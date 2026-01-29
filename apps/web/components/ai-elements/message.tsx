@@ -49,6 +49,8 @@ export const MessageResponse = memo(
     <Streamdown
       className={cn(
         "size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
+        "data-[streamdown=link]:cursor-pointer data-[streamdown=ordered-list]:list-outside data-[streamdown=unordered-list]:list-outside",
+        "data-[streamdown=link-safety-modal]:[&_button]:my-0 data-[streamdown=link-safety-modal]:[&_button]:cursor-pointer",
         className,
       )}
       {...props}

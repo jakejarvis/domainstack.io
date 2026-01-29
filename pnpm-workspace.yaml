@@ -6,8 +6,6 @@ catalog:
   '@tabler/icons-react': ^3.36.1
   '@types/node': 25.0.10
   '@types/pg': ^8.16.0
-  '@types/react': 19.2.10
-  '@types/react-dom': 19.2.3
   drizzle-orm: ^0.45.1
   motion: ^12.29.2
   sonner: ^2.0.7

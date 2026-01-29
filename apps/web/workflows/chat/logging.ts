@@ -9,7 +9,6 @@ import {
   InvalidToolInputError,
   NoSuchToolError,
   ToolCallRepairError,
-  type UIMessage,
 } from "ai";
 import { getStepMetadata, getWorkflowMetadata } from "workflow";
 
@@ -180,58 +179,6 @@ export function summarizeToolResults(
   });
 }
 
-export function getStuckToolParts(messages: UIMessage[]): StuckToolPart[] {
-  const stuckTools: StuckToolPart[] = [];
-  for (const message of messages) {
-    for (const part of message.parts ?? []) {
-      if (
-        part &&
-        typeof part === "object" &&
-        "type" in part &&
-        typeof part.type === "string" &&
-        part.type.startsWith("tool-") &&
-        "state" in part &&
-        (part.state === "input-available" || part.state === "output-error")
-      ) {
-        const typedPart = part as {
-          type: string;
-          toolCallId?: string;
-          input?: unknown;
-          errorText?: string;
-          state: string;
-        };
-        stuckTools.push({
-          toolType: typedPart.type,
-          toolCallId: typedPart.toolCallId,
-          input: typedPart.input,
-          errorText: typedPart.errorText,
-        });
-      }
-    }
-  }
-  return stuckTools;
-}
-
-export function getToolStepStats(steps: unknown[]): ToolStepStats {
-  let toolCalls = 0;
-  let toolResults = 0;
-  for (const step of steps) {
-    if (step && typeof step === "object") {
-      if ("toolCalls" in step && Array.isArray(step.toolCalls)) {
-        toolCalls += step.toolCalls.length;
-      }
-      if ("toolResults" in step && Array.isArray(step.toolResults)) {
-        toolResults += step.toolResults.length;
-      }
-    }
-  }
-  return {
-    totalSteps: steps.length,
-    toolCalls,
-    toolResults,
-  };
-}
-
 // ============================================================================
 // Workflow Step Functions
 // ============================================================================
@@ -269,22 +216,4 @@ export async function logChatStepFinishStep(payload: {
   const { workflowRunId } = getWorkflowMetadata();
   const { stepId } = getStepMetadata();
   logger.info({ ...payload, workflowRunId, stepId }, "chat step finished");
-}
-
-export async function logChatStreamWarningStep(payload: {
-  event: "chat_tool_missing_result";
-  domain?: string;
-  userId?: string | null;
-  stuckTools: StuckToolPart[];
-  stepStats: ToolStepStats;
-}) {
-  "use step";
-  const { createLogger } = await import("@/lib/logger/server");
-  const logger = createLogger({ source: "chat/workflow" });
-  const { workflowRunId } = getWorkflowMetadata();
-  const { stepId } = getStepMetadata();
-  logger.warn(
-    { ...payload, workflowRunId, stepId },
-    "chat stream finished with unresolved tool calls",
-  );
 }

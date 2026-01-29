@@ -34,8 +34,8 @@
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@tabler/icons-react": "catalog:",
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
+    "@types/react": "19.2.10",
+    "@types/react-dom": "19.2.3",
     "motion": "catalog:",
     "sonner": "catalog:"
   }

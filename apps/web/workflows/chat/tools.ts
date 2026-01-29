@@ -9,6 +9,7 @@
  */
 
 import { tool } from "ai";
+import { cache } from "react";
 import { z } from "zod";
 
 /**
@@ -199,49 +200,53 @@ async function getSeoStep(domain: string, ctx: ToolContext) {
  *
  * See: https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling#strict-mode
  */
-export function createDomainToolset(ctx: ToolContext) {
-  return {
-    get_registration: tool({
-      description:
-        "Get WHOIS/RDAP registration data for a domain including registrar, creation date, expiration date, nameservers, and registrant information. Use this tool when users ask about domain ownership, registration, expiry, or who owns a domain.",
-      inputSchema: domainSchema,
-      strict: true,
-      execute: async ({ domain }) => getRegistrationStep(domain, ctx),
-    }),
-    get_dns_records: tool({
-      description:
-        "Get DNS records for a domain including A, AAAA, CNAME, MX, TXT, NS, and SOA records. Use this tool when users ask about DNS configuration, IP addresses, mail servers, or nameservers.",
-      inputSchema: domainSchema,
-      strict: true,
-      execute: async ({ domain }) => getDnsRecordsStep(domain, ctx),
-    }),
-    get_hosting: tool({
-      description:
-        "Detect hosting, DNS, CDN, and email providers for a domain by analyzing DNS records and HTTP headers. Use this tool when users ask where a site is hosted, what CDN they use, or who provides their email.",
-      inputSchema: domainSchema,
-      strict: true,
-      execute: async ({ domain }) => getHostingStep(domain, ctx),
-    }),
-    get_certificates: tool({
-      description:
-        "Get SSL/TLS certificate information for a domain including issuer, validity dates, and certificate chain. Use this tool when users ask about HTTPS, SSL certificates, security, or certificate expiry.",
-      inputSchema: domainSchema,
-      strict: true,
-      execute: async ({ domain }) => getCertificatesStep(domain, ctx),
-    }),
-    get_headers: tool({
-      description:
-        "Get HTTP response headers for a domain including security headers, caching headers, and server information. Use this tool when users ask about security headers, server software, caching, or HTTP configuration.",
-      inputSchema: domainSchema,
-      strict: true,
-      execute: async ({ domain }) => getHeadersStep(domain, ctx),
-    }),
-    get_seo: tool({
-      description:
-        "Get SEO metadata for a domain including title, description, Open Graph tags, Twitter cards, and robots.txt rules. Use this tool when users ask about SEO, meta tags, social sharing, or how a site appears in search.",
-      inputSchema: domainSchema,
-      strict: true,
-      execute: async ({ domain }) => getSeoStep(domain, ctx),
-    }),
-  };
-}
+export const createDomainToolset = cache(() => ({
+  get_registration: tool({
+    description:
+      "Get WHOIS/RDAP registration data for a domain including registrar, creation date, expiration date, nameservers, and registrant information. Use this tool when users ask about domain ownership, registration, expiry, or who owns a domain.",
+    inputSchema: domainSchema,
+    strict: true,
+    execute: async ({ domain }, { experimental_context }) =>
+      getRegistrationStep(domain, experimental_context as ToolContext),
+  }),
+  get_dns_records: tool({
+    description:
+      "Get DNS records for a domain including A, AAAA, CNAME, MX, TXT, NS, and SOA records. Use this tool when users ask about DNS configuration, IP addresses, mail servers, or nameservers.",
+    inputSchema: domainSchema,
+    strict: true,
+    execute: async ({ domain }, { experimental_context }) =>
+      getDnsRecordsStep(domain, experimental_context as ToolContext),
+  }),
+  get_hosting: tool({
+    description:
+      "Detect hosting, DNS, CDN, and email providers for a domain by analyzing DNS records and HTTP headers. Use this tool when users ask where a site is hosted, what CDN they use, or who provides their email.",
+    inputSchema: domainSchema,
+    strict: true,
+    execute: async ({ domain }, { experimental_context }) =>
+      getHostingStep(domain, experimental_context as ToolContext),
+  }),
+  get_certificates: tool({
+    description:
+      "Get SSL/TLS certificate information for a domain including issuer, validity dates, and certificate chain. Use this tool when users ask about HTTPS, SSL certificates, security, or certificate expiry.",
+    inputSchema: domainSchema,
+    strict: true,
+    execute: async ({ domain }, { experimental_context }) =>
+      getCertificatesStep(domain, experimental_context as ToolContext),
+  }),
+  get_headers: tool({
+    description:
+      "Get HTTP response headers for a domain including security headers, caching headers, and server information. Use this tool when users ask about security headers, server software, caching, or HTTP configuration.",
+    inputSchema: domainSchema,
+    strict: true,
+    execute: async ({ domain }, { experimental_context }) =>
+      getHeadersStep(domain, experimental_context as ToolContext),
+  }),
+  get_seo: tool({
+    description:
+      "Get SEO metadata for a domain including title, description, Open Graph tags, Twitter cards, and robots.txt rules. Use this tool when users ask about SEO, meta tags, social sharing, or how a site appears in search.",
+    inputSchema: domainSchema,
+    strict: true,
+    execute: async ({ domain }, { experimental_context }) =>
+      getSeoStep(domain, experimental_context as ToolContext),
+  }),
+}));
