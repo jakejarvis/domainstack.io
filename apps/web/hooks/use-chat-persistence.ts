@@ -1,6 +1,6 @@
 import type { ChatRequestOptions, UIMessage } from "ai";
 import { useEffect, useRef } from "react";
-import { useChatStore } from "@/lib/stores/chat-store";
+import { useChatHydrated, useChatStore } from "@/lib/stores/chat-store";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -28,7 +28,7 @@ interface UseChatPersistenceOptions {
  * Manages chat message persistence between the useChat hook and Zustand store.
  *
  * Handles:
- * - Restoring messages from store on mount (once)
+ * - Restoring messages from store on mount (once, after hydration)
  * - Persisting messages to store when they change
  * - Clearing runId when chat transitions from streaming to ready
  *
@@ -40,6 +40,7 @@ export function useChatPersistence({
   setMessages,
 }: UseChatPersistenceOptions): void {
   // Store access
+  const hydrated = useChatHydrated();
   const runId = useChatStore((s) => s.runId);
   const storedMessages = useChatStore((s) => s.messages);
   const setRunId = useChatStore((s) => s.setRunId);
@@ -50,17 +51,25 @@ export function useChatPersistence({
   setMessagesRef.current = setMessages;
 
   // ---------------------------------------------------------------------------
-  // Restore messages from store once on mount
+  // Restore messages from store once after hydration
   // ---------------------------------------------------------------------------
 
   const hasRestored = useRef(false);
   useEffect(() => {
+    // Wait for store to hydrate from localStorage before restoring
+    if (!hydrated) return;
     if (hasRestored.current) return;
     hasRestored.current = true;
     if (storedMessages.length > 0) {
       setMessagesRef.current(storedMessages);
     }
-  }, [storedMessages]);
+    // Clear any persisted runId - it's from a previous session and the workflow
+    // has likely completed. Trying to resume a completed workflow causes errors.
+    // In-session stream interruptions (network drops) still work since runId is in memory.
+    if (runId) {
+      setRunId(null);
+    }
+  }, [hydrated, storedMessages, runId, setRunId]);
 
   // ---------------------------------------------------------------------------
   // Persist messages to store

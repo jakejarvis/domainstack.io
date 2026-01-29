@@ -1,5 +1,6 @@
 "use client";
 
+import { CHATBOT_NAME } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
 import {
   Dialog,
@@ -21,7 +22,12 @@ import {
 } from "@domainstack/ui/item";
 import { Label } from "@domainstack/ui/label";
 import { Switch } from "@domainstack/ui/switch";
-import { IconBiohazard, IconInfoCircle, IconTool } from "@tabler/icons-react";
+import {
+  IconBiohazard,
+  IconBrain,
+  IconInfoCircle,
+  IconTool,
+} from "@tabler/icons-react";
 import { BetaBadge } from "@/components/beta-badge";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 
@@ -38,6 +44,8 @@ export function ChatSettingsDialog({
   const setHideAiFeatures = usePreferencesStore((s) => s.setHideAiFeatures);
   const showToolCalls = usePreferencesStore((s) => s.showToolCalls);
   const setShowToolCalls = usePreferencesStore((s) => s.setShowToolCalls);
+  const showReasoning = usePreferencesStore((s) => s.showReasoning);
+  const setShowReasoning = usePreferencesStore((s) => s.setShowReasoning);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange} modal>
@@ -60,7 +68,7 @@ export function ChatSettingsDialog({
               <ItemContent>
                 <ItemTitle>Show tool calls</ItemTitle>
                 <ItemDescription>
-                  Display the underlying API calls in the conversation
+                  Display the underlying API requests & responses
                 </ItemDescription>
               </ItemContent>
             </Label>
@@ -69,6 +77,28 @@ export function ChatSettingsDialog({
                 id="show-tool-calls"
                 checked={showToolCalls}
                 onCheckedChange={setShowToolCalls}
+              />
+            </ItemActions>
+          </Item>
+          <Item size="xs" variant="outline">
+            <Label htmlFor="show-reasoning" className="flex-1 cursor-pointer">
+              <ItemMedia variant="icon">
+                <Icon variant="muted" size="sm">
+                  <IconBrain />
+                </Icon>
+              </ItemMedia>
+              <ItemContent>
+                <ItemTitle>Show reasoning</ItemTitle>
+                <ItemDescription>
+                  Reveals {CHATBOT_NAME}&rsquo;s thought process
+                </ItemDescription>
+              </ItemContent>
+            </Label>
+            <ItemActions>
+              <Switch
+                id="show-reasoning"
+                checked={showReasoning}
+                onCheckedChange={setShowReasoning}
               />
             </ItemActions>
           </Item>

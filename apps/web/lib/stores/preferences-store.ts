@@ -15,6 +15,16 @@ import {
 // Types
 // ---------------------------------------------------------------------------
 
+/**
+ * AI mode preference for chat.
+ * - cloud: Always use server-side AI (Gemini 2.5 Flash)
+ * - local: Use browser-based AI (Gemini Nano/Phi Mini) when available
+ * - auto: Prefer local AI when available, fall back to cloud
+ */
+export type AiModePreference = "cloud" | "local" | "auto";
+
+export const AI_MODE_OPTIONS = ["cloud", "local", "auto"] as const;
+
 interface PreferencesState {
   // Dashboard preferences
   viewMode: DashboardViewModeOptions;
@@ -22,7 +32,9 @@ interface PreferencesState {
   columnVisibility: Record<string, boolean>;
   // AI preferences
   showToolCalls: boolean;
+  showReasoning: boolean;
   hideAiFeatures: boolean;
+  aiMode: AiModePreference;
 }
 
 interface PreferencesActions {
@@ -34,7 +46,9 @@ interface PreferencesActions {
       | ((prev: Record<string, boolean>) => Record<string, boolean>),
   ) => void;
   setShowToolCalls: (show: boolean) => void;
+  setShowReasoning: (show: boolean) => void;
   setHideAiFeatures: (hide: boolean) => void;
+  setAiMode: (mode: AiModePreference) => void;
 }
 
 type PreferencesStore = PreferencesState & PreferencesActions;
@@ -48,7 +62,9 @@ const DEFAULT_PREFERENCES: PreferencesState = {
   pageSize: DASHBOARD_PREFERENCES_DEFAULT.pageSize,
   columnVisibility: DASHBOARD_PREFERENCES_DEFAULT.columnVisibility,
   showToolCalls: true,
+  showReasoning: false,
   hideAiFeatures: false,
+  aiMode: "cloud",
 };
 
 function validateOption<T>(
@@ -67,7 +83,7 @@ function validateOption<T>(
 // ---------------------------------------------------------------------------
 
 /**
- * Unified preferences store for dashboard and AI settings.
+ * Unified store for preferences local to the current browser, not the account.
  *
  * Usage:
  * ```tsx
@@ -91,7 +107,9 @@ const preferencesStore = create<PreferencesStore>()(
         set({ columnVisibility: newVisibility });
       },
       setShowToolCalls: (showToolCalls) => set({ showToolCalls }),
+      setShowReasoning: (showReasoning) => set({ showReasoning }),
       setHideAiFeatures: (hideAiFeatures) => set({ hideAiFeatures }),
+      setAiMode: (aiMode) => set({ aiMode }),
     }),
     {
       name: "preferences",
@@ -101,7 +119,9 @@ const preferencesStore = create<PreferencesStore>()(
         pageSize: state.pageSize,
         columnVisibility: state.columnVisibility,
         showToolCalls: state.showToolCalls,
+        showReasoning: state.showReasoning,
         hideAiFeatures: state.hideAiFeatures,
+        aiMode: state.aiMode,
       }),
       merge: (persistedState, currentState) => {
         const persisted = persistedState as Partial<PreferencesState> | null;
@@ -121,8 +141,15 @@ const preferencesStore = create<PreferencesStore>()(
             persisted?.columnVisibility ?? DEFAULT_PREFERENCES.columnVisibility,
           showToolCalls:
             persisted?.showToolCalls ?? DEFAULT_PREFERENCES.showToolCalls,
+          showReasoning:
+            persisted?.showReasoning ?? DEFAULT_PREFERENCES.showReasoning,
           hideAiFeatures:
             persisted?.hideAiFeatures ?? DEFAULT_PREFERENCES.hideAiFeatures,
+          aiMode: validateOption(
+            persisted?.aiMode,
+            AI_MODE_OPTIONS,
+            DEFAULT_PREFERENCES.aiMode,
+          ),
         };
       },
     },

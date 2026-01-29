@@ -3,7 +3,12 @@
 import { MAX_MESSAGE_LENGTH } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
 import { cn } from "@domainstack/ui/utils";
-import { IconAlertCircle, IconMessages, IconX } from "@tabler/icons-react";
+import {
+  IconAlertCircle,
+  IconBrain,
+  IconMessages,
+  IconX,
+} from "@tabler/icons-react";
 import type { ChatStatus, ToolUIPart, UIMessage } from "ai";
 import { useAtomValue } from "jotai";
 import { useCallback, useState } from "react";
@@ -26,6 +31,11 @@ import {
   PromptInputSubmit,
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
+import {
+  Reasoning,
+  ReasoningContent,
+  ReasoningTrigger,
+} from "@/components/ai-elements/reasoning";
 import { ShimmeringText } from "@/components/ai-elements/shimmering-text";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import {
@@ -37,6 +47,7 @@ import {
 } from "@/components/ai-elements/tool";
 import { chatSuggestionsAtom } from "@/lib/atoms/chat-atoms";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
+import { ChatModeSelector } from "./chat-mode-selector";
 import { getToolStatusMessage } from "./utils";
 
 interface ChatPanelProps {
@@ -68,6 +79,7 @@ export function ChatPanel({
 }: ChatPanelProps) {
   const [inputLength, setInputLength] = useState(0);
   const showToolCalls = usePreferencesStore((s) => s.showToolCalls);
+  const showReasoning = usePreferencesStore((s) => s.showReasoning);
 
   // Prepare to share scroll state between the different components
   const stickyInstance = useStickToBottom();
@@ -99,20 +111,6 @@ export function ChatPanel({
     setInputLength(e.target.value.length);
     onClearError?.();
   };
-
-  // Show loading indicator when waiting for response or when streaming but no text yet
-  // (e.g., after tool calls complete but before the final text response starts)
-  const lastMessage = messages[messages.length - 1];
-  const hasVisibleText =
-    lastMessage?.role === "assistant" &&
-    lastMessage.parts.some(
-      (part) => part.type === "text" && part.text.trim().length > 0,
-    );
-  const showLoading =
-    status === "submitted" ||
-    (status === "streaming" &&
-      lastMessage?.role === "assistant" &&
-      !hasVisibleText);
 
   return (
     <>
@@ -150,6 +148,34 @@ export function ChatPanel({
                           </MessageResponse>
                         );
                       }
+                      if (part.type === "reasoning") {
+                        const isStreaming =
+                          status === "streaming" &&
+                          index === message.parts.length - 1 &&
+                          message.id === messages.at(-1)?.id;
+                        if (showReasoning) {
+                          return (
+                            <Reasoning
+                              key={`${message.id}-${index}`}
+                              className="w-full"
+                              isStreaming={isStreaming}
+                            >
+                              <ReasoningTrigger />
+                              <ReasoningContent>{part.text}</ReasoningContent>
+                            </Reasoning>
+                          );
+                        }
+
+                        return isStreaming ? (
+                          <div
+                            key={`${message.id}-${index}`}
+                            className="flex items-center gap-2 text-[13px] text-muted-foreground"
+                          >
+                            <IconBrain className="size-3.5" />
+                            <ShimmeringText text="Thinking…" />
+                          </div>
+                        ) : null;
+                      }
                       if (part.type.startsWith("tool-") && showToolCalls) {
                         const toolPart = part as ToolUIPart;
                         return (
@@ -176,8 +202,13 @@ export function ChatPanel({
                   </MessageContent>
                 </Message>
               ))}
-              {showLoading && (
-                <ShimmeringText text="Thinking…" className="text-sm" />
+              {/* Show loading indicator while waiting for response stream to begin */}
+              {status === "submitted" && (
+                <Message from="assistant">
+                  <MessageContent>
+                    <ShimmeringText text="Thinking…" />
+                  </MessageContent>
+                </Message>
               )}
             </>
           )}
@@ -230,15 +261,20 @@ export function ChatPanel({
             onChange={handleInputChange}
             maxLength={MAX_MESSAGE_LENGTH}
           />
-          <PromptInputFooter>
+          <PromptInputFooter className="pr-1.5 pb-1.5 pl-3">
             <PromptInputCharacterCount
               current={inputLength}
               max={MAX_MESSAGE_LENGTH}
             />
-            <PromptInputSubmit
-              disabled={inputLength === 0}
-              status={error ? "error" : status}
-            />
+            <div className="flex items-center gap-2">
+              <ChatModeSelector
+                disabled={status === "submitted" || status === "streaming"}
+              />
+              <PromptInputSubmit
+                disabled={inputLength === 0}
+                status={error ? "error" : status}
+              />
+            </div>
           </PromptInputFooter>
         </PromptInput>
       </div>
