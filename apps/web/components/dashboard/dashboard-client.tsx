@@ -117,35 +117,8 @@ export function DashboardClient() {
   // Filter State
   // -------------------------------------------------------------------------
 
-  const { state: filterHookState, actions: filterHookActions } =
-    useDashboardFilters(domains);
-
-  // Destructure for easier access
-  const {
-    search,
-    status,
-    health,
-    tlds,
-    providers,
-    domainId,
-    filteredDomainName,
-    availableTlds,
-    availableProviders,
-    hasActiveFilters,
-    stats,
-    filteredDomains: filteredUnsorted,
-  } = filterHookState;
-
-  const {
-    setSearch,
-    setStatus,
-    setHealth,
-    setTlds,
-    setProviders,
-    clearFilters,
-    applyHealthFilter,
-    clearDomainId,
-  } = filterHookActions;
+  const filterHook = useDashboardFilters(domains);
+  const { filteredDomains: filteredUnsorted } = filterHook.state;
 
   // Apply sorting after filtering (only for grid view - table has its own column sorting)
   const filteredDomains = useMemo(
@@ -327,36 +300,6 @@ export function DashboardClient() {
     return <DashboardError onRetry={handleRetry} />;
   }
 
-  // Build filter state/actions for context
-  const filterState = {
-    search,
-    status,
-    health,
-    tlds,
-    providers,
-    domainId,
-    filteredDomainName,
-    availableTlds,
-    availableProviders,
-    hasActiveFilters,
-    stats,
-    sortOption,
-    table: viewMode === "table" ? tableInstance : null,
-  };
-
-  const filterActions = {
-    setSearch,
-    setStatus,
-    setHealth,
-    setTlds,
-    setProviders,
-    clearFilters,
-    applyHealthFilter,
-    clearDomainId,
-    setSortOption,
-    setTable: setTableInstance,
-  };
-
   return (
     <div className="space-y-6">
       <DashboardHeader userName={session?.user?.name ?? ""} />
@@ -389,10 +332,15 @@ export function DashboardClient() {
         onBulkDelete={handleBulkDelete}
         isBulkArchiving={mutations.isBulkArchiving}
         isBulkDeleting={mutations.isBulkDeleting}
-        filterState={filterState}
-        filterActions={filterActions}
-        paginationState={pagination}
-        paginationActions={{ setPageIndex, setPageSize, resetPage }}
+        filterHook={filterHook}
+        sortOption={sortOption}
+        setSortOption={setSortOption}
+        table={viewMode === "table" ? tableInstance : null}
+        setTable={setTableInstance}
+        paginationHook={{
+          state: pagination,
+          actions: { setPageIndex, setPageSize, resetPage },
+        }}
       >
         {/* Active domains view */}
         {activeTab === "active" && (

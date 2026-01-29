@@ -12,6 +12,9 @@ import type {
   StatusFilter,
 } from "@/lib/dashboard-utils";
 
+// Re-export types so consumers can import from context
+export type { SortOption } from "@/lib/dashboard-utils";
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -103,12 +106,22 @@ interface DashboardProviderProps {
   onBulkDelete: (domainIds: string[]) => void;
   isBulkArchiving: boolean;
   isBulkDeleting: boolean;
-  /** Filter state - passed from useDashboardFilters hook */
-  filterState: FilterState;
-  filterActions: FilterActions;
-  /** Pagination state - passed from useDashboardPagination hook */
-  paginationState: PaginationState;
-  paginationActions: PaginationActions;
+  /** Filter hook result - passed directly from useDashboardFilters */
+  filterHook: {
+    state: Omit<FilterState, "sortOption" | "table">;
+    actions: Omit<FilterActions, "setSortOption" | "setTable">;
+  };
+  /** Sort state (grid view only) */
+  sortOption: SortOption;
+  setSortOption: (sort: SortOption) => void;
+  /** Table instance (table view only) */
+  table: Table<TrackedDomainWithDetails> | null;
+  setTable: (table: Table<TrackedDomainWithDetails> | null) => void;
+  /** Pagination hook result - passed directly from useDashboardPagination */
+  paginationHook: {
+    state: PaginationState;
+    actions: PaginationActions;
+  };
 }
 
 export function DashboardProvider({
@@ -122,10 +135,12 @@ export function DashboardProvider({
   onBulkDelete,
   isBulkArchiving,
   isBulkDeleting,
-  filterState,
-  filterActions,
-  paginationState,
-  paginationActions,
+  filterHook,
+  sortOption,
+  setSortOption,
+  table,
+  setTable,
+  paginationHook,
 }: DashboardProviderProps) {
   const value = useMemo<DashboardContextValue>(
     () => ({
@@ -143,12 +158,16 @@ export function DashboardProvider({
         isBulkDeleting,
       },
       filters: {
-        ...filterState,
-        ...filterActions,
+        ...filterHook.state,
+        ...filterHook.actions,
+        sortOption,
+        setSortOption,
+        table,
+        setTable,
       },
       pagination: {
-        ...paginationState,
-        ...paginationActions,
+        ...paginationHook.state,
+        ...paginationHook.actions,
       },
     }),
     [
@@ -161,10 +180,12 @@ export function DashboardProvider({
       onBulkDelete,
       isBulkArchiving,
       isBulkDeleting,
-      filterState,
-      filterActions,
-      paginationState,
-      paginationActions,
+      filterHook,
+      sortOption,
+      setSortOption,
+      table,
+      setTable,
+      paginationHook,
     ],
   );
 
