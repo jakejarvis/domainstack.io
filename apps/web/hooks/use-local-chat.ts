@@ -124,7 +124,7 @@ export function useLocalChat({
         const modelMessages = await convertToModelMessages(updatedMessages);
 
         // Run the model with tool calling
-        // stopWhen: stepCountIs(5) enables multi-step tool execution - without it,
+        // stopWhen: stepCountIs(3) enables multi-step tool execution - without it,
         // the model stops after generating a tool call without executing it
         const result = streamText({
           model,
