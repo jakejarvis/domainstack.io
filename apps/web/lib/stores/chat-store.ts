@@ -1,6 +1,7 @@
 "use client";
 
 import type { UIMessage } from "ai";
+import { useEffect, useState } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -36,7 +37,7 @@ type ChatStore = ChatState & ChatActions;
  * const setMessages = useChatStore((s) => s.setMessages);
  * ```
  */
-export const useChatStore = create<ChatStore>()(
+const chatStore = create<ChatStore>()(
   persist(
     (set) => ({
       runId: null,
@@ -56,3 +57,27 @@ export const useChatStore = create<ChatStore>()(
     },
   ),
 );
+
+export const useChatStore = chatStore;
+
+/**
+ * Returns true once the chat store has hydrated from localStorage.
+ * Use this to prevent restoring messages before the store has loaded persisted data.
+ *
+ * @see https://zustand.docs.pmnd.rs/integrations/persisting-store-data#how-can-i-check-if-my-store-has-been-hydrated
+ */
+export const useChatHydrated = () => {
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = chatStore.persist.onFinishHydration(() =>
+      setHydrated(true),
+    );
+
+    setHydrated(chatStore.persist.hasHydrated());
+
+    return () => unsubscribe();
+  }, []);
+
+  return hydrated;
+};

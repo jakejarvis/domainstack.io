@@ -2,12 +2,8 @@
 
 import { CHATBOT_NAME } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@domainstack/ui/tooltip";
-import { IconMessageCircleFilled } from "@tabler/icons-react";
+import { cn } from "@domainstack/ui/utils";
+import { IconLego, IconMessageCircleFilled } from "@tabler/icons-react";
 import {
   motion,
   useAnimationFrame,
@@ -15,6 +11,7 @@ import {
   useMotionValue,
   useReducedMotion,
 } from "motion/react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const MotionButton = motion.create(Button);
 
@@ -23,6 +20,7 @@ interface ChatFabProps {
 }
 
 export function ChatFab({ onClick }: ChatFabProps) {
+  const isMobile = useIsMobile();
   const prefersReducedMotion = useReducedMotion();
 
   // Animated gradient positions for mesh-like effect
@@ -57,43 +55,45 @@ export function ChatFab({ onClick }: ChatFabProps) {
   `;
 
   return (
-    <Tooltip>
-      <TooltipTrigger
-        render={
-          <MotionButton
-            variant="default"
-            size="icon-lg"
-            aria-label={`Chat with ${CHATBOT_NAME}`}
-            className="fixed right-6 bottom-6 z-40 overflow-hidden rounded-full shadow-lg transition-none"
-            onClick={onClick}
-            initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 16 }}
-            whileHover={prefersReducedMotion ? undefined : "hover"}
-            transition={{
-              duration: 0.25,
-              ease: [0.22, 1, 0.36, 1] as const,
-            }}
-          >
-            <motion.span
-              className="pointer-events-none absolute inset-[-4px] rounded-full"
-              initial={{ opacity: 0 }}
-              variants={{ hover: { opacity: 1 } }}
-              transition={{ duration: 0.2 }}
-              style={{
-                background: meshGradient,
-                filter: "blur(4px)",
-              }}
-            />
-            <span className="relative z-10 flex items-center justify-center">
-              <IconMessageCircleFilled className="size-5 text-background/95" />
-            </span>
-          </MotionButton>
-        }
+    <MotionButton
+      variant={isMobile ? "default" : "outline"}
+      size={isMobile ? "icon-lg" : "default"}
+      aria-label={`Chat with ${CHATBOT_NAME}`}
+      className={cn(
+        "group fixed right-6 bottom-6 z-40 overflow-hidden shadow-lg transition-none",
+        isMobile ? "rounded-full" : "backdrop-blur-md",
+      )}
+      onClick={onClick}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 16 }}
+      whileHover={prefersReducedMotion ? undefined : "hover"}
+      transition={{
+        duration: 0.25,
+        ease: [0.22, 1, 0.36, 1] as const,
+      }}
+    >
+      <motion.span
+        className="pointer-events-none absolute size-full"
+        initial={{ opacity: isMobile ? 1 : 0 }}
+        animate={isMobile ? { opacity: 1 } : undefined}
+        variants={isMobile ? undefined : { hover: { opacity: 1 } }}
+        transition={{ duration: 0.2 }}
+        style={{
+          background: meshGradient,
+          filter: "blur(4px)",
+        }}
       />
-      <TooltipContent side="left" sideOffset={8}>
-        Chat with {CHATBOT_NAME}
-      </TooltipContent>
-    </Tooltip>
+      {isMobile ? (
+        <span className="relative z-10 flex items-center justify-center">
+          <IconMessageCircleFilled className="size-5 text-background/95" />
+        </span>
+      ) : (
+        <span className="relative z-10 flex items-center gap-1.5 pr-0.5 font-semibold text-[13px] leading-none tracking-tight">
+          <IconLego className="size-4 text-muted-foreground group-hover:text-foreground" />
+          Ask {CHATBOT_NAME}
+        </span>
+      )}
+    </MotionButton>
   );
 }

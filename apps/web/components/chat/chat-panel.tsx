@@ -3,7 +3,12 @@
 import { MAX_MESSAGE_LENGTH } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
 import { cn } from "@domainstack/ui/utils";
-import { IconAlertCircle, IconMessages, IconX } from "@tabler/icons-react";
+import {
+  IconAlertCircle,
+  IconBrain,
+  IconMessages,
+  IconX,
+} from "@tabler/icons-react";
 import type { ChatStatus, ToolUIPart, UIMessage } from "ai";
 import { useAtomValue } from "jotai";
 import { useCallback, useState } from "react";
@@ -26,6 +31,11 @@ import {
   PromptInputSubmit,
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
+import {
+  Reasoning,
+  ReasoningContent,
+  ReasoningTrigger,
+} from "@/components/ai-elements/reasoning";
 import { ShimmeringText } from "@/components/ai-elements/shimmering-text";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import {
@@ -37,6 +47,7 @@ import {
 } from "@/components/ai-elements/tool";
 import { chatSuggestionsAtom } from "@/lib/atoms/chat-atoms";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
+import { ChatModeSelector } from "./chat-mode-selector";
 import { getToolStatusMessage } from "./utils";
 
 interface ChatPanelProps {
@@ -68,6 +79,7 @@ export function ChatPanel({
 }: ChatPanelProps) {
   const [inputLength, setInputLength] = useState(0);
   const showToolCalls = usePreferencesStore((s) => s.showToolCalls);
+  const showReasoning = usePreferencesStore((s) => s.showReasoning);
 
   // Prepare to share scroll state between the different components
   const stickyInstance = useStickToBottom();
@@ -100,20 +112,6 @@ export function ChatPanel({
     onClearError?.();
   };
 
-  // Show loading indicator when waiting for response or when streaming but no text yet
-  // (e.g., after tool calls complete but before the final text response starts)
-  const lastMessage = messages[messages.length - 1];
-  const hasVisibleText =
-    lastMessage?.role === "assistant" &&
-    lastMessage.parts.some(
-      (part) => part.type === "text" && part.text.trim().length > 0,
-    );
-  const showLoading =
-    status === "submitted" ||
-    (status === "streaming" &&
-      lastMessage?.role === "assistant" &&
-      !hasVisibleText);
-
   return (
     <>
       <Conversation
@@ -138,48 +136,71 @@ export function ChatPanel({
               description="I can look up DNS records, WHOIS data, SSL certificates, and more — just say the word."
             />
           ) : (
-            <>
-              {messages.map((message) => (
-                <Message key={message.id} from={message.role}>
-                  <MessageContent>
-                    {message.parts.map((part, index) => {
-                      if (part.type === "text") {
+            messages.map((message) => (
+              <Message key={message.id} from={message.role}>
+                <MessageContent>
+                  {message.parts.map((part, index) => {
+                    if (part.type === "text") {
+                      return (
+                        <MessageResponse key={`${message.id}-${index}`}>
+                          {part.text}
+                        </MessageResponse>
+                      );
+                    }
+                    if (part.type === "reasoning") {
+                      const isStreaming =
+                        status === "streaming" &&
+                        index === message.parts.length - 1 &&
+                        message.id === messages.at(-1)?.id;
+                      if (showReasoning) {
                         return (
-                          <MessageResponse key={`${message.id}-${index}`}>
-                            {part.text}
-                          </MessageResponse>
+                          <Reasoning
+                            key={`${message.id}-${index}`}
+                            className="w-full"
+                            isStreaming={isStreaming}
+                          >
+                            <ReasoningTrigger />
+                            <ReasoningContent>{part.text}</ReasoningContent>
+                          </Reasoning>
                         );
                       }
-                      if (part.type.startsWith("tool-") && showToolCalls) {
-                        const toolPart = part as ToolUIPart;
-                        return (
-                          <Tool key={`${message.id}-${index}`}>
-                            <ToolHeader
-                              title={getToolStatusMessage(toolPart.type)}
-                              type={toolPart.type}
-                              state={toolPart.state}
-                            />
-                            <ToolContent>
-                              <ToolInput input={toolPart.input} />
-                              {toolPart.state === "output-available" && (
-                                <ToolOutput
-                                  output={toolPart.output}
-                                  errorText={toolPart.errorText}
-                                />
-                              )}
-                            </ToolContent>
-                          </Tool>
-                        );
-                      }
-                      return null;
-                    })}
-                  </MessageContent>
-                </Message>
-              ))}
-              {showLoading && (
-                <ShimmeringText text="Thinking…" className="text-sm" />
-              )}
-            </>
+
+                      return isStreaming ? (
+                        <div
+                          key={`${message.id}-${index}`}
+                          className="flex items-center gap-2 text-[13px] text-muted-foreground"
+                        >
+                          <IconBrain className="size-3.5" />
+                          <ShimmeringText text="Thinking…" />
+                        </div>
+                      ) : null;
+                    }
+                    if (part.type.startsWith("tool-") && showToolCalls) {
+                      const toolPart = part as ToolUIPart;
+                      return (
+                        <Tool key={`${message.id}-${index}`}>
+                          <ToolHeader
+                            title={getToolStatusMessage(toolPart.type)}
+                            type={toolPart.type}
+                            state={toolPart.state}
+                          />
+                          <ToolContent>
+                            <ToolInput input={toolPart.input} />
+                            {toolPart.state === "output-available" && (
+                              <ToolOutput
+                                output={toolPart.output}
+                                errorText={toolPart.errorText}
+                              />
+                            )}
+                          </ToolContent>
+                        </Tool>
+                      );
+                    }
+                    return null;
+                  })}
+                </MessageContent>
+              </Message>
+            ))
           )}
         </ConversationContent>
         {!stickyInstance.isNearBottom && (
@@ -230,15 +251,20 @@ export function ChatPanel({
             onChange={handleInputChange}
             maxLength={MAX_MESSAGE_LENGTH}
           />
-          <PromptInputFooter>
+          <PromptInputFooter className="pr-1.5 pb-1.5 pl-3">
             <PromptInputCharacterCount
               current={inputLength}
               max={MAX_MESSAGE_LENGTH}
             />
-            <PromptInputSubmit
-              disabled={inputLength === 0}
-              status={error ? "error" : status}
-            />
+            <div className="flex items-center gap-2">
+              <ChatModeSelector
+                disabled={status === "submitted" || status === "streaming"}
+              />
+              <PromptInputSubmit
+                disabled={inputLength === 0}
+                status={error ? "error" : status}
+              />
+            </div>
           </PromptInputFooter>
         </PromptInput>
       </div>

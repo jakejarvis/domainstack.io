@@ -21,15 +21,20 @@ import { AnimatePresence } from "motion/react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BetaBadge } from "@/components/beta-badge";
+import { useBrowserAI } from "@/hooks/use-browser-ai";
 import { useChatPersistence } from "@/hooks/use-chat-persistence";
+import { useLocalChat } from "@/hooks/use-local-chat";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { analytics } from "@/lib/analytics/client";
 import { chatOpenAtom, serverSuggestionsAtom } from "@/lib/atoms/chat-atoms";
+import { buildClientSystemPrompt } from "@/lib/chat/client-prompt";
+import { createClientDomainTools } from "@/lib/chat/client-tools";
 import { useChatStore } from "@/lib/stores/chat-store";
 import {
   usePreferencesHydrated,
   usePreferencesStore,
 } from "@/lib/stores/preferences-store";
+import { useTRPCClient } from "@/lib/trpc/client";
 import { ChatFab } from "./chat-fab";
 import { ChatHeaderActions } from "./chat-header-actions";
 import { ChatPanel } from "./chat-panel";
@@ -48,10 +53,29 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
   const hydrated = usePreferencesHydrated();
   const hideAiFeatures = usePreferencesStore((s) => s.hideAiFeatures);
   const setHideAiFeatures = usePreferencesStore((s) => s.setHideAiFeatures);
+  const aiMode = usePreferencesStore((s) => s.aiMode);
 
   const domain = params.domain ? decodeURIComponent(params.domain) : undefined;
   const domainRef = useRef(domain);
   domainRef.current = domain;
+
+  // Browser AI detection and local chat setup
+  const browserAI = useBrowserAI();
+  const trpcClient = useTRPCClient();
+
+  // Determine effective mode based on preference and browser AI availability
+  const effectiveMode = useMemo((): "cloud" | "local" => {
+    if (aiMode === "local" && browserAI.status === "ready") return "local";
+    if (aiMode === "auto" && browserAI.status === "ready") return "local";
+    return "cloud";
+  }, [aiMode, browserAI.status]);
+
+  // Client-side tools and prompt for local chat
+  const clientTools = useMemo(
+    () => createClientDomainTools(trpcClient),
+    [trpcClient],
+  );
+  const systemPrompt = useMemo(() => buildClientSystemPrompt(domain), [domain]);
 
   const runId = useChatStore((s) => s.runId);
   const runIdRef = useRef(runId);
@@ -59,6 +83,13 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
   const setRunId = useChatStore((s) => s.setRunId);
   const setMessages = useChatStore((s) => s.setMessages);
   const clearSession = useChatStore((s) => s.clearSession);
+
+  // Capture initial runId for resume prop - must be stable to avoid AI SDK errors
+  // when runId changes mid-session (e.g., onChatEnd clearing it)
+  const initialRunIdRef = useRef<string | null | undefined>(undefined);
+  if (initialRunIdRef.current === undefined) {
+    initialRunIdRef.current = runId;
+  }
 
   const transport = useMemo(
     () =>
@@ -91,19 +122,36 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
     [setMessages, setRunId],
   );
 
-  const chat = useChat({
+  // Cloud chat (via Vercel Workflow)
+  // Use stable initialRunIdRef for resume to avoid AI SDK errors when runId changes
+  const cloudChat = useChat({
     transport,
-    resume: !!runId,
+    resume: !!initialRunIdRef.current,
     onError: (error) => {
       analytics.trackException(error, { context: "chat-send", domain });
     },
   });
 
+  // Local chat (browser-based AI) - only active when effectiveMode is "local"
+  // We create a placeholder model when browser AI isn't ready to avoid conditional hook calls
+  const localChat = useLocalChat({
+    model: browserAI.model ?? ({} as NonNullable<typeof browserAI.model>),
+    tools: clientTools,
+    systemPrompt,
+    onError: (error) => {
+      analytics.trackException(error, { context: "local-chat-send", domain });
+    },
+  });
+
+  // Select the active chat based on effective mode
+  const chat = effectiveMode === "local" ? localChat : cloudChat;
+
   // Handle message persistence (restore from store, persist to store, clear runId on completion)
+  // Only persist cloud chat messages (local chat doesn't have resumable workflows)
   useChatPersistence({
-    messages: chat.messages,
-    status: chat.status,
-    setMessages: chat.setMessages,
+    messages: cloudChat.messages,
+    status: cloudChat.status,
+    setMessages: cloudChat.setMessages,
   });
 
   // Ref for clearMessages callback to avoid dependency on chat.setMessages

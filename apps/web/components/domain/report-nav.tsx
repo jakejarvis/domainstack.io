@@ -135,7 +135,7 @@ export function SectionNav({
                   "hover:!bg-[color-mix(in_oklch,var(--section-accent)_15%,transparent)] hover:text-foreground",
                   activeSection === slug
                     ? "bg-[color-mix(in_oklch,var(--section-accent)_25%,transparent)] font-medium text-accent-foreground"
-                    : "text-muted-foreground",
+                    : "text-foreground/75",
                 )}
               >
                 <Icon className="size-3.5" />

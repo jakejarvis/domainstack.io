@@ -11,11 +11,9 @@
  */
 
 import type { GatewayProviderOptions } from "@ai-sdk/gateway";
+import { type OpenAIResponsesProviderOptions, openai } from "@ai-sdk/openai";
 import { MAX_OUTPUT_TOKENS, MAX_TOOL_STEPS } from "@domainstack/constants";
-import {
-  DurableAgent,
-  type DurableAgentStreamResult,
-} from "@workflow/ai/agent";
+import { DurableAgent } from "@workflow/ai/agent";
 import {
   convertToModelMessages,
   type UIMessage,
@@ -47,9 +45,7 @@ export interface ChatWorkflowInput {
  * Chat workflow that uses DurableAgent for streaming responses.
  * Single-turn pattern: client owns conversation history.
  */
-export async function chatWorkflow(
-  input: ChatWorkflowInput,
-): Promise<DurableAgentStreamResult<ReturnType<typeof createDomainToolset>>> {
+export async function chatWorkflow(input: ChatWorkflowInput) {
   "use workflow";
 
   const { messages, domain, ip, userId } = input;
@@ -62,10 +58,14 @@ export async function chatWorkflow(
 
   // Create agent with domain tools
   // Per AI SDK best practices: use temperature: 0 for deterministic tool calls
-  const tools = createDomainToolset();
   const agent = new DurableAgent({
     model: getModelStep,
-    tools,
+    tools: {
+      ...createDomainToolset(),
+      web_search: openai.tools.webSearch({
+        searchContextSize: "low",
+      }),
+    },
     system: systemPrompt,
     // Temperature 0 ensures consistent tool calling behavior across models
     // See: https://ai-sdk.dev/docs/ai-sdk-core/prompt-engineering#temperature-settings
@@ -74,6 +74,10 @@ export async function chatWorkflow(
       gateway: {
         user: userId ?? ip ?? "",
       } satisfies GatewayProviderOptions,
+      openai: {
+        reasoningEffort: "low",
+        reasoningSummary: "auto",
+      } satisfies OpenAIResponsesProviderOptions,
     },
     experimental_telemetry: {
       isEnabled: true,
