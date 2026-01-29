@@ -20,9 +20,7 @@ import {
   IconChevronDown,
   IconTrash,
 } from "@tabler/icons-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { toast } from "sonner";
 import { LinkedAccountRow } from "@/components/settings/account/linked-account-row";
 import {
   SettingsCard,
@@ -30,34 +28,33 @@ import {
 } from "@/components/settings/settings-card";
 import { LinkedAccountsSkeleton } from "@/components/settings/settings-skeleton";
 import { useAuthCallback } from "@/hooks/use-auth-callback";
-import { analytics } from "@/lib/analytics/client";
-import { linkSocial, unlinkAccount } from "@/lib/auth-client";
-import { getEnabledProviders, type OAuthProvider } from "@/lib/oauth";
-import { useTRPC } from "@/lib/trpc/client";
+import { useLinkedAccounts } from "@/hooks/use-linked-accounts";
+import type { OAuthProvider } from "@/lib/oauth";
 import { DeleteAccountDialog } from "./delete-account-dialog";
 
 export function AccountPanel() {
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
   const [unlinkingProvider, setUnlinkingProvider] = useState<string | null>(
     null,
   );
   const [linkingProvider, setLinkingProvider] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const enabledProviders = getEnabledProviders();
 
   // Handle auth callback errors from URL params (account linking)
   useAuthCallback();
 
-  // Query for linked accounts
   const {
-    data: linkedAccounts,
+    linkedAccounts,
+    linkedProviderIds,
+    enabledProviders,
     isLoading,
     isError,
-  } = useQuery(trpc.user.getLinkedAccounts.queryOptions());
-  const linkedAccountsQueryKey = trpc.user.getLinkedAccounts.queryKey();
+    canUnlink,
+    linkProvider,
+    unlinkProvider,
+    isUnlinking,
+  } = useLinkedAccounts();
 
-  // Handle linking a provider
+  // Handle linking a provider with local loading state
   const handleLink = async (provider: OAuthProvider) => {
     setLinkingProvider(provider.id);
 
@@ -74,78 +71,19 @@ export function AccountPanel() {
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     try {
-      await linkSocial({
-        provider: provider.id,
-        // On error, better-auth appends ?error=... to the callback URL
-        callbackURL: "/settings",
-      });
+      await linkProvider(provider);
       // Don't reset loading here - let it persist during navigation
       // It will be reset if user returns via back button
-    } catch (err) {
-      // Only reset on actual error
+    } catch {
+      // Error already handled in hook, just reset local state
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       setLinkingProvider(null);
-      analytics.trackException(
-        err instanceof Error ? err : new Error(String(err)),
-        { provider: provider.id, action: "link_account" },
-      );
-      toast.error(`Failed to link ${provider.name}. Please try again.`);
     }
   };
 
-  // Mutation for unlinking
-  const unlinkMutation = useMutation({
-    mutationFn: async (providerId: string) => {
-      const result = await unlinkAccount({ providerId });
-      if (result.error) {
-        throw new Error(result.error.message || "Failed to unlink account");
-      }
-      return result;
-    },
-    onMutate: async (providerId) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: linkedAccountsQueryKey });
-
-      // Snapshot the previous value
-      const previousAccounts = queryClient.getQueryData<typeof linkedAccounts>(
-        linkedAccountsQueryKey,
-      );
-
-      // Optimistically update to remove the account
-      queryClient.setQueryData(
-        linkedAccountsQueryKey,
-        (old: typeof linkedAccounts | undefined) =>
-          old?.filter((a) => a.providerId !== providerId),
-      );
-
-      return { previousAccounts };
-    },
-    onError: (err, providerId, context) => {
-      // Rollback on error
-      if (context?.previousAccounts) {
-        queryClient.setQueryData(
-          linkedAccountsQueryKey,
-          context.previousAccounts,
-        );
-      }
-      analytics.trackException(
-        err instanceof Error ? err : new Error(String(err)),
-        { provider: providerId, action: "unlink_account" },
-      );
-      toast.error("Failed to unlink account. Please try again.");
-    },
-    onSuccess: (_data, providerId) => {
-      const provider = enabledProviders.find((p) => p.id === providerId);
-      toast.success(`${provider?.name ?? "Account"} unlinked successfully`);
-    },
-    onSettled: () => {
-      setUnlinkingProvider(null);
-      void queryClient.invalidateQueries({ queryKey: linkedAccountsQueryKey });
-    },
-  });
-
   const handleUnlink = (providerId: string) => {
-    unlinkMutation.mutate(providerId);
+    unlinkProvider(providerId);
+    setUnlinkingProvider(null);
   };
 
   // Loading and error states (after all hooks)
@@ -156,12 +94,6 @@ export function AccountPanel() {
   if (isError || !linkedAccounts) {
     throw new Error("Failed to load linked accounts");
   }
-
-  // Set of linked provider IDs for quick lookup
-  const linkedProviderIds = new Set(linkedAccounts.map((a) => a.providerId));
-
-  // Check if user can unlink (must have at least 2 linked accounts)
-  const canUnlink = linkedProviderIds.size > 1;
 
   // Get the provider config being unlinked for the dialog
   const providerToUnlink = unlinkingProvider
@@ -186,9 +118,7 @@ export function AccountPanel() {
             .map((provider) => {
               const isLinked = linkedProviderIds.has(provider.id);
               const isLinking = linkingProvider === provider.id;
-              const isUnlinking =
-                unlinkMutation.isPending &&
-                unlinkMutation.variables === provider.id;
+              const isUnlinkingProvider = isUnlinking(provider.id);
 
               return (
                 <LinkedAccountRow
@@ -197,7 +127,7 @@ export function AccountPanel() {
                   isLinked={isLinked}
                   canUnlink={canUnlink}
                   isLinking={isLinking}
-                  isUnlinking={isUnlinking}
+                  isUnlinking={isUnlinkingProvider}
                   onLink={() => handleLink(provider)}
                   onUnlink={() => setUnlinkingProvider(provider.id)}
                 />
