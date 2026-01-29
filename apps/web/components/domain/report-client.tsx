@@ -16,7 +16,7 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import { useSetAtom } from "jotai";
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { CreateIssueButton } from "@/components/create-issue-button";
 import { CertificatesSection } from "@/components/domain/certificates/certificates-section";
 import { CertificatesSectionSkeleton } from "@/components/domain/certificates/certificates-section-skeleton";
@@ -36,6 +36,7 @@ import { SeoSection } from "@/components/domain/seo/seo-section";
 import { SeoSectionSkeleton } from "@/components/domain/seo/seo-section-skeleton";
 import { DomainUnregisteredCard } from "@/components/domain/unregistered-card";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSectionTracking } from "@/hooks/use-section-tracking";
 import { chatContextAtom } from "@/lib/atoms/chat-atoms";
 import {
   HEADER_HEIGHT,
@@ -173,82 +174,14 @@ export function DomainReportClient({ domain }: { domain: string }) {
 
   const headerRef = useRef<HTMLDivElement>(null);
   const sectionIds = Object.keys(sections);
-  const [activeSection, setActiveSection] = useState(sectionIds[0] ?? "");
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const isMobile = useIsMobile();
 
-  const programmaticTargetIdRef = useRef<string | null>(null);
-  const programmaticLockUntilRef = useRef<number>(0);
-
-  // Section tracking
-  useEffect(() => {
-    if (sectionIds.length === 0) return;
-
-    let rafId: number | null = null;
-    let scrollMarginPx = resolveScrollMargin(isMobile);
-
-    const updateActiveSection = () => {
-      const targetId = programmaticTargetIdRef.current;
-      if (targetId) {
-        const now =
-          typeof performance !== "undefined" ? performance.now() : Date.now();
-        const targetEl = document.getElementById(targetId);
-
-        if (!targetEl || now > programmaticLockUntilRef.current) {
-          programmaticTargetIdRef.current = null;
-        } else {
-          const { top } = targetEl.getBoundingClientRect();
-          const isLanded = Math.abs(top - scrollMarginPx) <= 2;
-          if (!isLanded) {
-            setActiveSection((prev) => (prev === targetId ? prev : targetId));
-            return;
-          }
-          programmaticTargetIdRef.current = null;
-        }
-      }
-
-      const sectionEls = sectionIds
-        .map((id) => document.getElementById(id))
-        .filter((el): el is HTMLElement => el instanceof HTMLElement);
-
-      let nextActive = sectionEls[0]?.id ?? sectionIds[0] ?? "";
-      for (const el of sectionEls) {
-        const { top } = el.getBoundingClientRect();
-        if (top - scrollMarginPx <= 1) {
-          nextActive = el.id;
-        } else {
-          break;
-        }
-      }
-
-      setActiveSection((prev) => (prev === nextActive ? prev : nextActive));
-    };
-
-    const scheduleUpdate = () => {
-      if (rafId !== null) return;
-      rafId = window.requestAnimationFrame(() => {
-        rafId = null;
-        updateActiveSection();
-      });
-    };
-
-    const handleResize = () => {
-      scrollMarginPx = resolveScrollMargin(isMobile);
-      scheduleUpdate();
-    };
-
-    window.addEventListener("scroll", scheduleUpdate, { passive: true });
-    window.addEventListener("resize", handleResize, { passive: true });
-    scheduleUpdate();
-
-    return () => {
-      window.removeEventListener("scroll", scheduleUpdate);
-      window.removeEventListener("resize", handleResize);
-      if (rafId !== null) {
-        window.cancelAnimationFrame(rafId);
-      }
-    };
-  }, [sectionIds, isMobile]);
+  // Section tracking with scroll detection
+  const { activeSection, scrollToSection } = useSectionTracking({
+    sectionIds,
+    scrollMarginPx: resolveScrollMargin(isMobile),
+  });
 
   // Header observer
   useEffect(() => {
@@ -267,22 +200,6 @@ export function DomainReportClient({ domain }: { domain: string }) {
 
     observer.observe(headerElement);
     return () => observer.disconnect();
-  }, []);
-
-  const scrollToSection = useCallback((id: string) => {
-    const element = document.getElementById(id);
-    if (!element) return;
-
-    setActiveSection(id);
-    programmaticTargetIdRef.current = id;
-    const now =
-      typeof performance !== "undefined" ? performance.now() : Date.now();
-    programmaticLockUntilRef.current = now + 1500;
-
-    element.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
   }, []);
 
   if (isRegistrationError) {

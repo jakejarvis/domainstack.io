@@ -21,6 +21,7 @@ import { AnimatePresence } from "motion/react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BetaBadge } from "@/components/beta-badge";
+import { useChatPersistence } from "@/hooks/use-chat-persistence";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { analytics } from "@/lib/analytics/client";
 import { serverSuggestionsAtom } from "@/lib/atoms/chat-atoms";
@@ -56,7 +57,6 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
   const runId = useChatStore((s) => s.runId);
   const runIdRef = useRef(runId);
   runIdRef.current = runId;
-  const storedMessages = useChatStore((s) => s.messages);
   const setRunId = useChatStore((s) => s.setRunId);
   const setMessages = useChatStore((s) => s.setMessages);
   const clearSession = useChatStore((s) => s.clearSession);
@@ -101,61 +101,23 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
     },
   });
 
-  const setChatMessagesRef = useRef(chat.setMessages);
-  setChatMessagesRef.current = chat.setMessages;
+  // Handle message persistence (restore from store, persist to store, clear runId on completion)
+  useChatPersistence({
+    messages: chat.messages,
+    status: chat.status,
+    setMessages: chat.setMessages,
+  });
 
-  // Restore messages from store once on mount
-  const hasRestored = useRef(false);
-  useEffect(() => {
-    if (hasRestored.current) return;
-    hasRestored.current = true;
-    if (storedMessages.length > 0) {
-      setChatMessagesRef.current(storedMessages);
-    }
-  }, [storedMessages]);
-
-  // Persist messages to store
-  const isInitialized = useRef(false);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: using .length + status to balance write frequency with capturing final streamed content
-  useEffect(() => {
-    if (!isInitialized.current) {
-      if (chat.messages.length > 0) {
-        isInitialized.current = true;
-      }
-      return;
-    }
-    if (chat.messages.length > 0) {
-      setMessages(chat.messages);
-    }
-  }, [chat.messages.length, chat.status, setMessages]);
-
-  // Clear runId when chat completes successfully.
-  // The WorkflowChatTransport's onChatEnd callback should clear runId when a finish chunk
-  // is received, but sometimes the finish chunk is not received (e.g., during tool execution
-  // when the workflow suspends). This effect handles that case by detecting when the chat
-  // transitions from streaming to ready with assistant messages, indicating completion.
-  const prevStatusRef = useRef(chat.status);
-  useEffect(() => {
-    const wasStreaming = prevStatusRef.current === "streaming";
-    const isNowReady = chat.status === "ready";
-    const hasAssistantMessage = chat.messages.some(
-      (m) => m.role === "assistant",
-    );
-
-    if (wasStreaming && isNowReady && hasAssistantMessage && runId) {
-      // Chat completed but onChatEnd wasn't called - clear runId to prevent stale reconnection attempts
-      setRunId(null);
-    }
-
-    prevStatusRef.current = chat.status;
-  }, [chat.status, chat.messages, runId, setRunId]);
+  // Ref for clearMessages callback to avoid dependency on chat.setMessages
+  const chatSetMessagesRef = useRef(chat.setMessages);
+  chatSetMessagesRef.current = chat.setMessages;
 
   const clearError = useCallback(() => {
     setSubmitError(null);
   }, []);
 
   const clearMessages = useCallback(() => {
-    setChatMessagesRef.current([]);
+    chatSetMessagesRef.current([]);
     setSubmitError(null);
     clearSession();
   }, [clearSession]);

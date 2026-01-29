@@ -18,27 +18,11 @@ import {
   IconArrowLeft,
   IconHeartHandshake,
 } from "@tabler/icons-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import type { Table } from "@tanstack/react-table";
-import { usePathname, useSearchParams } from "next/navigation";
-import {
-  parseAsArrayOf,
-  parseAsInteger,
-  parseAsString,
-  parseAsStringLiteral,
-  useQueryState,
-  useQueryStates,
-} from "nuqs";
-import {
-  useCallback,
-  useEffect,
-  useEffectEvent,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  useTransition,
-} from "react";
+import { useSearchParams } from "next/navigation";
+import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ArchivedDomainsList } from "@/components/dashboard/archived-domains-list";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
@@ -51,44 +35,34 @@ import { HealthSummary } from "@/components/dashboard/health-summary";
 import { SubscriptionEndingBanner } from "@/components/dashboard/subscription-ending-banner";
 import { UpgradeBanner } from "@/components/dashboard/upgrade-banner";
 import { DashboardProvider } from "@/context/dashboard-context";
-import { useHydratedNow } from "@/hooks/use-hydrated-now";
+import { useDashboardFilters } from "@/hooks/use-dashboard-filters";
+import { useDashboardMutations } from "@/hooks/use-dashboard-mutations";
+import { useDashboardPagination } from "@/hooks/use-dashboard-pagination";
 import { useRouter } from "@/hooks/use-router";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useSession } from "@/lib/auth-client";
 import {
   type ConfirmAction,
-  computeHealthStats,
   DEFAULT_SORT,
-  type DomainFilterCriteria,
-  extractAvailableProviders,
-  extractAvailableTlds,
-  filterDomains,
   getConfirmDialogContent,
-  getValidProviderIds,
-  type HealthFilter,
   SORT_OPTIONS,
   type SortOption,
-  type StatusFilter,
   sortDomains,
-  validateHealthFilters,
-  validateStatusFilters,
 } from "@/lib/dashboard-utils";
-import { useDashboardStore } from "@/lib/stores/dashboard-store";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { useTRPC } from "@/lib/trpc/client";
 
 export function DashboardClient() {
   const { data: session, isPending: sessionLoading } = useSession();
   const router = useRouter();
-  const pathname = usePathname();
   const trpc = useTRPC();
-  const queryClient = useQueryClient();
   const {
     subscription,
     isSubscriptionLoading: subscriptionLoading,
     isSubscriptionError: subscriptionError,
     refetchSubscription,
   } = useSubscription();
+  const mutations = useDashboardMutations();
 
   const [activeTab, setActiveTab] = useQueryState(
     "view",
@@ -111,361 +85,20 @@ export function DashboardClient() {
     : DEFAULT_SORT;
   const setSortOption = setSortParam;
 
-  // Pagination state (URL-synced page index, localStorage-synced page size)
-  const [pageParam, setPageParam] = useQueryState(
-    "page",
-    parseAsInteger.withDefault(1).withOptions({
-      shallow: true,
-      clearOnDefault: true,
-    }),
-  );
-  const pageSize = usePreferencesStore((s) => s.pageSize);
-  const setPageSizePreference = usePreferencesStore((s) => s.setPageSize);
-  const pageIndex = Math.max(0, pageParam - 1);
-  const pagination = { pageIndex, pageSize };
-  const setPageIndex = useCallback(
-    (newIndex: number) => {
-      setPageParam(newIndex + 1);
-    },
-    [setPageParam],
-  );
-  const setPageSize = useCallback(
-    (newSize: typeof pageSize) => {
-      setPageSizePreference(newSize);
-      setPageParam(1);
-    },
-    [setPageSizePreference, setPageParam],
-  );
-  const resetPage = useCallback(() => {
-    setPageParam(1);
-  }, [setPageParam]);
+  // Pagination state
+  const {
+    state: pagination,
+    actions: { setPageIndex, setPageSize, resetPage },
+  } = useDashboardPagination();
 
-  const snapshot = useDashboardStore((s) => s.snapshot);
-  const captureSnapshot = useDashboardStore((s) => s.captureSnapshot);
-  const clearSnapshot = useDashboardStore((s) => s.clearSnapshot);
   const [tableInstance, setTableInstance] =
     useState<Table<TrackedDomainWithDetails> | null>(null);
 
-  // Tracked domains query + mutations
-  const domainsQueryKey = trpc.tracking.listDomains.queryKey();
-  const subscriptionQueryKey = trpc.user.getSubscription.queryKey();
-
+  // Tracked domains query
   const domainsQuery = useQuery(
     trpc.tracking.listDomains.queryOptions({ includeArchived: true }),
   );
   const allDomains = domainsQuery.data;
-
-  const invalidateDomainQueries = useCallback(() => {
-    void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
-    void queryClient.invalidateQueries({ queryKey: subscriptionQueryKey });
-  }, [queryClient, domainsQueryKey, subscriptionQueryKey]);
-
-  const removeMutation = useMutation({
-    ...trpc.tracking.removeDomain.mutationOptions(),
-    onMutate: async ({ trackedDomainId }) => {
-      await queryClient.cancelQueries({ queryKey: domainsQueryKey });
-      await queryClient.cancelQueries({ queryKey: subscriptionQueryKey });
-
-      const previousDomains = queryClient.getQueriesData({
-        queryKey: domainsQueryKey,
-      });
-      const previousSubscription =
-        queryClient.getQueryData(subscriptionQueryKey);
-
-      queryClient.setQueriesData(
-        { queryKey: domainsQueryKey },
-        (old: typeof allDomains) =>
-          old?.filter((d) => d.id !== trackedDomainId),
-      );
-      queryClient.setQueryData(
-        subscriptionQueryKey,
-        (old: typeof subscription) => {
-          if (!old) return old;
-          const newActiveCount = Math.max(0, old.activeCount - 1);
-          return {
-            ...old,
-            activeCount: newActiveCount,
-            canAddMore: newActiveCount < old.planQuota,
-          };
-        },
-      );
-
-      return { previousDomains, previousSubscription };
-    },
-    onError: (_err, _vars, context) => {
-      if (context?.previousDomains) {
-        for (const [key, data] of context.previousDomains) {
-          queryClient.setQueryData(key, data);
-        }
-      }
-      if (context?.previousSubscription) {
-        queryClient.setQueryData(
-          subscriptionQueryKey,
-          context.previousSubscription,
-        );
-      }
-      toast.error("Failed to remove domain");
-    },
-    onSuccess: () => toast.success("Domain removed"),
-    onSettled: invalidateDomainQueries,
-  });
-
-  const archiveMutation = useMutation({
-    ...trpc.tracking.archiveDomain.mutationOptions(),
-    onMutate: async ({ trackedDomainId }) => {
-      await queryClient.cancelQueries({ queryKey: domainsQueryKey });
-      await queryClient.cancelQueries({ queryKey: subscriptionQueryKey });
-
-      const previousDomains = queryClient.getQueriesData({
-        queryKey: domainsQueryKey,
-      });
-      const previousSubscription =
-        queryClient.getQueryData(subscriptionQueryKey);
-
-      queryClient.setQueriesData(
-        { queryKey: domainsQueryKey },
-        (old: typeof allDomains) =>
-          old?.map((d) =>
-            d.id === trackedDomainId ? { ...d, archivedAt: new Date() } : d,
-          ),
-      );
-      queryClient.setQueryData(
-        subscriptionQueryKey,
-        (old: typeof subscription) => {
-          if (!old) return old;
-          const newActiveCount = Math.max(0, old.activeCount - 1);
-          return {
-            ...old,
-            activeCount: newActiveCount,
-            archivedCount: old.archivedCount + 1,
-            canAddMore: newActiveCount < old.planQuota,
-          };
-        },
-      );
-
-      return { previousDomains, previousSubscription };
-    },
-    onError: (_err, _vars, context) => {
-      if (context?.previousDomains) {
-        for (const [key, data] of context.previousDomains) {
-          queryClient.setQueryData(key, data);
-        }
-      }
-      if (context?.previousSubscription) {
-        queryClient.setQueryData(
-          subscriptionQueryKey,
-          context.previousSubscription,
-        );
-      }
-      toast.error("Failed to archive domain");
-    },
-    onSuccess: () => toast.success("Domain archived"),
-    onSettled: invalidateDomainQueries,
-  });
-
-  const unarchiveMutation = useMutation({
-    ...trpc.tracking.unarchiveDomain.mutationOptions(),
-    onMutate: async ({ trackedDomainId }) => {
-      await queryClient.cancelQueries({ queryKey: domainsQueryKey });
-      await queryClient.cancelQueries({ queryKey: subscriptionQueryKey });
-
-      const previousDomains = queryClient.getQueriesData({
-        queryKey: domainsQueryKey,
-      });
-      const previousSubscription =
-        queryClient.getQueryData(subscriptionQueryKey);
-
-      queryClient.setQueriesData(
-        { queryKey: domainsQueryKey },
-        (old: typeof allDomains) =>
-          old?.map((d) =>
-            d.id === trackedDomainId ? { ...d, archivedAt: null } : d,
-          ),
-      );
-      queryClient.setQueryData(
-        subscriptionQueryKey,
-        (old: typeof subscription) => {
-          if (!old) return old;
-          const newActiveCount = old.activeCount + 1;
-          return {
-            ...old,
-            activeCount: newActiveCount,
-            archivedCount: Math.max(0, old.archivedCount - 1),
-            canAddMore: newActiveCount < old.planQuota,
-          };
-        },
-      );
-
-      return { previousDomains, previousSubscription };
-    },
-    onError: (err, _vars, context) => {
-      if (context?.previousDomains) {
-        for (const [key, data] of context.previousDomains) {
-          queryClient.setQueryData(key, data);
-        }
-      }
-      if (context?.previousSubscription) {
-        queryClient.setQueryData(
-          subscriptionQueryKey,
-          context.previousSubscription,
-        );
-      }
-      toast.error(
-        err instanceof Error ? err.message : "Failed to reactivate domain",
-      );
-    },
-    onSuccess: () => toast.success("Domain reactivated"),
-    onSettled: invalidateDomainQueries,
-  });
-
-  const muteMutation = useMutation({
-    ...trpc.user.setDomainMuted.mutationOptions(),
-    onMutate: async ({ trackedDomainId, muted }) => {
-      await queryClient.cancelQueries({ queryKey: domainsQueryKey });
-
-      const previousDomains = queryClient.getQueriesData({
-        queryKey: domainsQueryKey,
-      });
-
-      queryClient.setQueriesData(
-        { queryKey: domainsQueryKey },
-        (old: typeof allDomains) =>
-          old?.map((d) => (d.id === trackedDomainId ? { ...d, muted } : d)),
-      );
-
-      return { previousDomains };
-    },
-    onError: (_err, _vars, context) => {
-      if (context?.previousDomains) {
-        for (const [key, data] of context.previousDomains) {
-          queryClient.setQueryData(key, data);
-        }
-      }
-      toast.error("Failed to update notification settings");
-    },
-    onSuccess: (_data, { muted }) =>
-      toast.success(muted ? "Domain muted" : "Domain unmuted"),
-    onSettled: () =>
-      void queryClient.invalidateQueries({ queryKey: domainsQueryKey }),
-  });
-
-  const bulkArchiveMutation = useMutation({
-    mutationFn: trpc.tracking.bulkArchiveDomains.mutationOptions().mutationFn,
-    onMutate: async ({ trackedDomainIds }) => {
-      await queryClient.cancelQueries({ queryKey: domainsQueryKey });
-      await queryClient.cancelQueries({ queryKey: subscriptionQueryKey });
-
-      const previousDomains = queryClient.getQueriesData({
-        queryKey: domainsQueryKey,
-      });
-      const previousSubscription =
-        queryClient.getQueryData(subscriptionQueryKey);
-
-      const idsSet = new Set(trackedDomainIds);
-      let archiveCount = 0;
-      for (const [, domains] of previousDomains) {
-        if (!domains) continue;
-        for (const d of domains as NonNullable<typeof allDomains>) {
-          if (idsSet.has(d.id) && !d.archivedAt) archiveCount++;
-        }
-      }
-
-      queryClient.setQueriesData(
-        { queryKey: domainsQueryKey },
-        (old: typeof allDomains) =>
-          old?.map((d) =>
-            idsSet.has(d.id) ? { ...d, archivedAt: new Date() } : d,
-          ),
-      );
-      queryClient.setQueryData(
-        subscriptionQueryKey,
-        (old: typeof subscription) => {
-          if (!old) return old;
-          const newActiveCount = Math.max(0, old.activeCount - archiveCount);
-          return {
-            ...old,
-            activeCount: newActiveCount,
-            archivedCount: old.archivedCount + archiveCount,
-            canAddMore: newActiveCount < old.planQuota,
-          };
-        },
-      );
-
-      return { previousDomains, previousSubscription };
-    },
-    onError: (_err, _vars, context) => {
-      if (context?.previousDomains) {
-        for (const [key, data] of context.previousDomains) {
-          queryClient.setQueryData(key, data);
-        }
-      }
-      if (context?.previousSubscription) {
-        queryClient.setQueryData(
-          subscriptionQueryKey,
-          context.previousSubscription,
-        );
-      }
-      toast.error("Failed to archive domains");
-    },
-    onSettled: invalidateDomainQueries,
-  });
-
-  const bulkDeleteMutation = useMutation({
-    mutationFn: trpc.tracking.bulkRemoveDomains.mutationOptions().mutationFn,
-    onMutate: async ({ trackedDomainIds }) => {
-      await queryClient.cancelQueries({ queryKey: domainsQueryKey });
-      await queryClient.cancelQueries({ queryKey: subscriptionQueryKey });
-
-      const previousDomains = queryClient.getQueriesData({
-        queryKey: domainsQueryKey,
-      });
-      const previousSubscription =
-        queryClient.getQueryData(subscriptionQueryKey);
-
-      const idsSet = new Set(trackedDomainIds);
-      let deleteCount = 0;
-      for (const [, domains] of previousDomains) {
-        if (!domains) continue;
-        for (const d of domains as NonNullable<typeof allDomains>) {
-          if (idsSet.has(d.id) && !d.archivedAt) deleteCount++;
-        }
-      }
-
-      queryClient.setQueriesData(
-        { queryKey: domainsQueryKey },
-        (old: typeof allDomains) => old?.filter((d) => !idsSet.has(d.id)),
-      );
-      queryClient.setQueryData(
-        subscriptionQueryKey,
-        (old: typeof subscription) => {
-          if (!old) return old;
-          const newActiveCount = Math.max(0, old.activeCount - deleteCount);
-          return {
-            ...old,
-            activeCount: newActiveCount,
-            canAddMore: newActiveCount < old.planQuota,
-          };
-        },
-      );
-
-      return { previousDomains, previousSubscription };
-    },
-    onError: (_err, _vars, context) => {
-      if (context?.previousDomains) {
-        for (const [key, data] of context.previousDomains) {
-          queryClient.setQueryData(key, data);
-        }
-      }
-      if (context?.previousSubscription) {
-        queryClient.setQueryData(
-          subscriptionQueryKey,
-          context.previousSubscription,
-        );
-      }
-      toast.error("Failed to delete domains");
-    },
-    onSettled: invalidateDomainQueries,
-  });
 
   const domains = useMemo(
     () => allDomains?.filter((d) => d.archivedAt === null) ?? [],
@@ -476,254 +109,39 @@ export function DashboardClient() {
     [allDomains],
   );
 
-  const [, startTransition] = useTransition();
-
   // -------------------------------------------------------------------------
-  // Filter State (inlined from useDashboardFilters hook)
+  // Filter State
   // -------------------------------------------------------------------------
 
-  // Use shared hydrated time to avoid extra re-renders
-  const now = useHydratedNow();
+  const { state: filterHookState, actions: filterHookActions } =
+    useDashboardFilters(domains);
 
-  // URL state with nuqs
-  const [filters, setFilters] = useQueryStates(
-    {
-      search: parseAsString.withDefault(""),
-      status: parseAsArrayOf(parseAsString).withDefault([]),
-      health: parseAsArrayOf(parseAsString).withDefault([]),
-      tlds: parseAsArrayOf(parseAsString).withDefault([]),
-      providers: parseAsArrayOf(parseAsString).withDefault([]),
-      domainId: parseAsString,
-    },
-    {
-      shallow: true,
-      clearOnDefault: true,
-    },
-  );
+  // Destructure for easier access
+  const {
+    search,
+    status,
+    health,
+    tlds,
+    providers,
+    domainId,
+    filteredDomainName,
+    availableTlds,
+    availableProviders,
+    hasActiveFilters,
+    stats,
+    filteredDomains: filteredUnsorted,
+  } = filterHookState;
 
-  // Validate status and health filter values from URL params
-  const validatedStatus = useMemo(
-    () => validateStatusFilters(filters.status),
-    [filters.status],
-  );
-
-  const validatedHealth = useMemo(
-    () => validateHealthFilters(filters.health),
-    [filters.health],
-  );
-
-  // Extract unique TLDs from domains for the dropdown
-  const availableTlds = useMemo(() => extractAvailableTlds(domains), [domains]);
-
-  // Extract unique providers from domains, grouped by category
-  const availableProviders = useMemo(
-    () => extractAvailableProviders(domains),
-    [domains],
-  );
-
-  // Create a flat set of all valid provider IDs for validation
-  const validProviderIds = useMemo(
-    () => getValidProviderIds(availableProviders),
-    [availableProviders],
-  );
-
-  // Check if any filters are active
-  const hasActiveFilters =
-    filters.search.length > 0 ||
-    validatedStatus.length > 0 ||
-    validatedHealth.length > 0 ||
-    filters.tlds.length > 0 ||
-    filters.providers.length > 0 ||
-    !!filters.domainId;
-
-  // Filter domains based on current filters
-  const filterCriteria: DomainFilterCriteria = useMemo(
-    () => ({
-      search: filters.search,
-      domainId: filters.domainId,
-      status: validatedStatus,
-      health: validatedHealth,
-      tlds: filters.tlds,
-      providers: filters.providers,
-    }),
-    [filters, validatedStatus, validatedHealth],
-  );
-
-  const filteredUnsorted = useMemo(
-    () =>
-      now
-        ? filterDomains(domains, filterCriteria, validProviderIds, now)
-        : domains,
-    [domains, filterCriteria, validProviderIds, now],
-  );
-
-  // Compute stats for health summary
-  const stats = useMemo(
-    () =>
-      now
-        ? computeHealthStats(domains, now)
-        : { expiringSoon: 0, pendingVerification: 0 },
-    [domains, now],
-  );
-
-  // Filter setters - wrapped with startTransition for non-blocking updates
-  const setSearchImmediate = useCallback(
-    (value: string) => {
-      setFilters({ search: value || null, domainId: null });
-    },
-    [setFilters],
-  );
-  const setSearch = useCallback(
-    (value: string) => startTransition(() => setSearchImmediate(value)),
-    [setSearchImmediate],
-  );
-
-  const setStatusImmediate = useCallback(
-    (values: StatusFilter[]) => {
-      setFilters({ status: values.length > 0 ? values : null, domainId: null });
-    },
-    [setFilters],
-  );
-  const setStatus = useCallback(
-    (value: StatusFilter[]) => startTransition(() => setStatusImmediate(value)),
-    [setStatusImmediate],
-  );
-
-  const setHealthImmediate = useCallback(
-    (values: HealthFilter[]) => {
-      setFilters({ health: values.length > 0 ? values : null, domainId: null });
-    },
-    [setFilters],
-  );
-  const setHealth = useCallback(
-    (value: HealthFilter[]) => startTransition(() => setHealthImmediate(value)),
-    [setHealthImmediate],
-  );
-
-  const setTldsImmediate = useCallback(
-    (values: string[]) => {
-      setFilters({ tlds: values.length > 0 ? values : null, domainId: null });
-    },
-    [setFilters],
-  );
-  const setTlds = useCallback(
-    (value: string[]) => startTransition(() => setTldsImmediate(value)),
-    [setTldsImmediate],
-  );
-
-  const setProvidersImmediate = useCallback(
-    (values: string[]) => {
-      setFilters({
-        providers: values.length > 0 ? values : null,
-        domainId: null,
-      });
-    },
-    [setFilters],
-  );
-  const setProviders = useCallback(
-    (value: string[]) => startTransition(() => setProvidersImmediate(value)),
-    [setProvidersImmediate],
-  );
-
-  const clearFilters = useCallback(() => {
-    setFilters({
-      search: null,
-      status: null,
-      health: null,
-      tlds: null,
-      providers: null,
-      domainId: null,
-    });
-  }, [setFilters]);
-
-  const applyHealthFilter = useCallback(
-    (filter: HealthFilter | "pending") => {
-      if (filter === "pending") {
-        setFilters({ status: ["pending"], health: null, domainId: null });
-      } else {
-        setFilters({ status: null, health: [filter], domainId: null });
-      }
-    },
-    [setFilters],
-  );
-
-  const clearDomainId = useCallback(() => {
-    setFilters({ domainId: null });
-  }, [setFilters]);
-
-  const filteredDomainName = filters.domainId
-    ? (domains.find((d) => d.id === filters.domainId)?.domainName ?? null)
-    : null;
-
-  // Expose filter values using the variable names expected by snapshot logic
-  const { search, tlds, providers, domainId } = filters;
-  const status = validatedStatus;
-  const health = validatedHealth;
-
-  // Track previous pathname to detect navigation away from/to dashboard
-  const prevPathnameRef = useRef(pathname);
-
-  // Effect event to restore snapshot - reads latest snapshot without being a dependency
-  const onRestoreSnapshot = useEffectEvent(() => {
-    if (!snapshot) return;
-    setSearchImmediate(snapshot.search);
-    setStatusImmediate(snapshot.status);
-    setHealthImmediate(snapshot.health);
-    setTldsImmediate(snapshot.tlds);
-    setProvidersImmediate(snapshot.providers);
-    setSortOption(snapshot.sort);
-    setPageIndex(snapshot.page);
-    if (snapshot.view !== "active") {
-      setActiveTab(snapshot.view);
-    }
-    clearSnapshot();
-  });
-
-  // Effect event to capture snapshot - reads latest filter values without them being dependencies
-  const onCaptureSnapshot = useEffectEvent(() => {
-    captureSnapshot({
-      search,
-      status,
-      health,
-      tlds,
-      providers,
-      domainId,
-      sort: sortOption,
-      page: pagination.pageIndex,
-      view: activeTab ?? "active",
-    });
-  });
-
-  // Restore snapshot when returning to /dashboard from an intercepted route
-  // Note: useLayoutEffect runs before useEffect, so we can restore before the capture check
-  useLayoutEffect(() => {
-    const wasOnDashboard = prevPathnameRef.current === "/dashboard";
-    const isOnDashboard = pathname === "/dashboard";
-
-    if (!wasOnDashboard && isOnDashboard) {
-      onRestoreSnapshot();
-    }
-  }, [pathname]);
-
-  // Capture snapshot when navigating away from /dashboard
-  // For intercepted routes (modals), this component stays mounted and the snapshot is preserved
-  // For full navigations, the unmount cleanup below will clear it
-  useEffect(() => {
-    const wasOnDashboard = prevPathnameRef.current === "/dashboard";
-    const isOnDashboard = pathname === "/dashboard";
-
-    if (wasOnDashboard && !isOnDashboard) {
-      onCaptureSnapshot();
-    }
-
-    // Update ref after both effects have read the previous value
-    prevPathnameRef.current = pathname;
-  }, [pathname]);
-
-  // Clear snapshot on unmount (full navigation away, not intercepted route)
-  // This prevents stale snapshots from being restored if user navigates
-  // to a different page entirely and then comes back to dashboard
-  useEffect(() => clearSnapshot, [clearSnapshot]);
+  const {
+    setSearch,
+    setStatus,
+    setHealth,
+    setTlds,
+    setProviders,
+    clearFilters,
+    applyHealthFilter,
+    clearDomainId,
+  } = filterHookActions;
 
   // Apply sorting after filtering (only for grid view - table has its own column sorting)
   const filteredDomains = useMemo(
@@ -746,9 +164,7 @@ export function DashboardClient() {
   const doBulkArchive = useCallback(
     async (domainIds: string[]) => {
       try {
-        const result = await bulkArchiveMutation.mutateAsync({
-          trackedDomainIds: domainIds,
-        });
+        const result = await mutations.bulkArchive(domainIds);
         clearSelectionRef.current?.();
         if (result.failedCount === 0) {
           toast.success(
@@ -763,15 +179,13 @@ export function DashboardClient() {
         // Error handled in mutation onError
       }
     },
-    [bulkArchiveMutation],
+    [mutations],
   );
 
   const doBulkDelete = useCallback(
     async (domainIds: string[]) => {
       try {
-        const result = await bulkDeleteMutation.mutateAsync({
-          trackedDomainIds: domainIds,
-        });
+        const result = await mutations.bulkDelete(domainIds);
         clearSelectionRef.current?.();
         if (result.failedCount === 0) {
           toast.success(
@@ -786,7 +200,7 @@ export function DashboardClient() {
         // Error handled in mutation onError
       }
     },
-    [bulkDeleteMutation],
+    [mutations],
   );
 
   // Confirmation dialog - local state
@@ -800,22 +214,16 @@ export function DashboardClient() {
   const handleConfirm = useCallback(() => {
     if (!pendingAction) return;
     if (pendingAction.type === "remove") {
-      removeMutation.mutate({ trackedDomainId: pendingAction.domainId });
+      mutations.remove(pendingAction.domainId);
     } else if (pendingAction.type === "archive") {
-      archiveMutation.mutate({ trackedDomainId: pendingAction.domainId });
+      mutations.archive(pendingAction.domainId);
     } else if (pendingAction.type === "bulk-archive") {
       void doBulkArchive(pendingAction.domainIds);
     } else if (pendingAction.type === "bulk-delete") {
       void doBulkDelete(pendingAction.domainIds);
     }
     setPendingAction(null);
-  }, [
-    pendingAction,
-    removeMutation,
-    archiveMutation,
-    doBulkArchive,
-    doBulkDelete,
-  ]);
+  }, [pendingAction, mutations, doBulkArchive, doBulkDelete]);
 
   // Handle ?upgraded=true query param (after nuqs adapter)
   const searchParams = useSearchParams();
@@ -883,16 +291,16 @@ export function DashboardClient() {
 
   const handleUnarchive = useCallback(
     (id: string) => {
-      unarchiveMutation.mutate({ trackedDomainId: id });
+      mutations.unarchive(id);
     },
-    [unarchiveMutation],
+    [mutations],
   );
 
   const handleToggleMuted = useCallback(
     (id: string, muted: boolean) => {
-      muteMutation.mutate({ trackedDomainId: id, muted });
+      mutations.setMuted(id, muted);
     },
-    [muteMutation],
+    [mutations],
   );
 
   // Show loading until we have both query data AND session data
@@ -975,8 +383,8 @@ export function DashboardClient() {
         onToggleMuted={handleToggleMuted}
         onBulkArchive={handleBulkArchive}
         onBulkDelete={handleBulkDelete}
-        isBulkArchiving={bulkArchiveMutation.isPending}
-        isBulkDeleting={bulkDeleteMutation.isPending}
+        isBulkArchiving={mutations.isBulkArchiving}
+        isBulkDeleting={mutations.isBulkDeleting}
         filterState={filterState}
         filterActions={filterActions}
         paginationState={pagination}
