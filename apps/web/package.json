@@ -16,7 +16,7 @@
     "workflow": "workflow inspect runs --web"
   },
   "dependencies": {
-    "@ai-sdk/gateway": "^3.0.25",
+    "@ai-sdk/gateway": "^3.0.27",
     "@ai-sdk/react": "^3.0.59",
     "@bprogress/next": "^3.2.12",
     "@domainstack/constants": "workspace:*",
