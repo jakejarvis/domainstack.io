@@ -16,7 +16,7 @@ import {
 } from "@domainstack/ui/sheet";
 import { IconLayoutSidebarRightCollapse, IconLego } from "@tabler/icons-react";
 import { WorkflowChatTransport } from "@workflow/ai";
-import { useSetAtom } from "jotai";
+import { useAtom, useSetAtom } from "jotai";
 import { AnimatePresence } from "motion/react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -24,7 +24,7 @@ import { BetaBadge } from "@/components/beta-badge";
 import { useChatPersistence } from "@/hooks/use-chat-persistence";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { analytics } from "@/lib/analytics/client";
-import { serverSuggestionsAtom } from "@/lib/atoms/chat-atoms";
+import { chatOpenAtom, serverSuggestionsAtom } from "@/lib/atoms/chat-atoms";
 import { useChatStore } from "@/lib/stores/chat-store";
 import {
   usePreferencesHydrated,
@@ -41,9 +41,8 @@ interface ChatClientProps {
 }
 
 export function ChatClient({ suggestions = [] }: ChatClientProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useAtom(chatOpenAtom);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
   const params = useParams<{ domain?: string }>();
   const isMobile = useIsMobile();
   const hydrated = usePreferencesHydrated();
@@ -97,7 +96,6 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
     resume: !!runId,
     onError: (error) => {
       analytics.trackException(error, { context: "chat-send", domain });
-      setSubmitError(getUserFriendlyError(error));
     },
   });
 
@@ -112,27 +110,18 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
   const chatSetMessagesRef = useRef(chat.setMessages);
   chatSetMessagesRef.current = chat.setMessages;
 
-  const clearError = useCallback(() => {
-    setSubmitError(null);
-  }, []);
-
   const clearMessages = useCallback(() => {
     chatSetMessagesRef.current([]);
-    setSubmitError(null);
     clearSession();
   }, [clearSession]);
 
   const sendMessage = useCallback(
     (msgParams: { text: string }) => {
       const text = msgParams.text.trim();
-      if (!text) {
-        setSubmitError("Please enter a message.");
-        return;
-      }
-      clearError();
+      if (!text) return;
       chat.sendMessage({ text });
     },
-    [chat, clearError],
+    [chat],
   );
 
   const { messages, status } = chat;
@@ -140,11 +129,12 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
   // Don't show errors while streaming - if messages are coming through, the chat is working.
   // The WorkflowChatTransport may report errors from reconnection attempts that don't affect
   // the actual message stream (e.g., trying to reconnect after the workflow already completed).
-  // These errors come through both onError (setting submitError) and chat.error.
   const error =
     status === "streaming"
       ? null
-      : (submitError ?? (chat.error ? getUserFriendlyError(chat.error) : null));
+      : chat.error
+        ? getUserFriendlyError(chat.error)
+        : null;
 
   // Hydrate server suggestions into atom
   const setServerSuggestions = useSetAtom(serverSuggestionsAtom);
@@ -173,7 +163,6 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
     status,
     domain,
     error,
-    onClearError: clearError,
   };
 
   if (!hydrated) {

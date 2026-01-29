@@ -3,6 +3,17 @@
 import { atom } from "jotai";
 
 // ---------------------------------------------------------------------------
+// Chat UI State
+// ---------------------------------------------------------------------------
+
+/**
+ * Whether the chat panel is open.
+ * Global atom so any component can programmatically open the chat
+ * (e.g., "Ask AI about this domain" buttons).
+ */
+export const chatOpenAtom = atom(false);
+
+// ---------------------------------------------------------------------------
 // Chat Context
 // ---------------------------------------------------------------------------
 
