@@ -9,10 +9,8 @@ import {
 } from "@domainstack/ui/responsive-tooltip";
 import { cn } from "@domainstack/ui/utils";
 import { IconArchive, IconTrash, IconX } from "@tabler/icons-react";
-import {
-  useDashboardBulkActions,
-  useDashboardSelection,
-} from "@/context/dashboard-context";
+import { useDashboardBulkActions } from "@/context/dashboard-context";
+import { useDashboardSelection } from "@/hooks/use-dashboard-selection";
 
 type BulkActionsToolbarProps = {
   /** Total number of domains (for "Select all X" tooltip) */
@@ -25,6 +23,7 @@ export function BulkActionsToolbar({
   className,
 }: BulkActionsToolbarProps) {
   const {
+    selectedIds,
     selectedCount,
     isAllSelected,
     isPartiallySelected,
@@ -33,6 +32,16 @@ export function BulkActionsToolbar({
   } = useDashboardSelection();
   const { onBulkArchive, onBulkDelete, isBulkArchiving, isBulkDeleting } =
     useDashboardBulkActions();
+
+  const handleBulkArchive = () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length > 0) onBulkArchive(ids);
+  };
+
+  const handleBulkDelete = () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length > 0) onBulkDelete(ids);
+  };
 
   if (selectedCount === 0) return null;
 
@@ -78,7 +87,7 @@ export function BulkActionsToolbar({
           <Button
             variant="outline"
             size="sm"
-            onClick={onBulkArchive}
+            onClick={handleBulkArchive}
             disabled={isLoading}
             className="text-[13px]"
           >
@@ -88,7 +97,7 @@ export function BulkActionsToolbar({
           <Button
             variant="destructive"
             size="sm"
-            onClick={onBulkDelete}
+            onClick={handleBulkDelete}
             disabled={isLoading}
             className="text-[13px]"
           >

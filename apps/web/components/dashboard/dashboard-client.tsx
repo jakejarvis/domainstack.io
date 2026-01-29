@@ -22,7 +22,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { Table } from "@tanstack/react-table";
 import { useSearchParams } from "next/navigation";
 import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ArchivedDomainsList } from "@/components/dashboard/archived-domains-list";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
@@ -38,6 +38,10 @@ import { DashboardProvider } from "@/context/dashboard-context";
 import { useDashboardFilters } from "@/hooks/use-dashboard-filters";
 import { useDashboardMutations } from "@/hooks/use-dashboard-mutations";
 import { useDashboardPagination } from "@/hooks/use-dashboard-pagination";
+import {
+  useDashboardSelection,
+  useSyncVisibleDomainIds,
+} from "@/hooks/use-dashboard-selection";
 import { useRouter } from "@/hooks/use-router";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useSession } from "@/lib/auth-client";
@@ -152,20 +156,21 @@ export function DashboardClient() {
     [filteredUnsorted, sortOption, viewMode],
   );
 
-  // Filtered domain IDs for selection context
+  // Filtered domain IDs for selection - sync to Jotai atom
   const filteredDomainIds = useMemo(
     () => filteredDomains.map((d) => d.id),
     [filteredDomains],
   );
+  useSyncVisibleDomainIds(filteredDomainIds);
 
-  // Ref to hold clearSelection callback from provider (set after provider mounts)
-  const clearSelectionRef = useRef<(() => void) | null>(null);
+  // Selection state from Jotai
+  const { clearSelection } = useDashboardSelection();
 
   const doBulkArchive = useCallback(
     async (domainIds: string[]) => {
       try {
         const result = await mutations.bulkArchive(domainIds);
-        clearSelectionRef.current?.();
+        clearSelection();
         if (result.failedCount === 0) {
           toast.success(
             `Archived ${result.successCount} domain${result.successCount === 1 ? "" : "s"}`,
@@ -179,14 +184,14 @@ export function DashboardClient() {
         // Error handled in mutation onError
       }
     },
-    [mutations],
+    [mutations, clearSelection],
   );
 
   const doBulkDelete = useCallback(
     async (domainIds: string[]) => {
       try {
         const result = await mutations.bulkDelete(domainIds);
-        clearSelectionRef.current?.();
+        clearSelection();
         if (result.failedCount === 0) {
           toast.success(
             `Deleted ${result.successCount} domain${result.successCount === 1 ? "" : "s"}`,
@@ -200,7 +205,7 @@ export function DashboardClient() {
         // Error handled in mutation onError
       }
     },
-    [mutations],
+    [mutations, clearSelection],
   );
 
   // Confirmation dialog - local state
@@ -375,7 +380,6 @@ export function DashboardClient() {
       <UpgradeBanner />
 
       <DashboardProvider
-        domainIds={filteredDomainIds}
         onVerify={handleVerify}
         onRemove={handleRemove}
         onArchive={handleArchive}
@@ -404,7 +408,6 @@ export function DashboardClient() {
               totalDomains={domains.length}
               onAddDomain={handleAddDomain}
               onTableReady={setTableInstance}
-              clearSelectionRef={clearSelectionRef}
             />
 
             {/* Link to archived domains - only show when there are archived domains */}

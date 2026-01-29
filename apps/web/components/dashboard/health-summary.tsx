@@ -7,10 +7,10 @@ import {
 } from "@domainstack/ui/tooltip";
 import { cn } from "@domainstack/ui/utils";
 import { IconAlertTriangle, IconClock } from "@tabler/icons-react";
-import { useDashboardFilters } from "@/context/dashboard-context";
+import { useDashboardFiltersContext } from "@/context/dashboard-context";
 
 export function HealthSummary() {
-  const { stats, applyHealthFilter } = useDashboardFilters();
+  const { stats, applyHealthFilter } = useDashboardFiltersContext();
   const { expiringSoon, pendingVerification } = stats;
   // Don't render if no alerts
   if (expiringSoon === 0 && pendingVerification === 0) {

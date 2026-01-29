@@ -27,9 +27,9 @@ import { UpgradeRow } from "@/components/dashboard/upgrade-row";
 import { VerifiedTableRow } from "@/components/dashboard/verified-table-row";
 import {
   useDashboardActions,
-  useDashboardPagination,
-  useDashboardSelection,
+  useDashboardPaginationContext,
 } from "@/context/dashboard-context";
+import { useDashboardSelection } from "@/hooks/use-dashboard-selection";
 import {
   DEFAULT_SORT,
   parseSortParam,
@@ -50,7 +50,7 @@ export function DashboardTable({ domains, onTableReady }: DashboardTableProps) {
   const { onVerify, onRemove, onArchive, onToggleMuted } =
     useDashboardActions();
   const { pageIndex, pageSize, setPageSize, setPageIndex, resetPage } =
-    useDashboardPagination();
+    useDashboardPaginationContext();
   const pagination = { pageIndex, pageSize };
 
   // Table sort state with URL persistence

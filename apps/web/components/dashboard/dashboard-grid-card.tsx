@@ -46,10 +46,8 @@ import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Favicon } from "@/components/icons/favicon";
 import { ProviderLogo } from "@/components/icons/provider-logo";
-import {
-  useDashboardActions,
-  useDashboardSelection,
-} from "@/context/dashboard-context";
+import { useDashboardActions } from "@/context/dashboard-context";
+import { useDashboardSelection } from "@/hooks/use-dashboard-selection";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
 import { useTruncation } from "@/hooks/use-truncation";

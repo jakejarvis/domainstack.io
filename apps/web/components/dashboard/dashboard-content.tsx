@@ -17,14 +17,11 @@ import {
 import type { Table } from "@tanstack/react-table";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
-import { type MutableRefObject, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { BulkActionsToolbar } from "@/components/dashboard/bulk-actions-toolbar";
 import { DashboardGrid } from "@/components/dashboard/dashboard-grid";
 import { DashboardTable } from "@/components/dashboard/dashboard-table";
-import {
-  useDashboardFilters,
-  useDashboardSelection,
-} from "@/context/dashboard-context";
+import { useDashboardFiltersContext } from "@/context/dashboard-context";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 
 type DashboardContentProps = {
@@ -33,8 +30,6 @@ type DashboardContentProps = {
   onAddDomain?: () => void;
   // Table instance callback (table view only)
   onTableReady?: (table: Table<TrackedDomainWithDetails>) => void;
-  // Ref to expose clearSelection to parent (for post-mutation cleanup)
-  clearSelectionRef?: MutableRefObject<(() => void) | null>;
 };
 
 export function DashboardContent({
@@ -42,18 +37,9 @@ export function DashboardContent({
   totalDomains,
   onAddDomain,
   onTableReady,
-  clearSelectionRef,
 }: DashboardContentProps) {
-  const { hasActiveFilters, clearFilters } = useDashboardFilters();
+  const { hasActiveFilters, clearFilters } = useDashboardFiltersContext();
   const viewMode = usePreferencesStore((s) => s.viewMode);
-  const { clearSelection } = useDashboardSelection();
-
-  // Expose clearSelection to parent for post-mutation cleanup
-  useEffect(() => {
-    if (clearSelectionRef) {
-      clearSelectionRef.current = clearSelection;
-    }
-  }, [clearSelectionRef, clearSelection]);
   const [hasHydrated, setHasHydrated] = useState(false);
 
   // Avoid animating the initial view swap during hydration when localStorage preferences reconcile.
