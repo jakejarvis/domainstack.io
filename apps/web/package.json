@@ -54,7 +54,7 @@
     "@vercel/otel": "^2.1.0",
     "@workflow/ai": "4.0.1-beta.51",
     "ai": "^6.0.57",
-    "better-auth": "^1.4.17",
+    "better-auth": "^1.4.18",
     "date-fns": "^4.1.0",
     "decode-ico": "^0.4.1",
     "dotenv": "^17.2.3",
