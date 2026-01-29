@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@ai-sdk/gateway": "^3.0.25",
-    "@ai-sdk/react": "^3.0.59",
+    "@ai-sdk/react": "^3.0.61",
     "@bprogress/next": "^3.2.12",
     "@domainstack/constants": "workspace:*",
     "@domainstack/core": "workspace:*",
