@@ -114,7 +114,7 @@ export function ChatFab({ onClick }: ChatFabProps) {
         variant="outline"
         size="default"
         aria-label={`Chat with ${CHATBOT_NAME}`}
-        className="group fixed right-6 bottom-6 z-40 hidden overflow-hidden shadow-lg backdrop-blur-md transition-none md:flex"
+        className="group fixed right-6 bottom-6 z-40 hidden overflow-hidden px-2 shadow-lg backdrop-blur-md transition-none md:flex"
         {...motionProps}
       >
         <MeshGradientBackground

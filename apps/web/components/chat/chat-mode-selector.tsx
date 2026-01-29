@@ -18,9 +18,9 @@ import {
 import { cn } from "@domainstack/ui/utils";
 import {
   IconArrowFork,
-  IconBrandChrome,
   IconChevronDown,
   IconCloud,
+  IconDeviceLaptop,
   IconDownload,
 } from "@tabler/icons-react";
 import { type BrowserAIStatus, useBrowserAI } from "@/hooks/use-browser-ai";
@@ -87,7 +87,7 @@ export function ChatModeSelector({
           <Button variant="ghost" size="sm" className={cn("group", className)}>
             {aiMode === "local" ||
             (aiMode === "auto" && browserAI.status === "ready") ? (
-              <IconBrandChrome className="size-4 text-foreground/70 group-hover:text-foreground" />
+              <IconDeviceLaptop className="size-4 text-foreground/70 group-hover:text-foreground" />
             ) : (
               <IconCloud className="size-4 text-foreground/70 group-hover:text-foreground" />
             )}
@@ -129,7 +129,7 @@ export function ChatModeSelector({
                     value="local"
                     disabled={!canUseLocal && !isDownloading}
                   >
-                    <IconBrandChrome className="translate-y-[2px] self-start text-muted-foreground" />
+                    <IconDeviceLaptop className="translate-y-[2px] self-start text-muted-foreground" />
                     <div className="flex flex-1 flex-col">
                       <span>Local</span>
                       <span className="text-muted-foreground text-xs">
