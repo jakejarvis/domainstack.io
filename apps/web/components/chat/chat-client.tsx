@@ -125,18 +125,8 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
     },
   });
 
-  // Determine effective mode based on preference and browser AI availability.
-  // IMPORTANT: Once a cloud conversation is in progress, we lock to cloud mode
-  // to prevent message loss when browser AI becomes ready mid-conversation.
-  const effectiveMode = useMemo((): "cloud" | "local" => {
-    // If there's an active cloud conversation, stay in cloud mode to avoid losing messages
-    if (cloudChat.messages.length > 0) return "cloud";
-    if (aiMode === "local" && browserAI.status === "ready") return "local";
-    if (aiMode === "auto" && browserAI.status === "ready") return "local";
-    return "cloud";
-  }, [aiMode, browserAI.status, cloudChat.messages.length]);
-
-  // Local chat (browser-based AI) - only active when effectiveMode is "local"
+  // Local chat (browser-based AI) - declared before effectiveMode to check for active
+  // local messages and prevent race conditions with cloud history hydration.
   // The hook handles null model gracefully (sendMessage becomes a no-op)
   const localChat = useLocalChat({
     model: browserAI.model,
@@ -146,6 +136,29 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
       analytics.trackException(error, { context: "local-chat-send", domain });
     },
   });
+
+  // Determine effective mode based on preference and browser AI availability.
+  // IMPORTANT: Once a conversation is in progress in either mode, we lock to that mode
+  // to prevent message loss when:
+  // 1. Browser AI becomes ready mid-cloud-conversation
+  // 2. Cloud history hydrates mid-local-conversation (the fix for the race condition)
+  const effectiveMode = useMemo((): "cloud" | "local" => {
+    // If there's an active local conversation, stay in local mode to avoid losing messages.
+    // This prevents the race condition where async cloud history hydration from localStorage
+    // would override an in-progress local chat session.
+    if (localChat.messages.length > 0) return "local";
+    // If there's an active cloud conversation, stay in cloud mode to avoid losing messages
+    if (cloudChat.messages.length > 0) return "cloud";
+    // No active conversation - use preference-based mode selection
+    if (aiMode === "local" && browserAI.status === "ready") return "local";
+    if (aiMode === "auto" && browserAI.status === "ready") return "local";
+    return "cloud";
+  }, [
+    aiMode,
+    browserAI.status,
+    cloudChat.messages.length,
+    localChat.messages.length,
+  ]);
 
   // Select the active chat based on effective mode
   const chat = effectiveMode === "local" ? localChat : cloudChat;
