@@ -50,22 +50,7 @@ export function DashboardGrid({ domains }: DashboardGridProps) {
             className="h-full"
             {...getItemMotionProps(index)}
           >
-            <DashboardGridCard
-              trackedDomainId={domain.id}
-              domainId={domain.domainId}
-              domainName={domain.domainName}
-              verified={domain.verified}
-              verificationStatus={domain.verificationStatus}
-              verificationMethod={domain.verificationMethod}
-              verificationFailedAt={domain.verificationFailedAt}
-              expirationDate={domain.expirationDate}
-              registrar={domain.registrar}
-              dns={domain.dns}
-              hosting={domain.hosting}
-              email={domain.email}
-              ca={domain.ca}
-              muted={domain.muted}
-            />
+            <DashboardGridCard domain={domain} />
           </motion.div>
         ))}
 

@@ -1,9 +1,8 @@
+import type { ProviderCategory } from "@domainstack/constants";
 import type {
-  ProviderCategory,
-  VerificationMethod,
-  VerificationStatus,
-} from "@domainstack/constants";
-import type { ProviderInfo } from "@domainstack/types";
+  ProviderInfo,
+  TrackedDomainWithDetails,
+} from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@domainstack/ui/card";
 import { Checkbox } from "@domainstack/ui/checkbox";
@@ -53,20 +52,7 @@ import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
 import { useTruncation } from "@/hooks/use-truncation";
 
 type DashboardGridCardProps = {
-  trackedDomainId: string;
-  domainId: string;
-  domainName: string;
-  verified: boolean;
-  verificationStatus: VerificationStatus;
-  verificationMethod: VerificationMethod | null;
-  verificationFailedAt?: Date | null;
-  expirationDate: Date | null;
-  registrar: ProviderInfo;
-  dns: ProviderInfo;
-  hosting: ProviderInfo;
-  email: ProviderInfo;
-  ca: ProviderInfo;
-  muted: boolean;
+  domain: TrackedDomainWithDetails;
 };
 
 /**
@@ -74,21 +60,24 @@ type DashboardGridCardProps = {
  * Includes scale animation and selection ring. Parent handles enter/exit animations.
  */
 export const DashboardGridCard = memo(function DashboardGridCard({
-  trackedDomainId,
-  domainId,
-  domainName,
-  verified,
-  verificationStatus,
-  verificationMethod,
-  verificationFailedAt,
-  expirationDate,
-  registrar,
-  dns,
-  hosting,
-  email,
-  ca,
-  muted,
+  domain,
 }: DashboardGridCardProps) {
+  const {
+    id: trackedDomainId,
+    domainId,
+    domainName,
+    verified,
+    verificationStatus,
+    verificationMethod,
+    verificationFailedAt,
+    expirationDate,
+    registrar,
+    dns,
+    hosting,
+    email,
+    ca,
+    muted,
+  } = domain;
   // Selection state and actions from context
   const { isSelected, toggle } = useDashboardSelection();
   const { onVerify, onRemove, onArchive, onToggleMuted } =
