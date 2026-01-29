@@ -1,13 +1,9 @@
-import type { NotificationCategory } from "@domainstack/constants";
-import type { UserNotificationPreferences } from "@domainstack/types";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
-import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
 import { Suspense } from "react";
-import { toast } from "sonner";
 import {
   CalendarInstructions,
   CalendarInstructionsSkeleton,
@@ -20,156 +16,32 @@ import {
 } from "@/components/settings/settings-card";
 import { SettingsErrorBoundary } from "@/components/settings/settings-error-boundary";
 import { NotificationsSkeleton } from "@/components/settings/settings-skeleton";
+import { useNotificationPreferences } from "@/hooks/use-notification-preferences";
 import { useSession } from "@/lib/auth-client";
-import { useTRPC } from "@/lib/trpc/client";
 
 export function NotificationsPanel() {
   const { data: session } = useSession();
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-
-  // Query keys for cache manipulation
-  const domainsQueryKey = trpc.tracking.listDomains.queryKey();
-  const globalPrefsQueryKey = trpc.user.getNotificationPreferences.queryKey();
-
-  // Queries - both run in parallel
-  const [domainsResult, globalPrefsResult] = useQueries({
-    queries: [
-      trpc.tracking.listDomains.queryOptions(),
-      trpc.user.getNotificationPreferences.queryOptions(),
-    ],
-  });
-
-  // Mutations with optimistic updates (must be called before early returns)
-  const updateGlobalMutation = useMutation({
-    ...trpc.user.updateGlobalNotificationPreferences.mutationOptions(),
-    onMutate: async (newPrefs) => {
-      await queryClient.cancelQueries({ queryKey: globalPrefsQueryKey });
-      const previousPrefs =
-        queryClient.getQueryData<UserNotificationPreferences>(
-          globalPrefsQueryKey,
-        );
-
-      // Optimistically update
-      queryClient.setQueryData<UserNotificationPreferences>(
-        globalPrefsQueryKey,
-        (old) => (old ? { ...old, ...newPrefs } : old),
-      );
-
-      return { previousPrefs };
-    },
-    onError: (_err, _variables, context) => {
-      if (context?.previousPrefs) {
-        queryClient.setQueryData<UserNotificationPreferences>(
-          globalPrefsQueryKey,
-          context.previousPrefs,
-        );
-      }
-      toast.error("Failed to update settings");
-    },
-    onSuccess: () => {
-      toast.success("Global settings updated");
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: globalPrefsQueryKey });
-    },
-  });
-
-  const setDomainMutedMutation = useMutation({
-    ...trpc.user.setDomainMuted.mutationOptions(),
-    onMutate: async ({ trackedDomainId, muted }) => {
-      await queryClient.cancelQueries({ queryKey: domainsQueryKey });
-      // Snapshot all domain query variants for rollback
-      const previousDomains = queryClient.getQueriesData<
-        typeof domainsResult.data
-      >({
-        queryKey: domainsQueryKey,
-      });
-
-      // Optimistically update the domain's muted state in all query variants
-      queryClient.setQueriesData<typeof domainsResult.data>(
-        { queryKey: domainsQueryKey },
-        (old) =>
-          old
-            ? old.map((d) => (d.id === trackedDomainId ? { ...d, muted } : d))
-            : old,
-      );
-
-      return { previousDomains };
-    },
-    onError: (_err, _variables, context) => {
-      if (context?.previousDomains) {
-        for (const [key, data] of context.previousDomains) {
-          queryClient.setQueryData(key, data);
-        }
-      }
-      toast.error("Failed to update settings");
-    },
-    onSuccess: (_data, variables) => {
-      toast.success(variables.muted ? "Domain muted" : "Domain unmuted");
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
-    },
-  });
-
-  // Loading and error states (after all hooks)
-  const isLoading = domainsResult.isLoading || globalPrefsResult.isLoading;
-  const isError = domainsResult.isError || globalPrefsResult.isError;
+  const {
+    domains,
+    globalPrefs,
+    isLoading,
+    isError,
+    isPending,
+    updateGlobalPreference,
+    setDomainMuted,
+  } = useNotificationPreferences();
 
   if (isLoading) {
     return <NotificationsSkeleton />;
   }
 
-  if (isError || !domainsResult.data || !globalPrefsResult.data) {
+  if (isError || !domains || !globalPrefs) {
     throw new Error("Failed to load notification settings");
   }
-
-  // Data is now guaranteed to be defined
-  const domains = domainsResult.data;
-  const globalPrefsData = globalPrefsResult.data;
-
-  const defaultGlobalPrefs: UserNotificationPreferences = {
-    domainExpiry: { inApp: true, email: true },
-    certificateExpiry: { inApp: true, email: true },
-    registrationChanges: { inApp: true, email: true },
-    providerChanges: { inApp: true, email: true },
-    certificateChanges: { inApp: true, email: true },
-  };
-
-  // Merge defaults with saved preferences to ensure new fields are always present
-  const globalPrefs: UserNotificationPreferences = {
-    ...defaultGlobalPrefs,
-    ...globalPrefsData,
-  };
-
-  const handleGlobalToggle = (
-    category: NotificationCategory,
-    type: "email" | "inApp",
-    enabled: boolean,
-  ) => {
-    // Get current category preferences
-    const currentPref = globalPrefs[category];
-
-    // Update only the specific channel
-    const updatedPref = {
-      ...currentPref,
-      [type === "email" ? "email" : "inApp"]: enabled,
-    };
-
-    updateGlobalMutation.mutate({ [category]: updatedPref });
-  };
-
-  const handleToggleMuted = (trackedDomainId: string, muted: boolean) => {
-    setDomainMutedMutation.mutate({ trackedDomainId, muted });
-  };
 
   const verifiedDomains = domains
     .filter((d) => d.verified)
     .sort((a, b) => a.domainName.localeCompare(b.domainName));
-
-  const isPending =
-    updateGlobalMutation.isPending || setDomainMutedMutation.isPending;
 
   return (
     <>
@@ -213,7 +85,7 @@ export function NotificationsPanel() {
       >
         <NotificationMatrix
           preferences={globalPrefs}
-          onToggle={handleGlobalToggle}
+          onToggle={updateGlobalPreference}
           disabled={isPending}
         />
       </SettingsCard>
@@ -230,7 +102,7 @@ export function NotificationsPanel() {
             domainName: d.domainName,
             muted: d.muted,
           }))}
-          onToggleMuted={handleToggleMuted}
+          onToggleMuted={setDomainMuted}
           disabled={isPending}
         />
       </SettingsCard>

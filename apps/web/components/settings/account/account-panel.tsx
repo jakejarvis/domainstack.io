@@ -8,11 +8,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@domainstack/ui/alert-dialog";
+import { Button } from "@domainstack/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@domainstack/ui/collapsible";
 import { ItemGroup } from "@domainstack/ui/item";
+import {
+  IconAlertTriangle,
+  IconChevronDown,
+  IconTrash,
+} from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { DangerZoneCollapsible } from "@/components/settings/account/danger-zone-collapsible";
 import { LinkedAccountRow } from "@/components/settings/account/linked-account-row";
 import {
   SettingsCard,
@@ -24,6 +34,7 @@ import { analytics } from "@/lib/analytics/client";
 import { linkSocial, unlinkAccount } from "@/lib/auth-client";
 import { getEnabledProviders, type OAuthProvider } from "@/lib/oauth";
 import { useTRPC } from "@/lib/trpc/client";
+import { DeleteAccountDialog } from "./delete-account-dialog";
 
 export function AccountPanel() {
   const trpc = useTRPC();
@@ -32,6 +43,7 @@ export function AccountPanel() {
     null,
   );
   const [linkingProvider, setLinkingProvider] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const enabledProviders = getEnabledProviders();
 
   // Handle auth callback errors from URL params (account linking)
@@ -158,47 +170,82 @@ export function AccountPanel() {
 
   return (
     <>
-      <div className="max-w-full overflow-x-hidden">
-        <SettingsCard
-          title="Login Providers"
-          description="Protect your account with additional third-party services."
-        >
-          <ItemGroup className="gap-2.5">
-            {[...enabledProviders]
-              .sort((a, b) => {
-                const aLinked = linkedProviderIds.has(a.id);
-                const bLinked = linkedProviderIds.has(b.id);
-                // Linked providers first, then alphabetically by name
-                if (aLinked !== bLinked) return bLinked ? 1 : -1;
-                return a.name.localeCompare(b.name);
-              })
-              .map((provider) => {
-                const isLinked = linkedProviderIds.has(provider.id);
-                const isLinking = linkingProvider === provider.id;
-                const isUnlinking =
-                  unlinkMutation.isPending &&
-                  unlinkMutation.variables === provider.id;
+      <SettingsCard
+        title="Login Providers"
+        description="Protect your account with additional third-party services."
+      >
+        <ItemGroup className="gap-2.5">
+          {[...enabledProviders]
+            .sort((a, b) => {
+              const aLinked = linkedProviderIds.has(a.id);
+              const bLinked = linkedProviderIds.has(b.id);
+              // Linked providers first, then alphabetically by name
+              if (aLinked !== bLinked) return bLinked ? 1 : -1;
+              return a.name.localeCompare(b.name);
+            })
+            .map((provider) => {
+              const isLinked = linkedProviderIds.has(provider.id);
+              const isLinking = linkingProvider === provider.id;
+              const isUnlinking =
+                unlinkMutation.isPending &&
+                unlinkMutation.variables === provider.id;
 
-                return (
-                  <LinkedAccountRow
-                    key={provider.id}
-                    provider={provider}
-                    isLinked={isLinked}
-                    canUnlink={canUnlink}
-                    isLinking={isLinking}
-                    isUnlinking={isUnlinking}
-                    onLink={() => handleLink(provider)}
-                    onUnlink={() => setUnlinkingProvider(provider.id)}
-                  />
-                );
-              })}
-          </ItemGroup>
-        </SettingsCard>
+              return (
+                <LinkedAccountRow
+                  key={provider.id}
+                  provider={provider}
+                  isLinked={isLinked}
+                  canUnlink={canUnlink}
+                  isLinking={isLinking}
+                  isUnlinking={isUnlinking}
+                  onLink={() => handleLink(provider)}
+                  onUnlink={() => setUnlinkingProvider(provider.id)}
+                />
+              );
+            })}
+        </ItemGroup>
+      </SettingsCard>
 
-        <SettingsCardSeparator />
+      <SettingsCardSeparator />
 
-        <DangerZoneCollapsible />
-      </div>
+      <Collapsible className="rounded-md border border-destructive/20">
+        <CollapsibleTrigger
+          render={
+            <button
+              type="button"
+              className="group flex w-full cursor-pointer items-center justify-between rounded-md bg-destructive/5 px-4 py-3 text-left transition-all hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2 data-[panel-open]:rounded-b-none"
+            >
+              <div className="flex items-center gap-3">
+                <IconAlertTriangle className="size-5 text-destructive" />
+                <span className="font-medium text-destructive text-sm leading-none">
+                  Danger Zone!
+                </span>
+              </div>
+              <IconChevronDown className="size-4 text-destructive/60 transition-transform duration-200 group-data-[panel-open]:rotate-180" />
+            </button>
+          }
+        />
+        <CollapsibleContent keepMounted>
+          <div className="rounded-b-md bg-destructive/2 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-medium text-sm">Delete account</p>
+                <p className="text-muted-foreground text-xs">
+                  Permanently delete your account and all associated data
+                </p>
+              </div>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setIsDeleteDialogOpen(true)}
+              >
+                <IconTrash />
+                Delete
+              </Button>
+            </div>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       <AlertDialog
         open={unlinkingProvider !== null}
@@ -228,6 +275,11 @@ export function AccountPanel() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <DeleteAccountDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      />
     </>
   );
 }
