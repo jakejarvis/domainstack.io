@@ -36,15 +36,9 @@ import {
   IconRefresh,
   IconShieldLock,
 } from "@tabler/icons-react";
-import {
-  useMutation,
-  useQueryClient,
-  useSuspenseQuery,
-} from "@tanstack/react-query";
 import { formatDistanceToNowStrict } from "date-fns";
 import { useCallback, useState } from "react";
-import { toast } from "sonner";
-import { useTRPC } from "@/lib/trpc/client";
+import { useCalendarFeed } from "@/hooks/use-calendar-feed";
 
 /**
  * Skeleton for calendar instructions.
@@ -75,107 +69,10 @@ export function CalendarInstructionsSkeleton({
 }
 
 export function CalendarInstructions({ className }: { className?: string }) {
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
   const [showRotateDialog, setShowRotateDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  // Query key for cache manipulation
-  const feedQueryKey = trpc.user.getCalendarFeed.queryKey();
-
-  // Query - auto-refresh every 30s to keep "last accessed" timestamp current
-  // Uses Suspense for initial loading state; errors bubble to ErrorBoundary
-  const { data: feed } = useSuspenseQuery({
-    ...trpc.user.getCalendarFeed.queryOptions(),
-    refetchInterval: 30_000,
-  });
-
-  // Mutations
-  const enableMutation = useMutation({
-    ...trpc.user.enableCalendarFeed.mutationOptions(),
-    onSuccess: (data) => {
-      queryClient.setQueryData(feedQueryKey, {
-        enabled: true,
-        feedUrl: data.feedUrl,
-        lastAccessedAt: null,
-      });
-      toast.success("Calendar feed enabled");
-    },
-    onError: () => {
-      toast.error("Failed to enable calendar feed");
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: feedQueryKey });
-    },
-  });
-
-  const disableMutation = useMutation({
-    ...trpc.user.disableCalendarFeed.mutationOptions(),
-    onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: feedQueryKey });
-      const previous = queryClient.getQueryData(feedQueryKey);
-      queryClient.setQueryData(feedQueryKey, { enabled: false });
-      return { previous };
-    },
-    onError: (_err, _variables, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(feedQueryKey, context.previous);
-      }
-      toast.error("Failed to disable calendar feed");
-    },
-    onSuccess: () => {
-      toast.success("Calendar feed disabled");
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: feedQueryKey });
-    },
-  });
-
-  const rotateMutation = useMutation({
-    ...trpc.user.rotateCalendarFeedToken.mutationOptions(),
-    onSuccess: () => {
-      toast.success("Calendar feed URL regenerated");
-      setShowRotateDialog(false);
-    },
-    onError: () => {
-      toast.error("Failed to regenerate URL");
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: feedQueryKey });
-    },
-  });
-
-  const deleteMutation = useMutation({
-    ...trpc.user.deleteCalendarFeed.mutationOptions(),
-    onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: feedQueryKey });
-      const previous = queryClient.getQueryData(feedQueryKey);
-      queryClient.setQueryData(feedQueryKey, { enabled: false });
-      return { previous };
-    },
-    onError: (_err, _variables, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(feedQueryKey, context.previous);
-      }
-      toast.error("Failed to disable calendar feed");
-    },
-    onSuccess: () => {
-      toast.success("Calendar feed disabled");
-      setShowDeleteDialog(false);
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: feedQueryKey });
-    },
-  });
-
-  const isPending =
-    enableMutation.isPending ||
-    disableMutation.isPending ||
-    rotateMutation.isPending ||
-    deleteMutation.isPending;
-
-  // With useSuspenseQuery, feed is guaranteed to be defined
-  const isEnabled = feed.enabled && "feedUrl" in feed;
+  const { feed, isPending, enable, rotate, deleteFeed } = useCalendarFeed();
 
   const getIntegrations = useCallback((feedUrl: string | undefined) => {
     if (!feedUrl) {
@@ -223,13 +120,14 @@ export function CalendarInstructions({ className }: { className?: string }) {
     ];
   }, []);
 
-  const integrations = getIntegrations(feed?.feedUrl);
+  // Only compute integrations when feed is enabled (has feedUrl)
+  const integrations = feed.enabled ? getIntegrations(feed.feedUrl) : [];
 
   return (
     <>
       <div className={className}>
         {/* Content - loading handled by Suspense, errors by ErrorBoundary */}
-        {isEnabled ? (
+        {feed.enabled ? (
           <div className="space-y-4">
             {/* Security warning */}
             <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-amber-700 dark:text-amber-400">
@@ -349,7 +247,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
                   onClick={() => setShowRotateDialog(true)}
                   disabled={isPending}
                 >
-                  {rotateMutation.isPending ? (
+                  {rotate.isPending ? (
                     <Spinner />
                   ) : (
                     <IconRefresh className="text-muted-foreground" />
@@ -362,19 +260,15 @@ export function CalendarInstructions({ className }: { className?: string }) {
                   onClick={() => setShowDeleteDialog(true)}
                   disabled={isPending}
                 >
-                  {deleteMutation.isPending ? <Spinner /> : <IconCalendarOff />}
+                  {deleteFeed.isPending ? <Spinner /> : <IconCalendarOff />}
                   Disable
                 </Button>
               </div>
             </div>
           </div>
         ) : (
-          <Button
-            onClick={() => enableMutation.mutate()}
-            disabled={isPending}
-            className="w-full"
-          >
-            {enableMutation.isPending ? (
+          <Button onClick={enable} disabled={isPending} className="w-full">
+            {isPending ? (
               <>
                 <Spinner />
                 Enabling…
@@ -401,14 +295,16 @@ export function CalendarInstructions({ className }: { className?: string }) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={rotateMutation.isPending}>
+            <AlertDialogCancel disabled={rotate.isPending}>
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => rotateMutation.mutate()}
-              disabled={rotateMutation.isPending}
+              onClick={() =>
+                rotate.mutate({ onSuccess: () => setShowRotateDialog(false) })
+              }
+              disabled={rotate.isPending}
             >
-              {rotateMutation.isPending ? <Spinner /> : <IconRefresh />}
+              {rotate.isPending ? <Spinner /> : <IconRefresh />}
               Regenerate
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -427,15 +323,19 @@ export function CalendarInstructions({ className }: { className?: string }) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>
+            <AlertDialogCancel disabled={deleteFeed.isPending}>
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deleteMutation.mutate()}
-              disabled={deleteMutation.isPending}
+              onClick={() =>
+                deleteFeed.mutate({
+                  onSuccess: () => setShowDeleteDialog(false),
+                })
+              }
+              disabled={deleteFeed.isPending}
               variant="destructive"
             >
-              {deleteMutation.isPending ? <Spinner /> : <IconCalendarOff />}
+              {deleteFeed.isPending ? <Spinner /> : <IconCalendarOff />}
               Disable
             </AlertDialogAction>
           </AlertDialogFooter>
