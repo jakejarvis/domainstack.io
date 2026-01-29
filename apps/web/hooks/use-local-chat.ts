@@ -3,12 +3,13 @@
 import type { browserAI } from "@browser-ai/core";
 import {
   convertToModelMessages,
+  generateId,
   readUIMessageStream,
   streamText,
   type ToolSet,
   type UIMessage,
 } from "ai";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * Chat status matching the useChat hook from @ai-sdk/react.
@@ -16,8 +17,8 @@ import { useCallback, useRef, useState } from "react";
 export type LocalChatStatus = "ready" | "submitted" | "streaming" | "error";
 
 export interface UseLocalChatOptions {
-  /** Browser AI model instance from useBrowserAI */
-  model: ReturnType<typeof browserAI>;
+  /** Browser AI model instance from useBrowserAI (null when not ready) */
+  model: ReturnType<typeof browserAI> | null;
   /** Tools for the model to use (from createClientDomainTools) */
   tools: ToolSet;
   /** System prompt for the chat */
@@ -37,11 +38,6 @@ export interface UseLocalChatReturn {
   sendMessage: (params: { text: string }) => void;
   /** Set messages directly (for persistence restore) */
   setMessages: (messages: UIMessage[]) => void;
-}
-
-let messageIdCounter = 0;
-function generateMessageId(): string {
-  return `local-msg-${Date.now()}-${++messageIdCounter}`;
 }
 
 /**
@@ -79,10 +75,20 @@ export function useLocalChat({
   // AbortController for cancelling in-flight requests
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // Cleanup: abort any in-flight request on unmount to prevent state updates
+  // on unmounted component and avoid memory leaks
+  useEffect(
+    () => () => {
+      abortControllerRef.current?.abort();
+    },
+    [],
+  );
+
   const sendMessage = useCallback(
     async (params: { text: string }) => {
       const text = params.text.trim();
-      if (!text || processingRef.current) return;
+      // Guard: don't send if no text, already processing, or model not ready
+      if (!text || processingRef.current || !model) return;
 
       processingRef.current = true;
       setStatus("submitted");
@@ -94,13 +100,13 @@ export function useLocalChat({
 
       // Add user message
       const userMessage: UIMessage = {
-        id: generateMessageId(),
+        id: generateId(),
         role: "user",
         parts: [{ type: "text", text }],
       };
 
       // Add placeholder assistant message for streaming
-      const assistantMessageId = generateMessageId();
+      const assistantMessageId = generateId();
       const assistantMessage: UIMessage = {
         id: assistantMessageId,
         role: "assistant",

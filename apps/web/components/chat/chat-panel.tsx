@@ -136,71 +136,81 @@ export function ChatPanel({
               description="I can look up DNS records, WHOIS data, SSL certificates, and more — just say the word."
             />
           ) : (
-            messages.map((message) => (
-              <Message key={message.id} from={message.role}>
-                <MessageContent>
-                  {message.parts.map((part, index) => {
-                    if (part.type === "text") {
-                      return (
-                        <MessageResponse key={`${message.id}-${index}`}>
-                          {part.text}
-                        </MessageResponse>
-                      );
-                    }
-                    if (part.type === "reasoning") {
-                      const isStreaming =
-                        status === "streaming" &&
-                        index === message.parts.length - 1 &&
-                        message.id === messages.at(-1)?.id;
-                      if (showReasoning) {
+            <>
+              {messages.map((message) => (
+                <Message key={message.id} from={message.role}>
+                  <MessageContent>
+                    {message.parts.map((part, index) => {
+                      if (part.type === "text") {
                         return (
-                          <Reasoning
-                            key={`${message.id}-${index}`}
-                            className="w-full"
-                            isStreaming={isStreaming}
-                          >
-                            <ReasoningTrigger />
-                            <ReasoningContent>{part.text}</ReasoningContent>
-                          </Reasoning>
+                          <MessageResponse key={`${message.id}-${index}`}>
+                            {part.text}
+                          </MessageResponse>
                         );
                       }
+                      if (part.type === "reasoning") {
+                        const isStreaming =
+                          status === "streaming" &&
+                          index === message.parts.length - 1 &&
+                          message.id === messages.at(-1)?.id;
+                        if (showReasoning) {
+                          return (
+                            <Reasoning
+                              key={`${message.id}-${index}`}
+                              className="w-full"
+                              isStreaming={isStreaming}
+                            >
+                              <ReasoningTrigger />
+                              <ReasoningContent>{part.text}</ReasoningContent>
+                            </Reasoning>
+                          );
+                        }
 
-                      return isStreaming ? (
-                        <div
-                          key={`${message.id}-${index}`}
-                          className="flex items-center gap-2 text-[13px] text-muted-foreground"
-                        >
-                          <IconBrain className="size-3.5" />
-                          <ShimmeringText text="Thinking…" />
-                        </div>
-                      ) : null;
-                    }
-                    if (part.type.startsWith("tool-") && showToolCalls) {
-                      const toolPart = part as ToolUIPart;
-                      return (
-                        <Tool key={`${message.id}-${index}`}>
-                          <ToolHeader
-                            title={getToolStatusMessage(toolPart.type)}
-                            type={toolPart.type}
-                            state={toolPart.state}
-                          />
-                          <ToolContent>
-                            <ToolInput input={toolPart.input} />
-                            {toolPart.state === "output-available" && (
-                              <ToolOutput
-                                output={toolPart.output}
-                                errorText={toolPart.errorText}
-                              />
-                            )}
-                          </ToolContent>
-                        </Tool>
-                      );
-                    }
-                    return null;
-                  })}
-                </MessageContent>
-              </Message>
-            ))
+                        return isStreaming ? (
+                          <div
+                            key={`${message.id}-${index}`}
+                            className="flex items-center gap-2 text-[13px] text-muted-foreground"
+                          >
+                            <IconBrain className="size-3.5" />
+                            <ShimmeringText text="Thinking…" />
+                          </div>
+                        ) : null;
+                      }
+                      if (part.type.startsWith("tool-") && showToolCalls) {
+                        const toolPart = part as ToolUIPart;
+                        return (
+                          <Tool key={`${message.id}-${index}`}>
+                            <ToolHeader
+                              title={getToolStatusMessage(toolPart.type)}
+                              type={toolPart.type}
+                              state={toolPart.state}
+                            />
+                            <ToolContent>
+                              <ToolInput input={toolPart.input} />
+                              {toolPart.state === "output-available" && (
+                                <ToolOutput
+                                  output={toolPart.output}
+                                  errorText={toolPart.errorText}
+                                />
+                              )}
+                            </ToolContent>
+                          </Tool>
+                        );
+                      }
+                      return null;
+                    })}
+                  </MessageContent>
+                </Message>
+              ))}
+              {/* Show loading indicator while waiting for response stream to begin */}
+              {status === "submitted" && (
+                <Message from="assistant">
+                  <MessageContent>
+                    <ShimmeringText text="Thinking…" />
+                  </MessageContent>
+                </Message>
+              )}
+            </>
           )}
         </ConversationContent>
         {!stickyInstance.isNearBottom && (

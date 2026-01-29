@@ -69,13 +69,17 @@ export function useBrowserAI(): UseBrowserAIResult {
   // Track if we've already initialized to prevent double-init
   const initializingRef = useRef(false);
   const modelInstanceRef = useRef<ReturnType<typeof browserAI> | null>(null);
+  // Track mounted state to prevent state updates after unmount
+  const isMountedRef = useRef(true);
 
   // Check browser support and model availability on mount
   useEffect(() => {
+    isMountedRef.current = true;
+
     async function checkAvailability() {
       // First check if browser supports the API at all
       if (!doesBrowserSupportBrowserAI()) {
-        setStatus("unavailable");
+        if (isMountedRef.current) setStatus("unavailable");
         return;
       }
 
@@ -85,6 +89,8 @@ export function useBrowserAI(): UseBrowserAIResult {
         modelInstanceRef.current = instance;
 
         const availability = await instance.availability();
+
+        if (!isMountedRef.current) return;
 
         switch (availability) {
           case "unavailable":
@@ -105,6 +111,7 @@ export function useBrowserAI(): UseBrowserAIResult {
             setStatus("unavailable");
         }
       } catch (err) {
+        if (!isMountedRef.current) return;
         setError(
           err instanceof Error
             ? err.message
@@ -115,6 +122,10 @@ export function useBrowserAI(): UseBrowserAIResult {
     }
 
     void checkAvailability();
+
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
   // Initialize (download) the model
@@ -133,16 +144,20 @@ export function useBrowserAI(): UseBrowserAIResult {
 
       // Create session with progress tracking
       await instance.createSessionWithProgress((progress) => {
-        setDownloadProgress(progress);
+        if (isMountedRef.current) setDownloadProgress(progress);
       });
 
-      setModel(instance);
-      setStatus("ready");
+      if (isMountedRef.current) {
+        setModel(instance);
+        setStatus("ready");
+      }
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to initialize AI model",
-      );
-      setStatus("error");
+      if (isMountedRef.current) {
+        setError(
+          err instanceof Error ? err.message : "Failed to initialize AI model",
+        );
+        setStatus("error");
+      }
     } finally {
       initializingRef.current = false;
     }

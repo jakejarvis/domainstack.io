@@ -21,7 +21,6 @@ import { AnimatePresence } from "motion/react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BetaBadge } from "@/components/beta-badge";
-import type { UseBrowserAIResult } from "@/hooks/use-browser-ai";
 import { useBrowserAI } from "@/hooks/use-browser-ai";
 import { useChatPersistence } from "@/hooks/use-chat-persistence";
 import { useLocalChat } from "@/hooks/use-local-chat";
@@ -41,10 +40,6 @@ import { ChatHeaderActions } from "./chat-header-actions";
 import { ChatPanel } from "./chat-panel";
 import { ChatSettingsDialog } from "./chat-settings-dialog";
 import { getUserFriendlyError } from "./utils";
-
-// Stable empty model reference to avoid recreating useLocalChat's sendMessage on every render
-// when browser AI is not ready. This is used as a placeholder to satisfy the hook's type requirements.
-const EMPTY_MODEL = {} as NonNullable<UseBrowserAIResult["model"]>;
 
 interface ChatClientProps {
   suggestions?: string[];
@@ -142,9 +137,9 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
   }, [aiMode, browserAI.status, cloudChat.messages.length]);
 
   // Local chat (browser-based AI) - only active when effectiveMode is "local"
-  // We use EMPTY_MODEL placeholder when browser AI isn't ready to avoid conditional hook calls
+  // The hook handles null model gracefully (sendMessage becomes a no-op)
   const localChat = useLocalChat({
-    model: browserAI.model ?? EMPTY_MODEL,
+    model: browserAI.model,
     tools: clientTools,
     systemPrompt,
     onError: (error) => {
