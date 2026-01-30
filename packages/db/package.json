@@ -27,7 +27,7 @@
     "drizzle-orm": "catalog:"
   },
   "peerDependencies": {
-    "pg": "^8"
+    "pg": "^8.18.0"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
