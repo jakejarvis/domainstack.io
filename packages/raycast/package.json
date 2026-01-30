@@ -1,0 +1,69 @@
+{
+  "$schema": "https://www.raycast.com/schemas/extension.json",
+  "name": "domainstack",
+  "title": "Domainstack",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Lookup WHOIS, DNS, SSL certificates, hosting, and SEO data for any domain",
+  "icon": "extension-icon.png",
+  "author": "jakejarvis",
+  "authorUrl": "https://jarv.is",
+  "license": "MIT",
+  "categories": [
+    "Developer Tools",
+    "Web"
+  ],
+  "keywords": [
+    "domain",
+    "whois",
+    "dns",
+    "ssl",
+    "hosting",
+    "seo"
+  ],
+  "commands": [
+    {
+      "name": "lookup-domain",
+      "title": "Lookup Domain",
+      "subtitle": "Domainstack",
+      "description": "Look up WHOIS, DNS, SSL, and hosting information for a domain",
+      "mode": "view",
+      "arguments": [
+        {
+          "name": "domain",
+          "placeholder": "raycast.com",
+          "type": "text",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "inspect-tab",
+      "title": "Inspect Current Tab",
+      "subtitle": "Domainstack",
+      "description": "Inspect the domain of the currently active browser tab",
+      "mode": "view"
+    }
+  ],
+  "scripts": {
+    "build": "ray build -e dist",
+    "check-types": "tsc --noEmit",
+    "dev": "ray develop",
+    "fix-lint": "ray lint --fix",
+    "lint": "ray lint",
+    "prepublishOnly": "echo \"\\n\\nIt seems like you are trying to publish the Raycast extension to npm.\\n\\nIf you did intend to publish it to npm, remove the \\`prepublishOnly\\` script and rerun \\`npm publish\\` again.\\nIf you wanted to publish it to the Raycast Store instead, use \\`npm run publish\\` instead.\\n\\n\" && exit 1",
+    "publish": "npx @raycast/api@latest publish"
+  },
+  "dependencies": {
+    "@raycast/api": "^1.104.3",
+    "@raycast/utils": "^2.2.2"
+  },
+  "devDependencies": {
+    "@raycast/eslint-config": "^2.1.1",
+    "@types/node": "^25.1.0",
+    "@types/react": "^19.2.10",
+    "eslint": "^9.39.2",
+    "react": "^19.2.4",
+    "typescript": "^5.9.3"
+  }
+}
