@@ -64,7 +64,9 @@ function MenubarContent({
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
-        className="isolate z-50 outline-none"
+        // pointer-events: auto ensures menubar is interactive when rendered inside
+        // modal dialogs (like vaul drawers) that set pointer-events: none on body
+        className="pointer-events-auto isolate z-50 outline-none"
       >
         <Menu.Popup
           data-slot="menubar-content"
@@ -254,7 +256,9 @@ function MenubarSubContent({
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
-        className="isolate z-50 outline-none"
+        // pointer-events: auto ensures menubar submenu is interactive when rendered inside
+        // modal dialogs (like vaul drawers) that set pointer-events: none on body
+        className="pointer-events-auto isolate z-50 outline-none"
       >
         <Menu.Popup
           data-slot="menubar-sub-content"

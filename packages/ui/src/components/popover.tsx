@@ -46,7 +46,9 @@ function PopoverContent({
         collisionAvoidance={collisionAvoidance}
         sticky={sticky}
         positionMethod={positionMethod}
-        className="isolate z-50"
+        // pointer-events: auto ensures popover is interactive when rendered inside
+        // modal dialogs (like vaul drawers) that set pointer-events: none on body
+        className="pointer-events-auto isolate z-50"
       >
         <PopoverPrimitive.Popup
           data-slot="popover-content"

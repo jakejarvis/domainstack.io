@@ -42,7 +42,9 @@ function HoverCardContent({
         collisionPadding={collisionPadding}
         sticky={sticky}
         positionMethod={positionMethod}
-        className="isolate z-50"
+        // pointer-events: auto ensures hover card is interactive when rendered inside
+        // modal dialogs (like vaul drawers) that set pointer-events: none on body
+        className="pointer-events-auto isolate z-50"
       >
         <PreviewCardPrimitive.Popup
           data-slot="hover-card-content"

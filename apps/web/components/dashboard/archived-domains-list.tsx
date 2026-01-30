@@ -93,6 +93,7 @@ export function ArchivedDomainsList({ domains }: ArchivedDomainsListProps) {
                         size="sm"
                         onClick={() => onUnarchive(domain.id)}
                         disabled={!subscription?.canAddMore}
+                        focusableWhenDisabled
                       >
                         <IconRefresh />
                         <span className="sr-only sm:not-sr-only sm:ml-2">

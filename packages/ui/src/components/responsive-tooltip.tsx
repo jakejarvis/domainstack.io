@@ -103,7 +103,9 @@ function ResponsiveTooltipContent({
         align={align}
         alignOffset={alignOffset}
         side={side}
-        className="isolate z-50"
+        // pointer-events: auto ensures tooltip is interactive when rendered inside
+        // modal dialogs (like vaul drawers) that set pointer-events: none on body
+        className="pointer-events-auto isolate z-50"
       >
         <Popup
           data-slot="responsive-tooltip-content"

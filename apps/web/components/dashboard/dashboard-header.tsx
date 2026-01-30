@@ -88,12 +88,10 @@ export function DashboardHeader({ userName }: DashboardHeaderProps) {
           <ResponsiveTooltip>
             <ResponsiveTooltipTrigger
               render={
-                <div>
-                  <Button disabled>
-                    <IconPlus />
-                    Add Domain
-                  </Button>
-                </div>
+                <Button disabled focusableWhenDisabled>
+                  <IconPlus />
+                  Add Domain
+                </Button>
               }
             />
             <ResponsiveTooltipContent className="!p-0">

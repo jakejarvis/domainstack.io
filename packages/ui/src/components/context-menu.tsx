@@ -106,7 +106,9 @@ function ContextMenuContent({
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
-        className="isolate z-50 outline-none"
+        // pointer-events: auto ensures context menu is interactive when rendered inside
+        // modal dialogs (like vaul drawers) that set pointer-events: none on body
+        className="pointer-events-auto isolate z-50 outline-none"
       >
         <ContextMenuPrimitive.Popup
           data-slot="context-menu-content"

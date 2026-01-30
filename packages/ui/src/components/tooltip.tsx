@@ -46,7 +46,9 @@ function TooltipContent({
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
-        className="isolate z-50"
+        // pointer-events: auto ensures tooltip is interactive when rendered inside
+        // modal dialogs (like vaul drawers) that set pointer-events: none on body
+        className="pointer-events-auto isolate z-50"
       >
         <TooltipPrimitive.Popup
           data-slot="tooltip-content"

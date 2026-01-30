@@ -53,19 +53,17 @@ export function LinkedAccountRow({
         {isLinked ? (
           <ResponsiveTooltip>
             <ResponsiveTooltipTrigger
-              nativeButton={false}
               render={
-                <div>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={canUnlink ? onUnlink : undefined}
-                    disabled={isLoading || !canUnlink}
-                  >
-                    {isUnlinking && <Spinner />}
-                    Unlink
-                  </Button>
-                </div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={canUnlink ? onUnlink : undefined}
+                  disabled={isLoading || !canUnlink}
+                  focusableWhenDisabled
+                >
+                  {isUnlinking && <Spinner />}
+                  Unlink
+                </Button>
               }
             />
             {!canUnlink && (

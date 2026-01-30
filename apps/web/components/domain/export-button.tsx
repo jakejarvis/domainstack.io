@@ -100,6 +100,7 @@ export function ExportButton({
             variant="outline"
             onClick={handleExport}
             disabled={!enabled || !allDataLoaded}
+            focusableWhenDisabled
             aria-label="Export report"
           >
             <IconDownload

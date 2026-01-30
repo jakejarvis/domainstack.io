@@ -158,6 +158,7 @@ export function ToolsDropdown({ domain, enabled = true }: ToolsDropdownProps) {
                   size="icon"
                   aria-label="Open menu"
                   disabled={!enabled}
+                  focusableWhenDisabled
                 >
                   <IconDotsVertical />
                   <span className="sr-only">Open tools menu</span>
