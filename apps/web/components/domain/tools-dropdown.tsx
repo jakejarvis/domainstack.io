@@ -13,6 +13,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@domainstack/ui/tooltip";
+import { cn } from "@domainstack/ui/utils";
 import { IconDotsVertical, IconPlus } from "@tabler/icons-react";
 import { Favicon } from "@/components/icons/favicon";
 
@@ -153,16 +154,22 @@ export function ToolsDropdown({ domain, enabled = true }: ToolsDropdownProps) {
           render={
             <TooltipTrigger
               render={
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-label="Open menu"
-                  disabled={!enabled}
-                  focusableWhenDisabled
+                <div
+                  className={cn(
+                    "pointer-events-auto",
+                    !enabled && "cursor-not-allowed",
+                  )}
                 >
-                  <IconDotsVertical />
-                  <span className="sr-only">Open tools menu</span>
-                </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label="Open menu"
+                    disabled={!enabled}
+                  >
+                    <IconDotsVertical />
+                    <span className="sr-only">Open tools menu</span>
+                  </Button>
+                </div>
               }
             />
           }

@@ -13,6 +13,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@domainstack/ui/tooltip";
+import { cn } from "@domainstack/ui/utils";
 import {
   IconArchive,
   IconCircleArrowUp,
@@ -88,18 +89,24 @@ export function ArchivedDomainsList({ domains }: ArchivedDomainsListProps) {
                 <Tooltip>
                   <TooltipTrigger
                     render={
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onUnarchive(domain.id)}
-                        disabled={!subscription?.canAddMore}
-                        focusableWhenDisabled
+                      <div
+                        className={cn(
+                          "pointer-events-auto",
+                          !subscription?.canAddMore && "cursor-not-allowed",
+                        )}
                       >
-                        <IconRefresh />
-                        <span className="sr-only sm:not-sr-only sm:ml-2">
-                          Reactivate
-                        </span>
-                      </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onUnarchive(domain.id)}
+                          disabled={!subscription?.canAddMore}
+                        >
+                          <IconRefresh />
+                          <span className="sr-only sm:not-sr-only sm:ml-2">
+                            Reactivate
+                          </span>
+                        </Button>
+                      </div>
                     }
                   />
                   <TooltipContent>

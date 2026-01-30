@@ -51,27 +51,33 @@ export function LinkedAccountRow({
 
       <ItemActions>
         {isLinked ? (
-          <ResponsiveTooltip>
-            <ResponsiveTooltipTrigger
-              render={
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={canUnlink ? onUnlink : undefined}
-                  disabled={isLoading || !canUnlink}
-                  focusableWhenDisabled
-                >
-                  {isUnlinking && <Spinner />}
-                  Unlink
-                </Button>
-              }
-            />
-            {!canUnlink && (
+          canUnlink ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={onUnlink}
+              disabled={isLoading}
+            >
+              {isUnlinking && <Spinner />}
+              Unlink
+            </Button>
+          ) : (
+            <ResponsiveTooltip>
+              <ResponsiveTooltipTrigger
+                nativeButton={false}
+                render={
+                  <div className="pointer-events-auto cursor-not-allowed">
+                    <Button variant="secondary" size="sm" disabled>
+                      Unlink
+                    </Button>
+                  </div>
+                }
+              />
               <ResponsiveTooltipContent>
                 You must have at least one linked account to sign in
               </ResponsiveTooltipContent>
-            )}
-          </ResponsiveTooltip>
+            </ResponsiveTooltip>
+          )
         ) : (
           <Button
             variant="outline"

@@ -87,11 +87,14 @@ export function DashboardHeader({ userName }: DashboardHeaderProps) {
         ) : (
           <ResponsiveTooltip>
             <ResponsiveTooltipTrigger
+              nativeButton={false}
               render={
-                <Button disabled focusableWhenDisabled>
-                  <IconPlus />
-                  Add Domain
-                </Button>
+                <div className="pointer-events-auto cursor-not-allowed">
+                  <Button disabled>
+                    <IconPlus />
+                    Add Domain
+                  </Button>
+                </div>
               }
             />
             <ResponsiveTooltipContent className="!p-0">

@@ -6,6 +6,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@domainstack/ui/tooltip";
+import { cn } from "@domainstack/ui/utils";
 import { IconDownload } from "@tabler/icons-react";
 import { notifyManager, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -96,19 +97,25 @@ export function ExportButton({
     <Tooltip>
       <TooltipTrigger
         render={
-          <Button
-            variant="outline"
-            onClick={handleExport}
-            disabled={!enabled || !allDataLoaded}
-            focusableWhenDisabled
-            aria-label="Export report"
+          <div
+            className={cn(
+              "pointer-events-auto",
+              (!enabled || !allDataLoaded) && "cursor-not-allowed",
+            )}
           >
-            <IconDownload
-              className="sm:text-muted-foreground"
-              aria-hidden="true"
-            />
-            <span className="hidden sm:inline-block">Export</span>
-          </Button>
+            <Button
+              variant="outline"
+              onClick={handleExport}
+              disabled={!enabled || !allDataLoaded}
+              aria-label="Export report"
+            >
+              <IconDownload
+                className="sm:text-muted-foreground"
+                aria-hidden="true"
+              />
+              <span className="hidden sm:inline-block">Export</span>
+            </Button>
+          </div>
         }
       />
       <TooltipContent>
