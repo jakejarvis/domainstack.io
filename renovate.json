@@ -8,6 +8,10 @@
   "rangeStrategy": "bump",
   "packageRules": [
     {
+      "matchDepTypes": ["peerDependencies"],
+      "rangeStrategy": "widen"
+    },
+    {
       "matchPackageNames": ["next", "@next/*"],
       "groupName": "next.js",
       "rangeStrategy": "pin"

@@ -1,6 +1,7 @@
 import { ipAddress, waitUntil } from "@vercel/functions";
 import { createLogger } from "@/lib/logger/server";
 import {
+  DEFAULT_RATE_LIMIT,
   getRateLimiter,
   type RateLimitConfig,
   type RateLimitInfo,
@@ -110,16 +111,22 @@ async function resolveIdentifier(request: Request): Promise<string | null> {
  */
 export async function checkRateLimit(
   request: Request,
-  config?: RateLimitConfig,
+  config: RateLimitConfig = DEFAULT_RATE_LIMIT,
 ): Promise<RateLimitSuccess | RateLimitFailure> {
   // Resolve identifier: user ID (preferred) or IP address (fallback)
-  const identifier = await resolveIdentifier(request);
+  const baseIdentifier = await resolveIdentifier(request);
 
   // Fail open: no Redis or no identifier = allow request without rate limiting
   const limiter = getRateLimiter(config);
-  if (!limiter || !identifier) {
+  if (!limiter || !baseIdentifier) {
     return { success: true };
   }
+
+  // Include endpoint name in identifier for per-endpoint isolation
+  const identifier = config.name
+    ? `${config.name}:${baseIdentifier}`
+    : baseIdentifier;
+
   const { success, limit, remaining, reset, pending } =
     await limiter.limit(identifier);
 

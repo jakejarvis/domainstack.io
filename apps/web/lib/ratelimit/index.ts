@@ -1,38 +1,20 @@
-import { Ratelimit } from "@upstash/ratelimit";
+import { type Duration, Ratelimit } from "@upstash/ratelimit";
 import { getRedis } from "@/lib/redis";
 
 /**
- * Global prefix for all rate limit keys.
- * Namespaces rate limiting in Redis for dashboard visibility
- * and to avoid collisions with other Redis usage.
- */
-const RATE_LIMIT_PREFIX = "@upstash/ratelimit";
-
-/**
- * Ephemeral in-memory cache to reduce Redis calls.
- * Shared across all requests in the same process.
- */
-const cache = new Map();
-
-/**
- * Supported time windows for rate limiting.
- */
-export type RateLimitWindow = "1 s" | "10 s" | "1 m" | "10 m" | "1 h" | "1 d";
-
-/**
- * Rate limit configuration for a procedure.
+ * Rate limit configuration for a procedure or API route.
  */
 export type RateLimitConfig = {
   /**
-   * Unique name identifying this rate limit bucket.
-   * Used in Redis key prefix for per-endpoint isolation.
-   * Examples: "screenshot:post", "dns:lookup", "trpc:getDomain"
+   * Optional name for endpoint isolation in API routes.
+   * Used as prefix in the rate limit identifier (e.g., "api:screenshot:post").
+   * Not needed for tRPC procedures (they use the procedure path automatically).
    */
   name?: string;
   /** Maximum requests allowed in the window */
   requests: number;
   /** Time window (e.g., "1 m", "10 s", "1 h") */
-  window: RateLimitWindow;
+  window: Duration;
 };
 
 /**
@@ -44,74 +26,50 @@ export const DEFAULT_RATE_LIMIT: RateLimitConfig = {
 };
 
 /**
- * Cache of rate limiter instances by config key.
- * Created lazily on first use.
+ * Ephemeral in-memory cache shared across all Ratelimit instances.
+ * Reduces Redis calls by caching recent limit checks in-memory.
  */
-const limiters = new Map<string, Ratelimit>();
+const ephemeralCache = new Map();
 
 /**
- * Generate a cache key for a rate limit config.
- * Includes name for per-endpoint isolation.
+ * Cache of Ratelimit instances by config key.
+ * Instances must be reused to benefit from the ephemeral cache.
  */
-function configKey(config: RateLimitConfig): string {
-  // Remove spaces from window for cleaner Redis keys (e.g., "1 m" -> "1m")
-  const window = config.window.replace(" ", "");
-  const base = `${config.requests}/${window}`;
-  return config.name ? `${config.name}:${base}` : base;
-}
+const instanceCache = new Map<string, Ratelimit>();
 
 /**
- * Get or create a rate limiter for the specified configuration.
+ * Get or create a cached Ratelimit instance for the specified configuration.
  *
- * Limiters are cached by their config key (name + requests + window) to avoid
- * creating duplicates when multiple calls share the same rate limit.
+ * Instances are cached by their config (requests + window) to ensure the
+ * ephemeral in-memory cache is shared across requests with the same limits.
  *
- * @param config - Rate limit configuration (name, requests, window)
- * @returns Configured Ratelimit instance
+ * Per-endpoint isolation is achieved via the identifier passed to .limit(),
+ * not by creating separate instances.
  *
- * @example
- * ```ts
- * // Named rate limiter (recommended for per-endpoint isolation)
- * const limiter = getRateLimiter({
- *   name: "screenshot:post",
- *   requests: 10,
- *   window: "1 m",
- * });
- *
- * // Anonymous rate limiter (shared bucket for same config)
- * const limiter = getRateLimiter({ requests: 60, window: "1 m" });
- * ```
+ * @param config - Rate limit configuration
+ * @returns Cached Ratelimit instance, or null if Redis unavailable
  */
-export function getRateLimiter(
-  config: RateLimitConfig = DEFAULT_RATE_LIMIT,
-): Ratelimit | null {
+export function getRateLimiter(config: RateLimitConfig): Ratelimit | null {
   const redis = getRedis();
   if (!redis) {
     return null;
   }
 
-  const key = configKey(config);
+  const cacheKey = `${config.requests}:${config.window}`;
+  let limiter = instanceCache.get(cacheKey);
 
-  let limiter = limiters.get(key);
   if (!limiter) {
     limiter = new Ratelimit({
       redis,
+      ephemeralCache,
       limiter: Ratelimit.slidingWindow(config.requests, config.window),
-      prefix: `${RATE_LIMIT_PREFIX}:${key}`,
-      ephemeralCache: cache,
-      timeout: 2000,
       analytics: true,
     });
-    limiters.set(key, limiter);
+    instanceCache.set(cacheKey, limiter);
   }
 
   return limiter;
 }
-
-/**
- * Default rate limiter instance (60 requests/minute).
- */
-export const ratelimit = getRateLimiter();
 
 /**
  * Rate limit result with timing metadata.

@@ -288,6 +288,7 @@ function createMcpHandlerWithContext(request: Request) {
 async function handler(request: Request): Promise<Response> {
   // Apply rate limiting before processing MCP requests
   const rateLimit = await checkRateLimit(request, {
+    name: "api:mcp-handler",
     requests: 30,
     window: "1 m",
   });

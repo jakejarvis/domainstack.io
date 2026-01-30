@@ -134,22 +134,21 @@ export const withRateLimit = t.middleware(async ({ ctx, meta, path, next }) => {
   }
 
   // Use user ID for authenticated requests, fall back to IP for anonymous
-  const rateLimitKey = ctx.session?.user?.id ?? ctx.ip;
-
-  // Build rate limit config with procedure path as the bucket name
-  // This ensures each procedure has its own rate limit bucket in Redis
   const limiter = getRateLimiter({
-    name: path,
     requests: meta?.rateLimit?.requests ?? 60,
     window: meta?.rateLimit?.window ?? "1 m",
   });
 
   // Fail open: no Redis or no identifier = skip rate limiting entirely
-  if (!limiter || !rateLimitKey) {
+  if (!limiter) {
     return next();
   }
-  const { success, limit, remaining, reset, pending } =
-    await limiter.limit(rateLimitKey);
+
+  // Build rate limiter with procedure path as the id prefix
+  // This ensures each procedure has its own rate limit bucket in Redis
+  const { success, limit, remaining, reset, pending } = await limiter.limit(
+    `${path}:${ctx.session?.user?.id ?? ctx.ip}`,
+  );
 
   // Handle analytics write in background (non-blocking)
   after(() => pending);

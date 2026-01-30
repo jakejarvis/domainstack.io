@@ -96,14 +96,5 @@ vi.mock("@/lib/ratelimit", () => ({
       pending: Promise.resolve(),
     }),
   })),
-  ratelimit: {
-    limit: vi.fn().mockResolvedValue({
-      success: true,
-      limit: 60,
-      remaining: 59,
-      reset: Date.now() + 60000,
-      pending: Promise.resolve(),
-    }),
-  },
   DEFAULT_RATE_LIMIT: { requests: 60, window: "1 m" },
 }));

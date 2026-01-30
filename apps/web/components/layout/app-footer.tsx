@@ -20,15 +20,16 @@ import {
 } from "@icons-pack/react-simple-icons";
 import {
   IconBookmark,
+  IconBookmarks,
+  IconBrandApple,
   IconCookie,
   IconCornerLeftUp,
   IconExternalLink,
   IconGavel,
   IconHeart,
   IconLifebuoy,
-  IconMouse,
   IconPuzzle,
-  IconStackForward,
+  IconWorld,
 } from "@tabler/icons-react";
 import * as motion from "motion/react-client";
 import Link from "next/link";
@@ -82,7 +83,7 @@ export function AppFooter() {
                 className="px-1.5 py-1 text-[13px]"
                 onClick={() => setIsBookmarkletsOpen(true)}
               >
-                <IconBookmark className="text-muted-foreground" />
+                <IconBookmarks className="text-muted-foreground" />
                 Bookmarklet
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -94,8 +95,8 @@ export function AppFooter() {
                     href={`workflow://shortcuts/${APPLE_SHORTCUT_ID}`}
                     data-disable-progress
                   >
-                    <IconStackForward className="text-muted-foreground" />
-                    Apple Shortcut
+                    <IconBrandApple className="text-muted-foreground" />
+                    Shortcut
                     <IconExternalLink className="ml-auto size-3.5 translate-y-[-1px] text-muted-foreground" />
                   </a>
                 }
@@ -104,15 +105,11 @@ export function AppFooter() {
                 nativeButton={false}
                 className="px-1.5 py-1 text-[13px]"
                 render={
-                  <a
-                    href="https://www.raycast.com/jakejarvis/domainstack"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
+                  <span>
                     <SiRaycast className="text-muted-foreground" />
-                    Raycast (Soon)
+                    Raycast (soon)
                     <IconExternalLink className="ml-auto size-3.5 translate-y-[-1px] text-muted-foreground" />
-                  </a>
+                  </span>
                 }
                 disabled
               ></DropdownMenuItem>
@@ -179,7 +176,7 @@ export function AppFooter() {
                 });
               }}
             >
-              <IconMouse />
+              <IconWorld />
               Inspect Domain
             </Button>
           </div>
