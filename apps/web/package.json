@@ -41,7 +41,7 @@
     "@sparticuz/chromium": "143.0.4",
     "@tabler/icons-react": "catalog:",
     "@tanstack/react-query": "^5.90.20",
-    "@tanstack/react-query-devtools": "^5.91.2",
+    "@tanstack/react-query-devtools": "^5.91.3",
     "@tanstack/react-query-next-experimental": "^5.91.0",
     "@tanstack/react-table": "^8.21.3",
     "@trpc/client": "^11.9.0",
