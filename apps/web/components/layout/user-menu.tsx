@@ -125,7 +125,6 @@ export function UserMenu() {
           }
         />
         <DropdownMenuSeparator />
-        {/* Theme toggle and bookmarklet - now visible on all screen sizes */}
         <DropdownMenuItem onClick={toggleTheme}>
           {theme === "dark" ? <IconSun /> : <IconMoon />}
           {theme === "dark" ? "Light mode" : "Dark mode"}

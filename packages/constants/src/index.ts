@@ -1,7 +1,7 @@
 /**
  * @domainstack/constants
  *
- * Shared constants and primitives for the DomainStack platform.
+ * Shared constants and primitives for the Domainstack platform.
  */
 
 export * from "./ai";

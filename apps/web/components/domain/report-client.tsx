@@ -11,6 +11,8 @@ import {
 } from "@domainstack/ui/empty";
 import { IconAlertTriangle, IconRefresh } from "@tabler/icons-react";
 import {
+  dehydrate,
+  HydrationBoundary,
   useQuery,
   useQueryClient,
   useSuspenseQuery,
@@ -157,6 +159,18 @@ export function DomainReportClient({ domain }: { domain: string }) {
   const domainId = registration?.data?.domainId;
   const isRegistered = registration?.data?.isRegistered === true;
 
+  void Promise.all([
+    queryClient.prefetchQuery(trpc.domain.getHosting.queryOptions({ domain })),
+    queryClient.prefetchQuery(
+      trpc.domain.getDnsRecords.queryOptions({ domain }),
+    ),
+    queryClient.prefetchQuery(
+      trpc.domain.getCertificates.queryOptions({ domain }),
+    ),
+    queryClient.prefetchQuery(trpc.domain.getHeaders.queryOptions({ domain })),
+    queryClient.prefetchQuery(trpc.domain.getSeo.queryOptions({ domain })),
+  ]);
+
   // Add to search history for registered domains
   const addDomainToHistory = useSearchHistoryStore((s) => s.addDomain);
   useEffect(() => {
@@ -250,7 +264,7 @@ export function DomainReportClient({ domain }: { domain: string }) {
   }
 
   return (
-    <div>
+    <HydrationBoundary state={dehydrate(queryClient)}>
       <DomainReportHeader
         domain={domain}
         domainId={domainId}
@@ -309,6 +323,6 @@ export function DomainReportClient({ domain }: { domain: string }) {
           </>
         )}
       </div>
-    </div>
+    </HydrationBoundary>
   );
 }

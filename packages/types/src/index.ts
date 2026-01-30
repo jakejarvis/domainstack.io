@@ -1,7 +1,7 @@
 /**
  * @domainstack/types
  *
- * Shared TypeScript interfaces for the DomainStack platform.
+ * Shared TypeScript interfaces for the Domainstack platform.
  *
  * Exports:
  * - domain: Domain scan response types (registration, DNS, hosting, certificates, etc.)

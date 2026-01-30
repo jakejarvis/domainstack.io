@@ -361,9 +361,9 @@ describe("fetchBootstrapData", () => {
         });
       });
 
-    await fetchBootstrapData("DomainStack/1.0");
+    await fetchBootstrapData("Domainstack/1.0");
 
-    expect(capturedHeaders["User-Agent"]).toBe("DomainStack/1.0");
+    expect(capturedHeaders["User-Agent"]).toBe("Domainstack/1.0");
   });
 
   it("does not include userAgent header when not provided", async () => {

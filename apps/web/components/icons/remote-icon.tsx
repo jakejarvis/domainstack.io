@@ -3,9 +3,9 @@
 import { Skeleton } from "@domainstack/ui/skeleton";
 import { cn } from "@domainstack/ui/utils";
 import { simpleHash } from "@domainstack/utils";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
-import { Component, Suspense, useState } from "react";
+import { useState } from "react";
 import type { FaviconWorkflowResult } from "@/workflows/favicon";
 import type { ProviderLogoWorkflowResult } from "@/workflows/provider-logo";
 
@@ -112,34 +112,10 @@ function FallbackIcon({
 }
 
 /**
- * Error boundary that catches query failures and renders the fallback icon.
- * This prevents favicon/logo workflow errors from crashing the entire page.
+ * Shared component for rendering remote icons (favicons, logos, etc.)
+ * with loading states, error handling, and letter avatar fallback.
  */
-class IconErrorBoundary extends Component<
-  { children: React.ReactNode; fallbackProps: FallbackIconProps },
-  { hasError: boolean }
-> {
-  constructor(props: {
-    children: React.ReactNode;
-    fallbackProps: FallbackIconProps;
-  }) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError(): { hasError: boolean } {
-    return { hasError: true };
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return <FallbackIcon {...this.props.fallbackProps} />;
-    }
-    return this.props.children;
-  }
-}
-
-function SuspendedIcon({
+export function RemoteIcon({
   size = 32,
   className,
   style,
@@ -150,7 +126,11 @@ function SuspendedIcon({
 }: RemoteIconProps) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
 
-  const { data: result } = useSuspenseQuery<IconWorkflowResult>({
+  const {
+    data: result,
+    isLoading,
+    isError,
+  } = useQuery<IconWorkflowResult>({
     ...queryOptions,
     // Disable retries - icons should fail fast to fallback
     retry: false,
@@ -161,10 +141,15 @@ function SuspendedIcon({
     refetchOnReconnect: false,
   });
 
-  const url = result.data?.url;
+  // Loading state: show skeleton
+  if (isLoading) {
+    return <IconSkeleton className={className} style={style} />;
+  }
 
-  // Query completed: show letter avatar if no icon found or image failed to load
-  if (!url || failedUrl === url) {
+  const url = result?.data?.url;
+
+  // Error or no URL: show letter avatar fallback
+  if (isError || !url || failedUrl === url) {
     return (
       <FallbackIcon
         size={size}
@@ -193,22 +178,5 @@ function SuspendedIcon({
       onError={() => setFailedUrl(url)}
       {...(dataAttribute ? { [dataAttribute]: fallbackIdentifier } : {})}
     />
-  );
-}
-
-/**
- * Shared component for rendering remote icons (favicons, logos, etc.)
- * with loading states, error handling, and letter avatar fallback.
- */
-export function RemoteIcon(props: RemoteIconProps) {
-  const { queryOptions: _, ...fallbackProps } = props;
-  const { className, style } = props;
-
-  return (
-    <IconErrorBoundary fallbackProps={fallbackProps}>
-      <Suspense fallback={<IconSkeleton className={className} style={style} />}>
-        <SuspendedIcon {...props} />
-      </Suspense>
-    </IconErrorBoundary>
   );
 }

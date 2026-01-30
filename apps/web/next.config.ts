@@ -56,13 +56,6 @@ let nextConfig: NextConfig = {
       destination: "/api/healthz",
     },
   ],
-  redirects: async () => [
-    {
-      source: "/bookmarklet",
-      destination: "/bookmarklets",
-      permanent: true,
-    },
-  ],
   skipTrailingSlashRedirect: true,
 };
 

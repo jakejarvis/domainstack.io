@@ -1,7 +1,7 @@
 /**
  * @domainstack/utils
  *
- * Shared utility functions for the DomainStack platform.
+ * Shared utility functions for the Domainstack platform.
  */
 
 export * from "./country-emoji";

@@ -1,7 +1,7 @@
 /**
  * @domainstack/core
  *
- * Shared domain lookup logic for DomainStack.
+ * Shared domain lookup logic for Domainstack.
  *
  * This package provides Node.js-only utilities for:
  * - Provider detection (hosting, email, DNS, registrar, CA)
