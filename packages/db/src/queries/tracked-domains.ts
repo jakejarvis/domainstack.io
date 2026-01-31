@@ -2,13 +2,13 @@ import type {
   VerificationMethod,
   VerificationStatus,
 } from "@domainstack/constants";
-import { deduplicateDnsRecordsByValue } from "@domainstack/core/dns";
 import type {
   DnsRecord,
   ProviderInfo,
   RegistrationContact,
   TrackedDomainWithDetails,
 } from "@domainstack/types";
+import { deduplicateDnsRecordsByValue } from "@domainstack/utils/dns";
 import type { SQL } from "drizzle-orm";
 import {
   and,

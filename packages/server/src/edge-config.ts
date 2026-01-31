@@ -5,11 +5,11 @@
  * Uses React's cache() for request-level deduplication.
  */
 
+import { createLogger } from "@domainstack/logger";
 import {
   type ProviderCatalog,
   safeParseProviderCatalog,
-} from "@domainstack/core/providers";
-import { createLogger } from "@domainstack/logger";
+} from "@domainstack/utils/providers";
 import { get } from "@vercel/edge-config";
 import { cache } from "react";
 

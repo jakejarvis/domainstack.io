@@ -71,7 +71,7 @@ async function fetchDnsRecords(domain: string): Promise<DnsFetchData> {
     providerOrderForLookup,
     queryDohProvider,
     sortDnsRecordsByType,
-  } = await import("@domainstack/core/dns");
+  } = await import("@domainstack/utils/dns");
 
   const providers = providerOrderForLookup(domain);
   const types = DNS_RECORD_TYPES;

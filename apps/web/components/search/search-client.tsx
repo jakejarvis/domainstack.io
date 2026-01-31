@@ -1,10 +1,6 @@
 "use client";
 
 import { analytics } from "@domainstack/analytics/client";
-import {
-  isValidDomain,
-  normalizeDomainInput,
-} from "@domainstack/core/domain/client";
 import { Field, FieldLabel } from "@domainstack/ui/field";
 import { Form } from "@domainstack/ui/form";
 import {
@@ -16,6 +12,10 @@ import {
 import { Kbd } from "@domainstack/ui/kbd";
 import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
+import {
+  isValidDomain,
+  normalizeDomainInput,
+} from "@domainstack/utils/domain/client";
 import { IconArrowRight, IconCircleX, IconSearch } from "@tabler/icons-react";
 import { useAtom } from "jotai";
 import { useParams } from "next/navigation";

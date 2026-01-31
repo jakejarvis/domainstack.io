@@ -53,18 +53,18 @@ describe("providerOrderForLookup", () => {
 });
 
 describe("queryDohProvider", () => {
-  const originalFetch = global.fetch;
+  const originalFetch = globalThis.fetch;
 
   beforeEach(() => {
     vi.resetAllMocks();
   });
 
   afterEach(() => {
-    global.fetch = originalFetch;
+    globalThis.fetch = originalFetch;
   });
 
   it("returns answers for successful response", async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: () =>
         Promise.resolve({
@@ -79,11 +79,11 @@ describe("queryDohProvider", () => {
 
     expect(answers).toHaveLength(1);
     expect(answers[0]?.data).toBe("93.184.216.34");
-    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
   });
 
   it("returns empty array for NXDOMAIN (Status !== 0)", async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: () =>
         Promise.resolve({
@@ -102,7 +102,7 @@ describe("queryDohProvider", () => {
   });
 
   it("returns empty array when Answer is undefined", async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: () =>
         Promise.resolve({
@@ -117,7 +117,7 @@ describe("queryDohProvider", () => {
   });
 
   it("throws on non-2xx HTTP response", async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: false,
       status: 500,
     });
@@ -128,7 +128,7 @@ describe("queryDohProvider", () => {
   });
 
   it("throws on non-object JSON response", async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: () => Promise.resolve(null),
     });
@@ -139,7 +139,7 @@ describe("queryDohProvider", () => {
   });
 
   it("throws when Answer is not an array", async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: () =>
         Promise.resolve({
@@ -155,7 +155,7 @@ describe("queryDohProvider", () => {
 
   it("adds cacheBust parameter when option is true", async () => {
     let capturedUrl = "";
-    global.fetch = vi.fn().mockImplementation((url: URL) => {
+    globalThis.fetch = vi.fn().mockImplementation((url: URL) => {
       capturedUrl = url.toString();
       return Promise.resolve({
         ok: true,
@@ -172,7 +172,7 @@ describe("queryDohProvider", () => {
 
   it("does not add cacheBust parameter by default", async () => {
     let capturedUrl = "";
-    global.fetch = vi.fn().mockImplementation((url: URL) => {
+    globalThis.fetch = vi.fn().mockImplementation((url: URL) => {
       capturedUrl = url.toString();
       return Promise.resolve({
         ok: true,
@@ -187,7 +187,7 @@ describe("queryDohProvider", () => {
 
   it("sets correct Accept header", async () => {
     let capturedHeaders: Record<string, string> = {};
-    global.fetch = vi
+    globalThis.fetch = vi
       .fn()
       .mockImplementation((_url: string, options: RequestInit) => {
         capturedHeaders = options.headers as Record<string, string>;

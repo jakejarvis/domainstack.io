@@ -112,10 +112,8 @@ async function fetchHtml(domain: string): Promise<HtmlFetchData> {
   const { isExpectedDnsError, safeFetch } = await import(
     "@domainstack/safe-fetch"
   );
-  const { parseHtmlMeta, selectPreview } = await import(
-    "@domainstack/core/seo"
-  );
-  const { isExpectedTlsError } = await import("@domainstack/core/tls");
+  const { parseHtmlMeta, selectPreview } = await import("../seo");
+  const { isExpectedTlsError } = await import("../tls");
 
   let finalUrl = `https://${domain}/`;
   let status: number | null = null;
@@ -220,8 +218,8 @@ async function fetchHtml(domain: string): Promise<HtmlFetchData> {
 
 async function fetchRobots(domain: string): Promise<RobotsFetchData> {
   const { safeFetch } = await import("@domainstack/safe-fetch");
-  const { parseRobotsTxt } = await import("@domainstack/core/seo");
-  const { isExpectedTlsError } = await import("@domainstack/core/tls");
+  const { parseRobotsTxt } = await import("../seo");
+  const { isExpectedTlsError } = await import("../tls");
 
   const robotsUrl = `https://${domain}/robots.txt`;
 

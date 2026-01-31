@@ -6,11 +6,11 @@
  * Permanent errors return { success: false, error }.
  */
 
-import type { Provider, ProviderCatalog } from "@domainstack/core/providers";
 import type {
   RegistrationContact,
   RegistrationResponse,
 } from "@domainstack/types";
+import type { Provider, ProviderCatalog } from "@domainstack/utils/providers";
 import { getProviderCatalog } from "../edge-config";
 import { ttlForRegistration } from "../ttl";
 
@@ -74,7 +74,7 @@ type LookupResult =
   | { success: false; error: RegistrationError };
 
 async function lookupWhois(domain: string): Promise<LookupResult> {
-  const { lookupWhois: lookup } = await import("@domainstack/core/whois");
+  const { lookupWhois: lookup } = await import("../whois");
 
   const result = await lookup(domain, {
     userAgent: process.env.EXTERNAL_USER_AGENT,
@@ -107,7 +107,7 @@ async function normalizeRegistration(
   const { catalog } = options;
 
   const { detectRegistrar, getProvidersFromCatalog } = await import(
-    "@domainstack/core/providers"
+    "@domainstack/utils/providers"
   );
   const { upsertCatalogProvider, resolveOrCreateProviderId } = await import(
     "@domainstack/db/queries"
@@ -199,7 +199,7 @@ async function persistRegistration(
   domain: string,
   response: RegistrationResponse,
 ): Promise<void> {
-  const { getDomainTld } = await import("@domainstack/core/domain");
+  const { getDomainTld } = await import("@domainstack/utils/domain");
   const { upsertDomain, upsertRegistration } = await import(
     "@domainstack/db/queries"
   );

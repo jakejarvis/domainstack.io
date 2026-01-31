@@ -2,7 +2,7 @@ import { BLACKLISTED_SUFFIXES } from "@domainstack/constants";
 import {
   normalizeDomainInput,
   toRegistrableDomain as toRegistrableDomainCore,
-} from "@domainstack/core/domain";
+} from "@domainstack/utils/domain";
 import { LRUCache } from "lru-cache";
 
 /**

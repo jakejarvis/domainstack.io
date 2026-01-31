@@ -73,7 +73,7 @@ async function fetchHttpHeaders(domain: string): Promise<FetchResult> {
   const { isExpectedDnsError, safeFetch } = await import(
     "@domainstack/safe-fetch"
   );
-  const { isExpectedTlsError } = await import("@domainstack/core/tls");
+  const { isExpectedTlsError } = await import("../tls");
 
   const allowedHosts = [domain, `www.${domain}`];
 

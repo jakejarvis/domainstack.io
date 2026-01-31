@@ -4,8 +4,8 @@
  * These functions are safe to use in browser bundles - they don't depend on
  * rdapper or the Public Suffix List, only using basic string manipulation.
  *
- * For server-side PSL-based domain parsing, use the exports from the main
- * `@domainstack/core/domain` entry point.
+ * For server-side PSL-based domain parsing, use the exports from
+ * `@domainstack/utils/domain`.
  */
 
 // Matches beginning "http:" or "https:" followed by any number of slashes/colons

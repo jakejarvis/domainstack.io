@@ -5,11 +5,11 @@
  * This step is shared between the dedicated registrationWorkflow and internal workflows.
  */
 
-import type { Provider } from "@domainstack/core/providers";
 import type {
   RegistrationContact,
   RegistrationResponse,
 } from "@domainstack/types";
+import type { Provider } from "@domainstack/utils/providers";
 
 // Type for parsed RDAP record
 interface ParsedRdapRecord {
@@ -65,7 +65,7 @@ export async function normalizeAndBuildResponseStep(
     "@domainstack/server/edge-config"
   );
   const { detectRegistrar, getProvidersFromCatalog } = await import(
-    "@domainstack/core/providers"
+    "@domainstack/utils/providers"
   );
   const { upsertCatalogProvider, resolveOrCreateProviderId } = await import(
     "@domainstack/db/queries"

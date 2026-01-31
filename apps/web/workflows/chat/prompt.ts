@@ -5,7 +5,7 @@ export async function buildSystemPromptStep(domain?: string): Promise<string> {
   "use step";
 
   // Validate domain format before interpolating into prompt
-  const { isValidDomain } = await import("@domainstack/core/domain");
+  const { isValidDomain } = await import("@domainstack/utils/domain");
   const validatedDomain = domain && isValidDomain(domain) ? domain : undefined;
 
   const { CHATBOT_NAME } = await import("@domainstack/constants");

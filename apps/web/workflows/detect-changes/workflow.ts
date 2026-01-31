@@ -1,8 +1,8 @@
-import { statusesAreEqual } from "@domainstack/core/whois";
 import type {
   CertificateSnapshotData,
   RegistrationSnapshotData,
 } from "@domainstack/db/schema";
+import { statusesAreEqual } from "@domainstack/server/whois";
 import type {
   CertificatesResponse,
   HostingResponse,

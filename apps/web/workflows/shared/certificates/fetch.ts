@@ -5,7 +5,7 @@
  * This step is shared between the dedicated certificatesWorkflow and internal workflows.
  */
 
-import type { RawCertificate } from "@domainstack/core/tls";
+import type { RawCertificate } from "@domainstack/server/tls";
 import type { Certificate } from "@domainstack/types";
 import { RetryableError } from "workflow";
 import type {
@@ -28,7 +28,7 @@ export async function fetchCertificateChainStep(
   "use step";
 
   // Dynamic import to keep step bundle small
-  const { fetchCertificateChain } = await import("@domainstack/core/tls");
+  const { fetchCertificateChain } = await import("@domainstack/server/tls");
 
   const result = await fetchCertificateChain(domain);
 
@@ -69,7 +69,7 @@ export async function processChainStep(
     "@domainstack/server/edge-config"
   );
   const { detectCertificateAuthority, getProvidersFromCatalog } = await import(
-    "@domainstack/core/providers"
+    "@domainstack/utils/providers"
   );
   const { upsertCatalogProvider } = await import("@domainstack/db/queries");
 

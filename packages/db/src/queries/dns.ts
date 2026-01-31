@@ -1,10 +1,10 @@
 import { DNS_RECORD_TYPES } from "@domainstack/constants";
+import type { DnsRecord, DnsRecordsResponse } from "@domainstack/types";
 import {
   deduplicateDnsRecords,
   makeDnsRecordKey,
   sortDnsRecordsByType,
-} from "@domainstack/core/dns";
-import type { DnsRecord, DnsRecordsResponse } from "@domainstack/types";
+} from "@domainstack/utils/dns";
 import type { InferInsertModel } from "drizzle-orm";
 import { eq, inArray, sql } from "drizzle-orm";
 import { db } from "../client";

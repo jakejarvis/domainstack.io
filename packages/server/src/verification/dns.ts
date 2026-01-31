@@ -6,7 +6,10 @@ import {
   DNS_VERIFICATION_HOST_LEGACY,
   DNS_VERIFICATION_PREFIX,
 } from "@domainstack/constants";
-import { providerOrderForLookup, queryDohProvider } from "../dns";
+import {
+  providerOrderForLookup,
+  queryDohProvider,
+} from "@domainstack/utils/dns";
 import type { VerificationResult } from "./types";
 
 /**

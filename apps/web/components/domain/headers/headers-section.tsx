@@ -1,7 +1,6 @@
 "use client";
 
 import { IMPORTANT_HEADERS } from "@domainstack/constants";
-import { normalizeDomainInput } from "@domainstack/core/domain/client";
 import type { HeadersResponse } from "@domainstack/types";
 import { Alert, AlertDescription } from "@domainstack/ui/alert";
 import {
@@ -11,6 +10,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@domainstack/ui/empty";
+import { normalizeDomainInput } from "@domainstack/utils/domain/client";
 import {
   IconExternalLink,
   IconInfoCircle,

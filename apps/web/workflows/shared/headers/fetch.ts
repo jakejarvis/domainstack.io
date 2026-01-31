@@ -49,7 +49,7 @@ export async function fetchHeadersStep(
   const { isExpectedDnsError, safeFetch } = await import(
     "@domainstack/safe-fetch"
   );
-  const { isExpectedTlsError } = await import("@domainstack/core/tls");
+  const { isExpectedTlsError } = await import("@domainstack/server/tls");
 
   const allowedHosts = [domain, `www.${domain}`];
 

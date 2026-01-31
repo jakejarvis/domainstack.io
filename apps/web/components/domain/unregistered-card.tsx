@@ -1,7 +1,7 @@
 "use client";
 
 import { NONPUBLIC_TLDS } from "@domainstack/constants";
-import { extractTldClient } from "@domainstack/core/domain/client";
+import { extractTldClient } from "@domainstack/utils/domain/client";
 import { Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import {

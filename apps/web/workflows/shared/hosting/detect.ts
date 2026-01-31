@@ -46,7 +46,7 @@ export async function detectAndResolveProvidersStep(
     detectEmailProvider,
     detectHostingProvider,
     getProvidersFromCatalog,
-  } = await import("@domainstack/core/providers");
+  } = await import("@domainstack/utils/providers");
   const { upsertCatalogProvider, resolveOrCreateProviderId } = await import(
     "@domainstack/db/queries"
   );

@@ -23,7 +23,7 @@ export async function lookupWhoisStep(
   "use step";
 
   // Dynamic import to keep step bundle small
-  const { lookupWhois } = await import("@domainstack/core/whois");
+  const { lookupWhois } = await import("@domainstack/server/whois");
 
   const result = await lookupWhois(domain, {
     userAgent: process.env.EXTERNAL_USER_AGENT,

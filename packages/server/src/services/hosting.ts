@@ -197,14 +197,14 @@ async function detectAndResolveProviders(
   headers: Header[],
   geoData: GeoIpData | null,
 ): Promise<ProviderDetectionData> {
-  const { toRegistrableDomain } = await import("@domainstack/core/domain");
+  const { toRegistrableDomain } = await import("@domainstack/utils/domain");
   const { getProviderCatalog } = await import("../edge-config");
   const {
     detectDnsProvider,
     detectEmailProvider,
     detectHostingProvider,
     getProvidersFromCatalog,
-  } = await import("@domainstack/core/providers");
+  } = await import("@domainstack/utils/providers");
   const { upsertCatalogProvider, resolveOrCreateProviderId } = await import(
     "@domainstack/db/queries"
   );

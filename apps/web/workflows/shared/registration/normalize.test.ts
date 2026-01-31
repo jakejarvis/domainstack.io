@@ -7,7 +7,7 @@ vi.mock("@domainstack/server/edge-config", () => ({
 }));
 
 // Mock provider detection
-vi.mock("@domainstack/core/providers", () => ({
+vi.mock("@domainstack/utils/providers", () => ({
   detectRegistrar: vi.fn().mockReturnValue(null),
   getProvidersFromCatalog: vi.fn().mockReturnValue([]),
 }));

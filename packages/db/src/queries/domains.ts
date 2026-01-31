@@ -1,4 +1,4 @@
-import { getDomainTld } from "@domainstack/core/domain";
+import { getDomainTld } from "@domainstack/utils/domain";
 import { and, desc, eq, gt, isNull, lt, or } from "drizzle-orm";
 import { db } from "../client";
 import { domains } from "../schema";

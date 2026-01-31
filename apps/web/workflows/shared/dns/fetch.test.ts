@@ -102,7 +102,7 @@ const dnsUtilsMock = vi.hoisted(() => {
   };
 });
 
-vi.mock("@domainstack/core/dns", () => dnsUtilsMock);
+vi.mock("@domainstack/utils/dns", () => dnsUtilsMock);
 
 // Mock cloudflare IP check
 vi.mock("@/lib/cloudflare", () => ({

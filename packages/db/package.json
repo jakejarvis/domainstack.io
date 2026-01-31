@@ -24,8 +24,8 @@
   },
   "dependencies": {
     "@domainstack/constants": "workspace:*",
-    "@domainstack/core": "workspace:*",
     "@domainstack/types": "workspace:*",
+    "@domainstack/utils": "workspace:*",
     "drizzle-orm": "^0.45.1",
     "pg": "^8.18.0"
   },

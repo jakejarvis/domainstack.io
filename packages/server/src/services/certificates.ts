@@ -6,8 +6,8 @@
  * Permanent errors return { success: false, error }.
  */
 
-import type { RawCertificate } from "@domainstack/core/tls";
 import type { Certificate, CertificatesResponse } from "@domainstack/types";
+import type { RawCertificate } from "../tls";
 import { ttlForCertificates } from "../ttl";
 
 // ============================================================================
@@ -71,7 +71,7 @@ type FetchResult =
 async function fetchCertificateChainInternal(
   domain: string,
 ): Promise<FetchResult> {
-  const { fetchCertificateChain } = await import("@domainstack/core/tls");
+  const { fetchCertificateChain } = await import("../tls");
 
   const result = await fetchCertificateChain(domain);
 
@@ -100,7 +100,7 @@ async function processChain(
 ): Promise<CertificatesProcessedData> {
   const { getProviderCatalog } = await import("../edge-config");
   const { detectCertificateAuthority, getProvidersFromCatalog } = await import(
-    "@domainstack/core/providers"
+    "@domainstack/utils/providers"
   );
   const { upsertCatalogProvider } = await import("@domainstack/db/queries");
 
