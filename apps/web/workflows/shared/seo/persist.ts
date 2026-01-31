@@ -35,7 +35,7 @@ export async function persistSeoStep(
   "use step";
 
   // Dynamic imports for Node.js modules and database operations
-  const { ttlForSeo } = await import("@/lib/ttl");
+  const { ttlForSeo } = await import("@domainstack/server/ttl");
   const { ensureDomainRecord, upsertSeo } = await import(
     "@domainstack/db/queries"
   );

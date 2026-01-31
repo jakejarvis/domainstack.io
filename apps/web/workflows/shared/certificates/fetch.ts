@@ -65,7 +65,9 @@ export async function processChainStep(
   "use step";
 
   // Dynamic imports to avoid top-level db/network dependencies
-  const { getProviderCatalog } = await import("@/lib/edge-config");
+  const { getProviderCatalog } = await import(
+    "@domainstack/server/edge-config"
+  );
   const { detectCertificateAuthority, getProvidersFromCatalog } = await import(
     "@domainstack/core/providers"
   );

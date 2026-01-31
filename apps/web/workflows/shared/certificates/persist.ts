@@ -31,7 +31,7 @@ export async function persistCertificatesStep(
   const { ensureDomainRecord, replaceCertificates } = await import(
     "@domainstack/db/queries"
   );
-  const { ttlForCertificates } = await import("@/lib/ttl");
+  const { ttlForCertificates } = await import("@domainstack/server/ttl");
 
   const now = new Date();
 

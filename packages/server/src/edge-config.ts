@@ -1,3 +1,10 @@
+/**
+ * Vercel Edge Config utilities.
+ *
+ * Provides cached access to configuration stored in Vercel Edge Config.
+ * Uses React's cache() for request-level deduplication.
+ */
+
 import {
   type ProviderCatalog,
   safeParseProviderCatalog,
@@ -16,43 +23,24 @@ const logger = createLogger({ source: "edge-config" });
  *
  * Edge Config key: `domain_suggestions`
  *
- * Expected schema:
- * ```json
- * {
- *   "domain_suggestions": [
- *     "github.com",
- *     "reddit.com",
- *     "wikipedia.org",
- *     "firefox.com",
- *     "jarv.is"
- *   ]
- * }
- * ```
- *
  * @returns Array of suggested domain names (empty array if unavailable)
  */
 export const getDefaultSuggestions = cache(async (): Promise<string[]> => {
-  // If EDGE_CONFIG is not set, return empty array
   if (!process.env.EDGE_CONFIG) {
     return [];
   }
 
   try {
     const suggestions = await get<string[]>("domain_suggestions");
-
-    // Return the suggestions if they exist, otherwise empty array
     return suggestions ?? [];
   } catch (err) {
     // Check for specific prerender error from Next.js/Edge Config
-    // "During prerendering, dynamic "use cache" rejects when the prerender is complete."
     const isPrerenderError =
       err instanceof Error && err.message.includes("During prerendering");
 
     if (isPrerenderError) {
-      // This is expected during static generation when accessing dynamic data
       logger.info("skipping domain suggestions during prerender");
     } else {
-      // Log unexpected errors but still fail gracefully
       logger.error(err, "failed to fetch domain suggestions");
     }
 
@@ -68,24 +56,10 @@ export const getDefaultSuggestions = cache(async (): Promise<string[]> => {
  *
  * Edge Config key: `provider_catalog`
  *
- * Expected schema:
- * ```json
- * {
- *   "provider_catalog": {
- *     "ca": [{ "name": "Let's Encrypt", "domain": "letsencrypt.org", "rule": {...} }],
- *     "dns": [...],
- *     "email": [...],
- *     "hosting": [...],
- *     "registrar": [...]
- *   }
- * }
- * ```
- *
  * @returns Validated ProviderCatalog or null if unavailable/invalid
  */
 export const getProviderCatalog = cache(
   async (): Promise<ProviderCatalog | null> => {
-    // If EDGE_CONFIG is not set, return null
     if (!process.env.EDGE_CONFIG) {
       return null;
     }
@@ -107,7 +81,6 @@ export const getProviderCatalog = cache(
 
       return result.data;
     } catch (err) {
-      // Log unexpected errors but still fail gracefully
       logger.error(err, "failed to fetch provider catalog");
       return null;
     }
@@ -122,15 +95,6 @@ export const getProviderCatalog = cache(
  *
  * Edge Config key: `screenshot_blocklist_sources`
  *
- * Expected schema:
- * ```json
- * {
- *   "screenshot_blocklist_sources": [
- *     "https://nsfw.oisd.nl/domainswild"
- *   ]
- * }
- * ```
- *
  * @returns Array of blocklist source URLs (empty array if unavailable)
  */
 export async function getBlocklistSources(): Promise<string[]> {
@@ -142,7 +106,6 @@ export async function getBlocklistSources(): Promise<string[]> {
     const sources = await get<string[]>("screenshot_blocklist_sources");
     return sources ?? [];
   } catch (err) {
-    // Log unexpected errors but still fail gracefully
     logger.error(err, "failed to fetch screenshot blocklist sources");
     return [];
   }
@@ -155,13 +118,6 @@ export async function getBlocklistSources(): Promise<string[]> {
  * The caller should fall back to a default model when null is returned.
  *
  * Edge Config key: `ai_chat_model`
- *
- * Expected schema:
- * ```json
- * {
- *   "ai_chat_model": "anthropic/claude-sonnet-4.5"
- * }
- * ```
  *
  * @returns AI Gateway model identifier, or null if unavailable
  */

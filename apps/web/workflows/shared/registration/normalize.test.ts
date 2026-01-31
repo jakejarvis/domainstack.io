@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock Edge Config
-vi.mock("@/lib/edge-config", () => ({
+vi.mock("@domainstack/server/edge-config", () => ({
   getProviderCatalog: vi.fn().mockResolvedValue(null),
 }));
 

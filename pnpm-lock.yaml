@@ -99,6 +99,9 @@ importers:
       '@domainstack/safe-fetch':
         specifier: workspace:*
         version: link:../../packages/safe-fetch
+      '@domainstack/server':
+        specifier: workspace:*
+        version: link:../../packages/server
       '@domainstack/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -164,7 +167,7 @@ importers:
         version: 2.0.1
       '@vercel/edge-config':
         specifier: ^1.4.3
-        version: 1.4.3(@opentelemetry/api@1.9.0)(next@16.1.6(@babel/core@7.28.6)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))
+        version: 1.4.3(@opentelemetry/api@1.9.0)(next@16.1.6(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))
       '@vercel/functions':
         specifier: ^3.4.0
         version: 3.4.0(@aws-sdk/credential-provider-web-identity@3.609.0(@aws-sdk/client-sts@3.980.0))
@@ -731,6 +734,43 @@ importers:
       puppeteer:
         specifier: 24.35.0
         version: 24.35.0(bufferutil@4.1.0)(typescript@5.9.3)
+
+  packages/server:
+    dependencies:
+      '@domainstack/constants':
+        specifier: workspace:*
+        version: link:../constants
+      '@domainstack/core':
+        specifier: workspace:*
+        version: link:../core
+      '@domainstack/db':
+        specifier: workspace:*
+        version: link:../db
+      '@domainstack/logger':
+        specifier: workspace:*
+        version: link:../logger
+      '@domainstack/types':
+        specifier: workspace:*
+        version: link:../types
+      '@vercel/edge-config':
+        specifier: ^1.4.0
+        version: 1.4.3(@opentelemetry/api@1.9.0)(next@16.1.6(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))
+      react:
+        specifier: 19.2.4
+        version: 19.2.4
+    devDependencies:
+      '@domainstack/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.0.10
+      '@types/react':
+        specifier: 19.2.10
+        version: 19.2.10
+      vitest:
+        specifier: 'catalog:'
+        version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.0.10)(@vitest/browser-playwright@4.0.18)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.12.7(@types/node@25.0.10)(typescript@5.9.3))(terser@5.46.0)
 
   packages/types:
     dependencies:
@@ -11259,7 +11299,7 @@ snapshots:
 
   '@vercel/edge-config-fs@0.1.0': {}
 
-  '@vercel/edge-config@1.4.3(@opentelemetry/api@1.9.0)(next@16.1.6(@babel/core@7.28.6)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))':
+  '@vercel/edge-config@1.4.3(@opentelemetry/api@1.9.0)(next@16.1.6(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))':
     dependencies:
       '@vercel/edge-config-fs': 0.1.0
     optionalDependencies:

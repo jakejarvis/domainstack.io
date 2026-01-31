@@ -49,7 +49,7 @@ const mockCatalog = {
   registrar: [],
 };
 
-vi.mock("@/lib/edge-config", () => ({
+vi.mock("@domainstack/server/edge-config", () => ({
   getProviderCatalog: vi.fn().mockResolvedValue(mockCatalog),
 }));
 

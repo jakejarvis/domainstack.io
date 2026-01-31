@@ -31,7 +31,7 @@ export async function persistHostingStep(
   "use step";
 
   // Dynamic imports for Node.js modules and database operations
-  const { ttlForHosting } = await import("@/lib/ttl");
+  const { ttlForHosting } = await import("@domainstack/server/ttl");
   const { ensureDomainRecord, upsertHosting } = await import(
     "@domainstack/db/queries"
   );

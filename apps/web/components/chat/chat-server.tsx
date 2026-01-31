@@ -1,4 +1,4 @@
-import { getDefaultSuggestions } from "@/lib/edge-config";
+import { getDefaultSuggestions } from "@domainstack/server/edge-config";
 import { ChatClient } from "./chat-client";
 
 /** Question templates - each takes a domain and returns a suggestion */

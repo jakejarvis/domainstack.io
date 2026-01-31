@@ -13,12 +13,35 @@ import {
 const { makePGliteDb, closePGliteDb } = await import("@domainstack/db/testing");
 const { db } = await makePGliteDb();
 
-// Mock workflow/api to avoid starting real workflows
+// Mock workflow/api to avoid starting real workflows (still used by non-registration procedures)
 vi.mock("workflow/api", () => ({
   start: vi.fn().mockResolvedValue({
     runId: "mock-run-id",
     returnValue: Promise.resolve({ success: true, data: {} }),
   }),
+}));
+
+// Mock the registration service (used by getRegistration)
+vi.mock("@domainstack/server", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@domainstack/server")>();
+  return {
+    ...original,
+    fetchRegistration: vi.fn().mockResolvedValue({
+      success: true,
+      data: {
+        isRegistered: true,
+        registrarProvider: {
+          id: "00000000-0000-0000-0000-000000000002",
+          name: "Unknown",
+        },
+      },
+    }),
+  };
+});
+
+// Mock edge-config
+vi.mock("@domainstack/server/edge-config", () => ({
+  getProviderCatalog: vi.fn().mockResolvedValue(null),
 }));
 
 // Mock next/headers to avoid errors outside request context
@@ -36,6 +59,7 @@ const { dnsRecords, domains, providers, registrations } = await import(
   "@domainstack/db/schema"
 );
 const { start } = await import("workflow/api");
+const { fetchRegistration } = await import("@domainstack/server");
 const { createCaller } = await import("@/server/routers/_app");
 
 import type { Context } from "@/trpc/init";
@@ -116,19 +140,31 @@ describe("domain router", () => {
     it("normalizes domain to registrable form", async () => {
       const caller = createTestCaller();
 
-      // Mock workflow to capture the input
-      vi.mocked(start).mockResolvedValue({
-        returnValue: Promise.resolve({
-          success: true,
-          data: { isRegistered: true },
-        }),
-      } as never);
+      // Mock service to capture the input
+      vi.mocked(fetchRegistration).mockResolvedValue({
+        success: true,
+        data: {
+          domain: "example.com",
+          tld: "com",
+          isRegistered: true,
+          status: "registered",
+          source: "rdap",
+          registrarProvider: {
+            id: TEST_PROVIDER_ID,
+            name: "Unknown",
+            domain: null,
+          },
+        },
+      });
 
       // www.example.com should be normalized to example.com
       await caller.domain.getRegistration({ domain: "www.example.com" });
 
-      // The workflow should be called with the normalized domain
-      expect(start).toHaveBeenCalled();
+      // The service should be called with the normalized domain
+      expect(fetchRegistration).toHaveBeenCalledWith(
+        "example.com",
+        expect.any(Object),
+      );
     });
 
     it("accepts valid domain with subdomain", async () => {
@@ -228,25 +264,31 @@ describe("domain router", () => {
 
       // Background revalidation should be triggered (fire-and-forget)
       await vi.waitFor(() => {
-        expect(start).toHaveBeenCalled();
+        expect(fetchRegistration).toHaveBeenCalled();
       });
     });
 
-    it("runs workflow when no cached data exists", async () => {
+    it("fetches fresh data when no cached data exists", async () => {
       const caller = createTestCaller();
 
       // Use a domain that doesn't exist in cache
       const newDomain = "newdomain.com";
 
-      vi.mocked(start).mockResolvedValue({
-        returnValue: Promise.resolve({
-          success: true,
-          data: {
-            isRegistered: true,
-            registrarProvider: { id: TEST_PROVIDER_ID, name: "Unknown" },
+      vi.mocked(fetchRegistration).mockResolvedValue({
+        success: true,
+        data: {
+          domain: newDomain,
+          tld: "com",
+          isRegistered: true,
+          status: "registered",
+          source: "rdap",
+          registrarProvider: {
+            id: TEST_PROVIDER_ID,
+            name: "Unknown",
+            domain: null,
           },
-        }),
-      } as never);
+        },
+      });
 
       const result = await caller.domain.getRegistration({ domain: newDomain });
 
@@ -254,7 +296,7 @@ describe("domain router", () => {
       if (result.success) {
         expect(result.cached).toBe(false);
       }
-      expect(start).toHaveBeenCalled();
+      expect(fetchRegistration).toHaveBeenCalled();
     });
   });
 
@@ -328,19 +370,16 @@ describe("domain router", () => {
     });
   });
 
-  describe("workflow error handling", () => {
-    it("returns error result when workflow fails", async () => {
+  describe("service error handling", () => {
+    it("returns error result when service returns permanent error", async () => {
       const caller = createTestCaller();
 
       const failingDomain = "failing.com";
 
-      vi.mocked(start).mockResolvedValue({
-        returnValue: Promise.resolve({
-          success: false,
-          data: null,
-          error: "RDAP lookup failed",
-        }),
-      } as never);
+      vi.mocked(fetchRegistration).mockResolvedValue({
+        success: false,
+        error: "unsupported_tld",
+      });
 
       const result = await caller.domain.getRegistration({
         domain: failingDomain,
@@ -348,7 +387,7 @@ describe("domain router", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toBe("RDAP lookup failed");
+        expect(result.error).toBe("unsupported_tld");
       }
     });
   });

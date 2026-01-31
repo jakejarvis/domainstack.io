@@ -38,7 +38,9 @@ export async function detectAndResolveProvidersStep(
 
   // Dynamic imports for Node.js modules and database operations
   const { toRegistrableDomain } = await import("@/lib/normalize-domain");
-  const { getProviderCatalog } = await import("@/lib/edge-config");
+  const { getProviderCatalog } = await import(
+    "@domainstack/server/edge-config"
+  );
   const {
     detectDnsProvider,
     detectEmailProvider,

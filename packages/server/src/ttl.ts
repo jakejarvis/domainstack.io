@@ -1,3 +1,9 @@
+/**
+ * TTL calculation functions for cache expiration.
+ *
+ * Returns Date objects for Postgres timestamp columns.
+ */
+
 import {
   TTL_CERTIFICATES_EXPIRY_BUFFER,
   TTL_CERTIFICATES_MIN,
@@ -15,7 +21,6 @@ import {
   TTL_SEO,
 } from "@domainstack/constants";
 
-// Helper functions
 function addSeconds(base: Date, seconds: number): Date {
   return new Date(base.getTime() + seconds * 1000);
 }
@@ -34,23 +39,27 @@ function clampFuture(min: Date, max: Date, now: Date): Date {
   return new Date(minMs);
 }
 
-// TTL calculation functions (return Date objects for Postgres timestamps)
+/**
+ * TTL for registration data.
+ * Revalidates more aggressively near expiry (within 7 days).
+ */
 export function ttlForRegistration(
   now: Date,
   expirationDate?: Date | null,
 ): Date {
-  // Note: Only registered domains are stored in Postgres.
-  // Unregistered domains return 404 and are not cached.
   if (expirationDate) {
     const msUntil = expirationDate.getTime() - now.getTime();
     if (msUntil <= TTL_REGISTRATION_EXPIRY_THRESHOLD * 1000) {
-      // Revalidate more aggressively near expiry (within 7 days)
       return addSeconds(now, TTL_REGISTRATION_NEAR_EXPIRY);
     }
   }
   return addSeconds(now, TTL_REGISTRATION_REGISTERED);
 }
 
+/**
+ * TTL for DNS records.
+ * Uses the record's TTL if available, clamped to max.
+ */
 export function ttlForDnsRecord(now: Date, ttlSeconds?: number | null): Date {
   const ttl =
     typeof ttlSeconds === "number" && ttlSeconds > 0
@@ -59,9 +68,11 @@ export function ttlForDnsRecord(now: Date, ttlSeconds?: number | null): Date {
   return addSeconds(now, ttl);
 }
 
+/**
+ * TTL for certificates.
+ * Sliding window with aggressive checks near expiry.
+ */
 export function ttlForCertificates(now: Date, validTo: Date): Date {
-  // Revalidate certificates within a 24h sliding window, but start checking
-  // more aggressively 48h before expiry to catch upcoming expirations.
   const window = addSeconds(now, TTL_CERTIFICATES_WINDOW);
   const revalidateBefore = new Date(
     validTo.getTime() - TTL_CERTIFICATES_EXPIRY_BUFFER * 1000,

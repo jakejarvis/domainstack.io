@@ -31,7 +31,7 @@ export async function fetchDnsRecordsStep(
     queryDohProvider,
     sortDnsRecordsByType,
   } = await import("@domainstack/core/dns");
-  const { ttlForDnsRecord } = await import("@/lib/ttl");
+  const { ttlForDnsRecord } = await import("@domainstack/server/ttl");
 
   const providers = providerOrderForLookup(domain);
   const types = DNS_RECORD_TYPES;

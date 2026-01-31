@@ -76,7 +76,7 @@ async function processAndStore(
   const { ensureDomainRecord, upsertFavicon } = await import(
     "@domainstack/db/queries"
   );
-  const { ttlForFavicon } = await import("@/lib/ttl");
+  const { ttlForFavicon } = await import("@domainstack/server/ttl");
 
   try {
     // 1. Process image (handles ICO/SVG files with appropriate fallbacks)
@@ -137,7 +137,7 @@ async function persistFailure(
   const { ensureDomainRecord, upsertFavicon } = await import(
     "@domainstack/db/queries"
   );
-  const { ttlForFavicon } = await import("@/lib/ttl");
+  const { ttlForFavicon } = await import("@domainstack/server/ttl");
 
   try {
     const domainRecord = await ensureDomainRecord(domain);

@@ -1,0 +1,37 @@
+{
+  "name": "@domainstack/server",
+  "version": "0.0.0-beta.1",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./services/registration": "./src/services/registration.ts",
+    "./swr": "./src/swr.ts",
+    "./edge-config": "./src/edge-config.ts",
+    "./ttl": "./src/ttl.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "lint": "biome check",
+    "format": "biome format --write",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@domainstack/constants": "workspace:*",
+    "@domainstack/core": "workspace:*",
+    "@domainstack/db": "workspace:*",
+    "@domainstack/logger": "workspace:*",
+    "@domainstack/types": "workspace:*",
+    "@vercel/edge-config": "^1.4.0"
+  },
+  "peerDependencies": {
+    "react": ">=19.0.0"
+  },
+  "devDependencies": {
+    "@domainstack/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@types/react": "^19.0.0",
+    "vitest": "catalog:"
+  }
+}

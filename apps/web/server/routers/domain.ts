@@ -6,6 +6,8 @@ import {
   MAX_AGE_REGISTRATION,
   MAX_AGE_SEO,
 } from "@domainstack/constants";
+import { fetchRegistration, withSwr } from "@domainstack/server";
+import { getProviderCatalog } from "@domainstack/server/edge-config";
 import { TRPCError } from "@trpc/server";
 import { start } from "workflow/api";
 import z from "zod";
@@ -34,8 +36,8 @@ const DomainInputSchema = z
 
 export const domainRouter = createTRPCRouter({
   /**
-   * Get registration data for a domain using a durable workflow.
-   * Performs WHOIS/RDAP lookup with automatic retries.
+   * Get registration data for a domain.
+   * Performs WHOIS/RDAP lookup. Transient errors throw for TanStack Query to retry.
    * Uses stale-while-revalidate: returns stale data immediately while refreshing in background.
    */
   getRegistration: publicProcedure
@@ -45,14 +47,13 @@ export const domainRouter = createTRPCRouter({
     .input(DomainInputSchema)
     .query(async ({ input }) => {
       const { getCachedRegistration } = await import("@domainstack/db/queries");
-      const { registrationWorkflow } = await import("@/workflows/registration");
+      const catalog = await getProviderCatalog();
 
-      return withSwrCache({
-        workflowName: "registration",
+      return withSwr({
+        name: "registration",
         domain: input.domain,
         getCached: () => getCachedRegistration(input.domain),
-        startWorkflow: () =>
-          start(registrationWorkflow, [{ domain: input.domain }]),
+        fetchFresh: () => fetchRegistration(input.domain, { catalog }),
         maxAgeMs: MAX_AGE_REGISTRATION,
       });
     }),

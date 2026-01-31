@@ -27,6 +27,7 @@
     "@domainstack/constants": "workspace:*",
     "@domainstack/core": "workspace:*",
     "@domainstack/db": "workspace:*",
+    "@domainstack/server": "workspace:*",
     "@domainstack/email": "workspace:*",
     "@domainstack/logger": "workspace:*",
     "@domainstack/polar": "workspace:*",

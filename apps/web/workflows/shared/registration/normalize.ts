@@ -61,7 +61,9 @@ export async function normalizeAndBuildResponseStep(
   "use step";
 
   // Dynamic imports for Node.js modules and database operations
-  const { getProviderCatalog } = await import("@/lib/edge-config");
+  const { getProviderCatalog } = await import(
+    "@domainstack/server/edge-config"
+  );
   const { detectRegistrar, getProvidersFromCatalog } = await import(
     "@domainstack/core/providers"
   );

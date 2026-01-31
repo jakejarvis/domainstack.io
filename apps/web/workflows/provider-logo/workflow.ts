@@ -80,7 +80,7 @@ async function processAndStore(
   const { optimizeImage } = await import("@/lib/image");
   const { storeImage } = await import("@/lib/storage");
   const { upsertProviderLogo } = await import("@domainstack/db/queries");
-  const { ttlForProviderIcon } = await import("@/lib/ttl");
+  const { ttlForProviderIcon } = await import("@domainstack/server/ttl");
 
   try {
     // 1. Process image (handles ICO/SVG files with appropriate fallbacks)
@@ -138,7 +138,7 @@ async function persistFailure(
   "use step";
 
   const { upsertProviderLogo } = await import("@domainstack/db/queries");
-  const { ttlForProviderIcon } = await import("@/lib/ttl");
+  const { ttlForProviderIcon } = await import("@domainstack/server/ttl");
 
   try {
     const now = new Date();
