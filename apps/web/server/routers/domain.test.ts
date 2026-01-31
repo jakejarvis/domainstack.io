@@ -220,16 +220,15 @@ describe("domain router", () => {
         domain: TEST_DOMAIN,
       });
 
-      // Should return cached data without starting workflow
+      // Should return cached data without calling the service
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.cached).toBe(true);
-        expect(result.stale).toBe(false);
       }
-      expect(start).not.toHaveBeenCalled();
+      expect(fetchRegistration).not.toHaveBeenCalled();
     });
 
-    it("returns stale data and triggers revalidation when expired", async () => {
+    it("fetches fresh data when cache is stale", async () => {
       const caller = createTestCaller();
 
       // Insert stale registration data
@@ -259,17 +258,12 @@ describe("domain router", () => {
         domain: TEST_DOMAIN,
       });
 
-      // Should return stale data
+      // Should fetch fresh data when stale
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.cached).toBe(true);
-        expect(result.stale).toBe(true);
+        expect(result.cached).toBe(false);
       }
-
-      // Background revalidation should be triggered (fire-and-forget)
-      await vi.waitFor(() => {
-        expect(fetchRegistration).toHaveBeenCalled();
-      });
+      expect(fetchRegistration).toHaveBeenCalled();
     });
 
     it("fetches fresh data when no cached data exists", async () => {

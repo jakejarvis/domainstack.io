@@ -8,16 +8,17 @@ import {
   getRecentlyAccessedDomains,
 } from "@domainstack/db/queries";
 import { createLogger } from "@domainstack/logger";
+import {
+  fetchCertificates,
+  fetchDns,
+  fetchHeaders,
+  fetchHosting,
+  fetchRegistration,
+  fetchSeo,
+} from "@domainstack/server";
 import { NextResponse } from "next/server";
-import { start } from "workflow/api";
 import type { Section } from "@/lib/constants/sections";
 import { sections } from "@/lib/constants/sections";
-import { certificatesWorkflow } from "@/workflows/certificates";
-import { dnsWorkflow } from "@/workflows/dns";
-import { headersWorkflow } from "@/workflows/headers";
-import { hostingWorkflow } from "@/workflows/hosting";
-import { registrationWorkflow } from "@/workflows/registration";
-import { seoWorkflow } from "@/workflows/seo";
 
 /** All section types */
 const ALL_SECTIONS = Object.keys(sections) as Section[];
@@ -45,19 +46,16 @@ const sectionCacheGetters: Record<
 };
 
 /**
- * Lookup map from section to its workflow function.
- * Uses the purpose-built workflows directly for single source of truth.
+ * Lookup map from section to its fetch function.
+ * Uses the server package services directly.
  */
-const sectionWorkflows: Record<
-  Section,
-  (input: { domain: string }) => Promise<unknown>
-> = {
-  dns: dnsWorkflow,
-  headers: headersWorkflow,
-  hosting: hostingWorkflow,
-  certificates: certificatesWorkflow,
-  seo: seoWorkflow,
-  registration: registrationWorkflow,
+const sectionFetchers: Record<Section, (domain: string) => Promise<unknown>> = {
+  dns: fetchDns,
+  headers: fetchHeaders,
+  hosting: fetchHosting,
+  certificates: fetchCertificates,
+  seo: fetchSeo,
+  registration: fetchRegistration,
 };
 
 /**
@@ -153,17 +151,17 @@ export async function GET(request: Request) {
       });
     }
 
-    // Fire off all workflows (fire-and-forget)
-    // Workflows are idempotent, so we don't need deduplication
+    // Fire off all fetchers (fire-and-forget)
+    // Services are idempotent, so we don't need deduplication
     let sectionsStarted = 0;
     await Promise.all(
       jobs.map(async ({ domain, section }) => {
         try {
-          await start(sectionWorkflows[section], [{ domain }]);
+          await sectionFetchers[section](domain);
           sectionsStarted++;
         } catch (err) {
           // Log but don't fail the cron - other sections may succeed
-          logger.error({ domain, section, err }, "Failed to start workflow");
+          logger.error({ domain, section, err }, "Failed to refresh section");
         }
       }),
     );

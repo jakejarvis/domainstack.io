@@ -1,13 +1,15 @@
 import { getProviderById, getProviderLogo } from "@domainstack/db/queries";
-import { start } from "workflow/api";
+import { createLogger } from "@domainstack/logger";
+import { fetchProviderLogo } from "@domainstack/server";
 import z from "zod";
-import { withSwrCache } from "@/lib/workflow/swr";
 import { createTRPCRouter, publicProcedure } from "@/trpc/init";
+
+const logger = createLogger({ source: "provider-router" });
 
 export const providerRouter = createTRPCRouter({
   /**
-   * Get a provider's logo/icon using a durable workflow.
-   * Uses stale-while-revalidate: returns stale data immediately while refreshing in background.
+   * Get a provider's logo/icon.
+   * Returns cached data if fresh, otherwise fetches fresh data.
    */
   getProviderIcon: publicProcedure
     .input(z.object({ providerId: z.string().uuid() }))
@@ -16,21 +18,33 @@ export const providerRouter = createTRPCRouter({
       const providerDomain = provider?.domain;
       if (!providerDomain) {
         // Return null instead of throwing to avoid logging errors for missing icons
-        return { success: false, cached: false, stale: false, data: null };
+        return { success: false, cached: false, data: null };
       }
 
-      const { providerLogoWorkflow } = await import(
-        "@/workflows/provider-logo"
-      );
+      // Check cache first
+      const cached = await getProviderLogo(input.providerId);
+      if (cached.data && !cached.stale) {
+        return { success: true, cached: true, data: cached.data };
+      }
 
-      return withSwrCache({
-        workflowName: "provider-logo",
-        domain: input.providerId, // Use providerId as the cache key
-        getCached: () => getProviderLogo(input.providerId),
-        startWorkflow: () =>
-          start(providerLogoWorkflow, [
-            { providerId: input.providerId, providerDomain },
-          ]),
-      });
+      // Fetch fresh data
+      try {
+        const result = await fetchProviderLogo(
+          input.providerId,
+          providerDomain,
+        );
+        return { success: true, cached: false, data: result.data };
+      } catch (err) {
+        logger.error(
+          { providerId: input.providerId, err },
+          "provider logo fetch failed",
+        );
+        return {
+          success: false,
+          cached: false,
+          data: null,
+          error: "fetch_failed",
+        };
+      }
     }),
 });

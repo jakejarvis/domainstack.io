@@ -737,6 +737,9 @@ importers:
 
   packages/server:
     dependencies:
+      '@domainstack/blob':
+        specifier: workspace:*
+        version: link:../blob
       '@domainstack/constants':
         specifier: workspace:*
         version: link:../constants
@@ -746,12 +749,24 @@ importers:
       '@domainstack/db':
         specifier: workspace:*
         version: link:../db
+      '@domainstack/image':
+        specifier: workspace:*
+        version: link:../image
       '@domainstack/logger':
         specifier: workspace:*
         version: link:../logger
+      '@domainstack/redis':
+        specifier: workspace:*
+        version: link:../redis
+      '@domainstack/safe-fetch':
+        specifier: workspace:*
+        version: link:../safe-fetch
       '@domainstack/types':
         specifier: workspace:*
         version: link:../types
+      '@readme/http-status-codes':
+        specifier: ^9.0.6
+        version: 9.0.6
       '@vercel/edge-config':
         specifier: ^1.4.0
         version: 1.4.3(@opentelemetry/api@1.9.0)(next@16.1.6(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))

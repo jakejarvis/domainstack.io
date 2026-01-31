@@ -19,11 +19,16 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@domainstack/blob": "workspace:*",
     "@domainstack/constants": "workspace:*",
     "@domainstack/core": "workspace:*",
     "@domainstack/db": "workspace:*",
+    "@domainstack/image": "workspace:*",
     "@domainstack/logger": "workspace:*",
+    "@domainstack/redis": "workspace:*",
+    "@domainstack/safe-fetch": "workspace:*",
     "@domainstack/types": "workspace:*",
+    "@readme/http-status-codes": "^9.0.6",
     "@vercel/edge-config": "^1.4.0",
     "ipaddr.js": "^2.3.0",
     "lru-cache": "^11.2.5"
