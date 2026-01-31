@@ -31,16 +31,17 @@ export async function sendEmail(
 ): Promise<SendEmailResult> {
   "use step";
 
-  const { sendEmail: sendResendEmail } = await import("@/lib/resend");
+  const { sendEmail: sendResendEmail } = await import("@domainstack/email");
 
   const { to, subject, react } = params;
 
   // Use stepId as idempotency key - stable across retries and unique per step
   const { stepId } = getStepMetadata();
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
 
   const { data, error } = await sendResendEmail(
     { to, subject, react },
-    { idempotencyKey: stepId },
+    { baseUrl, idempotencyKey: stepId },
   );
 
   if (!error && data?.id) {

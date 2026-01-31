@@ -9,12 +9,9 @@ import {
   vi,
 } from "vitest";
 
-// Mock the DB client before importing anything else
-vi.mock("@/lib/db/client", async () => {
-  const { makePGliteDb } = await import("@domainstack/db/testing");
-  const { db } = await makePGliteDb();
-  return { db };
-});
+// Initialize PGlite before importing anything that uses the db
+const { makePGliteDb, closePGliteDb } = await import("@domainstack/db/testing");
+const { db } = await makePGliteDb();
 
 // Mock workflow/api to avoid starting real workflows
 vi.mock("workflow/api", () => ({
@@ -34,21 +31,24 @@ vi.mock("next/server", () => ({
   after: vi.fn((fn) => fn()),
 }));
 
-// Mock resend to avoid sending real emails
-vi.mock("@/lib/resend", () => ({
+// Mock email package to avoid sending real emails
+vi.mock("@domainstack/email", () => ({
   sendEmail: vi.fn().mockResolvedValue({ error: null }),
 }));
 
-import {
-  domains,
-  userSubscriptions,
-  users,
-  userTrackedDomains,
-} from "@domainstack/db/schema";
-import { start } from "workflow/api";
-import { db } from "@/lib/db/client";
-import { sendEmail } from "@/lib/resend";
-import { createCaller } from "@/server/routers/_app";
+// Mock email templates to avoid rendering React Email components in tests
+vi.mock("@domainstack/email/templates/verification-instructions", () => ({
+  default: vi.fn().mockReturnValue(null),
+}));
+
+// Now import modules that depend on the db
+const { domains, userSubscriptions, users, userTrackedDomains } = await import(
+  "@domainstack/db/schema"
+);
+const { sendEmail } = await import("@domainstack/email");
+const { start } = await import("workflow/api");
+const { createCaller } = await import("@/server/routers/_app");
+
 import type { Context } from "@/trpc/init";
 
 // Test fixtures - use valid RFC 4122 UUIDs (version 1, variant 1)
@@ -137,7 +137,6 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  const { closePGliteDb } = await import("@domainstack/db/testing");
   await closePGliteDb();
 });
 
@@ -723,6 +722,9 @@ describe("tracking router", () => {
         expect.objectContaining({
           to: "admin@example.com",
           subject: expect.stringContaining(TEST_DOMAIN),
+        }),
+        expect.objectContaining({
+          baseUrl: expect.any(String),
         }),
       );
     });

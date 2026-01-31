@@ -11,8 +11,14 @@ import {
 } from "vitest";
 import { server } from "@/mocks/server";
 
-// Mock Edge Config for provider catalogs
-const mockCatalog = {
+// Initialize PGlite before importing anything that uses the db
+const { makePGliteDb, closePGliteDb, resetPGliteDb } = await import(
+  "@domainstack/db/testing"
+);
+await makePGliteDb();
+
+// Use vi.hoisted to define the mock catalog before vi.mock is hoisted
+const mockCatalog = vi.hoisted(() => ({
   hosting: [
     {
       name: "Vercel",
@@ -41,9 +47,9 @@ const mockCatalog = {
   ],
   ca: [],
   registrar: [],
-};
+}));
 
-vi.mock("@/lib/edge-config", () => ({
+vi.mock("@domainstack/server/edge-config", () => ({
   getProviderCatalog: vi.fn().mockResolvedValue(mockCatalog),
 }));
 
@@ -63,20 +69,12 @@ afterEach(() => {
 });
 
 describe("detectAndResolveProvidersStep", () => {
-  beforeAll(async () => {
-    const { makePGliteDb } = await import("@domainstack/db/testing");
-    const { db } = await makePGliteDb();
-    vi.doMock("@/lib/db/client", () => ({ db }));
-  });
-
   beforeEach(async () => {
-    const { resetPGliteDb } = await import("@domainstack/db/testing");
     await resetPGliteDb();
     vi.clearAllMocks();
   });
 
   afterAll(async () => {
-    const { closePGliteDb } = await import("@domainstack/db/testing");
     await closePGliteDb();
   });
 

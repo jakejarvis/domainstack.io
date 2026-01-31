@@ -1,4 +1,7 @@
-import type { NotificationType } from "@domainstack/constants";
+import {
+  DOMAIN_EXPIRY_THRESHOLDS,
+  type NotificationType,
+} from "@domainstack/constants";
 import { FatalError } from "workflow";
 import {
   calculateDaysRemainingStep,
@@ -42,7 +45,7 @@ export async function domainExpiryWorkflow(
 
   // Step 2: Calculate days remaining and check for renewal
   const daysRemaining = await calculateDaysRemainingStep(domain.expirationDate);
-  const MAX_THRESHOLD_DAYS = 30;
+  const MAX_THRESHOLD_DAYS = Math.max(...DOMAIN_EXPIRY_THRESHOLDS);
 
   // Detect renewal: If expiration is now beyond our notification window,
   // clear previous notifications so they can be re-sent when approaching expiry again.
@@ -61,7 +64,7 @@ export async function domainExpiryWorkflow(
     daysRemaining,
     DOMAIN_EXPIRY_THRESHOLDS,
     "domain_expiry",
-  );
+  ) as NotificationType | null;
   if (!notificationType) {
     return { skipped: true, reason: "no_threshold_met" };
   }
@@ -118,9 +121,6 @@ export async function domainExpiryWorkflow(
   return { skipped: false, sent: true };
 }
 
-// Domain expiry thresholds (days before expiration)
-const DOMAIN_EXPIRY_THRESHOLDS = [30, 14, 7, 1] as const;
-
 interface DomainData {
   userId: string;
   userName: string;
@@ -136,11 +136,11 @@ async function fetchDomain(
 ): Promise<DomainData | null> {
   "use step";
 
-  const { trackedDomainsRepo } = await import("@/lib/db/repos");
-
-  return await trackedDomainsRepo.getTrackedDomainForNotification(
-    trackedDomainId,
+  const { getTrackedDomainForNotification } = await import(
+    "@domainstack/db/queries"
   );
+
+  return await getTrackedDomainForNotification(trackedDomainId);
 }
 
 async function clearRenewedNotifications(
@@ -148,11 +148,11 @@ async function clearRenewedNotifications(
 ): Promise<number> {
   "use step";
 
-  const { notificationsRepo } = await import("@/lib/db/repos");
-
-  return await notificationsRepo.clearDomainExpiryNotifications(
-    trackedDomainId,
+  const { clearDomainExpiryNotifications } = await import(
+    "@domainstack/db/queries"
   );
+
+  return await clearDomainExpiryNotifications(trackedDomainId);
 }
 
 async function createNotificationRecord(params: {
@@ -169,7 +169,7 @@ async function createNotificationRecord(params: {
   "use step";
 
   const { format } = await import("date-fns");
-  const { notificationsRepo } = await import("@/lib/db/repos");
+  const { createNotification } = await import("@domainstack/db/queries");
 
   const {
     trackedDomainId,
@@ -191,7 +191,7 @@ async function createNotificationRecord(params: {
   if (shouldSendEmail) channels.push("email");
   if (shouldSendInApp) channels.push("in-app");
 
-  const notification = await notificationsRepo.createNotification({
+  const notification = await createNotification({
     userId,
     trackedDomainId,
     type: notificationType,
@@ -222,7 +222,9 @@ async function sendDomainExpiryEmail(params: {
   "use step";
 
   const { format } = await import("date-fns");
-  const { default: DomainExpiryEmail } = await import("@/emails/domain-expiry");
+  const { default: DomainExpiryEmail } = await import(
+    "@domainstack/email/templates/domain-expiry"
+  );
   const { sendEmail } = await import("@/workflows/shared/send-email");
 
   const {
@@ -235,6 +237,8 @@ async function sendDomainExpiryEmail(params: {
     subject,
   } = params;
 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
+
   const result = await sendEmail({
     to: userEmail,
     subject,
@@ -244,6 +248,7 @@ async function sendDomainExpiryEmail(params: {
       expirationDate: format(expirationDate, "MMMM d, yyyy"),
       daysRemaining,
       registrar,
+      baseUrl,
     }),
   });
 

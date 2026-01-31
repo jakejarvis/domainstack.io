@@ -9,19 +9,46 @@ import {
   vi,
 } from "vitest";
 
-// Mock the DB client before importing anything else
-vi.mock("@/lib/db/client", async () => {
-  const { makePGliteDb } = await import("@domainstack/db/testing");
-  const { db } = await makePGliteDb();
-  return { db };
-});
+// Initialize PGlite before importing anything that uses the db
+const { makePGliteDb, closePGliteDb } = await import("@domainstack/db/testing");
+const { db } = await makePGliteDb();
 
-// Mock workflow/api to avoid starting real workflows
+// Mock workflow/api to avoid starting real workflows (still used by non-registration procedures)
 vi.mock("workflow/api", () => ({
   start: vi.fn().mockResolvedValue({
     runId: "mock-run-id",
     returnValue: Promise.resolve({ success: true, data: {} }),
   }),
+}));
+
+// Mock the services (used by getRegistration and getDnsRecords)
+vi.mock("@domainstack/server", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@domainstack/server")>();
+  return {
+    ...original,
+    fetchRegistration: vi.fn().mockResolvedValue({
+      success: true,
+      data: {
+        isRegistered: true,
+        registrarProvider: {
+          id: "00000000-0000-0000-0000-000000000002",
+          name: "Unknown",
+        },
+      },
+    }),
+    fetchDns: vi.fn().mockResolvedValue({
+      success: true,
+      data: {
+        records: [],
+        resolver: "cloudflare",
+      },
+    }),
+  };
+});
+
+// Mock edge-config
+vi.mock("@domainstack/server/edge-config", () => ({
+  getProviderCatalog: vi.fn().mockResolvedValue(null),
 }));
 
 // Mock next/headers to avoid errors outside request context
@@ -34,15 +61,14 @@ vi.mock("next/server", () => ({
   after: vi.fn((fn) => fn()),
 }));
 
-import {
-  dnsRecords,
-  domains,
-  providers,
-  registrations,
-} from "@domainstack/db/schema";
-import { start } from "workflow/api";
-import { db } from "@/lib/db/client";
-import { createCaller } from "@/server/routers/_app";
+// Now import modules that depend on the db
+const { dnsRecords, domains, providers, registrations } = await import(
+  "@domainstack/db/schema"
+);
+const { start } = await import("workflow/api");
+const { fetchDns, fetchRegistration } = await import("@domainstack/server");
+const { createCaller } = await import("@/server/routers/_app");
+
 import type { Context } from "@/trpc/init";
 
 // Test fixtures - use valid UUIDs
@@ -85,7 +111,6 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  const { closePGliteDb } = await import("@domainstack/db/testing");
   await closePGliteDb();
 });
 
@@ -122,19 +147,28 @@ describe("domain router", () => {
     it("normalizes domain to registrable form", async () => {
       const caller = createTestCaller();
 
-      // Mock workflow to capture the input
-      vi.mocked(start).mockResolvedValue({
-        returnValue: Promise.resolve({
-          success: true,
-          data: { isRegistered: true },
-        }),
-      } as never);
+      // Mock service to capture the input
+      vi.mocked(fetchRegistration).mockResolvedValue({
+        success: true,
+        data: {
+          domain: "example.com",
+          tld: "com",
+          isRegistered: true,
+          status: "registered",
+          source: "rdap",
+          registrarProvider: {
+            id: TEST_PROVIDER_ID,
+            name: "Unknown",
+            domain: null,
+          },
+        },
+      });
 
       // www.example.com should be normalized to example.com
       await caller.domain.getRegistration({ domain: "www.example.com" });
 
-      // The workflow should be called with the normalized domain
-      expect(start).toHaveBeenCalled();
+      // The service should be called with the normalized domain
+      expect(fetchRegistration).toHaveBeenCalledWith("example.com");
     });
 
     it("accepts valid domain with subdomain", async () => {
@@ -186,16 +220,15 @@ describe("domain router", () => {
         domain: TEST_DOMAIN,
       });
 
-      // Should return cached data without starting workflow
+      // Should return cached data without calling the service
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.cached).toBe(true);
-        expect(result.stale).toBe(false);
       }
-      expect(start).not.toHaveBeenCalled();
+      expect(fetchRegistration).not.toHaveBeenCalled();
     });
 
-    it("returns stale data and triggers revalidation when expired", async () => {
+    it("fetches fresh data when cache is stale", async () => {
       const caller = createTestCaller();
 
       // Insert stale registration data
@@ -225,34 +258,35 @@ describe("domain router", () => {
         domain: TEST_DOMAIN,
       });
 
-      // Should return stale data
+      // Should fetch fresh data when stale
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.cached).toBe(true);
-        expect(result.stale).toBe(true);
+        expect(result.cached).toBe(false);
       }
-
-      // Background revalidation should be triggered (fire-and-forget)
-      await vi.waitFor(() => {
-        expect(start).toHaveBeenCalled();
-      });
+      expect(fetchRegistration).toHaveBeenCalled();
     });
 
-    it("runs workflow when no cached data exists", async () => {
+    it("fetches fresh data when no cached data exists", async () => {
       const caller = createTestCaller();
 
       // Use a domain that doesn't exist in cache
       const newDomain = "newdomain.com";
 
-      vi.mocked(start).mockResolvedValue({
-        returnValue: Promise.resolve({
-          success: true,
-          data: {
-            isRegistered: true,
-            registrarProvider: { id: TEST_PROVIDER_ID, name: "Unknown" },
+      vi.mocked(fetchRegistration).mockResolvedValue({
+        success: true,
+        data: {
+          domain: newDomain,
+          tld: "com",
+          isRegistered: true,
+          status: "registered",
+          source: "rdap",
+          registrarProvider: {
+            id: TEST_PROVIDER_ID,
+            name: "Unknown",
+            domain: null,
           },
-        }),
-      } as never);
+        },
+      });
 
       const result = await caller.domain.getRegistration({ domain: newDomain });
 
@@ -260,7 +294,7 @@ describe("domain router", () => {
       if (result.success) {
         expect(result.cached).toBe(false);
       }
-      expect(start).toHaveBeenCalled();
+      expect(fetchRegistration).toHaveBeenCalled();
     });
   });
 
@@ -289,31 +323,29 @@ describe("domain router", () => {
       const result = await caller.domain.getDnsRecords({ domain: TEST_DOMAIN });
 
       expect(result.success).toBe(true);
-      if (result.success) {
+      if (result.success && result.data) {
         expect(result.cached).toBe(true);
         expect(result.data.records).toBeDefined();
       }
     });
 
-    it("runs workflow when no cached DNS exists", async () => {
+    it("fetches fresh DNS when no cached DNS exists", async () => {
       const caller = createTestCaller();
 
       const newDomain = "nodns.com";
 
-      vi.mocked(start).mockResolvedValue({
-        returnValue: Promise.resolve({
-          success: true,
-          data: {
-            records: [{ type: "A", name: newDomain, value: "1.2.3.4" }],
-            resolver: "cloudflare",
-          },
-        }),
-      } as never);
+      vi.mocked(fetchDns).mockResolvedValue({
+        success: true,
+        data: {
+          records: [{ type: "A", name: newDomain, value: "1.2.3.4", ttl: 300 }],
+          resolver: "cloudflare",
+        },
+      });
 
       const result = await caller.domain.getDnsRecords({ domain: newDomain });
 
       expect(result.success).toBe(true);
-      expect(start).toHaveBeenCalled();
+      expect(fetchDns).toHaveBeenCalled();
     });
   });
 
@@ -334,19 +366,16 @@ describe("domain router", () => {
     });
   });
 
-  describe("workflow error handling", () => {
-    it("returns error result when workflow fails", async () => {
+  describe("service error handling", () => {
+    it("returns error result when service returns permanent error", async () => {
       const caller = createTestCaller();
 
       const failingDomain = "failing.com";
 
-      vi.mocked(start).mockResolvedValue({
-        returnValue: Promise.resolve({
-          success: false,
-          data: null,
-          error: "RDAP lookup failed",
-        }),
-      } as never);
+      vi.mocked(fetchRegistration).mockResolvedValue({
+        success: false,
+        error: "unsupported_tld",
+      });
 
       const result = await caller.domain.getRegistration({
         domain: failingDomain,
@@ -354,7 +383,7 @@ describe("domain router", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toBe("RDAP lookup failed");
+        expect(result.error).toBe("unsupported_tld");
       }
     });
   });

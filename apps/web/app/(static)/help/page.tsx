@@ -1,4 +1,5 @@
 import { PLAN_QUOTAS } from "@domainstack/constants";
+import { PRO_TIER_INFO } from "@domainstack/polar/products";
 import {
   Accordion,
   AccordionContent,
@@ -7,7 +8,6 @@ import {
 } from "@domainstack/ui/accordion";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PRO_TIER_INFO } from "@/lib/polar/products";
 
 export const metadata: Metadata = {
   title: "Help & FAQ",

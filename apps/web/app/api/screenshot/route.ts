@@ -1,13 +1,13 @@
+import { analytics } from "@domainstack/analytics/server";
+import {
+  getDomainById,
+  getScreenshotByDomainId,
+  isDomainBlocked,
+} from "@domainstack/db/queries";
+import { createLogger } from "@domainstack/logger";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getRun, start } from "workflow/api";
-import { analytics } from "@/lib/analytics/server";
-import {
-  blockedDomainsRepo,
-  domainsRepo,
-  screenshotsRepo,
-} from "@/lib/db/repos";
-import { createLogger } from "@/lib/logger/server";
 import { checkRateLimit } from "@/lib/ratelimit/api";
 import {
   type ScreenshotWorkflowResult,
@@ -81,7 +81,7 @@ export async function POST(
     }
 
     // Look up domain by ID (security check - domain must exist)
-    const domain = await domainsRepo.getDomainById(domainId);
+    const domain = await getDomainById(domainId);
 
     if (!domain) {
       logger.warn({ domainId }, "screenshot requested for unknown domain");
@@ -89,8 +89,7 @@ export async function POST(
     }
 
     // Check cache first
-    const cachedScreenshot =
-      await screenshotsRepo.getScreenshotByDomainId(domainId);
+    const cachedScreenshot = await getScreenshotByDomainId(domainId);
 
     if (cachedScreenshot) {
       // Only treat as cache hit if we have a definitive result:
@@ -108,7 +107,7 @@ export async function POST(
             const domainName = domain.name;
 
             // Check block status
-            blocked = await blockedDomainsRepo.isDomainBlocked(domainName);
+            blocked = await isDomainBlocked(domainName);
           } catch (err) {
             // Log error but fall back to unblocked to avoid breaking screenshots
             // for transient database issues. Blocked domains are a soft protection.

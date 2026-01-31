@@ -5,6 +5,11 @@ import { coverageConfigDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [tsconfigPaths(), react()],
+  define: {
+    "process.env.NEXT_PUBLIC_BASE_URL": JSON.stringify(
+      "https://test.domainstack.io",
+    ),
+  },
   test: {
     globals: true,
     silent: "passed-only",

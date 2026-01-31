@@ -280,7 +280,7 @@ export const myRouter = createTRPCRouter({
 
 Server-side only using Pino (object-first API):
 ```typescript
-import { createLogger } from "@/lib/logger/server";
+import { createLogger } from "@domainstack/logger";
 const logger = createLogger({ source: "dns" });
 
 logger.info({ domain: "example.com", count: 5 }, "resolution complete");

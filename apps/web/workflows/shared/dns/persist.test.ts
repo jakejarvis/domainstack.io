@@ -1,13 +1,11 @@
 /* @vitest-environment node */
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+
+// Initialize PGlite before importing anything that uses the db
+const { makePGliteDb, closePGliteDb, resetPGliteDb } = await import(
+  "@domainstack/db/testing"
+);
+const { db } = await makePGliteDb();
 
 // Mock schedule revalidation
 vi.mock("@/lib/revalidation", () => ({
@@ -15,26 +13,18 @@ vi.mock("@/lib/revalidation", () => ({
 }));
 
 describe("persistDnsRecordsStep", () => {
-  beforeAll(async () => {
-    const { makePGliteDb } = await import("@domainstack/db/testing");
-    const { db } = await makePGliteDb();
-    vi.doMock("@/lib/db/client", () => ({ db }));
-  });
-
   beforeEach(async () => {
-    const { resetPGliteDb } = await import("@domainstack/db/testing");
     await resetPGliteDb();
     vi.clearAllMocks();
   });
 
   afterAll(async () => {
-    const { closePGliteDb } = await import("@domainstack/db/testing");
     await closePGliteDb();
   });
 
   it("persists DNS records to database", async () => {
-    const { domainsRepo } = await import("@/lib/db/repos");
-    const domain = await domainsRepo.upsertDomain({
+    const { upsertDomain } = await import("@domainstack/db/queries");
+    const domain = await upsertDomain({
       name: "persist.com",
       tld: "com",
       unicodeName: "persist.com",
@@ -55,9 +45,9 @@ describe("persistDnsRecordsStep", () => {
       ],
     });
 
-    const { db } = await import("@/lib/db/client");
+    // Use the PGlite db instance (already set as the singleton)
     const { dnsRecords } = await import("@domainstack/db/schema");
-    const { eq } = await import("drizzle-orm");
+    const { eq } = await import("@domainstack/db/drizzle");
 
     const rows = await db
       .select()

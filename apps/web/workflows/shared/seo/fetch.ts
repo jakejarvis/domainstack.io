@@ -24,9 +24,9 @@ export async function fetchHtmlStep(domain: string): Promise<HtmlFetchData> {
   const { isExpectedDnsError } = await import("@domainstack/safe-fetch");
   const { safeFetch } = await import("@domainstack/safe-fetch");
   const { parseHtmlMeta, selectPreview } = await import(
-    "@domainstack/core/seo"
+    "@domainstack/server/seo"
   );
-  const { isExpectedTlsError } = await import("@domainstack/core/tls");
+  const { isExpectedTlsError } = await import("@domainstack/server/tls");
 
   let finalUrl = `https://${domain}/`;
   let status: number | null = null;
@@ -137,8 +137,8 @@ export async function fetchRobotsStep(
 
   // Dynamic imports for Node.js modules
   const { safeFetch } = await import("@domainstack/safe-fetch");
-  const { parseRobotsTxt } = await import("@domainstack/core/seo");
-  const { isExpectedTlsError } = await import("@domainstack/core/tls");
+  const { parseRobotsTxt } = await import("@domainstack/server/seo");
+  const { isExpectedTlsError } = await import("@domainstack/server/tls");
 
   const robotsUrl = `https://${domain}/robots.txt`;
 

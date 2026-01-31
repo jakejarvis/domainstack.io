@@ -1,0 +1,23 @@
+{
+  "name": "@domainstack/logger",
+  "version": "0.0.0-beta.1",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "lint": "biome check",
+    "format": "biome format --write"
+  },
+  "dependencies": {
+    "pino": "^10.3.0"
+  },
+  "devDependencies": {
+    "@domainstack/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "pino-pretty": "^13.1.3"
+  }
+}

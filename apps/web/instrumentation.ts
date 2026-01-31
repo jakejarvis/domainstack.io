@@ -31,7 +31,7 @@ export const onRequestError: Instrumentation.onRequestError = async (
   if (process.env.NEXT_RUNTIME === "nodejs") {
     try {
       // Use logger for structured error logging
-      const { logger } = await import("@/lib/logger/server");
+      const { logger } = await import("@domainstack/logger");
       logger.error(
         {
           err: error,

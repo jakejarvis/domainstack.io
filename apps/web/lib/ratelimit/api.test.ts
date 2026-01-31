@@ -1,33 +1,25 @@
 /* @vitest-environment node */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Unmock @/lib/ratelimit from global setup so we can test the actual implementation
-// This file tests the getRateLimiter function itself, so we need the real module
-vi.unmock("@/lib/ratelimit");
+// Unmock @domainstack/redis/ratelimit from global setup so we can test the actual implementation
+// This file tests the checkRateLimit function itself, so we need the real module
+vi.unmock("@domainstack/redis/ratelimit");
 
 // Hoist mock functions so they're available before module imports
-const { mockLimit, MockRatelimit, mockIpAddress, mockGetSession } = vi.hoisted(
-  () => {
+const { mockLimit, mockIpAddress, mockGetSession, mockGetRateLimiter } =
+  vi.hoisted(() => {
     const mockLimit = vi.fn();
     const mockIpAddress = vi.fn();
     const mockGetSession = vi.fn();
+    const mockGetRateLimiter = vi.fn();
 
-    // Create a proper class mock for Ratelimit
-    class MockRatelimit {
-      limit = mockLimit;
-      static slidingWindow = vi.fn().mockReturnValue("sliding-window-config");
-    }
+    return { mockLimit, mockIpAddress, mockGetSession, mockGetRateLimiter };
+  });
 
-    return { mockLimit, MockRatelimit, mockIpAddress, mockGetSession };
-  },
-);
-
-vi.mock("@upstash/ratelimit", () => ({
-  Ratelimit: MockRatelimit,
-}));
-
-vi.mock("@/lib/redis", () => ({
-  getRedis: vi.fn(() => ({})),
+// Mock the ratelimit module that the actual code uses
+vi.mock("@domainstack/redis/ratelimit", () => ({
+  getRateLimiter: mockGetRateLimiter,
+  DEFAULT_RATE_LIMIT: { requests: 60, window: "1 m" },
 }));
 
 vi.mock("@vercel/functions", () => ({
@@ -35,7 +27,7 @@ vi.mock("@vercel/functions", () => ({
   ipAddress: mockIpAddress,
 }));
 
-vi.mock("@/lib/auth", () => ({
+vi.mock("@domainstack/auth/server", () => ({
   auth: {
     api: {
       getSession: mockGetSession,
@@ -64,6 +56,8 @@ describe("lib/ratelimit/api", () => {
     // Default: no session, no IP
     mockGetSession.mockResolvedValue(null);
     mockIpAddress.mockReturnValue(null);
+    // Default: rate limiter returns mock with limit function
+    mockGetRateLimiter.mockReturnValue({ limit: mockLimit });
   });
 
   afterEach(() => {

@@ -1,5 +1,6 @@
 "use client";
 
+import { analytics } from "@domainstack/analytics/client";
 import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
 import {
@@ -24,7 +25,6 @@ import {
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { useTheme } from "@/hooks/use-theme";
-import { analytics } from "@/lib/analytics/client";
 
 import "maplibre-gl/dist/maplibre-gl.css";
 

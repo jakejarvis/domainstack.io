@@ -1,11 +1,11 @@
 "use client";
 
+import { useAnalytics } from "@domainstack/analytics/client";
+import { signIn } from "@domainstack/auth/client";
 import { Button } from "@domainstack/ui/button";
 import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
 import { toast } from "sonner";
-import { useAnalytics } from "@/lib/analytics/client";
-import { signIn } from "@/lib/auth-client";
 import type { OAuthProvider } from "@/lib/oauth";
 
 interface OAuthButtonProps {

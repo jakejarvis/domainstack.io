@@ -1,0 +1,54 @@
+{
+  "name": "@domainstack/server",
+  "version": "0.0.0-beta.1",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./dns": "./src/dns/index.ts",
+    "./headers": "./src/headers/index.ts",
+    "./seo": "./src/seo/index.ts",
+    "./tls": "./src/tls/index.ts",
+    "./verification": "./src/verification/index.ts",
+    "./whois": "./src/whois/index.ts",
+    "./edge-config": "./src/edge-config.ts",
+    "./ttl": "./src/ttl.ts",
+    "./cloudflare": "./src/cloudflare.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "lint": "biome check",
+    "format": "biome format --write",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@domainstack/blob": "workspace:*",
+    "@domainstack/constants": "workspace:*",
+    "@domainstack/db": "workspace:*",
+    "@domainstack/image": "workspace:*",
+    "@domainstack/logger": "workspace:*",
+    "@domainstack/redis": "workspace:*",
+    "@domainstack/safe-fetch": "workspace:*",
+    "@domainstack/types": "workspace:*",
+    "@domainstack/utils": "workspace:*",
+    "@readme/http-status-codes": "^9.0.6",
+    "@vercel/edge-config": "^1.4.3",
+    "cheerio": "^1.2.0",
+    "ipaddr.js": "^2.3.0",
+    "lru-cache": "^11.2.5",
+    "rdapper": "^0.13.0"
+  },
+  "peerDependencies": {
+    "react": ">=19.0.0",
+    "zod": "^4"
+  },
+  "devDependencies": {
+    "@domainstack/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@types/react": "19.2.10",
+    "msw": "^2.12.7",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  }
+}

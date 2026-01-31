@@ -7,7 +7,7 @@ afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
 // Global mocks for analytics to avoid network/log noise in tests
-vi.mock("@/lib/analytics/server", () => ({
+vi.mock("@domainstack/analytics/server", () => ({
   analytics: {
     track: vi.fn(async () => undefined),
     trackException: vi.fn(async () => undefined),
@@ -26,7 +26,7 @@ const createMockLogger = () => ({
   child: vi.fn(() => createMockLogger()),
 });
 
-vi.mock("@/lib/logger/server", () => ({
+vi.mock("@domainstack/logger", () => ({
   logger: createMockLogger(),
   createLogger: vi.fn(() => createMockLogger()),
 }));
@@ -80,13 +80,13 @@ vi.mock("workflow", async () => {
 // Mock Redis client to return undefined by default in tests
 // This makes code fall back to non-distributed behavior
 // Tests that need Redis can override with vi.mocked(getRedis).mockReturnValue(...)
-vi.mock("@/lib/redis", () => ({
+vi.mock("@domainstack/redis", () => ({
   getRedis: vi.fn(() => undefined),
 }));
 
 // Mock rate limiter to avoid Redis timeouts in tests
 // The Upstash Ratelimit has a 2s timeout which causes slow tests
-vi.mock("@/lib/ratelimit", () => ({
+vi.mock("@domainstack/redis/ratelimit", () => ({
   getRateLimiter: vi.fn(() => ({
     limit: vi.fn().mockResolvedValue({
       success: true,

@@ -1,23 +1,24 @@
+import {
+  getCachedCertificates,
+  getCachedDns,
+  getCachedHeaders,
+  getCachedHosting,
+  getCachedRegistration,
+  getCachedSeo,
+  getRecentlyAccessedDomains,
+} from "@domainstack/db/queries";
+import { createLogger } from "@domainstack/logger";
+import {
+  fetchCertificates,
+  fetchDns,
+  fetchHeaders,
+  fetchHosting,
+  fetchRegistration,
+  fetchSeo,
+} from "@domainstack/server";
 import { NextResponse } from "next/server";
-import { start } from "workflow/api";
 import type { Section } from "@/lib/constants/sections";
 import { sections } from "@/lib/constants/sections";
-import {
-  certificatesRepo,
-  dnsRepo,
-  domainsRepo,
-  headersRepo,
-  hostingRepo,
-  registrationsRepo,
-  seoRepo,
-} from "@/lib/db/repos";
-import { createLogger } from "@/lib/logger/server";
-import { certificatesWorkflow } from "@/workflows/certificates";
-import { dnsWorkflow } from "@/workflows/dns";
-import { headersWorkflow } from "@/workflows/headers";
-import { hostingWorkflow } from "@/workflows/hosting";
-import { registrationWorkflow } from "@/workflows/registration";
-import { seoWorkflow } from "@/workflows/seo";
 
 /** All section types */
 const ALL_SECTIONS = Object.keys(sections) as Section[];
@@ -36,28 +37,25 @@ const sectionCacheGetters: Record<
   Section,
   (domain: string) => Promise<{ stale: boolean; data: unknown }>
 > = {
-  dns: (domain) => dnsRepo.getCachedDns(domain),
-  headers: (domain) => headersRepo.getCachedHeaders(domain),
-  hosting: (domain) => hostingRepo.getCachedHosting(domain),
-  certificates: (domain) => certificatesRepo.getCachedCertificates(domain),
-  seo: (domain) => seoRepo.getCachedSeo(domain),
-  registration: (domain) => registrationsRepo.getCachedRegistration(domain),
+  dns: (domain) => getCachedDns(domain),
+  headers: (domain) => getCachedHeaders(domain),
+  hosting: (domain) => getCachedHosting(domain),
+  certificates: (domain) => getCachedCertificates(domain),
+  seo: (domain) => getCachedSeo(domain),
+  registration: (domain) => getCachedRegistration(domain),
 };
 
 /**
- * Lookup map from section to its workflow function.
- * Uses the purpose-built workflows directly for single source of truth.
+ * Lookup map from section to its fetch function.
+ * Uses the server package services directly.
  */
-const sectionWorkflows: Record<
-  Section,
-  (input: { domain: string }) => Promise<unknown>
-> = {
-  dns: dnsWorkflow,
-  headers: headersWorkflow,
-  hosting: hostingWorkflow,
-  certificates: certificatesWorkflow,
-  seo: seoWorkflow,
-  registration: registrationWorkflow,
+const sectionFetchers: Record<Section, (domain: string) => Promise<unknown>> = {
+  dns: fetchDns,
+  headers: fetchHeaders,
+  hosting: fetchHosting,
+  certificates: fetchCertificates,
+  seo: fetchSeo,
+  registration: fetchRegistration,
 };
 
 /**
@@ -115,8 +113,7 @@ export async function GET(request: Request) {
 
   try {
     // Get domains accessed in the last 24 hours
-    const recentDomains =
-      await domainsRepo.getRecentlyAccessedDomains(LOOKBACK_HOURS);
+    const recentDomains = await getRecentlyAccessedDomains(LOOKBACK_HOURS);
 
     if (recentDomains.length === 0) {
       logger.info("No recently accessed domains to warm");
@@ -154,20 +151,25 @@ export async function GET(request: Request) {
       });
     }
 
-    // Fire off all workflows (fire-and-forget)
-    // Workflows are idempotent, so we don't need deduplication
+    // Process in batches to avoid overwhelming resources and timeouts
+    // Each batch runs concurrently, batches run sequentially
+    const BATCH_SIZE = 50;
     let sectionsStarted = 0;
-    await Promise.all(
-      jobs.map(async ({ domain, section }) => {
-        try {
-          await start(sectionWorkflows[section], [{ domain }]);
-          sectionsStarted++;
-        } catch (err) {
-          // Log but don't fail the cron - other sections may succeed
-          logger.error({ domain, section, err }, "Failed to start workflow");
-        }
-      }),
-    );
+
+    for (let i = 0; i < jobs.length; i += BATCH_SIZE) {
+      const batch = jobs.slice(i, i + BATCH_SIZE);
+      await Promise.all(
+        batch.map(async ({ domain, section }) => {
+          try {
+            await sectionFetchers[section](domain);
+            sectionsStarted++;
+          } catch (err) {
+            // Log but don't fail the cron - other sections may succeed
+            logger.error({ domain, section, err }, "Failed to refresh section");
+          }
+        }),
+      );
+    }
 
     const result = {
       domains: recentDomains.length,

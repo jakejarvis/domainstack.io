@@ -6,21 +6,25 @@ import { simpleHash } from "@domainstack/utils";
 import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import { useState } from "react";
-import type { FaviconWorkflowResult } from "@/workflows/favicon";
-import type { ProviderLogoWorkflowResult } from "@/workflows/provider-logo";
 
-/** Union of workflow result types this component can handle */
-type IconWorkflowResult = FaviconWorkflowResult | ProviderLogoWorkflowResult;
+/**
+ * Result shape for icon queries (favicons, provider logos).
+ * Both the tRPC queries and provider-logo workflow return this shape.
+ */
+type IconQueryResult = {
+  success: boolean;
+  data: { url: string | null } | null;
+};
 
 export type RemoteIconProps = {
   /**
    * TanStack Query options from tRPC's queryOptions() method.
-   * Expected to resolve to FaviconWorkflowResult or ProviderLogoWorkflowResult.
+   * Expected to resolve to a result with { data: { url: string | null } }.
    *
    * Note: Using `any` because tRPC generates complex internal types
    * (UnusedSkipTokenTRPCQueryOptionsOut) that don't conform to standard
    * UseQueryOptions interfaces. Type safety is maintained through the
-   * useQuery<IconWorkflowResult> generic parameter.
+   * useQuery<IconQueryResult> generic parameter.
    */
   // biome-ignore lint/suspicious/noExplicitAny: tRPC queryOptions returns complex internal types
   queryOptions: any;
@@ -130,7 +134,7 @@ export function RemoteIcon({
     data: result,
     isLoading,
     isError,
-  } = useQuery<IconWorkflowResult>({
+  } = useQuery<IconQueryResult>({
     ...queryOptions,
     // Disable retries - icons should fail fast to fallback
     retry: false,

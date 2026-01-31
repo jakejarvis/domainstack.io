@@ -1,7 +1,7 @@
+import { getVerifiedTrackedDomainIds } from "@domainstack/db/queries";
+import { createLogger } from "@domainstack/logger";
 import { NextResponse } from "next/server";
 import { start } from "workflow/api";
-import { trackedDomainsRepo } from "@/lib/db/repos";
-import { createLogger } from "@/lib/logger/server";
 import { reverifyOwnershipWorkflow } from "@/workflows/reverify-ownership";
 
 const logger = createLogger({ source: "cron/reverify-domains" });
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const ids = await trackedDomainsRepo.getVerifiedTrackedDomainIds();
+    const ids = await getVerifiedTrackedDomainIds();
     const results = await Promise.allSettled(
       ids.map((id) =>
         start(reverifyOwnershipWorkflow, [{ trackedDomainId: id }]),

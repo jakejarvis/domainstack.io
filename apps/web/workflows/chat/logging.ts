@@ -191,7 +191,7 @@ export async function logChatStreamErrorStep(payload: {
   tool?: ToolErrorDetails;
 }) {
   "use step";
-  const { createLogger } = await import("@/lib/logger/server");
+  const { createLogger } = await import("@domainstack/logger");
   const logger = createLogger({ source: "chat/workflow" });
   const { workflowRunId } = getWorkflowMetadata();
   const { stepId } = getStepMetadata();
@@ -211,7 +211,7 @@ export async function logChatStepFinishStep(payload: {
   toolResults: ToolResultSummary[];
 }) {
   "use step";
-  const { createLogger } = await import("@/lib/logger/server");
+  const { createLogger } = await import("@domainstack/logger");
   const logger = createLogger({ source: "chat/workflow" });
   const { workflowRunId } = getWorkflowMetadata();
   const { stepId } = getStepMetadata();

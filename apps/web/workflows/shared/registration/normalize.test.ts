@@ -2,22 +2,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock Edge Config
-vi.mock("@/lib/edge-config", () => ({
+vi.mock("@domainstack/server/edge-config", () => ({
   getProviderCatalog: vi.fn().mockResolvedValue(null),
 }));
 
 // Mock provider detection
-vi.mock("@domainstack/core/providers", () => ({
+vi.mock("@domainstack/utils/providers", () => ({
   detectRegistrar: vi.fn().mockReturnValue(null),
   getProvidersFromCatalog: vi.fn().mockReturnValue([]),
 }));
 
-// Mock providers repo
-vi.mock("@/lib/db/repos", () => ({
-  providersRepo: {
-    resolveOrCreateProviderId: vi.fn().mockResolvedValue(null),
-    upsertCatalogProvider: vi.fn().mockResolvedValue({ id: "test-id" }),
-  },
+// Mock providers repo functions
+vi.mock("@domainstack/db/queries", () => ({
+  resolveOrCreateProviderId: vi.fn().mockResolvedValue(null),
+  upsertCatalogProvider: vi.fn().mockResolvedValue({ id: "test-id" }),
 }));
 
 describe("normalizeAndBuildResponseStep", () => {

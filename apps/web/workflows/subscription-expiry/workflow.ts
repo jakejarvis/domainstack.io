@@ -125,9 +125,11 @@ async function fetchUserSubscription(
 ): Promise<UserSubscriptionData | null> {
   "use step";
 
-  const { userSubscriptionRepo } = await import("@/lib/db/repos");
+  const { getUserWithEndingSubscription } = await import(
+    "@domainstack/db/queries"
+  );
 
-  return await userSubscriptionRepo.getUserWithEndingSubscription(userId);
+  return await getUserWithEndingSubscription(userId);
 }
 
 async function calculateDaysRemaining(endsAt: Date): Promise<number> {
@@ -146,9 +148,9 @@ async function updateExpiryTracking(
 ): Promise<void> {
   "use step";
 
-  const { userSubscriptionRepo } = await import("@/lib/db/repos");
+  const { setLastExpiryNotification } = await import("@domainstack/db/queries");
 
-  await userSubscriptionRepo.setLastExpiryNotification(userId, threshold);
+  await setLastExpiryNotification(userId, threshold);
 }
 
 /**
@@ -173,7 +175,7 @@ async function sendSubscriptionExpiryNotification(params: {
 
   const { format } = await import("date-fns");
   const { default: SubscriptionCancelingEmail } = await import(
-    "@/emails/subscription-canceling"
+    "@domainstack/email/templates/subscription-canceling"
   );
   const { sendEmail } = await import("@/workflows/shared/send-email");
 
@@ -181,6 +183,7 @@ async function sendSubscriptionExpiryNotification(params: {
 
   const firstName = getFirstName(userName);
   const endDate = format(endsAt, "MMMM d, yyyy");
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
 
   // Determine urgency for subject line
   const isUrgent = daysRemaining <= 3;
@@ -196,6 +199,7 @@ async function sendSubscriptionExpiryNotification(params: {
     react: SubscriptionCancelingEmail({
       userName: firstName,
       endDate,
+      baseUrl,
     }),
   });
 

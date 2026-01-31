@@ -1,8 +1,8 @@
 "use client";
 
+import { analytics } from "@domainstack/analytics/client";
+import { useSession } from "@domainstack/auth/client";
 import { useEffect, useRef } from "react";
-import { analytics } from "@/lib/analytics/client";
-import { useSession } from "@/lib/auth-client";
 
 /**
  * PostHog identity provider that automatically identifies users on login

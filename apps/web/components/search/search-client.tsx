@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  isValidDomain,
-  normalizeDomainInput,
-} from "@domainstack/core/domain/client";
+import { analytics } from "@domainstack/analytics/client";
 import { Field, FieldLabel } from "@domainstack/ui/field";
 import { Form } from "@domainstack/ui/form";
 import {
@@ -15,6 +12,10 @@ import {
 import { Kbd } from "@domainstack/ui/kbd";
 import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
+import {
+  isValidDomain,
+  normalizeDomainInput,
+} from "@domainstack/utils/domain/client";
 import { IconArrowRight, IconCircleX, IconSearch } from "@tabler/icons-react";
 import { useAtom } from "jotai";
 import { useParams } from "next/navigation";
@@ -23,9 +24,13 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useRouter } from "@/hooks/use-router";
-import { analytics } from "@/lib/analytics/client";
 import { pendingDomainAtom } from "@/lib/atoms/search-atoms";
-import { isMac } from "@/lib/utils";
+
+const isMac = () =>
+  typeof navigator !== "undefined" &&
+  // @ts-expect-error userAgentData not yet in all TS libs
+  (navigator.userAgentData?.platform === "macOS" ||
+    navigator.userAgent.includes("Mac"));
 
 export type SearchClientVariant = "sm" | "lg";
 

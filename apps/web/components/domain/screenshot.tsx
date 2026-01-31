@@ -1,5 +1,6 @@
 "use client";
 
+import { analytics } from "@domainstack/analytics/client";
 import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
 import { IconCircleX, IconShieldExclamation } from "@tabler/icons-react";
@@ -7,7 +8,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { analytics } from "@/lib/analytics/client";
 import { parseRetryAfterHeader } from "@/lib/ratelimit/client";
 
 type ScreenshotStartResponse =

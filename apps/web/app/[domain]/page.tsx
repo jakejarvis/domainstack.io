@@ -1,7 +1,7 @@
+import { analytics } from "@domainstack/analytics/server";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { DomainReportClient } from "@/components/domain/report-client";
-import { analytics } from "@/lib/analytics/server";
 import { toRegistrableDomain } from "@/lib/normalize-domain";
 
 export async function generateMetadata({

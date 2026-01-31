@@ -1,7 +1,7 @@
+import { getUserIdsWithEndingSubscriptions } from "@domainstack/db/queries";
+import { createLogger } from "@domainstack/logger";
 import { NextResponse } from "next/server";
 import { start } from "workflow/api";
-import { userSubscriptionRepo } from "@/lib/db/repos";
-import { createLogger } from "@/lib/logger/server";
 import { subscriptionExpiryWorkflow } from "@/workflows/subscription-expiry";
 
 const logger = createLogger({ source: "cron/check-subscription-expiry" });
@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const ids = await userSubscriptionRepo.getUserIdsWithEndingSubscriptions();
+    const ids = await getUserIdsWithEndingSubscriptions();
     const results = await Promise.allSettled(
       ids.map((id) => start(subscriptionExpiryWorkflow, [{ userId: id }])),
     );

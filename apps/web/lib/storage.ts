@@ -1,8 +1,8 @@
 import "server-only";
 
 import { createHmac } from "node:crypto";
+import { createLogger } from "@domainstack/logger";
 import { putBlob } from "@/lib/blob";
-import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "storage" });
 

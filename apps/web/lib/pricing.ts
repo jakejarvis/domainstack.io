@@ -1,4 +1,4 @@
-import { createLogger } from "@/lib/logger/server";
+import { createLogger } from "@domainstack/logger";
 
 const logger = createLogger({ source: "pricing" });
 

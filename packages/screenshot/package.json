@@ -1,0 +1,26 @@
+{
+  "name": "@domainstack/screenshot",
+  "version": "0.0.0-beta.1",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "lint": "biome check",
+    "format": "biome format --write"
+  },
+  "dependencies": {
+    "@domainstack/logger": "workspace:*",
+    "@ghostery/adblocker-puppeteer": "^2.13.4",
+    "@sparticuz/chromium": "143.0.4",
+    "puppeteer-core": "24.35.0"
+  },
+  "devDependencies": {
+    "@domainstack/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "puppeteer": "24.35.0"
+  }
+}

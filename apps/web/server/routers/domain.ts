@@ -1,22 +1,24 @@
+import { createLogger } from "@domainstack/logger";
 import {
-  MAX_AGE_CERTIFICATES,
-  MAX_AGE_DNS,
-  MAX_AGE_HEADERS,
-  MAX_AGE_HOSTING,
-  MAX_AGE_REGISTRATION,
-  MAX_AGE_SEO,
-} from "@domainstack/constants";
+  fetchCertificates,
+  fetchDns,
+  fetchFavicon,
+  fetchHeaders,
+  fetchHosting,
+  fetchRegistration,
+  fetchSeo,
+} from "@domainstack/server";
 import { TRPCError } from "@trpc/server";
-import { start } from "workflow/api";
 import z from "zod";
 import { toRegistrableDomain } from "@/lib/normalize-domain";
-import { withSwrCache } from "@/lib/workflow/swr";
 import {
   createTRPCRouter,
   publicProcedure,
   withDomainAccessUpdate,
   withRateLimit,
 } from "@/trpc/init";
+
+const logger = createLogger({ source: "domain-router" });
 
 const DomainInputSchema = z
   .object({ domain: z.string().min(1) })
@@ -34,9 +36,8 @@ const DomainInputSchema = z
 
 export const domainRouter = createTRPCRouter({
   /**
-   * Get registration data for a domain using a durable workflow.
-   * Performs WHOIS/RDAP lookup with automatic retries.
-   * Uses stale-while-revalidate: returns stale data immediately while refreshing in background.
+   * Get registration data for a domain.
+   * Performs WHOIS/RDAP lookup. Returns cached data if fresh, otherwise fetches.
    */
   getRegistration: publicProcedure
     .use(withRateLimit)
@@ -44,23 +45,43 @@ export const domainRouter = createTRPCRouter({
     .meta({ rateLimit: { requests: 30, window: "1 m" } })
     .input(DomainInputSchema)
     .query(async ({ input }) => {
-      const { registrationsRepo } = await import("@/lib/db/repos");
-      const { registrationWorkflow } = await import("@/workflows/registration");
+      const { getCachedRegistration } = await import("@domainstack/db/queries");
 
-      return withSwrCache({
-        workflowName: "registration",
-        domain: input.domain,
-        getCached: () => registrationsRepo.getCachedRegistration(input.domain),
-        startWorkflow: () =>
-          start(registrationWorkflow, [{ domain: input.domain }]),
-        maxAgeMs: MAX_AGE_REGISTRATION,
-      });
+      // Check cache first
+      const cached = await getCachedRegistration(input.domain);
+      if (cached.data && !cached.stale) {
+        return { success: true, cached: true, data: cached.data };
+      }
+
+      // Fetch fresh data
+      try {
+        const result = await fetchRegistration(input.domain);
+        if (result.success === false) {
+          return {
+            success: false,
+            cached: false,
+            data: null,
+            error: result.error,
+          };
+        }
+        return { success: true, cached: false, data: result.data };
+      } catch (err) {
+        logger.error(
+          { domain: input.domain, err },
+          "registration fetch failed",
+        );
+        return {
+          success: false,
+          cached: false,
+          data: null,
+          error: "lookup_failed",
+        };
+      }
     }),
 
   /**
-   * Get DNS records for a domain using a durable workflow.
+   * Get DNS records for a domain.
    * Queries multiple DoH providers with automatic fallback.
-   * Uses stale-while-revalidate: returns stale data immediately while refreshing in background.
    */
   getDnsRecords: publicProcedure
     .use(withRateLimit)
@@ -68,25 +89,32 @@ export const domainRouter = createTRPCRouter({
     .meta({ rateLimit: { requests: 60, window: "1 m" } })
     .input(DomainInputSchema)
     .query(async ({ input }) => {
-      const { dnsRepo } = await import("@/lib/db/repos");
-      const { dnsWorkflow } = await import("@/workflows/dns");
+      const { getCachedDns } = await import("@domainstack/db/queries");
 
-      return withSwrCache({
-        workflowName: "dns",
-        domain: input.domain,
-        getCached: () => dnsRepo.getCachedDns(input.domain),
-        startWorkflow: () => start(dnsWorkflow, [{ domain: input.domain }]),
-        maxAgeMs: MAX_AGE_DNS,
-      });
+      // Check cache first
+      const cached = await getCachedDns(input.domain);
+      if (cached.data && !cached.stale) {
+        return { success: true, cached: true, data: cached.data };
+      }
+
+      // Fetch fresh data
+      try {
+        const result = await fetchDns(input.domain);
+        return { success: true, cached: false, data: result.data };
+      } catch (err) {
+        logger.error({ domain: input.domain, err }, "dns fetch failed");
+        return {
+          success: false,
+          cached: false,
+          data: null,
+          error: "dns_fetch_failed",
+        };
+      }
     }),
 
   /**
    * Get hosting, DNS, and email provider data for a domain.
    * Detects providers from DNS records and HTTP headers.
-   * Uses stale-while-revalidate: returns stale data immediately while refreshing in background.
-   *
-   * Uses the hostingWorkflow which handles the full dependency chain
-   * (DNS → headers → hosting) with proper durability and error handling.
    */
   getHosting: publicProcedure
     .use(withRateLimit)
@@ -94,22 +122,32 @@ export const domainRouter = createTRPCRouter({
     .meta({ rateLimit: { requests: 30, window: "1 m" } })
     .input(DomainInputSchema)
     .query(async ({ input }) => {
-      const { hostingRepo } = await import("@/lib/db/repos");
-      const { hostingWorkflow } = await import("@/workflows/hosting");
+      const { getCachedHosting } = await import("@domainstack/db/queries");
 
-      return withSwrCache({
-        domain: input.domain,
-        getCached: () => hostingRepo.getCachedHosting(input.domain),
-        startWorkflow: () => start(hostingWorkflow, [{ domain: input.domain }]),
-        workflowName: "hosting",
-        maxAgeMs: MAX_AGE_HOSTING,
-      });
+      // Check cache first
+      const cached = await getCachedHosting(input.domain);
+      if (cached.data && !cached.stale) {
+        return { success: true, cached: true, data: cached.data };
+      }
+
+      // Fetch fresh data
+      try {
+        const result = await fetchHosting(input.domain);
+        return { success: true, cached: false, data: result.data };
+      } catch (err) {
+        logger.error({ domain: input.domain, err }, "hosting fetch failed");
+        return {
+          success: false,
+          cached: false,
+          data: null,
+          error: "fetch_failed",
+        };
+      }
     }),
 
   /**
-   * Get SSL certificates for a domain using a durable workflow.
-   * Performs TLS handshake with automatic retries.
-   * Uses stale-while-revalidate: returns stale data immediately while refreshing in background.
+   * Get SSL certificates for a domain.
+   * Performs TLS handshake to retrieve certificate chain.
    */
   getCertificates: publicProcedure
     .use(withRateLimit)
@@ -117,23 +155,43 @@ export const domainRouter = createTRPCRouter({
     .meta({ rateLimit: { requests: 30, window: "1 m" } })
     .input(DomainInputSchema)
     .query(async ({ input }) => {
-      const { certificatesRepo } = await import("@/lib/db/repos");
-      const { certificatesWorkflow } = await import("@/workflows/certificates");
+      const { getCachedCertificates } = await import("@domainstack/db/queries");
 
-      return withSwrCache({
-        workflowName: "certificates",
-        domain: input.domain,
-        getCached: () => certificatesRepo.getCachedCertificates(input.domain),
-        startWorkflow: () =>
-          start(certificatesWorkflow, [{ domain: input.domain }]),
-        maxAgeMs: MAX_AGE_CERTIFICATES,
-      });
+      // Check cache first
+      const cached = await getCachedCertificates(input.domain);
+      if (cached.data && !cached.stale) {
+        return { success: true, cached: true, data: cached.data };
+      }
+
+      // Fetch fresh data
+      try {
+        const result = await fetchCertificates(input.domain);
+        if (result.success === false) {
+          return {
+            success: false,
+            cached: false,
+            data: null,
+            error: result.error,
+          };
+        }
+        return { success: true, cached: false, data: result.data };
+      } catch (err) {
+        logger.error(
+          { domain: input.domain, err },
+          "certificates fetch failed",
+        );
+        return {
+          success: false,
+          cached: false,
+          data: null,
+          error: "fetch_failed",
+        };
+      }
     }),
 
   /**
-   * Get HTTP headers for a domain using a durable workflow.
-   * Probes the domain with automatic retries.
-   * Uses stale-while-revalidate: returns stale data immediately while refreshing in background.
+   * Get HTTP headers for a domain.
+   * Probes the domain to retrieve response headers.
    */
   getHeaders: publicProcedure
     .use(withRateLimit)
@@ -141,22 +199,40 @@ export const domainRouter = createTRPCRouter({
     .meta({ rateLimit: { requests: 60, window: "1 m" } })
     .input(DomainInputSchema)
     .query(async ({ input }) => {
-      const { headersRepo } = await import("@/lib/db/repos");
-      const { headersWorkflow } = await import("@/workflows/headers");
+      const { getCachedHeaders } = await import("@domainstack/db/queries");
 
-      return withSwrCache({
-        workflowName: "headers",
-        domain: input.domain,
-        getCached: () => headersRepo.getCachedHeaders(input.domain),
-        startWorkflow: () => start(headersWorkflow, [{ domain: input.domain }]),
-        maxAgeMs: MAX_AGE_HEADERS,
-      });
+      // Check cache first
+      const cached = await getCachedHeaders(input.domain);
+      if (cached.data && !cached.stale) {
+        return { success: true, cached: true, data: cached.data };
+      }
+
+      // Fetch fresh data
+      try {
+        const result = await fetchHeaders(input.domain);
+        if (result.success === false) {
+          return {
+            success: false,
+            cached: false,
+            data: null,
+            error: result.error,
+          };
+        }
+        return { success: true, cached: false, data: result.data };
+      } catch (err) {
+        logger.error({ domain: input.domain, err }, "headers fetch failed");
+        return {
+          success: false,
+          cached: false,
+          data: null,
+          error: "fetch_failed",
+        };
+      }
     }),
 
   /**
-   * Get SEO data for a domain using a durable workflow.
-   * Fetches HTML, robots.txt, and OG images with automatic retries.
-   * Uses stale-while-revalidate: returns stale data immediately while refreshing in background.
+   * Get SEO data for a domain.
+   * Fetches HTML meta tags, robots.txt, and OG images.
    */
   getSeo: publicProcedure
     .use(withRateLimit)
@@ -164,34 +240,66 @@ export const domainRouter = createTRPCRouter({
     .meta({ rateLimit: { requests: 30, window: "1 m" } })
     .input(DomainInputSchema)
     .query(async ({ input }) => {
-      const { seoRepo } = await import("@/lib/db/repos");
-      const { seoWorkflow } = await import("@/workflows/seo");
+      const { getCachedSeo } = await import("@domainstack/db/queries");
 
-      return withSwrCache({
-        workflowName: "seo",
-        domain: input.domain,
-        getCached: () => seoRepo.getCachedSeo(input.domain),
-        startWorkflow: () => start(seoWorkflow, [{ domain: input.domain }]),
-        maxAgeMs: MAX_AGE_SEO,
-      });
+      // Check cache first
+      const cached = await getCachedSeo(input.domain);
+      if (cached.data && !cached.stale) {
+        return { success: true, cached: true, data: cached.data };
+      }
+
+      // Fetch fresh data
+      try {
+        const result = await fetchSeo(input.domain);
+        if (!result.success) {
+          return {
+            success: false,
+            cached: false,
+            data: null,
+            error: result.error,
+          };
+        }
+        return { success: true, cached: false, data: result.data };
+      } catch (err) {
+        logger.error({ domain: input.domain, err }, "seo fetch failed");
+        return {
+          success: false,
+          cached: false,
+          data: null,
+          error: "fetch_failed",
+        };
+      }
     }),
 
   /**
-   * Get a favicon for a domain using a durable workflow.
-   * Fetches from multiple sources with automatic retries.
-   * Uses stale-while-revalidate: returns stale data immediately while refreshing in background.
+   * Get a favicon for a domain.
+   * Fetches from multiple sources (Google, DuckDuckGo, direct).
    */
   getFavicon: publicProcedure
     .input(DomainInputSchema)
     .query(async ({ input }) => {
-      const { faviconsRepo } = await import("@/lib/db/repos");
-      const { faviconWorkflow } = await import("@/workflows/favicon");
+      const { getFavicon: getCachedFavicon } = await import(
+        "@domainstack/db/queries"
+      );
 
-      return withSwrCache({
-        workflowName: "favicon",
-        domain: input.domain,
-        getCached: () => faviconsRepo.getFavicon(input.domain),
-        startWorkflow: () => start(faviconWorkflow, [{ domain: input.domain }]),
-      });
+      // Check cache first
+      const cached = await getCachedFavicon(input.domain);
+      if (cached.data && !cached.stale) {
+        return { success: true, cached: true, data: cached.data };
+      }
+
+      // Fetch fresh data
+      try {
+        const result = await fetchFavicon(input.domain);
+        return { success: true, cached: false, data: result.data };
+      } catch (err) {
+        logger.error({ domain: input.domain, err }, "favicon fetch failed");
+        return {
+          success: false,
+          cached: false,
+          data: null,
+          error: "fetch_failed",
+        };
+      }
     }),
 });

@@ -5,7 +5,7 @@
  * This step is shared between the dedicated certificatesWorkflow and internal workflows.
  */
 
-import type { RawCertificate } from "@domainstack/core/tls";
+import type { RawCertificate } from "@domainstack/server/tls";
 import type { Certificate } from "@domainstack/types";
 import { RetryableError } from "workflow";
 import type {
@@ -28,7 +28,7 @@ export async function fetchCertificateChainStep(
   "use step";
 
   // Dynamic import to keep step bundle small
-  const { fetchCertificateChain } = await import("@domainstack/core/tls");
+  const { fetchCertificateChain } = await import("@domainstack/server/tls");
 
   const result = await fetchCertificateChain(domain);
 
@@ -65,11 +65,13 @@ export async function processChainStep(
   "use step";
 
   // Dynamic imports to avoid top-level db/network dependencies
-  const { getProviderCatalog } = await import("@/lib/edge-config");
-  const { detectCertificateAuthority, getProvidersFromCatalog } = await import(
-    "@domainstack/core/providers"
+  const { getProviderCatalog } = await import(
+    "@domainstack/server/edge-config"
   );
-  const { providersRepo } = await import("@/lib/db/repos");
+  const { detectCertificateAuthority, getProvidersFromCatalog } = await import(
+    "@domainstack/utils/providers"
+  );
+  const { upsertCatalogProvider } = await import("@domainstack/db/queries");
 
   const chain = JSON.parse(chainJson) as RawCertificate[];
   const catalog = await getProviderCatalog();
@@ -99,7 +101,7 @@ export async function processChainStep(
   const providerIds = await Promise.all(
     certificatesWithMatches.map(async ({ catalogProvider }) => {
       if (catalogProvider) {
-        const ref = await providersRepo.upsertCatalogProvider(catalogProvider);
+        const ref = await upsertCatalogProvider(catalogProvider);
         return ref.id;
       }
       return null;

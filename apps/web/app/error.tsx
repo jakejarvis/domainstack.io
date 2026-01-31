@@ -1,10 +1,10 @@
 "use client";
 
+import { analytics } from "@domainstack/analytics/client";
 import { Button } from "@domainstack/ui/button";
 import { IconRefresh } from "@tabler/icons-react";
 import { useEffect } from "react";
 import { CreateIssueButton } from "@/components/create-issue-button";
-import { analytics } from "@/lib/analytics/client";
 
 export default function RootError(props: {
   error: Error & { digest?: string };

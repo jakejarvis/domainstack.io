@@ -3,10 +3,10 @@ import {
   TTL_AVATAR_CDN,
   TTL_AVATAR_STALE,
 } from "@domainstack/constants";
+import { getUserAvatarUrl } from "@domainstack/db/queries";
+import { createLogger } from "@domainstack/logger";
 import { SafeFetchError, safeFetch } from "@domainstack/safe-fetch";
 import { connection, type NextRequest, NextResponse } from "next/server";
-import { usersRepo } from "@/lib/db/repos";
-import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "api/avatar" });
 
@@ -29,7 +29,7 @@ export async function GET(
   }
 
   // Look up user's avatar URL
-  const avatarUrl = await usersRepo.getUserAvatarUrl(userId);
+  const avatarUrl = await getUserAvatarUrl(userId);
 
   if (!avatarUrl) {
     return new NextResponse("Not found", { status: 404 });

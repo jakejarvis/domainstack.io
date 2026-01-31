@@ -1,9 +1,9 @@
 "use client";
 
+import { analytics } from "@domainstack/analytics/client";
+import { linkSocial, unlinkAccount } from "@domainstack/auth/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { analytics } from "@/lib/analytics/client";
-import { linkSocial, unlinkAccount } from "@/lib/auth-client";
 import { getEnabledProviders, type OAuthProvider } from "@/lib/oauth";
 import { useTRPC } from "@/lib/trpc/client";
 

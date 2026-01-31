@@ -19,13 +19,13 @@ export async function getModelStep(): Promise<CompatibleLanguageModel> {
   });
 
   // Get the AI model ID from Edge Config, fallback to constants string
-  const { getAiChatModel } = await import("@/lib/edge-config");
+  const { getAiChatModel } = await import("@domainstack/server/edge-config");
   const { DEFAULT_CHAT_MODEL } = await import("@domainstack/constants");
   const modelId = await getAiChatModel();
   const model = gateway(modelId || DEFAULT_CHAT_MODEL);
 
   // Wrap with PostHog tracing if client available
-  const { getServerPosthog } = await import("@/lib/analytics/server");
+  const { getServerPosthog } = await import("@domainstack/analytics/server");
   const phClient = getServerPosthog();
   if (phClient) {
     // Get workflow run ID and step ID for PostHog trace correlation

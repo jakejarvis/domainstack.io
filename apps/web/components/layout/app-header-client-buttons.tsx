@@ -1,5 +1,6 @@
 "use client";
 
+import { useSession } from "@domainstack/auth/client";
 import { Button } from "@domainstack/ui/button";
 import {
   DropdownMenu,
@@ -27,7 +28,6 @@ import { UserMenu } from "@/components/layout/user-menu";
 import { NotificationsPopover } from "@/components/notifications/notifications-popover";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/hooks/use-theme";
-import { useSession } from "@/lib/auth-client";
 
 /**
  * Session-dependent header buttons that conditionally render based on auth state.

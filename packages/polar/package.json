@@ -1,0 +1,40 @@
+{
+  "name": "@domainstack/polar",
+  "version": "0.0.0-beta.1",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./products": "./src/products.ts",
+    "./handlers": "./src/handlers.ts",
+    "./emails": "./src/emails.ts",
+    "./downgrade": "./src/downgrade.ts",
+    "./better-auth/server": "./src/better-auth/server.ts",
+    "./better-auth/client": "./src/better-auth/client.ts",
+    "./sdk": "./src/sdk.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "lint": "biome check",
+    "format": "biome format --write",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@domainstack/analytics": "workspace:*",
+    "@domainstack/db": "workspace:*",
+    "@domainstack/email": "workspace:*",
+    "@domainstack/logger": "workspace:*",
+    "@polar-sh/better-auth": "^1.6.4",
+    "@polar-sh/sdk": "^0.42.5",
+    "date-fns": "^4.1.0"
+  },
+  "devDependencies": {
+    "@domainstack/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "next": ">=16.0.0"
+  }
+}

@@ -5,11 +5,11 @@
  * This step is shared between the dedicated registrationWorkflow and internal workflows.
  */
 
-import type { Provider } from "@domainstack/core/providers";
 import type {
   RegistrationContact,
   RegistrationResponse,
 } from "@domainstack/types";
+import type { Provider } from "@domainstack/utils/providers";
 
 // Type for parsed RDAP record
 interface ParsedRdapRecord {
@@ -61,11 +61,15 @@ export async function normalizeAndBuildResponseStep(
   "use step";
 
   // Dynamic imports for Node.js modules and database operations
-  const { getProviderCatalog } = await import("@/lib/edge-config");
-  const { detectRegistrar, getProvidersFromCatalog } = await import(
-    "@domainstack/core/providers"
+  const { getProviderCatalog } = await import(
+    "@domainstack/server/edge-config"
   );
-  const { providersRepo } = await import("@/lib/db/repos");
+  const { detectRegistrar, getProvidersFromCatalog } = await import(
+    "@domainstack/utils/providers"
+  );
+  const { upsertCatalogProvider, resolveOrCreateProviderId } = await import(
+    "@domainstack/db/queries"
+  );
 
   const record = JSON.parse(recordJson) as ParsedRdapRecord;
   const catalog = await getProviderCatalog();
@@ -103,11 +107,10 @@ export async function normalizeAndBuildResponseStep(
 
   if (hasProviderInfo) {
     if (catalogProvider) {
-      const providerRef =
-        await providersRepo.upsertCatalogProvider(catalogProvider);
+      const providerRef = await upsertCatalogProvider(catalogProvider);
       registrarProviderId = providerRef.id;
     } else {
-      registrarProviderId = await providersRepo.resolveOrCreateProviderId({
+      registrarProviderId = await resolveOrCreateProviderId({
         category: "registrar",
         domain: registrarDomain,
         name: registrarName.trim() || null,

@@ -1,3 +1,6 @@
+"use client";
+
+import { useSession } from "@domainstack/auth/client";
 import { Button } from "@domainstack/ui/button";
 import {
   Tooltip,
@@ -13,7 +16,6 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useCallback } from "react";
 import { useRouter } from "@/hooks/use-router";
-import { useSession } from "@/lib/auth-client";
 import { useTRPC } from "@/lib/trpc/client";
 
 type TrackDomainButtonProps = {

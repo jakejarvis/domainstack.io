@@ -1,29 +1,13 @@
 /**
  * DNS shared step types.
  *
- * Internal types for step-to-step data transfer and typed errors.
- * Response types (DnsRecordsResponse) remain in lib/types/domain/dns.ts.
+ * Re-exports types from @domainstack/server/dns.
  */
 
-import type { DnsRecord } from "@domainstack/types";
+import type { DnsFetchData } from "@domainstack/server/dns";
 
-/**
- * Internal data structure for step-to-step transfer.
- * Includes expiry metadata not exposed in the public response.
- */
-export interface DnsFetchData {
-  records: DnsRecord[];
-  resolver: string;
-  recordsWithExpiry: Array<{
-    type: string;
-    name: string;
-    value: string;
-    ttl?: number;
-    priority?: number;
-    isCloudflare?: boolean;
-    expiresAt: string;
-  }>;
-}
+// Re-export for backwards compatibility
+export type { DnsFetchData } from "@domainstack/server/dns";
 
 /**
  * Result of the DNS fetch step.

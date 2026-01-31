@@ -15,7 +15,7 @@ globalThis.fetch = vi.fn(() => {
   );
 });
 
-vi.mock("@/lib/analytics/client", () => ({
+vi.mock("@domainstack/analytics/client", () => ({
   analytics: {
     track: vi.fn(),
     trackException: vi.fn(),

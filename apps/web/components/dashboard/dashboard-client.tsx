@@ -1,5 +1,6 @@
 "use client";
 
+import { useSession } from "@domainstack/auth/client";
 import type { VerificationMethod } from "@domainstack/constants";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import {
@@ -22,7 +23,13 @@ import { useQuery } from "@tanstack/react-query";
 import type { Table } from "@tanstack/react-table";
 import { useSearchParams } from "next/navigation";
 import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from "react";
 import { toast } from "sonner";
 import { ArchivedDomainsList } from "@/components/dashboard/archived-domains-list";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
@@ -44,7 +51,6 @@ import {
 } from "@/hooks/use-dashboard-selection";
 import { useRouter } from "@/hooks/use-router";
 import { useSubscription } from "@/hooks/use-subscription";
-import { useSession } from "@/lib/auth-client";
 import {
   type ConfirmAction,
   DEFAULT_SORT,
@@ -57,7 +63,7 @@ import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { useTRPC } from "@/lib/trpc/client";
 
 export function DashboardClient() {
-  const { data: session, isPending: sessionLoading } = useSession();
+  const { data: session, isPending: isSessionPending } = useSession();
   const router = useRouter();
   const trpc = useTRPC();
   const {
@@ -283,7 +289,7 @@ export function DashboardClient() {
 
   // Show loading until we have both query data AND session data
   const isLoading =
-    subscriptionLoading || domainsQuery.isLoading || sessionLoading || !session;
+    subscriptionLoading || domainsQuery.isLoading || isSessionPending;
 
   const hasError = subscriptionError || domainsQuery.isError;
 
@@ -292,7 +298,21 @@ export function DashboardClient() {
     domainsQuery.refetch();
   }, [refetchSubscription, domainsQuery]);
 
+  // Redirect to login if not authenticated (must be before conditional returns)
+  // useLayoutEffect prevents flash of unauthorized content by redirecting before paint
+  const shouldRedirect = !isLoading && !session;
+  useLayoutEffect(() => {
+    if (shouldRedirect) {
+      router.replace("/login");
+    }
+  }, [shouldRedirect, router]);
+
   if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+
+  if (!session) {
+    // Render skeleton while redirect is in progress
     return <DashboardSkeleton />;
   }
 

@@ -6,8 +6,10 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./drizzle": "./src/drizzle.ts",
     "./schema": "./src/schema.ts",
-    "./repos": "./src/repos/index.ts",
+    "./queries": "./src/queries/index.ts",
     "./testing": "./src/testing.ts"
   },
   "scripts": {
@@ -22,18 +24,25 @@
   },
   "dependencies": {
     "@domainstack/constants": "workspace:*",
-    "@domainstack/core": "workspace:*",
     "@domainstack/types": "workspace:*",
-    "drizzle-orm": "catalog:"
+    "@domainstack/utils": "workspace:*",
+    "drizzle-orm": "^0.45.1",
+    "pg": "^8.18.0"
   },
   "peerDependencies": {
-    "pg": "^8"
+    "@vercel/functions": ">=2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@vercel/functions": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@electric-sql/pglite": "^0.3.15",
+    "@vercel/functions": "^3.4.0",
     "@types/node": "catalog:",
-    "@types/pg": "catalog:",
+    "@types/pg": "^8.16.0",
     "dotenv": "^17.2.3",
     "drizzle-kit": "^0.31.8",
     "vitest": "catalog:"

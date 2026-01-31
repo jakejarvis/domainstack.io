@@ -10,12 +10,12 @@ vi.mock("@domainstack/safe-fetch", () => ({
 }));
 
 // Mock fetch utilities
-vi.mock("@domainstack/core/tls", () => ({
+vi.mock("@domainstack/server/tls", () => ({
   isExpectedTlsError: vi.fn().mockReturnValue(false),
 }));
 
 // Mock blocked domains repo
-vi.mock("@/lib/db/repos", () => ({
+vi.mock("@domainstack/db/queries", () => ({
   blockedDomainsRepo: {
     isDomainBlocked: vi.fn().mockResolvedValue(false),
   },

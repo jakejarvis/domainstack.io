@@ -1,3 +1,4 @@
+import { auth } from "@domainstack/auth/server";
 import { Card } from "@domainstack/ui/card";
 import { Skeleton } from "@domainstack/ui/skeleton";
 import type { Metadata } from "next";
@@ -9,7 +10,6 @@ import {
   SettingsSkeletonPanels,
   SettingsSkeletonTabsList,
 } from "@/components/settings/settings-skeleton";
-import { auth } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Settings",

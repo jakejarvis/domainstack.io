@@ -1,12 +1,12 @@
 /* @vitest-environment node */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Hoist mock for @domainstack/core/whois
+// Hoist mock for @domainstack/server/whois
 const whoisMock = vi.hoisted(() => ({
   lookupWhois: vi.fn(),
 }));
 
-vi.mock("@domainstack/core/whois", () => whoisMock);
+vi.mock("@domainstack/server/whois", () => whoisMock);
 
 describe("lookupWhoisStep", () => {
   beforeEach(() => {

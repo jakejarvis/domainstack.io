@@ -1,13 +1,13 @@
+import { analytics } from "@domainstack/analytics/client";
 import type { VerificationMethod } from "@domainstack/constants";
+import type { ResumeDomainData } from "@domainstack/types";
 import {
   isValidDomain,
   normalizeDomainInput,
-} from "@domainstack/core/domain/client";
-import type { ResumeDomainData } from "@domainstack/types";
+} from "@domainstack/utils/domain/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { toast } from "sonner";
-import { analytics } from "@/lib/analytics/client";
 import { useTRPC } from "@/lib/trpc/client";
 import {
   createInitialState,
