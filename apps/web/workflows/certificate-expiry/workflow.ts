@@ -66,7 +66,7 @@ export async function certificateExpiryWorkflow(
     daysRemaining,
     CERTIFICATE_EXPIRY_THRESHOLDS,
     "certificate_expiry",
-  );
+  ) as NotificationType | null;
   if (!notificationType) {
     return { skipped: true, reason: "no_threshold_met" };
   }

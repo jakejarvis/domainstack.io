@@ -1,6 +1,5 @@
-/* @vitest-environment node */
 import { describe, expect, it } from "vitest";
-import { normalizeStatus, statusesAreEqual } from "./normalize";
+import { normalizeStatus, statusesAreEqual } from "./status";
 
 describe("normalizeStatus", () => {
   it("converts to lowercase", () => {
@@ -28,8 +27,8 @@ describe("normalizeStatus", () => {
   });
 
   it("handles mixed separators", () => {
-    expect(normalizeStatus("client_transfer prohibited")).toBe(
-      "clienttransferprohibited",
+    expect(normalizeStatus("client_transfer-prohibited here")).toBe(
+      "clienttransferprohibitedhere",
     );
   });
 

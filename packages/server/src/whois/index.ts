@@ -7,7 +7,8 @@
 
 // Lookup functions
 export * from "./lookup";
-// Normalization utilities
-export * from "./normalize";
 // Types
 export * from "./types";
+
+// Re-export status utilities from utils for backward compatibility
+export { normalizeStatus, statusesAreEqual } from "@domainstack/utils/change-detection";

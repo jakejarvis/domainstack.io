@@ -1,5 +1,5 @@
 /**
- * Utilities for normalizing registration data from RDAP/WHOIS.
+ * Utilities for normalizing and comparing registration status strings.
  */
 
 /**

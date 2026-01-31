@@ -61,7 +61,7 @@ export async function domainExpiryWorkflow(
     daysRemaining,
     DOMAIN_EXPIRY_THRESHOLDS,
     "domain_expiry",
-  );
+  ) as NotificationType | null;
   if (!notificationType) {
     return { skipped: true, reason: "no_threshold_met" };
   }

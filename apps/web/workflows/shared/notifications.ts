@@ -8,6 +8,9 @@
 import type { NotificationType } from "@domainstack/constants";
 import type { UserNotificationPreferences } from "@domainstack/types";
 
+// Re-export expiry utilities from utils
+export { getThresholdNotificationType } from "@domainstack/utils/expiry";
+
 export interface NotificationChannels {
   shouldSendEmail: boolean;
   shouldSendInApp: boolean;
@@ -68,25 +71,6 @@ export async function resolveProviderNamesStep(
 // ============================================================================
 // Expiry notification helpers
 // ============================================================================
-
-/**
- * Get the notification type for a given days remaining value and thresholds.
- *
- * Finds the smallest threshold that the days remaining falls under.
- */
-export function getThresholdNotificationType(
-  daysRemaining: number,
-  thresholds: readonly number[],
-  prefix: "domain_expiry" | "certificate_expiry",
-): NotificationType | null {
-  const sorted = [...thresholds].sort((a, b) => a - b);
-  for (const threshold of sorted) {
-    if (daysRemaining <= threshold) {
-      return `${prefix}_${threshold}d` as NotificationType;
-    }
-  }
-  return null;
-}
 
 /**
  * Step: Calculate days remaining until expiration.

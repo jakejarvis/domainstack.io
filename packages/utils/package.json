@@ -6,9 +6,11 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
+    "./change-detection": "./src/change-detection/index.ts",
     "./dns": "./src/dns/index.ts",
     "./domain": "./src/domain/index.ts",
     "./domain/client": "./src/domain/client.ts",
+    "./expiry": "./src/expiry/index.ts",
     "./providers": "./src/providers/index.ts"
   },
   "scripts": {

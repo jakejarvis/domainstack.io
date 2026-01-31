@@ -1,13 +1,19 @@
 import type {
-  CertificateSnapshotData,
-  RegistrationSnapshotData,
+  CertificateSnapshotData as DbCertificateSnapshotData,
+  RegistrationSnapshotData as DbRegistrationSnapshotData,
 } from "@domainstack/db/schema";
-import { statusesAreEqual } from "@domainstack/server/whois";
 import type {
   CertificatesResponse,
   HostingResponse,
   RegistrationResponse,
 } from "@domainstack/types";
+import {
+  type CertificateChangeWithNames,
+  type ProviderChangeWithNames,
+  detectCertificateChange,
+  detectProviderChange,
+  detectRegistrationChange,
+} from "@domainstack/utils/change-detection";
 import {
   fetchCertificateChainStep,
   persistCertificatesStep,
@@ -39,62 +45,14 @@ import {
   persistRegistrationStep,
 } from "@/workflows/shared/registration";
 
-// =============================================================================
-// Change Types
-// =============================================================================
-
-/**
- * Registration change details.
- */
-export interface RegistrationChange {
-  registrarChanged: boolean;
-  nameserversChanged: boolean;
-  transferLockChanged: boolean;
-  statusesChanged: boolean;
-  previousRegistrar: string | null;
-  previousNameservers: { host: string }[];
-  previousTransferLock: boolean | null;
-  previousStatuses: string[];
-  newRegistrar: string | null;
-  newNameservers: { host: string }[];
-  newTransferLock: boolean | null;
-  newStatuses: string[];
-}
-
-/**
- * Provider change details.
- */
-export interface HostingChange {
-  dnsProviderChanged: boolean;
-  hostingProviderChanged: boolean;
-  emailProviderChanged: boolean;
-  previousDnsProvider: string | null;
-  previousHostingProvider: string | null;
-  previousEmailProvider: string | null;
-  newDnsProvider: string | null;
-  newHostingProvider: string | null;
-  newEmailProvider: string | null;
-  previousDnsProviderId: string | null;
-  previousHostingProviderId: string | null;
-  previousEmailProviderId: string | null;
-  newDnsProviderId: string | null;
-  newHostingProviderId: string | null;
-  newEmailProviderId: string | null;
-}
-
-/**
- * Certificate change details.
- */
-export interface CertificateChange {
-  caProviderChanged: boolean;
-  issuerChanged: boolean;
-  previousCaProvider: string | null;
-  previousIssuer: string | null;
-  newCaProvider: string | null;
-  newIssuer: string | null;
-  previousCaProviderId: string | null;
-  newCaProviderId: string | null;
-}
+// Re-export change types for consumers
+export type {
+  CertificateChange,
+  CertificateChangeWithNames,
+  ProviderChange,
+  ProviderChangeWithNames,
+  RegistrationChange,
+} from "@domainstack/utils/change-detection";
 
 // =============================================================================
 // Workflow Types
@@ -213,12 +171,13 @@ export async function detectChangesWorkflow(
       registrarProviderId: registrationData.registrarProvider?.id ?? null,
       nameservers: registrationData.nameservers || [],
       transferLock: registrationData.transferLock ?? null,
-      statuses: (registrationData.statuses || []).map((s) =>
-        typeof s === "string" ? s : s.status,
+      statuses: (registrationData.statuses || []).map(
+        (s: string | { status: string }) =>
+          typeof s === "string" ? s : s.status,
       ),
     };
 
-    const registrationChange = await detectRegistrationChange(
+    const registrationChange = detectRegistrationChange(
       snapshot.registration,
       currentRegistration,
     );
@@ -372,7 +331,7 @@ export async function detectChangesWorkflow(
       email: hostingData.emailProvider?.id ?? null,
     };
 
-    const providerChange = await detectProviderChange(
+    const providerChange = detectProviderChange(
       {
         dnsProviderId: snapshot.dnsProviderId,
         hostingProviderId: snapshot.hostingProviderId,
@@ -406,7 +365,7 @@ export async function detectChangesWorkflow(
 
         const providerNames = await resolveProviderNamesStep(providerIds);
 
-        const enrichedChange: HostingChange = {
+        const enrichedChange: ProviderChangeWithNames = {
           ...providerChange,
           previousDnsProvider: providerChange.previousDnsProviderId
             ? providerNames.get(providerChange.previousDnsProviderId) || null
@@ -526,7 +485,7 @@ export async function detectChangesWorkflow(
       fingerprint: null,
     };
 
-    const certificateChange = await detectCertificateChange(
+    const certificateChange = detectCertificateChange(
       snapshot.certificate,
       currentCertificate,
     );
@@ -548,7 +507,7 @@ export async function detectChangesWorkflow(
 
         const caProviderNames = await resolveProviderNamesStep(caIds);
 
-        const enrichedChange: CertificateChange = {
+        const enrichedChange: CertificateChangeWithNames = {
           ...certificateChange,
           previousCaProvider: certificateChange.previousCaProviderId
             ? caProviderNames.get(certificateChange.previousCaProviderId) ||
@@ -638,143 +597,9 @@ async function fetchSnapshot(trackedDomainId: string): Promise<SnapshotData> {
   return await getSnapshot(trackedDomainId);
 }
 
-async function detectRegistrationChange(
-  previous: RegistrationSnapshotData,
-  current: RegistrationSnapshotData,
-): Promise<RegistrationChange | null> {
-  "use step";
-
-  const registrarChanged =
-    previous.registrarProviderId !== current.registrarProviderId;
-
-  // Defensive: Handle potential empty objects from createSnapshot defaults
-  const snapshotNameservers = previous.nameservers ?? [];
-  const currentNameservers = current.nameservers ?? [];
-
-  // Check nameserver changes
-  const prevNsHosts = [...snapshotNameservers]
-    .map((ns) => ns.host)
-    .sort((a, b) => a.localeCompare(b));
-  const currNsHosts = [...currentNameservers]
-    .map((ns) => ns.host)
-    .sort((a, b) => a.localeCompare(b));
-  const nameserversChanged =
-    prevNsHosts.length !== currNsHosts.length ||
-    prevNsHosts.some((host, i) => host !== currNsHosts[i]);
-
-  const transferLockChanged = previous.transferLock !== current.transferLock;
-
-  // Check status changes (using normalized comparison to handle formatting differences)
-  const snapshotStatuses = previous.statuses ?? [];
-  const currentStatuses = current.statuses ?? [];
-  const statusesChanged = !statusesAreEqual(snapshotStatuses, currentStatuses);
-
-  // If nothing changed, return null
-  if (
-    !registrarChanged &&
-    !nameserversChanged &&
-    !transferLockChanged &&
-    !statusesChanged
-  ) {
-    return null;
-  }
-
-  // Something changed, return the change details
-  return {
-    registrarChanged,
-    nameserversChanged,
-    transferLockChanged,
-    statusesChanged,
-    previousRegistrar: previous.registrarProviderId,
-    previousNameservers: snapshotNameservers,
-    previousTransferLock: previous.transferLock,
-    previousStatuses: snapshotStatuses,
-    newRegistrar: current.registrarProviderId,
-    newNameservers: currentNameservers,
-    newTransferLock: current.transferLock,
-    newStatuses: currentStatuses,
-  };
-}
-
-async function detectProviderChange(
-  previous: {
-    dnsProviderId: string | null;
-    hostingProviderId: string | null;
-    emailProviderId: string | null;
-  },
-  current: {
-    dnsProviderId: string | null;
-    hostingProviderId: string | null;
-    emailProviderId: string | null;
-  },
-): Promise<Omit<
-  HostingChange,
-  | "previousDnsProvider"
-  | "newDnsProvider"
-  | "previousHostingProvider"
-  | "newHostingProvider"
-  | "previousEmailProvider"
-  | "newEmailProvider"
-> | null> {
-  "use step";
-
-  const dnsProviderChanged = previous.dnsProviderId !== current.dnsProviderId;
-  const hostingProviderChanged =
-    previous.hostingProviderId !== current.hostingProviderId;
-  const emailProviderChanged =
-    previous.emailProviderId !== current.emailProviderId;
-
-  // If nothing changed, return null
-  if (!dnsProviderChanged && !hostingProviderChanged && !emailProviderChanged) {
-    return null;
-  }
-
-  // Something changed, return the change details
-  // Note: Provider names will be fetched separately in the monitoring job
-  return {
-    dnsProviderChanged,
-    hostingProviderChanged,
-    emailProviderChanged,
-    previousDnsProviderId: previous.dnsProviderId,
-    previousHostingProviderId: previous.hostingProviderId,
-    previousEmailProviderId: previous.emailProviderId,
-    newDnsProviderId: current.dnsProviderId,
-    newHostingProviderId: current.hostingProviderId,
-    newEmailProviderId: current.emailProviderId,
-  };
-}
-
-async function detectCertificateChange(
-  previous: CertificateSnapshotData,
-  current: CertificateSnapshotData,
-): Promise<CertificateChange | null> {
-  "use step";
-
-  const caProviderChanged = previous.caProviderId !== current.caProviderId;
-  const issuerChanged = previous.issuer !== current.issuer;
-
-  // If nothing changed, return null
-  if (!caProviderChanged && !issuerChanged) {
-    return null;
-  }
-
-  // Something changed, return the change details
-  // Note: CA provider names will be fetched separately in the monitoring job
-  return {
-    caProviderChanged,
-    issuerChanged,
-    previousCaProvider: null,
-    previousIssuer: previous.issuer,
-    newCaProvider: null,
-    newIssuer: current.issuer,
-    previousCaProviderId: previous.caProviderId,
-    newCaProviderId: current.caProviderId,
-  };
-}
-
 async function updateRegistrationSnapshot(
   trackedDomainId: string,
-  registration: RegistrationSnapshotData,
+  registration: DbRegistrationSnapshotData,
 ): Promise<void> {
   "use step";
 
@@ -802,7 +627,7 @@ async function updateProviderSnapshot(
 
 async function updateCertificateSnapshot(
   trackedDomainId: string,
-  certificate: CertificateSnapshotData,
+  certificate: DbCertificateSnapshotData,
 ): Promise<void> {
   "use step";
 
