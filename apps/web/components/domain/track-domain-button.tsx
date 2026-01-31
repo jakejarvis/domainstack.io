@@ -1,3 +1,5 @@
+"use client";
+
 import { useSession } from "@domainstack/auth/client";
 import { Button } from "@domainstack/ui/button";
 import {

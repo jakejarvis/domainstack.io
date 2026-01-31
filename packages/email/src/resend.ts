@@ -2,18 +2,11 @@ import {
   RESEND_LOGO_CONTENT_ID,
   RESEND_LOGO_PATH,
 } from "@domainstack/constants";
-import { logger } from "@domainstack/logger";
 import { Resend } from "resend";
 
-const apiKey = process.env.RESEND_API_KEY;
-
-if (!apiKey) {
-  logger.warn(
-    "RESEND_API_KEY is not set. Email notifications will not be sent.",
-  );
-}
-
-const resend = apiKey ? new Resend(apiKey) : null;
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
 
 /**
  * Options for sending email.

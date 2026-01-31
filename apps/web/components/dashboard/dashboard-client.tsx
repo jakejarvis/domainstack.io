@@ -57,7 +57,7 @@ import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { useTRPC } from "@/lib/trpc/client";
 
 export function DashboardClient() {
-  const { data: session, isPending: sessionLoading } = useSession();
+  const { data: session, isPending: isSessionPending } = useSession();
   const router = useRouter();
   const trpc = useTRPC();
   const {
@@ -283,7 +283,7 @@ export function DashboardClient() {
 
   // Show loading until we have both query data AND session data
   const isLoading =
-    subscriptionLoading || domainsQuery.isLoading || sessionLoading || !session;
+    subscriptionLoading || domainsQuery.isLoading || isSessionPending;
 
   const hasError = subscriptionError || domainsQuery.isError;
 
@@ -294,6 +294,11 @@ export function DashboardClient() {
 
   if (isLoading) {
     return <DashboardSkeleton />;
+  }
+
+  if (!session) {
+    router.replace("/login");
+    return null;
   }
 
   if (hasError) {
