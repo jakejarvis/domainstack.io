@@ -251,6 +251,14 @@ export const domainRouter = createTRPCRouter({
       // Fetch fresh data
       try {
         const result = await fetchSeo(input.domain);
+        if (!result.success) {
+          return {
+            success: false,
+            cached: false,
+            data: null,
+            error: result.error,
+          };
+        }
         return { success: true, cached: false, data: result.data };
       } catch (err) {
         logger.error({ domain: input.domain, err }, "seo fetch failed");

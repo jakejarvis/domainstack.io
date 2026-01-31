@@ -28,7 +28,11 @@ import { ttlForSeo } from "../ttl";
 // Types
 // ============================================================================
 
-export type SeoResult = { success: true; data: SeoResponse };
+export type SeoError = "dns_error" | "tls_error";
+
+export type SeoResult =
+  | { success: true; data: SeoResponse }
+  | { success: false; error: SeoError };
 
 interface HtmlFetchData {
   success: boolean;
@@ -68,9 +72,9 @@ const SOCIAL_HEIGHT = 630;
  * Fetch and persist SEO data for a domain.
  *
  * @param domain - The domain to analyze
- * @returns SEO result with meta, preview, and robots data
+ * @returns SEO result with data or error
  *
- * @throws Error on transient failures - TanStack Query retries these
+ * @throws Error on transient failures (network issues) - TanStack Query retries these
  */
 export async function fetchSeo(domain: string): Promise<SeoResult> {
   // Step 1 & 2: Fetch HTML and robots.txt in parallel
@@ -78,6 +82,18 @@ export async function fetchSeo(domain: string): Promise<SeoResult> {
     fetchHtml(domain),
     fetchRobots(domain),
   ]);
+
+  // Check for permanent HTML failures (DNS/TLS errors)
+  // These are fatal - no useful data can be extracted
+  if (!htmlResult.success) {
+    if (htmlResult.error === "DNS resolution failed") {
+      return { success: false, error: "dns_error" };
+    }
+    if (htmlResult.error === "Invalid SSL certificate") {
+      return { success: false, error: "tls_error" };
+    }
+    // Other HTML failures (HTTP errors, non-HTML) continue with partial data
+  }
 
   // Step 3: Process OG image (if present and not blocked)
   let uploadedImageUrl: string | null = null;
