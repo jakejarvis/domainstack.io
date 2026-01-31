@@ -1,4 +1,7 @@
-import type { NotificationType } from "@domainstack/constants";
+import {
+  DOMAIN_EXPIRY_THRESHOLDS,
+  type NotificationType,
+} from "@domainstack/constants";
 import { FatalError } from "workflow";
 import {
   calculateDaysRemainingStep,
@@ -117,9 +120,6 @@ export async function domainExpiryWorkflow(
 
   return { skipped: false, sent: true };
 }
-
-// Domain expiry thresholds (days before expiration)
-const DOMAIN_EXPIRY_THRESHOLDS = [30, 14, 7, 1] as const;
 
 interface DomainData {
   userId: string;

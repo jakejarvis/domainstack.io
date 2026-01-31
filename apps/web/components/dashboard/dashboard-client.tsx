@@ -23,7 +23,13 @@ import { useQuery } from "@tanstack/react-query";
 import type { Table } from "@tanstack/react-table";
 import { useSearchParams } from "next/navigation";
 import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from "react";
 import { toast } from "sonner";
 import { ArchivedDomainsList } from "@/components/dashboard/archived-domains-list";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
@@ -292,13 +298,21 @@ export function DashboardClient() {
     domainsQuery.refetch();
   }, [refetchSubscription, domainsQuery]);
 
+  // Redirect to login if not authenticated (must be before conditional returns)
+  const shouldRedirect = !isLoading && !session;
+  useLayoutEffect(() => {
+    if (shouldRedirect) {
+      router.replace("/login");
+    }
+  }, [shouldRedirect, router]);
+
   if (isLoading) {
     return <DashboardSkeleton />;
   }
 
   if (!session) {
-    router.replace("/login");
-    return null;
+    // Render skeleton while redirect is in progress
+    return <DashboardSkeleton />;
   }
 
   if (hasError) {

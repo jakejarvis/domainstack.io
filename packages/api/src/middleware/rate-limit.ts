@@ -45,9 +45,23 @@ export const withRateLimit = t.middleware(async ({ ctx, meta, path, next }) => {
 
   // Build rate limiter with procedure path as the id prefix
   // This ensures each procedure has its own rate limit bucket in Redis
-  const { success, limit, remaining, reset, pending } = await limiter.limit(
-    `${path}:${ctx.session?.user?.id ?? ctx.ip}`,
-  );
+  const identifier = ctx.session?.user?.id ?? ctx.ip;
+
+  // Fail open: no identifier = skip rate limiting
+  if (!identifier) {
+    return next();
+  }
+
+  const rateLimitResult = await limiter
+    .limit(`${path}:${identifier}`)
+    .catch(() => null);
+
+  // Fail open: Redis errors allow the request through
+  if (!rateLimitResult) {
+    return next();
+  }
+
+  const { success, limit, remaining, reset, pending } = rateLimitResult;
 
   // Handle analytics write in background (non-blocking)
   after(() => pending);

@@ -8,14 +8,9 @@ import type { DnsRecord } from "@domainstack/types";
 
 /**
  * Record with expiry metadata for persistence.
+ * Extends DnsRecord with expiration timestamp.
  */
-export interface DnsRecordWithExpiry {
-  type: string;
-  name: string;
-  value: string;
-  ttl?: number;
-  priority?: number;
-  isCloudflare?: boolean;
+export interface DnsRecordWithExpiry extends DnsRecord {
   expiresAt: string;
 }
 

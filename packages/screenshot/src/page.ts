@@ -9,6 +9,24 @@ const NAV_TIMEOUT_MS = 5000;
 const IDLE_TIME_MS = 500;
 const IDLE_TIMEOUT_MS = 1500;
 
+// Module-level singleton for adblocker (lazy initialized)
+// biome-ignore lint/suspicious/noExplicitAny: PuppeteerBlocker type is complex to infer from dynamic import
+let blockerPromise: Promise<any> | null = null;
+
+async function getBlocker() {
+  if (!blockerPromise) {
+    blockerPromise = import("@ghostery/adblocker-puppeteer")
+      .then(({ PuppeteerBlocker }) =>
+        PuppeteerBlocker.fromPrebuiltAdsAndTracking(),
+      )
+      .catch((err) => {
+        logger.warn(err, "failed to initialize adblocker");
+        return null;
+      });
+  }
+  return blockerPromise;
+}
+
 export interface CreatePageOptions {
   viewport?: Viewport;
 }
@@ -24,22 +42,11 @@ export async function createPage(
 ): Promise<Page | null> {
   let page: Page | null = null;
 
-  // Initialize adblocker once and reuse for all pages
-  // biome-ignore lint/suspicious/noExplicitAny: PuppeteerBlocker type is complex to infer from dynamic import
-  let blocker: any = null;
   try {
-    const { PuppeteerBlocker } = await import("@ghostery/adblocker-puppeteer");
-    blocker = await PuppeteerBlocker.fromPrebuiltAdsAndTracking();
-  } catch (err) {
-    logger.warn(err, "failed to initialize adblocker");
-  }
+    page = await browser.newPage();
 
-  try {
-    if (!page) {
-      page = await browser.newPage();
-    }
-
-    // Enable adblocker if initialized, but don't throw if it fails
+    // Enable adblocker if available, but don't throw if it fails
+    const blocker = await getBlocker();
     if (blocker) {
       try {
         await blocker.enableBlockingInPage(page);
@@ -63,7 +70,11 @@ export async function createPage(
     }
 
     page.on("console", (msg) => {
-      logger.debug({ source: "chromium", msg });
+      logger.debug({
+        source: "chromium",
+        message: msg.text(),
+        type: msg.type(),
+      });
     });
 
     await page.setViewport({
@@ -74,6 +85,10 @@ export async function createPage(
 
     return page;
   } catch (err) {
+    // Close page to avoid memory leak if navigation or setup failed
+    if (page) {
+      await page.close().catch(() => {});
+    }
     logger.warn(err, "failed to create page");
     throw err;
   }

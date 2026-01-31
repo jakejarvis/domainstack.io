@@ -17,8 +17,8 @@ const { makePGliteDb, closePGliteDb, resetPGliteDb } = await import(
 );
 await makePGliteDb();
 
-// Mock Edge Config for provider catalogs
-const mockCatalog = {
+// Use vi.hoisted to define the mock catalog before vi.mock is hoisted
+const mockCatalog = vi.hoisted(() => ({
   hosting: [
     {
       name: "Vercel",
@@ -47,7 +47,7 @@ const mockCatalog = {
   ],
   ca: [],
   registrar: [],
-};
+}));
 
 vi.mock("@domainstack/server/edge-config", () => ({
   getProviderCatalog: vi.fn().mockResolvedValue(mockCatalog),

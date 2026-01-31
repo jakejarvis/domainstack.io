@@ -8,6 +8,8 @@ import { DOH_PROVIDERS, type DohProvider } from "@domainstack/constants";
 import { simpleHash } from "@domainstack/utils";
 import type { DnsAnswer, DnsJson, DohQueryOptions } from "./types";
 
+const DEFAULT_TIMEOUT_MS = 5000;
+
 /**
  * Build a DoH query URL for a given provider, domain, and record type.
  */
@@ -51,11 +53,20 @@ export async function queryDohProvider(
     url.searchParams.set("t", Date.now().toString());
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+  );
+
   const res = await fetch(url, {
     headers: {
       Accept: "application/dns-json",
     },
+    signal: controller.signal,
   });
+
+  clearTimeout(timeoutId);
 
   if (!res.ok) {
     throw new Error(`DoH query failed: ${provider.key} ${type} ${res.status}`);

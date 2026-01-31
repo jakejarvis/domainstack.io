@@ -18,8 +18,8 @@ const REQUEST_TIMEOUT_MS = 5000;
  * DNS and TLS errors are not thrown - they're returned as error results.
  */
 export class HeadersFetchError extends Error {
-  constructor(message = "Headers fetch failed") {
-    super(message);
+  constructor(message = "Headers fetch failed", cause?: unknown) {
+    super(message, { cause });
     this.name = "HeadersFetchError";
   }
 }
@@ -36,7 +36,10 @@ export class HeadersFetchError extends Error {
 export async function fetchHttpHeaders(
   domain: string,
 ): Promise<HeadersFetchResult> {
-  const allowedHosts = [domain, `www.${domain}`];
+  // Normalize domain: strip www. prefix and port to get base hostname
+  // Then allow both apex and www variants
+  const [hostname] = domain.replace(/^www\./i, "").split(":");
+  const allowedHosts = [hostname, `www.${hostname}`];
 
   try {
     const final = await safeFetch({
@@ -84,7 +87,7 @@ export async function fetchHttpHeaders(
       return { success: false, error: "tls_error" };
     }
 
-    // Transient failure - throw for caller to handle
-    throw new HeadersFetchError();
+    // Transient failure - throw for caller to handle (with cause for debugging)
+    throw new HeadersFetchError("Headers fetch failed", err);
   }
 }

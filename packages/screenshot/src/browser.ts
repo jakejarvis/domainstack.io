@@ -4,26 +4,33 @@ const logger = createLogger({ source: "screenshot/browser" });
 
 let browserPromise: Promise<import("puppeteer-core").Browser> | null = null;
 
-async function createBrowser(
-  overrides: Record<string, unknown> = {},
-): Promise<import("puppeteer-core").Browser> {
+// Stability flags always included for browser launch
+const STABILITY_ARGS = [
+  "--disable-dev-shm-usage", // avoid tiny /dev/shm; use /tmp instead
+  "--no-first-run",
+  "--no-default-browser-check",
+];
+
+/**
+ * Merge and dedupe browser arguments while preserving order.
+ */
+function mergeArgs(...argSets: (string[] | undefined)[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const args of argSets) {
+    if (!args) continue;
+    for (const arg of args) {
+      if (typeof arg === "string" && !seen.has(arg)) {
+        seen.add(arg);
+        result.push(arg);
+      }
+    }
+  }
+  return result;
+}
+
+async function createBrowser(): Promise<import("puppeteer-core").Browser> {
   const isVercel = Boolean(process.env.VERCEL);
-
-  // Always include a minimal set of stability flags; merge with env-specific args
-  const stabilityArgs = [
-    "--disable-dev-shm-usage", // avoid tiny /dev/shm; use /tmp instead
-    "--no-first-run",
-    "--no-default-browser-check",
-  ];
-  const overrideArgs = (overrides as { args?: unknown }).args;
-  const extraArgs = Array.isArray(overrideArgs)
-    ? (overrideArgs as string[])
-    : [];
-
-  const { args: _ignoredArgs, ...restOverrides } = overrides as {
-    args?: unknown;
-    [key: string]: unknown;
-  };
 
   if (isVercel) {
     // Vercel: use @sparticuz/chromium + puppeteer-core
@@ -37,23 +44,11 @@ async function createBrowser(
       ? (chromium.args as string[])
       : [];
 
-    // Dedupe while preserving order: base -> stability -> overrides
-    const seen = new Set<string>();
-    const mergedArgs = [...baseArgs, ...stabilityArgs, ...extraArgs].filter(
-      (arg) => {
-        if (typeof arg !== "string") return false;
-        if (seen.has(arg)) return false;
-        seen.add(arg);
-        return true;
-      },
-    );
-
     return launch({
       headless: true,
-      args: mergedArgs,
+      args: mergeArgs(baseArgs, STABILITY_ARGS),
       executablePath,
       defaultViewport: null,
-      ...restOverrides,
     });
   }
 
@@ -62,19 +57,11 @@ async function createBrowser(
   try {
     // Attempt to use full puppeteer locally for convenience
     const puppeteer = await import("puppeteer");
-    const seen = new Set<string>();
-    const mergedArgs = [...stabilityArgs, ...extraArgs].filter((arg) => {
-      if (typeof arg !== "string") return false;
-      if (seen.has(arg)) return false;
-      seen.add(arg);
-      return true;
-    });
 
     const browser = await puppeteer.launch({
       headless: true,
-      args: mergedArgs,
+      args: mergeArgs(STABILITY_ARGS),
       defaultViewport: null,
-      ...restOverrides,
     } as never);
     return browser as unknown as import("puppeteer-core").Browser;
   } catch {
@@ -93,32 +80,22 @@ async function createBrowser(
       );
     }
 
-    const seen = new Set<string>();
-    const mergedArgs = [...stabilityArgs, ...extraArgs].filter((arg) => {
-      if (typeof arg !== "string") return false;
-      if (seen.has(arg)) return false;
-      seen.add(arg);
-      return true;
-    });
-
     return launch({
       headless: true,
-      args: mergedArgs,
+      args: mergeArgs(STABILITY_ARGS),
       executablePath,
       defaultViewport: null,
-      ...restOverrides,
     });
   }
 }
 
 /**
  * Get a browser instance. Reuses existing instance if available.
+ * Browser configuration is determined by environment (Vercel vs local).
  */
-export function getBrowser(
-  overrides: Record<string, unknown> = {},
-): Promise<import("puppeteer-core").Browser> {
+export function getBrowser(): Promise<import("puppeteer-core").Browser> {
   if (!browserPromise) {
-    browserPromise = createBrowser(overrides).catch((err) => {
+    browserPromise = createBrowser().catch((err) => {
       logger.error(err, "failed to create browser");
       // Reset promise to allow retry on next call
       browserPromise = null;
@@ -146,12 +123,12 @@ export async function closeBrowser(): Promise<void> {
   }
 }
 
-// Register shutdown handlers
+// Register shutdown handlers to close browser gracefully
+// Note: We do NOT call process.exit() here - that's the application's responsibility
 if (process.env.NODE_ENV !== "test") {
-  const handleShutdown = async (signal: string) => {
+  const handleShutdown = (signal: string) => {
     logger.debug(`received ${signal}, closing browser`);
-    await closeBrowser();
-    process.exit(0);
+    void closeBrowser();
   };
 
   process.on("SIGTERM", () => handleShutdown("SIGTERM"));

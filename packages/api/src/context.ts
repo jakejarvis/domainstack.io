@@ -46,8 +46,10 @@ export async function createContext(
           },
         };
       }
-    } catch {
-      // Auth not available or error - session remains null
+    } catch (error) {
+      // Log auth errors but don't crash - session remains null
+      // This can happen if auth is misconfigured or database is unavailable
+      console.error("[tRPC context] Auth error:", error);
     }
   }
 

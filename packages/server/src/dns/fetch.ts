@@ -77,7 +77,8 @@ export async function fetchDnsRecords(
                 break;
               }
               case "TXT": {
-                const value = a.data.replace(/^"|"$/g, "");
+                // Handle multi-string TXT records: "part1" "part2" -> part1part2
+                const value = a.data.replace(/^"|"$/g, "").replace(/" "/g, "");
                 records.push({ type, name, value, ttl });
                 break;
               }

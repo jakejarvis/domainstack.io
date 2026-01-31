@@ -6,7 +6,7 @@ import SubscriptionExpiredEmail from "@domainstack/email/templates/subscription-
 import { logger } from "@domainstack/logger";
 import { format } from "date-fns";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://domainstack.io";
 
 /**
  * Send a pro upgrade success email to a user.

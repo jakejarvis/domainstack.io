@@ -63,8 +63,16 @@ export async function fetchProviderLogo(
   const fetchResult = await fetchIconFromSources(providerDomain);
 
   if (!fetchResult.success) {
-    // Persist "no logo found" as a cached state
-    await persistFailure(providerId, fetchResult.allNotFound);
+    // If at least one source failed with a transient error (not 404/400),
+    // throw so TanStack Query can retry instead of caching failure
+    if (!fetchResult.allNotFound) {
+      throw new Error(
+        `Provider logo fetch failed for ${providerDomain} (transient)`,
+      );
+    }
+
+    // Persist "no logo found" as a cached state (all sources returned 404)
+    await persistFailure(providerId, true);
 
     // "No logo" is a valid cached result, not a failure
     return {

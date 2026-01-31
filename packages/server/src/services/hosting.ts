@@ -133,7 +133,11 @@ async function lookupGeoIp(ip: string): Promise<GeoIpData | null> {
     );
     url.searchParams.set("apikey", apiKey);
 
-    const res = await fetch(url.toString());
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const res = await fetch(url.toString(), { signal: controller.signal });
+    clearTimeout(timeoutId);
 
     if (!res.ok) {
       const body = await res.text().catch(() => "");

@@ -27,57 +27,100 @@ export interface CloudflareIpRanges {
   ipv6Cidrs: string[];
 }
 
-/**
- * Fetch Cloudflare IP ranges.
- */
-// Cache Cloudflare IP ranges in memory (refreshed weekly)
-let cachedRanges: CloudflareIpRanges | null = null;
-let cachedAt = 0;
-const CACHE_TTL_MS = 604_800_000; // 1 week
-
-async function getCloudflareIpRanges(): Promise<CloudflareIpRanges> {
-  // Return cached ranges if still valid
-  if (cachedRanges && Date.now() - cachedAt < CACHE_TTL_MS) {
-    return cachedRanges;
-  }
-
-  try {
-    const res = await fetch(CLOUDFLARE_IPS_URL, {
-      headers: {
-        ...(process.env.EXTERNAL_USER_AGENT
-          ? { "User-Agent": process.env.EXTERNAL_USER_AGENT }
-          : {}),
-      },
-    });
-
-    if (!res.ok) {
-      throw new Error(`Failed to fetch Cloudflare IPs: ${res.status}`);
-    }
-
-    const data = await res.json();
-
-    cachedRanges = {
-      ipv4Cidrs: data.result?.ipv4_cidrs || [],
-      ipv6Cidrs: data.result?.ipv6_cidrs || [],
-    };
-    cachedAt = Date.now();
-    return cachedRanges;
-  } catch {
-    // Return cached ranges if available, otherwise empty
-    return cachedRanges ?? { ipv4Cidrs: [], ipv6Cidrs: [] };
-  }
+interface ParsedCloudflareRanges {
+  ipv4: [ipaddr.IPv4, number][];
+  ipv6: [ipaddr.IPv6, number][];
 }
 
-function isIpInCidr(ip: ipaddr.IPv4 | ipaddr.IPv6, cidr: string): boolean {
-  try {
-    const [net, prefix] = ipaddr.parseCIDR(cidr);
-    if (net.kind() !== ip.kind()) return false;
-    return ip.match([net, prefix] as
-      | [ipaddr.IPv4, number]
-      | [ipaddr.IPv6, number]);
-  } catch {
-    return false;
+// Cache Cloudflare IP ranges in memory (refreshed weekly)
+let cachedRanges: CloudflareIpRanges | null = null;
+let parsedRanges: ParsedCloudflareRanges | null = null;
+let cachedAt = 0;
+let activePromise: Promise<CloudflareIpRanges> | null = null;
+const CACHE_TTL_MS = 604_800_000; // 1 week
+const ERROR_BACKOFF_MS = 60_000; // 1 minute backoff on errors
+
+/**
+ * Parse CIDR strings into ipaddr.js objects for efficient matching.
+ */
+function parseCidrs(ranges: CloudflareIpRanges): ParsedCloudflareRanges {
+  const ipv4: [ipaddr.IPv4, number][] = [];
+  const ipv6: [ipaddr.IPv6, number][] = [];
+
+  for (const cidr of ranges.ipv4Cidrs) {
+    try {
+      const [net, prefix] = ipaddr.parseCIDR(cidr);
+      if (net.kind() === "ipv4") {
+        ipv4.push([net as ipaddr.IPv4, prefix]);
+      }
+    } catch {
+      // Skip invalid CIDRs
+    }
   }
+
+  for (const cidr of ranges.ipv6Cidrs) {
+    try {
+      const [net, prefix] = ipaddr.parseCIDR(cidr);
+      if (net.kind() === "ipv6") {
+        ipv6.push([net as ipaddr.IPv6, prefix]);
+      }
+    } catch {
+      // Skip invalid CIDRs
+    }
+  }
+
+  return { ipv4, ipv6 };
+}
+
+/**
+ * Fetch Cloudflare IP ranges with request coalescing and error backoff.
+ */
+async function getCloudflareIpRanges(): Promise<CloudflareIpRanges> {
+  // Return cached ranges if still valid
+  if (cachedRanges !== null && Date.now() - cachedAt < CACHE_TTL_MS) {
+    return cachedRanges;
+  }
+
+  // Request coalescing: return active promise if one is in progress
+  if (activePromise !== null) {
+    return activePromise;
+  }
+
+  activePromise = (async () => {
+    try {
+      const res = await fetch(CLOUDFLARE_IPS_URL, {
+        headers: {
+          ...(process.env.EXTERNAL_USER_AGENT
+            ? { "User-Agent": process.env.EXTERNAL_USER_AGENT }
+            : {}),
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to fetch Cloudflare IPs: ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      cachedRanges = {
+        ipv4Cidrs: data.result?.ipv4_cidrs || [],
+        ipv6Cidrs: data.result?.ipv6_cidrs || [],
+      };
+      // Parse CIDRs once when caching
+      parsedRanges = parseCidrs(cachedRanges);
+      cachedAt = Date.now();
+      return cachedRanges;
+    } catch {
+      // Update cachedAt even on error to implement backoff
+      cachedAt = Date.now() - CACHE_TTL_MS + ERROR_BACKOFF_MS;
+      // Return cached ranges if available, otherwise empty
+      return cachedRanges ?? { ipv4Cidrs: [], ipv6Cidrs: [] };
+    } finally {
+      activePromise = null;
+    }
+  })();
+
+  return activePromise;
 }
 
 /**
@@ -89,15 +132,27 @@ export async function isCloudflareIp(ip: string): Promise<boolean> {
     return cached;
   }
 
-  const ranges = await getCloudflareIpRanges();
+  // Ensure ranges are fetched and parsed
+  await getCloudflareIpRanges();
+
+  // Use pre-parsed ranges for efficient matching
+  if (!parsedRanges) {
+    cache.set(ip, false);
+    return false;
+  }
+
   let result = false;
 
   if (ipaddr.IPv4.isValid(ip)) {
     const parsed = ipaddr.IPv4.parse(ip);
-    result = ranges.ipv4Cidrs.some((cidr) => isIpInCidr(parsed, cidr));
+    result = parsedRanges.ipv4.some(([net, prefix]) =>
+      parsed.match([net, prefix]),
+    );
   } else if (ipaddr.IPv6.isValid(ip)) {
     const parsed = ipaddr.IPv6.parse(ip);
-    result = ranges.ipv6Cidrs.some((cidr) => isIpInCidr(parsed, cidr));
+    result = parsedRanges.ipv6.some(([net, prefix]) =>
+      parsed.match([net, prefix]),
+    );
   }
 
   cache.set(ip, result);

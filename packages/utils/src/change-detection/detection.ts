@@ -36,12 +36,12 @@ export function detectRegistrationChange(
   const snapshotNameservers = previous.nameservers ?? [];
   const currentNameservers = current.nameservers ?? [];
 
-  // Check nameserver changes (order-independent comparison)
+  // Check nameserver changes (order-independent, case-insensitive per RFC 4343)
   const prevNsHosts = [...snapshotNameservers]
-    .map((ns) => ns.host)
+    .map((ns) => ns.host.toLowerCase())
     .sort((a, b) => a.localeCompare(b));
   const currNsHosts = [...currentNameservers]
-    .map((ns) => ns.host)
+    .map((ns) => ns.host.toLowerCase())
     .sort((a, b) => a.localeCompare(b));
   const nameserversChanged =
     prevNsHosts.length !== currNsHosts.length ||

@@ -1,4 +1,7 @@
-import type { NotificationType } from "@domainstack/constants";
+import {
+  CERTIFICATE_EXPIRY_THRESHOLDS,
+  type NotificationType,
+} from "@domainstack/constants";
 import { FatalError } from "workflow";
 import {
   calculateDaysRemainingStep,
@@ -121,9 +124,6 @@ export async function certificateExpiryWorkflow(
 
   return { skipped: false, sent: true };
 }
-
-// Certificate expiry thresholds (days before expiration)
-const CERTIFICATE_EXPIRY_THRESHOLDS = [14, 7, 3, 1] as const;
 
 interface CertificateData {
   userId: string;

@@ -60,8 +60,14 @@ export async function fetchFavicon(domain: string): Promise<FaviconResult> {
   const fetchResult = await fetchIconFromSources(domain);
 
   if (!fetchResult.success) {
-    // Persist "no favicon found" as a cached state
-    await persistFailure(domain, fetchResult.allNotFound);
+    // If at least one source failed with a transient error (not 404/400),
+    // throw so TanStack Query can retry instead of caching failure
+    if (!fetchResult.allNotFound) {
+      throw new Error(`Favicon fetch failed for ${domain} (transient)`);
+    }
+
+    // Persist "no favicon found" as a cached state (all sources returned 404)
+    await persistFailure(domain, true);
 
     // "No favicon" is a valid cached result, not a failure
     return {

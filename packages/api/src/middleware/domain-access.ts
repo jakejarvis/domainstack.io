@@ -8,8 +8,11 @@ import { t } from "../trpc";
  * Schedules the write to happen after the response is sent using Next.js after().
  */
 export const withDomainAccessUpdate = t.middleware(async ({ input, next }) => {
-  // Check if input is a valid object with a domain property
+  const result = await next();
+
+  // Only update access time for successful requests
   if (
+    result.ok &&
     input &&
     typeof input === "object" &&
     "domain" in input &&
@@ -17,5 +20,6 @@ export const withDomainAccessUpdate = t.middleware(async ({ input, next }) => {
   ) {
     after(() => updateLastAccessed(input.domain as string));
   }
-  return next();
+
+  return result;
 });

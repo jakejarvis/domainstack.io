@@ -63,11 +63,11 @@ const SOCIAL_HEIGHT = 630;
  * @throws Error on transient failures - TanStack Query retries these
  */
 export async function fetchSeo(domain: string): Promise<SeoResult> {
-  // Step 1: Fetch HTML and parse meta
-  const htmlResult = await fetchHtml(domain);
-
-  // Step 2: Fetch robots.txt
-  const robotsResult = await fetchRobots(domain);
+  // Step 1 & 2: Fetch HTML and robots.txt in parallel
+  const [htmlResult, robotsResult] = await Promise.all([
+    fetchHtml(domain),
+    fetchRobots(domain),
+  ]);
 
   // Step 3: Process OG image (if present and not blocked)
   let uploadedImageUrl: string | null = null;
@@ -217,7 +217,9 @@ async function fetchHtml(domain: string): Promise<HtmlFetchData> {
 // ============================================================================
 
 async function fetchRobots(domain: string): Promise<RobotsFetchData> {
-  const { safeFetch } = await import("@domainstack/safe-fetch");
+  const { isExpectedDnsError, safeFetch } = await import(
+    "@domainstack/safe-fetch"
+  );
   const { parseRobotsTxt } = await import("../seo");
   const { isExpectedTlsError } = await import("../tls");
 
@@ -248,11 +250,15 @@ async function fetchRobots(domain: string): Promise<RobotsFetchData> {
 
     return { robots: null, error: `HTTP ${robotsResult.status}` };
   } catch (err) {
-    const isTlsError = isExpectedTlsError(err);
-    if (isTlsError) {
+    // Permanent errors - return error result
+    if (isExpectedDnsError(err)) {
+      return { robots: null, error: "DNS resolution failed" };
+    }
+    if (isExpectedTlsError(err)) {
       return { robots: null, error: "Invalid SSL certificate" };
     }
-    return { robots: null, error: String(err) };
+    // Transient failure - throw for TanStack Query to retry
+    throw new Error("Robots.txt fetch failed");
   }
 }
 

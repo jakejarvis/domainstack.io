@@ -151,20 +151,25 @@ export async function GET(request: Request) {
       });
     }
 
-    // Fire off all fetchers (fire-and-forget)
-    // Services are idempotent, so we don't need deduplication
+    // Process in batches to avoid overwhelming resources and timeouts
+    // Each batch runs concurrently, batches run sequentially
+    const BATCH_SIZE = 50;
     let sectionsStarted = 0;
-    await Promise.all(
-      jobs.map(async ({ domain, section }) => {
-        try {
-          await sectionFetchers[section](domain);
-          sectionsStarted++;
-        } catch (err) {
-          // Log but don't fail the cron - other sections may succeed
-          logger.error({ domain, section, err }, "Failed to refresh section");
-        }
-      }),
-    );
+
+    for (let i = 0; i < jobs.length; i += BATCH_SIZE) {
+      const batch = jobs.slice(i, i + BATCH_SIZE);
+      await Promise.all(
+        batch.map(async ({ domain, section }) => {
+          try {
+            await sectionFetchers[section](domain);
+            sectionsStarted++;
+          } catch (err) {
+            // Log but don't fail the cron - other sections may succeed
+            logger.error({ domain, section, err }, "Failed to refresh section");
+          }
+        }),
+      );
+    }
 
     const result = {
       domains: recentDomains.length,

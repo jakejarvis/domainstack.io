@@ -50,6 +50,15 @@ describe("detectRegistrationChange", () => {
     expect(result).toBeNull();
   });
 
+  it("ignores nameserver case differences (RFC 4343)", () => {
+    const current = {
+      ...baseSnapshot,
+      nameservers: [{ host: "NS1.EXAMPLE.COM" }, { host: "NS2.EXAMPLE.COM" }],
+    };
+    const result = detectRegistrationChange(baseSnapshot, current);
+    expect(result).toBeNull();
+  });
+
   it("detects transfer lock change", () => {
     const current = { ...baseSnapshot, transferLock: false };
     const result = detectRegistrationChange(baseSnapshot, current);

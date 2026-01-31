@@ -26,4 +26,6 @@ export interface DnsJson {
 export interface DohQueryOptions {
   /** Add timestamp parameter to bypass HTTP caches (useful for verification) */
   cacheBust?: boolean;
+  /** Request timeout in milliseconds (default: 5000) */
+  timeoutMs?: number;
 }

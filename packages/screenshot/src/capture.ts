@@ -62,10 +62,22 @@ export async function captureScreenshot(
       encoding: "binary",
     });
 
+    // For fullPage screenshots, get actual content dimensions
+    let actualWidth = width;
+    let actualHeight = height;
+    if (fullPage) {
+      const dimensions = await page.evaluate(() => ({
+        width: document.documentElement.scrollWidth,
+        height: document.documentElement.scrollHeight,
+      }));
+      actualWidth = dimensions.width;
+      actualHeight = dimensions.height;
+    }
+
     return {
       buffer: Buffer.from(buffer),
-      width,
-      height,
+      width: actualWidth,
+      height: actualHeight,
     };
   } catch (err) {
     logger.error(err, "screenshot capture failed");

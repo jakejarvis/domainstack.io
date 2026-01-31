@@ -8,9 +8,16 @@ import { t } from "../trpc";
 export const withProTier = t.middleware(async (opts) => {
   const { getUserSubscription } = await import("@domainstack/db/queries");
 
-  // Type assertion needed because middleware chaining doesn't preserve extended context types
-  const ctx = opts.ctx as typeof opts.ctx & { user: { id: string } };
-  const subscription = await getUserSubscription(ctx.user.id);
+  // Ensure this middleware is chained after withAuth
+  const user = opts.ctx.session?.user;
+  if (!user) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "You must be logged in to access this resource",
+    });
+  }
+
+  const subscription = await getUserSubscription(user.id);
 
   if (subscription.plan !== "pro") {
     throw new TRPCError({
@@ -21,7 +28,8 @@ export const withProTier = t.middleware(async (opts) => {
 
   return opts.next({
     ctx: {
-      ...ctx,
+      ...opts.ctx,
+      user,
       subscription,
     },
   });
