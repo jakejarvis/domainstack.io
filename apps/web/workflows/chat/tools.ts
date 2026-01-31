@@ -59,7 +59,7 @@ function isExpectedError(message: string): boolean {
  */
 async function handleToolError(err: unknown, domain: string, toolName: string) {
   // Import logger inside to keep Node.js modules out of workflow sandbox
-  const { createLogger } = await import("@/lib/logger/server");
+  const { createLogger } = await import("@domainstack/logger");
   const logger = createLogger({ source: "chat/tools" });
 
   // Sanitize error messages to avoid leaking internal details

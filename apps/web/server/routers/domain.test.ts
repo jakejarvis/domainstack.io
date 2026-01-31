@@ -9,12 +9,9 @@ import {
   vi,
 } from "vitest";
 
-// Mock the DB client before importing anything else
-vi.mock("@/lib/db/client", async () => {
-  const { makePGliteDb } = await import("@domainstack/db/testing");
-  const { db } = await makePGliteDb();
-  return { db };
-});
+// Initialize PGlite before importing anything that uses the db
+const { makePGliteDb, closePGliteDb } = await import("@domainstack/db/testing");
+const { db } = await makePGliteDb();
 
 // Mock workflow/api to avoid starting real workflows
 vi.mock("workflow/api", () => ({
@@ -34,15 +31,13 @@ vi.mock("next/server", () => ({
   after: vi.fn((fn) => fn()),
 }));
 
-import {
-  dnsRecords,
-  domains,
-  providers,
-  registrations,
-} from "@domainstack/db/schema";
-import { start } from "workflow/api";
-import { db } from "@/lib/db/client";
-import { createCaller } from "@/server/routers/_app";
+// Now import modules that depend on the db
+const { dnsRecords, domains, providers, registrations } = await import(
+  "@domainstack/db/schema"
+);
+const { start } = await import("workflow/api");
+const { createCaller } = await import("@/server/routers/_app");
+
 import type { Context } from "@/trpc/init";
 
 // Test fixtures - use valid UUIDs
@@ -85,7 +80,6 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  const { closePGliteDb } = await import("@domainstack/db/testing");
   await closePGliteDb();
 });
 

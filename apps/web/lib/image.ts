@@ -1,7 +1,7 @@
 import "server-only";
 
+import { createLogger } from "@domainstack/logger";
 import sharp from "sharp";
-import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "image" });
 

@@ -1,7 +1,10 @@
+import {
+  deleteStaleUnverifiedDomains,
+  getStaleUnverifiedDomains,
+} from "@domainstack/db/queries";
+import { createLogger } from "@domainstack/logger";
 import { subDays } from "date-fns";
 import { NextResponse } from "next/server";
-import { trackedDomainsRepo } from "@/lib/db/repos";
-import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "cron/cleanup-stale-domains" });
 
@@ -30,8 +33,7 @@ export async function GET(request: Request) {
     logger.info("Starting cleanup stale domains cron job");
 
     const cutoffDate = subDays(new Date(), STALE_DOMAIN_DAYS);
-    const staleDomains =
-      await trackedDomainsRepo.getStaleUnverifiedDomains(cutoffDate);
+    const staleDomains = await getStaleUnverifiedDomains(cutoffDate);
 
     if (staleDomains.length === 0) {
       logger.info("No stale domains to cleanup");
@@ -48,8 +50,7 @@ export async function GET(request: Request) {
     let deletedCount = 0;
     for (let i = 0; i < ids.length; i += DELETE_BATCH_SIZE) {
       const batch = ids.slice(i, i + DELETE_BATCH_SIZE);
-      const batchDeleted =
-        await trackedDomainsRepo.deleteStaleUnverifiedDomains(batch);
+      const batchDeleted = await deleteStaleUnverifiedDomains(batch);
       deletedCount += batchDeleted;
     }
 

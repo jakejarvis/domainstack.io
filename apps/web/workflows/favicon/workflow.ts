@@ -73,7 +73,9 @@ async function processAndStore(
 
   const { optimizeImage } = await import("@/lib/image");
   const { storeImage } = await import("@/lib/storage");
-  const { domainsRepo, faviconsRepo } = await import("@/lib/db/repos");
+  const { ensureDomainRecord, upsertFavicon } = await import(
+    "@domainstack/db/queries"
+  );
   const { ttlForFavicon } = await import("@/lib/ttl");
 
   try {
@@ -98,11 +100,11 @@ async function processAndStore(
     });
 
     // 3. Persist to database
-    const domainRecord = await domainsRepo.ensureDomainRecord(domain);
+    const domainRecord = await ensureDomainRecord(domain);
     const now = new Date();
     const expiresAt = ttlForFavicon(now);
 
-    await faviconsRepo.upsertFavicon({
+    await upsertFavicon({
       domainId: domainRecord.id,
       url,
       pathname: pathname ?? null,
@@ -132,15 +134,17 @@ async function persistFailure(
 ): Promise<void> {
   "use step";
 
-  const { domainsRepo, faviconsRepo } = await import("@/lib/db/repos");
+  const { ensureDomainRecord, upsertFavicon } = await import(
+    "@domainstack/db/queries"
+  );
   const { ttlForFavicon } = await import("@/lib/ttl");
 
   try {
-    const domainRecord = await domainsRepo.ensureDomainRecord(domain);
+    const domainRecord = await ensureDomainRecord(domain);
     const now = new Date();
     const expiresAt = ttlForFavicon(now);
 
-    await faviconsRepo.upsertFavicon({
+    await upsertFavicon({
       domainId: domainRecord.id,
       url: null,
       pathname: null,

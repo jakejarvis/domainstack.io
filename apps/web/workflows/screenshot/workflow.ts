@@ -183,14 +183,16 @@ async function persistSuccess(
 ): Promise<void> {
   "use step";
 
-  const { domainsRepo, screenshotsRepo } = await import("@/lib/db/repos");
+  const { ensureDomainRecord, upsertScreenshot } = await import(
+    "@domainstack/db/queries"
+  );
   const { ttlForScreenshot } = await import("@/lib/ttl");
 
-  const domainRecord = await domainsRepo.ensureDomainRecord(domain);
+  const domainRecord = await ensureDomainRecord(domain);
   const now = new Date();
   const expiresAt = ttlForScreenshot(now);
 
-  await screenshotsRepo.upsertScreenshot({
+  await upsertScreenshot({
     domainId: domainRecord.id,
     url,
     pathname,
@@ -208,15 +210,17 @@ async function persistSuccess(
 async function persistFailure(domain: string): Promise<void> {
   "use step";
 
-  const { domainsRepo, screenshotsRepo } = await import("@/lib/db/repos");
+  const { ensureDomainRecord, upsertScreenshot } = await import(
+    "@domainstack/db/queries"
+  );
   const { ttlForScreenshot } = await import("@/lib/ttl");
 
   try {
-    const domainRecord = await domainsRepo.ensureDomainRecord(domain);
+    const domainRecord = await ensureDomainRecord(domain);
     const now = new Date();
     const expiresAt = ttlForScreenshot(now);
 
-    await screenshotsRepo.upsertScreenshot({
+    await upsertScreenshot({
       domainId: domainRecord.id,
       url: null,
       pathname: null,

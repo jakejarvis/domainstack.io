@@ -79,7 +79,7 @@ async function processAndStore(
 
   const { optimizeImage } = await import("@/lib/image");
   const { storeImage } = await import("@/lib/storage");
-  const { providerLogosRepo } = await import("@/lib/db/repos");
+  const { upsertProviderLogo } = await import("@domainstack/db/queries");
   const { ttlForProviderIcon } = await import("@/lib/ttl");
 
   try {
@@ -109,7 +109,7 @@ async function processAndStore(
     const now = new Date();
     const expiresAt = ttlForProviderIcon(now);
 
-    await providerLogosRepo.upsertProviderLogo({
+    await upsertProviderLogo({
       providerId,
       url,
       pathname: pathname ?? null,
@@ -137,14 +137,14 @@ async function persistFailure(
 ): Promise<void> {
   "use step";
 
-  const { providerLogosRepo } = await import("@/lib/db/repos");
+  const { upsertProviderLogo } = await import("@domainstack/db/queries");
   const { ttlForProviderIcon } = await import("@/lib/ttl");
 
   try {
     const now = new Date();
     const expiresAt = ttlForProviderIcon(now);
 
-    await providerLogosRepo.upsertProviderLogo({
+    await upsertProviderLogo({
       providerId,
       url: null,
       pathname: null,

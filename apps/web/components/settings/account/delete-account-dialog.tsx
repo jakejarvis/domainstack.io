@@ -1,3 +1,5 @@
+import { useAnalytics } from "@domainstack/analytics/client";
+import { deleteUser } from "@domainstack/auth/client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,8 +18,6 @@ import {
   IconHeartBroken,
 } from "@tabler/icons-react";
 import { useCallback, useReducer } from "react";
-import { useAnalytics } from "@/lib/analytics/client";
-import { deleteUser } from "@/lib/auth-client";
 
 // ============================================================================
 // Types

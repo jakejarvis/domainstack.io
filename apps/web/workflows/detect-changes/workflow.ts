@@ -628,14 +628,14 @@ export async function detectChangesWorkflow(
 
 // Import SnapshotForMonitoring type for proper typing
 type SnapshotData = Awaited<
-  ReturnType<typeof import("@/lib/db/repos").snapshotsRepo.getSnapshot>
+  ReturnType<typeof import("@domainstack/db/queries").getSnapshot>
 >;
 
 async function fetchSnapshot(trackedDomainId: string): Promise<SnapshotData> {
   "use step";
 
-  const { snapshotsRepo } = await import("@/lib/db/repos");
-  return await snapshotsRepo.getSnapshot(trackedDomainId);
+  const { getSnapshot } = await import("@domainstack/db/queries");
+  return await getSnapshot(trackedDomainId);
 }
 
 async function detectRegistrationChange(
@@ -778,8 +778,8 @@ async function updateRegistrationSnapshot(
 ): Promise<void> {
   "use step";
 
-  const { snapshotsRepo } = await import("@/lib/db/repos");
-  await snapshotsRepo.updateSnapshot(trackedDomainId, { registration });
+  const { updateSnapshot } = await import("@domainstack/db/queries");
+  await updateSnapshot(trackedDomainId, { registration });
 }
 
 async function updateProviderSnapshot(
@@ -792,8 +792,8 @@ async function updateProviderSnapshot(
 ): Promise<void> {
   "use step";
 
-  const { snapshotsRepo } = await import("@/lib/db/repos");
-  await snapshotsRepo.updateSnapshot(trackedDomainId, {
+  const { updateSnapshot } = await import("@domainstack/db/queries");
+  await updateSnapshot(trackedDomainId, {
     dnsProviderId: providers.dns,
     hostingProviderId: providers.hosting,
     emailProviderId: providers.email,
@@ -806,6 +806,6 @@ async function updateCertificateSnapshot(
 ): Promise<void> {
   "use step";
 
-  const { snapshotsRepo } = await import("@/lib/db/repos");
-  await snapshotsRepo.updateSnapshot(trackedDomainId, { certificate });
+  const { updateSnapshot } = await import("@domainstack/db/queries");
+  await updateSnapshot(trackedDomainId, { certificate });
 }

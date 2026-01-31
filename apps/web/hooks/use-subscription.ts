@@ -1,12 +1,12 @@
 "use client";
 
+import { analytics } from "@domainstack/analytics/client";
+import { checkoutEmbed, customer } from "@domainstack/auth/client";
+import { PRO_TIER_INFO } from "@domainstack/polar/products";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
-import { analytics } from "@/lib/analytics/client";
-import { checkoutEmbed, customer } from "@/lib/auth-client";
-import { PRO_TIER_INFO } from "@/lib/polar/products";
 import { useTRPC } from "@/lib/trpc/client";
 import type { AppRouter } from "@/server/routers/_app";
 

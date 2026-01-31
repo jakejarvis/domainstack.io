@@ -101,19 +101,21 @@ async function fetchDomain(
 ): Promise<DomainData | null> {
   "use step";
 
-  const { trackedDomainsRepo } = await import("@/lib/db/repos");
-
-  return await trackedDomainsRepo.getTrackedDomainForReverification(
-    trackedDomainId,
+  const { getTrackedDomainForReverification } = await import(
+    "@domainstack/db/queries"
   );
+
+  return await getTrackedDomainForReverification(trackedDomainId);
 }
 
 async function markSuccess(trackedDomainId: string): Promise<void> {
   "use step";
 
-  const { trackedDomainsRepo } = await import("@/lib/db/repos");
+  const { markVerificationSuccessful } = await import(
+    "@domainstack/db/queries"
+  );
 
-  await trackedDomainsRepo.markVerificationSuccessful(trackedDomainId);
+  await markVerificationSuccessful(trackedDomainId);
 }
 
 interface DomainForFailureCheck {
@@ -141,13 +143,15 @@ async function determineFailureAction(
   const { VERIFICATION_GRACE_PERIOD_DAYS } = await import(
     "@domainstack/constants"
   );
-  const { trackedDomainsRepo } = await import("@/lib/db/repos");
+  const { markVerificationFailing, revokeVerification } = await import(
+    "@domainstack/db/queries"
+  );
 
   const now = new Date();
 
   if (domain.verificationStatus === "verified") {
     // First failure - mark as failing
-    await trackedDomainsRepo.markVerificationFailing(domain.id);
+    await markVerificationFailing(domain.id);
     return {
       action: "marked_failing",
       shouldSendEmail: true,
@@ -160,7 +164,7 @@ async function determineFailureAction(
     const failedAt = domain.verificationFailedAt;
     if (!failedAt) {
       // Shouldn't happen, but mark failing time now
-      await trackedDomainsRepo.markVerificationFailing(domain.id);
+      await markVerificationFailing(domain.id);
       return {
         action: "marked_failing",
         shouldSendEmail: false,
@@ -172,7 +176,7 @@ async function determineFailureAction(
 
     if (daysFailing >= VERIFICATION_GRACE_PERIOD_DAYS) {
       // Grace period exceeded - revoke verification
-      await trackedDomainsRepo.revokeVerification(domain.id);
+      await revokeVerification(domain.id);
       return {
         action: "revoked",
         shouldSendEmail: true,
@@ -212,15 +216,19 @@ async function sendVerificationFailingEmail(
   "use step";
 
   const { default: VerificationFailingEmail } = await import(
-    "@/emails/verification-failing"
+    "@domainstack/email/templates/verification-failing"
   );
   const { VERIFICATION_GRACE_PERIOD_DAYS } = await import(
     "@domainstack/constants"
   );
-  const { notificationsRepo } = await import("@/lib/db/repos");
+  const {
+    hasRecentNotification,
+    createNotification,
+    updateNotificationResendId,
+  } = await import("@domainstack/db/queries");
   const { sendEmail } = await import("@/workflows/shared/send-email");
 
-  const alreadySent = await notificationsRepo.hasRecentNotification(
+  const alreadySent = await hasRecentNotification(
     domain.id,
     "verification_failing",
   );
@@ -231,7 +239,7 @@ async function sendVerificationFailingEmail(
   const message = `Verification for ${domain.domainName} is failing. You have ${VERIFICATION_GRACE_PERIOD_DAYS} days to fix it before access is revoked.`;
 
   // Create in-app notification first
-  const notification = await notificationsRepo.createNotification({
+  const notification = await createNotification({
     userId: domain.userId,
     trackedDomainId: domain.id,
     type: "verification_failing",
@@ -246,6 +254,8 @@ async function sendVerificationFailingEmail(
     );
   }
 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
+
   // Send email notification using shared step (handles error classification)
   const result = await sendEmail({
     to: domain.userEmail,
@@ -255,14 +265,12 @@ async function sendVerificationFailingEmail(
       domainName: domain.domainName,
       verificationMethod: domain.verificationMethod,
       gracePeriodDays: VERIFICATION_GRACE_PERIOD_DAYS,
+      baseUrl,
     }),
   });
 
   // Update notification with email ID
-  await notificationsRepo.updateNotificationResendId(
-    notification.id,
-    result.emailId,
-  );
+  await updateNotificationResendId(notification.id, result.emailId);
 
   return true;
 }
@@ -276,12 +284,16 @@ async function sendVerificationRevokedEmail(
   "use step";
 
   const { default: VerificationRevokedEmail } = await import(
-    "@/emails/verification-revoked"
+    "@domainstack/email/templates/verification-revoked"
   );
-  const { notificationsRepo } = await import("@/lib/db/repos");
+  const {
+    hasRecentNotification,
+    createNotification,
+    updateNotificationResendId,
+  } = await import("@domainstack/db/queries");
   const { sendEmail } = await import("@/workflows/shared/send-email");
 
-  const alreadySent = await notificationsRepo.hasRecentNotification(
+  const alreadySent = await hasRecentNotification(
     domain.id,
     "verification_revoked",
   );
@@ -292,7 +304,7 @@ async function sendVerificationRevokedEmail(
   const message = `Verification for ${domain.domainName} has been revoked. The grace period has expired without successful re-verification.`;
 
   // Create in-app notification first
-  const notification = await notificationsRepo.createNotification({
+  const notification = await createNotification({
     userId: domain.userId,
     trackedDomainId: domain.id,
     type: "verification_revoked",
@@ -307,6 +319,8 @@ async function sendVerificationRevokedEmail(
     );
   }
 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
+
   // Send email notification using shared step (handles error classification)
   const result = await sendEmail({
     to: domain.userEmail,
@@ -314,14 +328,12 @@ async function sendVerificationRevokedEmail(
     react: VerificationRevokedEmail({
       userName: domain.userName.split(" ")[0] || "there",
       domainName: domain.domainName,
+      baseUrl,
     }),
   });
 
   // Update notification with email ID
-  await notificationsRepo.updateNotificationResendId(
-    notification.id,
-    result.emailId,
-  );
+  await updateNotificationResendId(notification.id, result.emailId);
 
   return true;
 }

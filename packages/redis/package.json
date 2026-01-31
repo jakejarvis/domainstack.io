@@ -1,0 +1,25 @@
+{
+  "name": "@domainstack/redis",
+  "version": "0.0.0-beta.1",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./ratelimit": "./src/ratelimit.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "lint": "biome check",
+    "format": "biome format --write"
+  },
+  "dependencies": {
+    "@domainstack/logger": "workspace:*",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.36.1"
+  },
+  "devDependencies": {
+    "@domainstack/typescript-config": "workspace:*",
+    "@types/node": "catalog:"
+  }
+}

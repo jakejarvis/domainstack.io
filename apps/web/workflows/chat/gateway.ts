@@ -25,7 +25,7 @@ export async function getModelStep(): Promise<CompatibleLanguageModel> {
   const model = gateway(modelId || DEFAULT_CHAT_MODEL);
 
   // Wrap with PostHog tracing if client available
-  const { getServerPosthog } = await import("@/lib/analytics/server");
+  const { getServerPosthog } = await import("@domainstack/analytics/server");
   const phClient = getServerPosthog();
   if (phClient) {
     // Get workflow run ID and step ID for PostHog trace correlation

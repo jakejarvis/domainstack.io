@@ -1,7 +1,7 @@
+import { syncBlockedDomains } from "@domainstack/db/queries";
+import { createLogger } from "@domainstack/logger";
 import { NextResponse } from "next/server";
-import { blockedDomainsRepo } from "@/lib/db/repos";
 import { getBlocklistSources } from "@/lib/edge-config";
-import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "cron/sync-blocklist" });
 
@@ -92,7 +92,7 @@ export async function GET(request: Request) {
 
     // Deduplicate and sync
     const uniqueDomains = [...new Set(allDomains)];
-    const result = await blockedDomainsRepo.syncBlockedDomains(uniqueDomains);
+    const result = await syncBlockedDomains(uniqueDomains);
 
     logger.info(
       { sources: sources.length, added: result.added, removed: result.removed },

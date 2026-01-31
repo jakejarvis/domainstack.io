@@ -1,13 +1,11 @@
 /* @vitest-environment node */
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+
+// Initialize PGlite before importing anything that uses the db
+const { makePGliteDb, closePGliteDb, resetPGliteDb } = await import(
+  "@domainstack/db/testing"
+);
+const { db } = await makePGliteDb();
 
 // Mock schedule revalidation
 vi.mock("@/lib/revalidation", () => ({
@@ -15,20 +13,12 @@ vi.mock("@/lib/revalidation", () => ({
 }));
 
 describe("persistRegistrationStep", () => {
-  beforeAll(async () => {
-    const { makePGliteDb } = await import("@domainstack/db/testing");
-    const { db } = await makePGliteDb();
-    vi.doMock("@/lib/db/client", () => ({ db }));
-  });
-
   beforeEach(async () => {
-    const { resetPGliteDb } = await import("@domainstack/db/testing");
     await resetPGliteDb();
     vi.clearAllMocks();
   });
 
   afterAll(async () => {
-    const { closePGliteDb } = await import("@domainstack/db/testing");
     await closePGliteDb();
   });
 
@@ -55,9 +45,9 @@ describe("persistRegistrationStep", () => {
 
     expect(domainId).toBeTruthy();
 
-    const { db } = await import("@/lib/db/client");
+    // Use the PGlite db instance (already set as the singleton)
     const { domains, registrations } = await import("@domainstack/db/schema");
-    const { eq } = await import("drizzle-orm");
+    const { eq } = await import("@domainstack/db/drizzle");
 
     const domainRows = await db
       .select()

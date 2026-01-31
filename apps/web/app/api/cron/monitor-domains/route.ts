@@ -1,7 +1,10 @@
+import {
+  getMonitoredSnapshotIds,
+  getVerifiedDomainsWithoutSnapshots,
+} from "@domainstack/db/queries";
+import { createLogger } from "@domainstack/logger";
 import { NextResponse } from "next/server";
 import { start } from "workflow/api";
-import { snapshotsRepo } from "@/lib/db/repos";
-import { createLogger } from "@/lib/logger/server";
 import { detectChangesWorkflow } from "@/workflows/detect-changes";
 import { initializeSnapshotWorkflow } from "@/workflows/initialize-snapshot";
 
@@ -24,7 +27,7 @@ export async function GET(request: Request) {
 
   try {
     // Phase 1: Create baseline snapshots for verified domains without snapshots
-    const domains = await snapshotsRepo.getVerifiedDomainsWithoutSnapshots();
+    const domains = await getVerifiedDomainsWithoutSnapshots();
     const baselineResults = await Promise.allSettled(
       domains.map((input) => start(initializeSnapshotWorkflow, [input])),
     );
@@ -33,7 +36,7 @@ export async function GET(request: Request) {
     ).length;
 
     // Phase 2: Detect changes for domains with existing snapshots
-    const ids = await snapshotsRepo.getMonitoredSnapshotIds();
+    const ids = await getMonitoredSnapshotIds();
     const monitorResults = await Promise.allSettled(
       ids.map((id) => start(detectChangesWorkflow, [{ trackedDomainId: id }])),
     );

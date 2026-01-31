@@ -1,4 +1,4 @@
-import { useMediaQuery } from "@/hooks/use-media-query";
+import { useMediaQuery } from "@domainstack/ui/hooks";
 
 const MOBILE_BREAKPOINT = 768;
 

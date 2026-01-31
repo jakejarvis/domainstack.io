@@ -15,7 +15,7 @@ vi.mock("@domainstack/core/tls", () => ({
 }));
 
 // Mock blocked domains repo
-vi.mock("@/lib/db/repos", () => ({
+vi.mock("@domainstack/db/queries", () => ({
   blockedDomainsRepo: {
     isDomainBlocked: vi.fn().mockResolvedValue(false),
   },

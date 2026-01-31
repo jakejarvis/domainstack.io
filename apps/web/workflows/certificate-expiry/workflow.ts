@@ -140,9 +140,9 @@ async function fetchCertificate(
 ): Promise<CertificateData | null> {
   "use step";
 
-  const { certificatesRepo } = await import("@/lib/db/repos");
+  const { getEarliestCertificate } = await import("@domainstack/db/queries");
 
-  return await certificatesRepo.getEarliestCertificate(trackedDomainId);
+  return await getEarliestCertificate(trackedDomainId);
 }
 
 async function clearRenewedNotifications(
@@ -150,11 +150,11 @@ async function clearRenewedNotifications(
 ): Promise<number> {
   "use step";
 
-  const { notificationsRepo } = await import("@/lib/db/repos");
-
-  return await notificationsRepo.clearCertificateExpiryNotifications(
-    trackedDomainId,
+  const { clearCertificateExpiryNotifications } = await import(
+    "@domainstack/db/queries"
   );
+
+  return await clearCertificateExpiryNotifications(trackedDomainId);
 }
 
 async function createNotificationRecord(params: {
@@ -171,7 +171,7 @@ async function createNotificationRecord(params: {
   "use step";
 
   const { format } = await import("date-fns");
-  const { notificationsRepo } = await import("@/lib/db/repos");
+  const { createNotification } = await import("@domainstack/db/queries");
 
   const {
     trackedDomainId,
@@ -193,7 +193,7 @@ async function createNotificationRecord(params: {
   if (shouldSendEmail) channels.push("email");
   if (shouldSendInApp) channels.push("in-app");
 
-  const notification = await notificationsRepo.createNotification({
+  const notification = await createNotification({
     userId,
     trackedDomainId,
     type: notificationType,
@@ -225,7 +225,7 @@ async function sendCertificateExpiryEmail(params: {
 
   const { format } = await import("date-fns");
   const { default: CertificateExpiryEmail } = await import(
-    "@/emails/certificate-expiry"
+    "@domainstack/email/templates/certificate-expiry"
   );
   const { sendEmail } = await import("@/workflows/shared/send-email");
 
@@ -239,6 +239,8 @@ async function sendCertificateExpiryEmail(params: {
     subject,
   } = params;
 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
+
   const result = await sendEmail({
     to: userEmail,
     subject,
@@ -248,6 +250,7 @@ async function sendCertificateExpiryEmail(params: {
       expirationDate: format(validTo, "MMMM d, yyyy"),
       daysRemaining,
       issuer,
+      baseUrl,
     }),
   });
 

@@ -28,14 +28,16 @@ export async function persistCertificatesStep(
   "use step";
 
   // Dynamic imports for Node.js modules and database operations
-  const { domainsRepo, certificatesRepo } = await import("@/lib/db/repos");
+  const { ensureDomainRecord, replaceCertificates } = await import(
+    "@domainstack/db/queries"
+  );
   const { ttlForCertificates } = await import("@/lib/ttl");
 
   const now = new Date();
 
   try {
     // Ensure domain record exists (creates if needed)
-    const domainRecord = await domainsRepo.ensureDomainRecord(domain);
+    const domainRecord = await ensureDomainRecord(domain);
 
     const chainWithIds = processedData.certificates.map((c, i) => ({
       issuer: c.issuer,
@@ -48,7 +50,7 @@ export async function persistCertificatesStep(
 
     const expiresAt = ttlForCertificates(now, processedData.earliestValidTo);
 
-    await certificatesRepo.replaceCertificates({
+    await replaceCertificates({
       domainId: domainRecord.id,
       chain: chainWithIds,
       fetchedAt: now,

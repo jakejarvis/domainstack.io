@@ -1,3 +1,4 @@
+import { auth } from "@domainstack/auth/server";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -5,7 +6,6 @@ import { Suspense } from "react";
 import { AddDomainModalClient } from "@/components/dashboard/add-domain/add-domain-modal-client";
 import { AddDomainSkeleton } from "@/components/dashboard/add-domain/add-domain-skeleton";
 import { Modal, ModalContent } from "@/components/modal";
-import { auth } from "@/lib/auth";
 
 export default function InterceptedAddDomainPage({
   searchParams,

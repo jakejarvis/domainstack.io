@@ -1,10 +1,10 @@
+import { auth } from "@domainstack/auth/server";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Suspense } from "react";
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
-import { auth } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Dashboard",

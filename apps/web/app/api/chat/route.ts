@@ -15,19 +15,19 @@
  * - Conversation history truncation
  */
 
+import { auth } from "@domainstack/auth/server";
 import {
   MAX_CONVERSATION_MESSAGES,
   MAX_MESSAGE_LENGTH,
   RATE_LIMIT_ANONYMOUS,
   RATE_LIMIT_AUTHENTICATED,
 } from "@domainstack/constants";
+import { createLogger } from "@domainstack/logger";
 import { ipAddress } from "@vercel/functions";
 import { createUIMessageStreamResponse, type UIMessage } from "ai";
 import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
-import { createLogger } from "@/lib/logger/server";
 import { checkRateLimit } from "@/lib/ratelimit/api";
 import { chatWorkflow } from "@/workflows/chat";
 

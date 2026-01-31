@@ -1,9 +1,9 @@
 import "server-only";
 
+import { analytics } from "@domainstack/analytics/server";
+import type { CacheResult } from "@domainstack/db/queries";
+import { createLogger } from "@domainstack/logger";
 import type { Run } from "workflow/api";
-import { analytics } from "@/lib/analytics/server";
-import type { CacheResult } from "@/lib/db/repos";
-import { createLogger } from "@/lib/logger/server";
 import type { WorkflowResult } from "./types";
 
 const logger = createLogger({ source: "workflow/swr" });

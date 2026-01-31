@@ -65,7 +65,9 @@ export async function normalizeAndBuildResponseStep(
   const { detectRegistrar, getProvidersFromCatalog } = await import(
     "@domainstack/core/providers"
   );
-  const { providersRepo } = await import("@/lib/db/repos");
+  const { upsertCatalogProvider, resolveOrCreateProviderId } = await import(
+    "@domainstack/db/queries"
+  );
 
   const record = JSON.parse(recordJson) as ParsedRdapRecord;
   const catalog = await getProviderCatalog();
@@ -103,11 +105,10 @@ export async function normalizeAndBuildResponseStep(
 
   if (hasProviderInfo) {
     if (catalogProvider) {
-      const providerRef =
-        await providersRepo.upsertCatalogProvider(catalogProvider);
+      const providerRef = await upsertCatalogProvider(catalogProvider);
       registrarProviderId = providerRef.id;
     } else {
-      registrarProviderId = await providersRepo.resolveOrCreateProviderId({
+      registrarProviderId = await resolveOrCreateProviderId({
         category: "registrar",
         domain: registrarDomain,
         name: registrarName.trim() || null,

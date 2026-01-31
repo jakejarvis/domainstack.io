@@ -1,5 +1,6 @@
 "use client";
 
+import { analytics } from "@domainstack/analytics/client";
 import {
   isValidDomain,
   normalizeDomainInput,
@@ -23,9 +24,13 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useRouter } from "@/hooks/use-router";
-import { analytics } from "@/lib/analytics/client";
 import { pendingDomainAtom } from "@/lib/atoms/search-atoms";
-import { isMac } from "@/lib/utils";
+
+const isMac = () =>
+  typeof navigator !== "undefined" &&
+  // @ts-expect-error userAgentData not yet in all TS libs
+  (navigator.userAgentData?.platform === "macOS" ||
+    navigator.userAgent.includes("Mac"));
 
 export type SearchClientVariant = "sm" | "lg";
 

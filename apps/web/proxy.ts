@@ -1,4 +1,4 @@
-import { getSessionCookie } from "better-auth/cookies";
+import { getSessionCookie } from "@domainstack/auth/server";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { toRegistrableDomain } from "@/lib/normalize-domain";

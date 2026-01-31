@@ -1,5 +1,5 @@
 import "server-only";
-import { createLogger } from "@/lib/logger/server";
+import { createLogger } from "@domainstack/logger";
 
 const logger = createLogger({ source: "puppeteer" });
 

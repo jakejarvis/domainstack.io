@@ -136,11 +136,11 @@ async function fetchDomain(
 ): Promise<DomainData | null> {
   "use step";
 
-  const { trackedDomainsRepo } = await import("@/lib/db/repos");
-
-  return await trackedDomainsRepo.getTrackedDomainForNotification(
-    trackedDomainId,
+  const { getTrackedDomainForNotification } = await import(
+    "@domainstack/db/queries"
   );
+
+  return await getTrackedDomainForNotification(trackedDomainId);
 }
 
 async function clearRenewedNotifications(
@@ -148,11 +148,11 @@ async function clearRenewedNotifications(
 ): Promise<number> {
   "use step";
 
-  const { notificationsRepo } = await import("@/lib/db/repos");
-
-  return await notificationsRepo.clearDomainExpiryNotifications(
-    trackedDomainId,
+  const { clearDomainExpiryNotifications } = await import(
+    "@domainstack/db/queries"
   );
+
+  return await clearDomainExpiryNotifications(trackedDomainId);
 }
 
 async function createNotificationRecord(params: {
@@ -169,7 +169,7 @@ async function createNotificationRecord(params: {
   "use step";
 
   const { format } = await import("date-fns");
-  const { notificationsRepo } = await import("@/lib/db/repos");
+  const { createNotification } = await import("@domainstack/db/queries");
 
   const {
     trackedDomainId,
@@ -191,7 +191,7 @@ async function createNotificationRecord(params: {
   if (shouldSendEmail) channels.push("email");
   if (shouldSendInApp) channels.push("in-app");
 
-  const notification = await notificationsRepo.createNotification({
+  const notification = await createNotification({
     userId,
     trackedDomainId,
     type: notificationType,
@@ -222,7 +222,9 @@ async function sendDomainExpiryEmail(params: {
   "use step";
 
   const { format } = await import("date-fns");
-  const { default: DomainExpiryEmail } = await import("@/emails/domain-expiry");
+  const { default: DomainExpiryEmail } = await import(
+    "@domainstack/email/templates/domain-expiry"
+  );
   const { sendEmail } = await import("@/workflows/shared/send-email");
 
   const {
@@ -235,6 +237,8 @@ async function sendDomainExpiryEmail(params: {
     subject,
   } = params;
 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
+
   const result = await sendEmail({
     to: userEmail,
     subject,
@@ -244,6 +248,7 @@ async function sendDomainExpiryEmail(params: {
       expirationDate: format(expirationDate, "MMMM d, yyyy"),
       daysRemaining,
       registrar,
+      baseUrl,
     }),
   });
 

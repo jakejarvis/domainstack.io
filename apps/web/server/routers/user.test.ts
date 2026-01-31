@@ -9,12 +9,9 @@ import {
   vi,
 } from "vitest";
 
-// Mock the DB client before importing anything else
-vi.mock("@/lib/db/client", async () => {
-  const { makePGliteDb } = await import("@domainstack/db/testing");
-  const { db } = await makePGliteDb();
-  return { db };
-});
+// Initialize PGlite before importing anything that uses the db
+const { makePGliteDb, closePGliteDb } = await import("@domainstack/db/testing");
+const { db } = await makePGliteDb();
 
 // Mock next/headers to avoid errors outside request context
 vi.mock("next/headers", () => ({
@@ -26,7 +23,8 @@ vi.mock("next/server", () => ({
   after: vi.fn((fn) => fn()),
 }));
 
-import {
+// Now import modules that depend on the db
+const {
   accounts,
   calendarFeeds,
   domains,
@@ -34,9 +32,9 @@ import {
   userSubscriptions,
   users,
   userTrackedDomains,
-} from "@domainstack/db/schema";
-import { db } from "@/lib/db/client";
-import { createCaller } from "@/server/routers/_app";
+} = await import("@domainstack/db/schema");
+const { createCaller } = await import("@/server/routers/_app");
+
 import type { Context } from "@/trpc/init";
 
 // Test fixtures
@@ -123,7 +121,6 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  const { closePGliteDb } = await import("@domainstack/db/testing");
   await closePGliteDb();
 });
 

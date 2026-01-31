@@ -1,5 +1,6 @@
 "use client";
 
+import { useAnalytics } from "@domainstack/analytics/client";
 import { MAX_HISTORY_ITEMS } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
@@ -14,7 +15,6 @@ import { useSetAtom } from "jotai";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Favicon } from "@/components/icons/favicon";
-import { useAnalytics } from "@/lib/analytics/client";
 import { pendingDomainAtom } from "@/lib/atoms/search-atoms";
 import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
 

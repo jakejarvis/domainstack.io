@@ -1,8 +1,8 @@
 import { PLAN_QUOTAS } from "@domainstack/constants";
+import { PRO_TIER_INFO } from "@domainstack/polar/products";
 import { IconCircleArrowUp, IconRocket } from "@tabler/icons-react";
 import { UpgradeButton } from "@/components/upgrade-button";
 import { useSubscription } from "@/hooks/use-subscription";
-import { PRO_TIER_INFO } from "@/lib/polar/products";
 
 export function UpgradeRow() {
   const { isPro, isSubscriptionLoading } = useSubscription();

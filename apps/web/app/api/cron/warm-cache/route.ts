@@ -1,17 +1,17 @@
+import {
+  getCachedCertificates,
+  getCachedDns,
+  getCachedHeaders,
+  getCachedHosting,
+  getCachedRegistration,
+  getCachedSeo,
+  getRecentlyAccessedDomains,
+} from "@domainstack/db/queries";
+import { createLogger } from "@domainstack/logger";
 import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 import type { Section } from "@/lib/constants/sections";
 import { sections } from "@/lib/constants/sections";
-import {
-  certificatesRepo,
-  dnsRepo,
-  domainsRepo,
-  headersRepo,
-  hostingRepo,
-  registrationsRepo,
-  seoRepo,
-} from "@/lib/db/repos";
-import { createLogger } from "@/lib/logger/server";
 import { certificatesWorkflow } from "@/workflows/certificates";
 import { dnsWorkflow } from "@/workflows/dns";
 import { headersWorkflow } from "@/workflows/headers";
@@ -36,12 +36,12 @@ const sectionCacheGetters: Record<
   Section,
   (domain: string) => Promise<{ stale: boolean; data: unknown }>
 > = {
-  dns: (domain) => dnsRepo.getCachedDns(domain),
-  headers: (domain) => headersRepo.getCachedHeaders(domain),
-  hosting: (domain) => hostingRepo.getCachedHosting(domain),
-  certificates: (domain) => certificatesRepo.getCachedCertificates(domain),
-  seo: (domain) => seoRepo.getCachedSeo(domain),
-  registration: (domain) => registrationsRepo.getCachedRegistration(domain),
+  dns: (domain) => getCachedDns(domain),
+  headers: (domain) => getCachedHeaders(domain),
+  hosting: (domain) => getCachedHosting(domain),
+  certificates: (domain) => getCachedCertificates(domain),
+  seo: (domain) => getCachedSeo(domain),
+  registration: (domain) => getCachedRegistration(domain),
 };
 
 /**
@@ -115,8 +115,7 @@ export async function GET(request: Request) {
 
   try {
     // Get domains accessed in the last 24 hours
-    const recentDomains =
-      await domainsRepo.getRecentlyAccessedDomains(LOOKBACK_HOURS);
+    const recentDomains = await getRecentlyAccessedDomains(LOOKBACK_HOURS);
 
     if (recentDomains.length === 0) {
       logger.info("No recently accessed domains to warm");

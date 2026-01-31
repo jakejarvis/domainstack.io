@@ -1,6 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import { analytics } from "@domainstack/analytics/client";
 import { CHATBOT_NAME } from "@domainstack/constants";
 import {
   Drawer,
@@ -25,7 +26,6 @@ import { useBrowserAI } from "@/hooks/use-browser-ai";
 import { useChatPersistence } from "@/hooks/use-chat-persistence";
 import { useLocalChat } from "@/hooks/use-local-chat";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { analytics } from "@/lib/analytics/client";
 import { chatOpenAtom, serverSuggestionsAtom } from "@/lib/atoms/chat-atoms";
 import { buildClientSystemPrompt } from "@/lib/chat/client-prompt";
 import { createClientDomainTools } from "@/lib/chat/client-tools";

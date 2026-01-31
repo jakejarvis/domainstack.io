@@ -1,3 +1,4 @@
+import { auth } from "@domainstack/auth/server";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -10,7 +11,6 @@ import {
 } from "@/components/modal";
 import { SettingsTabsRouter } from "@/components/settings/settings-content";
 import { SettingsSkeletonPanels } from "@/components/settings/settings-skeleton";
-import { auth } from "@/lib/auth";
 
 function SettingsSkeleton() {
   return (

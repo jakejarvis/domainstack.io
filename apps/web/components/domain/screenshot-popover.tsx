@@ -1,5 +1,6 @@
 "use client";
 
+import { usePointerCapability } from "@domainstack/ui/hooks";
 import {
   Popover,
   PopoverContent,
@@ -7,7 +8,6 @@ import {
 } from "@domainstack/ui/popover";
 import { useEffect, useState } from "react";
 import { Screenshot, useScreenshot } from "@/components/domain/screenshot";
-import { usePointerCapability } from "@/hooks/use-pointer-capability";
 
 export function ScreenshotPopover({
   domain,

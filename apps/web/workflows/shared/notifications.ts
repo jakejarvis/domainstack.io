@@ -26,12 +26,10 @@ export async function determineNotificationChannelsStep(
 ): Promise<NotificationChannels> {
   "use step";
 
-  const { trackedDomainsRepo, userNotificationPreferencesRepo } = await import(
-    "@/lib/db/repos"
-  );
+  const { findTrackedDomainById, getOrCreateUserNotificationPreferences } =
+    await import("@domainstack/db/queries");
 
-  const trackedDomain =
-    await trackedDomainsRepo.findTrackedDomainById(trackedDomainId);
+  const trackedDomain = await findTrackedDomainById(trackedDomainId);
   if (!trackedDomain) {
     return { shouldSendEmail: false, shouldSendInApp: false };
   }
@@ -42,10 +40,7 @@ export async function determineNotificationChannelsStep(
   }
 
   // Fall back to global preferences
-  const globalPrefs =
-    await userNotificationPreferencesRepo.getOrCreateUserNotificationPreferences(
-      userId,
-    );
+  const globalPrefs = await getOrCreateUserNotificationPreferences(userId);
   const globalPref = globalPrefs[preferenceType];
   return {
     shouldSendEmail: globalPref.email,
@@ -65,9 +60,9 @@ export async function resolveProviderNamesStep(
 
   if (providerIds.length === 0) return new Map();
 
-  const { providersRepo } = await import("@/lib/db/repos");
+  const { getProviderNames } = await import("@domainstack/db/queries");
 
-  return await providersRepo.getProviderNames(providerIds);
+  return await getProviderNames(providerIds);
 }
 
 // ============================================================================
@@ -131,12 +126,11 @@ export async function checkExpiryPreferencesStep(
     return { shouldSendEmail: false, shouldSendInApp: false };
   }
 
-  const { userNotificationPreferencesRepo } = await import("@/lib/db/repos");
+  const { getOrCreateUserNotificationPreferences } = await import(
+    "@domainstack/db/queries"
+  );
 
-  const globalPrefs =
-    await userNotificationPreferencesRepo.getOrCreateUserNotificationPreferences(
-      userId,
-    );
+  const globalPrefs = await getOrCreateUserNotificationPreferences(userId);
 
   return {
     shouldSendEmail: globalPrefs[preferenceKey].email,
@@ -153,12 +147,9 @@ export async function checkAlreadySentStep(
 ): Promise<boolean> {
   "use step";
 
-  const { notificationsRepo } = await import("@/lib/db/repos");
+  const { hasRecentNotification } = await import("@domainstack/db/queries");
 
-  return await notificationsRepo.hasRecentNotification(
-    trackedDomainId,
-    notificationType,
-  );
+  return await hasRecentNotification(trackedDomainId, notificationType);
 }
 
 /**
@@ -170,9 +161,11 @@ export async function updateNotificationEmailIdStep(
 ): Promise<void> {
   "use step";
 
-  const { notificationsRepo } = await import("@/lib/db/repos");
+  const { updateNotificationResendId } = await import(
+    "@domainstack/db/queries"
+  );
 
-  await notificationsRepo.updateNotificationResendId(notificationId, emailId);
+  await updateNotificationResendId(notificationId, emailId);
 }
 
 // ============================================================================
@@ -213,8 +206,10 @@ async function sendNotificationInternal(
   shouldSendEmail: boolean,
   shouldSendInApp: boolean,
 ): Promise<boolean> {
-  const { notificationsRepo } = await import("@/lib/db/repos");
-  const { sendEmail } = await import("@/lib/resend");
+  const { createNotification, updateNotificationResendId } = await import(
+    "@domainstack/db/queries"
+  );
+  const { sendEmail } = await import("@domainstack/email");
 
   const {
     userId,
@@ -236,7 +231,7 @@ async function sendNotificationInternal(
   if (shouldSendInApp) channels.push("in-app");
 
   // Create notification record
-  const notification = await notificationsRepo.createNotification({
+  const notification = await createNotification({
     userId,
     trackedDomainId,
     type: notificationType,
@@ -252,23 +247,21 @@ async function sendNotificationInternal(
 
   // Send email notification if enabled and component provided
   if (shouldSendEmail && emailComponent && emailSubject) {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
     const { data, error } = await sendEmail(
       {
         to: userEmail,
         subject: emailSubject,
         react: emailComponent,
       },
-      idempotencyKey ? { idempotencyKey } : undefined,
+      { baseUrl, ...(idempotencyKey ? { idempotencyKey } : {}) },
     );
 
     if (error) throw new Error(`Resend error: ${error.message}`);
 
     // Update notification with email ID
     if (data?.id) {
-      await notificationsRepo.updateNotificationResendId(
-        notification.id,
-        data.id,
-      );
+      await updateNotificationResendId(notification.id, data.id);
     }
   }
 
@@ -316,15 +309,17 @@ export async function sendRegistrationChangeNotificationStep(
 
   const { getStepMetadata } = await import("workflow");
   const { default: RegistrationChangeEmail } = await import(
-    "@/emails/registration-change"
+    "@domainstack/email/templates/registration-change"
   );
 
   const { stepId } = getStepMetadata();
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
 
   const emailComponent = RegistrationChangeEmail({
     userName: params.userName.split(" ")[0] || "there",
     domainName: params.domainName,
     changes: params.changes,
+    baseUrl,
   });
 
   return await sendNotificationInternal(
@@ -385,15 +380,17 @@ export async function sendProviderChangeNotificationStep(
 
   const { getStepMetadata } = await import("workflow");
   const { default: ProviderChangeEmail } = await import(
-    "@/emails/provider-change"
+    "@domainstack/email/templates/provider-change"
   );
 
   const { stepId } = getStepMetadata();
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
 
   const emailComponent = ProviderChangeEmail({
     userName: params.userName.split(" ")[0] || "there",
     domainName: params.domainName,
     changes: params.changes,
+    baseUrl,
   });
 
   return await sendNotificationInternal(
@@ -448,16 +445,18 @@ export async function sendCertificateChangeNotificationStep(
 
   const { getStepMetadata } = await import("workflow");
   const { default: CertificateChangeEmail } = await import(
-    "@/emails/certificate-change"
+    "@domainstack/email/templates/certificate-change"
   );
 
   const { stepId } = getStepMetadata();
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
 
   const emailComponent = CertificateChangeEmail({
     userName: params.userName.split(" ")[0] || "there",
     domainName: params.domainName,
     changes: params.changes,
     newValidTo: params.newValidTo,
+    baseUrl,
   });
 
   return await sendNotificationInternal(

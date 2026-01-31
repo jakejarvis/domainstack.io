@@ -11,6 +11,12 @@ import {
 } from "vitest";
 import { server } from "@/mocks/server";
 
+// Initialize PGlite before importing anything that uses the db
+const { makePGliteDb, closePGliteDb, resetPGliteDb } = await import(
+  "@domainstack/db/testing"
+);
+await makePGliteDb();
+
 // Mock Edge Config for provider catalogs
 const mockCatalog = {
   hosting: [
@@ -63,20 +69,12 @@ afterEach(() => {
 });
 
 describe("detectAndResolveProvidersStep", () => {
-  beforeAll(async () => {
-    const { makePGliteDb } = await import("@domainstack/db/testing");
-    const { db } = await makePGliteDb();
-    vi.doMock("@/lib/db/client", () => ({ db }));
-  });
-
   beforeEach(async () => {
-    const { resetPGliteDb } = await import("@domainstack/db/testing");
     await resetPGliteDb();
     vi.clearAllMocks();
   });
 
   afterAll(async () => {
-    const { closePGliteDb } = await import("@domainstack/db/testing");
     await closePGliteDb();
   });
 

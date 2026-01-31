@@ -1,3 +1,4 @@
+import { useSession } from "@domainstack/auth/client";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
@@ -17,7 +18,6 @@ import {
 import { SettingsErrorBoundary } from "@/components/settings/settings-error-boundary";
 import { NotificationsSkeleton } from "@/components/settings/settings-skeleton";
 import { useNotificationPreferences } from "@/hooks/use-notification-preferences";
-import { useSession } from "@/lib/auth-client";
 
 export function NotificationsPanel() {
   const { data: session } = useSession();

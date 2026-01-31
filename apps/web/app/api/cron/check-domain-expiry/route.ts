@@ -1,7 +1,7 @@
+import { getVerifiedTrackedDomainIds } from "@domainstack/db/queries";
+import { createLogger } from "@domainstack/logger";
 import { NextResponse } from "next/server";
 import { start } from "workflow/api";
-import { trackedDomainsRepo } from "@/lib/db/repos";
-import { createLogger } from "@/lib/logger/server";
 import { domainExpiryWorkflow } from "@/workflows/domain-expiry";
 
 const logger = createLogger({ source: "cron/check-domain-expiry" });
@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const ids = await trackedDomainsRepo.getVerifiedTrackedDomainIds();
+    const ids = await getVerifiedTrackedDomainIds();
     const results = await Promise.allSettled(
       ids.map((id) => start(domainExpiryWorkflow, [{ trackedDomainId: id }])),
     );

@@ -1,14 +1,11 @@
 "use client";
 
+import { analytics } from "@domainstack/analytics/client";
+import { getAuthErrorMessage, isAccountLinkingError } from "@domainstack/auth";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useRouter } from "@/hooks/use-router";
-import { analytics } from "@/lib/analytics/client";
-import {
-  getAuthErrorMessage,
-  isAccountLinkingError,
-} from "@/lib/constants/auth-errors";
 
 /**
  * Hook to handle auth callback error query parameters.

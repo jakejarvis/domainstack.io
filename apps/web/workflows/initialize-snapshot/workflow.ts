@@ -192,8 +192,8 @@ async function fetchDomainStep(
 ): Promise<{ name: string } | null> {
   "use step";
 
-  const { domainsRepo } = await import("@/lib/db/repos");
-  return domainsRepo.getDomainNameById(domainId);
+  const { getDomainNameById } = await import("@domainstack/db/queries");
+  return getDomainNameById(domainId);
 }
 
 async function createSnapshotStep(params: {
@@ -216,9 +216,9 @@ async function createSnapshotStep(params: {
 }): Promise<{ id: string }> {
   "use step";
 
-  const { snapshotsRepo } = await import("@/lib/db/repos");
+  const { createSnapshot } = await import("@domainstack/db/queries");
 
-  const snapshot = await snapshotsRepo.createSnapshot({
+  const snapshot = await createSnapshot({
     trackedDomainId: params.trackedDomainId,
     registration: params.registration,
     certificate: params.certificate,

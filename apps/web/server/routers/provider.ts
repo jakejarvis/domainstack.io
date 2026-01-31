@@ -1,6 +1,6 @@
+import { getProviderById, getProviderLogo } from "@domainstack/db/queries";
 import { start } from "workflow/api";
 import z from "zod";
-import { providerLogosRepo, providersRepo } from "@/lib/db/repos";
 import { withSwrCache } from "@/lib/workflow/swr";
 import { createTRPCRouter, publicProcedure } from "@/trpc/init";
 
@@ -12,7 +12,7 @@ export const providerRouter = createTRPCRouter({
   getProviderIcon: publicProcedure
     .input(z.object({ providerId: z.string().uuid() }))
     .query(async ({ input }) => {
-      const provider = await providersRepo.getProviderById(input.providerId);
+      const provider = await getProviderById(input.providerId);
       const providerDomain = provider?.domain;
       if (!providerDomain) {
         // Return null instead of throwing to avoid logging errors for missing icons
@@ -26,7 +26,7 @@ export const providerRouter = createTRPCRouter({
       return withSwrCache({
         workflowName: "provider-logo",
         domain: input.providerId, // Use providerId as the cache key
-        getCached: () => providerLogosRepo.getProviderLogo(input.providerId),
+        getCached: () => getProviderLogo(input.providerId),
         startWorkflow: () =>
           start(providerLogoWorkflow, [
             { providerId: input.providerId, providerDomain },

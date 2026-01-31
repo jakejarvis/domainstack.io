@@ -1,0 +1,31 @@
+{
+  "name": "@domainstack/email",
+  "version": "0.0.0-beta.1",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./templates/*": "./src/templates/*.tsx",
+    "./components/*": "./src/components/*.tsx"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "lint": "biome check",
+    "format": "biome format --write"
+  },
+  "dependencies": {
+    "@domainstack/constants": "workspace:*",
+    "@domainstack/logger": "workspace:*",
+    "@react-email/components": "^1.0.6",
+    "resend": "^6.9.1"
+  },
+  "devDependencies": {
+    "@domainstack/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@types/react": "^19.2.10"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  }
+}

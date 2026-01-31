@@ -2,9 +2,9 @@ import {
   type ProviderCatalog,
   safeParseProviderCatalog,
 } from "@domainstack/core/providers";
+import { createLogger } from "@domainstack/logger";
 import { get } from "@vercel/edge-config";
 import { cache } from "react";
-import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "edge-config" });
 

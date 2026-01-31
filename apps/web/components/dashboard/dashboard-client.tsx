@@ -1,5 +1,6 @@
 "use client";
 
+import { useSession } from "@domainstack/auth/client";
 import type { VerificationMethod } from "@domainstack/constants";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import {
@@ -44,7 +45,6 @@ import {
 } from "@/hooks/use-dashboard-selection";
 import { useRouter } from "@/hooks/use-router";
 import { useSubscription } from "@/hooks/use-subscription";
-import { useSession } from "@/lib/auth-client";
 import {
   type ConfirmAction,
   DEFAULT_SORT,

@@ -1,9 +1,9 @@
+import { auth } from "@domainstack/auth/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { LoginSkeletonWithCard } from "@/components/auth/login-skeleton";
 import { AnimatedBackground } from "@/components/layout/animated-background";
-import { auth } from "@/lib/auth";
 
 async function RedirectAuthenticatedLayout({
   children,

@@ -1,3 +1,4 @@
+import { useAnalytics } from "@domainstack/analytics/client";
 import { Button } from "@domainstack/ui/button";
 import { Skeleton } from "@domainstack/ui/skeleton";
 import {
@@ -9,7 +10,6 @@ import { cn } from "@domainstack/ui/utils";
 import { SiCloudflare } from "@icons-pack/react-simple-icons";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useAnalytics } from "@/lib/analytics/client";
 import { useTRPC } from "@/lib/trpc/client";
 
 /**

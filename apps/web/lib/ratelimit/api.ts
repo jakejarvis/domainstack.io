@@ -1,11 +1,11 @@
-import { ipAddress, waitUntil } from "@vercel/functions";
-import { createLogger } from "@/lib/logger/server";
+import { createLogger } from "@domainstack/logger";
 import {
   DEFAULT_RATE_LIMIT,
   getRateLimiter,
   type RateLimitConfig,
   type RateLimitInfo,
-} from "./index";
+} from "@domainstack/redis/ratelimit";
+import { ipAddress, waitUntil } from "@vercel/functions";
 
 const logger = createLogger({ source: "ratelimit/api" });
 
@@ -53,7 +53,7 @@ function buildHeaders(info: RateLimitInfo): RateLimitHeaders {
 async function resolveIdentifier(request: Request): Promise<string | null> {
   // Try to get user ID from session
   try {
-    const { auth } = await import("@/lib/auth");
+    const { auth } = await import("@domainstack/auth/server");
     const session = await auth.api.getSession({
       headers: request.headers,
     });

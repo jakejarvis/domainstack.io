@@ -8,15 +8,15 @@
  * network issues or Vercel Function timeouts.
  */
 
+import { auth } from "@domainstack/auth/server";
 import {
   RATE_LIMIT_ANONYMOUS,
   RATE_LIMIT_AUTHENTICATED,
 } from "@domainstack/constants";
+import { createLogger } from "@domainstack/logger";
 import { createUIMessageStreamResponse } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 import { getRun } from "workflow/api";
-import { auth } from "@/lib/auth";
-import { createLogger } from "@/lib/logger/server";
 import { checkRateLimit } from "@/lib/ratelimit/api";
 
 const logger = createLogger({ source: "api/chat/stream" });

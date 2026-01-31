@@ -12,7 +12,7 @@ const handler = async (req: Request) => {
     createContext: () => ctx,
     onError: async ({ path, error }) => {
       // Use logger for unhandled errors
-      const { logger } = await import("@/lib/logger/server");
+      const { logger } = await import("@domainstack/logger");
       logger.error({ err: error, source: "trpc", path });
     },
   });

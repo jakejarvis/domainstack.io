@@ -1,15 +1,15 @@
+import { updateLastAccessed } from "@domainstack/db/queries";
+import { createLogger } from "@domainstack/logger";
+import {
+  getRateLimiter,
+  type RateLimitConfig,
+  type RateLimitInfo,
+} from "@domainstack/redis/ratelimit";
 import { initTRPC, TRPCError } from "@trpc/server";
 import { ipAddress } from "@vercel/functions";
 import { headers } from "next/headers";
 import { after } from "next/server";
 import superjson from "superjson";
-import { domainsRepo } from "@/lib/db/repos";
-import { createLogger } from "@/lib/logger/server";
-import {
-  getRateLimiter,
-  type RateLimitConfig,
-  type RateLimitInfo,
-} from "@/lib/ratelimit";
 
 /**
  * Procedure metadata for configuring middleware behavior.
@@ -41,7 +41,7 @@ export const createContext = async (opts?: { req?: Request }) => {
   let session: { user: { id: string; name: string; email: string } } | null =
     null;
   try {
-    const { auth } = await import("@/lib/auth");
+    const { auth } = await import("@domainstack/auth/server");
     const headerList = await headers();
     const authSession = await auth.api.getSession({
       headers: headerList,
@@ -90,7 +90,7 @@ export const withLogging = t.middleware(async ({ path, type, next }) => {
     if (durationMs > 5000) {
       procedureLogger.info({ durationMs }, "slow request");
 
-      const { analytics } = await import("@/lib/analytics/server");
+      const { analytics } = await import("@domainstack/analytics/server");
       // Explicitly void the promise to avoid unhandled rejection warnings
       void analytics.track("trpc_slow_request", {
         path,
@@ -206,7 +206,7 @@ export const withDomainAccessUpdate = t.middleware(async ({ input, next }) => {
     "domain" in input &&
     typeof input.domain === "string"
   ) {
-    after(() => domainsRepo.updateLastAccessed(input.domain as string));
+    after(() => updateLastAccessed(input.domain as string));
   }
   return next();
 });
@@ -237,13 +237,11 @@ export const withAuth = t.middleware(async ({ ctx, next }) => {
  * Throws FORBIDDEN if user is on free tier.
  */
 export const withProTier = t.middleware(async (opts) => {
-  const { userSubscriptionRepo } = await import("@/lib/db/repos");
+  const { getUserSubscription } = await import("@domainstack/db/queries");
 
   // Type assertion needed because middleware chaining doesn't preserve extended context types
   const ctx = opts.ctx as typeof opts.ctx & { user: { id: string } };
-  const subscription = await userSubscriptionRepo.getUserSubscription(
-    ctx.user.id,
-  );
+  const subscription = await getUserSubscription(ctx.user.id);
 
   if (subscription.plan !== "pro") {
     throw new TRPCError({
