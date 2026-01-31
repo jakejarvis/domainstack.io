@@ -84,12 +84,10 @@ async function getCloudflareIpRanges(): Promise<CloudflareIpRanges> {
   }
 
   // Respect error backoff even on cold start (when cachedRanges is null)
-  // This prevents request storms when the upstream service is down
-  if (
-    cachedRanges === null &&
-    cachedAt > 0 &&
-    now - cachedAt < ERROR_BACKOFF_MS
-  ) {
+  // This prevents request storms when the upstream service is down.
+  // The error handler sets cachedAt to a synthetic timestamp that makes
+  // (now - cachedAt < CACHE_TTL_MS) true for ERROR_BACKOFF_MS duration.
+  if (cachedRanges === null && cachedAt > 0 && now - cachedAt < CACHE_TTL_MS) {
     return { ipv4Cidrs: [], ipv6Cidrs: [] };
   }
 

@@ -23,7 +23,13 @@ import { useQuery } from "@tanstack/react-query";
 import type { Table } from "@tanstack/react-table";
 import { useSearchParams } from "next/navigation";
 import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from "react";
 import { toast } from "sonner";
 import { ArchivedDomainsList } from "@/components/dashboard/archived-domains-list";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
@@ -293,8 +299,9 @@ export function DashboardClient() {
   }, [refetchSubscription, domainsQuery]);
 
   // Redirect to login if not authenticated (must be before conditional returns)
+  // useLayoutEffect prevents flash of unauthorized content by redirecting before paint
   const shouldRedirect = !isLoading && !session;
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (shouldRedirect) {
       router.replace("/login");
     }
