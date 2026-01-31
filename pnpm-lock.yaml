@@ -71,8 +71,8 @@ importers:
         specifier: ^3.2.12
         version: 3.2.12(next@16.1.6(@babel/core@7.28.6)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@browser-ai/core':
-        specifier: ^2.0.1
-        version: 2.0.1(ai@6.0.62(zod@4.3.6))
+        specifier: ^2.0.2
+        version: 2.0.2(ai@6.0.62(zod@4.3.6))
       '@domainstack/constants':
         specifier: workspace:*
         version: link:../../packages/constants
@@ -968,8 +968,8 @@ packages:
       react: 19.2.4
       react-dom: 19.2.4
 
-  '@browser-ai/core@2.0.1':
-    resolution: {integrity: sha512-twEu1q5BWs+yfcvkhx0TOTBiNtBm9yigD4uD4Sn2Lv4exbM+kvW/WDPaKXopRPb5a6kNHW5mr/3Ln0pAm2XNxg==}
+  '@browser-ai/core@2.0.2':
+    resolution: {integrity: sha512-aPIThwLAIeXUgac/yQ3rfe8BI5q09fUX7o8WTcH1iJQTUukomYaAm+PL6loT+hCTUrkP8Ya32bPfScTARDG25A==}
     peerDependencies:
       ai: ^6.0.0
 
@@ -8483,7 +8483,7 @@ snapshots:
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
 
-  '@browser-ai/core@2.0.1(ai@6.0.62(zod@4.3.6))':
+  '@browser-ai/core@2.0.2(ai@6.0.62(zod@4.3.6))':
     dependencies:
       '@mediapipe/tasks-text': 0.10.32
       ai: 6.0.62(zod@4.3.6)

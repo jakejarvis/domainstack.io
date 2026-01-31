@@ -20,7 +20,7 @@
     "@ai-sdk/openai": "^3.0.23",
     "@ai-sdk/react": "^3.0.64",
     "@bprogress/next": "^3.2.12",
-    "@browser-ai/core": "^2.0.1",
+    "@browser-ai/core": "^2.0.2",
     "@domainstack/constants": "workspace:*",
     "@domainstack/core": "workspace:*",
     "@domainstack/db": "workspace:*",
