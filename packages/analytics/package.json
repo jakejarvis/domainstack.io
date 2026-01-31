@@ -21,7 +21,7 @@
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@types/node": "catalog:",
-    "@types/react": "^19.2.10",
+    "@types/react": "19.2.10",
     "@types/uuid": "^10.0.0"
   },
   "peerDependencies": {

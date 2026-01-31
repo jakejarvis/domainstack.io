@@ -33,7 +33,7 @@
     "@domainstack/types": "workspace:*",
     "@domainstack/utils": "workspace:*",
     "@readme/http-status-codes": "^9.0.6",
-    "@vercel/edge-config": "^1.4.0",
+    "@vercel/edge-config": "^1.4.3",
     "cheerio": "^1.2.0",
     "ipaddr.js": "^2.3.0",
     "lru-cache": "^11.2.5",
@@ -46,7 +46,7 @@
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@types/node": "catalog:",
-    "@types/react": "^19.0.0",
+    "@types/react": "19.2.10",
     "msw": "^2.12.7",
     "vitest": "catalog:",
     "zod": "catalog:"
