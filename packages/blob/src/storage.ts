@@ -1,5 +1,3 @@
-import "server-only";
-
 import { createHmac } from "node:crypto";
 import { createLogger } from "@domainstack/logger";
 import { vercelBlobProvider } from "./providers/vercel";

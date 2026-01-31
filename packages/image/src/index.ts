@@ -1,1 +1,1 @@
-export { optimizeImage, type OptimizeImageOptions } from "./optimize";
+export { type OptimizeImageOptions, optimizeImage } from "./optimize";

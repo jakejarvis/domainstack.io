@@ -1,5 +1,5 @@
 {
-  "name": "@domainstack/image",
+  "name": "@domainstack/screenshot",
   "version": "0.0.0-beta.1",
   "private": true,
   "type": "module",
@@ -14,11 +14,13 @@
   },
   "dependencies": {
     "@domainstack/logger": "workspace:*",
-    "decode-ico": "^0.4.1",
-    "sharp": "^0.34.5"
+    "@ghostery/adblocker-puppeteer": "^2.13.4",
+    "@sparticuz/chromium": "143.0.4",
+    "puppeteer-core": "24.35.0"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
-    "@types/node": "catalog:"
+    "@types/node": "catalog:",
+    "puppeteer": "24.35.0"
   }
 }

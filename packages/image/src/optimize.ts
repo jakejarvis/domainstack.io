@@ -1,5 +1,3 @@
-import "server-only";
-
 import { createLogger } from "@domainstack/logger";
 import sharp from "sharp";
 
