@@ -5,6 +5,14 @@
  * Transient errors throw (for TanStack Query to retry).
  */
 
+import { storeImage } from "@domainstack/blob";
+import {
+  ensureDomainRecord,
+  isDomainBlocked,
+  upsertSeo,
+} from "@domainstack/db/queries";
+import { optimizeImage } from "@domainstack/image";
+import { isExpectedDnsError, safeFetch } from "@domainstack/safe-fetch";
 import type {
   GeneralMeta,
   OpenGraphMeta,
@@ -12,6 +20,8 @@ import type {
   SeoResponse,
   TwitterMeta,
 } from "@domainstack/types";
+import { parseHtmlMeta, parseRobotsTxt, selectPreview } from "../seo";
+import { isExpectedTlsError } from "../tls";
 import { ttlForSeo } from "../ttl";
 
 // ============================================================================
@@ -100,7 +110,6 @@ export async function fetchSeo(domain: string): Promise<SeoResult> {
 // ============================================================================
 
 async function checkBlocklist(domain: string): Promise<boolean> {
-  const { isDomainBlocked } = await import("@domainstack/db/queries");
   return isDomainBlocked(domain);
 }
 
@@ -109,12 +118,6 @@ async function checkBlocklist(domain: string): Promise<boolean> {
 // ============================================================================
 
 async function fetchHtml(domain: string): Promise<HtmlFetchData> {
-  const { isExpectedDnsError, safeFetch } = await import(
-    "@domainstack/safe-fetch"
-  );
-  const { parseHtmlMeta, selectPreview } = await import("../seo");
-  const { isExpectedTlsError } = await import("../tls");
-
   let finalUrl = `https://${domain}/`;
   let status: number | null = null;
 
@@ -217,12 +220,6 @@ async function fetchHtml(domain: string): Promise<HtmlFetchData> {
 // ============================================================================
 
 async function fetchRobots(domain: string): Promise<RobotsFetchData> {
-  const { isExpectedDnsError, safeFetch } = await import(
-    "@domainstack/safe-fetch"
-  );
-  const { parseRobotsTxt } = await import("../seo");
-  const { isExpectedTlsError } = await import("../tls");
-
   const robotsUrl = `https://${domain}/robots.txt`;
 
   try {
@@ -272,10 +269,6 @@ async function processOgImage(
   imageUrl: string,
   currentUrl: string,
 ): Promise<string | null> {
-  const { optimizeImage } = await import("@domainstack/image");
-  const { safeFetch } = await import("@domainstack/safe-fetch");
-  const { storeImage } = await import("@domainstack/blob");
-
   try {
     const asset = await safeFetch({
       url: imageUrl,
@@ -359,10 +352,6 @@ async function persistSeo(
   response: SeoResponse,
   uploadedImageUrl: string | null,
 ): Promise<void> {
-  const { ensureDomainRecord, upsertSeo } = await import(
-    "@domainstack/db/queries"
-  );
-
   const now = new Date();
   const expiresAt = ttlForSeo(now);
 

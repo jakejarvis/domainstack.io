@@ -7,6 +7,14 @@
  * headers failures are handled gracefully.
  */
 
+import {
+  ensureDomainRecord,
+  resolveOrCreateProviderId,
+  upsertCatalogProvider,
+  upsertHosting,
+} from "@domainstack/db/queries";
+import { createLogger } from "@domainstack/logger";
+import { getRedis } from "@domainstack/redis";
 import type {
   DnsRecord,
   GeoIpData,
@@ -14,6 +22,14 @@ import type {
   HostingResponse,
   ProviderRef,
 } from "@domainstack/types";
+import { toRegistrableDomain } from "@domainstack/utils/domain";
+import {
+  detectDnsProvider,
+  detectEmailProvider,
+  detectHostingProvider,
+  getProvidersFromCatalog,
+} from "@domainstack/utils/providers";
+import { getProviderCatalog } from "../edge-config";
 import { ttlForHosting } from "../ttl";
 import { fetchDns } from "./dns";
 import { fetchHeaders } from "./headers";
@@ -97,13 +113,10 @@ export async function fetchHosting(domain: string): Promise<HostingResult> {
 // Internal: GeoIP Lookup
 // ============================================================================
 
-async function lookupGeoIp(ip: string): Promise<GeoIpData | null> {
-  // Use the existing geoip module from the web app
-  // This is a temporary solution until we move geoip to the server package
-  const { getRedis } = await import("@domainstack/redis");
-  const { createLogger } = await import("@domainstack/logger");
+const geoIpLogger = createLogger({ source: "hosting-geoip" });
 
-  const logger = createLogger({ source: "hosting-geoip" });
+async function lookupGeoIp(ip: string): Promise<GeoIpData | null> {
+  const logger = geoIpLogger;
   const redis = getRedis();
   const cacheKey = `geoip:${ip}`;
 
@@ -201,18 +214,6 @@ async function detectAndResolveProviders(
   headers: Header[],
   geoData: GeoIpData | null,
 ): Promise<ProviderDetectionData> {
-  const { toRegistrableDomain } = await import("@domainstack/utils/domain");
-  const { getProviderCatalog } = await import("../edge-config");
-  const {
-    detectDnsProvider,
-    detectEmailProvider,
-    detectHostingProvider,
-    getProvidersFromCatalog,
-  } = await import("@domainstack/utils/providers");
-  const { upsertCatalogProvider, resolveOrCreateProviderId } = await import(
-    "@domainstack/db/queries"
-  );
-
   // Extract MX and NS records
   const mx = dnsRecords.filter((d) => d.type === "MX");
   const nsRecords = dnsRecords.filter((d) => d.type === "NS");
@@ -338,10 +339,6 @@ async function persistHosting(
   providers: ProviderDetectionData,
   geo: GeoIpData["geo"],
 ): Promise<void> {
-  const { ensureDomainRecord, upsertHosting } = await import(
-    "@domainstack/db/queries"
-  );
-
   const now = new Date();
   const expiresAt = ttlForHosting(now);
 

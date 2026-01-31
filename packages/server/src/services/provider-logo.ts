@@ -4,6 +4,10 @@
  * Similar to favicon service but with logo.dev support for higher quality logos.
  */
 
+import { storeImage } from "@domainstack/blob";
+import { upsertProviderLogo } from "@domainstack/db/queries";
+import { optimizeImage } from "@domainstack/image";
+import { safeFetch } from "@domainstack/safe-fetch";
 import type { ProviderLogoResponse } from "@domainstack/types";
 import { ttlForProviderIcon } from "../ttl";
 
@@ -100,8 +104,6 @@ export async function fetchProviderLogo(
 // ============================================================================
 
 async function fetchIconFromSources(domain: string): Promise<IconFetchResult> {
-  const { safeFetch } = await import("@domainstack/safe-fetch");
-
   const sources: IconSource[] = [];
 
   // Primary: Logo.dev API (if API key is configured)
@@ -210,10 +212,6 @@ async function processAndStore(
   imageBase64: string,
   sourceName: string,
 ): Promise<{ url: string }> {
-  const { optimizeImage } = await import("@domainstack/image");
-  const { storeImage } = await import("@domainstack/blob");
-  const { upsertProviderLogo } = await import("@domainstack/db/queries");
-
   // 1. Process image
   const inputBuffer = Buffer.from(imageBase64, "base64");
   const optimized = await optimizeImage(inputBuffer, {
@@ -262,8 +260,6 @@ async function persistFailure(
   providerId: string,
   isNotFound: boolean,
 ): Promise<void> {
-  const { upsertProviderLogo } = await import("@domainstack/db/queries");
-
   const now = new Date();
   const expiresAt = ttlForProviderIcon(now);
 

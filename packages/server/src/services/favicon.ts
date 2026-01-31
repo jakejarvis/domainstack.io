@@ -5,6 +5,10 @@
  * Uses multiple fallback sources (Google, DuckDuckGo, direct).
  */
 
+import { storeImage } from "@domainstack/blob";
+import { ensureDomainRecord, upsertFavicon } from "@domainstack/db/queries";
+import { optimizeImage } from "@domainstack/image";
+import { safeFetch } from "@domainstack/safe-fetch";
 import type { FaviconResponse } from "@domainstack/types";
 import { ttlForFavicon } from "../ttl";
 
@@ -94,8 +98,6 @@ export async function fetchFavicon(domain: string): Promise<FaviconResult> {
 // ============================================================================
 
 async function fetchIconFromSources(domain: string): Promise<IconFetchResult> {
-  const { safeFetch } = await import("@domainstack/safe-fetch");
-
   const sources: IconSource[] = [
     {
       url: `https://www.google.com/s2/favicons?domain=${domain}&sz=${DEFAULT_SIZE}`,
@@ -188,12 +190,6 @@ async function processAndStore(
   imageBase64: string,
   sourceName: string,
 ): Promise<{ url: string }> {
-  const { optimizeImage } = await import("@domainstack/image");
-  const { storeImage } = await import("@domainstack/blob");
-  const { ensureDomainRecord, upsertFavicon } = await import(
-    "@domainstack/db/queries"
-  );
-
   // 1. Process image
   const inputBuffer = Buffer.from(imageBase64, "base64");
   const optimized = await optimizeImage(inputBuffer, {
@@ -243,10 +239,6 @@ async function persistFailure(
   domain: string,
   isNotFound: boolean,
 ): Promise<void> {
-  const { ensureDomainRecord, upsertFavicon } = await import(
-    "@domainstack/db/queries"
-  );
-
   const domainRecord = await ensureDomainRecord(domain);
   const now = new Date();
   const expiresAt = ttlForFavicon(now);

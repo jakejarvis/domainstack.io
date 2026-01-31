@@ -5,7 +5,8 @@
  * All errors throw (for TanStack Query to retry) - there are no permanent failures.
  */
 
-import type { DnsRecordType } from "@domainstack/constants";
+import { DNS_RECORD_TYPES, type DnsRecordType } from "@domainstack/constants";
+import { ensureDomainRecord, replaceDns } from "@domainstack/db/queries";
 import type { DnsRecordsResponse } from "@domainstack/types";
 import { type DnsFetchData, fetchDnsRecords } from "../dns";
 
@@ -51,11 +52,6 @@ async function persistDnsRecords(
   domain: string,
   fetchData: DnsFetchData,
 ): Promise<void> {
-  const { DNS_RECORD_TYPES } = await import("@domainstack/constants");
-  const { ensureDomainRecord, replaceDns } = await import(
-    "@domainstack/db/queries"
-  );
-
   const types = DNS_RECORD_TYPES;
   const now = new Date();
 

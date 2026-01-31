@@ -6,6 +6,7 @@
  * Permanent errors return { success: false, error }.
  */
 
+import { ensureDomainRecord, replaceHeaders } from "@domainstack/db/queries";
 import type { HeadersResponse } from "@domainstack/types";
 import {
   fetchHttpHeaders,
@@ -65,10 +66,6 @@ async function persistHeaders(
   domain: string,
   fetchData: HeadersFetchData,
 ): Promise<void> {
-  const { ensureDomainRecord, replaceHeaders } = await import(
-    "@domainstack/db/queries"
-  );
-
   const now = new Date();
   const expiresAt = ttlForHeaders(now);
 

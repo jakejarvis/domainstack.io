@@ -6,8 +6,18 @@
  * Permanent errors return { success: false, error }.
  */
 
+import {
+  ensureDomainRecord,
+  replaceCertificates,
+  upsertCatalogProvider,
+} from "@domainstack/db/queries";
 import type { Certificate, CertificatesResponse } from "@domainstack/types";
-import type { RawCertificate } from "../tls";
+import {
+  detectCertificateAuthority,
+  getProvidersFromCatalog,
+} from "@domainstack/utils/providers";
+import { getProviderCatalog } from "../edge-config";
+import { fetchCertificateChain, type RawCertificate } from "../tls";
 import { ttlForCertificates } from "../ttl";
 
 // ============================================================================
@@ -71,8 +81,6 @@ type FetchResult =
 async function fetchCertificateChainInternal(
   domain: string,
 ): Promise<FetchResult> {
-  const { fetchCertificateChain } = await import("../tls");
-
   const result = await fetchCertificateChain(domain);
 
   if (!result.success) {
@@ -98,12 +106,6 @@ async function fetchCertificateChainInternal(
 async function processChain(
   chain: RawCertificate[],
 ): Promise<CertificatesProcessedData> {
-  const { getProviderCatalog } = await import("../edge-config");
-  const { detectCertificateAuthority, getProvidersFromCatalog } = await import(
-    "@domainstack/utils/providers"
-  );
-  const { upsertCatalogProvider } = await import("@domainstack/db/queries");
-
   const catalog = await getProviderCatalog();
   const caProviders = catalog ? getProvidersFromCatalog(catalog, "ca") : [];
 
@@ -167,10 +169,6 @@ async function persistCertificates(
   domain: string,
   processedData: CertificatesProcessedData,
 ): Promise<void> {
-  const { ensureDomainRecord, replaceCertificates } = await import(
-    "@domainstack/db/queries"
-  );
-
   const now = new Date();
   const expiresAt = ttlForCertificates(now, processedData.earliestValidTo);
 

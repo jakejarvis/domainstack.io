@@ -6,13 +6,26 @@
  * Permanent errors return { success: false, error }.
  */
 
+import {
+  resolveOrCreateProviderId,
+  upsertCatalogProvider,
+  upsertDomain,
+  upsertRegistration,
+} from "@domainstack/db/queries";
 import type {
   RegistrationContact,
   RegistrationResponse,
 } from "@domainstack/types";
-import type { Provider, ProviderCatalog } from "@domainstack/utils/providers";
+import { getDomainTld } from "@domainstack/utils/domain";
+import {
+  detectRegistrar,
+  getProvidersFromCatalog,
+  type Provider,
+  type ProviderCatalog,
+} from "@domainstack/utils/providers";
 import { getProviderCatalog } from "../edge-config";
 import { ttlForRegistration } from "../ttl";
+import { lookupWhois as lookup } from "../whois";
 
 // ============================================================================
 // Types
@@ -74,8 +87,6 @@ type LookupResult =
   | { success: false; error: RegistrationError };
 
 async function lookupWhois(domain: string): Promise<LookupResult> {
-  const { lookupWhois: lookup } = await import("../whois");
-
   const result = await lookup(domain, {
     userAgent: process.env.EXTERNAL_USER_AGENT,
   });
@@ -105,14 +116,6 @@ async function normalizeRegistration(
   options: NormalizeOptions,
 ): Promise<RegistrationResponse> {
   const { catalog } = options;
-
-  const { detectRegistrar, getProvidersFromCatalog } = await import(
-    "@domainstack/utils/providers"
-  );
-  const { upsertCatalogProvider, resolveOrCreateProviderId } = await import(
-    "@domainstack/db/queries"
-  );
-
   const record = JSON.parse(recordJson) as ParsedRdapRecord;
   const registrarProviders = catalog
     ? getProvidersFromCatalog(catalog, "registrar")
@@ -199,11 +202,6 @@ async function persistRegistration(
   domain: string,
   response: RegistrationResponse,
 ): Promise<void> {
-  const { getDomainTld } = await import("@domainstack/utils/domain");
-  const { upsertDomain, upsertRegistration } = await import(
-    "@domainstack/db/queries"
-  );
-
   const now = new Date();
   const domainRecord = await upsertDomain({
     name: domain,
