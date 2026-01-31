@@ -18,7 +18,10 @@ export const withDomainAccessUpdate = t.middleware(async ({ input, next }) => {
     "domain" in input &&
     typeof input.domain === "string"
   ) {
-    after(() => updateLastAccessed(input.domain as string));
+    // Extract to local const - closures don't preserve narrowed types
+    // biome-ignore lint/nursery/useDestructuring: we want to use the original object
+    const domain = input.domain;
+    after(() => updateLastAccessed(domain));
   }
 
   return result;

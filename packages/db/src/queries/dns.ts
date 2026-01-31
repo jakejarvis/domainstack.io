@@ -63,11 +63,11 @@ export async function replaceDns(params: UpsertDnsParams) {
         ...r,
         type,
         // Always normalize name (hostname) to lowercase
-        name: (r.name as string).trim().toLowerCase(),
+        name: r.name.trim().toLowerCase(),
         // Normalize value to lowercase except for TXT records
         value: preserveValueCase
-          ? (r.value as string).trim()
-          : (r.value as string).trim().toLowerCase(),
+          ? r.value.trim()
+          : r.value.trim().toLowerCase(),
       }));
 
       for (const r of next) {
