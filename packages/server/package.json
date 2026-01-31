@@ -7,9 +7,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./services/registration": "./src/services/registration.ts",
-    "./swr": "./src/swr.ts",
+    "./services/dns": "./src/services/dns.ts",
     "./edge-config": "./src/edge-config.ts",
-    "./ttl": "./src/ttl.ts"
+    "./ttl": "./src/ttl.ts",
+    "./cloudflare": "./src/cloudflare.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit",
@@ -23,7 +24,9 @@
     "@domainstack/db": "workspace:*",
     "@domainstack/logger": "workspace:*",
     "@domainstack/types": "workspace:*",
-    "@vercel/edge-config": "^1.4.0"
+    "@vercel/edge-config": "^1.4.0",
+    "ipaddr.js": "^2.3.0",
+    "lru-cache": "^11.2.5"
   },
   "peerDependencies": {
     "react": ">=19.0.0"

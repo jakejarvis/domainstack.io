@@ -6,9 +6,10 @@ import {
   MAX_AGE_REGISTRATION,
   MAX_AGE_SEO,
 } from "@domainstack/constants";
-import { fetchRegistration, withSwr } from "@domainstack/server";
-import { getProviderCatalog } from "@domainstack/server/edge-config";
+import { createLogger } from "@domainstack/logger";
+import { fetchDns, fetchRegistration } from "@domainstack/server";
 import { TRPCError } from "@trpc/server";
+import { after } from "next/server";
 import { start } from "workflow/api";
 import z from "zod";
 import { toRegistrableDomain } from "@/lib/normalize-domain";
@@ -19,6 +20,8 @@ import {
   withDomainAccessUpdate,
   withRateLimit,
 } from "@/trpc/init";
+
+const logger = createLogger({ source: "domain-router" });
 
 const DomainInputSchema = z
   .object({ domain: z.string().min(1) })
@@ -47,20 +50,81 @@ export const domainRouter = createTRPCRouter({
     .input(DomainInputSchema)
     .query(async ({ input }) => {
       const { getCachedRegistration } = await import("@domainstack/db/queries");
-      const catalog = await getProviderCatalog();
 
-      return withSwr({
-        name: "registration",
-        domain: input.domain,
-        getCached: () => getCachedRegistration(input.domain),
-        fetchFresh: () => fetchRegistration(input.domain, { catalog }),
-        maxAgeMs: MAX_AGE_REGISTRATION,
-      });
+      // Check cache first
+      const cached = await getCachedRegistration(input.domain);
+
+      // Fresh data - return immediately
+      if (cached.data && !cached.stale) {
+        return { success: true, cached: true, stale: false, data: cached.data };
+      }
+
+      // Stale data - check if acceptable
+      if (cached.data && cached.stale) {
+        const isTooOld =
+          cached.fetchedAt !== null &&
+          Date.now() - cached.fetchedAt.getTime() > MAX_AGE_REGISTRATION;
+
+        if (!isTooOld) {
+          // Return stale, trigger background refresh
+          after(async () => {
+            try {
+              await fetchRegistration(input.domain);
+            } catch (err) {
+              logger.error(
+                { domain: input.domain, err },
+                "background registration refresh failed",
+              );
+            }
+          });
+          return {
+            success: true,
+            cached: true,
+            stale: true,
+            data: cached.data,
+          };
+        }
+      }
+
+      // Cache miss or too stale - fetch fresh and wait
+      try {
+        const result = await fetchRegistration(input.domain);
+
+        if (result.success === false) {
+          return {
+            success: false,
+            cached: false,
+            stale: false,
+            data: null,
+            error: result.error,
+          };
+        }
+
+        return {
+          success: true,
+          cached: false,
+          stale: false,
+          data: result.data,
+        };
+      } catch (err) {
+        logger.error(
+          { domain: input.domain, err },
+          "registration fetch failed",
+        );
+        return {
+          success: false,
+          cached: false,
+          stale: false,
+          data: null,
+          error: "lookup_failed",
+        };
+      }
     }),
 
   /**
-   * Get DNS records for a domain using a durable workflow.
+   * Get DNS records for a domain.
    * Queries multiple DoH providers with automatic fallback.
+   * Transient errors throw for TanStack Query to retry.
    * Uses stale-while-revalidate: returns stale data immediately while refreshing in background.
    */
   getDnsRecords: publicProcedure
@@ -70,15 +134,61 @@ export const domainRouter = createTRPCRouter({
     .input(DomainInputSchema)
     .query(async ({ input }) => {
       const { getCachedDns } = await import("@domainstack/db/queries");
-      const { dnsWorkflow } = await import("@/workflows/dns");
 
-      return withSwrCache({
-        workflowName: "dns",
-        domain: input.domain,
-        getCached: () => getCachedDns(input.domain),
-        startWorkflow: () => start(dnsWorkflow, [{ domain: input.domain }]),
-        maxAgeMs: MAX_AGE_DNS,
-      });
+      // Check cache first
+      const cached = await getCachedDns(input.domain);
+
+      // Fresh data - return immediately
+      if (cached.data && !cached.stale) {
+        return { success: true, cached: true, stale: false, data: cached.data };
+      }
+
+      // Stale data - check if acceptable
+      if (cached.data && cached.stale) {
+        const isTooOld =
+          cached.fetchedAt !== null &&
+          Date.now() - cached.fetchedAt.getTime() > MAX_AGE_DNS;
+
+        if (!isTooOld) {
+          // Return stale, trigger background refresh
+          after(async () => {
+            try {
+              await fetchDns(input.domain);
+            } catch (err) {
+              logger.error(
+                { domain: input.domain, err },
+                "background dns refresh failed",
+              );
+            }
+          });
+          return {
+            success: true,
+            cached: true,
+            stale: true,
+            data: cached.data,
+          };
+        }
+      }
+
+      // Cache miss or too stale - fetch fresh and wait
+      try {
+        const result = await fetchDns(input.domain);
+        return {
+          success: true,
+          cached: false,
+          stale: false,
+          data: result.data,
+        };
+      } catch (err) {
+        logger.error({ domain: input.domain, err }, "dns fetch failed");
+        return {
+          success: false,
+          cached: false,
+          stale: false,
+          data: null,
+          error: "dns_fetch_failed",
+        };
+      }
     }),
 
   /**

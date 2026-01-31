@@ -7,5 +7,5 @@
  * Retry logic is intentionally omitted - TanStack Query handles retries on the frontend.
  */
 
+export * from "./services/dns";
 export * from "./services/registration";
-export * from "./swr";

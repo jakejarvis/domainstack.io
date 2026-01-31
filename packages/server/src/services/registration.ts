@@ -11,6 +11,7 @@ import type {
   RegistrationContact,
   RegistrationResponse,
 } from "@domainstack/types";
+import { getProviderCatalog } from "../edge-config";
 import { ttlForRegistration } from "../ttl";
 
 // ============================================================================
@@ -26,14 +27,6 @@ export type RegistrationResult =
   | { success: true; data: RegistrationResponse }
   | { success: false; error: RegistrationError };
 
-export interface RegistrationOptions {
-  /**
-   * Provider catalog for registrar normalization.
-   * If null, registrar names won't be normalized to known providers.
-   */
-  catalog: ProviderCatalog | null;
-}
-
 // ============================================================================
 // Main Service Function
 // ============================================================================
@@ -42,17 +35,13 @@ export interface RegistrationOptions {
  * Fetch, normalize, and persist registration data for a domain.
  *
  * @param domain - The domain to look up
- * @param options - Configuration options
  * @returns Registration result with data or error
  *
  * @throws Error on transient failures (timeout, network) - TanStack Query retries these
  */
 export async function fetchRegistration(
   domain: string,
-  options: RegistrationOptions,
 ): Promise<RegistrationResult> {
-  const { catalog } = options;
-
   // 1. Fetch WHOIS/RDAP
   const lookupResult = await lookupWhois(domain);
 
@@ -60,12 +49,15 @@ export async function fetchRegistration(
     return { success: false, error: lookupResult.error };
   }
 
-  // 2. Normalize
+  // 2. Get provider catalog for normalization
+  const catalog = await getProviderCatalog();
+
+  // 3. Normalize
   const normalized = await normalizeRegistration(lookupResult.recordJson, {
     catalog,
   });
 
-  // 3. Persist (only for registered domains)
+  // 4. Persist (only for registered domains)
   if (normalized.isRegistered) {
     await persistRegistration(domain, normalized);
   }

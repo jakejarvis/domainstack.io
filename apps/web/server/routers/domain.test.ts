@@ -21,7 +21,7 @@ vi.mock("workflow/api", () => ({
   }),
 }));
 
-// Mock the registration service (used by getRegistration)
+// Mock the services (used by getRegistration and getDnsRecords)
 vi.mock("@domainstack/server", async (importOriginal) => {
   const original = await importOriginal<typeof import("@domainstack/server")>();
   return {
@@ -34,6 +34,13 @@ vi.mock("@domainstack/server", async (importOriginal) => {
           id: "00000000-0000-0000-0000-000000000002",
           name: "Unknown",
         },
+      },
+    }),
+    fetchDns: vi.fn().mockResolvedValue({
+      success: true,
+      data: {
+        records: [],
+        resolver: "cloudflare",
       },
     }),
   };
@@ -59,7 +66,7 @@ const { dnsRecords, domains, providers, registrations } = await import(
   "@domainstack/db/schema"
 );
 const { start } = await import("workflow/api");
-const { fetchRegistration } = await import("@domainstack/server");
+const { fetchDns, fetchRegistration } = await import("@domainstack/server");
 const { createCaller } = await import("@/server/routers/_app");
 
 import type { Context } from "@/trpc/init";
@@ -161,10 +168,7 @@ describe("domain router", () => {
       await caller.domain.getRegistration({ domain: "www.example.com" });
 
       // The service should be called with the normalized domain
-      expect(fetchRegistration).toHaveBeenCalledWith(
-        "example.com",
-        expect.any(Object),
-      );
+      expect(fetchRegistration).toHaveBeenCalledWith("example.com");
     });
 
     it("accepts valid domain with subdomain", async () => {
@@ -325,31 +329,29 @@ describe("domain router", () => {
       const result = await caller.domain.getDnsRecords({ domain: TEST_DOMAIN });
 
       expect(result.success).toBe(true);
-      if (result.success) {
+      if (result.success && result.data) {
         expect(result.cached).toBe(true);
         expect(result.data.records).toBeDefined();
       }
     });
 
-    it("runs workflow when no cached DNS exists", async () => {
+    it("fetches fresh DNS when no cached DNS exists", async () => {
       const caller = createTestCaller();
 
       const newDomain = "nodns.com";
 
-      vi.mocked(start).mockResolvedValue({
-        returnValue: Promise.resolve({
-          success: true,
-          data: {
-            records: [{ type: "A", name: newDomain, value: "1.2.3.4" }],
-            resolver: "cloudflare",
-          },
-        }),
-      } as never);
+      vi.mocked(fetchDns).mockResolvedValue({
+        success: true,
+        data: {
+          records: [{ type: "A", name: newDomain, value: "1.2.3.4", ttl: 300 }],
+          resolver: "cloudflare",
+        },
+      });
 
       const result = await caller.domain.getDnsRecords({ domain: newDomain });
 
       expect(result.success).toBe(true);
-      expect(start).toHaveBeenCalled();
+      expect(fetchDns).toHaveBeenCalled();
     });
   });
 
