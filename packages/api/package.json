@@ -1,0 +1,33 @@
+{
+  "name": "@domainstack/api",
+  "version": "0.0.0-beta.1",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./middleware": "./src/middleware/index.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "lint": "biome check",
+    "format": "biome format --write"
+  },
+  "dependencies": {
+    "@domainstack/analytics": "workspace:*",
+    "@domainstack/auth": "workspace:*",
+    "@domainstack/db": "workspace:*",
+    "@domainstack/logger": "workspace:*",
+    "@domainstack/redis": "workspace:*",
+    "@trpc/server": "^11.9.0",
+    "@vercel/functions": "^3.4.0",
+    "superjson": "^2.2.6"
+  },
+  "peerDependencies": {
+    "next": ">=15.0.0"
+  },
+  "devDependencies": {
+    "@domainstack/typescript-config": "workspace:*",
+    "@types/node": "catalog:"
+  }
+}

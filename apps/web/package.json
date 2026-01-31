@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@ai-sdk/gateway": "^3.0.29",
+    "@domainstack/api": "workspace:*",
     "@ai-sdk/openai": "^3.0.23",
     "@ai-sdk/react": "^3.0.66",
     "@bprogress/next": "^3.2.12",
