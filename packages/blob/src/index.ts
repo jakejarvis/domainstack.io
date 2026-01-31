@@ -1,14 +1,8 @@
-// Types
-
 // Providers
 export { VercelBlobProvider, vercelBlobProvider } from "./providers/vercel";
 // Storage utilities
-export {
-  type StoreBlobOptions,
-  type StoreImageOptions,
-  storeBlob,
-  storeImage,
-} from "./storage";
+export { type StoreBlobOptions, storeBlob } from "./storage";
+// Types
 export type {
   BlobProvider,
   DeleteBlobResult,

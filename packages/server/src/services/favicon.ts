@@ -5,9 +5,8 @@
  * Uses multiple fallback sources (Google, DuckDuckGo, direct).
  */
 
-import { storeImage } from "@domainstack/blob";
 import { ensureDomainRecord, upsertFavicon } from "@domainstack/db/queries";
-import { optimizeImage } from "@domainstack/image";
+import { optimizeImage, storeImage } from "@domainstack/image";
 import { safeFetch } from "@domainstack/safe-fetch";
 import type { FaviconResponse } from "@domainstack/types";
 import { ttlForFavicon } from "../ttl";

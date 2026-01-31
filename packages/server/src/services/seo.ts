@@ -5,13 +5,12 @@
  * Transient errors throw (for TanStack Query to retry).
  */
 
-import { storeImage } from "@domainstack/blob";
 import {
   ensureDomainRecord,
   isDomainBlocked,
   upsertSeo,
 } from "@domainstack/db/queries";
-import { optimizeImage } from "@domainstack/image";
+import { optimizeImage, storeImage } from "@domainstack/image";
 import { isExpectedDnsError, safeFetch } from "@domainstack/safe-fetch";
 import type {
   GeneralMeta,

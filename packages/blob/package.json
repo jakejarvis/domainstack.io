@@ -15,8 +15,7 @@
   "dependencies": {
     "@domainstack/logger": "workspace:*",
     "@vercel/blob": "^2.0.1",
-    "file-type": "^21.3.0",
-    "image-size": "^2.0.2"
+    "file-type": "^21.3.0"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",

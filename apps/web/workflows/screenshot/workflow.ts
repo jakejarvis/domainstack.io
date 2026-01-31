@@ -98,49 +98,24 @@ export async function screenshotWorkflow(
 async function captureScreenshot(domain: string): Promise<CaptureResult> {
   "use step";
 
-  const { getBrowser, createPage } = await import("@/lib/puppeteer");
+  const { captureScreenshotBase64 } = await import("@domainstack/screenshot");
 
-  // Get a browser instance, may reuse an existing one if available
-  let browser: import("@/lib/puppeteer").Browser | null = null;
   try {
-    browser = await getBrowser();
-  } catch (err) {
-    throw new FatalError(
-      `Failed to get browser instance: ${err instanceof Error ? err.message : String(err)}`,
-    );
-  }
-
-  let page: import("@/lib/puppeteer").Page | null = null;
-  try {
-    page = await createPage(browser, `https://${domain}`, {
-      viewport: {
-        width: VIEWPORT_WIDTH,
-        height: VIEWPORT_HEIGHT,
-      },
-    });
-
-    if (!page) {
-      throw new FatalError("Failed to create page");
-    }
-
-    const imageBuffer = await page.screenshot({
-      type: "webp",
+    const result = await captureScreenshotBase64(`https://${domain}`, {
+      width: VIEWPORT_WIDTH,
+      height: VIEWPORT_HEIGHT,
+      format: "webp",
       fullPage: false,
-      // Encode as base64 for serialization between steps
-      encoding: "base64",
     });
 
     return {
       success: true,
-      imageBuffer,
+      imageBuffer: result.imageBase64,
     };
   } catch (err) {
     throw new FatalError(
       `Screenshot capture failed for domain ${domain}: ${err instanceof Error ? err.message : String(err)}`,
     );
-  } finally {
-    // Close page in background to avoid blocking the workflow
-    void page?.close();
   }
 }
 
@@ -156,7 +131,7 @@ async function storeScreenshot(
 }> {
   "use step";
 
-  const { storeImage } = await import("@/lib/storage");
+  const { storeImage } = await import("@domainstack/image");
 
   // Decode base64 back to Buffer
   const imageBuffer = Buffer.from(imageBufferBase64, "base64");

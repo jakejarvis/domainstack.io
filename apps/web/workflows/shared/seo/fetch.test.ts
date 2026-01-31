@@ -21,8 +21,9 @@ vi.mock("@domainstack/db/queries", () => ({
   },
 }));
 
-// Mock storage
-vi.mock("@/lib/storage", () => ({
+// Mock image storage
+vi.mock("@domainstack/image", () => ({
+  optimizeImage: vi.fn().mockResolvedValue(Buffer.from("optimized")),
   storeImage: vi.fn().mockResolvedValue({
     url: "https://blob.vercel-storage.com/og-test.webp",
     pathname: "og/test.webp",
@@ -30,10 +31,6 @@ vi.mock("@/lib/storage", () => ({
 }));
 
 // Mock image processing
-vi.mock("@/lib/image", () => ({
-  optimizeImage: vi.fn().mockResolvedValue(Buffer.from("optimized")),
-}));
-
 afterEach(() => {
   vi.restoreAllMocks();
   server.resetHandlers();

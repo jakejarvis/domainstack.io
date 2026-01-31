@@ -13,6 +13,7 @@
     "format": "biome format --write"
   },
   "dependencies": {
+    "@domainstack/blob": "workspace:*",
     "@domainstack/logger": "workspace:*",
     "decode-ico": "^0.4.1",
     "sharp": "^0.34.5"

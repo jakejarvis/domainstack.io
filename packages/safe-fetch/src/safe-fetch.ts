@@ -1,3 +1,4 @@
+import { createLogger } from "@domainstack/logger";
 import * as ipaddr from "ipaddr.js";
 import { isExpectedDnsError, resolveHostIps } from "./dns";
 import { SafeFetchError } from "./errors";
@@ -9,13 +10,7 @@ import type {
 } from "./types";
 import { withTimeout } from "./utils";
 
-/** Default console logger */
-const consoleLogger: SafeFetchLogger = {
-  debug: (obj, msg) => console.debug(msg, obj),
-  info: (obj, msg) => console.info(msg, obj),
-  warn: (obj, msg) => console.warn(msg, obj),
-  error: (obj, msg) => console.error(msg, obj),
-};
+const defaultLogger = createLogger({ source: "safe-fetch" });
 
 // Hostnames that should never be fetched
 const BLOCKED_HOSTNAMES = new Set(["localhost"]);
@@ -51,7 +46,7 @@ export async function safeFetch(
     allowedHosts,
     returnOnDisallowedRedirect = false,
     fetch: customFetch = globalThis.fetch,
-    logger = consoleLogger,
+    logger = defaultLogger,
   } = opts;
 
   const initialUrl = toUrl(opts.url, opts.currentUrl);

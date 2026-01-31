@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@domainstack/constants": "workspace:*",
+    "@domainstack/logger": "workspace:*",
     "@domainstack/utils": "workspace:*",
     "ipaddr.js": "^2.3.0"
   },

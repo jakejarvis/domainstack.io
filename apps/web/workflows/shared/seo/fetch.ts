@@ -191,9 +191,9 @@ export async function processOgImageStep(
   "use step";
 
   // Dynamic imports for Node.js modules
-  const { optimizeImage } = await import("@/lib/image");
+  const { optimizeImage } = await import("@domainstack/image");
   const { safeFetch } = await import("@domainstack/safe-fetch");
-  const { storeImage } = await import("@/lib/storage");
+  const { storeImage } = await import("@domainstack/image");
 
   try {
     const asset = await safeFetch({

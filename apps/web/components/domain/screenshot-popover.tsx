@@ -69,14 +69,14 @@ export function ScreenshotPopover({
         render={children}
       />
       <PopoverContent
-        className="w-auto border-0 bg-transparent p-0 shadow-none"
+        className="w-auto rounded-lg bg-transparent p-0 shadow-xl"
         align={align}
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
       >
         <div className="w-[360px] md:w-[420px]">
-          <div className="inline-block h-auto w-full select-none overflow-hidden rounded-lg border shadow-xl">
+          <div className="block h-auto w-full select-none overflow-hidden rounded-lg">
             {/* Top Chrome Bar */}
             <div
               className="flex h-6 items-center gap-2 border-zinc-200 border-b bg-zinc-100 px-2 dark:border-zinc-800 dark:bg-zinc-900"

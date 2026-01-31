@@ -4,9 +4,8 @@
  * Similar to favicon service but with logo.dev support for higher quality logos.
  */
 
-import { storeImage } from "@domainstack/blob";
 import { upsertProviderLogo } from "@domainstack/db/queries";
-import { optimizeImage } from "@domainstack/image";
+import { optimizeImage, storeImage } from "@domainstack/image";
 import { safeFetch } from "@domainstack/safe-fetch";
 import type { ProviderLogoResponse } from "@domainstack/types";
 import { ttlForProviderIcon } from "../ttl";
