@@ -45,7 +45,7 @@ export async function domainExpiryWorkflow(
 
   // Step 2: Calculate days remaining and check for renewal
   const daysRemaining = await calculateDaysRemainingStep(domain.expirationDate);
-  const MAX_THRESHOLD_DAYS = 30;
+  const MAX_THRESHOLD_DAYS = Math.max(...DOMAIN_EXPIRY_THRESHOLDS);
 
   // Detect renewal: If expiration is now beyond our notification window,
   // clear previous notifications so they can be re-sent when approaching expiry again.

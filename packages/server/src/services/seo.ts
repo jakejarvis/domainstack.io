@@ -257,8 +257,9 @@ async function fetchRobots(domain: string): Promise<RobotsFetchData> {
     if (isExpectedTlsError(err)) {
       return { robots: null, error: "Invalid SSL certificate" };
     }
-    // Transient failure - throw for TanStack Query to retry
-    throw new Error("Robots.txt fetch failed");
+    // Transient failure - return soft error to allow partial results
+    // (HTML may have succeeded even if robots.txt failed)
+    return { robots: null, error: "Fetch failed" };
   }
 }
 

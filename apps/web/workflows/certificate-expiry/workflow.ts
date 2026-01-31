@@ -51,7 +51,7 @@ export async function certificateExpiryWorkflow(
   }
 
   const daysRemaining = await calculateDaysRemainingStep(validTo);
-  const MAX_THRESHOLD_DAYS = 14;
+  const MAX_THRESHOLD_DAYS = Math.max(...CERTIFICATE_EXPIRY_THRESHOLDS);
 
   // Detect renewal: If certificate is renewed beyond our notification window
   if (daysRemaining > MAX_THRESHOLD_DAYS) {

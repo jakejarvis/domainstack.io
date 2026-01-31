@@ -76,9 +76,21 @@ function parseCidrs(ranges: CloudflareIpRanges): ParsedCloudflareRanges {
  * Fetch Cloudflare IP ranges with request coalescing and error backoff.
  */
 async function getCloudflareIpRanges(): Promise<CloudflareIpRanges> {
+  const now = Date.now();
+
   // Return cached ranges if still valid
-  if (cachedRanges !== null && Date.now() - cachedAt < CACHE_TTL_MS) {
+  if (cachedRanges !== null && now - cachedAt < CACHE_TTL_MS) {
     return cachedRanges;
+  }
+
+  // Respect error backoff even on cold start (when cachedRanges is null)
+  // This prevents request storms when the upstream service is down
+  if (
+    cachedRanges === null &&
+    cachedAt > 0 &&
+    now - cachedAt < ERROR_BACKOFF_MS
+  ) {
+    return { ipv4Cidrs: [], ipv6Cidrs: [] };
   }
 
   // Request coalescing: return active promise if one is in progress
