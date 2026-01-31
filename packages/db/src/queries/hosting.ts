@@ -67,6 +67,10 @@ export async function getCachedHosting(
   const { fetchedAt, expiresAt } = row;
   const stale = (expiresAt?.getTime?.() ?? 0) <= now;
 
+  // Only construct geo object if there's meaningful data
+  // (at minimum, country_code is required for display)
+  const hasGeoData = row.geoCountryCode || row.geoCountry || row.geoCity;
+
   const result: HostingResponse = {
     hostingProvider: {
       id: row.hostingProviderId ?? null,
@@ -83,14 +87,16 @@ export async function getCachedHosting(
       name: row.dnsProviderName ?? null,
       domain: row.dnsProviderDomain ?? null,
     },
-    geo: {
-      city: row.geoCity ?? "",
-      region: row.geoRegion ?? "",
-      country: row.geoCountry ?? "",
-      country_code: row.geoCountryCode ?? "",
-      lat: row.geoLat ?? null,
-      lon: row.geoLon ?? null,
-    },
+    geo: hasGeoData
+      ? {
+          city: row.geoCity ?? "",
+          region: row.geoRegion ?? "",
+          country: row.geoCountry ?? "",
+          country_code: row.geoCountryCode ?? "",
+          lat: row.geoLat ?? null,
+          lon: row.geoLon ?? null,
+        }
+      : null,
   };
 
   return { data: result, stale, fetchedAt, expiresAt };

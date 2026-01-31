@@ -115,6 +115,41 @@ export async function fetchHosting(domain: string): Promise<HostingResult> {
 
 const geoIpLogger = createLogger({ source: "hosting-geoip" });
 
+/** Raw iplocate.io API response - cached in Redis */
+interface IplocateApiResponse {
+  city?: string;
+  subdivision?: string;
+  country?: string;
+  country_code?: string;
+  latitude?: number;
+  longitude?: number;
+  company?: { name?: string; domain?: string };
+  asn?: { name?: string; domain?: string };
+  error?: string;
+}
+
+/** Transform raw API response to application format */
+function transformApiResponse(data: IplocateApiResponse): GeoIpData {
+  return {
+    geo: {
+      city: data.city || "",
+      region: data.subdivision || "",
+      country: data.country || "",
+      country_code: data.country_code || "",
+      lat: typeof data.latitude === "number" ? data.latitude : null,
+      lon: typeof data.longitude === "number" ? data.longitude : null,
+    },
+    owner: data.company?.name || data.asn?.name || null,
+    domain: data.company?.domain || data.asn?.domain || null,
+  };
+}
+
+/**
+ * Lookup IP metadata including geolocation and ownership information.
+ *
+ * Caches raw API response in Redis - transformation happens on read.
+ * This ensures cached data remains valid if transformation logic changes.
+ */
 async function lookupGeoIp(ip: string): Promise<GeoIpData | null> {
   const logger = geoIpLogger;
   const redis = getRedis();
@@ -123,9 +158,9 @@ async function lookupGeoIp(ip: string): Promise<GeoIpData | null> {
   // Try Redis cache first
   if (redis) {
     try {
-      const cached = await redis.get<GeoIpData>(cacheKey);
+      const cached = await redis.get<IplocateApiResponse>(cacheKey);
       if (cached) {
-        return cached;
+        return transformApiResponse(cached);
       }
     } catch (err) {
       logger.warn({ err }, "redis cache read failed, falling back to API");
@@ -161,44 +196,21 @@ async function lookupGeoIp(ip: string): Promise<GeoIpData | null> {
       return null;
     }
 
-    const data = (await res.json()) as {
-      city?: string;
-      subdivision?: string;
-      country?: string;
-      country_code?: string;
-      latitude?: number;
-      longitude?: number;
-      company?: { name?: string; domain?: string };
-      asn?: { name?: string; domain?: string };
-      error?: string;
-    };
+    const data = (await res.json()) as IplocateApiResponse;
 
     if (data.error) {
       logger.error({ error: data.error }, "iplocate.io returned error message");
       return null;
     }
 
-    const result: GeoIpData = {
-      geo: {
-        city: data.city || "",
-        region: data.subdivision || "",
-        country: data.country || "",
-        country_code: data.country_code || "",
-        lat: typeof data.latitude === "number" ? data.latitude : null,
-        lon: typeof data.longitude === "number" ? data.longitude : null,
-      },
-      owner: data.company?.name || data.asn?.name || null,
-      domain: data.company?.domain || data.asn?.domain || null,
-    };
-
-    // Cache in Redis (fire-and-forget)
+    // Cache raw response in Redis (fire-and-forget)
     if (redis) {
-      redis.set(cacheKey, result, { ex: 43200 }).catch((err) => {
+      redis.set(cacheKey, data, { ex: 43200 }).catch((err) => {
         logger.warn({ err }, "redis cache write failed");
       });
     }
 
-    return result;
+    return transformApiResponse(data);
   } catch (err) {
     logger.error({ err }, "iplocate.io lookup failed");
     return null;
