@@ -1,4 +1,5 @@
 import type {
+  ProviderRef,
   RegistrationContact,
   RegistrationNameserver,
   RegistrationResponse,
@@ -78,7 +79,7 @@ export async function getCachedRegistration(
   const { fetchedAt, expiresAt } = row.registration;
   const stale = expiresAt <= now;
 
-  const registrarProvider = row.providerName
+  const registrarProvider: ProviderRef = row.providerName
     ? {
         id: row.providerId ?? null,
         name: row.providerName,
@@ -86,8 +87,8 @@ export async function getCachedRegistration(
       }
     : {
         id: null,
-        name: null as string | null,
-        domain: null as string | null,
+        name: null,
+        domain: null,
       };
 
   const contactsArray: RegistrationContact[] = row.registration.contacts ?? [];
