@@ -9,10 +9,10 @@ import type {
 } from "@domainstack/types";
 import {
   type CertificateChangeWithNames,
-  type ProviderChangeWithNames,
   detectCertificateChange,
   detectProviderChange,
   detectRegistrationChange,
+  type ProviderChangeWithNames,
 } from "@domainstack/utils/change-detection";
 import {
   fetchCertificateChainStep,

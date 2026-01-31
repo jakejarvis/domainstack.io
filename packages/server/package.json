@@ -6,6 +6,8 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
+    "./dns": "./src/dns/index.ts",
+    "./headers": "./src/headers/index.ts",
     "./seo": "./src/seo/index.ts",
     "./tls": "./src/tls/index.ts",
     "./verification": "./src/verification/index.ts",
