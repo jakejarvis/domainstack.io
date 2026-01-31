@@ -85,12 +85,20 @@ export async function fetchSeo(domain: string): Promise<SeoResult> {
 
   // Check for permanent HTML failures (DNS/TLS errors)
   // These are fatal - no useful data can be extracted
+  // Still persist the error state to prevent repeated retries
   if (!htmlResult.success) {
-    if (htmlResult.error === "DNS resolution failed") {
-      return { success: false, error: "dns_error" };
-    }
-    if (htmlResult.error === "Invalid SSL certificate") {
-      return { success: false, error: "tls_error" };
+    if (
+      htmlResult.error === "DNS resolution failed" ||
+      htmlResult.error === "Invalid SSL certificate"
+    ) {
+      const errorResponse = buildSeoResponse(htmlResult, robotsResult, null);
+      await persistSeo(domain, errorResponse, null);
+
+      const errorCode =
+        htmlResult.error === "DNS resolution failed"
+          ? "dns_error"
+          : "tls_error";
+      return { success: false, error: errorCode };
     }
     // Other HTML failures (HTTP errors, non-HTML) continue with partial data
   }
