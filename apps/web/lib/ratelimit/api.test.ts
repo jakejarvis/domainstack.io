@@ -231,6 +231,20 @@ describe("lib/ratelimit/api", () => {
           expect(result.info?.limit).toBe(10);
         }
       });
+
+      it("allows request when Redis throws error (fail-open)", async () => {
+        mockIpAddress.mockReturnValue("192.168.1.1");
+        mockLimit.mockRejectedValueOnce(new Error("Redis connection error"));
+
+        const request = createMockRequest();
+        const result = await checkRateLimit(request);
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+          // No headers when failing open
+          expect(result.headers).toBeUndefined();
+        }
+      });
     });
   });
 });

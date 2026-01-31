@@ -127,39 +127,46 @@ export async function checkRateLimit(
     ? `${config.name}:${baseIdentifier}`
     : baseIdentifier;
 
-  const { success, limit, remaining, reset, pending } =
-    await limiter.limit(identifier);
+  // Fail open: if Redis errors, allow the request through
+  try {
+    const { success, limit, remaining, reset, pending } =
+      await limiter.limit(identifier);
 
-  // Handle analytics write in background (non-blocking)
-  waitUntil(pending);
+    // Handle analytics write in background (non-blocking)
+    waitUntil(pending);
 
-  const info = { limit, remaining, reset };
+    const info = { limit, remaining, reset };
 
-  if (!success) {
-    // Ensure minimum 1 second to prevent tight retry loops from clock skew
-    const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
-    return {
-      success: false,
-      error: new Response(
-        JSON.stringify({
-          error: "Rate limit exceeded",
-          retryAfter,
-        }),
-        {
-          status: 429,
-          headers: {
-            "Content-Type": "application/json",
-            ...buildHeaders(info),
-            "Retry-After": retryAfter.toString(),
+    if (!success) {
+      // Ensure minimum 1 second to prevent tight retry loops from clock skew
+      const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
+      return {
+        success: false,
+        error: new Response(
+          JSON.stringify({
+            error: "Rate limit exceeded",
+            retryAfter,
+          }),
+          {
+            status: 429,
+            headers: {
+              "Content-Type": "application/json",
+              ...buildHeaders(info),
+              "Retry-After": retryAfter.toString(),
+            },
           },
-        },
-      ),
-    };
-  }
+        ),
+      };
+    }
 
-  return {
-    success: true,
-    headers: buildHeaders(info),
-    info,
-  };
+    return {
+      success: true,
+      headers: buildHeaders(info),
+      info,
+    };
+  } catch (err) {
+    // Redis error - fail open to prevent blocking requests
+    logger.warn({ err }, "rate limit check failed, allowing request");
+    return { success: true };
+  }
 }
