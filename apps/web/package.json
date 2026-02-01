@@ -16,9 +16,10 @@
     "workflow": "workflow inspect runs --web"
   },
   "dependencies": {
-    "@ai-sdk/gateway": "^3.0.30",
-    "@ai-sdk/openai": "^3.0.23",
-    "@ai-sdk/react": "^3.0.67",
+    "@ai-sdk/gateway": "^3.0.31",
+    "@ai-sdk/openai": "^3.0.24",
+    "@ai-sdk/provider": "^3.0.6",
+    "@ai-sdk/react": "^3.0.68",
     "@bprogress/next": "^3.2.12",
     "@browser-ai/core": "^2.0.2",
     "@domainstack/analytics": "workspace:*",
@@ -55,7 +56,7 @@
     "@vercel/functions": "^3.4.0",
     "@vercel/otel": "^2.1.0",
     "@workflow/ai": "4.0.1-beta.51",
-    "ai": "^6.0.65",
+    "ai": "^6.0.66",
     "date-fns": "^4.1.0",
     "geist": "^1.5.1",
     "jotai": "^2.17.0",
@@ -82,7 +83,7 @@
     "workflow": "4.0.1-beta.50",
     "ws": "^8.19.0",
     "zod": "catalog:",
-    "zustand": "^5.0.10"
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
