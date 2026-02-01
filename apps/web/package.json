@@ -55,7 +55,7 @@
     "@vercel/functions": "^3.4.0",
     "@vercel/otel": "^2.1.0",
     "@workflow/ai": "4.0.1-beta.51",
-    "ai": "^6.0.65",
+    "ai": "^6.0.66",
     "date-fns": "^4.1.0",
     "geist": "^1.5.1",
     "jotai": "^2.17.0",
