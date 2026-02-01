@@ -31,7 +31,7 @@ function MeshGradientBackground({
 }) {
   return (
     <motion.span
-      className="pointer-events-none absolute size-full"
+      className="pointer-events-none absolute inset-0 rounded-[inherit]"
       initial={{ opacity: alwaysVisible ? 1 : 0 }}
       animate={alwaysVisible ? { opacity: 1 } : undefined}
       variants={alwaysVisible ? undefined : { hover: { opacity: 1 } }}
