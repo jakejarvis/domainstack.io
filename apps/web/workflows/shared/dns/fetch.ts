@@ -35,6 +35,3 @@ export async function fetchDnsRecordsStep(
     throw err;
   }
 }
-
-// Allow more retries for DNS since DoH providers can be flaky
-fetchDnsRecordsStep.maxRetries = 5;

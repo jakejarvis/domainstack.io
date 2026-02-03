@@ -44,6 +44,3 @@ export async function fetchHeadersStep(
     throw err;
   }
 }
-
-// HTTP header probing can fail due to transient network issues - allow more retries
-fetchHeadersStep.maxRetries = 5;

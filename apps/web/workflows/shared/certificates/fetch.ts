@@ -50,9 +50,6 @@ export async function fetchCertificateChainStep(
   };
 }
 
-// TLS handshakes can be flaky - allow more retries
-fetchCertificateChainStep.maxRetries = 5;
-
 /**
  * Step: Detect CA providers from issuer names and build response.
  *
