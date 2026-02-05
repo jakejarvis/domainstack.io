@@ -24,7 +24,7 @@
     "superjson": "^2.2.6"
   },
   "peerDependencies": {
-    "next": ">=15.0.0"
+    "next": "16.1.6"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
