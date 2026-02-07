@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "posthog-js": "^1.336.4",
-    "posthog-node": "^5.24.7",
+    "posthog-node": "^5.24.11",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
