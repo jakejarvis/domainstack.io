@@ -41,7 +41,7 @@
     "@icons-pack/react-simple-icons": "^13.8.0",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/instrumentation-pino": "^0.57.0",
-    "@posthog/ai": "^7.8.2",
+    "@posthog/ai": "^7.8.6",
     "@posthog/nextjs-config": "^1.8.8",
     "@tabler/icons-react": "catalog:",
     "@tanstack/react-query": "^5.90.20",
