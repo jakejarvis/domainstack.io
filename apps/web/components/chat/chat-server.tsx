@@ -1,5 +1,5 @@
 import { getDefaultSuggestions } from "@domainstack/server/edge-config";
-import { ChatClient } from "./chat-client";
+import { ChatClientLazy } from "./chat-client-lazy";
 
 /** Question templates - each takes a domain and returns a suggestion */
 const QUESTION_TEMPLATES = [
@@ -48,5 +48,5 @@ export async function ChatServer() {
       template(shuffledDomains[i % shuffledDomains.length]),
     );
 
-  return <ChatClient suggestions={suggestions} />;
+  return <ChatClientLazy suggestions={suggestions} />;
 }

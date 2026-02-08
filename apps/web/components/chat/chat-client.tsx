@@ -30,10 +30,7 @@ import { chatOpenAtom, serverSuggestionsAtom } from "@/lib/atoms/chat-atoms";
 import { buildClientSystemPrompt } from "@/lib/chat/client-prompt";
 import { createClientDomainTools } from "@/lib/chat/client-tools";
 import { useChatStore } from "@/lib/stores/chat-store";
-import {
-  usePreferencesHydrated,
-  usePreferencesStore,
-} from "@/lib/stores/preferences-store";
+import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { useTRPCClient } from "@/lib/trpc/client";
 import { ChatFab } from "./chat-fab";
 import { ChatHeaderActions } from "./chat-header-actions";
@@ -50,9 +47,7 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const params = useParams<{ domain?: string }>();
   const isMobile = useIsMobile();
-  const hydrated = usePreferencesHydrated();
   const hideAiFeatures = usePreferencesStore((s) => s.hideAiFeatures);
-  const setHideAiFeatures = usePreferencesStore((s) => s.setHideAiFeatures);
   const aiMode = usePreferencesStore((s) => s.aiMode);
 
   const domain = params.domain ? decodeURIComponent(params.domain) : undefined;
@@ -207,20 +202,6 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
     setServerSuggestions(suggestions);
   }, [suggestions, setServerSuggestions]);
 
-  // Check for ?show_ai=1 URL param to re-enable AI features
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get("show_ai") === "1" && hideAiFeatures) {
-      setHideAiFeatures(false);
-      urlParams.delete("show_ai");
-      const newUrl =
-        urlParams.toString() === ""
-          ? window.location.pathname
-          : `${window.location.pathname}?${urlParams.toString()}`;
-      window.history.replaceState({}, "", newUrl);
-    }
-  }, [hideAiFeatures, setHideAiFeatures]);
-
   const chatClientProps = {
     messages,
     sendMessage,
@@ -229,10 +210,6 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
     domain,
     error,
   };
-
-  if (!hydrated) {
-    return null;
-  }
 
   if (hideAiFeatures && !settingsOpen) {
     return null;
