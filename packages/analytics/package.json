@@ -25,7 +25,7 @@
     "@types/uuid": "^10.0.0"
   },
   "peerDependencies": {
-    "next": ">=14",
+    "next": "16.1.6",
     "react": ">=18"
   }
 }
