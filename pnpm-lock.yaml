@@ -130,8 +130,8 @@ importers:
         specifier: ^7.8.2
         version: 7.8.2(@ai-sdk/provider@3.0.7)(@modelcontextprotocol/sdk@1.25.2(@cfworker/json-schema@4.1.1)(hono@4.11.7)(zod@4.3.6))(@opentelemetry/api@1.9.0)(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(bufferutil@4.1.0)(posthog-node@5.24.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(ws@8.19.0(bufferutil@4.1.0))(zod-to-json-schema@3.25.1(zod@4.3.6))
       '@posthog/nextjs-config':
-        specifier: ^1.8.8
-        version: 1.8.8(next@16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(webpack@5.104.1(@swc/core@1.15.3))
+        specifier: ^1.8.12
+        version: 1.8.12(next@16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(webpack@5.104.1(@swc/core@1.15.3))
       '@tabler/icons-react':
         specifier: 'catalog:'
         version: 3.36.1(react@19.2.4)
@@ -2497,8 +2497,11 @@ packages:
   '@posthog/core@1.17.0':
     resolution: {integrity: sha512-8pDNL+/u9ojzXloA5wILVDXBCV5daJ7w2ipCALQlEEZmL752cCKhRpbyiHn3tjKXh3Hy6aOboJneYa1JdlVHrQ==}
 
-  '@posthog/nextjs-config@1.8.8':
-    resolution: {integrity: sha512-bOrwhTnM+KXofBXVjjl0l4z1mM4B4MqKg/Bdi0LrjqGF627G5rSyZO4Px07EPSLeEAI3M/g3QKgF8tX5K9NDiw==}
+  '@posthog/core@1.20.1':
+    resolution: {integrity: sha512-uoTmWkYCtLYFpiK37/JCq+BuCA/OZn1qQZn5cPv1EEKt3ni3Zgg48xWCnSEyGFl5KKSXlfCruiRTwnbAtCgrBA==}
+
+  '@posthog/nextjs-config@1.8.12':
+    resolution: {integrity: sha512-sZ6H4TQeNO+3Zy8Vi0pHsumHcaO52p0/d/pHHxKq7cC0JTjCVY3dm9L/1pN29OW4cVCHPQbB2RFCRlUta4XnlQ==}
     engines: {node: ^20.20.0 || >=22.22.0}
     peerDependencies:
       next: 16.1.6
@@ -2506,8 +2509,8 @@ packages:
   '@posthog/types@1.336.4':
     resolution: {integrity: sha512-BY3cq/8segbXEvHbEXx9SWmaKJEM0AGgsOgMFH2yy13AV+rUHsGcp4Z5LDI5pU25DURN9EAZvzcoVyYy/Iokmw==}
 
-  '@posthog/webpack-plugin@1.2.14':
-    resolution: {integrity: sha512-EZrnxV6BRNVDieOLT8XLvhyrlKcvfcuoNleUKMRJIXSOZNZlCTJiMRDWvCLwQ/M/9CVYBWoEH3Lokm5B1xxVAQ==}
+  '@posthog/webpack-plugin@1.2.18':
+    resolution: {integrity: sha512-2cx3Gvurv3OO12HEqieX7d4AQ18GRx5g+ksAJ+fHLQnO3ksHhf2UeBvRC3Cr6xIcDeT6h+zcgYgBMNTxBo8ikg==}
     peerDependencies:
       webpack: ^5
 
@@ -5816,6 +5819,7 @@ packages:
 
   glob@10.5.0:
     resolution: {integrity: sha512-DfXN8DfhJ7NH3Oe7cFmu3NCu1wKbkReJ8TorzSAFbSKrlNaQSKfIzqYqVY8zlbs2NLBbWpRiU52GX2PbaBVNkg==}
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
     hasBin: true
 
   glob@13.0.0:
@@ -10335,11 +10339,15 @@ snapshots:
     dependencies:
       cross-spawn: 7.0.6
 
-  '@posthog/nextjs-config@1.8.8(next@16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(webpack@5.104.1(@swc/core@1.15.3))':
+  '@posthog/core@1.20.1':
+    dependencies:
+      cross-spawn: 7.0.6
+
+  '@posthog/nextjs-config@1.8.12(next@16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(webpack@5.104.1(@swc/core@1.15.3))':
     dependencies:
       '@posthog/cli': 0.5.26
-      '@posthog/core': 1.17.0
-      '@posthog/webpack-plugin': 1.2.14(webpack@5.104.1(@swc/core@1.15.3))
+      '@posthog/core': 1.20.1
+      '@posthog/webpack-plugin': 1.2.18(webpack@5.104.1(@swc/core@1.15.3))
       next: 16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       semver: 7.7.3
     transitivePeerDependencies:
@@ -10348,10 +10356,10 @@ snapshots:
 
   '@posthog/types@1.336.4': {}
 
-  '@posthog/webpack-plugin@1.2.14(webpack@5.104.1(@swc/core@1.15.3))':
+  '@posthog/webpack-plugin@1.2.18(webpack@5.104.1(@swc/core@1.15.3))':
     dependencies:
       '@posthog/cli': 0.5.26
-      '@posthog/core': 1.17.0
+      '@posthog/core': 1.20.1
       webpack: 5.104.1(@swc/core@1.15.3)
     transitivePeerDependencies:
       - debug
