@@ -40,13 +40,13 @@
     "rdapper": "^0.13.0"
   },
   "peerDependencies": {
-    "react": ">=19.0.0",
+    "react": "19.2.4",
     "zod": "^4"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@types/node": "catalog:",
-    "@types/react": "19.2.10",
+    "@types/react": "19.2.13",
     "msw": "^2.12.7",
     "vitest": "catalog:",
     "zod": "catalog:"
