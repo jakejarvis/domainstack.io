@@ -47,7 +47,7 @@
     "@domainstack/typescript-config": "workspace:*",
     "@types/node": "catalog:",
     "@types/react": "19.2.10",
-    "msw": "^2.12.7",
+    "msw": "^2.12.10",
     "vitest": "catalog:",
     "zod": "catalog:"
   }

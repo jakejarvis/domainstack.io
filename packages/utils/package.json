@@ -29,7 +29,7 @@
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
-    "msw": "^2.12.7",
+    "msw": "^2.12.10",
     "vitest": "catalog:",
     "zod": "catalog:"
   }
