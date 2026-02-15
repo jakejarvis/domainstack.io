@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@domainstack/logger": "workspace:*",
-    "@ghostery/adblocker-puppeteer": "^2.13.4",
+    "@ghostery/adblocker-puppeteer": "^2.14.1",
     "@sparticuz/chromium": "143.0.4",
     "puppeteer-core": "24.35.0"
   },
