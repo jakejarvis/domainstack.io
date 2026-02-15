@@ -15,7 +15,7 @@
     "format": "biome format --write"
   },
   "dependencies": {
-    "@base-ui/react": "^1.1.0",
+    "@base-ui/react": "^1.2.0",
     "clipboard-copy": "^4.0.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
