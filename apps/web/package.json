@@ -60,7 +60,7 @@
     "date-fns": "^4.1.0",
     "geist": "^1.5.1",
     "jotai": "^2.17.0",
-    "lru-cache": "^11.2.5",
+    "lru-cache": "^11.2.6",
     "maplibre-gl": "^5.17.0",
     "mcp-handler": "^1.0.7",
     "motion": "catalog:",
