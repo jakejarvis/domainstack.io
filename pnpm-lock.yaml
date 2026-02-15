@@ -235,8 +235,8 @@ importers:
         specifier: ^2.2.6
         version: 2.2.6
       ts-ics:
-        specifier: ^2.4.0
-        version: 2.4.0
+        specifier: ^2.4.1
+        version: 2.4.1
       use-local-storage-state:
         specifier: ^19.5.0
         version: 19.5.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -5816,6 +5816,7 @@ packages:
 
   glob@10.5.0:
     resolution: {integrity: sha512-DfXN8DfhJ7NH3Oe7cFmu3NCu1wKbkReJ8TorzSAFbSKrlNaQSKfIzqYqVY8zlbs2NLBbWpRiU52GX2PbaBVNkg==}
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
     hasBin: true
 
   glob@13.0.0:
@@ -8018,8 +8019,8 @@ packages:
   ts-algebra@2.0.0:
     resolution: {integrity: sha512-FPAhNPFMrkwz76P7cdjdmiShwMynZYN6SgOujD1urY4oNm80Ou9oMdmbR45LotcKOXoy7wSmHkRFE6Mxbrhefw==}
 
-  ts-ics@2.4.0:
-    resolution: {integrity: sha512-Tguo+7W/swxTw8/Fxv4zPBqiHw/i1ohg0aCWeY50miwdwFGC7TCWcOUuqaeag5EdnaX57zn1qrqERsc4A+4j1A==}
+  ts-ics@2.4.1:
+    resolution: {integrity: sha512-7iI90sLYPukVuoS4zOEixDCG34wMU0S4KK87Tq81rDencS99qdU2qhXFYGidoXBx5L6kPG6n8ku3EKFKgcWMDg==}
 
   tsconfck@3.1.6:
     resolution: {integrity: sha512-ks6Vjr/jEw0P1gmOVwutM3B7fWxoWBL2KRDb1JfqGVawBmO5UsvmWOQFGHBPl5yxYz4eERr19E6L7NMv+Fej4w==}
@@ -16427,7 +16428,7 @@ snapshots:
 
   ts-algebra@2.0.0: {}
 
-  ts-ics@2.4.0:
+  ts-ics@2.4.1:
     dependencies:
       '@standard-schema/spec': 1.1.0
 
