@@ -61,7 +61,7 @@
     "geist": "^1.5.1",
     "jotai": "^2.17.0",
     "lru-cache": "^11.2.5",
-    "maplibre-gl": "^5.17.0",
+    "maplibre-gl": "^5.18.0",
     "mcp-handler": "^1.0.7",
     "motion": "catalog:",
     "ms": "3.0.0-canary.202508261828",
