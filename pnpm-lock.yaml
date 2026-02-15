@@ -419,7 +419,7 @@ importers:
         version: link:../redis
       better-auth:
         specifier: ^1.4.18
-        version: 1.4.18(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@electric-sql/pglite@0.3.15)(@opentelemetry/api@1.9.0)(@types/pg@8.16.0)(@upstash/redis@1.36.1)(kysely@0.28.11)(pg@8.18.0))(next@16.1.6(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(pg@8.18.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vitest@4.0.18)
+        version: 1.4.18(drizzle-kit@0.31.9)(drizzle-orm@0.45.1(@electric-sql/pglite@0.3.15)(@opentelemetry/api@1.9.0)(@types/pg@8.16.0)(@upstash/redis@1.36.1)(kysely@0.28.11)(pg@8.18.0))(next@16.1.6(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(pg@8.18.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vitest@4.0.18)
       next:
         specifier: 16.1.6
         version: 16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -496,8 +496,8 @@ importers:
         specifier: ^17.2.3
         version: 17.2.3
       drizzle-kit:
-        specifier: ^0.31.8
-        version: 0.31.8
+        specifier: ^0.31.9
+        version: 0.31.9
       vitest:
         specifier: 'catalog:'
         version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.0.10)(@vitest/browser-playwright@4.0.18)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.12.7(@types/node@25.0.10)(typescript@5.9.3))(terser@5.46.0)
@@ -584,7 +584,7 @@ importers:
         version: link:../logger
       '@polar-sh/better-auth':
         specifier: ^1.6.4
-        version: 1.6.4(@polar-sh/sdk@0.42.5)(@stripe/react-stripe-js@4.0.2(@stripe/stripe-js@7.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@stripe/stripe-js@7.9.0)(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(better-auth@1.4.18(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@electric-sql/pglite@0.3.15)(@opentelemetry/api@1.9.0)(@types/pg@8.16.0)(@upstash/redis@1.36.1)(kysely@0.28.11)(pg@8.18.0))(next@16.1.6(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(pg@8.18.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vitest@4.0.18))(react-dom@19.2.4(react@19.2.4))(react-is@17.0.2)(react@19.2.4)(redux@5.0.1)(zod@4.3.6)
+        version: 1.6.4(@polar-sh/sdk@0.42.5)(@stripe/react-stripe-js@4.0.2(@stripe/stripe-js@7.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@stripe/stripe-js@7.9.0)(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(better-auth@1.4.18(drizzle-kit@0.31.9)(drizzle-orm@0.45.1(@electric-sql/pglite@0.3.15)(@opentelemetry/api@1.9.0)(@types/pg@8.16.0)(@upstash/redis@1.36.1)(kysely@0.28.11)(pg@8.18.0))(next@16.1.6(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(pg@8.18.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vitest@4.0.18))(react-dom@19.2.4(react@19.2.4))(react-is@17.0.2)(react@19.2.4)(redux@5.0.1)(zod@4.3.6)
       '@polar-sh/sdk':
         specifier: ^0.42.5
         version: 0.42.5
@@ -5235,8 +5235,8 @@ packages:
     resolution: {integrity: sha512-JVUnt+DUIzu87TABbhPmNfVdBDt18BLOWjMUFJMSi/Qqg7NTYtabbvSNJGOJ7afbRuv9D/lngizHtP7QyLQ+9w==}
     engines: {node: '>=12'}
 
-  drizzle-kit@0.31.8:
-    resolution: {integrity: sha512-O9EC/miwdnRDY10qRxM8P3Pg8hXe3LyU4ZipReKOgTwn4OqANmftj8XJz1UPUAS6NMHf0E2htjsbQujUTkncCg==}
+  drizzle-kit@0.31.9:
+    resolution: {integrity: sha512-GViD3IgsXn7trFyBUUHyTFBpH/FsHTxYJ66qdbVggxef4UBPHRYxQaRzYLTuekYnk9i5FIEL9pbBIwMqX/Uwrg==}
     hasBin: true
 
   drizzle-orm@0.45.1:
@@ -5816,6 +5816,7 @@ packages:
 
   glob@10.5.0:
     resolution: {integrity: sha512-DfXN8DfhJ7NH3Oe7cFmu3NCu1wKbkReJ8TorzSAFbSKrlNaQSKfIzqYqVY8zlbs2NLBbWpRiU52GX2PbaBVNkg==}
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
     hasBin: true
 
   glob@13.0.0:
@@ -10214,11 +10215,11 @@ snapshots:
   '@pkgjs/parseargs@0.11.0':
     optional: true
 
-  '@polar-sh/better-auth@1.6.4(@polar-sh/sdk@0.42.5)(@stripe/react-stripe-js@4.0.2(@stripe/stripe-js@7.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@stripe/stripe-js@7.9.0)(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(better-auth@1.4.18(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@electric-sql/pglite@0.3.15)(@opentelemetry/api@1.9.0)(@types/pg@8.16.0)(@upstash/redis@1.36.1)(kysely@0.28.11)(pg@8.18.0))(next@16.1.6(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(pg@8.18.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vitest@4.0.18))(react-dom@19.2.4(react@19.2.4))(react-is@17.0.2)(react@19.2.4)(redux@5.0.1)(zod@4.3.6)':
+  '@polar-sh/better-auth@1.6.4(@polar-sh/sdk@0.42.5)(@stripe/react-stripe-js@4.0.2(@stripe/stripe-js@7.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@stripe/stripe-js@7.9.0)(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(better-auth@1.4.18(drizzle-kit@0.31.9)(drizzle-orm@0.45.1(@electric-sql/pglite@0.3.15)(@opentelemetry/api@1.9.0)(@types/pg@8.16.0)(@upstash/redis@1.36.1)(kysely@0.28.11)(pg@8.18.0))(next@16.1.6(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(pg@8.18.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vitest@4.0.18))(react-dom@19.2.4(react@19.2.4))(react-is@17.0.2)(react@19.2.4)(redux@5.0.1)(zod@4.3.6)':
     dependencies:
       '@polar-sh/checkout': 0.1.15(@stripe/react-stripe-js@4.0.2(@stripe/stripe-js@7.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@stripe/stripe-js@7.9.0)(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(react-dom@19.2.4(react@19.2.4))(react-is@17.0.2)(react@19.2.4)(redux@5.0.1)
       '@polar-sh/sdk': 0.42.5
-      better-auth: 1.4.18(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@electric-sql/pglite@0.3.15)(@opentelemetry/api@1.9.0)(@types/pg@8.16.0)(@upstash/redis@1.36.1)(kysely@0.28.11)(pg@8.18.0))(next@16.1.6(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(pg@8.18.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vitest@4.0.18)
+      better-auth: 1.4.18(drizzle-kit@0.31.9)(drizzle-orm@0.45.1(@electric-sql/pglite@0.3.15)(@opentelemetry/api@1.9.0)(@types/pg@8.16.0)(@upstash/redis@1.36.1)(kysely@0.28.11)(pg@8.18.0))(next@16.1.6(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(pg@8.18.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vitest@4.0.18)
       zod: 4.3.6
     transitivePeerDependencies:
       - '@stripe/react-stripe-js'
@@ -12735,7 +12736,7 @@ snapshots:
 
   basic-ftp@5.1.0: {}
 
-  better-auth@1.4.18(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@electric-sql/pglite@0.3.15)(@opentelemetry/api@1.9.0)(@types/pg@8.16.0)(@upstash/redis@1.36.1)(kysely@0.28.11)(pg@8.18.0))(next@16.1.6(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(pg@8.18.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vitest@4.0.18):
+  better-auth@1.4.18(drizzle-kit@0.31.9)(drizzle-orm@0.45.1(@electric-sql/pglite@0.3.15)(@opentelemetry/api@1.9.0)(@types/pg@8.16.0)(@upstash/redis@1.36.1)(kysely@0.28.11)(pg@8.18.0))(next@16.1.6(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(pg@8.18.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vitest@4.0.18):
     dependencies:
       '@better-auth/core': 1.4.18(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@4.3.6))(jose@6.1.3)(kysely@0.28.11)(nanostores@1.1.0)
       '@better-auth/telemetry': 1.4.18(@better-auth/core@1.4.18(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@4.3.6))(jose@6.1.3)(kysely@0.28.11)(nanostores@1.1.0))
@@ -12750,7 +12751,7 @@ snapshots:
       nanostores: 1.1.0
       zod: 4.3.6
     optionalDependencies:
-      drizzle-kit: 0.31.8
+      drizzle-kit: 0.31.9
       drizzle-orm: 0.45.1(@electric-sql/pglite@0.3.15)(@opentelemetry/api@1.9.0)(@types/pg@8.16.0)(@upstash/redis@1.36.1)(kysely@0.28.11)(pg@8.18.0)
       next: 16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       pg: 8.18.0
@@ -13297,7 +13298,7 @@ snapshots:
 
   dotenv@17.2.3: {}
 
-  drizzle-kit@0.31.8:
+  drizzle-kit@0.31.9:
     dependencies:
       '@drizzle-team/brocli': 0.10.2
       '@esbuild-kit/esm-loader': 2.6.5
