@@ -18,7 +18,7 @@
   "dependencies": {
     "@ai-sdk/gateway": "^3.0.32",
     "@ai-sdk/openai": "^3.0.25",
-    "@ai-sdk/provider": "^3.0.7",
+    "@ai-sdk/provider": "^3.0.8",
     "@ai-sdk/react": "^3.0.70",
     "@bprogress/next": "^3.2.12",
     "@browser-ai/core": "^2.0.3",
