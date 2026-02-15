@@ -67,8 +67,8 @@ importers:
         specifier: ^3.2.12
         version: 3.2.12(next@16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@browser-ai/core':
-        specifier: ^2.0.3
-        version: 2.0.3(ai@6.0.68(zod@4.3.6))
+        specifier: ^2.1.1
+        version: 2.1.1(ai@6.0.68(zod@4.3.6))
       '@domainstack/analytics':
         specifier: workspace:*
         version: link:../../packages/analytics
@@ -1243,8 +1243,8 @@ packages:
       react: 19.2.4
       react-dom: 19.2.4
 
-  '@browser-ai/core@2.0.3':
-    resolution: {integrity: sha512-hH7PPeYaAMpN4Tz+qWuxGUwaI7QTK51YzoMzdxkVQKWfypo7UAE1/DOgXJ9zxG19hoPEZa/hXs0kUTE+tVrdpg==}
+  '@browser-ai/core@2.1.1':
+    resolution: {integrity: sha512-FwGoCuQ1lC0p8xH9GoAEDtwTYWRocbudU64iFD7cRROG94+dRZD7nLGxLyFA29SdDGb38D+PCHz8KmkZ7DgXyg==}
     peerDependencies:
       ai: ^6.0.0
 
@@ -5816,6 +5816,7 @@ packages:
 
   glob@10.5.0:
     resolution: {integrity: sha512-DfXN8DfhJ7NH3Oe7cFmu3NCu1wKbkReJ8TorzSAFbSKrlNaQSKfIzqYqVY8zlbs2NLBbWpRiU52GX2PbaBVNkg==}
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
     hasBin: true
 
   glob@13.0.0:
@@ -9255,7 +9256,7 @@ snapshots:
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
 
-  '@browser-ai/core@2.0.3(ai@6.0.68(zod@4.3.6))':
+  '@browser-ai/core@2.1.1(ai@6.0.68(zod@4.3.6))':
     dependencies:
       '@mediapipe/tasks-text': 0.10.32
       ai: 6.0.68(zod@4.3.6)

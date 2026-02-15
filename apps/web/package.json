@@ -21,7 +21,7 @@
     "@ai-sdk/provider": "^3.0.7",
     "@ai-sdk/react": "^3.0.70",
     "@bprogress/next": "^3.2.12",
-    "@browser-ai/core": "^2.0.3",
+    "@browser-ai/core": "^2.1.1",
     "@domainstack/analytics": "workspace:*",
     "@domainstack/api": "workspace:*",
     "@domainstack/auth": "workspace:*",
