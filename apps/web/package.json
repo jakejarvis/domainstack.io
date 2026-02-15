@@ -53,7 +53,7 @@
     "@trpc/tanstack-react-query": "^11.9.0",
     "@vercel/analytics": "^1.6.1",
     "@vercel/edge-config": "^1.4.3",
-    "@vercel/functions": "^3.4.0",
+    "@vercel/functions": "^3.4.2",
     "@vercel/otel": "^2.1.0",
     "@workflow/ai": "4.0.1-beta.52",
     "ai": "^6.0.68",

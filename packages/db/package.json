@@ -40,7 +40,7 @@
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@electric-sql/pglite": "^0.3.15",
-    "@vercel/functions": "^3.4.0",
+    "@vercel/functions": "^3.4.2",
     "@types/node": "catalog:",
     "@types/pg": "^8.16.0",
     "dotenv": "^17.2.3",
