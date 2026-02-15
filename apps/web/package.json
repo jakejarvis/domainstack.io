@@ -75,7 +75,7 @@
     "react-hotkeys-hook": "^5.2.4",
     "server-only": "0.0.1",
     "sonner": "catalog:",
-    "streamdown": "^2.1.0",
+    "streamdown": "^2.2.0",
     "superjson": "^2.2.6",
     "ts-ics": "^2.4.0",
     "use-local-storage-state": "^19.5.0",
