@@ -217,8 +217,8 @@ importers:
         specifier: 19.2.4
         version: 19.2.4(react@19.2.4)
       react-error-boundary:
-        specifier: ^6.1.0
-        version: 6.1.0(react@19.2.4)
+        specifier: ^6.1.1
+        version: 6.1.1(react@19.2.4)
       react-hotkeys-hook:
         specifier: ^5.2.4
         version: 5.2.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -5816,6 +5816,7 @@ packages:
 
   glob@10.5.0:
     resolution: {integrity: sha512-DfXN8DfhJ7NH3Oe7cFmu3NCu1wKbkReJ8TorzSAFbSKrlNaQSKfIzqYqVY8zlbs2NLBbWpRiU52GX2PbaBVNkg==}
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
     hasBin: true
 
   glob@13.0.0:
@@ -7319,8 +7320,8 @@ packages:
     peerDependencies:
       react: 19.2.4
 
-  react-error-boundary@6.1.0:
-    resolution: {integrity: sha512-02k9WQ/mUhdbXir0tC1NiMesGzRPaCsJEWU/4bcFrbY1YMZOtHShtZP6zw0SJrBWA/31H0KT9/FgdL8+sPKgHA==}
+  react-error-boundary@6.1.1:
+    resolution: {integrity: sha512-BrYwPOdXi5mqkk5lw+Uvt0ThHx32rCt3BkukS4X23A2AIWDPSGX6iaWTc0y9TU/mHDA/6qOSGel+B2ERkOvD1w==}
     peerDependencies:
       react: 19.2.4
 
@@ -15649,7 +15650,7 @@ snapshots:
       react: 19.2.4
       scheduler: 0.27.0
 
-  react-error-boundary@6.1.0(react@19.2.4):
+  react-error-boundary@6.1.1(react@19.2.4):
     dependencies:
       react: 19.2.4
 
