@@ -52,7 +52,9 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
 
   const domain = params.domain ? decodeURIComponent(params.domain) : undefined;
   const domainRef = useRef(domain);
-  domainRef.current = domain;
+  useEffect(() => {
+    domainRef.current = domain;
+  });
 
   // Browser AI detection and local chat setup
   const browserAI = useBrowserAI();
@@ -67,7 +69,9 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
 
   const runId = useChatStore((s) => s.runId);
   const runIdRef = useRef(runId);
-  runIdRef.current = runId;
+  useEffect(() => {
+    runIdRef.current = runId;
+  });
   const setRunId = useChatStore((s) => s.setRunId);
   const setMessages = useChatStore((s) => s.setMessages);
   const clearSession = useChatStore((s) => s.clearSession);

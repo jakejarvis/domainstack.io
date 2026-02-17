@@ -1,8 +1,11 @@
+"use client";
+
 import type { NotificationData } from "@domainstack/types";
 import { Icon } from "@domainstack/ui/icon";
 import { cn } from "@domainstack/ui/utils";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
+import { useMemo } from "react";
 import {
   getNotificationIcon,
   getNotificationSeverity,
@@ -19,7 +22,10 @@ export function NotificationCard({
   notification,
   onClick,
 }: NotificationCardProps) {
-  const IconComponent = getNotificationIcon(notification.type);
+  const IconComponent = useMemo(
+    () => getNotificationIcon(notification.type),
+    [notification.type],
+  );
   const severity = getNotificationSeverity(notification.type);
   const iconColor = getSeverityIconColor(severity, !!notification.readAt);
   const isUnread = !notification.readAt;

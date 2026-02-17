@@ -166,8 +166,8 @@ export function AppFooter() {
             <Button
               size="lg"
               nativeButton={false}
-              // biome-ignore lint/a11y/useValidAnchor: set by hrefScript above
-              render={<a ref={hrefScript} />}
+              // biome-ignore lint/a11y/useValidAnchor: href set dynamically by hrefScript ref
+              render={<a ref={hrefScript} href="#" />}
               onClick={(e) => {
                 e.preventDefault();
                 toast.info("Drag the button to your bookmarks bar to use it.", {

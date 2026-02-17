@@ -107,7 +107,9 @@ export function SearchClient({
 
   // Store function ref to avoid unnecessary effect re-runs
   const navigateRef = useRef(navigateToDomain);
-  navigateRef.current = navigateToDomain;
+  useEffect(() => {
+    navigateRef.current = navigateToDomain;
+  });
 
   // Handle pending domain from suggestion clicks (variant="lg" only)
   useEffect(() => {

@@ -2,7 +2,7 @@
 
 import { cn } from "@domainstack/ui/utils";
 import { formatDistanceToNowStrict } from "date-fns";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 
 export function RelativeAgeString({
   from,
@@ -13,16 +13,12 @@ export function RelativeAgeString({
   /** className applied to the wrapper span */
   className?: string;
 }) {
-  const [text, setText] = useState<string | null>(null);
-
-  // format distance to now
-  useEffect(() => {
+  const text = useMemo(() => {
     try {
-      const rel = formatDistanceToNowStrict(new Date(from), {
-        addSuffix: true,
-      });
-      setText(rel);
-    } catch {}
+      return formatDistanceToNowStrict(new Date(from), { addSuffix: true });
+    } catch {
+      return null;
+    }
   }, [from]);
 
   // Render invisible placeholder during SSR to prevent layout shift

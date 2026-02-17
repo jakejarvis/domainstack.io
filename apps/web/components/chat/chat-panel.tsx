@@ -91,9 +91,10 @@ export function ChatPanel({
   // Get suggestions from atom (context-aware or server-generated fallback)
   const suggestions = useAtomValue(chatSuggestionsAtom);
 
+  const { scrollToBottom } = stickyInstance;
   const handleScrollToBottom = useCallback(() => {
-    void stickyInstance.scrollToBottom();
-  }, [stickyInstance.scrollToBottom]);
+    void scrollToBottom();
+  }, [scrollToBottom]);
 
   const handleSubmit = (message: { text: string }) => {
     sendMessage(message);

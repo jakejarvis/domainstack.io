@@ -139,10 +139,10 @@ export function VibrationProvider() {
     label.appendChild(checkbox);
 
     // Attach event listeners
-    window.addEventListener("click", onInteraction);
-    window.addEventListener("touchend", onInteraction);
-    window.addEventListener("keyup", onInteraction);
-    window.addEventListener("keypress", onInteraction);
+    window.addEventListener("click", onInteraction, { passive: true });
+    window.addEventListener("touchend", onInteraction, { passive: true });
+    window.addEventListener("keyup", onInteraction, { passive: true });
+    window.addEventListener("keypress", onInteraction, { passive: true });
 
     // Mount
     if (document.head) {
