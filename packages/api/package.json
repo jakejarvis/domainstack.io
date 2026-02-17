@@ -19,8 +19,8 @@
     "@domainstack/db": "workspace:*",
     "@domainstack/logger": "workspace:*",
     "@domainstack/redis": "workspace:*",
-    "@trpc/server": "^11.9.0",
-    "@vercel/functions": "^3.4.0",
+    "@trpc/server": "^11.10.0",
+    "@vercel/functions": "^3.4.2",
     "superjson": "^2.2.6"
   },
   "peerDependencies": {

@@ -13,7 +13,7 @@
     "format": "biome format --write"
   },
   "dependencies": {
-    "pino": "^10.3.0"
+    "pino": "^10.3.1"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",

@@ -17,13 +17,13 @@
   "dependencies": {
     "@domainstack/constants": "workspace:*",
     "@domainstack/logger": "workspace:*",
-    "@react-email/components": "^1.0.6",
-    "resend": "^6.9.1"
+    "@react-email/components": "^1.0.7",
+    "resend": "^6.9.2"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@types/node": "catalog:",
-    "@types/react": "19.2.10"
+    "@types/react": "19.2.14"
   },
   "peerDependencies": {
     "react": ">=18"

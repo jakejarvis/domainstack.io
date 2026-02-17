@@ -15,13 +15,13 @@
     "format": "biome format --write"
   },
   "dependencies": {
-    "@base-ui/react": "^1.1.0",
+    "@base-ui/react": "^1.2.0",
     "clipboard-copy": "^4.0.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "cva": "1.0.0-beta.4",
     "media-chrome": "^4.17.2",
-    "tailwind-merge": "^3.4.0",
+    "tailwind-merge": "^3.4.1",
     "vaul": "^1.1.2"
   },
   "peerDependencies": {
@@ -34,7 +34,7 @@
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@tabler/icons-react": "catalog:",
-    "@types/react": "19.2.10",
+    "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "motion": "catalog:",
     "sonner": "catalog:"

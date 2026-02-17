@@ -16,7 +16,7 @@
   "dependencies": {
     "@domainstack/logger": "workspace:*",
     "@upstash/ratelimit": "^2.0.8",
-    "@upstash/redis": "^1.36.1"
+    "@upstash/redis": "^1.36.2"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
