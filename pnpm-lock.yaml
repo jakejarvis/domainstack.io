@@ -9,21 +9,12 @@ catalogs:
     '@tabler/icons-react':
       specifier: ^3.36.1
       version: 3.36.1
-    '@types/node':
-      specifier: 25.2.3
-      version: 25.2.3
     motion:
       specifier: ^12.34.1
       version: 12.34.1
     sonner:
       specifier: ^2.0.7
       version: 2.0.7
-    vitest:
-      specifier: ^4.0.18
-      version: 4.0.18
-    zod:
-      specifier: ^4.3.6
-      version: 4.3.6
 
 overrides:
   '@types/react': 19.2.14
@@ -785,9 +776,6 @@ importers:
       tailwind-merge:
         specifier: ^3.4.1
         version: 3.4.1
-      vaul:
-        specifier: ^1.1.2
-        version: 1.1.2(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
     devDependencies:
       '@domainstack/typescript-config':
         specifier: workspace:*
@@ -8346,12 +8334,6 @@ packages:
   vary@1.1.2:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
-
-  vaul@1.1.2:
-    resolution: {integrity: sha512-ZFkClGpWyI2WUQjdLJ/BaGuV6AVQiJ3uELGk3OYtP+B6yCO7Cmn9vPFXVJkRaGkOJu3m8bQMgtyzNHixULceQA==}
-    peerDependencies:
-      react: 19.2.4
-      react-dom: 19.2.4
 
   vfile-location@5.0.3:
     resolution: {integrity: sha512-5yXvWDEgqeiYiBe1lbxYF7UMAIm/IcopxMHrMQDq3nvKcjPKIhZklUKL+AE7J7uApI4kwe2snsK+eI6UTj9EHg==}
@@ -16776,15 +16758,6 @@ snapshots:
   uuid@13.0.0: {}
 
   vary@1.1.2: {}
-
-  vaul@1.1.2(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
-    dependencies:
-      '@radix-ui/react-dialog': 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      react: 19.2.4
-      react-dom: 19.2.4(react@19.2.4)
-    transitivePeerDependencies:
-      - '@types/react'
-      - '@types/react-dom'
 
   vfile-location@5.0.3:
     dependencies:

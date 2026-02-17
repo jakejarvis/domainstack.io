@@ -234,7 +234,7 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
       </AnimatePresence>
 
       {isMobile ? (
-        <Drawer open={open} onOpenChange={setOpen} handleOnly>
+        <Drawer open={open} onOpenChange={setOpen}>
           <DrawerContent>
             <DrawerHeader className="flex flex-row items-center justify-between">
               <DrawerTitle className="flex items-center gap-2">

@@ -21,8 +21,7 @@
     "cmdk": "^1.1.1",
     "cva": "1.0.0-beta.4",
     "media-chrome": "^4.17.2",
-    "tailwind-merge": "^3.4.1",
-    "vaul": "^1.1.2"
+    "tailwind-merge": "^3.4.1"
   },
   "peerDependencies": {
     "@tabler/icons-react": "^3",
