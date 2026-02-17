@@ -228,7 +228,7 @@ export function ShareInstructionsDialog({
   const trpc = useTRPC();
 
   // Cleanup timeout on unmount
-  // biome-ignore lint/nursery/useConsistentArrowReturn: nesting is intentional
+  // biome-ignore lint/style/useConsistentArrowReturn: nesting is intentional
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {

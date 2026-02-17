@@ -31,7 +31,7 @@ export function CopyButton({
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Clear the reset timer on unmount to prevent setState on unmounted component
-  // biome-ignore lint/nursery/useConsistentArrowReturn: nesting is intentional
+  // biome-ignore lint/style/useConsistentArrowReturn: nesting is intentional
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {

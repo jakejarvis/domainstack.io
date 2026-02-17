@@ -58,9 +58,7 @@ const chatRequestSchema = z.object({
                 }),
               }),
               // Allow other part types (tool calls, etc.) to pass through
-              z
-                .object({ type: z.string() })
-                .passthrough(),
+              z.object({ type: z.string() }).passthrough(),
             ]),
           ),
         })

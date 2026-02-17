@@ -55,6 +55,9 @@
         "useAnchorContent": "off",
         "useSemanticElements": "off"
       },
+      "style": {
+        "useConsistentArrowReturn": "error"
+      },
       "nursery": {
         "useSortedClasses": {
           "level": "error",
@@ -65,7 +68,6 @@
         },
         "noFloatingPromises": "error",
         "noMisusedPromises": "error",
-        "useConsistentArrowReturn": "error",
         "useDestructuring": "error"
       }
     }
