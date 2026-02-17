@@ -26,6 +26,6 @@
   },
   "peerDependencies": {
     "next": ">=14",
-    "react": ">=18"
+    "react": "19.2.4"
   }
 }
