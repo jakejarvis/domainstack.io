@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@ai-sdk/gateway": "^3.0.47",
-    "@ai-sdk/openai": "^3.0.29",
+    "@ai-sdk/openai": "^3.0.30",
     "@ai-sdk/provider": "^3.0.8",
     "@ai-sdk/react": "^3.0.89",
     "@bprogress/next": "^3.2.12",

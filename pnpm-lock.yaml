@@ -9,12 +9,21 @@ catalogs:
     '@tabler/icons-react':
       specifier: ^3.36.1
       version: 3.36.1
+    '@types/node':
+      specifier: 25.2.3
+      version: 25.2.3
     motion:
       specifier: ^12.34.1
       version: 12.34.1
     sonner:
       specifier: ^2.0.7
       version: 2.0.7
+    vitest:
+      specifier: ^4.0.18
+      version: 4.0.18
+    zod:
+      specifier: ^4.3.6
+      version: 4.3.6
 
 overrides:
   '@types/react': 19.2.14
@@ -46,8 +55,8 @@ importers:
         specifier: ^3.0.47
         version: 3.0.47(zod@4.3.6)
       '@ai-sdk/openai':
-        specifier: ^3.0.29
-        version: 3.0.29(zod@4.3.6)
+        specifier: ^3.0.30
+        version: 3.0.30(zod@4.3.6)
       '@ai-sdk/provider':
         specifier: ^3.0.8
         version: 3.0.8
@@ -850,8 +859,8 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/openai@3.0.29':
-    resolution: {integrity: sha512-ugVTIVpuSLKTjzSPe1F1DWiblJT/lwrrHx0OZEKjpMk/EYP6j6VD/F7SJqM1dsqOJryeBCJWFbUzLNqc99PrMA==}
+  '@ai-sdk/openai@3.0.30':
+    resolution: {integrity: sha512-YDht3t7TDyWKP+JYZp20VuYqSjyF2brHYh47GGFDUPf2wZiqNQ263ecL+quar2bP3GZ3BeQA8f0m2B7UwLPR+g==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -8679,14 +8688,14 @@ snapshots:
       zod: 4.1.11
     optional: true
 
-  '@ai-sdk/openai@3.0.29(zod@4.1.11)':
+  '@ai-sdk/openai@3.0.30(zod@4.1.11)':
     dependencies:
       '@ai-sdk/provider': 3.0.8
       '@ai-sdk/provider-utils': 4.0.15(zod@4.1.11)
       zod: 4.1.11
     optional: true
 
-  '@ai-sdk/openai@3.0.29(zod@4.3.6)':
+  '@ai-sdk/openai@3.0.30(zod@4.3.6)':
     dependencies:
       '@ai-sdk/provider': 3.0.8
       '@ai-sdk/provider-utils': 4.0.15(zod@4.3.6)
@@ -12231,7 +12240,7 @@ snapshots:
       '@ai-sdk/anthropic': 3.0.44(zod@4.1.11)
       '@ai-sdk/gateway': 3.0.47(zod@4.1.11)
       '@ai-sdk/google': 3.0.29(zod@4.1.11)
-      '@ai-sdk/openai': 3.0.29(zod@4.1.11)
+      '@ai-sdk/openai': 3.0.30(zod@4.1.11)
       '@ai-sdk/xai': 3.0.57(zod@4.1.11)
 
   '@workflow/astro@4.0.0-beta.31(@aws-sdk/client-sts@3.991.0)(@opentelemetry/api@1.9.0)':
