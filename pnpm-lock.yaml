@@ -9,12 +9,21 @@ catalogs:
     '@tabler/icons-react':
       specifier: ^3.36.1
       version: 3.36.1
+    '@types/node':
+      specifier: 25.2.3
+      version: 25.2.3
     motion:
       specifier: ^12.34.1
       version: 12.34.1
     sonner:
       specifier: ^2.0.7
       version: 2.0.7
+    vitest:
+      specifier: ^4.0.18
+      version: 4.0.18
+    zod:
+      specifier: ^4.3.6
+      version: 4.3.6
 
 overrides:
   '@types/react': 19.2.14
@@ -43,8 +52,8 @@ importers:
   apps/web:
     dependencies:
       '@ai-sdk/gateway':
-        specifier: ^3.0.47
-        version: 3.0.47(zod@4.3.6)
+        specifier: ^3.0.50
+        version: 3.0.50(zod@4.3.6)
       '@ai-sdk/openai':
         specifier: ^3.0.29
         version: 3.0.29(zod@4.3.6)
@@ -834,6 +843,12 @@ packages:
 
   '@ai-sdk/gateway@3.0.47':
     resolution: {integrity: sha512-gGsUF42TKjnnKpyHNpk/J6Hw1HCg0XqfRS9QSeZ2nn+ccy+CUXIbnuIpeBMrGCHUOAiZCy5Ei/H9BW9VgV+vKg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  '@ai-sdk/gateway@3.0.50':
+    resolution: {integrity: sha512-Jdd1a8VgbD7l7r+COj0h5SuaYRfPvOJ/AO6l0OrmTPEcI2MUQPr3C4JttfpNkcheEN+gOdy0CtZWuG17bW2fjw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -8650,7 +8665,14 @@ snapshots:
       zod: 4.1.11
     optional: true
 
-  '@ai-sdk/gateway@3.0.47(zod@4.1.11)':
+  '@ai-sdk/gateway@3.0.47(zod@4.3.6)':
+    dependencies:
+      '@ai-sdk/provider': 3.0.8
+      '@ai-sdk/provider-utils': 4.0.15(zod@4.3.6)
+      '@vercel/oidc': 3.1.0
+      zod: 4.3.6
+
+  '@ai-sdk/gateway@3.0.50(zod@4.1.11)':
     dependencies:
       '@ai-sdk/provider': 3.0.8
       '@ai-sdk/provider-utils': 4.0.15(zod@4.1.11)
@@ -8658,7 +8680,7 @@ snapshots:
       zod: 4.1.11
     optional: true
 
-  '@ai-sdk/gateway@3.0.47(zod@4.3.6)':
+  '@ai-sdk/gateway@3.0.50(zod@4.3.6)':
     dependencies:
       '@ai-sdk/provider': 3.0.8
       '@ai-sdk/provider-utils': 4.0.15(zod@4.3.6)
@@ -12044,7 +12066,7 @@ snapshots:
 
   '@vercel/queue@0.0.0-alpha.36':
     dependencies:
-      '@vercel/oidc': 3.0.5
+      '@vercel/oidc': 3.2.0
       mixpart: 0.0.5-alpha.1
 
   '@vitejs/plugin-react@5.1.4(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.46.0))':
@@ -12229,7 +12251,7 @@ snapshots:
       zod: 4.1.11
     optionalDependencies:
       '@ai-sdk/anthropic': 3.0.44(zod@4.1.11)
-      '@ai-sdk/gateway': 3.0.47(zod@4.1.11)
+      '@ai-sdk/gateway': 3.0.50(zod@4.1.11)
       '@ai-sdk/google': 3.0.29(zod@4.1.11)
       '@ai-sdk/openai': 3.0.29(zod@4.1.11)
       '@ai-sdk/xai': 3.0.57(zod@4.1.11)
