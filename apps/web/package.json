@@ -19,7 +19,7 @@
     "@ai-sdk/gateway": "^3.0.47",
     "@ai-sdk/openai": "^3.0.29",
     "@ai-sdk/provider": "^3.0.8",
-    "@ai-sdk/react": "^3.0.89",
+    "@ai-sdk/react": "^3.0.93",
     "@bprogress/next": "^3.2.12",
     "@browser-ai/core": "^2.1.1",
     "@domainstack/analytics": "workspace:*",
