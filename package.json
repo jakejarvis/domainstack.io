@@ -29,7 +29,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.4.2",
     "shx": "^0.4.0",
-    "turbo": "^2.8.9",
+    "turbo": "^2.8.10",
     "typescript": "5.9.3"
   },
   "engines": {

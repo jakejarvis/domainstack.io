@@ -4,8 +4,8 @@ packages:
 
 catalog:
   '@tabler/icons-react': ^3.36.1
-  '@types/node': 25.2.3
-  motion: ^12.34.1
+  '@types/node': 25.3.0
+  motion: ^12.34.2
   sonner: ^2.0.7
   vitest: ^4.0.18
   zod: ^4.3.6

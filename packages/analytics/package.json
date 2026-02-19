@@ -14,15 +14,14 @@
     "format": "biome format --write"
   },
   "dependencies": {
-    "posthog-js": "^1.347.2",
-    "posthog-node": "^5.24.15",
+    "posthog-js": "^1.351.3",
+    "posthog-node": "^5.24.17",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@types/node": "catalog:",
-    "@types/react": "19.2.14",
-    "@types/uuid": "^10.0.0"
+    "@types/react": "19.2.14"
   },
   "peerDependencies": {
     "next": ">=14",

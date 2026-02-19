@@ -151,6 +151,7 @@ export function ToolsDropdown({ domain, enabled = true }: ToolsDropdownProps) {
     <DropdownMenu>
       <Tooltip>
         <DropdownMenuTrigger
+          nativeButton={false}
           render={
             <TooltipTrigger
               render={

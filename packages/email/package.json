@@ -17,7 +17,7 @@
   "dependencies": {
     "@domainstack/constants": "workspace:*",
     "@domainstack/logger": "workspace:*",
-    "@react-email/components": "^1.0.7",
+    "@react-email/components": "^1.0.8",
     "resend": "^6.9.2"
   },
   "devDependencies": {

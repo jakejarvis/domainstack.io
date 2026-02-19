@@ -183,9 +183,6 @@
   ::selection {
     @apply bg-selection text-selection-foreground;
   }
-  html {
-    @apply overscroll-y-none;
-  }
   body {
     font-synthesis-weight: none;
     text-rendering: optimizeLegibility;
