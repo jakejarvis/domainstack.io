@@ -3,29 +3,33 @@ import { HttpResponse, http } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/mocks/server";
 
-// Mock DNS for domain resolution
+// Mock DNS for domain resolution (must override both DoH providers
+// since resolveHostIps picks provider order by domain hash)
 function mockDns(domain: string) {
+  const handler = ({ request }: { request: Request }) => {
+    const url = new URL(request.url);
+    const name = url.searchParams.get("name");
+
+    if (name === domain) {
+      return HttpResponse.json({
+        Status: 0,
+        Answer: [
+          {
+            name: `${domain}.`,
+            type: 1,
+            TTL: 60,
+            data: "1.2.3.4",
+          },
+        ],
+      });
+    }
+
+    return HttpResponse.json({ Status: 0, Answer: [] });
+  };
+
   server.use(
-    http.get("https://cloudflare-dns.com/dns-query", ({ request }) => {
-      const url = new URL(request.url);
-      const name = url.searchParams.get("name");
-
-      if (name === domain) {
-        return HttpResponse.json({
-          Status: 0,
-          Answer: [
-            {
-              name: `${domain}.`,
-              type: 1,
-              TTL: 60,
-              data: "1.2.3.4",
-            },
-          ],
-        });
-      }
-
-      return HttpResponse.json({ Status: 0, Answer: [] });
-    }),
+    http.get("https://cloudflare-dns.com/dns-query", handler),
+    http.get("https://dns.google/resolve", handler),
   );
 }
 
