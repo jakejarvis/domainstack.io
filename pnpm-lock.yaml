@@ -9,12 +9,21 @@ catalogs:
     '@tabler/icons-react':
       specifier: ^3.36.1
       version: 3.36.1
+    '@types/node':
+      specifier: 25.2.3
+      version: 25.2.3
     motion:
       specifier: ^12.34.1
       version: 12.34.1
     sonner:
       specifier: ^2.0.7
       version: 2.0.7
+    vitest:
+      specifier: ^4.0.18
+      version: 4.0.18
+    zod:
+      specifier: ^4.3.6
+      version: 4.3.6
 
 overrides:
   '@types/react': 19.2.14
@@ -774,8 +783,8 @@ importers:
         specifier: 19.2.4
         version: 19.2.4(react@19.2.4)
       tailwind-merge:
-        specifier: ^3.4.1
-        version: 3.4.1
+        specifier: ^3.5.0
+        version: 3.5.0
     devDependencies:
       '@domainstack/typescript-config':
         specifier: workspace:*
@@ -7978,6 +7987,9 @@ packages:
   tailwind-merge@3.4.1:
     resolution: {integrity: sha512-2OA0rFqWOkITEAOFWSBSApYkDeH9t2B3XSJuI4YztKBzK3mX0737A2qtxDZ7xkw9Zfh0bWl+r34sF3HXV+Ig7Q==}
 
+  tailwind-merge@3.5.0:
+    resolution: {integrity: sha512-I8K9wewnVDkL1NTGoqWmVEIlUcB9gFriAEkXkfCjX5ib8ezGxtR3xD7iZIxrfArjEsH7F1CHD4RFUtxefdqV/A==}
+
   tailwindcss@4.1.18:
     resolution: {integrity: sha512-4+Z+0yiYyEtUVCScyfHCxOYP06L5Ne+JiHhY2IjR2KWMIWhJOYZKLSGZaP5HkZ8+bY0cxfzwDE5uOmzFXyIwxw==}
 
@@ -10351,7 +10363,7 @@ snapshots:
       react-hook-form: 7.70.0(react@19.2.4)
       react-timeago: 8.3.0(react@19.2.4)
       recharts: 3.7.0(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react-is@17.0.2)(react@19.2.4)(redux@5.0.1)
-      tailwind-merge: 3.4.1
+      tailwind-merge: 3.5.0
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
@@ -16430,6 +16442,8 @@ snapshots:
   tagged-tag@1.0.0: {}
 
   tailwind-merge@3.4.1: {}
+
+  tailwind-merge@3.5.0: {}
 
   tailwindcss@4.1.18: {}
 
