@@ -2,7 +2,7 @@
 <a href="https://domainstack.io"><img width="72" height="72" alt="Domainstack" src="https://github.com/user-attachments/assets/d76429cc-56cb-4859-bb41-f52131f093e9" /></a>
 </p>
 <p align="center">
-<a href="https://domainstack.io"><strong>Domainstack</strong></a>: Domain Intelligence Made Easy
+<a href="https://domainstack.io"><strong>Domainstack</strong></a> — Domain Intelligence Made Easy
 </p>
 
 ## Features
@@ -21,7 +21,7 @@
 - **Reliable backend**: SWR caching with cron-based cache warming.
 
 <p align="center">
-<a href="https://domainstack.io/github.com"><img width="600" height="315" alt="og" src="https://github.com/user-attachments/assets/4f327128-df7c-4b19-8648-cb7c85ac95b1" /></a>
+<a href="https://domainstack.io"><img width="1149" height="552" alt="Screenshot 2026-02-21 at 11 16 04 AM" src="https://github.com/user-attachments/assets/15754f3d-82d1-4b8d-9b13-616c3ab9dd53" /></a>
 </p>
 
 ## Tech Stack
