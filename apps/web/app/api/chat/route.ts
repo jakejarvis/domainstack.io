@@ -48,7 +48,7 @@ const chatRequestSchema = z.object({
       z
         .object({
           id: z.string(),
-          role: z.enum(["user", "assistant", "system"]),
+          role: z.enum(["user", "assistant"]),
           parts: z.array(
             z.union([
               z.object({
