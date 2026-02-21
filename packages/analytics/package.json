@@ -14,7 +14,7 @@
     "format": "biome format --write"
   },
   "dependencies": {
-    "posthog-js": "^1.351.3",
+    "posthog-js": "^1.352.0",
     "posthog-node": "^5.24.17",
     "uuid": "^13.0.0"
   },

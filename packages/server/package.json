@@ -23,7 +23,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@domainstack/blob": "workspace:*",
     "@domainstack/constants": "workspace:*",
     "@domainstack/db": "workspace:*",
     "@domainstack/image": "workspace:*",

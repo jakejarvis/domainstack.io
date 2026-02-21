@@ -21,12 +21,11 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@domainstack/analytics": "workspace:*",
     "@domainstack/db": "workspace:*",
     "@domainstack/email": "workspace:*",
     "@domainstack/logger": "workspace:*",
     "@polar-sh/better-auth": "^1.8.1",
-    "@polar-sh/sdk": "^0.43.1",
+    "@polar-sh/sdk": "^0.42.5",
     "date-fns": "^4.1.0"
   },
   "devDependencies": {

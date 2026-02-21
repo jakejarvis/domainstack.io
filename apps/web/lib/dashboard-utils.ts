@@ -36,7 +36,7 @@ const VALID_HEALTH_FILTERS: readonly HealthFilter[] = [
 /**
  * Determine health status based on expiration date
  */
-export function getHealthStatus(
+function getHealthStatus(
   expirationDate: Date | null,
   verified: boolean,
   now: Date,

@@ -27,7 +27,7 @@
     "clean": "shx rm -rf .turbo \"apps/*/.turbo\" \"apps/*/node_modules\" \"apps/*/*.tsbuildinfo\" apps/web/.next \"packages/*/.turbo\" \"packages/*/node_modules\" \"packages/*/*.tsbuildinfo\" node_modules pnpm-lock.yaml"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.2",
+    "@biomejs/biome": "2.4.4",
     "shx": "^0.4.0",
     "turbo": "^2.8.10",
     "typescript": "5.9.3"

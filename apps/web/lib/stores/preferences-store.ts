@@ -23,7 +23,7 @@ import {
  */
 export type AiModePreference = "cloud" | "local" | "auto";
 
-export const AI_MODE_OPTIONS = ["cloud", "local", "auto"] as const;
+const AI_MODE_OPTIONS = ["cloud", "local", "auto"] as const;
 
 interface PreferencesState {
   // Dashboard preferences

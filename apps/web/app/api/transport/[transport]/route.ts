@@ -81,10 +81,14 @@ function createMcpHandlerWithContext(request: Request) {
       server.registerTool(
         "domain_registration",
         {
-          title: "domain_registration",
+          title: "Registration",
           description:
             "Get WHOIS/RDAP registration data for a domain including registrar, creation date, expiration date, nameservers, and registrant information",
           inputSchema: domainSchema,
+          annotations: {
+            readOnlyHint: true,
+            idempotentHint: true,
+          },
         },
         async ({ domain }) => {
           const result = await trpc.domain.getRegistration({ domain });
@@ -98,10 +102,14 @@ function createMcpHandlerWithContext(request: Request) {
       server.registerTool(
         "domain_dns",
         {
-          title: "domain_dns",
+          title: "DNS Records",
           description:
             "Get DNS records for a domain including A, AAAA, CNAME, MX, TXT, NS, and SOA records",
           inputSchema: domainSchema,
+          annotations: {
+            readOnlyHint: true,
+            idempotentHint: true,
+          },
         },
         async ({ domain }) => {
           const result = await trpc.domain.getDnsRecords({ domain });
@@ -115,10 +123,14 @@ function createMcpHandlerWithContext(request: Request) {
       server.registerTool(
         "domain_hosting",
         {
-          title: "domain_hosting",
+          title: "Hosting",
           description:
             "Detect hosting, DNS, CDN, and email providers for a domain by analyzing DNS records and HTTP headers",
           inputSchema: domainSchema,
+          annotations: {
+            readOnlyHint: true,
+            idempotentHint: true,
+          },
         },
         async ({ domain }) => {
           const result = await trpc.domain.getHosting({ domain });
@@ -132,10 +144,14 @@ function createMcpHandlerWithContext(request: Request) {
       server.registerTool(
         "domain_certificates",
         {
-          title: "domain_certificates",
+          title: "Certificates",
           description:
             "Get SSL/TLS certificate information for a domain including issuer, validity dates, and certificate chain",
           inputSchema: domainSchema,
+          annotations: {
+            readOnlyHint: true,
+            idempotentHint: true,
+          },
         },
         async ({ domain }) => {
           const result = await trpc.domain.getCertificates({ domain });
@@ -149,10 +165,14 @@ function createMcpHandlerWithContext(request: Request) {
       server.registerTool(
         "domain_headers",
         {
-          title: "domain_headers",
+          title: "Headers",
           description:
             "Get HTTP response headers for a domain including security headers, caching headers, and server information",
           inputSchema: domainSchema,
+          annotations: {
+            readOnlyHint: true,
+            idempotentHint: true,
+          },
         },
         async ({ domain }) => {
           const result = await trpc.domain.getHeaders({ domain });
@@ -166,10 +186,14 @@ function createMcpHandlerWithContext(request: Request) {
       server.registerTool(
         "domain_seo",
         {
-          title: "domain_seo",
+          title: "SEO",
           description:
             "Get SEO metadata for a domain including title, description, Open Graph tags, Twitter cards, and robots.txt rules",
           inputSchema: domainSchema,
+          annotations: {
+            readOnlyHint: true,
+            idempotentHint: true,
+          },
         },
         async ({ domain }) => {
           const result = await trpc.domain.getSeo({ domain });
@@ -183,12 +207,16 @@ function createMcpHandlerWithContext(request: Request) {
       server.registerTool(
         "domain_report",
         {
-          title: "domain_report",
+          title: "Full Report",
           description:
             "Get a comprehensive domain report combining multiple data sources. Returns registration, DNS, hosting, certificates, headers, and SEO data in a single call. Use the sections parameter to request only specific data.",
           inputSchema: domainSchema.extend({
             sections: sectionsSchema,
           }),
+          annotations: {
+            readOnlyHint: true,
+            idempotentHint: true,
+          },
         },
         async ({ domain, sections }) => {
           // Default to all sections if not specified
