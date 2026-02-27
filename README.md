@@ -4,6 +4,12 @@
 <p align="center">
 <a href="https://domainstack.io"><strong>Domainstack</strong></a> — Domain Intelligence Made Easy
 </p>
+<br/>
+<p align="center">
+<a href="https://vercel.com/oss">
+  <img alt="Vercel OSS Program" src="https://vercel.com/oss/program-badge.svg" />
+</a>
+</p>
 
 ## Features
 
