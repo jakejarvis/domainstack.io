@@ -25,13 +25,8 @@ import { type BetterAuthOptions, betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { getSessionCookie } from "better-auth/cookies";
 import { nextCookies, toNextJsHandler } from "better-auth/next-js";
-import {
-  ACCOUNT_LINKING_CONFIG,
-  buildOAuthProviders,
-  createRedisStorage,
-  SESSION_CONFIG,
-  validateOAuthCredentialPair,
-} from "./index";
+import { buildOAuthProviders, validateOAuthCredentialPair } from "./providers";
+import { createRedisStorage } from "./storage";
 
 const logger = createLogger({ source: "auth" });
 
@@ -121,6 +116,7 @@ const polarClient = process.env.POLAR_ACCESS_TOKEN
   : null;
 
 export const auth = betterAuth({
+  appName: "Domainstack",
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,
@@ -190,18 +186,36 @@ export const auth = betterAuth({
     },
   },
   socialProviders,
-  session: SESSION_CONFIG,
+  session: {
+    expiresIn: 60 * 60 * 24 * 7, // 7 days
+    updateAge: 60 * 60 * 24, // 1 day
+    storeSessionInDatabase: true,
+    cookieCache: {
+      enabled: true,
+      maxAge: 60 * 5, // 5 minutes
+      // encrypt cookie payload so session data is not readable if intercepted:
+      strategy: "jwe",
+    },
+  },
+  verification: {
+    storeInDatabase: true,
+  },
   rateLimit: {
     storage: redis ? "secondary-storage" : "memory",
   },
   account: {
     accountLinking: {
-      ...ACCOUNT_LINKING_CONFIG,
+      enabled: true,
       trustedProviders: enabledProviders,
     },
   },
   experimental: {
     joins: true,
+  },
+  advanced: {
+    ipAddress: {
+      ipAddressHeaders: ["x-vercel-forwarded-for"],
+    },
   },
   plugins: [
     ...(polarClient
