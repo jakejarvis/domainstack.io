@@ -20,12 +20,13 @@
     "format": "biome format --write"
   },
   "dependencies": {
+    "@better-auth/infra": "^0.1.8",
     "@domainstack/db": "workspace:*",
     "@domainstack/email": "workspace:*",
     "@domainstack/logger": "workspace:*",
     "@domainstack/polar": "workspace:*",
     "@domainstack/redis": "workspace:*",
-    "better-auth": "^1.4.18"
+    "better-auth": "^1.5.0"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",

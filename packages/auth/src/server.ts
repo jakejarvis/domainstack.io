@@ -1,3 +1,4 @@
+import { dash } from "@better-auth/infra";
 import { db } from "@domainstack/db/client";
 import { createSubscription } from "@domainstack/db/queries";
 import * as schema from "@domainstack/db/schema";
@@ -230,10 +231,11 @@ export const auth = betterAuth({
           }),
         ]
       : []),
+    dash(),
     // must be last: https://www.better-auth.com/docs/integrations/next#server-action-cookies
     nextCookies(),
   ],
-} satisfies BetterAuthOptions);
+} as BetterAuthOptions);
 
 export type Session = typeof auth.$Infer.Session;
 

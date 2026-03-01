@@ -1,3 +1,4 @@
+import { sentinelClient } from "@better-auth/infra/client";
 import { polarClient } from "@domainstack/polar/better-auth/client";
 import { createAuthClient } from "better-auth/react";
 
@@ -7,7 +8,7 @@ import { createAuthClient } from "better-auth/react";
  */
 export const authClient = createAuthClient({
   baseURL: process.env.NEXT_PUBLIC_BASE_URL,
-  plugins: [polarClient()],
+  plugins: [polarClient(), sentinelClient()],
 });
 
 // Re-export individual methods for convenience

@@ -7,6 +7,7 @@
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**"],
       "env": [
+        "BETTER_AUTH_API_KEY",
         "BETTER_AUTH_SECRET",
         "BLOB_READ_WRITE_TOKEN",
         "BLOB_SIGNING_SECRET",
