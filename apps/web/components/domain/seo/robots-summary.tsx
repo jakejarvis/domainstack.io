@@ -511,6 +511,7 @@ function GroupContent({
       <div className="flex flex-col">
         {rules.map((r, i) => (
           <RuleRow
+            // biome-ignore lint/suspicious/noArrayIndexKey: rules can have duplicate type+value
             key={`r-${r.type}-${r.value}-all-${i}`}
             rule={r}
             query={query}
@@ -535,6 +536,7 @@ function GroupContent({
       ) : null}
       {existing.map((r, i) => (
         <RuleRow
+          // biome-ignore lint/suspicious/noArrayIndexKey: rules can have duplicate type+value
           key={`r-${r.type}-${r.value}-existing-${i}`}
           rule={r}
           query={query}
@@ -553,6 +555,7 @@ function GroupContent({
         >
           {added.map((r, i) => (
             <RuleRow
+              // biome-ignore lint/suspicious/noArrayIndexKey: rules can have duplicate type+value
               key={`r-${r.type}-${r.value}-added-${i}`}
               rule={r}
               query={query}

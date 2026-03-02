@@ -80,8 +80,8 @@ function RegistrationChangeEmail({
                   <>
                     <strong>Previous:</strong>
                     <br />
-                    {changes.previousNameservers.map((ns, idx) => (
-                      <span key={`prev-${idx}-${ns.host}`}>
+                    {changes.previousNameservers.map((ns) => (
+                      <span key={`prev-${ns.host}`}>
                         • {ns.host}
                         <br />
                       </span>
@@ -93,8 +93,8 @@ function RegistrationChangeEmail({
                 <>
                   <strong>New:</strong>
                   <br />
-                  {changes.newNameservers.map((ns, idx) => (
-                    <span key={`new-${idx}-${ns.host}`}>
+                  {changes.newNameservers.map((ns) => (
+                    <span key={`new-${ns.host}`}>
                       • {ns.host}
                       <br />
                     </span>

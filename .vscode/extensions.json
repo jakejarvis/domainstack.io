@@ -3,7 +3,6 @@
     "biomejs.biome",
     "bradlc.vscode-tailwindcss",
     "vitest.explorer",
-    "webpro.vscode-knip",
     "vercel.turbo-vsc"
   ]
 }

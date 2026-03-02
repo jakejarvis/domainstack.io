@@ -14,8 +14,8 @@
     "format": "biome format --write"
   },
   "dependencies": {
-    "posthog-js": "^1.356.1",
-    "posthog-node": "^5.26.0",
+    "posthog-js": "^1.357.0",
+    "posthog-node": "^5.26.1",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
@@ -24,7 +24,7 @@
     "@types/react": "19.2.14"
   },
   "peerDependencies": {
-    "next": ">=14",
+    "next": ">=16",
     "react": ">=18"
   }
 }

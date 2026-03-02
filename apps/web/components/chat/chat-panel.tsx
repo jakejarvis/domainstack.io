@@ -144,7 +144,10 @@ export function ChatPanel({
                     {message.parts.map((part, index) => {
                       if (part.type === "text") {
                         return (
-                          <MessageResponse key={`${message.id}-${index}`}>
+                          <MessageResponse
+                            // biome-ignore lint/suspicious/noArrayIndexKey: message parts have no stable IDs
+                            key={`${message.id}-${index}`}
+                          >
                             {part.text}
                           </MessageResponse>
                         );
@@ -157,6 +160,7 @@ export function ChatPanel({
                         if (showReasoning) {
                           return (
                             <Reasoning
+                              // biome-ignore lint/suspicious/noArrayIndexKey: message parts have no stable IDs
                               key={`${message.id}-${index}`}
                               className="w-full"
                               isStreaming={isStreaming}
@@ -169,6 +173,7 @@ export function ChatPanel({
 
                         return isStreaming ? (
                           <div
+                            // biome-ignore lint/suspicious/noArrayIndexKey: message parts have no stable IDs
                             key={`${message.id}-${index}`}
                             className="flex items-center gap-2 text-[13px] text-muted-foreground"
                           >
@@ -180,7 +185,10 @@ export function ChatPanel({
                       if (part.type.startsWith("tool-") && showToolCalls) {
                         const toolPart = part as ToolUIPart;
                         return (
-                          <Tool key={`${message.id}-${index}`}>
+                          <Tool
+                            // biome-ignore lint/suspicious/noArrayIndexKey: message parts have no stable IDs
+                            key={`${message.id}-${index}`}
+                          >
                             <ToolHeader
                               title={getToolStatusMessage(toolPart.type)}
                               type={toolPart.type}

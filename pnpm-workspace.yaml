@@ -3,9 +3,9 @@ packages:
   - packages/*
 
 catalog:
-  '@tabler/icons-react': ^3.37.1
+  '@tabler/icons-react': ^3.38.0
   '@types/node': 25.3.3
-  motion: ^12.34.3
+  motion: ^12.34.4
   sonner: ^2.0.7
   vitest: ^4.0.18
   zod: ^4.3.6

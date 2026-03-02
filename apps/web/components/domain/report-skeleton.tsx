@@ -64,11 +64,18 @@ function SectionNavSkeleton() {
       >
         {/* Skeleton tabs - horizontally scrollable on mobile, centered on desktop */}
         <div className="no-scrollbar flex flex-1 items-center gap-1 overflow-x-auto px-1 md:justify-center">
-          {[125, 140, 130, 145, 135, 130].map((width, index) => (
+          {[
+            { key: "overview", w: 125 },
+            { key: "dns", w: 140 },
+            { key: "ssl", w: 130 },
+            { key: "whois", w: 145 },
+            { key: "headers", w: 135 },
+            { key: "seo", w: 130 },
+          ].map(({ key, w }) => (
             <Skeleton
-              key={`tab-${index}-${width}`}
+              key={key}
               className="h-8 shrink-0 rounded-md"
-              style={{ width }}
+              style={{ width: w }}
             />
           ))}
         </div>

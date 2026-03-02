@@ -52,15 +52,17 @@ export function KeyValueSkeletonList({
 }) {
   return (
     <>
-      {Array.from({ length: count }, (_, i) => (
-        <KeyValueSkeleton
-          key={`${keyPrefix}-${i + 1}`}
-          widthClass={widthClass}
-          withLeading={withLeading}
-          withTrailing={withTrailing}
-          withSuffix={withSuffix}
-        />
-      ))}
+      {Array.from({ length: count }, (_, i) => `${keyPrefix}-${i + 1}`).map(
+        (key) => (
+          <KeyValueSkeleton
+            key={key}
+            widthClass={widthClass}
+            withLeading={withLeading}
+            withTrailing={withTrailing}
+            withSuffix={withSuffix}
+          />
+        ),
+      )}
     </>
   );
 }
