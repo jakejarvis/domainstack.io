@@ -575,10 +575,10 @@ importers:
         version: link:../logger
       '@polar-sh/better-auth':
         specifier: ^1.8.1
-        version: 1.8.1(950669b6aa316931c89d381a9ad1ec01)
+        version: 1.8.1(11dd0df8957e8746a0d573ac1e8326bf)
       '@polar-sh/sdk':
-        specifier: ^0.42.1
-        version: 0.42.5
+        specifier: ^0.46.0
+        version: 0.46.0
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -2543,6 +2543,9 @@ packages:
 
   '@polar-sh/sdk@0.42.5':
     resolution: {integrity: sha512-GzC3/ElCtMO55+KeXwFTANlydZzw5qI3DU/F9vAFIsUKuegSmh+Xu03KCL+ct9/imJOvLUQucYhUSsNKqo2j2Q==}
+
+  '@polar-sh/sdk@0.46.0':
+    resolution: {integrity: sha512-zrM03aFLSUyNzoh28zTi/DGWXtp4saIr9L2lQnAhuaOXesZ584tJZJxYlzUTzo1XWCwvFYha6IWnPQBnixb80w==}
 
   '@polar-sh/ui@0.1.2':
     resolution: {integrity: sha512-YTmMB2lr+PplMTDZnTs0Crgu0KNBKyQcSX4N0FYXSlo1Q6e9IKs4hwzEcqNUv3eHS4BxGO1SvxxNjuSK+il49Q==}
@@ -10727,10 +10730,10 @@ snapshots:
   '@pkgjs/parseargs@0.11.0':
     optional: true
 
-  '@polar-sh/better-auth@1.8.1(950669b6aa316931c89d381a9ad1ec01)':
+  '@polar-sh/better-auth@1.8.1(11dd0df8957e8746a0d573ac1e8326bf)':
     dependencies:
       '@polar-sh/checkout': 0.2.0(@stripe/react-stripe-js@4.0.2(@stripe/stripe-js@7.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@stripe/stripe-js@7.9.0)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react-is@17.0.2)(react@19.2.4)(redux@5.0.1)
-      '@polar-sh/sdk': 0.42.5
+      '@polar-sh/sdk': 0.46.0
       better-auth: 1.5.1(@prisma/client@7.4.2(prisma@7.4.2(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3))(drizzle-kit@0.31.9)(drizzle-orm@0.45.1(@electric-sql/pglite@0.3.15)(@opentelemetry/api@1.9.0)(@prisma/client@7.4.2(prisma@7.4.2(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3))(@types/pg@8.18.0)(@upstash/redis@1.36.3)(kysely@0.28.11)(mysql2@3.15.3)(pg@8.19.0)(postgres@3.4.7)(prisma@7.4.2(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)))(mongodb@7.1.0(socks@2.8.7))(mysql2@3.15.3)(next@16.1.6(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(pg@8.19.0)(prisma@7.4.2(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vitest@4.0.18)
       zod: 4.3.6
     transitivePeerDependencies:
@@ -10762,6 +10765,11 @@ snapshots:
       - redux
 
   '@polar-sh/sdk@0.42.5':
+    dependencies:
+      standardwebhooks: 1.0.0
+      zod: 4.3.6
+
+  '@polar-sh/sdk@0.46.0':
     dependencies:
       standardwebhooks: 1.0.0
       zod: 4.3.6
