@@ -16,7 +16,7 @@
     "workflow": "workflow inspect runs --web"
   },
   "dependencies": {
-    "@ai-sdk/gateway": "^3.0.59",
+    "@ai-sdk/gateway": "^3.0.61",
     "@ai-sdk/openai": "^3.0.37",
     "@ai-sdk/provider": "^3.0.8",
     "@ai-sdk/react": "^3.0.107",
