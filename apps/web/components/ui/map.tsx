@@ -940,7 +940,7 @@ function MapRoute({
   }, [isLoaded, map, coordinates, sourceId]);
 
   useEffect(() => {
-    if (!isLoaded || !map || !map.getLayer(layerId)) return;
+    if (!isLoaded || !map?.getLayer(layerId)) return;
 
     map.setPaintProperty(layerId, "line-color", color);
     map.setPaintProperty(layerId, "line-width", width);
@@ -954,14 +954,14 @@ function MapRoute({
 }
 
 export {
+  MapControls,
   MapInstance,
-  useMap,
   MapMarker,
   MapMarkerContent,
+  MapMarkerLabel,
   MapMarkerPopup,
   MapMarkerTooltip,
-  MapMarkerLabel,
   MapPopup,
-  MapControls,
   MapRoute,
+  useMap,
 };

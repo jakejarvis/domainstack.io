@@ -16,8 +16,8 @@
   },
   "dependencies": {
     "@domainstack/constants": "workspace:*",
-    "@react-email/components": "^1.0.8",
-    "resend": "^6.9.3"
+    "@react-email/components": "^1.0.12",
+    "resend": "^6.11.0"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",

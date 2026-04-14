@@ -35,7 +35,7 @@
     "@vercel/edge-config": "^1.4.3",
     "cheerio": "^1.2.0",
     "ipaddr.js": "^2.3.0",
-    "lru-cache": "^11.2.6",
+    "lru-cache": "^11.3.5",
     "rdapper": "^0.13.0"
   },
   "peerDependencies": {
@@ -46,7 +46,7 @@
     "@domainstack/typescript-config": "workspace:*",
     "@types/node": "catalog:",
     "@types/react": "19.2.14",
-    "msw": "^2.12.10",
+    "msw": "^2.13.3",
     "vitest": "catalog:",
     "zod": "catalog:"
   }

@@ -19,18 +19,41 @@ type SubscriptionUncanceledPayload = Parameters<
 >[0];
 
 // Hoist mock functions so they're available to vi.mock factory
-const { updateUserTier, setSubscriptionEndsAt, clearSubscriptionEndsAt } =
-  vi.hoisted(() => ({
+const {
+  updateUserTier,
+  setSubscriptionEndsAt,
+  clearSubscriptionEndsAt,
+  createMockLogger,
+} = vi.hoisted(() => {
+  const createMockLogger = () => ({
+    log: vi.fn(),
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    fatal: vi.fn(),
+    child: vi.fn(() => createMockLogger()),
+  });
+
+  return {
     updateUserTier: vi.fn(),
     setSubscriptionEndsAt: vi.fn(),
     clearSubscriptionEndsAt: vi.fn(),
-  }));
+    createMockLogger,
+  };
+});
 
 // Mock the dependencies - export functions directly (not via repo objects)
 vi.mock("@domainstack/db/queries", () => ({
   updateUserTier,
   setSubscriptionEndsAt,
   clearSubscriptionEndsAt,
+}));
+
+vi.mock("@domainstack/logger", () => ({
+  logger: createMockLogger(),
+  createLogger: vi.fn(() => createMockLogger()),
 }));
 
 vi.mock("./downgrade", () => ({

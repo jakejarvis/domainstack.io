@@ -125,7 +125,7 @@ export async function validateCalendarFeedToken(
     .where(eq(calendarFeeds.token, token))
     .limit(1);
 
-  if (!feed || !feed.enabled) {
+  if (!feed?.enabled) {
     return { valid: false, reason: "invalid" };
   }
 

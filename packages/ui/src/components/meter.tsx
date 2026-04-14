@@ -27,4 +27,4 @@ const MeterIndicator = MeterPrimitive.Indicator;
 const MeterLabel = MeterPrimitive.Label;
 const MeterValue = MeterPrimitive.Value;
 
-export { Meter, MeterTrack, MeterIndicator, MeterLabel, MeterValue };
+export { Meter, MeterIndicator, MeterLabel, MeterTrack, MeterValue };

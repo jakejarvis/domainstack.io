@@ -39,5 +39,5 @@ function Icon({ variant, size, className, ...props }: IconProps) {
   );
 }
 
-export { Icon, iconVariants };
 export type { IconProps };
+export { Icon, iconVariants };

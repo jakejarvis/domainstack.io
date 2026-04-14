@@ -30,14 +30,24 @@ export function useNotificationsData({
   const queryClient = useQueryClient();
 
   // Query keys for cache manipulation
-  const inboxListQueryKey = trpc.notifications.list.infiniteQueryOptions({
-    limit: PAGE_SIZE,
-    filter: "unread",
-  }).queryKey;
-  const archiveListQueryKey = trpc.notifications.list.infiniteQueryOptions({
-    limit: PAGE_SIZE,
-    filter: "read",
-  }).queryKey;
+  const inboxListQueryKey = trpc.notifications.list.infiniteQueryOptions(
+    {
+      limit: PAGE_SIZE,
+      filter: "unread",
+    },
+    {
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+    },
+  ).queryKey;
+  const archiveListQueryKey = trpc.notifications.list.infiniteQueryOptions(
+    {
+      limit: PAGE_SIZE,
+      filter: "read",
+    },
+    {
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+    },
+  ).queryKey;
   const countQueryKey = trpc.notifications.unreadCount.queryKey();
 
   // Mark single notification as read
@@ -187,16 +197,20 @@ export function useNotificationsData({
     isLoading,
     isError,
   } = useInfiniteQuery({
-    ...trpc.notifications.list.infiniteQueryOptions({
-      limit: PAGE_SIZE,
-      filter,
-    }),
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
-    refetchOnWindowFocus: true,
-    // Always refetch on mount/access to ensure fresh data
-    staleTime: 0,
-    // Base UI popover keeps content mounted for close animations; gate fetching on open
-    enabled,
+    ...trpc.notifications.list.infiniteQueryOptions(
+      {
+        limit: PAGE_SIZE,
+        filter,
+      },
+      {
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
+        refetchOnWindowFocus: true,
+        // Always refetch on mount/access to ensure fresh data
+        staleTime: 0,
+        // Base UI popover keeps content mounted for close animations; gate fetching on open
+        enabled,
+      },
+    ),
   });
 
   const notifications = data?.pages.flatMap((page) => page.items) ?? [];

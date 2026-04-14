@@ -39,12 +39,12 @@ function Modal({ onOpenChange, ...props }: ModalProps) {
 
 export {
   Modal,
-  ModalContent,
   ModalClose,
-  ModalOverlay,
-  ModalPortal,
-  ModalHeader,
-  ModalTitle,
+  ModalContent,
   ModalDescription,
   ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  ModalPortal,
+  ModalTitle,
 };

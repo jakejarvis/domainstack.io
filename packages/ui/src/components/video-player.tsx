@@ -128,13 +128,13 @@ function VideoPlayerContent({
 
 export {
   VideoPlayer,
+  VideoPlayerContent,
   VideoPlayerControlBar,
-  VideoPlayerTimeRange,
-  VideoPlayerTimeDisplay,
-  VideoPlayerVolumeRange,
+  VideoPlayerMuteButton,
   VideoPlayerPlayButton,
   VideoPlayerSeekBackwardButton,
   VideoPlayerSeekForwardButton,
-  VideoPlayerMuteButton,
-  VideoPlayerContent,
+  VideoPlayerTimeDisplay,
+  VideoPlayerTimeRange,
+  VideoPlayerVolumeRange,
 };

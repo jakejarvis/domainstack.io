@@ -254,4 +254,4 @@ export const auth = betterAuth({
 export type Session = typeof auth.$Infer.Session;
 
 // Re-export Next.js utilities for consumers
-export { toNextJsHandler, getSessionCookie };
+export { getSessionCookie, toNextJsHandler };

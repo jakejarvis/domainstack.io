@@ -102,9 +102,9 @@ function PopoverDescription({
 
 export {
   Popover,
-  PopoverTrigger,
   PopoverContent,
+  PopoverDescription,
   PopoverHeader,
   PopoverTitle,
-  PopoverDescription,
+  PopoverTrigger,
 };

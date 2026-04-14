@@ -129,6 +129,6 @@ function ResponsiveTooltipContent({
 
 export {
   ResponsiveTooltip,
-  ResponsiveTooltipTrigger,
   ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
 };
