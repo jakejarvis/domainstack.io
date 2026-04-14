@@ -11,6 +11,7 @@ import {
   MediaTimeRange,
   MediaVolumeRange,
 } from "media-chrome/react";
+
 import { cn } from "../utils";
 
 const variables = {
@@ -25,10 +26,7 @@ const variables = {
   "--media-range-track-background": "var(--border)",
 } as React.CSSProperties;
 
-function VideoPlayer({
-  style,
-  ...props
-}: React.ComponentProps<typeof MediaController>) {
+function VideoPlayer({ style, ...props }: React.ComponentProps<typeof MediaController>) {
   return (
     <MediaController
       style={{
@@ -40,9 +38,7 @@ function VideoPlayer({
   );
 }
 
-function VideoPlayerControlBar(
-  props: React.ComponentProps<typeof MediaControlBar>,
-) {
+function VideoPlayerControlBar(props: React.ComponentProps<typeof MediaControlBar>) {
   return <MediaControlBar {...props} />;
 }
 
@@ -71,13 +67,7 @@ function VideoPlayerPlayButton({
   className,
   ...props
 }: React.ComponentProps<typeof MediaPlayButton>) {
-  return (
-    <MediaPlayButton
-      aria-label="Play"
-      className={cn("p-2.5", className)}
-      {...props}
-    />
-  );
+  return <MediaPlayButton aria-label="Play" className={cn("p-2.5", className)} {...props} />;
 }
 
 function VideoPlayerSeekBackwardButton({
@@ -110,19 +100,10 @@ function VideoPlayerMuteButton({
   className,
   ...props
 }: React.ComponentProps<typeof MediaMuteButton>) {
-  return (
-    <MediaMuteButton
-      aria-label="Mute"
-      className={cn("p-2.5", className)}
-      {...props}
-    />
-  );
+  return <MediaMuteButton aria-label="Mute" className={cn("p-2.5", className)} {...props} />;
 }
 
-function VideoPlayerContent({
-  className,
-  ...props
-}: React.ComponentProps<"video">) {
+function VideoPlayerContent({ className, ...props }: React.ComponentProps<"video">) {
   return <video className={cn("mt-0 mb-0", className)} {...props} />;
 }
 

@@ -17,7 +17,9 @@
     "start": "turbo run start",
     "check-types": "turbo run check-types",
     "lint": "turbo run lint",
-    "format": "turbo run format",
+    "lint:fix": "turbo run lint:fix",
+    "fmt": "turbo run fmt",
+    "fmt:check": "turbo run fmt:check",
     "test": "turbo run test",
     "test:coverage": "turbo run test:coverage",
     "db:generate": "turbo run db:generate",
@@ -27,7 +29,8 @@
     "clean": "shx rm -rf .turbo \"apps/*/.turbo\" \"apps/*/node_modules\" \"apps/*/*.tsbuildinfo\" apps/web/.next \"packages/*/.turbo\" \"packages/*/node_modules\" \"packages/*/*.tsbuildinfo\" node_modules pnpm-lock.yaml"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.12",
+    "oxfmt": "^0.45.0",
+    "oxlint": "^1.60.0",
     "shx": "^0.4.0",
     "turbo": "^2.9.6",
     "typescript": "6.0.2"

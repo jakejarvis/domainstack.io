@@ -10,7 +10,7 @@ type NextImageMockProps = ComponentProps<"img"> & {
   unoptimized?: boolean;
 };
 
-export default function NextImageMock({
+function toImgProps({
   blurDataURL: _blurDataURL,
   fill: _fill,
   loader: _loader,
@@ -19,10 +19,14 @@ export default function NextImageMock({
   quality: _quality,
   unoptimized: _unoptimized,
   ...props
-}: NextImageMockProps) {
-  return createElement("img", props);
+}: NextImageMockProps): ComponentProps<"img"> {
+  return props;
 }
 
-export function getImageProps({ props }: { props: NextImageMockProps }) {
-  return { props };
+export default function NextImageMock(props: NextImageMockProps) {
+  return createElement("img", toImgProps(props));
+}
+
+export function getImageProps(props: NextImageMockProps) {
+  return { props: toImgProps(props) };
 }

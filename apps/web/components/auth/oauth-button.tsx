@@ -1,12 +1,13 @@
 "use client";
 
+import { toast } from "sonner";
+
+import type { OAuthProvider } from "@/lib/oauth";
 import { useAnalytics } from "@domainstack/analytics/client";
 import { signIn } from "@domainstack/auth/client";
 import { Button } from "@domainstack/ui/button";
 import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
-import { toast } from "sonner";
-import type { OAuthProvider } from "@/lib/oauth";
 
 interface OAuthButtonProps {
   /** Provider configuration */
@@ -55,10 +56,7 @@ export function OAuthButton({
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         onLoadingChange?.(false);
-        document.removeEventListener(
-          "visibilitychange",
-          handleVisibilityChange,
-        );
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
       }
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -76,13 +74,10 @@ export function OAuthButton({
       // Only reset on actual error
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       onLoadingChange?.(false);
-      analytics.trackException(
-        err instanceof Error ? err : new Error(String(err)),
-        {
-          provider: provider.id,
-          action: "sign_in",
-        },
-      );
+      analytics.trackException(err instanceof Error ? err : new Error(String(err)), {
+        provider: provider.id,
+        action: "sign_in",
+      });
       toast.error(`Failed to sign in with ${provider.name}.`, {
         description: "Please try again or choose a different provider.",
       });

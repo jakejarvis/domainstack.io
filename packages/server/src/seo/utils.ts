@@ -29,10 +29,7 @@ export function sanitizeText(input: unknown): string {
 /**
  * Resolve a URL against a base URL, returning null for invalid or non-HTTP(S) URLs.
  */
-export function resolveUrlMaybe(
-  value: string | undefined,
-  baseUrl: string,
-): string | null {
+export function resolveUrlMaybe(value: string | undefined, baseUrl: string): string | null {
   if (!value) return null;
   try {
     const u = new URL(value, baseUrl);

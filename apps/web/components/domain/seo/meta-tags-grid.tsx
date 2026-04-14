@@ -1,4 +1,5 @@
 import { IconExternalLink } from "@tabler/icons-react";
+
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { PillCount } from "@/components/domain/pill-count";
@@ -12,7 +13,7 @@ export function MetaTagsGrid({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 text-[11px] text-foreground/70 uppercase leading-none tracking-[0.08em] dark:text-foreground/80">
+      <div className="flex items-center gap-2 text-[11px] leading-none tracking-[0.08em] text-foreground/70 uppercase dark:text-foreground/80">
         <span>Meta Tags</span>
         <PillCount count={count} color="orange" />
       </div>
@@ -25,8 +26,7 @@ export function MetaTagsGrid({
               label={t.label}
               value={String(t.value)}
               suffix={
-                String(t.value).startsWith("http://") ||
-                String(t.value).startsWith("https://") ? (
+                String(t.value).startsWith("http://") || String(t.value).startsWith("https://") ? (
                   <a
                     href={String(t.value)}
                     target="_blank"

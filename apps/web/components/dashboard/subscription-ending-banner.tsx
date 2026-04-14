@@ -1,27 +1,19 @@
-import { PLAN_QUOTAS } from "@domainstack/constants";
 import { IconCalendarDot } from "@tabler/icons-react";
 import { differenceInDays, format, formatDistanceToNow } from "date-fns";
+
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { useSubscription } from "@/hooks/use-subscription";
+import { PLAN_QUOTAS } from "@domainstack/constants";
 
 export function SubscriptionEndingBanner() {
-  const {
-    handleCheckout,
-    isCheckoutLoading,
-    handleCustomerPortal,
-    isCustomerPortalLoading,
-  } = useSubscription();
+  const { handleCheckout, isCheckoutLoading, handleCustomerPortal, isCustomerPortalLoading } =
+    useSubscription();
   const now = useHydratedNow();
   const { subscription, isPro, isSubscriptionLoading } = useSubscription();
 
   // Don't show if subscription unavailable, or no end date
-  if (
-    isSubscriptionLoading ||
-    !isPro ||
-    !subscription ||
-    !subscription.endsAt
-  ) {
+  if (isSubscriptionLoading || !isPro || !subscription || !subscription.endsAt) {
     return null;
   }
 
@@ -46,16 +38,12 @@ export function SubscriptionEndingBanner() {
       variant={isUrgent ? "warning" : "info"}
       icon={IconCalendarDot}
       title={
-        isUrgent
-          ? `Pro subscription ending ${relativeTime}`
-          : "Your Pro subscription is ending"
+        isUrgent ? `Pro subscription ending ${relativeTime}` : "Your Pro subscription is ending"
       }
       description={
         <>
-          Your access continues until{" "}
-          <span className="font-medium">{formattedDate}</span>. After that,
-          domains beyond the free quota of {PLAN_QUOTAS.free} domains will be
-          archived.
+          Your access continues until <span className="font-medium">{formattedDate}</span>. After
+          that, domains beyond the free quota of {PLAN_QUOTAS.free} domains will be archived.
         </>
       }
       action={{

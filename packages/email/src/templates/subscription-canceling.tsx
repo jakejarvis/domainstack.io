@@ -30,9 +30,8 @@ function SubscriptionCancelingEmail({
       <EmailText>Hi {userName},</EmailText>
 
       <EmailText>
-        We&apos;ve received your cancellation request. Your{" "}
-        <strong>Domainstack Pro</strong> subscription will remain active until{" "}
-        <strong>{endDate}</strong>.
+        We&apos;ve received your cancellation request. Your <strong>Domainstack Pro</strong>{" "}
+        subscription will remain active until <strong>{endDate}</strong>.
       </EmailText>
 
       <EmailBox variant="warning">
@@ -51,20 +50,18 @@ function SubscriptionCancelingEmail({
       </EmailBox>
 
       <EmailText>
-        Changed your mind? You can resubscribe anytime before {endDate} to keep
-        your Pro benefits without interruption.
+        Changed your mind? You can resubscribe anytime before {endDate} to keep your Pro benefits
+        without interruption.
       </EmailText>
 
-      <EmailButton href={`${baseUrl}/settings`}>
-        Manage Subscription
-      </EmailButton>
+      <EmailButton href={`${baseUrl}/settings`}>Manage Subscription</EmailButton>
 
       <EmailHr />
 
       <EmailFooter>
         You received this email because you canceled your Pro subscription on{" "}
-        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. If you
-        have any questions, just reply to this email.
+        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. If you have any questions,
+        just reply to this email.
       </EmailFooter>
     </EmailLayout>
   );

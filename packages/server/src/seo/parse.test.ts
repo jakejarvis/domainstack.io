@@ -1,5 +1,6 @@
 /* @vitest-environment node */
 import { describe, expect, it } from "vitest";
+
 import { parseHtmlMeta, selectPreview } from "./parse";
 import { resolveUrlMaybe, sanitizeText } from "./utils";
 
@@ -72,12 +73,8 @@ describe("seo helpers", () => {
   });
 
   it("resolveUrlMaybe returns absolute URLs and null for invalid schemes", () => {
-    expect(resolveUrlMaybe("/rel", "https://e.test/base")).toBe(
-      "https://e.test/rel",
-    );
-    expect(resolveUrlMaybe("https://x.test/a", "https://e.test")).toBe(
-      "https://x.test/a",
-    );
+    expect(resolveUrlMaybe("/rel", "https://e.test/base")).toBe("https://e.test/rel");
+    expect(resolveUrlMaybe("https://x.test/a", "https://e.test")).toBe("https://x.test/a");
     expect(resolveUrlMaybe("mailto:hi@e.test", "https://e.test")).toBeNull();
     expect(resolveUrlMaybe(undefined, "https://e.test")).toBeNull();
   });

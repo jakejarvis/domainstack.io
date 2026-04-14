@@ -1,9 +1,10 @@
+import { IconCircleArrowUp, IconRocket } from "@tabler/icons-react";
+
+import { UpgradeButton } from "@/components/upgrade-button";
+import { useSubscription } from "@/hooks/use-subscription";
 import { PLAN_QUOTAS } from "@domainstack/constants";
 import { PRO_TIER_INFO } from "@domainstack/polar/products";
 import { Card, CardContent } from "@domainstack/ui/card";
-import { IconCircleArrowUp, IconRocket } from "@tabler/icons-react";
-import { UpgradeButton } from "@/components/upgrade-button";
-import { useSubscription } from "@/hooks/use-subscription";
 
 export function GridUpgradeCard() {
   const { isPro, isSubscriptionLoading } = useSubscription();
@@ -33,22 +34,18 @@ export function GridUpgradeCard() {
           </div>
 
           {/* Heading */}
-          <h3 className="mb-2 font-semibold text-lg">Upgrade to Pro</h3>
+          <h3 className="mb-2 text-lg font-semibold">Upgrade to Pro</h3>
 
           {/* Value prop */}
-          <p className="mb-4 text-muted-foreground text-sm">
+          <p className="mb-4 text-sm text-muted-foreground">
             Track up to {PLAN_QUOTAS.pro} domains with priority notifications.
           </p>
 
           {/* Pricing */}
           <div className="flex items-center gap-1.5 text-sm">
-            <span className="font-medium text-accent-gold">
-              {PRO_TIER_INFO.monthly.label}
-            </span>
+            <span className="font-medium text-accent-gold">{PRO_TIER_INFO.monthly.label}</span>
             <span className="text-muted-foreground">or</span>
-            <span className="font-medium text-accent-gold">
-              {PRO_TIER_INFO.yearly.label}
-            </span>
+            <span className="font-medium text-accent-gold">{PRO_TIER_INFO.yearly.label}</span>
           </div>
         </div>
 

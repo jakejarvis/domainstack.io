@@ -1,19 +1,16 @@
 "use client";
 
-import type { ResumeDomainData } from "@domainstack/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
+
 import { AddDomainContent } from "@/components/dashboard/add-domain/add-domain-content";
 import { useRouter } from "@/hooks/use-router";
 import { useTRPC } from "@/lib/trpc/client";
 import { isValidVerificationMethod } from "@/lib/verification-instructions";
+import type { ResumeDomainData } from "@domainstack/types";
 
-export function AddDomainModalClient({
-  prefillDomain,
-}: {
-  prefillDomain?: string;
-}) {
+export function AddDomainModalClient({ prefillDomain }: { prefillDomain?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const trpc = useTRPC();

@@ -1,13 +1,11 @@
 "use client";
 
-import type { NotificationCategory } from "@domainstack/constants";
-import type {
-  TrackedDomainWithDetails,
-  UserNotificationPreferences,
-} from "@domainstack/types";
 import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+
 import { useTRPC } from "@/lib/trpc/client";
+import type { NotificationCategory } from "@domainstack/constants";
+import type { TrackedDomainWithDetails, UserNotificationPreferences } from "@domainstack/types";
 
 const DEFAULT_PREFERENCES: UserNotificationPreferences = {
   domainExpiry: { inApp: true, email: true },
@@ -64,14 +62,11 @@ export function useNotificationPreferences(): UseNotificationPreferencesReturn {
     onMutate: async (newPrefs) => {
       await queryClient.cancelQueries({ queryKey: globalPrefsQueryKey });
       const previousPrefs =
-        queryClient.getQueryData<UserNotificationPreferences>(
-          globalPrefsQueryKey,
-        );
+        queryClient.getQueryData<UserNotificationPreferences>(globalPrefsQueryKey);
 
       // Optimistically update
-      queryClient.setQueryData<UserNotificationPreferences>(
-        globalPrefsQueryKey,
-        (old) => (old ? { ...old, ...newPrefs } : old),
+      queryClient.setQueryData<UserNotificationPreferences>(globalPrefsQueryKey, (old) =>
+        old ? { ...old, ...newPrefs } : old,
       );
 
       return { previousPrefs };
@@ -99,19 +94,13 @@ export function useNotificationPreferences(): UseNotificationPreferencesReturn {
     onMutate: async ({ trackedDomainId, muted }) => {
       await queryClient.cancelQueries({ queryKey: domainsQueryKey });
       // Snapshot all domain query variants for rollback
-      const previousDomains = queryClient.getQueriesData<
-        typeof domainsResult.data
-      >({
+      const previousDomains = queryClient.getQueriesData<typeof domainsResult.data>({
         queryKey: domainsQueryKey,
       });
 
       // Optimistically update the domain's muted state in all query variants
-      queryClient.setQueriesData<typeof domainsResult.data>(
-        { queryKey: domainsQueryKey },
-        (old) =>
-          old
-            ? old.map((d) => (d.id === trackedDomainId ? { ...d, muted } : d))
-            : old,
+      queryClient.setQueriesData<typeof domainsResult.data>({ queryKey: domainsQueryKey }, (old) =>
+        old ? old.map((d) => (d.id === trackedDomainId ? { ...d, muted } : d)) : old,
       );
 
       return { previousDomains };
@@ -165,8 +154,7 @@ export function useNotificationPreferences(): UseNotificationPreferencesReturn {
     globalPrefs,
     isLoading: domainsResult.isLoading || globalPrefsResult.isLoading,
     isError: domainsResult.isError || globalPrefsResult.isError,
-    isPending:
-      updateGlobalMutation.isPending || setDomainMutedMutation.isPending,
+    isPending: updateGlobalMutation.isPending || setDomainMutedMutation.isPending,
     updateGlobalPreference,
     setDomainMuted,
   };

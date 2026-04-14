@@ -1,3 +1,5 @@
+import { fileURLToPath } from "node:url";
+
 import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
 import { coverageConfigDefaults, defineConfig } from "vitest/config";
@@ -6,14 +8,12 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "next/image": new URL("./mocks/next-image.ts", import.meta.url).pathname,
+      "next/image": fileURLToPath(new URL("./mocks/next-image.ts", import.meta.url)),
     },
     tsconfigPaths: true,
   },
   define: {
-    "process.env.NEXT_PUBLIC_BASE_URL": JSON.stringify(
-      "https://test.domainstack.io",
-    ),
+    "process.env.NEXT_PUBLIC_BASE_URL": JSON.stringify("https://test.domainstack.io"),
   },
   test: {
     globals: true,

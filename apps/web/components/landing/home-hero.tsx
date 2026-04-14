@@ -1,8 +1,9 @@
 "use client";
 
-import { cn } from "@domainstack/ui/utils";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+
+import { cn } from "@domainstack/ui/utils";
 
 const ROTATING_WORDS = [
   "registration",
@@ -52,13 +53,11 @@ export function HomeHero({ className }: { className?: string }) {
   return (
     <h1
       className={cn(
-        "relative flex w-full flex-col items-center justify-center gap-y-2 text-center font-semibold text-3xl leading-none tracking-tight sm:flex-row sm:items-baseline sm:gap-y-0 sm:text-4xl md:text-5xl",
+        "relative flex w-full flex-col items-center justify-center gap-y-2 text-center text-3xl leading-none font-semibold tracking-tight sm:flex-row sm:items-baseline sm:gap-y-0 sm:text-4xl md:text-5xl",
         className,
       )}
     >
-      <span className="whitespace-nowrap text-foreground/90">
-        Inspect any domain&rsquo;s
-      </span>
+      <span className="whitespace-nowrap text-foreground/90">Inspect any domain&rsquo;s</span>
       <motion.span
         className="ml-2.5 inline-flex items-center rounded-lg bg-muted/40 px-2 py-0.5 text-foreground shadow-sm ring-1 ring-ring/20 will-change-[width,transform] sm:rounded-md sm:px-3 sm:py-1"
         aria-live="polite"
@@ -76,21 +75,9 @@ export function HomeHero({ className }: { className?: string }) {
             <AnimatePresence mode="wait" initial={false}>
               <motion.span
                 key={ROTATING_WORDS[index]}
-                initial={
-                  shouldReduceMotion
-                    ? { opacity: 0 }
-                    : { y: "100%", opacity: 0, x: 0 }
-                }
-                animate={
-                  shouldReduceMotion
-                    ? { opacity: 1 }
-                    : { y: 0, opacity: 1, x: 0 }
-                }
-                exit={
-                  shouldReduceMotion
-                    ? { opacity: 0 }
-                    : { y: "-100%", opacity: 0, x: 0 }
-                }
+                initial={shouldReduceMotion ? { opacity: 0 } : { y: "100%", opacity: 0, x: 0 }}
+                animate={shouldReduceMotion ? { opacity: 1 } : { y: 0, opacity: 1, x: 0 }}
+                exit={shouldReduceMotion ? { opacity: 0 } : { y: "-100%", opacity: 0, x: 0 }}
                 transition={{
                   type: "tween",
                   ease: [0.22, 1, 0.36, 1],
@@ -112,13 +99,9 @@ export function HomeHero({ className }: { className?: string }) {
         className="pointer-events-none invisible absolute top-0 left-0 inline-flex items-center px-2 py-0.5 align-baseline sm:px-3 sm:py-1"
         aria-hidden
       >
-        <span className="inline-flex items-center whitespace-nowrap">
-          {ROTATING_WORDS[index]}
-        </span>
+        <span className="inline-flex items-center whitespace-nowrap">{ROTATING_WORDS[index]}</span>
       </span>
-      <span className="hidden whitespace-nowrap text-foreground/90 sm:inline">
-        .
-      </span>
+      <span className="hidden whitespace-nowrap text-foreground/90 sm:inline">.</span>
     </h1>
   );
 }

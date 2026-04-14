@@ -1,11 +1,12 @@
 "use client";
 
-import { analytics } from "@domainstack/analytics/client";
-import { linkSocial, unlinkAccount } from "@domainstack/auth/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+
 import { getEnabledProviders, type OAuthProvider } from "@/lib/oauth";
 import { useTRPC } from "@/lib/trpc/client";
+import { analytics } from "@domainstack/analytics/client";
+import { linkSocial, unlinkAccount } from "@domainstack/auth/client";
 
 export interface UseLinkedAccountsReturn {
   /** List of linked accounts */
@@ -63,15 +64,12 @@ export function useLinkedAccounts(): UseLinkedAccountsReturn {
       await queryClient.cancelQueries({ queryKey: linkedAccountsQueryKey });
 
       // Snapshot the previous value
-      const previousAccounts = queryClient.getQueryData<typeof linkedAccounts>(
-        linkedAccountsQueryKey,
-      );
+      const previousAccounts =
+        queryClient.getQueryData<typeof linkedAccounts>(linkedAccountsQueryKey);
 
       // Optimistically update to remove the account
-      queryClient.setQueryData(
-        linkedAccountsQueryKey,
-        (old: typeof linkedAccounts | undefined) =>
-          old?.filter((a) => a.providerId !== providerId),
+      queryClient.setQueryData(linkedAccountsQueryKey, (old: typeof linkedAccounts | undefined) =>
+        old?.filter((a) => a.providerId !== providerId),
       );
 
       return { previousAccounts };
@@ -79,15 +77,12 @@ export function useLinkedAccounts(): UseLinkedAccountsReturn {
     onError: (err, providerId, context) => {
       // Rollback on error
       if (context?.previousAccounts) {
-        queryClient.setQueryData(
-          linkedAccountsQueryKey,
-          context.previousAccounts,
-        );
+        queryClient.setQueryData(linkedAccountsQueryKey, context.previousAccounts);
       }
-      analytics.trackException(
-        err instanceof Error ? err : new Error(String(err)),
-        { provider: providerId, action: "unlink_account" },
-      );
+      analytics.trackException(err instanceof Error ? err : new Error(String(err)), {
+        provider: providerId,
+        action: "unlink_account",
+      });
       toast.error("Failed to unlink account. Please try again.");
     },
     onSuccess: (_data, providerId) => {
@@ -108,19 +103,17 @@ export function useLinkedAccounts(): UseLinkedAccountsReturn {
         callbackURL: "/settings",
       });
     } catch (err) {
-      analytics.trackException(
-        err instanceof Error ? err : new Error(String(err)),
-        { provider: provider.id, action: "link_account" },
-      );
+      analytics.trackException(err instanceof Error ? err : new Error(String(err)), {
+        provider: provider.id,
+        action: "link_account",
+      });
       toast.error(`Failed to link ${provider.name}. Please try again.`);
       throw err; // Re-throw so caller can handle loading state
     }
   };
 
   // Derived state
-  const linkedProviderIds = new Set(
-    linkedAccounts?.map((a) => a.providerId) ?? [],
-  );
+  const linkedProviderIds = new Set(linkedAccounts?.map((a) => a.providerId) ?? []);
   const canUnlink = linkedProviderIds.size > 1;
 
   return {

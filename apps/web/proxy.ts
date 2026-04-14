@@ -1,7 +1,8 @@
-import { getSessionCookie } from "@domainstack/auth/server";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+
 import { toRegistrableDomain } from "@/lib/normalize-domain";
+import { getSessionCookie } from "@domainstack/auth/server";
 
 // Routes that require authentication (pre-check for faster redirects)
 const PROTECTED_ROUTES = ["/dashboard", "/settings"];
@@ -36,8 +37,7 @@ export function proxy(request: NextRequest) {
 
   // Exempt only the calendar feed route from auth check when token is present
   const isCalendarFeedRoute =
-    (pathname === "/dashboard/feed.ics" ||
-      pathname === "/dashboard/feed.ics/") &&
+    (pathname === "/dashboard/feed.ics" || pathname === "/dashboard/feed.ics/") &&
     searchParams.get("token");
 
   if (isProtectedRoute && !isCalendarFeedRoute) {

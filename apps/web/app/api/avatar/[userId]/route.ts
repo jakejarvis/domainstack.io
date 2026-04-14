@@ -1,12 +1,9 @@
-import {
-  TTL_AVATAR_BROWSER,
-  TTL_AVATAR_CDN,
-  TTL_AVATAR_STALE,
-} from "@domainstack/constants";
+import { connection, type NextRequest, NextResponse } from "next/server";
+
+import { TTL_AVATAR_BROWSER, TTL_AVATAR_CDN, TTL_AVATAR_STALE } from "@domainstack/constants";
 import { getUserAvatarUrl } from "@domainstack/db/queries";
 import { createLogger } from "@domainstack/logger";
 import { SafeFetchError, safeFetch } from "@domainstack/safe-fetch";
-import { connection, type NextRequest, NextResponse } from "next/server";
 
 const logger = createLogger({ source: "api/avatar" });
 
@@ -57,10 +54,7 @@ export async function GET(
     // Validate content type is a safe image format (block SVGs which can contain scripts)
     const { contentType } = asset;
     if (!contentType?.startsWith("image/") || contentType === "image/svg+xml") {
-      logger.warn(
-        { userId, contentType },
-        "upstream returned invalid content type",
-      );
+      logger.warn({ userId, contentType }, "upstream returned invalid content type");
       return new NextResponse("Invalid content type", { status: 502 });
     }
 

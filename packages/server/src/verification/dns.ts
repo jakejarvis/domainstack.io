@@ -2,14 +2,9 @@
  * DNS TXT record verification for domain ownership.
  */
 
-import {
-  DNS_VERIFICATION_HOST_LEGACY,
-  DNS_VERIFICATION_PREFIX,
-} from "@domainstack/constants";
-import {
-  providerOrderForLookup,
-  queryDohProvider,
-} from "@domainstack/utils/dns";
+import { DNS_VERIFICATION_HOST_LEGACY, DNS_VERIFICATION_PREFIX } from "@domainstack/constants";
+import { providerOrderForLookup, queryDohProvider } from "@domainstack/utils/dns";
+
 import type { VerificationResult } from "./types";
 
 /**
@@ -25,10 +20,7 @@ import type { VerificationResult } from "./types";
  * @param token - The verification token to look for
  * @returns Verification result
  */
-export async function verifyByDns(
-  domain: string,
-  token: string,
-): Promise<VerificationResult> {
+export async function verifyByDns(domain: string, token: string): Promise<VerificationResult> {
   const expectedValue = `${DNS_VERIFICATION_PREFIX}${token}`;
 
   // Check both apex domain (new) and legacy subdomain format

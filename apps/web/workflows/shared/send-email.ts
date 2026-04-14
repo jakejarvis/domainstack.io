@@ -26,9 +26,7 @@ export interface SendEmailResult {
  * - Server errors (5xx) → RetryableError with backoff
  * - Idempotency conflicts → FatalError or RetryableError depending on type
  */
-export async function sendEmail(
-  params: SendEmailParams,
-): Promise<SendEmailResult> {
+export async function sendEmail(params: SendEmailParams): Promise<SendEmailResult> {
   "use step";
 
   const { sendEmail: sendResendEmail } = await import("@domainstack/email");
@@ -50,12 +48,9 @@ export async function sendEmail(
 
   if (!error) {
     // Unexpected: no error but also no data - treat as transient
-    throw new RetryableError(
-      `Email send returned no data or error, will retry`,
-      {
-        retryAfter: "5s",
-      },
-    );
+    throw new RetryableError(`Email send returned no data or error, will retry`, {
+      retryAfter: "5s",
+    });
   }
 
   // Classify the error based on Resend error types
@@ -111,20 +106,14 @@ export async function sendEmail(
   }
 
   // Server/application errors - retry with backoff
-  if (
-    errorName === "application_error" ||
-    errorName === "internal_server_error"
-  ) {
+  if (errorName === "application_error" || errorName === "internal_server_error") {
     throw new RetryableError(`Email send failed: ${errorName}`, {
       retryAfter: "5s",
     });
   }
 
   // Unknown error - assume transient and retry
-  throw new RetryableError(
-    `Email send failed: ${errorName} - ${errorMessage}`,
-    {
-      retryAfter: "5s",
-    },
-  );
+  throw new RetryableError(`Email send failed: ${errorName} - ${errorMessage}`, {
+    retryAfter: "5s",
+  });
 }

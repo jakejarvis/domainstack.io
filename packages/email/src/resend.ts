@@ -1,12 +1,8 @@
-import {
-  RESEND_LOGO_CONTENT_ID,
-  RESEND_LOGO_PATH,
-} from "@domainstack/constants";
 import { Resend } from "resend";
 
-const resend = process.env.RESEND_API_KEY
-  ? new Resend(process.env.RESEND_API_KEY)
-  : null;
+import { RESEND_LOGO_CONTENT_ID, RESEND_LOGO_PATH } from "@domainstack/constants";
+
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 /**
  * Options for sending email.
@@ -51,9 +47,7 @@ export async function sendEmail(
       ...params,
       attachments: [...existingAttachments, logoAttachment],
     } as Parameters<typeof Resend.prototype.emails.send>[0],
-    options.idempotencyKey
-      ? { idempotencyKey: options.idempotencyKey }
-      : undefined,
+    options.idempotencyKey ? { idempotencyKey: options.idempotencyKey } : undefined,
   );
 }
 
@@ -63,10 +57,7 @@ export async function sendEmail(
  * @param email - The email address of the contact.
  * @param fullName - The full name of the contact.
  */
-export async function addContact(
-  email: string,
-  fullName: string | null | undefined,
-) {
+export async function addContact(email: string, fullName: string | null | undefined) {
   if (!resend) {
     throw new Error("Resend is not configured");
   }
@@ -74,8 +65,7 @@ export async function addContact(
   // Parse name into first/last (best-effort)
   const nameParts = fullName?.trim().split(/\s+/) ?? [];
   const [firstName] = nameParts;
-  const lastName =
-    nameParts.length > 1 ? nameParts.slice(1).join(" ") : undefined;
+  const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : undefined;
 
   return resend.contacts.create({
     email: email,

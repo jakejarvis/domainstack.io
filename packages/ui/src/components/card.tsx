@@ -1,12 +1,9 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
+
 import { cn } from "../utils";
 
-function Card({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"div">) {
+function Card({ className, render, ...props }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
@@ -22,11 +19,7 @@ function Card({
   });
 }
 
-function CardHeader({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"div">) {
+function CardHeader({ className, render, ...props }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
@@ -42,16 +35,12 @@ function CardHeader({
   });
 }
 
-function CardTitle({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"div">) {
+function CardTitle({ className, render, ...props }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
-      className: cn("font-semibold leading-none", className),
+      className: cn("leading-none font-semibold", className),
     }),
     state: {
       slot: "card-title",
@@ -59,16 +48,12 @@ function CardTitle({
   });
 }
 
-function CardDescription({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"div">) {
+function CardDescription({ className, render, ...props }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
-      className: cn("text-muted-foreground text-sm", className),
+      className: cn("text-sm text-muted-foreground", className),
     }),
     state: {
       slot: "card-description",
@@ -76,19 +61,12 @@ function CardDescription({
   });
 }
 
-function CardAction({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"div">) {
+function CardAction({ className, render, ...props }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
-      className: cn(
-        "col-start-2 row-span-2 row-start-1 self-start justify-self-end",
-        className,
-      ),
+      className: cn("col-start-2 row-span-2 row-start-1 self-start justify-self-end", className),
     }),
     state: {
       slot: "card-action",
@@ -96,11 +74,7 @@ function CardAction({
   });
 }
 
-function CardContent({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"div">) {
+function CardContent({ className, render, ...props }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
@@ -113,11 +87,7 @@ function CardContent({
   });
 }
 
-function CardFooter({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"div">) {
+function CardFooter({ className, render, ...props }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
@@ -130,12 +100,4 @@ function CardFooter({
   });
 }
 
-export {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-};
+export { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle };

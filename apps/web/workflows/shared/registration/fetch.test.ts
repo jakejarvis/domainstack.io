@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Hoist mock for @domainstack/server/whois
 const whoisMock = vi.hoisted(() => ({
-  lookupWhois: vi.fn(),
+  lookupWhois: vi.fn<typeof import("@domainstack/server/whois").lookupWhois>(),
 }));
 
 vi.mock("@domainstack/server/whois", () => whoisMock);
@@ -63,9 +63,7 @@ describe("lookupWhoisStep", () => {
 
     const { lookupWhoisStep } = await import("./fetch");
 
-    await expect(lookupWhoisStep("slow.com")).rejects.toThrow(
-      "RDAP lookup timed out",
-    );
+    await expect(lookupWhoisStep("slow.com")).rejects.toThrow("RDAP lookup timed out");
   });
 
   it("throws RetryableError on unknown failure", async () => {
@@ -76,8 +74,6 @@ describe("lookupWhoisStep", () => {
 
     const { lookupWhoisStep } = await import("./fetch");
 
-    await expect(lookupWhoisStep("error.com")).rejects.toThrow(
-      "RDAP lookup failed",
-    );
+    await expect(lookupWhoisStep("error.com")).rejects.toThrow("RDAP lookup failed");
   });
 });

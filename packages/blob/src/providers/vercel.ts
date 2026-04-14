@@ -1,11 +1,8 @@
-import { createLogger } from "@domainstack/logger";
 import { del, put } from "@vercel/blob";
-import type {
-  BlobProvider,
-  DeleteBlobResult,
-  PutBlobOptions,
-  PutBlobResult,
-} from "../types";
+
+import { createLogger } from "@domainstack/logger";
+
+import type { BlobProvider, DeleteBlobResult, PutBlobOptions, PutBlobResult } from "../types";
 
 const logger = createLogger({ source: "blob/vercel" });
 
@@ -27,10 +24,7 @@ export class VercelBlobProvider implements BlobProvider {
         pathname: options.pathname,
       };
     } catch (err) {
-      logger.error(
-        { err, pathname: options.pathname },
-        "Failed to upload blob",
-      );
+      logger.error({ err, pathname: options.pathname }, "Failed to upload blob");
       throw err;
     }
   }

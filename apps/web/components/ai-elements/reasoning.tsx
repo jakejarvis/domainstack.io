@@ -1,22 +1,13 @@
 "use client";
 
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@domainstack/ui/collapsible";
-import { cn } from "@domainstack/ui/utils";
 import { IconBrain, IconChevronDown } from "@tabler/icons-react";
 import type { ComponentProps, ReactNode } from "react";
-import {
-  createContext,
-  memo,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import { createContext, memo, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Streamdown } from "streamdown";
+
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@domainstack/ui/collapsible";
+import { cn } from "@domainstack/ui/utils";
+
 import { ShimmeringText } from "./shimmering-text";
 
 interface ReasoningContextValue {
@@ -126,11 +117,13 @@ export const Reasoning = memo(
     const handleOpenChange = (newOpen: boolean) => {
       setIsOpen(newOpen);
     };
+    const contextValue = useMemo(
+      () => ({ isStreaming, isOpen: isOpen ?? false, setIsOpen, duration }),
+      [isStreaming, isOpen, setIsOpen, duration],
+    );
 
     return (
-      <ReasoningContext.Provider
-        value={{ isStreaming, isOpen: isOpen ?? false, setIsOpen, duration }}
-      >
+      <ReasoningContext.Provider value={contextValue}>
         <Collapsible
           className={cn("text-muted-foreground", className)}
           onOpenChange={handleOpenChange}
@@ -144,9 +137,7 @@ export const Reasoning = memo(
   },
 );
 
-export type ReasoningTriggerProps = ComponentProps<
-  typeof CollapsibleTrigger
-> & {
+export type ReasoningTriggerProps = ComponentProps<typeof CollapsibleTrigger> & {
   getThinkingMessage?: (isStreaming: boolean, duration?: number) => ReactNode;
 };
 
@@ -182,10 +173,7 @@ export const ReasoningTrigger = memo(
             <IconBrain className="size-3.5" />
             {getThinkingMessage(isStreaming, duration)}
             <IconChevronDown
-              className={cn(
-                "size-3 transition-transform",
-                isOpen ? "rotate-180" : "rotate-0",
-              )}
+              className={cn("size-3 transition-transform", isOpen ? "rotate-180" : "rotate-0")}
             />
           </>
         )}
@@ -194,19 +182,15 @@ export const ReasoningTrigger = memo(
   },
 );
 
-export type ReasoningContentProps = ComponentProps<
-  typeof CollapsibleContent
-> & {
+export type ReasoningContentProps = ComponentProps<typeof CollapsibleContent> & {
   children: string;
 };
 
-export const ReasoningContent = memo(
-  ({ className, children, ...props }: ReasoningContentProps) => (
-    <CollapsibleContent className={cn("mt-4 text-sm", className)} {...props}>
-      <Streamdown>{children}</Streamdown>
-    </CollapsibleContent>
-  ),
-);
+export const ReasoningContent = memo(({ className, children, ...props }: ReasoningContentProps) => (
+  <CollapsibleContent className={cn("mt-4 text-sm", className)} {...props}>
+    <Streamdown>{children}</Streamdown>
+  </CollapsibleContent>
+));
 
 Reasoning.displayName = "Reasoning";
 ReasoningTrigger.displayName = "ReasoningTrigger";

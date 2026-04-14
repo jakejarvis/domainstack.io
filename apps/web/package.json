@@ -9,8 +9,10 @@
     "start": "next start",
     "analyze": "next experimental-analyze",
     "check-types": "next typegen && tsc --noEmit",
-    "lint": "biome check",
-    "format": "biome format --write",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "fmt": "oxfmt --config ../../.oxfmtrc.json",
+    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "workflow": "workflow inspect runs --web"

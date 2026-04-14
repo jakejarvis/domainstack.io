@@ -1,8 +1,9 @@
 "use client";
 
-import { MAX_HISTORY_ITEMS } from "@domainstack/constants";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+
+import { MAX_HISTORY_ITEMS } from "@domainstack/constants";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -47,10 +48,10 @@ export const useSearchHistoryStore = create<SearchHistoryStore>()(
         }
 
         // Create new list with domain at front, removing any duplicates
-        const newHistory = [
-          domain,
-          ...currentHistory.filter((d) => d !== domain),
-        ].slice(0, MAX_HISTORY_ITEMS);
+        const newHistory = [domain, ...currentHistory.filter((d) => d !== domain)].slice(
+          0,
+          MAX_HISTORY_ITEMS,
+        );
 
         set({ history: newHistory });
       },

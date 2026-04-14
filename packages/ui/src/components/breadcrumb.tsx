@@ -1,13 +1,10 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { IconChevronRight, IconDots } from "@tabler/icons-react";
+
 import { cn } from "../utils";
 
-function Breadcrumb({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"nav">) {
+function Breadcrumb({ className, render, ...props }: useRender.ComponentProps<"nav">) {
   return useRender({
     defaultTagName: "nav",
     render,
@@ -21,17 +18,13 @@ function Breadcrumb({
   });
 }
 
-function BreadcrumbList({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"ol">) {
+function BreadcrumbList({ className, render, ...props }: useRender.ComponentProps<"ol">) {
   return useRender({
     defaultTagName: "ol",
     render,
     props: mergeProps<"ol">(props, {
       className: cn(
-        "flex flex-wrap items-center gap-1.5 break-words text-muted-foreground text-sm",
+        "flex flex-wrap items-center gap-1.5 text-sm break-words text-muted-foreground",
         className,
       ),
     }),
@@ -41,11 +34,7 @@ function BreadcrumbList({
   });
 }
 
-function BreadcrumbItem({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"li">) {
+function BreadcrumbItem({ className, render, ...props }: useRender.ComponentProps<"li">) {
   return useRender({
     defaultTagName: "li",
     render,
@@ -58,11 +47,7 @@ function BreadcrumbItem({
   });
 }
 
-function BreadcrumbLink({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"a">) {
+function BreadcrumbLink({ className, render, ...props }: useRender.ComponentProps<"a">) {
   return useRender({
     defaultTagName: "a",
     props: mergeProps<"a">(props, {
@@ -75,11 +60,7 @@ function BreadcrumbLink({
   });
 }
 
-function BreadcrumbPage({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"span">) {
+function BreadcrumbPage({ className, render, ...props }: useRender.ComponentProps<"span">) {
   return useRender({
     defaultTagName: "span",
     render,
@@ -114,19 +95,12 @@ function BreadcrumbSeparator({
   });
 }
 
-function BreadcrumbEllipsis({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"span">) {
+function BreadcrumbEllipsis({ className, render, ...props }: useRender.ComponentProps<"span">) {
   return useRender({
     defaultTagName: "span",
     render,
     props: mergeProps<"span">(props, {
-      className: cn(
-        "flex size-5 items-center justify-center [&>svg]:size-4",
-        className,
-      ),
+      className: cn("flex size-5 items-center justify-center [&>svg]:size-4", className),
       children: <IconDots aria-hidden />,
     }),
     state: {

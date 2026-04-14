@@ -1,6 +1,7 @@
+import { IconShieldExclamation } from "@tabler/icons-react";
+
 import { Alert, AlertDescription, AlertTitle } from "@domainstack/ui/alert";
 import { cn } from "@domainstack/ui/utils";
-import { IconShieldExclamation } from "@tabler/icons-react";
 
 export function CertificateAlert({
   error,
@@ -16,8 +17,7 @@ export function CertificateAlert({
       <IconShieldExclamation aria-hidden className="size-4" />
       <AlertTitle>{title}</AlertTitle>
       <AlertDescription>
-        {error ||
-          "The security certificate for this site is invalid or expired."}
+        {error || "The security certificate for this site is invalid or expired."}
       </AlertDescription>
     </Alert>
   );

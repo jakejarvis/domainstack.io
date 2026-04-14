@@ -10,8 +10,10 @@
   },
   "scripts": {
     "check-types": "tsc --noEmit",
-    "lint": "biome check",
-    "format": "biome format --write"
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "fmt": "oxfmt --config ../../.oxfmtrc.json",
+    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json"
   },
   "dependencies": {
     "@domainstack/analytics": "workspace:*",
@@ -23,11 +25,11 @@
     "@vercel/functions": "^3.4.3",
     "superjson": "^2.2.6"
   },
-  "peerDependencies": {
-    "next": ">=16"
-  },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@types/node": "catalog:"
+  },
+  "peerDependencies": {
+    "next": ">=16"
   }
 }

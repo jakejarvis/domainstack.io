@@ -1,13 +1,15 @@
-import { createLogger } from "@domainstack/logger";
-import type { ProviderRef } from "@domainstack/types";
-import { normalizeDomainInput } from "@domainstack/utils/domain";
+/* oxlint-disable nextjs/no-img-element -- ImageResponse requires raw img elements. */
 import { cacheLife } from "next/cache";
 import { ImageResponse } from "next/og";
 import { type NextRequest, NextResponse } from "next/server";
+
 import { Logo } from "@/components/logo";
 import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { hexToRGBA, loadGoogleFont } from "@/lib/og-utils";
 import { createCaller } from "@/server/routers/_app";
+import { createLogger } from "@domainstack/logger";
+import type { ProviderRef } from "@domainstack/types";
+import { normalizeDomainInput } from "@domainstack/utils/domain";
 
 const SIZE = { width: 1200, height: 630 };
 
@@ -42,16 +44,14 @@ async function fetchProviderData(domain: string): Promise<ProviderData> {
     const caller = createCaller({ req: undefined, ip: null, session: null });
 
     // Fetch registration, hosting, and certificates in parallel
-    const [registrationResult, hostingResult, certificatesResult] =
-      await Promise.all([
-        caller.domain.getRegistration({ domain }),
-        caller.domain.getHosting({ domain }),
-        caller.domain.getCertificates({ domain }),
-      ]);
+    const [registrationResult, hostingResult, certificatesResult] = await Promise.all([
+      caller.domain.getRegistration({ domain }),
+      caller.domain.getHosting({ domain }),
+      caller.domain.getCertificates({ domain }),
+    ]);
 
     // Collect all provider refs
-    const providerRefs: { type: string; ref: ProviderRef; color: string }[] =
-      [];
+    const providerRefs: { type: string; ref: ProviderRef; color: string }[] = [];
 
     // Extract registrar (first, as it's the most important)
     if (registrationResult.success && registrationResult.data) {
@@ -67,8 +67,7 @@ async function fetchProviderData(domain: string): Promise<ProviderData> {
 
     // Extract hosting providers
     if (hostingResult.success && hostingResult.data) {
-      const { dnsProvider, hostingProvider, emailProvider } =
-        hostingResult.data;
+      const { dnsProvider, hostingProvider, emailProvider } = hostingResult.data;
 
       if (dnsProvider.name) {
         providerRefs.push({
@@ -96,10 +95,7 @@ async function fetchProviderData(domain: string): Promise<ProviderData> {
     }
 
     // Extract CA from first certificate
-    if (
-      certificatesResult.success &&
-      certificatesResult.data?.certificates?.length
-    ) {
+    if (certificatesResult.success && certificatesResult.data?.certificates?.length) {
       const ca = certificatesResult.data.certificates[0].caProvider;
       if (ca.name) {
         providerRefs.push({
@@ -145,13 +141,11 @@ export async function GET(request: NextRequest) {
   }
 
   // Fetch fonts and provider data in parallel
-  const [geistRegularFont, geistSemiBoldFont, providerData] = await Promise.all(
-    [
-      loadGoogleFont("Geist", 400),
-      loadGoogleFont("Geist", 600),
-      fetchProviderData(registrable),
-    ],
-  );
+  const [geistRegularFont, geistSemiBoldFont, providerData] = await Promise.all([
+    loadGoogleFont("Geist", 400),
+    loadGoogleFont("Geist", 600),
+    fetchProviderData(registrable),
+  ]);
 
   return new ImageResponse(
     <div
@@ -197,16 +191,13 @@ export async function GET(request: NextRequest) {
             >
               Domainstack
             </div>
-            <div style={{ fontSize: 14, color: "#AAB3C2" }}>
-              Domain Intelligence Made Easy
-            </div>
+            <div style={{ fontSize: 14, color: "#AAB3C2" }}>Domain Intelligence Made Easy</div>
           </div>
         </div>
 
         {/* Title + subtitle + chips */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-            {/** biome-ignore lint/performance/noImgElement: OG image requires img element */}
             <img
               src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`}
               alt="favicon"
@@ -245,9 +236,7 @@ export async function GET(request: NextRequest) {
             Domain intelligence report for {normalized}
           </div>
 
-          <div
-            style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 6 }}
-          >
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 6 }}>
             {providerData.providers.length > 0
               ? providerData.providers.map((provider) => (
                   <div
@@ -265,7 +254,6 @@ export async function GET(request: NextRequest) {
                     }}
                   >
                     {provider.logoUrl && (
-                      // biome-ignore lint/performance/noImgElement: OG image requires img element
                       <img
                         src={provider.logoUrl}
                         alt=""
@@ -286,9 +274,7 @@ export async function GET(request: NextRequest) {
                       >
                         {provider.type}
                       </div>
-                      <div style={{ fontSize: 18, fontWeight: 600 }}>
-                        {provider.name}
-                      </div>
+                      <div style={{ fontSize: 18, fontWeight: 600 }}>{provider.name}</div>
                     </div>
                   </div>
                 ))
@@ -355,8 +341,7 @@ export async function GET(request: NextRequest) {
       ],
       headers: {
         "Cache-Control": "public, max-age=3600",
-        "Vercel-CDN-Cache-Control":
-          "public, s-maxage=604800, stale-while-revalidate=86400",
+        "Vercel-CDN-Cache-Control": "public, s-maxage=604800, stale-while-revalidate=86400",
       },
     },
   );

@@ -23,9 +23,7 @@ export type CreateContextOptions = {
  * (not coupled to Next.js `headers()`). The web app wrapper provides
  * headers from either the request or `headers()`.
  */
-export async function createContext(
-  opts: CreateContextOptions = {},
-): Promise<Context> {
+export async function createContext(opts: CreateContextOptions = {}): Promise<Context> {
   const { req } = opts;
   const ip = req ? (ipAddress(req) ?? null) : null;
 

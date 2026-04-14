@@ -1,10 +1,11 @@
 "use client";
 
-import { Button } from "@domainstack/ui/button";
 import Link from "next/link";
-import posthog from "posthog-js";
+import posthogClient from "posthog-js";
 import { useEffect, useState } from "react";
 import useLocalStorageState from "use-local-storage-state";
+
+import { Button } from "@domainstack/ui/button";
 
 const CONSENT_KEY = "cookie-consent";
 
@@ -17,15 +18,10 @@ type ConsentStatus = "pending" | "accepted" | "declined";
  * - Non-EU users are auto-accepted silently
  * - Syncs with PostHog opt-in/opt-out
  */
-export function CookiePrompt({
-  consentRequired,
-}: {
-  consentRequired: boolean;
-}) {
-  const [consent, setConsent, { isPersistent }] =
-    useLocalStorageState<ConsentStatus>(CONSENT_KEY, {
-      defaultValue: "pending",
-    });
+export function CookiePrompt({ consentRequired }: { consentRequired: boolean }) {
+  const [consent, setConsent, { isPersistent }] = useLocalStorageState<ConsentStatus>(CONSENT_KEY, {
+    defaultValue: "pending",
+  });
   const [show, setShow] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
@@ -37,15 +33,15 @@ export function CookiePrompt({
       // User has already made a choice - re-apply PostHog state
       // in case it was reset (cleared cookies, new session, etc.)
       if (consent === "accepted") {
-        posthog.opt_in_capturing();
+        posthogClient.opt_in_capturing();
       } else {
-        posthog.opt_out_capturing();
+        posthogClient.opt_out_capturing();
       }
       setShow(false);
     } else if (!consentRequired) {
       // Non-EU user with no stored consent - auto-accept silently
       setConsent("accepted");
-      posthog.opt_in_capturing();
+      posthogClient.opt_in_capturing();
       setShow(false);
     } else {
       // EU user needs to make a choice - show banner
@@ -64,12 +60,12 @@ export function CookiePrompt({
   };
 
   const accept = () => {
-    posthog.opt_in_capturing();
+    posthogClient.opt_in_capturing();
     handleHide("accepted");
   };
 
   const decline = () => {
-    posthog.opt_out_capturing();
+    posthogClient.opt_out_capturing();
     handleHide("declined");
   };
 
@@ -80,9 +76,7 @@ export function CookiePrompt({
   return (
     <div
       className={`fixed bottom-3 left-3 z-100 max-w-[260px] duration-200 ${
-        isExiting
-          ? "slide-out-to-bottom-8 animate-out"
-          : "slide-in-from-bottom-8 animate-in"
+        isExiting ? "animate-out slide-out-to-bottom-8" : "animate-in slide-in-from-bottom-8"
       }`}
     >
       <div
@@ -90,7 +84,7 @@ export function CookiePrompt({
         aria-label="Cookie consent"
         className="rounded-lg border bg-card p-3 shadow-md"
       >
-        <p className="text-pretty text-muted-foreground text-xs leading-relaxed">
+        <p className="text-xs leading-relaxed text-pretty text-muted-foreground">
           We use cookies to understand how you use our service.{" "}
           <Link
             href="/privacy#cookies"
@@ -105,14 +99,14 @@ export function CookiePrompt({
             variant="ghost"
             size="sm"
             onClick={decline}
-            className="h-7 px-2.5 text-muted-foreground text-xs"
+            className="h-7 px-2.5 text-xs text-muted-foreground"
           >
             Decline
           </Button>
           <Button
             size="sm"
             onClick={accept}
-            className="h-7 bg-foreground px-2.5 text-background text-xs hover:bg-foreground/90"
+            className="h-7 bg-foreground px-2.5 text-xs text-background hover:bg-foreground/90"
           >
             Accept
           </Button>

@@ -1,7 +1,8 @@
+import { IconAlertCircle, IconRefresh } from "@tabler/icons-react";
+
 import { Button } from "@domainstack/ui/button";
 import { Icon } from "@domainstack/ui/icon";
 import { Spinner } from "@domainstack/ui/spinner";
-import { IconAlertCircle, IconRefresh } from "@tabler/icons-react";
 
 type StepInstructionsErrorProps = {
   error?: string;
@@ -9,11 +10,7 @@ type StepInstructionsErrorProps = {
   isRetrying: boolean;
 };
 
-export function StepInstructionsError({
-  error,
-  onRetry,
-  isRetrying,
-}: StepInstructionsErrorProps) {
+export function StepInstructionsError({ error, onRetry, isRetrying }: StepInstructionsErrorProps) {
   return (
     <div className="flex h-[200px] flex-col items-center justify-center space-y-4">
       <Icon size="lg" variant="destructive" className="mx-auto">
@@ -21,16 +18,11 @@ export function StepInstructionsError({
       </Icon>
       <div className="text-center" aria-live="polite">
         <h3 className="font-semibold">Unable to load verification details</h3>
-        <p className="text-muted-foreground text-sm">
+        <p className="text-sm text-muted-foreground">
           {error || "Something went wrong. Please try again."}
         </p>
       </div>
-      <Button
-        variant="outline"
-        onClick={onRetry}
-        disabled={isRetrying}
-        aria-label="Retry"
-      >
+      <Button variant="outline" onClick={onRetry} disabled={isRetrying} aria-label="Retry">
         {isRetrying ? (
           <>
             <Spinner />

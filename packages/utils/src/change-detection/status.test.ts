@@ -1,35 +1,26 @@
 import { describe, expect, it } from "vitest";
+
 import { normalizeStatus, statusesAreEqual } from "./status";
 
 describe("normalizeStatus", () => {
   it("converts to lowercase", () => {
-    expect(normalizeStatus("ClientTransferProhibited")).toBe(
-      "clienttransferprohibited",
-    );
+    expect(normalizeStatus("ClientTransferProhibited")).toBe("clienttransferprohibited");
   });
 
   it("removes spaces", () => {
-    expect(normalizeStatus("client transfer prohibited")).toBe(
-      "clienttransferprohibited",
-    );
+    expect(normalizeStatus("client transfer prohibited")).toBe("clienttransferprohibited");
   });
 
   it("removes underscores", () => {
-    expect(normalizeStatus("client_transfer_prohibited")).toBe(
-      "clienttransferprohibited",
-    );
+    expect(normalizeStatus("client_transfer_prohibited")).toBe("clienttransferprohibited");
   });
 
   it("removes hyphens", () => {
-    expect(normalizeStatus("client-transfer-prohibited")).toBe(
-      "clienttransferprohibited",
-    );
+    expect(normalizeStatus("client-transfer-prohibited")).toBe("clienttransferprohibited");
   });
 
   it("handles mixed separators", () => {
-    expect(normalizeStatus("client_transfer-prohibited here")).toBe(
-      "clienttransferprohibitedhere",
-    );
+    expect(normalizeStatus("client_transfer-prohibited here")).toBe("clienttransferprohibitedhere");
   });
 
   it("trims whitespace", () => {

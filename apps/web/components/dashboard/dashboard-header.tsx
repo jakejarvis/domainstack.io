@@ -1,16 +1,3 @@
-import { Button } from "@domainstack/ui/button";
-import {
-  ResponsiveTooltip,
-  ResponsiveTooltipContent,
-  ResponsiveTooltipTrigger,
-} from "@domainstack/ui/responsive-tooltip";
-import { Separator } from "@domainstack/ui/separator";
-import { ToggleGroup, ToggleGroupItem } from "@domainstack/ui/toggle-group";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@domainstack/ui/tooltip";
 import {
   IconExternalLink,
   IconGridDots,
@@ -20,11 +7,21 @@ import {
 } from "@tabler/icons-react";
 import { format } from "date-fns";
 import Link from "next/link";
+
 import { CalendarFeedPopover } from "@/components/dashboard/calendar-feed-popover";
 import { QuotaBar } from "@/components/dashboard/quota-bar";
 import { useSubscription } from "@/hooks/use-subscription";
 import type { DashboardViewModeOptions } from "@/lib/dashboard-utils";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
+import { Button } from "@domainstack/ui/button";
+import {
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@domainstack/ui/responsive-tooltip";
+import { Separator } from "@domainstack/ui/separator";
+import { ToggleGroup, ToggleGroupItem } from "@domainstack/ui/toggle-group";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 
 type DashboardHeaderProps = {
   userName: string;
@@ -39,7 +36,7 @@ export function DashboardHeader({ userName }: DashboardHeaderProps) {
     <div className="grid grid-cols-[1fr_auto] items-center gap-3 lg:flex lg:justify-between">
       {/* Welcome message */}
       <div className="flex items-center gap-3">
-        <h1 className="font-semibold text-2xl tracking-tight">
+        <h1 className="text-2xl font-semibold tracking-tight">
           Welcome back
           {userName ? `, ${userName.split(" ")[0]}` : ""}
         </h1>
@@ -49,7 +46,7 @@ export function DashboardHeader({ userName }: DashboardHeaderProps) {
               <ResponsiveTooltipTrigger
                 nativeButton={false}
                 render={
-                  <span className="inline-flex cursor-help select-none items-center gap-1 rounded-md border border-accent-gold/15 bg-gradient-to-r from-accent-gold/10 to-accent-gold/20 px-2 py-0.5 font-semibold text-[10px] text-accent-gold uppercase dark:border-accent-gold/20 dark:from-accent-gold/10 dark:to-accent-gold/15">
+                  <span className="inline-flex cursor-help items-center gap-1 rounded-md border border-accent-gold/15 bg-gradient-to-r from-accent-gold/10 to-accent-gold/20 px-2 py-0.5 text-[10px] font-semibold text-accent-gold uppercase select-none dark:border-accent-gold/20 dark:from-accent-gold/10 dark:to-accent-gold/15">
                     <IconRocket className="size-3" aria-hidden="true" />
                     Pro
                   </span>
@@ -60,13 +57,13 @@ export function DashboardHeader({ userName }: DashboardHeaderProps) {
               </ResponsiveTooltipContent>
             </ResponsiveTooltip>
           ) : (
-            <span className="pointer-events-none inline-flex select-none items-center gap-1 rounded-md border border-accent-gold/15 bg-gradient-to-r from-accent-gold/10 to-accent-gold/20 px-2 py-0.5 font-semibold text-[10px] text-accent-gold uppercase dark:border-accent-gold/20 dark:from-accent-gold/10 dark:to-accent-gold/15">
+            <span className="pointer-events-none inline-flex items-center gap-1 rounded-md border border-accent-gold/15 bg-gradient-to-r from-accent-gold/10 to-accent-gold/20 px-2 py-0.5 text-[10px] font-semibold text-accent-gold uppercase select-none dark:border-accent-gold/20 dark:from-accent-gold/10 dark:to-accent-gold/15">
               <IconRocket className="size-3" aria-hidden="true" />
               Pro
             </span>
           )
         ) : (
-          <span className="pointer-events-none inline-flex select-none items-center rounded-md border border-foreground/30 px-2 py-0.5 font-medium text-[10px] text-foreground/70 uppercase">
+          <span className="pointer-events-none inline-flex items-center rounded-md border border-foreground/30 px-2 py-0.5 text-[10px] font-medium text-foreground/70 uppercase select-none">
             Free
           </span>
         )}
@@ -102,7 +99,7 @@ export function DashboardHeader({ userName }: DashboardHeaderProps) {
                 <Button
                   variant="link"
                   onClick={handleCheckout}
-                  className="!px-2.5 !py-1.5 !h-auto gap-1 font-normal text-background text-xs"
+                  className="!h-auto gap-1 !px-2.5 !py-1.5 text-xs font-normal text-background"
                 >
                   Upgrade to add more domains
                   <IconExternalLink className="size-3 -translate-y-[1px]" />
@@ -141,9 +138,7 @@ export function DashboardHeader({ userName }: DashboardHeaderProps) {
               multiple={false}
               value={[viewMode]}
               onValueChange={(groupValue) => {
-                const next = groupValue[0] as
-                  | DashboardViewModeOptions
-                  | undefined;
+                const next = groupValue[0] as DashboardViewModeOptions | undefined;
                 if (next) setViewMode(next);
               }}
               className="relative h-9 gap-0 overflow-hidden rounded-md border bg-transparent p-0 shadow-xs"

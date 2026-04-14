@@ -6,12 +6,10 @@ const iconVariants = cva({
     variant: {
       default: "bg-primary/5 [&_svg:not([class*='text-'])]:text-primary",
       muted: "bg-muted/30 [&_svg:not([class*='text-'])]:text-foreground/80",
-      destructive:
-        "bg-destructive/10 [&_svg:not([class*='text-'])]:text-destructive",
+      destructive: "bg-destructive/10 [&_svg:not([class*='text-'])]:text-destructive",
       warning:
         "bg-amber-500/10 [&_svg:not([class*='text-'])]:text-amber-600 dark:[&_svg:not([class*='text-'])]:text-amber-400",
-      success:
-        "bg-success/10 [&_svg:not([class*='text-'])]:text-success-foreground",
+      success: "bg-success/10 [&_svg:not([class*='text-'])]:text-success-foreground",
     },
     size: {
       sm: "size-8 [&_svg:not([class*='size-'])]:size-4",
@@ -26,8 +24,7 @@ const iconVariants = cva({
   },
 });
 
-type IconProps = React.ComponentProps<"div"> &
-  VariantProps<typeof iconVariants>;
+type IconProps = React.ComponentProps<"div"> & VariantProps<typeof iconVariants>;
 
 function Icon({ variant, size, className, ...props }: IconProps) {
   return (

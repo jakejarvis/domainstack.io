@@ -5,8 +5,4 @@
  */
 
 export { fetchHttpHeaders, HeadersFetchError } from "./fetch";
-export type {
-  HeadersError,
-  HeadersFetchData,
-  HeadersFetchResult,
-} from "./types";
+export type { HeadersError, HeadersFetchData, HeadersFetchResult } from "./types";

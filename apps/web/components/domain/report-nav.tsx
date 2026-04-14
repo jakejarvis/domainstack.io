@@ -1,12 +1,13 @@
 "use client";
 
-import { Button } from "@domainstack/ui/button";
-import { ScrollArea } from "@domainstack/ui/scroll-area";
-import { cn } from "@domainstack/ui/utils";
 import { useEffect, useRef } from "react";
+
 import { Favicon } from "@/components/icons/favicon";
 import { useScrollDirection } from "@/hooks/use-scroll-direction";
 import type { SectionDef } from "@/lib/constants/sections";
+import { Button } from "@domainstack/ui/button";
+import { ScrollArea } from "@domainstack/ui/scroll-area";
+import { cn } from "@domainstack/ui/utils";
 
 interface SectionNavProps {
   domain: string;
@@ -86,7 +87,7 @@ export function SectionNav({
           // Solid border when scrolled, faded edges when at top (desktop only)
           isHeaderVisible
             ? "after:bg-gradient-to-r after:from-transparent after:via-black/10 after:to-transparent dark:after:via-white/10"
-            : "shadow-black/5 shadow-xl after:bg-black/10 dark:shadow-none dark:after:bg-white/10",
+            : "shadow-xl shadow-black/5 after:bg-black/10 dark:shadow-none dark:after:bg-white/10",
         )}
       >
         <div
@@ -95,7 +96,7 @@ export function SectionNav({
             "transition-all duration-200 ease-out",
             isHeaderVisible
               ? "w-0 opacity-0"
-              : "mr-3 w-auto border-black/10 border-r pr-3 opacity-100 dark:border-white/10",
+              : "mr-3 w-auto border-r border-black/10 pr-3 opacity-100 dark:border-white/10",
           )}
         >
           <button
@@ -105,9 +106,7 @@ export function SectionNav({
             aria-label={`Scroll to top - ${domain}`}
           >
             <Favicon domain={domain} className="shrink-0" />
-            <span className="max-w-32 truncate font-medium text-[15px]">
-              {domain}
-            </span>
+            <span className="max-w-32 truncate text-[15px] font-medium">{domain}</span>
           </button>
         </div>
 
@@ -129,9 +128,9 @@ export function SectionNav({
                   } as React.CSSProperties
                 }
                 className={cn(
-                  "whitespace-nowrap rounded-md px-3 py-1.5 text-[13px] tracking-[0.01em]",
+                  "rounded-md px-3 py-1.5 text-[13px] tracking-[0.01em] whitespace-nowrap",
                   "transition-all duration-150",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                  "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none",
                   "hover:!bg-[color-mix(in_oklch,var(--section-accent)_15%,transparent)] hover:text-foreground",
                   activeSection === slug
                     ? "bg-[color-mix(in_oklch,var(--section-accent)_25%,transparent)] font-medium text-accent-foreground"

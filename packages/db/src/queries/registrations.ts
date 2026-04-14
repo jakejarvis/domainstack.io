@@ -1,11 +1,13 @@
+import type { InferInsertModel } from "drizzle-orm";
+import { eq } from "drizzle-orm";
+
 import type {
   ProviderRef,
   RegistrationContact,
   RegistrationNameserver,
   RegistrationResponse,
 } from "@domainstack/types";
-import type { InferInsertModel } from "drizzle-orm";
-import { eq } from "drizzle-orm";
+
 import { db } from "../client";
 import { domains, providers, registrations } from "../schema";
 import type { CacheResult } from "../types";
@@ -117,10 +119,7 @@ export async function getCachedRegistration(
     rdapServers: row.registration.rdapServers ?? undefined,
     source: row.registration.source ?? null,
     registrarProvider,
-    rawResponse: getRawResponseFromDb(
-      row.registration.rawResponse,
-      row.registration.source,
-    ),
+    rawResponse: getRawResponseFromDb(row.registration.rawResponse, row.registration.source),
   };
 
   return { data: response, stale, fetchedAt, expiresAt };

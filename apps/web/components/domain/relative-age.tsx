@@ -1,8 +1,9 @@
 "use client";
 
-import { cn } from "@domainstack/ui/utils";
 import { formatDistanceToNowStrict } from "date-fns";
 import { useMemo } from "react";
+
+import { cn } from "@domainstack/ui/utils";
 
 export function RelativeAgeString({
   from,

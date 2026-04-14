@@ -62,7 +62,7 @@ function NotificationMatrixSkeleton({ className }: { className?: string }) {
   return (
     <div className={className}>
       {/* Header row */}
-      <div className="flex items-center border-border border-b py-2 pr-2 pl-1.5">
+      <div className="flex items-center border-b border-border py-2 pr-2 pl-1.5">
         <Skeleton className="h-3 w-16" />
         <div className="ml-auto flex items-center gap-1">
           <div className="flex w-14 justify-center">
@@ -234,16 +234,12 @@ export function LinkedAccountsSkeleton({ className }: { className?: string }) {
  * Skeleton for the tabs navigation.
  * Shows placeholders for tab triggers (line variant with full-width border).
  */
-export function SettingsSkeletonTabsList({
-  className,
-}: {
-  className?: string;
-}) {
+export function SettingsSkeletonTabsList({ className }: { className?: string }) {
   return (
     <div className={cn("w-full", className)}>
-      <div className="flex h-10 w-full items-center border-muted border-b">
+      <div className="flex h-10 w-full items-center border-b border-muted">
         {/* Subscription Tab (Active) */}
-        <div className="flex h-10 items-center gap-2 border-foreground border-b px-3">
+        <div className="flex h-10 items-center gap-2 border-b border-foreground px-3">
           <Skeleton className="size-4 rounded-sm" />
           <Skeleton className="h-3.5 w-[76px]" />
         </div>

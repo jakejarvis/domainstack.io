@@ -1,5 +1,6 @@
 /* @vitest-environment node */
 import { describe, expect, it } from "vitest";
+
 import type { DetectionContext, Rule } from "./rules";
 import { evalRule } from "./rules";
 
@@ -491,9 +492,7 @@ describe("evalRule", () => {
             any: [
               { kind: "headerEquals", name: "server", value: "vercel" },
               {
-                any: [
-                  { kind: "headerEquals", name: "server", value: "netlify" },
-                ],
+                any: [{ kind: "headerEquals", name: "server", value: "netlify" }],
               },
             ],
           },

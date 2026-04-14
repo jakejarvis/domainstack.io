@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+
 import { render, screen } from "@/mocks/react";
+
 import { MetaTagsGrid } from "./meta-tags-grid";
 
 describe("MetaTagsGrid", () => {
@@ -85,8 +87,7 @@ describe("MetaTagsGrid", () => {
       // Filter out any links that might be from external link icons
       const valueLinks = links.filter(
         (link) =>
-          link.textContent?.includes("Just a title") ||
-          link.textContent?.includes("John Doe"),
+          link.textContent?.includes("Just a title") || link.textContent?.includes("John Doe"),
       );
       expect(valueLinks.length).toBe(0);
     });
@@ -157,9 +158,7 @@ describe("MetaTagsGrid", () => {
         render(<MetaTagsGrid metaTagValues={testCase.metaTagValues} />);
 
         // Verify count
-        expect(
-          screen.getByText(testCase.expectedCount.toString()),
-        ).toBeInTheDocument();
+        expect(screen.getByText(testCase.expectedCount.toString())).toBeInTheDocument();
 
         // Use getAllByText to handle elements that appear in multiple places
         for (const expectedTag of testCase.expectedTags) {

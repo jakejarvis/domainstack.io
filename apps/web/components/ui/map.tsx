@@ -1,8 +1,5 @@
 "use client";
 
-import { analytics } from "@domainstack/analytics/client";
-import { Spinner } from "@domainstack/ui/spinner";
-import { cn } from "@domainstack/ui/utils";
 import {
   IconArrowsMaximize,
   IconLoader2,
@@ -24,7 +21,11 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
+
 import { useTheme } from "@/hooks/use-theme";
+import { analytics } from "@domainstack/analytics/client";
+import { Spinner } from "@domainstack/ui/spinner";
+import { cn } from "@domainstack/ui/utils";
 
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -69,18 +70,14 @@ const DefaultLoader = () => (
   </div>
 );
 
-function MapInstance({
-  children,
-  styles,
-  className,
-  ...props
-}: MapInstanceProps) {
+function MapInstance({ children, styles, className, ...props }: MapInstanceProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreGL.Map | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isStyleLoaded, setIsStyleLoaded] = useState(false);
   const { theme: resolvedTheme } = useTheme();
+  const initialMapOptionsRef = useRef(props);
 
   const mapStyles = useMemo(
     () => ({
@@ -89,26 +86,26 @@ function MapInstance({
     }),
     [styles],
   );
+  const initialMapStyleRef = useRef<MapStyleOption | null>(null);
+  if (initialMapStyleRef.current === null) {
+    initialMapStyleRef.current = resolvedTheme === "dark" ? mapStyles.dark : mapStyles.light;
+  }
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: this is intentional
   useEffect(() => {
     if (!isMounted || !containerRef.current) return;
 
-    const mapStyle =
-      resolvedTheme === "dark" ? mapStyles.dark : mapStyles.light;
-
     const mapInstance = new MapLibreGL.Map({
       container: containerRef.current,
-      style: mapStyle,
+      style: initialMapStyleRef.current ?? defaultStyles.light,
       renderWorldCopies: false,
       attributionControl: {
         compact: true,
       },
-      ...props,
+      ...initialMapOptionsRef.current,
     });
 
     const styleDataHandler = () => setIsStyleLoaded(true);
@@ -129,26 +126,24 @@ function MapInstance({
   useEffect(() => {
     if (mapRef.current) {
       setIsStyleLoaded(false);
-      mapRef.current.setStyle(
-        resolvedTheme === "dark" ? mapStyles.dark : mapStyles.light,
-        { diff: true },
-      );
+      mapRef.current.setStyle(resolvedTheme === "dark" ? mapStyles.dark : mapStyles.light, {
+        diff: true,
+      });
     }
   }, [resolvedTheme, mapStyles]);
 
   const isLoading = !isMounted || !isLoaded || !isStyleLoaded;
+  const contextValue = useMemo(
+    () => ({
+      map: mapRef.current,
+      isLoaded: isMounted && isLoaded && isStyleLoaded,
+    }),
+    [isMounted, isLoaded, isStyleLoaded],
+  );
 
   return (
-    <MapContext.Provider
-      value={{
-        map: mapRef.current,
-        isLoaded: isMounted && isLoaded && isStyleLoaded,
-      }}
-    >
-      <div
-        ref={containerRef}
-        className={cn("relative h-full w-full", className)}
-      >
+    <MapContext.Provider value={contextValue}>
+      <div ref={containerRef} className={cn("relative h-full w-full", className)}>
         {isLoading && <DefaultLoader />}
         {/* guard against hydration error */}
         {isMounted && children}
@@ -204,27 +199,50 @@ function MapMarker({
   const markerElementRef = useRef<HTMLDivElement | null>(null);
   const [isReady, setIsReady] = useState(false);
   const markerOptionsRef = useRef(markerOptions);
+  const initialMarkerOptionsRef = useRef(markerOptions);
+  const markerStateRef = useRef({
+    longitude,
+    latitude,
+    draggable,
+    onClick,
+    onMouseEnter,
+    onMouseLeave,
+    onDragStart,
+    onDrag,
+    onDragEnd,
+  });
+  markerStateRef.current = {
+    longitude,
+    latitude,
+    draggable,
+    onClick,
+    onMouseEnter,
+    onMouseLeave,
+    onDragStart,
+    onDrag,
+    onDragEnd,
+  };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: this is intentional
   useEffect(() => {
     if (!isLoaded || !map) return;
 
     const container = document.createElement("div");
     markerElementRef.current = container;
+    const currentState = markerStateRef.current;
 
     const marker = new MapLibreGL.Marker({
-      ...markerOptions,
+      ...initialMarkerOptionsRef.current,
       element: container,
-      draggable,
+      draggable: currentState.draggable,
     })
-      .setLngLat([longitude, latitude])
+      .setLngLat([currentState.longitude, currentState.latitude])
       .addTo(map);
 
     markerRef.current = marker;
 
-    const handleClick = (e: MouseEvent) => onClick?.(e);
-    const handleMouseEnter = (e: MouseEvent) => onMouseEnter?.(e);
-    const handleMouseLeave = (e: MouseEvent) => onMouseLeave?.(e);
+    const handleClick = (e: MouseEvent) => markerStateRef.current.onClick?.(e);
+    const handleMouseEnter = (e: MouseEvent) => markerStateRef.current.onMouseEnter?.(e);
+    const handleMouseLeave = (e: MouseEvent) => markerStateRef.current.onMouseLeave?.(e);
 
     container.addEventListener("click", handleClick);
     container.addEventListener("mouseenter", handleMouseEnter);
@@ -232,15 +250,15 @@ function MapMarker({
 
     const handleDragStart = () => {
       const lngLat = marker.getLngLat();
-      onDragStart?.({ lng: lngLat.lng, lat: lngLat.lat });
+      markerStateRef.current.onDragStart?.({ lng: lngLat.lng, lat: lngLat.lat });
     };
     const handleDrag = () => {
       const lngLat = marker.getLngLat();
-      onDrag?.({ lng: lngLat.lng, lat: lngLat.lat });
+      markerStateRef.current.onDrag?.({ lng: lngLat.lng, lat: lngLat.lat });
     };
     const handleDragEnd = () => {
       const lngLat = marker.getLngLat();
-      onDragEnd?.({ lng: lngLat.lng, lat: lngLat.lat });
+      markerStateRef.current.onDragEnd?.({ lng: lngLat.lng, lat: lngLat.lat });
     };
 
     marker.on("dragstart", handleDragStart);
@@ -284,29 +302,21 @@ function MapMarker({
       markerRef.current.setRotation(markerOptions.rotation ?? 0);
     }
     if (prev.rotationAlignment !== markerOptions.rotationAlignment) {
-      markerRef.current.setRotationAlignment(
-        markerOptions.rotationAlignment ?? "auto",
-      );
+      markerRef.current.setRotationAlignment(markerOptions.rotationAlignment ?? "auto");
     }
     if (prev.pitchAlignment !== markerOptions.pitchAlignment) {
-      markerRef.current.setPitchAlignment(
-        markerOptions.pitchAlignment ?? "auto",
-      );
+      markerRef.current.setPitchAlignment(markerOptions.pitchAlignment ?? "auto");
     }
 
     markerOptionsRef.current = markerOptions;
-  }, [
-    // biome-ignore lint/correctness/useExhaustiveDependencies: this is intentional
-    markerOptions,
-  ]);
+  }, [markerOptions]);
 
-  return (
-    <MarkerContext.Provider
-      value={{ markerRef, markerElementRef, map, isReady }}
-    >
-      {children}
-    </MarkerContext.Provider>
+  const markerContextValue = useMemo(
+    () => ({ markerRef, markerElementRef, map, isReady }),
+    [map, isReady],
   );
+
+  return <MarkerContext.Provider value={markerContextValue}>{children}</MarkerContext.Provider>;
 }
 
 type MapMarkerContentProps = {
@@ -320,9 +330,7 @@ function MapMarkerContent({ children, className }: MapMarkerContentProps) {
   if (!isReady || !markerElementRef.current) return null;
 
   return createPortal(
-    <div className={cn("relative", className)}>
-      {children || <DefaultMarkerIcon />}
-    </div>,
+    <div className={cn("relative", className)}>{children || <DefaultMarkerIcon />}</div>,
     markerElementRef.current,
   );
 }
@@ -353,8 +361,8 @@ function MapMarkerPopup({
   const popupRef = useRef<MapLibreGL.Popup | null>(null);
   const [mounted, setMounted] = useState(false);
   const popupOptionsRef = useRef(popupOptions);
+  const initialPopupOptionsRef = useRef(popupOptions);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: this is intentional
   useEffect(() => {
     if (!isReady || !markerRef.current) return;
 
@@ -363,7 +371,7 @@ function MapMarkerPopup({
 
     const popup = new MapLibreGL.Popup({
       offset: 16,
-      ...popupOptions,
+      ...initialPopupOptionsRef.current,
       closeButton: false,
     })
       .setMaxWidth("none")
@@ -379,7 +387,7 @@ function MapMarkerPopup({
       containerRef.current = null;
       setMounted(false);
     };
-  }, [isReady]);
+  }, [isReady, markerRef]);
 
   useEffect(() => {
     if (!popupRef.current) return;
@@ -393,10 +401,7 @@ function MapMarkerPopup({
     }
 
     popupOptionsRef.current = popupOptions;
-  }, [
-    // biome-ignore lint/correctness/useExhaustiveDependencies: this is intentional
-    popupOptions,
-  ]);
+  }, [popupOptions]);
 
   const handleClose = () => popupRef.current?.remove();
 
@@ -405,7 +410,7 @@ function MapMarkerPopup({
   return createPortal(
     <div
       className={cn(
-        "fade-in-0 zoom-in-95 relative animate-in rounded-md border bg-popover p-3 text-popover-foreground shadow-md",
+        "relative animate-in rounded-md border bg-popover p-3 text-popover-foreground shadow-md fade-in-0 zoom-in-95",
         className,
       )}
     >
@@ -413,7 +418,7 @@ function MapMarkerPopup({
         <button
           type="button"
           onClick={handleClose}
-          className="absolute top-1 right-1 z-10 cursor-pointer rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="absolute top-1 right-1 z-10 cursor-pointer rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
           aria-label="Close popup"
         >
           <IconX className="h-4 w-4" />
@@ -431,28 +436,23 @@ type MapMarkerTooltipProps = {
   className?: string;
 } & Omit<PopupOptions, "className" | "closeButton" | "closeOnClick">;
 
-function MapMarkerTooltip({
-  children,
-  className,
-  ...popupOptions
-}: MapMarkerTooltipProps) {
+function MapMarkerTooltip({ children, className, ...popupOptions }: MapMarkerTooltipProps) {
   const { markerRef, markerElementRef, map, isReady } = useMarkerContext();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const popupRef = useRef<MapLibreGL.Popup | null>(null);
   const [mounted, setMounted] = useState(false);
   const popupOptionsRef = useRef(popupOptions);
+  const initialPopupOptionsRef = useRef(popupOptions);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: this is intentional
   useEffect(() => {
-    if (!isReady || !markerRef.current || !markerElementRef.current || !map)
-      return;
+    if (!isReady || !markerRef.current || !markerElementRef.current || !map) return;
 
     const container = document.createElement("div");
     containerRef.current = container;
 
     const popup = new MapLibreGL.Popup({
       offset: 16,
-      ...popupOptions,
+      ...initialPopupOptionsRef.current,
       closeOnClick: true,
       closeButton: false,
     })
@@ -481,7 +481,7 @@ function MapMarkerTooltip({
       containerRef.current = null;
       setMounted(false);
     };
-  }, [isReady, map]);
+  }, [isReady, map, markerRef, markerElementRef]);
 
   useEffect(() => {
     if (!popupRef.current) return;
@@ -495,17 +495,14 @@ function MapMarkerTooltip({
     }
 
     popupOptionsRef.current = popupOptions;
-  }, [
-    // biome-ignore lint/correctness/useExhaustiveDependencies: this is intentional
-    popupOptions,
-  ]);
+  }, [popupOptions]);
 
   if (!mounted || !containerRef.current) return null;
 
   return createPortal(
     <div
       className={cn(
-        "fade-in-0 zoom-in-95 animate-in rounded-md bg-foreground px-2 py-1 text-background text-xs shadow-md",
+        "animate-in rounded-md bg-foreground px-2 py-1 text-xs text-background shadow-md fade-in-0 zoom-in-95",
         className,
       )}
     >
@@ -521,11 +518,7 @@ type MapMarkerLabelProps = {
   position?: "top" | "bottom";
 };
 
-function MapMarkerLabel({
-  children,
-  className,
-  position = "top",
-}: MapMarkerLabelProps) {
+function MapMarkerLabel({ children, className, position = "top" }: MapMarkerLabelProps) {
   const positionClasses = {
     top: "bottom-full mb-1",
     bottom: "top-full mt-1",
@@ -535,7 +528,7 @@ function MapMarkerLabel({
     <div
       className={cn(
         "absolute left-1/2 -translate-x-1/2 whitespace-nowrap",
-        "font-medium text-[10px] text-foreground",
+        "text-[10px] font-medium text-foreground",
         positionClasses[position],
         className,
       )}
@@ -564,7 +557,7 @@ const positionClasses = {
 
 function ControlGroup({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-col overflow-hidden rounded-md border bg-background shadow-sm [&>button:not(:last-child)]:border-border [&>button:not(:last-child)]:border-b">
+    <div className="flex flex-col overflow-hidden rounded-md border bg-background shadow-sm [&>button:not(:last-child)]:border-b [&>button:not(:last-child)]:border-border">
       {children}
     </div>
   );
@@ -676,11 +669,7 @@ function MapControls({
 
   return (
     <div
-      className={cn(
-        "absolute z-10 flex flex-col gap-1.5",
-        positionClasses[position],
-        className,
-      )}
+      className={cn("absolute z-10 flex flex-col gap-1.5", positionClasses[position], className)}
     >
       {showZoom && (
         <ControlGroup>
@@ -786,24 +775,27 @@ function MapPopup({
   const { map } = useMap();
   const popupRef = useRef<MapLibreGL.Popup | null>(null);
   const popupOptionsRef = useRef(popupOptions);
+  const initialPopupOptionsRef = useRef(popupOptions);
+  const popupStateRef = useRef({ longitude, latitude, onClose });
+  popupStateRef.current = { longitude, latitude, onClose };
 
   const container = useMemo(() => document.createElement("div"), []);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: this is intentional
   useEffect(() => {
     if (!map) return;
+    const currentState = popupStateRef.current;
 
     const popup = new MapLibreGL.Popup({
       offset: 16,
-      ...popupOptions,
+      ...initialPopupOptionsRef.current,
       closeButton: false,
     })
       .setMaxWidth("none")
       .setDOMContent(container)
-      .setLngLat([longitude, latitude])
+      .setLngLat([currentState.longitude, currentState.latitude])
       .addTo(map);
 
-    const onCloseProp = () => onClose?.();
+    const onCloseProp = () => popupStateRef.current.onClose?.();
 
     popup.on("close", onCloseProp);
 
@@ -816,7 +808,7 @@ function MapPopup({
       }
       popupRef.current = null;
     };
-  }, [map]);
+  }, [map, container]);
 
   useEffect(() => {
     popupRef.current?.setLngLat([longitude, latitude]);
@@ -834,10 +826,7 @@ function MapPopup({
     }
 
     popupOptionsRef.current = popupOptions;
-  }, [
-    // biome-ignore lint/correctness/useExhaustiveDependencies: this is intentional
-    popupOptions,
-  ]);
+  }, [popupOptions]);
 
   const handleClose = () => {
     popupRef.current?.remove();
@@ -847,7 +836,7 @@ function MapPopup({
   return createPortal(
     <div
       className={cn(
-        "fade-in-0 zoom-in-95 relative animate-in rounded-md border bg-popover p-3 text-popover-foreground shadow-md",
+        "relative animate-in rounded-md border bg-popover p-3 text-popover-foreground shadow-md fade-in-0 zoom-in-95",
         className,
       )}
     >
@@ -855,7 +844,7 @@ function MapPopup({
         <button
           type="button"
           onClick={handleClose}
-          className="absolute top-1 right-1 z-10 cursor-pointer rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="absolute top-1 right-1 z-10 cursor-pointer rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
           aria-label="Close popup"
         >
           <IconX className="h-4 w-4" />
@@ -887,11 +876,13 @@ function MapRoute({
   const id = useId();
   const sourceId = `route-source-${id}`;
   const layerId = `route-layer-${id}`;
+  const paintRef = useRef({ color, width, opacity, dashArray });
+  paintRef.current = { color, width, opacity, dashArray };
 
   // Add source and layer on mount
-  // biome-ignore lint/correctness/useExhaustiveDependencies: this is intentional
   useEffect(() => {
     if (!isLoaded || !map) return;
+    const paint = paintRef.current;
 
     map.addSource(sourceId, {
       type: "geojson",
@@ -908,10 +899,10 @@ function MapRoute({
       source: sourceId,
       layout: { "line-join": "round", "line-cap": "round" },
       paint: {
-        "line-color": color,
-        "line-width": width,
-        "line-opacity": opacity,
-        ...(dashArray && { "line-dasharray": dashArray }),
+        "line-color": paint.color,
+        "line-width": paint.width,
+        "line-opacity": paint.opacity,
+        ...(paint.dashArray && { "line-dasharray": paint.dashArray }),
       },
     });
 

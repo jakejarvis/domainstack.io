@@ -14,8 +14,10 @@
   },
   "scripts": {
     "check-types": "tsc --noEmit",
-    "lint": "biome check",
-    "format": "biome format --write",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "fmt": "oxfmt --config ../../.oxfmtrc.json",
+    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json",
     "test": "vitest run --passWithNoTests",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
@@ -29,14 +31,6 @@
     "drizzle-orm": "^0.45.2",
     "pg": "^8.20.0"
   },
-  "peerDependencies": {
-    "@vercel/functions": ">=2.0.0"
-  },
-  "peerDependenciesMeta": {
-    "@vercel/functions": {
-      "optional": true
-    }
-  },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@electric-sql/pglite": "^0.4.4",
@@ -46,5 +40,13 @@
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
     "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "@vercel/functions": ">=2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@vercel/functions": {
+      "optional": true
+    }
   }
 }

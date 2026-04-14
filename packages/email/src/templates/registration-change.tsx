@@ -52,8 +52,8 @@ function RegistrationChangeEmail({
       <EmailText>Hi {userName},</EmailText>
 
       <EmailText>
-        We detected {changeCount === 1 ? "a change" : `${changeCount} changes`}{" "}
-        to the registration details for <strong>{domainName}</strong>.
+        We detected {changeCount === 1 ? "a change" : `${changeCount} changes`} to the registration
+        details for <strong>{domainName}</strong>.
       </EmailText>
 
       {changes.registrarChanged && (
@@ -61,8 +61,7 @@ function RegistrationChangeEmail({
           <EmailSubheading>Registrar Changed</EmailSubheading>
           <EmailBox variant="warning">
             <EmailBoxText variant="warning">
-              <strong>Previous:</strong>{" "}
-              {changes.previousRegistrar || "Unknown"}
+              <strong>Previous:</strong> {changes.previousRegistrar || "Unknown"}
               <br />
               <strong>New:</strong> {changes.newRegistrar || "Unknown"}
             </EmailBoxText>
@@ -75,20 +74,19 @@ function RegistrationChangeEmail({
           <EmailSubheading>Nameservers Changed</EmailSubheading>
           <EmailBox variant="warning">
             <EmailBoxText variant="warning">
-              {changes.previousNameservers &&
-                changes.previousNameservers.length > 0 && (
-                  <>
-                    <strong>Previous:</strong>
-                    <br />
-                    {changes.previousNameservers.map((ns) => (
-                      <span key={`prev-${ns.host}`}>
-                        • {ns.host}
-                        <br />
-                      </span>
-                    ))}
-                    <br />
-                  </>
-                )}
+              {changes.previousNameservers && changes.previousNameservers.length > 0 && (
+                <>
+                  <strong>Previous:</strong>
+                  <br />
+                  {changes.previousNameservers.map((ns) => (
+                    <span key={`prev-${ns.host}`}>
+                      • {ns.host}
+                      <br />
+                    </span>
+                  ))}
+                  <br />
+                </>
+              )}
               {changes.newNameservers && changes.newNameservers.length > 0 && (
                 <>
                   <strong>New:</strong>
@@ -129,29 +127,25 @@ function RegistrationChangeEmail({
         </>
       )}
 
-      {changes.statusesChanged &&
-        changes.previousStatuses &&
-        changes.newStatuses && (
-          <>
-            <EmailSubheading>Domain Statuses Changed</EmailSubheading>
-            <EmailBox variant="warning">
-              <EmailBoxText variant="warning">
-                <strong>Previous:</strong>{" "}
-                {changes.previousStatuses.join(", ") || "None"}
-                <br />
-                <strong>New:</strong> {changes.newStatuses.join(", ") || "None"}
-              </EmailBoxText>
-            </EmailBox>
-          </>
-        )}
+      {changes.statusesChanged && changes.previousStatuses && changes.newStatuses && (
+        <>
+          <EmailSubheading>Domain Statuses Changed</EmailSubheading>
+          <EmailBox variant="warning">
+            <EmailBoxText variant="warning">
+              <strong>Previous:</strong> {changes.previousStatuses.join(", ") || "None"}
+              <br />
+              <strong>New:</strong> {changes.newStatuses.join(", ") || "None"}
+            </EmailBoxText>
+          </EmailBox>
+        </>
+      )}
 
       {/* Show danger warning for high-risk changes (registrar or transfer lock) */}
       {(changes.registrarChanged || changes.transferLockChanged) && (
         <EmailBox variant="danger">
           <EmailBoxText variant="danger">
-            <strong>Action Required:</strong> If you didn&apos;t make these
-            changes, your domain may have been compromised. Contact your
-            registrar immediately.
+            <strong>Action Required:</strong> If you didn&apos;t make these changes, your domain may
+            have been compromised. Contact your registrar immediately.
           </EmailBoxText>
         </EmailBox>
       )}
@@ -162,23 +156,20 @@ function RegistrationChangeEmail({
         (changes.nameserversChanged || changes.statusesChanged) && (
           <EmailBox variant="info">
             <EmailBoxText variant="info">
-              <strong>Note:</strong> If you didn&apos;t authorize these changes,
-              contact your registrar to investigate.
+              <strong>Note:</strong> If you didn&apos;t authorize these changes, contact your
+              registrar to investigate.
             </EmailBoxText>
           </EmailBox>
         )}
 
-      <EmailButton href={`${baseUrl}/${domainName}`}>
-        View Domain Details
-      </EmailButton>
+      <EmailButton href={`${baseUrl}/${domainName}`}>View Domain Details</EmailButton>
 
       <EmailHr />
 
       <EmailFooter>
         You received this email because you&apos;re tracking {domainName} on{" "}
-        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. You
-        can manage your notification settings in your{" "}
-        <EmailLink href={`${baseUrl}/settings`}>dashboard</EmailLink>.
+        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. You can manage your
+        notification settings in your <EmailLink href={`${baseUrl}/settings`}>dashboard</EmailLink>.
       </EmailFooter>
     </EmailLayout>
   );
@@ -195,14 +186,8 @@ RegistrationChangeEmail.PreviewProps = {
     statusesChanged: false,
     previousRegistrar: "GoDaddy",
     newRegistrar: "Cloudflare",
-    previousNameservers: [
-      { host: "ns1.godaddy.com" },
-      { host: "ns2.godaddy.com" },
-    ],
-    newNameservers: [
-      { host: "ns1.cloudflare.com" },
-      { host: "ns2.cloudflare.com" },
-    ],
+    previousNameservers: [{ host: "ns1.godaddy.com" }, { host: "ns2.godaddy.com" }],
+    newNameservers: [{ host: "ns1.cloudflare.com" }, { host: "ns2.cloudflare.com" }],
   },
   baseUrl: "https://domainstack.io",
 } as RegistrationChangeEmailProps;

@@ -55,20 +55,15 @@ function VerificationInstructionsEmail({
       </EmailText>
 
       <EmailText>
-        Please complete <strong>ONE</strong> of the following verification
-        methods:
+        Please complete <strong>ONE</strong> of the following verification methods:
       </EmailText>
 
       <EmailHr />
 
       {/* Option 1: DNS */}
       <EmailSection variant="option">
-        <EmailSubheading>
-          Option 1: DNS TXT Record (Recommended)
-        </EmailSubheading>
-        <EmailText>
-          Add a TXT record to the domain&apos;s DNS settings:
-        </EmailText>
+        <EmailSubheading>Option 1: DNS TXT Record (Recommended)</EmailSubheading>
+        <EmailText>Add a TXT record to the domain&apos;s DNS settings:</EmailText>
         <EmailSection variant="code">
           <EmailFieldLabel>Host / Name</EmailFieldLabel>
           <EmailCodeText>@ ({dnsHostname})</EmailCodeText>
@@ -81,9 +76,7 @@ function VerificationInstructionsEmail({
             {dnsTTL} ({dnsTTLLabel})
           </EmailCodeText>
         </EmailSection>
-        <EmailNoteText>
-          Note: DNS changes may take up to 48&nbsp;hours to propagate.
-        </EmailNoteText>
+        <EmailNoteText>Note: DNS changes may take up to 48&nbsp;hours to propagate.</EmailNoteText>
       </EmailSection>
 
       <EmailHr />
@@ -111,9 +104,7 @@ function VerificationInstructionsEmail({
       {/* Option 3: Meta Tag */}
       <EmailSection variant="option">
         <EmailSubheading>Option 3: Meta Tag</EmailSubheading>
-        <EmailText>
-          Add this meta tag to the homepage&apos;s {"<head>"} section:
-        </EmailText>
+        <EmailText>Add this meta tag to the homepage&apos;s {"<head>"} section:</EmailText>
         <EmailSection variant="code">
           <EmailCodeText>{metaTag}</EmailCodeText>
         </EmailSection>
@@ -123,16 +114,15 @@ function VerificationInstructionsEmail({
 
       <EmailText>
         Once completed, {senderName} can return to{" "}
-        <EmailLink href={`${baseUrl}/dashboard`}>Domainstack</EmailLink> to
-        verify ownership.
+        <EmailLink href={`${baseUrl}/dashboard`}>Domainstack</EmailLink> to verify ownership.
       </EmailText>
 
       <EmailHr />
 
       <EmailFooter>
         This email was sent on behalf of {senderName} via{" "}
-        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. If you
-        didn&apos;t expect this email, you can safely ignore it.
+        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. If you didn&apos;t expect
+        this email, you can safely ignore it.
       </EmailFooter>
     </EmailLayout>
   );

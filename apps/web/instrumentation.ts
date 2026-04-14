@@ -23,10 +23,7 @@ export async function register() {
  * Handle uncaught errors in Next.js requests.
  * Logs errors with full context for debugging.
  */
-export const onRequestError: Instrumentation.onRequestError = async (
-  error,
-  request,
-) => {
+export const onRequestError: Instrumentation.onRequestError = async (error, request) => {
   // Only track errors in Node.js runtime (not Edge)
   if (process.env.NEXT_RUNTIME === "nodejs") {
     try {

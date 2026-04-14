@@ -1,12 +1,8 @@
 "use client";
 
-import {
-  useInfiniteQuery,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+
 import { useTRPC } from "@/lib/trpc/client";
 
 const PAGE_SIZE = 20;
@@ -22,10 +18,7 @@ type UseNotificationsDataOptions = {
  * Hook for notifications data fetching and mutations.
  * Encapsulates all TanStack Query logic for the notifications popover.
  */
-export function useNotificationsData({
-  filter,
-  enabled,
-}: UseNotificationsDataOptions) {
+export function useNotificationsData({ filter, enabled }: UseNotificationsDataOptions) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
@@ -62,9 +55,7 @@ export function useNotificationsData({
       const previousInbox = queryClient.getQueryData(inboxListQueryKey);
       const previousArchive = queryClient.getQueryData(archiveListQueryKey);
 
-      const wasInInbox = previousInbox?.pages?.some((page) =>
-        page.items.some((n) => n.id === id),
-      );
+      const wasInInbox = previousInbox?.pages?.some((page) => page.items.some((n) => n.id === id));
 
       if (wasInInbox) {
         queryClient.setQueryData(countQueryKey, (old: number | undefined) =>
@@ -90,9 +81,7 @@ export function useNotificationsData({
           ...old,
           pages: old.pages.map((page) => ({
             ...page,
-            items: page.items.map((n) =>
-              n.id === id ? { ...n, readAt: n.readAt ?? now } : n,
-            ),
+            items: page.items.map((n) => (n.id === id ? { ...n, readAt: n.readAt ?? now } : n)),
           })),
         };
       });
@@ -188,30 +177,23 @@ export function useNotificationsData({
   });
 
   // Get notifications with infinite scrolling
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetching,
-    isFetchingNextPage,
-    isLoading,
-    isError,
-  } = useInfiniteQuery({
-    ...trpc.notifications.list.infiniteQueryOptions(
-      {
-        limit: PAGE_SIZE,
-        filter,
-      },
-      {
-        getNextPageParam: (lastPage) => lastPage.nextCursor,
-        refetchOnWindowFocus: true,
-        // Always refetch on mount/access to ensure fresh data
-        staleTime: 0,
-        // Base UI popover keeps content mounted for close animations; gate fetching on open
-        enabled,
-      },
-    ),
-  });
+  const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage, isLoading, isError } =
+    useInfiniteQuery({
+      ...trpc.notifications.list.infiniteQueryOptions(
+        {
+          limit: PAGE_SIZE,
+          filter,
+        },
+        {
+          getNextPageParam: (lastPage) => lastPage.nextCursor,
+          refetchOnWindowFocus: true,
+          // Always refetch on mount/access to ensure fresh data
+          staleTime: 0,
+          // Base UI popover keeps content mounted for close animations; gate fetching on open
+          enabled,
+        },
+      ),
+    });
 
   const notifications = data?.pages.flatMap((page) => page.items) ?? [];
 
@@ -221,8 +203,7 @@ export function useNotificationsData({
   const showLoading = isLoading || (isFetching && data === undefined);
 
   // Helper to get latest unread count from cache
-  const getLatestUnreadCount = () =>
-    queryClient.getQueryData<number>(countQueryKey) ?? count;
+  const getLatestUnreadCount = () => queryClient.getQueryData<number>(countQueryKey) ?? count;
 
   return {
     // Data

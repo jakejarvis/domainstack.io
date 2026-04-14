@@ -1,7 +1,7 @@
-import { Skeleton } from "@domainstack/ui/skeleton";
 import { SiGithub } from "@icons-pack/react-simple-icons";
 import Link from "next/link";
 import { Suspense } from "react";
+
 import { AppHeaderClientButtons } from "@/components/layout/app-header-client-buttons";
 import { AppHeaderGrid } from "@/components/layout/app-header-grid";
 import { AppHeaderSeparator } from "@/components/layout/app-header-separator";
@@ -10,6 +10,7 @@ import { GithubStars } from "@/components/layout/github-stars";
 import { Logo } from "@/components/logo";
 import { HeaderSearchClient } from "@/components/search/header-search-client";
 import { HeaderSearchSkeleton } from "@/components/search/header-search-skeleton";
+import { Skeleton } from "@domainstack/ui/skeleton";
 
 export function AppHeader() {
   return (

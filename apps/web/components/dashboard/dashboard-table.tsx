@@ -1,10 +1,6 @@
 "use no memo"; // Disable React Compiler memoization - TanStack Table has issues with it
-
 // See: https://github.com/TanStack/table/issues/5567
 
-import type { TrackedDomainWithDetails } from "@domainstack/types";
-import { ScrollArea } from "@domainstack/ui/scroll-area";
-import { cn } from "@domainstack/ui/utils";
 import type { SortingState } from "@tanstack/react-table";
 import {
   flexRender,
@@ -16,6 +12,7 @@ import {
 import { AnimatePresence } from "motion/react";
 import { parseAsString, useQueryState } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef } from "react";
+
 import {
   createColumns,
   createUnverifiedLastSorter,
@@ -25,30 +22,23 @@ import { SortIndicator } from "@/components/dashboard/sort-indicator";
 import { UnverifiedTableRow } from "@/components/dashboard/unverified-table-row";
 import { UpgradeRow } from "@/components/dashboard/upgrade-row";
 import { VerifiedTableRow } from "@/components/dashboard/verified-table-row";
-import {
-  useDashboardActions,
-  useDashboardPaginationContext,
-} from "@/context/dashboard-context";
+import { useDashboardActions, useDashboardPaginationContext } from "@/context/dashboard-context";
 import { useDashboardSelection } from "@/hooks/use-dashboard-selection";
-import {
-  DEFAULT_SORT,
-  parseSortParam,
-  serializeSortState,
-} from "@/lib/dashboard-utils";
+import { DEFAULT_SORT, parseSortParam, serializeSortState } from "@/lib/dashboard-utils";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
+import type { TrackedDomainWithDetails } from "@domainstack/types";
+import { ScrollArea } from "@domainstack/ui/scroll-area";
+import { cn } from "@domainstack/ui/utils";
 
 type DashboardTableProps = {
   domains: TrackedDomainWithDetails[];
-  onTableReady?: (
-    table: ReturnType<typeof useReactTable<TrackedDomainWithDetails>>,
-  ) => void;
+  onTableReady?: (table: ReturnType<typeof useReactTable<TrackedDomainWithDetails>>) => void;
 };
 
 export function DashboardTable({ domains, onTableReady }: DashboardTableProps) {
   // Get selection and actions from context
   const { selectedIds, toggle } = useDashboardSelection();
-  const { onVerify, onRemove, onArchive, onToggleMuted } =
-    useDashboardActions();
+  const { onVerify, onRemove, onArchive, onToggleMuted } = useDashboardActions();
   const { pageIndex, pageSize, setPageSize, setPageIndex, resetPage } =
     useDashboardPaginationContext();
   const pagination = { pageIndex, pageSize };
@@ -66,8 +56,7 @@ export function DashboardTable({ domains, onTableReady }: DashboardTableProps) {
   const sorting = useMemo(() => parseSortParam(sortParam), [sortParam]);
   const setSorting = useCallback(
     (updater: SortingState | ((old: SortingState) => SortingState)) => {
-      const newSorting =
-        typeof updater === "function" ? updater(sorting) : updater;
+      const newSorting = typeof updater === "function" ? updater(sorting) : updater;
       setSortParam(serializeSortState(newSorting));
       onSortChangeRef.current?.();
     },
@@ -86,11 +75,12 @@ export function DashboardTable({ domains, onTableReady }: DashboardTableProps) {
 
   // Create a stable sorting helper that reads from ref instead of closing over state
   // This prevents columns from being recreated on every render
-  const withUnverifiedLast = useCallback(
-    createUnverifiedLastSorter((columnId) => {
-      const columnSort = sortingRef.current.find((s) => s.id === columnId);
-      return columnSort?.desc ?? false;
-    }),
+  const withUnverifiedLast = useMemo(
+    () =>
+      createUnverifiedLastSorter((columnId) => {
+        const columnSort = sortingRef.current.find((s) => s.id === columnId);
+        return columnSort?.desc ?? false;
+      }),
     [], // Empty deps - reads from ref, not state
   );
 
@@ -116,8 +106,7 @@ export function DashboardTable({ domains, onTableReady }: DashboardTableProps) {
     state: { sorting, pagination, columnVisibility },
     onSortingChange: setSorting,
     onPaginationChange: (updater) => {
-      const newPagination =
-        typeof updater === "function" ? updater(pagination) : updater;
+      const newPagination = typeof updater === "function" ? updater(pagination) : updater;
       setPageIndex(newPagination.pageIndex);
     },
     onColumnVisibilityChange: setColumnVisibility,
@@ -149,7 +138,7 @@ export function DashboardTable({ domains, onTableReady }: DashboardTableProps) {
             {table.getHeaderGroups().map((headerGroup) => (
               <tr
                 key={headerGroup.id}
-                className="min-w-full border-black/10 border-b bg-muted/30 dark:border-white/10"
+                className="min-w-full border-b border-black/10 bg-muted/30 dark:border-white/10"
               >
                 {headerGroup.headers.map((header) => {
                   const isSelectColumn = header.column.id === "select";
@@ -165,37 +154,24 @@ export function DashboardTable({ domains, onTableReady }: DashboardTableProps) {
                   const canSort = header.column.getCanSort();
                   // Get sort state directly from our state instead of table API
                   // (header.column.getIsSorted() can return stale values)
-                  const sortEntry = sorting.find(
-                    (s) => s.id === header.column.id,
-                  );
-                  const isSorted = sortEntry
-                    ? sortEntry.desc
-                      ? "desc"
-                      : "asc"
-                    : false;
+                  const sortEntry = sorting.find((s) => s.id === header.column.id);
+                  const isSorted = sortEntry ? (sortEntry.desc ? "desc" : "asc") : false;
 
-                  const headerContent =
-                    header.isPlaceholder ? null : canSort ? (
-                      <button
-                        type="button"
-                        className={cn(
-                          "-ml-1.5 inline-flex h-6 cursor-pointer select-none items-center gap-1 rounded px-1.5 text-xs leading-none transition-colors hover:bg-accent hover:text-foreground",
-                          isSorted && "text-foreground",
-                        )}
-                        onClick={header.column.getToggleSortingHandler()}
-                      >
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                        <SortIndicator isSorted={isSorted} />
-                      </button>
-                    ) : (
-                      flexRender(
-                        header.column.columnDef.header,
-                        header.getContext(),
-                      )
-                    );
+                  const headerContent = header.isPlaceholder ? null : canSort ? (
+                    <button
+                      type="button"
+                      className={cn(
+                        "-ml-1.5 inline-flex h-6 cursor-pointer items-center gap-1 rounded px-1.5 text-xs leading-none transition-colors select-none hover:bg-accent hover:text-foreground",
+                        isSorted && "text-foreground",
+                      )}
+                      onClick={header.column.getToggleSortingHandler()}
+                    >
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                      <SortIndicator isSorted={isSorted} />
+                    </button>
+                  ) : (
+                    flexRender(header.column.columnDef.header, header.getContext())
+                  );
 
                   return (
                     <th
@@ -205,7 +181,7 @@ export function DashboardTable({ domains, onTableReady }: DashboardTableProps) {
                         width: header.column.getSize(),
                       }}
                       className={cn(
-                        "h-9 px-2.5 text-left align-middle font-medium text-muted-foreground text-xs first:pl-4 last:pr-4",
+                        "h-9 px-2.5 text-left align-middle text-xs font-medium text-muted-foreground first:pl-4 last:pr-4",
                       )}
                     >
                       {headerContent}
@@ -220,7 +196,7 @@ export function DashboardTable({ domains, onTableReady }: DashboardTableProps) {
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="h-16 text-center text-muted-foreground text-sm"
+                  className="h-16 text-center text-sm text-muted-foreground"
                 >
                   No domains tracked yet.
                 </td>

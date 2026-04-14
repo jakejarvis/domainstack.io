@@ -1,18 +1,12 @@
-import { analytics } from "@domainstack/analytics/server";
-import {
-  getDomainById,
-  getScreenshotByDomainId,
-  isDomainBlocked,
-} from "@domainstack/db/queries";
-import { createLogger } from "@domainstack/logger";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getRun, start } from "workflow/api";
+
 import { checkRateLimit } from "@/lib/ratelimit/api";
-import {
-  type ScreenshotWorkflowResult,
-  screenshotWorkflow,
-} from "@/workflows/screenshot";
+import { type ScreenshotWorkflowResult, screenshotWorkflow } from "@/workflows/screenshot";
+import { analytics } from "@domainstack/analytics/server";
+import { getDomainById, getScreenshotByDomainId, isDomainBlocked } from "@domainstack/db/queries";
+import { createLogger } from "@domainstack/logger";
 
 const logger = createLogger({ source: "api/screenshot" });
 
@@ -74,10 +68,7 @@ export async function POST(
     const { domainId } = body as { domainId?: string };
 
     if (!domainId || typeof domainId !== "string") {
-      return NextResponse.json(
-        { error: "Missing or invalid domainId" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Missing or invalid domainId" }, { status: 400 });
     }
 
     // Look up domain by ID (security check - domain must exist)
@@ -156,10 +147,7 @@ export async function POST(
     );
   } catch (err) {
     logger.error({ err }, "failed to start screenshot workflow");
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -230,10 +218,7 @@ export async function GET(
     }
 
     // Still running
-    return NextResponse.json(
-      { status: "running" },
-      { headers: rateLimit.headers },
-    );
+    return NextResponse.json({ status: "running" }, { headers: rateLimit.headers });
   } catch (err) {
     logger.warn({ err, runId }, "failed to get workflow run status");
     return NextResponse.json({ error: "Run not found" }, { status: 404 });

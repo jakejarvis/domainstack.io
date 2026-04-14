@@ -1,15 +1,11 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@domainstack/ui/tabs";
 import { SiDiscord, SiFacebook, SiX } from "@icons-pack/react-simple-icons";
 import { IconPhotoOff } from "@tabler/icons-react";
 import Image from "next/image";
 import { useState, useTransition } from "react";
 
-type SocialPreviewProvider =
-  | "twitter"
-  | "facebook"
-  | "linkedin"
-  | "discord"
-  | "slack";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@domainstack/ui/tabs";
+
+type SocialPreviewProvider = "twitter" | "facebook" | "linkedin" | "discord" | "slack";
 
 export function SocialPreviews({
   preview,
@@ -24,20 +20,17 @@ export function SocialPreviews({
   };
   twitterVariant: "compact" | "large";
 }) {
-  const [selectedTab, setSelectedTab] =
-    useState<SocialPreviewProvider>("twitter");
+  const [selectedTab, setSelectedTab] = useState<SocialPreviewProvider>("twitter");
   const [, startTransition] = useTransition();
 
   return (
     <div className="mt-6 space-y-3">
-      <div className="text-[11px] text-foreground/70 uppercase tracking-[0.08em] dark:text-foreground/80">
+      <div className="text-[11px] tracking-[0.08em] text-foreground/70 uppercase dark:text-foreground/80">
         Open Graph
       </div>
       <Tabs
         value={selectedTab}
-        onValueChange={(v) =>
-          startTransition(() => setSelectedTab(v as typeof selectedTab))
-        }
+        onValueChange={(v) => startTransition(() => setSelectedTab(v as typeof selectedTab))}
       >
         <TabsList className="h-11 w-full">
           <TabsTrigger value="twitter" data-1p-ignore>
@@ -125,7 +118,7 @@ function PreviewImage({
         alt="Preview image"
         width={width}
         height={height}
-        className="h-full w-full select-none object-cover"
+        className="h-full w-full object-cover select-none"
         draggable={false}
         loading="lazy"
         unoptimized
@@ -134,9 +127,7 @@ function PreviewImage({
   }
 
   return (
-    <div
-      className={`flex h-full w-full items-center justify-center ${placeholderClassName}`}
-    >
+    <div className={`flex h-full w-full items-center justify-center ${placeholderClassName}`}>
       <IconPhotoOff className="h-5 w-5" aria-hidden />
       <span className="sr-only">No image</span>
     </div>
@@ -176,14 +167,14 @@ function SocialPreview({
             </div>
 
             <div className="min-w-0 flex-1 p-3">
-              <div className="truncate text-[#536471] text-[11px] leading-4 dark:text-[#8b98a5]">
+              <div className="truncate text-[11px] leading-4 text-[#536471] dark:text-[#8b98a5]">
                 {hostname}
               </div>
-              <div className="mt-0.5 line-clamp-1 font-semibold text-[15px]">
+              <div className="mt-0.5 line-clamp-1 text-[15px] font-semibold">
                 {title || hostname}
               </div>
               {description && (
-                <div className="mt-0.5 line-clamp-2 text-[#536471] text-[13px] dark:text-[#8b98a5]">
+                <div className="mt-0.5 line-clamp-2 text-[13px] text-[#536471] dark:text-[#8b98a5]">
                   {description}
                 </div>
               )}
@@ -205,14 +196,12 @@ function SocialPreview({
             </div>
           </div>
           <div className="p-3">
-            <div className="truncate text-[#536471] text-[11px] dark:text-[#8b98a5]">
+            <div className="truncate text-[11px] text-[#536471] dark:text-[#8b98a5]">
               {hostname}
             </div>
-            <div className="mt-0.5 line-clamp-2 font-semibold text-[15px]">
-              {title || hostname}
-            </div>
+            <div className="mt-0.5 line-clamp-2 text-[15px] font-semibold">{title || hostname}</div>
             {description && (
-              <div className="mt-0.5 line-clamp-2 text-[#536471] text-[13px] dark:text-[#8b98a5]">
+              <div className="mt-0.5 line-clamp-2 text-[13px] text-[#536471] dark:text-[#8b98a5]">
                 {description}
               </div>
             )}
@@ -236,14 +225,14 @@ function SocialPreview({
           </div>
         </div>
         <div className="bg-[#f0f2f5] px-4 py-3 dark:bg-[#3a3b3c]">
-          <div className="truncate font-medium text-[#606770] text-[11px] uppercase tracking-wide dark:text-[#b0b3b8]">
+          <div className="truncate text-[11px] font-medium tracking-wide text-[#606770] uppercase dark:text-[#b0b3b8]">
             {hostname}
           </div>
-          <div className="mt-1 line-clamp-2 font-semibold text-[#050505] text-[17px] dark:text-[#e4e6eb]">
+          <div className="mt-1 line-clamp-2 text-[17px] font-semibold text-[#050505] dark:text-[#e4e6eb]">
             {title || hostname}
           </div>
           {description && (
-            <div className="mt-1 line-clamp-2 text-[#606770] text-[13px] dark:text-[#b0b3b8]">
+            <div className="mt-1 line-clamp-2 text-[13px] text-[#606770] dark:text-[#b0b3b8]">
               {description}
             </div>
           )}
@@ -266,12 +255,10 @@ function SocialPreview({
           </div>
         </div>
         <div className="space-y-1 px-4 py-3">
-          <div className="line-clamp-2 font-semibold text-[#0a66c2] text-[13px] dark:text-[#70b5f9]">
+          <div className="line-clamp-2 text-[13px] font-semibold text-[#0a66c2] dark:text-[#70b5f9]">
             {title || hostname}
           </div>
-          <div className="truncate text-[#6e7781] text-[13px] dark:text-[#9aa6b2]">
-            {hostname}
-          </div>
+          <div className="truncate text-[13px] text-[#6e7781] dark:text-[#9aa6b2]">{hostname}</div>
         </div>
       </div>
     );
@@ -281,16 +268,14 @@ function SocialPreview({
     card = (
       <div className="relative overflow-hidden rounded-md border border-[#e1e3e6] bg-white p-3 pl-6 text-black dark:border-[#2b2e33] dark:bg-[#1f2329] dark:text-white">
         <div className="absolute top-3 bottom-3 left-3 w-[3px] rounded bg-[#c9ced6] dark:bg-[#3a3f45]" />
-        <div className="truncate text-[#4a4e52] text-[12px] leading-4 dark:text-[#b7bfc6]">
+        <div className="truncate text-[12px] leading-4 text-[#4a4e52] dark:text-[#b7bfc6]">
           {hostname}
         </div>
-        <div className="mt-1 font-semibold text-[#1d9bd1] text-[15px] dark:text-[#36c5f0]">
+        <div className="mt-1 text-[15px] font-semibold text-[#1d9bd1] dark:text-[#36c5f0]">
           {title || hostname}
         </div>
         {description && (
-          <div className="mt-1 text-[#4a4e52] text-[13px] dark:text-[#b7bfc6]">
-            {description}
-          </div>
+          <div className="mt-1 text-[13px] text-[#4a4e52] dark:text-[#b7bfc6]">{description}</div>
         )}
         <div className="mt-3 overflow-hidden rounded-[6px] bg-[#ecebeb] dark:bg-[#393d42]">
           <div className="aspect-[16/9] min-h-[150px] w-full">
@@ -309,16 +294,12 @@ function SocialPreview({
   if (provider === "discord") {
     card = (
       <div className="rounded-lg border border-[#1f2124] bg-[#2b2d31] p-3 text-white">
-        <div className="truncate text-[#b5bac1] text-[12px] leading-4">
-          {hostname}
-        </div>
-        <div className="mt-1 line-clamp-2 font-semibold text-[#58a6ff] text-[16px]">
+        <div className="truncate text-[12px] leading-4 text-[#b5bac1]">{hostname}</div>
+        <div className="mt-1 line-clamp-2 text-[16px] font-semibold text-[#58a6ff]">
           {title || hostname}
         </div>
         {description && (
-          <div className="mt-1 line-clamp-3 text-[#dbdee1] text-[13px]">
-            {description}
-          </div>
+          <div className="mt-1 line-clamp-3 text-[13px] text-[#dbdee1]">{description}</div>
         )}
         <div className="mt-3 overflow-hidden rounded-md bg-[#1f2124]">
           <div className="aspect-[1200/628] min-h-[150px] w-full">
@@ -349,7 +330,7 @@ function SocialPreview({
     </a>
   ) : (
     <div
-      className="flex h-48 w-full items-center justify-center rounded-md border text-[#64748b] text-[12px] dark:text-[#8b98a5]"
+      className="flex h-48 w-full items-center justify-center rounded-md border text-[12px] text-[#64748b] dark:text-[#8b98a5]"
       data-slot="social-preview"
       data-provider={provider}
       data-variant={variant}

@@ -1,5 +1,6 @@
-import { createContext as createBaseContext } from "@domainstack/api";
 import { headers } from "next/headers";
+
+import { createContext as createBaseContext } from "@domainstack/api";
 
 /**
  * Web app wrapper that provides Next.js headers for RSC prefetching.

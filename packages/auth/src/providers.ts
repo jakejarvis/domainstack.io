@@ -35,9 +35,7 @@ export type OAuthProviderResult = {
  * });
  * ```
  */
-export function buildOAuthProviders(
-  credentials: OAuthConfig,
-): OAuthProviderResult {
+export function buildOAuthProviders(credentials: OAuthConfig): OAuthProviderResult {
   const providers: Record<string, OAuthCredentials> = {};
   const enabledProviders: OAuthProvider[] = [];
 

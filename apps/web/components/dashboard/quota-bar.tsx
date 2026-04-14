@@ -1,20 +1,13 @@
 import { Meter } from "@domainstack/ui/meter";
 import { cn } from "@domainstack/ui/utils";
 
-interface QuotaBarProps
-  extends Omit<React.ComponentProps<typeof Meter>, "value"> {
+interface QuotaBarProps extends Omit<React.ComponentProps<typeof Meter>, "value"> {
   used: number;
   planQuota: number;
 }
 
-export function QuotaBar({
-  used,
-  planQuota,
-  className,
-  ...props
-}: QuotaBarProps) {
-  const percentage =
-    planQuota > 0 ? Math.min((used / planQuota) * 100, 100) : 0;
+export function QuotaBar({ used, planQuota, className, ...props }: QuotaBarProps) {
+  const percentage = planQuota > 0 ? Math.min((used / planQuota) * 100, 100) : 0;
   const isAtLimit = used >= planQuota;
   const isNearLimit = !isAtLimit && used >= planQuota * 0.8;
 

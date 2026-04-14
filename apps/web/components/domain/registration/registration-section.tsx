@@ -1,16 +1,10 @@
-import type { RegistrationResponse } from "@domainstack/types";
-import {
-  ResponsiveTooltip,
-  ResponsiveTooltipContent,
-  ResponsiveTooltipTrigger,
-} from "@domainstack/ui/responsive-tooltip";
-import { formatDate, formatDateTimeUtc } from "@domainstack/utils";
 import {
   IconAlertCircle,
   IconRosetteDiscountCheck,
   IconSchool,
   IconSpy,
 } from "@tabler/icons-react";
+
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { RawDataDialog } from "@/components/domain/registration/raw-data-dialog";
@@ -19,6 +13,13 @@ import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { ReportSection } from "@/components/domain/report-section";
 import { ProviderLogo } from "@/components/icons/provider-logo";
 import { sections } from "@/lib/constants/sections";
+import type { RegistrationResponse } from "@domainstack/types";
+import {
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@domainstack/ui/responsive-tooltip";
+import { formatDate, formatDateTimeUtc } from "@domainstack/utils";
 
 type RegistrantView = { organization: string; country: string; state?: string };
 
@@ -42,9 +43,7 @@ export function RegistrationSection({
     ? (extractSourceDomain(serverUrl) ?? "RDAP")
     : (data.whoisServer ?? "WHOIS");
   const learnUrl =
-    data.source === "rdap"
-      ? "https://about.rdap.org/"
-      : "https://en.wikipedia.org/wiki/WHOIS";
+    data.source === "rdap" ? "https://about.rdap.org/" : "https://en.wikipedia.org/wiki/WHOIS";
 
   return (
     <ReportSection
@@ -140,11 +139,7 @@ export function RegistrationSection({
 
           <KeyValue
             label="Registrant"
-            value={
-              data.privacyEnabled || !registrant
-                ? "Hidden"
-                : formatRegistrant(registrant)
-            }
+            value={data.privacyEnabled || !registrant ? "Hidden" : formatRegistrant(registrant)}
             leading={
               data.privacyEnabled || !registrant ? (
                 <IconSpy className="text-muted-foreground" aria-hidden="true" />
@@ -155,14 +150,10 @@ export function RegistrationSection({
           <KeyValue
             label="Created"
             value={formatDate(data.creationDate || "Unknown")}
-            valueTooltip={
-              data.creationDate
-                ? formatDateTimeUtc(data.creationDate)
-                : undefined
-            }
+            valueTooltip={data.creationDate ? formatDateTimeUtc(data.creationDate) : undefined}
             suffix={
               data.creationDate ? (
-                <span className="text-[11px] text-muted-foreground leading-none">
+                <span className="text-[11px] leading-none text-muted-foreground">
                   <RelativeAgeString from={data.creationDate} />
                 </span>
               ) : null
@@ -172,19 +163,11 @@ export function RegistrationSection({
           <KeyValue
             label="Expires"
             value={formatDate(data.expirationDate || "Unknown")}
-            valueTooltip={
-              data.expirationDate
-                ? formatDateTimeUtc(data.expirationDate)
-                : undefined
-            }
+            valueTooltip={data.expirationDate ? formatDateTimeUtc(data.expirationDate) : undefined}
             suffix={
               data.expirationDate ? (
-                <span className="text-[11px] text-muted-foreground leading-none">
-                  <RelativeExpiryString
-                    to={data.expirationDate}
-                    dangerDays={30}
-                    warnDays={45}
-                  />
+                <span className="text-[11px] leading-none text-muted-foreground">
+                  <RelativeExpiryString to={data.expirationDate} dangerDays={30} warnDays={45} />
                 </span>
               ) : null
             }
@@ -195,11 +178,7 @@ export function RegistrationSection({
   );
 }
 
-export function formatRegistrant(reg: {
-  organization: string;
-  country: string;
-  state?: string;
-}) {
+export function formatRegistrant(reg: { organization: string; country: string; state?: string }) {
   const org = (reg.organization || "").trim();
   const country = (reg.country || "").trim();
   const state = (reg.state || "").trim();
@@ -211,21 +190,16 @@ export function formatRegistrant(reg: {
   return parts.join(" — ");
 }
 
-function extractRegistrantView(
-  record: RegistrationResponse,
-): RegistrantView | null {
+function extractRegistrantView(record: RegistrationResponse): RegistrantView | null {
   const registrant = record.contacts?.find((c) => c.type === "registrant");
   if (!registrant) return null;
-  const organization =
-    (registrant.organization || registrant.name || "").trim() || "Unknown";
+  const organization = (registrant.organization || registrant.name || "").trim() || "Unknown";
   const country = registrant.country || registrant.countryCode || "";
   const state = registrant.state || "" || undefined;
   return { organization, country, state };
 }
 
-function extractSourceDomain(
-  input: string | undefined | null,
-): string | undefined {
+function extractSourceDomain(input: string | undefined | null): string | undefined {
   if (!input) return;
   const value = String(input).trim();
   if (!value) return;

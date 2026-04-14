@@ -1,8 +1,9 @@
-import { getVerifiedTrackedDomainIds } from "@domainstack/db/queries";
-import { createLogger } from "@domainstack/logger";
 import { NextResponse } from "next/server";
 import { start } from "workflow/api";
+
 import { domainExpiryWorkflow } from "@/workflows/domain-expiry";
+import { getVerifiedTrackedDomainIds } from "@domainstack/db/queries";
+import { createLogger } from "@domainstack/logger";
 
 const logger = createLogger({ source: "cron/check-domain-expiry" });
 
@@ -10,9 +11,7 @@ const logger = createLogger({ source: "cron/check-domain-expiry" });
  * Cron job to check domain expiry and send notifications.
  */
 export async function GET(request: Request) {
-  if (
-    request.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`
-  ) {
+  if (request.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
     logger.warn("Unauthorized cron request");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -24,16 +23,10 @@ export async function GET(request: Request) {
     );
     const started = results.filter((r) => r.status === "fulfilled").length;
 
-    logger.info(
-      { started, total: ids.length },
-      "Check domain expiry completed",
-    );
+    logger.info({ started, total: ids.length }, "Check domain expiry completed");
     return NextResponse.json({ started });
   } catch (err) {
     logger.error({ err }, "Check domain expiry failed");
-    return NextResponse.json(
-      { error: "Failed to check domain expiry" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to check domain expiry" }, { status: 500 });
   }
 }

@@ -15,8 +15,10 @@
   },
   "scripts": {
     "check-types": "tsc --noEmit",
-    "lint": "biome check",
-    "format": "biome format --write",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "fmt": "oxfmt --config ../../.oxfmtrc.json",
+    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json",
     "test": "vitest run"
   },
   "dependencies": {
@@ -24,12 +26,12 @@
     "@domainstack/types": "workspace:*",
     "rdapper": "^0.13.0"
   },
-  "peerDependencies": {
-    "zod": "^4"
-  },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "vitest": "catalog:",
     "zod": "catalog:"
+  },
+  "peerDependencies": {
+    "zod": "^4"
   }
 }

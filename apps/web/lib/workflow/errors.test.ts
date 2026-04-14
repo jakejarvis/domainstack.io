@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { FatalError, RetryableError } from "workflow";
-import {
-  classifyFetchError,
-  getErrorClassification,
-  withFetchErrorHandling,
-} from "./errors";
+
+import { classifyFetchError, getErrorClassification, withFetchErrorHandling } from "./errors";
 
 // Mock SafeFetchError
 class SafeFetchError extends Error {

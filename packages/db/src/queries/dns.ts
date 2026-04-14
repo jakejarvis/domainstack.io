@@ -1,3 +1,6 @@
+import type { InferInsertModel } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
+
 import { DNS_RECORD_TYPES } from "@domainstack/constants";
 import type { DnsRecord, DnsRecordsResponse } from "@domainstack/types";
 import {
@@ -5,8 +8,7 @@ import {
   makeDnsRecordKey,
   sortDnsRecordsByType,
 } from "@domainstack/utils/dns";
-import type { InferInsertModel } from "drizzle-orm";
-import { eq, inArray, sql } from "drizzle-orm";
+
 import { db } from "../client";
 import { dnsRecords, type dnsRecordType, domains } from "../schema";
 import type { CacheResult } from "../types";
@@ -20,12 +22,7 @@ export interface UpsertDnsParams {
   // complete set per type
   recordsByType: Record<
     (typeof dnsRecordType.enumValues)[number],
-    Array<
-      Omit<
-        DnsRecordInsert,
-        "id" | "domainId" | "type" | "resolver" | "fetchedAt"
-      >
-    >
+    Array<Omit<DnsRecordInsert, "id" | "domainId" | "type" | "resolver" | "fetchedAt">>
   >;
 }
 
@@ -60,14 +57,15 @@ export async function replaceDns(params: UpsertDnsParams) {
       const preserveValueCase = type === "TXT";
 
       const next = (recordsByType[type] ?? []).map((r) => ({
-        ...r,
         type,
         // Always normalize name (hostname) to lowercase
         name: r.name.trim().toLowerCase(),
         // Normalize value to lowercase except for TXT records
-        value: preserveValueCase
-          ? r.value.trim()
-          : r.value.trim().toLowerCase(),
+        value: preserveValueCase ? r.value.trim() : r.value.trim().toLowerCase(),
+        ttl: r.ttl,
+        priority: r.priority,
+        isCloudflare: r.isCloudflare,
+        expiresAt: r.expiresAt,
       }));
 
       for (const r of next) {
@@ -145,9 +143,7 @@ export async function replaceDns(params: UpsertDnsParams) {
  * Optimized: Uses a single query with JOIN to fetch domain and DNS records,
  * reducing from 2 round trips to 1.
  */
-export async function getCachedDns(
-  domain: string,
-): Promise<CacheResult<DnsRecordsResponse>> {
+export async function getCachedDns(domain: string): Promise<CacheResult<DnsRecordsResponse>> {
   const nowMs = Date.now();
   const types = DNS_RECORD_TYPES;
 

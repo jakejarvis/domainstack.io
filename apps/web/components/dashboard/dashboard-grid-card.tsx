@@ -1,8 +1,33 @@
+import {
+  IconAlertCircle,
+  IconArchive,
+  IconBell,
+  IconBellOff,
+  IconBookmark,
+  IconDotsVertical,
+  IconExternalLink,
+  IconTool,
+  IconTrash,
+} from "@tabler/icons-react";
+import { format } from "date-fns";
+import { motion } from "motion/react";
+import Link from "next/link";
+import { memo, useCallback } from "react";
+
+import { DomainHealthBadge, getHealthAccent } from "@/components/dashboard/domain-health-badge";
+import { DomainStatusBadge } from "@/components/dashboard/domain-status-badge";
+import { ProviderTooltipContent } from "@/components/dashboard/provider-tooltip-content";
+import { RelativeExpiryString } from "@/components/domain/relative-expiry";
+import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
+import { Favicon } from "@/components/icons/favicon";
+import { ProviderLogo } from "@/components/icons/provider-logo";
+import { useDashboardActions } from "@/context/dashboard-context";
+import { useDashboardSelection } from "@/hooks/use-dashboard-selection";
+import { useHydratedNow } from "@/hooks/use-hydrated-now";
+import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
+import { useTruncation } from "@/hooks/use-truncation";
 import type { ProviderCategory } from "@domainstack/constants";
-import type {
-  ProviderInfo,
-  TrackedDomainWithDetails,
-} from "@domainstack/types";
+import type { ProviderInfo, TrackedDomainWithDetails } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@domainstack/ui/card";
 import { Checkbox } from "@domainstack/ui/checkbox";
@@ -20,36 +45,6 @@ import {
 } from "@domainstack/ui/responsive-tooltip";
 import { cn } from "@domainstack/ui/utils";
 import { formatDateTimeUtc } from "@domainstack/utils";
-import {
-  IconAlertCircle,
-  IconArchive,
-  IconBell,
-  IconBellOff,
-  IconBookmark,
-  IconDotsVertical,
-  IconExternalLink,
-  IconTool,
-  IconTrash,
-} from "@tabler/icons-react";
-import { format } from "date-fns";
-import { motion } from "motion/react";
-import Link from "next/link";
-import { memo, useCallback } from "react";
-import {
-  DomainHealthBadge,
-  getHealthAccent,
-} from "@/components/dashboard/domain-health-badge";
-import { DomainStatusBadge } from "@/components/dashboard/domain-status-badge";
-import { ProviderTooltipContent } from "@/components/dashboard/provider-tooltip-content";
-import { RelativeExpiryString } from "@/components/domain/relative-expiry";
-import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
-import { Favicon } from "@/components/icons/favicon";
-import { ProviderLogo } from "@/components/icons/provider-logo";
-import { useDashboardActions } from "@/context/dashboard-context";
-import { useDashboardSelection } from "@/hooks/use-dashboard-selection";
-import { useHydratedNow } from "@/hooks/use-hydrated-now";
-import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
-import { useTruncation } from "@/hooks/use-truncation";
 
 type DashboardGridCardProps = {
   domain: TrackedDomainWithDetails;
@@ -80,8 +75,7 @@ export const DashboardGridCard = memo(function DashboardGridCard({
   } = domain;
   // Selection state and actions from context
   const { isSelected, toggle } = useDashboardSelection();
-  const { onVerify, onRemove, onArchive, onToggleMuted } =
-    useDashboardActions();
+  const { onVerify, onRemove, onArchive, onToggleMuted } = useDashboardActions();
 
   const selected = isSelected(trackedDomainId);
 
@@ -123,9 +117,7 @@ export const DashboardGridCard = memo(function DashboardGridCard({
       <div
         className={cn(
           "pointer-events-none absolute inset-0 rounded-xl transition-all duration-150",
-          selected
-            ? "ring-2 ring-primary/60 ring-offset-2 ring-offset-background"
-            : "ring-0",
+          selected ? "ring-2 ring-primary/60 ring-offset-2 ring-offset-background" : "ring-0",
         )}
         aria-hidden
       />
@@ -140,9 +132,7 @@ export const DashboardGridCard = memo(function DashboardGridCard({
         <div
           aria-hidden
           className="pointer-events-none absolute -inset-x-8 -top-8 h-24 accent-glow opacity-30 blur-2xl"
-          style={
-            { "--glow-color": `var(--accent-${accent})` } as React.CSSProperties
-          }
+          style={{ "--glow-color": `var(--accent-${accent})` } as React.CSSProperties}
         />
 
         <CardHeader className="relative pt-6 pb-2">
@@ -151,10 +141,7 @@ export const DashboardGridCard = memo(function DashboardGridCard({
               {/* Favicon - hidden on hover or when selected */}
               <Favicon
                 domain={domainName}
-                className={cn(
-                  "size-8 rounded-md",
-                  selected ? "hidden" : "group-hover:hidden",
-                )}
+                className={cn("size-8 rounded-md", selected ? "hidden" : "group-hover:hidden")}
               />
               {/* Checkbox - shown on hover or when selected */}
               <Checkbox
@@ -175,17 +162,12 @@ export const DashboardGridCard = memo(function DashboardGridCard({
                   className="block min-w-0 hover:underline"
                   data-disable-progress
                 >
-                  <CardTitle className="truncate text-base">
-                    {domainName}
-                  </CardTitle>
+                  <CardTitle className="truncate text-base">{domainName}</CardTitle>
                 </Link>
               </ScreenshotPopover>
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 {verified && (
-                  <DomainHealthBadge
-                    expirationDate={expirationDate}
-                    verified={verified}
-                  />
+                  <DomainHealthBadge expirationDate={expirationDate} verified={verified} />
                 )}
                 <DomainStatusBadge
                   verified={verified}
@@ -209,11 +191,7 @@ export const DashboardGridCard = memo(function DashboardGridCard({
                 <DropdownMenuItem
                   nativeButton={false}
                   render={
-                    <a
-                      href={`https://${domainName}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
+                    <a href={`https://${domainName}`} target="_blank" rel="noopener noreferrer">
                       <IconExternalLink />
                       Open
                     </a>
@@ -222,10 +200,7 @@ export const DashboardGridCard = memo(function DashboardGridCard({
                 <DropdownMenuItem
                   nativeButton={false}
                   render={
-                    <Link
-                      href={`/${encodeURIComponent(domainName)}`}
-                      prefetch={false}
-                    >
+                    <Link href={`/${encodeURIComponent(domainName)}`} prefetch={false}>
                       <IconBookmark />
                       View Report
                     </Link>
@@ -269,9 +244,7 @@ export const DashboardGridCard = memo(function DashboardGridCard({
                   <ResponsiveTooltip>
                     <ResponsiveTooltipTrigger
                       render={
-                        <span className="truncate">
-                          {format(expirationDate, "MMM d, yyyy")}
-                        </span>
+                        <span className="truncate">{format(expirationDate, "MMM d, yyyy")}</span>
                       }
                     />
                     <ResponsiveTooltipContent>
@@ -342,12 +315,8 @@ export const DashboardGridCard = memo(function DashboardGridCard({
                           {formatDateTimeUtc(expirationDate.toISOString())}
                         </ResponsiveTooltipContent>
                       </ResponsiveTooltip>
-                      <span className="shrink-0 text-[11px] text-muted-foreground leading-none">
-                        <RelativeExpiryString
-                          to={expirationDate}
-                          dangerDays={30}
-                          warnDays={45}
-                        />
+                      <span className="shrink-0 text-[11px] leading-none text-muted-foreground">
+                        <RelativeExpiryString to={expirationDate} dangerDays={30} warnDays={45} />
                       </span>
                     </>
                   ) : (
@@ -404,7 +373,7 @@ export const DashboardGridCard = memo(function DashboardGridCard({
             </>
           ) : (
             <div className="flex flex-1 flex-col pt-2">
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 Complete verification to start receiving health alerts.
               </p>
               {/* Spacer to ensure minimum gap above button */}
@@ -465,17 +434,14 @@ function InfoRow({
 
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl border bg-background/40 px-3 py-2 backdrop-blur-lg">
-      <span className="flex shrink-0 items-center text-[10px] text-foreground/75 uppercase leading-[1.2] tracking-[0.08em] dark:text-foreground/80">
+      <span className="flex shrink-0 items-center text-[10px] leading-[1.2] tracking-[0.08em] text-foreground/75 uppercase dark:text-foreground/80">
         {label}
       </span>
-      <span className="flex min-w-0 items-center justify-end gap-1.5 text-[13px] text-foreground/95 leading-[1.2]">
+      <span className="flex min-w-0 items-center justify-end gap-1.5 text-[13px] leading-[1.2] text-foreground/95">
         {children ||
           (provider?.name ? (
             tooltipData.shouldShowTooltip ? (
-              <ResponsiveTooltip
-                open={tooltipData.isOpen}
-                onOpenChange={tooltipData.setIsOpen}
-              >
+              <ResponsiveTooltip open={tooltipData.isOpen} onOpenChange={tooltipData.setIsOpen}>
                 <ResponsiveTooltipTrigger render={providerContent} />
                 <ResponsiveTooltipContent>
                   <ProviderTooltipContent
@@ -496,15 +462,13 @@ function InfoRow({
             ) : isTruncated ? (
               <ResponsiveTooltip>
                 <ResponsiveTooltipTrigger render={providerContent} />
-                <ResponsiveTooltipContent>
-                  {provider.name}
-                </ResponsiveTooltipContent>
+                <ResponsiveTooltipContent>{provider.name}</ResponsiveTooltipContent>
               </ResponsiveTooltip>
             ) : (
               providerContent
             )
           ) : (
-            <span className="text-muted-foreground text-xs">—</span>
+            <span className="text-xs text-muted-foreground">—</span>
           ))}
       </span>
     </div>

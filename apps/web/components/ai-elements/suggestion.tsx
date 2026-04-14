@@ -1,21 +1,16 @@
 "use client";
 
+import type { ComponentProps } from "react";
+
 import { Button } from "@domainstack/ui/button";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
 import { cn } from "@domainstack/ui/utils";
-import type { ComponentProps } from "react";
 
 export type SuggestionsProps = ComponentProps<typeof ScrollArea>;
 
-export const Suggestions = ({
-  className,
-  children,
-  ...props
-}: SuggestionsProps) => (
+export const Suggestions = ({ className, children, ...props }: SuggestionsProps) => (
   <ScrollArea className="w-full" hideScrollbar {...props}>
-    <div className={cn("flex w-max items-center gap-2", className)}>
-      {children}
-    </div>
+    <div className={cn("flex w-max items-center gap-2", className)}>{children}</div>
   </ScrollArea>
 );
 

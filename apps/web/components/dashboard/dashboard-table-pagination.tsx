@@ -1,9 +1,8 @@
+import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
+
+import { DASHBOARD_PAGE_SIZE_OPTIONS, type DashboardPageSizeOptions } from "@/lib/dashboard-utils";
 import { Button } from "@domainstack/ui/button";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-} from "@domainstack/ui/pagination";
+import { Pagination, PaginationContent, PaginationItem } from "@domainstack/ui/pagination";
 import {
   Select,
   SelectContent,
@@ -11,11 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@domainstack/ui/select";
-import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
-import {
-  DASHBOARD_PAGE_SIZE_OPTIONS,
-  type DashboardPageSizeOptions,
-} from "@/lib/dashboard-utils";
 
 type DashboardTablePaginationProps = {
   pageIndex: number;
@@ -41,39 +35,33 @@ export function DashboardTablePagination({
   onPageSizeChange,
 }: DashboardTablePaginationProps) {
   return (
-    <div className="flex h-12 items-center justify-between border-black/10 border-t px-4 py-2 dark:border-white/10">
+    <div className="flex h-12 items-center justify-between border-t border-black/10 px-4 py-2 dark:border-white/10">
       {/* Page size selector */}
       <div className="flex items-center gap-1.5">
-        <span className="text-muted-foreground text-xs">Show</span>
+        <span className="text-xs text-muted-foreground">Show</span>
         <Select
           value={String(pageSize)}
-          onValueChange={(value) =>
-            onPageSizeChange(Number(value) as DashboardPageSizeOptions)
-          }
+          onValueChange={(value) => onPageSizeChange(Number(value) as DashboardPageSizeOptions)}
         >
           <SelectTrigger className="!h-8 cursor-pointer gap-1.5 px-2 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {DASHBOARD_PAGE_SIZE_OPTIONS.map((size) => (
-              <SelectItem
-                key={size}
-                value={String(size)}
-                className="cursor-pointer text-[13px]"
-              >
+              <SelectItem key={size} value={String(size)} className="cursor-pointer text-[13px]">
                 {size}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <span className="text-muted-foreground text-xs">domains per page</span>
+        <span className="text-xs text-muted-foreground">domains per page</span>
       </div>
 
       {/* Page navigation */}
       <Pagination className="mx-0 w-auto">
         <PaginationContent className="gap-1">
           <PaginationItem>
-            <span className="mr-2 text-muted-foreground text-xs">
+            <span className="mr-2 text-xs text-muted-foreground">
               {pageCount > 0 ? pageIndex + 1 : 0} of {pageCount}
             </span>
           </PaginationItem>

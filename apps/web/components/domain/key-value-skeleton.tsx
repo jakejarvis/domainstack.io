@@ -18,7 +18,7 @@ export function KeyValueSkeleton({
     <div className="flex h-16 min-w-0 items-center justify-between gap-4 rounded-xl border bg-background/60 px-4 py-3 backdrop-blur-lg">
       <div className="min-w-0 space-y-1">
         {label ? (
-          <div className="text-[10px] text-foreground/75 uppercase tracking-[0.08em] dark:text-foreground/80">
+          <div className="text-[10px] tracking-[0.08em] text-foreground/75 uppercase dark:text-foreground/80">
             {label}
           </div>
         ) : null}
@@ -52,17 +52,15 @@ export function KeyValueSkeletonList({
 }) {
   return (
     <>
-      {Array.from({ length: count }, (_, i) => `${keyPrefix}-${i + 1}`).map(
-        (key) => (
-          <KeyValueSkeleton
-            key={key}
-            widthClass={widthClass}
-            withLeading={withLeading}
-            withTrailing={withTrailing}
-            withSuffix={withSuffix}
-          />
-        ),
-      )}
+      {Array.from({ length: count }, (_, i) => `${keyPrefix}-${i + 1}`).map((key) => (
+        <KeyValueSkeleton
+          key={key}
+          widthClass={widthClass}
+          withLeading={withLeading}
+          withTrailing={withTrailing}
+          withSuffix={withSuffix}
+        />
+      ))}
     </>
   );
 }

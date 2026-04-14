@@ -1,8 +1,9 @@
+import { IconRocket, IconShoppingCart } from "@tabler/icons-react";
+
+import { UpgradeButton } from "@/components/upgrade-button";
 import { PLAN_QUOTAS } from "@domainstack/constants";
 import { PRO_TIER_INFO } from "@domainstack/polar/products";
 import { cn } from "@domainstack/ui/utils";
-import { IconRocket, IconShoppingCart } from "@tabler/icons-react";
-import { UpgradeButton } from "@/components/upgrade-button";
 
 interface UpgradeCardProps {
   className?: string;
@@ -37,14 +38,10 @@ export function UpgradeCard({ className }: UpgradeCardProps) {
           <li>Support development</li>
         </ul>
         <div className="flex items-baseline gap-1.5 text-sm">
-          <span className="font-semibold text-accent-gold">
-            {PRO_TIER_INFO.monthly.label}
-          </span>
+          <span className="font-semibold text-accent-gold">{PRO_TIER_INFO.monthly.label}</span>
           <span className="text-muted-foreground">or</span>
-          <span className="font-semibold text-accent-gold">
-            {PRO_TIER_INFO.yearly.label}
-          </span>
-          <span className="text-muted-foreground/95 text-xs lowercase">
+          <span className="font-semibold text-accent-gold">{PRO_TIER_INFO.yearly.label}</span>
+          <span className="text-xs text-muted-foreground/95 lowercase">
             ({PRO_TIER_INFO.yearly.savings})
           </span>
         </div>

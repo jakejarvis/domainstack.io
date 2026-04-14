@@ -1,5 +1,8 @@
 "use client";
 
+import type { ComponentPropsWithoutRef } from "react";
+
+import { useRouter } from "@/hooks/use-router";
 import {
   ModalClose,
   ModalContent,
@@ -11,8 +14,6 @@ import {
   Modal as ModalPrimitive,
   ModalTitle,
 } from "@domainstack/ui/modal";
-import type { ComponentPropsWithoutRef } from "react";
-import { useRouter } from "@/hooks/use-router";
 
 type ModalProps = ComponentPropsWithoutRef<typeof ModalPrimitive>;
 

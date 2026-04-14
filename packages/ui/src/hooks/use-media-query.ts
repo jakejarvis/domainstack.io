@@ -32,10 +32,7 @@ export function useMediaQuery(query: string, defaultValue = false): boolean {
   return useSyncExternalStore(
     (callback) => {
       // Return early if matchMedia is not available (old browsers)
-      if (
-        typeof window === "undefined" ||
-        typeof window.matchMedia !== "function"
-      ) {
+      if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
         return () => {};
       }
 
@@ -51,10 +48,7 @@ export function useMediaQuery(query: string, defaultValue = false): boolean {
     },
     () => {
       // Get current client-side value
-      if (
-        typeof window === "undefined" ||
-        typeof window.matchMedia !== "function"
-      ) {
+      if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
         return defaultValue;
       }
 

@@ -29,6 +29,7 @@ import {
   detectHostingProvider,
   getProvidersFromCatalog,
 } from "@domainstack/utils/providers";
+
 import { getProviderCatalog } from "../edge-config";
 import { ttlForHosting } from "../ttl";
 import { fetchDns } from "./dns";
@@ -89,11 +90,7 @@ export async function fetchHosting(domain: string): Promise<HostingResult> {
   const geoResult = ip ? await lookupGeoIp(ip) : null;
 
   // Step 5: Detect providers and resolve IDs
-  const providers = await detectAndResolveProviders(
-    dnsRecords,
-    headers,
-    geoResult,
-  );
+  const providers = await detectAndResolveProviders(dnsRecords, headers, geoResult);
 
   // Step 6: Persist hosting data to database
   await persistHosting(domain, providers, geoResult?.geo ?? null);
@@ -176,9 +173,7 @@ async function lookupGeoIp(ip: string): Promise<GeoIpData | null> {
   }
 
   try {
-    const url = new URL(
-      `https://www.iplocate.io/api/lookup/${encodeURIComponent(ip)}`,
-    );
+    const url = new URL(`https://www.iplocate.io/api/lookup/${encodeURIComponent(ip)}`);
     url.searchParams.set("apikey", apiKey);
 
     const controller = new AbortController();
@@ -232,19 +227,12 @@ async function detectAndResolveProviders(
 
   // Fetch provider catalog from Edge Config
   const catalog = await getProviderCatalog();
-  const hostingProviders = catalog
-    ? getProvidersFromCatalog(catalog, "hosting")
-    : [];
-  const emailProviders = catalog
-    ? getProvidersFromCatalog(catalog, "email")
-    : [];
+  const hostingProviders = catalog ? getProvidersFromCatalog(catalog, "hosting") : [];
+  const emailProviders = catalog ? getProvidersFromCatalog(catalog, "email") : [];
   const dnsProviders = catalog ? getProvidersFromCatalog(catalog, "dns") : [];
 
   // Hosting provider detection with fallback
-  const hostingCatalogProvider = detectHostingProvider(
-    headers,
-    hostingProviders,
-  );
+  const hostingCatalogProvider = detectHostingProvider(headers, hostingProviders);
 
   let hostingName = hostingCatalogProvider?.name ?? null;
   let hostingIconDomain = hostingCatalogProvider?.domain ?? null;
@@ -291,37 +279,35 @@ async function detectAndResolveProviders(
   }
 
   // Resolve provider IDs
-  const [hostingProviderId, emailProviderId, dnsProviderId] = await Promise.all(
-    [
-      hostingCatalogProvider
-        ? upsertCatalogProvider(hostingCatalogProvider).then((r) => r.id)
-        : hostingName
-          ? resolveOrCreateProviderId({
-              category: "hosting",
-              domain: hostingIconDomain,
-              name: hostingName,
-            })
-          : Promise.resolve(null),
-      emailCatalogProvider
-        ? upsertCatalogProvider(emailCatalogProvider).then((r) => r.id)
-        : emailName
-          ? resolveOrCreateProviderId({
-              category: "email",
-              domain: emailIconDomain,
-              name: emailName,
-            })
-          : Promise.resolve(null),
-      dnsCatalogProvider
-        ? upsertCatalogProvider(dnsCatalogProvider).then((r) => r.id)
-        : dnsName
-          ? resolveOrCreateProviderId({
-              category: "dns",
-              domain: dnsIconDomain,
-              name: dnsName,
-            })
-          : Promise.resolve(null),
-    ],
-  );
+  const [hostingProviderId, emailProviderId, dnsProviderId] = await Promise.all([
+    hostingCatalogProvider
+      ? upsertCatalogProvider(hostingCatalogProvider).then((r) => r.id)
+      : hostingName
+        ? resolveOrCreateProviderId({
+            category: "hosting",
+            domain: hostingIconDomain,
+            name: hostingName,
+          })
+        : Promise.resolve(null),
+    emailCatalogProvider
+      ? upsertCatalogProvider(emailCatalogProvider).then((r) => r.id)
+      : emailName
+        ? resolveOrCreateProviderId({
+            category: "email",
+            domain: emailIconDomain,
+            name: emailName,
+          })
+        : Promise.resolve(null),
+    dnsCatalogProvider
+      ? upsertCatalogProvider(dnsCatalogProvider).then((r) => r.id)
+      : dnsName
+        ? resolveOrCreateProviderId({
+            category: "dns",
+            domain: dnsIconDomain,
+            name: dnsName,
+          })
+        : Promise.resolve(null),
+  ]);
 
   return {
     hostingProvider: {

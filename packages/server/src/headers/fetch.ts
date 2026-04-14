@@ -5,9 +5,11 @@
  * Does not handle persistence - that's done by callers (workflows, services).
  */
 
+import { getStatusCode } from "@readme/http-status-codes";
+
 import { isExpectedDnsError, safeFetch } from "@domainstack/safe-fetch";
 import type { Header } from "@domainstack/types";
-import { getStatusCode } from "@readme/http-status-codes";
+
 import { isExpectedTlsError } from "../tls";
 import type { HeadersFetchResult } from "./types";
 
@@ -33,9 +35,7 @@ export class HeadersFetchError extends Error {
  * @param domain - The domain to probe
  * @returns Headers fetch result with data or typed error
  */
-export async function fetchHttpHeaders(
-  domain: string,
-): Promise<HeadersFetchResult> {
+export async function fetchHttpHeaders(domain: string): Promise<HeadersFetchResult> {
   // Normalize domain: strip www. prefix and port to get base hostname
   // Then allow both apex and www variants
   const [hostname] = domain.replace(/^www\./i, "").split(":");
@@ -54,9 +54,10 @@ export async function fetchHttpHeaders(
       returnOnDisallowedRedirect: true,
     });
 
-    const headers: Header[] = Object.entries(final.headers).map(
-      ([name, value]) => ({ name: name.trim().toLowerCase(), value }),
-    );
+    const headers: Header[] = Object.entries(final.headers).map(([name, value]) => ({
+      name: name.trim().toLowerCase(),
+      value,
+    }));
 
     // Get status message
     let statusMessage: string | undefined;

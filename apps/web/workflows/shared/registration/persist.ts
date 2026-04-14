@@ -8,8 +8,8 @@
  * should be done at the workflow level using scheduleRevalidationBatchStep.
  */
 
-import type { RegistrationResponse } from "@domainstack/types";
 import type { RegistrationPersistResult } from "@/lib/workflow/types";
+import type { RegistrationResponse } from "@domainstack/types";
 
 /**
  * Step: Persist registration to database.
@@ -31,9 +31,7 @@ export async function persistRegistrationStep(
   // Dynamic imports for Node.js modules and database operations
   const { getDomainTld } = await import("@domainstack/utils/domain");
   const { ttlForRegistration } = await import("@domainstack/server/ttl");
-  const { upsertDomain, upsertRegistration } = await import(
-    "@domainstack/db/queries"
-  );
+  const { upsertDomain, upsertRegistration } = await import("@domainstack/db/queries");
 
   const now = new Date();
 
@@ -54,16 +52,10 @@ export async function persistRegistrationStep(
       isRegistered: response.isRegistered,
       privacyEnabled: response.privacyEnabled ?? false,
       registry: response.registry ?? null,
-      creationDate: response.creationDate
-        ? new Date(response.creationDate)
-        : null,
+      creationDate: response.creationDate ? new Date(response.creationDate) : null,
       updatedDate: response.updatedDate ? new Date(response.updatedDate) : null,
-      expirationDate: response.expirationDate
-        ? new Date(response.expirationDate)
-        : null,
-      deletionDate: response.deletionDate
-        ? new Date(response.deletionDate)
-        : null,
+      expirationDate: response.expirationDate ? new Date(response.expirationDate) : null,
+      deletionDate: response.deletionDate ? new Date(response.deletionDate) : null,
       transferLock: response.transferLock ?? null,
       statuses: response.statuses ?? [],
       contacts: response.contacts ?? [],

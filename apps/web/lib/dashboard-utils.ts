@@ -1,6 +1,7 @@
+import type { SortingState } from "@tanstack/react-table";
+
 import { EXPIRING_SOON_DAYS } from "@domainstack/constants";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
-import type { SortingState } from "@tanstack/react-table";
 
 // ---------------------------------------------------------------------------
 // Provider Types
@@ -24,14 +25,10 @@ export type StatusFilter = "verified" | "pending";
 export type HealthFilter = "healthy" | "expiring" | "expired";
 
 /** Valid filter values for runtime validation of URL params */
-const VALID_STATUS_FILTERS: readonly StatusFilter[] = ["verified", "pending"];
+const VALID_STATUS_FILTERS = new Set<StatusFilter>(["verified", "pending"]);
 
 /** Valid health filter values for runtime validation of URL params */
-const VALID_HEALTH_FILTERS: readonly HealthFilter[] = [
-  "healthy",
-  "expiring",
-  "expired",
-];
+const VALID_HEALTH_FILTERS = new Set<HealthFilter>(["healthy", "expiring", "expired"]);
 
 /**
  * Determine health status based on expiration date
@@ -53,12 +50,10 @@ function getHealthStatus(
 }
 
 export const DASHBOARD_VIEW_MODE_OPTIONS = ["grid", "table"] as const;
-export type DashboardViewModeOptions =
-  (typeof DASHBOARD_VIEW_MODE_OPTIONS)[number];
+export type DashboardViewModeOptions = (typeof DASHBOARD_VIEW_MODE_OPTIONS)[number];
 
 export const DASHBOARD_PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
-export type DashboardPageSizeOptions =
-  (typeof DASHBOARD_PAGE_SIZE_OPTIONS)[number];
+export type DashboardPageSizeOptions = (typeof DASHBOARD_PAGE_SIZE_OPTIONS)[number];
 
 export const DASHBOARD_PREFERENCES_DEFAULT: {
   viewMode: DashboardViewModeOptions;
@@ -122,11 +117,7 @@ export const DEFAULT_SORT: SortOption = "domainName.asc";
  * Columns where unverified domains should NOT be pushed to the end.
  * For all other columns, unverified/pending domains will appear last.
  */
-const COLUMNS_WITHOUT_VERIFICATION_SORT = new Set([
-  "domainName",
-  "verified",
-  "createdAt",
-]);
+const COLUMNS_WITHOUT_VERIFICATION_SORT = new Set(["domainName", "verified", "createdAt"]);
 
 /**
  * Sort domains based on sort option (using table column format).
@@ -138,10 +129,7 @@ export function sortDomains(
   sortOption: SortOption,
 ): TrackedDomainWithDetails[] {
   const sorted = [...domains];
-  const [columnId, direction] = sortOption.split(".") as [
-    string,
-    "asc" | "desc",
-  ];
+  const [columnId, direction] = sortOption.split(".") as [string, "asc" | "desc"];
   const isDesc = direction === "desc";
   const pushUnverifiedToEnd = !COLUMNS_WITHOUT_VERIFICATION_SORT.has(columnId);
 
@@ -216,9 +204,7 @@ export function serializeSortState(sorting: SortingState): string {
 /**
  * Extract unique TLDs from domains for filter dropdown
  */
-export function extractAvailableTlds(
-  domains: TrackedDomainWithDetails[],
-): string[] {
+export function extractAvailableTlds(domains: TrackedDomainWithDetails[]): string[] {
   const tldSet = new Set<string>();
   for (const domain of domains) {
     if (domain.tld) tldSet.add(domain.tld);
@@ -296,8 +282,8 @@ export function extractAvailableProviders(
     }
   }
 
-  providersByCategory.registrar = Array.from(registrarMap.values()).sort(
-    (a, b) => a.name.localeCompare(b.name),
+  providersByCategory.registrar = Array.from(registrarMap.values()).sort((a, b) =>
+    a.name.localeCompare(b.name),
   );
   providersByCategory.dns = Array.from(dnsMap.values()).sort((a, b) =>
     a.name.localeCompare(b.name),
@@ -308,9 +294,7 @@ export function extractAvailableProviders(
   providersByCategory.email = Array.from(emailMap.values()).sort((a, b) =>
     a.name.localeCompare(b.name),
   );
-  providersByCategory.ca = Array.from(caMap.values()).sort((a, b) =>
-    a.name.localeCompare(b.name),
-  );
+  providersByCategory.ca = Array.from(caMap.values()).sort((a, b) => a.name.localeCompare(b.name));
 
   return providersByCategory;
 }
@@ -318,9 +302,7 @@ export function extractAvailableProviders(
 /**
  * Create a flat set of all valid provider IDs for validation
  */
-export function getValidProviderIds(
-  availableProviders: AvailableProvidersByCategory,
-): Set<string> {
+export function getValidProviderIds(availableProviders: AvailableProvidersByCategory): Set<string> {
   const ids = new Set<string>();
   for (const category of Object.values(availableProviders)) {
     for (const provider of category) {
@@ -333,10 +315,7 @@ export function getValidProviderIds(
 /**
  * Compute health stats for domains (expiring soon + pending verification counts)
  */
-export function computeHealthStats(
-  domains: TrackedDomainWithDetails[],
-  now: Date,
-) {
+export function computeHealthStats(domains: TrackedDomainWithDetails[], now: Date) {
   let expiringSoon = 0;
   let pendingVerification = 0;
 
@@ -345,11 +324,7 @@ export function computeHealthStats(
       pendingVerification++;
       continue;
     }
-    const healthStatus = getHealthStatus(
-      domain.expirationDate,
-      domain.verified,
-      now,
-    );
+    const healthStatus = getHealthStatus(domain.expirationDate, domain.verified, now);
     if (healthStatus === "expiring" || healthStatus === "expired") {
       expiringSoon++;
     }
@@ -366,18 +341,14 @@ export function computeHealthStats(
  * Validate and filter status values from URL params
  */
 export function validateStatusFilters(values: string[]): StatusFilter[] {
-  return values.filter((s): s is StatusFilter =>
-    VALID_STATUS_FILTERS.includes(s as StatusFilter),
-  );
+  return values.filter((s): s is StatusFilter => VALID_STATUS_FILTERS.has(s as StatusFilter));
 }
 
 /**
  * Validate and filter health values from URL params
  */
 export function validateHealthFilters(values: string[]): HealthFilter[] {
-  return values.filter((h): h is HealthFilter =>
-    VALID_HEALTH_FILTERS.includes(h as HealthFilter),
-  );
+  return values.filter((h): h is HealthFilter => VALID_HEALTH_FILTERS.has(h as HealthFilter));
 }
 
 /**
@@ -419,13 +390,8 @@ export function filterDomains(
 
     // Filter by health status
     if (criteria.health.length > 0) {
-      const healthStatus = getHealthStatus(
-        domain.expirationDate,
-        domain.verified,
-        now,
-      );
-      if (!healthStatus || !criteria.health.includes(healthStatus))
-        return false;
+      const healthStatus = getHealthStatus(domain.expirationDate, domain.verified, now);
+      if (!healthStatus || !criteria.health.includes(healthStatus)) return false;
     }
 
     // Filter by TLD
@@ -436,9 +402,7 @@ export function filterDomains(
     // Filter by provider
     if (criteria.providers.length > 0) {
       if (!domain.verified) return false;
-      const validSelectedProviders = criteria.providers.filter((id) =>
-        validProviderIds.has(id),
-      );
+      const validSelectedProviders = criteria.providers.filter((id) => validProviderIds.has(id));
       if (validSelectedProviders.length === 0) return true;
       const providerSet = new Set(validSelectedProviders);
       const hasMatch =

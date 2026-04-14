@@ -1,21 +1,10 @@
-import type {
-  CertificatesResponse,
-  HostingResponse,
-  RegistrationResponse,
-} from "@domainstack/types";
 import {
   fetchCertificateChainStep,
   persistCertificatesStep,
   processChainStep,
 } from "@/workflows/shared/certificates";
-import {
-  fetchDnsRecordsStep,
-  persistDnsRecordsStep,
-} from "@/workflows/shared/dns";
-import {
-  fetchHeadersStep,
-  persistHeadersStep,
-} from "@/workflows/shared/headers";
+import { fetchDnsRecordsStep, persistDnsRecordsStep } from "@/workflows/shared/dns";
+import { fetchHeadersStep, persistHeadersStep } from "@/workflows/shared/headers";
 import {
   detectAndResolveProvidersStep,
   lookupGeoIpStep,
@@ -26,6 +15,11 @@ import {
   normalizeAndBuildResponseStep,
   persistRegistrationStep,
 } from "@/workflows/shared/registration";
+import type {
+  CertificatesResponse,
+  HostingResponse,
+  RegistrationResponse,
+} from "@domainstack/types";
 
 export interface InitializeSnapshotWorkflowInput {
   trackedDomainId: string;
@@ -59,20 +53,17 @@ export async function initializeSnapshotWorkflow(
   const domainName = domainRecord.name;
 
   // Step 2: Fetch fresh data for this domain (parallel where possible)
-  const [registrationResult, dnsResult, headersResult, certificatesResult] =
-    await Promise.all([
-      lookupWhoisStep(domainName),
-      fetchDnsRecordsStep(domainName),
-      fetchHeadersStep(domainName),
-      fetchCertificateChainStep(domainName),
-    ]);
+  const [registrationResult, dnsResult, headersResult, certificatesResult] = await Promise.all([
+    lookupWhoisStep(domainName),
+    fetchDnsRecordsStep(domainName),
+    fetchHeadersStep(domainName),
+    fetchCertificateChainStep(domainName),
+  ]);
 
   // Process and persist registration
   let registrationData: RegistrationResponse | null = null;
   if (registrationResult.success) {
-    registrationData = await normalizeAndBuildResponseStep(
-      registrationResult.data.recordJson,
-    );
+    registrationData = await normalizeAndBuildResponseStep(registrationResult.data.recordJson);
     if (registrationData.isRegistered) {
       await persistRegistrationStep(domainName, registrationData);
     }
@@ -136,9 +127,8 @@ export async function initializeSnapshotWorkflow(
       registrarProviderId: registrationData.registrarProvider.id ?? null,
       nameservers: registrationData.nameservers || [],
       transferLock: registrationData.transferLock ?? null,
-      statuses: (registrationData.statuses || []).map(
-        (s: string | { status: string }) =>
-          typeof s === "string" ? s : s.status,
+      statuses: (registrationData.statuses || []).map((s: string | { status: string }) =>
+        typeof s === "string" ? s : s.status,
       ),
     };
   }
@@ -187,9 +177,7 @@ export async function initializeSnapshotWorkflow(
   return { success: true, snapshotId: snapshot.id };
 }
 
-async function fetchDomainStep(
-  domainId: string,
-): Promise<{ name: string } | null> {
+async function fetchDomainStep(domainId: string): Promise<{ name: string } | null> {
   "use step";
 
   const { getDomainNameById } = await import("@domainstack/db/queries");
@@ -228,9 +216,7 @@ async function createSnapshotStep(params: {
   });
 
   if (!snapshot) {
-    throw new Error(
-      `Failed to create snapshot for trackedDomainId: ${params.trackedDomainId}`,
-    );
+    throw new Error(`Failed to create snapshot for trackedDomainId: ${params.trackedDomainId}`);
   }
 
   return { id: snapshot.id };

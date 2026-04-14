@@ -1,22 +1,16 @@
 "use client";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@domainstack/ui/tabs";
 import { IconBell, IconUser, IconWallet } from "@tabler/icons-react";
 import { useSelectedLayoutSegment } from "next/navigation";
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  useTransition,
-} from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
+
 import { AccountPanel } from "@/components/settings/account/account-panel";
 import { NotificationsPanel } from "@/components/settings/notifications/notifications-panel";
 import { SettingsErrorBoundary } from "@/components/settings/settings-error-boundary";
 import { SubscriptionPanel } from "@/components/settings/subscription/subscription-panel";
 import { useRouter } from "@/hooks/use-router";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@domainstack/ui/tabs";
 
 const SETTINGS_TABS = [
   {
@@ -39,9 +33,7 @@ const SETTINGS_TABS = [
 type SettingsTabValue = (typeof SETTINGS_TABS)[number]["value"];
 
 function isSettingsTabValue(value: unknown): value is SettingsTabValue {
-  return (
-    value === "subscription" || value === "notifications" || value === "account"
-  );
+  return value === "subscription" || value === "notifications" || value === "account";
 }
 
 function SettingsTabsList({ className }: { className?: string }) {
@@ -56,7 +48,7 @@ function SettingsTabsList({ className }: { className?: string }) {
             value={tab.value}
             className="flex-initial gap-2 text-[13px] transition-colors hover:text-foreground"
           >
-            <Icon className="!text-inherit size-4" aria-hidden />
+            <Icon className="size-4 !text-inherit" aria-hidden />
             {tab.label}
           </TabsTrigger>
         );
@@ -113,8 +105,7 @@ export function SettingsTabsRouter({
 
   const activeTab = navigationMode === "page" ? pageTab : segmentTab;
 
-  const [tabsListPortalTarget, setTabsListPortalTarget] =
-    useState<HTMLElement | null>(null);
+  const [tabsListPortalTarget, setTabsListPortalTarget] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!tabsListPortalId) {

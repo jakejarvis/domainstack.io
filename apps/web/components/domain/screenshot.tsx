@@ -1,14 +1,15 @@
 "use client";
 
-import { analytics } from "@domainstack/analytics/client";
-import { Spinner } from "@domainstack/ui/spinner";
-import { cn } from "@domainstack/ui/utils";
 import { IconCircleX, IconShieldExclamation } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+
 import { parseRetryAfterHeader } from "@/lib/ratelimit/client";
+import { analytics } from "@domainstack/analytics/client";
+import { Spinner } from "@domainstack/ui/spinner";
+import { cn } from "@domainstack/ui/utils";
 
 type ScreenshotStartResponse =
   | { status: "completed"; data: ScreenshotData }
@@ -114,17 +115,14 @@ export function useScreenshot({
 }): UseScreenshotResult {
   const queryClient = useQueryClient();
   const [runId, setRunId] = useState<string | null>(null);
-  const [screenshotData, setScreenshotData] = useState<ScreenshotData | null>(
-    null,
-  );
+  const [screenshotData, setScreenshotData] = useState<ScreenshotData | null>(null);
   const hasStartedRef = useRef(false);
   const startedForDomainRef = useRef<string | null>(null);
   const [rateLimitedUntil, setRateLimitedUntil] = useState<number | null>(null);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const screenshotQueryKey = useMemo(() => ["screenshot", domain], [domain]);
-  const cachedData =
-    queryClient.getQueryData<ScreenshotData>(screenshotQueryKey);
+  const cachedData = queryClient.getQueryData<ScreenshotData>(screenshotQueryKey);
 
   const startScreenshot = useCallback(async (id: string) => {
     const response = await fetch("/api/screenshot", {
@@ -250,13 +248,7 @@ export function useScreenshot({
       }
     }
 
-    if (
-      hasStartedRef.current ||
-      !enabled ||
-      !domainId ||
-      cachedData ||
-      screenshotData
-    ) {
+    if (hasStartedRef.current || !enabled || !domainId || cachedData || screenshotData) {
       return;
     }
 
@@ -266,15 +258,7 @@ export function useScreenshot({
 
     hasStartedRef.current = true;
     startMutation.mutate(domainId);
-  }, [
-    domain,
-    enabled,
-    domainId,
-    cachedData,
-    screenshotData,
-    startMutation,
-    rateLimitedUntil,
-  ]);
+  }, [domain, enabled, domainId, cachedData, screenshotData, startMutation, rateLimitedUntil]);
 
   // Derive return values
   const finalData = screenshotData ?? cachedData ?? null;
@@ -328,11 +312,7 @@ export function Screenshot({
             alt={`Homepage preview of ${domain}`}
             width={width}
             height={height}
-            className={cn(
-              "h-auto w-full object-cover",
-              aspectClassName,
-              imageClassName,
-            )}
+            className={cn("h-auto w-full object-cover", aspectClassName, imageClassName)}
             unoptimized
             priority={false}
             draggable={false}
@@ -344,7 +324,7 @@ export function Screenshot({
           className={`h-auto w-full ${aspectClassName} flex items-center justify-center bg-muted/50`}
         >
           <div
-            className="flex items-center gap-2 text-muted-foreground text-xs [&_svg]:size-4"
+            className="flex items-center gap-2 text-xs text-muted-foreground [&_svg]:size-4"
             aria-live="polite"
           >
             {isLoading ? (

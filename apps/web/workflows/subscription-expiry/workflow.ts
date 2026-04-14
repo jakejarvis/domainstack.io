@@ -13,21 +13,16 @@ export type SubscriptionExpiryWorkflowResult =
 
 // Thresholds for subscription expiry reminders (days before expiration)
 const SUBSCRIPTION_EXPIRY_THRESHOLDS = [7, 3, 1] as const;
-type SubscriptionExpiryThreshold =
-  (typeof SUBSCRIPTION_EXPIRY_THRESHOLDS)[number];
+type SubscriptionExpiryThreshold = (typeof SUBSCRIPTION_EXPIRY_THRESHOLDS)[number];
 
 // Pre-sorted ascending for threshold lookup (most urgent first)
-const SORTED_THRESHOLDS = [...SUBSCRIPTION_EXPIRY_THRESHOLDS].sort(
-  (a, b) => a - b,
-);
+const SORTED_THRESHOLDS = [...SUBSCRIPTION_EXPIRY_THRESHOLDS].sort((a, b) => a - b);
 
 /**
  * Get the subscription expiry notification threshold for a given number of days remaining.
  * Returns the most urgent (smallest) threshold that applies, or null if none.
  */
-function getSubscriptionExpiryThreshold(
-  daysRemaining: number,
-): SubscriptionExpiryThreshold | null {
+function getSubscriptionExpiryThreshold(daysRemaining: number): SubscriptionExpiryThreshold | null {
   for (const threshold of SORTED_THRESHOLDS) {
     if (daysRemaining <= threshold) {
       return threshold as SubscriptionExpiryThreshold;
@@ -120,14 +115,10 @@ interface UserSubscriptionData {
   lastExpiryNotification: number | null;
 }
 
-async function fetchUserSubscription(
-  userId: string,
-): Promise<UserSubscriptionData | null> {
+async function fetchUserSubscription(userId: string): Promise<UserSubscriptionData | null> {
   "use step";
 
-  const { getUserWithEndingSubscription } = await import(
-    "@domainstack/db/queries"
-  );
+  const { getUserWithEndingSubscription } = await import("@domainstack/db/queries");
 
   return await getUserWithEndingSubscription(userId);
 }
@@ -142,10 +133,7 @@ async function calculateDaysRemaining(endsAt: Date): Promise<number> {
   return differenceInDays(endsAt, now);
 }
 
-async function updateExpiryTracking(
-  userId: string,
-  threshold: number,
-): Promise<void> {
+async function updateExpiryTracking(userId: string, threshold: number): Promise<void> {
   "use step";
 
   const { setLastExpiryNotification } = await import("@domainstack/db/queries");
@@ -174,9 +162,8 @@ async function sendSubscriptionExpiryNotification(params: {
   "use step";
 
   const { format } = await import("date-fns");
-  const { default: SubscriptionCancelingEmail } = await import(
-    "@domainstack/email/templates/subscription-canceling"
-  );
+  const { default: SubscriptionCancelingEmail } =
+    await import("@domainstack/email/templates/subscription-canceling");
   const { sendEmail } = await import("@/workflows/shared/send-email");
 
   const { userName, userEmail, endsAt, daysRemaining, threshold: _ } = params;

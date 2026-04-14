@@ -2,14 +2,12 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Initialize PGlite before importing anything that uses the db
-const { makePGliteDb, closePGliteDb, resetPGliteDb } = await import(
-  "@domainstack/db/testing"
-);
+const { makePGliteDb, closePGliteDb, resetPGliteDb } = await import("@domainstack/db/testing");
 const { db } = await makePGliteDb();
 
 // Mock schedule revalidation
 vi.mock("@/lib/revalidation", () => ({
-  scheduleRevalidation: vi.fn().mockResolvedValue(undefined),
+  scheduleRevalidation: vi.fn<(...args: unknown[]) => Promise<void>>().mockResolvedValue(undefined),
 }));
 
 describe("persistRegistrationStep", () => {
@@ -49,10 +47,7 @@ describe("persistRegistrationStep", () => {
     const { domains, registrations } = await import("@domainstack/db/schema");
     const { eq } = await import("@domainstack/db/drizzle");
 
-    const domainRows = await db
-      .select()
-      .from(domains)
-      .where(eq(domains.name, "persist.com"));
+    const domainRows = await db.select().from(domains).where(eq(domains.name, "persist.com"));
 
     expect(domainRows).toHaveLength(1);
 

@@ -1,22 +1,18 @@
-import { Badge } from "@domainstack/ui/badge";
-import { Button } from "@domainstack/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@domainstack/ui/collapsible";
-import { cn } from "@domainstack/ui/utils";
 import { IconChevronDown, IconFilter } from "@tabler/icons-react";
 import type { Table } from "@tanstack/react-table";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
+
 import { DashboardTableColumnMenu } from "@/components/dashboard/dashboard-table-column-menu";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
+import { Badge } from "@domainstack/ui/badge";
+import { Button } from "@domainstack/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@domainstack/ui/collapsible";
+import { cn } from "@domainstack/ui/utils";
 
 type MobileFiltersCollapsibleProps = {
   hasActiveFilters: boolean;
   activeFilterCount: number;
-  // biome-ignore lint/suspicious/noExplicitAny: Table generic type varies
   table?: Table<any> | null;
   children: React.ReactNode;
 };
@@ -60,20 +56,13 @@ export function MobileFiltersCollapsible({
                   )}
                 </AnimatePresence>
               </span>
-              <IconChevronDown
-                className={cn(
-                  "transition-transform",
-                  mobileOpen && "rotate-180",
-                )}
-              />
+              <IconChevronDown className={cn("transition-transform", mobileOpen && "rotate-180")} />
             </Button>
           }
         />
 
         {/* Column visibility - always visible in collapsed mode for table view */}
-        {viewMode === "table" && table && (
-          <DashboardTableColumnMenu table={table} />
-        )}
+        {viewMode === "table" && table && <DashboardTableColumnMenu table={table} />}
       </div>
 
       <CollapsibleContent

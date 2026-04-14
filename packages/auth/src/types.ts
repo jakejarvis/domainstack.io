@@ -14,6 +14,4 @@ export type OAuthCredentials = {
 /**
  * OAuth configuration map.
  */
-export type OAuthConfig = Partial<
-  Record<OAuthProvider, OAuthCredentials | undefined>
->;
+export type OAuthConfig = Partial<Record<OAuthProvider, OAuthCredentials | undefined>>;

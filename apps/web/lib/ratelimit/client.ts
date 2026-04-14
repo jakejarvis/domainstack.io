@@ -68,10 +68,7 @@ function extractRateLimitError(error: unknown): RateLimitError | null {
   let message = "Too many requests. Please try again later.";
 
   if (typeof error === "object" && error !== null) {
-    const { message: errMessage, cause: errCause } = error as Record<
-      string,
-      unknown
-    >;
+    const { message: errMessage, cause: errCause } = error as Record<string, unknown>;
 
     // Extract message
     if (typeof errMessage === "string") {
@@ -86,10 +83,7 @@ function extractRateLimitError(error: unknown): RateLimitError | null {
 
     // Check cause for structured retry info
     if (errCause && typeof errCause === "object") {
-      const { retryAfter: causeRetryAfter } = errCause as Record<
-        string,
-        unknown
-      >;
+      const { retryAfter: causeRetryAfter } = errCause as Record<string, unknown>;
       if (typeof causeRetryAfter === "number") {
         retryAfter = causeRetryAfter;
       }
@@ -138,10 +132,7 @@ export function showRateLimitError(error: unknown): boolean {
  * @param response - Fetch Response object (typically with status 429)
  * @param defaultSeconds - Fallback value if header is missing/invalid (default: 60)
  */
-export function parseRetryAfterHeader(
-  response: Response,
-  defaultSeconds = 60,
-): number {
+export function parseRetryAfterHeader(response: Response, defaultSeconds = 60): number {
   const header = response.headers.get("Retry-After");
   if (header) {
     const seconds = Number.parseInt(header, 10);

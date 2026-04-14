@@ -1,5 +1,15 @@
 "use client";
 
+import { IconAlertTriangle, IconCalendarClock, IconRefresh, IconX } from "@tabler/icons-react";
+import { useQueryErrorResetBoundary } from "@tanstack/react-query";
+import { Suspense, useState } from "react";
+import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
+
+import {
+  CalendarInstructions,
+  CalendarInstructionsSkeleton,
+} from "@/components/calendar-instructions";
+import { CreateIssueButton } from "@/components/create-issue-button";
 import { Button } from "@domainstack/ui/button";
 import {
   Popover,
@@ -9,25 +19,7 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@domainstack/ui/popover";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@domainstack/ui/tooltip";
-import {
-  IconAlertTriangle,
-  IconCalendarClock,
-  IconRefresh,
-  IconX,
-} from "@tabler/icons-react";
-import { useQueryErrorResetBoundary } from "@tanstack/react-query";
-import { Suspense, useState } from "react";
-import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
-import {
-  CalendarInstructions,
-  CalendarInstructionsSkeleton,
-} from "@/components/calendar-instructions";
-import { CreateIssueButton } from "@/components/create-issue-button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 
 /**
  * Compact error fallback for popover content.
@@ -38,7 +30,7 @@ function PopoverErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
   return (
     <div className="flex flex-col items-center gap-2 p-4 text-center">
       <IconAlertTriangle className="size-5 text-destructive" />
-      <p className="text-muted-foreground text-sm">Failed to load</p>
+      <p className="text-sm text-muted-foreground">Failed to load</p>
       <div className="flex flex-wrap items-center justify-center gap-2">
         <Button size="sm" onClick={resetErrorBoundary}>
           <IconRefresh />
@@ -72,7 +64,7 @@ export function CalendarFeedPopover() {
         <TooltipContent>Subscribe to updates</TooltipContent>
       </Tooltip>
       <PopoverContent
-        className="max-sm:!left-0 max-sm:!right-0 max-sm:!mx-auto max-sm:!translate-x-0 overflow-hidden bg-background p-0 max-sm:w-[calc(100vw-1rem)] sm:w-[400px]"
+        className="overflow-hidden bg-background p-0 max-sm:!right-0 max-sm:!left-0 max-sm:!mx-auto max-sm:w-[calc(100vw-1rem)] max-sm:!translate-x-0 sm:w-[400px]"
         align="end"
         side="bottom"
         collisionAvoidance={{
@@ -81,7 +73,7 @@ export function CalendarFeedPopover() {
         }}
         collisionPadding={8}
       >
-        <PopoverHeader className="border-border border-b bg-card/60 px-4 pt-3 pb-2.5">
+        <PopoverHeader className="border-b border-border bg-card/60 px-4 pt-3 pb-2.5">
           <PopoverTitle>Calendar Feed</PopoverTitle>
           <PopoverDescription className="text-[13px] leading-normal">
             Subscribe to domain expiration dates in your favorite calendar app

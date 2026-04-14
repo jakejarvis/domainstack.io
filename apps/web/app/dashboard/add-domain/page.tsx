@@ -1,6 +1,7 @@
 import { IconArrowLeft } from "@tabler/icons-react";
 import Link from "next/link";
 import { Suspense } from "react";
+
 import { AddDomainPageClient } from "@/components/dashboard/add-domain/add-domain-page-client";
 import { AddDomainSkeleton } from "@/components/dashboard/add-domain/add-domain-skeleton";
 
@@ -22,7 +23,7 @@ export default async function AddDomainPage({
     <div className="mx-auto my-auto flex w-full max-w-lg flex-col">
       <Link
         href="/dashboard"
-        className="mb-4 inline-flex items-center gap-1.5 text-muted-foreground text-sm transition-colors hover:text-foreground"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <IconArrowLeft className="size-4" />
         Back to dashboard

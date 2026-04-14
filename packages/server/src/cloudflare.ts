@@ -99,11 +99,9 @@ async function getCloudflareIpRanges(): Promise<CloudflareIpRanges> {
   activePromise = (async () => {
     try {
       const res = await fetch(CLOUDFLARE_IPS_URL, {
-        headers: {
-          ...(process.env.EXTERNAL_USER_AGENT
-            ? { "User-Agent": process.env.EXTERNAL_USER_AGENT }
-            : {}),
-        },
+        headers: process.env.EXTERNAL_USER_AGENT
+          ? { "User-Agent": process.env.EXTERNAL_USER_AGENT }
+          : undefined,
       });
 
       if (!res.ok) {
@@ -155,14 +153,10 @@ export async function isCloudflareIp(ip: string): Promise<boolean> {
 
   if (ipaddr.IPv4.isValid(ip)) {
     const parsed = ipaddr.IPv4.parse(ip);
-    result = parsedRanges.ipv4.some(([net, prefix]) =>
-      parsed.match([net, prefix]),
-    );
+    result = parsedRanges.ipv4.some(([net, prefix]) => parsed.match([net, prefix]));
   } else if (ipaddr.IPv6.isValid(ip)) {
     const parsed = ipaddr.IPv6.parse(ip);
-    result = parsedRanges.ipv6.some(([net, prefix]) =>
-      parsed.match([net, prefix]),
-    );
+    result = parsedRanges.ipv6.some(([net, prefix]) => parsed.match([net, prefix]));
   }
 
   cache.set(ip, result);

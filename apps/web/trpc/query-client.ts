@@ -1,7 +1,4 @@
-import {
-  defaultShouldDehydrateQuery,
-  QueryClient,
-} from "@tanstack/react-query";
+import { defaultShouldDehydrateQuery, QueryClient } from "@tanstack/react-query";
 
 export const makeQueryClient = () => {
   return new QueryClient({
@@ -17,8 +14,7 @@ export const makeQueryClient = () => {
       dehydrate: {
         // Include pending queries so streaming works smoothly
         shouldDehydrateQuery: (query) =>
-          defaultShouldDehydrateQuery(query) ||
-          query.state.status === "pending",
+          defaultShouldDehydrateQuery(query) || query.state.status === "pending",
         // Do not redact errors on the server; Next.js handles error redaction/digests
         shouldRedactErrors: () => false,
       },

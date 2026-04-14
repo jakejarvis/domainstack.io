@@ -1,5 +1,6 @@
-import { createLogger } from "@domainstack/logger";
 import type { Browser, Page, Viewport } from "puppeteer-core";
+
+import { createLogger } from "@domainstack/logger";
 
 const logger = createLogger({ source: "screenshot/page" });
 
@@ -10,15 +11,12 @@ const IDLE_TIME_MS = 500;
 const IDLE_TIMEOUT_MS = 1500;
 
 // Module-level singleton for adblocker (lazy initialized)
-// biome-ignore lint/suspicious/noExplicitAny: PuppeteerBlocker type is complex to infer from dynamic import
 let blockerPromise: Promise<any> | null = null;
 
 async function getBlocker() {
   if (!blockerPromise) {
     blockerPromise = import("@ghostery/adblocker-puppeteer")
-      .then(({ PuppeteerBlocker }) =>
-        PuppeteerBlocker.fromPrebuiltAdsAndTracking(),
-      )
+      .then(({ PuppeteerBlocker }) => PuppeteerBlocker.fromPrebuiltAdsAndTracking())
       .catch((err) => {
         logger.warn(err, "failed to initialize adblocker");
         return null;

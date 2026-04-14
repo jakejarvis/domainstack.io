@@ -9,6 +9,7 @@ import { ensureDomainRecord, upsertFavicon } from "@domainstack/db/queries";
 import { optimizeImage, storeImage } from "@domainstack/image";
 import { safeFetch } from "@domainstack/safe-fetch";
 import type { FaviconResponse } from "@domainstack/types";
+
 import { ttlForFavicon } from "../ttl";
 
 // ============================================================================
@@ -80,11 +81,7 @@ export async function fetchFavicon(domain: string): Promise<FaviconResult> {
   }
 
   // Step 2: Process, store, and persist
-  const result = await processAndStore(
-    domain,
-    fetchResult.imageBase64,
-    fetchResult.sourceName,
-  );
+  const result = await processAndStore(domain, fetchResult.imageBase64, fetchResult.sourceName);
 
   return {
     success: true,
@@ -137,8 +134,7 @@ async function fetchIconFromSources(domain: string): Promise<IconFetchResult> {
       });
 
       if (!asset.ok) {
-        const isDefinitiveNotFoundStatus =
-          asset.status === 404 || asset.status === 400;
+        const isDefinitiveNotFoundStatus = asset.status === 404 || asset.status === 400;
         if (!isDefinitiveNotFoundStatus) {
           allNotFound = false;
         }
@@ -234,10 +230,7 @@ async function processAndStore(
 // Internal: Persist Failure
 // ============================================================================
 
-async function persistFailure(
-  domain: string,
-  isNotFound: boolean,
-): Promise<void> {
+async function persistFailure(domain: string, isNotFound: boolean): Promise<void> {
   const domainRecord = await ensureDomainRecord(domain);
   const now = new Date();
   const expiresAt = ttlForFavicon(now);

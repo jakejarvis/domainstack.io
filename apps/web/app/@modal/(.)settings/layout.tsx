@@ -1,16 +1,12 @@
-import { auth } from "@domainstack/auth/server";
-import { ScrollArea } from "@domainstack/ui/scroll-area";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import {
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalTitle,
-} from "@/components/modal";
+
+import { Modal, ModalContent, ModalHeader, ModalTitle } from "@/components/modal";
 import { SettingsTabsRouter } from "@/components/settings/settings-content";
 import { SettingsSkeletonPanels } from "@/components/settings/settings-skeleton";
+import { auth } from "@domainstack/auth/server";
+import { ScrollArea } from "@domainstack/ui/scroll-area";
 
 function SettingsSkeleton() {
   return (
@@ -26,10 +22,7 @@ export default function SettingsModalLayout() {
       <ModalContent>
         <ModalHeader className="border-b-0 pb-0">
           <ModalTitle>Settings</ModalTitle>
-          <div
-            id="settings-modal-tabs"
-            className="-mx-4.5 mt-2 [&_[data-slot=tabs-list]]:px-2"
-          />
+          <div id="settings-modal-tabs" className="-mx-4.5 mt-2 [&_[data-slot=tabs-list]]:px-2" />
         </ModalHeader>
         <ScrollArea className="min-h-0 flex-1 bg-popover/10">
           <div className="mt-1 min-w-0 p-5 [contain:inline-size]">
@@ -52,10 +45,5 @@ async function AuthorizedSettingsModalLayout() {
     redirect("/login");
   }
 
-  return (
-    <SettingsTabsRouter
-      navigationMode="modal"
-      tabsListPortalId="settings-modal-tabs"
-    />
-  );
+  return <SettingsTabsRouter navigationMode="modal" tabsListPortalId="settings-modal-tabs" />;
 }

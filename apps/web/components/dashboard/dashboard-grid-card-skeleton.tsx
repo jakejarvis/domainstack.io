@@ -5,9 +5,7 @@ type DashboardGridCardSkeletonProps = {
   infoRows?: number;
 };
 
-export function DashboardGridCardSkeleton({
-  infoRows = 3,
-}: DashboardGridCardSkeletonProps) {
+export function DashboardGridCardSkeleton({ infoRows = 3 }: DashboardGridCardSkeletonProps) {
   return (
     <div className="rounded-xl border border-black/15 bg-background/60 p-6 dark:border-white/15">
       {/* Header: favicon + domain name + dropdown */}
@@ -25,7 +23,6 @@ export function DashboardGridCardSkeleton({
       {/* Info rows - configurable count */}
       <div className="mt-4 space-y-2">
         {Array.from({ length: infoRows }, (_, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: fine for skeletons
           <Skeleton key={`info-row-${i}`} className="h-10 w-full rounded-xl" />
         ))}
       </div>

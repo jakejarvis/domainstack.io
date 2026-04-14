@@ -1,5 +1,6 @@
 import { Field as FieldPrimitive } from "@base-ui/react/field";
 import { Fieldset as FieldsetPrimitive } from "@base-ui/react/fieldset";
+
 import { cn, cva, type VariantProps } from "../utils";
 import { Separator } from "./separator";
 
@@ -39,10 +40,7 @@ function FieldLegend({
   );
 }
 
-function FieldGroup({
-  className,
-  ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+function FieldGroup({ className, ...props }: React.ComponentPropsWithoutRef<"div">) {
   return (
     <div
       data-slot="field-group"
@@ -66,7 +64,7 @@ const fieldVariants = cva({
         "has-[>[data-slot=field-content]]:items-start has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
       ],
       responsive: [
-        "@md/field-group:flex-row flex-col @md/field-group:items-center @md/field-group:[&>*]:w-auto [&>*]:w-full [&>.sr-only]:w-auto",
+        "flex-col @md/field-group:flex-row @md/field-group:items-center [&>*]:w-full @md/field-group:[&>*]:w-auto [&>.sr-only]:w-auto",
         "@md/field-group:[&>[data-slot=field-label]]:flex-auto",
         "@md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
       ],
@@ -93,17 +91,11 @@ function Field({
   );
 }
 
-function FieldContent({
-  className,
-  ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+function FieldContent({ className, ...props }: React.ComponentPropsWithoutRef<"div">) {
   return (
     <div
       data-slot="field-content"
-      className={cn(
-        "group/field-content flex flex-1 flex-col gap-1.5 leading-snug",
-        className,
-      )}
+      className={cn("group/field-content flex flex-1 flex-col gap-1.5 leading-snug", className)}
       {...props}
     />
   );
@@ -124,15 +116,12 @@ function FieldLabel({ className, ...props }: FieldPrimitive.Label.Props) {
   );
 }
 
-function FieldTitle({
-  className,
-  ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+function FieldTitle({ className, ...props }: React.ComponentPropsWithoutRef<"div">) {
   return (
     <div
       data-slot="field-title"
       className={cn(
-        "flex w-fit items-center gap-2 font-medium text-sm leading-snug group-data-[disabled]/field:opacity-50",
+        "flex w-fit items-center gap-2 text-sm leading-snug font-medium group-data-[disabled]/field:opacity-50",
         className,
       )}
       {...props}
@@ -140,17 +129,14 @@ function FieldTitle({
   );
 }
 
-function FieldDescription({
-  className,
-  ...props
-}: FieldPrimitive.Description.Props) {
+function FieldDescription({ className, ...props }: FieldPrimitive.Description.Props) {
   return (
     <FieldPrimitive.Description
       data-slot="field-description"
       className={cn(
-        "font-normal text-muted-foreground text-sm leading-normal group-has-[[data-orientation=horizontal]]/field:text-balance",
+        "text-sm leading-normal font-normal text-muted-foreground group-has-[[data-orientation=horizontal]]/field:text-balance",
         "[[data-variant=legend]+&]:-mt-1.5",
-        "[&>a:hover]:text-primary [&>a]:underline [&>a]:underline-offset-4",
+        "[&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary",
         className,
       )}
       {...props}
@@ -158,11 +144,7 @@ function FieldDescription({
   );
 }
 
-function FieldSeparator({
-  children,
-  className,
-  ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+function FieldSeparator({ children, className, ...props }: React.ComponentPropsWithoutRef<"div">) {
   return (
     <div
       data-slot="field-separator"
@@ -197,18 +179,22 @@ function FieldError({
   let content = children;
 
   if (!content && errors?.length) {
-    if (errors.length === 1 && errors[0]?.message) {
-      content = errors[0].message;
-    } else {
+    const errorMessages = [
+      ...new Set(errors.flatMap((error) => (error?.message ? [error.message] : []))),
+    ];
+
+    if (errorMessages.length === 1) {
+      content = errorMessages[0];
+    } else if (errorMessages.length > 1) {
       content = (
         <ul className="ml-4 flex list-disc flex-col gap-1">
-          {errors.map(
-            (error, index) =>
-              // biome-ignore lint/suspicious/noArrayIndexKey: this is fine
-              error?.message && <li key={index}>{error.message}</li>,
-          )}
+          {errorMessages.map((message) => (
+            <li key={message}>{message}</li>
+          ))}
         </ul>
       );
+    } else {
+      content = null;
     }
   }
 
@@ -221,7 +207,7 @@ function FieldError({
       match
       role="alert"
       data-slot="field-error"
-      className={cn("font-normal text-destructive text-sm", className)}
+      className={cn("text-sm font-normal text-destructive", className)}
       {...props}
     >
       {content}

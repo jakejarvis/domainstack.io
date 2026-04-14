@@ -1,12 +1,9 @@
 /* @vitest-environment node */
 import type { Certificate } from "node:tls";
+
 import { describe, expect, it } from "vitest";
-import {
-  isExpectedDnsError,
-  isExpectedTlsError,
-  parseAltNames,
-  toName,
-} from "./utils";
+
+import { isExpectedDnsError, isExpectedTlsError, parseAltNames, toName } from "./utils";
 
 // Helper to cast partial objects as Certificate for testing
 const asCert = (obj: Partial<Certificate>) => obj as Certificate;
@@ -17,9 +14,7 @@ describe("toName", () => {
   });
 
   it("prefers CN over O", () => {
-    expect(toName(asCert({ CN: "Common Name", O: "Organization" }))).toBe(
-      "Common Name",
-    );
+    expect(toName(asCert({ CN: "Common Name", O: "Organization" }))).toBe("Common Name");
   });
 
   it("falls back to O when CN is missing", () => {

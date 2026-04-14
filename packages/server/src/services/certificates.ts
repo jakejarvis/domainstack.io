@@ -12,10 +12,8 @@ import {
   upsertCatalogProvider,
 } from "@domainstack/db/queries";
 import type { Certificate, CertificatesResponse } from "@domainstack/types";
-import {
-  detectCertificateAuthority,
-  getProvidersFromCatalog,
-} from "@domainstack/utils/providers";
+import { detectCertificateAuthority, getProvidersFromCatalog } from "@domainstack/utils/providers";
+
 import { getProviderCatalog } from "../edge-config";
 import { fetchCertificateChain, type RawCertificate } from "../tls";
 import { ttlForCertificates } from "../ttl";
@@ -48,9 +46,7 @@ interface CertificatesProcessedData {
  *
  * @throws Error on transient failures (timeout, fetch_error) - TanStack Query retries these
  */
-export async function fetchCertificates(
-  domain: string,
-): Promise<CertificatesResult> {
+export async function fetchCertificates(domain: string): Promise<CertificatesResult> {
   // 1. Fetch certificate chain via TLS handshake
   const fetchResult = await fetchCertificateChainInternal(domain);
 
@@ -78,9 +74,7 @@ type FetchResult =
   | { success: true; chain: RawCertificate[] }
   | { success: false; error: CertificatesError };
 
-async function fetchCertificateChainInternal(
-  domain: string,
-): Promise<FetchResult> {
+async function fetchCertificateChainInternal(domain: string): Promise<FetchResult> {
   const result = await fetchCertificateChain(domain);
 
   if (!result.success) {
@@ -103,9 +97,7 @@ async function fetchCertificateChainInternal(
 // Internal: Process Chain
 // ============================================================================
 
-async function processChain(
-  chain: RawCertificate[],
-): Promise<CertificatesProcessedData> {
+async function processChain(chain: RawCertificate[]): Promise<CertificatesProcessedData> {
   const catalog = await getProviderCatalog();
   const caProviders = catalog ? getProvidersFromCatalog(catalog, "ca") : [];
 
@@ -141,21 +133,22 @@ async function processChain(
   );
 
   // Update certificates with provider IDs
-  const certificates: Certificate[] = certificatesWithMatches.map(
-    ({ cert }, i) => ({
-      ...cert,
-      caProvider: {
-        ...cert.caProvider,
-        id: providerIds[i],
-      },
-    }),
-  );
+  const certificates: Certificate[] = certificatesWithMatches.map(({ cert }, i) => ({
+    issuer: cert.issuer,
+    subject: cert.subject,
+    altNames: cert.altNames,
+    validFrom: cert.validFrom,
+    validTo: cert.validTo,
+    caProvider: {
+      id: providerIds[i],
+      name: cert.caProvider.name,
+      domain: cert.caProvider.domain,
+    },
+  }));
 
   const earliestValidTo =
     certificates.length > 0
-      ? new Date(
-          Math.min(...certificates.map((c) => new Date(c.validTo).getTime())),
-        )
+      ? new Date(Math.min(...certificates.map((c) => new Date(c.validTo).getTime())))
       : new Date(Date.now() + 3_600_000);
 
   return { certificates, providerIds, earliestValidTo };

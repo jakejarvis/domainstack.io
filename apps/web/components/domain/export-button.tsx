@@ -1,39 +1,28 @@
 "use client";
 
-import { analytics } from "@domainstack/analytics/client";
-import { Button } from "@domainstack/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@domainstack/ui/tooltip";
-import { cn } from "@domainstack/ui/utils";
 import { IconDownload } from "@tabler/icons-react";
 import { notifyManager, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+
 import { exportDomainData } from "@/lib/json-export";
 import { useTRPC } from "@/lib/trpc/client";
+import { analytics } from "@domainstack/analytics/client";
+import { Button } from "@domainstack/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
+import { cn } from "@domainstack/ui/utils";
 
-export function ExportButton({
-  domain,
-  enabled = true,
-}: {
-  domain: string;
-  enabled?: boolean;
-}) {
+export function ExportButton({ domain, enabled = true }: { domain: string; enabled?: boolean }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const [allDataLoaded, setAllDataLoaded] = useState(false);
 
   const queryKeys = useMemo(
     () => ({
-      registration: trpc.domain.getRegistration.queryOptions({ domain })
-        .queryKey,
+      registration: trpc.domain.getRegistration.queryOptions({ domain }).queryKey,
       dns: trpc.domain.getDnsRecords.queryOptions({ domain }).queryKey,
       hosting: trpc.domain.getHosting.queryOptions({ domain }).queryKey,
-      certificates: trpc.domain.getCertificates.queryOptions({ domain })
-        .queryKey,
+      certificates: trpc.domain.getCertificates.queryOptions({ domain }).queryKey,
       headers: trpc.domain.getHeaders.queryOptions({ domain }).queryKey,
       seo: trpc.domain.getSeo.queryOptions({ domain }).queryKey,
     }),
@@ -49,18 +38,14 @@ export function ExportButton({
     const checkAndUpdateDataStatus = () => {
       const hasAllData = Object.values(queryKeysRef.current).every((key) => {
         const query = queryClient.getQueryCache().find({ queryKey: key });
-        return (
-          query?.state.data !== undefined || query?.state.status === "error"
-        );
+        return query?.state.data !== undefined || query?.state.status === "error";
       });
       notifyManager.schedule(() => {
         setAllDataLoaded(hasAllData);
       });
     };
 
-    const unsubscribe = queryClient
-      .getQueryCache()
-      .subscribe(checkAndUpdateDataStatus);
+    const unsubscribe = queryClient.getQueryCache().subscribe(checkAndUpdateDataStatus);
     checkAndUpdateDataStatus();
 
     return unsubscribe;
@@ -84,10 +69,7 @@ export function ExportButton({
       exportDomainData(domain, exportData);
     } catch (err) {
       toast.error(`Failed to export ${domain}`, {
-        description:
-          err instanceof Error
-            ? err.message
-            : "An error occurred while exporting",
+        description: err instanceof Error ? err.message : "An error occurred while exporting",
         position: "bottom-center",
       });
     }
@@ -109,10 +91,7 @@ export function ExportButton({
               disabled={!enabled || !allDataLoaded}
               aria-label="Export report"
             >
-              <IconDownload
-                className="sm:text-muted-foreground"
-                aria-hidden="true"
-              />
+              <IconDownload className="sm:text-muted-foreground" aria-hidden="true" />
               <span className="hidden sm:inline-block">Export</span>
             </Button>
           </div>

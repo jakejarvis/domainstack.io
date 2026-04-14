@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+
 import { AnnouncementPill } from "@/components/landing/announcement-pill";
 import { HomeHero } from "@/components/landing/home-hero";
 import { HomeSearchClient } from "@/components/search/home-search-client";

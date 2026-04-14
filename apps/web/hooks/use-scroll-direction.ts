@@ -1,6 +1,7 @@
 "use client";
 
 import { startTransition, useEffect, useRef, useState } from "react";
+
 import { HEADER_HEIGHT } from "@/lib/constants/layout";
 
 export type ScrollDirection = "up" | "down" | null;
@@ -40,19 +41,19 @@ export function useScrollDirection({
     // Initialize with current scroll position
     const initialScrollY = window.scrollY;
     lastScrollY.current = initialScrollY;
-    const pastThreshold = initialScrollY > offsetThreshold;
-    lastPastThreshold.current = pastThreshold;
-    startTransition(() => setIsPastThreshold(pastThreshold));
+    const initialPastThreshold = initialScrollY > offsetThreshold;
+    lastPastThreshold.current = initialPastThreshold;
+    startTransition(() => setIsPastThreshold(initialPastThreshold));
 
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       const delta = currentScrollY - lastScrollY.current;
 
       // Update threshold state (only when it changes)
-      const pastThreshold = currentScrollY > offsetThreshold;
-      if (pastThreshold !== lastPastThreshold.current) {
-        lastPastThreshold.current = pastThreshold;
-        startTransition(() => setIsPastThreshold(pastThreshold));
+      const nextPastThreshold = currentScrollY > offsetThreshold;
+      if (nextPastThreshold !== lastPastThreshold.current) {
+        lastPastThreshold.current = nextPastThreshold;
+        startTransition(() => setIsPastThreshold(nextPastThreshold));
       }
 
       // At the very top, always show header (direction = 'up')

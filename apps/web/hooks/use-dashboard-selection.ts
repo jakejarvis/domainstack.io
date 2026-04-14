@@ -1,5 +1,6 @@
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useCallback, useEffect, useRef } from "react";
+
 import {
   hasSelectionAtom,
   isAllSelectedAtom,
@@ -29,8 +30,7 @@ export interface DashboardSelectionActions {
   toggleAll: () => void;
 }
 
-export type UseDashboardSelectionReturn = DashboardSelectionState &
-  DashboardSelectionActions;
+export type UseDashboardSelectionReturn = DashboardSelectionState & DashboardSelectionActions;
 
 // ---------------------------------------------------------------------------
 // Hook
@@ -110,10 +110,7 @@ export function useDashboardSelection(): UseDashboardSelectionReturn {
     [setSelectedIds],
   );
 
-  const isSelected = useCallback(
-    (id: string) => selectedIds.has(id),
-    [selectedIds],
-  );
+  const isSelected = useCallback((id: string) => selectedIds.has(id), [selectedIds]);
 
   const selectAll = useCallback(() => {
     setSelectedIds(new Set(visibleDomainIds));

@@ -1,12 +1,13 @@
+import { NextResponse } from "next/server";
+import { start } from "workflow/api";
+
+import { detectChangesWorkflow } from "@/workflows/detect-changes";
+import { initializeSnapshotWorkflow } from "@/workflows/initialize-snapshot";
 import {
   getMonitoredSnapshotIds,
   getVerifiedDomainsWithoutSnapshots,
 } from "@domainstack/db/queries";
 import { createLogger } from "@domainstack/logger";
-import { NextResponse } from "next/server";
-import { start } from "workflow/api";
-import { detectChangesWorkflow } from "@/workflows/detect-changes";
-import { initializeSnapshotWorkflow } from "@/workflows/initialize-snapshot";
 
 const logger = createLogger({ source: "cron/monitor-domains" });
 
@@ -18,9 +19,7 @@ const logger = createLogger({ source: "cron/monitor-domains" });
  * 2. Detect changes for domains that already have snapshots
  */
 export async function GET(request: Request) {
-  if (
-    request.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`
-  ) {
+  if (request.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
     logger.warn("Unauthorized cron request");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -31,18 +30,14 @@ export async function GET(request: Request) {
     const baselineResults = await Promise.allSettled(
       domains.map((input) => start(initializeSnapshotWorkflow, [input])),
     );
-    const baselinesStarted = baselineResults.filter(
-      (r) => r.status === "fulfilled",
-    ).length;
+    const baselinesStarted = baselineResults.filter((r) => r.status === "fulfilled").length;
 
     // Phase 2: Detect changes for domains with existing snapshots
     const ids = await getMonitoredSnapshotIds();
     const monitorResults = await Promise.allSettled(
       ids.map((id) => start(detectChangesWorkflow, [{ trackedDomainId: id }])),
     );
-    const monitoringStarted = monitorResults.filter(
-      (r) => r.status === "fulfilled",
-    ).length;
+    const monitoringStarted = monitorResults.filter((r) => r.status === "fulfilled").length;
 
     const result = {
       baselines: { started: baselinesStarted, total: domains.length },
@@ -53,9 +48,6 @@ export async function GET(request: Request) {
     return NextResponse.json(result);
   } catch (err) {
     logger.error({ err }, "Monitor domains failed");
-    return NextResponse.json(
-      { error: "Failed to monitor domains" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to monitor domains" }, { status: 500 });
   }
 }

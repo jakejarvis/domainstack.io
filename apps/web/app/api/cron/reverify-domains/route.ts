@@ -1,8 +1,9 @@
-import { getVerifiedTrackedDomainIds } from "@domainstack/db/queries";
-import { createLogger } from "@domainstack/logger";
 import { NextResponse } from "next/server";
 import { start } from "workflow/api";
+
 import { reverifyOwnershipWorkflow } from "@/workflows/reverify-ownership";
+import { getVerifiedTrackedDomainIds } from "@domainstack/db/queries";
+import { createLogger } from "@domainstack/logger";
 
 const logger = createLogger({ source: "cron/reverify-domains" });
 
@@ -11,9 +12,7 @@ const logger = createLogger({ source: "cron/reverify-domains" });
  * Pending domain verification is handled by the auto-verify workflow.
  */
 export async function GET(request: Request) {
-  if (
-    request.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`
-  ) {
+  if (request.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
     logger.warn("Unauthorized cron request");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -21,9 +20,7 @@ export async function GET(request: Request) {
   try {
     const ids = await getVerifiedTrackedDomainIds();
     const results = await Promise.allSettled(
-      ids.map((id) =>
-        start(reverifyOwnershipWorkflow, [{ trackedDomainId: id }]),
-      ),
+      ids.map((id) => start(reverifyOwnershipWorkflow, [{ trackedDomainId: id }])),
     );
     const started = results.filter((r) => r.status === "fulfilled").length;
 
@@ -31,9 +28,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ started });
   } catch (err) {
     logger.error({ err }, "Reverify domains failed");
-    return NextResponse.json(
-      { error: "Failed to reverify domains" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to reverify domains" }, { status: 500 });
   }
 }

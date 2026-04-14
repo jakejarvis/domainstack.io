@@ -1,8 +1,9 @@
 import "server-only";
-
 import crypto from "node:crypto";
-import type { TrackedDomainWithDetails } from "@domainstack/types";
+
 import { generateIcsCalendar, type IcsCalendar, type IcsEvent } from "ts-ics";
+
+import type { TrackedDomainWithDetails } from "@domainstack/types";
 
 /**
  * Result of generating a calendar feed.
@@ -24,13 +25,9 @@ export interface CalendarFeedResult {
  * - RDAP/WHOIS times are often registry-local timezone
  * - All-day events are more visible in calendar apps
  */
-export function generateCalendarFeed(
-  domains: TrackedDomainWithDetails[],
-): CalendarFeedResult {
+export function generateCalendarFeed(domains: TrackedDomainWithDetails[]): CalendarFeedResult {
   // Filter to verified domains with expiration dates
-  const expiringDomains = domains.filter(
-    (d) => d.verified && d.expirationDate !== null,
-  );
+  const expiringDomains = domains.filter((d) => d.verified && d.expirationDate !== null);
 
   const now = new Date();
   const events: IcsEvent[] = expiringDomains
@@ -86,9 +83,7 @@ function buildEventDescription(domain: TrackedDomainWithDetails): string {
   }
 
   if (domain.ca.certificateExpiryDate) {
-    lines.push(
-      `SSL certificate expires: ${domain.ca.certificateExpiryDate.toISOString()}`,
-    );
+    lines.push(`SSL certificate expires: ${domain.ca.certificateExpiryDate.toISOString()}`);
   }
 
   lines.push("");
@@ -115,9 +110,5 @@ function computeEtag(domains: TrackedDomainWithDetails[]): string {
     .sort()
     .join("|");
 
-  return crypto
-    .createHash("sha256")
-    .update(hashInput)
-    .digest("hex")
-    .slice(0, 16);
+  return crypto.createHash("sha256").update(hashInput).digest("hex").slice(0, 16);
 }

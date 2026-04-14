@@ -11,8 +11,10 @@
   },
   "scripts": {
     "check-types": "tsc --noEmit",
-    "lint": "biome check",
-    "format": "biome format --write"
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "fmt": "oxfmt --config ../../.oxfmtrc.json",
+    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.0",
@@ -23,13 +25,6 @@
     "media-chrome": "^4.19.0",
     "tailwind-merge": "^3.5.0"
   },
-  "peerDependencies": {
-    "@tabler/icons-react": "^3",
-    "motion": "^12",
-    "react": ">=18",
-    "react-dom": ">=18",
-    "sonner": "^2"
-  },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@tabler/icons-react": "catalog:",
@@ -37,5 +32,12 @@
     "@types/react-dom": "19.2.3",
     "motion": "catalog:",
     "sonner": "catalog:"
+  },
+  "peerDependencies": {
+    "@tabler/icons-react": "^3",
+    "motion": "^12",
+    "react": ">=18",
+    "react-dom": ">=18",
+    "sonner": "^2"
   }
 }

@@ -15,6 +15,14 @@
  * - Conversation history truncation
  */
 
+import { ipAddress } from "@vercel/functions";
+import { createUIMessageStreamResponse, type UIMessage } from "ai";
+import { NextResponse } from "next/server";
+import { start } from "workflow/api";
+import { z } from "zod";
+
+import { checkRateLimit } from "@/lib/ratelimit/api";
+import { chatWorkflow } from "@/workflows/chat";
 import { auth } from "@domainstack/auth/server";
 import {
   MAX_CONVERSATION_MESSAGES,
@@ -23,13 +31,6 @@ import {
   RATE_LIMIT_AUTHENTICATED,
 } from "@domainstack/constants";
 import { createLogger } from "@domainstack/logger";
-import { ipAddress } from "@vercel/functions";
-import { createUIMessageStreamResponse, type UIMessage } from "ai";
-import { NextResponse } from "next/server";
-import { start } from "workflow/api";
-import { z } from "zod";
-import { checkRateLimit } from "@/lib/ratelimit/api";
-import { chatWorkflow } from "@/workflows/chat";
 
 const logger = createLogger({ source: "api/chat" });
 
@@ -90,9 +91,7 @@ export async function POST(request: Request) {
   }
 
   // Apply rate limits based on auth status
-  const rateLimitConfig = userId
-    ? RATE_LIMIT_AUTHENTICATED.chat
-    : RATE_LIMIT_ANONYMOUS.chat;
+  const rateLimitConfig = userId ? RATE_LIMIT_AUTHENTICATED.chat : RATE_LIMIT_ANONYMOUS.chat;
 
   const rateLimit = await checkRateLimit(request, {
     name: "api:chat",

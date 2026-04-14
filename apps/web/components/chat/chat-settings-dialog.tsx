@@ -1,5 +1,9 @@
 "use client";
 
+import { IconBiohazard, IconBrain, IconInfoCircle, IconTool } from "@tabler/icons-react";
+
+import { BetaBadge } from "@/components/beta-badge";
+import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { CHATBOT_NAME } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
 import {
@@ -22,24 +26,13 @@ import {
 } from "@domainstack/ui/item";
 import { Label } from "@domainstack/ui/label";
 import { Switch } from "@domainstack/ui/switch";
-import {
-  IconBiohazard,
-  IconBrain,
-  IconInfoCircle,
-  IconTool,
-} from "@tabler/icons-react";
-import { BetaBadge } from "@/components/beta-badge";
-import { usePreferencesStore } from "@/lib/stores/preferences-store";
 
 export interface ChatSettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function ChatSettingsDialog({
-  open,
-  onOpenChange,
-}: ChatSettingsDialogProps) {
+export function ChatSettingsDialog({ open, onOpenChange }: ChatSettingsDialogProps) {
   const hideAiFeatures = usePreferencesStore((s) => s.hideAiFeatures);
   const setHideAiFeatures = usePreferencesStore((s) => s.setHideAiFeatures);
   const showToolCalls = usePreferencesStore((s) => s.showToolCalls);
@@ -67,9 +60,7 @@ export function ChatSettingsDialog({
               </ItemMedia>
               <ItemContent>
                 <ItemTitle>Show tool calls</ItemTitle>
-                <ItemDescription>
-                  Display the underlying API requests & responses
-                </ItemDescription>
+                <ItemDescription>Display the underlying API requests & responses</ItemDescription>
               </ItemContent>
             </Label>
             <ItemActions>
@@ -89,9 +80,7 @@ export function ChatSettingsDialog({
               </ItemMedia>
               <ItemContent>
                 <ItemTitle>Show reasoning</ItemTitle>
-                <ItemDescription>
-                  Reveals {CHATBOT_NAME}&rsquo;s thought process
-                </ItemDescription>
+                <ItemDescription>Reveals {CHATBOT_NAME}&rsquo;s thought process</ItemDescription>
               </ItemContent>
             </Label>
             <ItemActions>
@@ -115,9 +104,7 @@ export function ChatSettingsDialog({
                   {hideAiFeatures ? (
                     <>
                       To restore, visit any page with{" "}
-                      <code className="rounded bg-muted px-1 text-[11px]">
-                        ?show_ai=1
-                      </code>
+                      <code className="rounded bg-muted px-1 text-[11px]">?show_ai=1</code>
                     </>
                   ) : (
                     <>Removes all AI-powered features from all pages</>
@@ -126,26 +113,18 @@ export function ChatSettingsDialog({
               </ItemContent>
             </Label>
             <ItemActions>
-              <Switch
-                id="hide-ai"
-                checked={hideAiFeatures}
-                onCheckedChange={setHideAiFeatures}
-              />
+              <Switch id="hide-ai" checked={hideAiFeatures} onCheckedChange={setHideAiFeatures} />
             </ItemActions>
           </Item>
         </ItemGroup>
         <DialogFooter className="gap-2.5 sm:items-center sm:justify-between sm:gap-5">
           <div className="mx-auto flex items-start gap-1.5 pl-2 sm:mx-0 sm:gap-2 sm:pl-1">
             <IconInfoCircle className="size-3.5 translate-y-[3px] text-muted-foreground" />
-            <p className="text-[13px] text-muted-foreground leading-normal">
+            <p className="text-[13px] leading-normal text-muted-foreground">
               These preferences only apply to the current browser.
             </p>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="sm:hidden"
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="sm:hidden">
             Close
           </Button>
         </DialogFooter>

@@ -1,15 +1,13 @@
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+
 import { render, screen } from "@/mocks/react";
+
 import { CertificatesSection, equalHostname } from "./certificates-section";
 
 vi.mock("@/components/icons/provider-logo", () => ({
   ProviderLogo: ({ providerId }: { providerId: string }) => (
-    <div
-      data-testid="provider-logo"
-      data-slot="provider-logo"
-      data-provider-id={providerId}
-    />
+    <div data-testid="provider-logo" data-slot="provider-logo" data-provider-id={providerId} />
   ),
 }));
 
@@ -19,13 +17,13 @@ vi.mock("@domainstack/ui/tooltip", () => ({
   ),
   TooltipTrigger: ({
     children,
-    render,
+    render: renderProp,
   }: {
     children?: React.ReactNode;
     render?: React.ReactNode;
   }) => (
     <button type="button" data-slot="tooltip-trigger">
-      {render ?? children}
+      {renderProp ?? children}
     </button>
   ),
   TooltipContent: ({ children }: { children: React.ReactNode }) => (
@@ -39,13 +37,13 @@ vi.mock("@domainstack/ui/responsive-tooltip", () => ({
   ),
   ResponsiveTooltipTrigger: ({
     children,
-    render,
+    render: renderProp,
   }: {
     children?: React.ReactNode;
     render?: React.ReactNode;
   }) => (
     <button type="button" data-slot="responsive-tooltip-trigger">
-      {render ?? children}
+      {renderProp ?? children}
     </button>
   ),
   ResponsiveTooltipContent: ({ children }: { children: React.ReactNode }) => (
@@ -74,9 +72,7 @@ describe("CertificatesSection", () => {
     render(<CertificatesSection data={data} />);
     expect(screen.getByText("Issuer")).toBeInTheDocument();
     expect(
-      screen
-        .getAllByText("Let's Encrypt")
-        .some((n) => n.tagName.toLowerCase() === "span"),
+      screen.getAllByText("Let's Encrypt").some((n) => n.tagName.toLowerCase() === "span"),
     ).toBe(true);
     expect(screen.getByText("Subject")).toBeInTheDocument();
 

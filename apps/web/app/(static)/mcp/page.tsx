@@ -1,4 +1,15 @@
 import {
+  SiClaude,
+  SiGooglegemini,
+  SiModelcontextprotocol,
+  SiWindsurf,
+} from "@icons-pack/react-simple-icons";
+import { IconBook2, IconBrandOpenai, IconExternalLink } from "@tabler/icons-react";
+import type { Metadata } from "next";
+import Image from "next/image";
+
+import { BetaBadge } from "@/components/beta-badge";
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -6,25 +17,10 @@ import {
 } from "@domainstack/ui/accordion";
 import { Badge } from "@domainstack/ui/badge";
 import { CodeBlock } from "@domainstack/ui/code-block";
-import {
-  SiClaude,
-  SiGooglegemini,
-  SiModelcontextprotocol,
-  SiWindsurf,
-} from "@icons-pack/react-simple-icons";
-import {
-  IconBook2,
-  IconBrandOpenai,
-  IconExternalLink,
-} from "@tabler/icons-react";
-import type { Metadata } from "next";
-import Image from "next/image";
-import { BetaBadge } from "@/components/beta-badge";
 
 export const metadata: Metadata = {
   title: "MCP (Beta)",
-  description:
-    "Connect AI assistants like Claude to Domainstack for domain intelligence lookups.",
+  description: "Connect AI assistants like Claude to Domainstack for domain intelligence lookups.",
 };
 
 const MCP_URL = `${process.env.NEXT_PUBLIC_BASE_URL}/api/transport/mcp`;
@@ -61,15 +57,10 @@ const setupItems: SetupItem[] = [
         <CodeBlock>{`claude mcp add domainstack --transport http ${MCP_URL}`}</CodeBlock>
         <p>
           Or add this snippet to your project&apos;s{" "}
-          <code className="rounded bg-muted px-1.5 py-0.5">.mcp.json</code>{" "}
-          file:
+          <code className="rounded bg-muted px-1.5 py-0.5">.mcp.json</code> file:
         </p>
         <CodeBlock>
-          {JSON.stringify(
-            { mcpServers: { domainstack: { url: MCP_URL } } },
-            null,
-            2,
-          )}
+          {JSON.stringify({ mcpServers: { domainstack: { url: MCP_URL } } }, null, 2)}
         </CodeBlock>
       </>
     ),
@@ -78,36 +69,27 @@ const setupItems: SetupItem[] = [
     id: "claude-desktop",
     icon: <SiClaude className="size-4 text-muted-foreground" />,
     label: "Claude.ai / Claude Desktop",
-    docsUrl:
-      "https://modelcontextprotocol.io/docs/develop/connect-remote-servers",
+    docsUrl: "https://modelcontextprotocol.io/docs/develop/connect-remote-servers",
     docsLabel: "View Claude docs",
     content: (
       <>
         <p>
           Open Claude Desktop and navigate to{" "}
-          <strong>
-            Settings &rarr; Connectors &rarr; Add Custom Connector
-          </strong>
-          . Set the server URL to:
+          <strong>Settings &rarr; Connectors &rarr; Add Custom Connector</strong>. Set the server
+          URL to:
         </p>
         <CodeBlock>{MCP_URL}</CodeBlock>
         <p>
           Alternatively, edit your{" "}
-          <code className="rounded bg-muted px-1.5 py-0.5">
-            claude_desktop_config.json
-          </code>{" "}
-          (on macOS:{" "}
+          <code className="rounded bg-muted px-1.5 py-0.5">claude_desktop_config.json</code> (on
+          macOS:{" "}
           <code className="rounded bg-muted px-1.5 py-0.5">
             ~/Library/Application Support/Claude/claude_desktop_config.json
           </code>
           ):
         </p>
         <CodeBlock>
-          {JSON.stringify(
-            { mcpServers: { domainstack: { url: MCP_URL } } },
-            null,
-            2,
-          )}
+          {JSON.stringify({ mcpServers: { domainstack: { url: MCP_URL } } }, null, 2)}
         </CodeBlock>
       </>
     ),
@@ -142,19 +124,11 @@ const setupItems: SetupItem[] = [
           </a>
         </p>
         <p>
-          Click the button above to install automatically, or add this snippet
-          to{" "}
-          <code className="rounded bg-muted px-1.5 py-0.5">
-            ~/.cursor/mcp.json
-          </code>
-          :
+          Click the button above to install automatically, or add this snippet to{" "}
+          <code className="rounded bg-muted px-1.5 py-0.5">~/.cursor/mcp.json</code>:
         </p>
         <CodeBlock>
-          {JSON.stringify(
-            { mcpServers: { domainstack: { url: MCP_URL } } },
-            null,
-            2,
-          )}
+          {JSON.stringify({ mcpServers: { domainstack: { url: MCP_URL } } }, null, 2)}
         </CodeBlock>
       </>
     ),
@@ -181,7 +155,7 @@ const setupItems: SetupItem[] = [
         <p className="mb-4 flex justify-center text-center">
           <a
             href={VSCODE_DEEPLINK}
-            className="!no-underline hover:!text-white inline-flex items-center gap-2 rounded-md bg-[#0066b8] p-3 font-medium text-white leading-none transition-colors hover:bg-[#005ba4]"
+            className="inline-flex items-center gap-2 rounded-md bg-[#0066b8] p-3 leading-none font-medium text-white !no-underline transition-colors hover:bg-[#005ba4] hover:!text-white"
             data-disable-progress
           >
             <svg
@@ -198,8 +172,8 @@ const setupItems: SetupItem[] = [
           </a>
         </p>
         <p>
-          Click the button above to install automatically, or add this snippet
-          to your VS Code settings:
+          Click the button above to install automatically, or add this snippet to your VS Code
+          settings:
         </p>
         <CodeBlock>
           {JSON.stringify(
@@ -227,10 +201,7 @@ const setupItems: SetupItem[] = [
         <CodeBlock>{`codex mcp add domainstack --url ${MCP_URL}`}</CodeBlock>
         <p className="text-muted-foreground">
           Enable remote MCP client support by adding this to your{" "}
-          <code className="rounded bg-muted px-1.5 py-0.5">
-            ~/.codex/config.toml
-          </code>
-          :
+          <code className="rounded bg-muted px-1.5 py-0.5">~/.codex/config.toml</code>:
         </p>
         <CodeBlock>{`[features]\nrmcp_client = true`}</CodeBlock>
       </>
@@ -259,17 +230,11 @@ const setupItems: SetupItem[] = [
       <>
         <p>
           Add this snippet to your Windsurf MCP config (
-          <code className="rounded bg-muted px-1.5 py-0.5">
-            ~/.windsurf/mcp.json
-          </code>
+          <code className="rounded bg-muted px-1.5 py-0.5">~/.windsurf/mcp.json</code>
           ):
         </p>
         <CodeBlock>
-          {JSON.stringify(
-            { mcpServers: { domainstack: { serverUrl: MCP_URL } } },
-            null,
-            2,
-          )}
+          {JSON.stringify({ mcpServers: { domainstack: { serverUrl: MCP_URL } } }, null, 2)}
         </CodeBlock>
       </>
     ),
@@ -296,8 +261,7 @@ const setupItems: SetupItem[] = [
       <>
         <p>
           Open Cline, click the hamburger menu, go to{" "}
-          <strong>MCP Servers &rarr; Remote Servers</strong>, and add this
-          snippet:
+          <strong>MCP Servers &rarr; Remote Servers</strong>, and add this snippet:
         </p>
         <CodeBlock>
           {JSON.stringify(
@@ -324,8 +288,7 @@ const tools = [
   },
   {
     name: "domain_dns",
-    description:
-      "Get DNS records including A, AAAA, CNAME, MX, TXT, NS, and SOA records.",
+    description: "Get DNS records including A, AAAA, CNAME, MX, TXT, NS, and SOA records.",
     parameters: [{ name: "domain", type: "string", required: true }],
   },
   {
@@ -373,10 +336,10 @@ export default function McpPage() {
   return (
     <>
       <header className="not-prose">
-        <h1 className="flex items-center gap-2.5 font-semibold text-2xl tracking-tight">
+        <h1 className="flex items-center gap-2.5 text-2xl font-semibold tracking-tight">
           <SiModelcontextprotocol className="text-foreground/70" />
           MCP Server
-          <BetaBadge className="ml-0.5 font-semibold text-sm tracking-normal" />
+          <BetaBadge className="ml-0.5 text-sm font-semibold tracking-normal" />
         </h1>
         <p className="mt-2 text-muted-foreground">
           Connect AI assistants to Domainstack for instant domain intelligence.
@@ -386,17 +349,12 @@ export default function McpPage() {
       <section>
         <p>
           Domainstack exposes a{" "}
-          <a
-            href="https://modelcontextprotocol.io"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <a href="https://modelcontextprotocol.io" target="_blank" rel="noopener noreferrer">
             Model Context Protocol (MCP)
             <IconExternalLink />
           </a>{" "}
-          server that allows AI assistants to look up domain information
-          directly. This enables natural language queries about domains without
-          leaving your conversation.
+          server that allows AI assistants to look up domain information directly. This enables
+          natural language queries about domains without leaving your conversation.
         </p>
       </section>
 
@@ -408,7 +366,7 @@ export default function McpPage() {
             <AccordionItem
               key={item.id}
               value={item.id}
-              className="border-border border-b px-4 last:border-none"
+              className="border-b border-border px-4 last:border-none"
             >
               <AccordionTrigger className="text-left tracking-[0.01em] decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
                 <span className="flex items-center gap-2.5">
@@ -418,7 +376,7 @@ export default function McpPage() {
               </AccordionTrigger>
               <AccordionContent className="pt-1 text-foreground/90">
                 {item.content}
-                <p className="mt-2 flex items-center gap-1 text-muted-foreground text-xs leading-relaxed">
+                <p className="mt-2 flex items-center gap-1 text-xs leading-relaxed text-muted-foreground">
                   <IconBook2 className="mr-[1px] size-3" />
                   Need help?
                   <a
@@ -439,46 +397,31 @@ export default function McpPage() {
 
       <section id="tools">
         <h2>Available Tools</h2>
-        <p>
-          The MCP server provides {tools.length} tools for domain intelligence:
-        </p>
+        <p>The MCP server provides {tools.length} tools for domain intelligence:</p>
 
         <div className="mt-6 space-y-6">
           {tools.map((tool) => (
-            <div
-              key={tool.name}
-              className="not-prose space-y-3 rounded-lg border bg-muted/20 p-4"
-            >
+            <div key={tool.name} className="not-prose space-y-3 rounded-lg border bg-muted/20 p-4">
               <h3 className="font-mono text-[15px]">{tool.name}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                {tool.description}
-              </p>
+              <p className="text-sm leading-relaxed text-muted-foreground">{tool.description}</p>
               <div>
-                <span className="font-medium text-foreground/75 text-xs uppercase tracking-wide">
+                <span className="text-xs font-medium tracking-wide text-foreground/75 uppercase">
                   Parameters
                 </span>
                 <ul className="mt-2 space-y-1 pl-2 [&_li]:list-none">
                   {tool.parameters.map((param) => (
                     <li key={param.name} className="space-x-2">
-                      <span className="font-mono text-[13px] text-foreground">
-                        {param.name}
-                      </span>
-                      <Badge
-                        variant="outline"
-                        className="text-xs lowercase leading-4"
-                      >
+                      <span className="font-mono text-[13px] text-foreground">{param.name}</span>
+                      <Badge variant="outline" className="text-xs leading-4 lowercase">
                         {param.type}
                       </Badge>
                       {param.required && (
-                        <Badge
-                          variant="destructive"
-                          className="text-xs lowercase leading-4"
-                        >
+                        <Badge variant="destructive" className="text-xs leading-4 lowercase">
                           Required
                         </Badge>
                       )}
                       {"description" in param && (
-                        <span className="font-sans text-muted-foreground text-xs">
+                        <span className="font-sans text-xs text-muted-foreground">
                           {param.description}
                         </span>
                       )}
@@ -499,10 +442,7 @@ export default function McpPage() {
           <li>&ldquo;When does the github.com domain expire?&rdquo;</li>
           <li>&ldquo;Show me the DNS records for vercel.com&rdquo;</li>
           <li>&ldquo;What SSL certificate does nytimes.com have?&rdquo;</li>
-          <li>
-            &ldquo;Give me a full report on linear.app including DNS and
-            hosting.&rdquo;
-          </li>
+          <li>&ldquo;Give me a full report on linear.app including DNS and hosting.&rdquo;</li>
           <li>&ldquo;Check the SEO metadata for nextjs.org.&rdquo;</li>
         </ul>
       </section>
@@ -510,46 +450,42 @@ export default function McpPage() {
       <section id="rate-limits">
         <h2>Rate Limits</h2>
         <p>
-          The MCP server is dynamically rate limited to meet demand. This
-          applies across all tool calls. If you exceed the limit, requests will
-          return a 429 error with a <code>Retry-After</code> header.
+          The MCP server is dynamically rate limited to meet demand. This applies across all tool
+          calls. If you exceed the limit, requests will return a 429 error with a{" "}
+          <code>Retry-After</code> header.
         </p>
         <p>
-          The <code>domain_report</code> tool is useful for reducing the number
-          of calls when you need multiple data types.
+          The <code>domain_report</code> tool is useful for reducing the number of calls when you
+          need multiple data types.
         </p>
       </section>
 
       <section id="data-freshness">
         <h2>Data Freshness</h2>
         <p>
-          Domain data is cached and refreshed automatically. Different data
-          types have different refresh intervals:
+          Domain data is cached and refreshed automatically. Different data types have different
+          refresh intervals:
         </p>
         <ul>
           <li>
-            <strong>DNS records</strong> &mdash; Refreshed frequently (minutes
-            to hours)
+            <strong>DNS records</strong> &mdash; Refreshed frequently (minutes to hours)
           </li>
           <li>
-            <strong>HTTP headers</strong> &mdash; Refreshed frequently (minutes
-            to hours)
+            <strong>HTTP headers</strong> &mdash; Refreshed frequently (minutes to hours)
           </li>
           <li>
-            <strong>Registration data</strong> &mdash; Refreshed less frequently
-            (hours to days)
+            <strong>Registration data</strong> &mdash; Refreshed less frequently (hours to days)
           </li>
           <li>
-            <strong>SSL certificates</strong> &mdash; Refreshed based on expiry
-            proximity
+            <strong>SSL certificates</strong> &mdash; Refreshed based on expiry proximity
           </li>
           <li>
             <strong>SEO metadata</strong> &mdash; Refreshed periodically (hours)
           </li>
         </ul>
         <p>
-          If data appears stale, a background refresh was likely triggered
-          automatically and fresh data will be available soon.
+          If data appears stale, a background refresh was likely triggered automatically and fresh
+          data will be available soon.
         </p>
       </section>
     </>

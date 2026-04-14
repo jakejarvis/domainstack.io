@@ -1,4 +1,3 @@
-import { Button } from "@domainstack/ui/button";
 import {
   IconActivity,
   IconCloudComputing,
@@ -9,11 +8,9 @@ import {
 } from "@tabler/icons-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useMemo } from "react";
+
 import { DashboardTableColumnMenu } from "@/components/dashboard/dashboard-table-column-menu";
-import {
-  type FilterChip,
-  FilterChips,
-} from "@/components/dashboard/filter-chips";
+import { type FilterChip, FilterChips } from "@/components/dashboard/filter-chips";
 import { FilterDropdowns } from "@/components/dashboard/filter-dropdowns";
 import { FilterSearchInput } from "@/components/dashboard/filter-search-input";
 import { GridSortDropdown } from "@/components/dashboard/grid-sort-dropdown";
@@ -22,6 +19,7 @@ import { ProviderLogo } from "@/components/icons/provider-logo";
 import { useDashboardFiltersContext } from "@/context/dashboard-context";
 import { HEALTH_OPTIONS } from "@/lib/constants/domain-filters";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
+import { Button } from "@domainstack/ui/button";
 
 export function DashboardFilters() {
   const {
@@ -60,9 +58,7 @@ export function DashboardFilters() {
       }
     >();
 
-    for (const [categoryKey, providerList] of Object.entries(
-      availableProviders,
-    )) {
+    for (const [categoryKey, providerList] of Object.entries(availableProviders)) {
       // Map category keys to display labels
       const categoryLabel =
         categoryKey === "registrar"
@@ -150,16 +146,7 @@ export function DashboardFilters() {
         icon: allProvidersMap.get(p)?.icon ?? null,
       })),
     ],
-    [
-      domainId,
-      filteredDomainName,
-      search,
-      status,
-      health,
-      tlds,
-      providers,
-      allProvidersMap,
-    ],
+    [domainId, filteredDomainName, search, status, health, tlds, providers, allProvidersMap],
   );
 
   const removeFilter = useCallback(
@@ -223,11 +210,7 @@ export function DashboardFilters() {
                 ease: [0.22, 1, 0.36, 1] as const,
               }}
             >
-              <Button
-                variant="ghost"
-                onClick={clearFilters}
-                className="text-muted-foreground"
-              >
+              <Button variant="ghost" onClick={clearFilters} className="text-muted-foreground">
                 <IconX />
                 Clear all
               </Button>
@@ -237,10 +220,7 @@ export function DashboardFilters() {
 
         {/* Sort dropdown - only for grid view */}
         {viewMode === "grid" && (
-          <GridSortDropdown
-            sortOption={sortOption}
-            onSortChange={setSortOption}
-          />
+          <GridSortDropdown sortOption={sortOption} onSortChange={setSortOption} />
         )}
 
         {/* Column visibility - only for table view, hidden when collapsed (shown outside collapsible) */}

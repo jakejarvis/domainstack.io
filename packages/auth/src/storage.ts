@@ -25,9 +25,7 @@ export type SecondaryStorage = {
  * });
  * ```
  */
-export function createRedisStorage(
-  redis: Redis | null,
-): SecondaryStorage | undefined {
+export function createRedisStorage(redis: Redis | null): SecondaryStorage | undefined {
   if (!redis) return undefined;
 
   return {

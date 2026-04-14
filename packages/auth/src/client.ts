@@ -1,6 +1,7 @@
 import { sentinelClient } from "@better-auth/infra/client";
-import { polarClient } from "@domainstack/polar/better-auth/client";
 import { createAuthClient } from "better-auth/react";
+
+import { polarClient } from "@domainstack/polar/better-auth/client";
 
 /**
  * Configured Better Auth client instance with Polar integration.

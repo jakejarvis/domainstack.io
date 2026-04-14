@@ -20,8 +20,7 @@ export function makeDnsRecordKey(
   const priorityPart = priority != null ? `|${priority}` : "";
   const normalizedName = name.trim().toLowerCase();
   // TXT values preserve case; all others normalize to lowercase
-  const normalizedValue =
-    type === "TXT" ? value.trim() : value.trim().toLowerCase();
+  const normalizedValue = type === "TXT" ? value.trim() : value.trim().toLowerCase();
   return `${type}|${normalizedName}|${normalizedValue}${priorityPart}`;
 }
 
@@ -49,9 +48,7 @@ export function deduplicateDnsRecords(records: DnsRecord[]): DnsRecord[] {
  * Deduplicate DNS records by value and priority only (for tooltip display).
  * Case-insensitive comparison for consistent deduplication.
  */
-export function deduplicateDnsRecordsByValue(
-  records: DnsRecord[],
-): DnsRecord[] {
+export function deduplicateDnsRecordsByValue(records: DnsRecord[]): DnsRecord[] {
   const seen = new Set<string>();
   const deduplicated: DnsRecord[] = [];
 
@@ -71,10 +68,7 @@ export function deduplicateDnsRecordsByValue(
  * MX records are sorted by priority first, then alphabetically by value.
  * All other types are sorted alphabetically by value.
  */
-export function sortDnsRecordsForType(
-  records: DnsRecord[],
-  type: DnsRecordType,
-): DnsRecord[] {
+export function sortDnsRecordsForType(records: DnsRecord[], type: DnsRecordType): DnsRecord[] {
   const sorted = [...records];
 
   if (type === "MX") {

@@ -1,21 +1,21 @@
 "use client";
 
-import { analytics } from "@domainstack/analytics/client";
-import { checkoutEmbed, customer } from "@domainstack/auth/client";
-import { PRO_TIER_INFO } from "@domainstack/polar/products";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
+
 import { useTRPC } from "@/lib/trpc/client";
 import type { AppRouter } from "@/server/routers/_app";
+import { analytics } from "@domainstack/analytics/client";
+import { checkoutEmbed, customer } from "@domainstack/auth/client";
+import { PRO_TIER_INFO } from "@domainstack/polar/products";
 
 /**
  * Subscription data shape inferred from user.getSubscription procedure.
  * Using inference ensures client types stay in sync with server.
  */
-type SubscriptionData =
-  inferRouterOutputs<AppRouter>["user"]["getSubscription"];
+type SubscriptionData = inferRouterOutputs<AppRouter>["user"]["getSubscription"];
 
 interface UseSubscriptionOptions {
   /** Whether to enable the query (defaults to true) */
@@ -98,9 +98,7 @@ interface UseSubscriptionResult {
  * }
  * ```
  */
-export function useSubscription(
-  options: UseSubscriptionOptions = {},
-): UseSubscriptionResult {
+export function useSubscription(options: UseSubscriptionOptions = {}): UseSubscriptionResult {
   const { enabled = true } = options;
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -125,16 +123,12 @@ export function useSubscription(
 
     try {
       await checkoutEmbed({
-        products: [
-          PRO_TIER_INFO.monthly.productId,
-          PRO_TIER_INFO.yearly.productId,
-        ],
+        products: [PRO_TIER_INFO.monthly.productId, PRO_TIER_INFO.yearly.productId],
       });
     } catch (err) {
-      analytics.trackException(
-        err instanceof Error ? err : new Error(String(err)),
-        { action: "upgrade_checkout" },
-      );
+      analytics.trackException(err instanceof Error ? err : new Error(String(err)), {
+        action: "upgrade_checkout",
+      });
       toast.error("Failed to open checkout. Please try again.");
     } finally {
       setCheckoutLoading(false);
@@ -149,10 +143,9 @@ export function useSubscription(
     try {
       await customer.portal();
     } catch (err) {
-      analytics.trackException(
-        err instanceof Error ? err : new Error(String(err)),
-        { action: "open_customer_portal" },
-      );
+      analytics.trackException(err instanceof Error ? err : new Error(String(err)), {
+        action: "open_customer_portal",
+      });
       toast.error("Failed to open customer portal. Please try again.");
     } finally {
       setCustomerPortalLoading(false);

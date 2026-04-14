@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+
 import {
   DASHBOARD_PAGE_SIZE_OPTIONS,
   DASHBOARD_PREFERENCES_DEFAULT,
@@ -67,11 +68,7 @@ const DEFAULT_PREFERENCES: PreferencesState = {
   aiMode: "cloud",
 };
 
-function validateOption<T>(
-  value: T | undefined,
-  validOptions: readonly T[],
-  defaultValue: T,
-): T {
+function validateOption<T>(value: T | undefined, validOptions: readonly T[], defaultValue: T): T {
   if (value !== undefined && validOptions.includes(value)) {
     return value;
   }
@@ -101,9 +98,7 @@ const preferencesStore = create<PreferencesStore>()(
       setColumnVisibility: (updaterOrValue) => {
         const currentVisibility = get().columnVisibility;
         const newVisibility =
-          typeof updaterOrValue === "function"
-            ? updaterOrValue(currentVisibility)
-            : updaterOrValue;
+          typeof updaterOrValue === "function" ? updaterOrValue(currentVisibility) : updaterOrValue;
         set({ columnVisibility: newVisibility });
       },
       setShowToolCalls: (showToolCalls) => set({ showToolCalls }),
@@ -137,19 +132,11 @@ const preferencesStore = create<PreferencesStore>()(
             DASHBOARD_PAGE_SIZE_OPTIONS,
             DEFAULT_PREFERENCES.pageSize,
           ),
-          columnVisibility:
-            persisted?.columnVisibility ?? DEFAULT_PREFERENCES.columnVisibility,
-          showToolCalls:
-            persisted?.showToolCalls ?? DEFAULT_PREFERENCES.showToolCalls,
-          showReasoning:
-            persisted?.showReasoning ?? DEFAULT_PREFERENCES.showReasoning,
-          hideAiFeatures:
-            persisted?.hideAiFeatures ?? DEFAULT_PREFERENCES.hideAiFeatures,
-          aiMode: validateOption(
-            persisted?.aiMode,
-            AI_MODE_OPTIONS,
-            DEFAULT_PREFERENCES.aiMode,
-          ),
+          columnVisibility: persisted?.columnVisibility ?? DEFAULT_PREFERENCES.columnVisibility,
+          showToolCalls: persisted?.showToolCalls ?? DEFAULT_PREFERENCES.showToolCalls,
+          showReasoning: persisted?.showReasoning ?? DEFAULT_PREFERENCES.showReasoning,
+          hideAiFeatures: persisted?.hideAiFeatures ?? DEFAULT_PREFERENCES.hideAiFeatures,
+          aiMode: validateOption(persisted?.aiMode, AI_MODE_OPTIONS, DEFAULT_PREFERENCES.aiMode),
         };
       },
     },
@@ -168,9 +155,7 @@ export const usePreferencesHydrated = () => {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = preferencesStore.persist.onFinishHydration(() =>
-      setHydrated(true),
-    );
+    const unsubscribe = preferencesStore.persist.onFinishHydration(() => setHydrated(true));
 
     setHydrated(preferencesStore.persist.hasHydrated());
 

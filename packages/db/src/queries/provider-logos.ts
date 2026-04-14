@@ -1,6 +1,8 @@
-import type { ProviderLogoResponse } from "@domainstack/types";
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import { eq } from "drizzle-orm";
+
+import type { ProviderLogoResponse } from "@domainstack/types";
+
 import { db } from "../client";
 import { providerLogos } from "../schema";
 import type { CacheResult } from "../types";
@@ -8,9 +10,7 @@ import type { CacheResult } from "../types";
 type ProviderLogoInsert = InferInsertModel<typeof providerLogos>;
 type ProviderLogo = InferSelectModel<typeof providerLogos>;
 
-export async function upsertProviderLogo(
-  params: ProviderLogoInsert,
-): Promise<ProviderLogo | null> {
+export async function upsertProviderLogo(params: ProviderLogoInsert): Promise<ProviderLogo | null> {
   const rows = await db
     .insert(providerLogos)
     .values(params)

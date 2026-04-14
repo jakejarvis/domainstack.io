@@ -1,5 +1,6 @@
 /* @vitest-environment node */
 import { describe, expect, it } from "vitest";
+
 import {
   detectCertificateAuthority,
   detectDnsProvider,
@@ -121,10 +122,7 @@ describe("provider detection", () => {
   });
 
   it("detects email from MX (Google)", () => {
-    const res = detectEmailProvider(
-      ["aspmx.l.google.com."],
-      MOCK_EMAIL_PROVIDERS,
-    );
+    const res = detectEmailProvider(["aspmx.l.google.com."], MOCK_EMAIL_PROVIDERS);
     expect(res).not.toBeNull();
     if (!res) throw new Error("Expected result");
 
@@ -133,18 +131,12 @@ describe("provider detection", () => {
   });
 
   it("returns null when no email provider matches", () => {
-    const res = detectEmailProvider(
-      ["mail.unknown-provider.com"],
-      MOCK_EMAIL_PROVIDERS,
-    );
+    const res = detectEmailProvider(["mail.unknown-provider.com"], MOCK_EMAIL_PROVIDERS);
     expect(res).toBeNull();
   });
 
   it("detects DNS from NS (Cloudflare)", () => {
-    const res = detectDnsProvider(
-      ["ns1.cloudflare.com", "ns2.cloudflare.com"],
-      MOCK_DNS_PROVIDERS,
-    );
+    const res = detectDnsProvider(["ns1.cloudflare.com", "ns2.cloudflare.com"], MOCK_DNS_PROVIDERS);
     expect(res).not.toBeNull();
     if (!res) throw new Error("Expected result");
 
@@ -189,10 +181,7 @@ describe("provider detection", () => {
   });
 
   it("detects CA from issuer string (Let's Encrypt)", () => {
-    const res = detectCertificateAuthority(
-      "Let's Encrypt R3",
-      MOCK_CA_PROVIDERS,
-    );
+    const res = detectCertificateAuthority("Let's Encrypt R3", MOCK_CA_PROVIDERS);
     expect(res).not.toBeNull();
     if (!res) throw new Error("Expected result");
 
@@ -210,10 +199,7 @@ describe("provider detection", () => {
   });
 
   it("returns null for unknown CA", () => {
-    const res = detectCertificateAuthority(
-      "Unknown CA Inc.",
-      MOCK_CA_PROVIDERS,
-    );
+    const res = detectCertificateAuthority("Unknown CA Inc.", MOCK_CA_PROVIDERS);
     expect(res).toBeNull();
   });
 

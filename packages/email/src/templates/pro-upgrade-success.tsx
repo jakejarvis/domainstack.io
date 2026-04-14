@@ -1,4 +1,5 @@
 import { PLAN_QUOTAS } from "@domainstack/constants";
+
 import {
   EmailBox,
   EmailBoxText,
@@ -16,10 +17,7 @@ export type ProUpgradeSuccessEmailProps = {
   baseUrl: string;
 };
 
-function ProUpgradeSuccessEmail({
-  userName,
-  baseUrl,
-}: ProUpgradeSuccessEmailProps) {
+function ProUpgradeSuccessEmail({ userName, baseUrl }: ProUpgradeSuccessEmailProps) {
   const previewText = "Welcome to Domainstack Pro!";
 
   return (
@@ -29,28 +27,22 @@ function ProUpgradeSuccessEmail({
       <EmailText>Hi {userName},</EmailText>
 
       <EmailText>
-        Thank you for upgrading to <strong>Domainstack Pro</strong>! Your
-        payment has been confirmed and your account has been upgraded.
+        Thank you for upgrading to <strong>Domainstack Pro</strong>! Your payment has been confirmed
+        and your account has been upgraded.
       </EmailText>
 
       <EmailBox variant="success">
         <EmailBoxText variant="success" strong>
           Your Pro benefits are now active:
         </EmailBoxText>
-        <EmailBoxText variant="success">
-          • Track up to {PLAN_QUOTAS.pro} domains
-        </EmailBoxText>
-        <EmailBoxText variant="success">
-          • Priority email notifications
-        </EmailBoxText>
-        <EmailBoxText variant="success">
-          • Support ongoing development
-        </EmailBoxText>
+        <EmailBoxText variant="success">• Track up to {PLAN_QUOTAS.pro} domains</EmailBoxText>
+        <EmailBoxText variant="success">• Priority email notifications</EmailBoxText>
+        <EmailBoxText variant="success">• Support ongoing development</EmailBoxText>
       </EmailBox>
 
       <EmailText>
-        Head to your dashboard to start tracking more domains and customize your
-        notification preferences.
+        Head to your dashboard to start tracking more domains and customize your notification
+        preferences.
       </EmailText>
 
       <EmailButton variant="success" href={`${baseUrl}/dashboard`}>
@@ -61,9 +53,8 @@ function ProUpgradeSuccessEmail({
 
       <EmailFooter>
         You received this email because you upgraded to Pro on{" "}
-        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. Manage
-        your subscription in your{" "}
-        <EmailLink href={`${baseUrl}/settings`}>account settings</EmailLink>.
+        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. Manage your subscription
+        in your <EmailLink href={`${baseUrl}/settings`}>account settings</EmailLink>.
       </EmailFooter>
     </EmailLayout>
   );

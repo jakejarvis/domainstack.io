@@ -71,10 +71,7 @@ async function handleToolError(err: unknown, domain: string, toolName: string) {
   if (isExpected) {
     logger.warn({ err, domain, tool: toolName }, "tool step failed (expected)");
   } else {
-    logger.error(
-      { err, domain, tool: toolName },
-      "tool step failed (unexpected)",
-    );
+    logger.error({ err, domain, tool: toolName }, "tool step failed (unexpected)");
   }
 
   let userMessage = "Unable to fetch data. Please try again.";
@@ -96,10 +93,7 @@ async function handleToolError(err: unknown, domain: string, toolName: string) {
     lowerMessage.includes("tls")
   ) {
     userMessage = `Could not establish secure connection to ${domain}.`;
-  } else if (
-    lowerMessage.includes("refused") ||
-    lowerMessage.includes("unreachable")
-  ) {
+  } else if (lowerMessage.includes("refused") || lowerMessage.includes("unreachable")) {
     userMessage = `Could not connect to ${domain}. The server may be down.`;
   }
 

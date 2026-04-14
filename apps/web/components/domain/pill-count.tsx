@@ -1,14 +1,7 @@
 import { Skeleton } from "@domainstack/ui/skeleton";
 import { cn } from "@domainstack/ui/utils";
 
-type AccentColor =
-  | "blue"
-  | "cyan"
-  | "green"
-  | "orange"
-  | "purple"
-  | "indigo"
-  | "slate";
+type AccentColor = "blue" | "cyan" | "green" | "orange" | "purple" | "indigo" | "slate";
 
 function colorToClasses(color: AccentColor) {
   return color === "blue"
@@ -38,7 +31,7 @@ export function PillCount({
   return (
     <span
       className={cn(
-        "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 font-mono font-semibold text-[10px]",
+        "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 font-mono text-[10px] font-semibold",
         colorToClasses(color),
         className,
       )}

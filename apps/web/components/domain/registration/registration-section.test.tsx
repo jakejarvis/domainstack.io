@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
+
 import { render, screen } from "@/mocks/react";
+
 import { RegistrationSection } from "./registration-section";
 
 vi.mock("@/components/icons/favicon", () => ({
-  Favicon: ({ domain }: { domain: string }) => (
-    <div data-slot="favicon" data-domain={domain} />
-  ),
+  Favicon: ({ domain }: { domain: string }) => <div data-slot="favicon" data-domain={domain} />,
 }));
 
 vi.mock("@/components/ui/tooltip", () => ({
@@ -61,8 +61,6 @@ describe("RegistrationSection", () => {
         }
       />,
     );
-    expect(
-      screen.getByText(/Registration Data Unavailable/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Registration Data Unavailable/i)).toBeInTheDocument();
   });
 });

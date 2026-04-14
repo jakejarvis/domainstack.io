@@ -1,7 +1,9 @@
 import userEvent from "@testing-library/user-event";
 import { createElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { render, screen } from "@/mocks/react";
+
 import { HomeSearchSuggestionsClient } from "./home-search-suggestions-client";
 
 vi.mock("@/components/icons/favicon", () => ({
@@ -13,17 +15,14 @@ vi.mock("@/components/icons/favicon", () => ({
 }));
 
 // Mock the search history store to control history state in tests
-const mockClearHistory = vi.fn();
+const mockClearHistory = vi.fn<() => void>();
 const mockHistoryState = vi.hoisted(() => ({
   history: [] as string[],
 }));
 
 vi.mock("@/lib/stores/search-history-store", () => ({
   useSearchHistoryStore: (
-    selector: (state: {
-      history: string[];
-      clearHistory: () => void;
-    }) => unknown,
+    selector: (state: { history: string[]; clearHistory: () => void }) => unknown,
   ) =>
     selector({
       history: mockHistoryState.history,
@@ -32,7 +31,7 @@ vi.mock("@/lib/stores/search-history-store", () => ({
 }));
 
 // Mock pending domain atom (Jotai)
-const mockSetPendingDomain = vi.fn();
+const mockSetPendingDomain = vi.fn<(domain: string) => void>();
 
 vi.mock("jotai", async (importOriginal) => {
   const actual = await importOriginal<typeof import("jotai")>();
@@ -59,19 +58,11 @@ describe("DomainSuggestionsClient", () => {
   });
 
   it("renders provided suggestions when there is no history", async () => {
-    render(
-      <HomeSearchSuggestionsClient
-        defaultSuggestions={DEFAULT_TEST_SUGGESTIONS}
-      />,
-    );
+    render(<HomeSearchSuggestionsClient defaultSuggestions={DEFAULT_TEST_SUGGESTIONS} />);
     // Wait for a known suggestion like jarv.invalid to appear
-    expect(
-      await screen.findByRole("button", { name: /jarv\.invalid/i }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /jarv\.invalid/i })).toBeInTheDocument();
     // At least one favicon placeholder should exist
-    expect(
-      document.querySelectorAll('[data-slot="favicon"]').length,
-    ).toBeGreaterThan(0);
+    expect(document.querySelectorAll('[data-slot="favicon"]').length).toBeGreaterThan(0);
   });
 
   it("renders no suggestions when defaultSuggestions is empty and no history", async () => {
@@ -83,40 +74,23 @@ describe("DomainSuggestionsClient", () => {
 
   it("merges history and suggestions without duplicates, capped by max", async () => {
     mockHistoryState.history = ["foo.invalid", "github.invalid", "bar.invalid"];
-    render(
-      <HomeSearchSuggestionsClient
-        defaultSuggestions={DEFAULT_TEST_SUGGESTIONS}
-        max={4}
-      />,
-    );
+    render(<HomeSearchSuggestionsClient defaultSuggestions={DEFAULT_TEST_SUGGESTIONS} max={4} />);
     // History entries appear
-    expect(
-      await screen.findByRole("button", { name: /foo\.invalid/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /bar\.invalid/i }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /foo\.invalid/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /bar\.invalid/i })).toBeInTheDocument();
     // github.invalid appears only once (deduped with suggestions)
-    expect(
-      screen.getAllByRole("button", { name: /github\.invalid/i }).length,
-    ).toBe(1);
+    expect(screen.getAllByRole("button", { name: /github\.invalid/i }).length).toBe(1);
   });
 
   it("shows only history when defaultSuggestions is empty", async () => {
     mockHistoryState.history = ["example.invalid", "test.invalid"];
     render(<HomeSearchSuggestionsClient defaultSuggestions={[]} />);
     // History entries appear
-    expect(
-      await screen.findByRole("button", { name: /example\.invalid/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /test\.invalid/i }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /example\.invalid/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /test\.invalid/i })).toBeInTheDocument();
     // Should show 2 history items + 1 clear history button
     expect(screen.getAllByRole("button").length).toBe(3);
-    expect(
-      screen.getByRole("button", { name: /clear history/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /clear history/i })).toBeInTheDocument();
   });
 
   it("clears history when clear button is clicked", async () => {
@@ -124,9 +98,7 @@ describe("DomainSuggestionsClient", () => {
     render(<HomeSearchSuggestionsClient defaultSuggestions={[]} />);
 
     // Ensure history is loaded and rendered
-    expect(
-      await screen.findByRole("button", { name: /example\.invalid/i }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /example\.invalid/i })).toBeInTheDocument();
 
     const clearButton = screen.getByRole("button", { name: /clear history/i });
     await userEvent.click(clearButton);
@@ -137,14 +109,8 @@ describe("DomainSuggestionsClient", () => {
 
   it("sets pending domain when a suggestion is clicked", async () => {
     mockHistoryState.history = ["example.invalid"];
-    render(
-      <HomeSearchSuggestionsClient
-        defaultSuggestions={DEFAULT_TEST_SUGGESTIONS}
-      />,
-    );
-    await userEvent.click(
-      screen.getByRole("button", { name: /example.invalid/i }),
-    );
+    render(<HomeSearchSuggestionsClient defaultSuggestions={DEFAULT_TEST_SUGGESTIONS} />);
+    await userEvent.click(screen.getByRole("button", { name: /example.invalid/i }));
     expect(mockSetPendingDomain).toHaveBeenCalledWith("example.invalid");
   });
 });

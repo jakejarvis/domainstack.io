@@ -1,13 +1,13 @@
 import { PGlite } from "@electric-sql/pglite";
 import type { PgliteDatabase } from "drizzle-orm/pglite";
 import { drizzle } from "drizzle-orm/pglite";
+
 import { __setTestDb, type Database } from "./client";
 import * as schema from "./schema";
 
 // Dynamic import via require pattern is recommended in community examples
 // to access drizzle-kit/api in Vitest.
-const { pushSchema } =
-  require("drizzle-kit/api") as typeof import("drizzle-kit/api");
+const { pushSchema } = require("drizzle-kit/api") as typeof import("drizzle-kit/api");
 
 interface DbBundle {
   db: PgliteDatabase<typeof schema>;
@@ -26,11 +26,7 @@ export async function makePGliteDb(): Promise<DbBundle> {
 
   // Apply schema only once per worker
   if (!schemaApplied) {
-    const { apply } = await pushSchema(
-      schema,
-      // biome-ignore lint/suspicious/noExplicitAny: ignore type mismatch
-      cached.db as any,
-    );
+    const { apply } = await pushSchema(schema, cached.db as any);
     // Silence noisy logs printed by drizzle-kit during schema sync in tests
     const consoleObj = globalThis.console;
     const origLog = consoleObj.log;
@@ -48,7 +44,6 @@ export async function makePGliteDb(): Promise<DbBundle> {
   }
 
   // Set the test db as the singleton so repos use it
-  // biome-ignore lint/suspicious/noExplicitAny: PGlite db is compatible for testing
   __setTestDb(cached.db as any as Database);
 
   return cached;

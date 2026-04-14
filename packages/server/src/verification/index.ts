@@ -8,6 +8,7 @@
  */
 
 import type { VerificationMethod } from "@domainstack/constants";
+
 import { verifyByDns } from "./dns";
 import { verifyByHtmlFile } from "./html";
 import { verifyByMetaTag } from "./meta";

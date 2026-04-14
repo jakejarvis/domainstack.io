@@ -1,8 +1,9 @@
+import { z } from "zod";
+
+import { createTRPCRouter, publicProcedure } from "@/trpc/init";
 import { getProviderById, getProviderLogo } from "@domainstack/db/queries";
 import { createLogger } from "@domainstack/logger";
 import { fetchProviderLogo } from "@domainstack/server";
-import z from "zod";
-import { createTRPCRouter, publicProcedure } from "@/trpc/init";
 
 const logger = createLogger({ source: "provider-router" });
 
@@ -29,16 +30,10 @@ export const providerRouter = createTRPCRouter({
 
       // Fetch fresh data
       try {
-        const result = await fetchProviderLogo(
-          input.providerId,
-          providerDomain,
-        );
+        const result = await fetchProviderLogo(input.providerId, providerDomain);
         return { success: true, cached: false, data: result.data };
       } catch (err) {
-        logger.error(
-          { providerId: input.providerId, err },
-          "provider logo fetch failed",
-        );
+        logger.error({ providerId: input.providerId, err }, "provider logo fetch failed");
         return {
           success: false,
           cached: false,

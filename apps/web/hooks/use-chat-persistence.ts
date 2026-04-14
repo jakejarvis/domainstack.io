@@ -1,5 +1,6 @@
 import type { ChatRequestOptions, UIMessage } from "ai";
 import { useEffect, useRef } from "react";
+
 import { useChatHydrated, useChatStore } from "@/lib/stores/chat-store";
 
 // ---------------------------------------------------------------------------
@@ -76,7 +77,6 @@ export function useChatPersistence({
   // ---------------------------------------------------------------------------
 
   const isInitialized = useRef(false);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: using .length + status to balance write frequency with capturing final streamed content
   useEffect(() => {
     if (!isInitialized.current) {
       if (messages.length > 0) {
@@ -87,7 +87,7 @@ export function useChatPersistence({
     if (messages.length > 0) {
       storeSetMessages(messages);
     }
-  }, [messages.length, status, storeSetMessages]);
+  }, [messages, status, storeSetMessages]);
 
   // ---------------------------------------------------------------------------
   // Clear runId when chat completes successfully

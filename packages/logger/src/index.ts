@@ -109,10 +109,11 @@ const globalForLogger = globalThis as unknown as {
  * logger.error({ err: error, table: "users" }, "Database connection failed");
  * ```
  */
-export const logger: pino.Logger =
-  globalForLogger.__pino_logger ??
-  // biome-ignore lint/suspicious/noAssignInExpressions: we need to assign to the global variable
-  (globalForLogger.__pino_logger = createPinoLogger());
+if (!globalForLogger.__pino_logger) {
+  globalForLogger.__pino_logger = createPinoLogger();
+}
+
+export const logger: pino.Logger = globalForLogger.__pino_logger;
 
 /**
  * Create a child logger with a specific context prefix.

@@ -1,3 +1,10 @@
+import { IconArchive, IconCircleArrowUp, IconRefresh, IconTrash } from "@tabler/icons-react";
+import { formatDistanceToNow } from "date-fns";
+
+import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
+import { Favicon } from "@/components/icons/favicon";
+import { useDashboardActions } from "@/context/dashboard-context";
+import { useSubscription } from "@/hooks/use-subscription";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { Card, CardContent } from "@domainstack/ui/card";
@@ -8,23 +15,8 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@domainstack/ui/empty";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@domainstack/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 import { cn } from "@domainstack/ui/utils";
-import {
-  IconArchive,
-  IconCircleArrowUp,
-  IconRefresh,
-  IconTrash,
-} from "@tabler/icons-react";
-import { formatDistanceToNow } from "date-fns";
-import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
-import { Favicon } from "@/components/icons/favicon";
-import { useDashboardActions } from "@/context/dashboard-context";
-import { useSubscription } from "@/hooks/use-subscription";
 
 type ArchivedDomainsListProps = {
   domains: TrackedDomainWithDetails[];
@@ -43,8 +35,8 @@ export function ArchivedDomainsList({ domains }: ArchivedDomainsListProps) {
           </EmptyMedia>
           <EmptyTitle>No archived domains</EmptyTitle>
           <EmptyDescription>
-            Archived domains will appear here. You can archive domains you want
-            to keep but don't need to actively monitor.
+            Archived domains will appear here. You can archive domains you want to keep but don't
+            need to actively monitor.
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -71,10 +63,8 @@ export function ArchivedDomainsList({ domains }: ArchivedDomainsListProps) {
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 <Favicon domain={domain.domainName} className="size-6" />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium">
-                    {domain.domainName}
-                  </div>
-                  <div className="text-muted-foreground text-sm">
+                  <div className="truncate font-medium">{domain.domainName}</div>
+                  <div className="text-sm text-muted-foreground">
                     Archived{" "}
                     {domain.archivedAt
                       ? formatDistanceToNow(new Date(domain.archivedAt), {
@@ -102,9 +92,7 @@ export function ArchivedDomainsList({ domains }: ArchivedDomainsListProps) {
                           disabled={!subscription?.canAddMore}
                         >
                           <IconRefresh />
-                          <span className="sr-only sm:not-sr-only sm:ml-2">
-                            Reactivate
-                          </span>
+                          <span className="sr-only sm:not-sr-only sm:ml-2">Reactivate</span>
                         </Button>
                       </div>
                     }

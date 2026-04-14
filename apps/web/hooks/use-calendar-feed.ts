@@ -1,11 +1,8 @@
 "use client";
 
-import {
-  useMutation,
-  useQueryClient,
-  useSuspenseQuery,
-} from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+
 import { useTRPC } from "@/lib/trpc/client";
 
 type CalendarFeedData =
