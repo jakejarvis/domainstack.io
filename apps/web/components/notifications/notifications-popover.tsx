@@ -1,29 +1,16 @@
-import type { NotificationData } from "@domainstack/types";
-import { Button } from "@domainstack/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@domainstack/ui/popover";
-import { Tabs, TabsList, TabsTrigger } from "@domainstack/ui/tabs";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@domainstack/ui/tooltip";
-import { cn } from "@domainstack/ui/utils";
-import {
-  IconArchive,
-  IconBell,
-  IconBellCog,
-  IconChecks,
-  IconInbox,
-} from "@tabler/icons-react";
+import { IconArchive, IconBell, IconBellCog, IconChecks, IconInbox } from "@tabler/icons-react";
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
+
 import { NotificationList } from "@/components/notifications/notification-list";
 import { useNotificationsData } from "@/hooks/use-notifications-data";
 import { useRouter } from "@/hooks/use-router";
+import type { NotificationData } from "@domainstack/types";
+import { Button } from "@domainstack/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@domainstack/ui/popover";
+import { Tabs, TabsList, TabsTrigger } from "@domainstack/ui/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
+import { cn } from "@domainstack/ui/utils";
 
 export function NotificationsPopover() {
   const router = useRouter();
@@ -80,7 +67,6 @@ export function NotificationsPopover() {
   // The infinite query refetches when `filter` changes (via query key).
 
   // Reset scroll position when switching tabs
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally trigger on view change
   useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = 0;
@@ -154,12 +140,10 @@ export function NotificationsPopover() {
             />
           }
         />
-        <TooltipContent>
-          {count > 0 ? `Notifications (${count})` : "Notifications"}
-        </TooltipContent>
+        <TooltipContent>{count > 0 ? `Notifications (${count})` : "Notifications"}</TooltipContent>
       </Tooltip>
       <PopoverContent
-        className="max-sm:!left-0 max-sm:!right-0 max-sm:!mx-auto max-sm:!translate-x-0 overflow-hidden bg-background p-0 max-sm:w-[calc(100vw-1rem)] sm:w-[400px]"
+        className="overflow-hidden bg-background p-0 max-sm:!right-0 max-sm:!left-0 max-sm:!mx-auto max-sm:w-[calc(100vw-1rem)] max-sm:!translate-x-0 sm:w-[400px]"
         align="end"
         side="bottom"
         collisionAvoidance={{
@@ -170,10 +154,10 @@ export function NotificationsPopover() {
       >
         <div className="flex max-h-[calc(min(100dvh-6rem,560px))] flex-col">
           {/* Header */}
-          <div className="shrink-0 border-border border-b bg-card/60">
+          <div className="shrink-0 border-b border-border bg-card/60">
             {/* Title row */}
             <div className="flex items-center justify-between pt-2 pr-4 pb-1 pl-4">
-              <h4 className="font-semibold text-[15px]">Notifications</h4>
+              <h4 className="text-[15px] font-semibold">Notifications</h4>
 
               {/* Header actions */}
               <Tooltip>
@@ -225,7 +209,7 @@ export function NotificationsPopover() {
                     <IconInbox className="!text-inherit" aria-hidden />
                     Inbox
                     {count > 0 && (
-                      <span className="ml-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-foreground px-1.5 font-medium text-[10px] text-background tabular-nums">
+                      <span className="ml-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-foreground px-1.5 text-[10px] font-medium text-background tabular-nums">
                         {count > 99 ? "99+" : count}
                       </span>
                     )}
@@ -246,9 +230,9 @@ export function NotificationsPopover() {
                         onClick={() => markAllRead.mutate()}
                         disabled={markAllRead.isPending}
                         className={cn(
-                          "flex h-full items-center gap-1.5 px-2 font-medium text-[13px] text-muted-foreground transition-colors",
+                          "flex h-full items-center gap-1.5 px-2 text-[13px] font-medium text-muted-foreground transition-colors",
                           "hover:text-foreground focus-visible:text-foreground",
-                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-1",
+                          "focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-1 focus-visible:outline-none",
                           "disabled:pointer-events-none disabled:opacity-50",
                         )}
                         aria-label="Clear all notifications"

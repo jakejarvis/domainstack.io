@@ -1,14 +1,19 @@
+import { fileURLToPath } from "node:url";
+
 import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
-import tsconfigPaths from "vite-tsconfig-paths";
 import { coverageConfigDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
-  plugins: [tsconfigPaths(), react()],
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "next/image": fileURLToPath(new URL("./mocks/next-image.ts", import.meta.url)),
+    },
+    tsconfigPaths: true,
+  },
   define: {
-    "process.env.NEXT_PUBLIC_BASE_URL": JSON.stringify(
-      "https://test.domainstack.io",
-    ),
+    "process.env.NEXT_PUBLIC_BASE_URL": JSON.stringify("https://test.domainstack.io"),
   },
   test: {
     globals: true,
@@ -27,6 +32,9 @@ export default defineConfig({
           include: ["**/*.test.ts"],
           environment: "node",
           setupFiles: ["./vitest.setup.node.ts"],
+          // Node tests share the MSW server, so run files serially to avoid
+          // resetHandlers() races with in-flight fetches.
+          fileParallelism: false,
         },
       },
       {

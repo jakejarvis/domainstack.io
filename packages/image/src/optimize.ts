@@ -1,5 +1,6 @@
-import { createLogger } from "@domainstack/logger";
 import sharp from "sharp";
+
+import { createLogger } from "@domainstack/logger";
 
 const logger = createLogger({ source: "image" });
 
@@ -47,18 +48,8 @@ export interface OptimizeImageOptions {
  *
  * Thanks [@brianlovin](https://github.com/brianlovin/briOS/blob/ebd96b6036e114b98a00a9d6a0fc26f742df1cf4/src/lib/image-processing/ico.ts)
  */
-export async function optimizeImage(
-  input: Buffer,
-  options: OptimizeImageOptions,
-): Promise<Buffer> {
-  const {
-    width,
-    height,
-    format = "webp",
-    quality = 80,
-    fit = "cover",
-    sharpOptions,
-  } = options;
+export async function optimizeImage(input: Buffer, options: OptimizeImageOptions): Promise<Buffer> {
+  const { width, height, format = "webp", quality = 80, fit = "cover", sharpOptions } = options;
   let imageBuffer = input;
 
   // Extract best frame from ICO files first

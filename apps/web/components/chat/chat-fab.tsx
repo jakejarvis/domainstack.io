@@ -1,7 +1,5 @@
 "use client";
 
-import { CHATBOT_NAME } from "@domainstack/constants";
-import { Button } from "@domainstack/ui/button";
 import { IconLego, IconMessageCircleFilled } from "@tabler/icons-react";
 import {
   type MotionValue,
@@ -11,6 +9,9 @@ import {
   useMotionValue,
   useReducedMotion,
 } from "motion/react";
+
+import { CHATBOT_NAME } from "@domainstack/constants";
+import { Button } from "@domainstack/ui/button";
 
 const MotionButton = motion.create(Button);
 
@@ -117,11 +118,8 @@ export function ChatFab({ onClick }: ChatFabProps) {
         className="group fixed right-6 bottom-6 z-40 hidden overflow-hidden px-2 shadow-lg backdrop-blur-md transition-none md:flex"
         {...motionProps}
       >
-        <MeshGradientBackground
-          alwaysVisible={false}
-          meshGradient={meshGradient}
-        />
-        <span className="relative z-10 flex items-center gap-1.5 pr-0.5 font-semibold text-[13px] leading-none tracking-tight">
+        <MeshGradientBackground alwaysVisible={false} meshGradient={meshGradient} />
+        <span className="relative z-10 flex items-center gap-1.5 pr-0.5 text-[13px] leading-none font-semibold tracking-tight">
           <IconLego className="size-4 text-muted-foreground group-hover:text-foreground" />
           Ask {CHATBOT_NAME}
         </span>

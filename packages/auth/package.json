@@ -16,17 +16,19 @@
   },
   "scripts": {
     "check-types": "tsc --noEmit",
-    "lint": "biome check",
-    "format": "biome format --write"
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "fmt": "oxfmt --config ../../.oxfmtrc.json",
+    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json"
   },
   "dependencies": {
-    "@better-auth/infra": "^0.1.8",
+    "@better-auth/infra": "^0.2.3",
     "@domainstack/db": "workspace:*",
     "@domainstack/email": "workspace:*",
     "@domainstack/logger": "workspace:*",
     "@domainstack/polar": "workspace:*",
     "@domainstack/redis": "workspace:*",
-    "better-auth": "1.5.1"
+    "better-auth": "1.6.3"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",

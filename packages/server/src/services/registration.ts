@@ -12,10 +12,7 @@ import {
   upsertDomain,
   upsertRegistration,
 } from "@domainstack/db/queries";
-import type {
-  RegistrationContact,
-  RegistrationResponse,
-} from "@domainstack/types";
+import type { RegistrationContact, RegistrationResponse } from "@domainstack/types";
 import { getDomainTld } from "@domainstack/utils/domain";
 import {
   detectRegistrar,
@@ -23,6 +20,7 @@ import {
   type Provider,
   type ProviderCatalog,
 } from "@domainstack/utils/providers";
+
 import { getProviderCatalog } from "../edge-config";
 import { ttlForRegistration } from "../ttl";
 import { lookupWhois as lookup } from "../whois";
@@ -31,10 +29,7 @@ import { lookupWhois as lookup } from "../whois";
 // Types
 // ============================================================================
 
-export type RegistrationError =
-  | "unsupported_tld"
-  | "not_found"
-  | "lookup_failed";
+export type RegistrationError = "unsupported_tld" | "not_found" | "lookup_failed";
 
 export type RegistrationResult =
   | { success: true; data: RegistrationResponse }
@@ -52,9 +47,7 @@ export type RegistrationResult =
  *
  * @throws Error on transient failures (timeout, network) - TanStack Query retries these
  */
-export async function fetchRegistration(
-  domain: string,
-): Promise<RegistrationResult> {
+export async function fetchRegistration(domain: string): Promise<RegistrationResult> {
   // 1. Fetch WHOIS/RDAP
   const lookupResult = await lookupWhois(domain);
 
@@ -117,9 +110,7 @@ async function normalizeRegistration(
 ): Promise<RegistrationResponse> {
   const { catalog } = options;
   const record = JSON.parse(recordJson) as ParsedRdapRecord;
-  const registrarProviders = catalog
-    ? getProvidersFromCatalog(catalog, "registrar")
-    : [];
+  const registrarProviders = catalog ? getProvidersFromCatalog(catalog, "registrar") : [];
 
   // Normalize registrar
   let registrarName = (record.registrar?.name || "").toString();
@@ -136,8 +127,7 @@ async function normalizeRegistration(
   // Fallback to URL hostname
   if (!registrarDomain && record.registrar?.url) {
     try {
-      registrarDomain =
-        new URL(record.registrar.url.toString()).hostname || null;
+      registrarDomain = new URL(record.registrar.url.toString()).hostname || null;
     } catch {
       // URL parsing failed
     }
@@ -198,10 +188,7 @@ async function normalizeRegistration(
 // Internal: Persist Registration
 // ============================================================================
 
-async function persistRegistration(
-  domain: string,
-  response: RegistrationResponse,
-): Promise<void> {
+async function persistRegistration(domain: string, response: RegistrationResponse): Promise<void> {
   const now = new Date();
   const domainRecord = await upsertDomain({
     name: domain,
@@ -219,16 +206,10 @@ async function persistRegistration(
     isRegistered: response.isRegistered,
     privacyEnabled: response.privacyEnabled ?? false,
     registry: response.registry ?? null,
-    creationDate: response.creationDate
-      ? new Date(response.creationDate)
-      : null,
+    creationDate: response.creationDate ? new Date(response.creationDate) : null,
     updatedDate: response.updatedDate ? new Date(response.updatedDate) : null,
-    expirationDate: response.expirationDate
-      ? new Date(response.expirationDate)
-      : null,
-    deletionDate: response.deletionDate
-      ? new Date(response.deletionDate)
-      : null,
+    expirationDate: response.expirationDate ? new Date(response.expirationDate) : null,
+    deletionDate: response.deletionDate ? new Date(response.deletionDate) : null,
     transferLock: response.transferLock ?? null,
     statuses: response.statuses ?? [],
     contacts: response.contacts ?? [],
@@ -287,9 +268,7 @@ interface ParsedRdapRecord {
   warnings?: string[];
 }
 
-function formatRawResponse(
-  record: ParsedRdapRecord,
-): Record<string, unknown> | string | undefined {
+function formatRawResponse(record: ParsedRdapRecord): Record<string, unknown> | string | undefined {
   if (record.source === "rdap" && record.rawRdap) {
     return record.rawRdap as Record<string, unknown>;
   }

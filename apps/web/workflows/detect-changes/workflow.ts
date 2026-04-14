@@ -1,32 +1,10 @@
-import type {
-  CertificateSnapshotData as DbCertificateSnapshotData,
-  RegistrationSnapshotData as DbRegistrationSnapshotData,
-} from "@domainstack/db/schema";
-import type {
-  CertificatesResponse,
-  HostingResponse,
-  RegistrationResponse,
-} from "@domainstack/types";
-import {
-  type CertificateChangeWithNames,
-  detectCertificateChange,
-  detectProviderChange,
-  detectRegistrationChange,
-  type ProviderChangeWithNames,
-} from "@domainstack/utils/change-detection";
 import {
   fetchCertificateChainStep,
   persistCertificatesStep,
   processChainStep,
 } from "@/workflows/shared/certificates";
-import {
-  fetchDnsRecordsStep,
-  persistDnsRecordsStep,
-} from "@/workflows/shared/dns";
-import {
-  fetchHeadersStep,
-  persistHeadersStep,
-} from "@/workflows/shared/headers";
+import { fetchDnsRecordsStep, persistDnsRecordsStep } from "@/workflows/shared/dns";
+import { fetchHeadersStep, persistHeadersStep } from "@/workflows/shared/headers";
 import {
   detectAndResolveProvidersStep,
   lookupGeoIpStep,
@@ -44,6 +22,22 @@ import {
   normalizeAndBuildResponseStep,
   persistRegistrationStep,
 } from "@/workflows/shared/registration";
+import type {
+  CertificateSnapshotData as DbCertificateSnapshotData,
+  RegistrationSnapshotData as DbRegistrationSnapshotData,
+} from "@domainstack/db/schema";
+import type {
+  CertificatesResponse,
+  HostingResponse,
+  RegistrationResponse,
+} from "@domainstack/types";
+import {
+  type CertificateChangeWithNames,
+  detectCertificateChange,
+  detectProviderChange,
+  detectRegistrationChange,
+  type ProviderChangeWithNames,
+} from "@domainstack/utils/change-detection";
 
 // Re-export change types for consumers
 export type {
@@ -100,20 +94,17 @@ export async function detectChangesWorkflow(
   const { domainName, userId, userName, userEmail } = snapshot;
 
   // Step 2: Fetch fresh data for this domain (parallel where possible)
-  const [registrationResult, dnsResult, headersResult, certificatesResult] =
-    await Promise.all([
-      lookupWhoisStep(domainName),
-      fetchDnsRecordsStep(domainName),
-      fetchHeadersStep(domainName),
-      fetchCertificateChainStep(domainName),
-    ]);
+  const [registrationResult, dnsResult, headersResult, certificatesResult] = await Promise.all([
+    lookupWhoisStep(domainName),
+    fetchDnsRecordsStep(domainName),
+    fetchHeadersStep(domainName),
+    fetchCertificateChainStep(domainName),
+  ]);
 
   // Process and persist registration
   let registrationData: RegistrationResponse | null = null;
   if (registrationResult.success) {
-    registrationData = await normalizeAndBuildResponseStep(
-      registrationResult.data.recordJson,
-    );
+    registrationData = await normalizeAndBuildResponseStep(registrationResult.data.recordJson);
     if (registrationData.isRegistered) {
       await persistRegistrationStep(domainName, registrationData);
     }
@@ -171,16 +162,12 @@ export async function detectChangesWorkflow(
       registrarProviderId: registrationData.registrarProvider?.id ?? null,
       nameservers: registrationData.nameservers || [],
       transferLock: registrationData.transferLock ?? null,
-      statuses: (registrationData.statuses || []).map(
-        (s: string | { status: string }) =>
-          typeof s === "string" ? s : s.status,
+      statuses: (registrationData.statuses || []).map((s: string | { status: string }) =>
+        typeof s === "string" ? s : s.status,
       ),
     };
 
-    const registrationChange = detectRegistrationChange(
-      snapshot.registration,
-      currentRegistration,
-    );
+    const registrationChange = detectRegistrationChange(snapshot.registration, currentRegistration);
 
     if (registrationChange) {
       // Step 3a: Check notification preferences
@@ -197,17 +184,14 @@ export async function detectChangesWorkflow(
           registrationChange.newRegistrar,
         ].filter((id): id is string => !!id);
         const registrarNames =
-          registrarIds.length > 0
-            ? await resolveProviderNamesStep(registrarIds)
-            : new Map();
+          registrarIds.length > 0 ? await resolveProviderNamesStep(registrarIds) : new Map();
 
         const previousRegistrar = registrationChange.previousRegistrar
           ? (registrarNames.get(registrationChange.previousRegistrar) ??
             registrationChange.previousRegistrar)
           : null;
         const newRegistrar = registrationChange.newRegistrar
-          ? (registrarNames.get(registrationChange.newRegistrar) ??
-            registrationChange.newRegistrar)
+          ? (registrarNames.get(registrationChange.newRegistrar) ?? registrationChange.newRegistrar)
           : null;
 
         // Build notification content (title, message, subject) - inlined
@@ -215,9 +199,7 @@ export async function detectChangesWorkflow(
 
         if (registrationChange.registrarChanged) {
           if (previousRegistrar && newRegistrar) {
-            changeDetails.push(
-              `Registrar changed from ${previousRegistrar} to ${newRegistrar}`,
-            );
+            changeDetails.push(`Registrar changed from ${previousRegistrar} to ${newRegistrar}`);
           } else if (newRegistrar) {
             changeDetails.push(`Registrar set to ${newRegistrar}`);
           } else if (previousRegistrar) {
@@ -234,9 +216,7 @@ export async function detectChangesWorkflow(
         }
 
         if (registrationChange.nameserversChanged) {
-          const prevNs = registrationChange.previousNameservers.map(
-            (ns) => ns.host,
-          );
+          const prevNs = registrationChange.previousNameservers.map((ns) => ns.host);
           const newNs = registrationChange.newNameservers.map((ns) => ns.host);
           if (prevNs.length > 0 && newNs.length > 0) {
             changeDetails.push(
@@ -301,8 +281,7 @@ export async function detectChangesWorkflow(
               newRegistrar: newRegistrar || undefined,
               previousNameservers: registrationChange.previousNameservers,
               newNameservers: registrationChange.newNameservers,
-              previousTransferLock:
-                registrationChange.previousTransferLock ?? undefined,
+              previousTransferLock: registrationChange.previousTransferLock ?? undefined,
               newTransferLock: registrationChange.newTransferLock ?? undefined,
               previousStatuses: registrationChange.previousStatuses,
               newStatuses: registrationChange.newStatuses,
@@ -314,10 +293,7 @@ export async function detectChangesWorkflow(
 
         if (sent) {
           results.registrationChanges = true;
-          await updateRegistrationSnapshot(
-            trackedDomainId,
-            currentRegistration,
-          );
+          await updateRegistrationSnapshot(trackedDomainId, currentRegistration);
         }
       }
     }
@@ -374,8 +350,7 @@ export async function detectChangesWorkflow(
             ? providerNames.get(providerChange.newDnsProviderId) || null
             : null,
           previousHostingProvider: providerChange.previousHostingProviderId
-            ? providerNames.get(providerChange.previousHostingProviderId) ||
-              null
+            ? providerNames.get(providerChange.previousHostingProviderId) || null
             : null,
           newHostingProvider: providerChange.newHostingProviderId
             ? providerNames.get(providerChange.newHostingProviderId) || null
@@ -395,9 +370,7 @@ export async function detectChangesWorkflow(
           const prev = enrichedChange.previousDnsProvider;
           const next = enrichedChange.newDnsProvider;
           if (prev && next) {
-            providerChangeDetails.push(
-              `DNS provider changed from ${prev} to ${next}`,
-            );
+            providerChangeDetails.push(`DNS provider changed from ${prev} to ${next}`);
           } else if (next) {
             providerChangeDetails.push(`DNS provider set to ${next}`);
           } else if (prev) {
@@ -409,9 +382,7 @@ export async function detectChangesWorkflow(
           const prev = enrichedChange.previousHostingProvider;
           const next = enrichedChange.newHostingProvider;
           if (prev && next) {
-            providerChangeDetails.push(
-              `Hosting changed from ${prev} to ${next}`,
-            );
+            providerChangeDetails.push(`Hosting changed from ${prev} to ${next}`);
           } else if (next) {
             providerChangeDetails.push(`Hosting set to ${next}`);
           } else if (prev) {
@@ -423,9 +394,7 @@ export async function detectChangesWorkflow(
           const prev = enrichedChange.previousEmailProvider;
           const next = enrichedChange.newEmailProvider;
           if (prev && next) {
-            providerChangeDetails.push(
-              `Email provider changed from ${prev} to ${next}`,
-            );
+            providerChangeDetails.push(`Email provider changed from ${prev} to ${next}`);
           } else if (next) {
             providerChangeDetails.push(`Email provider set to ${next}`);
           } else if (prev) {
@@ -485,10 +454,7 @@ export async function detectChangesWorkflow(
       fingerprint: null,
     };
 
-    const certificateChange = detectCertificateChange(
-      snapshot.certificate,
-      currentCertificate,
-    );
+    const certificateChange = detectCertificateChange(snapshot.certificate, currentCertificate);
 
     if (certificateChange) {
       // Step 5a: Check notification preferences
@@ -510,8 +476,7 @@ export async function detectChangesWorkflow(
         const enrichedChange: CertificateChangeWithNames = {
           ...certificateChange,
           previousCaProvider: certificateChange.previousCaProviderId
-            ? caProviderNames.get(certificateChange.previousCaProviderId) ||
-              null
+            ? caProviderNames.get(certificateChange.previousCaProviderId) || null
             : null,
           newCaProvider: certificateChange.newCaProviderId
             ? caProviderNames.get(certificateChange.newCaProviderId) || null
@@ -525,9 +490,7 @@ export async function detectChangesWorkflow(
           const prev = enrichedChange.previousCaProvider;
           const next = enrichedChange.newCaProvider;
           if (prev && next) {
-            certChangeDetails.push(
-              `Certificate authority changed from ${prev} to ${next}`,
-            );
+            certChangeDetails.push(`Certificate authority changed from ${prev} to ${next}`);
           } else if (next) {
             certChangeDetails.push(`Certificate authority set to ${next}`);
           }
@@ -586,9 +549,7 @@ export async function detectChangesWorkflow(
 // --- Step Functions ---
 
 // Import SnapshotForMonitoring type for proper typing
-type SnapshotData = Awaited<
-  ReturnType<typeof import("@domainstack/db/queries").getSnapshot>
->;
+type SnapshotData = Awaited<ReturnType<typeof import("@domainstack/db/queries").getSnapshot>>;
 
 async function fetchSnapshot(trackedDomainId: string): Promise<SnapshotData> {
   "use step";

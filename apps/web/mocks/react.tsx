@@ -29,7 +29,6 @@ export function createTestQueryClient(): QueryClient {
   });
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: Jotai atoms can be any type
 type AtomTuple = readonly [any, any];
 
 /**
@@ -50,17 +49,12 @@ function HydrateAtoms({
  * Test wrapper that provides QueryClientProvider and JotaiProvider with fresh
  * instances for each test. Ensures test isolation.
  */
-function createWrapper(
-  queryClient: QueryClient,
-  initialAtomValues: AtomTuple[] = [],
-) {
+function createWrapper(queryClient: QueryClient, initialAtomValues: AtomTuple[] = []) {
   return function Wrapper({ children }: { children: React.ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>
         <JotaiProvider>
-          <HydrateAtoms initialValues={initialAtomValues}>
-            {children}
-          </HydrateAtoms>
+          <HydrateAtoms initialValues={initialAtomValues}>{children}</HydrateAtoms>
         </JotaiProvider>
       </QueryClientProvider>
     );

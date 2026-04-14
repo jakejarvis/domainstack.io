@@ -66,8 +66,7 @@ function getVerificationInstructions(
     case "meta_tag":
       return {
         title: "Add a meta tag",
-        description:
-          "Add the following meta tag to the <head> section of your homepage.",
+        description: "Add the following meta tag to the <head> section of your homepage.",
         metaTag: `<meta name="${META_TAG_NAME}" content="${token}">`,
       };
   }
@@ -91,11 +90,6 @@ export function buildVerificationInstructions(
  * Type guard to check if a value is a valid VerificationMethod.
  * Client-safe runtime validation without Zod dependency.
  */
-export function isValidVerificationMethod(
-  value: unknown,
-): value is VerificationMethod {
-  return (
-    typeof value === "string" &&
-    VERIFICATION_METHODS.includes(value as VerificationMethod)
-  );
+export function isValidVerificationMethod(value: unknown): value is VerificationMethod {
+  return typeof value === "string" && VERIFICATION_METHODS.includes(value as VerificationMethod);
 }

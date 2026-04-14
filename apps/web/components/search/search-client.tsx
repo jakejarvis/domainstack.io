@@ -1,5 +1,15 @@
 "use client";
 
+import { IconArrowRight, IconCircleX, IconSearch } from "@tabler/icons-react";
+import { useAtom } from "jotai";
+import { useParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
+import { toast } from "sonner";
+
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useRouter } from "@/hooks/use-router";
+import { pendingDomainAtom } from "@/lib/atoms/search-atoms";
 import { analytics } from "@domainstack/analytics/client";
 import { Field, FieldLabel } from "@domainstack/ui/field";
 import { Form } from "@domainstack/ui/form";
@@ -12,25 +22,12 @@ import {
 import { Kbd } from "@domainstack/ui/kbd";
 import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
-import {
-  isValidDomain,
-  normalizeDomainInput,
-} from "@domainstack/utils/domain/client";
-import { IconArrowRight, IconCircleX, IconSearch } from "@tabler/icons-react";
-import { useAtom } from "jotai";
-import { useParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useHotkeys } from "react-hotkeys-hook";
-import { toast } from "sonner";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useRouter } from "@/hooks/use-router";
-import { pendingDomainAtom } from "@/lib/atoms/search-atoms";
+import { isValidDomain, normalizeDomainInput } from "@domainstack/utils/domain/client";
 
 const isMac = () =>
   typeof navigator !== "undefined" &&
   // @ts-expect-error userAgentData not yet in all TS libs
-  (navigator.userAgentData?.platform === "macOS" ||
-    navigator.userAgent.includes("Mac"));
+  (navigator.userAgentData?.platform === "macOS" || navigator.userAgent.includes("Mac"));
 
 export type SearchClientVariant = "sm" | "lg";
 
@@ -91,9 +88,7 @@ export function SearchClient({
     const target = normalizeDomainInput(domain);
     analytics.track("search_submitted", { domain: target });
 
-    const current = params?.domain
-      ? normalizeDomainInput(decodeURIComponent(params.domain))
-      : null;
+    const current = params?.domain ? normalizeDomainInput(decodeURIComponent(params.domain)) : null;
 
     setLoading(true);
     router.push(`/${encodeURIComponent(target)}`);
@@ -213,11 +208,7 @@ export function SearchClient({
                 spellCheck={false}
                 disabled={loading}
                 placeholder={
-                  variant === "lg"
-                    ? "domainstack.io"
-                    : isMobile
-                      ? "Search"
-                      : "Search any domain"
+                  variant === "lg" ? "domainstack.io" : isMobile ? "Search" : "Search any domain"
                 }
                 aria-label="Search any domain"
                 value={value}

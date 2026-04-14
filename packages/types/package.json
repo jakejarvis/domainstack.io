@@ -9,8 +9,10 @@
   },
   "scripts": {
     "check-types": "tsc --noEmit",
-    "lint": "biome check",
-    "format": "biome format --write"
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "fmt": "oxfmt --config ../../.oxfmtrc.json",
+    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json"
   },
   "dependencies": {
     "@domainstack/constants": "workspace:*"

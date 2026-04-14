@@ -1,5 +1,9 @@
 "use client";
 
+import { IconPlus, IconWorld, IconX } from "@tabler/icons-react";
+import { useState } from "react";
+
+import { Favicon } from "@/components/icons/favicon";
 import { Button } from "@domainstack/ui/button";
 import {
   DropdownMenu,
@@ -8,9 +12,6 @@ import {
   DropdownMenuTrigger,
 } from "@domainstack/ui/dropdown-menu";
 import { cn } from "@domainstack/ui/utils";
-import { IconPlus, IconWorld, IconX } from "@tabler/icons-react";
-import { useState } from "react";
-import { Favicon } from "@/components/icons/favicon";
 
 interface MutableDomain {
   id: string;
@@ -29,11 +30,7 @@ interface DomainMuteListProps {
  * Shows muted domains as chips with X to unmute.
  * Plus button opens dropdown to mute additional domains.
  */
-export function DomainMuteList({
-  domains,
-  onToggleMuted,
-  disabled = false,
-}: DomainMuteListProps) {
+export function DomainMuteList({ domains, onToggleMuted, disabled = false }: DomainMuteListProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const mutedDomains = domains.filter((d) => d.muted);
@@ -44,7 +41,7 @@ export function DomainMuteList({
     return (
       <div className="flex items-center gap-3 rounded-xl border border-dashed bg-muted/10 px-4 py-6">
         <IconWorld className="size-5 text-muted-foreground/50" />
-        <p className="text-muted-foreground text-sm">
+        <p className="text-sm text-muted-foreground">
           Verify domains to customize their notification settings.
         </p>
       </div>
@@ -76,9 +73,7 @@ export function DomainMuteList({
               <IconPlus className="size-3.5" />
               <span
                 className={cn(
-                  mutedDomains.length > 0
-                    ? "sr-only"
-                    : "text-[13px] text-foreground/80",
+                  mutedDomains.length > 0 ? "sr-only" : "text-[13px] text-foreground/80",
                 )}
               >
                 Mute domain
@@ -114,13 +109,8 @@ interface MutedDomainChipProps {
 function MutedDomainChip({ domain, onUnmute, disabled }: MutedDomainChipProps) {
   return (
     <div className="group flex h-8 items-center gap-1.5 rounded-full border bg-muted/40 pr-1.5 pl-3.5 transition-colors hover:bg-muted/60">
-      <Favicon
-        domain={domain.domainName}
-        className="mr-0.5 size-3.5 shrink-0"
-      />
-      <span className="max-w-32 truncate font-medium text-[13px]">
-        {domain.domainName}
-      </span>
+      <Favicon domain={domain.domainName} className="mr-0.5 size-3.5 shrink-0" />
+      <span className="max-w-32 truncate text-[13px] font-medium">{domain.domainName}</span>
       <Button
         variant="ghost"
         size="icon-xs"

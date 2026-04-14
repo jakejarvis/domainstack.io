@@ -1,5 +1,7 @@
-import { getDomainTld } from "@domainstack/utils/domain";
 import { and, desc, eq, gt, isNull, lt, or } from "drizzle-orm";
+
+import { getDomainTld } from "@domainstack/utils/domain";
+
 import { db } from "../client";
 import { domains } from "../schema";
 
@@ -40,11 +42,7 @@ export async function upsertDomain(params: UpsertDomainParams) {
  * Returns null if the domain doesn't exist (typically means unregistered).
  */
 export async function findDomainByName(name: string) {
-  const rows = await db
-    .select()
-    .from(domains)
-    .where(eq(domains.name, name))
-    .limit(1);
+  const rows = await db.select().from(domains).where(eq(domains.name, name)).limit(1);
   return rows[0] ?? null;
 }
 
@@ -83,11 +81,7 @@ export async function ensureDomainRecord(domain: string) {
  * Returns null if the domain doesn't exist.
  */
 export async function getDomainById(id: string) {
-  const rows = await db
-    .select()
-    .from(domains)
-    .where(eq(domains.id, id))
-    .limit(1);
+  const rows = await db.select().from(domains).where(eq(domains.id, id)).limit(1);
   return rows[0] ?? null;
 }
 
@@ -96,9 +90,7 @@ export async function getDomainById(id: string) {
  * Lightweight query that only fetches the name column.
  * Returns null if the domain doesn't exist.
  */
-export async function getDomainNameById(
-  id: string,
-): Promise<{ name: string } | null> {
+export async function getDomainNameById(id: string): Promise<{ name: string } | null> {
   const rows = await db
     .select({ name: domains.name })
     .from(domains)
@@ -129,10 +121,7 @@ export async function updateLastAccessed(name: string): Promise<boolean> {
       .where(
         and(
           eq(domains.name, name),
-          or(
-            isNull(domains.lastAccessedAt),
-            lt(domains.lastAccessedAt, debounceThreshold),
-          ),
+          or(isNull(domains.lastAccessedAt), lt(domains.lastAccessedAt, debounceThreshold)),
         ),
       );
     return true;
@@ -148,9 +137,7 @@ export async function updateLastAccessed(name: string): Promise<boolean> {
  * @param hoursAgo - How many hours back to look (default: 24)
  * @returns Array of domain names ordered by most recently accessed, capped at 500
  */
-export async function getRecentlyAccessedDomains(
-  hoursAgo = 24,
-): Promise<string[]> {
+export async function getRecentlyAccessedDomains(hoursAgo = 24): Promise<string[]> {
   const cutoff = new Date(Date.now() - hoursAgo * 60 * 60 * 1000);
 
   const rows = await db

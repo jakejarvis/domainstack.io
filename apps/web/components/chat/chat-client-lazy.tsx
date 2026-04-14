@@ -2,15 +2,12 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
-import {
-  usePreferencesHydrated,
-  usePreferencesStore,
-} from "@/lib/stores/preferences-store";
 
-const DynamicChatClient = dynamic(
-  () => import("./chat-client").then((m) => m.ChatClient),
-  { ssr: false },
-);
+import { usePreferencesHydrated, usePreferencesStore } from "@/lib/stores/preferences-store";
+
+const DynamicChatClient = dynamic(() => import("./chat-client").then((m) => m.ChatClient), {
+  ssr: false,
+});
 
 export function ChatClientLazy({ suggestions }: { suggestions?: string[] }) {
   const hydrated = usePreferencesHydrated();

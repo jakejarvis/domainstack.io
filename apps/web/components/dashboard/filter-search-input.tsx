@@ -1,11 +1,12 @@
+import { IconSearch, IconX } from "@tabler/icons-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
 } from "@domainstack/ui/input-group";
-import { IconSearch, IconX } from "@tabler/icons-react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 type FilterSearchInputProps = {
   value: string;

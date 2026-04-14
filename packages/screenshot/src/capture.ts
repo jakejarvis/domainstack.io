@@ -1,4 +1,5 @@
 import { createLogger } from "@domainstack/logger";
+
 import { type Browser, getBrowser, type Page } from "./browser";
 import { createPage } from "./page";
 

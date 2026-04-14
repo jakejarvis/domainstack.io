@@ -1,21 +1,15 @@
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
+
 import { cn, cva, type VariantProps } from "../utils";
 import { ScrollArea } from "./scroll-area";
 
-function Tabs({
-  className,
-  orientation = "horizontal",
-  ...props
-}: TabsPrimitive.Root.Props) {
+function Tabs({ className, orientation = "horizontal", ...props }: TabsPrimitive.Root.Props) {
   return (
     <TabsPrimitive.Root
       data-slot="tabs"
       data-orientation={orientation}
       orientation={orientation}
-      className={cn(
-        "group/tabs flex gap-2 data-[orientation=horizontal]:flex-col",
-        className,
-      )}
+      className={cn("group/tabs flex gap-2 data-[orientation=horizontal]:flex-col", className)}
       {...props}
     />
   );
@@ -27,7 +21,7 @@ const tabsListVariants = cva({
     variant: {
       default:
         "h-9 w-fit justify-center rounded-lg border border-black/8 bg-muted/40 p-1 backdrop-blur-sm dark:border-white/10",
-      line: "h-10 w-full gap-1.5 border-muted border-b bg-transparent",
+      line: "h-10 w-full gap-1.5 border-b border-muted bg-transparent",
     },
   },
   defaultVariants: {
@@ -93,15 +87,15 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
       data-slot="tabs-trigger"
       className={cn(
         // Base styles
-        "relative z-10 inline-flex h-full flex-1 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2 font-medium text-muted-foreground text-sm transition-colors",
+        "relative z-10 inline-flex h-full flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-transparent px-2 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors",
         // Focus styles
-        "focus-visible:border-ring focus-visible:outline-1 focus-visible:outline-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+        "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring",
         // Disabled styles
         "disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50",
         // Active styles
         "data-[active]:cursor-default data-[active]:text-foreground",
         // Icon styles
-        "[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-muted-foreground/70 data-[active]:[&_svg]:text-foreground",
+        "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-muted-foreground/70 data-[active]:[&_svg]:text-foreground [&_svg:not([class*='size-'])]:size-4",
         // Vertical orientation
         "group-data-[orientation=vertical]/tabs:w-full group-data-[orientation=vertical]/tabs:justify-start",
         className,
@@ -121,4 +115,4 @@ function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
   );
 }
 
-export { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants };
+export { Tabs, TabsContent, TabsList, TabsTrigger, tabsListVariants };

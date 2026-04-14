@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type { WebhooksOptions } from "./better-auth/server";
 
 // Extract payload types from WebhooksOptions (same as handlers.ts)
@@ -19,12 +20,31 @@ type SubscriptionUncanceledPayload = Parameters<
 >[0];
 
 // Hoist mock functions so they're available to vi.mock factory
-const { updateUserTier, setSubscriptionEndsAt, clearSubscriptionEndsAt } =
-  vi.hoisted(() => ({
-    updateUserTier: vi.fn(),
-    setSubscriptionEndsAt: vi.fn(),
-    clearSubscriptionEndsAt: vi.fn(),
-  }));
+const { updateUserTier, setSubscriptionEndsAt, clearSubscriptionEndsAt, createMockLogger } =
+  vi.hoisted(() => {
+    type MockLogger = Record<
+      "log" | "trace" | "debug" | "info" | "warn" | "error" | "fatal" | "child",
+      ReturnType<typeof vi.fn>
+    >;
+
+    const buildMockLogger = (): MockLogger => ({
+      log: vi.fn<(...args: unknown[]) => void>(),
+      trace: vi.fn<(...args: unknown[]) => void>(),
+      debug: vi.fn<(...args: unknown[]) => void>(),
+      info: vi.fn<(...args: unknown[]) => void>(),
+      warn: vi.fn<(...args: unknown[]) => void>(),
+      error: vi.fn<(...args: unknown[]) => void>(),
+      fatal: vi.fn<(...args: unknown[]) => void>(),
+      child: vi.fn<(...args: unknown[]) => MockLogger>(() => buildMockLogger()),
+    });
+
+    return {
+      updateUserTier: vi.fn<(userId: string, tier: "free" | "pro") => Promise<void>>(),
+      setSubscriptionEndsAt: vi.fn<(userId: string, endsAt: Date) => Promise<void>>(),
+      clearSubscriptionEndsAt: vi.fn<(userId: string) => Promise<void>>(),
+      createMockLogger: buildMockLogger,
+    };
+  });
 
 // Mock the dependencies - export functions directly (not via repo objects)
 vi.mock("@domainstack/db/queries", () => ({
@@ -33,18 +53,25 @@ vi.mock("@domainstack/db/queries", () => ({
   clearSubscriptionEndsAt,
 }));
 
+vi.mock("@domainstack/logger", () => ({
+  logger: createMockLogger(),
+  createLogger: vi.fn<(...args: unknown[]) => ReturnType<typeof createMockLogger>>(() =>
+    createMockLogger(),
+  ),
+}));
+
 vi.mock("./downgrade", () => ({
-  handleDowngrade: vi.fn(),
+  handleDowngrade: vi.fn<(userId: string) => Promise<number>>(),
 }));
 
 vi.mock("./products", () => ({
-  getTierForProductId: vi.fn(),
+  getTierForProductId: vi.fn<(productId: string) => "pro" | null>(),
 }));
 
 vi.mock("./emails", () => ({
-  sendProUpgradeEmail: vi.fn(),
-  sendSubscriptionCancelingEmail: vi.fn(),
-  sendSubscriptionExpiredEmail: vi.fn(),
+  sendProUpgradeEmail: vi.fn<(userId: string) => Promise<void>>(),
+  sendSubscriptionCancelingEmail: vi.fn<(userId: string, periodEnd: Date) => Promise<void>>(),
+  sendSubscriptionExpiredEmail: vi.fn<(userId: string, archivedCount: number) => Promise<void>>(),
 }));
 
 import { handleDowngrade } from "./downgrade";
@@ -73,8 +100,7 @@ function createSubscriptionData(overrides: {
   currentPeriodEnd?: Date | null;
   canceledAt?: Date | null;
 }) {
-  const externalId: string | null =
-    "userId" in overrides ? (overrides.userId ?? null) : "user-456";
+  const externalId: string | null = "userId" in overrides ? (overrides.userId ?? null) : "user-456";
 
   return {
     id: overrides.subscriptionId ?? "sub-123",
@@ -189,9 +215,7 @@ describe("handleSubscriptionActive", () => {
   it("does not upgrade tier when product ID is unknown", async () => {
     vi.mocked(getTierForProductId).mockReturnValue(null);
 
-    await handleSubscriptionActive(
-      createActivePayload({ productId: "unknown-product" }),
-    );
+    await handleSubscriptionActive(createActivePayload({ productId: "unknown-product" }));
 
     expect(getTierForProductId).toHaveBeenCalledWith("unknown-product");
     expect(updateUserTier).not.toHaveBeenCalled();
@@ -211,9 +235,7 @@ describe("handleSubscriptionActive", () => {
     vi.mocked(getTierForProductId).mockReturnValue("pro");
     vi.mocked(updateUserTier).mockRejectedValue(new Error("Database error"));
 
-    await expect(
-      handleSubscriptionActive(createActivePayload()),
-    ).rejects.toThrow("Database error");
+    await expect(handleSubscriptionActive(createActivePayload())).rejects.toThrow("Database error");
   });
 
   it("sends pro upgrade email after tier upgrade", async () => {
@@ -229,9 +251,7 @@ describe("handleSubscriptionActive", () => {
     vi.mocked(sendProUpgradeEmail).mockRejectedValue(new Error("Email failed"));
 
     // Should not throw - email errors are logged but swallowed
-    await expect(
-      handleSubscriptionActive(createActivePayload()),
-    ).resolves.not.toThrow();
+    await expect(handleSubscriptionActive(createActivePayload())).resolves.not.toThrow();
 
     expect(updateUserTier).toHaveBeenCalled();
     expect(clearSubscriptionEndsAt).toHaveBeenCalled();
@@ -282,9 +302,7 @@ describe("handleSubscriptionCanceled", () => {
   });
 
   it("re-throws errors from setSubscriptionEndsAt for webhook retry", async () => {
-    vi.mocked(setSubscriptionEndsAt).mockRejectedValue(
-      new Error("Database error"),
-    );
+    vi.mocked(setSubscriptionEndsAt).mockRejectedValue(new Error("Database error"));
 
     await expect(
       handleSubscriptionCanceled(
@@ -304,16 +322,11 @@ describe("handleSubscriptionCanceled", () => {
       }),
     );
 
-    expect(sendSubscriptionCancelingEmail).toHaveBeenCalledWith(
-      "user-456",
-      periodEnd,
-    );
+    expect(sendSubscriptionCancelingEmail).toHaveBeenCalledWith("user-456", periodEnd);
   });
 
   it("does not fail webhook if cancellation email fails", async () => {
-    vi.mocked(sendSubscriptionCancelingEmail).mockRejectedValue(
-      new Error("Email failed"),
-    );
+    vi.mocked(sendSubscriptionCancelingEmail).mockRejectedValue(new Error("Email failed"));
 
     // Should not throw - email errors are logged but swallowed
     await expect(
@@ -356,14 +369,10 @@ describe("handleSubscriptionRevoked", () => {
   });
 
   it("does not fail webhook if email sending fails", async () => {
-    vi.mocked(sendSubscriptionExpiredEmail).mockRejectedValue(
-      new Error("Email failed"),
-    );
+    vi.mocked(sendSubscriptionExpiredEmail).mockRejectedValue(new Error("Email failed"));
 
     // Should not throw - email errors are logged but swallowed
-    await expect(
-      handleSubscriptionRevoked(createRevokedPayload()),
-    ).resolves.not.toThrow();
+    await expect(handleSubscriptionRevoked(createRevokedPayload())).resolves.not.toThrow();
 
     expect(handleDowngrade).toHaveBeenCalled();
     expect(clearSubscriptionEndsAt).toHaveBeenCalled();
@@ -380,9 +389,9 @@ describe("handleSubscriptionRevoked", () => {
   it("re-throws errors from handleDowngrade for webhook retry", async () => {
     vi.mocked(handleDowngrade).mockRejectedValue(new Error("Downgrade failed"));
 
-    await expect(
-      handleSubscriptionRevoked(createRevokedPayload()),
-    ).rejects.toThrow("Downgrade failed");
+    await expect(handleSubscriptionRevoked(createRevokedPayload())).rejects.toThrow(
+      "Downgrade failed",
+    );
   });
 });
 
@@ -398,20 +407,16 @@ describe("handleSubscriptionUncanceled", () => {
   });
 
   it("does not clear end date when externalId (userId) is missing", async () => {
-    await handleSubscriptionUncanceled(
-      createUncanceledPayload({ userId: null }),
-    );
+    await handleSubscriptionUncanceled(createUncanceledPayload({ userId: null }));
 
     expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
   });
 
   it("re-throws errors from clearSubscriptionEndsAt for webhook retry", async () => {
-    vi.mocked(clearSubscriptionEndsAt).mockRejectedValue(
-      new Error("Database error"),
-    );
+    vi.mocked(clearSubscriptionEndsAt).mockRejectedValue(new Error("Database error"));
 
-    await expect(
-      handleSubscriptionUncanceled(createUncanceledPayload()),
-    ).rejects.toThrow("Database error");
+    await expect(handleSubscriptionUncanceled(createUncanceledPayload())).rejects.toThrow(
+      "Database error",
+    );
   });
 });

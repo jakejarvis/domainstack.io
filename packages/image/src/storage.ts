@@ -28,16 +28,8 @@ export interface StoreImageOptions {
 export async function storeImage(
   options: StoreImageOptions,
 ): Promise<{ url: string; pathname: string }> {
-  const {
-    kind,
-    domain,
-    buffer,
-    width,
-    height,
-    contentType,
-    extension,
-    cacheControlMaxAge,
-  } = options;
+  const { kind, domain, buffer, width, height, contentType, extension, cacheControlMaxAge } =
+    options;
 
   return storeBlob({
     kind,

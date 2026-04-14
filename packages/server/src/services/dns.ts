@@ -8,6 +8,7 @@
 import { DNS_RECORD_TYPES, type DnsRecordType } from "@domainstack/constants";
 import { ensureDomainRecord, replaceDns } from "@domainstack/db/queries";
 import type { DnsRecordsResponse } from "@domainstack/types";
+
 import { type DnsFetchData, fetchDnsRecords } from "../dns";
 
 // ============================================================================
@@ -48,10 +49,7 @@ export async function fetchDns(domain: string): Promise<DnsResult> {
 // Internal: Persist DNS Records
 // ============================================================================
 
-async function persistDnsRecords(
-  domain: string,
-  fetchData: DnsFetchData,
-): Promise<void> {
+async function persistDnsRecords(domain: string, fetchData: DnsFetchData): Promise<void> {
   const types = DNS_RECORD_TYPES;
   const now = new Date();
 

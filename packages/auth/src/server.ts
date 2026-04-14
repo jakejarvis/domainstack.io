@@ -1,4 +1,9 @@
 import { dash } from "@better-auth/infra";
+import { type BetterAuthOptions, betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { getSessionCookie } from "better-auth/cookies";
+import { nextCookies, toNextJsHandler } from "better-auth/next-js";
+
 import { db } from "@domainstack/db/client";
 import { createSubscription } from "@domainstack/db/queries";
 import * as schema from "@domainstack/db/schema";
@@ -13,18 +18,10 @@ import {
   handleSubscriptionRevoked,
   handleSubscriptionUncanceled,
 } from "@domainstack/polar";
-import {
-  checkout,
-  polar,
-  portal,
-  webhooks,
-} from "@domainstack/polar/better-auth/server";
+import { checkout, polar, portal, webhooks } from "@domainstack/polar/better-auth/server";
 import { Polar } from "@domainstack/polar/sdk";
 import { getRedis } from "@domainstack/redis";
-import { type BetterAuthOptions, betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { getSessionCookie } from "better-auth/cookies";
-import { nextCookies, toNextJsHandler } from "better-auth/next-js";
+
 import { buildOAuthProviders, validateOAuthCredentialPair } from "./providers";
 import { createRedisStorage } from "./storage";
 
@@ -39,9 +36,7 @@ if (!process.env.BETTER_AUTH_SECRET) {
 
 // Polar is optional, but webhook secret is required if Polar is enabled
 if (process.env.POLAR_ACCESS_TOKEN && !process.env.POLAR_WEBHOOK_SECRET) {
-  throw new Error(
-    "POLAR_WEBHOOK_SECRET is required when POLAR_ACCESS_TOKEN is set",
-  );
+  throw new Error("POLAR_WEBHOOK_SECRET is required when POLAR_ACCESS_TOKEN is set");
 }
 
 // Validate OAuth credential pairs
@@ -110,8 +105,7 @@ if (enabledProviders.length === 0) {
 const polarClient = process.env.POLAR_ACCESS_TOKEN
   ? new Polar({
       accessToken: process.env.POLAR_ACCESS_TOKEN,
-      server:
-        process.env.VERCEL_ENV === "production" ? "production" : "sandbox",
+      server: process.env.VERCEL_ENV === "production" ? "production" : "sandbox",
     })
   : null;
 
@@ -158,10 +152,7 @@ export const auth = betterAuth({
             });
           } catch (err) {
             // Don't block account deletion if Polar cleanup fails
-            logger.error(
-              { err, userId: user.id },
-              "failed to delete Polar customer",
-            );
+            logger.error({ err, userId: user.id }, "failed to delete Polar customer");
           }
         }
 
@@ -226,14 +217,12 @@ export const auth = betterAuth({
             use: [
               checkout({
                 products: getProductsForCheckout(),
-                successUrl:
-                  process.env.POLAR_SUCCESS_URL || "/dashboard?upgraded=true",
+                successUrl: process.env.POLAR_SUCCESS_URL || "/dashboard?upgraded=true",
                 authenticatedUsersOnly: true,
                 theme: "dark",
               }),
               portal(),
               webhooks({
-                // biome-ignore lint/style/noNonNullAssertion: webhook secret is validated above
                 secret: process.env.POLAR_WEBHOOK_SECRET!,
                 onSubscriptionCreated: handleSubscriptionCreated,
                 onSubscriptionActive: handleSubscriptionActive,
@@ -254,4 +243,4 @@ export const auth = betterAuth({
 export type Session = typeof auth.$Infer.Session;
 
 // Re-export Next.js utilities for consumers
-export { toNextJsHandler, getSessionCookie };
+export { getSessionCookie, toNextJsHandler };

@@ -1,10 +1,8 @@
-import {
-  deleteStaleUnverifiedDomains,
-  getStaleUnverifiedDomains,
-} from "@domainstack/db/queries";
-import { createLogger } from "@domainstack/logger";
 import { subDays } from "date-fns";
 import { NextResponse } from "next/server";
+
+import { deleteStaleUnverifiedDomains, getStaleUnverifiedDomains } from "@domainstack/db/queries";
+import { createLogger } from "@domainstack/logger";
 
 const logger = createLogger({ source: "cron/cleanup-stale-domains" });
 
@@ -22,9 +20,7 @@ const DELETE_BATCH_SIZE = 500;
  */
 export async function GET(request: Request) {
   // Verify the request is from Vercel Cron
-  if (
-    request.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`
-  ) {
+  if (request.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
     logger.warn("Unauthorized cron request");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -66,9 +62,6 @@ export async function GET(request: Request) {
     });
   } catch (err) {
     logger.error({ err }, "Cleanup stale domains failed");
-    return NextResponse.json(
-      { error: "Failed to cleanup stale domains" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to cleanup stale domains" }, { status: 500 });
   }
 }

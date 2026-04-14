@@ -2,7 +2,8 @@
   "extends": "@domainstack/typescript-config/base.json",
   "compilerOptions": {
     "declaration": true,
-    "declarationMap": true
+    "declarationMap": true,
+    "types": ["node"]
   },
   "include": ["src/**/*"]
 }

@@ -2,6 +2,8 @@
  * HTML meta tag parsing for SEO data extraction.
  */
 
+import * as cheerio from "cheerio";
+
 import type {
   GeneralMeta,
   OpenGraphMeta,
@@ -9,7 +11,7 @@ import type {
   SeoPreview,
   TwitterMeta,
 } from "@domainstack/types";
-import * as cheerio from "cheerio";
+
 import { resolveUrlMaybe, sanitizeText } from "./utils";
 
 /**
@@ -23,9 +25,7 @@ export function parseHtmlMeta(html: string, finalUrl: string): SeoMeta {
   const $ = cheerio.load(html);
 
   const titleTag = sanitizeText($("title").first().text());
-  const descriptionTag = sanitizeText(
-    $('meta[name="description"]').attr("content") ?? "",
-  );
+  const descriptionTag = sanitizeText($('meta[name="description"]').attr("content") ?? "");
   const canonicalHref = $('link[rel="canonical"]').attr("href") ?? "";
   const robotsMeta = $('meta[name="robots"]').attr("content") ?? "";
   const generatorMeta = $('meta[name="generator"]').attr("content") ?? "";
@@ -51,9 +51,7 @@ export function parseHtmlMeta(html: string, finalUrl: string): SeoMeta {
     card: pickMetaAttr($, "name", "twitter:card"),
     title: pickMetaAttr($, "name", "twitter:title"),
     description: pickMetaAttr($, "name", "twitter:description"),
-    image:
-      pickMetaAttr($, "name", "twitter:image") ??
-      pickMetaAttr($, "name", "twitter:image:src"),
+    image: pickMetaAttr($, "name", "twitter:image") ?? pickMetaAttr($, "name", "twitter:image:src"),
   };
 
   const general: GeneralMeta = {
@@ -66,12 +64,9 @@ export function parseHtmlMeta(html: string, finalUrl: string): SeoMeta {
     robots: sanitizeText(robotsMeta) || undefined,
   };
 
-  general.canonical =
-    resolveUrlMaybe(general.canonical, finalUrl) ?? general.canonical;
+  general.canonical = resolveUrlMaybe(general.canonical, finalUrl) ?? general.canonical;
   og.url = resolveUrlMaybe(og.url, finalUrl) ?? og.url;
-  og.images = og.images
-    ?.map((i) => resolveUrlMaybe(i, finalUrl))
-    .filter(Boolean) as string[];
+  og.images = og.images?.map((i) => resolveUrlMaybe(i, finalUrl)).filter(Boolean) as string[];
   if (tw.image) tw.image = resolveUrlMaybe(tw.image, finalUrl) ?? tw.image;
 
   return {
@@ -97,11 +92,7 @@ function pickMetaAttr(
 /**
  * Collect multiple meta tag values (e.g., multiple og:image tags).
  */
-function collectMetaMulti(
-  $: cheerio.CheerioAPI,
-  attr: "name" | "property",
-  key: string,
-): string[] {
+function collectMetaMulti($: cheerio.CheerioAPI, attr: "name" | "property", key: string): string[] {
   const out: string[] = [];
   $(`meta[${attr}="${key}"]`).each((_i, el) => {
     const v = sanitizeText($(el).attr("content") ?? "");
@@ -119,20 +110,12 @@ function collectMetaMulti(
  * @param finalUrl - Fallback URL if no canonical is found
  * @returns Preview data for social sharing
  */
-export function selectPreview(
-  meta: SeoMeta | null,
-  finalUrl: string,
-): SeoPreview {
-  const title =
-    meta?.openGraph.title || meta?.twitter.title || meta?.general.title || null;
+export function selectPreview(meta: SeoMeta | null, finalUrl: string): SeoPreview {
+  const title = meta?.openGraph.title || meta?.twitter.title || meta?.general.title || null;
   const description =
-    meta?.openGraph.description ||
-    meta?.twitter.description ||
-    meta?.general.description ||
-    null;
+    meta?.openGraph.description || meta?.twitter.description || meta?.general.description || null;
   const image = meta?.openGraph.images?.[0] || meta?.twitter.image || null;
-  const canonicalUrl =
-    meta?.general.canonical || meta?.openGraph.url || finalUrl;
+  const canonicalUrl = meta?.general.canonical || meta?.openGraph.url || finalUrl;
   return { title, description, image, imageUploaded: null, canonicalUrl };
 }
 

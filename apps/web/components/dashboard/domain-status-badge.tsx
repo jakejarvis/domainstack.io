@@ -1,17 +1,15 @@
-import type {
-  VerificationMethod,
-  VerificationStatus,
-} from "@domainstack/constants";
-import { VERIFICATION_GRACE_PERIOD_DAYS } from "@domainstack/constants";
-import { cn } from "@domainstack/ui/utils";
 import {
   IconAlertTriangle,
   IconProgressAlert,
   IconRosetteDiscountCheck,
 } from "@tabler/icons-react";
 import { differenceInDays } from "date-fns";
+
 import { BadgeWithTooltip } from "@/components/dashboard/badge-with-tooltip";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
+import type { VerificationMethod, VerificationStatus } from "@domainstack/constants";
+import { VERIFICATION_GRACE_PERIOD_DAYS } from "@domainstack/constants";
+import { cn } from "@domainstack/ui/utils";
 
 type DomainStatusBadgeProps = {
   verified: boolean;
@@ -37,11 +35,7 @@ export function DomainStatusBadge({
   if (verified && verificationStatus === "failing") {
     const daysRemaining =
       verificationFailedAt && now
-        ? Math.max(
-            0,
-            VERIFICATION_GRACE_PERIOD_DAYS -
-              differenceInDays(now, verificationFailedAt),
-          )
+        ? Math.max(0, VERIFICATION_GRACE_PERIOD_DAYS - differenceInDays(now, verificationFailedAt))
         : VERIFICATION_GRACE_PERIOD_DAYS;
 
     const tooltipText =
@@ -53,10 +47,7 @@ export function DomainStatusBadge({
       <BadgeWithTooltip
         icon={IconAlertTriangle}
         label="Failing"
-        className={cn(
-          "border-danger-border bg-danger/20 text-danger-foreground",
-          className,
-        )}
+        className={cn("border-danger-border bg-danger/20 text-danger-foreground", className)}
         tooltipContent={tooltipText}
         onClick={onClick}
       />
@@ -69,10 +60,7 @@ export function DomainStatusBadge({
       <BadgeWithTooltip
         icon={IconRosetteDiscountCheck}
         label="Verified"
-        className={cn(
-          "border-success-border bg-success/20 text-success-foreground",
-          className,
-        )}
+        className={cn("border-success-border bg-success/20 text-success-foreground", className)}
         tooltipContent={
           verificationMethod
             ? `Using ${verificationMethod === "dns_txt" ? "TXT record" : verificationMethod === "html_file" ? "file" : "meta tag"}`
@@ -87,10 +75,7 @@ export function DomainStatusBadge({
     <BadgeWithTooltip
       icon={IconProgressAlert}
       label="Pending"
-      className={cn(
-        "border-warning-border bg-warning/20 text-warning-foreground",
-        className,
-      )}
+      className={cn("border-warning-border bg-warning/20 text-warning-foreground", className)}
       tooltipContent={onClick ? "Complete verification" : undefined}
       onClick={onClick}
     />

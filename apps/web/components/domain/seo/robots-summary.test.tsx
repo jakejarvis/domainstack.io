@@ -1,6 +1,8 @@
-import type { SeoResponse } from "@domainstack/types";
 import { describe, expect, it, vi } from "vitest";
+
 import { render, screen } from "@/mocks/react";
+import type { SeoResponse } from "@domainstack/types";
+
 import { RobotsSummary } from "./robots-summary";
 
 vi.mock("@/components/ui/tooltip", () => ({
@@ -77,19 +79,14 @@ describe("RobotsSummary", () => {
       };
       render(<RobotsSummary domain="test.invalid" robots={robots} />);
       // When there are no groups and no sitemaps, only the header with link is shown
-      expect(
-        screen.getByRole("link", { name: /robots\.txt/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /robots\.txt/i })).toBeInTheDocument();
     });
 
     it("shows appropriate message when robots.txt has no rules but has sitemaps", () => {
       const robots: SeoResponse["robots"] = {
         fetched: true,
         groups: [],
-        sitemaps: [
-          "https://test.invalid/sitemap.xml",
-          "https://test.invalid/sitemap-2.xml",
-        ],
+        sitemaps: ["https://test.invalid/sitemap.xml", "https://test.invalid/sitemap-2.xml"],
       };
       render(<RobotsSummary domain="test.invalid" robots={robots} />);
       expect(screen.getByText(/No crawl rules detected/i)).toBeInTheDocument();
@@ -181,9 +178,7 @@ describe("RobotsSummary", () => {
         }),
       ).toBeInTheDocument();
       // Third sitemap is hidden behind "Show more" button
-      expect(
-        screen.getByRole("button", { name: /Show 1 more/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Show 1 more/i })).toBeInTheDocument();
     });
 
     it("handles empty disallow value (allow all)", () => {
@@ -201,9 +196,7 @@ describe("RobotsSummary", () => {
       // Empty disallow means allow all - the message appears inside the accordion when opened
       // Since we're using mocked accordions, we can't test the message visibility
       // Just verify the component renders
-      expect(
-        screen.getByRole("link", { name: /robots\.txt/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /robots\.txt/i })).toBeInTheDocument();
     });
 
     it("renders allow and disallow filter buttons", () => {
@@ -224,12 +217,8 @@ describe("RobotsSummary", () => {
       // Get all buttons and find the filter buttons specifically
       const buttons = screen.getAllByRole("button");
       const allButton = buttons.find((btn) => btn.textContent?.includes("All"));
-      const allowButton = buttons.find((btn) =>
-        btn.textContent?.includes("Allow"),
-      );
-      const disallowButton = buttons.find((btn) =>
-        btn.textContent?.includes("Disallow"),
-      );
+      const allowButton = buttons.find((btn) => btn.textContent?.includes("Allow"));
+      const disallowButton = buttons.find((btn) => btn.textContent?.includes("Disallow"));
 
       expect(allButton).toBeInTheDocument();
       expect(allowButton).toBeInTheDocument();

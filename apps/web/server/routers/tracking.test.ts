@@ -1,13 +1,5 @@
 /* @vitest-environment node */
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Initialize PGlite before importing anything that uses the db
 const { makePGliteDb, closePGliteDb } = await import("@domainstack/db/testing");
@@ -15,7 +7,7 @@ const { db } = await makePGliteDb();
 
 // Mock workflow/api to avoid starting real workflows
 vi.mock("workflow/api", () => ({
-  start: vi.fn().mockResolvedValue({
+  start: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue({
     runId: "mock-run-id",
     returnValue: Promise.resolve({ success: true, data: {} }),
   }),
@@ -23,28 +15,29 @@ vi.mock("workflow/api", () => ({
 
 // Mock next/headers to avoid errors outside request context
 vi.mock("next/headers", () => ({
-  headers: vi.fn().mockResolvedValue(new Map()),
+  headers: vi.fn<() => Promise<Map<string, string>>>().mockResolvedValue(new Map()),
 }));
 
 // Mock next/server after() to be a no-op
 vi.mock("next/server", () => ({
-  after: vi.fn((fn) => fn()),
+  after: vi.fn<(fn: () => unknown) => unknown>((fn) => fn()),
 }));
 
 // Mock email package to avoid sending real emails
 vi.mock("@domainstack/email", () => ({
-  sendEmail: vi.fn().mockResolvedValue({ error: null }),
+  sendEmail: vi.fn<(...args: unknown[]) => Promise<{ error: null }>>().mockResolvedValue({
+    error: null,
+  }),
 }));
 
 // Mock email templates to avoid rendering React Email components in tests
 vi.mock("@domainstack/email/templates/verification-instructions", () => ({
-  default: vi.fn().mockReturnValue(null),
+  default: vi.fn<(...args: unknown[]) => null>().mockReturnValue(null),
 }));
 
 // Now import modules that depend on the db
-const { domains, userSubscriptions, users, userTrackedDomains } = await import(
-  "@domainstack/db/schema"
-);
+const { domains, userSubscriptions, users, userTrackedDomains } =
+  await import("@domainstack/db/schema");
 const { sendEmail } = await import("@domainstack/email");
 const { start } = await import("workflow/api");
 const { createCaller } = await import("@/server/routers/_app");
@@ -152,17 +145,15 @@ describe("tracking router", () => {
     it("rejects unauthenticated requests to listDomains", async () => {
       const caller = createUnauthenticatedCaller();
 
-      await expect(caller.tracking.listDomains()).rejects.toThrow(
-        "must be logged in",
-      );
+      await expect(caller.tracking.listDomains()).rejects.toThrow("must be logged in");
     });
 
     it("rejects unauthenticated requests to addDomain", async () => {
       const caller = createUnauthenticatedCaller();
 
-      await expect(
-        caller.tracking.addDomain({ domain: TEST_DOMAIN }),
-      ).rejects.toThrow("must be logged in");
+      await expect(caller.tracking.addDomain({ domain: TEST_DOMAIN })).rejects.toThrow(
+        "must be logged in",
+      );
     });
   });
 
@@ -306,9 +297,9 @@ describe("tracking router", () => {
         verificationMethod: "dns_txt",
       });
 
-      await expect(
-        caller.tracking.addDomain({ domain: TEST_DOMAIN }),
-      ).rejects.toThrow("already tracking");
+      await expect(caller.tracking.addDomain({ domain: TEST_DOMAIN })).rejects.toThrow(
+        "already tracking",
+      );
     });
 
     it("normalizes domain input", async () => {
@@ -325,9 +316,9 @@ describe("tracking router", () => {
     it("rejects invalid domain", async () => {
       const caller = createAuthenticatedCaller();
 
-      await expect(
-        caller.tracking.addDomain({ domain: "not-a-domain" }),
-      ).rejects.toThrow("Invalid domain");
+      await expect(caller.tracking.addDomain({ domain: "not-a-domain" })).rejects.toThrow(
+        "Invalid domain",
+      );
     });
   });
 
@@ -351,8 +342,8 @@ describe("tracking router", () => {
       expect(result.success).toBe(true);
 
       // Verify it was deleted
-      const domains = await caller.tracking.listDomains();
-      expect(domains).toEqual([]);
+      const listedDomains = await caller.tracking.listDomains();
+      expect(listedDomains).toEqual([]);
     });
 
     it("returns NOT_FOUND for non-existent domain", async () => {

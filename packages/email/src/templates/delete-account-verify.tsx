@@ -17,10 +17,7 @@ export type DeleteAccountVerifyEmailProps = {
   baseUrl: string;
 };
 
-function DeleteAccountVerifyEmail({
-  userName,
-  confirmUrl,
-}: DeleteAccountVerifyEmailProps) {
+function DeleteAccountVerifyEmail({ userName, confirmUrl }: DeleteAccountVerifyEmailProps) {
   const previewText = "Confirm your account deletion request";
 
   return (
@@ -30,8 +27,8 @@ function DeleteAccountVerifyEmail({
       <EmailText>Hi {userName},</EmailText>
 
       <EmailText>
-        We received a request to permanently delete your Domainstack account.
-        This action is <strong>irreversible</strong>.
+        We received a request to permanently delete your Domainstack account. This action is{" "}
+        <strong>irreversible</strong>.
       </EmailText>
 
       <EmailBox variant="danger">
@@ -45,8 +42,8 @@ function DeleteAccountVerifyEmail({
       </EmailBox>
 
       <EmailText>
-        If you did not request this, you can safely ignore this email. Your
-        account will remain active.
+        If you did not request this, you can safely ignore this email. Your account will remain
+        active.
       </EmailText>
 
       <EmailText>To proceed with deletion, click the button below:</EmailText>
@@ -55,17 +52,14 @@ function DeleteAccountVerifyEmail({
         Delete My Account
       </EmailButton>
 
-      <EmailMutedText>
-        This link will expire in 1&nbsp;hour for security purposes.
-      </EmailMutedText>
+      <EmailMutedText>This link will expire in 1&nbsp;hour for security purposes.</EmailMutedText>
 
       <EmailHr />
 
       <EmailFooter>
         You received this email because a deletion request was made for your{" "}
-        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>{" "}
-        account. If you didn&apos;t make this request, please secure your
-        account.
+        <EmailLink href="https://domainstack.io">Domainstack</EmailLink> account. If you didn&apos;t
+        make this request, please secure your account.
       </EmailFooter>
     </EmailLayout>
   );

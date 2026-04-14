@@ -1,13 +1,11 @@
-import type { HostingResponse } from "@domainstack/types";
 import type { InferInsertModel } from "drizzle-orm";
 import { eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
+
+import type { HostingResponse } from "@domainstack/types";
+
 import { db } from "../client";
-import {
-  domains,
-  hosting as hostingTable,
-  providers as providersTable,
-} from "../schema";
+import { domains, hosting as hostingTable, providers as providersTable } from "../schema";
 import type { CacheResult } from "../types";
 
 type HostingInsert = InferInsertModel<typeof hostingTable>;
@@ -22,9 +20,7 @@ type HostingInsert = InferInsertModel<typeof hostingTable>;
  * Optimized: Uses a single query with JOINs to fetch domain and hosting data,
  * reducing from 2 round trips to 1.
  */
-export async function getCachedHosting(
-  domain: string,
-): Promise<CacheResult<HostingResponse>> {
+export async function getCachedHosting(domain: string): Promise<CacheResult<HostingResponse>> {
   const now = Date.now();
 
   const hp = alias(providersTable, "hp");

@@ -243,9 +243,7 @@ const DNS_RECORDS: Record<string, Record<string, unknown[]>> = {
     A: [{ name: "owner.example.", type: 1, TTL: 60, data: "9.9.9.9" }],
   },
   "provider-create.example": {
-    A: [
-      { name: "provider-create.example.", type: 1, TTL: 60, data: "1.2.3.4" },
-    ],
+    A: [{ name: "provider-create.example.", type: 1, TTL: 60, data: "1.2.3.4" }],
     MX: [
       {
         name: "provider-create.example.",
@@ -381,10 +379,7 @@ const rdapBootstrapHandler = () =>
     services: [
       [
         ["com", "net", "test"],
-        [
-          "https://rdap.verisign.com/com/v1/",
-          "http://rdap.verisign.com/com/v1/",
-        ],
+        ["https://rdap.verisign.com/com/v1/", "http://rdap.verisign.com/com/v1/"],
       ],
       [["io"], ["https://rdap.nic.io/domain/"]],
     ],
@@ -511,10 +506,9 @@ const verificationFileHandler = () =>
 // Mock 1x1 transparent PNG
 const iconHandler = () => {
   const buffer = new Uint8Array([
-    137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 1, 0,
-    0, 0, 1, 8, 6, 0, 0, 0, 31, 21, 196, 137, 0, 0, 0, 10, 73, 68, 65, 84, 120,
-    156, 99, 0, 1, 0, 0, 5, 0, 1, 13, 10, 45, 180, 0, 0, 0, 0, 73, 69, 78, 68,
-    174, 66, 96, 130,
+    137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 1, 0, 0, 0, 1, 8, 6, 0,
+    0, 0, 31, 21, 196, 137, 0, 0, 0, 10, 73, 68, 65, 84, 120, 156, 99, 0, 1, 0, 0, 5, 0, 1, 13, 10,
+    45, 180, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
   ]);
 
   return new HttpResponse(buffer, {
@@ -561,10 +555,7 @@ export const handlers = [
   http.get("https://data.iana.org/rdap/dns.json", rdapBootstrapHandler),
 
   // RDAP Servers (mock generic paths or specific known ones)
-  http.get(
-    "https://rdap.verisign.com/com/v1/domain/:domain",
-    rdapDomainHandler,
-  ),
+  http.get("https://rdap.verisign.com/com/v1/domain/:domain", rdapDomainHandler),
   http.get("https://rdap.nic.io/domain/:domain", rdapDomainHandler),
 
   // Resend API
@@ -573,15 +564,9 @@ export const handlers = [
   http.delete("https://api.resend.com/contacts/*", resendContactHandler),
 
   // Pricing Providers
-  http.post(
-    "https://api.porkbun.com/api/json/v3/pricing/get",
-    porkbunPricingHandler,
-  ),
+  http.post("https://api.porkbun.com/api/json/v3/pricing/get", porkbunPricingHandler),
   http.get("https://cfdomainpricing.com/prices.json", cloudflarePricingHandler),
-  http.get(
-    "https://api.dynadot.com/restful/v1/domains/get_tld_price",
-    dynadotPricingHandler,
-  ),
+  http.get("https://api.dynadot.com/restful/v1/domains/get_tld_price", dynadotPricingHandler),
 
   // Domain Content (SEO/Verification)
   // Match common test domains
@@ -610,14 +595,8 @@ export const handlers = [
   http.all("https://provider-create.example/", genericDomainHandler),
 
   // Verification File
-  http.get(
-    "http://*/.well-known/domainstack-verify.html",
-    verificationFileHandler,
-  ),
-  http.get(
-    "https://*/.well-known/domainstack-verify.html",
-    verificationFileHandler,
-  ),
+  http.get("http://*/.well-known/domainstack-verify.html", verificationFileHandler),
+  http.get("https://*/.well-known/domainstack-verify.html", verificationFileHandler),
 
   // Favicons/Icons
   http.get("http://*/favicon.ico", iconHandler),

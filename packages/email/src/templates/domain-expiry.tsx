@@ -42,10 +42,7 @@ function DomainExpiryEmail({
           <span style={urgent}>tomorrow</span>
         ) : (
           <>
-            in{" "}
-            <span style={isUrgent ? urgent : highlight}>
-              {daysRemaining} days
-            </span>
+            in <span style={isUrgent ? urgent : highlight}>{daysRemaining} days</span>
           </>
         )}{" "}
         on <strong>{expirationDate}</strong>.
@@ -62,8 +59,8 @@ function DomainExpiryEmail({
       {isUrgent && (
         <EmailBox variant="danger">
           <EmailBoxText variant="danger">
-            <strong>Action Required:</strong> Renew your domain immediately to
-            avoid service interruption.
+            <strong>Action Required:</strong> Renew your domain immediately to avoid service
+            interruption.
           </EmailBoxText>
         </EmailBox>
       )}
@@ -79,9 +76,8 @@ function DomainExpiryEmail({
 
       <EmailFooter>
         You received this email because you&apos;re tracking {domainName} on{" "}
-        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. You
-        can manage your notification settings in your{" "}
-        <EmailLink href={`${baseUrl}/settings`}>dashboard</EmailLink>.
+        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. You can manage your
+        notification settings in your <EmailLink href={`${baseUrl}/settings`}>dashboard</EmailLink>.
       </EmailFooter>
     </EmailLayout>
   );

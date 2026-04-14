@@ -1,14 +1,5 @@
 "use client";
 
-import { Button } from "@domainstack/ui/button";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@domainstack/ui/empty";
 import { IconAlertTriangle, IconRefresh } from "@tabler/icons-react";
 import {
   dehydrate,
@@ -19,6 +10,7 @@ import {
 } from "@tanstack/react-query";
 import { useSetAtom } from "jotai";
 import { Suspense, useEffect, useRef, useState } from "react";
+
 import { CreateIssueButton } from "@/components/create-issue-button";
 import { CertificatesSection } from "@/components/domain/certificates/certificates-section";
 import { CertificatesSectionSkeleton } from "@/components/domain/certificates/certificates-section-skeleton";
@@ -40,14 +32,19 @@ import { DomainUnregisteredCard } from "@/components/domain/unregistered-card";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSectionTracking } from "@/hooks/use-section-tracking";
 import { chatContextAtom } from "@/lib/atoms/chat-atoms";
-import {
-  HEADER_HEIGHT,
-  SCROLL_PADDING,
-  SECTION_NAV_HEIGHT,
-} from "@/lib/constants/layout";
+import { HEADER_HEIGHT, SCROLL_PADDING, SECTION_NAV_HEIGHT } from "@/lib/constants/layout";
 import { sections } from "@/lib/constants/sections";
 import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
 import { useTRPC } from "@/lib/trpc/client";
+import { Button } from "@domainstack/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@domainstack/ui/empty";
 
 function resolveScrollMargin(isMobile: boolean) {
   const headerHeight = !isMobile ? HEADER_HEIGHT : 0;
@@ -108,9 +105,7 @@ function SuspendedCertificatesSection({ domain }: { domain: string }) {
   });
 
   if (!data.success) {
-    return (
-      <SectionFailedAlert section={sections.certificates} error={data.error} />
-    );
+    return <SectionFailedAlert section={sections.certificates} error={data.error} />;
   }
   return <CertificatesSection domain={domain} data={data.data} />;
 }
@@ -161,12 +156,8 @@ export function DomainReportClient({ domain }: { domain: string }) {
 
   void Promise.all([
     queryClient.prefetchQuery(trpc.domain.getHosting.queryOptions({ domain })),
-    queryClient.prefetchQuery(
-      trpc.domain.getDnsRecords.queryOptions({ domain }),
-    ),
-    queryClient.prefetchQuery(
-      trpc.domain.getCertificates.queryOptions({ domain }),
-    ),
+    queryClient.prefetchQuery(trpc.domain.getDnsRecords.queryOptions({ domain })),
+    queryClient.prefetchQuery(trpc.domain.getCertificates.queryOptions({ domain })),
     queryClient.prefetchQuery(trpc.domain.getHeaders.queryOptions({ domain })),
     queryClient.prefetchQuery(trpc.domain.getSeo.queryOptions({ domain })),
   ]);
@@ -245,11 +236,7 @@ export function DomainReportClient({ domain }: { domain: string }) {
               Retry
             </Button>
             <CreateIssueButton
-              error={
-                registrationError instanceof Error
-                  ? registrationError
-                  : undefined
-              }
+              error={registrationError instanceof Error ? registrationError : undefined}
               variant="outline"
               size="sm"
             />

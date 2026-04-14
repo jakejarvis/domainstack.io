@@ -1,13 +1,11 @@
-import { createLogger } from "@domainstack/logger";
 import * as ipaddr from "ipaddr.js";
+
+import { createLogger } from "@domainstack/logger";
+
 import { isExpectedDnsError, resolveHostIps } from "./dns";
 import { SafeFetchError } from "./errors";
 import { isPrivateIp } from "./ip";
-import type {
-  SafeFetchLogger,
-  SafeFetchOptions,
-  SafeFetchResult,
-} from "./types";
+import type { SafeFetchLogger, SafeFetchOptions, SafeFetchResult } from "./types";
 import { withTimeout } from "./utils";
 
 const defaultLogger = createLogger({ source: "safe-fetch" });
@@ -32,9 +30,7 @@ const DEFAULT_MAX_REDIRECTS = 3;
  * HTTP errors (4xx, 5xx) are returned as successful responses.
  * Only infrastructure errors throw SafeFetchError.
  */
-export async function safeFetch(
-  opts: SafeFetchOptions,
-): Promise<SafeFetchResult> {
+export async function safeFetch(opts: SafeFetchOptions): Promise<SafeFetchResult> {
   const {
     userAgent,
     timeoutMs = DEFAULT_TIMEOUT_MS,
@@ -83,18 +79,12 @@ export async function safeFetch(
     // Handle redirects
     if (isRedirect(response)) {
       if (redirectCount === maxRedirects) {
-        throw new SafeFetchError(
-          "redirect_limit",
-          `Too many redirects fetching ${currentUrl}`,
-        );
+        throw new SafeFetchError("redirect_limit", `Too many redirects fetching ${currentUrl}`);
       }
 
       const location = response.headers.get("location");
       if (!location) {
-        throw new SafeFetchError(
-          "invalid_response",
-          "Redirect response missing Location header",
-        );
+        throw new SafeFetchError("invalid_response", "Redirect response missing Location header");
       }
 
       const nextUrl = new URL(location, currentUrl);
@@ -131,10 +121,7 @@ export async function safeFetch(
       fallbackToGetOnHeadFailure &&
       !retryingWithGet
     ) {
-      logger.debug(
-        { url: currentUrl.toString() },
-        "HEAD returned 405, retrying with GET",
-      );
+      logger.debug({ url: currentUrl.toString() }, "HEAD returned 405, retrying with GET");
       method = "GET";
       retryingWithGet = true;
       currentUrl = initialUrl;
@@ -171,10 +158,7 @@ async function ensureUrlAllowed(
 
   // Protocol check
   if (protocol !== "https:" && !(opts.allowHttp && protocol === "http:")) {
-    throw new SafeFetchError(
-      "protocol_not_allowed",
-      `Protocol ${protocol} not allowed`,
-    );
+    throw new SafeFetchError("protocol_not_allowed", `Protocol ${protocol} not allowed`);
   }
 
   const hostname = url.hostname.trim().toLowerCase();
@@ -183,19 +167,13 @@ async function ensureUrlAllowed(
   }
 
   // Blocked hostnames
-  if (
-    BLOCKED_HOSTNAMES.has(hostname) ||
-    BLOCKED_SUFFIXES.some((s) => hostname.endsWith(s))
-  ) {
+  if (BLOCKED_HOSTNAMES.has(hostname) || BLOCKED_SUFFIXES.some((s) => hostname.endsWith(s))) {
     throw new SafeFetchError("host_blocked", `Host ${hostname} is blocked`);
   }
 
   // Allowlist check
   if (opts.allowedHosts.length > 0 && !opts.allowedHosts.includes(hostname)) {
-    throw new SafeFetchError(
-      "host_not_allowed",
-      `Host ${hostname} is not in allow list`,
-    );
+    throw new SafeFetchError("host_not_allowed", `Host ${hostname} is not in allow list`);
   }
 
   // If hostname is already an IP, check it directly
@@ -231,10 +209,7 @@ async function ensureUrlAllowed(
 
   // Check if any resolved IP is private
   if (records.some((r) => isPrivateIp(r.address))) {
-    throw new SafeFetchError(
-      "private_ip",
-      `DNS for ${hostname} resolved to private address`,
-    );
+    throw new SafeFetchError("private_ip", `DNS for ${hostname} resolved to private address`);
   }
 }
 
@@ -285,10 +260,7 @@ async function readBodyWithLimit(
     const buf = Buffer.from(await response.arrayBuffer());
     if (buf.byteLength > maxBytes) {
       if (truncateOnLimit) return buf.subarray(0, maxBytes);
-      throw new SafeFetchError(
-        "size_exceeded",
-        `Response exceeded ${maxBytes} bytes`,
-      );
+      throw new SafeFetchError("size_exceeded", `Response exceeded ${maxBytes} bytes`);
     }
     return buf;
   }
@@ -306,10 +278,7 @@ async function readBodyWithLimit(
 
       if (received > maxBytes) {
         const overage = received - maxBytes;
-        const partial = Buffer.from(value).subarray(
-          0,
-          value.byteLength - overage,
-        );
+        const partial = Buffer.from(value).subarray(0, value.byteLength - overage);
         if (partial.length > 0) chunks.push(partial);
 
         try {
@@ -322,10 +291,7 @@ async function readBodyWithLimit(
           return Buffer.concat(chunks, maxBytes);
         }
 
-        throw new SafeFetchError(
-          "size_exceeded",
-          `Response exceeded ${maxBytes} bytes`,
-        );
+        throw new SafeFetchError("size_exceeded", `Response exceeded ${maxBytes} bytes`);
       }
 
       chunks.push(Buffer.from(value));

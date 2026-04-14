@@ -1,5 +1,6 @@
 import { Slider as SliderPrimitive } from "@base-ui/react/slider";
 import { useMemo } from "react";
+
 import { cn } from "../utils";
 
 function Slider({
@@ -11,12 +12,7 @@ function Slider({
   ...props
 }: SliderPrimitive.Root.Props) {
   const _values = useMemo(
-    () =>
-      Array.isArray(value)
-        ? value
-        : Array.isArray(defaultValue)
-          ? defaultValue
-          : [min, max],
+    () => (Array.isArray(value) ? value : Array.isArray(defaultValue) ? defaultValue : [min, max]),
     [value, defaultValue, min, max],
   );
 
@@ -28,7 +24,7 @@ function Slider({
       min={min}
       max={max}
       className={cn(
-        "relative flex w-full select-none flex-col data-[disabled]:opacity-50",
+        "relative flex w-full flex-col select-none data-[disabled]:opacity-50",
         className,
       )}
       {...props}
@@ -39,7 +35,7 @@ function Slider({
       >
         <SliderPrimitive.Track
           data-slot="slider-track"
-          className="relative grow overflow-hidden rounded-full bg-muted data-[orientation=horizontal]:h-1.5 data-[orientation=vertical]:h-full data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-1.5"
+          className="relative grow overflow-hidden rounded-full bg-muted data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5"
         >
           <SliderPrimitive.Indicator
             data-slot="slider-range"
@@ -50,9 +46,8 @@ function Slider({
               data-slot="slider-thumb"
               // Base UI needs explicit index when multiple thumbs are used.
               index={index}
-              // biome-ignore lint/suspicious/noArrayIndexKey: this is fine
               key={`thumb-${_values.length}-${index}`}
-              className="size-4 rounded-full border border-primary bg-background shadow-sm ring-ring/50 transition-[color,box-shadow] hover:ring-4 focus-visible:outline-hidden focus-visible:ring-4 data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+              className="size-4 rounded-full border border-primary bg-background shadow-sm ring-ring/50 transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
             />
           ))}
         </SliderPrimitive.Track>

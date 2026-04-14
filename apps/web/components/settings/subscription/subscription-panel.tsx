@@ -1,12 +1,13 @@
-import { Button } from "@domainstack/ui/button";
-import { Spinner } from "@domainstack/ui/spinner";
 import { IconCreditCard } from "@tabler/icons-react";
 import { format } from "date-fns";
+
 import { PlanStatusCard } from "@/components/plan-status-card";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { SubscriptionSkeleton } from "@/components/settings/settings-skeleton";
 import { UpgradeCard } from "@/components/upgrade-card";
 import { useSubscription } from "@/hooks/use-subscription";
+import { Button } from "@domainstack/ui/button";
+import { Spinner } from "@domainstack/ui/spinner";
 
 export function SubscriptionPanel() {
   // Subscription query and hooks
@@ -24,12 +25,7 @@ export function SubscriptionPanel() {
   }
 
   if (isSubscriptionError) {
-    return (
-      <SettingsCard
-        title="Plan"
-        description="Failed to load subscription information"
-      />
-    );
+    return <SettingsCard title="Plan" description="Failed to load subscription information" />;
   }
 
   return (
@@ -65,9 +61,8 @@ export function SubscriptionPanel() {
               Manage Subscription
             </Button>
             {subscription?.endsAt && (
-              <p className="text-center text-muted-foreground text-xs">
-                Your Pro access continues until{" "}
-                {format(subscription.endsAt, "MMMM d, yyyy")}
+              <p className="text-center text-xs text-muted-foreground">
+                Your Pro access continues until {format(subscription.endsAt, "MMMM d, yyyy")}
               </p>
             )}
           </div>

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { createInitialState, verificationReducer } from "./verification-state";
 
 describe("createInitialState", () => {
@@ -410,9 +411,7 @@ describe("verificationReducer", () => {
           method: "meta_tag",
         }),
       ).toEqual(step3State);
-      expect(verificationReducer(step3State, { type: "GO_BACK" })).toEqual(
-        step3State,
-      );
+      expect(verificationReducer(step3State, { type: "GO_BACK" })).toEqual(step3State);
     });
 
     it("RESET can exit step 3", () => {

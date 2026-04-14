@@ -3,6 +3,7 @@ import { after } from "next/server";
 import { PostHog } from "posthog-node";
 import { cache } from "react";
 import { v4 as uuidv4 } from "uuid";
+
 import type { IdentifyProperties, IdentifySetOnceProperties } from "./types";
 
 // PostHog clients maintain background flushers; keep a single shared instance
@@ -31,9 +32,7 @@ const getDistinctId = cache(async (): Promise<string> => {
 
   try {
     const cookieStore = await cookies();
-    const phCookie = cookieStore.get(
-      `ph_${process.env.NEXT_PUBLIC_POSTHOG_KEY}_posthog`,
-    );
+    const phCookie = cookieStore.get(`ph_${process.env.NEXT_PUBLIC_POSTHOG_KEY}_posthog`);
     if (phCookie?.value) {
       try {
         const parsed = JSON.parse(decodeURIComponent(phCookie.value));
@@ -45,8 +44,7 @@ const getDistinctId = cache(async (): Promise<string> => {
   } catch (err) {
     // cookies() throws when called outside request scope (e.g., during prerender)
     // Log unexpected errors that don't match the known pattern
-    const isExpectedError =
-      err instanceof Error && err.message.includes("outside a request scope");
+    const isExpectedError = err instanceof Error && err.message.includes("outside a request scope");
     if (!isExpectedError) {
       // Use console.warn to avoid circular dependency with logger
       console.warn("unexpected error accessing cookies", err);
@@ -107,16 +105,10 @@ export const analytics = {
     after(() => doIdentify());
   },
 
-  track: (
-    event: string,
-    properties: Record<string, unknown>,
-    distinctId?: string,
-  ) => {
+  track: (event: string, properties: Record<string, unknown>, distinctId?: string) => {
     // Start getDistinctId() promise outside of after() to trigger cookies()
     // during the request phase (not inside the after callback)
-    const distinctIdPromise = distinctId
-      ? Promise.resolve(distinctId)
-      : getDistinctId();
+    const distinctIdPromise = distinctId ? Promise.resolve(distinctId) : getDistinctId();
 
     const doTrack = async () => {
       const client = getServerPosthog();
@@ -140,16 +132,10 @@ export const analytics = {
   /**
    * @internal Use logger.error() instead, which automatically tracks exceptions.
    */
-  trackException: (
-    error: Error,
-    properties: Record<string, unknown>,
-    distinctId?: string,
-  ) => {
+  trackException: (error: Error, properties: Record<string, unknown>, distinctId?: string) => {
     // Start getDistinctId() promise outside of after() to trigger cookies()
     // during the request phase (not inside the after callback)
-    const distinctIdPromise = distinctId
-      ? Promise.resolve(distinctId)
-      : getDistinctId();
+    const distinctIdPromise = distinctId ? Promise.resolve(distinctId) : getDistinctId();
 
     const doTrack = async () => {
       const client = getServerPosthog();

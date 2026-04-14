@@ -1,6 +1,7 @@
-import { Alert, AlertDescription } from "@domainstack/ui/alert";
 import { IconFlag, IconSearch } from "@tabler/icons-react";
 import Link from "next/link";
+
+import { Alert, AlertDescription } from "@domainstack/ui/alert";
 
 export function RedirectedAlert({
   domain,

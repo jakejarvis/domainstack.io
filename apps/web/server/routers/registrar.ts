@@ -1,4 +1,5 @@
-import z from "zod";
+import { z } from "zod";
+
 import { providers } from "@/lib/pricing";
 import { createTRPCRouter, publicProcedure } from "@/trpc/init";
 
@@ -10,12 +11,8 @@ export const registrarRouter = createTRPCRouter({
   getPricing: publicProcedure
     .input(z.object({ tld: z.string().min(1) }))
     .query(async ({ input }) => {
-      const normalizedTld = (input.tld ?? "")
-        .trim()
-        .toLowerCase()
-        .replace(/^\./, "");
-      if (!normalizedTld)
-        return { success: false, data: { tld: null, providers: [] } };
+      const normalizedTld = (input.tld ?? "").trim().toLowerCase().replace(/^\./, "");
+      if (!normalizedTld) return { success: false, data: { tld: null, providers: [] } };
 
       const results = await Promise.all(
         providers
@@ -35,9 +32,7 @@ export const registrarRouter = createTRPCRouter({
         success: true,
         data: {
           tld: normalizedTld,
-          providers: results.filter(
-            (r): r is NonNullable<typeof r> => r !== null,
-          ),
+          providers: results.filter((r): r is NonNullable<typeof r> => r !== null),
         },
       };
     }),

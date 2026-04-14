@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { simpleHash } from "./simple-hash";
 
 describe("simpleHash", () => {
@@ -11,12 +12,7 @@ describe("simpleHash", () => {
 
   it("returns non-negative integers", () => {
     // Test various inputs to ensure we always get positive numbers
-    const inputs = [
-      "test",
-      "hello world",
-      "a".repeat(100),
-      "\u0000\u0001\u0002",
-    ];
+    const inputs = ["test", "hello world", "a".repeat(100), "\u0000\u0001\u0002"];
     for (const input of inputs) {
       const result = simpleHash(input);
       expect(result).toBeGreaterThanOrEqual(0);

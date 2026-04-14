@@ -1,11 +1,9 @@
 import { eq, type InferSelectModel } from "drizzle-orm";
+
 import { db } from "../client";
 import { accounts, users } from "../schema";
 
-export type UserData = Pick<
-  InferSelectModel<typeof users>,
-  "id" | "name" | "email"
->;
+export type UserData = Pick<InferSelectModel<typeof users>, "id" | "name" | "email">;
 
 export interface LinkedAccount {
   providerId: string;
@@ -58,9 +56,7 @@ export async function getUserAvatarUrl(userId: string): Promise<string | null> {
  * Get the user's linked OAuth accounts.
  * Returns only provider IDs for security (no tokens or sensitive data).
  */
-export async function getLinkedAccounts(
-  userId: string,
-): Promise<LinkedAccount[]> {
+export async function getLinkedAccounts(userId: string): Promise<LinkedAccount[]> {
   const linkedAccounts = await db
     .select({
       providerId: accounts.providerId,

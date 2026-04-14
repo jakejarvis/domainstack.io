@@ -1,9 +1,4 @@
-import {
-  SiGithub,
-  SiGitlab,
-  SiGoogle,
-  SiVercel,
-} from "@icons-pack/react-simple-icons";
+import { SiGithub, SiGitlab, SiGoogle, SiVercel } from "@icons-pack/react-simple-icons";
 
 /**
  * OAuth provider constants for better-auth social providers.

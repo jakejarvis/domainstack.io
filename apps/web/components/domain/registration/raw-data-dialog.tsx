@@ -1,5 +1,14 @@
 "use client";
 
+import {
+  IconArrowsMinimize,
+  IconExternalLink,
+  IconRosetteDiscountCheck,
+  IconZoomCode,
+} from "@tabler/icons-react";
+import { type ReactNode, useMemo, useState } from "react";
+
+import { Favicon } from "@/components/icons/favicon";
 import { Button } from "@domainstack/ui/button";
 import { Checkbox } from "@domainstack/ui/checkbox";
 import { CopyButton } from "@domainstack/ui/copy-button";
@@ -16,33 +25,30 @@ import {
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@domainstack/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 import { cn } from "@domainstack/ui/utils";
-import {
-  IconArrowsMinimize,
-  IconExternalLink,
-  IconRosetteDiscountCheck,
-  IconZoomCode,
-} from "@tabler/icons-react";
-import { type ReactNode, useMemo, useState } from "react";
-import { Favicon } from "@/components/icons/favicon";
 
 // Token types for JSON syntax highlighting
-type TokenType =
-  | "key"
-  | "string"
-  | "number"
-  | "boolean"
-  | "null"
-  | "punctuation";
+type TokenType = "key" | "string" | "number" | "boolean" | "null" | "punctuation";
 
 interface Token {
   type: TokenType;
   value: string;
+}
+
+function getTokenItems(tokens: Token[]) {
+  const seen = new Map<string, number>();
+
+  return tokens.map((token) => {
+    const baseKey = `${token.type}-${token.value}`;
+    const duplicateCount = seen.get(baseKey) ?? 0;
+    seen.set(baseKey, duplicateCount + 1);
+
+    return {
+      key: `${baseKey}-${duplicateCount}`,
+      token,
+    };
+  });
 }
 
 /**
@@ -135,13 +141,7 @@ function tokenizeLine(line: string): Token[] {
  * Renders a tokenized line with syntax highlighting using CSS classes.
  * Falls back to plain text if tokenization fails for any reason.
  */
-function HighlightedLine({
-  line,
-  isJson,
-}: {
-  line: string;
-  isJson: boolean;
-}): ReactNode {
+function HighlightedLine({ line, isJson }: { line: string; isJson: boolean }): ReactNode {
   // For non-JSON (WHOIS), render plain text
   if (!isJson) {
     return <>{line || "\u00A0"}</>;
@@ -168,10 +168,9 @@ function HighlightedLine({
 
   return (
     <>
-      {tokens.map((token, i) => (
+      {getTokenItems(tokens).map(({ key, token }) => (
         <span
-          // biome-ignore lint/suspicious/noArrayIndexKey: tokens are derived from line content
-          key={i}
+          key={key}
           className={cn(
             // Carefully chosen Tailwind colors for good contrast in both light/dark modes
             // Light: ~99.5% lightness bg, Dark: ~16.5% lightness bg (card)
@@ -179,8 +178,7 @@ function HighlightedLine({
             token.type === "string" && "text-emerald-700 dark:text-emerald-400",
             token.type === "number" && "text-amber-700 dark:text-amber-400",
             token.type === "boolean" && "text-violet-700 dark:text-violet-400",
-            token.type === "null" &&
-              "text-stone-500 italic dark:text-stone-400",
+            token.type === "null" && "text-stone-500 italic dark:text-stone-400",
           )}
         >
           {token.value}
@@ -199,13 +197,7 @@ interface RawDataDialogProps {
   serverUrl: string | undefined;
 }
 
-export function RawDataDialog({
-  domain,
-  format,
-  data,
-  serverName,
-  serverUrl,
-}: RawDataDialogProps) {
+export function RawDataDialog({ domain, format, data, serverName, serverUrl }: RawDataDialogProps) {
   const [open, setOpen] = useState(false);
   const [wrapLines, setWrapLines] = useState(true);
 
@@ -219,10 +211,23 @@ export function RawDataDialog({
     return JSON.stringify(data, null, 2);
   }, [data]);
 
-  const lines = useMemo(
-    () => formattedData?.trim().split("\n") ?? [],
-    [formattedData],
-  );
+  const lines = useMemo(() => formattedData?.trim().split("\n") ?? [], [formattedData]);
+  const lineItems = useMemo(() => {
+    const seen = new Map<string, number>();
+    let lineNumber = 0;
+
+    return lines.map((line) => {
+      lineNumber += 1;
+      const duplicateCount = seen.get(line) ?? 0;
+      seen.set(line, duplicateCount + 1);
+
+      return {
+        key: `${line || "empty-line"}-${duplicateCount}`,
+        line,
+        lineNumber,
+      };
+    });
+  }, [lines]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -249,16 +254,14 @@ export function RawDataDialog({
         }
       />
       <DialogContent className="gap-0 p-0 sm:max-w-2xl">
-        <DialogHeader className="place-items-start space-y-1 border-border border-b bg-card/60 p-4">
+        <DialogHeader className="place-items-start space-y-1 border-b border-border bg-card/60 p-4">
           <DialogTitle className="flex items-center gap-2">
             <Favicon domain={domain} />
-            <span className="truncate text-base lowercase tracking-[-0.01em]">
-              {domain}
-            </span>
+            <span className="truncate text-base tracking-[-0.01em] lowercase">{domain}</span>
             <ResponsiveTooltip>
               <ResponsiveTooltipTrigger
                 render={
-                  <span className="ml-1 flex cursor-default items-center gap-1 font-normal text-[13px] text-foreground/75">
+                  <span className="ml-1 flex cursor-default items-center gap-1 text-[13px] font-normal text-foreground/75">
                     <IconRosetteDiscountCheck className="size-3.5 text-accent-green" />
                     <span>{format}</span>
                   </span>
@@ -289,33 +292,28 @@ export function RawDataDialog({
         </DialogHeader>
         <ScrollArea className="min-h-0 flex-1 bg-popover/10" scrollFade={false}>
           <div className="p-3">
-            <pre className="font-mono text-foreground/90 text-xs leading-5">
+            <pre className="font-mono text-xs leading-5 text-foreground/90">
               <code
                 className={cn(
                   "grid",
-                  wrapLines
-                    ? "grid-cols-[auto_1fr]"
-                    : "w-max min-w-full grid-cols-[auto_auto]",
+                  wrapLines ? "grid-cols-[auto_1fr]" : "w-max min-w-full grid-cols-[auto_auto]",
                 )}
               >
-                {lines.map((line, i) => (
+                {lineItems.map((item) => (
                   <div
-                    // biome-ignore lint/suspicious/noArrayIndexKey: static list, no reordering
-                    key={i}
+                    key={item.key}
                     className="col-span-2 grid grid-cols-subgrid rounded px-1 py-0.5 hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none active:bg-muted/50"
                   >
-                    <span className="select-none justify-self-end px-1 text-muted-foreground/70">
-                      {i + 1}
+                    <span className="justify-self-end px-1 text-muted-foreground/70 select-none">
+                      {item.lineNumber}
                     </span>
                     <span
                       className={cn(
                         "min-w-0 pr-1 pl-3",
-                        wrapLines
-                          ? "whitespace-pre-wrap break-all"
-                          : "whitespace-pre",
+                        wrapLines ? "break-all whitespace-pre-wrap" : "whitespace-pre",
                       )}
                     >
-                      <HighlightedLine line={line} isJson={isJson} />
+                      <HighlightedLine line={item.line} isJson={isJson} />
                     </span>
                   </div>
                 ))}
@@ -323,11 +321,11 @@ export function RawDataDialog({
             </pre>
           </div>
         </ScrollArea>
-        <div className="flex w-full items-center justify-between gap-2 border-border border-t bg-card/60 p-3">
+        <div className="flex w-full items-center justify-between gap-2 border-t border-border bg-card/60 p-3">
           <Button
             variant="outline"
             size="sm"
-            className="!px-3 gap-2 text-[13px]"
+            className="gap-2 !px-3 text-[13px]"
             onClick={() => setWrapLines((prev) => !prev)}
           >
             <Checkbox checked={wrapLines} className="size-3.5" />
@@ -337,7 +335,7 @@ export function RawDataDialog({
             <CopyButton
               variant="outline"
               size="sm"
-              className="!px-3 gap-2 text-[13px]"
+              className="gap-2 !px-3 text-[13px]"
               value={formattedData}
               showLabel={true}
             />
@@ -345,7 +343,7 @@ export function RawDataDialog({
               variant="outline"
               size="sm"
               onClick={() => setOpen(false)}
-              className="!px-3 gap-2 text-[13px]"
+              className="gap-2 !px-3 text-[13px]"
             >
               <IconArrowsMinimize />
               Close

@@ -1,14 +1,5 @@
 "use client";
 
-import { Badge } from "@domainstack/ui/badge";
-import { CodeBlock } from "@domainstack/ui/code-block";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@domainstack/ui/collapsible";
-import { Spinner } from "@domainstack/ui/spinner";
-import { cn } from "@domainstack/ui/utils";
 import {
   IconCheck,
   IconChevronDown,
@@ -21,13 +12,16 @@ import type { ToolUIPart } from "ai";
 import type { ComponentProps, ReactNode } from "react";
 import { isValidElement } from "react";
 
+import { Badge } from "@domainstack/ui/badge";
+import { CodeBlock } from "@domainstack/ui/code-block";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@domainstack/ui/collapsible";
+import { Spinner } from "@domainstack/ui/spinner";
+import { cn } from "@domainstack/ui/utils";
+
 export type ToolProps = ComponentProps<typeof Collapsible>;
 
 export const Tool = ({ className, ...props }: ToolProps) => (
-  <Collapsible
-    className={cn("w-full rounded-md border border-border", className)}
-    {...props}
-  />
+  <Collapsible className={cn("w-full rounded-md border border-border", className)} {...props} />
 );
 
 export type ToolHeaderProps = {
@@ -59,29 +53,20 @@ const getStatusBadge = (status: ToolUIPart["state"]) => {
   };
 
   return (
-    <Badge
-      className="gap-1.5 rounded-full py-1 text-xs leading-none"
-      variant="secondary"
-    >
+    <Badge className="gap-1.5 rounded-full py-1 text-xs leading-none" variant="secondary">
       {icons[status]}
       {labels[status]}
     </Badge>
   );
 };
 
-export const ToolHeader = ({
-  className,
-  title,
-  type,
-  state,
-  ...props
-}: ToolHeaderProps) => (
+export const ToolHeader = ({ className, title, type, state, ...props }: ToolHeaderProps) => (
   <CollapsibleTrigger
     className={cn("group flex w-full items-center gap-3 p-3", className)}
     {...props}
   >
     <IconTool className="size-4 shrink-0 text-muted-foreground" />
-    <span className="min-w-0 flex-1 truncate text-left font-medium text-sm">
+    <span className="min-w-0 flex-1 truncate text-left text-sm font-medium">
       {title ?? type.split("-").slice(1).join("-")}
     </span>
     {getStatusBadge(state)}
@@ -100,11 +85,8 @@ export type ToolInputProps = ComponentProps<"div"> & {
 };
 
 export const ToolInput = ({ className, input, ...props }: ToolInputProps) => (
-  <div
-    className={cn("min-w-0 space-y-2 overflow-hidden p-3", className)}
-    {...props}
-  >
-    <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+  <div className={cn("min-w-0 space-y-2 overflow-hidden p-3", className)} {...props}>
+    <h4 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
       Parameters
     </h4>
     <CodeBlock>{JSON.stringify(input, null, 2)}</CodeBlock>
@@ -172,11 +154,7 @@ function formatToolOutput(output: ToolUIPart["output"]): string {
   }
 
   // Handle regular objects
-  if (
-    typeof output === "object" &&
-    output !== null &&
-    !isValidElement(output)
-  ) {
+  if (typeof output === "object" && output !== null && !isValidElement(output)) {
     return JSON.stringify(output, null, 2);
   }
 
@@ -200,12 +178,7 @@ function formatToolOutput(output: ToolUIPart["output"]): string {
   return String(output);
 }
 
-export const ToolOutput = ({
-  className,
-  output,
-  errorText,
-  ...props
-}: ToolOutputProps) => {
+export const ToolOutput = ({ className, output, errorText, ...props }: ToolOutputProps) => {
   // Use explicit null/undefined check to allow falsy values like 0, false, or ""
   if (output == null && !errorText) {
     return null;
@@ -214,23 +187,15 @@ export const ToolOutput = ({
   const formattedOutput = output != null ? formatToolOutput(output) : null;
 
   return (
-    <div
-      className={cn("min-w-0 space-y-2 overflow-hidden p-3", className)}
-      {...props}
-    >
-      <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+    <div className={cn("min-w-0 space-y-2 overflow-hidden p-3", className)} {...props}>
+      <h4 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
         {errorText ? "Error" : "Result"}
       </h4>
       <div
-        className={cn(
-          "overflow-x-auto text-xs",
-          errorText && "bg-destructive/10 text-destructive",
-        )}
+        className={cn("overflow-x-auto text-xs", errorText && "bg-destructive/10 text-destructive")}
       >
         {errorText && <div>{errorText}</div>}
-        {formattedOutput && (
-          <CodeBlock className="max-h-[200px]">{formattedOutput}</CodeBlock>
-        )}
+        {formattedOutput && <CodeBlock className="max-h-[200px]">{formattedOutput}</CodeBlock>}
       </div>
     </div>
   );

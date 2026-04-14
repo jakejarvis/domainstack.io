@@ -6,6 +6,7 @@
 
 import { DOH_PROVIDERS, type DohProvider } from "@domainstack/constants";
 import { simpleHash } from "@domainstack/utils";
+
 import type { DnsAnswer, DnsJson, DohQueryOptions } from "./types";
 
 const DEFAULT_TIMEOUT_MS = 5000;
@@ -28,10 +29,7 @@ export function providerOrderForLookup(domain: string): DohProvider[] {
   // Normalize to lowercase for case-insensitive DNS name matching (RFC 1035)
   const hash = simpleHash(domain.toLowerCase());
   const start = hash % DOH_PROVIDERS.length;
-  return [
-    ...DOH_PROVIDERS.slice(start),
-    ...DOH_PROVIDERS.slice(0, start),
-  ] as DohProvider[];
+  return [...DOH_PROVIDERS.slice(start), ...DOH_PROVIDERS.slice(0, start)] as DohProvider[];
 }
 
 /**
@@ -54,10 +52,7 @@ export async function queryDohProvider(
   }
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(
-    () => controller.abort(),
-    options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
-  );
+  const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
 
   const res = await fetch(url, {
     headers: {
@@ -85,9 +80,7 @@ export async function queryDohProvider(
   }
 
   if (!Array.isArray(json.Answer)) {
-    throw new Error(
-      `DoH invalid response: ${provider.key} (Answer is not an array)`,
-    );
+    throw new Error(`DoH invalid response: ${provider.key} (Answer is not an array)`);
   }
 
   return json.Answer;
@@ -97,9 +90,6 @@ export async function queryDohProvider(
  * Filter DNS answers to only those matching the expected type number.
  * DoH providers often include CNAME records in answer chains.
  */
-export function filterAnswersByType(
-  answers: DnsAnswer[],
-  expectedType: number,
-): DnsAnswer[] {
+export function filterAnswersByType(answers: DnsAnswer[], expectedType: number): DnsAnswer[] {
   return answers.filter((a) => a.type === expectedType);
 }

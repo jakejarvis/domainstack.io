@@ -1,3 +1,7 @@
+import { IconArchive, IconTrash, IconX } from "@tabler/icons-react";
+
+import { useDashboardBulkActions } from "@/context/dashboard-context";
+import { useDashboardSelection } from "@/hooks/use-dashboard-selection";
 import { Button } from "@domainstack/ui/button";
 import { ButtonGroup } from "@domainstack/ui/button-group";
 import { Checkbox } from "@domainstack/ui/checkbox";
@@ -8,9 +12,6 @@ import {
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
 import { cn } from "@domainstack/ui/utils";
-import { IconArchive, IconTrash, IconX } from "@tabler/icons-react";
-import { useDashboardBulkActions } from "@/context/dashboard-context";
-import { useDashboardSelection } from "@/hooks/use-dashboard-selection";
 
 type BulkActionsToolbarProps = {
   /** Total number of domains (for "Select all X" tooltip) */
@@ -18,10 +19,7 @@ type BulkActionsToolbarProps = {
   className?: string;
 };
 
-export function BulkActionsToolbar({
-  totalCount,
-  className,
-}: BulkActionsToolbarProps) {
+export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbarProps) {
   const {
     selectedIds,
     selectedCount,
@@ -50,7 +48,7 @@ export function BulkActionsToolbar({
   return (
     <div
       className={cn(
-        "fade-in-0 slide-in-from-bottom-4 motion-reduce:slide-in-from-bottom-0 fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-lg animate-in items-center justify-between gap-4 rounded-xl border border-black/15 bg-background/60 px-4 py-3 shadow-2xl shadow-black/10 backdrop-blur-xl duration-200 sm:inset-x-auto dark:border-white/15",
+        "fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-lg animate-in items-center justify-between gap-4 rounded-xl border border-black/15 bg-background/60 px-4 py-3 shadow-2xl shadow-black/10 backdrop-blur-xl duration-200 fade-in-0 slide-in-from-bottom-4 motion-reduce:slide-in-from-bottom-0 sm:inset-x-auto dark:border-white/15",
         className,
       )}
       role="toolbar"
@@ -67,10 +65,7 @@ export function BulkActionsToolbar({
                 onCheckedChange={toggleAll}
                 disabled={isLoading}
               />
-              <span
-                className="font-medium text-[13px] tabular-nums"
-                aria-live="polite"
-              >
+              <span className="text-[13px] font-medium tabular-nums" aria-live="polite">
                 {selectedCount} selected
               </span>
             </Label>

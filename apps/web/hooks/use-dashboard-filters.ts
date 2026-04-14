@@ -1,6 +1,6 @@
-import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { parseAsArrayOf, parseAsString, useQueryStates } from "nuqs";
 import { useCallback, useMemo, useTransition } from "react";
+
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import {
   type AvailableProvidersByCategory,
@@ -15,6 +15,7 @@ import {
   validateHealthFilters,
   validateStatusFilters,
 } from "@/lib/dashboard-utils";
+import type { TrackedDomainWithDetails } from "@domainstack/types";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -89,24 +90,15 @@ export function useDashboardFilters(
   );
 
   // Validate status and health filter values from URL params
-  const validatedStatus = useMemo(
-    () => validateStatusFilters(filters.status),
-    [filters.status],
-  );
+  const validatedStatus = useMemo(() => validateStatusFilters(filters.status), [filters.status]);
 
-  const validatedHealth = useMemo(
-    () => validateHealthFilters(filters.health),
-    [filters.health],
-  );
+  const validatedHealth = useMemo(() => validateHealthFilters(filters.health), [filters.health]);
 
   // Extract unique TLDs from domains for the dropdown
   const availableTlds = useMemo(() => extractAvailableTlds(domains), [domains]);
 
   // Extract unique providers from domains, grouped by category
-  const availableProviders = useMemo(
-    () => extractAvailableProviders(domains),
-    [domains],
-  );
+  const availableProviders = useMemo(() => extractAvailableProviders(domains), [domains]);
 
   // Create a flat set of all valid provider IDs for validation
   const validProviderIds = useMemo(
@@ -137,19 +129,13 @@ export function useDashboardFilters(
   );
 
   const filteredDomains = useMemo(
-    () =>
-      now
-        ? filterDomains(domains, filterCriteria, validProviderIds, now)
-        : domains,
+    () => (now ? filterDomains(domains, filterCriteria, validProviderIds, now) : domains),
     [domains, filterCriteria, validProviderIds, now],
   );
 
   // Compute stats for health summary
   const stats = useMemo(
-    () =>
-      now
-        ? computeHealthStats(domains, now)
-        : { expiringSoon: 0, pendingVerification: 0 },
+    () => (now ? computeHealthStats(domains, now) : { expiringSoon: 0, pendingVerification: 0 }),
     [domains, now],
   );
 

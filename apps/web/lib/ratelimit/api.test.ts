@@ -6,15 +6,27 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.unmock("@domainstack/redis/ratelimit");
 
 // Hoist mock functions so they're available before module imports
-const { mockLimit, mockIpAddress, mockGetSession, mockGetRateLimiter } =
-  vi.hoisted(() => {
-    const mockLimit = vi.fn();
-    const mockIpAddress = vi.fn();
-    const mockGetSession = vi.fn();
-    const mockGetRateLimiter = vi.fn();
+const { mockLimit, mockIpAddress, mockGetSession, mockGetRateLimiter } = vi.hoisted(() => {
+  type RateLimitResult = {
+    success: boolean;
+    limit: number;
+    remaining: number;
+    reset: number;
+    pending: Promise<void>;
+  };
 
-    return { mockLimit, mockIpAddress, mockGetSession, mockGetRateLimiter };
-  });
+  const limitMock = vi.fn<(identifier: string) => Promise<RateLimitResult>>();
+  const ipAddressMock = vi.fn<(request: Request) => string | null>();
+  const getSessionMock = vi.fn<(...args: unknown[]) => Promise<unknown>>();
+  const getRateLimiterMock = vi.fn<(...args: unknown[]) => { limit: typeof limitMock }>();
+
+  return {
+    mockLimit: limitMock,
+    mockIpAddress: ipAddressMock,
+    mockGetSession: getSessionMock,
+    mockGetRateLimiter: getRateLimiterMock,
+  };
+});
 
 // Mock the ratelimit module that the actual code uses
 vi.mock("@domainstack/redis/ratelimit", () => ({
@@ -23,7 +35,7 @@ vi.mock("@domainstack/redis/ratelimit", () => ({
 }));
 
 vi.mock("@vercel/functions", () => ({
-  waitUntil: vi.fn(),
+  waitUntil: vi.fn<(promise: Promise<unknown>) => void>(),
   ipAddress: mockIpAddress,
 }));
 

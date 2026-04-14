@@ -1,7 +1,8 @@
-import type {
-  VerificationMethod,
-  VerificationStatus,
-} from "@domainstack/constants";
+import type { SQL } from "drizzle-orm";
+import { and, asc, count, eq, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
+
+import type { VerificationMethod, VerificationStatus } from "@domainstack/constants";
 import type {
   DnsRecord,
   ProviderInfo,
@@ -9,19 +10,7 @@ import type {
   TrackedDomainWithDetails,
 } from "@domainstack/types";
 import { deduplicateDnsRecordsByValue } from "@domainstack/utils/dns";
-import type { SQL } from "drizzle-orm";
-import {
-  and,
-  asc,
-  count,
-  eq,
-  inArray,
-  isNotNull,
-  isNull,
-  lt,
-  sql,
-} from "drizzle-orm";
-import { alias } from "drizzle-orm/pg-core";
+
 import { db } from "../client";
 import {
   certificates,
@@ -129,9 +118,7 @@ const EMPTY_CA_INFO: ProviderInfo = {
 /**
  * Transform flat query rows into nested TrackedDomainWithDetails structure.
  */
-function transformToTrackedDomainWithDetails(
-  row: TrackedDomainRow,
-): TrackedDomainWithDetails {
+function transformToTrackedDomainWithDetails(row: TrackedDomainRow): TrackedDomainWithDetails {
   if (!row.verified) {
     return {
       id: row.id,
@@ -343,9 +330,7 @@ async function fetchDnsRecordsForDomains(domainIds: string[]): Promise<
 /**
  * Fetch the earliest expiring certificate for each domain.
  */
-async function fetchEarliestCertificatesForDomains(
-  domainIds: string[],
-): Promise<
+async function fetchEarliestCertificatesForDomains(domainIds: string[]): Promise<
   Map<
     string,
     {
@@ -433,9 +418,7 @@ function attachCertificates(
  */
 async function queryTrackedDomainsWithDetails(
   whereCondition: SQL,
-  orderByColumn:
-    | typeof userTrackedDomains.createdAt
-    | typeof userTrackedDomains.archivedAt,
+  orderByColumn: typeof userTrackedDomains.createdAt | typeof userTrackedDomains.archivedAt,
   options: QueryTrackedDomainsOptions = {},
 ): Promise<TrackedDomainWithDetails[]> {
   const { includeDnsRecords = true, includeRegistrarDetails = true } = options;
@@ -486,16 +469,10 @@ async function queryTrackedDomainsWithDetails(
     .from(userTrackedDomains)
     .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
     .leftJoin(registrations, eq(domains.id, registrations.domainId))
-    .leftJoin(
-      registrarProvider,
-      eq(registrations.registrarProviderId, registrarProvider.id),
-    )
+    .leftJoin(registrarProvider, eq(registrations.registrarProviderId, registrarProvider.id))
     .leftJoin(hosting, eq(domains.id, hosting.domainId))
     .leftJoin(dnsProvider, eq(hosting.dnsProviderId, dnsProvider.id))
-    .leftJoin(
-      hostingProvider,
-      eq(hosting.hostingProviderId, hostingProvider.id),
-    )
+    .leftJoin(hostingProvider, eq(hosting.hostingProviderId, hostingProvider.id))
     .leftJoin(emailProvider, eq(hosting.emailProviderId, emailProvider.id))
     .where(whereCondition)
     .orderBy(orderByColumn);
@@ -573,24 +550,13 @@ export async function createTrackedDomain(params: CreateTrackedDomainParams) {
 export async function createTrackedDomainWithLimitCheck(
   params: CreateTrackedDomainParams & { maxDomains: number },
 ): Promise<CreateTrackedDomainWithLimitCheckResult> {
-  const {
-    userId,
-    domainId,
-    verificationToken,
-    verificationMethod,
-    maxDomains,
-  } = params;
+  const { userId, domainId, verificationToken, verificationMethod, maxDomains } = params;
 
   return await db.transaction(async (tx) => {
     const lockedRows = await tx
       .select({ id: userTrackedDomains.id })
       .from(userTrackedDomains)
-      .where(
-        and(
-          eq(userTrackedDomains.userId, userId),
-          isNull(userTrackedDomains.archivedAt),
-        ),
-      )
+      .where(and(eq(userTrackedDomains.userId, userId), isNull(userTrackedDomains.archivedAt)))
       .for("update");
 
     const currentCount = lockedRows.length;
@@ -625,12 +591,7 @@ export async function findTrackedDomain(userId: string, domainId: string) {
   const rows = await db
     .select()
     .from(userTrackedDomains)
-    .where(
-      and(
-        eq(userTrackedDomains.userId, userId),
-        eq(userTrackedDomains.domainId, domainId),
-      ),
-    )
+    .where(and(eq(userTrackedDomains.userId, userId), eq(userTrackedDomains.domainId, domainId)))
     .limit(1);
 
   return rows[0] ?? null;
@@ -680,8 +641,7 @@ export async function getTrackedDomainsForUser(
   userId: string,
   options: GetTrackedDomainsOptions | boolean = {},
 ): Promise<TrackedDomainWithDetails[]> {
-  const opts =
-    typeof options === "boolean" ? { includeArchived: options } : options;
+  const opts = typeof options === "boolean" ? { includeArchived: options } : options;
   const {
     includeArchived = false,
     includeDnsRecords = true,
@@ -690,16 +650,12 @@ export async function getTrackedDomainsForUser(
 
   const whereCondition = includeArchived
     ? eq(userTrackedDomains.userId, userId)
-    : and(
-        eq(userTrackedDomains.userId, userId),
-        isNull(userTrackedDomains.archivedAt),
-      );
+    : and(eq(userTrackedDomains.userId, userId), isNull(userTrackedDomains.archivedAt));
 
-  return queryTrackedDomainsWithDetails(
-    whereCondition as SQL,
-    userTrackedDomains.createdAt,
-    { includeDnsRecords, includeRegistrarDetails },
-  );
+  return queryTrackedDomainsWithDetails(whereCondition as SQL, userTrackedDomains.createdAt, {
+    includeDnsRecords,
+    includeRegistrarDetails,
+  });
 }
 
 /**
@@ -732,10 +688,7 @@ export async function countTrackedDomainsForUser(
 ): Promise<number> {
   const whereCondition = includeArchived
     ? eq(userTrackedDomains.userId, userId)
-    : (and(
-        eq(userTrackedDomains.userId, userId),
-        isNull(userTrackedDomains.archivedAt),
-      ) as SQL);
+    : (and(eq(userTrackedDomains.userId, userId), isNull(userTrackedDomains.archivedAt)) as SQL);
 
   const [result] = await db
     .select({ count: count() })
@@ -748,18 +701,14 @@ export async function countTrackedDomainsForUser(
 /**
  * Count active (non-archived) tracked domains for a user.
  */
-export async function countActiveTrackedDomainsForUser(
-  userId: string,
-): Promise<number> {
+export async function countActiveTrackedDomainsForUser(userId: string): Promise<number> {
   return countTrackedDomainsForUser(userId, false);
 }
 
 /**
  * Count archived tracked domains for a user.
  */
-export async function countArchivedTrackedDomainsForUser(
-  userId: string,
-): Promise<number> {
+export async function countArchivedTrackedDomainsForUser(userId: string): Promise<number> {
   const whereCondition = and(
     eq(userTrackedDomains.userId, userId),
     isNotNull(userTrackedDomains.archivedAt),
@@ -776,17 +725,11 @@ export async function countArchivedTrackedDomainsForUser(
 /**
  * Count active and archived tracked domains for a user.
  */
-export async function countTrackedDomainsByStatus(
-  userId: string,
-): Promise<TrackedDomainCounts> {
+export async function countTrackedDomainsByStatus(userId: string): Promise<TrackedDomainCounts> {
   const [result] = await db
     .select({
-      active: count(
-        sql`CASE WHEN ${userTrackedDomains.archivedAt} IS NULL THEN 1 END`,
-      ),
-      archived: count(
-        sql`CASE WHEN ${userTrackedDomains.archivedAt} IS NOT NULL THEN 1 END`,
-      ),
+      active: count(sql`CASE WHEN ${userTrackedDomains.archivedAt} IS NULL THEN 1 END`),
+      archived: count(sql`CASE WHEN ${userTrackedDomains.archivedAt} IS NOT NULL THEN 1 END`),
     })
     .from(userTrackedDomains)
     .where(eq(userTrackedDomains.userId, userId));
@@ -800,10 +743,7 @@ export async function countTrackedDomainsByStatus(
 /**
  * Mark a tracked domain as verified.
  */
-export async function verifyTrackedDomain(
-  id: string,
-  method: VerificationMethod,
-) {
+export async function verifyTrackedDomain(id: string, method: VerificationMethod) {
   const now = new Date();
   const updated = await db
     .update(userTrackedDomains)
@@ -853,12 +793,7 @@ export async function getVerifiedTrackedDomainIds(): Promise<string[]> {
   const rows = await db
     .select({ id: userTrackedDomains.id })
     .from(userTrackedDomains)
-    .where(
-      and(
-        eq(userTrackedDomains.verified, true),
-        isNull(userTrackedDomains.archivedAt),
-      ),
-    );
+    .where(and(eq(userTrackedDomains.verified, true), isNull(userTrackedDomains.archivedAt)));
 
   return rows.map((r) => r.id);
 }
@@ -887,10 +822,7 @@ export async function getTrackedDomainForNotification(
     .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
     .innerJoin(registrations, eq(domains.id, registrations.domainId))
     .innerJoin(users, eq(userTrackedDomains.userId, users.id))
-    .leftJoin(
-      registrarProvider,
-      eq(registrations.registrarProviderId, registrarProvider.id),
-    )
+    .leftJoin(registrarProvider, eq(registrations.registrarProviderId, registrarProvider.id))
     .where(eq(userTrackedDomains.id, trackedDomainId))
     .limit(1);
 
@@ -1047,12 +979,7 @@ export async function unarchiveTrackedDomainWithLimitCheck(
     const lockedRows = await tx
       .select({ id: userTrackedDomains.id })
       .from(userTrackedDomains)
-      .where(
-        and(
-          eq(userTrackedDomains.userId, userId),
-          isNull(userTrackedDomains.archivedAt),
-        ),
-      )
+      .where(and(eq(userTrackedDomains.userId, userId), isNull(userTrackedDomains.archivedAt)))
       .for("update");
 
     const currentCount = lockedRows.length;
@@ -1089,12 +1016,7 @@ export async function archiveOldestActiveDomains(
         db
           .select({ id: userTrackedDomains.id })
           .from(userTrackedDomains)
-          .where(
-            and(
-              eq(userTrackedDomains.userId, userId),
-              isNull(userTrackedDomains.archivedAt),
-            ),
-          )
+          .where(and(eq(userTrackedDomains.userId, userId), isNull(userTrackedDomains.archivedAt)))
           .orderBy(asc(userTrackedDomains.createdAt))
           .limit(countToArchive),
       ),
@@ -1219,10 +1141,7 @@ export async function getArchivedDomainsForUser(
     isNotNull(userTrackedDomains.archivedAt),
   );
 
-  return queryTrackedDomainsWithDetails(
-    whereCondition as SQL,
-    userTrackedDomains.archivedAt,
-  );
+  return queryTrackedDomainsWithDetails(whereCondition as SQL, userTrackedDomains.archivedAt);
 }
 
 /**
@@ -1239,10 +1158,7 @@ export async function getStaleUnverifiedDomains(cutoffDate: Date) {
     .from(userTrackedDomains)
     .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
     .where(
-      and(
-        eq(userTrackedDomains.verified, false),
-        lt(userTrackedDomains.createdAt, cutoffDate),
-      ),
+      and(eq(userTrackedDomains.verified, false), lt(userTrackedDomains.createdAt, cutoffDate)),
     );
 
   return rows;
@@ -1251,9 +1167,7 @@ export async function getStaleUnverifiedDomains(cutoffDate: Date) {
 /**
  * Delete stale unverified domains.
  */
-export async function deleteStaleUnverifiedDomains(
-  ids: string[],
-): Promise<number> {
+export async function deleteStaleUnverifiedDomains(ids: string[]): Promise<number> {
   if (ids.length === 0) return 0;
 
   const deleted = await db

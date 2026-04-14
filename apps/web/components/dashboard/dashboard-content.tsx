@@ -1,3 +1,14 @@
+import { IconFilterX, IconHourglass, IconPlus, IconWorld } from "@tabler/icons-react";
+import type { Table } from "@tanstack/react-table";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+
+import { BulkActionsToolbar } from "@/components/dashboard/bulk-actions-toolbar";
+import { DashboardGrid } from "@/components/dashboard/dashboard-grid";
+import { DashboardTable } from "@/components/dashboard/dashboard-table";
+import { useDashboardFiltersContext } from "@/context/dashboard-context";
+import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import {
@@ -8,21 +19,6 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@domainstack/ui/empty";
-import {
-  IconFilterX,
-  IconHourglass,
-  IconPlus,
-  IconWorld,
-} from "@tabler/icons-react";
-import type { Table } from "@tanstack/react-table";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { BulkActionsToolbar } from "@/components/dashboard/bulk-actions-toolbar";
-import { DashboardGrid } from "@/components/dashboard/dashboard-grid";
-import { DashboardTable } from "@/components/dashboard/dashboard-table";
-import { useDashboardFiltersContext } from "@/context/dashboard-context";
-import { usePreferencesStore } from "@/lib/stores/preferences-store";
 
 type DashboardContentProps = {
   domains: TrackedDomainWithDetails[];
@@ -59,8 +55,7 @@ export function DashboardContent({
           </EmptyMedia>
           <EmptyTitle>No domains match your filters</EmptyTitle>
           <EmptyDescription>
-            Try adjusting your search or filter criteria to find what you're
-            looking for.
+            Try adjusting your search or filter criteria to find what you're looking for.
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
@@ -92,8 +87,8 @@ export function DashboardContent({
           </EmptyMedia>
           <EmptyTitle>Start tracking your domains</EmptyTitle>
           <EmptyDescription className="max-w-md">
-            Add your domains to monitor expiration dates, SSL certificates, and
-            DNS configurations. We'll notify you before anything expires.
+            Add your domains to monitor expiration dates, SSL certificates, and DNS configurations.
+            We'll notify you before anything expires.
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent className="relative">
@@ -113,7 +108,7 @@ export function DashboardContent({
               }
             />
           )}
-          <div className="mt-4 flex items-center gap-2 text-muted-foreground text-sm">
+          <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
             <IconHourglass className="size-4" />
             <span>Verification takes less than 2&nbsp;minutes</span>
           </div>
@@ -127,15 +122,9 @@ export function DashboardContent({
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={viewMode}
-          initial={
-            hasHydrated ? { opacity: 0, y: shouldReduceMotion ? 0 : 8 } : false
-          }
+          initial={hasHydrated ? { opacity: 0, y: shouldReduceMotion ? 0 : 8 } : false}
           animate={{ opacity: 1, y: 0 }}
-          exit={
-            hasHydrated
-              ? { opacity: 0, y: shouldReduceMotion ? 0 : -8 }
-              : undefined
-          }
+          exit={hasHydrated ? { opacity: 0, y: shouldReduceMotion ? 0 : -8 } : undefined}
           transition={
             hasHydrated
               ? {

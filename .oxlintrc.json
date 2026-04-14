@@ -1,0 +1,54 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "oxc",
+    "eslint",
+    "typescript",
+    "react",
+    "nextjs",
+    "import",
+    "unicorn",
+    "vitest"
+  ],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "perf": "warn"
+  },
+  "rules": {
+    "import/no-named-as-default-member": "off",
+    "import/no-unassigned-import": "off",
+    "no-await-in-loop": "off",
+    "no-console": "off",
+    "no-new": "off",
+    "no-unused-vars": "off",
+    "oxc/no-barrel-file": "off",
+    "react/no-unknown-property": "off",
+    "react/react-in-jsx-scope": "off",
+    "react/style-prop-object": "off",
+    "typescript/no-unused-vars": "warn",
+    "unicorn/consistent-function-scoping": "off",
+    "unicorn/filename-case": "off",
+    "unicorn/no-array-sort": "off",
+    "unicorn/no-null": "off"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx"],
+      "rules": {
+        "typescript/no-unused-vars": "off"
+      }
+    }
+  ],
+  "ignorePatterns": [
+    "dist",
+    "node_modules",
+    ".turbo",
+    ".next",
+    ".vercel",
+    ".swc",
+    "coverage",
+    "packages/db/drizzle",
+    "**/.well-known/workflow"
+  ]
+}

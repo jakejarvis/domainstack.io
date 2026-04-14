@@ -1,9 +1,6 @@
-import {
-  DNS_TYPE_NUMBERS,
-  DOH_PROVIDERS,
-  type DohProvider,
-} from "@domainstack/constants";
+import { DNS_TYPE_NUMBERS, DOH_PROVIDERS, type DohProvider } from "@domainstack/constants";
 import { simpleHash } from "@domainstack/utils";
+
 import { withRetry, withTimeout } from "./utils";
 
 /**

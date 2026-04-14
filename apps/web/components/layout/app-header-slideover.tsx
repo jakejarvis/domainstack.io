@@ -2,14 +2,11 @@
 
 import { useAtomValue } from "jotai";
 import { motion, useReducedMotion } from "motion/react";
+
 import { useIsMobile } from "@/hooks/use-mobile";
 import { isSearchFocusedAtom } from "@/lib/atoms/search-atoms";
 
-export function AppHeaderSlideOver({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function AppHeaderSlideOver({ children }: { children: React.ReactNode }) {
   const isSearchFocused = useAtomValue(isSearchFocusedAtom);
   const isMobile = useIsMobile();
   const shouldReduceMotion = useReducedMotion();

@@ -1,3 +1,18 @@
+import {
+  IconAt,
+  IconCheck,
+  IconCopy,
+  IconDownload,
+  IconFileText,
+  IconSend,
+  IconShare,
+} from "@tabler/icons-react";
+import { useMutation } from "@tanstack/react-query";
+import { useCallback, useEffect, useReducer, useRef } from "react";
+import { toast } from "sonner";
+
+import { useTRPC } from "@/lib/trpc/client";
+import { buildVerificationInstructions } from "@/lib/verification-instructions";
 import { Button } from "@domainstack/ui/button";
 import { CopyButton } from "@domainstack/ui/copy-button";
 import {
@@ -27,20 +42,6 @@ import {
   ItemTitle,
 } from "@domainstack/ui/item";
 import { Spinner } from "@domainstack/ui/spinner";
-import {
-  IconAt,
-  IconCheck,
-  IconCopy,
-  IconDownload,
-  IconFileText,
-  IconSend,
-  IconShare,
-} from "@tabler/icons-react";
-import { useMutation } from "@tanstack/react-query";
-import { useCallback, useEffect, useReducer, useRef } from "react";
-import { toast } from "sonner";
-import { useTRPC } from "@/lib/trpc/client";
-import { buildVerificationInstructions } from "@/lib/verification-instructions";
 
 // ============================================================================
 // Types
@@ -88,10 +89,7 @@ const initialState: ShareDialogState = {
   email: "",
 };
 
-function shareDialogReducer(
-  state: ShareDialogState,
-  action: ShareDialogAction,
-): ShareDialogState {
+function shareDialogReducer(state: ShareDialogState, action: ShareDialogAction): ShareDialogState {
   switch (action.type) {
     case "OPEN":
       return { ...state, open: true };
@@ -131,14 +129,8 @@ function shareDialogReducer(
  * Formats all verification instructions into a plain text format
  * suitable for sharing with IT or via email.
  */
-function formatInstructionsForSharing(
-  domain: string,
-  verificationToken: string,
-): string {
-  const { dns_txt, html_file, meta_tag } = buildVerificationInstructions(
-    domain,
-    verificationToken,
-  );
+function formatInstructionsForSharing(domain: string, verificationToken: string): string {
+  const { dns_txt, html_file, meta_tag } = buildVerificationInstructions(domain, verificationToken);
 
   return `Domain Verification Instructions for ${domain}
 ${"=".repeat(50)}
@@ -184,10 +176,7 @@ Once completed, return to Domainstack to verify ownership.
 /**
  * Downloads the instructions as a text file.
  */
-function downloadInstructionsFile(
-  domain: string,
-  verificationToken: string,
-): { success: boolean } {
+function downloadInstructionsFile(domain: string, verificationToken: string): { success: boolean } {
   try {
     const content = formatInstructionsForSharing(domain, verificationToken);
     const filename = `${domain}-verification-instructions.txt`;
@@ -228,7 +217,6 @@ export function ShareInstructionsDialog({
   const trpc = useTRPC();
 
   // Cleanup timeout on unmount
-  // biome-ignore lint/style/useConsistentArrowReturn: nesting is intentional
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
@@ -292,12 +280,9 @@ export function ShareInstructionsDialog({
     }
   }, []);
 
-  const handleEmailChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      dispatch({ type: "SET_EMAIL", email: e.target.value });
-    },
-    [],
-  );
+  const handleEmailChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    dispatch({ type: "SET_EMAIL", email: e.target.value });
+  }, []);
 
   // Derived state
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.email.trim());
@@ -319,8 +304,8 @@ export function ShareInstructionsDialog({
         <DialogHeader>
           <DialogTitle>Share Verification Instructions</DialogTitle>
           <DialogDescription>
-            Share these instructions with someone who manages your domain (e.g.,
-            IT admin, web developer).
+            Share these instructions with someone who manages your domain (e.g., IT admin, web
+            developer).
           </DialogDescription>
         </DialogHeader>
 
@@ -381,9 +366,7 @@ export function ShareInstructionsDialog({
             </ItemMedia>
             <ItemContent>
               <ItemTitle>Send via email</ItemTitle>
-              <ItemDescription>
-                We&apos;ll send instructions on your behalf
-              </ItemDescription>
+              <ItemDescription>We&apos;ll send instructions on your behalf</ItemDescription>
             </ItemContent>
             <ItemFooter>
               <Field>
@@ -402,11 +385,7 @@ export function ShareInstructionsDialog({
                       value={state.email}
                       onChange={handleEmailChange}
                       onKeyDown={(e) => {
-                        if (
-                          e.key === "Enter" &&
-                          isValidEmail &&
-                          !isEmailSending
-                        ) {
+                        if (e.key === "Enter" && isValidEmail && !isEmailSending) {
                           handleSendEmail();
                         }
                       }}

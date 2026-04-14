@@ -1,5 +1,6 @@
 /* @vitest-environment node */
 import { describe, expect, it } from "vitest";
+
 import {
   generateIdempotencyKey,
   getCertificateExpiryNotificationType,
@@ -8,10 +9,7 @@ import {
 
 describe("generateIdempotencyKey", () => {
   it("generates key in expected format", () => {
-    const key = generateIdempotencyKey(
-      "tracked-domain-123",
-      "domain_expiry_30d",
-    );
+    const key = generateIdempotencyKey("tracked-domain-123", "domain_expiry_30d");
     expect(key).toBe("tracked-domain-123:domain_expiry_30d");
   });
 
@@ -103,62 +101,34 @@ describe("getCertificateExpiryNotificationType", () => {
   });
 
   it("returns 14d notification for 14 days or less (but more than 7)", () => {
-    expect(getCertificateExpiryNotificationType(14)).toBe(
-      "certificate_expiry_14d",
-    );
-    expect(getCertificateExpiryNotificationType(13)).toBe(
-      "certificate_expiry_14d",
-    );
-    expect(getCertificateExpiryNotificationType(8)).toBe(
-      "certificate_expiry_14d",
-    );
+    expect(getCertificateExpiryNotificationType(14)).toBe("certificate_expiry_14d");
+    expect(getCertificateExpiryNotificationType(13)).toBe("certificate_expiry_14d");
+    expect(getCertificateExpiryNotificationType(8)).toBe("certificate_expiry_14d");
   });
 
   it("returns 7d notification for 7 days or less (but more than 3)", () => {
-    expect(getCertificateExpiryNotificationType(7)).toBe(
-      "certificate_expiry_7d",
-    );
-    expect(getCertificateExpiryNotificationType(6)).toBe(
-      "certificate_expiry_7d",
-    );
-    expect(getCertificateExpiryNotificationType(4)).toBe(
-      "certificate_expiry_7d",
-    );
+    expect(getCertificateExpiryNotificationType(7)).toBe("certificate_expiry_7d");
+    expect(getCertificateExpiryNotificationType(6)).toBe("certificate_expiry_7d");
+    expect(getCertificateExpiryNotificationType(4)).toBe("certificate_expiry_7d");
   });
 
   it("returns 3d notification for 3 days or less (but more than 1)", () => {
-    expect(getCertificateExpiryNotificationType(3)).toBe(
-      "certificate_expiry_3d",
-    );
-    expect(getCertificateExpiryNotificationType(2)).toBe(
-      "certificate_expiry_3d",
-    );
+    expect(getCertificateExpiryNotificationType(3)).toBe("certificate_expiry_3d");
+    expect(getCertificateExpiryNotificationType(2)).toBe("certificate_expiry_3d");
   });
 
   it("returns 1d notification for 1 day or less", () => {
-    expect(getCertificateExpiryNotificationType(1)).toBe(
-      "certificate_expiry_1d",
-    );
-    expect(getCertificateExpiryNotificationType(0)).toBe(
-      "certificate_expiry_1d",
-    );
-    expect(getCertificateExpiryNotificationType(-1)).toBe(
-      "certificate_expiry_1d",
-    );
+    expect(getCertificateExpiryNotificationType(1)).toBe("certificate_expiry_1d");
+    expect(getCertificateExpiryNotificationType(0)).toBe("certificate_expiry_1d");
+    expect(getCertificateExpiryNotificationType(-1)).toBe("certificate_expiry_1d");
   });
 
   it("returns the MOST URGENT notification type (smallest threshold)", () => {
     // Critical: daysRemaining=7 should return 7d, not 14d
-    expect(getCertificateExpiryNotificationType(7)).toBe(
-      "certificate_expiry_7d",
-    );
+    expect(getCertificateExpiryNotificationType(7)).toBe("certificate_expiry_7d");
     // daysRemaining=3 should return 3d, not 7d/14d
-    expect(getCertificateExpiryNotificationType(3)).toBe(
-      "certificate_expiry_3d",
-    );
+    expect(getCertificateExpiryNotificationType(3)).toBe("certificate_expiry_3d");
     // daysRemaining=1 should return 1d, not 3d/7d/14d
-    expect(getCertificateExpiryNotificationType(1)).toBe(
-      "certificate_expiry_1d",
-    );
+    expect(getCertificateExpiryNotificationType(1)).toBe("certificate_expiry_1d");
   });
 });

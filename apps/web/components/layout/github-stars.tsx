@@ -1,6 +1,7 @@
+import { SiGithub } from "@icons-pack/react-simple-icons";
+
 import { REPOSITORY_SLUG } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
-import { SiGithub } from "@icons-pack/react-simple-icons";
 
 async function fetchRepoStars(): Promise<number | null> {
   try {
@@ -24,9 +25,7 @@ async function fetchRepoStars(): Promise<number | null> {
 
     const json = (await res.json()) as { stargazers_count?: number };
 
-    return typeof json.stargazers_count === "number"
-      ? json.stargazers_count
-      : null;
+    return typeof json.stargazers_count === "number" ? json.stargazers_count : null;
   } catch {
     return null;
   }
@@ -56,7 +55,7 @@ export async function GithubStars() {
           aria-label="Open GitHub repository"
         >
           <SiGithub className="flex size-3.5 shrink-0 transition-colors group-hover:text-foreground" />
-          <span className="relative inline-block font-mono text-[13px] text-muted-foreground leading-none transition-colors group-hover:text-foreground">
+          <span className="relative inline-block font-mono text-[13px] leading-none text-muted-foreground transition-colors group-hover:text-foreground">
             {label}
           </span>
         </a>

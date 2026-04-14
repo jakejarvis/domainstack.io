@@ -1,5 +1,7 @@
-import type { Header, HeadersResponse } from "@domainstack/types";
 import { eq } from "drizzle-orm";
+
+import type { Header, HeadersResponse } from "@domainstack/types";
+
 import { db } from "../client";
 import { domains, httpHeaders } from "../schema";
 import type { CacheResult } from "../types";
@@ -52,9 +54,7 @@ export async function replaceHeaders(params: ReplaceHeadersParams) {
  * Optimized: Uses a single query with JOIN to fetch domain and headers,
  * reducing from 2 round trips to 1.
  */
-export async function getCachedHeaders(
-  domain: string,
-): Promise<CacheResult<HeadersResponse>> {
+export async function getCachedHeaders(domain: string): Promise<CacheResult<HeadersResponse>> {
   const now = Date.now();
 
   // Single query: JOIN domains -> httpHeaders

@@ -3,6 +3,7 @@
  */
 
 import type { RegistrationSource } from "@domainstack/constants";
+
 import type { ProviderRef } from "./provider-ref";
 
 /**

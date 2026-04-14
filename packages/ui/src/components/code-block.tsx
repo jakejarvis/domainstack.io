@@ -1,6 +1,7 @@
 "use client";
 
 import { type CSSProperties, type ReactNode, useCallback, useRef } from "react";
+
 import { cn } from "../utils";
 import { Card, CardContent, CardHeader, CardTitle } from "./card";
 import { CopyButton } from "./copy-button";
@@ -31,10 +32,7 @@ export const CodeBlock = ({
 
   const CodeBlockComponent = useCallback(
     (props: { className?: string }) => (
-      <ScrollArea
-        className="w-full rounded-sm border bg-background"
-        scrollFade={false}
-      >
+      <ScrollArea className="w-full rounded-sm border bg-background" scrollFade={false}>
         <pre
           className={cn(
             "not-prose p-3.5 text-[13px] leading-normal outline-none",
@@ -58,7 +56,7 @@ export const CodeBlock = ({
       <div data-slot="code-block" className="group/code-block relative">
         <CodeBlockComponent />
         <CopyButton
-          className="!bg-background hover:!bg-background absolute top-[5px] right-[5px] text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover/code-block:opacity-100"
+          className="absolute top-[5px] right-[5px] !bg-background text-muted-foreground opacity-0 transition-opacity group-hover/code-block:opacity-100 hover:!bg-background hover:text-foreground"
           value={getValue}
         />
       </div>
@@ -70,15 +68,9 @@ export const CodeBlock = ({
       data-slot="code-block"
       className="not-prose gap-0 overflow-hidden rounded-sm p-0 shadow-none"
     >
-      <CardHeader className="flex items-center gap-2 border-b bg-sidebar py-1.5! pr-1.5 pl-4 text-muted-foreground">
-        {icon && (
-          <div
-            className="size-3.5 shrink-0"
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: icon is a raw SVG string
-            dangerouslySetInnerHTML={{ __html: icon }}
-          />
-        )}
-        <CardTitle className="flex-1 font-mono font-normal text-sm tracking-tight">
+      <CardHeader className="bg-sidebar flex items-center gap-2 border-b py-1.5! pr-1.5 pl-4 text-muted-foreground">
+        {icon && <div className="size-3.5 shrink-0" dangerouslySetInnerHTML={{ __html: icon }} />}
+        <CardTitle className="flex-1 font-mono text-sm font-normal tracking-tight">
           {title}
         </CardTitle>
         <CopyButton value={getValue} />

@@ -1,12 +1,13 @@
+import type { NextRequest } from "next/server";
+import { after, NextResponse } from "next/server";
+
+import { generateCalendarFeed } from "@/lib/calendar";
 import {
   getTrackedDomainsForUser,
   recordCalendarFeedAccess,
   validateCalendarFeedToken,
 } from "@domainstack/db/queries";
 import { createLogger } from "@domainstack/logger";
-import type { NextRequest } from "next/server";
-import { after, NextResponse } from "next/server";
-import { generateCalendarFeed } from "@/lib/calendar";
 
 const logger = createLogger({ source: "api/calendar/user" });
 

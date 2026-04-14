@@ -92,10 +92,7 @@ type EmailSectionProps = {
   variant?: "default" | "option" | "code" | "secondaryButton";
 };
 
-export function EmailSection({
-  children,
-  variant = "default",
-}: EmailSectionProps) {
+export function EmailSection({ children, variant = "default" }: EmailSectionProps) {
   const sectionStyles = {
     default: defaultSection,
     option: optionSection,

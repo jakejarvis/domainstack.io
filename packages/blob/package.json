@@ -9,13 +9,15 @@
   },
   "scripts": {
     "check-types": "tsc --noEmit",
-    "lint": "biome check",
-    "format": "biome format --write"
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "fmt": "oxfmt --config ../../.oxfmtrc.json",
+    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json"
   },
   "dependencies": {
     "@domainstack/logger": "workspace:*",
-    "@vercel/blob": "^2.3.0",
-    "file-type": "^21.3.0"
+    "@vercel/blob": "^2.3.3",
+    "file-type": "^22.0.1"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",

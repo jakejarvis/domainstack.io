@@ -1,9 +1,6 @@
 import type { DomainResponse } from "@domainstack/types";
 
-export function exportDomainData(
-  domain: string,
-  data: Partial<DomainResponse>,
-) {
+export function exportDomainData(domain: string, data: Partial<DomainResponse>) {
   let registration = null;
   if (data.registration) {
     // omit domain, unicodeName, punycodeName, warnings, registrarProvider
@@ -51,7 +48,6 @@ export function exportDomainData(
 
   let headers = null;
   if (data.headers) {
-    // biome-ignore lint/nursery/useDestructuring: might be null
     headers = data.headers.headers;
   }
 

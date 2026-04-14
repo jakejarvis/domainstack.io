@@ -1,5 +1,6 @@
 /* @vitest-environment node */
 import { describe, expect, it } from "vitest";
+
 import { ttlForCertificates, ttlForDnsRecord, ttlForRegistration } from "./ttl";
 
 describe("TTL policy", () => {
@@ -53,9 +54,7 @@ describe("TTL policy", () => {
     const now = new Date("2024-01-01T00:00:00.000Z");
     const validTo = new Date("2024-01-04T00:00:00.000Z");
     const d = ttlForCertificates(now, validTo);
-    expect(d.toISOString()).toBe(
-      new Date("2024-01-01T01:00:00.000Z").toISOString(),
-    );
+    expect(d.toISOString()).toBe(new Date("2024-01-01T01:00:00.000Z").toISOString());
   });
 
   it("certs: clamps to minimum when valid_to is inside the 48h buffer", () => {

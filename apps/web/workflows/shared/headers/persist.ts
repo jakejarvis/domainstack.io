@@ -9,6 +9,7 @@
  */
 
 import type { PersistResult } from "@/lib/workflow/types";
+
 import type { HeadersFetchData } from "./types";
 
 /**
@@ -29,9 +30,7 @@ export async function persistHeadersStep(
 
   // Dynamic imports for Node.js modules and database operations
   const { ttlForHeaders } = await import("@domainstack/server/ttl");
-  const { ensureDomainRecord, replaceHeaders } = await import(
-    "@domainstack/db/queries"
-  );
+  const { ensureDomainRecord, replaceHeaders } = await import("@domainstack/db/queries");
 
   const now = new Date();
   const expiresAt = ttlForHeaders(now);

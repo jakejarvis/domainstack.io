@@ -1,9 +1,8 @@
-import {
-  getRateLimiter,
-  type RateLimitInfo,
-} from "@domainstack/redis/ratelimit";
 import { TRPCError } from "@trpc/server";
 import { after } from "next/server";
+
+import { getRateLimiter, type RateLimitInfo } from "@domainstack/redis/ratelimit";
+
 import { t } from "../trpc";
 
 /**
@@ -52,9 +51,7 @@ export const withRateLimit = t.middleware(async ({ ctx, meta, path, next }) => {
     return next();
   }
 
-  const rateLimitResult = await limiter
-    .limit(`${path}:${identifier}`)
-    .catch(() => null);
+  const rateLimitResult = await limiter.limit(`${path}:${identifier}`).catch(() => null);
 
   // Fail open: Redis errors allow the request through
   if (!rateLimitResult) {
@@ -88,12 +85,7 @@ export const withRateLimit = t.middleware(async ({ ctx, meta, path, next }) => {
 
   // Augment successful responses with rate limit metadata
   // Only augment plain objects, not arrays or primitives
-  if (
-    result.ok &&
-    result.data &&
-    typeof result.data === "object" &&
-    !Array.isArray(result.data)
-  ) {
+  if (result.ok && result.data && typeof result.data === "object" && !Array.isArray(result.data)) {
     return {
       ...result,
       data: {

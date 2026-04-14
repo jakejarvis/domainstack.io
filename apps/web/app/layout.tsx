@@ -3,6 +3,7 @@ import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
+
 import { Providers } from "@/app/providers";
 import { ChatServer } from "@/components/chat/chat-server";
 import { CookiePromptGeofenced } from "@/components/consent/cookie-prompt-geofenced";
@@ -19,9 +20,7 @@ export const metadata: Metadata = {
   },
   description:
     "Instant lookups for WHOIS, DNS, hosting, certificates, SEO and more, plus free domain tracking and change alerts.",
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000",
-  ),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"),
   alternates: {
     canonical: "/",
   },

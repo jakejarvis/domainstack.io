@@ -3,6 +3,7 @@
  */
 
 import { type BootstrapData, lookup } from "rdapper";
+
 import type { RdapLookupResult, WhoisLookupOptions } from "./types";
 import { RDAP_BOOTSTRAP_URL } from "./types";
 
@@ -46,14 +47,10 @@ function isTimeoutError(error: unknown): boolean {
  * @param userAgent - User agent for the request
  * @returns Bootstrap data or undefined if fetch fails
  */
-export async function fetchBootstrapData(
-  userAgent?: string,
-): Promise<BootstrapData | undefined> {
+export async function fetchBootstrapData(userAgent?: string): Promise<BootstrapData | undefined> {
   try {
     const res = await fetch(RDAP_BOOTSTRAP_URL, {
-      headers: {
-        ...(userAgent ? { "User-Agent": userAgent } : {}),
-      },
+      headers: userAgent ? { "User-Agent": userAgent } : undefined,
       // Next.js Data Cache - 1 week TTL (ignored in non-Next.js environments)
       next: { revalidate: 604_800 },
     } as RequestInit);

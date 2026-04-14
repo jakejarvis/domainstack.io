@@ -1,13 +1,14 @@
+import { useMemo } from "react";
+
+import { TtlBadge } from "@/components/domain/dns/ttl-badge";
+import { KeyValue } from "@/components/domain/key-value";
+import { Favicon } from "@/components/icons/favicon";
 import type { DnsRecord } from "@domainstack/types";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
-import { useMemo } from "react";
-import { TtlBadge } from "@/components/domain/dns/ttl-badge";
-import { KeyValue } from "@/components/domain/key-value";
-import { Favicon } from "@/components/icons/favicon";
 
 export function DnsRecordList({
   records,
@@ -26,15 +27,9 @@ export function DnsRecordList({
       {filtered.map((r) => (
         <KeyValue
           key={`${type}-${r.value}${type === "MX" ? `-${r.priority ?? ""}` : ""}`}
-          label={
-            type === "MX" && r.priority != null
-              ? `Priority ${r.priority}`
-              : undefined
-          }
+          label={type === "MX" && r.priority != null ? `Priority ${r.priority}` : undefined}
           value={r.value}
-          trailing={
-            typeof r.ttl === "number" ? <TtlBadge ttl={r.ttl} /> : undefined
-          }
+          trailing={typeof r.ttl === "number" ? <TtlBadge ttl={r.ttl} /> : undefined}
           suffix={
             r.isCloudflare ? (
               <ResponsiveTooltip>

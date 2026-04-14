@@ -41,24 +41,16 @@ const AUTH_CALLBACK_ERROR_MESSAGES: Record<AuthCallbackErrorCode, string> = {
     "The account you tried to link uses a different email address. Both accounts must use the same email.",
   [AUTH_CALLBACK_ERROR_CODES.ACCOUNT_ALREADY_LINKED]:
     "This account is already linked to a different user.",
-  [AUTH_CALLBACK_ERROR_CODES.UNABLE_TO_LINK]:
-    "Unable to link account. Please try again.",
+  [AUTH_CALLBACK_ERROR_CODES.UNABLE_TO_LINK]: "Unable to link account. Please try again.",
 
   // OAuth flow errors - less common but should be handled
-  [AUTH_CALLBACK_ERROR_CODES.STATE_MISMATCH]:
-    "Authentication session expired. Please try again.",
-  [AUTH_CALLBACK_ERROR_CODES.PLEASE_RESTART]:
-    "Authentication session expired. Please try again.",
-  [AUTH_CALLBACK_ERROR_CODES.INVALID_CALLBACK]:
-    "Invalid authentication request. Please try again.",
-  [AUTH_CALLBACK_ERROR_CODES.INTERNAL_ERROR]:
-    "An internal error occurred. Please try again later.",
-  [AUTH_CALLBACK_ERROR_CODES.NO_CODE]:
-    "Authentication was not completed. Please try again.",
-  [AUTH_CALLBACK_ERROR_CODES.INVALID_CODE]:
-    "Authentication code was invalid. Please try again.",
-  [AUTH_CALLBACK_ERROR_CODES.PROVIDER_NOT_FOUND]:
-    "This login provider is not available.",
+  [AUTH_CALLBACK_ERROR_CODES.STATE_MISMATCH]: "Authentication session expired. Please try again.",
+  [AUTH_CALLBACK_ERROR_CODES.PLEASE_RESTART]: "Authentication session expired. Please try again.",
+  [AUTH_CALLBACK_ERROR_CODES.INVALID_CALLBACK]: "Invalid authentication request. Please try again.",
+  [AUTH_CALLBACK_ERROR_CODES.INTERNAL_ERROR]: "An internal error occurred. Please try again later.",
+  [AUTH_CALLBACK_ERROR_CODES.NO_CODE]: "Authentication was not completed. Please try again.",
+  [AUTH_CALLBACK_ERROR_CODES.INVALID_CODE]: "Authentication code was invalid. Please try again.",
+  [AUTH_CALLBACK_ERROR_CODES.PROVIDER_NOT_FOUND]: "This login provider is not available.",
   [AUTH_CALLBACK_ERROR_CODES.UNABLE_TO_GET_USER_INFO]:
     "Unable to retrieve account information from the provider. Please try again.",
   [AUTH_CALLBACK_ERROR_CODES.NO_CALLBACK_URL]:

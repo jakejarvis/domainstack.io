@@ -44,9 +44,10 @@ export function formatDateTimeUtc(iso: string): string {
     });
 
     const parts = formatter.formatToParts(d);
-    const partMap = Object.fromEntries(
-      parts.map((p) => [p.type, p.value]),
-    ) as Record<string, string>;
+    const partMap = Object.fromEntries(parts.map((p) => [p.type, p.value])) as Record<
+      string,
+      string
+    >;
 
     // Construct: 2025-10-02 14:30:05 UTC
     return `${partMap.year}-${partMap.month}-${partMap.day} ${partMap.hour}:${partMap.minute}:${partMap.second} UTC`;

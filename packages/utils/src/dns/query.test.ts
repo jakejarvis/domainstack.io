@@ -1,11 +1,9 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 /* @vitest-environment node */
 import type { DohProvider } from "@domainstack/constants";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  filterAnswersByType,
-  providerOrderForLookup,
-  queryDohProvider,
-} from "./query";
+
+import { filterAnswersByType, providerOrderForLookup, queryDohProvider } from "./query";
 
 // Use type assertion for mock provider since DohProvider is a literal union type
 const mockProvider = {
@@ -13,6 +11,14 @@ const mockProvider = {
   name: "Test Provider",
   url: "https://dns.test/dns-query",
 } as unknown as DohProvider;
+
+function mockFetchResponse(response: Partial<Response> & { json?: () => Promise<unknown> }) {
+  globalThis.fetch = vi.fn<typeof fetch>().mockResolvedValue(response as Response);
+}
+
+function mockFetchImplementation(implementation: typeof fetch) {
+  globalThis.fetch = vi.fn<typeof fetch>().mockImplementation(implementation);
+}
 
 describe("providerOrderForLookup", () => {
   it("returns all providers", () => {
@@ -43,8 +49,7 @@ describe("providerOrderForLookup", () => {
     // Different domains should likely produce different orders
     // (not guaranteed, but statistically likely with good hash function)
     const sameOrder =
-      order1.every((p, i) => p.key === order2[i]?.key) &&
-      order1.length === order2.length;
+      order1.every((p, i) => p.key === order2[i]?.key) && order1.length === order2.length;
 
     // This test may occasionally fail with a poor hash or collision,
     // but simpleHash should distribute well enough for common domains
@@ -64,14 +69,12 @@ describe("queryDohProvider", () => {
   });
 
   it("returns answers for successful response", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({
+    mockFetchResponse({
       ok: true,
       json: () =>
         Promise.resolve({
           Status: 0,
-          Answer: [
-            { name: "example.com", type: 1, TTL: 300, data: "93.184.216.34" },
-          ],
+          Answer: [{ name: "example.com", type: 1, TTL: 300, data: "93.184.216.34" }],
         }),
     });
 
@@ -83,7 +86,7 @@ describe("queryDohProvider", () => {
   });
 
   it("returns empty array for NXDOMAIN (Status !== 0)", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({
+    mockFetchResponse({
       ok: true,
       json: () =>
         Promise.resolve({
@@ -92,17 +95,13 @@ describe("queryDohProvider", () => {
         }),
     });
 
-    const answers = await queryDohProvider(
-      mockProvider,
-      "nonexistent.test",
-      "A",
-    );
+    const answers = await queryDohProvider(mockProvider, "nonexistent.test", "A");
 
     expect(answers).toEqual([]);
   });
 
   it("returns empty array when Answer is undefined", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({
+    mockFetchResponse({
       ok: true,
       json: () =>
         Promise.resolve({
@@ -117,29 +116,29 @@ describe("queryDohProvider", () => {
   });
 
   it("throws on non-2xx HTTP response", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({
+    mockFetchResponse({
       ok: false,
       status: 500,
     });
 
-    await expect(
-      queryDohProvider(mockProvider, "example.com", "A"),
-    ).rejects.toThrow("DoH query failed: test A 500");
+    await expect(queryDohProvider(mockProvider, "example.com", "A")).rejects.toThrow(
+      "DoH query failed: test A 500",
+    );
   });
 
   it("throws on non-object JSON response", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({
+    mockFetchResponse({
       ok: true,
       json: () => Promise.resolve(null),
     });
 
-    await expect(
-      queryDohProvider(mockProvider, "example.com", "A"),
-    ).rejects.toThrow("DoH invalid response: test (not an object)");
+    await expect(queryDohProvider(mockProvider, "example.com", "A")).rejects.toThrow(
+      "DoH invalid response: test (not an object)",
+    );
   });
 
   it("throws when Answer is not an array", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({
+    mockFetchResponse({
       ok: true,
       json: () =>
         Promise.resolve({
@@ -148,19 +147,19 @@ describe("queryDohProvider", () => {
         }),
     });
 
-    await expect(
-      queryDohProvider(mockProvider, "example.com", "A"),
-    ).rejects.toThrow("DoH invalid response: test (Answer is not an array)");
+    await expect(queryDohProvider(mockProvider, "example.com", "A")).rejects.toThrow(
+      "DoH invalid response: test (Answer is not an array)",
+    );
   });
 
   it("adds cacheBust parameter when option is true", async () => {
     let capturedUrl = "";
-    globalThis.fetch = vi.fn().mockImplementation((url: URL) => {
-      capturedUrl = url.toString();
+    mockFetchImplementation((input) => {
+      capturedUrl = input.toString();
       return Promise.resolve({
         ok: true,
         json: () => Promise.resolve({ Status: 0 }),
-      });
+      } as Response);
     });
 
     await queryDohProvider(mockProvider, "example.com", "A", {
@@ -172,12 +171,12 @@ describe("queryDohProvider", () => {
 
   it("does not add cacheBust parameter by default", async () => {
     let capturedUrl = "";
-    globalThis.fetch = vi.fn().mockImplementation((url: URL) => {
-      capturedUrl = url.toString();
+    mockFetchImplementation((input) => {
+      capturedUrl = input.toString();
       return Promise.resolve({
         ok: true,
         json: () => Promise.resolve({ Status: 0 }),
-      });
+      } as Response);
     });
 
     await queryDohProvider(mockProvider, "example.com", "A");
@@ -187,15 +186,13 @@ describe("queryDohProvider", () => {
 
   it("sets correct Accept header", async () => {
     let capturedHeaders: Record<string, string> = {};
-    globalThis.fetch = vi
-      .fn()
-      .mockImplementation((_url: string, options: RequestInit) => {
-        capturedHeaders = options.headers as Record<string, string>;
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ Status: 0 }),
-        });
-      });
+    mockFetchImplementation((_input, options) => {
+      capturedHeaders = options?.headers as Record<string, string>;
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ Status: 0 }),
+      } as Response);
+    });
 
     await queryDohProvider(mockProvider, "example.com", "A");
 
@@ -218,9 +215,7 @@ describe("filterAnswersByType", () => {
   });
 
   it("returns empty array when no matches", () => {
-    const answers = [
-      { name: "example.com", type: 5, TTL: 300, data: "alias.example.com" },
-    ];
+    const answers = [{ name: "example.com", type: 5, TTL: 300, data: "alias.example.com" }];
 
     const filtered = filterAnswersByType(answers, 1);
 

@@ -1,15 +1,11 @@
 "use client";
 
-import {
-  IconCheck,
-  IconCircleX,
-  IconClipboardCheck,
-  IconCopy,
-} from "@tabler/icons-react";
+import { IconCheck, IconCircleX, IconClipboardCheck, IconCopy } from "@tabler/icons-react";
 import clipboardCopy from "clipboard-copy";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+
 import { cn, type VariantProps } from "../utils";
 import { Button, type buttonVariants } from "./button";
 
@@ -31,7 +27,6 @@ export function CopyButton({
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Clear the reset timer on unmount to prevent setState on unmounted component
-  // biome-ignore lint/style/useConsistentArrowReturn: nesting is intentional
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
@@ -87,15 +82,9 @@ export function CopyButton({
         {copied ? (
           <motion.span
             key="check"
-            initial={
-              shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }
-            }
-            animate={
-              shouldReduceMotion ? { opacity: 1 } : { scale: 1, opacity: 1 }
-            }
-            exit={
-              shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }
-            }
+            initial={shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }}
+            animate={shouldReduceMotion ? { opacity: 1 } : { scale: 1, opacity: 1 }}
+            exit={shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }}
             transition={{ duration: shouldReduceMotion ? 0.1 : 0.15 }}
             className="flex items-center justify-center"
           >
@@ -104,15 +93,9 @@ export function CopyButton({
         ) : (
           <motion.span
             key="clipboard"
-            initial={
-              shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }
-            }
-            animate={
-              shouldReduceMotion ? { opacity: 1 } : { scale: 1, opacity: 1 }
-            }
-            exit={
-              shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }
-            }
+            initial={shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }}
+            animate={shouldReduceMotion ? { opacity: 1 } : { scale: 1, opacity: 1 }}
+            exit={shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }}
             transition={{ duration: shouldReduceMotion ? 0.1 : 0.15 }}
             className="flex items-center justify-center"
           >

@@ -1,5 +1,7 @@
-import type { UserNotificationPreferences as UserNotificationPreferencesData } from "@domainstack/types";
 import { eq } from "drizzle-orm";
+
+import type { UserNotificationPreferences as UserNotificationPreferencesData } from "@domainstack/types";
+
 import { db } from "../client";
 import { userNotificationPreferences } from "../schema";
 
@@ -42,9 +44,7 @@ export async function getOrCreateUserNotificationPreferences(
     .returning();
 
   if (!row) {
-    throw new Error(
-      `Failed to get notification preferences for user ${userId} after upsert`,
-    );
+    throw new Error(`Failed to get notification preferences for user ${userId} after upsert`);
   }
 
   return mapPreferences(row);

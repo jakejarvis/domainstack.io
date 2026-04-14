@@ -32,7 +32,7 @@ export function HostingMapClient({ lat, lon, domain }: HostingMapClientProps) {
       <MapMarker longitude={lon} latitude={lat}>
         <MapMarkerContent>
           <div className="relative">
-            <div className="absolute -inset-2 not-motion-safe:hidden animate-ping rounded-full bg-accent-cyan/30 [animation-duration:2s]" />
+            <div className="absolute -inset-2 animate-ping rounded-full bg-accent-cyan/30 [animation-duration:2s] not-motion-safe:hidden" />
             <div className="absolute -inset-1 rounded-full bg-accent-cyan/20 blur-sm" />
             <div className="relative size-4 rounded-full bg-gradient-to-b from-accent-cyan to-accent-blue shadow-lg" />
           </div>

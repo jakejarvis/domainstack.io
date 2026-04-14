@@ -5,11 +5,7 @@
  * Transient errors throw (for TanStack Query to retry).
  */
 
-import {
-  ensureDomainRecord,
-  isDomainBlocked,
-  upsertSeo,
-} from "@domainstack/db/queries";
+import { ensureDomainRecord, isDomainBlocked, upsertSeo } from "@domainstack/db/queries";
 import { optimizeImage, storeImage } from "@domainstack/image";
 import { isExpectedDnsError, safeFetch } from "@domainstack/safe-fetch";
 import type {
@@ -19,6 +15,7 @@ import type {
   SeoResponse,
   TwitterMeta,
 } from "@domainstack/types";
+
 import { parseHtmlMeta, parseRobotsTxt, selectPreview } from "../seo";
 import { isExpectedTlsError } from "../tls";
 import { ttlForSeo } from "../ttl";
@@ -29,9 +26,7 @@ import { ttlForSeo } from "../ttl";
 
 export type SeoError = "dns_error" | "tls_error";
 
-export type SeoResult =
-  | { success: true; data: SeoResponse }
-  | { success: false; error: SeoError };
+export type SeoResult = { success: true; data: SeoResponse } | { success: false; error: SeoError };
 
 interface HtmlFetchData {
   success: boolean;
@@ -77,10 +72,7 @@ const SOCIAL_HEIGHT = 630;
  */
 export async function fetchSeo(domain: string): Promise<SeoResult> {
   // Step 1 & 2: Fetch HTML and robots.txt in parallel
-  const [htmlResult, robotsResult] = await Promise.all([
-    fetchHtml(domain),
-    fetchRobots(domain),
-  ]);
+  const [htmlResult, robotsResult] = await Promise.all([fetchHtml(domain), fetchRobots(domain)]);
 
   // Check for permanent HTML failures (DNS/TLS errors)
   // These are fatal - no useful data can be extracted
@@ -93,10 +85,7 @@ export async function fetchSeo(domain: string): Promise<SeoResult> {
       const errorResponse = buildSeoResponse(htmlResult, robotsResult, null);
       await persistSeo(domain, errorResponse, null);
 
-      const errorCode =
-        htmlResult.error === "DNS resolution failed"
-          ? "dns_error"
-          : "tls_error";
+      const errorCode = htmlResult.error === "DNS resolution failed" ? "dns_error" : "tls_error";
       return { success: false, error: errorCode };
     }
     // Other HTML failures (HTTP errors, non-HTML) continue with partial data
@@ -154,15 +143,12 @@ async function fetchHtml(domain: string): Promise<HtmlFetchData> {
       maxRedirects: 5,
       truncateOnLimit: true,
       headers: {
-        Accept:
-          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "en",
       },
     });
 
-    // biome-ignore lint/nursery/useDestructuring: might be null
     status = htmlResult.status;
-    // biome-ignore lint/nursery/useDestructuring: might be null
     finalUrl = htmlResult.finalUrl;
 
     if (!htmlResult.ok) {
@@ -234,7 +220,7 @@ async function fetchHtml(domain: string): Promise<HtmlFetchData> {
     }
 
     // Transient failure - throw for TanStack Query to retry
-    throw new Error("HTML fetch failed");
+    throw new Error("HTML fetch failed", { cause: err });
   }
 }
 
@@ -298,8 +284,7 @@ async function processOgImage(
       userAgent: process.env.EXTERNAL_USER_AGENT,
       currentUrl,
       headers: {
-        Accept:
-          "image/avif,image/webp,image/png,image/jpeg,image/*;q=0.9,*/*;q=0.8",
+        Accept: "image/avif,image/webp,image/png,image/jpeg,image/*;q=0.9,*/*;q=0.8",
       },
       maxBytes: 5 * 1024 * 1024, // 5MB
       timeoutMs: 8000,

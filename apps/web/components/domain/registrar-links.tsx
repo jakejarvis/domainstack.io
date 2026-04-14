@@ -1,16 +1,13 @@
-import { useAnalytics } from "@domainstack/analytics/client";
-import { Button } from "@domainstack/ui/button";
-import { Skeleton } from "@domainstack/ui/skeleton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@domainstack/ui/tooltip";
-import { cn } from "@domainstack/ui/utils";
 import { SiCloudflare } from "@icons-pack/react-simple-icons";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import Link from "next/link";
+
 import { useTRPC } from "@/lib/trpc/client";
+import { useAnalytics } from "@domainstack/analytics/client";
+import { Button } from "@domainstack/ui/button";
+import { Skeleton } from "@domainstack/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
+import { cn } from "@domainstack/ui/utils";
 
 /**
  * Registry of all supported pricing providers.
@@ -47,8 +44,7 @@ const REGISTRAR_PROVIDERS: Record<
   },
   dynadot: {
     name: "Dynadot",
-    searchUrl: (domain) =>
-      `https://www.dynadot.com/domain/search?domain=${domain}`,
+    searchUrl: (domain) => `https://www.dynadot.com/domain/search?domain=${domain}`,
     icon: (
       <svg viewBox="0 0 24 24" fill="#1FA7FF">
         <path d="M19.688 5.66c-1.218-2.439-4.29-3.355-6.708-2.098L5.82 7.286l1.605 3.081-1.618.84c-2.395 1.245-3.412 4.262-2.15 6.649a4.88 4.88 0 0 0 6.552 2.044l7.258-3.776-1.6-3.078 1.71-.89a4.877 4.877 0 0 0 2.111-6.494zM9.376 18.293a3.07 3.07 0 0 1-4.419-2.107 2.7 2.7 0 0 1-.059-.757c.073-1.13.697-2.076 1.653-2.57l1.708-.89.707 1.36a2.936 2.936 0 0 0 3.955 1.25l1.343-.698.767 1.475-5.653 2.938zm2.542-7.961c.551.105.995.548 1.101 1.098a1.403 1.403 0 0 1-1.648 1.65 1.4 1.4 0 0 1-1.101-1.102 1.403 1.403 0 0 1 1.648-1.648zm4.75.256-1.635.852-.707-1.358a2.934 2.934 0 0 0-3.955-1.25l-1.344.699-.768-1.476 5.654-2.938a3.07 3.07 0 0 1 4.107 1.258c.814 1.506.167 3.424-1.353 4.215z" />
@@ -68,7 +64,6 @@ export function RegistrarLinksSkeleton({ className }: { className?: string }) {
     <div className={cn("flex flex-col items-center justify-center", className)}>
       <Skeleton className="mt-1 mb-1 h-3 w-20" aria-hidden />
       {Array.from({ length: providerCount }, (_, i) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: Static skeleton elements never reorder
         <Skeleton key={i} className="mt-2 h-8 w-48" aria-hidden />
       ))}
       <Skeleton className="mt-7 mb-1 h-3 w-64" aria-hidden />
@@ -140,7 +135,7 @@ export function RegistrarLinks({
             <Button
               key={providerPricing.provider}
               variant="outline"
-              className="[&_svg]:!size-5 [&_svg]:!shrink-0 flex w-full min-w-[250px] items-center gap-2.5"
+              className="flex w-full min-w-[250px] items-center gap-2.5 [&_svg]:!size-5 [&_svg]:!shrink-0"
               nativeButton={false}
               render={
                 <a
@@ -156,17 +151,13 @@ export function RegistrarLinks({
                   }
                 >
                   <Tooltip>
-                    <TooltipTrigger
-                      render={
-                        <span className="rounded-full">{config.icon}</span>
-                      }
-                    />
+                    <TooltipTrigger render={<span className="rounded-full">{config.icon}</span>} />
                     <TooltipContent>{config.name}</TooltipContent>
                   </Tooltip>
                   <span>
                     <span className="text-foreground/85">.{tld} from</span>{" "}
                     <span className="font-semibold">{price}</span>
-                    <span className="text-muted-foreground text-xs">/year</span>
+                    <span className="text-xs text-muted-foreground">/year</span>
                   </span>
                 </a>
               }
@@ -175,7 +166,7 @@ export function RegistrarLinks({
         })}
       </div>
 
-      <p className="mt-6 text-muted-foreground text-xs">
+      <p className="mt-6 text-xs text-muted-foreground">
         These are not affiliate links, but they{" "}
         <Link
           href="/help#contact"

@@ -1,4 +1,5 @@
 import { getDefaultSuggestions } from "@domainstack/server/edge-config";
+
 import { ChatClientLazy } from "./chat-client-lazy";
 
 /** Question templates - each takes a domain and returns a suggestion */
@@ -13,12 +14,7 @@ const QUESTION_TEMPLATES = [
 ];
 
 /** Fallback domains when Edge Config is empty */
-const FALLBACK_DOMAINS = [
-  "vercel.com",
-  "github.com",
-  "stackoverflow.com",
-  "chatgpt.com",
-];
+const FALLBACK_DOMAINS = ["vercel.com", "github.com", "stackoverflow.com", "chatgpt.com"];
 
 /** Fisher-Yates shuffle */
 function shuffle<T>(array: T[]): T[] {
@@ -44,9 +40,7 @@ export async function ChatServer() {
 
   const suggestions = shuffledTemplates
     .slice(0, 4)
-    .map((template, i) =>
-      template(shuffledDomains[i % shuffledDomains.length]),
-    );
+    .map((template, i) => template(shuffledDomains[i % shuffledDomains.length]));
 
   return <ChatClientLazy suggestions={suggestions} />;
 }

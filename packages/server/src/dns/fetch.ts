@@ -13,6 +13,7 @@ import {
   queryDohProvider,
   sortDnsRecordsByType,
 } from "@domainstack/utils/dns";
+
 import { isCloudflareIp } from "../cloudflare";
 import { ttlForDnsRecord } from "../ttl";
 import type { DnsFetchData } from "./types";
@@ -62,17 +63,13 @@ export async function fetchDnsRecords(
             switch (type) {
               case "A":
               case "AAAA": {
-                const value = a.data.endsWith(".")
-                  ? a.data.slice(0, -1)
-                  : a.data;
+                const value = a.data.endsWith(".") ? a.data.slice(0, -1) : a.data;
                 const isCloudflare = await isCloudflareIp(value);
                 records.push({ type, name, value, ttl, isCloudflare });
                 break;
               }
               case "NS": {
-                const value = a.data.endsWith(".")
-                  ? a.data.slice(0, -1)
-                  : a.data;
+                const value = a.data.endsWith(".") ? a.data.slice(0, -1) : a.data;
                 records.push({ type, name, value, ttl });
                 break;
               }

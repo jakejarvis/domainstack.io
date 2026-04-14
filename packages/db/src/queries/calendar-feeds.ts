@@ -1,5 +1,7 @@
 import crypto from "node:crypto";
+
 import { eq, type InferSelectModel, sql } from "drizzle-orm";
+
 import { db } from "../client";
 import { calendarFeeds } from "../schema";
 
@@ -25,9 +27,7 @@ export type CalendarFeedValidation =
 /**
  * Get a user's calendar feed record if it exists.
  */
-export async function getCalendarFeed(
-  userId: string,
-): Promise<CalendarFeedSelect | null> {
+export async function getCalendarFeed(userId: string): Promise<CalendarFeedSelect | null> {
   const [feed] = await db
     .select()
     .from(calendarFeeds)
@@ -40,9 +40,7 @@ export async function getCalendarFeed(
 /**
  * Enable (create or re-enable) a calendar feed for a user.
  */
-export async function enableCalendarFeed(
-  userId: string,
-): Promise<CalendarFeedSelect> {
+export async function enableCalendarFeed(userId: string): Promise<CalendarFeedSelect> {
   const token = generateCalendarFeedToken();
 
   const [feed] = await db
@@ -63,9 +61,7 @@ export async function enableCalendarFeed(
 /**
  * Disable a calendar feed for a user.
  */
-export async function disableCalendarFeed(
-  userId: string,
-): Promise<CalendarFeedSelect | null> {
+export async function disableCalendarFeed(userId: string): Promise<CalendarFeedSelect | null> {
   const [updated] = await db
     .update(calendarFeeds)
     .set({ enabled: false })
@@ -78,9 +74,7 @@ export async function disableCalendarFeed(
 /**
  * Rotate the calendar feed token for a user.
  */
-export async function rotateCalendarFeedToken(
-  userId: string,
-): Promise<CalendarFeedSelect | null> {
+export async function rotateCalendarFeedToken(userId: string): Promise<CalendarFeedSelect | null> {
   const newToken = generateCalendarFeedToken();
 
   const [updated] = await db
@@ -112,9 +106,7 @@ export async function deleteCalendarFeed(userId: string): Promise<boolean> {
 /**
  * Validate a calendar feed token and return the associated user ID.
  */
-export async function validateCalendarFeedToken(
-  token: string,
-): Promise<CalendarFeedValidation> {
+export async function validateCalendarFeedToken(token: string): Promise<CalendarFeedValidation> {
   const [feed] = await db
     .select({
       id: calendarFeeds.id,
@@ -125,7 +117,7 @@ export async function validateCalendarFeedToken(
     .where(eq(calendarFeeds.token, token))
     .limit(1);
 
-  if (!feed || !feed.enabled) {
+  if (!feed?.enabled) {
     return { valid: false, reason: "invalid" };
   }
 

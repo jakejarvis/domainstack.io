@@ -6,6 +6,7 @@
  */
 
 import { RetryableError } from "workflow";
+
 import type { FetchRegistrationResult } from "./types";
 
 /**
@@ -17,9 +18,7 @@ import type { FetchRegistrationResult } from "./types";
  * @param domain - The domain to lookup
  * @returns FetchRegistrationResult with typed error on failure
  */
-export async function lookupWhoisStep(
-  domain: string,
-): Promise<FetchRegistrationResult> {
+export async function lookupWhoisStep(domain: string): Promise<FetchRegistrationResult> {
   "use step";
 
   // Dynamic import to keep step bundle small

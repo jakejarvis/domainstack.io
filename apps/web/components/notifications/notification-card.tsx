@@ -1,31 +1,26 @@
 "use client";
 
-import type { NotificationData } from "@domainstack/types";
-import { Icon } from "@domainstack/ui/icon";
-import { cn } from "@domainstack/ui/utils";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import { useMemo } from "react";
+
 import {
   getNotificationIcon,
   getNotificationSeverity,
   getSeverityIconColor,
   getUnreadIndicatorColor,
 } from "@/lib/notification-utils";
+import type { NotificationData } from "@domainstack/types";
+import { Icon } from "@domainstack/ui/icon";
+import { cn } from "@domainstack/ui/utils";
 
 interface NotificationCardProps {
   notification: NotificationData;
   onClick?: () => void;
 }
 
-export function NotificationCard({
-  notification,
-  onClick,
-}: NotificationCardProps) {
-  const IconComponent = useMemo(
-    () => getNotificationIcon(notification.type),
-    [notification.type],
-  );
+export function NotificationCard({ notification, onClick }: NotificationCardProps) {
+  const IconComponent = useMemo(() => getNotificationIcon(notification.type), [notification.type]);
   const severity = getNotificationSeverity(notification.type);
   const iconColor = getSeverityIconColor(severity, !!notification.readAt);
   const isUnread = !notification.readAt;
@@ -54,7 +49,7 @@ export function NotificationCard({
         {/* Content */}
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <p className="font-medium text-sm">{notification.title}</p>
+            <p className="text-sm font-medium">{notification.title}</p>
             {isUnread && (
               <span
                 className={cn(
@@ -66,10 +61,8 @@ export function NotificationCard({
               />
             )}
           </div>
-          <p className="line-clamp-3 text-[13px] text-muted-foreground">
-            {notification.message}
-          </p>
-          <p className="mt-1 text-muted-foreground/75 text-xs">
+          <p className="line-clamp-3 text-[13px] text-muted-foreground">{notification.message}</p>
+          <p className="mt-1 text-xs text-muted-foreground/75">
             {formatDistanceToNow(notification.sentAt, {
               addSuffix: true,
             })}

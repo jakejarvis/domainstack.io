@@ -1,5 +1,6 @@
 import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+
 import { server } from "./test-setup";
 
 beforeAll(() => server.listen({ onUnhandledRequest: "bypass" }));
@@ -127,10 +128,7 @@ describe("verifyByDns", () => {
         "https://cloudflare-dns.com/dns-query",
         () => new HttpResponse(null, { status: 500 }),
       ),
-      http.get(
-        "https://dns.google/resolve",
-        () => new HttpResponse(null, { status: 500 }),
-      ),
+      http.get("https://dns.google/resolve", () => new HttpResponse(null, { status: 500 })),
     );
 
     const { verifyByDns } = await import("./index");
@@ -252,14 +250,8 @@ describe("verifyByHtmlFile", () => {
 
   it("returns not verified when all files not found", async () => {
     server.use(
-      http.get(
-        "https://verified-dns.test/*",
-        () => new HttpResponse(null, { status: 404 }),
-      ),
-      http.get(
-        "http://verified-dns.test/*",
-        () => new HttpResponse(null, { status: 404 }),
-      ),
+      http.get("https://verified-dns.test/*", () => new HttpResponse(null, { status: 404 })),
+      http.get("http://verified-dns.test/*", () => new HttpResponse(null, { status: 404 })),
     );
 
     const { verifyByHtmlFile } = await import("./index");
@@ -393,12 +385,9 @@ describe("verifyByMetaTag", () => {
       http.get(
         "https://verified-dns.test/",
         () =>
-          new HttpResponse(
-            "<html><head><title>Test</title></head><body></body></html>",
-            {
-              headers: { "Content-Type": "text/html" },
-            },
-          ),
+          new HttpResponse("<html><head><title>Test</title></head><body></body></html>", {
+            headers: { "Content-Type": "text/html" },
+          }),
       ),
     );
 
@@ -579,12 +568,8 @@ describe("verifyDomain (all methods)", () => {
     );
 
     server.use(
-      http.get("https://verified-dns.test/*", () =>
-        HttpResponse.json(null, { status: 404 }),
-      ),
-      http.get("http://verified-dns.test/*", () =>
-        HttpResponse.json(null, { status: 404 }),
-      ),
+      http.get("https://verified-dns.test/*", () => HttpResponse.json(null, { status: 404 })),
+      http.get("http://verified-dns.test/*", () => HttpResponse.json(null, { status: 404 })),
     );
 
     const { verifyDomain } = await import("./index");
@@ -618,11 +603,7 @@ describe("verifyDomainByMethod", () => {
     );
 
     const { verifyDomainByMethod } = await import("./index");
-    const result = await verifyDomainByMethod(
-      "verified-dns.test",
-      token,
-      "dns_txt",
-    );
+    const result = await verifyDomainByMethod("verified-dns.test", token, "dns_txt");
 
     expect(result.verified).toBe(true);
     expect(result.method).toBe("dns_txt");
@@ -640,11 +621,7 @@ describe("verifyDomainByMethod", () => {
     );
 
     const { verifyDomainByMethod } = await import("./index");
-    const result = await verifyDomainByMethod(
-      "verified-dns.test",
-      token,
-      "html_file",
-    );
+    const result = await verifyDomainByMethod("verified-dns.test", token, "html_file");
 
     expect(result.verified).toBe(true);
     expect(result.method).toBe("html_file");
@@ -665,11 +642,7 @@ describe("verifyDomainByMethod", () => {
     );
 
     const { verifyDomainByMethod } = await import("./index");
-    const result = await verifyDomainByMethod(
-      "verified-dns.test",
-      token,
-      "meta_tag",
-    );
+    const result = await verifyDomainByMethod("verified-dns.test", token, "meta_tag");
 
     expect(result.verified).toBe(true);
     expect(result.method).toBe("meta_tag");

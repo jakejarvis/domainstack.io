@@ -9,6 +9,7 @@ import {
 } from "motion/react";
 import { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
+
 import { StaticBackground } from "@/components/layout/static-background";
 
 /**
@@ -86,30 +87,12 @@ function generateBlobParams(rand: () => number, baseId: string): BlobParams[] {
     const drift = randRange(rand, 10, 26);
     const steps = randInt(rand, 6, 10);
 
-    const x = randomWalkKeyframes(rand, startX, drift, steps, 6, 94).map(
-      (v) => `${v}vw`,
-    );
-    const y = randomWalkKeyframes(rand, startY, drift, steps, 6, 94).map(
-      (v) => `${v}vh`,
-    );
+    const x = randomWalkKeyframes(rand, startX, drift, steps, 6, 94).map((v) => `${v}vw`);
+    const y = randomWalkKeyframes(rand, startY, drift, steps, 6, 94).map((v) => `${v}vh`);
     const scale = randomWalkKeyframes(rand, 1, 0.18, steps, 0.82, 1.28);
-    const rotate = randomWalkKeyframes(
-      rand,
-      randRange(rand, -6, 6),
-      12,
-      steps,
-      -18,
-      18,
-    );
+    const rotate = randomWalkKeyframes(rand, randRange(rand, -6, 6), 12, steps, -18, 18);
     const opacityBase = 0.45 + idx * 0.06;
-    const opacity = randomWalkKeyframes(
-      rand,
-      opacityBase,
-      0.22,
-      steps,
-      0.25,
-      0.9,
-    );
+    const opacity = randomWalkKeyframes(rand, opacityBase, 0.22, steps, 0.25, 0.9);
 
     const times = randomTimes(rand, steps);
     const duration = randRange(rand, 18, 42) + idx * randRange(rand, 1, 4);
@@ -204,9 +187,7 @@ function randomTimes(rand: () => number, steps: number) {
   // `times` is 0..1 and must match keyframe array length.
   // We generate uneven segment durations for "lava lamp" pacing.
   const count = steps + 1; // plus the closing frame
-  const weights = Array.from({ length: count - 1 }, () =>
-    randRange(rand, 0.5, 1.8),
-  );
+  const weights = Array.from({ length: count - 1 }, () => randRange(rand, 0.5, 1.8));
   const total = weights.reduce((sum, w) => sum + w, 0);
   const times: number[] = [0];
   let acc = 0;

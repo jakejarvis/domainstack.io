@@ -1,10 +1,11 @@
-import type { VerificationMethod } from "@domainstack/constants";
 import { FatalError, sleep } from "workflow";
+
 import {
   verifyDomainByDns,
   verifyDomainByHtmlFile,
   verifyDomainByMetaTag,
 } from "@/workflows/shared/verify-domain";
+import type { VerificationMethod } from "@domainstack/constants";
 
 export interface AutoVerifyWorkflowInput {
   trackedDomainId: string;
@@ -95,10 +96,7 @@ export async function autoVerifyWorkflow(
       continue;
     }
 
-    const result = await attemptVerification(
-      currentDomainName,
-      verificationToken,
-    );
+    const result = await attemptVerification(currentDomainName, verificationToken);
 
     if (result.verified && result.method) {
       // Success! Mark the domain as verified
@@ -118,8 +116,7 @@ export async function autoVerifyWorkflow(
   // All attempts exhausted after 30 days
   return {
     result: "exhausted",
-    message:
-      "Verification schedule complete after 30 days. Domain remains unverified.",
+    message: "Verification schedule complete after 30 days. Domain remains unverified.",
   };
 }
 
@@ -128,14 +125,10 @@ type DomainStatus =
   | { status: "already-verified"; domainName: string }
   | { status: "pending"; domainName: string; verificationToken: string };
 
-async function checkDomainStatus(
-  trackedDomainId: string,
-): Promise<DomainStatus> {
+async function checkDomainStatus(trackedDomainId: string): Promise<DomainStatus> {
   "use step";
 
-  const { findTrackedDomainWithDomainName } = await import(
-    "@domainstack/db/queries"
-  );
+  const { findTrackedDomainWithDomainName } = await import("@domainstack/db/queries");
 
   const domain = await findTrackedDomainWithDomainName(trackedDomainId);
 

@@ -1,12 +1,6 @@
+import { Body, Container, Head, Html, Img, Preview } from "@react-email/components";
+
 import { RESEND_LOGO_CONTENT_ID } from "@domainstack/constants";
-import {
-  Body,
-  Container,
-  Head,
-  Html,
-  Img,
-  Preview,
-} from "@react-email/components";
 
 type EmailLayoutProps = {
   previewText: string;
@@ -21,11 +15,7 @@ export function EmailLayout({ previewText, children }: EmailLayoutProps) {
       <Body style={main}>
         <Container style={container}>
           <div style={logoContainer}>
-            <Img
-              src={`cid:${RESEND_LOGO_CONTENT_ID}`}
-              alt="Domainstack"
-              style={logo}
-            />
+            <Img src={`cid:${RESEND_LOGO_CONTENT_ID}`} alt="Domainstack" style={logo} />
           </div>
           {children}
         </Container>

@@ -1,6 +1,7 @@
-import type { SeoResponse } from "@domainstack/types";
 import { describe, expect, it, vi } from "vitest";
+
 import { render, screen } from "@/mocks/react";
+import type { SeoResponse } from "@domainstack/types";
 
 // Mock child components to isolate main component testing
 vi.mock("@/components/domain/seo/meta-tags-grid", () => ({
@@ -234,9 +235,7 @@ describe("SeoSection - Integration & Orchestration", () => {
         },
       });
       render(<SeoSection domain="test.invalid" data={data} />);
-      expect(
-        screen.queryByText(/We followed a redirect/i),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText(/We followed a redirect/i)).not.toBeInTheDocument();
     });
   });
 });

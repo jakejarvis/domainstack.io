@@ -1,3 +1,7 @@
+import { TRPCError } from "@trpc/server";
+import { z } from "zod";
+
+import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { analytics } from "@domainstack/analytics/server";
 import {
   countTrackedDomainsByStatus,
@@ -13,9 +17,6 @@ import {
   setDomainMuted,
   updateUserNotificationPreferences,
 } from "@domainstack/db/queries";
-import { TRPCError } from "@trpc/server";
-import z from "zod";
-import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 
 const NotificationChannelsSchema = z.object({
   inApp: z.boolean(),
@@ -44,9 +45,7 @@ export const userRouter = createTRPCRouter({
    * Get the user's linked OAuth accounts.
    * Returns only provider IDs for security (no tokens or sensitive data).
    */
-  getLinkedAccounts: protectedProcedure.query(async ({ ctx }) =>
-    getLinkedAccounts(ctx.user.id),
-  ),
+  getLinkedAccounts: protectedProcedure.query(async ({ ctx }) => getLinkedAccounts(ctx.user.id)),
 
   /**
    * Get user's subscription data including tier, limits, and current usage.
@@ -86,16 +85,9 @@ export const userRouter = createTRPCRouter({
   updateGlobalNotificationPreferences: protectedProcedure
     .input(UserNotificationPreferencesSchema)
     .mutation(async ({ ctx, input }) => {
-      const updated = await updateUserNotificationPreferences(
-        ctx.user.id,
-        input,
-      );
+      const updated = await updateUserNotificationPreferences(ctx.user.id, input);
 
-      analytics.track(
-        "notification_preferences_updated",
-        { ...input },
-        ctx.user.id,
-      );
+      analytics.track("notification_preferences_updated", { ...input }, ctx.user.id);
 
       return updated;
     }),
@@ -134,11 +126,7 @@ export const userRouter = createTRPCRouter({
         });
       }
 
-      analytics.track(
-        muted ? "domain_muted" : "domain_unmuted",
-        {},
-        ctx.user.id,
-      );
+      analytics.track(muted ? "domain_muted" : "domain_unmuted", {}, ctx.user.id);
 
       return {
         id: updated.id,

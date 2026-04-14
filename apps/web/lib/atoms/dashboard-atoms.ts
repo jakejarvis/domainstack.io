@@ -25,9 +25,7 @@ export const visibleDomainIdsAtom = atom<string[]>([]);
 export const selectedCountAtom = atom((get) => get(selectedDomainIdsAtom).size);
 
 /** Whether any domains are selected */
-export const hasSelectionAtom = atom(
-  (get) => get(selectedDomainIdsAtom).size > 0,
-);
+export const hasSelectionAtom = atom((get) => get(selectedDomainIdsAtom).size > 0);
 
 /** Whether all visible domains are selected */
 export const isAllSelectedAtom = atom((get) => {
