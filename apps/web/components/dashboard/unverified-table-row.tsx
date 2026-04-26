@@ -1,11 +1,11 @@
 "use no memo"; // Disable React Compiler memoization - TanStack Table has issues with it
+import { type Cell, flexRender } from "@tanstack/react-table";
+import { motion, useReducedMotion } from "motion/react";
 
+import { useDashboardActions } from "@/context/dashboard-context";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { cn } from "@domainstack/ui/utils";
-import { type Cell, flexRender } from "@tanstack/react-table";
-import { motion, useReducedMotion } from "motion/react";
-import { useDashboardActions } from "@/context/dashboard-context";
 
 type UnverifiedTableRowProps = {
   rowId: string;
@@ -59,10 +59,7 @@ export function UnverifiedTableRow({
           }}
           className={selectCell.column.columnDef.meta?.className}
         >
-          {flexRender(
-            selectCell.column.columnDef.cell,
-            selectCell.getContext(),
-          )}
+          {flexRender(selectCell.column.columnDef.cell, selectCell.getContext())}
         </td>
       )}
       {/* Domain column */}
@@ -73,10 +70,7 @@ export function UnverifiedTableRow({
           }}
           className={domainCell.column.columnDef.meta?.className}
         >
-          {flexRender(
-            domainCell.column.columnDef.cell,
-            domainCell.getContext(),
-          )}
+          {flexRender(domainCell.column.columnDef.cell, domainCell.getContext())}
         </td>
       )}
       {/* Status column */}
@@ -87,16 +81,13 @@ export function UnverifiedTableRow({
           }}
           className={statusCell.column.columnDef.meta?.className}
         >
-          {flexRender(
-            statusCell.column.columnDef.cell,
-            statusCell.getContext(),
-          )}
+          {flexRender(statusCell.column.columnDef.cell, statusCell.getContext())}
         </td>
       )}
       {/* Span remaining detail columns with verify message */}
       <td colSpan={collapseCount}>
         <div className="flex items-center gap-3">
-          <span className="text-muted-foreground text-xs">
+          <span className="text-xs text-muted-foreground">
             Verify ownership to see domain details:
           </span>
           <Button
@@ -124,10 +115,7 @@ export function UnverifiedTableRow({
           }}
           className={actionsCell.column.columnDef.meta?.className}
         >
-          {flexRender(
-            actionsCell.column.columnDef.cell,
-            actionsCell.getContext(),
-          )}
+          {flexRender(actionsCell.column.columnDef.cell, actionsCell.getContext())}
         </td>
       )}
     </motion.tr>

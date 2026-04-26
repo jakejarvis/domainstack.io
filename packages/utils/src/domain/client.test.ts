@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
+
 import { isValidDomain, normalizeDomainInput } from "./client";
 
 describe("normalizeDomainInput", () => {
   it("strips scheme, auth, port, path and lowercases", () => {
-    expect(
-      normalizeDomainInput("https://user:pass@WWW.Example.TEST:8080/a/b?c#d"),
-    ).toBe("example.test");
+    expect(normalizeDomainInput("https://user:pass@WWW.Example.TEST:8080/a/b?c#d")).toBe(
+      "example.test",
+    );
   });
 
   it("removes trailing dot and leading www", () => {
@@ -13,15 +14,11 @@ describe("normalizeDomainInput", () => {
   });
 
   it("handles inputs without scheme via implicit URL parsing", () => {
-    expect(normalizeDomainInput("Sub.Example.test/extra")).toBe(
-      "sub.example.test",
-    );
+    expect(normalizeDomainInput("Sub.Example.test/extra")).toBe("sub.example.test");
   });
 
   it("falls back on invalid URL-with-scheme by manual stripping", () => {
-    expect(normalizeDomainInput("fake+scheme://ex-ample.test/path")).toBe(
-      "ex-ample.test",
-    );
+    expect(normalizeDomainInput("fake+scheme://ex-ample.test/path")).toBe("ex-ample.test");
   });
 
   it("handles malformed protocols (single slash)", () => {
@@ -33,9 +30,7 @@ describe("normalizeDomainInput", () => {
   });
 
   it("handles malformed protocols (multiple colons)", () => {
-    expect(normalizeDomainInput("https:::example.test/path")).toBe(
-      "example.test",
-    );
+    expect(normalizeDomainInput("https:::example.test/path")).toBe("example.test");
   });
 
   it("rejects IPv6 literals", () => {
@@ -56,15 +51,11 @@ describe("normalizeDomainInput", () => {
 
   it("preserves non-www subdomains", () => {
     expect(normalizeDomainInput("api.example.test")).toBe("api.example.test");
-    expect(normalizeDomainInput("sub.domain.example.test")).toBe(
-      "sub.domain.example.test",
-    );
+    expect(normalizeDomainInput("sub.domain.example.test")).toBe("sub.domain.example.test");
   });
 
   it("handles query parameters and fragments", () => {
-    expect(normalizeDomainInput("example.test?query=value")).toBe(
-      "example.test",
-    );
+    expect(normalizeDomainInput("example.test?query=value")).toBe("example.test");
     expect(normalizeDomainInput("example.test#fragment")).toBe("example.test");
     expect(normalizeDomainInput("example.test?q=1#frag")).toBe("example.test");
   });

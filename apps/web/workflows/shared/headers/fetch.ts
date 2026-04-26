@@ -6,6 +6,7 @@
  */
 
 import { RetryableError } from "workflow";
+
 import type { FetchHeadersResult } from "./types";
 
 /**
@@ -17,14 +18,10 @@ import type { FetchHeadersResult } from "./types";
  * @param domain - The domain to probe
  * @returns FetchHeadersResult with typed error on failure
  */
-export async function fetchHeadersStep(
-  domain: string,
-): Promise<FetchHeadersResult> {
+export async function fetchHeadersStep(domain: string): Promise<FetchHeadersResult> {
   "use step";
 
-  const { HeadersFetchError, fetchHttpHeaders } = await import(
-    "@domainstack/server/headers"
-  );
+  const { HeadersFetchError, fetchHttpHeaders } = await import("@domainstack/server/headers");
 
   try {
     const result = await fetchHttpHeaders(domain);

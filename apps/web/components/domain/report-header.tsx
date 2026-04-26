@@ -1,11 +1,12 @@
-import { Spinner } from "@domainstack/ui/spinner";
-import { cn } from "@domainstack/ui/utils";
 import { IconCamera } from "@tabler/icons-react";
+
 import { ExportButton } from "@/components/domain/export-button";
 import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { ToolsDropdown } from "@/components/domain/tools-dropdown";
 import { TrackDomainButton } from "@/components/domain/track-domain-button";
 import { Favicon } from "@/components/icons/favicon";
+import { Spinner } from "@domainstack/ui/spinner";
+import { cn } from "@domainstack/ui/utils";
 
 interface DomainReportHeaderProps {
   domain: string;
@@ -26,13 +27,7 @@ export function DomainReportHeader({
   ...props
 }: React.ComponentPropsWithRef<"div"> & DomainReportHeaderProps) {
   return (
-    <div
-      className={cn(
-        "flex min-w-0 items-center justify-between gap-4",
-        className,
-      )}
-      {...props}
-    >
+    <div className={cn("flex min-w-0 items-center justify-between gap-4", className)} {...props}>
       {isRegistered ? (
         <ScreenshotPopover
           domain={domain}
@@ -48,31 +43,19 @@ export function DomainReportHeader({
             className="flex min-w-0 items-center gap-2"
           >
             <Favicon domain={domain} className="size-5 shrink-0" />
-            <h2
-              className="truncate font-semibold text-xl tracking-tight"
-              title={domain}
-            >
+            <h2 className="truncate text-xl font-semibold tracking-tight" title={domain}>
               {domain}
             </h2>
-            <IconCamera
-              className="mr-3 ml-0.5 size-3.5 shrink-0 text-foreground/65"
-              aria-hidden
-            />
+            <IconCamera className="mr-3 ml-0.5 size-3.5 shrink-0 text-foreground/65" aria-hidden />
           </a>
         </ScreenshotPopover>
       ) : (
         <span className="flex min-w-0 cursor-default items-center gap-2">
           <Favicon domain={domain} className="size-5 shrink-0" />
-          <h2
-            className="truncate font-semibold text-xl tracking-tight"
-            title={domain}
-          >
+          <h2 className="truncate text-xl font-semibold tracking-tight" title={domain}>
             {domain}
           </h2>
-          <Spinner
-            className="ml-0.5 size-3.5 shrink-0 text-foreground/65"
-            aria-hidden="true"
-          />
+          <Spinner className="ml-0.5 size-3.5 shrink-0 text-foreground/65" aria-hidden="true" />
         </span>
       )}
 

@@ -1,8 +1,9 @@
-import { PLAN_QUOTAS } from "@domainstack/constants";
-import { PRO_TIER_INFO } from "@domainstack/polar/products";
 import { IconCircleArrowUp, IconRocket } from "@tabler/icons-react";
+
 import { UpgradeButton } from "@/components/upgrade-button";
 import { useSubscription } from "@/hooks/use-subscription";
+import { PLAN_QUOTAS } from "@domainstack/constants";
+import { PRO_TIER_INFO } from "@domainstack/polar/products";
 
 export function UpgradeRow() {
   const { isPro, isSubscriptionLoading } = useSubscription();
@@ -13,7 +14,7 @@ export function UpgradeRow() {
   }
 
   return (
-    <div className="relative overflow-hidden border-black/10 border-t bg-gradient-to-r from-black/[0.02] via-transparent to-black/[0.03] p-4 dark:border-white/10 dark:from-white/[0.01] dark:via-transparent dark:to-white/[0.02]">
+    <div className="relative overflow-hidden border-t border-black/10 bg-gradient-to-r from-black/[0.02] via-transparent to-black/[0.03] p-4 dark:border-white/10 dark:from-white/[0.01] dark:via-transparent dark:to-white/[0.02]">
       {/* Decorative elements - subtle ambient glows */}
       <div
         aria-hidden
@@ -31,28 +32,21 @@ export function UpgradeRow() {
             <IconCircleArrowUp className="size-5 text-accent-gold" />
           </div>
           <div>
-            <h3 className="font-semibold leading-snug">Upgrade to Pro</h3>
+            <h3 className="leading-snug font-semibold">Upgrade to Pro</h3>
             <span className="text-[13px] text-muted-foreground">
               Track <span className="hidden sm:inline">up to </span>
               {PLAN_QUOTAS.pro} domains
               <span className="mx-1">•</span>
               <span className="font-medium text-accent-gold">
                 {PRO_TIER_INFO.monthly.label}
-              </span>{" "}
-              or{" "}
-              <span className="font-medium text-accent-gold">
-                {PRO_TIER_INFO.yearly.label}
-              </span>
+              </span> or{" "}
+              <span className="font-medium text-accent-gold">{PRO_TIER_INFO.yearly.label}</span>
             </span>
           </div>
         </div>
 
         {/* Right side - CTA */}
-        <UpgradeButton
-          variant="outline"
-          className="w-full shrink-0 md:w-auto"
-          icon={IconRocket}
-        >
+        <UpgradeButton variant="outline" className="w-full shrink-0 md:w-auto" icon={IconRocket}>
           Get Pro
         </UpgradeButton>
       </div>

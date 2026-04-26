@@ -1,5 +1,10 @@
 "use client";
 
+import { IconAlertTriangle, IconRefresh } from "@tabler/icons-react";
+import { useQueryErrorResetBoundary } from "@tanstack/react-query";
+import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
+
+import { CreateIssueButton } from "@/components/create-issue-button";
 import { analytics } from "@domainstack/analytics/client";
 import { Button } from "@domainstack/ui/button";
 import {
@@ -10,10 +15,6 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@domainstack/ui/empty";
-import { IconAlertTriangle, IconRefresh } from "@tabler/icons-react";
-import { useQueryErrorResetBoundary } from "@tanstack/react-query";
-import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
-import { CreateIssueButton } from "@/components/create-issue-button";
 
 interface Props {
   children: React.ReactNode;

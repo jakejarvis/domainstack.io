@@ -1,4 +1,5 @@
 import { PLAN_QUOTAS } from "@domainstack/constants";
+
 import {
   EmailBox,
   EmailBoxText,
@@ -26,8 +27,8 @@ function ProWelcomeEmail({ userName, baseUrl }: ProWelcomeEmailProps) {
       <EmailText>Hi {userName},</EmailText>
 
       <EmailText>
-        Thanks again for joining Domainstack Pro! Here are a few tips to help
-        you get the most out of your subscription.
+        Thanks again for joining Domainstack Pro! Here are a few tips to help you get the most out
+        of your subscription.
       </EmailText>
 
       <EmailBox variant="tip">
@@ -35,8 +36,8 @@ function ProWelcomeEmail({ userName, baseUrl }: ProWelcomeEmailProps) {
           1. Add Your Domains
         </EmailBoxText>
         <EmailBoxText variant="tip">
-          You can now track up to {PLAN_QUOTAS.pro} domains. Add them from your
-          dashboard and verify ownership to start receiving alerts.
+          You can now track up to {PLAN_QUOTAS.pro} domains. Add them from your dashboard and verify
+          ownership to start receiving alerts.
         </EmailBoxText>
       </EmailBox>
 
@@ -45,8 +46,8 @@ function ProWelcomeEmail({ userName, baseUrl }: ProWelcomeEmailProps) {
           2. Set Up Notifications
         </EmailBoxText>
         <EmailBoxText variant="tip">
-          Customize when you receive alerts for domain expiration, SSL
-          certificate expiry, and verification status changes.
+          Customize when you receive alerts for domain expiration, SSL certificate expiry, and
+          verification status changes.
         </EmailBoxText>
       </EmailBox>
 
@@ -55,14 +56,13 @@ function ProWelcomeEmail({ userName, baseUrl }: ProWelcomeEmailProps) {
           3. Stay Organized
         </EmailBoxText>
         <EmailBoxText variant="tip">
-          Archive domains you&apos;re not actively monitoring. They won&apos;t
-          count against your limit and you can restore them anytime.
+          Archive domains you&apos;re not actively monitoring. They won&apos;t count against your
+          limit and you can restore them anytime.
         </EmailBoxText>
       </EmailBox>
 
       <EmailText>
-        Have questions or feedback? Just reply to this email — we&apos;d love to
-        hear from you.
+        Have questions or feedback? Just reply to this email — we&apos;d love to hear from you.
       </EmailText>
 
       <EmailButton href={`${baseUrl}/dashboard`}>Open Dashboard</EmailButton>
@@ -71,9 +71,8 @@ function ProWelcomeEmail({ userName, baseUrl }: ProWelcomeEmailProps) {
 
       <EmailFooter>
         You received this email because you upgraded to Pro on{" "}
-        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. Manage
-        your subscription in your{" "}
-        <EmailLink href={`${baseUrl}/settings`}>account settings</EmailLink>.
+        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. Manage your subscription
+        in your <EmailLink href={`${baseUrl}/settings`}>account settings</EmailLink>.
       </EmailFooter>
     </EmailLayout>
   );

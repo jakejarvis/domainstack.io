@@ -51,9 +51,7 @@ export function AnnouncementPill() {
             >
               <IconMeteor className="size-3.5 text-accent-gold" />
               <div className="text-foreground/90">
-                <span className="mr-1.5 font-medium text-accent-gold">
-                  New!
-                </span>
+                <span className="mr-1.5 font-medium text-accent-gold">New!</span>
                 <span>Track domains &amp; get health alerts.</span>
               </div>
               <IconArrowUpRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-[1px] group-hover:-translate-y-[1px]" />

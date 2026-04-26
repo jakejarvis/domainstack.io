@@ -17,9 +17,7 @@ let nextConfig: NextConfig = {
     "prettier",
   ],
   outputFileTracingIncludes: {
-    "/.well-known/workflow/v1/step": [
-      "../../node_modules/@sparticuz/chromium/bin/**",
-    ],
+    "/.well-known/workflow/v1/step": ["../../node_modules/@sparticuz/chromium/bin/**"],
   },
   logging: {
     incomingRequests: {

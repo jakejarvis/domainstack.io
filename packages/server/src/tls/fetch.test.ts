@@ -1,8 +1,9 @@
 /* @vitest-environment node */
 import { EventEmitter } from "node:events";
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const mockConnect = vi.fn();
+const mockConnect = vi.fn<(...args: unknown[]) => unknown>();
 
 // Mock node:tls before importing the module under test
 vi.mock("node:tls", () => ({
@@ -30,23 +31,25 @@ describe("fetchCertificateChain", () => {
     shouldTimeout?: boolean;
   }) {
     const socket = new EventEmitter() as EventEmitter & {
-      setTimeout: ReturnType<typeof vi.fn>;
-      getPeerCertificate: ReturnType<typeof vi.fn>;
-      end: ReturnType<typeof vi.fn>;
-      destroy: ReturnType<typeof vi.fn>;
+      setTimeout: (ms: number, callback?: () => void) => void;
+      getPeerCertificate: () => Record<string, unknown>;
+      end: () => void;
+      destroy: (err?: Error) => void;
     };
 
-    socket.setTimeout = vi.fn((_ms: number, callback?: () => void) => {
+    socket.setTimeout = vi.fn<(ms: number, callback?: () => void) => void>((_ms, callback) => {
       if (options.shouldTimeout && callback) {
         // Simulate timeout by calling the callback which will call destroy
         setImmediate(callback);
       }
     });
 
-    socket.getPeerCertificate = vi.fn(() => options.peerCertificate ?? {});
-    socket.end = vi.fn();
+    socket.getPeerCertificate = vi.fn<() => Record<string, unknown>>(
+      () => options.peerCertificate ?? {},
+    );
+    socket.end = vi.fn<() => void>();
     // When destroy is called with an error, emit the error event
-    socket.destroy = vi.fn((err?: Error) => {
+    socket.destroy = vi.fn<(err?: Error) => void>((err) => {
       if (err) {
         setImmediate(() => socket.emit("error", err));
       }

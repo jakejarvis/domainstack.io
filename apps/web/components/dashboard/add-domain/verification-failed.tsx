@@ -1,7 +1,8 @@
+import { IconAlertTriangle, IconClock, IconRefresh } from "@tabler/icons-react";
+
 import type { VerificationMethod } from "@domainstack/constants";
 import { Alert, AlertDescription, AlertTitle } from "@domainstack/ui/alert";
 import { Button } from "@domainstack/ui/button";
-import { IconAlertTriangle, IconClock, IconRefresh } from "@tabler/icons-react";
 
 type VerificationFailedProps = {
   method: VerificationMethod;
@@ -10,10 +11,7 @@ type VerificationFailedProps = {
   onReturnLater: () => void;
 };
 
-const TROUBLESHOOTING_TIPS: Record<
-  VerificationMethod,
-  { title: string; tips: string[] }
-> = {
+const TROUBLESHOOTING_TIPS: Record<VerificationMethod, { title: string; tips: string[] }> = {
   dns_txt: {
     title: "DNS Record Troubleshooting",
     tips: [
@@ -57,18 +55,15 @@ export function VerificationFailed({
     <div className="space-y-4">
       <Alert className="bg-card/60">
         <IconAlertTriangle className="size-4 text-danger-foreground" />
-        <AlertTitle className="font-medium text-danger-foreground">
-          Verification Failed
-        </AlertTitle>
+        <AlertTitle className="font-medium text-danger-foreground">Verification Failed</AlertTitle>
         <AlertDescription>
-          We couldn&apos;t verify your domain ownership. Please check your setup
-          and try again.
+          We couldn&apos;t verify your domain ownership. Please check your setup and try again.
         </AlertDescription>
       </Alert>
 
       <div className="rounded-lg border bg-card/60 p-4 text-card-foreground">
-        <h4 className="mb-2 font-medium text-sm">{troubleshooting.title}</h4>
-        <ul className="space-y-1.5 text-muted-foreground text-sm">
+        <h4 className="mb-2 text-sm font-medium">{troubleshooting.title}</h4>
+        <ul className="space-y-1.5 text-sm text-muted-foreground">
           {troubleshooting.tips.map((tip) => (
             <li key={tip} className="flex gap-2">
               <span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground/50" />
@@ -89,9 +84,9 @@ export function VerificationFailed({
         </Button>
       </div>
 
-      <p className="text-center text-muted-foreground text-xs">
-        Don&apos;t worry—we&apos;ll automatically check your domain daily and
-        verify it once the changes have propagated.
+      <p className="text-center text-xs text-muted-foreground">
+        Don&apos;t worry—we&apos;ll automatically check your domain daily and verify it once the
+        changes have propagated.
       </p>
     </div>
   );

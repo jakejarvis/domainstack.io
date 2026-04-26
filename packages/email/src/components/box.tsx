@@ -27,11 +27,7 @@ type EmailBoxTextProps = {
   strong?: boolean;
 };
 
-export function EmailBoxText({
-  variant,
-  children,
-  strong = false,
-}: EmailBoxTextProps) {
+export function EmailBoxText({ variant, children, strong = false }: EmailBoxTextProps) {
   const textStyles = {
     info: infoTextStyle,
     warning: warningTextStyle,
@@ -40,11 +36,7 @@ export function EmailBoxText({
     danger: dangerTextStyle,
   };
 
-  return (
-    <Text style={textStyles[variant]}>
-      {strong ? <strong>{children}</strong> : children}
-    </Text>
-  );
+  return <Text style={textStyles[variant]}>{strong ? <strong>{children}</strong> : children}</Text>;
 }
 
 // Wrapper style

@@ -1,6 +1,8 @@
-import type { RateLimitConfig } from "@domainstack/redis/ratelimit";
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
+
+import type { RateLimitConfig } from "@domainstack/redis/ratelimit";
+
 import type { Context } from "./context";
 
 /**
@@ -31,7 +33,6 @@ export const t = initTRPC
   .create({ transformer: superjson });
 
 export const createTRPCRouter = t.router;
-// biome-ignore lint/nursery/useDestructuring: this is easier
 export const createCallerFactory = t.createCallerFactory;
 
 // Re-export TRPCError for convenience

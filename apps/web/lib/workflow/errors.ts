@@ -1,7 +1,8 @@
 import "server-only";
+import { FatalError, RetryableError } from "workflow";
+
 import { isExpectedDnsError } from "@domainstack/safe-fetch";
 import { isExpectedTlsError } from "@domainstack/server/tls";
-import { FatalError, RetryableError } from "workflow";
 
 /**
  * Error codes from SafeFetchError that are permanent (should not retry)
@@ -20,9 +21,7 @@ const PERMANENT_REMOTE_ASSET_ERRORS = new Set([
 /**
  * Check if a SafeFetchError is permanent (should not retry)
  */
-function isSafeFetchError(
-  err: unknown,
-): err is Error & { code?: string; name?: string } {
+function isSafeFetchError(err: unknown): err is Error & { code?: string; name?: string } {
   return err instanceof Error && err.name === "SafeFetchError";
 }
 
@@ -101,9 +100,7 @@ export function classifyFetchError(
       // Try to extract Retry-After header value from error message
       // Many HTTP clients include this in the error
       const retryAfterMatch = message.match(/retry[- ]after[:\s]+(\d+)/i);
-      const retrySeconds = retryAfterMatch
-        ? Number.parseInt(retryAfterMatch[1], 10)
-        : 60; // Default to 1 minute for rate limits
+      const retrySeconds = retryAfterMatch ? Number.parseInt(retryAfterMatch[1], 10) : 60; // Default to 1 minute for rate limits
       return new RetryableError(`${context}: rate limited`, {
         retryAfter: `${retrySeconds}s` as `${number}s`,
       });
@@ -324,9 +321,7 @@ export function classifyDatabaseError(
       message.includes("check constraint") ||
       message.includes("not null constraint")
     ) {
-      return new FatalError(
-        `${context}: constraint violation - ${err.message}`,
-      );
+      return new FatalError(`${context}: constraint violation - ${err.message}`);
     }
 
     // Syntax/schema errors are fatal

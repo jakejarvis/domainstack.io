@@ -112,11 +112,7 @@ export function useBrowserAI(): UseBrowserAIResult {
         }
       } catch (err) {
         if (!isMountedRef.current) return;
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to check AI availability",
-        );
+        setError(err instanceof Error ? err.message : "Failed to check AI availability");
         setStatus("error");
       }
     }
@@ -153,9 +149,7 @@ export function useBrowserAI(): UseBrowserAIResult {
       }
     } catch (err) {
       if (isMountedRef.current) {
-        setError(
-          err instanceof Error ? err.message : "Failed to initialize AI model",
-        );
+        setError(err instanceof Error ? err.message : "Failed to initialize AI model");
         setStatus("error");
       }
     } finally {

@@ -1,6 +1,8 @@
 import { userEvent } from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
+
 import { render, screen, within } from "@/mocks/react";
+
 import { SocialPreviews } from "./social-previews";
 
 describe("SocialPreviews", () => {
@@ -61,15 +63,17 @@ describe("SocialPreviews", () => {
       render(<SocialPreviews preview={mockPreview} twitterVariant="compact" />);
 
       // Check initial Twitter content
-      expect(
-        screen.getByRole("link", { name: /open test.invalid in a new tab/i }),
-      ).toHaveAttribute("data-provider", "twitter");
+      expect(screen.getByRole("link", { name: /open test.invalid in a new tab/i })).toHaveAttribute(
+        "data-provider",
+        "twitter",
+      );
 
       // Switch to Facebook and verify
       await user.click(screen.getByRole("tab", { name: /facebook/i }));
-      expect(
-        screen.getByRole("link", { name: /open test.invalid in a new tab/i }),
-      ).toHaveAttribute("data-provider", "facebook");
+      expect(screen.getByRole("link", { name: /open test.invalid in a new tab/i })).toHaveAttribute(
+        "data-provider",
+        "facebook",
+      );
     });
   });
 

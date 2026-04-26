@@ -1,14 +1,7 @@
+import { and, asc, count, eq, gt, inArray, isNotNull, isNull } from "drizzle-orm";
+
 import { PLAN_QUOTAS, type PLANS } from "@domainstack/constants";
-import {
-  and,
-  asc,
-  count,
-  eq,
-  gt,
-  inArray,
-  isNotNull,
-  isNull,
-} from "drizzle-orm";
+
 import { db } from "../client";
 import { userSubscriptions, users, userTrackedDomains } from "../schema";
 
@@ -33,9 +26,7 @@ export interface UserWithEndingSubscription {
 /**
  * Get user's subscription data.
  */
-export async function getUserSubscription(
-  userId: string,
-): Promise<UserSubscriptionData> {
+export async function getUserSubscription(userId: string): Promise<UserSubscriptionData> {
   const [record] = await db
     .select({
       userId: userSubscriptions.userId,
@@ -63,10 +54,7 @@ export async function getUserSubscription(
 /**
  * Update user tier.
  */
-export async function updateUserTier(
-  userId: string,
-  tier: Plan,
-): Promise<void> {
+export async function updateUserTier(userId: string, tier: Plan): Promise<void> {
   const updated = await db
     .update(userSubscriptions)
     .set({ tier, updatedAt: new Date() })
@@ -87,10 +75,7 @@ export async function updateUserTier(
 /**
  * Set subscription end date.
  */
-export async function setSubscriptionEndsAt(
-  userId: string,
-  endsAt: Date,
-): Promise<void> {
+export async function setSubscriptionEndsAt(userId: string, endsAt: Date): Promise<void> {
   const updated = await db
     .update(userSubscriptions)
     .set({ endsAt, updatedAt: new Date() })
@@ -139,12 +124,7 @@ export async function getUserIdsWithEndingSubscriptions(): Promise<string[]> {
   const rows = await db
     .select({ userId: userSubscriptions.userId })
     .from(userSubscriptions)
-    .where(
-      and(
-        isNotNull(userSubscriptions.endsAt),
-        gt(userSubscriptions.endsAt, now),
-      ),
-    );
+    .where(and(isNotNull(userSubscriptions.endsAt), gt(userSubscriptions.endsAt, now)));
 
   return rows.map((row) => row.userId);
 }
@@ -186,10 +166,7 @@ export async function getUserWithEndingSubscription(
 /**
  * Update the last expiry notification threshold sent.
  */
-export async function setLastExpiryNotification(
-  userId: string,
-  threshold: number,
-): Promise<void> {
+export async function setLastExpiryNotification(userId: string, threshold: number): Promise<void> {
   await db
     .update(userSubscriptions)
     .set({
@@ -219,12 +196,7 @@ export async function downgradeToFree(userId: string): Promise<number> {
     const [countResult] = await tx
       .select({ count: count() })
       .from(userTrackedDomains)
-      .where(
-        and(
-          eq(userTrackedDomains.userId, userId),
-          isNull(userTrackedDomains.archivedAt),
-        ),
-      );
+      .where(and(eq(userTrackedDomains.userId, userId), isNull(userTrackedDomains.archivedAt)));
 
     const activeCount = countResult?.count ?? 0;
 
@@ -237,12 +209,7 @@ export async function downgradeToFree(userId: string): Promise<number> {
     const domainsToArchive = await tx
       .select({ id: userTrackedDomains.id })
       .from(userTrackedDomains)
-      .where(
-        and(
-          eq(userTrackedDomains.userId, userId),
-          isNull(userTrackedDomains.archivedAt),
-        ),
-      )
+      .where(and(eq(userTrackedDomains.userId, userId), isNull(userTrackedDomains.archivedAt)))
       .orderBy(asc(userTrackedDomains.createdAt))
       .limit(toArchive);
 

@@ -1,18 +1,13 @@
-import { analytics } from "@domainstack/analytics/client";
-import type { VerificationMethod } from "@domainstack/constants";
-import type { ResumeDomainData } from "@domainstack/types";
-import {
-  isValidDomain,
-  normalizeDomainInput,
-} from "@domainstack/utils/domain/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { toast } from "sonner";
+
 import { useTRPC } from "@/lib/trpc/client";
-import {
-  createInitialState,
-  verificationReducer,
-} from "@/lib/verification-state";
+import { createInitialState, verificationReducer } from "@/lib/verification-state";
+import { analytics } from "@domainstack/analytics/client";
+import type { VerificationMethod } from "@domainstack/constants";
+import type { ResumeDomainData } from "@domainstack/types";
+import { isValidDomain, normalizeDomainInput } from "@domainstack/utils/domain/client";
 
 // ============================================================================
 // Types
@@ -43,8 +38,8 @@ export function useDomainVerification({
   const [state, dispatch] = useReducer(
     verificationReducer,
     { resumeDomain, prefillDomain },
-    ({ resumeDomain, prefillDomain }) =>
-      createInitialState(resumeDomain, prefillDomain),
+    ({ resumeDomain: initialResumeDomain, prefillDomain: initialPrefillDomain }) =>
+      createInitialState(initialResumeDomain, initialPrefillDomain),
   );
 
   const trpc = useTRPC();
@@ -128,12 +123,15 @@ export function useDomainVerification({
   // Sync when verification data query returns
   useEffect(() => {
     if (verificationDataQuery.data) {
-      const { domain, verificationToken, verificationMethod } =
-        verificationDataQuery.data;
+      const {
+        domain,
+        verificationToken: fetchedVerificationToken,
+        verificationMethod,
+      } = verificationDataQuery.data;
       dispatch({
         type: "SYNC_VERIFICATION_DATA",
         domain: domain ?? undefined,
-        verificationToken: verificationToken ?? undefined,
+        verificationToken: fetchedVerificationToken ?? undefined,
         method: verificationMethod ?? undefined,
       });
     }
@@ -169,11 +167,11 @@ export function useDomainVerification({
   }, [prefillDomain]);
 
   const handleOpenChange = useCallback(
-    (open: boolean) => {
-      if (!open) {
+    (nextOpen: boolean) => {
+      if (!nextOpen) {
         resetDialog();
       }
-      onOpenChange?.(open);
+      onOpenChange?.(nextOpen);
     },
     [onOpenChange, resetDialog],
   );
@@ -290,21 +288,16 @@ export function useDomainVerification({
 
   // Query-related derived state
   const isPrefilled = !!prefillDomain && !isResuming;
-  const isLoadingVerificationData =
-    isResuming && verificationDataQuery.isLoading;
-  const isVerificationDataQueryError =
-    isResuming && verificationDataQuery.isError;
+  const isLoadingVerificationData = isResuming && verificationDataQuery.isLoading;
+  const isVerificationDataQueryError = isResuming && verificationDataQuery.isError;
 
   // Step-specific derived state (type-narrowed from discriminated union)
   const domainError = state.step === 1 ? state.domainError : "";
-  const hasAttemptedDomainSubmit =
-    state.step === 1 ? state.hasAttemptedSubmit : false;
+  const hasAttemptedDomainSubmit = state.step === 1 ? state.hasAttemptedSubmit : false;
   const trackedDomainIdDerived =
     state.step === 2 || state.step === 3 ? state.trackedDomainId : null;
-  const verificationTokenDerived =
-    state.step === 2 ? state.verificationToken : "";
-  const method: VerificationMethod =
-    state.step === 2 ? state.method : "dns_txt";
+  const verificationTokenDerived = state.step === 2 ? state.verificationToken : "";
+  const method: VerificationMethod = state.step === 2 ? state.method : "dns_txt";
 
   // Verification status (step 2 only)
   const isVerifying = state.step === 2 && state.verifyStatus === "verifying";
@@ -315,8 +308,7 @@ export function useDomainVerification({
 
   // Verification state object for consumers
   const verificationState = useMemo(() => {
-    if (hasFailed)
-      return { status: "failed", error: verificationError } as const;
+    if (hasFailed) return { status: "failed", error: verificationError } as const;
     if (isVerifying) return { status: "verifying" } as const;
     return { status: "idle" } as const;
   }, [hasFailed, isVerifying, verificationError]);

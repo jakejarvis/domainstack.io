@@ -1,4 +1,5 @@
 import { eq, notInArray } from "drizzle-orm";
+
 import { db } from "../client";
 import { blockedDomains } from "../schema";
 

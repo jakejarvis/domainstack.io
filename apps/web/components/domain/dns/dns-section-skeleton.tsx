@@ -3,28 +3,21 @@ import { PillCountSkeleton } from "@/components/domain/pill-count";
 import { ReportSectionSkeleton } from "@/components/domain/report-section-skeleton";
 import { sections } from "@/lib/constants/sections";
 
-function DnsGroupSkeleton({
-  title,
-  records = 2,
-}: {
-  title: string;
-  records?: number;
-}) {
+function DnsGroupSkeleton({ title, records = 2 }: { title: string; records?: number }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 leading-none">
-        <div className="text-[11px] text-foreground/70 uppercase tracking-[0.08em] dark:text-foreground/80">
+        <div className="text-[11px] tracking-[0.08em] text-foreground/70 uppercase dark:text-foreground/80">
           {title}
         </div>
         <PillCountSkeleton />
       </div>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {Array.from(
-          { length: records },
-          (_, n) => `dns-skel-${title}-${records}-${n}`,
-        ).map((id) => (
-          <KeyValueSkeleton key={id} withTrailing widthClass="w-[100px]" />
-        ))}
+        {Array.from({ length: records }, (_, n) => `dns-skel-${title}-${records}-${n}`).map(
+          (id) => (
+            <KeyValueSkeleton key={id} withTrailing widthClass="w-[100px]" />
+          ),
+        )}
       </div>
     </div>
   );

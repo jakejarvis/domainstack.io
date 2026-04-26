@@ -1,14 +1,15 @@
 "use client";
 
-import { Icon } from "@domainstack/ui/icon";
-import { cn } from "@domainstack/ui/utils";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
+
 import { OAuthButton } from "@/components/auth/oauth-button";
 import { Logo } from "@/components/logo";
 import { useAuthCallback } from "@/hooks/use-auth-callback";
 import { getEnabledProviders } from "@/lib/oauth";
+import { Icon } from "@domainstack/ui/icon";
+import { cn } from "@domainstack/ui/utils";
 
 interface LoginContentProps {
   /** Additional classes for the wrapper */
@@ -19,11 +20,7 @@ interface LoginContentProps {
   callbackURL?: string;
 }
 
-export function LoginContent({
-  className,
-  onNavigate,
-  callbackURL,
-}: LoginContentProps) {
+export function LoginContent({ className, onNavigate, callbackURL }: LoginContentProps) {
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -38,18 +35,15 @@ export function LoginContent({
     callbackURL ??
     (["/", "/login"].includes(pathname)
       ? "/dashboard"
-      : pathname +
-        (searchParams.toString() ? `?${searchParams.toString()}` : ""));
+      : pathname + (searchParams.toString() ? `?${searchParams.toString()}` : ""));
 
   return (
     <div className={cn("flex flex-col items-center", className)}>
       <Icon size="xl" variant="muted" className="mb-5">
         <Logo />
       </Icon>
-      <h1 className="mb-2 font-semibold text-xl tracking-tight">
-        Welcome to Domainstack
-      </h1>
-      <p className="mb-6 text-center text-muted-foreground text-sm">
+      <h1 className="mb-2 text-xl font-semibold tracking-tight">Welcome to Domainstack</h1>
+      <p className="mb-6 text-center text-sm text-muted-foreground">
         Sign in to track your domains and receive health alerts.
       </p>
       <div className="flex w-full flex-col gap-3">
@@ -60,13 +54,11 @@ export function LoginContent({
             callbackURL={effectiveCallbackURL}
             isLoading={loadingProvider === provider.id}
             isAnyLoading={loadingProvider !== null}
-            onLoadingChange={(loading) =>
-              setLoadingProvider(loading ? provider.id : null)
-            }
+            onLoadingChange={(loading) => setLoadingProvider(loading ? provider.id : null)}
           />
         ))}
       </div>
-      <p className="mt-6 text-center text-muted-foreground text-xs leading-relaxed">
+      <p className="mt-6 text-center text-xs leading-relaxed text-muted-foreground">
         By signing in, you agree to our{" "}
         <Link
           href="/terms"

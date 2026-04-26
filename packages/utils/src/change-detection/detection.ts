@@ -29,8 +29,7 @@ export function detectRegistrationChange(
   previous: RegistrationSnapshotData,
   current: RegistrationSnapshotData,
 ): RegistrationChange | null {
-  const registrarChanged =
-    previous.registrarProviderId !== current.registrarProviderId;
+  const registrarChanged = previous.registrarProviderId !== current.registrarProviderId;
 
   // Defensive: Handle potential empty arrays
   const snapshotNameservers = previous.nameservers ?? [];
@@ -55,12 +54,7 @@ export function detectRegistrationChange(
   const statusesChanged = !statusesAreEqual(snapshotStatuses, currentStatuses);
 
   // If nothing changed, return null
-  if (
-    !registrarChanged &&
-    !nameserversChanged &&
-    !transferLockChanged &&
-    !statusesChanged
-  ) {
+  if (!registrarChanged && !nameserversChanged && !transferLockChanged && !statusesChanged) {
     return null;
   }
 
@@ -96,10 +90,8 @@ export function detectProviderChange(
   current: ProviderSnapshotData,
 ): ProviderChange | null {
   const dnsProviderChanged = previous.dnsProviderId !== current.dnsProviderId;
-  const hostingProviderChanged =
-    previous.hostingProviderId !== current.hostingProviderId;
-  const emailProviderChanged =
-    previous.emailProviderId !== current.emailProviderId;
+  const hostingProviderChanged = previous.hostingProviderId !== current.hostingProviderId;
+  const emailProviderChanged = previous.emailProviderId !== current.emailProviderId;
 
   // If nothing changed, return null
   if (!dnsProviderChanged && !hostingProviderChanged && !emailProviderChanged) {

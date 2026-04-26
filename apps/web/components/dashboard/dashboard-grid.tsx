@@ -1,8 +1,9 @@
-import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef } from "react";
+
 import { DashboardGridCard } from "@/components/dashboard/dashboard-grid-card";
 import { GridUpgradeCard } from "@/components/dashboard/grid-upgrade-card";
+import type { TrackedDomainWithDetails } from "@domainstack/types";
 
 type DashboardGridProps = {
   domains: TrackedDomainWithDetails[];
@@ -22,10 +23,7 @@ export function DashboardGrid({ domains }: DashboardGridProps) {
   const layoutTransition = { duration, ease } as const;
 
   const getItemMotionProps = (index: number) => {
-    const delay =
-      isFirstMountRef.current && !shouldReduceMotion
-        ? Math.min(index * 0.05, 0.3)
-        : 0;
+    const delay = isFirstMountRef.current && !shouldReduceMotion ? Math.min(index * 0.05, 0.3) : 0;
 
     return {
       layout: shouldReduceMotion ? false : ("position" as const),
@@ -45,21 +43,13 @@ export function DashboardGrid({ domains }: DashboardGridProps) {
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
       <AnimatePresence>
         {domains.map((domain, index) => (
-          <motion.div
-            key={domain.id}
-            className="h-full"
-            {...getItemMotionProps(index)}
-          >
+          <motion.div key={domain.id} className="h-full" {...getItemMotionProps(index)}>
             <DashboardGridCard domain={domain} />
           </motion.div>
         ))}
 
         {/* Free-tier CTA: treated as just another (last) grid item */}
-        <motion.div
-          key="upgrade-cta"
-          className="h-full"
-          {...getItemMotionProps(domains.length)}
-        >
+        <motion.div key="upgrade-cta" className="h-full" {...getItemMotionProps(domains.length)}>
           <GridUpgradeCard />
         </motion.div>
       </AnimatePresence>

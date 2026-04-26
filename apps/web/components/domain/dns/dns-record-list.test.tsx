@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+
 import { DnsRecordList } from "@/components/domain/dns/dns-record-list";
 import { render, screen } from "@/mocks/react";
 
@@ -12,13 +13,13 @@ vi.mock("@/components/ui/tooltip", () => ({
   ),
   TooltipTrigger: ({
     children,
-    render,
+    render: renderProp,
   }: {
     children?: React.ReactNode;
     render?: React.ReactNode;
   }) => (
     <button type="button" data-slot="tooltip-trigger">
-      {render ?? children}
+      {renderProp ?? children}
     </button>
   ),
   TooltipContent: ({ children }: { children: React.ReactNode }) => (
@@ -55,16 +56,12 @@ describe("DnsRecordList", () => {
     render(<DnsRecordList records={records} type="MX" />);
 
     // KeyValue now renders the value span with classes: "min-w-0 flex-1 truncate"
-    const items = Array.from(
-      document.querySelectorAll("span.min-w-0.flex-1.truncate"),
-    ).map((el) => (el as HTMLElement).textContent);
+    const items = Array.from(document.querySelectorAll("span.min-w-0.flex-1.truncate")).map(
+      (el) => (el as HTMLElement).textContent,
+    );
     // Ensure all rendered
     expect(items).toEqual(
-      expect.arrayContaining([
-        "mx-a.test.invalid",
-        "mx-b.test.invalid",
-        "mx-c.test.invalid",
-      ]),
+      expect.arrayContaining(["mx-a.test.invalid", "mx-b.test.invalid", "mx-c.test.invalid"]),
     );
 
     // TTL badge presence (not exact text as it's formatted)

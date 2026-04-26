@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
+
 import { render, screen } from "@/mocks/react";
+
 import { HeadersSection } from "./headers-section";
 
 // Keep TooltipContent empty in unit tests to avoid text duplication issues.
@@ -9,13 +11,13 @@ vi.mock("@/components/ui/tooltip", () => ({
   ),
   TooltipTrigger: ({
     children,
-    render,
+    render: renderProp,
   }: {
     children?: React.ReactNode;
     render?: React.ReactNode;
   }) => (
     <button type="button" data-slot="tooltip-trigger">
-      {render ?? children}
+      {renderProp ?? children}
     </button>
   ),
   TooltipContent: (_: { children: React.ReactNode }) => null,
@@ -90,9 +92,7 @@ describe("HeadersSection", () => {
     };
     render(<HeadersSection data={data} />);
     expect(screen.getByText("location")).toBeInTheDocument();
-    expect(
-      screen.getByText("https://www.test.invalid/path"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("https://www.test.invalid/path")).toBeInTheDocument();
 
     // Check that the link is rendered with correct href
     const link = screen.getByTitle("View report for test.invalid");

@@ -63,7 +63,6 @@ export function normalizeDomainInput(input: string): string {
   }
 
   // Strip query and fragment (in case they weren't already removed)
-  // biome-ignore lint/nursery/useDestructuring: this is simpler
   value = value.split(/[?#]/)[0];
 
   // Strip User Info (credentials)
@@ -73,11 +72,9 @@ export function normalizeDomainInput(input: string): string {
   }
 
   // Strip port
-  // biome-ignore lint/nursery/useDestructuring: this is simpler
   value = value.split(":")[0];
 
   // Remove any path components that might remain
-  // biome-ignore lint/nursery/useDestructuring: this is simpler
   value = value.split("/")[0];
 
   // Strip trailing dot

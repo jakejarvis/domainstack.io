@@ -1,22 +1,19 @@
 "use client";
 
-import { useAnalytics } from "@domainstack/analytics/client";
-import { MAX_HISTORY_ITEMS } from "@domainstack/constants";
-import { Button } from "@domainstack/ui/button";
-import { ScrollArea } from "@domainstack/ui/scroll-area";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@domainstack/ui/tooltip";
-import { cn } from "@domainstack/ui/utils";
 import { IconX } from "@tabler/icons-react";
 import { useSetAtom } from "jotai";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
 import { Favicon } from "@/components/icons/favicon";
 import { pendingDomainAtom } from "@/lib/atoms/search-atoms";
 import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
+import { useAnalytics } from "@domainstack/analytics/client";
+import { MAX_HISTORY_ITEMS } from "@domainstack/constants";
+import { Button } from "@domainstack/ui/button";
+import { ScrollArea } from "@domainstack/ui/scroll-area";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
+import { cn } from "@domainstack/ui/utils";
 
 export type HomeSearchSuggestionsClientProps = {
   defaultSuggestions: string[];
@@ -45,10 +42,7 @@ export function HomeSearchSuggestionsClient({
 
   const displayedSuggestions = useMemo(() => {
     const historySet = new Set(history);
-    const merged = [
-      ...history,
-      ...defaultSuggestions.filter((d) => !historySet.has(d)),
-    ];
+    const merged = [...history, ...defaultSuggestions.filter((d) => !historySet.has(d))];
     return merged.slice(0, max);
   }, [history, defaultSuggestions, max]);
 
@@ -69,10 +63,7 @@ export function HomeSearchSuggestionsClient({
     analytics.track("search_history_cleared");
 
     // Scroll back to the left with smooth animation
-    if (
-      scrollContainerRef.current &&
-      typeof scrollContainerRef.current.scrollTo === "function"
-    ) {
+    if (scrollContainerRef.current && typeof scrollContainerRef.current.scrollTo === "function") {
       scrollContainerRef.current.scrollTo({
         left: 0,
         behavior: "smooth",
@@ -81,36 +72,30 @@ export function HomeSearchSuggestionsClient({
   }, [analytics, clearHistory]);
 
   return (
-    <ScrollArea
-      className={cn("w-full", className)}
-      scrollRef={scrollContainerRef}
-      hideScrollbar
-    >
+    <ScrollArea className={cn("w-full", className)} scrollRef={scrollContainerRef} hideScrollbar>
       <div className="flex gap-2 p-0.5">
-        {(isHistoryLoaded ? displayedSuggestions : defaultSuggestions).map(
-          (domain) => (
-            <Button
-              key={domain}
-              variant="secondary"
-              size="sm"
-              className={cn(
-                "shrink-0 gap-2 border-none bg-muted/40 px-2.5 leading-none ring-1 ring-ring/20 hover:bg-muted/60",
-                isHistoryLoaded ? "visible" : "invisible",
-              )}
-              onClick={(e) => {
-                e.preventDefault();
-                handleClick(domain);
-              }}
-              nativeButton={false}
-              render={
-                <Link href={`/${encodeURIComponent(domain)}`} prefetch={false}>
-                  <Favicon domain={domain} className="shrink-0" />
-                  {domain}
-                </Link>
-              }
-            />
-          ),
-        )}
+        {(isHistoryLoaded ? displayedSuggestions : defaultSuggestions).map((domain) => (
+          <Button
+            key={domain}
+            variant="secondary"
+            size="sm"
+            className={cn(
+              "shrink-0 gap-2 border-none bg-muted/40 px-2.5 leading-none ring-1 ring-ring/20 hover:bg-muted/60",
+              isHistoryLoaded ? "visible" : "invisible",
+            )}
+            onClick={(e) => {
+              e.preventDefault();
+              handleClick(domain);
+            }}
+            nativeButton={false}
+            render={
+              <Link href={`/${encodeURIComponent(domain)}`} prefetch={false}>
+                <Favicon domain={domain} className="shrink-0" />
+                {domain}
+              </Link>
+            }
+          />
+        ))}
         {isHistoryLoaded && history.length > 0 ? (
           <Tooltip>
             <TooltipTrigger

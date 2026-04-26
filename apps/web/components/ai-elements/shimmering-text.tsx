@@ -1,8 +1,9 @@
 "use client";
 
-import { cn } from "@domainstack/ui/utils";
 import { motion, type UseInViewOptions, useInView } from "motion/react";
 import { useMemo, useRef } from "react";
+
+import { cn } from "@domainstack/ui/utils";
 
 interface ShimmeringTextProps {
   /** Text to display with shimmer effect */

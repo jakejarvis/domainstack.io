@@ -8,6 +8,7 @@ import { upsertProviderLogo } from "@domainstack/db/queries";
 import { optimizeImage, storeImage } from "@domainstack/image";
 import { safeFetch } from "@domainstack/safe-fetch";
 import type { ProviderLogoResponse } from "@domainstack/types";
+
 import { ttlForProviderIcon } from "../ttl";
 
 // ============================================================================
@@ -69,9 +70,7 @@ export async function fetchProviderLogo(
     // If at least one source failed with a transient error (not 404/400),
     // throw so TanStack Query can retry instead of caching failure
     if (!fetchResult.allNotFound) {
-      throw new Error(
-        `Provider logo fetch failed for ${providerDomain} (transient)`,
-      );
+      throw new Error(`Provider logo fetch failed for ${providerDomain} (transient)`);
     }
 
     // Persist "no logo found" as a cached state (all sources returned 404)
@@ -158,8 +157,7 @@ async function fetchIconFromSources(domain: string): Promise<IconFetchResult> {
       });
 
       if (!asset.ok) {
-        const isDefinitiveNotFoundStatus =
-          asset.status === 404 || asset.status === 400;
+        const isDefinitiveNotFoundStatus = asset.status === 404 || asset.status === 400;
         if (!isDefinitiveNotFoundStatus) {
           allNotFound = false;
         }
@@ -219,9 +217,7 @@ async function processAndStore(
   });
 
   if (optimized.length === 0) {
-    throw new Error(
-      `Image processing returned empty result for provider ${providerId}`,
-    );
+    throw new Error(`Image processing returned empty result for provider ${providerId}`);
   }
 
   // 2. Store to blob storage
@@ -255,10 +251,7 @@ async function processAndStore(
 // Internal: Persist Failure
 // ============================================================================
 
-async function persistFailure(
-  providerId: string,
-  isNotFound: boolean,
-): Promise<void> {
+async function persistFailure(providerId: string, isNotFound: boolean): Promise<void> {
   const now = new Date();
   const expiresAt = ttlForProviderIcon(now);
 

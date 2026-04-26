@@ -2,11 +2,10 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
+
 import { DashboardBanner } from "@/components/dashboard/dashboard-banner";
 
-export function DashboardBannerDismissable(
-  props: React.ComponentProps<typeof DashboardBanner>,
-) {
+export function DashboardBannerDismissable(props: React.ComponentProps<typeof DashboardBanner>) {
   const shouldReduceMotion = useReducedMotion();
   const [isDismissed, setIsDismissed] = useState(false);
 

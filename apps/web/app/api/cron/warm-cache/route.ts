@@ -1,3 +1,7 @@
+import { NextResponse } from "next/server";
+
+import type { Section } from "@/lib/constants/sections";
+import { sections } from "@/lib/constants/sections";
 import {
   getCachedCertificates,
   getCachedDns,
@@ -16,9 +20,6 @@ import {
   fetchRegistration,
   fetchSeo,
 } from "@domainstack/server";
-import { NextResponse } from "next/server";
-import type { Section } from "@/lib/constants/sections";
-import { sections } from "@/lib/constants/sections";
 
 /** All section types */
 const ALL_SECTIONS = Object.keys(sections) as Section[];
@@ -61,18 +62,12 @@ const sectionFetchers: Record<Section, (domain: string) => Promise<unknown>> = {
 /**
  * Check if a section is stale for a given domain.
  */
-async function isSectionStale(
-  domain: string,
-  section: Section,
-): Promise<boolean> {
+async function isSectionStale(domain: string, section: Section): Promise<boolean> {
   try {
     const result = await sectionCacheGetters[section](domain);
     return result.stale || result.data === null;
   } catch (err) {
-    logger.error(
-      { domain, section, err },
-      "failed to check staleness, assuming stale",
-    );
+    logger.error({ domain, section, err }, "failed to check staleness, assuming stale");
     return true;
   }
 }
@@ -104,9 +99,7 @@ async function getStaleSections(domain: string): Promise<Section[]> {
  * stays stale until next user access.
  */
 export async function GET(request: Request) {
-  if (
-    request.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`
-  ) {
+  if (request.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
     logger.warn("Unauthorized cron request");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -182,9 +175,6 @@ export async function GET(request: Request) {
     return NextResponse.json(result);
   } catch (err) {
     logger.error({ err }, "Warm-cache cron failed");
-    return NextResponse.json(
-      { error: "Failed to warm cache" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to warm cache" }, { status: 500 });
   }
 }

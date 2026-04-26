@@ -1,3 +1,14 @@
+import { IconAlertCircle, IconCheck, IconGauge } from "@tabler/icons-react";
+
+import { ShareInstructionsDialog } from "@/components/dashboard/add-domain/share-instructions-dialog";
+import { StepConfirmation } from "@/components/dashboard/add-domain/step-confirmation";
+import { StepEnterDomain } from "@/components/dashboard/add-domain/step-enter-domain";
+import { StepInstructionsError } from "@/components/dashboard/add-domain/step-instructions-error";
+import { StepVerifyOwnership } from "@/components/dashboard/add-domain/step-verify-ownership";
+import { PlanStatusCard } from "@/components/plan-status-card";
+import { UpgradeCard } from "@/components/upgrade-card";
+import { useDomainVerification } from "@/hooks/use-domain-verification";
+import { useSubscription } from "@/hooks/use-subscription";
 import type { ResumeDomainData } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { Icon } from "@domainstack/ui/icon";
@@ -12,21 +23,7 @@ import {
   StepperSeparator,
   StepperTrigger,
 } from "@domainstack/ui/stepper";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@domainstack/ui/tooltip";
-import { IconAlertCircle, IconCheck, IconGauge } from "@tabler/icons-react";
-import { ShareInstructionsDialog } from "@/components/dashboard/add-domain/share-instructions-dialog";
-import { StepConfirmation } from "@/components/dashboard/add-domain/step-confirmation";
-import { StepEnterDomain } from "@/components/dashboard/add-domain/step-enter-domain";
-import { StepInstructionsError } from "@/components/dashboard/add-domain/step-instructions-error";
-import { StepVerifyOwnership } from "@/components/dashboard/add-domain/step-verify-ownership";
-import { PlanStatusCard } from "@/components/plan-status-card";
-import { UpgradeCard } from "@/components/upgrade-card";
-import { useDomainVerification } from "@/hooks/use-domain-verification";
-import { useSubscription } from "@/hooks/use-subscription";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 
 export type AddDomainContentProps = {
   /** Additional classes for the wrapper */
@@ -49,13 +46,8 @@ export function AddDomainContent({
   prefillDomain,
 }: AddDomainContentProps) {
   // Check user subscription
-  const {
-    subscription,
-    isPro,
-    isSubscriptionLoading,
-    isSubscriptionError,
-    refetchSubscription,
-  } = useSubscription();
+  const { subscription, isPro, isSubscriptionLoading, isSubscriptionError, refetchSubscription } =
+    useSubscription();
 
   const {
     // State
@@ -120,10 +112,10 @@ export function AddDomainContent({
           <Icon size="lg" variant="destructive" className="mb-2">
             <IconAlertCircle />
           </Icon>
-          <h2 className="font-semibold text-lg leading-none tracking-tight">
+          <h2 className="text-lg leading-none font-semibold tracking-tight">
             Unable to Load Subscription
           </h2>
-          <p className="mt-1 text-muted-foreground text-sm">
+          <p className="mt-1 text-sm text-muted-foreground">
             We couldn&apos;t load your subscription details. Please try again.
           </p>
         </div>
@@ -157,12 +149,9 @@ export function AddDomainContent({
           <Icon size="lg" variant="destructive" className="mb-2">
             <IconGauge />
           </Icon>
-          <h2 className="font-semibold text-lg tracking-tight">
-            Domain Limit Reached
-          </h2>
-          <p className="text-muted-foreground text-sm">
-            You&apos;ve reached your limit of {subscription?.planQuota} tracked
-            domain
+          <h2 className="text-lg font-semibold tracking-tight">Domain Limit Reached</h2>
+          <p className="text-sm text-muted-foreground">
+            You&apos;ve reached your limit of {subscription?.planQuota} tracked domain
             {subscription?.planQuota !== 1 && "s"}.
           </p>
         </div>
@@ -179,9 +168,9 @@ export function AddDomainContent({
 
           {isPro ? (
             <div className="flex flex-col gap-2">
-              <p className="text-center text-muted-foreground text-sm">
-                You can archive unused domains to make room for new ones, or
-                remove domains you no longer need to track.
+              <p className="text-center text-sm text-muted-foreground">
+                You can archive unused domains to make room for new ones, or remove domains you no
+                longer need to track.
               </p>
               {onClose && (
                 <Button variant="outline" onClick={onClose} className="w-full">
@@ -202,10 +191,10 @@ export function AddDomainContent({
   return (
     <div className={className}>
       <div className="space-y-1">
-        <h2 className="font-semibold text-base">
+        <h2 className="text-base font-semibold">
           {isResuming ? "Complete Verification" : "Add Domain"}
         </h2>
-        <p className="text-muted-foreground text-sm">
+        <p className="text-sm text-muted-foreground">
           {isResuming
             ? domain
               ? `Verify ownership of ${domain}`
@@ -235,10 +224,7 @@ export function AddDomainContent({
             </Tooltip>
             <StepperSeparator />
           </StepperItem>
-          <StepperItem
-            step={2}
-            loading={isLoadingVerificationData || isVerifying}
-          >
+          <StepperItem step={2} loading={isLoadingVerificationData || isVerifying}>
             <Tooltip>
               <TooltipTrigger
                 render={
@@ -266,10 +252,7 @@ export function AddDomainContent({
         </StepperNav>
 
         <StepperPanel>
-          <StepperContent
-            value={1}
-            className="flex min-h-[200px] flex-col justify-between"
-          >
+          <StepperContent value={1} className="flex min-h-[200px] flex-col justify-between">
             <StepEnterDomain
               domain={domain}
               setDomain={setDomain}
@@ -329,9 +312,7 @@ export function AddDomainContent({
                     <Button
                       onClick={handleNext}
                       disabled={
-                        !canProceed ||
-                        isLoadingVerificationData ||
-                        isMissingVerificationData
+                        !canProceed || isLoadingVerificationData || isMissingVerificationData
                       }
                     >
                       {isVerifying ? <Spinner /> : <IconCheck />}
@@ -346,9 +327,8 @@ export function AddDomainContent({
                   </Icon>
                   <div className="text-center" aria-live="polite">
                     <h3 className="font-semibold">Something went wrong</h3>
-                    <p className="text-muted-foreground text-sm">
-                      Domain tracking ID is missing. Please try adding the
-                      domain again.
+                    <p className="text-sm text-muted-foreground">
+                      Domain tracking ID is missing. Please try adding the domain again.
                     </p>
                   </div>
                   {onClose && (

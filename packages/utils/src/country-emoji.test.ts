@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { countryCodeToEmoji } from "./country-emoji";
 
 describe("countryCodeToEmoji", () => {

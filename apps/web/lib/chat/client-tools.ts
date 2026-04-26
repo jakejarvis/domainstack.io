@@ -9,6 +9,7 @@
 import type { TRPCClient } from "@trpc/client";
 import { tool } from "ai";
 import { z } from "zod";
+
 import type { AppRouter } from "@/server/routers/_app";
 
 /**
@@ -51,10 +52,7 @@ function getUserFriendlyError(err: unknown, domain: string): string {
   ) {
     return `Could not establish secure connection to ${domain}.`;
   }
-  if (
-    lowerMessage.includes("refused") ||
-    lowerMessage.includes("unreachable")
-  ) {
+  if (lowerMessage.includes("refused") || lowerMessage.includes("unreachable")) {
     return `Could not connect to ${domain}. The server may be down.`;
   }
   if (lowerMessage.includes("unauthorized") || lowerMessage.includes("401")) {

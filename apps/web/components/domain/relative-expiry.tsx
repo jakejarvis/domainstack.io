@@ -1,9 +1,10 @@
 "use client";
 
-import { cn } from "@domainstack/ui/utils";
 import { differenceInDays, formatDistanceToNowStrict } from "date-fns";
 import { useMemo } from "react";
+
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
+import { cn } from "@domainstack/ui/utils";
 
 export function RelativeExpiryString({
   to,
@@ -47,9 +48,7 @@ export function RelativeExpiryString({
     <span
       className={cn(
         daysUntil <= dangerDays && "text-red-600 dark:text-red-400",
-        daysUntil > dangerDays &&
-          daysUntil <= warnDays &&
-          "text-amber-600 dark:text-amber-400",
+        daysUntil > dangerDays && daysUntil <= warnDays && "text-amber-600 dark:text-amber-400",
         className,
       )}
     >

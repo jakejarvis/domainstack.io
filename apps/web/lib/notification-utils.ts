@@ -1,10 +1,3 @@
-import type { NotificationType } from "@domainstack/constants";
-import {
-  CERTIFICATE_EXPIRY_THRESHOLDS,
-  CERTIFICATE_THRESHOLD_TO_TYPE,
-  DOMAIN_EXPIRY_THRESHOLDS,
-  DOMAIN_THRESHOLD_TO_TYPE,
-} from "@domainstack/constants";
 import {
   IconAlertTriangle,
   IconBell,
@@ -15,13 +8,17 @@ import {
   IconShieldExclamation,
 } from "@tabler/icons-react";
 
+import type { NotificationType } from "@domainstack/constants";
+import {
+  CERTIFICATE_EXPIRY_THRESHOLDS,
+  CERTIFICATE_THRESHOLD_TO_TYPE,
+  DOMAIN_EXPIRY_THRESHOLDS,
+  DOMAIN_THRESHOLD_TO_TYPE,
+} from "@domainstack/constants";
+
 // Pre-sorted thresholds (ascending) for efficient lookup - sort once at module load
-const SORTED_DOMAIN_THRESHOLDS = [...DOMAIN_EXPIRY_THRESHOLDS].sort(
-  (a, b) => a - b,
-);
-const SORTED_CERTIFICATE_THRESHOLDS = [...CERTIFICATE_EXPIRY_THRESHOLDS].sort(
-  (a, b) => a - b,
-);
+const SORTED_DOMAIN_THRESHOLDS = [...DOMAIN_EXPIRY_THRESHOLDS].sort((a, b) => a - b);
+const SORTED_CERTIFICATE_THRESHOLDS = [...CERTIFICATE_EXPIRY_THRESHOLDS].sort((a, b) => a - b);
 
 /**
  * Generate a stable idempotency key for Resend.
@@ -39,9 +36,7 @@ export function generateIdempotencyKey(...parts: string[]): string {
  *
  * Example: daysRemaining=14 → returns "domain_expiry_14d" (not 30d)
  */
-export function getDomainExpiryNotificationType(
-  daysRemaining: number,
-): NotificationType | null {
+export function getDomainExpiryNotificationType(daysRemaining: number): NotificationType | null {
   for (const threshold of SORTED_DOMAIN_THRESHOLDS) {
     if (daysRemaining <= threshold) {
       return DOMAIN_THRESHOLD_TO_TYPE[threshold];

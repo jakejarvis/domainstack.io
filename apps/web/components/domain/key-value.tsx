@@ -1,3 +1,4 @@
+import { useTruncation } from "@/hooks/use-truncation";
 import { CopyButton } from "@domainstack/ui/copy-button";
 import {
   ResponsiveTooltip,
@@ -5,7 +6,6 @@ import {
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
 import { cn } from "@domainstack/ui/utils";
-import { useTruncation } from "@/hooks/use-truncation";
 
 export function KeyValue({
   label,
@@ -41,10 +41,8 @@ export function KeyValue({
         {label && (
           <div
             className={cn(
-              "pt-1 text-[10px] uppercase leading-none tracking-[0.08em]",
-              highlight
-                ? "text-accent-purple"
-                : "text-foreground/75 dark:text-foreground/80",
+              "pt-1 text-[10px] leading-none tracking-[0.08em] uppercase",
+              highlight ? "text-accent-purple" : "text-foreground/75 dark:text-foreground/80",
             )}
           >
             {label}
@@ -69,7 +67,7 @@ export function KeyValue({
             <ResponsiveTooltipContent
               className={cn(
                 isTruncated || valueTooltip != null
-                  ? "max-w-[80vw] whitespace-pre-wrap break-words md:max-w-[40rem]"
+                  ? "max-w-[80vw] break-words whitespace-pre-wrap md:max-w-[40rem]"
                   : "hidden",
               )}
             >
@@ -87,11 +85,7 @@ export function KeyValue({
       <div className="flex shrink-0 items-center gap-2">
         {trailing}
         {copyable && (
-          <CopyButton
-            value={value}
-            variant="ghost"
-            className="-mr-1 text-muted-foreground"
-          />
+          <CopyButton value={value} variant="ghost" className="-mr-1 text-muted-foreground" />
         )}
       </div>
     </div>

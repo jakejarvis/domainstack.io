@@ -1,3 +1,12 @@
+import { IconAlertTriangle, IconChevronDown, IconTrash } from "@tabler/icons-react";
+import { useState } from "react";
+
+import { LinkedAccountRow } from "@/components/settings/account/linked-account-row";
+import { SettingsCard, SettingsCardSeparator } from "@/components/settings/settings-card";
+import { LinkedAccountsSkeleton } from "@/components/settings/settings-skeleton";
+import { useAuthCallback } from "@/hooks/use-auth-callback";
+import { useLinkedAccounts } from "@/hooks/use-linked-accounts";
+import type { OAuthProvider } from "@/lib/oauth";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,33 +18,13 @@ import {
   AlertDialogTitle,
 } from "@domainstack/ui/alert-dialog";
 import { Button } from "@domainstack/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@domainstack/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@domainstack/ui/collapsible";
 import { ItemGroup } from "@domainstack/ui/item";
-import {
-  IconAlertTriangle,
-  IconChevronDown,
-  IconTrash,
-} from "@tabler/icons-react";
-import { useState } from "react";
-import { LinkedAccountRow } from "@/components/settings/account/linked-account-row";
-import {
-  SettingsCard,
-  SettingsCardSeparator,
-} from "@/components/settings/settings-card";
-import { LinkedAccountsSkeleton } from "@/components/settings/settings-skeleton";
-import { useAuthCallback } from "@/hooks/use-auth-callback";
-import { useLinkedAccounts } from "@/hooks/use-linked-accounts";
-import type { OAuthProvider } from "@/lib/oauth";
+
 import { DeleteAccountDialog } from "./delete-account-dialog";
 
 export function AccountPanel() {
-  const [unlinkingProvider, setUnlinkingProvider] = useState<string | null>(
-    null,
-  );
+  const [unlinkingProvider, setUnlinkingProvider] = useState<string | null>(null);
   const [linkingProvider, setLinkingProvider] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
@@ -62,10 +51,7 @@ export function AccountPanel() {
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         setLinkingProvider(null);
-        document.removeEventListener(
-          "visibilitychange",
-          handleVisibilityChange,
-        );
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
       }
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -143,11 +129,11 @@ export function AccountPanel() {
           render={
             <button
               type="button"
-              className="group flex w-full cursor-pointer items-center justify-between rounded-md bg-destructive/5 px-4 py-3 text-left transition-all hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2 data-[panel-open]:rounded-b-none"
+              className="group flex w-full cursor-pointer items-center justify-between rounded-md bg-destructive/5 px-4 py-3 text-left transition-all hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2 focus-visible:outline-none data-[panel-open]:rounded-b-none"
             >
               <div className="flex items-center gap-3">
                 <IconAlertTriangle className="size-5 text-destructive" />
-                <span className="font-medium text-destructive text-sm leading-none">
+                <span className="text-sm leading-none font-medium text-destructive">
                   Danger Zone!
                 </span>
               </div>
@@ -159,16 +145,12 @@ export function AccountPanel() {
           <div className="rounded-b-md bg-destructive/2 p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="font-medium text-sm">Delete account</p>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-sm font-medium">Delete account</p>
+                <p className="text-xs text-muted-foreground">
                   Permanently delete your account and all associated data
                 </p>
               </div>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setIsDeleteDialogOpen(true)}
-              >
+              <Button variant="destructive" size="sm" onClick={() => setIsDeleteDialogOpen(true)}>
                 <IconTrash />
                 Delete
               </Button>
@@ -183,22 +165,17 @@ export function AccountPanel() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              Unlink {providerToUnlink?.name ?? "account"}?
-            </AlertDialogTitle>
+            <AlertDialogTitle>Unlink {providerToUnlink?.name ?? "account"}?</AlertDialogTitle>
             <AlertDialogDescription>
-              You will no longer be able to sign in with{" "}
-              {providerToUnlink?.name ?? "this account"}. Make sure you have
-              another way to access your account.
+              You will no longer be able to sign in with {providerToUnlink?.name ?? "this account"}.
+              Make sure you have another way to access your account.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              onClick={() =>
-                unlinkingProvider && handleUnlink(unlinkingProvider)
-              }
+              onClick={() => unlinkingProvider && handleUnlink(unlinkingProvider)}
             >
               Unlink
             </AlertDialogAction>
@@ -206,10 +183,7 @@ export function AccountPanel() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <DeleteAccountDialog
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-      />
+      <DeleteAccountDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen} />
     </>
   );
 }

@@ -57,8 +57,7 @@ export function useSectionTracking({
 
       // Check if we're in a programmatic scroll
       if (targetId) {
-        const now =
-          typeof performance !== "undefined" ? performance.now() : Date.now();
+        const now = typeof performance !== "undefined" ? performance.now() : Date.now();
         const targetEl = document.getElementById(targetId);
 
         if (!targetEl || now > programmaticLockUntilRef.current) {
@@ -124,8 +123,7 @@ export function useSectionTracking({
 
     setActiveSection(id);
     programmaticTargetIdRef.current = id;
-    const now =
-      typeof performance !== "undefined" ? performance.now() : Date.now();
+    const now = typeof performance !== "undefined" ? performance.now() : Date.now();
     programmaticLockUntilRef.current = now + 1500; // 1.5s lock period
 
     element.scrollIntoView({

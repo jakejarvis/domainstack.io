@@ -8,8 +8,9 @@
  * should be done at the workflow level using scheduleRevalidationBatchStep.
  */
 
-import type { GeoIpData } from "@domainstack/types";
 import type { PersistResult } from "@/lib/workflow/types";
+import type { GeoIpData } from "@domainstack/types";
+
 import type { ProviderDetectionData } from "./types";
 
 /**
@@ -32,9 +33,7 @@ export async function persistHostingStep(
 
   // Dynamic imports for Node.js modules and database operations
   const { ttlForHosting } = await import("@domainstack/server/ttl");
-  const { ensureDomainRecord, upsertHosting } = await import(
-    "@domainstack/db/queries"
-  );
+  const { ensureDomainRecord, upsertHosting } = await import("@domainstack/db/queries");
 
   const now = new Date();
   const expiresAt = ttlForHosting(now);

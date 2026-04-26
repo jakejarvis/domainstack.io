@@ -5,13 +5,12 @@
  * This step is shared between the dedicated certificatesWorkflow and internal workflows.
  */
 
+import { RetryableError } from "workflow";
+
 import type { RawCertificate } from "@domainstack/server/tls";
 import type { Certificate } from "@domainstack/types";
-import { RetryableError } from "workflow";
-import type {
-  CertificatesProcessedData,
-  FetchCertificatesResult,
-} from "./types";
+
+import type { CertificatesProcessedData, FetchCertificatesResult } from "./types";
 
 /**
  * Step: Fetch certificate chain via TLS handshake.
@@ -22,9 +21,7 @@ import type {
  * @param domain - The domain to connect to
  * @returns FetchCertificatesResult with typed error on failure
  */
-export async function fetchCertificateChainStep(
-  domain: string,
-): Promise<FetchCertificatesResult> {
+export async function fetchCertificateChainStep(domain: string): Promise<FetchCertificatesResult> {
   "use step";
 
   // Dynamic import to keep step bundle small
@@ -56,18 +53,13 @@ export async function fetchCertificateChainStep(
  * @param chainJson - JSON-serialized certificate chain
  * @returns Processed certificates with provider IDs and expiry metadata
  */
-export async function processChainStep(
-  chainJson: string,
-): Promise<CertificatesProcessedData> {
+export async function processChainStep(chainJson: string): Promise<CertificatesProcessedData> {
   "use step";
 
   // Dynamic imports to avoid top-level db/network dependencies
-  const { getProviderCatalog } = await import(
-    "@domainstack/server/edge-config"
-  );
-  const { detectCertificateAuthority, getProvidersFromCatalog } = await import(
-    "@domainstack/utils/providers"
-  );
+  const { getProviderCatalog } = await import("@domainstack/server/edge-config");
+  const { detectCertificateAuthority, getProvidersFromCatalog } =
+    await import("@domainstack/utils/providers");
   const { upsertCatalogProvider } = await import("@domainstack/db/queries");
 
   const chain = JSON.parse(chainJson) as RawCertificate[];
@@ -106,21 +98,22 @@ export async function processChainStep(
   );
 
   // Update certificates with provider IDs
-  const certificates: Certificate[] = certificatesWithMatches.map(
-    ({ cert }, i) => ({
-      ...cert,
-      caProvider: {
-        ...cert.caProvider,
-        id: providerIds[i],
-      },
-    }),
-  );
+  const certificates: Certificate[] = certificatesWithMatches.map(({ cert }, i) => ({
+    issuer: cert.issuer,
+    subject: cert.subject,
+    altNames: cert.altNames,
+    validFrom: cert.validFrom,
+    validTo: cert.validTo,
+    caProvider: {
+      id: providerIds[i],
+      name: cert.caProvider.name,
+      domain: cert.caProvider.domain,
+    },
+  }));
 
   const earliestValidTo =
     certificates.length > 0
-      ? new Date(
-          Math.min(...certificates.map((c) => new Date(c.validTo).getTime())),
-        )
+      ? new Date(Math.min(...certificates.map((c) => new Date(c.validTo).getTime())))
       : new Date(Date.now() + 3_600_000);
 
   return { certificates, providerIds, earliestValidTo };

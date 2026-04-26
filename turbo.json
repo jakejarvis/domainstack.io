@@ -50,8 +50,17 @@
       "dependsOn": ["^lint"],
       "outputs": []
     },
-    "format": {
-      "cache": false
+    "lint:fix": {
+      "dependsOn": ["^lint:fix"],
+      "outputs": []
+    },
+    "fmt": {
+      "dependsOn": ["^fmt"],
+      "outputs": []
+    },
+    "fmt:check": {
+      "dependsOn": ["^fmt:check"],
+      "outputs": []
     },
     "test": {
       "dependsOn": ["^build"],

@@ -43,10 +43,7 @@ function clampFuture(min: Date, max: Date, now: Date): Date {
  * TTL for registration data.
  * Revalidates more aggressively near expiry (within 7 days).
  */
-export function ttlForRegistration(
-  now: Date,
-  expirationDate?: Date | null,
-): Date {
+export function ttlForRegistration(now: Date, expirationDate?: Date | null): Date {
   if (expirationDate) {
     const msUntil = expirationDate.getTime() - now.getTime();
     if (msUntil <= TTL_REGISTRATION_EXPIRY_THRESHOLD * 1000) {
@@ -74,9 +71,7 @@ export function ttlForDnsRecord(now: Date, ttlSeconds?: number | null): Date {
  */
 export function ttlForCertificates(now: Date, validTo: Date): Date {
   const window = addSeconds(now, TTL_CERTIFICATES_WINDOW);
-  const revalidateBefore = new Date(
-    validTo.getTime() - TTL_CERTIFICATES_EXPIRY_BUFFER * 1000,
-  );
+  const revalidateBefore = new Date(validTo.getTime() - TTL_CERTIFICATES_EXPIRY_BUFFER * 1000);
   return clampFuture(
     addSeconds(now, TTL_CERTIFICATES_MIN),
     new Date(Math.min(window.getTime(), revalidateBefore.getTime())),

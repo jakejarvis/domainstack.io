@@ -1,8 +1,4 @@
-import {
-  IconArrowDown,
-  IconArrowsSort,
-  IconArrowUp,
-} from "@tabler/icons-react";
+import { IconArrowDown, IconArrowsSort, IconArrowUp } from "@tabler/icons-react";
 
 type SortIndicatorProps = {
   isSorted: false | "asc" | "desc";

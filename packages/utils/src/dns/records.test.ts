@@ -1,7 +1,9 @@
 /* @vitest-environment node */
 
-import type { DnsRecord } from "@domainstack/types";
 import { describe, expect, it } from "vitest";
+
+import type { DnsRecord } from "@domainstack/types";
+
 import {
   deduplicateDnsRecords,
   deduplicateDnsRecordsByValue,
@@ -27,12 +29,7 @@ describe("makeDnsRecordKey", () => {
   });
 
   it("preserves case for TXT values", () => {
-    const key = makeDnsRecordKey(
-      "TXT",
-      "example.com",
-      "v=spf1 include:_spf.Google.com",
-      undefined,
-    );
+    const key = makeDnsRecordKey("TXT", "example.com", "v=spf1 include:_spf.Google.com", undefined);
     expect(key).toBe("TXT|example.com|v=spf1 include:_spf.Google.com");
   });
 

@@ -1,9 +1,10 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
+
 import { cn, cva, type VariantProps } from "../utils";
 
 const alertVariants = cva({
-  base: "fade-in-0 slide-in-from-top-2 relative grid w-full animate-in grid-cols-[0_1fr] items-start gap-y-0.5 rounded-lg border bg-card/40 px-4 py-3 text-sm backdrop-blur-lg duration-200 has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-[>svg]:gap-x-2 [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current",
+  base: "relative grid w-full animate-in grid-cols-[0_1fr] items-start gap-y-0.5 rounded-lg border bg-card/40 px-4 py-3 text-sm backdrop-blur-lg duration-200 fade-in-0 slide-in-from-top-2 has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-[>svg]:gap-x-2 [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current",
   variants: {
     variant: {
       default: "text-card-foreground",
@@ -35,11 +36,7 @@ function Alert({
   });
 }
 
-function AlertTitle({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"div">) {
+function AlertTitle({ className, render, ...props }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
@@ -52,17 +49,13 @@ function AlertTitle({
   });
 }
 
-function AlertDescription({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"div">) {
+function AlertDescription({ className, render, ...props }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
       className: cn(
-        "col-start-2 grid justify-items-start gap-1 text-muted-foreground text-sm [&_p]:leading-relaxed",
+        "col-start-2 grid justify-items-start gap-1 text-sm text-muted-foreground [&_p]:leading-relaxed",
         className,
       ),
     }),
@@ -72,4 +65,4 @@ function AlertDescription({
   });
 }
 
-export { Alert, AlertTitle, AlertDescription };
+export { Alert, AlertDescription, AlertTitle };

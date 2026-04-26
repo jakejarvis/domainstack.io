@@ -1,6 +1,8 @@
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { render, screen, waitFor } from "@/mocks/react";
+
 import { SearchClient } from "./search-client";
 
 // Mock base-ui Form to avoid React instance mismatch in browser tests
@@ -23,16 +25,16 @@ vi.mock("@/components/ui/form", () => ({
 }));
 
 const nav = vi.hoisted(() => ({
-  push: vi.fn(),
+  push: vi.fn<(href: string) => void>(),
 }));
 
-const useIsMobile = vi.hoisted(() => vi.fn(() => false));
+const useIsMobile = vi.hoisted(() => vi.fn<() => boolean>(() => false));
 
 // Mock pending domain atom state
 const mockPendingDomain = vi.hoisted(() => ({
   value: null as string | null,
 }));
-const mockSetPendingDomain = vi.fn();
+const mockSetPendingDomain = vi.fn<(domain: string | null) => void>();
 
 vi.mock("jotai", async (importOriginal) => {
   const actual = await importOriginal<typeof import("jotai")>();
@@ -54,7 +56,7 @@ vi.mock("next/navigation", () => ({
   useParams: () => ({}),
 }));
 
-vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
+vi.mock("sonner", () => ({ toast: { error: vi.fn<(message?: string) => void>() } }));
 
 describe("DomainSearch (form variant)", () => {
   beforeEach(() => {
@@ -70,10 +72,7 @@ describe("DomainSearch (form variant)", () => {
     await userEvent.type(input, "test.invalid{Enter}");
     expect(nav.push).toHaveBeenCalledWith("/test.invalid");
     // Input and button should be disabled while loading/submitting
-    expect(
-      (screen.getByLabelText(/Search any domain/i) as HTMLInputElement)
-        .disabled,
-    ).toBe(true);
+    expect((screen.getByLabelText(/Search any domain/i) as HTMLInputElement).disabled).toBe(true);
     // Submit button shows a loading spinner with accessible name "Loading"
     expect(screen.getByRole("button", { name: /loading/i })).toBeDisabled();
   });
@@ -98,9 +97,7 @@ describe("DomainSearch (form variant)", () => {
     rerender(<SearchClient variant="lg" />);
 
     // Wait for input to reflect the triggered domain (async due to useEffect)
-    const input = (await screen.findByLabelText(
-      /Search any domain/i,
-    )) as HTMLInputElement;
+    const input = (await screen.findByLabelText(/Search any domain/i)) as HTMLInputElement;
     expect(input.value).toBe("test.invalid");
 
     // Wait for navigation and store clear to be triggered
@@ -122,9 +119,7 @@ describe("DomainSearch (header variant)", () => {
 
     render(<SearchClient variant="sm" />);
 
-    const input = screen.getByLabelText(
-      /Search any domain/i,
-    ) as HTMLInputElement;
+    const input = screen.getByLabelText(/Search any domain/i) as HTMLInputElement;
     expect(input.placeholder).toBe("Search any domain");
   });
 
@@ -133,9 +128,7 @@ describe("DomainSearch (header variant)", () => {
 
     render(<SearchClient variant="sm" />);
 
-    const input = screen.getByLabelText(
-      /Search any domain/i,
-    ) as HTMLInputElement;
+    const input = screen.getByLabelText(/Search any domain/i) as HTMLInputElement;
     expect(input.placeholder).toBe("Search");
   });
 

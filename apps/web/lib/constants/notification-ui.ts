@@ -1,4 +1,3 @@
-import type { NotificationCategory } from "@domainstack/constants";
 import {
   IconCalendarDot,
   IconCloudComputing,
@@ -7,6 +6,8 @@ import {
   IconShieldExclamation,
   type TablerIcon,
 } from "@tabler/icons-react";
+
+import type { NotificationCategory } from "@domainstack/constants";
 
 /**
  * Notification category UI metadata (icons, labels, descriptions).
@@ -28,8 +29,7 @@ export const NOTIFICATION_CATEGORY_INFO: Record<
   },
   registrationChanges: {
     label: "Registration Changes",
-    description:
-      "Alerts when registrar, nameservers, transfer lock, or statuses change",
+    description: "Alerts when registrar, nameservers, transfer lock, or statuses change",
     icon: IconIdBadge2,
   },
   certificateExpiry: {

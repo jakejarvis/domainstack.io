@@ -13,6 +13,7 @@ import {
   useRef,
   useState,
 } from "react";
+
 import { cn } from "../utils";
 
 // Types
@@ -46,12 +47,8 @@ interface StepItemContextValue {
   isLoading: boolean;
 }
 
-const StepperContext = createContext<StepperContextValue | undefined>(
-  undefined,
-);
-const StepItemContext = createContext<StepItemContextValue | undefined>(
-  undefined,
-);
+const StepperContext = createContext<StepperContextValue | undefined>(undefined);
+const StepItemContext = createContext<StepItemContextValue | undefined>(undefined);
 
 function useStepper() {
   const ctx = useContext(StepperContext);
@@ -81,7 +78,7 @@ function Stepper({
   className,
   children,
   indicators = {},
-  ...props
+  ...rootProps
 }: StepperProps) {
   const [activeStep, setActiveStep] = useState(defaultValue);
   const [triggerNodes, setTriggerNodes] = useState<HTMLButtonElement[]>([]);
@@ -112,31 +109,40 @@ function Stepper({
   const currentStep = value ?? activeStep;
 
   // Keyboard navigation logic
-  const focusTrigger = (idx: number) => {
-    if (triggerNodes[idx]) triggerNodes[idx].focus();
-  };
-  const focusNext = (currentIdx: number) =>
-    focusTrigger((currentIdx + 1) % triggerNodes.length);
-  const focusPrev = (currentIdx: number) =>
-    focusTrigger((currentIdx - 1 + triggerNodes.length) % triggerNodes.length);
-  const focusFirst = () => focusTrigger(0);
-  const focusLast = () => focusTrigger(triggerNodes.length - 1);
+  const focusTrigger = useCallback(
+    (idx: number) => {
+      if (triggerNodes[idx]) triggerNodes[idx].focus();
+    },
+    [triggerNodes],
+  );
+  const focusNext = useCallback(
+    (currentIdx: number) => focusTrigger((currentIdx + 1) % triggerNodes.length),
+    [focusTrigger, triggerNodes.length],
+  );
+  const focusPrev = useCallback(
+    (currentIdx: number) =>
+      focusTrigger((currentIdx - 1 + triggerNodes.length) % triggerNodes.length),
+    [focusTrigger, triggerNodes.length],
+  );
+  const focusFirst = useCallback(() => focusTrigger(0), [focusTrigger]);
+  const focusLast = useCallback(
+    () => focusTrigger(triggerNodes.length - 1),
+    [focusTrigger, triggerNodes.length],
+  );
 
   // Recursively count StepperItem components in the tree
   const countStepperItems = useCallback((node: React.ReactNode): number => {
     let count = 0;
     Children.forEach(node, (child) => {
       if (isValidElement(child)) {
-        if (
-          (child.type as { displayName?: string }).displayName === "StepperItem"
-        ) {
+        if ((child.type as { displayName?: string }).displayName === "StepperItem") {
           count++;
         }
         // Recurse into children (e.g., StepperNav contains StepperItems)
         if (child.props && typeof child.props === "object") {
-          const props = child.props as { children?: React.ReactNode };
-          if (props.children) {
-            count += countStepperItems(props.children);
+          const childProps = child.props as { children?: React.ReactNode };
+          if (childProps.children) {
+            count += countStepperItems(childProps.children);
           }
         }
       }
@@ -144,8 +150,6 @@ function Stepper({
     return count;
   }, []);
 
-  // Context value
-  // biome-ignore lint/correctness/useExhaustiveDependencies: indicators is intentionally stable
   const contextValue = useMemo<StepperContextValue>(
     () => ({
       activeStep: currentStep,
@@ -167,8 +171,13 @@ function Stepper({
       children,
       orientation,
       registerTrigger,
+      focusNext,
+      focusPrev,
+      focusFirst,
+      focusLast,
       triggerNodes,
       countStepperItems,
+      indicators,
     ],
   );
 
@@ -180,7 +189,7 @@ function Stepper({
         data-slot="stepper"
         className={cn("w-full", className)}
         data-orientation={orientation}
-        {...props}
+        {...rootProps}
       >
         {children}
       </div>
@@ -209,24 +218,22 @@ function StepperItem({
   const { activeStep } = useStepper();
 
   const state: StepState =
-    completed || step < activeStep
-      ? "completed"
-      : activeStep === step
-        ? "active"
-        : "inactive";
+    completed || step < activeStep ? "completed" : activeStep === step ? "active" : "inactive";
 
   const isLoading = loading && step === activeStep;
+  const contextValue = useMemo(
+    () => ({ step, state, isDisabled: disabled, isLoading }),
+    [step, state, disabled, isLoading],
+  );
 
   return (
-    <StepItemContext.Provider
-      value={{ step, state, isDisabled: disabled, isLoading }}
-    >
+    <StepItemContext.Provider value={contextValue}>
       <div
         data-slot="stepper-item"
         className={cn(
           // For horizontal: use display:contents so children become direct grid items
           // For vertical: use flex layout
-          "group/step group-data-[orientation=vertical]/stepper-nav:flex group-data-[orientation=horizontal]/stepper-nav:contents group-data-[orientation=vertical]/stepper-nav:flex-col group-data-[orientation=vertical]/stepper-nav:items-center",
+          "group/step group-data-[orientation=horizontal]/stepper-nav:contents group-data-[orientation=vertical]/stepper-nav:flex group-data-[orientation=vertical]/stepper-nav:flex-col group-data-[orientation=vertical]/stepper-nav:items-center",
           className,
         )}
         data-state={state}
@@ -247,20 +254,16 @@ interface StepperTriggerState {
   isSelected: boolean;
 }
 
-interface StepperTriggerProps
-  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
+interface StepperTriggerProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  "children"
+> {
   render?: useRender.RenderProp<StepperTriggerState>;
   children?: React.ReactNode;
 }
 
-function StepperTrigger({
-  render,
-  className,
-  children,
-  tabIndex,
-  ...props
-}: StepperTriggerProps) {
-  const { state, isLoading } = useStepItem();
+function StepperTrigger({ render, className, children, tabIndex, ...props }: StepperTriggerProps) {
+  const { state, isLoading, step, isDisabled } = useStepItem();
   const stepperCtx = useStepper();
   const {
     setActiveStep,
@@ -272,27 +275,24 @@ function StepperTrigger({
     focusFirst,
     focusLast,
   } = stepperCtx;
-  const { step, isDisabled } = useStepItem();
   const isSelected = activeStep === step;
   const id = `stepper-tab-${step}`;
   const panelId = `stepper-panel-${step}`;
 
-  // Register this trigger for keyboard navigation
   const btnRef = useRef<HTMLButtonElement>(null);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally depends on ref.current
   useEffect(() => {
-    if (btnRef.current) {
-      registerTrigger(btnRef.current);
+    const node = btnRef.current;
+    if (!node) {
+      return;
     }
-  }, [btnRef.current]);
 
-  // Find our index among triggers for navigation
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally depends on ref.current
-  const myIdx = useMemo(
-    () =>
-      triggerNodes.findIndex((n: HTMLButtonElement) => n === btnRef.current),
-    [triggerNodes, btnRef.current],
-  );
+    registerTrigger(node);
+    return () => {
+      registerTrigger(node);
+    };
+  }, [registerTrigger]);
+
+  const myIdx = triggerNodes.findIndex((n: HTMLButtonElement) => n === btnRef.current);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
     switch (e.key) {
@@ -337,7 +337,7 @@ function StepperTrigger({
     "data-state": state,
     "data-loading": isLoading,
     className: cn(
-      "inline-flex select-none items-center gap-3 rounded-full outline-none focus-visible:z-10 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-60",
+      "inline-flex items-center gap-3 rounded-full outline-none select-none focus-visible:z-10 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-60",
       className,
     ),
     onClick: () => setActiveStep(step),
@@ -357,10 +357,7 @@ function StepperTrigger({
 
 StepperTrigger.displayName = "StepperTrigger";
 
-function StepperIndicator({
-  children,
-  className,
-}: React.ComponentProps<"div">) {
+function StepperIndicator({ children, className }: React.ComponentProps<"div">) {
   const { state, isLoading } = useStepItem();
   const { indicators } = useStepper();
 
@@ -369,7 +366,7 @@ function StepperIndicator({
       data-slot="stepper-indicator"
       data-state={state}
       className={cn(
-        "relative flex size-8 shrink-0 cursor-default items-center justify-center rounded-full border-2 border-muted-foreground/40 font-medium text-muted-foreground text-sm",
+        "relative flex size-8 shrink-0 cursor-default items-center justify-center rounded-full border-2 border-muted-foreground/40 text-sm font-medium text-muted-foreground",
         "data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground",
         "data-[state=completed]:border-primary data-[state=completed]:bg-primary data-[state=completed]:text-primary-foreground",
         className,
@@ -418,7 +415,7 @@ function StepperTitle({ children, className }: React.ComponentProps<"span">) {
     <span
       data-slot="stepper-title"
       data-state={state}
-      className={cn("font-medium text-sm leading-none", className)}
+      className={cn("text-sm leading-none font-medium", className)}
     >
       {children}
     </span>
@@ -427,17 +424,14 @@ function StepperTitle({ children, className }: React.ComponentProps<"span">) {
 
 StepperTitle.displayName = "StepperTitle";
 
-function StepperDescription({
-  children,
-  className,
-}: React.ComponentProps<"div">) {
+function StepperDescription({ children, className }: React.ComponentProps<"div">) {
   const { state } = useStepItem();
 
   return (
     <div
       data-slot="stepper-description"
       data-state={state}
-      className={cn("text-muted-foreground text-sm", className)}
+      className={cn("text-sm text-muted-foreground", className)}
     >
       {children}
     </div>
@@ -471,9 +465,7 @@ function StepperNav({ children, className }: React.ComponentProps<"nav">) {
         className,
       )}
       style={
-        orientation === "horizontal" && gridCols
-          ? { gridTemplateColumns: gridCols }
-          : undefined
+        orientation === "horizontal" && gridCols ? { gridTemplateColumns: gridCols } : undefined
       }
     >
       {children}
@@ -487,11 +479,7 @@ function StepperPanel({ children, className }: React.ComponentProps<"div">) {
   const { activeStep } = useStepper();
 
   return (
-    <div
-      data-slot="stepper-panel"
-      data-state={activeStep}
-      className={cn("w-full", className)}
-    >
+    <div data-slot="stepper-panel" data-state={activeStep} className={cn("w-full", className)}>
       {children}
     </div>
   );
@@ -504,12 +492,7 @@ interface StepperContentProps extends React.ComponentProps<"div"> {
   forceMount?: boolean;
 }
 
-function StepperContent({
-  value,
-  forceMount,
-  children,
-  className,
-}: StepperContentProps) {
+function StepperContent({ value, forceMount, children, className }: StepperContentProps) {
   const { activeStep } = useStepper();
   const isActive = value === activeStep;
 
@@ -532,20 +515,20 @@ function StepperContent({
 StepperContent.displayName = "StepperContent";
 
 export {
-  useStepper,
-  useStepItem,
   Stepper,
-  StepperItem,
-  StepperTrigger,
+  StepperContent,
+  type StepperContentProps,
+  StepperDescription,
   StepperIndicator,
+  StepperItem,
+  type StepperItemProps,
+  StepperNav,
+  StepperPanel,
+  type StepperProps,
   StepperSeparator,
   StepperTitle,
-  StepperDescription,
-  StepperPanel,
-  StepperContent,
-  StepperNav,
-  type StepperProps,
-  type StepperItemProps,
+  StepperTrigger,
   type StepperTriggerProps,
-  type StepperContentProps,
+  useStepItem,
+  useStepper,
 };

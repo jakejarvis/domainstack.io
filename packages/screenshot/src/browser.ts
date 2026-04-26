@@ -38,9 +38,7 @@ async function createBrowser(): Promise<import("puppeteer-core").Browser> {
     const { launch } = await import("puppeteer-core");
     const executablePath = await chromium.executablePath();
 
-    const baseArgs = Array.isArray(
-      (chromium as unknown as { args?: unknown }).args,
-    )
+    const baseArgs = Array.isArray((chromium as unknown as { args?: unknown }).args)
       ? (chromium.args as string[])
       : [];
 
@@ -68,10 +66,8 @@ async function createBrowser(): Promise<import("puppeteer-core").Browser> {
     // Fallback: require an explicit executable path for a locally installed Chrome/Chromium
     const { launch } = await import("puppeteer-core");
     const executablePath =
-      (process.env.PUPPETEER_EXECUTABLE_PATH &&
-        String(process.env.PUPPETEER_EXECUTABLE_PATH)) ||
-      (process.env.CHROME_EXECUTABLE_PATH &&
-        String(process.env.CHROME_EXECUTABLE_PATH)) ||
+      (process.env.PUPPETEER_EXECUTABLE_PATH && String(process.env.PUPPETEER_EXECUTABLE_PATH)) ||
+      (process.env.CHROME_EXECUTABLE_PATH && String(process.env.CHROME_EXECUTABLE_PATH)) ||
       undefined;
 
     if (!executablePath) {

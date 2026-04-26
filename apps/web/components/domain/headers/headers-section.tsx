@@ -1,5 +1,13 @@
 "use client";
 
+import { IconExternalLink, IconInfoCircle, IconList, IconSearch } from "@tabler/icons-react";
+import Link from "next/link";
+import { useMemo } from "react";
+
+import { KeyValue } from "@/components/domain/key-value";
+import { KeyValueGrid } from "@/components/domain/key-value-grid";
+import { ReportSection } from "@/components/domain/report-section";
+import { sections } from "@/lib/constants/sections";
 import { IMPORTANT_HEADERS } from "@domainstack/constants";
 import type { HeadersResponse } from "@domainstack/types";
 import { Alert, AlertDescription } from "@domainstack/ui/alert";
@@ -11,18 +19,6 @@ import {
   EmptyTitle,
 } from "@domainstack/ui/empty";
 import { normalizeDomainInput } from "@domainstack/utils/domain/client";
-import {
-  IconExternalLink,
-  IconInfoCircle,
-  IconList,
-  IconSearch,
-} from "@tabler/icons-react";
-import Link from "next/link";
-import { useMemo } from "react";
-import { KeyValue } from "@/components/domain/key-value";
-import { KeyValueGrid } from "@/components/domain/key-value-grid";
-import { ReportSection } from "@/components/domain/report-section";
-import { sections } from "@/lib/constants/sections";
 
 /**
  * Extract domain from a Location header value.
@@ -39,12 +35,7 @@ function extractDomainFromLocation(locationValue: string): string | null {
   }
 }
 
-export function HeadersSection({
-  data,
-}: {
-  domain?: string;
-  data?: HeadersResponse | null;
-}) {
+export function HeadersSection({ data }: { domain?: string; data?: HeadersResponse | null }) {
   const status = data?.status;
   const statusMessage = data?.statusMessage;
 
@@ -55,9 +46,7 @@ export function HeadersSection({
       (a, b) =>
         Number(IMPORTANT_HEADERS.has(b.name?.toLowerCase() ?? "")) -
           Number(IMPORTANT_HEADERS.has(a.name?.toLowerCase() ?? "")) ||
-        (a.name?.toLowerCase() ?? "").localeCompare(
-          b.name?.toLowerCase() ?? "",
-        ),
+        (a.name?.toLowerCase() ?? "").localeCompare(b.name?.toLowerCase() ?? ""),
     );
   }, [data?.headers]);
 
@@ -96,9 +85,7 @@ export function HeadersSection({
           <KeyValueGrid colsDesktop={2}>
             {headers.map((h) => {
               const isLocation = h.name?.toLowerCase() === "location";
-              const locationDomain = isLocation
-                ? extractDomainFromLocation(h.value)
-                : null;
+              const locationDomain = isLocation ? extractDomainFromLocation(h.value) : null;
 
               return (
                 <KeyValue
@@ -139,8 +126,8 @@ export function HeadersSection({
               </EmptyMedia>
               <EmptyTitle>No HTTP headers detected</EmptyTitle>
               <EmptyDescription>
-                We couldn&apos;t fetch any HTTP response headers for this site.
-                It may be offline or blocking requests.
+                We couldn&apos;t fetch any HTTP response headers for this site. It may be offline or
+                blocking requests.
               </EmptyDescription>
             </EmptyHeader>
           </Empty>

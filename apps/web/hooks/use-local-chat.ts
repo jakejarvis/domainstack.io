@@ -161,15 +161,13 @@ export function useLocalChat({
           return;
         }
 
-        const error = err instanceof Error ? err : new Error("Unknown error");
-        setError(error);
+        const nextError = err instanceof Error ? err : new Error("Unknown error");
+        setError(nextError);
         setStatus("error");
-        onError?.(error);
+        onError?.(nextError);
 
         // Remove the empty assistant message on error
-        setMessages((prev) =>
-          prev.filter((msg) => msg.id !== assistantMessageId),
-        );
+        setMessages((prev) => prev.filter((msg) => msg.id !== assistantMessageId));
       } finally {
         processingRef.current = false;
       }

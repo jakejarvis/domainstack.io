@@ -1,10 +1,12 @@
+import type { WebhooksOptions } from "@polar-sh/better-auth";
+
 import {
   clearSubscriptionEndsAt,
   setSubscriptionEndsAt,
   updateUserTier,
 } from "@domainstack/db/queries";
 import { logger } from "@domainstack/logger";
-import type { WebhooksOptions } from "@polar-sh/better-auth";
+
 import { handleDowngrade } from "./downgrade";
 import {
   sendProUpgradeEmail,
@@ -59,9 +61,7 @@ export async function handleSubscriptionCreated(
  * This is called when payment is confirmed and the subscription is active.
  * Upgrade the user's tier and send a welcome email.
  */
-export async function handleSubscriptionActive(
-  payload: SubscriptionActivePayload,
-): Promise<void> {
+export async function handleSubscriptionActive(payload: SubscriptionActivePayload): Promise<void> {
   const { data } = payload;
   const userId = data.customer.externalId;
   const tier = getTierForProductId(data.product.id);
@@ -77,18 +77,12 @@ export async function handleSubscriptionActive(
   );
 
   if (!userId) {
-    logger.warn(
-      { subscriptionId: data.id },
-      "No externalId on customer, skipping tier upgrade",
-    );
+    logger.warn({ subscriptionId: data.id }, "No externalId on customer, skipping tier upgrade");
     return;
   }
 
   if (!tier) {
-    logger.warn(
-      { productId: data.product.id },
-      "Unknown product ID, skipping tier upgrade",
-    );
+    logger.warn({ productId: data.product.id }, "Unknown product ID, skipping tier upgrade");
     return;
   }
 
@@ -128,18 +122,12 @@ export async function handleSubscriptionCanceled(
   );
 
   if (!userId) {
-    logger.warn(
-      { subscriptionId: data.id },
-      "No externalId on customer, skipping end date update",
-    );
+    logger.warn({ subscriptionId: data.id }, "No externalId on customer, skipping end date update");
     return;
   }
 
   if (!data.currentPeriodEnd) {
-    logger.warn(
-      { subscriptionId: data.id },
-      "No currentPeriodEnd, skipping end date update",
-    );
+    logger.warn({ subscriptionId: data.id }, "No currentPeriodEnd, skipping end date update");
     return;
   }
 
@@ -174,10 +162,7 @@ export async function handleSubscriptionRevoked(
   );
 
   if (!userId) {
-    logger.warn(
-      { subscriptionId: data.id },
-      "No externalId on customer, skipping downgrade",
-    );
+    logger.warn({ subscriptionId: data.id }, "No externalId on customer, skipping downgrade");
     return;
   }
 
@@ -214,10 +199,7 @@ export async function handleSubscriptionUncanceled(
   );
 
   if (!userId) {
-    logger.warn(
-      { subscriptionId: data.id },
-      "No externalId on customer, skipping end date clear",
-    );
+    logger.warn({ subscriptionId: data.id }, "No externalId on customer, skipping end date clear");
     return;
   }
 

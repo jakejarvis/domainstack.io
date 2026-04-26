@@ -6,11 +6,7 @@ type EmailButtonProps = {
   children: React.ReactNode;
 };
 
-export function EmailButton({
-  href,
-  variant = "primary",
-  children,
-}: EmailButtonProps) {
+export function EmailButton({ href, variant = "primary", children }: EmailButtonProps) {
   const buttonStyles = {
     primary: primaryButtonStyle,
     secondary: secondaryButtonStyle,

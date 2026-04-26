@@ -77,18 +77,13 @@ export async function resolveProviderNamesStep(
  *
  * Getting current time inside a step ensures deterministic replay.
  */
-export async function calculateDaysRemainingStep(
-  expirationDate: Date | string,
-): Promise<number> {
+export async function calculateDaysRemainingStep(expirationDate: Date | string): Promise<number> {
   "use step";
 
   const { differenceInDays } = await import("date-fns");
 
   const now = new Date();
-  const expDate =
-    typeof expirationDate === "string"
-      ? new Date(expirationDate)
-      : expirationDate;
+  const expDate = typeof expirationDate === "string" ? new Date(expirationDate) : expirationDate;
 
   return differenceInDays(expDate, now);
 }
@@ -110,9 +105,7 @@ export async function checkExpiryPreferencesStep(
     return { shouldSendEmail: false, shouldSendInApp: false };
   }
 
-  const { getOrCreateUserNotificationPreferences } = await import(
-    "@domainstack/db/queries"
-  );
+  const { getOrCreateUserNotificationPreferences } = await import("@domainstack/db/queries");
 
   const globalPrefs = await getOrCreateUserNotificationPreferences(userId);
 
@@ -145,9 +138,7 @@ export async function updateNotificationEmailIdStep(
 ): Promise<void> {
   "use step";
 
-  const { updateNotificationResendId } = await import(
-    "@domainstack/db/queries"
-  );
+  const { updateNotificationResendId } = await import("@domainstack/db/queries");
 
   await updateNotificationResendId(notificationId, emailId);
 }
@@ -190,9 +181,8 @@ async function sendNotificationInternal(
   shouldSendEmail: boolean,
   shouldSendInApp: boolean,
 ): Promise<boolean> {
-  const { createNotification, updateNotificationResendId } = await import(
-    "@domainstack/db/queries"
-  );
+  const { createNotification, updateNotificationResendId } =
+    await import("@domainstack/db/queries");
   const { sendEmail } = await import("@domainstack/email");
 
   const {
@@ -292,9 +282,8 @@ export async function sendRegistrationChangeNotificationStep(
   "use step";
 
   const { getStepMetadata } = await import("workflow");
-  const { default: RegistrationChangeEmail } = await import(
-    "@domainstack/email/templates/registration-change"
-  );
+  const { default: RegistrationChangeEmail } =
+    await import("@domainstack/email/templates/registration-change");
 
   const { stepId } = getStepMetadata();
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
@@ -363,9 +352,8 @@ export async function sendProviderChangeNotificationStep(
   "use step";
 
   const { getStepMetadata } = await import("workflow");
-  const { default: ProviderChangeEmail } = await import(
-    "@domainstack/email/templates/provider-change"
-  );
+  const { default: ProviderChangeEmail } =
+    await import("@domainstack/email/templates/provider-change");
 
   const { stepId } = getStepMetadata();
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
@@ -428,9 +416,8 @@ export async function sendCertificateChangeNotificationStep(
   "use step";
 
   const { getStepMetadata } = await import("workflow");
-  const { default: CertificateChangeEmail } = await import(
-    "@domainstack/email/templates/certificate-change"
-  );
+  const { default: CertificateChangeEmail } =
+    await import("@domainstack/email/templates/certificate-change");
 
   const { stepId } = getStepMetadata();
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;

@@ -1,10 +1,4 @@
-import {
-  startTransition,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 
 export function useTruncation() {
   const valueRef = useRef<HTMLSpanElement | null>(null);

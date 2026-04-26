@@ -1,6 +1,7 @@
-import { Badge } from "@domainstack/ui/badge";
 import { IconX } from "@tabler/icons-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+
+import { Badge } from "@domainstack/ui/badge";
 
 export type FilterChip = {
   type: "search" | "status" | "health" | "tld" | "provider" | "domainId";
@@ -38,9 +39,7 @@ export function FilterChips({ chips, onRemove }: FilterChipsProps) {
         <AnimatePresence initial={false}>
           {chips.map((chip, index) => (
             <motion.div
-              key={
-                chip.type === "search" ? "search" : `${chip.type}-${chip.value}`
-              }
+              key={chip.type === "search" ? "search" : `${chip.type}-${chip.value}`}
               layout={shouldReduceMotion ? false : "position"}
               initial={{
                 opacity: 0,
@@ -60,13 +59,11 @@ export function FilterChips({ chips, onRemove }: FilterChipsProps) {
               }}
               className="inline-flex"
             >
-              <Badge className="select-none gap-1.5 border-border bg-muted/10 py-1 pr-1.5 text-foreground dark:bg-muted/30">
+              <Badge className="gap-1.5 border-border bg-muted/10 py-1 pr-1.5 text-foreground select-none dark:bg-muted/30">
                 {chip.icon}
                 <span className="flex items-center gap-1 text-xs leading-none">
                   {chip.prefix && (
-                    <span className="shrink-0 text-muted-foreground">
-                      {chip.prefix}:
-                    </span>
+                    <span className="shrink-0 text-muted-foreground">{chip.prefix}:</span>
                   )}
                   <span className="truncate">{chip.label}</span>
                 </span>

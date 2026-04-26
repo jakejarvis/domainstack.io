@@ -1,5 +1,7 @@
-import type { ProviderCategory } from "@domainstack/constants";
 import { z } from "zod";
+
+import type { ProviderCategory } from "@domainstack/constants";
+
 import type { Rule } from "./rules";
 import { RuleSchema } from "./rules";
 
@@ -53,19 +55,11 @@ const ProviderCatalogSchema = z
     ): void => {
       if ("all" in rule) {
         for (let i = 0; i < rule.all.length; i++) {
-          validateRegexInRule(rule.all[i], category, providerName, [
-            ...path,
-            "all",
-            String(i),
-          ]);
+          validateRegexInRule(rule.all[i], category, providerName, [...path, "all", String(i)]);
         }
       } else if ("any" in rule) {
         for (let i = 0; i < rule.any.length; i++) {
-          validateRegexInRule(rule.any[i], category, providerName, [
-            ...path,
-            "any",
-            String(i),
-          ]);
+          validateRegexInRule(rule.any[i], category, providerName, [...path, "any", String(i)]);
         }
       } else if ("not" in rule) {
         validateRegexInRule(rule.not, category, providerName, [...path, "not"]);
@@ -82,13 +76,7 @@ const ProviderCatalogSchema = z
       }
     };
 
-    const categories: ProviderCategory[] = [
-      "ca",
-      "dns",
-      "email",
-      "hosting",
-      "registrar",
-    ];
+    const categories: ProviderCategory[] = ["ca", "dns", "email", "hosting", "registrar"];
     for (const category of categories) {
       const providers = catalog[category];
       for (let index = 0; index < providers.length; index++) {
@@ -123,9 +111,7 @@ export function parseProviderCatalog(raw: unknown): ProviderCatalog {
  */
 export function safeParseProviderCatalog(
   raw: unknown,
-):
-  | { success: true; data: ProviderCatalog }
-  | { success: false; error: z.ZodError } {
+): { success: true; data: ProviderCatalog } | { success: false; error: z.ZodError } {
   return ProviderCatalogSchema.safeParse(raw);
 }
 
@@ -137,5 +123,10 @@ export function getProvidersFromCatalog(
   category: ProviderCategory,
 ): Provider[] {
   const entries = catalog[category];
-  return entries.map((entry) => ({ ...entry, category }));
+  return entries.map((entry) => ({
+    name: entry.name,
+    domain: entry.domain,
+    rule: entry.rule,
+    category,
+  }));
 }

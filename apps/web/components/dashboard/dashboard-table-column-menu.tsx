@@ -1,3 +1,7 @@
+import { IconEye, IconTableOptions } from "@tabler/icons-react";
+import type { Table } from "@tanstack/react-table";
+
+import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { Button } from "@domainstack/ui/button";
 import {
   DropdownMenu,
@@ -8,37 +12,23 @@ import {
   DropdownMenuTrigger,
 } from "@domainstack/ui/dropdown-menu";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@domainstack/ui/tooltip";
-import { IconEye, IconTableOptions } from "@tabler/icons-react";
-import type { Table } from "@tanstack/react-table";
-import { usePreferencesStore } from "@/lib/stores/preferences-store";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 
 type DashboardTableColumnMenuProps<TData> = {
   table: Table<TData>;
 };
 
-export function DashboardTableColumnMenu<TData>({
-  table,
-}: DashboardTableColumnMenuProps<TData>) {
+export function DashboardTableColumnMenu<TData>({ table }: DashboardTableColumnMenuProps<TData>) {
   // Read visibility state directly from store (not stale table API)
   const columnVisibility = usePreferencesStore((s) => s.columnVisibility);
   const setColumnVisibility = usePreferencesStore((s) => s.setColumnVisibility);
 
-  const allColumns = table
-    .getAllColumns()
-    .filter((column) => column.getCanHide());
+  const allColumns = table.getAllColumns().filter((column) => column.getCanHide());
 
   // Check visibility from our state, not the table API
-  const isColumnVisible = (columnId: string) =>
-    columnVisibility[columnId] !== false;
+  const isColumnVisible = (columnId: string) => columnVisibility[columnId] !== false;
 
-  const hiddenCount = allColumns.filter(
-    (column) => !isColumnVisible(column.id),
-  ).length;
+  const hiddenCount = allColumns.filter((column) => !isColumnVisible(column.id)).length;
 
   const toggleColumn = (columnId: string) => {
     const currentlyVisible = isColumnVisible(columnId);
@@ -65,9 +55,7 @@ export function DashboardTableColumnMenu<TData>({
                   size="icon"
                   className="size-9"
                   title={
-                    hiddenCount > 0
-                      ? `Toggle columns (${hiddenCount} hidden)`
-                      : "Toggle columns"
+                    hiddenCount > 0 ? `Toggle columns (${hiddenCount} hidden)` : "Toggle columns"
                   }
                 >
                   <IconTableOptions className="text-foreground/90" />
@@ -78,23 +66,15 @@ export function DashboardTableColumnMenu<TData>({
           }
         />
         <TooltipContent>
-          {hiddenCount > 0
-            ? `Toggle columns (${hiddenCount} hidden)`
-            : "Toggle columns"}
+          {hiddenCount > 0 ? `Toggle columns (${hiddenCount} hidden)` : "Toggle columns"}
         </TooltipContent>
       </Tooltip>
-      <DropdownMenuContent
-        align="end"
-        className="flex min-w-44 flex-col overflow-hidden p-0"
-      >
+      <DropdownMenuContent align="end" className="flex min-w-44 flex-col overflow-hidden p-0">
         <ScrollArea className="min-h-0 flex-1">
           <div className="p-1">
             {allColumns.map((column) => {
               const { columnDef } = column;
-              const header =
-                typeof columnDef.header === "string"
-                  ? columnDef.header
-                  : column.id;
+              const header = typeof columnDef.header === "string" ? columnDef.header : column.id;
               const isVisible = isColumnVisible(column.id);
 
               return (

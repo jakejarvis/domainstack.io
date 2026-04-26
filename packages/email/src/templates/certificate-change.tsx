@@ -40,22 +40,18 @@ function CertificateChangeEmail({
 
   return (
     <EmailLayout previewText={previewText}>
-      <EmailHeading>
-        🔒 Certificate {likelyRenewal ? "Renewed" : "Changed"}
-      </EmailHeading>
+      <EmailHeading>🔒 Certificate {likelyRenewal ? "Renewed" : "Changed"}</EmailHeading>
 
       <EmailText>Hi {userName},</EmailText>
 
       <EmailText>
         {likelyRenewal ? (
           <>
-            The SSL certificate for <strong>{domainName}</strong> has been
-            renewed.
+            The SSL certificate for <strong>{domainName}</strong> has been renewed.
           </>
         ) : (
           <>
-            We detected changes to the SSL certificate for{" "}
-            <strong>{domainName}</strong>.
+            We detected changes to the SSL certificate for <strong>{domainName}</strong>.
           </>
         )}
       </EmailText>
@@ -65,8 +61,7 @@ function CertificateChangeEmail({
           <EmailSubheading>Certificate Authority Changed</EmailSubheading>
           <EmailBox variant="info">
             <EmailBoxText variant="info">
-              <strong>Previous CA:</strong>{" "}
-              {changes.previousCaProvider || "Unknown"}
+              <strong>Previous CA:</strong> {changes.previousCaProvider || "Unknown"}
               <br />
               <strong>New CA:</strong> {changes.newCaProvider || "Unknown"}
             </EmailBoxText>
@@ -79,8 +74,7 @@ function CertificateChangeEmail({
           <EmailSubheading>Issuer Changed</EmailSubheading>
           <EmailBox variant="info">
             <EmailBoxText variant="info">
-              <strong>Previous Issuer:</strong>{" "}
-              {changes.previousIssuer || "Unknown"}
+              <strong>Previous Issuer:</strong> {changes.previousIssuer || "Unknown"}
               <br />
               <strong>New Issuer:</strong> {changes.newIssuer || "Unknown"}
             </EmailBoxText>
@@ -104,24 +98,21 @@ function CertificateChangeEmail({
       {!likelyRenewal && (
         <EmailBox variant="warning">
           <EmailBoxText variant="warning">
-            <strong>Verify this change:</strong> Certificate changes should only
-            occur during renewals or migrations. If you didn&apos;t expect this,
-            verify that your domain&apos;s SSL configuration is correct.
+            <strong>Verify this change:</strong> Certificate changes should only occur during
+            renewals or migrations. If you didn&apos;t expect this, verify that your domain&apos;s
+            SSL configuration is correct.
           </EmailBoxText>
         </EmailBox>
       )}
 
-      <EmailButton href={`${baseUrl}/${domainName}`}>
-        View Domain Details
-      </EmailButton>
+      <EmailButton href={`${baseUrl}/${domainName}`}>View Domain Details</EmailButton>
 
       <EmailHr />
 
       <EmailFooter>
         You received this email because you&apos;re tracking {domainName} on{" "}
-        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. You
-        can manage your notification settings in your{" "}
-        <EmailLink href={`${baseUrl}/settings`}>dashboard</EmailLink>.
+        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. You can manage your
+        notification settings in your <EmailLink href={`${baseUrl}/settings`}>dashboard</EmailLink>.
       </EmailFooter>
     </EmailLayout>
   );

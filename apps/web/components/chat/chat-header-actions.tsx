@@ -1,11 +1,5 @@
 "use client";
 
-import { Button } from "@domainstack/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@domainstack/ui/tooltip";
 import {
   IconCheck,
   IconCopy,
@@ -17,6 +11,10 @@ import {
 import type { UIMessage } from "ai";
 import { useState } from "react";
 import { toast } from "sonner";
+
+import { Button } from "@domainstack/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
+
 import { formatMessagesAsMarkdown } from "./utils";
 
 function CopyConversationButton({ messages }: { messages: UIMessage[] }) {
@@ -43,14 +41,7 @@ function CopyConversationButton({ messages }: { messages: UIMessage[] }) {
   return (
     <Tooltip>
       <TooltipTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={handleCopy}
-            aria-label={label}
-          />
-        }
+        render={<Button variant="ghost" size="icon-sm" onClick={handleCopy} aria-label={label} />}
       >
         <Icon className="size-4" />
       </TooltipTrigger>
@@ -63,14 +54,7 @@ function ClearChatButton({ onClick }: { onClick: () => void }) {
   return (
     <Tooltip>
       <TooltipTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={onClick}
-            aria-label="Clear chat"
-          />
-        }
+        render={<Button variant="ghost" size="icon-sm" onClick={onClick} aria-label="Clear chat" />}
       >
         <IconTrash className="size-4" />
       </TooltipTrigger>
@@ -83,14 +67,7 @@ function ChatSettingsButton({ onClick }: { onClick: () => void }) {
   return (
     <Tooltip>
       <TooltipTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Settings"
-            onClick={onClick}
-          />
-        }
+        render={<Button variant="ghost" size="icon-sm" aria-label="Settings" onClick={onClick} />}
       >
         <IconSettings className="size-4" />
       </TooltipTrigger>
@@ -109,14 +86,7 @@ function CloseChatButton({
   return (
     <Tooltip>
       <TooltipTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Close"
-            onClick={onClick}
-          />
-        }
+        render={<Button variant="ghost" size="icon-sm" aria-label="Close" onClick={onClick} />}
       >
         <CloseIcon className="size-4" />
       </TooltipTrigger>

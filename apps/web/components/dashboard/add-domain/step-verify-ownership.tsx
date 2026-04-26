@@ -1,3 +1,8 @@
+import { IconDownload, IconInfoCircle } from "@tabler/icons-react";
+import { toast } from "sonner";
+
+import { VerificationFailed } from "@/components/dashboard/add-domain/verification-failed";
+import { buildVerificationInstructions } from "@/lib/verification-instructions";
 import type { VerificationMethod } from "@domainstack/constants";
 import type { VerificationState } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
@@ -9,10 +14,6 @@ import {
 } from "@domainstack/ui/responsive-tooltip";
 import { Separator } from "@domainstack/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@domainstack/ui/tabs";
-import { IconDownload, IconInfoCircle } from "@tabler/icons-react";
-import { toast } from "sonner";
-import { VerificationFailed } from "@/components/dashboard/add-domain/verification-failed";
-import { buildVerificationInstructions } from "@/lib/verification-instructions";
 
 type StepVerifyOwnershipProps = {
   domain: string;
@@ -30,10 +31,7 @@ function isVerificationMethod(value: string): value is VerificationMethod {
   return (VERIFICATION_METHODS as readonly string[]).includes(value);
 }
 
-function downloadVerificationFile(
-  filename: string,
-  content: string,
-): { success: boolean } {
+function downloadVerificationFile(filename: string, content: string): { success: boolean } {
   try {
     const blob = new Blob([content], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
@@ -70,14 +68,12 @@ function VerificationInstructionsLayout({
       <div className="flex gap-3 rounded-lg border border-info-border bg-info p-3">
         <IconInfoCircle className="mt-0.5 size-4 shrink-0 text-info-foreground" />
         <div className="space-y-0.5">
-          <p className="font-medium text-info-foreground text-sm">{title}</p>
-          <p className="text-info-foreground/80 text-sm">{description}</p>
+          <p className="text-sm font-medium text-info-foreground">{title}</p>
+          <p className="text-sm text-info-foreground/80">{description}</p>
         </div>
       </div>
 
-      <div className="space-y-3 rounded-lg border border-input bg-muted/30 p-4">
-        {children}
-      </div>
+      <div className="space-y-3 rounded-lg border border-input bg-muted/30 p-4">{children}</div>
     </div>
   );
 }
@@ -97,11 +93,7 @@ export function StepVerifyOwnership({
   // If verification has failed, show the troubleshooting UI
   if (verificationState.status === "failed") {
     return (
-      <VerificationFailed
-        method={method}
-        onCheckAgain={onVerify}
-        onReturnLater={onReturnLater}
-      />
+      <VerificationFailed method={method} onCheckAgain={onVerify} onReturnLater={onReturnLater} />
     );
   }
 
@@ -133,27 +125,21 @@ export function StepVerifyOwnership({
             <CopyableField label="Host / Name" value="@">
               <span>
                 @
-                <span className="select-none text-muted-foreground/85">
+                <span className="text-muted-foreground/85 select-none">
                   {" "}
                   ({instructions.dns_txt.hostname})
                 </span>
               </span>
             </CopyableField>
-            <CopyableField
-              label="Type"
-              value={instructions.dns_txt.recordType}
-            />
-            <CopyableField
-              label="Value / Content"
-              value={instructions.dns_txt.value}
-            />
+            <CopyableField label="Type" value={instructions.dns_txt.recordType} />
+            <CopyableField label="Value / Content" value={instructions.dns_txt.value} />
             <CopyableField
               label="TTL (recommended)"
               value={String(instructions.dns_txt.suggestedTTL)}
             >
               <span>
                 {instructions.dns_txt.suggestedTTL}
-                <span className="select-none text-muted-foreground/85">
+                <span className="text-muted-foreground/85 select-none">
                   {" "}
                   ({instructions.dns_txt.suggestedTTLLabel})
                 </span>
@@ -167,21 +153,15 @@ export function StepVerifyOwnership({
             title={instructions.html_file.title}
             description={instructions.html_file.description}
           >
-            <CopyableField
-              label="Upload Path"
-              value={instructions.html_file.fullPath}
-            >
+            <CopyableField label="Upload Path" value={instructions.html_file.fullPath}>
               <span className="inline-flex items-center gap-0.5">
-                <span className="select-none text-muted-foreground/85">
+                <span className="text-muted-foreground/85 select-none">
                   https://{instructions.html_file.hostname}
                 </span>
                 {instructions.html_file.fullPath}
               </span>
             </CopyableField>
-            <CopyableField
-              label="File Contents"
-              value={instructions.html_file.fileContent}
-            />
+            <CopyableField label="File Contents" value={instructions.html_file.fileContent} />
             <Separator className="my-3 bg-border/60" />
             <ResponsiveTooltip>
               <ResponsiveTooltipTrigger
@@ -196,8 +176,7 @@ export function StepVerifyOwnership({
                       );
                       if (result.success) {
                         toast.success("File downloaded!", {
-                          description:
-                            "Upload the file to your website at the path shown.",
+                          description: "Upload the file to your website at the path shown.",
                         });
                       } else {
                         toast.error("Failed to download file");
@@ -209,9 +188,7 @@ export function StepVerifyOwnership({
                   </Button>
                 }
               />
-              <ResponsiveTooltipContent>
-                {instructions.html_file.filename}
-              </ResponsiveTooltipContent>
+              <ResponsiveTooltipContent>{instructions.html_file.filename}</ResponsiveTooltipContent>
             </ResponsiveTooltip>
           </VerificationInstructionsLayout>
         </TabsContent>
@@ -221,29 +198,18 @@ export function StepVerifyOwnership({
             title={instructions.meta_tag.title}
             description={instructions.meta_tag.description}
           >
-            <CopyableField
-              label="Meta Tag"
-              value={instructions.meta_tag.metaTag}
-            >
+            <CopyableField label="Meta Tag" value={instructions.meta_tag.metaTag}>
               {/* Syntax highlighted meta tag */}
               <span>
                 <span className="text-zinc-500 dark:text-zinc-400">&lt;</span>
                 <span className="text-rose-600 dark:text-rose-400">meta</span>
                 <span className="text-sky-600 dark:text-sky-400"> name</span>
                 <span className="text-zinc-500 dark:text-zinc-400">=</span>
-                <span className="text-emerald-600 dark:text-emerald-400">
-                  "domainstack-verify"
-                </span>
+                <span className="text-emerald-600 dark:text-emerald-400">"domainstack-verify"</span>
                 <span className="text-sky-600 dark:text-sky-400"> content</span>
                 <span className="text-zinc-500 dark:text-zinc-400">=</span>
                 <span className="text-emerald-600 dark:text-emerald-400">
-                  "
-                  {
-                    instructions.meta_tag.metaTag.match(
-                      /content="([^"]+)"/,
-                    )?.[1]
-                  }
-                  "
+                  "{instructions.meta_tag.metaTag.match(/content="([^"]+)"/)?.[1]}"
                 </span>
                 <span className="text-zinc-500 dark:text-zinc-400">&gt;</span>
               </span>

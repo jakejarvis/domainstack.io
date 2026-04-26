@@ -1,13 +1,9 @@
+import { IconX, type TablerIcon } from "@tabler/icons-react";
+
 import { Button } from "@domainstack/ui/button";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@domainstack/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@domainstack/ui/card";
 import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
-import { IconX, type TablerIcon } from "@tabler/icons-react";
 
 type DashboardBannerProps = {
   icon?: TablerIcon;
@@ -61,28 +57,18 @@ export function DashboardBanner({
   };
 
   const handleSecondaryActionClick = () => {
-    if (
-      secondaryAction &&
-      typeof secondaryAction === "object" &&
-      "onClick" in secondaryAction
-    ) {
+    if (secondaryAction && typeof secondaryAction === "object" && "onClick" in secondaryAction) {
       secondaryAction.onClick();
     }
   };
 
   // Check if actions are custom React nodes or button configs
-  const isCustomAction =
-    action && typeof action === "object" && !("onClick" in action);
-  const isButtonAction =
-    action && typeof action === "object" && "onClick" in action;
+  const isCustomAction = action && typeof action === "object" && !("onClick" in action);
+  const isButtonAction = action && typeof action === "object" && "onClick" in action;
   const isCustomSecondaryAction =
-    secondaryAction &&
-    typeof secondaryAction === "object" &&
-    !("onClick" in secondaryAction);
+    secondaryAction && typeof secondaryAction === "object" && !("onClick" in secondaryAction);
   const isButtonSecondaryAction =
-    secondaryAction &&
-    typeof secondaryAction === "object" &&
-    "onClick" in secondaryAction;
+    secondaryAction && typeof secondaryAction === "object" && "onClick" in secondaryAction;
 
   // Map variant to glow colors (using vibrant accent colors with soft opacity)
   const glowColors = {
@@ -111,7 +97,7 @@ export function DashboardBanner({
           variant="ghost"
           size="icon"
           onClick={handleDismiss}
-          className="absolute top-2 right-2 z-10 size-6 text-muted-foreground hover:text-foreground group-hover/dashboard-banner:visible sm:invisible"
+          className="absolute top-2 right-2 z-10 size-6 text-muted-foreground group-hover/dashboard-banner:visible hover:text-foreground sm:invisible"
           aria-label="Dismiss"
         >
           <IconX />
@@ -143,12 +129,9 @@ export function DashboardBanner({
                 className={cn(
                   "flex size-11 shrink-0 items-center justify-center rounded-xl",
                   variant === "info" && "bg-accent-blue/5 text-info-foreground",
-                  variant === "warning" &&
-                    "bg-accent-orange/5 text-warning-foreground",
-                  variant === "success" &&
-                    "bg-accent-green/5 text-success-foreground",
-                  variant === "danger" &&
-                    "bg-accent-red/5 text-danger-foreground",
+                  variant === "warning" && "bg-accent-orange/5 text-warning-foreground",
+                  variant === "success" && "bg-accent-green/5 text-success-foreground",
+                  variant === "danger" && "bg-accent-red/5 text-danger-foreground",
                 )}
               >
                 <Icon className="size-5" />
@@ -175,10 +158,7 @@ export function DashboardBanner({
           )}
           {isCustomAction && action}
           {isButtonAction && (
-            <Button
-              onClick={handleActionClick}
-              disabled={action.loading || action.disabled}
-            >
+            <Button onClick={handleActionClick} disabled={action.loading || action.disabled}>
               {action.loading && <Spinner />}
               {action.label}
             </Button>

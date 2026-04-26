@@ -12,14 +12,12 @@
 
 import type { GatewayProviderOptions } from "@ai-sdk/gateway";
 import { type OpenAIResponsesProviderOptions, openai } from "@ai-sdk/openai";
-import { MAX_OUTPUT_TOKENS, MAX_TOOL_STEPS } from "@domainstack/constants";
 import { DurableAgent } from "@workflow/ai/agent";
-import {
-  convertToModelMessages,
-  type UIMessage,
-  type UIMessageChunk,
-} from "ai";
+import { convertToModelMessages, type UIMessage, type UIMessageChunk } from "ai";
 import { getWritable } from "workflow";
+
+import { MAX_OUTPUT_TOKENS, MAX_TOOL_STEPS } from "@domainstack/constants";
+
 import { getModelStep } from "./gateway";
 import {
   getToolErrorDetails,
@@ -104,9 +102,7 @@ export async function chatWorkflow(input: ChatWorkflowInput) {
     },
     onStepFinish: async (step) => {
       const toolCalls = Array.isArray(step.toolCalls) ? step.toolCalls : [];
-      const toolResults = Array.isArray(step.toolResults)
-        ? step.toolResults
-        : [];
+      const toolResults = Array.isArray(step.toolResults) ? step.toolResults : [];
 
       await logChatStepFinishStep({
         event: "chat_step_finish",

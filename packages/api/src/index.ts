@@ -14,9 +14,4 @@ export {
 // Procedures
 export { protectedProcedure, publicProcedure } from "./procedures";
 export type { ProcedureMeta } from "./trpc";
-export {
-  createCallerFactory,
-  createTRPCRouter,
-  TRPCError,
-  t,
-} from "./trpc";
+export { createCallerFactory, createTRPCRouter, TRPCError, t } from "./trpc";

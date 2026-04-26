@@ -1,26 +1,13 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { analytics } from "@domainstack/analytics/client";
-import { CHATBOT_NAME } from "@domainstack/constants";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from "@domainstack/ui/drawer";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@domainstack/ui/sheet";
 import { IconLayoutSidebarRightCollapse, IconLego } from "@tabler/icons-react";
 import { WorkflowChatTransport } from "@workflow/ai";
 import { useAtom, useSetAtom } from "jotai";
 import { AnimatePresence } from "motion/react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
 import { BetaBadge } from "@/components/beta-badge";
 import { useBrowserAI } from "@/hooks/use-browser-ai";
 import { useChatPersistence } from "@/hooks/use-chat-persistence";
@@ -32,6 +19,11 @@ import { createClientDomainTools } from "@/lib/chat/client-tools";
 import { useChatStore } from "@/lib/stores/chat-store";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { useTRPCClient } from "@/lib/trpc/client";
+import { analytics } from "@domainstack/analytics/client";
+import { CHATBOT_NAME } from "@domainstack/constants";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@domainstack/ui/drawer";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@domainstack/ui/sheet";
+
 import { ChatFab } from "./chat-fab";
 import { ChatHeaderActions } from "./chat-header-actions";
 import { ChatPanel } from "./chat-panel";
@@ -61,10 +53,7 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
   const trpcClient = useTRPCClient();
 
   // Client-side tools and prompt for local chat
-  const clientTools = useMemo(
-    () => createClientDomainTools(trpcClient),
-    [trpcClient],
-  );
+  const clientTools = useMemo(() => createClientDomainTools(trpcClient), [trpcClient]);
   const systemPrompt = useMemo(() => buildClientSystemPrompt(domain), [domain]);
 
   const runId = useChatStore((s) => s.runId);
@@ -90,7 +79,7 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
         prepareSendMessagesRequest: ({ messages }) => ({
           body: { messages, domain: domainRef.current },
         }),
-        prepareReconnectToStreamRequest: ({ api, ...rest }) => {
+        prepareReconnectToStreamRequest: ({ api: _api, ...rest }) => {
           const currentRunId = runIdRef.current;
           if (!currentRunId) {
             throw new Error("No active workflow run ID found");
@@ -152,12 +141,7 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
     if (aiMode === "local" && browserAI.status === "ready") return "local";
     if (aiMode === "auto" && browserAI.status === "ready") return "local";
     return "cloud";
-  }, [
-    aiMode,
-    browserAI.status,
-    cloudChat.messages.length,
-    localChat.messages.length,
-  ]);
+  }, [aiMode, browserAI.status, cloudChat.messages.length, localChat.messages.length]);
 
   // Select the active chat based on effective mode
   const chat = effectiveMode === "local" ? localChat : cloudChat;
@@ -194,11 +178,7 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
   // The WorkflowChatTransport may report errors from reconnection attempts that don't affect
   // the actual message stream (e.g., trying to reconnect after the workflow already completed).
   const error =
-    status === "streaming"
-      ? null
-      : chat.error
-        ? getUserFriendlyError(chat.error)
-        : null;
+    status === "streaming" ? null : chat.error ? getUserFriendlyError(chat.error) : null;
 
   // Hydrate server suggestions into atom
   const setServerSuggestions = useSetAtom(serverSuggestionsAtom);
@@ -233,9 +213,7 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
 
   return (
     <>
-      <AnimatePresence>
-        {!hideAiFeatures && <ChatFab onClick={handleChatClick} />}
-      </AnimatePresence>
+      <AnimatePresence>{!hideAiFeatures && <ChatFab onClick={handleChatClick} />}</AnimatePresence>
 
       {isMobile ? (
         <Drawer open={open} onOpenChange={setOpen}>
@@ -243,7 +221,7 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
             <DrawerHeader className="flex flex-row items-center justify-between">
               <DrawerTitle className="flex items-center gap-2">
                 <IconLego className="size-4" />
-                <span className="font-semibold text-[15px] leading-none tracking-tight">
+                <span className="text-[15px] leading-none font-semibold tracking-tight">
                   {CHATBOT_NAME}
                 </span>
                 <BetaBadge />
@@ -257,11 +235,7 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
                 />
               </div>
             </DrawerHeader>
-            <ChatPanel
-              {...chatClientProps}
-              conversationClassName="px-4"
-              inputClassName="p-4"
-            />
+            <ChatPanel {...chatClientProps} conversationClassName="px-4" inputClassName="p-4" />
           </DrawerContent>
         </Drawer>
       ) : (
@@ -274,7 +248,7 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
             <SheetHeader className="flex shrink-0 flex-row items-center justify-between border-b bg-card/60 px-3.5 py-2">
               <SheetTitle className="flex items-center gap-2">
                 <IconLego className="size-4" />
-                <span className="font-semibold text-[15px] leading-none tracking-tight">
+                <span className="text-[15px] leading-none font-semibold tracking-tight">
                   {CHATBOT_NAME}
                 </span>
                 <BetaBadge />

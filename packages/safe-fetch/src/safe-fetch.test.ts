@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { SafeFetchError } from "./errors";
 import { safeFetch } from "./safe-fetch";
 import type { SafeFetchLogger } from "./types";
 
 // Mock DNS resolution
 vi.mock("./dns", () => ({
-  resolveHostIps: vi.fn(),
-  isExpectedDnsError: vi.fn(() => false),
+  resolveHostIps: vi.fn<typeof import("./dns").resolveHostIps>(),
+  isExpectedDnsError: vi.fn<typeof import("./dns").isExpectedDnsError>(() => false),
 }));
 
 import { resolveHostIps } from "./dns";
@@ -32,25 +33,19 @@ function mockResponse(
 
 // Helper to create mock fetch
 function createMockFetch(response: Response | (() => Response)) {
-  return vi.fn(async () =>
-    typeof response === "function" ? response() : response,
-  );
+  return vi.fn<typeof fetch>(async () => (typeof response === "function" ? response() : response));
 }
 
 describe("safeFetch", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Default: resolve to public IP
-    mockResolveHostIps.mockResolvedValue([
-      { address: "93.184.216.34", family: 4 },
-    ]);
+    mockResolveHostIps.mockResolvedValue([{ address: "93.184.216.34", family: 4 }]);
   });
 
   describe("basic functionality", () => {
     it("fetches a URL successfully", async () => {
-      const mockFetch = createMockFetch(
-        mockResponse("Hello, World!", { status: 200 }),
-      );
+      const mockFetch = createMockFetch(mockResponse("Hello, World!", { status: 200 }));
 
       const result = await safeFetch({
         url: "https://example.com",
@@ -67,9 +62,7 @@ describe("safeFetch", () => {
     });
 
     it("returns HTTP errors without throwing", async () => {
-      const mockFetch = createMockFetch(
-        mockResponse("Not Found", { status: 404 }),
-      );
+      const mockFetch = createMockFetch(mockResponse("Not Found", { status: 404 }));
 
       const result = await safeFetch({
         url: "https://example.com/missing",
@@ -289,9 +282,7 @@ describe("safeFetch", () => {
     });
 
     it("blocks hostnames that resolve to private IPs", async () => {
-      mockResolveHostIps.mockResolvedValue([
-        { address: "192.168.1.100", family: 4 },
-      ]);
+      mockResolveHostIps.mockResolvedValue([{ address: "192.168.1.100", family: 4 }]);
       const mockFetch = createMockFetch(mockResponse("OK", { status: 200 }));
 
       await expect(
@@ -366,7 +357,7 @@ describe("safeFetch", () => {
   describe("redirect handling", () => {
     it("follows redirects", async () => {
       let callCount = 0;
-      const mockFetch = vi.fn(async () => {
+      const mockFetch = vi.fn<typeof fetch>(async () => {
         callCount++;
         if (callCount === 1) {
           return mockResponse("", {
@@ -391,7 +382,7 @@ describe("safeFetch", () => {
     });
 
     it("respects maxRedirects limit", async () => {
-      const mockFetch = vi.fn(async () =>
+      const mockFetch = vi.fn<typeof fetch>(async () =>
         mockResponse("", {
           status: 302,
           headers: { Location: "https://example.com/next" },
@@ -428,7 +419,7 @@ describe("safeFetch", () => {
     });
 
     it("validates redirect targets against allowlist", async () => {
-      const mockFetch = vi.fn(async () =>
+      const mockFetch = vi.fn<typeof fetch>(async () =>
         mockResponse("", {
           status: 302,
           headers: { Location: "https://evil.com/steal" },
@@ -447,7 +438,7 @@ describe("safeFetch", () => {
     });
 
     it("returns redirect response when returnOnDisallowedRedirect is true", async () => {
-      const mockFetch = vi.fn(async () =>
+      const mockFetch = vi.fn<typeof fetch>(async () =>
         mockResponse("Redirect body", {
           status: 302,
           headers: { Location: "https://evil.com/steal" },
@@ -470,14 +461,12 @@ describe("safeFetch", () => {
 
   describe("HEAD to GET fallback", () => {
     it("retries with GET when HEAD returns 405", async () => {
-      const mockFetch = vi.fn(
-        async (_input: RequestInfo | URL, init?: RequestInit) => {
-          if (init?.method === "HEAD") {
-            return mockResponse("", { status: 405 });
-          }
-          return mockResponse("GET content", { status: 200 });
-        },
-      );
+      const mockFetch = vi.fn<typeof fetch>(async (_input, init) => {
+        if (init?.method === "HEAD") {
+          return mockResponse("", { status: 405 });
+        }
+        return mockResponse("GET content", { status: 200 });
+      });
 
       const result = await safeFetch({
         url: "https://example.com",
@@ -541,9 +530,7 @@ describe("safeFetch", () => {
     });
 
     it("truncates response when truncateOnLimit is true", async () => {
-      const mockFetch = createMockFetch(
-        mockResponse("Hello, World!", { status: 200 }),
-      );
+      const mockFetch = createMockFetch(mockResponse("Hello, World!", { status: 200 }));
 
       const result = await safeFetch({
         url: "https://example.com",

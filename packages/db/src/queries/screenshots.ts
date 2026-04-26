@@ -1,14 +1,13 @@
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import { and, eq, gt } from "drizzle-orm";
+
 import { db } from "../client";
 import { screenshots } from "../schema";
 
 type ScreenshotInsert = InferInsertModel<typeof screenshots>;
 type Screenshot = InferSelectModel<typeof screenshots>;
 
-export async function upsertScreenshot(
-  params: ScreenshotInsert,
-): Promise<Screenshot | null> {
+export async function upsertScreenshot(params: ScreenshotInsert): Promise<Screenshot | null> {
   const rows = await db
     .insert(screenshots)
     .values(params)
@@ -28,9 +27,7 @@ export async function getScreenshotByDomainId(domainId: string) {
   const rows = await db
     .select()
     .from(screenshots)
-    .where(
-      and(eq(screenshots.domainId, domainId), gt(screenshots.expiresAt, now)),
-    )
+    .where(and(eq(screenshots.domainId, domainId), gt(screenshots.expiresAt, now)))
     .limit(1);
   return rows[0] ?? null;
 }

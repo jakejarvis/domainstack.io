@@ -1,5 +1,7 @@
-import { updateLastAccessed } from "@domainstack/db/queries";
 import { after } from "next/server";
+
+import { updateLastAccessed } from "@domainstack/db/queries";
+
 import { t } from "../trpc";
 
 /**
@@ -19,7 +21,6 @@ export const withDomainAccessUpdate = t.middleware(async ({ input, next }) => {
     typeof input.domain === "string"
   ) {
     // Extract to local const - closures don't preserve narrowed types
-    // biome-ignore lint/nursery/useDestructuring: we want to use the original object
     const domain = input.domain;
     after(() => updateLastAccessed(domain));
   }

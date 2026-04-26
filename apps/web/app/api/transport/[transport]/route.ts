@@ -1,6 +1,7 @@
 import { ipAddress } from "@vercel/functions";
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
+
 import { checkRateLimit } from "@/lib/ratelimit/api";
 import { createCaller } from "@/server/routers/_app";
 import type { Context } from "@/trpc/init";
@@ -30,24 +31,16 @@ type ReportSection = (typeof REPORT_SECTIONS)[number];
 const sectionsSchema = z
   .array(z.enum(REPORT_SECTIONS))
   .optional()
-  .describe(
-    "Sections to include in the report. If omitted, all sections are included.",
-  );
+  .describe("Sections to include in the report. If omitted, all sections are included.");
 
 /**
  * Helper to format SwrResult for MCP tool response.
  * Strips internal metadata (rateLimit, cached, stale) and returns clean JSON.
  */
-function formatToolResponse(result: {
-  success: boolean;
-  data?: unknown;
-  error?: string;
-}) {
+function formatToolResponse(result: { success: boolean; data?: unknown; error?: string }) {
   if (!result.success) {
     return {
-      content: [
-        { type: "text" as const, text: result.error ?? "Unknown error" },
-      ],
+      content: [{ type: "text" as const, text: result.error ?? "Unknown error" }],
       isError: true,
     };
   }
@@ -282,9 +275,7 @@ function createMcpHandlerWithContext(request: Request) {
           }
 
           return {
-            content: [
-              { type: "text" as const, text: JSON.stringify(report, null, 2) },
-            ],
+            content: [{ type: "text" as const, text: JSON.stringify(report, null, 2) }],
             // Mark as partial error if some sections failed but not all
             isError: errors.length === requestedSections.length,
           };

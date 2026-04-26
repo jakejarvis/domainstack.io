@@ -4,8 +4,8 @@
   "customizations": {
     "vscode": {
       "extensions": [
-        "biomejs.biome",
         "bradlc.vscode-tailwindcss",
+        "oxc.oxc-vscode",
         "vitest.explorer",
         "vercel.turbo-vsc"
       ],

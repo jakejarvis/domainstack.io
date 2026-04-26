@@ -1,13 +1,6 @@
 import { PillCount } from "@/components/domain/pill-count";
 
-type DnsGroupColor =
-  | "blue"
-  | "cyan"
-  | "green"
-  | "orange"
-  | "purple"
-  | "indigo"
-  | "slate";
+type DnsGroupColor = "blue" | "cyan" | "green" | "orange" | "purple" | "indigo" | "slate";
 
 export function DnsGroup({
   title,
@@ -26,7 +19,7 @@ export function DnsGroup({
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 leading-none">
-        <div className="text-[11px] text-foreground/70 uppercase tracking-[0.08em] dark:text-foreground/80">
+        <div className="text-[11px] tracking-[0.08em] text-foreground/70 uppercase dark:text-foreground/80">
           {title}
         </div>
         <PillCount count={actualCount} color={color} />

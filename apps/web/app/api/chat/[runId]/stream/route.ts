@@ -8,16 +8,14 @@
  * network issues or Vercel Function timeouts.
  */
 
-import { auth } from "@domainstack/auth/server";
-import {
-  RATE_LIMIT_ANONYMOUS,
-  RATE_LIMIT_AUTHENTICATED,
-} from "@domainstack/constants";
-import { createLogger } from "@domainstack/logger";
 import { createUIMessageStreamResponse } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 import { getRun } from "workflow/api";
+
 import { checkRateLimit } from "@/lib/ratelimit/api";
+import { auth } from "@domainstack/auth/server";
+import { RATE_LIMIT_ANONYMOUS, RATE_LIMIT_AUTHENTICATED } from "@domainstack/constants";
+import { createLogger } from "@domainstack/logger";
 
 const logger = createLogger({ source: "api/chat/stream" });
 
@@ -57,12 +55,9 @@ export async function GET(
 
   const { runId } = await params;
   const startIndexParam = request.nextUrl.searchParams.get("startIndex");
-  const parsedIndex = startIndexParam
-    ? Number.parseInt(startIndexParam, 10)
-    : 0;
+  const parsedIndex = startIndexParam ? Number.parseInt(startIndexParam, 10) : 0;
   // Validate startIndex is a non-negative integer, default to 0 if invalid
-  const startIndex =
-    Number.isNaN(parsedIndex) || parsedIndex < 0 ? 0 : parsedIndex;
+  const startIndex = Number.isNaN(parsedIndex) || parsedIndex < 0 ? 0 : parsedIndex;
 
   try {
     const run = getRun(runId);
@@ -97,10 +92,7 @@ export async function GET(
 
     // Check for workflow run no longer available (400 means run completed/expired)
     // This is expected when the client tries to reconnect after the workflow finished
-    if (
-      error.message.includes("400") ||
-      error.message.includes("Bad Request")
-    ) {
+    if (error.message.includes("400") || error.message.includes("Bad Request")) {
       errorMessage = "Chat session completed or expired.";
       statusCode = 410; // Gone - resource no longer available
     } else if (error.message.includes("timeout")) {
@@ -109,10 +101,7 @@ export async function GET(
     } else if (error.message.includes("network")) {
       errorMessage = "Network error. Please check your connection.";
       statusCode = 502;
-    } else if (
-      !error.message.includes("not found") &&
-      !error.message.includes("expired")
-    ) {
+    } else if (!error.message.includes("not found") && !error.message.includes("expired")) {
       // Unexpected error - use 500 instead of misleading 404
       errorMessage = "An unexpected error occurred. Please try again.";
       statusCode = 500;
@@ -120,21 +109,12 @@ export async function GET(
 
     // Log at appropriate severity: error for 500s, warn/debug for expected errors
     if (statusCode === 500) {
-      logger.error(
-        { err, runId, statusCode },
-        "unexpected error reconnecting to chat stream",
-      );
+      logger.error({ err, runId, statusCode }, "unexpected error reconnecting to chat stream");
     } else if (statusCode === 410) {
       // 410 Gone is expected when reconnecting to a completed workflow
-      logger.debug(
-        { runId, statusCode },
-        "chat stream reconnection to completed workflow",
-      );
+      logger.debug({ runId, statusCode }, "chat stream reconnection to completed workflow");
     } else {
-      logger.warn(
-        { err, runId, statusCode },
-        "failed to reconnect to chat stream",
-      );
+      logger.warn({ err, runId, statusCode }, "failed to reconnect to chat stream");
     }
 
     return NextResponse.json(

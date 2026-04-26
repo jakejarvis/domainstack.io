@@ -1,3 +1,17 @@
+import { SiApple, SiAppstore, SiGoogle, SiProton } from "@icons-pack/react-simple-icons";
+import {
+  IconBrandOpenai,
+  IconCalendarCheck,
+  IconCalendarOff,
+  IconChevronDown,
+  IconInfoCircle,
+  IconRefresh,
+  IconShieldLock,
+} from "@tabler/icons-react";
+import { formatDistanceToNowStrict } from "date-fns";
+import { useCallback, useState } from "react";
+
+import { useCalendarFeed } from "@/hooks/use-calendar-feed";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,34 +35,12 @@ import {
 import { Skeleton } from "@domainstack/ui/skeleton";
 import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
-import {
-  SiApple,
-  SiAppstore,
-  SiGoogle,
-  SiProton,
-} from "@icons-pack/react-simple-icons";
-import {
-  IconBrandOpenai,
-  IconCalendarCheck,
-  IconCalendarOff,
-  IconChevronDown,
-  IconInfoCircle,
-  IconRefresh,
-  IconShieldLock,
-} from "@tabler/icons-react";
-import { formatDistanceToNowStrict } from "date-fns";
-import { useCallback, useState } from "react";
-import { useCalendarFeed } from "@/hooks/use-calendar-feed";
 
 /**
  * Skeleton for calendar instructions.
  * Exported for use as Suspense fallback in parent components.
  */
-export function CalendarInstructionsSkeleton({
-  className,
-}: {
-  className?: string;
-}) {
+export function CalendarInstructionsSkeleton({ className }: { className?: string }) {
   return (
     <div className={cn("space-y-4", className)}>
       <Skeleton className="h-16 w-full" />
@@ -98,13 +90,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
         id: "outlook",
         label: "Outlook",
         icon: (props: React.SVGProps<SVGSVGElement>) => (
-          <svg
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            role="img"
-            aria-label="Microsoft"
-            {...props}
-          >
+          <svg viewBox="0 0 24 24" fill="currentColor" role="img" aria-label="Microsoft" {...props}>
             <path d="M11.4 24H0V12.6h11.4zM24 24H12.6V12.6H24zM11.4 11.4H0V0h11.4zm12.6 0H12.6V0H24z" />
           </svg>
         ),
@@ -133,25 +119,19 @@ export function CalendarInstructions({ className }: { className?: string }) {
             <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-amber-700 dark:text-amber-400">
               <IconShieldLock className="size-4 shrink-0 translate-y-[4px]" />
               <div className="space-y-1 text-[13px]">
-                <p className="my-0.5 font-semibold">
-                  Treat this URL like a password!
-                </p>
+                <p className="my-0.5 font-semibold">Treat this URL like a password!</p>
                 <p>
-                  Anyone with this link can view your verified domains. You can
-                  invalidate it at any time by generating a fresh URL below.
+                  Anyone with this link can view your verified domains. You can invalidate it at any
+                  time by generating a fresh URL below.
                 </p>
               </div>
             </div>
 
             {/* Feed URL */}
-            <CopyableField
-              label="Feed URL"
-              value={feed.feedUrl}
-              showLabel={false}
-            />
+            <CopyableField label="Feed URL" value={feed.feedUrl} showLabel={false} />
 
             {/* Stats */}
-            <div className="flex items-center gap-[5px] text-muted-foreground text-xs leading-none">
+            <div className="flex items-center gap-[5px] text-xs leading-none text-muted-foreground">
               <IconInfoCircle className="size-3 shrink-0" />
               {feed.lastAccessedAt ? (
                 <span>
@@ -167,12 +147,12 @@ export function CalendarInstructions({ className }: { className?: string }) {
 
             {/* Actions */}
             <div className="@container/actions">
-              <div className="grid @md/actions:grid-cols-3 grid-cols-2 gap-2 pt-1">
+              <div className="grid grid-cols-2 gap-2 pt-1 @md/actions:grid-cols-3">
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     nativeButton={false}
                     render={
-                      <ButtonGroup className="@md/actions:col-span-1 col-span-2 flex w-full">
+                      <ButtonGroup className="col-span-2 flex w-full @md/actions:col-span-1">
                         <Button variant="outline" className="flex-1">
                           <SiAppstore className="text-muted-foreground" />
                           Open In…
@@ -200,18 +180,12 @@ export function CalendarInstructions({ className }: { className?: string }) {
                               <a
                                 href={href}
                                 target={opensNatively ? undefined : "_blank"}
-                                rel={
-                                  opensNatively
-                                    ? undefined
-                                    : "noopener noreferrer"
-                                }
-                                data-disable-progress={
-                                  opensNatively ? true : undefined
-                                }
-                                className="flex w-full flex-col items-center justify-center gap-2.5 rounded-md py-4 text-center focus-visible:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                rel={opensNatively ? undefined : "noopener noreferrer"}
+                                data-disable-progress={opensNatively ? true : undefined}
+                                className="flex w-full flex-col items-center justify-center gap-2.5 rounded-md py-4 text-center focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
                               >
                                 <Icon className="size-5 text-foreground/90" />
-                                <span className="text-foreground/75 text-xs leading-none">
+                                <span className="text-xs leading-none text-foreground/75">
                                   {label}
                                 </span>
                               </a>
@@ -289,19 +263,14 @@ export function CalendarInstructions({ className }: { className?: string }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Regenerate Calendar URL?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will generate a new calendar URL. Any calendar subscriptions
-              using the old URL will stop receiving updates. You&apos;ll need to
-              re-subscribe with the new URL.
+              This will generate a new calendar URL. Any calendar subscriptions using the old URL
+              will stop receiving updates. You&apos;ll need to re-subscribe with the new URL.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={rotate.isPending}>
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel disabled={rotate.isPending}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() =>
-                rotate.mutate({ onSuccess: () => setShowRotateDialog(false) })
-              }
+              onClick={() => rotate.mutate({ onSuccess: () => setShowRotateDialog(false) })}
               disabled={rotate.isPending}
             >
               {rotate.isPending ? <Spinner /> : <IconRefresh />}
@@ -317,15 +286,12 @@ export function CalendarInstructions({ className }: { className?: string }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Disable Calendar Feed?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will disable your calendar feed. Any calendar subscriptions
-              using this URL will stop working. You can enable a new feed later,
-              but it will have a different URL.
+              This will disable your calendar feed. Any calendar subscriptions using this URL will
+              stop working. You can enable a new feed later, but it will have a different URL.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteFeed.isPending}>
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteFeed.isPending}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() =>
                 deleteFeed.mutate({

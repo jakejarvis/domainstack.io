@@ -6,19 +6,11 @@
 // Verification Methods & Statuses
 // ============================================================================
 
-export const VERIFICATION_METHODS = [
-  "dns_txt",
-  "html_file",
-  "meta_tag",
-] as const;
+export const VERIFICATION_METHODS = ["dns_txt", "html_file", "meta_tag"] as const;
 
 export type VerificationMethod = (typeof VERIFICATION_METHODS)[number];
 
-export const VERIFICATION_STATUSES = [
-  "verified",
-  "failing",
-  "unverified",
-] as const;
+export const VERIFICATION_STATUSES = ["verified", "failing", "unverified"] as const;
 
 export type VerificationStatus = (typeof VERIFICATION_STATUSES)[number];
 

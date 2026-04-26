@@ -1,16 +1,12 @@
 import { Badge } from "@domainstack/ui/badge";
 import { cn } from "@domainstack/ui/utils";
 
-export function BetaBadge({
-  className,
-  style,
-  ...props
-}: React.ComponentProps<typeof Badge>) {
+export function BetaBadge({ className, style, ...props }: React.ComponentProps<typeof Badge>) {
   return (
     <Badge
       variant="secondary"
       className={cn(
-        "relative inline-block select-none rounded-xl border-none py-1 text-white shadow-sm",
+        "relative inline-block rounded-xl border-none py-1 text-white shadow-sm select-none",
         className,
       )}
       style={{

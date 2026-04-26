@@ -1,12 +1,13 @@
 "use client";
 
-import { analytics } from "@domainstack/analytics/client";
-import { Button } from "@domainstack/ui/button";
-import { CardDescription, CardHeader, CardTitle } from "@domainstack/ui/card";
 import { IconAlertTriangle, IconRefresh } from "@tabler/icons-react";
 import { useQueryErrorResetBoundary } from "@tanstack/react-query";
 import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
+
 import { CreateIssueButton } from "@/components/create-issue-button";
+import { analytics } from "@domainstack/analytics/client";
+import { Button } from "@domainstack/ui/button";
+import { CardDescription, CardHeader, CardTitle } from "@domainstack/ui/card";
 
 interface Props {
   children: React.ReactNode;
@@ -24,7 +25,7 @@ function SettingsErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
 
   return (
     <CardHeader className="px-0 pt-0 pb-2">
-      <CardTitle className="mb-1 flex items-center gap-2 text-destructive leading-none">
+      <CardTitle className="mb-1 flex items-center gap-2 leading-none text-destructive">
         <IconAlertTriangle className="size-4.5" />
         Failed to load
       </CardTitle>

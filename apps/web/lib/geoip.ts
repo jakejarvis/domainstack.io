@@ -1,7 +1,8 @@
+import { cache } from "react";
+
 import { createLogger } from "@domainstack/logger";
 import { getRedis } from "@domainstack/redis";
 import type { GeoIpData } from "@domainstack/types";
-import { cache } from "react";
 
 const logger = createLogger({ source: "geoip" });
 
@@ -86,9 +87,7 @@ async function fetchFromApi(ip: string): Promise<IplocateApiResponse> {
     throw new Error("IPLOCATE_API_KEY not configured");
   }
 
-  const url = new URL(
-    `https://www.iplocate.io/api/lookup/${encodeURIComponent(ip)}`,
-  );
+  const url = new URL(`https://www.iplocate.io/api/lookup/${encodeURIComponent(ip)}`);
   url.searchParams.set("apikey", apiKey);
 
   const res = await fetch(url.toString());
@@ -117,9 +116,7 @@ async function fetchFromApi(ip: string): Promise<IplocateApiResponse> {
  * Get raw iplocate.io response, using Redis cache.
  * Caches the raw response for flexibility - transformation happens per-request.
  */
-async function getOrFetchApiResponse(
-  ip: string,
-): Promise<IplocateApiResponse | null> {
+async function getOrFetchApiResponse(ip: string): Promise<IplocateApiResponse | null> {
   const redis = getRedis();
   const cacheKey = `${CACHE_PREFIX}${ip}`;
 
@@ -189,9 +186,7 @@ const EMPTY_RESPONSE: GeoIpData = {
  * Raw response is cached in Redis for flexibility - if transformation logic changes,
  * cached data remains valid. Transformation is cheap and happens per-request.
  */
-export const lookupGeoIp = cache(async function lookupGeoIp(
-  ip: string,
-): Promise<GeoIpData> {
+export const lookupGeoIp = cache(async function lookupGeoIp(ip: string): Promise<GeoIpData> {
   const raw = await getOrFetchApiResponse(ip);
 
   if (!raw) {

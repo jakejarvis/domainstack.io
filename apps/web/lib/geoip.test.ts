@@ -1,7 +1,9 @@
 /* @vitest-environment node */
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+
 import { server } from "@/mocks/server";
+
 import { lookupGeoIp } from "./geoip";
 
 beforeAll(() => {
@@ -24,11 +26,7 @@ describe("lookupGeoIp", () => {
 
   it("returns defaults on error", async () => {
     // Force network error
-    server.use(
-      http.get("https://www.iplocate.io/api/lookup/:ip", () =>
-        HttpResponse.error(),
-      ),
-    );
+    server.use(http.get("https://www.iplocate.io/api/lookup/:ip", () => HttpResponse.error()));
 
     const res = await lookupGeoIp("1.2.3.4");
     expect(res.owner).toBeNull();

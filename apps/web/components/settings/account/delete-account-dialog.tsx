@@ -1,3 +1,6 @@
+import { IconAlertTriangle, IconCheck, IconHeartBroken } from "@tabler/icons-react";
+import { useCallback, useReducer } from "react";
+
 import { useAnalytics } from "@domainstack/analytics/client";
 import { deleteUser } from "@domainstack/auth/client";
 import {
@@ -12,12 +15,6 @@ import {
   AlertDialogTitle,
 } from "@domainstack/ui/alert-dialog";
 import { Spinner } from "@domainstack/ui/spinner";
-import {
-  IconAlertTriangle,
-  IconCheck,
-  IconHeartBroken,
-} from "@tabler/icons-react";
-import { useCallback, useReducer } from "react";
 
 // ============================================================================
 // Types
@@ -73,10 +70,7 @@ function dialogReducer(state: DialogState, action: DialogAction): DialogState {
 // Component
 // ============================================================================
 
-export function DeleteAccountDialog({
-  open,
-  onOpenChange,
-}: DeleteAccountDialogProps) {
+export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
   const [state, dispatch] = useReducer(dialogReducer, initialState);
   const analytics = useAnalytics();
 
@@ -100,10 +94,9 @@ export function DeleteAccountDialog({
       analytics.track("delete_account_initiated");
       dispatch({ type: "DELETE_SUCCESS" });
     } catch (err) {
-      analytics.trackException(
-        err instanceof Error ? err : new Error(String(err)),
-        { action: "delete_account" },
-      );
+      analytics.trackException(err instanceof Error ? err : new Error(String(err)), {
+        action: "delete_account",
+      });
       dispatch({
         type: "DELETE_ERROR",
         message: "An unexpected error occurred. Please try again.",
@@ -138,14 +131,12 @@ export function DeleteAccountDialog({
               </AlertDialogMedia>
               <AlertDialogTitle>Check your email</AlertDialogTitle>
               <AlertDialogDescription>
-                We&apos;ve sent a confirmation link to your email address. Click
-                the link to permanently delete your account.
+                We&apos;ve sent a confirmation link to your email address. Click the link to
+                permanently delete your account.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="sm:justify-center">
-              <AlertDialogCancel onClick={() => handleOpenChange(false)}>
-                Close
-              </AlertDialogCancel>
+              <AlertDialogCancel onClick={() => handleOpenChange(false)}>Close</AlertDialogCancel>
             </AlertDialogFooter>
           </>
         ) : (
@@ -155,9 +146,7 @@ export function DeleteAccountDialog({
                 <IconAlertTriangle />
               </AlertDialogMedia>
               <AlertDialogTitle>Delete your account?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone.
-              </AlertDialogDescription>
+              <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
             </AlertDialogHeader>
 
             <div className="space-y-3">
@@ -181,7 +170,7 @@ export function DeleteAccountDialog({
             {errorMessage && (
               <div
                 role="alert"
-                className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-destructive text-sm"
+                className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
               >
                 {errorMessage}
               </div>
@@ -189,16 +178,8 @@ export function DeleteAccountDialog({
 
             <AlertDialogFooter>
               <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                variant="destructive"
-                onClick={handleDelete}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <Spinner />
-                ) : (
-                  <IconHeartBroken aria-hidden="true" />
-                )}
+              <AlertDialogAction variant="destructive" onClick={handleDelete} disabled={isLoading}>
+                {isLoading ? <Spinner /> : <IconHeartBroken aria-hidden="true" />}
                 I'm sure.
               </AlertDialogAction>
             </AlertDialogFooter>

@@ -1,3 +1,5 @@
+import type { TablerIcon } from "@tabler/icons-react";
+
 import { Badge } from "@domainstack/ui/badge";
 import {
   ResponsiveTooltip,
@@ -5,7 +7,6 @@ import {
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
 import { cn } from "@domainstack/ui/utils";
-import type { TablerIcon } from "@tabler/icons-react";
 
 type BadgeWithTooltipProps = {
   icon: TablerIcon;
@@ -25,7 +26,7 @@ export function BadgeWithTooltip({
   const badge = (
     <Badge
       className={cn(
-        "select-none gap-[5px] py-1 font-semibold leading-none",
+        "gap-[5px] py-1 leading-none font-semibold select-none",
         onClick && "cursor-pointer transition-opacity hover:opacity-95",
         className,
       )}

@@ -3,11 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock rdapper before importing the module under test
 vi.mock("rdapper", () => ({
-  lookup: vi.fn(),
+  lookup: vi.fn<typeof import("rdapper").lookup>(),
 }));
 
 // Import after mocking
 import { lookup } from "rdapper";
+
 import { fetchBootstrapData, lookupWhois } from "./lookup";
 
 describe("lookupWhois", () => {
@@ -16,9 +17,9 @@ describe("lookupWhois", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     // Mock fetch to return undefined bootstrap by default (tests will override if needed)
-    global.fetch = vi.fn().mockResolvedValue({
+    global.fetch = vi.fn<typeof fetch>().mockResolvedValue({
       ok: false,
-    });
+    } as Response);
   });
 
   afterEach(() => {
@@ -319,10 +320,10 @@ describe("fetchBootstrapData", () => {
       services: [[["com"], ["https://rdap.verisign.com/com/v1/"]]],
     };
 
-    global.fetch = vi.fn().mockResolvedValue({
+    global.fetch = vi.fn<typeof fetch>().mockResolvedValue({
       ok: true,
       json: () => Promise.resolve(bootstrapData),
-    });
+    } as Response);
 
     const result = await fetchBootstrapData();
 
@@ -330,10 +331,10 @@ describe("fetchBootstrapData", () => {
   });
 
   it("returns undefined on HTTP error", async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    global.fetch = vi.fn<typeof fetch>().mockResolvedValue({
       ok: false,
       status: 500,
-    });
+    } as Response);
 
     const result = await fetchBootstrapData();
 
@@ -341,7 +342,7 @@ describe("fetchBootstrapData", () => {
   });
 
   it("returns undefined on fetch exception", async () => {
-    global.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
+    global.fetch = vi.fn<typeof fetch>().mockRejectedValue(new Error("Network error"));
 
     const result = await fetchBootstrapData();
 
@@ -351,15 +352,13 @@ describe("fetchBootstrapData", () => {
   it("includes userAgent header when provided", async () => {
     let capturedHeaders: Record<string, string> = {};
 
-    global.fetch = vi
-      .fn()
-      .mockImplementation((_url: string, options: RequestInit) => {
-        capturedHeaders = (options.headers ?? {}) as Record<string, string>;
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ version: "1.0", services: [] }),
-        });
-      });
+    global.fetch = vi.fn<typeof fetch>().mockImplementation((_url, options) => {
+      capturedHeaders = (options?.headers ?? {}) as Record<string, string>;
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ version: "1.0", services: [] }),
+      } as Response);
+    });
 
     await fetchBootstrapData("Domainstack/1.0");
 
@@ -369,15 +368,13 @@ describe("fetchBootstrapData", () => {
   it("does not include userAgent header when not provided", async () => {
     let capturedHeaders: Record<string, string> = {};
 
-    global.fetch = vi
-      .fn()
-      .mockImplementation((_url: string, options: RequestInit) => {
-        capturedHeaders = (options.headers ?? {}) as Record<string, string>;
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ version: "1.0", services: [] }),
-        });
-      });
+    global.fetch = vi.fn<typeof fetch>().mockImplementation((_url, options) => {
+      capturedHeaders = (options?.headers ?? {}) as Record<string, string>;
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ version: "1.0", services: [] }),
+      } as Response);
+    });
 
     await fetchBootstrapData();
 

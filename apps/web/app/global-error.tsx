@@ -1,8 +1,9 @@
 "use client";
 
-import { analytics } from "@domainstack/analytics/client";
 import NextError from "next/error";
 import { useEffect } from "react";
+
+import { analytics } from "@domainstack/analytics/client";
 
 export default function GlobalError({
   error,

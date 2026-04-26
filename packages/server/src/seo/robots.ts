@@ -3,6 +3,7 @@
  */
 
 import type { RobotsGroup, RobotsRule, RobotsTxt } from "@domainstack/types";
+
 import { sanitizeText } from "./utils";
 
 export interface ParseRobotsTxtOptions {
@@ -28,10 +29,7 @@ export interface ParseRobotsTxtOptions {
  * @param opts - Parsing options
  * @returns Structured robots.txt data
  */
-export function parseRobotsTxt(
-  text: string,
-  opts?: ParseRobotsTxtOptions,
-): RobotsTxt {
+export function parseRobotsTxt(text: string, opts?: ParseRobotsTxtOptions): RobotsTxt {
   // Cap processing to avoid huge files (align with Google ~500 KiB)
   const capBytes = opts?.sizeCapBytes ?? 500 * 1024;
   const capped = text.length > capBytes ? text.slice(0, capBytes) : text;
@@ -56,10 +54,7 @@ export function parseRobotsTxt(
 
   for (const rawLine of lines) {
     // Remove invisible Unicode control chars (including BOM) before parsing
-    const cleaned = rawLine.replace(
-      /[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g,
-      "",
-    );
+    const cleaned = rawLine.replace(/[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g, "");
     const line = cleaned.split("#")[0]?.trim() ?? "";
     if (line === "") {
       // Treat blank lines as whitespace; do not flush the current group
@@ -81,18 +76,15 @@ export function parseRobotsTxt(
       continue;
     }
     if (key === "disallow") {
-      if (currentAgents.length > 0)
-        currentRules.push({ type: "disallow", value });
+      if (currentAgents.length > 0) currentRules.push({ type: "disallow", value });
       continue;
     }
     if (key === "crawl-delay") {
-      if (currentAgents.length > 0)
-        currentRules.push({ type: "crawlDelay", value });
+      if (currentAgents.length > 0) currentRules.push({ type: "crawlDelay", value });
       continue;
     }
     if (key === "content-signal") {
-      if (currentAgents.length > 0)
-        currentRules.push({ type: "contentSignal", value });
+      if (currentAgents.length > 0) currentRules.push({ type: "contentSignal", value });
       continue;
     }
     if (key === "sitemap") {
@@ -171,7 +163,7 @@ export function parseRobotsTxt(
           seen.add(key);
           dedupedRules.push(r);
         }
-        return { ...g, rules: dedupedRules };
+        return { userAgents: g.userAgents, rules: dedupedRules };
       });
     return { fetched: true, groups: mergedGroups, sitemaps };
   }

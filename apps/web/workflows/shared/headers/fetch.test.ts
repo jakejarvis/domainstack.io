@@ -1,6 +1,7 @@
 /* @vitest-environment node */
 import { HttpResponse, http } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
 import { server } from "@/mocks/server";
 
 // Mock DNS for domain resolution (must override both DoH providers
@@ -101,9 +102,7 @@ describe("fetchHeadersStep", () => {
 
     const { fetchHeadersStep } = await import("./fetch");
 
-    await expect(fetchHeadersStep("error.test")).rejects.toThrow(
-      "Headers fetch failed",
-    );
+    await expect(fetchHeadersStep("error.test")).rejects.toThrow("Headers fetch failed");
   });
 
   it("normalizes headers correctly", async () => {
@@ -130,12 +129,7 @@ describe("fetchHeadersStep", () => {
       // All headers should be lowercase
       const headerNames = result.data.headers.map((h) => h.name);
       expect(headerNames).toEqual(
-        expect.arrayContaining([
-          "server",
-          "content-security-policy",
-          "x-custom",
-          "accept",
-        ]),
+        expect.arrayContaining(["server", "content-security-policy", "x-custom", "accept"]),
       );
 
       // All header names should be lowercase

@@ -1,8 +1,9 @@
-import { analytics } from "@domainstack/analytics/server";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+
 import { DomainReportClient } from "@/components/domain/report-client";
 import { toRegistrableDomain } from "@/lib/normalize-domain";
+import { analytics } from "@domainstack/analytics/server";
 
 export async function generateMetadata({
   params,
@@ -50,11 +51,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function DomainPage({
-  params,
-}: {
-  params: Promise<{ domain: string }>;
-}) {
+export default async function DomainPage({ params }: { params: Promise<{ domain: string }> }) {
   const { domain: raw } = await params;
   const decoded = decodeURIComponent(raw);
 

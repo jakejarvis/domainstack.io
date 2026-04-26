@@ -8,11 +8,8 @@
 
 import { ensureDomainRecord, replaceHeaders } from "@domainstack/db/queries";
 import type { HeadersResponse } from "@domainstack/types";
-import {
-  fetchHttpHeaders,
-  type HeadersError,
-  type HeadersFetchData,
-} from "../headers";
+
+import { fetchHttpHeaders, type HeadersError, type HeadersFetchData } from "../headers";
 import { ttlForHeaders } from "../ttl";
 
 // ============================================================================
@@ -62,10 +59,7 @@ export async function fetchHeaders(domain: string): Promise<HeadersResult> {
 // Internal: Persist Headers
 // ============================================================================
 
-async function persistHeaders(
-  domain: string,
-  fetchData: HeadersFetchData,
-): Promise<void> {
+async function persistHeaders(domain: string, fetchData: HeadersFetchData): Promise<void> {
   const now = new Date();
   const expiresAt = ttlForHeaders(now);
 

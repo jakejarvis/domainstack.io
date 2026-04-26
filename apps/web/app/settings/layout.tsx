@@ -1,15 +1,16 @@
-import { auth } from "@domainstack/auth/server";
-import { Card } from "@domainstack/ui/card";
-import { Skeleton } from "@domainstack/ui/skeleton";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+
 import { StaticBackground } from "@/components/layout/static-background";
 import {
   SettingsSkeletonPanels,
   SettingsSkeletonTabsList,
 } from "@/components/settings/settings-skeleton";
+import { auth } from "@domainstack/auth/server";
+import { Card } from "@domainstack/ui/card";
+import { Skeleton } from "@domainstack/ui/skeleton";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -20,11 +21,7 @@ export const metadata: Metadata = {
   },
 };
 
-async function ProtectedSettingsLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+async function ProtectedSettingsLayout({ children }: { children: React.ReactNode }) {
   // Server-side auth check - requires runtime data (headers)
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -37,11 +34,7 @@ async function ProtectedSettingsLayout({
   return <>{children}</>;
 }
 
-export default function SettingsLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function SettingsLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <StaticBackground />

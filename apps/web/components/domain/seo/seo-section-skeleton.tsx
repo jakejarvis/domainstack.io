@@ -1,9 +1,9 @@
-import { Skeleton } from "@domainstack/ui/skeleton";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { KeyValueSkeleton } from "@/components/domain/key-value-skeleton";
 import { PillCountSkeleton } from "@/components/domain/pill-count";
 import { ReportSectionSkeleton } from "@/components/domain/report-section-skeleton";
 import { sections } from "@/lib/constants/sections";
+import { Skeleton } from "@domainstack/ui/skeleton";
 
 export function SeoSectionSkeleton() {
   return (
@@ -11,7 +11,7 @@ export function SeoSectionSkeleton() {
       <div className="space-y-4">
         {/* Meta Tags */}
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-[11px] text-foreground/70 uppercase leading-none tracking-[0.08em] dark:text-foreground/80">
+          <div className="flex items-center gap-2 text-[11px] leading-none tracking-[0.08em] text-foreground/70 uppercase dark:text-foreground/80">
             Meta Tags
             <PillCountSkeleton />
           </div>
@@ -25,16 +25,13 @@ export function SeoSectionSkeleton() {
 
         {/* Open Graph */}
         <div className="mt-6 space-y-3">
-          <div className="text-[11px] text-foreground/70 uppercase tracking-[0.08em] dark:text-foreground/80">
+          <div className="text-[11px] tracking-[0.08em] text-foreground/70 uppercase dark:text-foreground/80">
             Open Graph
           </div>
           {/* Tabs row skeleton */}
           <div className="flex h-auto w-full flex-wrap gap-1 rounded-md border border-muted-foreground/15 p-1 md:justify-start">
             {[1, 2, 3, 4, 5].map((id) => (
-              <Skeleton
-                key={`og-tab-${id}`}
-                className="h-9 flex-1 basis-0 rounded-md"
-              />
+              <Skeleton key={`og-tab-${id}`} className="h-9 flex-1 basis-0 rounded-md" />
             ))}
           </div>
           {/* Preview skeleton */}
@@ -60,7 +57,7 @@ export function SeoSectionSkeleton() {
 
         {/* Robots summary skeleton */}
         <div className="space-y-4 rounded-xl">
-          <div className="mt-5 flex items-center gap-2 text-[11px] text-foreground/70 uppercase leading-none tracking-[0.08em] dark:text-foreground/80">
+          <div className="mt-5 flex items-center gap-2 text-[11px] leading-none tracking-[0.08em] text-foreground/70 uppercase dark:text-foreground/80">
             robots.txt
             <PillCountSkeleton />
           </div>
@@ -92,7 +89,7 @@ export function SeoSectionSkeleton() {
                     {[0, 1, 2, 3, 4, 5].map((rid) => (
                       <div
                         key={`${gid}-rule-${rid}`}
-                        className={`flex items-center gap-2 border-input border-t px-2.5 py-2.5 ${rid === 0 ? "border-t-0" : ""}`}
+                        className={`flex items-center gap-2 border-t border-input px-2.5 py-2.5 ${rid === 0 ? "border-t-0" : ""}`}
                       >
                         <Skeleton className="size-3.5 rounded-full" />
                         <Skeleton className="h-3 w-32 rounded" />
@@ -106,7 +103,7 @@ export function SeoSectionSkeleton() {
 
           {/* Sitemaps */}
           <div className="space-y-3">
-            <div className="mt-5 flex items-center gap-2 text-[11px] text-foreground/70 uppercase leading-none tracking-[0.08em] dark:text-foreground/80">
+            <div className="mt-5 flex items-center gap-2 text-[11px] leading-none tracking-[0.08em] text-foreground/70 uppercase dark:text-foreground/80">
               Sitemaps
               <PillCountSkeleton />
             </div>

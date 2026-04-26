@@ -7,8 +7,4 @@
 export { lookupWhoisStep } from "./fetch";
 export { normalizeAndBuildResponseStep } from "./normalize";
 export { persistRegistrationStep } from "./persist";
-export type {
-  FetchRegistrationResult,
-  RegistrationError,
-  RegistrationFetchData,
-} from "./types";
+export type { FetchRegistrationResult, RegistrationError, RegistrationFetchData } from "./types";
