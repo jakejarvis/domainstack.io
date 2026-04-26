@@ -43,7 +43,7 @@
     "@icons-pack/react-simple-icons": "^13.13.0",
     "@modelcontextprotocol/sdk": "1.26.0",
     "@opentelemetry/api": "^1.9.1",
-    "@opentelemetry/instrumentation-pino": "^0.60.0",
+    "@opentelemetry/instrumentation-pino": "^0.61.0",
     "@posthog/ai": "^7.15.0",
     "@posthog/nextjs-config": "^1.9.2",
     "@tabler/icons-react": "catalog:",
