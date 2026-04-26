@@ -4,14 +4,18 @@ import { safeFetch } from "./safe-fetch";
 import type { SafeFetchLogger } from "./types";
 
 // Mock DNS resolution
-vi.mock("./dns", () => ({
-  resolveHostIps: vi.fn(),
-  isExpectedDnsError: vi.fn(() => false),
+vi.mock("node:dns/promises", () => ({
+  lookup: vi.fn(),
 }));
 
-import { resolveHostIps } from "./dns";
+import { lookup } from "node:dns/promises";
 
-const mockResolveHostIps = vi.mocked(resolveHostIps);
+const mockLookup = vi.mocked(lookup);
+type LookupResult = Awaited<ReturnType<typeof lookup>>;
+
+function mockLookupRecords(records: Array<{ address: string; family: 4 | 6 }>) {
+  mockLookup.mockResolvedValue(records as unknown as LookupResult);
+}
 
 // Silent logger for tests
 const silentLogger: SafeFetchLogger = {
@@ -41,9 +45,7 @@ describe("safeFetch", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Default: resolve to public IP
-    mockResolveHostIps.mockResolvedValue([
-      { address: "93.184.216.34", family: 4 },
-    ]);
+    mockLookupRecords([{ address: "93.184.216.34", family: 4 }]);
   });
 
   describe("basic functionality", () => {
@@ -289,9 +291,7 @@ describe("safeFetch", () => {
     });
 
     it("blocks hostnames that resolve to private IPs", async () => {
-      mockResolveHostIps.mockResolvedValue([
-        { address: "192.168.1.100", family: 4 },
-      ]);
+      mockLookupRecords([{ address: "192.168.1.100", family: 4 }]);
       const mockFetch = createMockFetch(mockResponse("OK", { status: 200 }));
 
       await expect(
@@ -305,7 +305,7 @@ describe("safeFetch", () => {
     });
 
     it("allows public IPs", async () => {
-      mockResolveHostIps.mockResolvedValue([{ address: "8.8.8.8", family: 4 }]);
+      mockLookupRecords([{ address: "8.8.8.8", family: 4 }]);
       const mockFetch = createMockFetch(mockResponse("OK", { status: 200 }));
 
       const result = await safeFetch({
@@ -596,8 +596,24 @@ describe("safeFetch", () => {
   });
 
   describe("DNS errors", () => {
+    it("uses system DNS lookup options that match fetch resolution", async () => {
+      const mockFetch = createMockFetch(mockResponse("OK", { status: 200 }));
+
+      await safeFetch({
+        url: "https://example.com",
+        userAgent: "TestBot/1.0",
+        fetch: mockFetch,
+        logger: silentLogger,
+      });
+
+      expect(mockLookup).toHaveBeenCalledWith("example.com", {
+        all: true,
+        verbatim: true,
+      });
+    });
+
     it("throws on DNS lookup failure", async () => {
-      mockResolveHostIps.mockRejectedValue(new Error("DNS resolution failed"));
+      mockLookup.mockRejectedValue(new Error("DNS resolution failed"));
       const mockFetch = createMockFetch(mockResponse("OK", { status: 200 }));
 
       await expect(
@@ -611,7 +627,7 @@ describe("safeFetch", () => {
     });
 
     it("throws when DNS returns no records", async () => {
-      mockResolveHostIps.mockResolvedValue([]);
+      mockLookupRecords([]);
       const mockFetch = createMockFetch(mockResponse("OK", { status: 200 }));
 
       await expect(

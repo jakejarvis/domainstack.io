@@ -1,6 +1,6 @@
+import { lookup } from "node:dns/promises";
 import { createLogger } from "@domainstack/logger";
 import * as ipaddr from "ipaddr.js";
-import { isExpectedDnsError, resolveHostIps } from "./dns";
 import { SafeFetchError } from "./errors";
 import { isPrivateIp } from "./ip";
 import type {
@@ -62,7 +62,6 @@ export async function safeFetch(
     await ensureUrlAllowed(currentUrl, {
       allowHttp,
       allowedHosts: normalizedAllowedHosts,
-      userAgent,
       logger,
     });
 
@@ -162,7 +161,6 @@ async function ensureUrlAllowed(
   opts: {
     allowHttp: boolean;
     allowedHosts: string[];
-    userAgent: string | null | undefined;
     logger: SafeFetchLogger;
   },
 ): Promise<void> {
@@ -206,22 +204,19 @@ async function ensureUrlAllowed(
     return;
   }
 
-  // DNS lookup to check resolved IPs
+  // DNS lookup to check resolved IPs.
+  // Use the system resolver so validation matches the resolver used by fetch().
   let records: Array<{ address: string }>;
   try {
-    const result = await resolveHostIps(hostname, {
-      userAgent: opts.userAgent,
+    const result = await lookup(hostname, {
       all: true,
+      verbatim: true,
     });
 
     records = Array.isArray(result) ? result : [result];
   } catch (err) {
     logger.warn({ hostname, err }, "DNS lookup failed");
-    const message = isExpectedDnsError(err)
-      ? "DNS lookup returned no records"
-      : err instanceof Error
-        ? err.message
-        : "DNS lookup failed";
+    const message = err instanceof Error ? err.message : "DNS lookup failed";
     throw new SafeFetchError("dns_error", message);
   }
 
