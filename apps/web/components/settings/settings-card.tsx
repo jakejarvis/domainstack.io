@@ -1,9 +1,4 @@
-import {
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@domainstack/ui/card";
+import { CardContent, CardDescription, CardHeader, CardTitle } from "@domainstack/ui/card";
 import { Separator } from "@domainstack/ui/separator";
 import { cn } from "@domainstack/ui/utils";
 
@@ -18,11 +13,7 @@ function SettingsCard({
   description: string | React.ReactNode;
 }) {
   return (
-    <div
-      data-slot="settings-card"
-      className={cn("space-y-4", className)}
-      {...props}
-    >
+    <div data-slot="settings-card" className={cn("space-y-4", className)} {...props}>
       <CardHeader className="gap-1 px-0 pt-0">
         <CardTitle className="text-[15px]">{title}</CardTitle>
         <CardDescription className="text-[13px]">{description}</CardDescription>
@@ -32,10 +23,7 @@ function SettingsCard({
   );
 }
 
-function SettingsCardSeparator({
-  className,
-  ...props
-}: React.ComponentProps<typeof Separator>) {
+function SettingsCardSeparator({ className, ...props }: React.ComponentProps<typeof Separator>) {
   return (
     <Separator
       data-slot="settings-card-separator"

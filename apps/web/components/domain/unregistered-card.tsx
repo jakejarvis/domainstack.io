@@ -1,25 +1,19 @@
 "use client";
 
-import { NONPUBLIC_TLDS } from "@domainstack/constants";
-import { extractTldClient } from "@domainstack/utils/domain/client";
 import { Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import {
-  RegistrarLinks,
-  RegistrarLinksSkeleton,
-} from "@/components/domain/registrar-links";
+
+import { RegistrarLinks, RegistrarLinksSkeleton } from "@/components/domain/registrar-links";
+import { NONPUBLIC_TLDS } from "@domainstack/constants";
+import { extractTldClient } from "@domainstack/utils/domain/client";
 
 interface DomainUnregisteredCardProps {
   domain: string;
 }
 
-export function DomainUnregisteredCard({
-  domain,
-}: DomainUnregisteredCardProps) {
+export function DomainUnregisteredCard({ domain }: DomainUnregisteredCardProps) {
   const lower = (domain ?? "").toLowerCase();
-  const isNonPublicTld = NONPUBLIC_TLDS.some((suffix) =>
-    lower.endsWith(suffix),
-  );
+  const isNonPublicTld = NONPUBLIC_TLDS.some((suffix) => lower.endsWith(suffix));
 
   // Extract TLD for registrar pricing - parent handles validation
   const tld = extractTldClient(domain);
@@ -30,18 +24,14 @@ export function DomainUnregisteredCard({
       <div
         aria-hidden
         className="pointer-events-none absolute -inset-x-16 -top-16 h-40 accent-glow opacity-40 blur-3xl"
-        style={
-          { "--glow-color": "var(--accent-indigo)" } as React.CSSProperties
-        }
+        style={{ "--glow-color": "var(--accent-indigo)" } as React.CSSProperties}
       />
 
       <div className="space-y-4.5">
         <div>
-          <h2 className="font-semibold text-2xl tracking-tight sm:text-3xl">
-            {domain}
-          </h2>
+          <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{domain}</h2>
 
-          <p className="mt-2 text-muted-foreground text-sm sm:text-base">
+          <p className="mt-2 text-sm text-muted-foreground sm:text-base">
             appears to be unregistered…
           </p>
         </div>

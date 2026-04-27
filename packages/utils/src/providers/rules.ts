@@ -128,16 +128,11 @@ export function evalRule(rule: Rule, ctx: DetectionContext): boolean {
   switch (rule.kind) {
     case "headerEquals": {
       const v = get(rule.name);
-      return (
-        typeof v === "string" && v.toLowerCase() === rule.value.toLowerCase()
-      );
+      return typeof v === "string" && v.toLowerCase() === rule.value.toLowerCase();
     }
     case "headerIncludes": {
       const v = get(rule.name);
-      return (
-        typeof v === "string" &&
-        v.toLowerCase().includes(rule.substr.toLowerCase())
-      );
+      return typeof v === "string" && v.toLowerCase().includes(rule.substr.toLowerCase());
     }
     case "headerPresent": {
       const key = rule.name.toLowerCase();
@@ -165,9 +160,7 @@ export function evalRule(rule: Rule, ctx: DetectionContext): boolean {
       return !!ctx.registrar && ctx.registrar === rule.value.toLowerCase();
     }
     case "registrarIncludes": {
-      return (
-        !!ctx.registrar && ctx.registrar.includes(rule.substr.toLowerCase())
-      );
+      return !!ctx.registrar && ctx.registrar.includes(rule.substr.toLowerCase());
     }
   }
 }

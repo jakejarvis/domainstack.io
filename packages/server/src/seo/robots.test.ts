@@ -1,5 +1,6 @@
 /* @vitest-environment node */
 import { describe, expect, it } from "vitest";
+
 import { parseRobotsTxt } from "./robots";
 
 describe("robots.txt parsing", () => {
@@ -92,9 +93,7 @@ describe("robots.txt parsing", () => {
 
     const [, google] = robots.groups;
     expect(google.userAgents).toContain("Googlebot");
-    expect(google.rules.find((r) => r.type === "contentSignal")?.value).toBe(
-      "no-ai-training",
-    );
+    expect(google.rules.find((r) => r.type === "contentSignal")?.value).toBe("no-ai-training");
   });
 
   it("parses keys case-insensitively and tolerates spacing around colon", () => {
@@ -103,18 +102,12 @@ describe("robots.txt parsing", () => {
     expect(robots.groups.length).toBe(1);
     const [g] = robots.groups;
     expect(g.userAgents).toEqual(["*"]);
-    expect(
-      g.rules.some((r) => r.type === "disallow" && r.value === "/Admin"),
-    ).toBe(true);
-    expect(g.rules.some((r) => r.type === "allow" && r.value === "/")).toBe(
-      true,
-    );
+    expect(g.rules.some((r) => r.type === "disallow" && r.value === "/Admin")).toBe(true);
+    expect(g.rules.some((r) => r.type === "allow" && r.value === "/")).toBe(true);
   });
 
   it("ignores unknown directives", () => {
-    const text = ["User-agent:*", "Foo: bar", "Disallow: /x", "Bar: baz"].join(
-      "\n",
-    );
+    const text = ["User-agent:*", "Foo: bar", "Disallow: /x", "Bar: baz"].join("\n");
     const robots = parseRobotsTxt(text);
     const [g] = robots.groups;
     expect(g.rules.length).toBe(1);
@@ -152,13 +145,9 @@ describe("robots.txt parsing", () => {
   });
 
   it("treats blank line between explicit UA groups as separator (still two groups)", () => {
-    const text = [
-      "User-agent: a",
-      "Disallow: /one",
-      "",
-      "User-agent: b",
-      "Disallow: /two",
-    ].join("\n");
+    const text = ["User-agent: a", "Disallow: /one", "", "User-agent: b", "Disallow: /two"].join(
+      "\n",
+    );
     const robots = parseRobotsTxt(text);
     expect(robots.groups.length).toBe(2);
     expect(robots.groups[0].userAgents).toEqual(["a"]);
@@ -188,17 +177,11 @@ describe("robots.txt parsing", () => {
   });
 
   it("preserves wildcard and anchor characters in values", () => {
-    const text = ["User-agent:*", "Disallow: /*.php$", "Allow: /search/*"].join(
-      "\n",
-    );
+    const text = ["User-agent:*", "Disallow: /*.php$", "Allow: /search/*"].join("\n");
     const robots = parseRobotsTxt(text);
     const [g] = robots.groups;
-    expect(
-      g.rules.some((r) => r.type === "disallow" && r.value === "/*.php$"),
-    ).toBe(true);
-    expect(
-      g.rules.some((r) => r.type === "allow" && r.value === "/search/*"),
-    ).toBe(true);
+    expect(g.rules.some((r) => r.type === "disallow" && r.value === "/*.php$")).toBe(true);
+    expect(g.rules.some((r) => r.type === "allow" && r.value === "/search/*")).toBe(true);
   });
 
   it("handles unicode in values and strips invisibles in lines", () => {
@@ -209,28 +192,15 @@ describe("robots.txt parsing", () => {
     ].join("\n");
     const robots = parseRobotsTxt(text);
     const [g] = robots.groups;
-    expect(
-      g.rules.some(
-        (r) => r.type === "allow" && r.value === "/caf3/\u8DEF\u5F84",
-      ),
-    ).toBe(false); // sanity check for encoding mistake
-    expect(
-      g.rules.some(
-        (r) => r.type === "allow" && r.value === "/caf\u00E9/\u8DEF\u5F84",
-      ),
-    ).toBe(true);
-    expect(
-      g.rules.some((r) => r.type === "disallow" && r.value === "/private"),
-    ).toBe(true);
+    expect(g.rules.some((r) => r.type === "allow" && r.value === "/caf3/\u8DEF\u5F84")).toBe(false); // sanity check for encoding mistake
+    expect(g.rules.some((r) => r.type === "allow" && r.value === "/caf\u00E9/\u8DEF\u5F84")).toBe(
+      true,
+    );
+    expect(g.rules.some((r) => r.type === "disallow" && r.value === "/private")).toBe(true);
   });
 
   it("ignores rules before any user-agent group", () => {
-    const text = [
-      "Disallow: /x",
-      "Allow: /",
-      "User-agent:*",
-      "Disallow: /y",
-    ].join("\n");
+    const text = ["Disallow: /x", "Allow: /", "User-agent:*", "Disallow: /y"].join("\n");
     const robots = parseRobotsTxt(text);
     expect(robots.groups.length).toBe(1);
     const [g] = robots.groups;
@@ -246,12 +216,8 @@ describe("robots.txt parsing", () => {
     expect(robots.groups.length).toBe(1);
     const [g] = robots.groups;
     expect(g.userAgents).toEqual(["*"]);
-    expect(
-      g.rules.some((r) => r.type === "allow" && r.value === "/public"),
-    ).toBe(true);
-    expect(
-      g.rules.some((r) => r.type === "disallow" && r.value === "/private"),
-    ).toBe(true);
+    expect(g.rules.some((r) => r.type === "allow" && r.value === "/public")).toBe(true);
+    expect(g.rules.some((r) => r.type === "disallow" && r.value === "/private")).toBe(true);
   });
 
   it("combines duplicate user-agent groups (e.g., multiple all-* groups)", () => {
@@ -276,25 +242,13 @@ describe("robots.txt parsing", () => {
     const [g] = robots.groups;
     expect(g.userAgents).toEqual(["*"]);
     // Should contain all rules from the three groups
-    expect(
-      g.rules.some((r) => r.type === "disallow" && r.value === "/wp-admin/"),
-    ).toBe(true);
-    expect(
-      g.rules.some(
-        (r) => r.type === "allow" && r.value === "/wp-admin/admin-ajax.php",
-      ),
-    ).toBe(true);
-    expect(
-      g.rules.some((r) => r.type === "disallow" && r.value === "/search"),
-    ).toBe(true);
-    expect(
-      g.rules.some((r) => r.type === "disallow" && r.value === "/?s="),
-    ).toBe(true);
-    expect(
-      g.rules.some(
-        (r) => r.type === "disallow" && r.value === "/plugins/search/",
-      ),
-    ).toBe(true);
+    expect(g.rules.some((r) => r.type === "disallow" && r.value === "/wp-admin/")).toBe(true);
+    expect(g.rules.some((r) => r.type === "allow" && r.value === "/wp-admin/admin-ajax.php")).toBe(
+      true,
+    );
+    expect(g.rules.some((r) => r.type === "disallow" && r.value === "/search")).toBe(true);
+    expect(g.rules.some((r) => r.type === "disallow" && r.value === "/?s=")).toBe(true);
+    expect(g.rules.some((r) => r.type === "disallow" && r.value === "/plugins/search/")).toBe(true);
   });
 
   it("deduplicates identical rules within a merged group while preserving order", () => {
@@ -348,32 +302,19 @@ describe("robots.txt parsing", () => {
     const [any] = robots.groups;
     expect(any.userAgents).toEqual(["*"]);
     // empty Disallow captured as a rule with empty value
-    expect(any.rules.some((r) => r.type === "disallow" && r.value === "")).toBe(
-      true,
-    );
+    expect(any.rules.some((r) => r.type === "disallow" && r.value === "")).toBe(true);
     // a few representative rules parsed
-    expect(
-      any.rules.some((r) => r.type === "allow" && r.value === "/api/og/*"),
-    ).toBe(true);
-    expect(
-      any.rules.some((r) => r.type === "disallow" && r.value === "/api/"),
-    ).toBe(true);
+    expect(any.rules.some((r) => r.type === "allow" && r.value === "/api/og/*")).toBe(true);
+    expect(any.rules.some((r) => r.type === "disallow" && r.value === "/api/")).toBe(true);
   });
 
   it("captures empty Disallow explicitly and non-empty alongside it", () => {
-    const text = [
-      "User-agent: *",
-      "Disallow:",
-      "Disallow: /admin",
-      "Allow: /",
-    ].join("\n");
+    const text = ["User-agent: *", "Disallow:", "Disallow: /admin", "Allow: /"].join("\n");
     const robots = parseRobotsTxt(text);
     const [g] = robots.groups;
     const empty = g.rules.find((r) => r.type === "disallow" && r.value === "");
     expect(empty).toBeTruthy();
-    expect(
-      g.rules.some((r) => r.type === "disallow" && r.value === "/admin"),
-    ).toBe(true);
+    expect(g.rules.some((r) => r.type === "disallow" && r.value === "/admin")).toBe(true);
   });
 
   it("tolerates BOM at the start of file before first directive", () => {

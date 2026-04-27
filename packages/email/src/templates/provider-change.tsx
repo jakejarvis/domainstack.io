@@ -28,12 +28,7 @@ export type ProviderChangeEmailProps = {
   baseUrl: string;
 };
 
-function ProviderChangeEmail({
-  userName,
-  domainName,
-  changes,
-  baseUrl,
-}: ProviderChangeEmailProps) {
+function ProviderChangeEmail({ userName, domainName, changes, baseUrl }: ProviderChangeEmailProps) {
   const previewText = `Provider changes detected for ${domainName}`;
 
   const changeCount =
@@ -48,8 +43,8 @@ function ProviderChangeEmail({
       <EmailText>Hi {userName},</EmailText>
 
       <EmailText>
-        We detected {changeCount === 1 ? "a change" : `${changeCount} changes`}{" "}
-        to the service providers for <strong>{domainName}</strong>.
+        We detected {changeCount === 1 ? "a change" : `${changeCount} changes`} to the service
+        providers for <strong>{domainName}</strong>.
       </EmailText>
 
       {changes.dnsProviderChanged && (
@@ -57,8 +52,7 @@ function ProviderChangeEmail({
           <EmailSubheading>DNS Provider Changed</EmailSubheading>
           <EmailBox variant="info">
             <EmailBoxText variant="info">
-              <strong>Previous:</strong>{" "}
-              {changes.previousDnsProvider || "Unknown"}
+              <strong>Previous:</strong> {changes.previousDnsProvider || "Unknown"}
               <br />
               <strong>New:</strong> {changes.newDnsProvider || "Unknown"}
             </EmailBoxText>
@@ -71,8 +65,7 @@ function ProviderChangeEmail({
           <EmailSubheading>Hosting Provider Changed</EmailSubheading>
           <EmailBox variant="info">
             <EmailBoxText variant="info">
-              <strong>Previous:</strong>{" "}
-              {changes.previousHostingProvider || "Unknown"}
+              <strong>Previous:</strong> {changes.previousHostingProvider || "Unknown"}
               <br />
               <strong>New:</strong> {changes.newHostingProvider || "Unknown"}
             </EmailBoxText>
@@ -85,8 +78,7 @@ function ProviderChangeEmail({
           <EmailSubheading>Email Provider Changed</EmailSubheading>
           <EmailBox variant="info">
             <EmailBoxText variant="info">
-              <strong>Previous:</strong>{" "}
-              {changes.previousEmailProvider || "Unknown"}
+              <strong>Previous:</strong> {changes.previousEmailProvider || "Unknown"}
               <br />
               <strong>New:</strong> {changes.newEmailProvider || "Unknown"}
             </EmailBoxText>
@@ -96,23 +88,19 @@ function ProviderChangeEmail({
 
       <EmailBox variant="warning">
         <EmailBoxText variant="warning">
-          <strong>Verify this change:</strong> Make sure this change was
-          intentional. If you didn&apos;t migrate to a new provider, your DNS
-          records may have been tampered with.
+          <strong>Verify this change:</strong> Make sure this change was intentional. If you
+          didn&apos;t migrate to a new provider, your DNS records may have been tampered with.
         </EmailBoxText>
       </EmailBox>
 
-      <EmailButton href={`${baseUrl}/${domainName}`}>
-        View Domain Details
-      </EmailButton>
+      <EmailButton href={`${baseUrl}/${domainName}`}>View Domain Details</EmailButton>
 
       <EmailHr />
 
       <EmailFooter>
         You received this email because you&apos;re tracking {domainName} on{" "}
-        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. You
-        can manage your notification settings in your{" "}
-        <EmailLink href={`${baseUrl}/settings`}>dashboard</EmailLink>.
+        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. You can manage your
+        notification settings in your <EmailLink href={`${baseUrl}/settings`}>dashboard</EmailLink>.
       </EmailFooter>
     </EmailLayout>
   );

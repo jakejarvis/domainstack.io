@@ -72,10 +72,7 @@ function createPricingProvider(
   const revalidate = config.revalidate ?? 604_800; // 7 days
   const enabled = config.enabled ?? true;
 
-  const providerFetch = async (
-    url: string,
-    options: RequestInit = {},
-  ): Promise<Response> => {
+  const providerFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
     const res = await fetch(url, {
       ...options,
       next: { revalidate, tags: ["pricing", `pricing:${name}`] },
@@ -104,14 +101,11 @@ const porkbunProvider = createPricingProvider("porkbun", {
   async fetchPricing(fetchFn) {
     // Does not require authentication!
     // https://porkbun.com/api/json/v3/documentation#Domain%20Pricing
-    const res = await fetchFn(
-      "https://api.porkbun.com/api/json/v3/pricing/get",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: "{}",
-      },
-    );
+    const res = await fetchFn("https://api.porkbun.com/api/json/v3/pricing/get", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    });
 
     const data = await res.json();
     // Porkbun returns: { status: "SUCCESS", pricing: { "com": { ... }, ... } }
@@ -132,15 +126,9 @@ const cloudflareProvider = createPricingProvider("cloudflare", {
     // Transform: { "com": { "registration": 10.44, ... }, ... } → normalized shape
     const pricing: RegistrarPricingResponse = {};
     for (const [tld, prices] of Object.entries(data)) {
-      if (
-        typeof prices === "object" &&
-        prices !== null &&
-        "registration" in prices
-      ) {
+      if (typeof prices === "object" && prices !== null && "registration" in prices) {
         pricing[tld] = {
-          registration: String(
-            (prices as { registration: string | number }).registration,
-          ),
+          registration: String((prices as { registration: string | number }).registration),
         };
       }
     }
@@ -158,9 +146,7 @@ const dynadotProvider = createPricingProvider(
       const apiKey = dynadotApiKey as string;
 
       // https://www.dynadot.com/domain/api-document#domain_get_tld_price
-      const url = new URL(
-        "https://api.dynadot.com/restful/v1/domains/get_tld_price",
-      );
+      const url = new URL("https://api.dynadot.com/restful/v1/domains/get_tld_price");
       url.searchParams.set("currency", "USD");
 
       const res = await fetchFn(url.toString(), {
@@ -181,9 +167,7 @@ const dynadotProvider = createPricingProvider(
           },
           "dynadot api error",
         );
-        throw new Error(
-          `Dynadot API error: ${data?.message ?? "Unknown error"}`,
-        );
+        throw new Error(`Dynadot API error: ${data?.message ?? "Unknown error"}`);
       }
 
       // Dynadot returns: { code: 200, data: { tldPriceList: [...] } }
@@ -203,8 +187,4 @@ const dynadotProvider = createPricingProvider(
   { enabled: !!dynadotApiKey },
 );
 
-export const providers: PricingProvider[] = [
-  porkbunProvider,
-  cloudflareProvider,
-  dynadotProvider,
-];
+export const providers: PricingProvider[] = [porkbunProvider, cloudflareProvider, dynadotProvider];

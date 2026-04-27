@@ -9,14 +9,18 @@ export function HomeSearchSuggestionsSkeleton({
   className?: string;
   count?: number;
 }) {
+  const skeletonItems = Array.from({ length: count }, (_, itemNumber) => ({
+    id: `home-search-suggestion-skeleton-${itemNumber}`,
+    width: 80 + ((itemNumber * 20) % 60),
+  }));
+
   return (
     <div className={cn("relative", className)}>
       <div className="overflow-hidden py-0.5">
         <div className="flex gap-2 pl-0.5">
-          {Array.from({ length: count }).map((_, i) => (
+          {skeletonItems.map((item) => (
             <div
-              // biome-ignore lint/suspicious/noArrayIndexKey: fine for skeletons
-              key={i}
+              key={item.id}
               className="flex h-8 shrink-0 animate-pulse items-center gap-2 rounded-md bg-muted/15 px-2.5 ring-1 ring-border/60"
             >
               {/* Favicon placeholder */}
@@ -25,7 +29,7 @@ export function HomeSearchSuggestionsSkeleton({
               <Skeleton
                 className="h-3.5"
                 style={{
-                  width: `${80 + ((i * 20) % 60)}px`,
+                  width: `${item.width}px`,
                 }}
               />
             </div>

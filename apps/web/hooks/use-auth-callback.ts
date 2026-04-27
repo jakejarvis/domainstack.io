@@ -1,11 +1,12 @@
 "use client";
 
-import { analytics } from "@domainstack/analytics/client";
-import { getAuthErrorMessage, isAccountLinkingError } from "@domainstack/auth";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
+
 import { useRouter } from "@/hooks/use-router";
+import { analytics } from "@domainstack/analytics/client";
+import { getAuthErrorMessage, isAccountLinkingError } from "@domainstack/auth";
 
 /**
  * Hook to handle auth callback error query parameters.
@@ -60,8 +61,7 @@ export function useAuthCallback() {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("error");
     const newSearch = params.toString();
-    const newUrl =
-      window.location.pathname + (newSearch ? `?${newSearch}` : "");
+    const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
     router.replace(newUrl, { scroll: false });
   }, [router, searchParams]);
 }

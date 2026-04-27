@@ -1,3 +1,7 @@
+import { ProviderTooltipContent } from "@/components/dashboard/provider-tooltip-content";
+import { ProviderLogo } from "@/components/icons/provider-logo";
+import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
+import { useTruncation } from "@/hooks/use-truncation";
 import type { ProviderCategory } from "@domainstack/constants";
 import type { ProviderInfo } from "@domainstack/types";
 import {
@@ -5,10 +9,6 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
-import { ProviderTooltipContent } from "@/components/dashboard/provider-tooltip-content";
-import { ProviderLogo } from "@/components/icons/provider-logo";
-import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
-import { useTruncation } from "@/hooks/use-truncation";
 
 type ProviderCellProps = {
   provider: ProviderInfo;
@@ -16,11 +16,7 @@ type ProviderCellProps = {
   providerType: ProviderCategory;
 };
 
-export function ProviderCell({
-  provider,
-  trackedDomainId,
-  providerType,
-}: ProviderCellProps) {
+export function ProviderCell({ provider, trackedDomainId, providerType }: ProviderCellProps) {
   const { valueRef, isTruncated } = useTruncation();
 
   const tooltipData = useProviderTooltipData({
@@ -30,7 +26,7 @@ export function ProviderCell({
   });
 
   if (!provider.name) {
-    return <span className="text-muted-foreground text-xs">—</span>;
+    return <span className="text-xs text-muted-foreground">—</span>;
   }
 
   const providerContent = (
@@ -50,14 +46,8 @@ export function ProviderCell({
 
   if (tooltipData.shouldShowTooltip) {
     return (
-      <ResponsiveTooltip
-        open={tooltipData.isOpen}
-        onOpenChange={tooltipData.setIsOpen}
-      >
-        <ResponsiveTooltipTrigger
-          nativeButton={false}
-          render={providerContent}
-        />
+      <ResponsiveTooltip open={tooltipData.isOpen} onOpenChange={tooltipData.setIsOpen}>
+        <ResponsiveTooltipTrigger nativeButton={false} render={providerContent} />
         <ResponsiveTooltipContent>
           <ProviderTooltipContent
             providerId={tooltipData.providerId}
@@ -80,10 +70,7 @@ export function ProviderCell({
   if (isTruncated) {
     return (
       <ResponsiveTooltip>
-        <ResponsiveTooltipTrigger
-          nativeButton={false}
-          render={providerContent}
-        />
+        <ResponsiveTooltipTrigger nativeButton={false} render={providerContent} />
         <ResponsiveTooltipContent>{provider.name}</ResponsiveTooltipContent>
       </ResponsiveTooltip>
     );

@@ -1,4 +1,3 @@
-import { cn } from "@domainstack/ui/utils";
 import {
   IconActivity,
   IconAlertOctagon,
@@ -8,8 +7,10 @@ import {
 } from "@tabler/icons-react";
 import { differenceInDays, formatDistanceToNowStrict } from "date-fns";
 import { useMemo } from "react";
+
 import { BadgeWithTooltip } from "@/components/dashboard/badge-with-tooltip";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
+import { cn } from "@domainstack/ui/utils";
 
 type HealthStatus = "healthy" | "warning" | "critical" | "unknown";
 
@@ -19,18 +20,12 @@ type DomainHealthBadgeProps = {
   className?: string;
 };
 
-export function DomainHealthBadge({
-  expirationDate,
-  verified,
-  className,
-}: DomainHealthBadgeProps) {
+export function DomainHealthBadge({ expirationDate, verified, className }: DomainHealthBadgeProps) {
   // Use shared hydrated time to avoid N separate useEffect calls for N badges
   const now = useHydratedNow();
 
   // During SSR (when now is null), show "Unknown" status without calculating
-  const status = now
-    ? getHealthStatus(expirationDate, verified, now)
-    : "unknown";
+  const status = now ? getHealthStatus(expirationDate, verified, now) : "unknown";
   const { label, colorClass, icon } = getStatusConfig(status);
 
   const tooltipText = useMemo(() => {
@@ -52,11 +47,7 @@ export function DomainHealthBadge({
   );
 }
 
-function getHealthStatus(
-  expirationDate: Date | null,
-  verified: boolean,
-  now: Date,
-): HealthStatus {
+function getHealthStatus(expirationDate: Date | null, verified: boolean, now: Date): HealthStatus {
   if (!verified || !expirationDate) {
     return "unknown";
   }
@@ -81,15 +72,13 @@ function getStatusConfig(status: HealthStatus): {
     case "healthy":
       return {
         label: "Healthy",
-        colorClass:
-          "border-success-border bg-success/20 text-success-foreground",
+        colorClass: "border-success-border bg-success/20 text-success-foreground",
         icon: IconActivity,
       };
     case "warning":
       return {
         label: "Needs Attention",
-        colorClass:
-          "border-warning-border bg-warning/20 text-warning-foreground",
+        colorClass: "border-warning-border bg-warning/20 text-warning-foreground",
         icon: IconAlertTriangle,
       };
     case "critical":

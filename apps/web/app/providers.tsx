@@ -1,12 +1,13 @@
 "use client";
 
 import { AppProgressProvider as ProgressProvider } from "@bprogress/next";
-import { TooltipProvider } from "@domainstack/ui/tooltip";
 import { MotionConfig } from "motion/react";
 import { ThemeProvider } from "next-themes";
+
 import { PostHogIdentityProvider } from "@/components/analytics/posthog-identity";
 import { VibrationProvider } from "@/components/providers/vibration-provider";
 import { TRPCProvider } from "@/trpc/client";
+import { TooltipProvider } from "@domainstack/ui/tooltip";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -20,11 +21,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           disableTransitionOnChange
         >
           <TooltipProvider>
-            <ProgressProvider
-              options={{ showSpinner: false }}
-              shallowRouting
-              disableStyle
-            >
+            <ProgressProvider options={{ showSpinner: false }} shallowRouting disableStyle>
               <MotionConfig
                 reducedMotion="user"
                 transition={{

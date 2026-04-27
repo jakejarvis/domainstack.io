@@ -4,10 +4,8 @@
  * These types are used across client and server code for tracked domains.
  */
 
-import type {
-  VerificationMethod,
-  VerificationStatus,
-} from "@domainstack/constants";
+import type { VerificationMethod, VerificationStatus } from "@domainstack/constants";
+
 import type { ProviderInfo } from "./provider";
 
 /**

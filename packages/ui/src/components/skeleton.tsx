@@ -1,12 +1,9 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
+
 import { cn } from "../utils";
 
-function Skeleton({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"div">) {
+function Skeleton({ className, render, ...props }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,

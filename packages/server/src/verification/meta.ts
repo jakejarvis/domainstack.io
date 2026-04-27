@@ -4,6 +4,7 @@
 
 import { META_TAG_NAME } from "@domainstack/constants";
 import { safeFetch } from "@domainstack/safe-fetch";
+
 import { extractMetaTagValues } from "../seo";
 import type { VerificationHttpOptions, VerificationResult } from "./types";
 

@@ -1,13 +1,5 @@
 /* @vitest-environment node */
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Initialize PGlite before importing anything that uses the db
 const { makePGliteDb, closePGliteDb } = await import("@domainstack/db/testing");
@@ -15,12 +7,12 @@ const { db } = await makePGliteDb();
 
 // Mock next/headers to avoid errors outside request context
 vi.mock("next/headers", () => ({
-  headers: vi.fn().mockResolvedValue(new Map()),
+  headers: vi.fn<() => Promise<Map<string, string>>>().mockResolvedValue(new Map()),
 }));
 
 // Mock next/server after() to be a no-op
 vi.mock("next/server", () => ({
-  after: vi.fn((fn) => fn()),
+  after: vi.fn<(fn: () => unknown) => unknown>((fn) => fn()),
 }));
 
 // Now import modules that depend on the db
@@ -99,25 +91,23 @@ describe("notifications router", () => {
     it("rejects unauthenticated requests to list", async () => {
       const caller = createUnauthenticatedCaller();
 
-      await expect(
-        caller.notifications.list({ filter: "all" }),
-      ).rejects.toThrow("must be logged in");
+      await expect(caller.notifications.list({ filter: "all" })).rejects.toThrow(
+        "must be logged in",
+      );
     });
 
     it("rejects unauthenticated requests to unreadCount", async () => {
       const caller = createUnauthenticatedCaller();
 
-      await expect(caller.notifications.unreadCount()).rejects.toThrow(
-        "must be logged in",
-      );
+      await expect(caller.notifications.unreadCount()).rejects.toThrow("must be logged in");
     });
 
     it("rejects unauthenticated requests to markRead", async () => {
       const caller = createUnauthenticatedCaller();
 
-      await expect(
-        caller.notifications.markRead({ id: TEST_NOTIFICATION_ID }),
-      ).rejects.toThrow("must be logged in");
+      await expect(caller.notifications.markRead({ id: TEST_NOTIFICATION_ID })).rejects.toThrow(
+        "must be logged in",
+      );
     });
   });
 
@@ -389,9 +379,9 @@ describe("notifications router", () => {
         sentAt: new Date(),
       });
 
-      await expect(
-        caller.notifications.markRead({ id: TEST_NOTIFICATION_ID }),
-      ).rejects.toThrow("not found");
+      await expect(caller.notifications.markRead({ id: TEST_NOTIFICATION_ID })).rejects.toThrow(
+        "not found",
+      );
     });
   });
 

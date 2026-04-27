@@ -1,6 +1,5 @@
 "use client";
 
-import { Spinner } from "@domainstack/ui/spinner";
 import {
   IconAlertTriangle,
   IconCircleCheck,
@@ -8,7 +7,9 @@ import {
   IconInfoCircle,
 } from "@tabler/icons-react";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
+
 import { useTheme } from "@/hooks/use-theme";
+import { Spinner } from "@domainstack/ui/spinner";
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme } = useTheme();

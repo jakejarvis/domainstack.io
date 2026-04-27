@@ -1,5 +1,6 @@
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { IconX } from "@tabler/icons-react";
+
 import { cn } from "../utils";
 import { Button } from "./button";
 import { Icon, type IconProps } from "./icon";
@@ -31,17 +32,14 @@ function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
   );
 }
 
-function DialogOverlay({
-  className,
-  ...props
-}: DialogPrimitive.Backdrop.Props) {
+function DialogOverlay({ className, ...props }: DialogPrimitive.Backdrop.Props) {
   return (
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
         "fixed inset-0 isolate bg-black/10 backdrop-blur-xs dark:bg-black/50",
-        "data-open:fade-in-0 data-open:animate-in data-open:duration-200",
-        "data-closed:fade-out-0 data-closed:animate-out data-closed:duration-200",
+        "data-open:animate-in data-open:duration-200 data-open:fade-in-0",
+        "data-closed:animate-out data-closed:duration-200 data-closed:fade-out-0",
         // iOS 26+: ensure backdrops cover the visual viewport
         "supports-[-webkit-touch-callout:none]:absolute",
         className,
@@ -69,8 +67,8 @@ function DialogContent({
             "group/dialog-content",
             "relative flex max-h-full min-h-0 w-[min(40rem,calc(100vw-2rem))] max-w-full flex-col overflow-hidden sm:max-w-lg",
             "gap-4 rounded-lg border bg-background p-5 text-foreground shadow-lg outline-hidden",
-            "data-open:fade-in-0 data-open:zoom-in-95 data-open:animate-in data-open:duration-200",
-            "data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:animate-out data-closed:duration-200",
+            "data-open:animate-in data-open:duration-200 data-open:fade-in-0 data-open:zoom-in-95",
+            "data-closed:animate-out data-closed:duration-200 data-closed:fade-out-0 data-closed:zoom-out-95",
             // Nested dialog styling: Dim the parent popup
             "data-[nested-dialog-open]:after:absolute data-[nested-dialog-open]:after:inset-0 data-[nested-dialog-open]:after:z-50 data-[nested-dialog-open]:after:rounded-[inherit] data-[nested-dialog-open]:after:bg-black/10 data-[nested-dialog-open]:after:content-['']",
             // Prevent interaction with parent dialog when nested dialog is open
@@ -81,19 +79,14 @@ function DialogContent({
           {...props}
         >
           {children}
-          {showCloseButton && (
-            <DialogClose className="absolute top-2 right-2" />
-          )}
+          {showCloseButton && <DialogClose className="absolute top-2 right-2" />}
         </DialogPrimitive.Popup>
       </DialogPrimitive.Viewport>
     </DialogPortal>
   );
 }
 
-function DialogHeader({
-  className,
-  ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+function DialogHeader({ className, ...props }: React.ComponentPropsWithoutRef<"div">) {
   return (
     <div
       data-slot="dialog-header"
@@ -106,16 +99,13 @@ function DialogHeader({
   );
 }
 
-function DialogFooter({
-  className,
-  ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+function DialogFooter({ className, ...props }: React.ComponentPropsWithoutRef<"div">) {
   return (
     <div
       data-slot="dialog-footer"
       className={cn(
         "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
-        "-mx-5 -mb-5 rounded-b-lg border-border border-t bg-muted/30 p-3",
+        "-mx-5 -mb-5 rounded-b-lg border-t border-border bg-muted/30 p-3",
         className,
       )}
       {...props}
@@ -123,12 +113,7 @@ function DialogFooter({
   );
 }
 
-function DialogMedia({
-  className,
-  size = "default",
-  variant = "default",
-  ...props
-}: IconProps) {
+function DialogMedia({ className, size = "default", variant = "default", ...props }: IconProps) {
   return (
     <Icon
       data-slot="dialog-media"
@@ -145,7 +130,7 @@ function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
     <DialogPrimitive.Title
       data-slot="dialog-title"
       className={cn(
-        "font-semibold text-base sm:group-has-data-[slot=dialog-media]/dialog-content:col-start-2",
+        "text-base font-semibold sm:group-has-data-[slot=dialog-media]/dialog-content:col-start-2",
         className,
       )}
       {...props}
@@ -153,15 +138,12 @@ function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
   );
 }
 
-function DialogDescription({
-  className,
-  ...props
-}: DialogPrimitive.Description.Props) {
+function DialogDescription({ className, ...props }: DialogPrimitive.Description.Props) {
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
       className={cn(
-        "text-balance text-[13px] text-muted-foreground sm:group-has-data-[slot=dialog-media]/dialog-content:col-start-2 md:text-pretty *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
+        "text-[13px] text-balance text-muted-foreground sm:group-has-data-[slot=dialog-media]/dialog-content:col-start-2 md:text-pretty *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
         className,
       )}
       {...props}

@@ -60,9 +60,7 @@ export async function verifyDomainOwnershipByMethod(
 ): Promise<VerificationResult> {
   "use step";
 
-  const { verifyDomainByMethod } = await import(
-    "@domainstack/server/verification"
-  );
+  const { verifyDomainByMethod } = await import("@domainstack/server/verification");
   return await verifyDomainByMethod(domain, token, method, {
     userAgent: process.env.EXTERNAL_USER_AGENT,
   });

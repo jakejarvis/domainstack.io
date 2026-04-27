@@ -1,22 +1,15 @@
 "use client";
 
-import { useSession } from "@domainstack/auth/client";
-import { Button } from "@domainstack/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@domainstack/ui/tooltip";
-import {
-  IconAlertCircle,
-  IconBellPlus,
-  IconRosetteDiscountCheck,
-} from "@tabler/icons-react";
+import { IconAlertCircle, IconBellPlus, IconRosetteDiscountCheck } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useCallback } from "react";
+
 import { useRouter } from "@/hooks/use-router";
 import { useTRPC } from "@/lib/trpc/client";
+import { useSession } from "@domainstack/auth/client";
+import { Button } from "@domainstack/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 
 type TrackDomainButtonProps = {
   domain: string;
@@ -24,10 +17,7 @@ type TrackDomainButtonProps = {
   enabled?: boolean;
 };
 
-export function TrackDomainButton({
-  domain,
-  enabled = true,
-}: TrackDomainButtonProps) {
+export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonProps) {
   const { data: session, isPending: isSessionPending } = useSession();
   const router = useRouter();
   const trpc = useTRPC();
@@ -65,10 +55,9 @@ export function TrackDomainButton({
         });
       } else {
         // Add new domain flow
-        router.push(
-          `/dashboard/add-domain?domain=${encodeURIComponent(domain)}`,
-          { scroll: false },
-        );
+        router.push(`/dashboard/add-domain?domain=${encodeURIComponent(domain)}`, {
+          scroll: false,
+        });
       }
     }
   }, [session?.user, isPendingVerification, trackedDomain, domain, router]);
@@ -136,11 +125,7 @@ export function TrackDomainButton({
       <TooltipTrigger
         render={
           session?.user ? (
-            <Button
-              variant="outline"
-              onClick={handleButtonClick}
-              aria-label={ariaLabel}
-            >
+            <Button variant="outline" onClick={handleButtonClick} aria-label={ariaLabel}>
               {buttonContent}
             </Button>
           ) : (

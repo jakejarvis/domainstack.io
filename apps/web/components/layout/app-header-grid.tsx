@@ -1,11 +1,12 @@
 "use client";
 
-import { cn } from "@domainstack/ui/utils";
 import { useAtomValue } from "jotai";
 import { motion } from "motion/react";
+
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useScrollDirection } from "@/hooks/use-scroll-direction";
 import { isSearchFocusedAtom } from "@/lib/atoms/search-atoms";
+import { cn } from "@domainstack/ui/utils";
 
 export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
   const isSearchFocused = useAtomValue(isSearchFocusedAtom);
@@ -21,7 +22,7 @@ export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
     <>
       <motion.header
         className={cn(
-          "top-0 right-0 left-0 z-100 grid h-[var(--header-height)] grid-cols-[1fr_minmax(0,var(--container-2xl))_1fr] items-center gap-4 border-black/15 border-b bg-background/80 py-3 pr-4 pl-6 backdrop-blur dark:border-white/10",
+          "top-0 right-0 left-0 z-100 grid h-[var(--header-height)] grid-cols-[1fr_minmax(0,var(--container-2xl))_1fr] items-center gap-4 border-b border-black/15 bg-background/80 py-3 pr-4 pl-6 backdrop-blur dark:border-white/10",
           "md:sticky md:right-auto md:left-auto",
           // Mobile transform logic:
           // - Before threshold: behave like a normal element (scrolls away with the page)
@@ -35,11 +36,7 @@ export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
               : "absolute translate-y-0"), // Natural scroll (no scroll-linked transforms)
         )}
         animate={{
-          gridTemplateColumns: isMobile
-            ? isSearchFocused
-              ? "auto 1fr 0px"
-              : "auto 1fr auto"
-            : "",
+          gridTemplateColumns: isMobile ? (isSearchFocused ? "auto 1fr 0px" : "auto 1fr auto") : "",
         }}
         transition={{
           gridTemplateColumns: { type: "spring", stiffness: 400, damping: 40 },

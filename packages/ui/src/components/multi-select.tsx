@@ -2,6 +2,7 @@ import { Combobox as ComboboxPrimitive } from "@base-ui/react/combobox";
 import type { TablerIcon } from "@tabler/icons-react";
 import { IconChevronDown, IconSearch } from "@tabler/icons-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+
 import { cn } from "../utils";
 import { Button } from "./button";
 import { Checkbox } from "./checkbox";
@@ -83,10 +84,7 @@ export function MultiSelect<T extends string>({
   });
 
   const flatOptions = useMemo(
-    () =>
-      sections
-        ? sections.flatMap((section) => section.options)
-        : (options ?? []),
+    () => (sections ? sections.flatMap((section) => section.options) : (options ?? [])),
     [options, sections],
   );
 
@@ -95,9 +93,9 @@ export function MultiSelect<T extends string>({
     [flatOptions],
   );
 
-  const selectedItems = selected
-    .map((v) => optionByValue.get(v))
-    .filter(Boolean) as Array<MultiSelectOption<T>>;
+  const selectedItems = selected.map((v) => optionByValue.get(v)).filter(Boolean) as Array<
+    MultiSelectOption<T>
+  >;
 
   // Default option renderer
   const defaultRenderOption = (option: MultiSelectOption<T>) => option.label;
@@ -114,11 +112,11 @@ export function MultiSelect<T extends string>({
   };
 
   const itemClassName = cn(
-    "relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden",
+    "relative flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none",
     "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
     // `data-highlighted` matches the highlighted/active item state.
     "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
-    "[&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0",
+    "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground",
   );
 
   return (
@@ -138,8 +136,7 @@ export function MultiSelect<T extends string>({
         if (
           !nextOpen &&
           // Base UI uses reason strings like "item-press" in its change event details.
-          (eventDetails as { reason?: string } | undefined)?.reason ===
-            "item-press"
+          (eventDetails as { reason?: string } | undefined)?.reason === "item-press"
         ) {
           return;
         }
@@ -182,7 +179,7 @@ export function MultiSelect<T extends string>({
             <Icon className="text-muted-foreground" />
             {label}
             {selected.length > 0 && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-md bg-foreground/10 px-1.5 font-semibold text-xs tabular-nums dark:bg-foreground/20">
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-md bg-foreground/10 px-1.5 text-xs font-semibold tabular-nums dark:bg-foreground/20">
                 {selected.length}
               </span>
             )}
@@ -202,10 +199,10 @@ export function MultiSelect<T extends string>({
             className={cn(
               // Mirror `PopoverContent` base styling (but keep padding controlled by inner content).
               // Width auto-sizes to content; pass popoverWidth to constrain if needed.
-              "rounded-md border bg-popover p-0 text-popover-foreground shadow-md outline-hidden ring-1 ring-foreground/10",
+              "rounded-md border bg-popover p-0 text-popover-foreground shadow-md ring-1 ring-foreground/10 outline-hidden",
               "origin-[var(--transform-origin)]",
-              "data-open:fade-in-0 data-open:zoom-in-95 data-open:animate-in",
-              "data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:animate-out",
+              "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95",
+              "data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
               "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
               popoverWidth,
             )}
@@ -246,21 +243,15 @@ export function MultiSelect<T extends string>({
 
               {sections ? (
                 <ScrollArea className="max-h-[300px]">
-                  <ComboboxPrimitive.List
-                    data-slot="command-list"
-                    className="scroll-py-1"
-                  >
-                    {(group: {
-                      value: string;
-                      items: Array<MultiSelectOption<T>>;
-                    }) => (
+                  <ComboboxPrimitive.List data-slot="command-list" className="scroll-py-1">
+                    {(group: { value: string; items: Array<MultiSelectOption<T>> }) => (
                       <ComboboxPrimitive.Group
                         key={group.value}
                         items={group.items}
                         data-slot="command-group"
                         className="overflow-hidden p-1 text-foreground"
                       >
-                        <ComboboxPrimitive.GroupLabel className="select-none px-2 py-1.5 font-medium text-muted-foreground text-xs">
+                        <ComboboxPrimitive.GroupLabel className="px-2 py-1.5 text-xs font-medium text-muted-foreground select-none">
                           {group.value}
                         </ComboboxPrimitive.GroupLabel>
                         <ComboboxPrimitive.Collection>

@@ -1,11 +1,11 @@
 import type { PgDatabase } from "drizzle-orm/pg-core";
+
 import type * as schema from "./schema";
 
 /**
  * Database client type for dependency injection.
  * This is the drizzle instance with our schema.
  */
-// biome-ignore lint/suspicious/noExplicitAny: Drizzle's internal types are complex
 export type DbClient = PgDatabase<any, typeof schema>;
 
 /**

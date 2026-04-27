@@ -1,13 +1,10 @@
+import { IconAlertTriangle, IconClock } from "@tabler/icons-react";
+
+import { useDashboardFiltersContext } from "@/context/dashboard-context";
 import { EXPIRING_SOON_DAYS } from "@domainstack/constants";
 import { Badge } from "@domainstack/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@domainstack/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 import { cn } from "@domainstack/ui/utils";
-import { IconAlertTriangle, IconClock } from "@tabler/icons-react";
-import { useDashboardFiltersContext } from "@/context/dashboard-context";
 
 export function HealthSummary() {
   const { stats, applyHealthFilter } = useDashboardFiltersContext();
@@ -34,10 +31,7 @@ export function HealthSummary() {
                     "cursor-pointer border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 font-semibold text-amber-600 transition-colors hover:bg-amber-500/20 dark:text-amber-400",
                   )}
                 >
-                  <IconAlertTriangle
-                    className="mr-0.5 size-3.5"
-                    aria-hidden="true"
-                  />
+                  <IconAlertTriangle className="mr-0.5 size-3.5" aria-hidden="true" />
                   <span className="tabular-nums">{expiringSoon}</span>
                   <span>expiring soon</span>
                 </Badge>
@@ -74,8 +68,8 @@ export function HealthSummary() {
             }
           />
           <TooltipContent>
-            {pendingVerification} domain{pendingVerification === 1 ? "" : "s"}{" "}
-            awaiting verification. Click to filter.
+            {pendingVerification} domain{pendingVerification === 1 ? "" : "s"} awaiting
+            verification. Click to filter.
           </TooltipContent>
         </Tooltip>
       )}

@@ -1,4 +1,5 @@
 import { and, eq, isNull } from "drizzle-orm";
+
 import { db } from "../client";
 import {
   type CertificateSnapshotData,
@@ -126,10 +127,7 @@ export async function createSnapshot(
 /**
  * Update an existing snapshot with new data.
  */
-export async function updateSnapshot(
-  trackedDomainId: string,
-  params: UpdateSnapshotParams,
-) {
+export async function updateSnapshot(trackedDomainId: string, params: UpdateSnapshotParams) {
   const updates: Record<string, unknown> = {
     updatedAt: new Date(),
   };
@@ -170,16 +168,8 @@ export async function getMonitoredSnapshotIds(): Promise<string[]> {
   const rows = await db
     .select({ trackedDomainId: domainSnapshots.trackedDomainId })
     .from(domainSnapshots)
-    .innerJoin(
-      userTrackedDomains,
-      eq(domainSnapshots.trackedDomainId, userTrackedDomains.id),
-    )
-    .where(
-      and(
-        eq(userTrackedDomains.verified, true),
-        isNull(userTrackedDomains.archivedAt),
-      ),
-    );
+    .innerJoin(userTrackedDomains, eq(domainSnapshots.trackedDomainId, userTrackedDomains.id))
+    .where(and(eq(userTrackedDomains.verified, true), isNull(userTrackedDomains.archivedAt)));
 
   return rows.map((r) => r.trackedDomainId);
 }
@@ -196,10 +186,7 @@ export async function getVerifiedDomainsWithoutSnapshots(): Promise<
       domainId: userTrackedDomains.domainId,
     })
     .from(userTrackedDomains)
-    .leftJoin(
-      domainSnapshots,
-      eq(userTrackedDomains.id, domainSnapshots.trackedDomainId),
-    )
+    .leftJoin(domainSnapshots, eq(userTrackedDomains.id, domainSnapshots.trackedDomainId))
     .where(
       and(
         eq(userTrackedDomains.verified, true),
@@ -214,9 +201,7 @@ export async function getVerifiedDomainsWithoutSnapshots(): Promise<
 /**
  * Get full snapshot data for a single domain.
  */
-export async function getSnapshot(
-  trackedDomainId: string,
-): Promise<SnapshotForMonitoring | null> {
+export async function getSnapshot(trackedDomainId: string): Promise<SnapshotForMonitoring | null> {
   const rows = await db
     .select({
       id: domainSnapshots.id,
@@ -233,10 +218,7 @@ export async function getSnapshot(
       userName: users.name,
     })
     .from(domainSnapshots)
-    .innerJoin(
-      userTrackedDomains,
-      eq(domainSnapshots.trackedDomainId, userTrackedDomains.id),
-    )
+    .innerJoin(userTrackedDomains, eq(domainSnapshots.trackedDomainId, userTrackedDomains.id))
     .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
     .innerJoin(users, eq(userTrackedDomains.userId, users.id))
     .where(eq(domainSnapshots.trackedDomainId, trackedDomainId))

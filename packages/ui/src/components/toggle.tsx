@@ -1,13 +1,14 @@
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
+
 import { cn, cva, type VariantProps } from "../utils";
 
 const toggleVariants = cva({
-  base: "group/toggle inline-flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-all hover:bg-muted hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-pressed:cursor-default aria-pressed:bg-muted aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[state=on]:bg-muted dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  base: "group/toggle inline-flex cursor-pointer items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none hover:bg-muted hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-pressed:cursor-default aria-pressed:bg-muted data-[state=on]:bg-muted dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   variants: {
     variant: {
       default: "bg-transparent",
       secondary:
-        "bg-background hover:bg-muted aria-pressed:bg-primary aria-pressed:text-primary-foreground dark:border-input dark:bg-input/30 dark:aria-pressed:bg-primary dark:aria-pressed:text-primary-foreground dark:hover:bg-input/50",
+        "bg-background hover:bg-muted aria-pressed:bg-primary aria-pressed:text-primary-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 dark:aria-pressed:bg-primary dark:aria-pressed:text-primary-foreground",
       outline: "border border-input bg-transparent hover:bg-muted",
     },
     size: {

@@ -1,3 +1,19 @@
+import { relations, sql } from "drizzle-orm";
+import {
+  boolean,
+  check,
+  doublePrecision,
+  index,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  unique,
+  uuid,
+} from "drizzle-orm/pg-core";
+
 import {
   DNS_RECORD_TYPES,
   NOTIFICATION_CHANNELS,
@@ -18,41 +34,14 @@ import type {
   RobotsTxt,
   TwitterMeta,
 } from "@domainstack/types";
-import { relations, sql } from "drizzle-orm";
-import {
-  boolean,
-  check,
-  doublePrecision,
-  index,
-  integer,
-  jsonb,
-  pgEnum,
-  pgTable,
-  text,
-  timestamp,
-  unique,
-  uuid,
-} from "drizzle-orm/pg-core";
 
 // Enums - const arrays define values; Drizzle pgEnums use them directly.
-export const providerCategory = pgEnum(
-  "provider_category",
-  PROVIDER_CATEGORIES,
-);
+export const providerCategory = pgEnum("provider_category", PROVIDER_CATEGORIES);
 export const providerSource = pgEnum("provider_source", PROVIDER_SOURCES);
 export const dnsRecordType = pgEnum("dns_record_type", DNS_RECORD_TYPES);
-export const registrationSource = pgEnum(
-  "registration_source",
-  REGISTRATION_SOURCES,
-);
-export const verificationMethod = pgEnum(
-  "verification_method",
-  VERIFICATION_METHODS,
-);
-export const verificationStatus = pgEnum(
-  "verification_status",
-  VERIFICATION_STATUSES,
-);
+export const registrationSource = pgEnum("registration_source", REGISTRATION_SOURCES);
+export const verificationMethod = pgEnum("verification_method", VERIFICATION_METHODS);
+export const verificationStatus = pgEnum("verification_status", VERIFICATION_STATUSES);
 export const userTier = pgEnum("user_tier", PLANS);
 
 // ============================================================================
@@ -159,12 +148,8 @@ export const userSubscriptions = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     tier: userTier("tier").notNull().default("free"),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
     // When a canceled subscription ends and user downgrades to free
     // Null means: no pending cancellation (subscription active or user is on free tier)
     endsAt: timestamp("ends_at", { withTimezone: true }),
@@ -191,18 +176,14 @@ export const userTrackedDomains = pgTable(
     verificationMethod: verificationMethod("verification_method"),
     verificationToken: text("verification_token").notNull(),
     // Re-verification tracking
-    verificationStatus: verificationStatus("verification_status")
-      .notNull()
-      .default("unverified"),
+    verificationStatus: verificationStatus("verification_status").notNull().default("unverified"),
     verificationFailedAt: timestamp("verification_failed_at", {
       withTimezone: true,
     }),
     lastVerifiedAt: timestamp("last_verified_at", { withTimezone: true }),
     // Muted domains receive no notifications (follows global preferences if false)
     muted: boolean("muted").notNull().default(false),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     verifiedAt: timestamp("verified_at", { withTimezone: true }),
     // Soft-archive timestamp (null = active, set = archived)
     archivedAt: timestamp("archived_at", { withTimezone: true }),
@@ -216,12 +197,7 @@ export const userTrackedDomains = pgTable(
     // Composite index for all userId queries (replaces single-column index):
     // Supports: WHERE userId = ? [AND archivedAt IS NULL] [ORDER BY createdAt DESC, id DESC]
     // Left-prefix property makes single-column i_tracked_domains_user redundant
-    index("i_tracked_domains_user_active_ordered").on(
-      t.userId,
-      t.archivedAt,
-      t.createdAt,
-      t.id,
-    ),
+    index("i_tracked_domains_user_active_ordered").on(t.userId, t.archivedAt, t.createdAt, t.id),
   ],
 );
 
@@ -235,10 +211,9 @@ export const notifications = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     // Optional: link to domain if notification is domain-specific
-    trackedDomainId: uuid("tracked_domain_id").references(
-      () => userTrackedDomains.id,
-      { onDelete: "cascade" },
-    ),
+    trackedDomainId: uuid("tracked_domain_id").references(() => userTrackedDomains.id, {
+      onDelete: "cascade",
+    }),
     type: text("type").notNull(),
     // UI display fields
     title: text("title").notNull(),
@@ -266,10 +241,7 @@ export const notifications = pgTable(
     // Index for tracked domain queries (hasRecentNotification, getNotificationsForTrackedDomain, etc.)
     index("idx_notifications_tracked_domain").on(t.trackedDomainId),
     // Composite index for notification deduplication checks (trackedDomainId + type)
-    index("idx_notifications_tracked_domain_type").on(
-      t.trackedDomainId,
-      t.type,
-    ),
+    index("idx_notifications_tracked_domain_type").on(t.trackedDomainId, t.type),
     // Ensure channels only contains valid values
     check(
       "ck_notifications_channels",
@@ -280,41 +252,34 @@ export const notifications = pgTable(
 
 // User notification preferences (global defaults for all domains)
 // Note: Verification status notifications are always sent and not stored in preferences
-export const userNotificationPreferences = pgTable(
-  "user_notification_preferences",
-  {
-    userId: text("user_id")
-      .primaryKey()
-      .references(() => users.id, { onDelete: "cascade" }),
-    // Global toggles (defaults for all domains) - stored as JSONB with { inApp: boolean, email: boolean }
-    domainExpiry: jsonb("domain_expiry")
-      .$type<{ inApp: boolean; email: boolean }>()
-      .notNull()
-      .default(sql`'{"inApp": true, "email": true}'::jsonb`),
-    certificateExpiry: jsonb("certificate_expiry")
-      .$type<{ inApp: boolean; email: boolean }>()
-      .notNull()
-      .default(sql`'{"inApp": true, "email": true}'::jsonb`),
-    registrationChanges: jsonb("registration_changes")
-      .$type<{ inApp: boolean; email: boolean }>()
-      .notNull()
-      .default(sql`'{"inApp": true, "email": true}'::jsonb`),
-    providerChanges: jsonb("provider_changes")
-      .$type<{ inApp: boolean; email: boolean }>()
-      .notNull()
-      .default(sql`'{"inApp": true, "email": true}'::jsonb`),
-    certificateChanges: jsonb("certificate_changes")
-      .$type<{ inApp: boolean; email: boolean }>()
-      .notNull()
-      .default(sql`'{"inApp": true, "email": true}'::jsonb`),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-  },
-);
+export const userNotificationPreferences = pgTable("user_notification_preferences", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  // Global toggles (defaults for all domains) - stored as JSONB with { inApp: boolean, email: boolean }
+  domainExpiry: jsonb("domain_expiry")
+    .$type<{ inApp: boolean; email: boolean }>()
+    .notNull()
+    .default(sql`'{"inApp": true, "email": true}'::jsonb`),
+  certificateExpiry: jsonb("certificate_expiry")
+    .$type<{ inApp: boolean; email: boolean }>()
+    .notNull()
+    .default(sql`'{"inApp": true, "email": true}'::jsonb`),
+  registrationChanges: jsonb("registration_changes")
+    .$type<{ inApp: boolean; email: boolean }>()
+    .notNull()
+    .default(sql`'{"inApp": true, "email": true}'::jsonb`),
+  providerChanges: jsonb("provider_changes")
+    .$type<{ inApp: boolean; email: boolean }>()
+    .notNull()
+    .default(sql`'{"inApp": true, "email": true}'::jsonb`),
+  certificateChanges: jsonb("certificate_changes")
+    .$type<{ inApp: boolean; email: boolean }>()
+    .notNull()
+    .default(sql`'{"inApp": true, "email": true}'::jsonb`),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
 
 // ============================================================================
 // Domain Data Tables
@@ -330,20 +295,12 @@ export const providers = pgTable(
     domain: text("domain"),
     slug: text("slug").notNull(),
     source: providerSource("source").notNull().default("discovered"),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [
     unique("u_providers_category_slug").on(t.category, t.slug),
-    index("i_providers_name_lower").using(
-      "btree",
-      t.category,
-      sql`lower(${t.name})`,
-    ),
+    index("i_providers_name_lower").using("btree", t.category, sql`lower(${t.name})`),
     index("i_providers_category_domain").on(t.category, t.domain),
   ],
 );
@@ -356,12 +313,8 @@ export const domains = pgTable(
     name: text("name").notNull(),
     tld: text("tld").notNull(),
     unicodeName: text("unicode_name").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
     lastAccessedAt: timestamp("last_accessed_at", { withTimezone: true }),
   },
   (t) => [
@@ -404,12 +357,8 @@ export const registrations = pgTable(
       .notNull()
       .default(sql`'[]'::jsonb`),
     source: registrationSource("source").notNull(),
-    registrarProviderId: uuid("registrar_provider_id").references(
-      () => providers.id,
-    ),
-    resellerProviderId: uuid("reseller_provider_id").references(
-      () => providers.id,
-    ),
+    registrarProviderId: uuid("registrar_provider_id").references(() => providers.id),
+    resellerProviderId: uuid("reseller_provider_id").references(() => providers.id),
     fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     // Raw RDAP/WHOIS response for debugging and advanced use cases
@@ -444,9 +393,7 @@ export const dnsRecords = pgTable(
     // Include priority in uniqueness for MX/SRV records
     // (same host with different priorities = different records)
     // Use NULLS NOT DISTINCT so records with NULL priority are treated as duplicates
-    unique("u_dns_record")
-      .on(t.domainId, t.type, t.name, t.value, t.priority)
-      .nullsNotDistinct(),
+    unique("u_dns_record").on(t.domainId, t.type, t.name, t.value, t.priority).nullsNotDistinct(),
     index("i_dns_type_value").on(t.type, t.value),
     index("i_dns_expires").on(t.expiresAt),
     index("i_dns_domain_expires").on(t.domainId, t.expiresAt),
@@ -508,9 +455,7 @@ export const hosting = pgTable(
     domainId: uuid("domain_id")
       .primaryKey()
       .references(() => domains.id, { onDelete: "cascade" }),
-    hostingProviderId: uuid("hosting_provider_id").references(
-      () => providers.id,
-    ),
+    hostingProviderId: uuid("hosting_provider_id").references(() => providers.id),
     emailProviderId: uuid("email_provider_id").references(() => providers.id),
     dnsProviderId: uuid("dns_provider_id").references(() => providers.id),
     geoCity: text("geo_city"),
@@ -667,12 +612,8 @@ export const domainSnapshots = pgTable("domain_snapshots", {
     .$type<CertificateSnapshotData>()
     .notNull()
     .default(sql`'{}'::jsonb`),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 // Blocked domains for screenshot/OG image capture (synced from external blocklists)
@@ -699,9 +640,7 @@ export const calendarFeeds = pgTable(
     token: text("token").notNull(),
     // Soft-disable without losing token (allows re-enable)
     enabled: boolean("enabled").notNull().default(true),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     // When the token was last rotated (null if never rotated)
     rotatedAt: timestamp("rotated_at", { withTimezone: true }),
     // For activity monitoring and leak detection

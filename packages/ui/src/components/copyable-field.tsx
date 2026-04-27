@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+
 import { cn } from "../utils";
 import { CopyButton } from "./copy-button";
 import { Field, FieldLabel } from "./field";
@@ -41,9 +42,7 @@ export function CopyableField({
     <Field className={cn("min-w-0", className)}>
       <FieldLabel
         className={cn(
-          showLabel
-            ? "text-muted-foreground text-xs uppercase tracking-wide"
-            : "sr-only",
+          showLabel ? "text-xs tracking-wide text-muted-foreground uppercase" : "sr-only",
         )}
       >
         {label}

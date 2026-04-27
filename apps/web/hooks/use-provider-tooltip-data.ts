@@ -1,12 +1,9 @@
-import type { ProviderCategory } from "@domainstack/constants";
-import type {
-  DnsRecord,
-  ProviderInfo,
-  RegistrationContact,
-} from "@domainstack/types";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+
 import { useTRPC } from "@/lib/trpc/client";
+import type { ProviderCategory } from "@domainstack/constants";
+import type { DnsRecord, ProviderInfo, RegistrationContact } from "@domainstack/types";
 
 interface UseProviderTooltipDataParams {
   provider: ProviderInfo;
@@ -51,8 +48,7 @@ export function useProviderTooltipData({
 
   const hasRecords = provider.records && provider.records.length > 0;
   const hasCertificateExpiry = provider.certificateExpiryDate != null;
-  const hasRegistrationInfo =
-    provider.whoisServer != null || provider.rdapServers != null;
+  const hasRegistrationInfo = provider.whoisServer != null || provider.rdapServers != null;
 
   // Helper to check if provider is missing expected data
   const isMissingData = (): boolean => {
@@ -105,8 +101,7 @@ export function useProviderTooltipData({
     } else if (providerType === "registrar") {
       lazyLoadedWhoisServer = domainDetails.registrar?.whoisServer;
       lazyLoadedRdapServers = domainDetails.registrar?.rdapServers;
-      lazyLoadedRegistrationSource =
-        domainDetails.registrar?.registrationSource;
+      lazyLoadedRegistrationSource = domainDetails.registrar?.registrationSource;
       lazyLoadedTransferLock = domainDetails.registrar?.transferLock;
       lazyLoadedRegistrantInfo = domainDetails.registrar?.registrantInfo;
     } else {
@@ -115,20 +110,16 @@ export function useProviderTooltipData({
   }
 
   const displayRecords = provider.records ?? lazyLoadedRecords;
-  const displayCertificateExpiry =
-    provider.certificateExpiryDate ?? lazyLoadedCertificateExpiry;
+  const displayCertificateExpiry = provider.certificateExpiryDate ?? lazyLoadedCertificateExpiry;
   const displayWhoisServer = provider.whoisServer ?? lazyLoadedWhoisServer;
   const displayRdapServers = provider.rdapServers ?? lazyLoadedRdapServers;
-  const displayRegistrationSource =
-    provider.registrationSource ?? lazyLoadedRegistrationSource;
+  const displayRegistrationSource = provider.registrationSource ?? lazyLoadedRegistrationSource;
   const displayTransferLock = provider.transferLock ?? lazyLoadedTransferLock;
-  const displayRegistrantInfo =
-    provider.registrantInfo ?? lazyLoadedRegistrantInfo;
+  const displayRegistrantInfo = provider.registrantInfo ?? lazyLoadedRegistrantInfo;
 
   const hasDisplayRecords = displayRecords && displayRecords.length > 0;
   const hasDisplayCertificateExpiry = displayCertificateExpiry != null;
-  const hasDisplayRegistrationInfo =
-    displayWhoisServer != null || displayRdapServers != null;
+  const hasDisplayRegistrationInfo = displayWhoisServer != null || displayRdapServers != null;
 
   const shouldShowTooltip =
     hasDisplayRecords ||

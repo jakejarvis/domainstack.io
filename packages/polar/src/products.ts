@@ -78,9 +78,7 @@ export function getProductsForCheckout() {
  * Used by webhooks to determine which tier to assign.
  */
 export function getTierForProductId(productId: string): "pro" | null {
-  const product = Object.values(POLAR_PRODUCTS).find(
-    (p) => p.productId === productId,
-  );
+  const product = Object.values(POLAR_PRODUCTS).find((p) => p.productId === productId);
   return product?.tier ?? null;
 }
 

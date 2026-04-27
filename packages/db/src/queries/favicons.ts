@@ -1,6 +1,8 @@
-import type { FaviconResponse } from "@domainstack/types";
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import { eq } from "drizzle-orm";
+
+import type { FaviconResponse } from "@domainstack/types";
+
 import { db } from "../client";
 import { domains, favicons } from "../schema";
 import type { CacheResult } from "../types";
@@ -8,9 +10,7 @@ import type { CacheResult } from "../types";
 type FaviconInsert = InferInsertModel<typeof favicons>;
 type Favicon = InferSelectModel<typeof favicons>;
 
-export async function upsertFavicon(
-  params: FaviconInsert,
-): Promise<Favicon | null> {
+export async function upsertFavicon(params: FaviconInsert): Promise<Favicon | null> {
   const rows = await db
     .insert(favicons)
     .values(params)
@@ -25,9 +25,7 @@ export async function upsertFavicon(
 /**
  * Fetch favicon record by domain ID with staleness metadata.
  */
-export async function getFaviconById(
-  domainId: string,
-): Promise<CacheResult<FaviconResponse>> {
+export async function getFaviconById(domainId: string): Promise<CacheResult<FaviconResponse>> {
   const now = new Date();
   const [row] = await db
     .select({
@@ -64,9 +62,7 @@ export async function getFaviconById(
 /**
  * Fetch favicon record by domain name with staleness metadata.
  */
-export async function getFavicon(
-  domainName: string,
-): Promise<CacheResult<FaviconResponse>> {
+export async function getFavicon(domainName: string): Promise<CacheResult<FaviconResponse>> {
   const now = new Date();
   const [row] = await db
     .select({

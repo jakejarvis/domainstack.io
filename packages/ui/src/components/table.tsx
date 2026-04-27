@@ -1,12 +1,9 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
+
 import { cn } from "../utils";
 
-function Table({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"table">) {
+function Table({ className, render, ...props }: useRender.ComponentProps<"table">) {
   const table = useRender({
     defaultTagName: "table",
     render,
@@ -19,20 +16,13 @@ function Table({
   });
 
   return (
-    <div
-      data-slot="table-container"
-      className="relative w-full overflow-x-auto"
-    >
+    <div data-slot="table-container" className="relative w-full overflow-x-auto">
       {table}
     </div>
   );
 }
 
-function TableHeader({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"thead">) {
+function TableHeader({ className, render, ...props }: useRender.ComponentProps<"thead">) {
   return useRender({
     defaultTagName: "thead",
     render,
@@ -45,11 +35,7 @@ function TableHeader({
   });
 }
 
-function TableBody({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"tbody">) {
+function TableBody({ className, render, ...props }: useRender.ComponentProps<"tbody">) {
   return useRender({
     defaultTagName: "tbody",
     render,
@@ -62,19 +48,12 @@ function TableBody({
   });
 }
 
-function TableFooter({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"tfoot">) {
+function TableFooter({ className, render, ...props }: useRender.ComponentProps<"tfoot">) {
   return useRender({
     defaultTagName: "tfoot",
     render,
     props: mergeProps<"tfoot">(props, {
-      className: cn(
-        "border-t bg-muted/50 font-medium [&>tr]:last:border-b-0",
-        className,
-      ),
+      className: cn("border-t bg-muted/50 font-medium [&>tr]:last:border-b-0", className),
     }),
     state: {
       slot: "table-footer",
@@ -82,11 +61,7 @@ function TableFooter({
   });
 }
 
-function TableRow({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"tr">) {
+function TableRow({ className, render, ...props }: useRender.ComponentProps<"tr">) {
   return useRender({
     defaultTagName: "tr",
     render,
@@ -102,17 +77,13 @@ function TableRow({
   });
 }
 
-function TableHead({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"th">) {
+function TableHead({ className, render, ...props }: useRender.ComponentProps<"th">) {
   return useRender({
     defaultTagName: "th",
     render,
     props: mergeProps<"th">(props, {
       className: cn(
-        "h-10 whitespace-nowrap px-2 text-left align-middle font-medium text-foreground [&:has([role=checkbox])]:pr-0",
+        "h-10 px-2 text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0",
         className,
       ),
     }),
@@ -122,19 +93,12 @@ function TableHead({
   });
 }
 
-function TableCell({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"td">) {
+function TableCell({ className, render, ...props }: useRender.ComponentProps<"td">) {
   return useRender({
     defaultTagName: "td",
     render,
     props: mergeProps<"td">(props, {
-      className: cn(
-        "whitespace-nowrap p-2 align-middle [&:has([role=checkbox])]:pr-0",
-        className,
-      ),
+      className: cn("p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0", className),
     }),
     state: {
       slot: "table-cell",
@@ -142,16 +106,12 @@ function TableCell({
   });
 }
 
-function TableCaption({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"caption">) {
+function TableCaption({ className, render, ...props }: useRender.ComponentProps<"caption">) {
   return useRender({
     defaultTagName: "caption",
     render,
     props: mergeProps<"caption">(props, {
-      className: cn("mt-4 text-muted-foreground text-sm", className),
+      className: cn("mt-4 text-sm text-muted-foreground", className),
     }),
     state: {
       slot: "table-caption",
@@ -159,13 +119,4 @@ function TableCaption({
   });
 }
 
-export {
-  Table,
-  TableHeader,
-  TableBody,
-  TableFooter,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableCaption,
-};
+export { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow };

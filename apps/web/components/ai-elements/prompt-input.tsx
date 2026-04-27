@@ -1,13 +1,5 @@
 "use client";
 
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupTextarea,
-} from "@domainstack/ui/input-group";
-import { Spinner } from "@domainstack/ui/spinner";
-import { cn } from "@domainstack/ui/utils";
 import { IconSend } from "@tabler/icons-react";
 import type { ChatStatus } from "ai";
 import {
@@ -19,6 +11,15 @@ import {
   useState,
 } from "react";
 
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupTextarea,
+} from "@domainstack/ui/input-group";
+import { Spinner } from "@domainstack/ui/spinner";
+import { cn } from "@domainstack/ui/utils";
+
 // ============================================================================
 // PromptInput
 // ============================================================================
@@ -27,22 +28,14 @@ export type PromptInputMessage = {
   text: string;
 };
 
-export type PromptInputProps = Omit<
-  HTMLAttributes<HTMLFormElement>,
-  "onSubmit"
-> & {
+export type PromptInputProps = Omit<HTMLAttributes<HTMLFormElement>, "onSubmit"> & {
   onSubmit: (
     message: PromptInputMessage,
     event: FormEvent<HTMLFormElement>,
   ) => void | Promise<void>;
 };
 
-export const PromptInput = ({
-  className,
-  onSubmit,
-  children,
-  ...props
-}: PromptInputProps) => {
+export const PromptInput = ({ className, onSubmit, children, ...props }: PromptInputProps) => {
   const handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault();
 
@@ -64,11 +57,7 @@ export const PromptInput = ({
   };
 
   return (
-    <form
-      className={cn("w-full", className)}
-      onSubmit={handleSubmit}
-      {...props}
-    >
+    <form className={cn("w-full", className)} onSubmit={handleSubmit} {...props}>
       <InputGroup className="overflow-hidden">{children}</InputGroup>
     </form>
   );
@@ -78,9 +67,7 @@ export const PromptInput = ({
 // PromptInputTextarea
 // ============================================================================
 
-export type PromptInputTextareaProps = ComponentProps<
-  typeof InputGroupTextarea
->;
+export type PromptInputTextareaProps = ComponentProps<typeof InputGroupTextarea>;
 
 export const PromptInputTextarea = ({
   onChange,
@@ -101,11 +88,8 @@ export const PromptInputTextarea = ({
       e.preventDefault();
 
       // Check if the submit button is disabled before submitting
-      // biome-ignore lint/nursery/useDestructuring: form needs to be a standalone variable for optional chaining
       const form = e.currentTarget.form;
-      const submitButton = form?.querySelector(
-        'button[type="submit"]',
-      ) as HTMLButtonElement | null;
+      const submitButton = form?.querySelector('button[type="submit"]') as HTMLButtonElement | null;
       if (submitButton?.disabled) {
         return;
       }
@@ -132,15 +116,9 @@ export const PromptInputTextarea = ({
 // PromptInputFooter
 // ============================================================================
 
-export type PromptInputFooterProps = Omit<
-  ComponentProps<typeof InputGroupAddon>,
-  "align"
->;
+export type PromptInputFooterProps = Omit<ComponentProps<typeof InputGroupAddon>, "align">;
 
-export const PromptInputFooter = ({
-  className,
-  ...props
-}: PromptInputFooterProps) => (
+export const PromptInputFooter = ({ className, ...props }: PromptInputFooterProps) => (
   <InputGroupAddon
     align="block-end"
     className={cn("items-center justify-between gap-1", className)}
@@ -191,8 +169,7 @@ export const PromptInputSubmit = ({
   // Determine if button should be disabled:
   // - submitted/streaming: always disabled (response in progress)
   // - ready/error: respect the disabled prop (typically based on empty input)
-  const isDisabled =
-    status === "submitted" || status === "streaming" || disabled;
+  const isDisabled = status === "submitted" || status === "streaming" || disabled;
 
   return (
     <InputGroupButton
@@ -226,7 +203,7 @@ export const PromptInputCharacterCount = ({
 }: PromptInputCharacterCountProps) => (
   <span
     className={cn(
-      "text-muted-foreground text-xs tabular-nums",
+      "text-xs text-muted-foreground tabular-nums",
       current > max && "text-destructive",
       className,
     )}

@@ -1,5 +1,17 @@
 "use client";
 
+import {
+  IconLayoutDashboard,
+  IconLogout,
+  IconMoon,
+  IconSettings,
+  IconSun,
+} from "@tabler/icons-react";
+import { getImageProps } from "next/image";
+import Link from "next/link";
+
+import { useRouter } from "@/hooks/use-router";
+import { useTheme } from "@/hooks/use-theme";
 import { useAnalytics } from "@domainstack/analytics/client";
 import { signOut, useSession } from "@domainstack/auth/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@domainstack/ui/avatar";
@@ -11,17 +23,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@domainstack/ui/dropdown-menu";
-import {
-  IconLayoutDashboard,
-  IconLogout,
-  IconMoon,
-  IconSettings,
-  IconSun,
-} from "@tabler/icons-react";
-import { getImageProps } from "next/image";
-import Link from "next/link";
-import { useRouter } from "@/hooks/use-router";
-import { useTheme } from "@/hooks/use-theme";
 
 export function UserMenu() {
   const router = useRouter();
@@ -81,7 +82,7 @@ export function UserMenu() {
           >
             <Avatar className="size-8">
               <AvatarImage {...imageProps} />
-              <AvatarFallback className="bg-muted text-muted-foreground text-xs">
+              <AvatarFallback className="bg-muted text-xs text-muted-foreground">
                 {initials}
               </AvatarFallback>
             </Avatar>
@@ -89,20 +90,16 @@ export function UserMenu() {
         }
       />
       <DropdownMenuContent align="end" className="min-w-56">
-        <div className="flex select-none items-center gap-[9px] p-1.5">
+        <div className="flex items-center gap-[9px] p-1.5 select-none">
           <Avatar className="size-8">
             <AvatarImage {...imageProps} />
-            <AvatarFallback className="bg-muted text-muted-foreground text-xs">
+            <AvatarFallback className="bg-muted text-xs text-muted-foreground">
               {initials}
             </AvatarFallback>
           </Avatar>
           <div className="flex flex-col space-y-[5px]">
-            <p className="font-medium text-sm leading-none">
-              {user.name || "User"}
-            </p>
-            <p className="text-muted-foreground text-xs leading-none">
-              {user.email}
-            </p>
+            <p className="text-sm leading-none font-medium">{user.name || "User"}</p>
+            <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
           </div>
         </div>
         <DropdownMenuSeparator />

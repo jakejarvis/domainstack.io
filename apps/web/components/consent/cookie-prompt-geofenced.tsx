@@ -1,6 +1,8 @@
-import { GDPR_COUNTRY_CODES } from "@domainstack/constants";
 import { headers } from "next/headers";
 import { connection } from "next/server";
+
+import { GDPR_COUNTRY_CODES } from "@domainstack/constants";
+
 import { CookiePrompt } from "./cookie-prompt";
 
 export async function CookiePromptGeofenced() {

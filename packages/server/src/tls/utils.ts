@@ -38,9 +38,7 @@ export function parseAltNames(subjectAltName: string | undefined): string[] {
       const value = segment.slice(idx + 1).trim();
       return [kind, value] as const;
     })
-    .filter(
-      ([kind, value]) => !!value && (kind === "DNS" || kind === "IP ADDRESS"),
-    )
+    .filter(([kind, value]) => !!value && (kind === "DNS" || kind === "IP ADDRESS"))
     .map(([_, value]) => value);
 }
 
@@ -55,11 +53,7 @@ export function isExpectedTlsError(err: unknown): boolean {
     message?: string;
   };
   const code = anyErr?.cause?.code || anyErr?.code;
-  const message = (
-    anyErr?.cause?.message ||
-    anyErr?.message ||
-    ""
-  ).toLowerCase();
+  const message = (anyErr?.cause?.message || anyErr?.message || "").toLowerCase();
 
   return (
     code === "ERR_TLS_CERT_ALTNAME_INVALID" ||
@@ -87,11 +81,7 @@ export function isExpectedDnsError(err: unknown): boolean {
     message?: string;
   };
   const code = anyErr?.cause?.code || anyErr?.code;
-  const message = (
-    anyErr?.cause?.message ||
-    anyErr?.message ||
-    ""
-  ).toLowerCase();
+  const message = (anyErr?.cause?.message || anyErr?.message || "").toLowerCase();
 
   return (
     code === "ENOTFOUND" ||

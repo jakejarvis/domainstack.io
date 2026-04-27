@@ -1,36 +1,13 @@
 "use client";
 
-import { useSession } from "@domainstack/auth/client";
-import type { VerificationMethod } from "@domainstack/constants";
-import type { TrackedDomainWithDetails } from "@domainstack/types";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@domainstack/ui/alert-dialog";
-import { Button } from "@domainstack/ui/button";
-import {
-  IconArchive,
-  IconArrowLeft,
-  IconHeartHandshake,
-} from "@tabler/icons-react";
+import { IconArchive, IconArrowLeft, IconHeartHandshake } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import type { Table } from "@tanstack/react-table";
 import { useSearchParams } from "next/navigation";
 import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+
 import { ArchivedDomainsList } from "@/components/dashboard/archived-domains-list";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
@@ -45,10 +22,7 @@ import { DashboardProvider } from "@/context/dashboard-context";
 import { useDashboardFilters } from "@/hooks/use-dashboard-filters";
 import { useDashboardMutations } from "@/hooks/use-dashboard-mutations";
 import { useDashboardPagination } from "@/hooks/use-dashboard-pagination";
-import {
-  useDashboardSelection,
-  useSyncVisibleDomainIds,
-} from "@/hooks/use-dashboard-selection";
+import { useDashboardSelection, useSyncVisibleDomainIds } from "@/hooks/use-dashboard-selection";
 import { useRouter } from "@/hooks/use-router";
 import { useSubscription } from "@/hooks/use-subscription";
 import {
@@ -61,6 +35,20 @@ import {
 } from "@/lib/dashboard-utils";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { useTRPC } from "@/lib/trpc/client";
+import { useSession } from "@domainstack/auth/client";
+import type { VerificationMethod } from "@domainstack/constants";
+import type { TrackedDomainWithDetails } from "@domainstack/types";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@domainstack/ui/alert-dialog";
+import { Button } from "@domainstack/ui/button";
 
 export function DashboardClient() {
   const { data: session, isPending: isSessionPending } = useSession();
@@ -101,13 +89,10 @@ export function DashboardClient() {
     actions: { setPageIndex, setPageSize, resetPage },
   } = useDashboardPagination();
 
-  const [tableInstance, setTableInstance] =
-    useState<Table<TrackedDomainWithDetails> | null>(null);
+  const [tableInstance, setTableInstance] = useState<Table<TrackedDomainWithDetails> | null>(null);
 
   // Tracked domains query
-  const domainsQuery = useQuery(
-    trpc.tracking.listDomains.queryOptions({ includeArchived: true }),
-  );
+  const domainsQuery = useQuery(trpc.tracking.listDomains.queryOptions({ includeArchived: true }));
   const allDomains = domainsQuery.data;
 
   const domains = useMemo(
@@ -128,18 +113,12 @@ export function DashboardClient() {
 
   // Apply sorting after filtering (only for grid view - table has its own column sorting)
   const filteredDomains = useMemo(
-    () =>
-      viewMode === "grid"
-        ? sortDomains(filteredUnsorted, sortOption)
-        : filteredUnsorted,
+    () => (viewMode === "grid" ? sortDomains(filteredUnsorted, sortOption) : filteredUnsorted),
     [filteredUnsorted, sortOption, viewMode],
   );
 
   // Filtered domain IDs for selection - sync to Jotai atom
-  const filteredDomainIds = useMemo(
-    () => filteredDomains.map((d) => d.id),
-    [filteredDomains],
-  );
+  const filteredDomainIds = useMemo(() => filteredDomains.map((d) => d.id), [filteredDomains]);
   useSyncVisibleDomainIds(filteredDomainIds);
 
   // Selection state from Jotai
@@ -188,9 +167,7 @@ export function DashboardClient() {
   );
 
   // Confirmation dialog - local state
-  const [pendingAction, setPendingAction] = useState<ConfirmAction | null>(
-    null,
-  );
+  const [pendingAction, setPendingAction] = useState<ConfirmAction | null>(null);
 
   // Upgrade banner - local state
   const [showUpgradedBanner, setShowUpgradedBanner] = useState(false);
@@ -218,8 +195,7 @@ export function DashboardClient() {
       const params = new URLSearchParams(searchParams.toString());
       params.delete("upgraded");
       const newSearch = params.toString();
-      const newUrl =
-        window.location.pathname + (newSearch ? `?${newSearch}` : "");
+      const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
       router.replace(newUrl, { scroll: false });
     }
   }, [router, searchParams]);
@@ -288,8 +264,7 @@ export function DashboardClient() {
   );
 
   // Show loading until we have both query data AND session data
-  const isLoading =
-    subscriptionLoading || domainsQuery.isLoading || isSessionPending;
+  const isLoading = subscriptionLoading || domainsQuery.isLoading || isSessionPending;
 
   const hasError = subscriptionError || domainsQuery.isError;
 
@@ -423,9 +398,7 @@ export function DashboardClient() {
         {pendingAction && (
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>
-                {getConfirmDialogContent(pendingAction).title}
-              </AlertDialogTitle>
+              <AlertDialogTitle>{getConfirmDialogContent(pendingAction).title}</AlertDialogTitle>
               <AlertDialogDescription>
                 {getConfirmDialogContent(pendingAction).description}
               </AlertDialogDescription>

@@ -1,3 +1,6 @@
+import type { InferInsertModel } from "drizzle-orm";
+import { eq } from "drizzle-orm";
+
 import type {
   GeneralMeta,
   OpenGraphMeta,
@@ -5,8 +8,7 @@ import type {
   SeoResponse,
   TwitterMeta,
 } from "@domainstack/types";
-import type { InferInsertModel } from "drizzle-orm";
-import { eq } from "drizzle-orm";
+
 import { db } from "../client";
 import { blockedDomains, domains, seo as seoTable } from "../schema";
 import type { CacheResult } from "../types";
@@ -30,9 +32,7 @@ export async function upsertSeo(params: SeoInsert) {
  * Optimized: Uses a single query with JOINs to fetch domain, SEO data,
  * and blocklist status, reducing from 3 round trips to 1.
  */
-export async function getCachedSeo(
-  domain: string,
-): Promise<CacheResult<SeoResponse>> {
+export async function getCachedSeo(domain: string): Promise<CacheResult<SeoResponse>> {
   const nowMs = Date.now();
 
   // Single query: JOIN domains -> seo, LEFT JOIN blockedDomains for blocklist check

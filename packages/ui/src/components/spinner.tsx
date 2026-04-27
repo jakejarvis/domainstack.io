@@ -1,10 +1,8 @@
 import { IconLoader2 } from "@tabler/icons-react";
+
 import { cn } from "../utils";
 
-function Spinner({
-  className,
-  ...props
-}: React.ComponentPropsWithoutRef<"svg">) {
+function Spinner({ className, ...props }: React.ComponentPropsWithoutRef<"svg">) {
   return (
     <IconLoader2
       role="status"

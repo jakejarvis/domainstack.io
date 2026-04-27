@@ -2,9 +2,7 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Initialize PGlite before importing anything that uses the db
-const { makePGliteDb, closePGliteDb, resetPGliteDb } = await import(
-  "@domainstack/db/testing"
-);
+const { makePGliteDb, closePGliteDb, resetPGliteDb } = await import("@domainstack/db/testing");
 const { db } = await makePGliteDb();
 
 describe("persistHeadersStep", () => {
@@ -20,7 +18,9 @@ describe("persistHeadersStep", () => {
   it("persists headers to database", async () => {
     // Mock schedule revalidation for this test
     vi.doMock("@/lib/revalidation", () => ({
-      scheduleRevalidation: vi.fn().mockResolvedValue(undefined),
+      scheduleRevalidation: vi
+        .fn<(...args: unknown[]) => Promise<void>>()
+        .mockResolvedValue(undefined),
     }));
 
     const { persistHeadersStep } = await import("./persist");

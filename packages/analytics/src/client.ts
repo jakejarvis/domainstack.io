@@ -1,7 +1,8 @@
 "use client";
 
-import posthog from "posthog-js";
+import posthogClient from "posthog-js";
 import { useMemo } from "react";
+
 import type { IdentifyProperties, IdentifySetOnceProperties } from "./types";
 
 /**
@@ -12,7 +13,7 @@ let identifiedUserId: string | null = null;
 
 function track(event: string, properties?: Record<string, unknown>) {
   try {
-    posthog.capture(event, properties);
+    posthogClient.capture(event, properties);
   } catch {
     // no-op
   }
@@ -20,7 +21,7 @@ function track(event: string, properties?: Record<string, unknown>) {
 
 function trackException(error: Error, properties?: Record<string, unknown>) {
   try {
-    posthog.captureException(error, properties);
+    posthogClient.captureException(error, properties);
   } catch {
     // no-op
   }
@@ -40,7 +41,7 @@ function identify(
   setOnceProperties?: IdentifySetOnceProperties,
 ) {
   try {
-    posthog.identify(userId, properties, setOnceProperties);
+    posthogClient.identify(userId, properties, setOnceProperties);
     identifiedUserId = userId;
   } catch {
     // no-op
@@ -53,7 +54,7 @@ function identify(
  */
 function reset() {
   try {
-    posthog.reset();
+    posthogClient.reset();
     identifiedUserId = null;
   } catch {
     // no-op
@@ -73,7 +74,7 @@ function isIdentified(): boolean {
  */
 function getDistinctId(): string | undefined {
   try {
-    return posthog.get_distinct_id();
+    return posthogClient.get_distinct_id();
   } catch {
     return;
   }

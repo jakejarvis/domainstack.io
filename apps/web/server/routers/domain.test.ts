@@ -1,13 +1,5 @@
 /* @vitest-environment node */
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Initialize PGlite before importing anything that uses the db
 const { makePGliteDb, closePGliteDb } = await import("@domainstack/db/testing");
@@ -15,7 +7,7 @@ const { db } = await makePGliteDb();
 
 // Mock workflow/api to avoid starting real workflows (still used by non-registration procedures)
 vi.mock("workflow/api", () => ({
-  start: vi.fn().mockResolvedValue({
+  start: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue({
     runId: "mock-run-id",
     returnValue: Promise.resolve({ success: true, data: {} }),
   }),
@@ -26,7 +18,7 @@ vi.mock("@domainstack/server", async (importOriginal) => {
   const original = await importOriginal<typeof import("@domainstack/server")>();
   return {
     ...original,
-    fetchRegistration: vi.fn().mockResolvedValue({
+    fetchRegistration: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue({
       success: true,
       data: {
         isRegistered: true,
@@ -36,7 +28,7 @@ vi.mock("@domainstack/server", async (importOriginal) => {
         },
       },
     }),
-    fetchDns: vi.fn().mockResolvedValue({
+    fetchDns: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue({
       success: true,
       data: {
         records: [],
@@ -48,23 +40,21 @@ vi.mock("@domainstack/server", async (importOriginal) => {
 
 // Mock edge-config
 vi.mock("@domainstack/server/edge-config", () => ({
-  getProviderCatalog: vi.fn().mockResolvedValue(null),
+  getProviderCatalog: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue(null),
 }));
 
 // Mock next/headers to avoid errors outside request context
 vi.mock("next/headers", () => ({
-  headers: vi.fn().mockResolvedValue(new Map()),
+  headers: vi.fn<() => Promise<Map<string, string>>>().mockResolvedValue(new Map()),
 }));
 
 // Mock next/server after() to be a no-op
 vi.mock("next/server", () => ({
-  after: vi.fn((fn) => fn()),
+  after: vi.fn<(fn: () => unknown) => unknown>((fn) => fn()),
 }));
 
 // Now import modules that depend on the db
-const { dnsRecords, domains, providers, registrations } = await import(
-  "@domainstack/db/schema"
-);
+const { dnsRecords, domains, providers, registrations } = await import("@domainstack/db/schema");
 const { start } = await import("workflow/api");
 const { fetchDns, fetchRegistration } = await import("@domainstack/server");
 const { createCaller } = await import("@/server/routers/_app");
@@ -123,17 +113,15 @@ describe("domain router", () => {
     it("rejects empty domain", async () => {
       const caller = createTestCaller();
 
-      await expect(
-        caller.domain.getRegistration({ domain: "" }),
-      ).rejects.toThrow();
+      await expect(caller.domain.getRegistration({ domain: "" })).rejects.toThrow();
     });
 
     it("rejects invalid domain format", async () => {
       const caller = createTestCaller();
 
-      await expect(
-        caller.domain.getRegistration({ domain: "not-a-domain" }),
-      ).rejects.toThrow("must be a valid registrable domain");
+      await expect(caller.domain.getRegistration({ domain: "not-a-domain" })).rejects.toThrow(
+        "must be a valid registrable domain",
+      );
     });
 
     it("rejects domain with invalid TLD", async () => {

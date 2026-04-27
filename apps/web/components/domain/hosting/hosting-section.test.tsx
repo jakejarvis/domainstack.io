@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
+
 import { render, screen } from "@/mocks/react";
+
 import { HostingSection } from "./hosting-section";
 
 vi.mock("@/components/icons/provider-logo", () => ({
@@ -53,8 +55,6 @@ describe("HostingSection", () => {
 
   it("shows empty state when no providers", () => {
     render(<HostingSection data={null} />);
-    expect(
-      screen.getByText(/No hosting details available/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/No hosting details available/i)).toBeInTheDocument();
   });
 });

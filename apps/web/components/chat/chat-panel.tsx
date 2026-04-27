@@ -1,29 +1,18 @@
 "use client";
 
-import { MAX_MESSAGE_LENGTH } from "@domainstack/constants";
-import { Button } from "@domainstack/ui/button";
-import { cn } from "@domainstack/ui/utils";
-import {
-  IconAlertCircle,
-  IconBrain,
-  IconMessages,
-  IconX,
-} from "@tabler/icons-react";
+import { IconAlertCircle, IconBrain, IconMessages, IconX } from "@tabler/icons-react";
 import type { ChatStatus, ToolUIPart, UIMessage } from "ai";
 import { useAtomValue } from "jotai";
 import { useCallback, useState } from "react";
 import { useStickToBottom } from "use-stick-to-bottom";
+
 import {
   Conversation,
   ConversationContent,
   ConversationEmptyState,
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
-import {
-  Message,
-  MessageContent,
-  MessageResponse,
-} from "@/components/ai-elements/message";
+import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import {
   PromptInput,
   PromptInputCharacterCount,
@@ -31,11 +20,7 @@ import {
   PromptInputSubmit,
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
-import {
-  Reasoning,
-  ReasoningContent,
-  ReasoningTrigger,
-} from "@/components/ai-elements/reasoning";
+import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ai-elements/reasoning";
 import { ShimmeringText } from "@/components/ai-elements/shimmering-text";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import {
@@ -47,8 +32,29 @@ import {
 } from "@/components/ai-elements/tool";
 import { chatSuggestionsAtom } from "@/lib/atoms/chat-atoms";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
+import { MAX_MESSAGE_LENGTH } from "@domainstack/constants";
+import { Button } from "@domainstack/ui/button";
+import { cn } from "@domainstack/ui/utils";
+
 import { ChatModeSelector } from "./chat-mode-selector";
 import { getToolStatusMessage } from "./utils";
+
+function getMessagePartItems(message: UIMessage) {
+  const seen = new Map<string, number>();
+
+  return message.parts.map((part, position) => {
+    const baseKey =
+      part.type === "text" || part.type === "reasoning" ? `${part.type}-${part.text}` : part.type;
+    const duplicateCount = seen.get(baseKey) ?? 0;
+    seen.set(baseKey, duplicateCount + 1);
+
+    return {
+      key: `${message.id}-${baseKey}-${duplicateCount}`,
+      part,
+      position,
+    };
+  });
+}
 
 interface ChatPanelProps {
   messages: UIMessage[];
@@ -84,9 +90,7 @@ export function ChatPanel({
   // Prepare to share scroll state between the different components
   const stickyInstance = useStickToBottom();
 
-  const placeholder = domain
-    ? `Ask about ${domain}\u2026`
-    : "Ask about a domain\u2026";
+  const placeholder = domain ? `Ask about ${domain}\u2026` : "Ask about a domain\u2026";
 
   // Get suggestions from atom (context-aware or server-generated fallback)
   const suggestions = useAtomValue(chatSuggestionsAtom);
@@ -123,11 +127,7 @@ export function ChatPanel({
         )}
       >
         <ConversationContent
-          className={cn(
-            messages.length === 0
-              ? "items-center justify-center"
-              : "gap-4 px-3 py-4",
-          )}
+          className={cn(messages.length === 0 ? "items-center justify-center" : "gap-4 px-3 py-4")}
           aria-live="polite"
         >
           {messages.length === 0 ? (
@@ -141,30 +141,18 @@ export function ChatPanel({
               {messages.map((message) => (
                 <Message key={message.id} from={message.role}>
                   <MessageContent>
-                    {message.parts.map((part, index) => {
+                    {getMessagePartItems(message).map(({ key, part, position }) => {
                       if (part.type === "text") {
-                        return (
-                          <MessageResponse
-                            // biome-ignore lint/suspicious/noArrayIndexKey: message parts have no stable IDs
-                            key={`${message.id}-${index}`}
-                          >
-                            {part.text}
-                          </MessageResponse>
-                        );
+                        return <MessageResponse key={key}>{part.text}</MessageResponse>;
                       }
                       if (part.type === "reasoning") {
                         const isStreaming =
                           status === "streaming" &&
-                          index === message.parts.length - 1 &&
+                          position === message.parts.length - 1 &&
                           message.id === messages.at(-1)?.id;
                         if (showReasoning) {
                           return (
-                            <Reasoning
-                              // biome-ignore lint/suspicious/noArrayIndexKey: message parts have no stable IDs
-                              key={`${message.id}-${index}`}
-                              className="w-full"
-                              isStreaming={isStreaming}
-                            >
+                            <Reasoning key={key} className="w-full" isStreaming={isStreaming}>
                               <ReasoningTrigger />
                               <ReasoningContent>{part.text}</ReasoningContent>
                             </Reasoning>
@@ -173,8 +161,7 @@ export function ChatPanel({
 
                         return isStreaming ? (
                           <div
-                            // biome-ignore lint/suspicious/noArrayIndexKey: message parts have no stable IDs
-                            key={`${message.id}-${index}`}
+                            key={key}
                             className="flex items-center gap-2 text-[13px] text-muted-foreground"
                           >
                             <IconBrain className="size-3.5" />
@@ -185,10 +172,7 @@ export function ChatPanel({
                       if (part.type.startsWith("tool-") && showToolCalls) {
                         const toolPart = part as ToolUIPart;
                         return (
-                          <Tool
-                            // biome-ignore lint/suspicious/noArrayIndexKey: message parts have no stable IDs
-                            key={`${message.id}-${index}`}
-                          >
+                          <Tool key={key}>
                             <ToolHeader
                               title={getToolStatusMessage(toolPart.type)}
                               type={toolPart.type}
@@ -228,25 +212,18 @@ export function ChatPanel({
       </Conversation>
 
       <div
-        className={cn(
-          "!pt-3 shrink-0 space-y-3 border-border border-t bg-card/60",
-          inputClassName,
-        )}
+        className={cn("shrink-0 space-y-3 border-t border-border bg-card/60 !pt-3", inputClassName)}
       >
         <Suggestions className="justify-center">
           {suggestions.map((suggestion) => (
-            <Suggestion
-              key={suggestion}
-              suggestion={suggestion}
-              onClick={handleSuggestionClick}
-            />
+            <Suggestion key={suggestion} suggestion={suggestion} onClick={handleSuggestionClick} />
           ))}
         </Suggestions>
 
         {error && (
           <div
             role="alert"
-            className="flex items-center gap-2 rounded-md border border-destructive/15 bg-destructive/10 px-2 py-1.5 text-[13px] text-destructive leading-tight"
+            className="flex items-center gap-2 rounded-md border border-destructive/15 bg-destructive/10 px-2 py-1.5 text-[13px] leading-tight text-destructive"
           >
             <IconAlertCircle className="size-4 shrink-0" />
             <span className="flex-1">{error}</span>
@@ -256,7 +233,7 @@ export function ChatPanel({
                 size="icon-xs"
                 onClick={onClearError}
                 aria-label="Dismiss error"
-                className="hover:!bg-destructive/20 hover:!text-destructive shrink-0 text-destructive"
+                className="shrink-0 text-destructive hover:!bg-destructive/20 hover:!text-destructive"
               >
                 <IconX className="size-3" />
               </Button>
@@ -271,18 +248,10 @@ export function ChatPanel({
             maxLength={MAX_MESSAGE_LENGTH}
           />
           <PromptInputFooter className="pr-1.5 pb-1.5 pl-3">
-            <PromptInputCharacterCount
-              current={inputLength}
-              max={MAX_MESSAGE_LENGTH}
-            />
+            <PromptInputCharacterCount current={inputLength} max={MAX_MESSAGE_LENGTH} />
             <div className="flex items-center gap-2">
-              <ChatModeSelector
-                disabled={status === "submitted" || status === "streaming"}
-              />
-              <PromptInputSubmit
-                disabled={inputLength === 0}
-                status={error ? "error" : status}
-              />
+              <ChatModeSelector disabled={status === "submitted" || status === "streaming"} />
+              <PromptInputSubmit disabled={inputLength === 0} status={error ? "error" : status} />
             </div>
           </PromptInputFooter>
         </PromptInput>

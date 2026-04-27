@@ -1,15 +1,12 @@
-import { auth } from "@domainstack/auth/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+
 import { LoginSkeletonWithCard } from "@/components/auth/login-skeleton";
 import { AnimatedBackground } from "@/components/layout/animated-background";
+import { auth } from "@domainstack/auth/server";
 
-async function RedirectAuthenticatedLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+async function RedirectAuthenticatedLayout({ children }: { children: React.ReactNode }) {
   // Server-side auth check - requires runtime data (headers)
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -22,11 +19,7 @@ async function RedirectAuthenticatedLayout({
   return <>{children}</>;
 }
 
-export default function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <AnimatedBackground />

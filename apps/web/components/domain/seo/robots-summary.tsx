@@ -1,3 +1,21 @@
+import {
+  IconAsterisk,
+  IconBan,
+  IconChevronRight,
+  IconCircleCheck,
+  IconCircleHalf2,
+  IconClockPause,
+  IconDotsVertical,
+  IconExternalLink,
+  IconFilter,
+  IconHelp,
+  IconWaveSquare,
+  IconX,
+} from "@tabler/icons-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+
+import { PillCount } from "@/components/domain/pill-count";
 import type { SeoResponse } from "@domainstack/types";
 import {
   Accordion,
@@ -20,36 +38,28 @@ import {
   InputGroupInput,
 } from "@domainstack/ui/input-group";
 import { ToggleGroup, ToggleGroupItem } from "@domainstack/ui/toggle-group";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@domainstack/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 import { cn } from "@domainstack/ui/utils";
-import {
-  IconAsterisk,
-  IconBan,
-  IconChevronRight,
-  IconCircleCheck,
-  IconCircleHalf2,
-  IconClockPause,
-  IconDotsVertical,
-  IconExternalLink,
-  IconFilter,
-  IconHelp,
-  IconWaveSquare,
-  IconX,
-} from "@tabler/icons-react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useTransition,
-} from "react";
-import { PillCount } from "@/components/domain/pill-count";
+
+type RobotsRule = {
+  type: "allow" | "disallow" | "crawlDelay" | "contentSignal";
+  value: string;
+};
+
+function getRuleItems(rules: RobotsRule[], scope: string) {
+  const seen = new Map<string, number>();
+
+  return rules.map((rule) => {
+    const baseKey = `${scope}-${rule.type}-${rule.value || "empty"}`;
+    const duplicateCount = seen.get(baseKey) ?? 0;
+    seen.set(baseKey, duplicateCount + 1);
+
+    return {
+      key: `${baseKey}-${duplicateCount}`,
+      rule,
+    };
+  });
+}
 
 function useProgressiveReveal<T>(items: T[], initialVisible: number) {
   const [visible, setVisible] = useState(initialVisible);
@@ -78,16 +88,12 @@ export function RobotsSummary({
     const isNonEmpty = (r: { value: string }) => r.value.trim() !== "";
     const disallows =
       robots?.groups.reduce(
-        (acc, g) =>
-          acc +
-          g.rules.filter((r) => r.type === "disallow" && isNonEmpty(r)).length,
+        (acc, g) => acc + g.rules.filter((r) => r.type === "disallow" && isNonEmpty(r)).length,
         0,
       ) ?? 0;
     const allows =
       robots?.groups.reduce(
-        (acc, g) =>
-          acc +
-          g.rules.filter((r) => r.type === "allow" && isNonEmpty(r)).length,
+        (acc, g) => acc + g.rules.filter((r) => r.type === "allow" && isNonEmpty(r)).length,
         0,
       ) ?? 0;
     return { allows, disallows };
@@ -97,10 +103,7 @@ export function RobotsSummary({
     const groups = robots?.groups ?? [];
     for (const g of groups) {
       for (const r of g.rules) {
-        if (
-          (r.type === "allow" || r.type === "disallow") &&
-          r.value.trim() !== ""
-        ) {
+        if ((r.type === "allow" || r.type === "disallow") && r.value.trim() !== "") {
           return true;
         }
       }
@@ -113,10 +116,7 @@ export function RobotsSummary({
     const groups = robots?.groups ?? [];
     for (const g of groups) {
       for (const r of g.rules) {
-        if (
-          (r.type === "allow" || r.type === "disallow") &&
-          r.value.trim() === ""
-        ) {
+        if ((r.type === "allow" || r.type === "disallow") && r.value.trim() === "") {
           return true;
         }
       }
@@ -153,17 +153,11 @@ export function RobotsSummary({
 
   const filteredGroups = useMemo(() => {
     const base = robots?.groups?.slice() ?? [];
-    const sorted = base.sort(
-      (a, b) => rankAgents(a.userAgents) - rankAgents(b.userAgents),
-    );
+    const sorted = base.sort((a, b) => rankAgents(a.userAgents) - rankAgents(b.userAgents));
     const isNonEmpty = (r: { value: string }) => r.value.trim() !== "";
     return sorted.map((g) => {
-      const hasEmptyAllow = g.rules.some(
-        (r) => r.type === "allow" && !isNonEmpty(r),
-      );
-      const hasEmptyDisallow = g.rules.some(
-        (r) => r.type === "disallow" && !isNonEmpty(r),
-      );
+      const hasEmptyAllow = g.rules.some((r) => r.type === "allow" && !isNonEmpty(r));
+      const hasEmptyDisallow = g.rules.some((r) => r.type === "disallow" && !isNonEmpty(r));
       const queryLower = query?.toLowerCase();
       const visible = g.rules.filter(
         (r) =>
@@ -171,14 +165,11 @@ export function RobotsSummary({
           (only === "all" || r.type === only) &&
           (!queryLower || r.value.toLowerCase().includes(queryLower)),
       );
-      return { ...g, rules: visible, hasEmptyAllow, hasEmptyDisallow } as {
-        userAgents: string[];
-        rules: {
-          type: "allow" | "disallow" | "crawlDelay" | "contentSignal";
-          value: string;
-        }[];
-        hasEmptyAllow: boolean;
-        hasEmptyDisallow: boolean;
+      return {
+        userAgents: g.userAgents,
+        rules: visible,
+        hasEmptyAllow,
+        hasEmptyDisallow,
       };
     });
   }, [robots, only, query, rankAgents]);
@@ -186,16 +177,13 @@ export function RobotsSummary({
   const hasFilteredRules = filteredGroups.some((g) => g.rules.length > 0);
   const filtersActive = query.trim().length > 0 || only !== "all";
   const displayGroups = useMemo(
-    () =>
-      filtersActive
-        ? filteredGroups.filter((g) => g.rules.length > 0)
-        : filteredGroups,
+    () => (filtersActive ? filteredGroups.filter((g) => g.rules.length > 0) : filteredGroups),
     [filteredGroups, filtersActive],
   );
 
   return (
     <div className="space-y-4 rounded-xl">
-      <div className="mt-5 flex items-center gap-2 text-[11px] text-foreground/70 uppercase leading-none tracking-[0.08em] dark:text-foreground/80">
+      <div className="mt-5 flex items-center gap-2 text-[11px] leading-none tracking-[0.08em] text-foreground/70 uppercase dark:text-foreground/80">
         <a
           href={`https://${domain}/robots.txt`}
           target="_blank"
@@ -203,15 +191,9 @@ export function RobotsSummary({
           className="inline-flex items-center gap-1 hover:underline hover:underline-offset-3"
         >
           <span>robots.txt</span>
-          <IconExternalLink
-            className="relative bottom-px inline-flex size-3"
-            aria-hidden
-          />
+          <IconExternalLink className="relative bottom-px inline-flex size-3" aria-hidden />
         </a>
-        <PillCount
-          count={(counts.allows + counts.disallows) as number}
-          color="blue"
-        />
+        <PillCount count={(counts.allows + counts.disallows) as number} color="blue" />
       </div>
 
       <div className="space-y-4">
@@ -223,9 +205,7 @@ export function RobotsSummary({
                   name="robots-filter"
                   placeholder="Filter rules…"
                   value={query}
-                  onChange={(e) =>
-                    startTransition(() => setQuery(e.currentTarget.value))
-                  }
+                  onChange={(e) => startTransition(() => setQuery(e.currentTarget.value))}
                   aria-label="Filter robots rules"
                   autoComplete="off"
                   autoCorrect="off"
@@ -237,11 +217,7 @@ export function RobotsSummary({
                 </InputGroupAddon>
                 {query ? (
                   <InputGroupAddon align="inline-end">
-                    <InputGroupButton
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setQuery("")}
-                    >
+                    <InputGroupButton size="sm" variant="ghost" onClick={() => setQuery("")}>
                       <IconX />
                     </InputGroupButton>
                   </InputGroupAddon>
@@ -259,21 +235,12 @@ export function RobotsSummary({
                 className="relative h-9 w-full items-stretch overflow-hidden rounded-lg border border-black/8 bg-muted/50 p-1 text-muted-foreground sm:w-auto dark:border-white/10 [&>*]:flex-1 sm:[&>*]:flex-none"
               >
                 <ToggleGroupItem value="all" className="h-full">
-                  <IconCircleHalf2
-                    className="size-3.5 text-accent-blue"
-                    aria-hidden
-                  />
+                  <IconCircleHalf2 className="size-3.5 text-accent-blue" aria-hidden />
                   <span className="text-[13px]">All</span>
-                  <PillCount
-                    count={(counts.allows + counts.disallows) as number}
-                    color="slate"
-                  />
+                  <PillCount count={(counts.allows + counts.disallows) as number} color="slate" />
                 </ToggleGroupItem>
                 <ToggleGroupItem value="allow" className="h-full">
-                  <IconCircleCheck
-                    className="size-3.5 text-accent-green"
-                    aria-hidden
-                  />
+                  <IconCircleCheck className="size-3.5 text-accent-green" aria-hidden />
                   <span className="text-[13px]">Allow</span>
                   <PillCount count={counts.allows} color="slate" />
                 </ToggleGroupItem>
@@ -286,7 +253,7 @@ export function RobotsSummary({
             </div>
 
             {filtersActive && !hasFilteredRules ? (
-              <div className="text-muted-foreground text-sm">
+              <div className="text-sm text-muted-foreground">
                 No matching rules.
                 <Button
                   variant="link"
@@ -312,12 +279,7 @@ export function RobotsSummary({
           </>
         ) : hasEmptyRulesGroups ? (
           // Show groups with empty rules (e.g., "Disallow:" means allow all)
-          <GroupsAccordion
-            groups={displayGroups}
-            query={query}
-            highlight={highlight}
-            only={only}
-          />
+          <GroupsAccordion groups={displayGroups} query={query} highlight={highlight} only={only} />
         ) : robots?.sitemaps?.length ? (
           <Empty className="border border-dashed">
             <EmptyHeader>
@@ -326,16 +288,13 @@ export function RobotsSummary({
               </EmptyMedia>
               <EmptyTitle>No crawl rules detected</EmptyTitle>
               <EmptyDescription>
-                This website&apos;s robots.txt only declares sitemaps; no crawl
-                rules are specified.
+                This website&apos;s robots.txt only declares sitemaps; no crawl rules are specified.
               </EmptyDescription>
             </EmptyHeader>
           </Empty>
         ) : null}
 
-        {robots?.sitemaps?.length ? (
-          <SitemapsList items={robots.sitemaps} />
-        ) : null}
+        {robots?.sitemaps?.length ? <SitemapsList items={robots.sitemaps} /> : null}
       </div>
     </div>
   );
@@ -362,10 +321,8 @@ function RobotsGroupHeader({
           <span
             key={ua}
             className={cn(
-              "flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-1 text-xs leading-none",
-              ua === "*"
-                ? "bg-accent-purple/18 text-accent-purple"
-                : "bg-muted",
+              "flex items-center gap-1 rounded px-1.5 py-1 text-xs leading-none whitespace-nowrap",
+              ua === "*" ? "bg-accent-purple/18 text-accent-purple" : "bg-muted",
             )}
           >
             {ua === "*" ? (
@@ -379,7 +336,7 @@ function RobotsGroupHeader({
           </span>
         ))}
       </div>
-      <div className="shrink-0 text-muted-foreground text-xs">
+      <div className="shrink-0 text-xs text-muted-foreground">
         {showAllow ? `${allowN} allow` : null}
         {showAllow && showDisallow ? " · " : null}
         {showDisallow ? `${disallowN} disallow` : null}
@@ -408,10 +365,7 @@ function GroupsAccordion({
   only?: "all" | "allow" | "disallow";
 }) {
   const shouldReduceMotion = useReducedMotion();
-  const defaultIdx = useMemo(
-    () => groups.findIndex((g) => g.userAgents.includes("*")),
-    [groups],
-  );
+  const defaultIdx = useMemo(() => groups.findIndex((g) => g.userAgents.includes("*")), [groups]);
   const defaultValue = defaultIdx >= 0 ? `g-${defaultIdx}` : undefined;
   const isSearching = Boolean(query);
   const openValues = useMemo(
@@ -504,24 +458,30 @@ function GroupContent({
   hasEmptyDisallow: boolean;
 }) {
   const isSearching = query.trim().length > 0;
-  const { existing, added, more, total, visible, setVisible } =
-    useProgressiveReveal(rules, 6);
+  const { existing, added, more, total, visible, setVisible } = useProgressiveReveal(rules, 6);
   if (isSearching) {
+    const ruleItems = getRuleItems(rules, "all");
+    const firstRuleKey = ruleItems[0]?.key;
+
     return (
       <div className="flex flex-col">
-        {rules.map((r, i) => (
+        {ruleItems.map(({ key, rule }) => (
           <RuleRow
-            // biome-ignore lint/suspicious/noArrayIndexKey: rules can have duplicate type+value
-            key={`r-${r.type}-${r.value}-all-${i}`}
-            rule={r}
+            key={key}
+            rule={rule}
             query={query}
             highlight={highlight}
-            isFirst={i === 0}
+            isFirst={key === firstRuleKey}
           />
         ))}
       </div>
     );
   }
+
+  const existingItems = getRuleItems(existing, "existing");
+  const firstExistingKey = existingItems[0]?.key;
+  const addedItems = getRuleItems(added, "added");
+
   return (
     <div className="flex flex-col py-2">
       {rules.length === 0 && hasEmptyDisallow && only !== "allow" ? (
@@ -534,14 +494,13 @@ function GroupContent({
           No explicit allow paths
         </div>
       ) : null}
-      {existing.map((r, i) => (
+      {existingItems.map(({ key, rule }) => (
         <RuleRow
-          // biome-ignore lint/suspicious/noArrayIndexKey: rules can have duplicate type+value
-          key={`r-${r.type}-${r.value}-existing-${i}`}
-          rule={r}
+          key={key}
+          rule={rule}
           query={query}
           highlight={highlight}
-          isFirst={i === 0}
+          isFirst={key === firstExistingKey}
         />
       ))}
       {added.length > 0 ? (
@@ -553,14 +512,8 @@ function GroupContent({
           style={{ overflow: "hidden" }}
           className="flex flex-col"
         >
-          {added.map((r, i) => (
-            <RuleRow
-              // biome-ignore lint/suspicious/noArrayIndexKey: rules can have duplicate type+value
-              key={`r-${r.type}-${r.value}-added-${i}`}
-              rule={r}
-              query={query}
-              highlight={highlight}
-            />
+          {addedItems.map(({ key, rule }) => (
+            <RuleRow key={key} rule={rule} query={query} highlight={highlight} />
           ))}
         </motion.div>
       ) : null}
@@ -598,7 +551,7 @@ function RuleRow({
   return (
     <div
       className={cn(
-        "group flex items-center gap-2 border-muted border-t px-2 py-2.5 font-mono text-xs",
+        "group flex items-center gap-2 border-t border-muted px-2 py-2.5 font-mono text-xs",
         isFirst && "border-t-0",
       )}
     >
@@ -631,11 +584,7 @@ const ruleTypeConfig = {
   },
 } as const;
 
-function RuleTypeDot({
-  type,
-}: {
-  type: "allow" | "disallow" | "crawlDelay" | "contentSignal";
-}) {
+function RuleTypeDot({ type }: { type: "allow" | "disallow" | "crawlDelay" | "contentSignal" }) {
   const { Icon, label, colorClass } = ruleTypeConfig[type];
 
   return (
@@ -658,7 +607,7 @@ function SitemapLink({ url }: { url: string }) {
   return (
     <div className="flex items-center">
       <a
-        className="flex items-center gap-1.5 truncate font-medium text-[13px] text-foreground/85 hover:text-foreground/60 hover:no-underline"
+        className="flex items-center gap-1.5 truncate text-[13px] font-medium text-foreground/85 hover:text-foreground/60 hover:no-underline"
         href={url}
         target="_blank"
         rel="noopener"
@@ -671,12 +620,11 @@ function SitemapLink({ url }: { url: string }) {
 }
 
 function SitemapsList({ items }: { items: string[] }) {
-  const { existing, added, more, total, visible, setVisible } =
-    useProgressiveReveal(items, 2);
+  const { existing, added, more, total, visible, setVisible } = useProgressiveReveal(items, 2);
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 text-[11px] text-foreground/70 uppercase leading-none tracking-[0.08em] dark:text-foreground/80">
+      <div className="flex items-center gap-2 text-[11px] leading-none tracking-[0.08em] text-foreground/70 uppercase dark:text-foreground/80">
         <span>Sitemaps</span>
         <PillCount count={items.length} color="green" />
       </div>

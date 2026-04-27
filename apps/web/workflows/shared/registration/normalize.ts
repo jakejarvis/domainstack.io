@@ -5,10 +5,7 @@
  * This step is shared between the dedicated registrationWorkflow and internal workflows.
  */
 
-import type {
-  RegistrationContact,
-  RegistrationResponse,
-} from "@domainstack/types";
+import type { RegistrationContact, RegistrationResponse } from "@domainstack/types";
 import type { Provider } from "@domainstack/utils/providers";
 
 // Type for parsed RDAP record
@@ -61,21 +58,14 @@ export async function normalizeAndBuildResponseStep(
   "use step";
 
   // Dynamic imports for Node.js modules and database operations
-  const { getProviderCatalog } = await import(
-    "@domainstack/server/edge-config"
-  );
-  const { detectRegistrar, getProvidersFromCatalog } = await import(
-    "@domainstack/utils/providers"
-  );
-  const { upsertCatalogProvider, resolveOrCreateProviderId } = await import(
-    "@domainstack/db/queries"
-  );
+  const { getProviderCatalog } = await import("@domainstack/server/edge-config");
+  const { detectRegistrar, getProvidersFromCatalog } = await import("@domainstack/utils/providers");
+  const { upsertCatalogProvider, resolveOrCreateProviderId } =
+    await import("@domainstack/db/queries");
 
   const record = JSON.parse(recordJson) as ParsedRdapRecord;
   const catalog = await getProviderCatalog();
-  const registrarProviders = catalog
-    ? getProvidersFromCatalog(catalog, "registrar")
-    : [];
+  const registrarProviders = catalog ? getProvidersFromCatalog(catalog, "registrar") : [];
 
   // Normalize registrar
   let registrarName = (record.registrar?.name || "").toString();
@@ -92,8 +82,7 @@ export async function normalizeAndBuildResponseStep(
   // Fallback to URL hostname parsing
   try {
     if (!registrarDomain && record.registrar?.url) {
-      registrarDomain =
-        new URL(record.registrar.url.toString()).hostname || null;
+      registrarDomain = new URL(record.registrar.url.toString()).hostname || null;
     }
   } catch {
     // URL parsing failed
@@ -158,9 +147,7 @@ export async function normalizeAndBuildResponseStep(
  * RDAP responses are returned as JSON objects, WHOIS responses as plain text.
  * Client-side code is responsible for prettification when displaying.
  */
-function formatRawResponse(
-  record: ParsedRdapRecord,
-): Record<string, unknown> | string | undefined {
+function formatRawResponse(record: ParsedRdapRecord): Record<string, unknown> | string | undefined {
   if (record.source === "rdap" && record.rawRdap) {
     return record.rawRdap as Record<string, unknown>;
   }

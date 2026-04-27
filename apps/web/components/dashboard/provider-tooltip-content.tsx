@@ -1,15 +1,11 @@
+import { IconLock, IconLockOpen, IconRosetteDiscountCheck, IconSpy } from "@tabler/icons-react";
+import { format } from "date-fns";
+
+import { formatRegistrant } from "@/components/domain/registration/registration-section";
+import { ProviderLogo } from "@/components/icons/provider-logo";
 import type { ProviderCategory } from "@domainstack/constants";
 import type { DnsRecord, RegistrationContact } from "@domainstack/types";
 import { Spinner } from "@domainstack/ui/spinner";
-import {
-  IconLock,
-  IconLockOpen,
-  IconRosetteDiscountCheck,
-  IconSpy,
-} from "@tabler/icons-react";
-import { format } from "date-fns";
-import { formatRegistrant } from "@/components/domain/registration/registration-section";
-import { ProviderLogo } from "@/components/icons/provider-logo";
 
 type ProviderTooltipContentProps = {
   providerId?: string | null;
@@ -72,18 +68,11 @@ export function ProviderTooltipContent({
     registrantInfo?.contacts && !registrantInfo.privacyEnabled
       ? (() => {
           const { contacts } = registrantInfo;
-          const registrantContact = contacts.find(
-            (c) => c.type === "registrant",
-          );
+          const registrantContact = contacts.find((c) => c.type === "registrant");
           if (!registrantContact) return null;
           const organization =
-            (
-              registrantContact.organization ||
-              registrantContact.name ||
-              ""
-            ).trim() || "Unknown";
-          const country =
-            registrantContact.country || registrantContact.countryCode || "";
+            (registrantContact.organization || registrantContact.name || "").trim() || "Unknown";
+          const country = registrantContact.country || registrantContact.countryCode || "";
           const state = registrantContact.state || undefined;
           return { organization, country, state };
         })()
@@ -91,12 +80,8 @@ export function ProviderTooltipContent({
 
   // Extract registration verification details
   const serverUrl =
-    rdapServers && rdapServers.length > 0
-      ? rdapServers[rdapServers.length - 1]
-      : undefined;
-  const serverName = serverUrl
-    ? (extractDomain(serverUrl) ?? "RDAP")
-    : (whoisServer ?? "WHOIS");
+    rdapServers && rdapServers.length > 0 ? rdapServers[rdapServers.length - 1] : undefined;
+  const serverName = serverUrl ? (extractDomain(serverUrl) ?? "RDAP") : (whoisServer ?? "WHOIS");
   const learnUrl =
     registrationSource === "rdap"
       ? "https://about.rdap.org/"
@@ -105,20 +90,16 @@ export function ProviderTooltipContent({
   return (
     <div className="space-y-2 py-1">
       {/* Provider info */}
-      <div className="flex items-center gap-1.5 border-muted/30 border-b pb-2">
+      <div className="flex items-center gap-1.5 border-b border-muted/30 pb-2">
         {providerId && (
-          <ProviderLogo
-            providerId={providerId}
-            providerName={providerName}
-            className="shrink-0"
-          />
+          <ProviderLogo providerId={providerId} providerName={providerName} className="shrink-0" />
         )}
         <span className="font-medium">{providerName}</span>
       </div>
 
       {/* Loading state */}
       {isLoading ? (
-        <div className="flex items-center justify-center gap-2 py-1 text-muted/90 text-xs">
+        <div className="flex items-center justify-center gap-2 py-1 text-xs text-muted/90">
           <Spinner className="size-3" />
           <span>Loading…</span>
         </div>
@@ -135,9 +116,7 @@ export function ProviderTooltipContent({
                     <span className="text-background/90">Privacy enabled</span>
                   </>
                 ) : (
-                  <span className="text-background/90">
-                    {formatRegistrant(registrant)}
-                  </span>
+                  <span className="text-background/90">{formatRegistrant(registrant)}</span>
                 )}
               </div>
             )}
@@ -148,16 +127,12 @@ export function ProviderTooltipContent({
                 {transferLock ? (
                   <>
                     <IconLock className="size-3.5 text-muted" />
-                    <span className="text-background/90">
-                      Transfer lock is on
-                    </span>
+                    <span className="text-background/90">Transfer lock is on</span>
                   </>
                 ) : (
                   <>
                     <IconLockOpen className="size-3.5 text-amber-300 dark:text-amber-500" />
-                    <span className="text-background/90">
-                      Transfer lock is off
-                    </span>
+                    <span className="text-background/90">Transfer lock is off</span>
                   </>
                 )}
               </div>
@@ -198,34 +173,26 @@ export function ProviderTooltipContent({
             </div>
           </div>
         ) : (
-          <div className="text-muted/80 text-xs">
-            No registration data available
-          </div>
+          <div className="text-xs text-muted/80">No registration data available</div>
         )
       ) : providerType === "ca" ? (
         // Certificate expiry for CA providers
         hasCertificateExpiry ? (
-          <div className="text-xs">
-            Expires on {format(certificateExpiryDate, "MMM d, yyyy")}
-          </div>
+          <div className="text-xs">Expires on {format(certificateExpiryDate, "MMM d, yyyy")}</div>
         ) : (
-          <div className="text-muted/80 text-xs">
-            No certificate data available
-          </div>
+          <div className="text-xs text-muted/80">No certificate data available</div>
         )
       ) : // DNS records for other providers
       hasRecords ? (
         <div className="space-y-1">
           {records.map((record) => (
             <div key={record.value} className="font-mono text-xs">
-              {record.priority != null
-                ? `${record.priority} ${record.value}`
-                : record.value}
+              {record.priority != null ? `${record.priority} ${record.value}` : record.value}
             </div>
           ))}
         </div>
       ) : (
-        <div className="text-muted/80 text-xs">No DNS records available</div>
+        <div className="text-xs text-muted/80">No DNS records available</div>
       )}
     </div>
   );

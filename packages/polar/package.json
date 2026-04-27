@@ -16,16 +16,18 @@
   },
   "scripts": {
     "check-types": "tsc --noEmit",
-    "lint": "biome check",
-    "format": "biome format --write",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "fmt": "oxfmt --config ../../.oxfmtrc.json",
+    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json",
     "test": "vitest run"
   },
   "dependencies": {
     "@domainstack/db": "workspace:*",
     "@domainstack/email": "workspace:*",
     "@domainstack/logger": "workspace:*",
-    "@polar-sh/better-auth": "^1.8.1",
-    "@polar-sh/sdk": "^0.42.1",
+    "@polar-sh/better-auth": "^1.8.3",
+    "@polar-sh/sdk": "^0.46.4",
     "date-fns": "^4.1.0"
   },
   "devDependencies": {

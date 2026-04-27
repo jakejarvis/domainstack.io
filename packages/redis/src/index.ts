@@ -1,5 +1,6 @@
-import { createLogger } from "@domainstack/logger";
 import { Redis } from "@upstash/redis";
+
+import { createLogger } from "@domainstack/logger";
 
 const logger = createLogger({ source: "redis" });
 
@@ -20,12 +21,9 @@ let redis: Redis | undefined;
 export function getRedis(): Redis | undefined {
   if (
     process.env.NODE_ENV !== "production" &&
-    (!process.env.UPSTASH_REDIS_REST_URL ||
-      !process.env.UPSTASH_REDIS_REST_TOKEN)
+    (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN)
   ) {
-    logger.warn(
-      "UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are not set",
-    );
+    logger.warn("UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are not set");
     // Don't block app if Redis is not set in development
     return undefined;
   }
@@ -44,10 +42,7 @@ export function getRedis(): Redis | undefined {
  * @param config - Redis connection configuration
  * @returns Redis client instance
  */
-export function createRedisClient(config: {
-  url: string;
-  token: string;
-}): Redis {
+export function createRedisClient(config: { url: string; token: string }): Redis {
   return new Redis({
     url: config.url,
     token: config.token,

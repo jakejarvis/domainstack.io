@@ -1,3 +1,5 @@
+import { ipAddress, waitUntil } from "@vercel/functions";
+
 import { createLogger } from "@domainstack/logger";
 import {
   DEFAULT_RATE_LIMIT,
@@ -5,7 +7,6 @@ import {
   type RateLimitConfig,
   type RateLimitInfo,
 } from "@domainstack/redis/ratelimit";
-import { ipAddress, waitUntil } from "@vercel/functions";
 
 const logger = createLogger({ source: "ratelimit/api" });
 
@@ -123,14 +124,11 @@ export async function checkRateLimit(
   }
 
   // Include endpoint name in identifier for per-endpoint isolation
-  const identifier = config.name
-    ? `${config.name}:${baseIdentifier}`
-    : baseIdentifier;
+  const identifier = config.name ? `${config.name}:${baseIdentifier}` : baseIdentifier;
 
   // Fail open: if Redis errors, allow the request through
   try {
-    const { success, limit, remaining, reset, pending } =
-      await limiter.limit(identifier);
+    const { success, limit, remaining, reset, pending } = await limiter.limit(identifier);
 
     // Handle analytics write in background (non-blocking)
     waitUntil(pending);

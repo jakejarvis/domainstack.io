@@ -1,7 +1,7 @@
-import posthog from "posthog-js";
+import posthogClient from "posthog-js";
 
 // PostHog
-posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY as string, {
+posthogClient.init(process.env.NEXT_PUBLIC_POSTHOG_KEY as string, {
   api_host: "/_proxy/ingest",
   ui_host: "https://us.posthog.com",
   defaults: "2025-05-24",

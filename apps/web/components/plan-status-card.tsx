@@ -1,8 +1,9 @@
-import { Badge } from "@domainstack/ui/badge";
-import { cn } from "@domainstack/ui/utils";
 import { IconGift, IconRocket } from "@tabler/icons-react";
 import { format } from "date-fns";
+
 import { QuotaBar } from "@/components/dashboard/quota-bar";
+import { Badge } from "@domainstack/ui/badge";
+import { cn } from "@domainstack/ui/utils";
 
 interface PlanStatusCardProps {
   activeCount: number;

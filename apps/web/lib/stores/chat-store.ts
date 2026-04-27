@@ -70,9 +70,7 @@ export const useChatHydrated = () => {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = chatStore.persist.onFinishHydration(() =>
-      setHydrated(true),
-    );
+    const unsubscribe = chatStore.persist.onFinishHydration(() => setHydrated(true));
 
     setHydrated(chatStore.persist.hasHydrated());
 

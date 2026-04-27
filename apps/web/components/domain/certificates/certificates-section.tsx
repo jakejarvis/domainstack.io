@@ -1,3 +1,20 @@
+import {
+  IconArrowUp,
+  IconCertificateOff,
+  IconChevronDown,
+  IconChevronUp,
+} from "@tabler/icons-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { Fragment, useState } from "react";
+
+import { CertificateAlert } from "@/components/domain/certificate-alert";
+import { KeyValue } from "@/components/domain/key-value";
+import { KeyValueGrid } from "@/components/domain/key-value-grid";
+import { RelativeAgeString } from "@/components/domain/relative-age";
+import { RelativeExpiryString } from "@/components/domain/relative-expiry";
+import { ReportSection } from "@/components/domain/report-section";
+import { ProviderLogo } from "@/components/icons/provider-logo";
+import { sections } from "@/lib/constants/sections";
 import type { Certificate, CertificatesResponse } from "@domainstack/types";
 import { Badge } from "@domainstack/ui/badge";
 import { Button } from "@domainstack/ui/button";
@@ -14,22 +31,6 @@ import {
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
 import { formatDate, formatDateTimeUtc } from "@domainstack/utils";
-import {
-  IconArrowUp,
-  IconCertificateOff,
-  IconChevronDown,
-  IconChevronUp,
-} from "@tabler/icons-react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Fragment, useState } from "react";
-import { CertificateAlert } from "@/components/domain/certificate-alert";
-import { KeyValue } from "@/components/domain/key-value";
-import { KeyValueGrid } from "@/components/domain/key-value-grid";
-import { RelativeAgeString } from "@/components/domain/relative-age";
-import { RelativeExpiryString } from "@/components/domain/relative-expiry";
-import { ReportSection } from "@/components/domain/report-section";
-import { ProviderLogo } from "@/components/icons/provider-logo";
-import { sections } from "@/lib/constants/sections";
 
 function CertificateCard({ cert }: { cert: Certificate }) {
   const sans = Array.isArray(cert.altNames)
@@ -44,17 +45,12 @@ function CertificateCard({ cert }: { cert: Certificate }) {
           value={cert.issuer}
           leading={
             cert.caProvider?.id ? (
-              <ProviderLogo
-                providerId={cert.caProvider.id}
-                providerName={cert.caProvider.name}
-              />
+              <ProviderLogo providerId={cert.caProvider.id} providerName={cert.caProvider.name} />
             ) : undefined
           }
           suffix={
             cert.caProvider?.name ? (
-              <span className="text-[11px] text-muted-foreground">
-                {cert.caProvider.name}
-              </span>
+              <span className="text-[11px] text-muted-foreground">{cert.caProvider.name}</span>
             ) : undefined
           }
         />
@@ -70,14 +66,14 @@ function CertificateCard({ cert }: { cert: Certificate }) {
                   render={
                     <Badge
                       variant="outline"
-                      className="select-none gap-0 border-muted-foreground/35 px-1.5 font-mono text-[11px] text-muted-foreground/85"
+                      className="gap-0 border-muted-foreground/35 px-1.5 font-mono text-[11px] text-muted-foreground/85 select-none"
                     >
                       <span>+</span>
                       <span className="px-[1px]">{sans.length}</span>
                     </Badge>
                   }
                 />
-                <ResponsiveTooltipContent className="max-w-[80vw] whitespace-pre-wrap break-words md:max-w-[40rem]">
+                <ResponsiveTooltipContent className="max-w-[80vw] break-words whitespace-pre-wrap md:max-w-[40rem]">
                   {sans.join(", ")}
                 </ResponsiveTooltipContent>
               </ResponsiveTooltip>
@@ -90,7 +86,7 @@ function CertificateCard({ cert }: { cert: Certificate }) {
           value={formatDate(cert.validFrom)}
           valueTooltip={formatDateTimeUtc(cert.validFrom)}
           suffix={
-            <span className="text-[11px] text-muted-foreground leading-none">
+            <span className="text-[11px] leading-none text-muted-foreground">
               <RelativeAgeString from={cert.validFrom} />
             </span>
           }
@@ -101,12 +97,8 @@ function CertificateCard({ cert }: { cert: Certificate }) {
           value={formatDate(cert.validTo)}
           valueTooltip={formatDateTimeUtc(cert.validTo)}
           suffix={
-            <span className="text-[11px] text-muted-foreground leading-none">
-              <RelativeExpiryString
-                to={cert.validTo}
-                dangerDays={7}
-                warnDays={21}
-              />
+            <span className="text-[11px] leading-none text-muted-foreground">
+              <RelativeExpiryString to={cert.validTo} dangerDays={7} warnDays={21} />
             </span>
           }
         />
@@ -175,23 +167,15 @@ export function CertificatesSection({
                   }}
                 >
                   <div className="my-3 flex justify-center">
-                    <IconArrowUp
-                      className="size-4 text-muted-foreground/60"
-                      aria-hidden
-                    />
+                    <IconArrowUp className="size-4 text-muted-foreground/60" aria-hidden />
                   </div>
                   {remainingCerts.map((cert, index) => (
-                    <Fragment
-                      key={`cert-${cert.subject}-${cert.validFrom}-${cert.validTo}`}
-                    >
+                    <Fragment key={`cert-${cert.subject}-${cert.validFrom}-${cert.validTo}`}>
                       <CertificateCard cert={cert} />
 
                       {index < remainingCerts.length - 1 && (
                         <div className="my-3 flex justify-center">
-                          <IconArrowUp
-                            className="size-4 text-muted-foreground/60"
-                            aria-hidden
-                          />
+                          <IconArrowUp className="size-4 text-muted-foreground/60" aria-hidden />
                         </div>
                       )}
                     </Fragment>
@@ -221,8 +205,8 @@ export function CertificatesSection({
             </EmptyMedia>
             <EmptyTitle>No certificates found</EmptyTitle>
             <EmptyDescription>
-              We couldn&apos;t retrieve a TLS certificate chain for this site.
-              Ensure the domain resolves and serves HTTPS on port 443.
+              We couldn&apos;t retrieve a TLS certificate chain for this site. Ensure the domain
+              resolves and serves HTTPS on port 443.
             </EmptyDescription>
           </EmptyHeader>
         </Empty>

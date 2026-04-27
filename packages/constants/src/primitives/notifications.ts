@@ -24,8 +24,7 @@ export const DOMAIN_EXPIRY_THRESHOLDS = [30, 14, 7, 1] as const;
 export const CERTIFICATE_EXPIRY_THRESHOLDS = [14, 7, 3, 1] as const;
 
 type DomainExpiryThreshold = (typeof DOMAIN_EXPIRY_THRESHOLDS)[number];
-type CertificateExpiryThreshold =
-  (typeof CERTIFICATE_EXPIRY_THRESHOLDS)[number];
+type CertificateExpiryThreshold = (typeof CERTIFICATE_EXPIRY_THRESHOLDS)[number];
 
 export type NotificationType =
   | `domain_expiry_${DomainExpiryThreshold}d`
@@ -37,24 +36,17 @@ export type NotificationType =
   | "certificate_change";
 
 // Dashboard "expiring soon" threshold (first notification threshold)
-// biome-ignore lint/nursery/useDestructuring: This is a constant
 export const EXPIRING_SOON_DAYS = DOMAIN_EXPIRY_THRESHOLDS[0];
 
 // Mapping from threshold to notification type
-export const DOMAIN_THRESHOLD_TO_TYPE: Record<
-  DomainExpiryThreshold,
-  NotificationType
-> = {
+export const DOMAIN_THRESHOLD_TO_TYPE: Record<DomainExpiryThreshold, NotificationType> = {
   30: "domain_expiry_30d",
   14: "domain_expiry_14d",
   7: "domain_expiry_7d",
   1: "domain_expiry_1d",
 };
 
-export const CERTIFICATE_THRESHOLD_TO_TYPE: Record<
-  CertificateExpiryThreshold,
-  NotificationType
-> = {
+export const CERTIFICATE_THRESHOLD_TO_TYPE: Record<CertificateExpiryThreshold, NotificationType> = {
   14: "certificate_expiry_14d",
   7: "certificate_expiry_7d",
   3: "certificate_expiry_3d",

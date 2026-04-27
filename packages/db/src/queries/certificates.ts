@@ -1,23 +1,17 @@
-import type { Certificate, CertificatesResponse } from "@domainstack/types";
 import type { InferInsertModel } from "drizzle-orm";
 import { and, asc, eq, isNull } from "drizzle-orm";
+
+import type { Certificate, CertificatesResponse } from "@domainstack/types";
+
 import { db } from "../client";
-import {
-  certificates,
-  domains,
-  providers,
-  users,
-  userTrackedDomains,
-} from "../schema";
+import { certificates, domains, providers, users, userTrackedDomains } from "../schema";
 import type { CacheResult } from "../types";
 
 type CertificateInsert = InferInsertModel<typeof certificates>;
 
 export interface UpsertCertificatesParams {
   domainId: string;
-  chain: Array<
-    Omit<CertificateInsert, "id" | "domainId" | "fetchedAt" | "expiresAt">
-  >;
+  chain: Array<Omit<CertificateInsert, "id" | "domainId" | "fetchedAt" | "expiresAt">>;
   fetchedAt: Date;
   expiresAt: Date; // policy window for revalidation (not cert validity)
 }
@@ -138,9 +132,7 @@ export async function getCachedCertificates(
  * Get tracked domain IDs that have certificates.
  * Used by the certificate expiry scheduler.
  */
-export async function getVerifiedTrackedDomainIdsWithCertificates(): Promise<
-  string[]
-> {
+export async function getVerifiedTrackedDomainIdsWithCertificates(): Promise<string[]> {
   const rows = await db
     .selectDistinct({
       trackedDomainId: userTrackedDomains.id,
@@ -148,12 +140,7 @@ export async function getVerifiedTrackedDomainIdsWithCertificates(): Promise<
     .from(userTrackedDomains)
     .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
     .innerJoin(certificates, eq(domains.id, certificates.domainId))
-    .where(
-      and(
-        eq(userTrackedDomains.verified, true),
-        isNull(userTrackedDomains.archivedAt),
-      ),
-    );
+    .where(and(eq(userTrackedDomains.verified, true), isNull(userTrackedDomains.archivedAt)));
 
   return rows.map((r) => r.trackedDomainId);
 }

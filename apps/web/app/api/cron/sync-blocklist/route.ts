@@ -1,7 +1,8 @@
+import { NextResponse } from "next/server";
+
 import { syncBlockedDomains } from "@domainstack/db/queries";
 import { createLogger } from "@domainstack/logger";
 import { getBlocklistSources } from "@domainstack/server/edge-config";
-import { NextResponse } from "next/server";
 
 const logger = createLogger({ source: "cron/sync-blocklist" });
 
@@ -13,9 +14,7 @@ const logger = createLogger({ source: "cron/sync-blocklist" });
  */
 export async function GET(request: Request) {
   // Verify the request is from Vercel Cron
-  if (
-    request.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`
-  ) {
+  if (request.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
     logger.warn("Unauthorized cron request");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -41,10 +40,7 @@ export async function GET(request: Request) {
         const response = await fetch(sourceUrl);
 
         if (!response.ok) {
-          logger.warn(
-            { sourceUrl, status: response.status },
-            "Failed to fetch blocklist",
-          );
+          logger.warn({ sourceUrl, status: response.status }, "Failed to fetch blocklist");
           return [];
         }
 
@@ -83,10 +79,7 @@ export async function GET(request: Request) {
       if (result.status === "fulfilled") {
         allDomains.push(...result.value);
       } else {
-        logger.error(
-          { err: result.reason, sourceUrl: sources[i] },
-          "Error fetching blocklist",
-        );
+        logger.error({ err: result.reason, sourceUrl: sources[i] }, "Error fetching blocklist");
       }
     }
 
@@ -107,9 +100,6 @@ export async function GET(request: Request) {
     });
   } catch (err) {
     logger.error({ err }, "Sync blocklist failed");
-    return NextResponse.json(
-      { error: "Failed to sync blocklist" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to sync blocklist" }, { status: 500 });
   }
 }

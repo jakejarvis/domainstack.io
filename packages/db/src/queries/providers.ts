@@ -1,9 +1,8 @@
-import { slugify } from "@domainstack/utils";
-import {
-  catalogRuleMatchesDiscovered,
-  type Provider,
-} from "@domainstack/utils/providers";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
+
+import { slugify } from "@domainstack/utils";
+import { catalogRuleMatchesDiscovered, type Provider } from "@domainstack/utils/providers";
+
 import { db } from "../client";
 import { type providerCategory, providers } from "../schema";
 import { isUniqueViolation } from "../utils";
@@ -23,20 +22,14 @@ type ProviderRow = typeof providers.$inferSelect;
  * Get provider by ID
  */
 export async function getProviderById(providerId: string) {
-  const rows = await db
-    .select()
-    .from(providers)
-    .where(eq(providers.id, providerId))
-    .limit(1);
+  const rows = await db.select().from(providers).where(eq(providers.id, providerId)).limit(1);
   return rows[0] ?? null;
 }
 
 /**
  * Resolve a provider id by exact domain when provided, falling back to case-insensitive name.
  */
-export async function resolveProviderId(
-  input: ResolveProviderInput,
-): Promise<string | null> {
+export async function resolveProviderId(input: ResolveProviderInput): Promise<string | null> {
   const { category } = input;
   const domain = input.domain?.toLowerCase() ?? null;
   const name = input.name?.trim() ?? null;
@@ -45,9 +38,7 @@ export async function resolveProviderId(
     const byDomain = await db
       .select({ id: providers.id })
       .from(providers)
-      .where(
-        and(eq(providers.category, category), eq(providers.domain, domain)),
-      )
+      .where(and(eq(providers.category, category), eq(providers.domain, domain)))
       .orderBy(desc(eq(providers.source, "catalog")), desc(providers.updatedAt))
       .limit(1);
     if (byDomain[0]?.id) return byDomain[0].id;
@@ -108,9 +99,7 @@ export async function resolveOrCreateProviderId(
       const bySlug = await db
         .select({ id: providers.id })
         .from(providers)
-        .where(
-          and(eq(providers.category, input.category), eq(providers.slug, slug)),
-        )
+        .where(and(eq(providers.category, input.category), eq(providers.slug, slug)))
         .limit(1);
 
       if (bySlug[0]?.id) return bySlug[0].id;
@@ -123,9 +112,7 @@ export async function resolveOrCreateProviderId(
 /**
  * Get provider names by IDs.
  */
-export async function getProviderNames(
-  ids: string[],
-): Promise<Map<string, string>> {
+export async function getProviderNames(ids: string[]): Promise<Map<string, string>> {
   if (ids.length === 0) return new Map();
 
   const uniqueIds = Array.from(new Set(ids));
@@ -152,9 +139,7 @@ export async function getProviderNames(
  * @param provider - Provider from Edge Config catalog
  * @returns Provider row with database ID
  */
-export async function upsertCatalogProvider(
-  provider: Provider,
-): Promise<ProviderRow> {
+export async function upsertCatalogProvider(provider: Provider): Promise<ProviderRow> {
   const slug = slugify(provider.name);
   const lowerDomain = provider.domain?.toLowerCase() ?? null;
 
@@ -162,20 +147,14 @@ export async function upsertCatalogProvider(
   const existing = await db
     .select()
     .from(providers)
-    .where(
-      and(eq(providers.category, provider.category), eq(providers.slug, slug)),
-    )
+    .where(and(eq(providers.category, provider.category), eq(providers.slug, slug)))
     .limit(1);
 
   if (existing[0]) {
     const [row] = existing;
 
     // If it's already a catalog provider with matching data, return as-is
-    if (
-      row.source === "catalog" &&
-      row.name === provider.name &&
-      row.domain === lowerDomain
-    ) {
+    if (row.source === "catalog" && row.name === provider.name && row.domain === lowerDomain) {
       return row;
     }
 
@@ -199,12 +178,7 @@ export async function upsertCatalogProvider(
   const discoveredProviders = await db
     .select()
     .from(providers)
-    .where(
-      and(
-        eq(providers.category, provider.category),
-        eq(providers.source, "discovered"),
-      ),
-    );
+    .where(and(eq(providers.category, provider.category), eq(providers.source, "discovered")));
 
   for (const discovered of discoveredProviders) {
     if (
@@ -256,12 +230,7 @@ export async function upsertCatalogProvider(
       const retried = await db
         .select()
         .from(providers)
-        .where(
-          and(
-            eq(providers.category, provider.category),
-            eq(providers.slug, slug),
-          ),
-        )
+        .where(and(eq(providers.category, provider.category), eq(providers.slug, slug)))
         .limit(1);
 
       if (retried[0]) {

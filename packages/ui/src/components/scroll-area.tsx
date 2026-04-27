@@ -1,4 +1,5 @@
 import { ScrollArea as ScrollAreaPrimitive } from "@base-ui/react/scroll-area";
+
 import { cn } from "../utils";
 
 function ScrollArea({
@@ -32,17 +33,13 @@ function ScrollArea({
         data-slot="scroll-area-viewport"
         ref={scrollRef}
         className={cn(
-          "no-scrollbar flex-1 rounded-[inherit] outline-none focus-visible:outline-1 focus-visible:ring-[3px] focus-visible:ring-ring/50 data-has-overflow-x:overscroll-x-contain",
+          "no-scrollbar flex-1 rounded-[inherit] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 data-has-overflow-x:overscroll-x-contain",
           scrollFade &&
-            "mask-t-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-y-start)))] mask-b-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-y-end)))] mask-l-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-x-start)))] mask-r-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-x-end)))] [--fade-size:1.5rem]",
-          scrollbarGutter &&
-            "data-has-overflow-y:pr-2.5 data-has-overflow-x:pb-2.5",
+            "mask-t-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-y-start)))] mask-r-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-x-end)))] mask-b-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-y-end)))] mask-l-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-x-start)))] [--fade-size:1.5rem]",
+          scrollbarGutter && "data-has-overflow-x:pb-2.5 data-has-overflow-y:pr-2.5",
         )}
       >
-        <ScrollAreaPrimitive.Content
-          data-slot="scroll-area-content"
-          ref={contentRef}
-        >
+        <ScrollAreaPrimitive.Content data-slot="scroll-area-content" ref={contentRef}>
           {children}
         </ScrollAreaPrimitive.Content>
       </ScrollAreaPrimitive.Viewport>
@@ -67,7 +64,7 @@ function ScrollBar({
       data-slot="scroll-area-scrollbar"
       orientation={orientation}
       className={cn(
-        "m-1 flex opacity-0 transition-opacity delay-300 data-[orientation=horizontal]:h-1 data-[orientation=vertical]:w-1 data-[orientation=horizontal]:flex-col data-hovering:opacity-100 data-scrolling:opacity-100 data-hovering:delay-0 data-scrolling:delay-0 data-hovering:duration-100 data-scrolling:duration-100",
+        "m-1 flex opacity-0 transition-opacity delay-300 data-hovering:opacity-100 data-hovering:delay-0 data-hovering:duration-100 data-scrolling:opacity-100 data-scrolling:delay-0 data-scrolling:duration-100 data-[orientation=horizontal]:h-1 data-[orientation=horizontal]:flex-col data-[orientation=vertical]:w-1",
         className,
       )}
       {...props}

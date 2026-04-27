@@ -1,23 +1,21 @@
-import { useSession } from "@domainstack/auth/client";
-import {
-  ResponsiveTooltip,
-  ResponsiveTooltipContent,
-  ResponsiveTooltipTrigger,
-} from "@domainstack/ui/responsive-tooltip";
 import { Suspense } from "react";
+
 import {
   CalendarInstructions,
   CalendarInstructionsSkeleton,
 } from "@/components/calendar-instructions";
 import { DomainMuteList } from "@/components/settings/notifications/domain-mute-list";
 import { NotificationMatrix } from "@/components/settings/notifications/notification-matrix";
-import {
-  SettingsCard,
-  SettingsCardSeparator,
-} from "@/components/settings/settings-card";
+import { SettingsCard, SettingsCardSeparator } from "@/components/settings/settings-card";
 import { SettingsErrorBoundary } from "@/components/settings/settings-error-boundary";
 import { NotificationsSkeleton } from "@/components/settings/settings-skeleton";
 import { useNotificationPreferences } from "@/hooks/use-notification-preferences";
+import { useSession } from "@domainstack/auth/client";
+import {
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@domainstack/ui/responsive-tooltip";
 
 export function NotificationsPanel() {
   const { data: session, isPending: isSessionPending } = useSession();
@@ -49,8 +47,7 @@ export function NotificationsPanel() {
         title="Global Preferences"
         description={
           <>
-            Alerts will be sent to{" "}
-            <span className="font-semibold">{session?.user?.email}</span>.{" "}
+            Alerts will be sent to <span className="font-semibold">{session?.user?.email}</span>.{" "}
             <ResponsiveTooltip>
               <ResponsiveTooltipTrigger
                 render={
@@ -62,8 +59,8 @@ export function NotificationsPanel() {
               <ResponsiveTooltipContent>
                 <div className="space-y-2">
                   <p>
-                    This is the email address that was verified with the linked
-                    account provider you chose at sign up.
+                    This is the email address that was verified with the linked account provider you
+                    chose at sign up.
                   </p>
                   <p>
                     To change it, sign in with a different external account or{" "}

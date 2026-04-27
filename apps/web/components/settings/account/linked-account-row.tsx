@@ -1,18 +1,12 @@
+import type { OAuthProvider } from "@/lib/oauth";
 import { Button } from "@domainstack/ui/button";
-import {
-  Item,
-  ItemActions,
-  ItemContent,
-  ItemMedia,
-  ItemTitle,
-} from "@domainstack/ui/item";
+import { Item, ItemActions, ItemContent, ItemMedia, ItemTitle } from "@domainstack/ui/item";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
 import { Spinner } from "@domainstack/ui/spinner";
-import type { OAuthProvider } from "@/lib/oauth";
 
 interface LinkedAccountRowProps {
   provider: OAuthProvider;
@@ -52,12 +46,7 @@ export function LinkedAccountRow({
       <ItemActions>
         {isLinked ? (
           canUnlink ? (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={onUnlink}
-              disabled={isLoading}
-            >
+            <Button variant="secondary" size="sm" onClick={onUnlink} disabled={isLoading}>
               {isUnlinking && <Spinner />}
               Unlink
             </Button>
@@ -79,12 +68,7 @@ export function LinkedAccountRow({
             </ResponsiveTooltip>
           )
         ) : (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onLink}
-            disabled={isLoading}
-          >
+          <Button variant="outline" size="sm" onClick={onLink} disabled={isLoading}>
             {isLinking && <Spinner />}
             Link
           </Button>

@@ -1,17 +1,16 @@
+import { TRPCError } from "@trpc/server";
+import { z } from "zod";
+
+import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import {
   getUnreadCount,
   getUserNotifications,
   markAllAsRead,
   markAsRead,
 } from "@domainstack/db/queries";
-import { TRPCError } from "@trpc/server";
-import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 
 /** Schema for notification filter parameter */
-const notificationFilterSchema = z
-  .enum(["unread", "read", "all"])
-  .default("all");
+const notificationFilterSchema = z.enum(["unread", "read", "all"]).default("all");
 
 export const notificationsRouter = createTRPCRouter({
   /**
@@ -30,12 +29,7 @@ export const notificationsRouter = createTRPCRouter({
       const { limit, cursor, filter } = input;
 
       // Fetch one extra to determine if there's a next page
-      const items = await getUserNotifications(
-        ctx.user.id,
-        limit + 1,
-        cursor,
-        filter,
-      );
+      const items = await getUserNotifications(ctx.user.id, limit + 1, cursor, filter);
 
       let nextCursor: string | undefined;
       if (items.length > limit) {
@@ -52,9 +46,7 @@ export const notificationsRouter = createTRPCRouter({
   /**
    * Get unread notification count for badge display.
    */
-  unreadCount: protectedProcedure.query(async ({ ctx }) =>
-    getUnreadCount(ctx.user.id),
-  ),
+  unreadCount: protectedProcedure.query(async ({ ctx }) => getUnreadCount(ctx.user.id)),
 
   /**
    * Mark a single notification as read.

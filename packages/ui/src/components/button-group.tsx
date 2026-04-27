@@ -2,6 +2,7 @@
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
+
 import { cn, cva, type VariantProps } from "../utils";
 import { Separator } from "./separator";
 
@@ -10,9 +11,9 @@ const buttonGroupVariants = cva({
   variants: {
     orientation: {
       horizontal:
-        "flex-row [&>[data-slot]:not(:has(~[data-slot]))]:rounded-r-md! [&>[data-slot]]:rounded-r-none [&>[data-slot]~[data-slot]]:rounded-l-none [&>[data-slot]~[data-slot]]:border-l-0",
+        "flex-row [&>[data-slot]]:rounded-r-none [&>[data-slot]:not(:has(~[data-slot]))]:rounded-r-md! [&>[data-slot]~[data-slot]]:rounded-l-none [&>[data-slot]~[data-slot]]:border-l-0",
       vertical:
-        "flex-col [&>[data-slot]:not(:has(~[data-slot]))]:rounded-b-md! [&>[data-slot]]:rounded-b-none [&>[data-slot]~[data-slot]]:rounded-t-none [&>[data-slot]~[data-slot]]:border-t-0",
+        "flex-col [&>[data-slot]]:rounded-b-none [&>[data-slot]:not(:has(~[data-slot]))]:rounded-b-md! [&>[data-slot]~[data-slot]]:rounded-t-none [&>[data-slot]~[data-slot]]:border-t-0",
     },
   },
   defaultVariants: {
@@ -40,17 +41,13 @@ function ButtonGroup({
   });
 }
 
-function ButtonGroupText({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"div">) {
+function ButtonGroupText({ className, render, ...props }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
       className: cn(
-        "flex items-center gap-2 rounded-md border bg-muted px-4 font-medium text-sm shadow-xs [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none",
+        "flex items-center gap-2 rounded-md border bg-muted px-4 text-sm font-medium shadow-xs [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
         className,
       ),
     }),
@@ -71,7 +68,7 @@ function ButtonGroupSeparator({
       data-slot="button-group-separator"
       orientation={orientation}
       className={cn(
-        "!m-0 relative self-stretch bg-input data-[orientation=vertical]:h-auto",
+        "relative !m-0 self-stretch bg-input data-[orientation=vertical]:h-auto",
         className,
       )}
       {...props}
@@ -79,9 +76,4 @@ function ButtonGroupSeparator({
   );
 }
 
-export {
-  ButtonGroup,
-  ButtonGroupSeparator,
-  ButtonGroupText,
-  buttonGroupVariants,
-};
+export { ButtonGroup, ButtonGroupSeparator, ButtonGroupText, buttonGroupVariants };

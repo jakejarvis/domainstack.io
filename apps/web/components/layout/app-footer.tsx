@@ -1,23 +1,6 @@
 "use client";
 
-import { APPLE_SHORTCUT_ID } from "@domainstack/constants";
-import { Button } from "@domainstack/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@domainstack/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@domainstack/ui/dropdown-menu";
-import {
-  SiModelcontextprotocol,
-  SiRaycast,
-} from "@icons-pack/react-simple-icons";
+import { SiModelcontextprotocol, SiRaycast } from "@icons-pack/react-simple-icons";
 import {
   IconBookmark,
   IconBookmarks,
@@ -35,7 +18,17 @@ import * as motion from "motion/react-client";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
+
 import { BetaBadge } from "@/components/beta-badge";
+import { APPLE_SHORTCUT_ID } from "@domainstack/constants";
+import { Button } from "@domainstack/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@domainstack/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@domainstack/ui/dropdown-menu";
 
 export function AppFooter() {
   const [isBookmarkletsOpen, setIsBookmarkletsOpen] = useState(false);
@@ -50,8 +43,8 @@ export function AppFooter() {
 
   return (
     <>
-      <footer className="space-y-1.5 px-4 pt-6 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center text-muted-foreground text-xs leading-relaxed sm:px-6 [&_a]:inline-flex [&_a]:items-center [&_a]:gap-1 [&_a]:text-foreground/85 [&_a]:hover:text-foreground/60 [&_a]:hover:no-underline [&_svg]:inline-block [&_svg]:size-4 [&_svg]:px-[1px]">
-        <div className="flex flex-wrap items-center justify-center gap-y-2 space-x-[1.25em] [&_a]:whitespace-nowrap">
+      <footer className="space-y-1.5 px-4 pt-6 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center text-xs leading-relaxed text-muted-foreground sm:px-6 [&_a]:inline-flex [&_a]:items-center [&_a]:gap-1 [&_a]:text-foreground/85 [&_a]:hover:text-foreground/60 [&_a]:hover:no-underline [&_svg]:inline-block [&_svg]:size-4 [&_svg]:px-[1px]">
+        <div className="flex flex-wrap items-center justify-center space-x-[1.25em] gap-y-2 [&_a]:whitespace-nowrap">
           <Link href="/help">
             <IconLifebuoy className="text-muted-foreground" />
             Help
@@ -146,27 +139,22 @@ export function AppFooter() {
         </div>
       </footer>
 
-      <Dialog
-        open={isBookmarkletsOpen}
-        onOpenChange={handleBookmarkletsOpenChange}
-      >
+      <Dialog open={isBookmarkletsOpen} onOpenChange={handleBookmarkletsOpenChange}>
         <DialogContent className="!max-w-lg">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-1.5 font-medium text-base tracking-tight">
+            <DialogTitle className="flex items-center gap-1.5 text-base font-medium tracking-tight">
               <IconBookmark className="size-4 text-muted-foreground" />
               Bookmarklet
             </DialogTitle>
           </DialogHeader>
-          <p className="text-muted-foreground text-sm">
-            Drag the button below to your bookmarks bar. Then, press it on any
-            site and the report for that domain will open in a new tab, like
-            magic!
+          <p className="text-sm text-muted-foreground">
+            Drag the button below to your bookmarks bar. Then, press it on any site and the report
+            for that domain will open in a new tab, like magic!
           </p>
           <div className="my-2 flex justify-center">
             <Button
               size="lg"
               nativeButton={false}
-              // biome-ignore lint/a11y/useValidAnchor: href set dynamically by hrefScript ref
               render={<a ref={hrefScript} href="#" />}
               onClick={(e) => {
                 e.preventDefault();

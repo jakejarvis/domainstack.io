@@ -1,6 +1,6 @@
+import { useSubscription } from "@/hooks/use-subscription";
 import { Button } from "@domainstack/ui/button";
 import { Spinner } from "@domainstack/ui/spinner";
-import { useSubscription } from "@/hooks/use-subscription";
 
 export function UpgradeButton({
   className,

@@ -1,4 +1,5 @@
 import { type Duration, Ratelimit } from "@upstash/ratelimit";
+
 import { getRedis } from "./index";
 
 /**

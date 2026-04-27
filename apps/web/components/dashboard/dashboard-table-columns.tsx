@@ -1,5 +1,22 @@
 "use no memo"; // Disable React Compiler memoization - TanStack Table has issues with it
+import {
+  IconArchive,
+  IconBell,
+  IconBellOff,
+  IconBookmark,
+  IconDotsVertical,
+  IconExternalLink,
+  IconTrash,
+} from "@tabler/icons-react";
+import type { ColumnDef, RowData } from "@tanstack/react-table";
+import { format } from "date-fns";
+import Link from "next/link";
 
+import { DomainHealthBadge } from "@/components/dashboard/domain-health-badge";
+import { DomainStatusBadge } from "@/components/dashboard/domain-status-badge";
+import { ProviderCell } from "@/components/dashboard/provider-cell";
+import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
+import { Favicon } from "@/components/icons/favicon";
 import type { VerificationMethod } from "@domainstack/constants";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
@@ -18,23 +35,6 @@ import {
 } from "@domainstack/ui/responsive-tooltip";
 import { cn } from "@domainstack/ui/utils";
 import { formatDateTimeUtc } from "@domainstack/utils";
-import {
-  IconArchive,
-  IconBell,
-  IconBellOff,
-  IconBookmark,
-  IconDotsVertical,
-  IconExternalLink,
-  IconTrash,
-} from "@tabler/icons-react";
-import type { ColumnDef, RowData } from "@tanstack/react-table";
-import { format } from "date-fns";
-import Link from "next/link";
-import { DomainHealthBadge } from "@/components/dashboard/domain-health-badge";
-import { DomainStatusBadge } from "@/components/dashboard/domain-status-badge";
-import { ProviderCell } from "@/components/dashboard/provider-cell";
-import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
-import { Favicon } from "@/components/icons/favicon";
 
 // Define custom column meta for styling
 declare module "@tanstack/react-table" {
@@ -52,14 +52,9 @@ declare module "@tanstack/react-table" {
  *
  * @param isDescFn - Function that returns whether the current column is sorted descending
  */
-export function createUnverifiedLastSorter(
-  isDescFn: (columnId: string) => boolean,
-) {
+export function createUnverifiedLastSorter(isDescFn: (columnId: string) => boolean) {
   return function withUnverifiedLast(
-    compareFn: (
-      a: TrackedDomainWithDetails,
-      b: TrackedDomainWithDetails,
-    ) => number,
+    compareFn: (a: TrackedDomainWithDetails, b: TrackedDomainWithDetails) => number,
   ) {
     return (
       rowA: { original: TrackedDomainWithDetails },
@@ -95,9 +90,7 @@ export type ColumnCallbacks = {
   withUnverifiedLast: ReturnType<typeof createUnverifiedLastSorter>;
 };
 
-export function createColumns(
-  callbacks: ColumnCallbacks,
-): ColumnDef<TrackedDomainWithDetails>[] {
+export function createColumns(callbacks: ColumnCallbacks): ColumnDef<TrackedDomainWithDetails>[] {
   const {
     selectedIdsRef,
     onToggleSelect,
@@ -121,20 +114,14 @@ export function createColumns(
             {/* Favicon - hidden on hover or when selected */}
             <Favicon
               domain={row.original.domainName}
-              className={cn(
-                "absolute inset-0",
-                isSelected ? "hidden" : "group-hover:hidden",
-              )}
+              className={cn("absolute inset-0", isSelected ? "hidden" : "group-hover:hidden")}
             />
             {/* Checkbox - shown on hover or when selected */}
             <Checkbox
               checked={isSelected}
               onCheckedChange={() => onToggleSelect?.(row.original.id)}
               aria-label={`Select ${row.original.domainName}`}
-              className={cn(
-                "absolute inset-0",
-                isSelected ? "flex" : "hidden group-hover:flex",
-              )}
+              className={cn("absolute inset-0", isSelected ? "flex" : "hidden group-hover:flex")}
             />
           </div>
         );
@@ -149,17 +136,14 @@ export function createColumns(
       accessorKey: "domainName",
       header: "Domain",
       cell: ({ row }) => (
-        <ScreenshotPopover
-          domain={row.original.domainName}
-          domainId={row.original.domainId}
-        >
+        <ScreenshotPopover domain={row.original.domainName} domainId={row.original.domainId}>
           <Link
             href={`/${encodeURIComponent(row.original.domainName)}`}
             prefetch={false}
             className="group/link flex items-center"
             data-disable-progress
           >
-            <span className="font-medium text-[13px] group-hover/link:underline">
+            <span className="text-[13px] font-medium group-hover/link:underline">
               {row.original.domainName}
             </span>
           </Link>
@@ -171,9 +155,7 @@ export function createColumns(
       accessorKey: "verified",
       header: "Status",
       cell: ({ row }) => {
-        const isFailing =
-          row.original.verified &&
-          row.original.verificationStatus === "failing";
+        const isFailing = row.original.verified && row.original.verificationStatus === "failing";
         const isPending = !row.original.verified;
 
         return (
@@ -184,8 +166,7 @@ export function createColumns(
             verificationFailedAt={row.original.verificationFailedAt}
             onClick={
               isFailing || isPending
-                ? () =>
-                    onVerify(row.original.id, row.original.verificationMethod)
+                ? () => onVerify(row.original.id, row.original.verificationMethod)
                 : undefined
             }
           />
@@ -194,11 +175,7 @@ export function createColumns(
       size: 100,
       // Sort verified domains first (verified = -1, unverified = 1)
       sortingFn: (rowA, rowB) =>
-        rowA.original.verified === rowB.original.verified
-          ? 0
-          : rowA.original.verified
-            ? -1
-            : 1,
+        rowA.original.verified === rowB.original.verified ? 0 : rowA.original.verified ? -1 : 1,
     },
     {
       id: "health",
@@ -215,14 +192,9 @@ export function createColumns(
       // Within the same status, sort by expiration date for more granular ordering
       sortingFn: withUnverifiedLast((a, b) => {
         const now = new Date();
-        const getHealthPriority = (
-          exp: Date | null,
-          verified: boolean,
-        ): number => {
+        const getHealthPriority = (exp: Date | null, verified: boolean): number => {
           if (!verified || !exp) return 3; // unknown
-          const days = Math.floor(
-            (exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
-          );
+          const days = Math.floor((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
           if (days <= 7) return 0; // critical
           if (days <= 30) return 1; // warning
           return 2; // healthy
@@ -247,10 +219,10 @@ export function createColumns(
       cell: ({ row }) => {
         const date = row.original.expirationDate;
         if (!date) {
-          return <span className="text-muted-foreground text-xs">-</span>;
+          return <span className="text-xs text-muted-foreground">-</span>;
         }
         return (
-          <div className="whitespace-nowrap text-[13px]">
+          <div className="text-[13px] whitespace-nowrap">
             <ResponsiveTooltip>
               <ResponsiveTooltipTrigger
                 nativeButton={false}
@@ -366,10 +338,10 @@ export function createColumns(
       cell: ({ row }) => {
         const date = row.original.registrationDate;
         if (!date) {
-          return <span className="text-muted-foreground text-xs">-</span>;
+          return <span className="text-xs text-muted-foreground">-</span>;
         }
         return (
-          <div className="whitespace-nowrap text-[13px]">
+          <div className="text-[13px] whitespace-nowrap">
             <ResponsiveTooltip>
               <ResponsiveTooltipTrigger
                 nativeButton={false}
@@ -395,7 +367,7 @@ export function createColumns(
       cell: ({ row }) => {
         const date = row.original.createdAt;
         return (
-          <div className="whitespace-nowrap text-[13px]">
+          <div className="text-[13px] whitespace-nowrap">
             <ResponsiveTooltip>
               <ResponsiveTooltipTrigger
                 nativeButton={false}
@@ -442,10 +414,7 @@ export function createColumns(
             <DropdownMenuItem
               nativeButton={false}
               render={
-                <Link
-                  href={`/${encodeURIComponent(row.original.domainName)}`}
-                  prefetch={false}
-                >
+                <Link href={`/${encodeURIComponent(row.original.domainName)}`} prefetch={false}>
                   <IconBookmark />
                   View Report
                 </Link>
@@ -453,11 +422,7 @@ export function createColumns(
             />
             <DropdownMenuSeparator />
             {row.original.verified && (
-              <DropdownMenuItem
-                onClick={() =>
-                  onToggleMuted(row.original.id, !row.original.muted)
-                }
-              >
+              <DropdownMenuItem onClick={() => onToggleMuted(row.original.id, !row.original.muted)}>
                 {row.original.muted ? (
                   <>
                     <IconBell />
@@ -471,17 +436,11 @@ export function createColumns(
                 )}
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem
-              onClick={() =>
-                onArchive(row.original.id, row.original.domainName)
-              }
-            >
+            <DropdownMenuItem onClick={() => onArchive(row.original.id, row.original.domainName)}>
               <IconArchive />
               Archive
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onRemove(row.original.id, row.original.domainName)}
-            >
+            <DropdownMenuItem onClick={() => onRemove(row.original.id, row.original.domainName)}>
               <IconTrash className="text-danger-foreground" />
               Remove
             </DropdownMenuItem>

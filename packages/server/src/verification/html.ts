@@ -8,6 +8,7 @@ import {
   HTML_FILE_PATH_LEGACY,
 } from "@domainstack/constants";
 import { safeFetch } from "@domainstack/safe-fetch";
+
 import type { VerificationHttpOptions, VerificationResult } from "./types";
 
 /**

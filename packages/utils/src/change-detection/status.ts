@@ -33,10 +33,7 @@ export function normalizeStatus(status: string): string {
  * @param current - Current status array
  * @returns True if the status sets are semantically equal
  */
-export function statusesAreEqual(
-  previous: string[],
-  current: string[],
-): boolean {
+export function statusesAreEqual(previous: string[], current: string[]): boolean {
   if (previous.length !== current.length) {
     return false;
   }

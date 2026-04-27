@@ -1,17 +1,7 @@
+import { and, count, desc, eq, gt, isNotNull, isNull, like, lt, or, sql } from "drizzle-orm";
+
 import type { NotificationType } from "@domainstack/constants";
-import {
-  and,
-  count,
-  desc,
-  eq,
-  gt,
-  isNotNull,
-  isNull,
-  like,
-  lt,
-  or,
-  sql,
-} from "drizzle-orm";
+
 import { db } from "../client";
 import { notifications } from "../schema";
 
@@ -32,8 +22,7 @@ export type NotificationFilter = "unread" | "read" | "all";
  * Create a new notification record.
  */
 export async function createNotification(params: CreateNotificationParams) {
-  const { userId, trackedDomainId, type, title, message, data, channels } =
-    params;
+  const { userId, trackedDomainId, type, title, message, data, channels } = params;
 
   try {
     const [notification] = await db
@@ -64,10 +53,7 @@ export async function updateNotificationResendId(
   resendId: string,
 ): Promise<boolean> {
   try {
-    await db
-      .update(notifications)
-      .set({ resendId })
-      .where(eq(notifications.id, notificationId));
+    await db.update(notifications).set({ resendId }).where(eq(notifications.id, notificationId));
     return true;
   } catch {
     return false;
@@ -142,10 +128,7 @@ export async function getUserNotifications(
     eq(notifications.userId, userId),
     or(
       lt(notifications.sentAt, cursorNotif.sentAt),
-      and(
-        eq(notifications.sentAt, cursorNotif.sentAt),
-        lt(notifications.id, cursorNotif.id),
-      ),
+      and(eq(notifications.sentAt, cursorNotif.sentAt), lt(notifications.id, cursorNotif.id)),
     ),
     sql`${notifications.channels} @> '["in-app"]'`,
   ];
@@ -184,20 +167,12 @@ export async function getUnreadCount(userId: string): Promise<number> {
 /**
  * Mark a notification as read.
  */
-export async function markAsRead(
-  notificationId: string,
-  userId: string,
-): Promise<boolean> {
+export async function markAsRead(notificationId: string, userId: string): Promise<boolean> {
   try {
     const updated = await db
       .update(notifications)
       .set({ readAt: new Date() })
-      .where(
-        and(
-          eq(notifications.id, notificationId),
-          eq(notifications.userId, userId),
-        ),
-      )
+      .where(and(eq(notifications.id, notificationId), eq(notifications.userId, userId)))
       .returning();
 
     return updated.length > 0;
@@ -214,9 +189,7 @@ export async function markAllAsRead(userId: string): Promise<number> {
     const updated = await db
       .update(notifications)
       .set({ readAt: new Date() })
-      .where(
-        and(eq(notifications.userId, userId), isNull(notifications.readAt)),
-      )
+      .where(and(eq(notifications.userId, userId), isNull(notifications.readAt)))
       .returning();
 
     return updated.length;
@@ -295,9 +268,7 @@ export async function deleteNotificationsForTrackedDomain(
   trackedDomainId: string,
 ): Promise<boolean> {
   try {
-    await db
-      .delete(notifications)
-      .where(eq(notifications.trackedDomainId, trackedDomainId));
+    await db.delete(notifications).where(eq(notifications.trackedDomainId, trackedDomainId));
     return true;
   } catch {
     return false;
@@ -307,9 +278,7 @@ export async function deleteNotificationsForTrackedDomain(
 /**
  * Clear all domain expiry notifications for a tracked domain.
  */
-export async function clearDomainExpiryNotifications(
-  trackedDomainId: string,
-): Promise<number> {
+export async function clearDomainExpiryNotifications(trackedDomainId: string): Promise<number> {
   try {
     const deleted = await db
       .delete(notifications)

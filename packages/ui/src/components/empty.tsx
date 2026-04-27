@@ -1,19 +1,16 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
+
 import { cn, cva } from "../utils";
 import { Icon } from "./icon";
 
-function Empty({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"div">) {
+function Empty({ className, render, ...props }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
       className: cn(
-        "flex min-w-0 flex-1 flex-col items-center justify-center gap-6 text-balance rounded-lg border-dashed p-6 text-center md:p-12",
+        "flex min-w-0 flex-1 flex-col items-center justify-center gap-6 rounded-lg border-dashed p-6 text-center text-balance md:p-12",
         className,
       ),
     }),
@@ -23,19 +20,12 @@ function Empty({
   });
 }
 
-function EmptyHeader({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"div">) {
+function EmptyHeader({ className, render, ...props }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
-      className: cn(
-        "flex max-w-sm flex-col items-center gap-2 text-center",
-        className,
-      ),
+      className: cn("flex max-w-sm flex-col items-center gap-2 text-center", className),
     }),
     state: {
       slot: "empty-header",
@@ -57,18 +47,12 @@ const emptyMediaVariants = cva({
 
 type EmptyMediaVariant = "default" | "icon";
 
-interface EmptyMediaProps
-  extends Omit<useRender.ComponentProps<"div">, "children"> {
+interface EmptyMediaProps extends Omit<useRender.ComponentProps<"div">, "children"> {
   variant?: EmptyMediaVariant;
   children?: React.ReactNode;
 }
 
-function EmptyMedia({
-  variant = "default",
-  className,
-  children,
-  ...props
-}: EmptyMediaProps) {
+function EmptyMedia({ variant = "default", className, children, ...props }: EmptyMediaProps) {
   // For icon variant, wrap children in IconBadge
   if (variant === "icon") {
     return (
@@ -89,16 +73,12 @@ function EmptyMedia({
   );
 }
 
-function EmptyTitle({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"div">) {
+function EmptyTitle({ className, render, ...props }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
-      className: cn("font-medium text-lg tracking-tight", className),
+      className: cn("text-lg font-medium tracking-tight", className),
     }),
     state: {
       slot: "empty-title",
@@ -106,17 +86,13 @@ function EmptyTitle({
   });
 }
 
-function EmptyDescription({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"div">) {
+function EmptyDescription({ className, render, ...props }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
       className: cn(
-        "text-muted-foreground text-sm/relaxed [&>a:hover]:text-primary [&>a]:underline [&>a]:underline-offset-4",
+        "text-sm/relaxed text-muted-foreground [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary",
         className,
       ),
     }),
@@ -126,17 +102,13 @@ function EmptyDescription({
   });
 }
 
-function EmptyContent({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"div">) {
+function EmptyContent({ className, render, ...props }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
       className: cn(
-        "flex w-full min-w-0 max-w-sm flex-col items-center gap-4 text-balance text-sm",
+        "flex w-full max-w-sm min-w-0 flex-col items-center gap-4 text-sm text-balance",
         className,
       ),
     }),
@@ -146,11 +118,4 @@ function EmptyContent({
   });
 }
 
-export {
-  Empty,
-  EmptyHeader,
-  EmptyTitle,
-  EmptyDescription,
-  EmptyContent,
-  EmptyMedia,
-};
+export { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle };

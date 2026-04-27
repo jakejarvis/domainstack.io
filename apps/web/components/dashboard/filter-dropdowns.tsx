@@ -1,19 +1,10 @@
-import {
-  MultiSelect,
-  type MultiSelectOption,
-} from "@domainstack/ui/multi-select";
-import {
-  IconActivity,
-  IconCloudComputing,
-  IconWorld,
-} from "@tabler/icons-react";
+import { IconActivity, IconCloudComputing, IconWorld } from "@tabler/icons-react";
 import { useMemo } from "react";
+
 import { ProviderLogo } from "@/components/icons/provider-logo";
 import { HEALTH_OPTIONS } from "@/lib/constants/domain-filters";
-import type {
-  AvailableProvidersByCategory,
-  HealthFilter,
-} from "@/lib/dashboard-utils";
+import type { AvailableProvidersByCategory, HealthFilter } from "@/lib/dashboard-utils";
+import { MultiSelect, type MultiSelectOption } from "@domainstack/ui/multi-select";
 
 type FilterDropdownsProps = {
   health: HealthFilter[];
@@ -164,9 +155,7 @@ export function FilterDropdowns({
                 providerName={option.label}
                 className="size-3.5 shrink-0"
               />
-              <span className="max-w-[240px] truncate leading-none">
-                {option.label}
-              </span>
+              <span className="max-w-[240px] truncate leading-none">{option.label}</span>
             </div>
           )}
         />

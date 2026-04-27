@@ -6,6 +6,7 @@
  */
 
 import type { Header } from "@domainstack/types";
+
 import type { Provider } from "./parser";
 import type { DetectionContext } from "./rules";
 import { evalRule } from "./rules";
@@ -50,10 +51,7 @@ function detectProviderFromList(
   registrar?: string,
 ): Provider | null {
   const headersObj: Record<string, string> = Object.fromEntries(
-    (headerContext?.headers ?? []).map((h) => [
-      h.name.toLowerCase(),
-      h.value.trim().toLowerCase(),
-    ]),
+    (headerContext?.headers ?? []).map((h) => [h.name.toLowerCase(), h.value.trim().toLowerCase()]),
   );
   const ctx: DetectionContext = {
     headers: headersObj,
@@ -81,10 +79,7 @@ function detectProviderFromList(
  * @param providers - Hosting provider catalog
  * @returns Matched provider or null
  */
-export function detectHostingProvider(
-  headers: Header[],
-  providers: Provider[],
-): Provider | null {
+export function detectHostingProvider(headers: Header[], providers: Provider[]): Provider | null {
   const context = createHeaderContext(headers);
   return detectProviderFromList(providers, context);
 }
@@ -96,10 +91,7 @@ export function detectHostingProvider(
  * @param providers - Email provider catalog
  * @returns Matched provider or null (falls back to domain extraction if no match)
  */
-export function detectEmailProvider(
-  mxHosts: string[],
-  providers: Provider[],
-): Provider | null {
+export function detectEmailProvider(mxHosts: string[], providers: Provider[]): Provider | null {
   return detectProviderFromList(providers, undefined, mxHosts);
 }
 
@@ -110,10 +102,7 @@ export function detectEmailProvider(
  * @param providers - DNS provider catalog
  * @returns Matched provider or null
  */
-export function detectDnsProvider(
-  nsHosts: string[],
-  providers: Provider[],
-): Provider | null {
+export function detectDnsProvider(nsHosts: string[], providers: Provider[]): Provider | null {
   return detectProviderFromList(providers, undefined, undefined, nsHosts);
 }
 
@@ -124,20 +113,10 @@ export function detectDnsProvider(
  * @param providers - Registrar provider catalog
  * @returns Matched provider or null
  */
-export function detectRegistrar(
-  registrarName: string,
-  providers: Provider[],
-): Provider | null {
+export function detectRegistrar(registrarName: string, providers: Provider[]): Provider | null {
   const name = (registrarName || "").toLowerCase();
   if (!name) return null;
-  return detectProviderFromList(
-    providers,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    name,
-  );
+  return detectProviderFromList(providers, undefined, undefined, undefined, undefined, name);
 }
 
 /**
@@ -147,19 +126,10 @@ export function detectRegistrar(
  * @param providers - CA provider catalog
  * @returns Matched provider or null
  */
-export function detectCertificateAuthority(
-  issuer: string,
-  providers: Provider[],
-): Provider | null {
+export function detectCertificateAuthority(issuer: string, providers: Provider[]): Provider | null {
   const name = (issuer || "").toLowerCase();
   if (!name) return null;
-  return detectProviderFromList(
-    providers,
-    undefined,
-    undefined,
-    undefined,
-    name,
-  );
+  return detectProviderFromList(providers, undefined, undefined, undefined, name);
 }
 
 // ============================================================================

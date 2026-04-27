@@ -1,5 +1,7 @@
 import { createHmac } from "node:crypto";
+
 import { createLogger } from "@domainstack/logger";
+
 import { vercelBlobProvider } from "./providers/vercel";
 import type { BlobProvider, PutBlobResult } from "./types";
 
@@ -18,13 +20,8 @@ const UPLOAD_BACKOFF_MAX_MS = 2000;
  * - `length` is clamped to the valid SHA-256 hex range: 0..64.
  */
 function deterministicHash(input: string, secret: string, length = 32): string {
-  const safeLength = Number.isFinite(length)
-    ? Math.max(0, Math.min(64, Math.trunc(length)))
-    : 32;
-  return createHmac("sha256", secret)
-    .update(input)
-    .digest("hex")
-    .slice(0, safeLength);
+  const safeLength = Number.isFinite(length) ? Math.max(0, Math.min(64, Math.trunc(length))) : 32;
+  return createHmac("sha256", secret).update(input).digest("hex").slice(0, safeLength);
 }
 
 function makeBlobPathname(
@@ -50,11 +47,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function backoffDelayMs(
-  attemptIndex: number,
-  baseMs: number,
-  maxMs: number,
-): number {
+function backoffDelayMs(attemptIndex: number, baseMs: number, maxMs: number): number {
   const base = Math.min(maxMs, baseMs * 2 ** attemptIndex);
   const jitter = Math.floor(Math.random() * Math.min(base, maxMs) * 0.25);
   return Math.min(base + jitter, maxMs);
@@ -87,11 +80,7 @@ async function uploadWithRetry(
       logger.warn({ err, pathname, attempt: attempt + 1, maxAttempts });
 
       if (attempt < maxAttempts - 1) {
-        const delay = backoffDelayMs(
-          attempt,
-          UPLOAD_BACKOFF_BASE_MS,
-          UPLOAD_BACKOFF_MAX_MS,
-        );
+        const delay = backoffDelayMs(attempt, UPLOAD_BACKOFF_BASE_MS, UPLOAD_BACKOFF_MAX_MS);
         logger.warn({ err, pathname, retryDelay: delay });
         await sleep(delay);
       }
@@ -116,9 +105,7 @@ export interface StoreBlobOptions {
   provider?: BlobProvider;
 }
 
-export async function storeBlob(
-  options: StoreBlobOptions,
-): Promise<PutBlobResult> {
+export async function storeBlob(options: StoreBlobOptions): Promise<PutBlobResult> {
   const {
     kind,
     buffer,
@@ -150,14 +137,7 @@ export async function storeBlob(
   extension = extension || "bin";
   filename = filename || "file";
 
-  const pathname =
-    providedPathname || makeBlobPathname(kind, filename, extension, extraParts);
+  const pathname = providedPathname || makeBlobPathname(kind, filename, extension, extraParts);
 
-  return uploadWithRetry(
-    provider,
-    pathname,
-    buffer,
-    contentType,
-    cacheControlMaxAge,
-  );
+  return uploadWithRetry(provider, pathname, buffer, contentType, cacheControlMaxAge);
 }

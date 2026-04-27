@@ -1,8 +1,9 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+
 import { analytics } from "@domainstack/analytics/client";
 import { useSession } from "@domainstack/auth/client";
-import { useEffect, useRef } from "react";
 
 /**
  * PostHog identity provider that automatically identifies users on login
@@ -11,11 +12,7 @@ import { useEffect, useRef } from "react";
  * This component should be placed inside the app providers to watch for
  * session changes and keep PostHog identity in sync with auth state.
  */
-export function PostHogIdentityProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function PostHogIdentityProvider({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   const previousUserIdRef = useRef<string | null>(null);
 
@@ -38,9 +35,7 @@ export function PostHogIdentityProvider({
             },
             // $set_once properties (immutable)
             {
-              createdAt: user.createdAt
-                ? new Date(user.createdAt).toISOString()
-                : undefined,
+              createdAt: user.createdAt ? new Date(user.createdAt).toISOString() : undefined,
             },
           );
         }

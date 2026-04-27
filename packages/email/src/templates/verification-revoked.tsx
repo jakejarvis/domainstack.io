@@ -30,22 +30,20 @@ function VerificationRevokedEmail({
       <EmailText>Hi {userName},</EmailText>
 
       <EmailText>
-        We&apos;ve removed <strong>{domainName}</strong> from your tracked
-        domains because we couldn&apos;t verify your ownership after multiple
-        attempts over the past week.
+        We&apos;ve removed <strong>{domainName}</strong> from your tracked domains because we
+        couldn&apos;t verify your ownership after multiple attempts over the past week.
       </EmailText>
 
       <EmailBox variant="info">
         <EmailBoxText variant="info">
-          <strong>What this means:</strong> You will no longer receive
-          expiration alerts for this domain. Your domain data has not been
-          deleted.
+          <strong>What this means:</strong> You will no longer receive expiration alerts for this
+          domain. Your domain data has not been deleted.
         </EmailBoxText>
       </EmailBox>
 
       <EmailText>
-        If you still own this domain, you can re-add it to your dashboard and
-        complete the verification process again.
+        If you still own this domain, you can re-add it to your dashboard and complete the
+        verification process again.
       </EmailText>
 
       <EmailButton href={`${baseUrl}/dashboard`}>Re-add Domain</EmailButton>
@@ -54,9 +52,8 @@ function VerificationRevokedEmail({
 
       <EmailFooter>
         You received this email because you were tracking {domainName} on{" "}
-        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. You
-        can manage your notification settings in your{" "}
-        <EmailLink href={`${baseUrl}/settings`}>dashboard</EmailLink>.
+        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. You can manage your
+        notification settings in your <EmailLink href={`${baseUrl}/settings`}>dashboard</EmailLink>.
       </EmailFooter>
     </EmailLayout>
   );

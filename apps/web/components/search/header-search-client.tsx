@@ -2,6 +2,7 @@
 
 import { useSetAtom } from "jotai";
 import { useSelectedLayoutSegment } from "next/navigation";
+
 import { SearchClient } from "@/components/search/search-client";
 import { isSearchFocusedAtom } from "@/lib/atoms/search-atoms";
 

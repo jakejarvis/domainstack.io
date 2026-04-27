@@ -1,8 +1,5 @@
-import {
-  CERTIFICATE_EXPIRY_THRESHOLDS,
-  type NotificationType,
-} from "@domainstack/constants";
 import { FatalError } from "workflow";
+
 import {
   calculateDaysRemainingStep,
   checkAlreadySentStep,
@@ -10,6 +7,7 @@ import {
   getThresholdNotificationType,
   updateNotificationEmailIdStep,
 } from "@/workflows/shared/notifications";
+import { CERTIFICATE_EXPIRY_THRESHOLDS, type NotificationType } from "@domainstack/constants";
 
 export interface CertificateExpiryWorkflowInput {
   trackedDomainId: string;
@@ -75,20 +73,13 @@ export async function certificateExpiryWorkflow(
   }
 
   // Step 4: Check notification preferences
-  const prefs = await checkExpiryPreferencesStep(
-    cert.userId,
-    cert.muted,
-    "certificateExpiry",
-  );
+  const prefs = await checkExpiryPreferencesStep(cert.userId, cert.muted, "certificateExpiry");
   if (!prefs.shouldSendEmail && !prefs.shouldSendInApp) {
     return { skipped: true, reason: "notifications_disabled" };
   }
 
   // Step 5: Check if already sent
-  const alreadySent = await checkAlreadySentStep(
-    trackedDomainId,
-    notificationType,
-  );
+  const alreadySent = await checkAlreadySentStep(trackedDomainId, notificationType);
   if (alreadySent) {
     return { skipped: true, reason: "already_sent" };
   }
@@ -135,9 +126,7 @@ interface CertificateData {
   muted: boolean;
 }
 
-async function fetchCertificate(
-  trackedDomainId: string,
-): Promise<CertificateData | null> {
+async function fetchCertificate(trackedDomainId: string): Promise<CertificateData | null> {
   "use step";
 
   const { getEarliestCertificate } = await import("@domainstack/db/queries");
@@ -145,14 +134,10 @@ async function fetchCertificate(
   return await getEarliestCertificate(trackedDomainId);
 }
 
-async function clearRenewedNotifications(
-  trackedDomainId: string,
-): Promise<number> {
+async function clearRenewedNotifications(trackedDomainId: string): Promise<number> {
   "use step";
 
-  const { clearCertificateExpiryNotifications } = await import(
-    "@domainstack/db/queries"
-  );
+  const { clearCertificateExpiryNotifications } = await import("@domainstack/db/queries");
 
   return await clearCertificateExpiryNotifications(trackedDomainId);
 }
@@ -224,20 +209,11 @@ async function sendCertificateExpiryEmail(params: {
   "use step";
 
   const { format } = await import("date-fns");
-  const { default: CertificateExpiryEmail } = await import(
-    "@domainstack/email/templates/certificate-expiry"
-  );
+  const { default: CertificateExpiryEmail } =
+    await import("@domainstack/email/templates/certificate-expiry");
   const { sendEmail } = await import("@/workflows/shared/send-email");
 
-  const {
-    userEmail,
-    userName,
-    domainName,
-    validTo,
-    issuer,
-    daysRemaining,
-    subject,
-  } = params;
+  const { userEmail, userName, domainName, validTo, issuer, daysRemaining, subject } = params;
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
 

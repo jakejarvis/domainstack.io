@@ -1,11 +1,12 @@
 "use client";
 
-import { Skeleton } from "@domainstack/ui/skeleton";
-import { cn } from "@domainstack/ui/utils";
-import { simpleHash } from "@domainstack/utils";
 import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import { useState } from "react";
+
+import { Skeleton } from "@domainstack/ui/skeleton";
+import { cn } from "@domainstack/ui/utils";
+import { simpleHash } from "@domainstack/utils";
 
 /**
  * Result shape for icon queries (favicons, provider logos).
@@ -26,7 +27,6 @@ export type RemoteIconProps = {
    * UseQueryOptions interfaces. Type safety is maintained through the
    * useQuery<IconQueryResult> generic parameter.
    */
-  // biome-ignore lint/suspicious/noExplicitAny: tRPC queryOptions returns complex internal types
   queryOptions: any;
   /** Identifier for fallback avatar (e.g., domain name, provider name) */
   fallbackIdentifier: string;
@@ -59,21 +59,10 @@ const PLACEHOLDER_COLORS = [
   "#d946ef", // fuchsia
 ] as const;
 
-const baseClassName = cn("pointer-events-none size-4 select-none rounded-xs");
+const baseClassName = cn("pointer-events-none size-4 rounded-xs select-none");
 
-function IconSkeleton({
-  className,
-  style,
-}: {
-  className?: string;
-  style?: React.CSSProperties;
-}) {
-  return (
-    <Skeleton
-      className={cn(baseClassName, "bg-input", className)}
-      style={style}
-    />
-  );
+function IconSkeleton({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return <Skeleton className={cn(baseClassName, "bg-input", className)} style={style} />;
 }
 
 type FallbackIconProps = Omit<RemoteIconProps, "queryOptions">;
@@ -88,9 +77,7 @@ function FallbackIcon({
 }: FallbackIconProps) {
   const letter = fallbackIdentifier[0]?.toUpperCase() || "?";
   const backgroundColor =
-    PLACEHOLDER_COLORS[
-      simpleHash(fallbackIdentifier) % PLACEHOLDER_COLORS.length
-    ];
+    PLACEHOLDER_COLORS[simpleHash(fallbackIdentifier) % PLACEHOLDER_COLORS.length];
   const fontSize = Math.max(9, Math.floor(size * 0.55)); // ~55% of container size
 
   return (

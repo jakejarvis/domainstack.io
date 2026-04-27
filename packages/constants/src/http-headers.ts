@@ -20,6 +20,4 @@ const IMPORTANT_HEADERS_LIST = [
 /**
  * Set of important headers for efficient O(1) lookups.
  */
-export const IMPORTANT_HEADERS: ReadonlySet<string> = new Set(
-  IMPORTANT_HEADERS_LIST,
-);
+export const IMPORTANT_HEADERS: ReadonlySet<string> = new Set(IMPORTANT_HEADERS_LIST);

@@ -6,6 +6,7 @@
  */
 
 import { RetryableError } from "workflow";
+
 import type { FetchDnsResult } from "./types";
 
 /**
@@ -14,14 +15,10 @@ import type { FetchDnsResult } from "./types";
  * @param domain - The domain to resolve
  * @returns FetchDnsResult with typed error on failure
  */
-export async function fetchDnsRecordsStep(
-  domain: string,
-): Promise<FetchDnsResult> {
+export async function fetchDnsRecordsStep(domain: string): Promise<FetchDnsResult> {
   "use step";
 
-  const { DnsProviderError, fetchDnsRecords } = await import(
-    "@domainstack/server/dns"
-  );
+  const { DnsProviderError, fetchDnsRecords } = await import("@domainstack/server/dns");
 
   try {
     const data = await fetchDnsRecords(domain);

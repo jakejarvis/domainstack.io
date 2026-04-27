@@ -1,4 +1,5 @@
 import { FatalError } from "workflow";
+
 import { checkBlocklist } from "@/workflows/shared/check-blocklist";
 
 const VIEWPORT_WIDTH = 1200;
@@ -77,10 +78,7 @@ export async function screenshotWorkflow(
   }
 
   // Step 3b: Process and store image to Vercel Blob
-  const storageResult = await storeScreenshot(
-    domain,
-    captureResult.imageBuffer,
-  );
+  const storageResult = await storeScreenshot(domain, captureResult.imageBuffer);
 
   // Step 4: Persist to database
   await persistSuccess(domain, storageResult.url, storageResult.pathname);
@@ -151,16 +149,10 @@ async function storeScreenshot(
 /**
  * Step: Persist successful screenshot to database
  */
-async function persistSuccess(
-  domain: string,
-  url: string,
-  pathname: string | null,
-): Promise<void> {
+async function persistSuccess(domain: string, url: string, pathname: string | null): Promise<void> {
   "use step";
 
-  const { ensureDomainRecord, upsertScreenshot } = await import(
-    "@domainstack/db/queries"
-  );
+  const { ensureDomainRecord, upsertScreenshot } = await import("@domainstack/db/queries");
   const { ttlForScreenshot } = await import("@domainstack/server/ttl");
 
   const domainRecord = await ensureDomainRecord(domain);
@@ -185,9 +177,7 @@ async function persistSuccess(
 async function persistFailure(domain: string): Promise<void> {
   "use step";
 
-  const { ensureDomainRecord, upsertScreenshot } = await import(
-    "@domainstack/db/queries"
-  );
+  const { ensureDomainRecord, upsertScreenshot } = await import("@domainstack/db/queries");
   const { ttlForScreenshot } = await import("@domainstack/server/ttl");
 
   try {

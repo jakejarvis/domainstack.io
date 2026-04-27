@@ -5,14 +5,16 @@ interface NotificationListSkeletonProps {
   count?: number;
 }
 
-export function NotificationListSkeleton({
-  count = 4,
-}: NotificationListSkeletonProps) {
+export function NotificationListSkeleton({ count = 4 }: NotificationListSkeletonProps) {
+  const skeletonIds = Array.from(
+    { length: count },
+    (_, itemNumber) => `notification-skeleton-${itemNumber}`,
+  );
+
   return (
     <div className="divide-y">
-      {Array.from({ length: count }).map((_, index) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton items have no stable id
-        <NotificationCardSkeleton key={index} />
+      {skeletonIds.map((skeletonId) => (
+        <NotificationCardSkeleton key={skeletonId} />
       ))}
     </div>
   );

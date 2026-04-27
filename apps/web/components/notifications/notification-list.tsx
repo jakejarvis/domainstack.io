@@ -1,14 +1,15 @@
 "use client";
 
-import type { NotificationData } from "@domainstack/types";
-import { ScrollArea } from "@domainstack/ui/scroll-area";
-import { Spinner } from "@domainstack/ui/spinner";
 import { IconXboxX } from "@tabler/icons-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { RefObject } from "react";
+
 import { NotificationCard } from "@/components/notifications/notification-card";
 import { NotificationEmptyState } from "@/components/notifications/notification-empty-state";
 import { NotificationListSkeleton } from "@/components/notifications/notification-list-skeleton";
+import type { NotificationData } from "@domainstack/types";
+import { ScrollArea } from "@domainstack/ui/scroll-area";
+import { Spinner } from "@domainstack/ui/spinner";
 
 interface NotificationListProps {
   notifications: NotificationData[];
@@ -38,10 +39,7 @@ export function NotificationList({
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <ScrollArea
-      scrollRef={scrollAreaRef}
-      className="min-h-0 flex-1 bg-popover/10"
-    >
+    <ScrollArea scrollRef={scrollAreaRef} className="min-h-0 flex-1 bg-popover/10">
       {isLoading ? (
         <NotificationListSkeleton />
       ) : isError ? (
@@ -53,10 +51,7 @@ export function NotificationList({
           Failed to load notifications
         </div>
       ) : notifications.length === 0 ? (
-        <NotificationEmptyState
-          variant={view}
-          onClosePopover={onClosePopover}
-        />
+        <NotificationEmptyState variant={view} onClosePopover={onClosePopover} />
       ) : (
         <div className="divide-y">
           <AnimatePresence mode="popLayout" initial={false}>
@@ -85,9 +80,7 @@ export function NotificationList({
           {/* Infinite scroll trigger */}
           {hasNextPage && (
             <div ref={loadMoreRef} className="flex justify-center py-4">
-              {isFetchingNextPage && (
-                <Spinner className="size-5 text-muted-foreground" />
-              )}
+              {isFetchingNextPage && <Spinner className="size-5 text-muted-foreground" />}
             </div>
           )}
         </div>

@@ -1,18 +1,11 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
-import {
-  IconChevronLeft,
-  IconChevronRight,
-  IconDots,
-} from "@tabler/icons-react";
+import { IconChevronLeft, IconChevronRight, IconDots } from "@tabler/icons-react";
+
 import { cn } from "../utils";
 import { Button } from "./button";
 
-function Pagination({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"nav">) {
+function Pagination({ className, render, ...props }: useRender.ComponentProps<"nav">) {
   return useRender({
     defaultTagName: "nav",
     render,
@@ -27,11 +20,7 @@ function Pagination({
   });
 }
 
-function PaginationContent({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"ul">) {
+function PaginationContent({ className, render, ...props }: useRender.ComponentProps<"ul">) {
   return useRender({
     defaultTagName: "ul",
     render,
@@ -64,7 +53,7 @@ function PaginationLink({
   isActive,
   size = "icon",
   className,
-  render,
+  render: _render,
   ...props
 }: PaginationLinkProps) {
   return (
@@ -113,17 +102,13 @@ function PaginationNext({ className, ...props }: PaginationLinkProps) {
   );
 }
 
-function PaginationEllipsis({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"span">) {
+function PaginationEllipsis({ className, render, ...props }: useRender.ComponentProps<"span">) {
   return useRender({
     defaultTagName: "span",
     render,
     props: mergeProps<"span">(props, {
       className: cn(
-        "flex size-9 items-center items-center justify-center justify-center [&_svg:not([class*='size-'])]:size-4",
+        "flex size-9 items-center justify-center [&_svg:not([class*='size-'])]:size-4",
         className,
       ),
       children: (
@@ -142,9 +127,9 @@ function PaginationEllipsis({
 export {
   Pagination,
   PaginationContent,
-  PaginationLink,
-  PaginationItem,
-  PaginationPrevious,
-  PaginationNext,
   PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
 };

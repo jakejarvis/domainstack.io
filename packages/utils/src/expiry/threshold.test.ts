@@ -1,72 +1,64 @@
 import { describe, expect, it } from "vitest";
-import {
-  calculateDaysRemaining,
-  getThresholdNotificationType,
-} from "./threshold";
+
+import { calculateDaysRemaining, getThresholdNotificationType } from "./threshold";
 
 describe("getThresholdNotificationType", () => {
   const domainThresholds = [30, 14, 7, 1];
   const certThresholds = [90, 30, 14, 7];
 
   it("returns smallest matching threshold for domain expiry", () => {
-    expect(
-      getThresholdNotificationType(5, domainThresholds, "domain_expiry"),
-    ).toBe("domain_expiry_7d");
+    expect(getThresholdNotificationType(5, domainThresholds, "domain_expiry")).toBe(
+      "domain_expiry_7d",
+    );
 
-    expect(
-      getThresholdNotificationType(1, domainThresholds, "domain_expiry"),
-    ).toBe("domain_expiry_1d");
+    expect(getThresholdNotificationType(1, domainThresholds, "domain_expiry")).toBe(
+      "domain_expiry_1d",
+    );
 
-    expect(
-      getThresholdNotificationType(10, domainThresholds, "domain_expiry"),
-    ).toBe("domain_expiry_14d");
+    expect(getThresholdNotificationType(10, domainThresholds, "domain_expiry")).toBe(
+      "domain_expiry_14d",
+    );
   });
 
   it("returns smallest matching threshold for certificate expiry", () => {
-    expect(
-      getThresholdNotificationType(25, certThresholds, "certificate_expiry"),
-    ).toBe("certificate_expiry_30d");
+    expect(getThresholdNotificationType(25, certThresholds, "certificate_expiry")).toBe(
+      "certificate_expiry_30d",
+    );
 
-    expect(
-      getThresholdNotificationType(60, certThresholds, "certificate_expiry"),
-    ).toBe("certificate_expiry_90d");
+    expect(getThresholdNotificationType(60, certThresholds, "certificate_expiry")).toBe(
+      "certificate_expiry_90d",
+    );
   });
 
   it("returns null when days exceeds all thresholds", () => {
-    expect(
-      getThresholdNotificationType(45, domainThresholds, "domain_expiry"),
-    ).toBeNull();
+    expect(getThresholdNotificationType(45, domainThresholds, "domain_expiry")).toBeNull();
 
-    expect(
-      getThresholdNotificationType(100, certThresholds, "certificate_expiry"),
-    ).toBeNull();
+    expect(getThresholdNotificationType(100, certThresholds, "certificate_expiry")).toBeNull();
   });
 
   it("handles exact threshold boundaries", () => {
-    expect(
-      getThresholdNotificationType(30, domainThresholds, "domain_expiry"),
-    ).toBe("domain_expiry_30d");
+    expect(getThresholdNotificationType(30, domainThresholds, "domain_expiry")).toBe(
+      "domain_expiry_30d",
+    );
 
-    expect(
-      getThresholdNotificationType(7, domainThresholds, "domain_expiry"),
-    ).toBe("domain_expiry_7d");
+    expect(getThresholdNotificationType(7, domainThresholds, "domain_expiry")).toBe(
+      "domain_expiry_7d",
+    );
   });
 
   it("handles zero and negative days", () => {
-    expect(
-      getThresholdNotificationType(0, domainThresholds, "domain_expiry"),
-    ).toBe("domain_expiry_1d");
+    expect(getThresholdNotificationType(0, domainThresholds, "domain_expiry")).toBe(
+      "domain_expiry_1d",
+    );
 
-    expect(
-      getThresholdNotificationType(-5, domainThresholds, "domain_expiry"),
-    ).toBe("domain_expiry_1d");
+    expect(getThresholdNotificationType(-5, domainThresholds, "domain_expiry")).toBe(
+      "domain_expiry_1d",
+    );
   });
 
   it("handles unsorted threshold arrays", () => {
     const unsorted = [7, 30, 1, 14] as const;
-    expect(getThresholdNotificationType(5, unsorted, "domain_expiry")).toBe(
-      "domain_expiry_7d",
-    );
+    expect(getThresholdNotificationType(5, unsorted, "domain_expiry")).toBe("domain_expiry_7d");
   });
 });
 

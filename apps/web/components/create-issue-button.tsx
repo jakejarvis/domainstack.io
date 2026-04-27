@@ -1,9 +1,10 @@
 "use client";
 
-import { REPOSITORY_SLUG } from "@domainstack/constants";
-import { Button } from "@domainstack/ui/button";
 import { SiGithub } from "@icons-pack/react-simple-icons";
 import { useMemo } from "react";
+
+import { REPOSITORY_SLUG } from "@domainstack/constants";
+import { Button } from "@domainstack/ui/button";
 
 type ErrorWithOptionalDigest = Error & { digest?: string };
 
@@ -16,8 +17,7 @@ function buildIssueUrl(error?: ErrorWithOptionalDigest) {
   const message = error?.message?.trim() || "Unexpected error";
   const digest = error && "digest" in error ? error.digest : undefined;
 
-  const shortMessage =
-    message.length > 80 ? `${message.slice(0, 77)}…` : message;
+  const shortMessage = message.length > 80 ? `${message.slice(0, 77)}…` : message;
   const titleParts = ["Bug:", shortMessage];
   if (digest) titleParts.push(`(id: ${digest})`);
   const title = titleParts.join(" ");

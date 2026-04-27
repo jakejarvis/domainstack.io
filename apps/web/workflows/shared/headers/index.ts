@@ -6,8 +6,4 @@
 
 export { fetchHeadersStep } from "./fetch";
 export { persistHeadersStep } from "./persist";
-export type {
-  FetchHeadersResult,
-  HeadersError,
-  HeadersFetchData,
-} from "./types";
+export type { FetchHeadersResult, HeadersError, HeadersFetchData } from "./types";

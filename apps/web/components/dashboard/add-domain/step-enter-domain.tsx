@@ -1,15 +1,8 @@
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldLabel,
-} from "@domainstack/ui/field";
-import { Input } from "@domainstack/ui/input";
-import {
-  isValidDomain,
-  normalizeDomainInput,
-} from "@domainstack/utils/domain/client";
 import { useMemo } from "react";
+
+import { Field, FieldDescription, FieldError, FieldLabel } from "@domainstack/ui/field";
+import { Input } from "@domainstack/ui/input";
+import { isValidDomain, normalizeDomainInput } from "@domainstack/utils/domain/client";
 
 type StepEnterDomainProps = {
   domain: string;

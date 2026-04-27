@@ -1,9 +1,8 @@
 "use client";
 
-import type { VerificationMethod } from "@domainstack/constants";
-import type { TrackedDomainWithDetails } from "@domainstack/types";
 import type { Table } from "@tanstack/react-table";
 import { createContext, useContext, useMemo } from "react";
+
 import type {
   AvailableProvidersByCategory,
   DashboardPageSizeOptions,
@@ -11,6 +10,8 @@ import type {
   SortOption,
   StatusFilter,
 } from "@/lib/dashboard-utils";
+import type { VerificationMethod } from "@domainstack/constants";
+import type { TrackedDomainWithDetails } from "@domainstack/types";
 
 // Re-export types so consumers can import from context
 export type { SortOption } from "@/lib/dashboard-utils";
@@ -189,11 +190,7 @@ export function DashboardProvider({
     ],
   );
 
-  return (
-    <DashboardContext.Provider value={value}>
-      {children}
-    </DashboardContext.Provider>
-  );
+  return <DashboardContext.Provider value={value}>{children}</DashboardContext.Provider>;
 }
 
 // ---------------------------------------------------------------------------
@@ -203,9 +200,7 @@ export function DashboardProvider({
 function useDashboardContext() {
   const context = useContext(DashboardContext);
   if (!context) {
-    throw new Error(
-      "useDashboardContext must be used within a DashboardProvider",
-    );
+    throw new Error("useDashboardContext must be used within a DashboardProvider");
   }
   return context;
 }

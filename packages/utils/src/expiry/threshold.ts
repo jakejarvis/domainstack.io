@@ -57,10 +57,7 @@ export function calculateDaysRemaining(
   expirationDate: Date | string,
   now: Date = new Date(),
 ): number {
-  const expDate =
-    typeof expirationDate === "string"
-      ? new Date(expirationDate)
-      : expirationDate;
+  const expDate = typeof expirationDate === "string" ? new Date(expirationDate) : expirationDate;
 
   const diffMs = expDate.getTime() - now.getTime();
   return Math.floor(diffMs / (1000 * 60 * 60 * 24));

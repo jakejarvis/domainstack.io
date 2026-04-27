@@ -1,3 +1,12 @@
+import { IconHelp } from "@tabler/icons-react";
+import dynamic from "next/dynamic";
+
+import { HostingMapSkeleton } from "@/components/domain/hosting/hosting-map-skeleton";
+import { KeyValue } from "@/components/domain/key-value";
+import { KeyValueGrid } from "@/components/domain/key-value-grid";
+import { ReportSection } from "@/components/domain/report-section";
+import { ProviderLogo } from "@/components/icons/provider-logo";
+import { sections } from "@/lib/constants/sections";
 import type { HostingGeo, HostingResponse } from "@domainstack/types";
 import {
   Empty,
@@ -7,20 +16,9 @@ import {
   EmptyTitle,
 } from "@domainstack/ui/empty";
 import { countryCodeToEmoji } from "@domainstack/utils";
-import { IconHelp } from "@tabler/icons-react";
-import dynamic from "next/dynamic";
-import { HostingMapSkeleton } from "@/components/domain/hosting/hosting-map-skeleton";
-import { KeyValue } from "@/components/domain/key-value";
-import { KeyValueGrid } from "@/components/domain/key-value-grid";
-import { ReportSection } from "@/components/domain/report-section";
-import { ProviderLogo } from "@/components/icons/provider-logo";
-import { sections } from "@/lib/constants/sections";
 
 const HostingMapClient = dynamic(
-  () =>
-    import("@/components/domain/hosting/hosting-map-client").then(
-      (m) => m.HostingMapClient,
-    ),
+  () => import("@/components/domain/hosting/hosting-map-client").then((m) => m.HostingMapClient),
   {
     ssr: false,
     loading: () => <HostingMapSkeleton />,
@@ -42,8 +40,7 @@ export function HostingSection({
   const dnsProvider = data?.dnsProvider ?? null;
   const hostingProvider = data?.hostingProvider ?? null;
   const emailProvider = data?.emailProvider ?? null;
-  const hasAnyProvider =
-    dnsProvider?.name || hostingProvider?.name || emailProvider?.name;
+  const hasAnyProvider = dnsProvider?.name || hostingProvider?.name || emailProvider?.name;
   const geolocation = data?.geo ?? null;
 
   return (
@@ -56,10 +53,7 @@ export function HostingSection({
               value={dnsProvider?.name ?? "Not configured"}
               leading={
                 dnsProvider?.id ? (
-                  <ProviderLogo
-                    providerId={dnsProvider.id}
-                    providerName={dnsProvider.name}
-                  />
+                  <ProviderLogo providerId={dnsProvider.id} providerName={dnsProvider.name} />
                 ) : undefined
               }
             />
@@ -80,10 +74,7 @@ export function HostingSection({
               value={emailProvider?.name ?? "Not configured"}
               leading={
                 emailProvider?.id ? (
-                  <ProviderLogo
-                    providerId={emailProvider.id}
-                    providerName={emailProvider.name}
-                  />
+                  <ProviderLogo providerId={emailProvider.id} providerName={emailProvider.name} />
                 ) : undefined
               }
             />
@@ -108,11 +99,7 @@ export function HostingSection({
 
               {geolocation.lat && geolocation.lon ? (
                 <div className="relative h-[280px] w-full">
-                  <HostingMapClient
-                    lat={geolocation.lat}
-                    lon={geolocation.lon}
-                    domain={domain}
-                  />
+                  <HostingMapClient lat={geolocation.lat} lon={geolocation.lon} domain={domain} />
                 </div>
               ) : null}
             </>
@@ -126,9 +113,8 @@ export function HostingSection({
             </EmptyMedia>
             <EmptyTitle>No hosting details available</EmptyTitle>
             <EmptyDescription>
-              We couldn&apos;t detect hosting, email, or DNS provider info. If
-              the domain has no A/AAAA records or blocked headers, details may
-              be unavailable.
+              We couldn&apos;t detect hosting, email, or DNS provider info. If the domain has no
+              A/AAAA records or blocked headers, details may be unavailable.
             </EmptyDescription>
           </EmptyHeader>
         </Empty>

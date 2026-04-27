@@ -1,20 +1,10 @@
-import type { DnsRecord, Header } from "@domainstack/types";
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { server } from "@/mocks/server";
+import type { DnsRecord, Header } from "@domainstack/types";
 
 // Initialize PGlite before importing anything that uses the db
-const { makePGliteDb, closePGliteDb, resetPGliteDb } = await import(
-  "@domainstack/db/testing"
-);
+const { makePGliteDb, closePGliteDb, resetPGliteDb } = await import("@domainstack/db/testing");
 await makePGliteDb();
 
 // Use vi.hoisted to define the mock catalog before vi.mock is hoisted
@@ -50,12 +40,14 @@ const mockCatalog = vi.hoisted(() => ({
 }));
 
 vi.mock("@domainstack/server/edge-config", () => ({
-  getProviderCatalog: vi.fn().mockResolvedValue(mockCatalog),
+  getProviderCatalog: vi
+    .fn<(...args: unknown[]) => Promise<typeof mockCatalog>>()
+    .mockResolvedValue(mockCatalog),
 }));
 
 // Mock schedule revalidation
 vi.mock("@/lib/revalidation", () => ({
-  scheduleRevalidation: vi.fn().mockResolvedValue(undefined),
+  scheduleRevalidation: vi.fn<(...args: unknown[]) => Promise<void>>().mockResolvedValue(undefined),
 }));
 
 beforeAll(() => {
@@ -108,11 +100,7 @@ describe("detectAndResolveProvidersStep", () => {
     };
 
     const { detectAndResolveProvidersStep } = await import("./detect");
-    const result = await detectAndResolveProvidersStep(
-      dnsRecords,
-      headers,
-      geoResult,
-    );
+    const result = await detectAndResolveProvidersStep(dnsRecords, headers, geoResult);
 
     expect(result.hostingProvider.name).toBe("Vercel");
     expect(result.hostingProvider.domain).toBe("vercel.com");
@@ -146,11 +134,7 @@ describe("detectAndResolveProvidersStep", () => {
     };
 
     const { detectAndResolveProvidersStep } = await import("./detect");
-    const result = await detectAndResolveProvidersStep(
-      dnsRecords,
-      headers,
-      geoResult,
-    );
+    const result = await detectAndResolveProvidersStep(dnsRecords, headers, geoResult);
 
     expect(result.emailProvider.name).toBe("Google Workspace");
     expect(result.emailProvider.domain).toBe("google.com");
@@ -189,11 +173,7 @@ describe("detectAndResolveProvidersStep", () => {
     };
 
     const { detectAndResolveProvidersStep } = await import("./detect");
-    const result = await detectAndResolveProvidersStep(
-      dnsRecords,
-      headers,
-      geoResult,
-    );
+    const result = await detectAndResolveProvidersStep(dnsRecords, headers, geoResult);
 
     expect(result.dnsProvider.name).toBe("Cloudflare");
     expect(result.dnsProvider.domain).toBe("cloudflare.com");
@@ -205,11 +185,7 @@ describe("detectAndResolveProvidersStep", () => {
     const geoResult = null;
 
     const { detectAndResolveProvidersStep } = await import("./detect");
-    const result = await detectAndResolveProvidersStep(
-      dnsRecords,
-      headers,
-      geoResult,
-    );
+    const result = await detectAndResolveProvidersStep(dnsRecords, headers, geoResult);
 
     expect(result.hostingProvider.name).toBeNull();
   });

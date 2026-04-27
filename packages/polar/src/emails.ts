@@ -1,10 +1,11 @@
+import { format } from "date-fns";
+
 import { getUserById } from "@domainstack/db/queries";
 import { sendEmail } from "@domainstack/email";
 import ProUpgradeSuccessEmail from "@domainstack/email/templates/pro-upgrade-success";
 import SubscriptionCancelingEmail from "@domainstack/email/templates/subscription-canceling";
 import SubscriptionExpiredEmail from "@domainstack/email/templates/subscription-expired";
 import { logger } from "@domainstack/logger";
-import { format } from "date-fns";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://domainstack.io";
 

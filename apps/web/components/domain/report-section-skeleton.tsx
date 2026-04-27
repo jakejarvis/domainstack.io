@@ -1,12 +1,8 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardTitle,
-} from "@domainstack/ui/card";
+import { IconInfoCircle } from "@tabler/icons-react";
+
+import { Card, CardContent, CardDescription, CardTitle } from "@domainstack/ui/card";
 import { Icon } from "@domainstack/ui/icon";
 import { Spinner } from "@domainstack/ui/spinner";
-import { IconInfoCircle } from "@tabler/icons-react";
 
 interface ReportSectionSkeletonProps {
   title: string;
@@ -48,9 +44,7 @@ export function ReportSectionSkeleton({
         <div
           aria-hidden
           className="pointer-events-none absolute -inset-x-8 -top-8 h-24 accent-glow opacity-30 blur-2xl"
-          style={
-            { "--glow-color": `var(--accent-${accent})` } as React.CSSProperties
-          }
+          style={{ "--glow-color": `var(--accent-${accent})` } as React.CSSProperties}
         />
         <div className="relative">
           <div className="p-5" id={headerId}>
@@ -64,20 +58,15 @@ export function ReportSectionSkeleton({
                 <CardTitle className="flex items-center gap-2">
                   <span className="text-base">{title}</span>
                   <span role="img">
-                    <IconInfoCircle
-                      className="size-3.5 opacity-60"
-                      aria-hidden
-                    />
+                    <IconInfoCircle className="size-3.5 opacity-60" aria-hidden />
                   </span>
                 </CardTitle>
                 {(description || help) && (
-                  <CardDescription className="sr-only">
-                    {description}
-                  </CardDescription>
+                  <CardDescription className="sr-only">{description}</CardDescription>
                 )}
               </div>
               <div className="ml-auto flex items-center gap-3">
-                <div className="mr-2 flex items-center gap-2 text-muted-foreground text-xs">
+                <div className="mr-2 flex items-center gap-2 text-xs text-muted-foreground">
                   <Spinner className="size-5" />
                   <span className="sr-only">Loading</span>
                 </div>
@@ -87,9 +76,7 @@ export function ReportSectionSkeleton({
         </div>
         {children && (
           <div id={contentId}>
-            <CardContent className="space-y-2 px-5 pt-0 pb-5">
-              {children}
-            </CardContent>
+            <CardContent className="space-y-2 px-5 pt-0 pb-5">{children}</CardContent>
           </div>
         )}
       </Card>

@@ -32,9 +32,7 @@ function CertificateExpiryEmail({
 
   return (
     <EmailLayout previewText={previewText}>
-      <EmailHeading>
-        {isUrgent ? "🔒⚠️ " : "🔒 "}Certificate Expiration Alert
-      </EmailHeading>
+      <EmailHeading>{isUrgent ? "🔒⚠️ " : "🔒 "}Certificate Expiration Alert</EmailHeading>
 
       <EmailText>Hi {userName},</EmailText>
 
@@ -44,10 +42,7 @@ function CertificateExpiryEmail({
           <span style={urgent}>tomorrow</span>
         ) : (
           <>
-            in{" "}
-            <span style={isUrgent ? urgent : highlight}>
-              {daysRemaining} days
-            </span>
+            in <span style={isUrgent ? urgent : highlight}>{daysRemaining} days</span>
           </>
         )}{" "}
         on <strong>{expirationDate}</strong>.
@@ -62,9 +57,8 @@ function CertificateExpiryEmail({
       {isUrgent && (
         <EmailBox variant="danger">
           <EmailBoxText variant="danger">
-            <strong>Action Required:</strong> Renew your SSL certificate
-            immediately to avoid browser security warnings and potential service
-            interruption.
+            <strong>Action Required:</strong> Renew your SSL certificate immediately to avoid
+            browser security warnings and potential service interruption.
           </EmailBoxText>
         </EmailBox>
       )}
@@ -72,14 +66,13 @@ function CertificateExpiryEmail({
       <EmailText>
         {issuer.toLowerCase().includes("let's encrypt") ? (
           <>
-            Let&apos;s Encrypt certificates typically auto-renew. If this one
-            hasn&apos;t, check your server&apos;s renewal configuration or
-            contact your hosting provider.
+            Let&apos;s Encrypt certificates typically auto-renew. If this one hasn&apos;t, check
+            your server&apos;s renewal configuration or contact your hosting provider.
           </>
         ) : (
           <>
-            Contact your certificate authority or hosting provider to renew the
-            certificate before it expires.
+            Contact your certificate authority or hosting provider to renew the certificate before
+            it expires.
           </>
         )}
       </EmailText>
@@ -90,9 +83,8 @@ function CertificateExpiryEmail({
 
       <EmailFooter>
         You received this email because you&apos;re tracking {domainName} on{" "}
-        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. You
-        can manage your notification settings in your{" "}
-        <EmailLink href={`${baseUrl}/settings`}>dashboard</EmailLink>.
+        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. You can manage your
+        notification settings in your <EmailLink href={`${baseUrl}/settings`}>dashboard</EmailLink>.
       </EmailFooter>
     </EmailLayout>
   );

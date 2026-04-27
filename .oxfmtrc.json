@@ -1,0 +1,40 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "sortImports": {
+    "groups": [
+      "builtin",
+      "external",
+      ["internal", "subpath"],
+      ["parent", "sibling", "index"],
+      "style",
+      "unknown"
+    ],
+    "internalPattern": ["@/", "@domainstack/"],
+    "newlinesBetween": true,
+    "order": "asc"
+  },
+  "sortTailwindcss": {
+    "stylesheet": "apps/web/app/globals.css",
+    "functions": ["clsx", "cn", "cva", "classList"],
+    "preserveWhitespace": true
+  },
+  "overrides": [
+    {
+      "files": ["**/*.json", "**/*.jsonc"],
+      "options": {
+        "trailingComma": "none"
+      }
+    }
+  ],
+  "ignorePatterns": [
+    "dist",
+    "node_modules",
+    ".turbo",
+    ".next",
+    ".vercel",
+    ".swc",
+    "coverage",
+    "packages/db/drizzle",
+    "**/.well-known/workflow"
+  ]
+}

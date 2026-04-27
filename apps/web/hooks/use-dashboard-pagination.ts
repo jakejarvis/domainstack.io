@@ -1,5 +1,6 @@
 import { parseAsInteger, useQueryState } from "nuqs";
 import { useCallback } from "react";
+
 import type { DashboardPageSizeOptions } from "@/lib/dashboard-utils";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 

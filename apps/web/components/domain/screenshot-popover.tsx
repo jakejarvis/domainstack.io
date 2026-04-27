@@ -1,13 +1,10 @@
 "use client";
 
-import { usePointerCapability } from "@domainstack/ui/hooks";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@domainstack/ui/popover";
 import { useEffect, useState } from "react";
+
 import { Screenshot, useScreenshot } from "@/components/domain/screenshot";
+import { usePointerCapability } from "@domainstack/ui/hooks";
+import { Popover, PopoverContent, PopoverTrigger } from "@domainstack/ui/popover";
 
 export function ScreenshotPopover({
   domain,
@@ -76,10 +73,10 @@ export function ScreenshotPopover({
         sideOffset={sideOffset}
       >
         <div className="w-[360px] md:w-[420px]">
-          <div className="block h-auto w-full select-none overflow-hidden rounded-lg">
+          <div className="block h-auto w-full overflow-hidden rounded-lg select-none">
             {/* Top Chrome Bar */}
             <div
-              className="flex h-6 items-center gap-2 border-zinc-200 border-b bg-zinc-100 px-2 dark:border-zinc-800 dark:bg-zinc-900"
+              className="flex h-6 items-center gap-2 border-b border-zinc-200 bg-zinc-100 px-2 dark:border-zinc-800 dark:bg-zinc-900"
               aria-hidden
             >
               {/* Traffic Light Dots */}
@@ -101,11 +98,7 @@ export function ScreenshotPopover({
 
             {/* Content Area */}
             <div className="bg-white dark:bg-zinc-950">
-              <Screenshot
-                domain={domain}
-                data={screenshot.data}
-                isLoading={screenshot.isLoading}
-              />
+              <Screenshot domain={domain} data={screenshot.data} isLoading={screenshot.isLoading} />
             </div>
           </div>
         </div>

@@ -1,10 +1,7 @@
 /* @vitest-environment node */
 import { describe, expect, it } from "vitest";
-import {
-  getProvidersFromCatalog,
-  parseProviderCatalog,
-  safeParseProviderCatalog,
-} from "./parser";
+
+import { getProvidersFromCatalog, parseProviderCatalog, safeParseProviderCatalog } from "./parser";
 
 describe("parseProviderCatalog", () => {
   it("parses a valid minimal catalog", () => {
@@ -43,7 +40,7 @@ describe("parseProviderCatalog", () => {
           },
         ],
       }),
-    ).toThrow();
+    ).toThrow(/string|character|too small/i);
   });
 
   it("rejects provider with empty domain", () => {
@@ -57,19 +54,19 @@ describe("parseProviderCatalog", () => {
           },
         ],
       }),
-    ).toThrow();
+    ).toThrow(/string|character|too small/i);
   });
 
   it("rejects null input", () => {
-    expect(() => parseProviderCatalog(null)).toThrow();
+    expect(() => parseProviderCatalog(null)).toThrow(/object|invalid/i);
   });
 
   it("rejects array input", () => {
-    expect(() => parseProviderCatalog([])).toThrow();
+    expect(() => parseProviderCatalog([])).toThrow(/object|invalid/i);
   });
 
   it("rejects string input", () => {
-    expect(() => parseProviderCatalog("not an object")).toThrow();
+    expect(() => parseProviderCatalog("not an object")).toThrow(/object|invalid/i);
   });
 
   it("rejects invalid regex pattern at parse time", () => {
@@ -191,18 +188,20 @@ describe("safeParseProviderCatalog", () => {
     });
 
     expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.hosting).toHaveLength(1);
+    if (!result.success) {
+      throw result.error;
     }
+    expect(result.data.hosting).toHaveLength(1);
   });
 
   it("returns error for invalid catalog", () => {
     const result = safeParseProviderCatalog(null);
 
     expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error).toBeDefined();
+    if (result.success) {
+      throw new Error("Expected catalog parsing to fail");
     }
+    expect(result.error).toBeDefined();
   });
 
   it("returns error object for empty name", () => {
@@ -231,11 +230,10 @@ describe("safeParseProviderCatalog", () => {
     });
 
     expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(
-        result.error.issues.some((i) => i.message.includes("Invalid regex")),
-      ).toBe(true);
+    if (result.success) {
+      throw new Error("Expected catalog parsing to fail");
     }
+    expect(result.error.issues.some((i) => i.message.includes("Invalid regex"))).toBe(true);
   });
 });
 

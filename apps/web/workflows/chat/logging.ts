@@ -5,11 +5,7 @@
  * for structured logging of chat events.
  */
 
-import {
-  InvalidToolInputError,
-  NoSuchToolError,
-  ToolCallRepairError,
-} from "ai";
+import { InvalidToolInputError, NoSuchToolError, ToolCallRepairError } from "ai";
 import { getStepMetadata, getWorkflowMetadata } from "workflow";
 
 // ============================================================================
@@ -24,11 +20,7 @@ export type SerializedError = {
 };
 
 export type ToolErrorDetails = {
-  type:
-    | "no_such_tool"
-    | "invalid_tool_input"
-    | "tool_call_repair"
-    | "tool_execution";
+  type: "no_such_tool" | "invalid_tool_input" | "tool_call_repair" | "tool_execution";
   toolName?: string;
   toolInput?: string;
   availableTools?: string[];
@@ -84,9 +76,7 @@ export function serializeError(error: unknown): SerializedError {
   return { message: String(error) };
 }
 
-export function getToolErrorDetails(
-  error: unknown,
-): ToolErrorDetails | undefined {
+export function getToolErrorDetails(error: unknown): ToolErrorDetails | undefined {
   if (NoSuchToolError.isInstance(error)) {
     return {
       type: "no_such_tool",
@@ -148,9 +138,7 @@ export function summarizeToolCalls(toolCalls: unknown[]): ToolCallSummary[] {
   });
 }
 
-export function summarizeToolResults(
-  toolResults: unknown[],
-): ToolResultSummary[] {
+export function summarizeToolResults(toolResults: unknown[]): ToolResultSummary[] {
   return toolResults.map((result) => {
     if (!result || typeof result !== "object") {
       return {};
@@ -171,9 +159,7 @@ export function summarizeToolResults(
           : undefined;
 
     const isError =
-      "isError" in result && typeof result.isError === "boolean"
-        ? result.isError
-        : undefined;
+      "isError" in result && typeof result.isError === "boolean" ? result.isError : undefined;
 
     return { toolName, toolCallId, isError };
   });

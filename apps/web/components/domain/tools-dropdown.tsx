@@ -1,3 +1,6 @@
+import { IconDotsVertical, IconPlus } from "@tabler/icons-react";
+
+import { Favicon } from "@/components/icons/favicon";
 import { REPOSITORY_SLUG } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
 import {
@@ -8,14 +11,8 @@ import {
   DropdownMenuTrigger,
 } from "@domainstack/ui/dropdown-menu";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@domainstack/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 import { cn } from "@domainstack/ui/utils";
-import { IconDotsVertical, IconPlus } from "@tabler/icons-react";
-import { Favicon } from "@/components/icons/favicon";
 
 type ToolsDropdownProps = {
   domain: string;
@@ -38,8 +35,7 @@ const TOOLS = (
     {
       name: "DomainTools",
       faviconDomain: "domaintools.com",
-      buildUrl: (domain) =>
-        `https://whois.domaintools.com/${encodeURIComponent(domain)}`,
+      buildUrl: (domain) => `https://whois.domaintools.com/${encodeURIComponent(domain)}`,
     },
     {
       name: "intoDNS",
@@ -61,8 +57,7 @@ const TOOLS = (
     {
       name: "SecurityTrails",
       faviconDomain: "securitytrails.com",
-      buildUrl: (domain) =>
-        `https://securitytrails.com/domain/${encodeURIComponent(domain)}/dns`,
+      buildUrl: (domain) => `https://securitytrails.com/domain/${encodeURIComponent(domain)}/dns`,
     },
     {
       name: "Sharing Debugger",
@@ -79,20 +74,17 @@ const TOOLS = (
     {
       name: "Wayback Machine",
       faviconDomain: "web.archive.org",
-      buildUrl: (domain) =>
-        `https://web.archive.org/web/*/${encodeURIComponent(domain)}`,
+      buildUrl: (domain) => `https://web.archive.org/web/*/${encodeURIComponent(domain)}`,
     },
     {
       name: "What's My DNS?",
       faviconDomain: "whatsmydns.net",
-      buildUrl: (domain) =>
-        `https://www.whatsmydns.net/#A/${encodeURIComponent(domain)}`,
+      buildUrl: (domain) => `https://www.whatsmydns.net/#A/${encodeURIComponent(domain)}`,
     },
     {
       name: "who.is",
       faviconDomain: "who.is",
-      buildUrl: (domain) =>
-        `https://who.is/whois/${encodeURIComponent(domain)}`,
+      buildUrl: (domain) => `https://who.is/whois/${encodeURIComponent(domain)}`,
     },
     {
       name: "Shodan",
@@ -109,8 +101,7 @@ const TOOLS = (
     {
       name: "DNSViz",
       faviconDomain: "dnsviz.net",
-      buildUrl: (domain) =>
-        `https://dnsviz.net/d/${encodeURIComponent(domain)}/dnssec/`,
+      buildUrl: (domain) => `https://dnsviz.net/d/${encodeURIComponent(domain)}/dnssec/`,
     },
     {
       name: "SSL Labs",
@@ -142,9 +133,7 @@ const TOOLS = (
       buildUrl: (domain) => `https://traffic.cv/${encodeURIComponent(domain)}`,
     },
   ] satisfies Tool[]
-).toSorted((a, b) =>
-  a.name.localeCompare(b.name, "en", { sensitivity: "base" }),
-);
+).toSorted((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
 
 export function ToolsDropdown({ domain, enabled = true }: ToolsDropdownProps) {
   return (
@@ -155,18 +144,8 @@ export function ToolsDropdown({ domain, enabled = true }: ToolsDropdownProps) {
           render={
             <TooltipTrigger
               render={
-                <div
-                  className={cn(
-                    "pointer-events-auto",
-                    !enabled && "cursor-not-allowed",
-                  )}
-                >
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    aria-label="Open menu"
-                    disabled={!enabled}
-                  >
+                <div className={cn("pointer-events-auto", !enabled && "cursor-not-allowed")}>
+                  <Button variant="outline" size="icon" aria-label="Open menu" disabled={!enabled}>
                     <IconDotsVertical />
                     <span className="sr-only">Open tools menu</span>
                   </Button>
@@ -177,10 +156,7 @@ export function ToolsDropdown({ domain, enabled = true }: ToolsDropdownProps) {
         />
         <TooltipContent>Third-party tools</TooltipContent>
       </Tooltip>
-      <DropdownMenuContent
-        align="end"
-        className="flex min-w-52 flex-col overflow-hidden p-0"
-      >
+      <DropdownMenuContent align="end" className="flex min-w-52 flex-col overflow-hidden p-0">
         <ScrollArea className="max-h-[65vh] min-h-0 flex-1">
           <div className="p-1">
             {TOOLS.map((tool) => (
@@ -188,11 +164,7 @@ export function ToolsDropdown({ domain, enabled = true }: ToolsDropdownProps) {
                 key={tool.name}
                 nativeButton={false}
                 render={
-                  <a
-                    href={tool.buildUrl(domain)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
+                  <a href={tool.buildUrl(domain)} target="_blank" rel="noopener noreferrer">
                     <Favicon domain={tool.faviconDomain} />
                     {tool.name}
                   </a>
@@ -207,14 +179,9 @@ export function ToolsDropdown({ domain, enabled = true }: ToolsDropdownProps) {
                   href={`https://github.com/${REPOSITORY_SLUG}/issues/new`}
                   onClick={(e) => {
                     e.preventDefault();
-                    const url = new URL(
-                      `https://github.com/${REPOSITORY_SLUG}/issues/new`,
-                    );
+                    const url = new URL(`https://github.com/${REPOSITORY_SLUG}/issues/new`);
                     url.searchParams.set("labels", "suggestion");
-                    url.searchParams.set(
-                      "title",
-                      "Add [TOOL] to tools dropdown",
-                    );
+                    url.searchParams.set("title", "Add [TOOL] to tools dropdown");
                     url.searchParams.set(
                       "body",
                       "I suggest adding the following tool to the tools dropdown:\n\n[Add the name, URL, and a brief description of the tool here]",

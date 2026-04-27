@@ -1,4 +1,5 @@
 import { IconGauge, IconShoppingCart } from "@tabler/icons-react";
+
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
 import { UpgradeButton } from "@/components/upgrade-button";
 import { useSubscription } from "@/hooks/use-subscription";

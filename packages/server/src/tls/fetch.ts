@@ -6,13 +6,9 @@
  */
 
 import type { DetailedPeerCertificate } from "node:tls";
+
 import type { RawCertificate, TlsFetchOptions, TlsFetchResult } from "./types";
-import {
-  isExpectedDnsError,
-  isExpectedTlsError,
-  parseAltNames,
-  toName,
-} from "./utils";
+import { isExpectedDnsError, isExpectedTlsError, parseAltNames, toName } from "./utils";
 
 /**
  * Fetch TLS certificate chain from a domain via TLS handshake.
@@ -47,15 +43,13 @@ export async function fetchCertificateChain(
         },
         () => {
           socket.setTimeout(0);
-          const peer = socket.getPeerCertificate(
-            true,
-          ) as DetailedPeerCertificate;
+          const peer = socket.getPeerCertificate(true) as DetailedPeerCertificate;
 
-          const chain: RawCertificate[] = [];
+          const rawChain: RawCertificate[] = [];
           let current: DetailedPeerCertificate | null = peer;
 
           while (current) {
-            chain.push({
+            rawChain.push({
               issuer: toName(current.issuer),
               subject: toName(current.subject),
               altNames: parseAltNames(
@@ -71,7 +65,7 @@ export async function fetchCertificateChain(
           }
 
           socket.end();
-          resolve(chain);
+          resolve(rawChain);
         },
       );
 

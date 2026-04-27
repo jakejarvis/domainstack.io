@@ -25,9 +25,5 @@ export function KeyValueGrid({
 
   const mobileClass = baseClassMap[colsMobile];
   const desktopClass = colsDesktop ? desktopClassMap[colsDesktop] : undefined;
-  return (
-    <div className={cn("grid gap-2", mobileClass, desktopClass, className)}>
-      {children}
-    </div>
-  );
+  return <div className={cn("grid gap-2", mobileClass, desktopClass, className)}>{children}</div>;
 }

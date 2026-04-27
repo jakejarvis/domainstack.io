@@ -1,21 +1,18 @@
 "use client";
 
-import { Button } from "@domainstack/ui/button";
-import { ScrollArea } from "@domainstack/ui/scroll-area";
-import { cn } from "@domainstack/ui/utils";
 import { IconArrowDown } from "@tabler/icons-react";
 import type { ComponentProps, HTMLAttributes, ReactNode } from "react";
 import type { StickToBottomInstance } from "use-stick-to-bottom";
+
+import { Button } from "@domainstack/ui/button";
+import { ScrollArea } from "@domainstack/ui/scroll-area";
+import { cn } from "@domainstack/ui/utils";
 
 export type ConversationProps = ComponentProps<typeof ScrollArea> & {
   stickyInstance: StickToBottomInstance;
 };
 
-export const Conversation = ({
-  stickyInstance,
-  className,
-  ...props
-}: ConversationProps) => {
+export const Conversation = ({ stickyInstance, className, ...props }: ConversationProps) => {
   const { scrollRef, contentRef } = stickyInstance;
   return (
     <ScrollArea
@@ -31,15 +28,9 @@ export const Conversation = ({
 
 export type ConversationContentProps = HTMLAttributes<HTMLDivElement>;
 
-export const ConversationContent = ({
-  className,
-  ...props
-}: ConversationContentProps) => (
+export const ConversationContent = ({ className, ...props }: ConversationContentProps) => (
   <div
-    className={cn(
-      "flex min-w-0 flex-1 flex-col gap-8 p-4 [contain:inline-size]",
-      className,
-    )}
+    className={cn("flex min-w-0 flex-1 flex-col gap-8 p-4 [contain:inline-size]", className)}
     {...props}
   />
 );
@@ -69,9 +60,9 @@ export const ConversationEmptyState = ({
       <>
         {icon && <div className="text-muted-foreground">{icon}</div>}
         <div className="space-y-1">
-          <h3 className="font-medium text-sm">{title}</h3>
+          <h3 className="text-sm font-medium">{title}</h3>
           {description && (
-            <p className="text-pretty text-[13px] text-muted-foreground leading-normal">
+            <p className="text-[13px] leading-normal text-pretty text-muted-foreground">
               {description}
             </p>
           )}

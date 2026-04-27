@@ -11,21 +11,9 @@ import {
  * Section types and metadata for domain report UI.
  */
 
-export type Section =
-  | "dns"
-  | "headers"
-  | "hosting"
-  | "certificates"
-  | "seo"
-  | "registration";
+export type Section = "dns" | "headers" | "hosting" | "certificates" | "seo" | "registration";
 
-export type SectionAccent =
-  | "blue"
-  | "purple"
-  | "green"
-  | "orange"
-  | "pink"
-  | "cyan";
+export type SectionAccent = "blue" | "purple" | "green" | "orange" | "pink" | "cyan";
 
 export interface SectionDef {
   title: string;
