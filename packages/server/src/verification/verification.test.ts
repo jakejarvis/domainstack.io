@@ -1,7 +1,20 @@
 import { HttpResponse, http } from "msw";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { server } from "./test-setup";
+
+type MockDnsLookup = (hostname: string) => Promise<Array<{ address: string; family: 4 }>>;
+
+vi.mock("node:dns/promises", () => ({
+  lookup: vi.fn<MockDnsLookup>(async (hostname: string) => {
+    if (hostname.endsWith(".test")) {
+      return [{ address: "1.2.3.4", family: 4 }];
+    }
+    throw Object.assign(new Error(`getaddrinfo ENOTFOUND ${hostname}`), {
+      code: "ENOTFOUND",
+    });
+  }),
+}));
 
 beforeAll(() => server.listen({ onUnhandledRequest: "bypass" }));
 afterEach(() => server.resetHandlers());

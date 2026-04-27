@@ -4,34 +4,23 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { server } from "@/mocks/server";
 
-// Mock DNS for domain resolution (must override both DoH providers
-// since resolveHostIps picks provider order by domain hash)
-function mockDns(domain: string) {
-  const handler = ({ request }: { request: Request }) => {
-    const url = new URL(request.url);
-    const name = url.searchParams.get("name");
+type MockDnsLookup = (hostname: string) => Promise<Array<{ address: string; family: 4 }>>;
 
-    if (name === domain) {
-      return HttpResponse.json({
-        Status: 0,
-        Answer: [
-          {
-            name: `${domain}.`,
-            type: 1,
-            TTL: 60,
-            data: "1.2.3.4",
-          },
-        ],
-      });
+vi.mock("node:dns/promises", () => ({
+  lookup: vi.fn<MockDnsLookup>(async (hostname: string) => {
+    if (hostname.endsWith(".test")) {
+      return [{ address: "1.2.3.4", family: 4 }];
     }
+    throw Object.assign(new Error(`getaddrinfo ENOTFOUND ${hostname}`), {
+      code: "ENOTFOUND",
+    });
+  }),
+}));
 
-    return HttpResponse.json({ Status: 0, Answer: [] });
-  };
-
-  server.use(
-    http.get("https://cloudflare-dns.com/dns-query", handler),
-    http.get("https://dns.google/resolve", handler),
-  );
+// Mock DNS for domain resolution.
+function mockDns(domain: string) {
+  // Keep explicit domain setup for readability in individual tests.
+  expect(domain.endsWith(".test")).toBe(true);
 }
 
 afterEach(() => {

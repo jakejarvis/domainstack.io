@@ -1,8 +1,9 @@
+import { lookup } from "node:dns/promises";
+
 import * as ipaddr from "ipaddr.js";
 
 import { createLogger } from "@domainstack/logger";
 
-import { isExpectedDnsError, resolveHostIps } from "./dns";
 import { SafeFetchError } from "./errors";
 import { isPrivateIp } from "./ip";
 import type { SafeFetchLogger, SafeFetchOptions, SafeFetchResult } from "./types";
@@ -58,8 +59,8 @@ export async function safeFetch(opts: SafeFetchOptions): Promise<SafeFetchResult
     await ensureUrlAllowed(currentUrl, {
       allowHttp,
       allowedHosts: normalizedAllowedHosts,
-      userAgent,
       logger,
+      timeoutMs,
     });
 
     const response = await withTimeout(
@@ -149,8 +150,8 @@ async function ensureUrlAllowed(
   opts: {
     allowHttp: boolean;
     allowedHosts: string[];
-    userAgent: string | null | undefined;
     logger: SafeFetchLogger;
+    timeoutMs: number;
   },
 ): Promise<void> {
   const { logger } = opts;
@@ -184,22 +185,14 @@ async function ensureUrlAllowed(
     return;
   }
 
-  // DNS lookup to check resolved IPs
+  // DNS lookup to check resolved IPs.
+  // Use the system resolver so validation matches the resolver used by fetch().
   let records: Array<{ address: string }>;
   try {
-    const result = await resolveHostIps(hostname, {
-      userAgent: opts.userAgent,
-      all: true,
-    });
-
-    records = Array.isArray(result) ? result : [result];
+    records = await lookupWithTimeout(hostname, opts.timeoutMs);
   } catch (err) {
     logger.warn({ hostname, err }, "DNS lookup failed");
-    const message = isExpectedDnsError(err)
-      ? "DNS lookup returned no records"
-      : err instanceof Error
-        ? err.message
-        : "DNS lookup failed";
+    const message = err instanceof Error ? err.message : "DNS lookup failed";
     throw new SafeFetchError("dns_error", message);
   }
 
@@ -210,6 +203,32 @@ async function ensureUrlAllowed(
   // Check if any resolved IP is private
   if (records.some((r) => isPrivateIp(r.address))) {
     throw new SafeFetchError("private_ip", `DNS for ${hostname} resolved to private address`);
+  }
+}
+
+async function lookupWithTimeout(
+  hostname: string,
+  timeoutMs: number,
+): Promise<Array<{ address: string }>> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const result = await Promise.race([
+      lookup(hostname, {
+        all: true,
+        verbatim: true,
+      }),
+      new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error(`DNS lookup timed out after ${timeoutMs}ms`));
+        }, timeoutMs);
+      }),
+    ]);
+
+    return Array.isArray(result) ? result : [result];
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
   }
 }
 
