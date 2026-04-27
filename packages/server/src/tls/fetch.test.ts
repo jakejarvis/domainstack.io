@@ -79,13 +79,14 @@ describe("fetchCertificateChain", () => {
     const result = await fetchCertificateChain("example.com");
 
     expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.chain).toHaveLength(1);
-      expect(result.chain[0]?.subject).toBe("example.com");
-      expect(result.chain[0]?.issuer).toBe("Test CA");
-      expect(result.chain[0]?.altNames).toContain("example.com");
-      expect(result.chain[0]?.altNames).toContain("www.example.com");
+    if (!result.success) {
+      throw new Error("Expected fetchCertificateChain to succeed");
     }
+    expect(result.chain).toHaveLength(1);
+    expect(result.chain[0]?.subject).toBe("example.com");
+    expect(result.chain[0]?.issuer).toBe("Test CA");
+    expect(result.chain[0]?.altNames).toContain("example.com");
+    expect(result.chain[0]?.altNames).toContain("www.example.com");
   });
 
   it("traverses issuer chain correctly", async () => {
@@ -124,12 +125,13 @@ describe("fetchCertificateChain", () => {
     const result = await fetchCertificateChain("example.com");
 
     expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.chain).toHaveLength(3);
-      expect(result.chain[0]?.subject).toBe("example.com");
-      expect(result.chain[1]?.subject).toBe("Intermediate CA");
-      expect(result.chain[2]?.subject).toBe("Root CA");
+    if (!result.success) {
+      throw new Error("Expected fetchCertificateChain to succeed");
     }
+    expect(result.chain).toHaveLength(3);
+    expect(result.chain[0]?.subject).toBe("example.com");
+    expect(result.chain[1]?.subject).toBe("Intermediate CA");
+    expect(result.chain[2]?.subject).toBe("Root CA");
   });
 
   it("stops traversal on self-signed certificate (issuer === current)", async () => {
@@ -153,11 +155,12 @@ describe("fetchCertificateChain", () => {
     const result = await fetchCertificateChain("example.com");
 
     expect(result.success).toBe(true);
-    if (result.success) {
-      // Should only have one cert, not infinite loop
-      expect(result.chain).toHaveLength(1);
-      expect(result.chain[0]?.subject).toBe("Self Signed");
+    if (!result.success) {
+      throw new Error("Expected fetchCertificateChain to succeed");
     }
+    // Should only have one cert, not infinite loop
+    expect(result.chain).toHaveLength(1);
+    expect(result.chain[0]?.subject).toBe("Self Signed");
   });
 
   it("returns dns_error for ENOTFOUND", async () => {
@@ -172,10 +175,7 @@ describe("fetchCertificateChain", () => {
 
     const result = await fetchCertificateChain("example.invalid");
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error).toBe("dns_error");
-    }
+    expect(result).toEqual({ success: false, error: "dns_error" });
   });
 
   it("returns dns_error for EAI_AGAIN", async () => {
@@ -190,10 +190,7 @@ describe("fetchCertificateChain", () => {
 
     const result = await fetchCertificateChain("example.com");
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error).toBe("dns_error");
-    }
+    expect(result).toEqual({ success: false, error: "dns_error" });
   });
 
   it("returns tls_error for certificate errors", async () => {
@@ -208,10 +205,7 @@ describe("fetchCertificateChain", () => {
 
     const result = await fetchCertificateChain("example.com");
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error).toBe("tls_error");
-    }
+    expect(result).toEqual({ success: false, error: "tls_error" });
   });
 
   it("returns tls_error for CERT_HAS_EXPIRED", async () => {
@@ -226,10 +220,7 @@ describe("fetchCertificateChain", () => {
 
     const result = await fetchCertificateChain("example.com");
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error).toBe("tls_error");
-    }
+    expect(result).toEqual({ success: false, error: "tls_error" });
   });
 
   it("returns fetch_error for ECONNREFUSED (connection refused before TLS)", async () => {
@@ -244,11 +235,7 @@ describe("fetchCertificateChain", () => {
 
     const result = await fetchCertificateChain("example.com");
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      // ECONNREFUSED is a network error, not a TLS error
-      expect(result.error).toBe("fetch_error");
-    }
+    expect(result).toEqual({ success: false, error: "fetch_error" });
   });
 
   it("returns timeout for socket timeout", async () => {
@@ -258,10 +245,7 @@ describe("fetchCertificateChain", () => {
 
     const result = await fetchCertificateChain("slow.example.com");
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error).toBe("timeout");
-    }
+    expect(result).toEqual({ success: false, error: "timeout" });
   });
 
   it("returns fetch_error for unknown errors", async () => {
@@ -275,10 +259,7 @@ describe("fetchCertificateChain", () => {
 
     const result = await fetchCertificateChain("example.com");
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error).toBe("fetch_error");
-    }
+    expect(result).toEqual({ success: false, error: "fetch_error" });
   });
 
   it("respects custom port option", async () => {

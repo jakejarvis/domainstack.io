@@ -113,7 +113,7 @@ describe("domain router", () => {
     it("rejects empty domain", async () => {
       const caller = createTestCaller();
 
-      await expect(caller.domain.getRegistration({ domain: "" })).rejects.toThrow();
+      await expect(caller.domain.getRegistration({ domain: "" })).rejects.toThrow(/./);
     });
 
     it("rejects invalid domain format", async () => {
@@ -210,9 +210,10 @@ describe("domain router", () => {
 
       // Should return cached data without calling the service
       expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.cached).toBe(true);
+      if (!result.success) {
+        throw new Error("Expected getRegistration to succeed");
       }
+      expect(result.cached).toBe(true);
       expect(fetchRegistration).not.toHaveBeenCalled();
     });
 
@@ -248,9 +249,10 @@ describe("domain router", () => {
 
       // Should fetch fresh data when stale
       expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.cached).toBe(false);
+      if (!result.success) {
+        throw new Error("Expected getRegistration to succeed");
       }
+      expect(result.cached).toBe(false);
       expect(fetchRegistration).toHaveBeenCalled();
     });
 
@@ -279,9 +281,10 @@ describe("domain router", () => {
       const result = await caller.domain.getRegistration({ domain: newDomain });
 
       expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.cached).toBe(false);
+      if (!result.success) {
+        throw new Error("Expected getRegistration to succeed");
       }
+      expect(result.cached).toBe(false);
       expect(fetchRegistration).toHaveBeenCalled();
     });
   });
@@ -311,10 +314,14 @@ describe("domain router", () => {
       const result = await caller.domain.getDnsRecords({ domain: TEST_DOMAIN });
 
       expect(result.success).toBe(true);
-      if (result.success && result.data) {
-        expect(result.cached).toBe(true);
-        expect(result.data.records).toBeDefined();
+      if (!result.success) {
+        throw new Error("Expected getDnsRecords to succeed");
       }
+      if (!result.data) {
+        throw new Error("Expected getDnsRecords to return data");
+      }
+      expect(result.cached).toBe(true);
+      expect(result.data.records).toBeDefined();
     });
 
     it("fetches fresh DNS when no cached DNS exists", async () => {
@@ -369,10 +376,7 @@ describe("domain router", () => {
         domain: failingDomain,
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBe("unsupported_tld");
-      }
+      expect(result).toMatchObject({ success: false, error: "unsupported_tld" });
     });
   });
 });

@@ -40,11 +40,12 @@ describe("lookupWhois", () => {
     const result = await lookupWhois("example.com");
 
     expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.recordJson).toContain("example.com");
-      const parsed = JSON.parse(result.recordJson);
-      expect(parsed.domain).toBe("example.com");
+    if (!result.success) {
+      throw new Error("Expected lookupWhois to succeed");
     }
+    expect(result.recordJson).toContain("example.com");
+    const parsed = JSON.parse(result.recordJson);
+    expect(parsed.domain).toBe("example.com");
   });
 
   it("returns unsupported_tld for 'no whois server discovered' error", async () => {
@@ -55,10 +56,7 @@ describe("lookupWhois", () => {
 
     const result = await lookupWhois("example.invalid");
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error).toBe("unsupported_tld");
-    }
+    expect(result).toEqual({ success: false, error: "unsupported_tld" });
   });
 
   it("returns unsupported_tld for 'no rdap server found' error", async () => {
@@ -69,10 +67,7 @@ describe("lookupWhois", () => {
 
     const result = await lookupWhois("example.obscure");
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error).toBe("unsupported_tld");
-    }
+    expect(result).toEqual({ success: false, error: "unsupported_tld" });
   });
 
   it("returns unsupported_tld for 'tld is not supported' error", async () => {
@@ -83,10 +78,7 @@ describe("lookupWhois", () => {
 
     const result = await lookupWhois("example.unknown");
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error).toBe("unsupported_tld");
-    }
+    expect(result).toEqual({ success: false, error: "unsupported_tld" });
   });
 
   it("returns unsupported_tld for 'registry may not publish public whois' error", async () => {
@@ -97,10 +89,7 @@ describe("lookupWhois", () => {
 
     const result = await lookupWhois("example.private");
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error).toBe("unsupported_tld");
-    }
+    expect(result).toEqual({ success: false, error: "unsupported_tld" });
   });
 
   it("returns unsupported_tld for 'no whois server configured' error", async () => {
@@ -111,10 +100,7 @@ describe("lookupWhois", () => {
 
     const result = await lookupWhois("example.new");
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error).toBe("unsupported_tld");
-    }
+    expect(result).toEqual({ success: false, error: "unsupported_tld" });
   });
 
   it("returns timeout for 'whois socket timeout' error", async () => {
@@ -125,10 +111,7 @@ describe("lookupWhois", () => {
 
     const result = await lookupWhois("slow.example.com");
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error).toBe("timeout");
-    }
+    expect(result).toEqual({ success: false, error: "timeout" });
   });
 
   it("returns timeout for 'whois timeout' error", async () => {
@@ -139,10 +122,7 @@ describe("lookupWhois", () => {
 
     const result = await lookupWhois("slow.example.com");
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error).toBe("timeout");
-    }
+    expect(result).toEqual({ success: false, error: "timeout" });
   });
 
   it("returns timeout for 'rdap timeout' error", async () => {
@@ -153,10 +133,7 @@ describe("lookupWhois", () => {
 
     const result = await lookupWhois("slow.example.com");
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error).toBe("timeout");
-    }
+    expect(result).toEqual({ success: false, error: "timeout" });
   });
 
   it("returns retry for generic errors", async () => {
@@ -167,10 +144,7 @@ describe("lookupWhois", () => {
 
     const result = await lookupWhois("example.com");
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error).toBe("retry");
-    }
+    expect(result).toEqual({ success: false, error: "retry" });
   });
 
   it("returns retry when lookup throws an exception", async () => {
@@ -178,10 +152,7 @@ describe("lookupWhois", () => {
 
     const result = await lookupWhois("example.com");
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error).toBe("retry");
-    }
+    expect(result).toEqual({ success: false, error: "retry" });
   });
 
   it("returns retry when ok is false but no specific error message", async () => {
@@ -192,10 +163,7 @@ describe("lookupWhois", () => {
 
     const result = await lookupWhois("example.com");
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error).toBe("retry");
-    }
+    expect(result).toEqual({ success: false, error: "retry" });
   });
 
   it("returns retry when record is undefined", async () => {
@@ -206,10 +174,7 @@ describe("lookupWhois", () => {
 
     const result = await lookupWhois("example.com");
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error).toBe("retry");
-    }
+    expect(result).toEqual({ success: false, error: "retry" });
   });
 
   it("uses provided customBootstrapData", async () => {

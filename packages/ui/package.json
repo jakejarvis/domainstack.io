@@ -17,7 +17,7 @@
     "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json"
   },
   "dependencies": {
-    "@base-ui/react": "^1.4.0",
+    "@base-ui/react": "^1.4.1",
     "clipboard-copy": "^4.0.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",

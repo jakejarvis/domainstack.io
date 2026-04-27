@@ -45,10 +45,7 @@ describe("createInitialState", () => {
       verificationMethod: null,
     });
 
-    expect(state.step).toBe(2);
-    if (state.step === 2) {
-      expect(state.method).toBe("dns_txt");
-    }
+    expect(state).toMatchObject({ step: 2, method: "dns_txt" });
   });
 
   it("prioritizes resumeDomain over prefillDomain", () => {
@@ -83,9 +80,7 @@ describe("verificationReducer", () => {
       });
 
       expect(result.domain).toBe("example.com");
-      if (result.step === 1) {
-        expect(result.domainError).toBe("");
-      }
+      expect(result).toMatchObject({ step: 1, domainError: "" });
     });
 
     it("SET_DOMAIN preserves empty error state", () => {
@@ -94,9 +89,7 @@ describe("verificationReducer", () => {
         domain: "test.com",
       });
 
-      if (result.step === 1) {
-        expect(result.domainError).toBe("");
-      }
+      expect(result).toMatchObject({ step: 1, domainError: "" });
     });
 
     it("SET_DOMAIN_ERROR sets error message", () => {
@@ -105,9 +98,10 @@ describe("verificationReducer", () => {
         error: "Please enter a valid domain",
       });
 
-      if (result.step === 1) {
-        expect(result.domainError).toBe("Please enter a valid domain");
-      }
+      expect(result).toMatchObject({
+        step: 1,
+        domainError: "Please enter a valid domain",
+      });
     });
 
     it("ATTEMPT_SUBMIT sets hasAttemptedSubmit and clears error", () => {
@@ -120,10 +114,11 @@ describe("verificationReducer", () => {
         type: "ATTEMPT_SUBMIT",
       });
 
-      if (result.step === 1) {
-        expect(result.hasAttemptedSubmit).toBe(true);
-        expect(result.domainError).toBe("");
-      }
+      expect(result).toMatchObject({
+        step: 1,
+        hasAttemptedSubmit: true,
+        domainError: "",
+      });
     });
 
     it("DOMAIN_ADDED transitions to step 2", () => {
@@ -169,9 +164,7 @@ describe("verificationReducer", () => {
         method: "meta_tag",
       });
 
-      if (result.step === 2) {
-        expect(result.method).toBe("meta_tag");
-      }
+      expect(result).toMatchObject({ step: 2, method: "meta_tag" });
     });
 
     it("START_VERIFICATION sets verifying status", () => {
@@ -179,10 +172,11 @@ describe("verificationReducer", () => {
         type: "START_VERIFICATION",
       });
 
-      if (result.step === 2) {
-        expect(result.verifyStatus).toBe("verifying");
-        expect(result.verifyError).toBeUndefined();
-      }
+      expect(result).toMatchObject({
+        step: 2,
+        verifyStatus: "verifying",
+        verifyError: undefined,
+      });
     });
 
     it("START_VERIFICATION clears previous error", () => {
@@ -196,10 +190,11 @@ describe("verificationReducer", () => {
         type: "START_VERIFICATION",
       });
 
-      if (result.step === 2) {
-        expect(result.verifyStatus).toBe("verifying");
-        expect(result.verifyError).toBeUndefined();
-      }
+      expect(result).toMatchObject({
+        step: 2,
+        verifyStatus: "verifying",
+        verifyError: undefined,
+      });
     });
 
     it("VERIFICATION_SUCCEEDED transitions to step 3", () => {
@@ -221,10 +216,11 @@ describe("verificationReducer", () => {
         error: "Token not found",
       });
 
-      if (result.step === 2) {
-        expect(result.verifyStatus).toBe("failed");
-        expect(result.verifyError).toBe("Token not found");
-      }
+      expect(result).toMatchObject({
+        step: 2,
+        verifyStatus: "failed",
+        verifyError: "Token not found",
+      });
     });
 
     it("VERIFICATION_FAILED works without error message", () => {
@@ -232,10 +228,11 @@ describe("verificationReducer", () => {
         type: "VERIFICATION_FAILED",
       });
 
-      if (result.step === 2) {
-        expect(result.verifyStatus).toBe("failed");
-        expect(result.verifyError).toBeUndefined();
-      }
+      expect(result).toMatchObject({
+        step: 2,
+        verifyStatus: "failed",
+        verifyError: undefined,
+      });
     });
 
     it("GO_BACK returns to step 1 preserving domain", () => {
@@ -255,11 +252,12 @@ describe("verificationReducer", () => {
         verificationToken: "new_token",
       });
 
-      if (result.step === 2) {
-        expect(result.verificationToken).toBe("new_token");
-        expect(result.domain).toBe("example.com");
-        expect(result.method).toBe("dns_txt");
-      }
+      expect(result).toMatchObject({
+        step: 2,
+        verificationToken: "new_token",
+        domain: "example.com",
+        method: "dns_txt",
+      });
     });
 
     it("SYNC_VERIFICATION_DATA can update all fields", () => {
@@ -270,11 +268,12 @@ describe("verificationReducer", () => {
         method: "meta_tag",
       });
 
-      if (result.step === 2) {
-        expect(result.domain).toBe("updated.com");
-        expect(result.verificationToken).toBe("new_token");
-        expect(result.method).toBe("meta_tag");
-      }
+      expect(result).toMatchObject({
+        step: 2,
+        domain: "updated.com",
+        verificationToken: "new_token",
+        method: "meta_tag",
+      });
     });
 
     it("ignores step 1 actions when on step 2", () => {
@@ -319,9 +318,7 @@ describe("verificationReducer", () => {
         prefillDomain: "prefilled.com",
       });
 
-      if (result.step === 1) {
-        expect(result.domain).toBe("prefilled.com");
-      }
+      expect(result).toMatchObject({ step: 1, domain: "prefilled.com" });
     });
 
     it("RESUME transitions to step 2 from step 1", () => {
@@ -365,10 +362,11 @@ describe("verificationReducer", () => {
         },
       });
 
-      if (result.step === 2) {
-        expect(result.trackedDomainId).toBe("td_456");
-        expect(result.domain).toBe("new.com");
-      }
+      expect(result).toMatchObject({
+        step: 2,
+        trackedDomainId: "td_456",
+        domain: "new.com",
+      });
     });
 
     it("RESUME defaults to dns_txt when method is null", () => {
@@ -384,9 +382,7 @@ describe("verificationReducer", () => {
         },
       });
 
-      if (result.step === 2) {
-        expect(result.method).toBe("dns_txt");
-      }
+      expect(result).toMatchObject({ step: 2, method: "dns_txt" });
     });
   });
 

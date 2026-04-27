@@ -49,11 +49,12 @@ describe("fetchHeadersStep", () => {
     const result = await fetchHeadersStep("success.test");
 
     expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.headers.length).toBeGreaterThan(0);
-      expect(result.data.status).toBe(200);
-      expect(result.data.statusMessage).toBe("OK");
+    if (!result.success) {
+      throw new Error("Expected fetchHeadersStep to succeed");
     }
+    expect(result.data.headers.length).toBeGreaterThan(0);
+    expect(result.data.status).toBe(200);
+    expect(result.data.statusMessage).toBe("OK");
   });
 
   it("captures non-2xx responses correctly", async () => {
@@ -76,10 +77,11 @@ describe("fetchHeadersStep", () => {
     const result = await fetchHeadersStep("forbidden.test");
 
     expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.status).toBe(403);
-      expect(result.data.statusMessage).toBe("Forbidden");
+    if (!result.success) {
+      throw new Error("Expected fetchHeadersStep to succeed");
     }
+    expect(result.data.status).toBe(403);
+    expect(result.data.statusMessage).toBe("Forbidden");
   });
 
   it("throws RetryableError on network error", async () => {
@@ -114,17 +116,18 @@ describe("fetchHeadersStep", () => {
     const result = await fetchHeadersStep("normalized.test");
 
     expect(result.success).toBe(true);
-    if (result.success) {
-      // All headers should be lowercase
-      const headerNames = result.data.headers.map((h) => h.name);
-      expect(headerNames).toEqual(
-        expect.arrayContaining(["server", "content-security-policy", "x-custom", "accept"]),
-      );
+    if (!result.success) {
+      throw new Error("Expected fetchHeadersStep to succeed");
+    }
+    // All headers should be lowercase
+    const headerNames = result.data.headers.map((h) => h.name);
+    expect(headerNames).toEqual(
+      expect.arrayContaining(["server", "content-security-policy", "x-custom", "accept"]),
+    );
 
-      // All header names should be lowercase
-      for (const name of headerNames) {
-        expect(name).toBe(name.toLowerCase());
-      }
+    // All header names should be lowercase
+    for (const name of headerNames) {
+      expect(name).toBe(name.toLowerCase());
     }
   });
 });

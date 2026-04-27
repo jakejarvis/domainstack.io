@@ -628,21 +628,25 @@ describe("safeFetch", () => {
       mockLookup.mockReturnValue(new Promise(() => {}) as ReturnType<typeof lookup>);
       const mockFetch = createMockFetch(mockResponse("OK", { status: 200 }));
 
-      const result = safeFetch({
+      const errorPromise = safeFetch({
         url: "https://slow-dns.example",
         userAgent: "TestBot/1.0",
         timeoutMs: 25,
         fetch: mockFetch,
         logger: silentLogger,
-      });
-      const expectation = expect(result).rejects.toMatchObject({
-        code: "dns_error",
-        message: "DNS lookup timed out after 25ms",
-      });
+      }).then(
+        () => {
+          throw new Error("Expected safeFetch to reject");
+        },
+        (error: unknown) => error,
+      );
 
       await vi.advanceTimersByTimeAsync(25);
 
-      await expectation;
+      await expect(errorPromise).resolves.toMatchObject({
+        code: "dns_error",
+        message: "DNS lookup timed out after 25ms",
+      });
       expect(mockFetch).not.toHaveBeenCalled();
     });
 

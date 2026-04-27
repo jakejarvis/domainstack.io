@@ -139,9 +139,10 @@ describe("lib/ratelimit/api", () => {
         const result = await checkRateLimit(request);
 
         expect(result.success).toBe(true);
-        if (result.success) {
-          expect(result.headers).toBeUndefined();
+        if (!result.success) {
+          throw new Error("Expected checkRateLimit to succeed");
         }
+        expect(result.headers).toBeUndefined();
         expect(mockLimit).not.toHaveBeenCalled();
       });
     });
@@ -161,18 +162,19 @@ describe("lib/ratelimit/api", () => {
         const result = await checkRateLimit(request);
 
         expect(result.success).toBe(true);
-        if (result.success) {
-          expect(result.info).toEqual({
-            limit: 60,
-            remaining: 55,
-            reset: expect.any(Number),
-          });
-          expect(result.headers).toEqual({
-            "X-RateLimit-Limit": "60",
-            "X-RateLimit-Remaining": "55",
-            "X-RateLimit-Reset": expect.any(String),
-          });
+        if (!result.success) {
+          throw new Error("Expected checkRateLimit to succeed");
         }
+        expect(result.info).toEqual({
+          limit: 60,
+          remaining: 55,
+          reset: expect.any(Number),
+        });
+        expect(result.headers).toEqual({
+          "X-RateLimit-Limit": "60",
+          "X-RateLimit-Remaining": "55",
+          "X-RateLimit-Reset": expect.any(String),
+        });
       });
 
       it("returns 429 response when rate limit exceeded", async () => {
@@ -190,17 +192,18 @@ describe("lib/ratelimit/api", () => {
         const result = await checkRateLimit(request);
 
         expect(result.success).toBe(false);
-        if (!result.success) {
-          expect(result.error.status).toBe(429);
-
-          const body = await result.error.json();
-          expect(body.error).toBe("Rate limit exceeded");
-          expect(body.retryAfter).toBe(30);
-
-          expect(result.error.headers.get("X-RateLimit-Limit")).toBe("60");
-          expect(result.error.headers.get("X-RateLimit-Remaining")).toBe("0");
-          expect(result.error.headers.get("Retry-After")).toBe("30");
+        if (result.success) {
+          throw new Error("Expected checkRateLimit to fail");
         }
+        expect(result.error.status).toBe(429);
+
+        const body = await result.error.json();
+        expect(body.error).toBe("Rate limit exceeded");
+        expect(body.retryAfter).toBe(30);
+
+        expect(result.error.headers.get("X-RateLimit-Limit")).toBe("60");
+        expect(result.error.headers.get("X-RateLimit-Remaining")).toBe("0");
+        expect(result.error.headers.get("Retry-After")).toBe("30");
       });
 
       it("handles zero remaining correctly at limit boundary", async () => {
@@ -217,9 +220,10 @@ describe("lib/ratelimit/api", () => {
         const result = await checkRateLimit(request);
 
         expect(result.success).toBe(true);
-        if (result.success) {
-          expect(result.info?.remaining).toBe(0);
+        if (!result.success) {
+          throw new Error("Expected checkRateLimit to succeed");
         }
+        expect(result.info?.remaining).toBe(0);
       });
 
       it("accepts custom rate limit config", async () => {
@@ -239,9 +243,10 @@ describe("lib/ratelimit/api", () => {
         });
 
         expect(result.success).toBe(true);
-        if (result.success) {
-          expect(result.info?.limit).toBe(10);
+        if (!result.success) {
+          throw new Error("Expected checkRateLimit to succeed");
         }
+        expect(result.info?.limit).toBe(10);
       });
 
       it("allows request when Redis throws error (fail-open)", async () => {
@@ -252,10 +257,11 @@ describe("lib/ratelimit/api", () => {
         const result = await checkRateLimit(request);
 
         expect(result.success).toBe(true);
-        if (result.success) {
-          // No headers when failing open
-          expect(result.headers).toBeUndefined();
+        if (!result.success) {
+          throw new Error("Expected checkRateLimit to succeed");
         }
+        // No headers when failing open
+        expect(result.headers).toBeUndefined();
       });
     });
   });

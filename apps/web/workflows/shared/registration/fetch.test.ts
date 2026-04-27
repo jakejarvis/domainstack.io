@@ -35,9 +35,10 @@ describe("lookupWhoisStep", () => {
     const result = await lookupWhoisStep("test.com");
 
     expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.recordJson).toContain("test.com");
+    if (!result.success) {
+      throw new Error("Expected lookupWhoisStep to succeed");
     }
+    expect(result.data.recordJson).toContain("test.com");
   });
 
   it("returns unsupported_tld error for unsupported TLDs", async () => {
@@ -49,10 +50,7 @@ describe("lookupWhoisStep", () => {
     const { lookupWhoisStep } = await import("./fetch");
     const result = await lookupWhoisStep("unsupported.invalid");
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error).toBe("unsupported_tld");
-    }
+    expect(result).toEqual({ success: false, error: "unsupported_tld" });
   });
 
   it("throws RetryableError on timeout", async () => {

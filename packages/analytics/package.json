@@ -16,9 +16,9 @@
     "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json"
   },
   "dependencies": {
-    "posthog-js": "^1.369.0",
-    "posthog-node": "^5.29.2",
-    "uuid": "^13.0.0"
+    "posthog-js": "^1.372.1",
+    "posthog-node": "^5.30.4",
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
