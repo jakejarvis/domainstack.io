@@ -4,8 +4,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { server } from "@/mocks/server";
 
+type MockDnsLookup = (hostname: string) => Promise<Array<{ address: string; family: 4 }>>;
+
 vi.mock("node:dns/promises", () => ({
-  lookup: vi.fn(async (hostname: string) => {
+  lookup: vi.fn<MockDnsLookup>(async (hostname: string) => {
     if (hostname.endsWith(".test")) {
       return [{ address: "1.2.3.4", family: 4 }];
     }

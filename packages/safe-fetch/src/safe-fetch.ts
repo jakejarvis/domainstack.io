@@ -1,6 +1,9 @@
 import { lookup } from "node:dns/promises";
-import { createLogger } from "@domainstack/logger";
+
 import * as ipaddr from "ipaddr.js";
+
+import { createLogger } from "@domainstack/logger";
+
 import { SafeFetchError } from "./errors";
 import { isPrivateIp } from "./ip";
 import type { SafeFetchLogger, SafeFetchOptions, SafeFetchResult } from "./types";
@@ -57,6 +60,7 @@ export async function safeFetch(opts: SafeFetchOptions): Promise<SafeFetchResult
       allowHttp,
       allowedHosts: normalizedAllowedHosts,
       logger,
+      timeoutMs,
     });
 
     const response = await withTimeout(
@@ -147,6 +151,7 @@ async function ensureUrlAllowed(
     allowHttp: boolean;
     allowedHosts: string[];
     logger: SafeFetchLogger;
+    timeoutMs: number;
   },
 ): Promise<void> {
   const { logger } = opts;
@@ -184,12 +189,7 @@ async function ensureUrlAllowed(
   // Use the system resolver so validation matches the resolver used by fetch().
   let records: Array<{ address: string }>;
   try {
-    const result = await lookup(hostname, {
-      all: true,
-      verbatim: true,
-    });
-
-    records = Array.isArray(result) ? result : [result];
+    records = await lookupWithTimeout(hostname, opts.timeoutMs);
   } catch (err) {
     logger.warn({ hostname, err }, "DNS lookup failed");
     const message = err instanceof Error ? err.message : "DNS lookup failed";
@@ -203,6 +203,32 @@ async function ensureUrlAllowed(
   // Check if any resolved IP is private
   if (records.some((r) => isPrivateIp(r.address))) {
     throw new SafeFetchError("private_ip", `DNS for ${hostname} resolved to private address`);
+  }
+}
+
+async function lookupWithTimeout(
+  hostname: string,
+  timeoutMs: number,
+): Promise<Array<{ address: string }>> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const result = await Promise.race([
+      lookup(hostname, {
+        all: true,
+        verbatim: true,
+      }),
+      new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error(`DNS lookup timed out after ${timeoutMs}ms`));
+        }, timeoutMs);
+      }),
+    ]);
+
+    return Array.isArray(result) ? result : [result];
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
   }
 }
 

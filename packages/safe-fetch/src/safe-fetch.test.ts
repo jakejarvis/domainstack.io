@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { lookup as dnsLookup } from "node:dns/promises";
+
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SafeFetchError } from "./errors";
 import { safeFetch } from "./safe-fetch";
@@ -6,7 +8,7 @@ import type { SafeFetchLogger } from "./types";
 
 // Mock DNS resolution
 vi.mock("node:dns/promises", () => ({
-  lookup: vi.fn(),
+  lookup: vi.fn<typeof dnsLookup>(),
 }));
 
 import { lookup } from "node:dns/promises";
@@ -41,6 +43,10 @@ function createMockFetch(response: Response | (() => Response)) {
 }
 
 describe("safeFetch", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     // Default: resolve to public IP
@@ -615,6 +621,29 @@ describe("safeFetch", () => {
           logger: silentLogger,
         }),
       ).rejects.toMatchObject({ code: "dns_error" });
+    });
+
+    it("times out DNS lookup before fetch starts", async () => {
+      vi.useFakeTimers();
+      mockLookup.mockReturnValue(new Promise(() => {}) as ReturnType<typeof lookup>);
+      const mockFetch = createMockFetch(mockResponse("OK", { status: 200 }));
+
+      const result = safeFetch({
+        url: "https://slow-dns.example",
+        userAgent: "TestBot/1.0",
+        timeoutMs: 25,
+        fetch: mockFetch,
+        logger: silentLogger,
+      });
+      const expectation = expect(result).rejects.toMatchObject({
+        code: "dns_error",
+        message: "DNS lookup timed out after 25ms",
+      });
+
+      await vi.advanceTimersByTimeAsync(25);
+
+      await expectation;
+      expect(mockFetch).not.toHaveBeenCalled();
     });
 
     it("throws when DNS returns no records", async () => {
