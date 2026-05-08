@@ -16,7 +16,7 @@
     "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json"
   },
   "dependencies": {
-    "posthog-js": "^1.372.1",
+    "posthog-js": "^1.372.10",
     "posthog-node": "^5.30.4",
     "uuid": "^14.0.0"
   },
