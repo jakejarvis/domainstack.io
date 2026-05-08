@@ -33,7 +33,7 @@
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
-    "@electric-sql/pglite": "^0.4.4",
+    "@electric-sql/pglite": "^0.4.5",
     "@types/node": "catalog:",
     "@types/pg": "^8.20.0",
     "@vercel/functions": "^3.4.4",
