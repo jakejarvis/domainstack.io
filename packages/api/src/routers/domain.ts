@@ -1,13 +1,5 @@
-import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { toRegistrableDomain } from "@/lib/normalize-domain";
-import {
-  createTRPCRouter,
-  publicProcedure,
-  withDomainAccessUpdate,
-  withRateLimit,
-} from "@/trpc/init";
 import { createLogger } from "@domainstack/logger";
 import {
   fetchCertificates,
@@ -18,6 +10,11 @@ import {
   fetchRegistration,
   fetchSeo,
 } from "@domainstack/server";
+import { toRegistrableDomain } from "@domainstack/utils/domain";
+
+import { withDomainAccessUpdate, withRateLimit } from "../middleware";
+import { publicProcedure } from "../procedures";
+import { createTRPCRouter, TRPCError } from "../trpc";
 
 const logger = createLogger({ source: "domain-router" });
 

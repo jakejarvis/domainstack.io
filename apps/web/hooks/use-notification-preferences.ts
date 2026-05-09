@@ -8,11 +8,11 @@ import type { NotificationCategory } from "@domainstack/constants";
 import type { TrackedDomainWithDetails, UserNotificationPreferences } from "@domainstack/types";
 
 const DEFAULT_PREFERENCES: UserNotificationPreferences = {
-  domainExpiry: { inApp: true, email: true },
-  certificateExpiry: { inApp: true, email: true },
-  registrationChanges: { inApp: true, email: true },
-  providerChanges: { inApp: true, email: true },
-  certificateChanges: { inApp: true, email: true },
+  domainExpiry: { inApp: true, email: true, push: true },
+  certificateExpiry: { inApp: true, email: true, push: true },
+  registrationChanges: { inApp: true, email: true, push: true },
+  providerChanges: { inApp: true, email: true, push: true },
+  certificateChanges: { inApp: true, email: true, push: true },
 };
 
 export interface UseNotificationPreferencesReturn {
@@ -29,7 +29,7 @@ export interface UseNotificationPreferencesReturn {
   /** Update a global preference toggle */
   updateGlobalPreference: (
     category: NotificationCategory,
-    type: "email" | "inApp",
+    type: "email" | "inApp" | "push",
     enabled: boolean,
   ) => void;
   /** Toggle muted state for a domain */
@@ -128,7 +128,7 @@ export function useNotificationPreferences(): UseNotificationPreferencesReturn {
 
   const updateGlobalPreference = (
     category: NotificationCategory,
-    type: "email" | "inApp",
+    type: "email" | "inApp" | "push",
     enabled: boolean,
   ) => {
     if (!globalPrefs) return;

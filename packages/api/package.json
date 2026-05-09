@@ -13,21 +13,29 @@
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt --config ../../.oxfmtrc.json",
-    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json"
+    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json",
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@domainstack/analytics": "workspace:*",
     "@domainstack/auth": "workspace:*",
+    "@domainstack/constants": "workspace:*",
     "@domainstack/db": "workspace:*",
+    "@domainstack/email": "workspace:*",
     "@domainstack/logger": "workspace:*",
     "@domainstack/redis": "workspace:*",
+    "@domainstack/server": "workspace:*",
+    "@domainstack/types": "workspace:*",
+    "@domainstack/utils": "workspace:*",
     "@trpc/server": "^11.16.0",
     "@vercel/functions": "^3.4.4",
-    "superjson": "^2.2.6"
+    "superjson": "^2.2.6",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
-    "@types/node": "catalog:"
+    "@types/node": "catalog:",
+    "vitest": "catalog:"
   },
   "peerDependencies": {
     "next": ">=16"

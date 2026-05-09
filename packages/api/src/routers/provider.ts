@@ -1,9 +1,11 @@
 import { z } from "zod";
 
-import { createTRPCRouter, publicProcedure } from "@/trpc/init";
 import { getProviderById, getProviderLogo } from "@domainstack/db/queries";
 import { createLogger } from "@domainstack/logger";
 import { fetchProviderLogo } from "@domainstack/server";
+
+import { publicProcedure } from "../procedures";
+import { createTRPCRouter } from "../trpc";
 
 const logger = createLogger({ source: "provider-router" });
 

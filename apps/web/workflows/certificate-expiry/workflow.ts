@@ -74,7 +74,7 @@ export async function certificateExpiryWorkflow(
 
   // Step 4: Check notification preferences
   const prefs = await checkExpiryPreferencesStep(cert.userId, cert.muted, "certificateExpiry");
-  if (!prefs.shouldSendEmail && !prefs.shouldSendInApp) {
+  if (!prefs.shouldSendEmail && !prefs.shouldSendInApp && !prefs.shouldSendPush) {
     return { skipped: true, reason: "notifications_disabled" };
   }
 
@@ -95,6 +95,7 @@ export async function certificateExpiryWorkflow(
     notificationType,
     shouldSendEmail: prefs.shouldSendEmail,
     shouldSendInApp: prefs.shouldSendInApp,
+    shouldSendPush: prefs.shouldSendPush,
   });
 
   // Step 7: Send email if enabled
@@ -152,6 +153,7 @@ async function createNotificationRecord(params: {
   notificationType: NotificationType;
   shouldSendEmail: boolean;
   shouldSendInApp: boolean;
+  shouldSendPush: boolean;
 }): Promise<{ notificationId: string; title: string; subject: string }> {
   "use step";
 
@@ -168,6 +170,7 @@ async function createNotificationRecord(params: {
     notificationType,
     shouldSendEmail,
     shouldSendInApp,
+    shouldSendPush,
   } = params;
 
   const title = `SSL certificate for ${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;
@@ -177,6 +180,7 @@ async function createNotificationRecord(params: {
   const channels: string[] = [];
   if (shouldSendEmail) channels.push("email");
   if (shouldSendInApp) channels.push("in-app");
+  if (shouldSendPush) channels.push("push");
 
   const notification = await createNotification({
     userId,
@@ -192,6 +196,18 @@ async function createNotificationRecord(params: {
     throw new FatalError(
       `Failed to create notification record: ${notificationType} for ${domainName}`,
     );
+  }
+
+  if (shouldSendPush) {
+    const { sendPushForNotificationStep } = await import("@/workflows/shared/push");
+    await sendPushForNotificationStep({
+      userId,
+      notificationId: notification.id,
+      title,
+      message,
+      trackedDomainId,
+      domainName,
+    });
   }
 
   return { notificationId: notification.id, title, subject };

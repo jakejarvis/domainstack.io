@@ -256,12 +256,12 @@ describe("user router", () => {
       // Create custom preferences
       await db.insert(userNotificationPreferences).values({
         userId: TEST_USER_ID,
-        domainExpiry: { inApp: false, email: true },
+        domainExpiry: { inApp: false, email: true, push: true },
       });
 
       const result = await caller.user.getNotificationPreferences();
 
-      expect(result.domainExpiry).toEqual({ inApp: false, email: true });
+      expect(result.domainExpiry).toEqual({ inApp: false, email: true, push: true });
     });
   });
 
@@ -273,10 +273,10 @@ describe("user router", () => {
       await caller.user.getNotificationPreferences();
 
       const result = await caller.user.updateGlobalNotificationPreferences({
-        domainExpiry: { inApp: true, email: false },
+        domainExpiry: { inApp: true, email: false, push: true },
       });
 
-      expect(result.domainExpiry).toEqual({ inApp: true, email: false });
+      expect(result.domainExpiry).toEqual({ inApp: true, email: false, push: true });
     });
 
     it("supports partial updates", async () => {
@@ -287,10 +287,10 @@ describe("user router", () => {
 
       // Update only one preference
       const result = await caller.user.updateGlobalNotificationPreferences({
-        certificateExpiry: { inApp: false, email: true },
+        certificateExpiry: { inApp: false, email: true, push: false },
       });
 
-      expect(result.certificateExpiry).toEqual({ inApp: false, email: true });
+      expect(result.certificateExpiry).toEqual({ inApp: false, email: true, push: false });
       // Other preferences should remain unchanged
       expect(result.domainExpiry).toBeDefined();
     });

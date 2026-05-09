@@ -177,7 +177,7 @@ export async function detectChangesWorkflow(
         "registrationChanges",
       );
 
-      if (channels.shouldSendEmail || channels.shouldSendInApp) {
+      if (channels.shouldSendEmail || channels.shouldSendInApp || channels.shouldSendPush) {
         // Step 3b: Resolve registrar provider names
         const registrarIds = [
           registrationChange.previousRegistrar,
@@ -289,6 +289,7 @@ export async function detectChangesWorkflow(
           },
           channels.shouldSendEmail,
           channels.shouldSendInApp,
+          channels.shouldSendPush,
         );
 
         if (sent) {
@@ -328,7 +329,7 @@ export async function detectChangesWorkflow(
         "providerChanges",
       );
 
-      if (channels.shouldSendEmail || channels.shouldSendInApp) {
+      if (channels.shouldSendEmail || channels.shouldSendInApp || channels.shouldSendPush) {
         // Step 4b: Fetch provider names for notification
         const providerIds = [
           snapshot.dnsProviderId,
@@ -433,6 +434,7 @@ export async function detectChangesWorkflow(
           },
           channels.shouldSendEmail,
           channels.shouldSendInApp,
+          channels.shouldSendPush,
         );
 
         if (sent) {
@@ -464,7 +466,7 @@ export async function detectChangesWorkflow(
         "certificateChanges",
       );
 
-      if (channels.shouldSendEmail || channels.shouldSendInApp) {
+      if (channels.shouldSendEmail || channels.shouldSendInApp || channels.shouldSendPush) {
         // Step 5b: Resolve CA provider names
         const caIds = [
           certificateChange.previousCaProviderId,
@@ -533,6 +535,7 @@ export async function detectChangesWorkflow(
           },
           channels.shouldSendEmail,
           channels.shouldSendInApp,
+          channels.shouldSendPush,
         );
 
         if (sent) {

@@ -61,7 +61,7 @@ export function validateOAuthProviders(credentials: OAuthConfig): void {
 
   if (enabledProviders.length === 0) {
     throw new Error(
-      "At least one OAuth provider must be configured (GitHub, GitLab, Google, or Vercel)",
+      "At least one OAuth provider must be configured (Apple, GitHub, GitLab, Google, or Vercel)",
     );
   }
 }

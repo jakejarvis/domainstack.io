@@ -1,0 +1,13 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "strict": true,
+    "types": ["uniwind/types", "vitest/globals"]
+  },
+  "include": ["app", "src", "expo-env.d.ts", "uniwind-env.d.ts", "*.config.ts"]
+}

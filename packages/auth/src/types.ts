@@ -1,7 +1,7 @@
 /**
  * OAuth provider identifiers supported by the auth system.
  */
-export type OAuthProvider = "github" | "gitlab" | "google" | "vercel";
+export type OAuthProvider = "apple" | "github" | "gitlab" | "google" | "vercel";
 
 /**
  * OAuth credentials for a provider.
@@ -9,6 +9,7 @@ export type OAuthProvider = "github" | "gitlab" | "google" | "vercel";
 export type OAuthCredentials = {
   clientId: string;
   clientSecret: string;
+  appBundleIdentifier?: string;
 };
 
 /**

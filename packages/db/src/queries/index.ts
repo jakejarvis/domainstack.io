@@ -34,6 +34,9 @@ export * from "./provider-logos";
 // Providers
 export * from "./providers";
 
+// Push devices
+export * from "./push-devices";
+
 // Registrations
 export * from "./registrations";
 

@@ -1,3 +1,4 @@
+import { expo } from "@better-auth/expo";
 import { dash } from "@better-auth/infra";
 import { type BetterAuthOptions, betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
@@ -60,9 +61,18 @@ validateOAuthCredentialPair(
   process.env.VERCEL_CLIENT_ID,
   process.env.VERCEL_CLIENT_SECRET,
 );
+validateOAuthCredentialPair("APPLE", process.env.APPLE_CLIENT_ID, process.env.APPLE_CLIENT_SECRET);
 
 // Build OAuth providers from env vars
 const { providers: socialProviders, enabledProviders } = buildOAuthProviders({
+  apple:
+    process.env.APPLE_CLIENT_ID && process.env.APPLE_CLIENT_SECRET
+      ? {
+          clientId: process.env.APPLE_CLIENT_ID,
+          clientSecret: process.env.APPLE_CLIENT_SECRET,
+          appBundleIdentifier: process.env.APPLE_APP_BUNDLE_IDENTIFIER ?? "io.domainstack.native",
+        }
+      : undefined,
   github:
     process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
       ? {
@@ -96,9 +106,16 @@ const { providers: socialProviders, enabledProviders } = buildOAuthProviders({
 // Ensure at least one OAuth provider is configured
 if (enabledProviders.length === 0) {
   throw new Error(
-    "At least one OAuth provider must be configured (GitHub, GitLab, Google, or Vercel)",
+    "At least one OAuth provider must be configured (Apple, GitHub, GitLab, Google, or Vercel)",
   );
 }
+
+const trustedOrigins = [
+  process.env.NEXT_PUBLIC_BASE_URL,
+  "domainstack://",
+  "exp://localhost:8081",
+  "http://localhost:8081",
+].filter((origin): origin is string => Boolean(origin));
 
 // Use VERCEL_ENV to determine Polar environment (not NODE_ENV, which is "production" on preview deployments too)
 // This prevents preview deployments from hitting the production Polar API
@@ -119,6 +136,7 @@ export const auth = betterAuth({
   secondaryStorage: createRedisStorage(redis ?? null),
   baseURL: process.env.NEXT_PUBLIC_BASE_URL,
   secret: process.env.BETTER_AUTH_SECRET,
+  trustedOrigins,
   logger: {
     log: (level, message, ...args) => {
       const logFn = logger[level].bind(logger);
@@ -235,6 +253,7 @@ export const auth = betterAuth({
         ]
       : []),
     dash(),
+    expo(),
     // must be last: https://www.better-auth.com/docs/integrations/next#server-action-cookies
     nextCookies(),
   ],

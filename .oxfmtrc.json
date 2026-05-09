@@ -35,6 +35,7 @@
     ".swc",
     "coverage",
     "packages/db/drizzle",
+    "apps/native/uniwind-types.d.ts",
     "**/.well-known/workflow"
   ]
 }

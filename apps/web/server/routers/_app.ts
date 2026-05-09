@@ -1,20 +1,27 @@
-import { domainRouter } from "@/server/routers/domain";
-import { notificationsRouter } from "@/server/routers/notifications";
-import { providerRouter } from "@/server/routers/provider";
-import { registrarRouter } from "@/server/routers/registrar";
-import { trackingRouter } from "@/server/routers/tracking";
-import { userRouter } from "@/server/routers/user";
-import { createCallerFactory, createTRPCRouter } from "@/trpc/init";
+import { start } from "workflow/api";
 
-export const appRouter = createTRPCRouter({
-  domain: domainRouter,
-  notifications: notificationsRouter,
-  provider: providerRouter,
-  registrar: registrarRouter,
-  tracking: trackingRouter,
-  user: userRouter,
+import { providers as pricingProviders } from "@/lib/pricing";
+import { autoVerifyWorkflow } from "@/workflows/auto-verify";
+import { initializeSnapshotWorkflow } from "@/workflows/initialize-snapshot";
+import { verificationWorkflow } from "@/workflows/verification";
+import { createAppRouter, createCallerFactoryForAppRouter } from "@domainstack/api";
+
+export const appRouter = createAppRouter({
+  pricingProviders,
+  tracking: {
+    startAutoVerify: async ({ trackedDomainId }) => {
+      await start(autoVerifyWorkflow, [{ trackedDomainId }]);
+    },
+    startInitializeSnapshot: async ({ trackedDomainId, domainId }) => {
+      await start(initializeSnapshotWorkflow, [{ trackedDomainId, domainId }]);
+    },
+    runVerification: async (input) => {
+      const run = await start(verificationWorkflow, [input]);
+      return await run.returnValue;
+    },
+  },
 });
 
 export type AppRouter = typeof appRouter;
 
-export const createCaller = createCallerFactory(appRouter);
+export const createCaller = createCallerFactoryForAppRouter(appRouter);

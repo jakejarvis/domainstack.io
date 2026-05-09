@@ -205,6 +205,7 @@ async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boo
   const { hasRecentNotification, createNotification, updateNotificationResendId } =
     await import("@domainstack/db/queries");
   const { sendEmail } = await import("@/workflows/shared/send-email");
+  const { sendPushForNotificationStep } = await import("@/workflows/shared/push");
 
   const alreadySent = await hasRecentNotification(domain.id, "verification_failing");
   if (alreadySent) return false;
@@ -221,6 +222,7 @@ async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boo
     title,
     message,
     data: { domainName: domain.domainName },
+    channels: ["in-app", "email", "push"],
   });
 
   if (!notification) {
@@ -247,6 +249,15 @@ async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boo
   // Update notification with email ID
   await updateNotificationResendId(notification.id, result.emailId);
 
+  await sendPushForNotificationStep({
+    userId: domain.userId,
+    notificationId: notification.id,
+    title,
+    message,
+    trackedDomainId: domain.id,
+    domainName: domain.domainName,
+  });
+
   return true;
 }
 
@@ -261,6 +272,7 @@ async function sendVerificationRevokedEmail(domain: DomainForEmail): Promise<boo
   const { hasRecentNotification, createNotification, updateNotificationResendId } =
     await import("@domainstack/db/queries");
   const { sendEmail } = await import("@/workflows/shared/send-email");
+  const { sendPushForNotificationStep } = await import("@/workflows/shared/push");
 
   const alreadySent = await hasRecentNotification(domain.id, "verification_revoked");
   if (alreadySent) return false;
@@ -277,6 +289,7 @@ async function sendVerificationRevokedEmail(domain: DomainForEmail): Promise<boo
     title,
     message,
     data: { domainName: domain.domainName },
+    channels: ["in-app", "email", "push"],
   });
 
   if (!notification) {
@@ -300,6 +313,15 @@ async function sendVerificationRevokedEmail(domain: DomainForEmail): Promise<boo
 
   // Update notification with email ID
   await updateNotificationResendId(notification.id, result.emailId);
+
+  await sendPushForNotificationStep({
+    userId: domain.userId,
+    notificationId: notification.id,
+    title,
+    message,
+    trackedDomainId: domain.id,
+    domainName: domain.domainName,
+  });
 
   return true;
 }

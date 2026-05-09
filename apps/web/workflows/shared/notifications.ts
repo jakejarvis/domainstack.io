@@ -14,6 +14,22 @@ export { getThresholdNotificationType } from "@domainstack/utils/expiry";
 export interface NotificationChannels {
   shouldSendEmail: boolean;
   shouldSendInApp: boolean;
+  shouldSendPush: boolean;
+}
+
+export function resolveNotificationChannels(
+  muted: boolean,
+  preference: UserNotificationPreferences[keyof UserNotificationPreferences],
+): NotificationChannels {
+  if (muted) {
+    return { shouldSendEmail: false, shouldSendInApp: false, shouldSendPush: false };
+  }
+
+  return {
+    shouldSendEmail: preference.email,
+    shouldSendInApp: preference.inApp,
+    shouldSendPush: preference.push,
+  };
 }
 
 /**
@@ -34,21 +50,18 @@ export async function determineNotificationChannelsStep(
 
   const trackedDomain = await findTrackedDomainById(trackedDomainId);
   if (!trackedDomain) {
-    return { shouldSendEmail: false, shouldSendInApp: false };
+    return { shouldSendEmail: false, shouldSendInApp: false, shouldSendPush: false };
   }
 
   // Muted domains receive no notifications
   if (trackedDomain.muted) {
-    return { shouldSendEmail: false, shouldSendInApp: false };
+    return { shouldSendEmail: false, shouldSendInApp: false, shouldSendPush: false };
   }
 
   // Fall back to global preferences
   const globalPrefs = await getOrCreateUserNotificationPreferences(userId);
   const globalPref = globalPrefs[preferenceType];
-  return {
-    shouldSendEmail: globalPref.email,
-    shouldSendInApp: globalPref.inApp,
-  };
+  return resolveNotificationChannels(false, globalPref);
 }
 
 /**
@@ -102,17 +115,14 @@ export async function checkExpiryPreferencesStep(
 
   // Muted domains receive no notifications
   if (muted) {
-    return { shouldSendEmail: false, shouldSendInApp: false };
+    return { shouldSendEmail: false, shouldSendInApp: false, shouldSendPush: false };
   }
 
   const { getOrCreateUserNotificationPreferences } = await import("@domainstack/db/queries");
 
   const globalPrefs = await getOrCreateUserNotificationPreferences(userId);
 
-  return {
-    shouldSendEmail: globalPrefs[preferenceKey].email,
-    shouldSendInApp: globalPrefs[preferenceKey].inApp,
-  };
+  return resolveNotificationChannels(false, globalPrefs[preferenceKey]);
 }
 
 /**
@@ -180,10 +190,12 @@ async function sendNotificationInternal(
   },
   shouldSendEmail: boolean,
   shouldSendInApp: boolean,
+  shouldSendPush: boolean,
 ): Promise<boolean> {
   const { createNotification, updateNotificationResendId } =
     await import("@domainstack/db/queries");
   const { sendEmail } = await import("@domainstack/email");
+  const { sendPushForNotificationStep } = await import("./push");
 
   const {
     userId,
@@ -198,11 +210,12 @@ async function sendNotificationInternal(
     emailSubject,
   } = options;
 
-  if (!shouldSendEmail && !shouldSendInApp) return false;
+  if (!shouldSendEmail && !shouldSendInApp && !shouldSendPush) return false;
 
   const channels: string[] = [];
   if (shouldSendEmail && emailComponent && emailSubject) channels.push("email");
   if (shouldSendInApp) channels.push("in-app");
+  if (shouldSendPush) channels.push("push");
 
   // Create notification record
   const notification = await createNotification({
@@ -237,6 +250,17 @@ async function sendNotificationInternal(
     if (data?.id) {
       await updateNotificationResendId(notification.id, data.id);
     }
+  }
+
+  if (shouldSendPush) {
+    await sendPushForNotificationStep({
+      userId,
+      notificationId: notification.id,
+      title,
+      message,
+      trackedDomainId,
+      domainName,
+    });
   }
 
   return true;
@@ -278,6 +302,7 @@ export async function sendRegistrationChangeNotificationStep(
   },
   shouldSendEmail: boolean,
   shouldSendInApp: boolean,
+  shouldSendPush: boolean,
 ): Promise<boolean> {
   "use step";
 
@@ -310,6 +335,7 @@ export async function sendRegistrationChangeNotificationStep(
     },
     shouldSendEmail,
     shouldSendInApp,
+    shouldSendPush,
   );
 }
 
@@ -348,6 +374,7 @@ export async function sendProviderChangeNotificationStep(
   },
   shouldSendEmail: boolean,
   shouldSendInApp: boolean,
+  shouldSendPush: boolean,
 ): Promise<boolean> {
   "use step";
 
@@ -380,6 +407,7 @@ export async function sendProviderChangeNotificationStep(
     },
     shouldSendEmail,
     shouldSendInApp,
+    shouldSendPush,
   );
 }
 
@@ -412,6 +440,7 @@ export async function sendCertificateChangeNotificationStep(
   },
   shouldSendEmail: boolean,
   shouldSendInApp: boolean,
+  shouldSendPush: boolean,
 ): Promise<boolean> {
   "use step";
 
@@ -445,5 +474,6 @@ export async function sendCertificateChangeNotificationStep(
     },
     shouldSendEmail,
     shouldSendInApp,
+    shouldSendPush,
   );
 }

@@ -258,28 +258,58 @@ export const userNotificationPreferences = pgTable("user_notification_preference
     .references(() => users.id, { onDelete: "cascade" }),
   // Global toggles (defaults for all domains) - stored as JSONB with { inApp: boolean, email: boolean }
   domainExpiry: jsonb("domain_expiry")
-    .$type<{ inApp: boolean; email: boolean }>()
+    .$type<{ inApp: boolean; email: boolean; push: boolean }>()
     .notNull()
-    .default(sql`'{"inApp": true, "email": true}'::jsonb`),
+    .default(sql`'{"inApp": true, "email": true, "push": true}'::jsonb`),
   certificateExpiry: jsonb("certificate_expiry")
-    .$type<{ inApp: boolean; email: boolean }>()
+    .$type<{ inApp: boolean; email: boolean; push: boolean }>()
     .notNull()
-    .default(sql`'{"inApp": true, "email": true}'::jsonb`),
+    .default(sql`'{"inApp": true, "email": true, "push": true}'::jsonb`),
   registrationChanges: jsonb("registration_changes")
-    .$type<{ inApp: boolean; email: boolean }>()
+    .$type<{ inApp: boolean; email: boolean; push: boolean }>()
     .notNull()
-    .default(sql`'{"inApp": true, "email": true}'::jsonb`),
+    .default(sql`'{"inApp": true, "email": true, "push": true}'::jsonb`),
   providerChanges: jsonb("provider_changes")
-    .$type<{ inApp: boolean; email: boolean }>()
+    .$type<{ inApp: boolean; email: boolean; push: boolean }>()
     .notNull()
-    .default(sql`'{"inApp": true, "email": true}'::jsonb`),
+    .default(sql`'{"inApp": true, "email": true, "push": true}'::jsonb`),
   certificateChanges: jsonb("certificate_changes")
-    .$type<{ inApp: boolean; email: boolean }>()
+    .$type<{ inApp: boolean; email: boolean; push: boolean }>()
     .notNull()
-    .default(sql`'{"inApp": true, "email": true}'::jsonb`),
+    .default(sql`'{"inApp": true, "email": true, "push": true}'::jsonb`),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const userPushDevices = pgTable(
+  "user_push_devices",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    expoPushToken: text("expo_push_token").notNull(),
+    platform: text("platform").notNull(),
+    deviceName: text("device_name"),
+    appVersion: text("app_version"),
+    enabled: boolean("enabled").notNull().default(true),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).defaultNow().notNull(),
+    lastSuccessAt: timestamp("last_success_at", { withTimezone: true }),
+    lastErrorAt: timestamp("last_error_at", { withTimezone: true }),
+    lastError: text("last_error"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (t) => [
+    unique("u_user_push_devices_token").on(t.expoPushToken),
+    index("idx_user_push_devices_user").on(t.userId),
+    index("idx_user_push_devices_enabled").on(t.userId, t.enabled),
+    check("ck_user_push_devices_platform", sql`${t.platform} in ('ios', 'android')`),
+  ],
+);
 
 // ============================================================================
 // Domain Data Tables

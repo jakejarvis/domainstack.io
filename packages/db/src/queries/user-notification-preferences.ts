@@ -18,11 +18,11 @@ function mapPreferences(
 }
 
 const DEFAULT_PREFERENCES = {
-  domainExpiry: { inApp: true, email: true },
-  certificateExpiry: { inApp: true, email: true },
-  registrationChanges: { inApp: true, email: true },
-  providerChanges: { inApp: true, email: true },
-  certificateChanges: { inApp: true, email: true },
+  domainExpiry: { inApp: true, email: true, push: true },
+  certificateExpiry: { inApp: true, email: true, push: true },
+  registrationChanges: { inApp: true, email: true, push: true },
+  providerChanges: { inApp: true, email: true, push: true },
+  certificateChanges: { inApp: true, email: true, push: true },
 } as const;
 
 /**

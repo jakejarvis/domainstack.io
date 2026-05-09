@@ -22,6 +22,7 @@
     "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json"
   },
   "dependencies": {
+    "@better-auth/expo": "^1.6.9",
     "@better-auth/infra": "^0.2.5",
     "@domainstack/db": "workspace:*",
     "@domainstack/email": "workspace:*",

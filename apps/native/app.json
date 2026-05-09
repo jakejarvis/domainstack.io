@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "Domainstack",
+    "slug": "domainstack",
+    "scheme": "domainstack",
+    "version": "0.0.0",
+    "platforms": ["ios", "android"],
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "io.domainstack.native",
+      "supportsTablet": true,
+      "usesAppleSignIn": true
+    },
+    "android": {
+      "package": "io.domainstack.native"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "mode": "production"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "apiBaseUrl": "${EXPO_PUBLIC_DOMAINSTACK_API_URL}",
+      "posthogKey": "${EXPO_PUBLIC_POSTHOG_KEY}",
+      "posthogHost": "${EXPO_PUBLIC_POSTHOG_HOST}"
+    }
+  }
+}

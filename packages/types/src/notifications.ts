@@ -21,6 +21,7 @@ export interface NotificationData {
 export interface ChannelToggles {
   inApp: boolean;
   email: boolean;
+  push: boolean;
 }
 
 /**

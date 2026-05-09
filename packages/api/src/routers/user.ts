@@ -1,7 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { analytics } from "@domainstack/analytics/server";
 import {
   countTrackedDomainsByStatus,
@@ -12,15 +11,23 @@ import {
   getCalendarFeed,
   getLinkedAccounts,
   getOrCreateUserNotificationPreferences,
+  getPushDevicesForUser,
   getUserSubscription,
+  registerPushDevice,
   rotateCalendarFeedToken,
   setDomainMuted,
+  setPushDeviceEnabled,
+  unregisterPushDevice,
   updateUserNotificationPreferences,
 } from "@domainstack/db/queries";
+
+import { protectedProcedure } from "../procedures";
+import { createTRPCRouter } from "../trpc";
 
 const NotificationChannelsSchema = z.object({
   inApp: z.boolean(),
   email: z.boolean(),
+  push: z.boolean(),
 });
 
 const UserNotificationPreferencesSchema = z
@@ -90,6 +97,74 @@ export const userRouter = createTRPCRouter({
       analytics.track("notification_preferences_updated", { ...input }, ctx.user.id);
 
       return updated;
+    }),
+
+  getPushDevices: protectedProcedure.query(async ({ ctx }) => getPushDevicesForUser(ctx.user.id)),
+
+  registerPushDevice: protectedProcedure
+    .input(
+      z.object({
+        expoPushToken: z.string().min(1),
+        platform: z.enum(["ios", "android"]),
+        deviceName: z.string().min(1).max(120).optional(),
+        appVersion: z.string().min(1).max(80).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const device = await registerPushDevice({
+        userId: ctx.user.id,
+        expoPushToken: input.expoPushToken,
+        platform: input.platform,
+        deviceName: input.deviceName ?? null,
+        appVersion: input.appVersion ?? null,
+      });
+
+      analytics.track("push_device_registered", { platform: input.platform }, ctx.user.id);
+
+      return device;
+    }),
+
+  setPushDeviceEnabled: protectedProcedure
+    .input(
+      z.object({
+        expoPushToken: z.string().min(1),
+        enabled: z.boolean(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const device = await setPushDeviceEnabled(ctx.user.id, input.expoPushToken, input.enabled);
+
+      if (!device) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Push device not found",
+        });
+      }
+
+      analytics.track(
+        input.enabled ? "push_device_enabled" : "push_device_disabled",
+        {},
+        ctx.user.id,
+      );
+
+      return device;
+    }),
+
+  unregisterPushDevice: protectedProcedure
+    .input(z.object({ expoPushToken: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const deleted = await unregisterPushDevice(ctx.user.id, input.expoPushToken);
+
+      if (!deleted) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Push device not found",
+        });
+      }
+
+      analytics.track("push_device_unregistered", {}, ctx.user.id);
+
+      return { success: true };
     }),
 
   /**

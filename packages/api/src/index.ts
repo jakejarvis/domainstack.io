@@ -15,3 +15,11 @@ export {
 export { protectedProcedure, publicProcedure } from "./procedures";
 export type { ProcedureMeta } from "./trpc";
 export { createCallerFactory, createTRPCRouter, TRPCError, t } from "./trpc";
+export {
+  createAppRouter,
+  createCallerFactoryForAppRouter,
+  type AppRouter,
+  type AppRouterDeps,
+} from "./routers/_app";
+export type { PricingProvider, RegistrarPricingResponse } from "./routers/registrar";
+export type { TrackingRouterDeps, VerificationWorkflowResult } from "./routers/tracking";

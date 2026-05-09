@@ -134,6 +134,13 @@
       "when": 1769297986322,
       "tag": "0018_puzzling_lady_ursula",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1778277928212,
+      "tag": "0019_rare_silhouette",
+      "breakpoints": true
     }
   ]
 }

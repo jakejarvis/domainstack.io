@@ -1,13 +1,15 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import {
   getUnreadCount,
   getUserNotifications,
   markAllAsRead,
   markAsRead,
 } from "@domainstack/db/queries";
+
+import { protectedProcedure } from "../procedures";
+import { createTRPCRouter } from "../trpc";
 
 /** Schema for notification filter parameter */
 const notificationFilterSchema = z.enum(["unread", "read", "all"]).default("all");

@@ -4,7 +4,7 @@
  */
 
 // Valid notification channels
-export const NOTIFICATION_CHANNELS = ["in-app", "email"] as const;
+export const NOTIFICATION_CHANNELS = ["in-app", "email", "push"] as const;
 
 export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];
 
