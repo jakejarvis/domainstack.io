@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import { getEnabledNativeAuthProviders } from "@/lib/auth-providers";
 import { reduceAddDomainFlow } from "@/lib/domain-lifecycle";
+import { buildGoogleSignInConfig } from "@/lib/google-auth";
 import { canAccessTab, getInitialRoute, routeFromNotificationData } from "@/lib/navigation";
+import { nonceFromBytes } from "@/lib/nonce";
 import {
   type PortfolioDomain,
   filterPortfolioDomains,
@@ -29,6 +32,80 @@ const domains: PortfolioDomain[] = [
 ];
 
 describe("native app core helpers", () => {
+  it("filters native auth providers in web parity order", () => {
+    expect(
+      getEnabledNativeAuthProviders(
+        {
+          apple: true,
+          github: true,
+          gitlab: true,
+          google: true,
+          vercel: true,
+        },
+        {
+          iosClientId: "ios-client",
+          webClientId: "web-client",
+        },
+      ),
+    ).toEqual([
+      { id: "apple", name: "Apple", supportsNativeIdToken: true },
+      { id: "github", name: "GitHub", supportsNativeIdToken: false },
+      { id: "gitlab", name: "GitLab", supportsNativeIdToken: false },
+      { id: "google", name: "Google", supportsNativeIdToken: true },
+      { id: "vercel", name: "Vercel", supportsNativeIdToken: false },
+    ]);
+
+    expect(
+      getEnabledNativeAuthProviders(
+        {
+          apple: false,
+          github: false,
+          gitlab: false,
+          google: true,
+          vercel: false,
+        },
+        {
+          iosClientId: "",
+          webClientId: "",
+        },
+      ),
+    ).toEqual([{ id: "google", name: "Google", supportsNativeIdToken: false }]);
+  });
+
+  it("builds Google native sign-in configuration", () => {
+    expect(
+      getEnabledNativeAuthProviders(
+        {
+          apple: false,
+          github: false,
+          gitlab: false,
+          google: true,
+          vercel: false,
+        },
+        {
+          iosClientId: "",
+          webClientId: "web-client",
+        },
+      ),
+    ).toEqual([{ id: "google", name: "Google", supportsNativeIdToken: false }]);
+
+    expect(
+      buildGoogleSignInConfig({
+        iosClientId: "ios-client",
+        webClientId: "web-client",
+      }),
+    ).toEqual({
+      iosClientId: "ios-client",
+      scopes: ["email", "profile"],
+      webClientId: "web-client",
+    });
+  });
+
+  it("formats nonce bytes as stable hex", () => {
+    expect(nonceFromBytes(new Uint8Array([0, 1, 15, 16, 255]))).toBe("00010f10ff");
+    expect(nonceFromBytes(new Uint8Array(16))).toHaveLength(32);
+  });
+
   it("injects Better Auth cookies into tRPC headers", () => {
     expect(buildTrpcHeaders("better-auth.session_token=abc")).toEqual({
       Cookie: "better-auth.session_token=abc",

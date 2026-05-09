@@ -5,8 +5,10 @@ import {
   AUTH_SCHEME,
   AUTH_STORAGE_PREFIX,
   getAuthCookieHeader,
+  NATIVE_ID_TOKEN_AUTH_PROVIDERS,
   NATIVE_AUTH_PROVIDERS,
   normalizeBaseUrl,
+  type NativeIdTokenAuthProvider,
   type NativeAuthProvider,
 } from "./client-core";
 
@@ -61,8 +63,27 @@ export async function signInWithAppleIdentityToken(
   callbackURL: string,
   nonce?: string,
 ) {
+  return signInWithProviderIdentityToken(client, "apple", token, callbackURL, nonce);
+}
+
+export async function signInWithGoogleIdentityToken(
+  client: NativeAuthClient,
+  token: string,
+  callbackURL: string,
+  nonce?: string,
+) {
+  return signInWithProviderIdentityToken(client, "google", token, callbackURL, nonce);
+}
+
+export async function signInWithProviderIdentityToken(
+  client: NativeAuthClient,
+  provider: NativeIdTokenAuthProvider,
+  token: string,
+  callbackURL: string,
+  nonce?: string,
+) {
   return client.signIn.social({
-    provider: "apple",
+    provider,
     idToken: {
       token,
       nonce,
@@ -75,5 +96,5 @@ export function getNativeAuthCookieHeader(client: NativeAuthClient): string | nu
   return getAuthCookieHeader(client);
 }
 
-export { AUTH_SCHEME, AUTH_STORAGE_PREFIX, NATIVE_AUTH_PROVIDERS };
-export type { NativeAuthProvider } from "./client-core";
+export { AUTH_SCHEME, AUTH_STORAGE_PREFIX, NATIVE_AUTH_PROVIDERS, NATIVE_ID_TOKEN_AUTH_PROVIDERS };
+export type { NativeAuthProvider, NativeIdTokenAuthProvider } from "./client-core";

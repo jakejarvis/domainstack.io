@@ -6,6 +6,7 @@ import {
   createNativeAuthClient,
   getNativeAuthCookieHeader,
   signInWithAppleIdentityToken,
+  signInWithGoogleIdentityToken,
   signInWithNativeProvider,
   type NativeAuthProvider,
 } from "@domainstack/auth/native";
@@ -27,6 +28,10 @@ export async function signInWithProvider(provider: AuthProvider) {
 
 export async function signInWithAppleToken(token: string, nonce?: string) {
   return signInWithAppleIdentityToken(authClient, token, Linking.createURL("/"), nonce);
+}
+
+export async function signInWithGoogleToken(token: string, nonce?: string) {
+  return signInWithGoogleIdentityToken(authClient, token, Linking.createURL("/"), nonce);
 }
 
 export async function signOut() {

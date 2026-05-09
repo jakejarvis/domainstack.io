@@ -7,13 +7,19 @@ import { Button } from "@/components/button";
 import { GlassCard } from "@/components/glass-card";
 import { Screen } from "@/components/screen";
 import { MutedText, Text } from "@/components/text";
-import { type AuthProvider, signInWithAppleToken, signInWithProvider } from "@/lib/auth";
+import {
+  type AuthProvider,
+  signInWithAppleToken,
+  signInWithGoogleToken,
+  signInWithProvider,
+} from "@/lib/auth";
+import { getEnabledNativeAuthProviders, type NativeAuthProviderOption } from "@/lib/auth-providers";
+import { googleNativeConfig, nativeOAuthEnabled } from "@/lib/env";
+import { getGoogleIdentityToken } from "@/lib/google-auth";
 import { getInitialRoute } from "@/lib/navigation";
+import { createAuthNonce } from "@/lib/nonce";
 
-const providers: Array<{ label: string; provider: AuthProvider }> = [
-  { label: "Continue with Google", provider: "google" },
-  { label: "Continue with GitHub", provider: "github" },
-];
+const providerOptions = getEnabledNativeAuthProviders(nativeOAuthEnabled, googleNativeConfig);
 
 function isAuthCanceled(error: unknown): boolean {
   return error instanceof Error && "code" in error && error.code === "ERR_REQUEST_CANCELED";
@@ -62,7 +68,9 @@ export default function SignInScreen() {
     setLoadingProvider("apple");
 
     try {
+      const nonce = await createAuthNonce();
       const credential = await AppleAuthentication.signInAsync({
+        nonce,
         requestedScopes: [
           AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
           AppleAuthentication.AppleAuthenticationScope.EMAIL,
@@ -73,7 +81,7 @@ export default function SignInScreen() {
         throw new Error("Apple did not return an identity token.");
       }
 
-      const result = await signInWithAppleToken(credential.identityToken);
+      const result = await signInWithAppleToken(credential.identityToken, nonce);
       if (result.error) {
         throw new Error(result.error.message ?? "Unable to sign in with Apple.");
       }
@@ -85,6 +93,80 @@ export default function SignInScreen() {
     }
   };
 
+  const handleNativeGoogleSignIn = async () => {
+    setLoadingProvider("google");
+
+    try {
+      const token = await getGoogleIdentityToken(googleNativeConfig);
+      if (!token) return;
+
+      const result = await signInWithGoogleToken(token);
+      if (result.error) {
+        throw new Error(result.error.message ?? "Unable to sign in with Google.");
+      }
+      finishSignIn();
+    } catch (error) {
+      showSignInError("Google", error);
+    } finally {
+      setLoadingProvider(null);
+    }
+  };
+
+  const handleSignIn = (provider: NativeAuthProviderOption) => {
+    if (provider.id === "apple" && appleAuthAvailable) {
+      void handleNativeAppleSignIn();
+      return;
+    }
+
+    if (provider.id === "google" && provider.supportsNativeIdToken) {
+      void handleNativeGoogleSignIn();
+      return;
+    }
+
+    void handleProviderSignIn(provider.id);
+  };
+
+  const renderProviderButton = (provider: NativeAuthProviderOption) => {
+    if (provider.id === "apple" && appleAuthAvailable === null) {
+      return (
+        <Button key={provider.id} disabled loading variant="primary">
+          Continue with Apple
+        </Button>
+      );
+    }
+
+    if (provider.id === "apple" && appleAuthAvailable) {
+      return (
+        <View
+          key={provider.id}
+          className={loadingProvider !== null ? "opacity-55" : undefined}
+          pointerEvents={loadingProvider !== null ? "none" : "auto"}
+        >
+          <AppleAuthentication.AppleAuthenticationButton
+            accessibilityLabel="Continue with Apple"
+            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+            buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+            cornerRadius={12}
+            onPress={() => handleSignIn(provider)}
+            style={{ height: 48, width: "100%" }}
+          />
+        </View>
+      );
+    }
+
+    return (
+      <Button
+        key={provider.id}
+        disabled={loadingProvider !== null}
+        loading={loadingProvider === provider.id}
+        onPress={() => handleSignIn(provider)}
+        variant={provider.supportsNativeIdToken ? "primary" : "secondary"}
+      >
+        Continue with {provider.name}
+      </Button>
+    );
+  };
+
   return (
     <Screen>
       <View className="gap-2">
@@ -93,51 +175,11 @@ export default function SignInScreen() {
       </View>
 
       <GlassCard>
-        {appleAuthAvailable === null ? (
-          <Button disabled loading variant="primary">
-            Continue with Apple
-          </Button>
-        ) : appleAuthAvailable ? (
-          <View
-            className={loadingProvider !== null ? "opacity-55" : undefined}
-            pointerEvents={loadingProvider !== null ? "none" : "auto"}
-          >
-            <AppleAuthentication.AppleAuthenticationButton
-              accessibilityLabel="Continue with Apple"
-              buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-              buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-              cornerRadius={12}
-              onPress={() => {
-                void handleNativeAppleSignIn();
-              }}
-              style={{ height: 48, width: "100%" }}
-            />
-          </View>
+        {providerOptions.length > 0 ? (
+          providerOptions.map(renderProviderButton)
         ) : (
-          <Button
-            disabled={loadingProvider !== null}
-            loading={loadingProvider === "apple"}
-            onPress={() => {
-              void handleProviderSignIn("apple");
-            }}
-            variant="primary"
-          >
-            Continue with Apple
-          </Button>
+          <MutedText>No sign-in providers are enabled for this build.</MutedText>
         )}
-        {providers.map((item) => (
-          <Button
-            key={item.provider}
-            disabled={loadingProvider !== null}
-            loading={loadingProvider === item.provider}
-            onPress={() => {
-              void handleProviderSignIn(item.provider);
-            }}
-            variant="secondary"
-          >
-            {item.label}
-          </Button>
-        ))}
       </GlassCard>
     </Screen>
   );

@@ -1,4 +1,25 @@
-import type { OAuthConfig, OAuthCredentials, OAuthProvider } from "./types";
+import {
+  OAUTH_PROVIDER_IDS,
+  type OAuthConfig,
+  type OAuthCredentials,
+  type OAuthProvider,
+} from "./types";
+
+export type OAuthProviderId = OAuthProvider;
+
+export type OAuthProviderMetadata = {
+  id: OAuthProvider;
+  name: string;
+  supportsNativeIdToken: boolean;
+};
+
+export const OAUTH_PROVIDER_METADATA: readonly OAuthProviderMetadata[] = [
+  { id: "apple", name: "Apple", supportsNativeIdToken: true },
+  { id: "github", name: "GitHub", supportsNativeIdToken: false },
+  { id: "gitlab", name: "GitLab", supportsNativeIdToken: false },
+  { id: "google", name: "Google", supportsNativeIdToken: true },
+  { id: "vercel", name: "Vercel", supportsNativeIdToken: false },
+];
 
 /**
  * Result of building OAuth provider configuration.
@@ -39,10 +60,11 @@ export function buildOAuthProviders(credentials: OAuthConfig): OAuthProviderResu
   const providers: Record<string, OAuthCredentials> = {};
   const enabledProviders: OAuthProvider[] = [];
 
-  for (const [provider, creds] of Object.entries(credentials)) {
+  for (const provider of OAUTH_PROVIDER_IDS) {
+    const creds = credentials[provider];
     if (creds?.clientId && creds?.clientSecret) {
       providers[provider] = creds;
-      enabledProviders.push(provider as OAuthProvider);
+      enabledProviders.push(provider);
     }
   }
 

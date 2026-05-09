@@ -1,9 +1,16 @@
+import { OAUTH_PROVIDER_IDS, type OAuthProvider } from "./types";
+
 export const AUTH_SCHEME = "domainstack";
 export const AUTH_STORAGE_PREFIX = "domainstack";
 
-export const NATIVE_AUTH_PROVIDERS = ["apple", "google", "github"] as const;
+export const NATIVE_AUTH_PROVIDERS = OAUTH_PROVIDER_IDS;
+export const NATIVE_ID_TOKEN_AUTH_PROVIDERS = [
+  "apple",
+  "google",
+] as const satisfies readonly OAuthProvider[];
 
-export type NativeAuthProvider = (typeof NATIVE_AUTH_PROVIDERS)[number];
+export type NativeAuthProvider = OAuthProvider;
+export type NativeIdTokenAuthProvider = (typeof NATIVE_ID_TOKEN_AUTH_PROVIDERS)[number];
 
 export type AuthCookieSource = {
   getCookie: () => string | null | undefined;

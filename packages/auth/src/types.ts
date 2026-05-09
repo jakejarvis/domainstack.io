@@ -1,7 +1,9 @@
 /**
  * OAuth provider identifiers supported by the auth system.
  */
-export type OAuthProvider = "apple" | "github" | "gitlab" | "google" | "vercel";
+export const OAUTH_PROVIDER_IDS = ["apple", "github", "gitlab", "google", "vercel"] as const;
+
+export type OAuthProvider = (typeof OAUTH_PROVIDER_IDS)[number];
 
 /**
  * OAuth credentials for a provider.
