@@ -6,7 +6,7 @@ import {
   AUTH_STORAGE_PREFIX,
   getAuthCookieHeader,
   NATIVE_AUTH_PROVIDERS,
-  normalizeAuthBaseURL,
+  normalizeBaseUrl,
   type NativeAuthProvider,
 } from "./client-core";
 
@@ -33,7 +33,7 @@ export function createNativeAuthClient({
   storagePrefix = AUTH_STORAGE_PREFIX,
 }: CreateNativeAuthClientOptions): NativeAuthClient {
   return createAuthClient({
-    baseURL: normalizeAuthBaseURL(baseURL),
+    baseURL: normalizeBaseUrl(baseURL),
     plugins: [
       expoClient({
         scheme,
@@ -51,6 +51,22 @@ export async function signInWithNativeProvider(
 ) {
   return client.signIn.social({
     provider,
+    callbackURL,
+  });
+}
+
+export async function signInWithAppleIdentityToken(
+  client: NativeAuthClient,
+  token: string,
+  callbackURL: string,
+  nonce?: string,
+) {
+  return client.signIn.social({
+    provider: "apple",
+    idToken: {
+      token,
+      nonce,
+    },
     callbackURL,
   });
 }

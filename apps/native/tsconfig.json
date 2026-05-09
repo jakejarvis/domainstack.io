@@ -9,5 +9,5 @@
     "strict": true,
     "types": ["uniwind/types", "vitest/globals"]
   },
-  "include": ["app", "src", "expo-env.d.ts", "uniwind-env.d.ts", "*.config.ts"]
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "uniwind-types.d.ts"]
 }

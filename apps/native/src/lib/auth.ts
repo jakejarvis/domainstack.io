@@ -5,6 +5,7 @@ import * as WebBrowser from "expo-web-browser";
 import {
   createNativeAuthClient,
   getNativeAuthCookieHeader,
+  signInWithAppleIdentityToken,
   signInWithNativeProvider,
   type NativeAuthProvider,
 } from "@domainstack/auth/native";
@@ -22,6 +23,10 @@ export type AuthProvider = NativeAuthProvider;
 
 export async function signInWithProvider(provider: AuthProvider) {
   return signInWithNativeProvider(authClient, provider, Linking.createURL("/"));
+}
+
+export async function signInWithAppleToken(token: string, nonce?: string) {
+  return signInWithAppleIdentityToken(authClient, token, Linking.createURL("/"), nonce);
 }
 
 export async function signOut() {

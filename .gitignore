@@ -49,8 +49,5 @@ next-env.d.ts
 # SWC
 .swc
 
-# Generated native styling metadata
-apps/native/uniwind-types.d.ts
-
 # next-agents-md
 .next-docs/

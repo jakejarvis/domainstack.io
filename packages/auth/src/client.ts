@@ -3,14 +3,14 @@ import { createAuthClient } from "better-auth/react";
 
 import { polarClient } from "@domainstack/polar/better-auth/client";
 
-import { normalizeAuthBaseURL } from "./client-core";
+import { normalizeBaseUrl } from "./client-core";
 
 /**
  * Web Better Auth client instance with Polar and Sentinel integrations.
  * Reads NEXT_PUBLIC_BASE_URL from environment, inlined at build time by Next.js.
  */
 const client = createAuthClient({
-  baseURL: normalizeAuthBaseURL(process.env.NEXT_PUBLIC_BASE_URL),
+  baseURL: normalizeBaseUrl(process.env.NEXT_PUBLIC_BASE_URL),
   plugins: [polarClient(), sentinelClient()],
 });
 

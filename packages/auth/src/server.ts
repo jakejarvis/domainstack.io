@@ -112,6 +112,7 @@ if (enabledProviders.length === 0) {
 
 const trustedOrigins = [
   process.env.NEXT_PUBLIC_BASE_URL,
+  "https://appleid.apple.com",
   "domainstack://",
   "exp://localhost:8081",
   "http://localhost:8081",

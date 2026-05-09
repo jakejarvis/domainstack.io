@@ -18,6 +18,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-apple-authentication",
       "expo-secure-store",
       "expo-web-browser",
       [
@@ -33,7 +34,12 @@
     "extra": {
       "apiBaseUrl": "${EXPO_PUBLIC_DOMAINSTACK_API_URL}",
       "posthogKey": "${EXPO_PUBLIC_POSTHOG_KEY}",
-      "posthogHost": "${EXPO_PUBLIC_POSTHOG_HOST}"
-    }
+      "posthogHost": "${EXPO_PUBLIC_POSTHOG_HOST}",
+      "router": {},
+      "eas": {
+        "projectId": "ff044af0-bf08-40bb-919f-04c950d11b14"
+      }
+    },
+    "owner": "jakejarvis"
   }
 }

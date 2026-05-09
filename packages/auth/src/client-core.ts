@@ -9,7 +9,7 @@ export type AuthCookieSource = {
   getCookie: () => string | null | undefined;
 };
 
-export function normalizeAuthBaseURL(baseURL: string | null | undefined): string | undefined {
+export function normalizeBaseUrl(baseURL: string | null | undefined): string | undefined {
   const trimmed = baseURL?.trim();
   if (!trimmed) return undefined;
   return trimmed.replace(/\/+$/, "");

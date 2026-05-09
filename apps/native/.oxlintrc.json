@@ -1,0 +1,5 @@
+{
+  "$schema": "../../node_modules/oxlint/configuration_schema.json",
+  "extends": ["../../.oxlintrc.json"],
+  "ignorePatterns": ["node_modules", ".expo/types/**/*.ts", "expo-env.d.ts", "uniwind-types.d.ts"]
+}

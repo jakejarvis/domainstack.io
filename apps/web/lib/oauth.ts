@@ -1,4 +1,4 @@
-import { SiGithub, SiGitlab, SiGoogle, SiVercel } from "@icons-pack/react-simple-icons";
+import { SiApple, SiGithub, SiGitlab, SiGoogle, SiVercel } from "@icons-pack/react-simple-icons";
 
 /**
  * OAuth provider constants for better-auth social providers.
@@ -30,6 +30,12 @@ export interface OAuthProvider {
  * server-side in lib/auth.ts.
  */
 const OAUTH_PROVIDERS: OAuthProvider[] = [
+  {
+    id: "apple",
+    name: "Apple",
+    icon: SiApple,
+    enabled: process.env.NEXT_PUBLIC_APPLE_OAUTH_ENABLED === "true",
+  },
   {
     id: "github",
     name: "GitHub",
