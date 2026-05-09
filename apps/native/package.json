@@ -17,8 +17,8 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@better-auth/expo": "^1.6.9",
     "@domainstack/api": "workspace:*",
+    "@domainstack/auth": "workspace:*",
     "@domainstack/constants": "workspace:*",
     "@domainstack/types": "workspace:*",
     "@domainstack/utils": "workspace:*",
@@ -28,7 +28,6 @@
     "@tanstack/react-query-persist-client": "^5.100.9",
     "@trpc/client": "^11.16.0",
     "@trpc/tanstack-react-query": "^11.16.0",
-    "better-auth": "1.6.9",
     "expo": "^55.0.23",
     "expo-blur": "^55.0.14",
     "expo-clipboard": "^55.0.13",

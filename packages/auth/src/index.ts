@@ -1,5 +1,5 @@
-// Client (re-exported for convenience, also available via ./client)
-export * from "./client";
+// Native-safe client helpers (web client lives behind ./client)
+export * from "./client-core";
 // Auth error utilities
 export * from "./errors";
 // Providers

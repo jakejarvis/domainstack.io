@@ -7,6 +7,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
+    "./client-core": "./src/client-core.ts",
+    "./native": "./src/native.ts",
     "./server": "./src/server.ts",
     "./errors": "./src/errors.ts",
     "./storage": "./src/storage.ts",
@@ -19,7 +21,8 @@
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt --config ../../.oxfmtrc.json",
-    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json"
+    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json",
+    "test": "vitest run"
   },
   "dependencies": {
     "@better-auth/expo": "^1.6.9",
@@ -33,10 +36,16 @@
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
-    "@types/node": "catalog:"
+    "@types/node": "catalog:",
+    "vitest": "catalog:"
   },
   "peerDependencies": {
     "next": ">=16",
     "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "next": {
+      "optional": true
+    }
   }
 }

@@ -1,31 +1,27 @@
-import { expoClient } from "@better-auth/expo/client";
-import { createAuthClient } from "better-auth/react";
 import * as Linking from "expo-linking";
 import * as SecureStore from "expo-secure-store";
 import * as WebBrowser from "expo-web-browser";
+
+import {
+  createNativeAuthClient,
+  getNativeAuthCookieHeader,
+  signInWithNativeProvider,
+  type NativeAuthProvider,
+} from "@domainstack/auth/native";
 
 import { apiBaseUrl } from "./env";
 
 WebBrowser.maybeCompleteAuthSession();
 
-export const authClient = createAuthClient({
+export const authClient = createNativeAuthClient({
   baseURL: apiBaseUrl,
-  plugins: [
-    expoClient({
-      scheme: "domainstack",
-      storagePrefix: "domainstack",
-      storage: SecureStore,
-    }),
-  ],
+  storage: SecureStore,
 });
 
-export type AuthProvider = "apple" | "github" | "google";
+export type AuthProvider = NativeAuthProvider;
 
 export async function signInWithProvider(provider: AuthProvider) {
-  return authClient.signIn.social({
-    provider,
-    callbackURL: Linking.createURL("/"),
-  });
+  return signInWithNativeProvider(authClient, provider, Linking.createURL("/"));
 }
 
 export async function signOut() {
@@ -33,5 +29,5 @@ export async function signOut() {
 }
 
 export function getAuthCookieHeader(): string | null {
-  return authClient.getCookie() || null;
+  return getNativeAuthCookieHeader(authClient);
 }
