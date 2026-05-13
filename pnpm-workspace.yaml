@@ -2,13 +2,16 @@ packages:
   - apps/*
   - packages/*
 
+nodeLinker: hoisted
+
 catalog:
-  '@tabler/icons-react': ^3.41.1
-  '@types/node': 25.6.0
+  '@tabler/icons-react': ^3.44.0
+  '@types/node': 25.7.0
   motion: ^12.38.0
   sonner: ^2.0.7
-  vitest: ^4.1.5
-  zod: ^4.3.6
+  vitest: ^4.1.6
+  zod: ^4.4.3
+
 ignoredBuiltDependencies:
   - '@nestjs/core'
 
@@ -27,6 +30,7 @@ onlyBuiltDependencies:
 overrides:
   '@types/react': 19.2.14
   '@types/react-dom': 19.2.3
+  lightningcss: 1.30.1
   next: 16.2.6
   react: 19.2.6
   react-dom: 19.2.6

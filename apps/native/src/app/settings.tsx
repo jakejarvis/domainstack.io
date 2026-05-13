@@ -1,7 +1,8 @@
+import { Host, Switch as NativeSwitch } from "@expo/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useState } from "react";
-import { Switch, View } from "react-native";
+import { View } from "react-native";
 
 import { Button } from "@/components/button";
 import { EmptyState } from "@/components/empty-state";
@@ -41,7 +42,9 @@ function ToggleRow({
   return (
     <View className="min-h-12 flex-row items-center justify-between gap-4">
       <Text className="flex-1 font-semibold">{label}</Text>
-      <Switch onValueChange={onValueChange} value={value} />
+      <Host matchContents style={{ minHeight: 36, minWidth: 52 }}>
+        <NativeSwitch onValueChange={onValueChange} value={value} />
+      </Host>
     </View>
   );
 }
@@ -208,7 +211,7 @@ export default function SettingsScreen() {
         </MutedText>
         <Button
           onPress={() => {
-            void signOut().then(() => router.replace("/(tabs)/lookup"));
+            void signOut().then(() => router.replace("/(tabs)/search"));
           }}
           variant="secondary"
         >

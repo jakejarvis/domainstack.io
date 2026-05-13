@@ -10,6 +10,7 @@ import { Screen } from "@/components/screen";
 import { SkeletonRows } from "@/components/skeleton";
 import { MutedText, Text } from "@/components/text";
 import { useTRPC } from "@/lib/api";
+import { authClient } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import { assertOnline } from "@/lib/network";
 
@@ -25,6 +26,37 @@ function MetricRow({ label, value }: { label: string; value: string | null | und
 }
 
 export default function DomainDetailScreen() {
+  const session = authClient.useSession();
+
+  if (session.isPending) {
+    return (
+      <Screen>
+        <SkeletonRows count={4} />
+      </Screen>
+    );
+  }
+
+  if (!session.data?.user) {
+    return (
+      <Screen>
+        <View className="gap-2">
+          <Text className="text-4xl font-semibold">Domain</Text>
+          <MutedText>Sign in to view tracked domain details.</MutedText>
+        </View>
+        <EmptyState
+          actionLabel="Sign in"
+          body="Domain detail pages are available after your portfolio syncs."
+          onAction={() => router.push("/sign-in")}
+          title="Account required"
+        />
+      </Screen>
+    );
+  }
+
+  return <DomainDetailContent />;
+}
+
+function DomainDetailContent() {
   const params = useLocalSearchParams<{ id: string }>();
   const trackedDomainId = Array.isArray(params.id) ? params.id[0] : params.id;
   const trpc = useTRPC();

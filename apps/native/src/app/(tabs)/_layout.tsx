@@ -1,67 +1,42 @@
-import { Tabs } from "expo-router";
-import { Text as NativeText } from "react-native";
+import { NativeTabs } from "expo-router/unstable-native-tabs";
 
-import { authClient } from "@/lib/auth";
-
-function TabGlyph({ focused, label }: { focused: boolean; label: string }) {
-  return (
-    <NativeText
-      className={focused ? "text-brand text-sm font-bold" : "text-text-secondary text-sm"}
-    >
-      {label}
-    </NativeText>
-  );
-}
+import { useCSSVariable } from "@/tw";
 
 export default function TabsLayout() {
-  const session = authClient.useSession();
-  const isSignedIn = Boolean(session.data?.user);
+  const accent = useCSSVariable("--color-brand");
+  const canvas = useCSSVariable("--color-canvas");
+  const surface = useCSSVariable("--color-glass");
+  const textMuted = useCSSVariable("--color-text-secondary");
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        sceneStyle: { backgroundColor: "#08110e" },
-        tabBarActiveTintColor: "#4ade80",
-        tabBarInactiveTintColor: "#afbeb5",
-        tabBarStyle: {
-          backgroundColor: "rgba(8, 17, 14, 0.88)",
-          borderTopColor: "rgba(255, 255, 255, 0.12)",
-        },
+    <NativeTabs
+      backgroundColor={surface}
+      iconColor={{ default: textMuted, selected: accent }}
+      labelStyle={{
+        default: { color: textMuted },
+        selected: { color: accent, fontWeight: "600" },
       }}
+      minimizeBehavior="onScrollDown"
+      tintColor={accent}
     >
-      <Tabs.Protected guard={isSignedIn}>
-        <Tabs.Screen
-          name="domains"
-          options={{
-            title: "Domains",
-            tabBarIcon: ({ focused }) => <TabGlyph focused={focused} label="D" />,
-          }}
+      <NativeTabs.Trigger contentStyle={{ backgroundColor: canvas }} name="domains">
+        <NativeTabs.Trigger.Icon
+          md="language"
+          sf={{ default: "globe", selected: "globe.americas.fill" }}
         />
-      </Tabs.Protected>
-      <Tabs.Screen
-        name="lookup"
-        options={{
-          title: "Lookup",
-          tabBarIcon: ({ focused }) => <TabGlyph focused={focused} label="L" />,
-        }}
-      />
-      <Tabs.Protected guard={isSignedIn}>
-        <Tabs.Screen
-          name="notifications"
-          options={{
-            title: "Alerts",
-            tabBarIcon: ({ focused }) => <TabGlyph focused={focused} label="N" />,
-          }}
+        <NativeTabs.Trigger.Label>Portfolio</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger contentStyle={{ backgroundColor: canvas }} name="alerts">
+        <NativeTabs.Trigger.Icon
+          md="notifications"
+          sf={{ default: "bell", selected: "bell.fill" }}
         />
-        <Tabs.Screen
-          name="settings"
-          options={{
-            title: "Settings",
-            tabBarIcon: ({ focused }) => <TabGlyph focused={focused} label="S" />,
-          }}
-        />
-      </Tabs.Protected>
-    </Tabs>
+        <NativeTabs.Trigger.Label>Alerts</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger contentStyle={{ backgroundColor: canvas }} name="search">
+        <NativeTabs.Trigger.Icon md="search" sf="magnifyingglass" />
+        <NativeTabs.Trigger.Label>Search</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+    </NativeTabs>
   );
 }

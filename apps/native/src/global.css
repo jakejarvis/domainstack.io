@@ -1,15 +1,84 @@
-@import "tailwindcss";
-@import "uniwind";
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css";
+@import "nativewind/theme";
 
 @theme {
-  --color-canvas: #08110e;
-  --color-canvas-2: #0d1a15;
-  --color-glass: rgba(255, 255, 255, 0.1);
-  --color-line: rgba(255, 255, 255, 0.14);
-  --color-brand: #4ade80;
-  --color-brand-strong: #22c55e;
-  --color-text-primary: #f6faf7;
-  --color-text-secondary: #afbeb5;
-  --color-warning: #fbbf24;
-  --color-danger: #fb7185;
+  --color-brand: light-dark(rgb(37 99 235), rgb(96 165 250));
+  --color-brand-soft: light-dark(rgb(219 234 254), rgb(96 165 250 / 0.16));
+  --color-brand-strong: light-dark(rgb(17 24 39), rgb(244 244 245));
+  --color-canvas: light-dark(rgb(246 247 248), rgb(16 17 20));
+  --color-canvas-2: light-dark(rgb(238 240 243), rgb(23 25 29));
+  --color-control-primary: light-dark(rgb(17 24 39), rgb(244 244 245));
+  --color-control-primary-text: light-dark(rgb(255 255 255), rgb(16 17 20));
+  --color-control-secondary: light-dark(rgb(255 255 255), rgb(255 255 255 / 0.08));
+  --color-control-secondary-text: light-dark(rgb(17 24 39), rgb(244 244 245));
+  --color-danger: light-dark(rgb(220 38 38), rgb(251 113 133));
+  --color-danger-soft: light-dark(rgb(254 226 226), rgb(251 113 133 / 0.15));
+  --color-danger-text: rgb(255 255 255);
+  --color-glass: light-dark(rgb(255 255 255 / 0.88), rgb(255 255 255 / 0.08));
+  --color-line: light-dark(rgb(17 24 39 / 0.12), rgb(255 255 255 / 0.13));
+  --color-success: light-dark(rgb(21 128 61), rgb(74 222 128));
+  --color-success-soft: light-dark(rgb(220 252 231), rgb(74 222 128 / 0.14));
+  --color-text-primary: light-dark(rgb(17 24 39), rgb(244 244 245));
+  --color-text-secondary: light-dark(rgb(95 102 115), rgb(161 161 170));
+  --color-warning: light-dark(rgb(180 83 9), rgb(251 191 36));
+  --color-warning-soft: light-dark(rgb(254 243 199), rgb(251 191 36 / 0.15));
+}
+
+:root {
+  color-scheme: light dark;
+  --color-brand: light-dark(rgb(37 99 235), rgb(96 165 250));
+  --color-brand-soft: light-dark(rgb(219 234 254), rgb(96 165 250 / 0.16));
+  --color-brand-strong: light-dark(rgb(17 24 39), rgb(244 244 245));
+  --color-canvas: light-dark(rgb(246 247 248), rgb(16 17 20));
+  --color-canvas-2: light-dark(rgb(238 240 243), rgb(23 25 29));
+  --color-control-primary: light-dark(rgb(17 24 39), rgb(244 244 245));
+  --color-control-primary-text: light-dark(rgb(255 255 255), rgb(16 17 20));
+  --color-control-secondary: light-dark(rgb(255 255 255), rgb(255 255 255 / 0.08));
+  --color-control-secondary-text: light-dark(rgb(17 24 39), rgb(244 244 245));
+  --color-danger: light-dark(rgb(220 38 38), rgb(251 113 133));
+  --color-danger-soft: light-dark(rgb(254 226 226), rgb(251 113 133 / 0.15));
+  --color-danger-text: rgb(255 255 255);
+  --color-glass: light-dark(rgb(255 255 255 / 0.88), rgb(255 255 255 / 0.08));
+  --color-line: light-dark(rgb(17 24 39 / 0.12), rgb(255 255 255 / 0.13));
+  --color-success: light-dark(rgb(21 128 61), rgb(74 222 128));
+  --color-success-soft: light-dark(rgb(220 252 231), rgb(74 222 128 / 0.14));
+  --color-text-primary: light-dark(rgb(17 24 39), rgb(244 244 245));
+  --color-text-secondary: light-dark(rgb(95 102 115), rgb(161 161 170));
+  --color-warning: light-dark(rgb(180 83 9), rgb(251 191 36));
+  --color-warning-soft: light-dark(rgb(254 243 199), rgb(251 191 36 / 0.15));
+}
+
+@media ios {
+  :root {
+    --color-brand: platformColor(systemBlue);
+    --color-canvas: platformColor(systemGroupedBackground);
+    --color-canvas-2: platformColor(secondarySystemGroupedBackground);
+    --color-danger: platformColor(systemRed);
+    --color-glass: platformColor(secondarySystemGroupedBackground);
+    --color-line: platformColor(separator);
+    --color-success: platformColor(systemGreen);
+    --color-text-primary: platformColor(label);
+    --color-text-secondary: platformColor(secondaryLabel);
+    --color-warning: platformColor(systemOrange);
+  }
+}
+
+@media android {
+  :root {
+    --font-mono: monospace;
+    --font-rounded: normal;
+    --font-sans: normal;
+    --font-serif: serif;
+  }
+}
+
+@media ios {
+  :root {
+    --font-mono: ui-monospace;
+    --font-rounded: ui-rounded;
+    --font-sans: system-ui;
+    --font-serif: ui-serif;
+  }
 }

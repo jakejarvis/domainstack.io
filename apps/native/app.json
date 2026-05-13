@@ -7,14 +7,13 @@
     "platforms": ["ios", "android"],
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "bundleIdentifier": "io.domainstack.native",
       "supportsTablet": true,
       "usesAppleSignIn": true
     },
     "android": {
-      "package": "io.domainstack.native"
+      "package": "io.domainstack.app"
     },
     "plugins": [
       "expo-router",
@@ -32,7 +31,9 @@
         {
           "mode": "production"
         }
-      ]
+      ],
+      "expo-image",
+      "expo-splash-screen"
     ],
     "experiments": {
       "typedRoutes": true

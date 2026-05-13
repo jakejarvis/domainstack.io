@@ -11,7 +11,7 @@ export default function IndexRoute() {
   if (session.isPending) {
     return (
       <Screen>
-        <MutedText>Loading Domainstack...</MutedText>
+        <MutedText>Loading Domainstack…</MutedText>
       </Screen>
     );
   }

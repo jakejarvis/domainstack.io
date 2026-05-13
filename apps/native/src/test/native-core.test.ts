@@ -119,18 +119,18 @@ describe("native app core helpers", () => {
 
   it("gates protected tabs by auth state", () => {
     expect(getInitialRoute(true)).toBe("/(tabs)/domains");
-    expect(getInitialRoute(false)).toBe("/(tabs)/lookup");
-    expect(canAccessTab("lookup", false)).toBe(true);
+    expect(getInitialRoute(false)).toBe("/(tabs)/search");
+    expect(canAccessTab("search", false)).toBe(true);
     expect(canAccessTab("domains", false)).toBe(false);
-    expect(canAccessTab("settings", true)).toBe(true);
+    expect(canAccessTab("alerts", true)).toBe(true);
   });
 
-  it("routes push payloads to domain detail or notifications", () => {
+  it("routes push payloads to domain detail or alerts", () => {
     expect(routeFromNotificationData({ trackedDomainId: "tracked-1" })).toEqual({
       params: { id: "tracked-1" },
       pathname: "/(tabs)/domains/[id]",
     });
-    expect(routeFromNotificationData({})).toBe("/(tabs)/notifications");
+    expect(routeFromNotificationData({})).toBe("/(tabs)/alerts");
   });
 
   it("filters and sorts portfolio domains", () => {

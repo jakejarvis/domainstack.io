@@ -1,8 +1,7 @@
-import { Pressable, View } from "react-native";
+import SegmentedControlNative from "@expo/ui/community/segmented-control";
+import { useColorScheme, View } from "react-native";
 
-import { cn } from "@/lib/cn";
-
-import { Text } from "./text";
+import { useCSSVariable } from "@/tw";
 
 export function SegmentedControl<T extends string>({
   onChange,
@@ -13,33 +12,25 @@ export function SegmentedControl<T extends string>({
   options: Array<{ label: string; value: T }>;
   value: T;
 }) {
+  const tintColor = useCSSVariable("--color-brand");
+  const appearance = useColorScheme() === "dark" ? "dark" : "light";
+  const selectedIndex = Math.max(
+    0,
+    options.findIndex((option) => option.value === value),
+  );
+
   return (
-    <View className="border-line bg-glass flex-row rounded-xl border p-1">
-      {options.map((option) => {
-        const selected = option.value === value;
-        return (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ selected }}
-            className={cn(
-              "min-h-10 flex-1 items-center justify-center rounded-lg px-2",
-              selected && "bg-brand-strong",
-            )}
-            key={option.value}
-            onPress={() => onChange(option.value)}
-          >
-            <Text
-              className={cn(
-                "text-center text-sm font-semibold",
-                selected ? "text-text-primary" : "text-text-secondary",
-              )}
-              numberOfLines={1}
-            >
-              {option.label}
-            </Text>
-          </Pressable>
-        );
-      })}
+    <View>
+      <SegmentedControlNative
+        appearance={appearance}
+        onChange={(event) => {
+          const option = options[event.nativeEvent.selectedSegmentIndex];
+          if (option) onChange(option.value);
+        }}
+        selectedIndex={selectedIndex}
+        tintColor={tintColor}
+        values={options.map((option) => option.label)}
+      />
     </View>
   );
 }

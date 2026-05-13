@@ -2,6 +2,7 @@ import * as Haptics from "expo-haptics";
 import { ActivityIndicator, Pressable } from "react-native";
 
 import { cn } from "@/lib/cn";
+import { useCSSVariable } from "@/tw";
 
 import { Text } from "./text";
 
@@ -21,35 +22,54 @@ export function Button({
   variant?: "primary" | "secondary" | "danger" | "ghost";
 }) {
   const isDisabled = Boolean(disabled || loading);
+  const foregroundColor = useCSSVariable(
+    variant === "primary"
+      ? "--color-control-primary-text"
+      : variant === "danger"
+        ? "--color-danger-text"
+        : variant === "ghost"
+          ? "--color-brand"
+          : "--color-control-secondary-text",
+  );
+  const variantClassName =
+    variant === "primary"
+      ? "bg-control-primary"
+      : variant === "danger"
+        ? "bg-danger"
+        : variant === "secondary"
+          ? "border border-line bg-control-secondary"
+          : "bg-transparent";
+  const textClassName =
+    variant === "primary"
+      ? "text-control-primary-text"
+      : variant === "danger"
+        ? "text-danger-text"
+        : variant === "ghost"
+          ? "text-brand"
+          : "text-control-secondary-text";
 
   return (
     <Pressable
       accessibilityRole="button"
-      disabled={isDisabled}
-      onPress={() => {
-        void Haptics.selectionAsync();
-        onPress?.();
-      }}
       className={cn(
         "min-h-12 flex-row items-center justify-center gap-2 rounded-xl px-4",
-        variant === "primary" && "bg-brand-strong",
-        variant === "secondary" && "border-line bg-glass border",
-        variant === "danger" && "bg-danger",
-        variant === "ghost" && "bg-transparent",
+        variantClassName,
         isDisabled && "opacity-55",
         className,
       )}
+      disabled={isDisabled}
+      onPress={() => {
+        if (process.env.EXPO_OS === "ios") {
+          void Haptics.selectionAsync();
+        }
+        onPress?.();
+      }}
+      style={({ pressed }) => ({
+        opacity: pressed && !isDisabled ? 0.82 : 1,
+      })}
     >
-      {loading && <ActivityIndicator color="#f6faf7" size="small" />}
-      <Text
-        className={cn(
-          "text-center text-base font-semibold",
-          variant === "ghost" && "text-brand",
-          variant !== "ghost" && "text-text-primary",
-        )}
-      >
-        {children}
-      </Text>
+      {loading && <ActivityIndicator color={foregroundColor} size="small" />}
+      <Text className={cn("text-center text-base font-semibold", textClassName)}>{children}</Text>
     </Pressable>
   );
 }

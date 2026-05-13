@@ -1,15 +1,15 @@
 import type { Href } from "expo-router";
 
-export type DomainstackTab = "domains" | "lookup" | "notifications" | "settings";
+export type DomainstackTab = "alerts" | "domains" | "search";
 
-const protectedTabs = new Set<DomainstackTab>(["domains", "notifications", "settings"]);
+const protectedTabs = new Set<DomainstackTab>(["alerts", "domains"]);
 
 function domainDetailRoute(id: string): Href {
   return { params: { id }, pathname: "/(tabs)/domains/[id]" };
 }
 
 export function getInitialRoute(isAuthenticated: boolean): Href {
-  return isAuthenticated ? "/(tabs)/domains" : "/(tabs)/lookup";
+  return isAuthenticated ? "/(tabs)/domains" : "/(tabs)/search";
 }
 
 export function canAccessTab(tab: DomainstackTab, isAuthenticated: boolean): boolean {
@@ -30,5 +30,5 @@ export function routeFromNotificationData(data: Record<string, unknown>): Href {
     }
   }
 
-  return "/(tabs)/notifications";
+  return "/(tabs)/alerts";
 }

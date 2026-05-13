@@ -9,14 +9,18 @@ export function Badge({
   children: React.ReactNode;
   tone?: "neutral" | "success" | "warning" | "danger";
 }) {
+  const toneStyles = {
+    danger: "border-danger bg-danger-soft text-danger",
+    neutral: "border-line bg-control-secondary text-text-secondary",
+    success: "border-success bg-success-soft text-success",
+    warning: "border-warning bg-warning-soft text-warning",
+  } satisfies Record<typeof tone, string>;
+
   return (
     <Text
       className={cn(
         "self-start rounded-full border px-2.5 py-1 text-xs font-semibold",
-        tone === "neutral" && "border-line bg-glass text-text-secondary",
-        tone === "success" && "border-brand/40 bg-brand/15 text-brand",
-        tone === "warning" && "border-warning/40 bg-warning/15 text-warning",
-        tone === "danger" && "border-danger/40 bg-danger/15 text-danger",
+        toneStyles[tone],
       )}
     >
       {children}

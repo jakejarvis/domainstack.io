@@ -27,8 +27,8 @@
     "@domainstack/server": "workspace:*",
     "@domainstack/types": "workspace:*",
     "@domainstack/utils": "workspace:*",
-    "@trpc/server": "^11.16.0",
-    "@vercel/functions": "^3.4.4",
+    "@trpc/server": "^11.17.0",
+    "@vercel/functions": "^3.5.1",
     "superjson": "^2.2.6",
     "zod": "catalog:"
   },

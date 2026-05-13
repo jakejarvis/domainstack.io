@@ -12,6 +12,7 @@ import { SegmentedControl } from "@/components/segmented-control";
 import { SkeletonRows } from "@/components/skeleton";
 import { MutedText, Text } from "@/components/text";
 import { useTRPC } from "@/lib/api";
+import { authClient } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 
 type NotificationFilter = "all" | "unread" | "read";
@@ -22,7 +23,40 @@ const filters: Array<{ label: string; value: NotificationFilter }> = [
   { label: "All", value: "all" },
 ];
 
-export default function NotificationsScreen() {
+export default function AlertsScreen() {
+  const session = authClient.useSession();
+
+  if (session.isPending) {
+    return (
+      <Screen>
+        <SkeletonRows count={4} />
+      </Screen>
+    );
+  }
+
+  if (!session.data?.user) {
+    return (
+      <Screen>
+        <View className="gap-2">
+          <Text className="text-4xl font-semibold">Alerts</Text>
+          <MutedText>
+            Sign in to review ownership, expiry, provider, and certificate changes.
+          </MutedText>
+        </View>
+        <EmptyState
+          actionLabel="Sign in"
+          body="Alerts are tied to tracked portfolio domains and push registration."
+          onAction={() => router.push("/sign-in")}
+          title="Alerts are locked"
+        />
+      </Screen>
+    );
+  }
+
+  return <AlertsList />;
+}
+
+function AlertsList() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<NotificationFilter>("unread");

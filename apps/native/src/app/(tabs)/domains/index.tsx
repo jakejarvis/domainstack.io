@@ -12,6 +12,7 @@ import { SkeletonRows } from "@/components/skeleton";
 import { MutedText, Text } from "@/components/text";
 import { TextField } from "@/components/text-field";
 import { useTRPC } from "@/lib/api";
+import { authClient } from "@/lib/auth";
 import {
   type PortfolioDomain,
   type PortfolioSort,
@@ -34,6 +35,37 @@ const sorts: Array<{ label: string; value: PortfolioSort }> = [
 ];
 
 export default function DomainsScreen() {
+  const session = authClient.useSession();
+
+  if (session.isPending) {
+    return (
+      <Screen>
+        <SkeletonRows count={4} />
+      </Screen>
+    );
+  }
+
+  if (!session.data?.user) {
+    return (
+      <Screen>
+        <View className="gap-2">
+          <Text className="text-4xl font-semibold">Portfolio</Text>
+          <MutedText>Sign in to track ownership, expiry, providers, and alerts.</MutedText>
+        </View>
+        <EmptyState
+          actionLabel="Sign in"
+          body="Search remains available without an account. Your portfolio syncs after sign in."
+          onAction={() => router.push("/sign-in")}
+          title="Portfolio is locked"
+        />
+      </Screen>
+    );
+  }
+
+  return <PortfolioScreen />;
+}
+
+function PortfolioScreen() {
   const trpc = useTRPC();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<PortfolioStatusFilter>("all");
@@ -61,11 +93,18 @@ export default function DomainsScreen() {
   return (
     <Screen>
       <View className="gap-2">
-        <Text className="text-4xl font-semibold">Domains</Text>
+        <Text className="text-4xl font-semibold">Portfolio</Text>
         <MutedText>Track ownership, expiry, DNS, hosting, mail, and certificate state.</MutedText>
       </View>
 
-      <Button onPress={() => router.push("/(tabs)/domains/add")}>Add domain</Button>
+      <View className="flex-row gap-3">
+        <Button className="flex-1" onPress={() => router.push("/(tabs)/domains/add")}>
+          Add domain
+        </Button>
+        <Button className="flex-1" onPress={() => router.push("/settings")} variant="secondary">
+          Settings
+        </Button>
+      </View>
 
       <TextField
         label="Filter domains"

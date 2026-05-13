@@ -1,6 +1,6 @@
 import { TextInput, View } from "react-native";
 
-import { cn } from "@/lib/cn";
+import { useCSSVariable } from "@/tw";
 
 import { MutedText } from "./text";
 
@@ -17,19 +17,19 @@ export function TextField({
   placeholder: string;
   value: string;
 }) {
+  const placeholderTextColor = useCSSVariable("--color-text-secondary");
+
   return (
     <View className="gap-2">
       <MutedText className="font-semibold">{label}</MutedText>
       <TextInput
         autoCapitalize={autoCapitalize}
         autoCorrect={false}
-        className={cn(
-          "border-line bg-glass text-text-primary min-h-12 rounded-xl border px-4 text-base",
-        )}
+        className="border-line bg-glass text-text-primary min-h-12 rounded-xl border px-4 text-base"
         inputMode="url"
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#6f7f75"
+        placeholderTextColor={placeholderTextColor}
         spellCheck={false}
         value={value}
       />

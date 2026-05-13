@@ -34,7 +34,7 @@ function getProviderName(data: unknown): string {
   return payload?.hosting?.name ?? payload?.provider ?? payload?.name ?? "Unknown";
 }
 
-export default function LookupScreen() {
+export default function SearchScreen() {
   const trpc = useTRPC();
   const session = authClient.useSession();
   const [domain, setDomain] = useState("");
@@ -72,8 +72,8 @@ export default function LookupScreen() {
   return (
     <Screen>
       <View className="gap-2">
-        <Text className="text-4xl font-semibold">Lookup</Text>
-        <MutedText>Preview public registration, DNS, hosting, and certificate data.</MutedText>
+        <Text className="text-4xl font-semibold">Search</Text>
+        <MutedText>Look up public registration, DNS, hosting, and certificate data.</MutedText>
       </View>
 
       <GlassCard>

@@ -1,15 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": [
-    "oxc",
-    "eslint",
-    "typescript",
-    "react",
-    "nextjs",
-    "import",
-    "unicorn",
-    "vitest"
-  ],
+  "plugins": ["oxc", "eslint", "typescript", "react", "nextjs", "import", "unicorn", "vitest"],
   "categories": {
     "correctness": "error",
     "suspicious": "warn",
@@ -21,6 +12,7 @@
     "no-await-in-loop": "off",
     "no-console": "off",
     "no-new": "off",
+    "no-underscore-dangle": "off",
     "no-unused-vars": "off",
     "oxc/no-barrel-file": "off",
     "react/no-unknown-property": "off",
@@ -49,7 +41,6 @@
     ".swc",
     "coverage",
     "packages/db/drizzle",
-    "apps/native/uniwind-types.d.ts",
     "**/.well-known/workflow"
   ]
 }

@@ -36,20 +36,20 @@
     "@readme/http-status-codes": "^9.0.6",
     "@vercel/edge-config": "^1.4.3",
     "cheerio": "^1.2.0",
-    "ipaddr.js": "^2.3.0",
-    "lru-cache": "^11.3.5",
+    "ipaddr.js": "^2.4.0",
+    "lru-cache": "^11.3.6",
     "rdapper": "^0.13.0"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@types/node": "catalog:",
     "@types/react": "19.2.14",
-    "msw": "^2.13.6",
+    "msw": "^2.14.6",
     "vitest": "catalog:",
     "zod": "catalog:"
   },
   "peerDependencies": {
-    "react": ">=18",
+    "react": ">=19",
     "zod": "^4"
   }
 }

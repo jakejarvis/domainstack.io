@@ -5,12 +5,14 @@ import { useEffect, useReducer } from "react";
 import { Alert, Share, View } from "react-native";
 
 import { Button } from "@/components/button";
+import { EmptyState } from "@/components/empty-state";
 import { GlassCard } from "@/components/glass-card";
 import { Screen } from "@/components/screen";
 import { SkeletonRows } from "@/components/skeleton";
 import { MutedText, Text } from "@/components/text";
 import { TextField } from "@/components/text-field";
 import { useTRPC } from "@/lib/api";
+import { authClient } from "@/lib/auth";
 import { type AddDomainFlowState, reduceAddDomainFlow } from "@/lib/domain-lifecycle";
 import { assertOnline } from "@/lib/network";
 import type { VerificationMethod } from "@domainstack/constants";
@@ -49,6 +51,37 @@ function InstructionValue({ label, value }: { label: string; value: string | num
 }
 
 export default function AddDomainScreen() {
+  const session = authClient.useSession();
+
+  if (session.isPending) {
+    return (
+      <Screen>
+        <SkeletonRows count={3} />
+      </Screen>
+    );
+  }
+
+  if (!session.data?.user) {
+    return (
+      <Screen>
+        <View className="gap-2">
+          <Text className="text-4xl font-semibold">Add domain</Text>
+          <MutedText>Sign in to verify ownership and add domains to your portfolio.</MutedText>
+        </View>
+        <EmptyState
+          actionLabel="Sign in"
+          body="Domain ownership verification is attached to your account."
+          onAction={() => router.push("/sign-in")}
+          title="Account required"
+        />
+      </Screen>
+    );
+  }
+
+  return <AddDomainFlow />;
+}
+
+function AddDomainFlow() {
   const params = useLocalSearchParams<{ trackedDomainId?: string }>();
   const resumeTrackedDomainId = Array.isArray(params.trackedDomainId)
     ? params.trackedDomainId[0]
