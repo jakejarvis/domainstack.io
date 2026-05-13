@@ -96,7 +96,8 @@ export default function SearchScreen() {
           <View className="gap-2">
             <Text className="text-lg font-semibold">Portfolio features are locked</Text>
             <MutedText>
-              Public lookup works without an account. Sign in to track domains and receive alerts.
+              Public lookup works without an account. Sign in to track domains and receive
+              notifications.
             </MutedText>
           </View>
           <Button onPress={() => router.push("/sign-in")} variant="secondary">

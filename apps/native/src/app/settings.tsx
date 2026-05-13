@@ -82,7 +82,7 @@ export default function SettingsScreen() {
       <View className="gap-2">
         <Text className="text-4xl font-semibold">Settings</Text>
         <MutedText>
-          Account, alert channels, device registration, plan, and privacy controls.
+          Account, notification channels, device registration, plan, and privacy controls.
         </MutedText>
       </View>
 

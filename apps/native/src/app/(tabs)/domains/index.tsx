@@ -50,7 +50,7 @@ export default function DomainsScreen() {
       <Screen>
         <View className="gap-2">
           <Text className="text-4xl font-semibold">Portfolio</Text>
-          <MutedText>Sign in to track ownership, expiry, providers, and alerts.</MutedText>
+          <MutedText>Sign in to track ownership, expiry, providers, and notifications.</MutedText>
         </View>
         <EmptyState
           actionLabel="Sign in"
@@ -129,7 +129,7 @@ function PortfolioScreen() {
       {!domainsQuery.isPending && !domainsQuery.error && visibleDomains.length === 0 && (
         <EmptyState
           actionLabel="Add domain"
-          body="Add a domain to keep its registration, DNS, providers, and alerts close at hand."
+          body="Add a domain to keep its registration, DNS, providers, and notifications close at hand."
           onAction={() => router.push("/(tabs)/domains/add")}
           title="No domains found"
         />

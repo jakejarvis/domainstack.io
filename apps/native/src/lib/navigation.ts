@@ -1,8 +1,8 @@
 import type { Href } from "expo-router";
 
-export type DomainstackTab = "alerts" | "domains" | "search";
+export type DomainstackTab = "domains" | "notifications" | "search";
 
-const protectedTabs = new Set<DomainstackTab>(["alerts", "domains"]);
+const protectedTabs = new Set<DomainstackTab>(["domains", "notifications"]);
 
 function domainDetailRoute(id: string): Href {
   return { params: { id }, pathname: "/(tabs)/domains/[id]" };
@@ -30,5 +30,5 @@ export function routeFromNotificationData(data: Record<string, unknown>): Href {
     }
   }
 
-  return "/(tabs)/alerts";
+  return "/(tabs)/notifications";
 }

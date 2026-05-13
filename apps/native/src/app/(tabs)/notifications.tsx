@@ -23,7 +23,7 @@ const filters: Array<{ label: string; value: NotificationFilter }> = [
   { label: "All", value: "all" },
 ];
 
-export default function AlertsScreen() {
+export default function NotificationsScreen() {
   const session = authClient.useSession();
 
   if (session.isPending) {
@@ -38,25 +38,25 @@ export default function AlertsScreen() {
     return (
       <Screen>
         <View className="gap-2">
-          <Text className="text-4xl font-semibold">Alerts</Text>
+          <Text className="text-4xl font-semibold">Notifications</Text>
           <MutedText>
             Sign in to review ownership, expiry, provider, and certificate changes.
           </MutedText>
         </View>
         <EmptyState
           actionLabel="Sign in"
-          body="Alerts are tied to tracked portfolio domains and push registration."
+          body="Notifications are tied to tracked portfolio domains and push registration."
           onAction={() => router.push("/sign-in")}
-          title="Alerts are locked"
+          title="Notifications are locked"
         />
       </Screen>
     );
   }
 
-  return <AlertsList />;
+  return <NotificationsList />;
 }
 
-function AlertsList() {
+function NotificationsList() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<NotificationFilter>("unread");
@@ -81,7 +81,7 @@ function AlertsList() {
     <Screen>
       <View className="gap-2">
         <View className="flex-row items-center gap-3">
-          <Text className="text-4xl font-semibold">Alerts</Text>
+          <Text className="text-4xl font-semibold">Notifications</Text>
           {(unread.data ?? 0) > 0 && <Badge tone="warning">{unread.data}</Badge>}
         </View>
         <MutedText>Review ownership, expiry, provider, and certificate changes.</MutedText>
@@ -106,14 +106,14 @@ function AlertsList() {
           actionLabel="Retry"
           body={notifications.error.message}
           onAction={() => void notifications.refetch()}
-          title="Alerts did not load"
+          title="Notifications did not load"
         />
       )}
 
       {!notifications.isPending && notifications.data?.items.length === 0 && (
         <EmptyState
-          body="Alerts you have not read yet will appear here."
-          title={filter === "read" ? "No archived alerts" : "No alerts"}
+          body="Notifications you have not read yet will appear here."
+          title={filter === "read" ? "No archived notifications" : "No notifications"}
         />
       )}
 

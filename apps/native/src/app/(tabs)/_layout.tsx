@@ -26,12 +26,12 @@ export default function TabsLayout() {
         />
         <NativeTabs.Trigger.Label>Portfolio</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger contentStyle={{ backgroundColor: canvas }} name="alerts">
+      <NativeTabs.Trigger contentStyle={{ backgroundColor: canvas }} name="notifications">
         <NativeTabs.Trigger.Icon
           md="notifications"
           sf={{ default: "bell", selected: "bell.fill" }}
         />
-        <NativeTabs.Trigger.Label>Alerts</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>Notifications</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger contentStyle={{ backgroundColor: canvas }} name="search">
         <NativeTabs.Trigger.Icon md="search" sf="magnifyingglass" />

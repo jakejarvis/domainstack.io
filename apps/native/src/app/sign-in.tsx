@@ -171,7 +171,7 @@ export default function SignInScreen() {
     <Screen>
       <View className="gap-2">
         <Text className="text-4xl font-semibold">Domainstack</Text>
-        <MutedText>Sign in to manage tracked domains, verification, and alerts.</MutedText>
+        <MutedText>Sign in to manage tracked domains, verification, and notifications.</MutedText>
       </View>
 
       <GlassCard>

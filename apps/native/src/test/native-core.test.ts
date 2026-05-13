@@ -122,15 +122,15 @@ describe("native app core helpers", () => {
     expect(getInitialRoute(false)).toBe("/(tabs)/search");
     expect(canAccessTab("search", false)).toBe(true);
     expect(canAccessTab("domains", false)).toBe(false);
-    expect(canAccessTab("alerts", true)).toBe(true);
+    expect(canAccessTab("notifications", true)).toBe(true);
   });
 
-  it("routes push payloads to domain detail or alerts", () => {
+  it("routes push payloads to domain detail or notifications", () => {
     expect(routeFromNotificationData({ trackedDomainId: "tracked-1" })).toEqual({
       params: { id: "tracked-1" },
       pathname: "/(tabs)/domains/[id]",
     });
-    expect(routeFromNotificationData({})).toBe("/(tabs)/alerts");
+    expect(routeFromNotificationData({})).toBe("/(tabs)/notifications");
   });
 
   it("filters and sorts portfolio domains", () => {

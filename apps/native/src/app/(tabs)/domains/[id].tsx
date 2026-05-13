@@ -177,7 +177,7 @@ function DomainDetailContent() {
               }
               variant="secondary"
             >
-              {domain.muted ? "Unmute alerts" : "Mute alerts"}
+              {domain.muted ? "Unmute notifications" : "Mute notifications"}
             </Button>
             <Button
               loading={archive.isPending || unarchive.isPending}
