@@ -183,7 +183,7 @@ function AddDomainFlow() {
             value={flow.domain}
           />
           <Button disabled={!canSubmit} loading={addDomain.isPending} onPress={() => void submit()}>
-            Continue
+            Add domain
           </Button>
         </GlassCard>
       )}

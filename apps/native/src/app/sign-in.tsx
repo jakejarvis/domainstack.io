@@ -140,74 +140,6 @@ export default function SignInScreen() {
     void handleProviderSignIn(provider.id);
   };
 
-  const renderProviderButton = (provider: NativeAuthProviderOption) => {
-    if (provider.id === "apple" && appleAuthAvailable === null) {
-      return (
-        <Button key={provider.id} disabled loading variant="primary">
-          Continue with Apple
-        </Button>
-      );
-    }
-
-    if (provider.id === "apple" && appleAuthAvailable) {
-      return (
-        <View
-          key={provider.id}
-          className={loadingProvider !== null ? "opacity-55" : undefined}
-          pointerEvents={loadingProvider !== null ? "none" : "auto"}
-        >
-          <AppleAuthentication.AppleAuthenticationButton
-            accessibilityLabel="Continue with Apple"
-            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-            buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-            cornerRadius={12}
-            onPress={() => handleSignIn(provider)}
-            style={{ height: 48, width: "100%" }}
-          />
-        </View>
-      );
-    }
-
-    return (
-      <Button
-        key={provider.id}
-        disabled={loadingProvider !== null}
-        loading={loadingProvider === provider.id}
-        onPress={() => handleSignIn(provider)}
-        variant={provider.supportsNativeIdToken ? "primary" : "secondary"}
-      >
-        Continue with {provider.name}
-      </Button>
-    );
-  };
-
-  const renderProviderContent = () => {
-    if (otaConfig.isPending) {
-      return (
-        <Button disabled loading variant="primary">
-          Loading sign-in options…
-        </Button>
-      );
-    }
-
-    if (otaConfig.isError) {
-      return (
-        <>
-          <MutedText>Sign-in options are unavailable.</MutedText>
-          <Button onPress={() => void otaConfig.refetch()} variant="secondary">
-            Try again
-          </Button>
-        </>
-      );
-    }
-
-    if (providerOptions.length === 0) {
-      return <MutedText>No sign-in providers are available right now.</MutedText>;
-    }
-
-    return providerOptions.map(renderProviderButton);
-  };
-
   return (
     <Screen>
       <View className="gap-2">
@@ -215,7 +147,81 @@ export default function SignInScreen() {
         <MutedText>Sign in to manage tracked domains, verification, and notifications.</MutedText>
       </View>
 
-      <GlassCard>{renderProviderContent()}</GlassCard>
+      <GlassCard>
+        {otaConfig.isPending ? (
+          <Button disabled loading variant="primary">
+            Loading sign-in options…
+          </Button>
+        ) : otaConfig.isError ? (
+          <>
+            <MutedText>Sign-in options are unavailable.</MutedText>
+            <Button onPress={() => void otaConfig.refetch()} variant="secondary">
+              Try again
+            </Button>
+          </>
+        ) : providerOptions.length === 0 ? (
+          <MutedText>No sign-in providers are available right now.</MutedText>
+        ) : (
+          providerOptions.map((provider) => (
+            <ProviderButton
+              key={provider.id}
+              appleAuthAvailable={appleAuthAvailable}
+              loadingProvider={loadingProvider}
+              onPress={handleSignIn}
+              provider={provider}
+            />
+          ))
+        )}
+      </GlassCard>
     </Screen>
+  );
+}
+
+function ProviderButton({
+  appleAuthAvailable,
+  loadingProvider,
+  onPress,
+  provider,
+}: {
+  appleAuthAvailable: boolean | null;
+  loadingProvider: AuthProvider | null;
+  onPress: (provider: NativeAuthProviderOption) => void;
+  provider: NativeAuthProviderOption;
+}) {
+  if (provider.id === "apple" && appleAuthAvailable === null) {
+    return (
+      <Button disabled loading variant="primary">
+        Continue with Apple
+      </Button>
+    );
+  }
+
+  if (provider.id === "apple" && appleAuthAvailable) {
+    return (
+      <View
+        className={loadingProvider !== null ? "opacity-55" : undefined}
+        pointerEvents={loadingProvider !== null ? "none" : "auto"}
+      >
+        <AppleAuthentication.AppleAuthenticationButton
+          accessibilityLabel="Continue with Apple"
+          buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+          buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+          cornerRadius={12}
+          onPress={() => onPress(provider)}
+          style={{ height: 48, width: "100%" }}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <Button
+      disabled={loadingProvider !== null}
+      loading={loadingProvider === provider.id}
+      onPress={() => onPress(provider)}
+      variant={provider.supportsNativeIdToken ? "primary" : "secondary"}
+    >
+      Continue with {provider.name}
+    </Button>
   );
 }
