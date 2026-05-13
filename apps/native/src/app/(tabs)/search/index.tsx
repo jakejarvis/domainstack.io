@@ -1,71 +1,47 @@
-import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { View } from "react-native";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { Alert, Pressable, View } from "react-native";
 
-import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
 import { EmptyState } from "@/components/empty-state";
 import { GlassCard } from "@/components/glass-card";
 import { HeaderMenu } from "@/components/header-menu";
 import { Screen } from "@/components/screen";
-import { SkeletonRows } from "@/components/skeleton";
 import { MutedText, Text } from "@/components/text";
 import { TextField } from "@/components/text-field";
-import { useTRPC } from "@/lib/api";
-import { formatCount } from "@/lib/format";
-
-function getRecordCount(data: unknown): number {
-  if (!data || typeof data !== "object") return 0;
-  const records = "data" in data ? (data as { data?: unknown }).data : null;
-  if (Array.isArray(records)) return records.length;
-  if (records && typeof records === "object" && "records" in records) {
-    const nested = (records as { records?: unknown }).records;
-    return Array.isArray(nested) ? nested.length : 0;
-  }
-  return 0;
-}
-
-function getProviderName(data: unknown): string {
-  if (!data || typeof data !== "object" || !("data" in data)) return "Unknown";
-  const payload = (
-    data as { data?: { provider?: string; name?: string; hosting?: { name?: string } } }
-  ).data;
-  return payload?.hosting?.name ?? payload?.provider ?? payload?.name ?? "Unknown";
-}
+import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
+import { isValidDomain, normalizeDomainInput } from "@domainstack/utils/domain/client";
 
 export default function SearchScreen() {
-  const trpc = useTRPC();
+  const router = useRouter();
   const [domain, setDomain] = useState("");
-  const [submittedDomain, setSubmittedDomain] = useState("");
+  const history = useSearchHistoryStore((s) => s.history);
+  const hasHydrated = useSearchHistoryStore((s) => s.hasHydrated);
+  const addDomain = useSearchHistoryStore((s) => s.addDomain);
+  const removeDomain = useSearchHistoryStore((s) => s.removeDomain);
+  const clearHistory = useSearchHistoryStore((s) => s.clearHistory);
 
-  const enabled = submittedDomain.length > 0;
-  const registration = useQuery(
-    trpc.domain.getRegistration.queryOptions({ domain: submittedDomain }, { enabled }),
-  );
-  const dns = useQuery(
-    trpc.domain.getDnsRecords.queryOptions({ domain: submittedDomain }, { enabled }),
-  );
-  const hosting = useQuery(
-    trpc.domain.getHosting.queryOptions({ domain: submittedDomain }, { enabled }),
-  );
-  const certificates = useQuery(
-    trpc.domain.getCertificates.queryOptions({ domain: submittedDomain }, { enabled }),
-  );
+  function openDomain(target: string) {
+    addDomain(target);
+    router.push({ params: { domain: target }, pathname: "/(tabs)/domains/[domain]" });
+  }
 
-  const loading =
-    registration.isPending || dns.isPending || hosting.isPending || certificates.isPending;
-  const hasError = registration.error || dns.error || hosting.error || certificates.error;
-  const reportReady = enabled && !loading && !hasError;
+  function handleSubmit() {
+    const normalized = normalizeDomainInput(domain);
+    if (!isValidDomain(normalized)) {
+      Alert.alert("Invalid domain", "Enter a hostname like example.com.");
+      return;
+    }
+    setDomain("");
+    openDomain(normalized);
+  }
 
-  const summary = useMemo(
-    () => [
-      { label: "Registration", value: registration.data?.success ? "Found" : "Unavailable" },
-      { label: "DNS records", value: formatCount(getRecordCount(dns.data)) },
-      { label: "Hosting", value: getProviderName(hosting.data) },
-      { label: "Certificates", value: certificates.data?.success ? "Checked" : "Unavailable" },
-    ],
-    [certificates.data, dns.data, hosting.data, registration.data],
-  );
+  function handleClearAll() {
+    Alert.alert("Clear recent searches?", "This removes all entries from your history.", [
+      { style: "cancel", text: "Cancel" },
+      { onPress: clearHistory, style: "destructive", text: "Clear" },
+    ]);
+  }
 
   return (
     <Screen>
@@ -77,50 +53,63 @@ export default function SearchScreen() {
         <TextField
           label="Domain"
           onChangeText={setDomain}
+          onSubmitEditing={handleSubmit}
           placeholder="example.com"
+          returnKeyType="search"
           value={domain}
         />
-        <Button
-          disabled={domain.trim().length === 0}
-          onPress={() => setSubmittedDomain(domain.trim())}
-        >
-          <Text>Run lookup</Text>
+        <Button disabled={domain.trim().length === 0} onPress={handleSubmit}>
+          <Text>Open report</Text>
         </Button>
       </GlassCard>
 
-      {enabled && loading && <SkeletonRows count={4} />}
-
-      {hasError && (
-        <EmptyState
-          actionLabel="Retry"
-          body="The report could not be loaded from the current connection."
-          onAction={() => setSubmittedDomain(domain.trim())}
-          title="Lookup failed"
-        />
-      )}
-
-      {reportReady && (
+      {hasHydrated && history.length > 0 && (
         <View className="gap-3">
-          <View className="flex-row items-center gap-2">
-            <Text className="text-2xl font-semibold" numberOfLines={1}>
-              {submittedDomain}
-            </Text>
-            <Badge tone="success">
-              <Text>Live report</Text>
-            </Badge>
+          <View className="flex-row items-center justify-between">
+            <Text className="text-lg font-semibold">Recent</Text>
+            <Pressable
+              accessibilityLabel="Clear recent searches"
+              accessibilityRole="button"
+              hitSlop={8}
+              onPress={handleClearAll}
+            >
+              <MutedText className="font-semibold">Clear all</MutedText>
+            </Pressable>
           </View>
 
-          {summary.map((row) => (
-            <GlassCard key={row.label}>
-              <View className="flex-row items-center justify-between gap-4">
-                <MutedText>{row.label}</MutedText>
-                <Text className="max-w-[58%] text-right font-semibold" numberOfLines={1}>
-                  {row.value}
-                </Text>
-              </View>
-            </GlassCard>
-          ))}
+          <View className="gap-2">
+            {history.map((item) => (
+              <GlassCard key={item}>
+                <View className="flex-row items-center justify-between gap-3">
+                  <Pressable
+                    accessibilityLabel={`Open report for ${item}`}
+                    accessibilityRole="button"
+                    className="flex-1"
+                    hitSlop={8}
+                    onPress={() => openDomain(item)}
+                  >
+                    <Text numberOfLines={1}>{item}</Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityLabel={`Remove ${item} from recent searches`}
+                    accessibilityRole="button"
+                    hitSlop={12}
+                    onPress={() => removeDomain(item)}
+                  >
+                    <MutedText className="font-semibold">Remove</MutedText>
+                  </Pressable>
+                </View>
+              </GlassCard>
+            ))}
+          </View>
         </View>
+      )}
+
+      {hasHydrated && history.length === 0 && (
+        <EmptyState
+          body="Look up a domain to start building your recent list."
+          title="No recent searches"
+        />
       )}
     </Screen>
   );
