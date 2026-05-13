@@ -188,16 +188,16 @@ function AddDomainFlow() {
         </GlassCard>
       )}
 
-      {resumeTrackedDomainId && verificationData.isPending && <SkeletonRows count={2} />}
+      {resumeTrackedDomainId && verificationData.isPending ? <SkeletonRows count={2} /> : null}
 
-      {flow.status === "failed" && (
+      {flow.status === "failed" ? (
         <GlassCard>
           <Text className="text-lg font-semibold">Needs attention</Text>
           <MutedText>{flow.message}</MutedText>
         </GlassCard>
-      )}
+      ) : null}
 
-      {instructions && (
+      {instructions ? (
         <View className="gap-4">
           <GlassCard>
             <Text className="text-xl font-semibold">DNS TXT</Text>
@@ -238,7 +238,7 @@ function AddDomainFlow() {
             </Button>
           </GlassCard>
         </View>
-      )}
+      ) : null}
     </Screen>
   );
 }

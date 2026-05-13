@@ -21,7 +21,11 @@ export function EmptyState({
         <Text className="text-lg font-semibold">{title}</Text>
         <MutedText>{body}</MutedText>
       </View>
-      {actionLabel && onAction && <Button onPress={onAction}>{actionLabel}</Button>}
+      {actionLabel && onAction ? (
+        <Button onPress={onAction}>
+          <Text>{actionLabel}</Text>
+        </Button>
+      ) : null}
     </GlassCard>
   );
 }

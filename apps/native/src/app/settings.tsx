@@ -62,7 +62,12 @@ export default function SettingsScreen() {
   const linkedAccounts = useQuery(trpc.user.getLinkedAccounts.queryOptions());
 
   const invalidate = async () => {
-    await queryClient.invalidateQueries();
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: trpc.user.getNotificationPreferences.queryKey(),
+      }),
+      queryClient.invalidateQueries({ queryKey: trpc.user.getPushDevices.queryKey() }),
+    ]);
   };
 
   const updatePreferences = useMutation(
@@ -96,9 +101,9 @@ export default function SettingsScreen() {
             <MutedText>
               {subscription.data.activeCount} of {subscription.data.planQuota} active domains used
             </MutedText>
-            {subscription.data.endsAt && (
+            {subscription.data.endsAt ? (
               <MutedText>Access ends {formatDate(subscription.data.endsAt)}</MutedText>
-            )}
+            ) : null}
           </View>
         ) : (
           <MutedText>Plan details are unavailable.</MutedText>
@@ -160,12 +165,12 @@ export default function SettingsScreen() {
         >
           <Text>Register this device</Text>
         </Button>
-        {pushRegistration.error && <MutedText>{pushRegistration.error.message}</MutedText>}
+        {pushRegistration.error ? <MutedText>{pushRegistration.error.message}</MutedText> : null}
         {devices.data?.map((device) => (
           <View className="border-line bg-canvas-2 gap-2 rounded-xl border p-3" key={device.id}>
             <Text className="font-semibold">{device.deviceName ?? device.platform}</Text>
             <MutedText numberOfLines={1}>{device.expoPushToken}</MutedText>
-            {device.lastError && <MutedText>{device.lastError}</MutedText>}
+            {device.lastError ? <MutedText>{device.lastError}</MutedText> : null}
             <ToggleRow
               label="Enabled"
               onValueChange={(enabled) =>

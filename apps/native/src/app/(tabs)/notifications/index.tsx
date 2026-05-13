@@ -1,7 +1,9 @@
+import { FlashList } from "@shopify/flash-list";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { inferRouterOutputs } from "@trpc/server";
 import { router } from "expo-router";
-import { useState } from "react";
-import { View } from "react-native";
+import { memo, useCallback, useState } from "react";
+import { RefreshControl, View } from "react-native";
 
 import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
@@ -15,7 +17,9 @@ import { MutedText, Text } from "@/components/text";
 import { useTRPC } from "@/lib/api";
 import { authClient } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
+import type { AppRouter } from "@domainstack/api";
 
+type NotificationItem = inferRouterOutputs<AppRouter>["notifications"]["list"]["items"][number];
 type NotificationFilter = "all" | "unread" | "read";
 
 const filters: Array<{ label: string; value: NotificationFilter }> = [
@@ -60,15 +64,19 @@ function NotificationsList() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<NotificationFilter>("unread");
+  const [refreshing, setRefreshing] = useState(false);
 
   const notifications = useQuery(
     trpc.notifications.list.queryOptions({ cursor: undefined, filter, limit: 50 }),
   );
   const unread = useQuery(trpc.notifications.unreadCount.queryOptions());
 
-  const invalidate = async () => {
-    await queryClient.invalidateQueries();
-  };
+  const invalidate = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: trpc.notifications.list.queryKey() }),
+      queryClient.invalidateQueries({ queryKey: trpc.notifications.unreadCount.queryKey() }),
+    ]);
+  }, [queryClient, trpc.notifications.list, trpc.notifications.unreadCount]);
 
   const markRead = useMutation(
     trpc.notifications.markRead.mutationOptions({ onSuccess: invalidate }),
@@ -77,80 +85,148 @@ function NotificationsList() {
     trpc.notifications.markAllRead.mutationOptions({ onSuccess: invalidate }),
   );
 
-  return (
-    <Screen onRefresh={invalidate}>
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await invalidate();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [invalidate]);
+
+  const handleOpenDomain = useCallback((trackedDomainId: string) => {
+    router.push(`/(tabs)/domains/${trackedDomainId}`);
+  }, []);
+
+  const handleMarkRead = useCallback(
+    (id: string) => {
+      void markRead.mutateAsync({ id });
+    },
+    [markRead],
+  );
+
+  const markReadPending = markRead.isPending;
+
+  const renderItem = useCallback(
+    ({ item }: { item: NotificationItem }) => (
+      <View className="px-4 pb-3">
+        <NotificationRow
+          item={item}
+          markReadPending={markReadPending}
+          onMarkRead={handleMarkRead}
+          onOpenDomain={handleOpenDomain}
+        />
+      </View>
+    ),
+    [handleMarkRead, handleOpenDomain, markReadPending],
+  );
+
+  const items = notifications.data?.items ?? [];
+  const unreadCount = unread.data ?? 0;
+
+  const listHeader = (
+    <View className="gap-5 px-4 pt-3 pb-2">
       <HeaderMenu />
 
       <SegmentedControl onChange={setFilter} options={filters} value={filter} />
 
-      {(unread.data ?? 0) > 0 && (
+      {unreadCount > 0 ? (
         <Button
           loading={markAllRead.isPending}
           onPress={() => void markAllRead.mutateAsync()}
           variant="secondary"
         >
-          <Text>Mark all read ({unread.data})</Text>
+          <Text>Mark all read ({unreadCount})</Text>
         </Button>
-      )}
+      ) : null}
 
-      {notifications.isPending && <SkeletonRows />}
+      {notifications.isPending ? <SkeletonRows /> : null}
 
-      {notifications.error && (
+      {notifications.error ? (
         <EmptyState
           actionLabel="Retry"
           body={notifications.error.message}
           onAction={() => void notifications.refetch()}
           title="Notifications did not load"
         />
-      )}
+      ) : null}
+    </View>
+  );
 
-      {!notifications.isPending && notifications.data?.items.length === 0 && (
+  const listEmpty =
+    !notifications.isPending && !notifications.error && items.length === 0 ? (
+      <View className="px-4 pb-8">
         <EmptyState
           body="Notifications you have not read yet will appear here."
           title={filter === "read" ? "No archived notifications" : "No notifications"}
         />
-      )}
-
-      <View className="gap-3">
-        {notifications.data?.items.map((item) => (
-          <GlassCard key={item.id}>
-            <View className="gap-2">
-              <View className="flex-row items-start justify-between gap-3">
-                <Text className="flex-1 text-lg font-semibold" numberOfLines={2}>
-                  {item.title}
-                </Text>
-                {!item.readAt && (
-                  <Badge tone="warning">
-                    <Text>Unread</Text>
-                  </Badge>
-                )}
-              </View>
-              <MutedText>{item.message}</MutedText>
-              <MutedText>{formatDate(item.sentAt)}</MutedText>
-            </View>
-            <View className="flex-row gap-2">
-              {item.trackedDomainId && (
-                <Button
-                  className="flex-1"
-                  onPress={() => router.push(`/(tabs)/domains/${item.trackedDomainId}`)}
-                  variant="secondary"
-                >
-                  <Text>Open domain</Text>
-                </Button>
-              )}
-              {!item.readAt && (
-                <Button
-                  className="flex-1"
-                  loading={markRead.isPending}
-                  onPress={() => void markRead.mutateAsync({ id: item.id })}
-                >
-                  <Text>Mark read</Text>
-                </Button>
-              )}
-            </View>
-          </GlassCard>
-        ))}
       </View>
-    </Screen>
+    ) : null;
+
+  return (
+    <FlashList
+      ListEmptyComponent={listEmpty}
+      ListHeaderComponent={listHeader}
+      contentContainerStyle={{ paddingBottom: 32 }}
+      contentInsetAdjustmentBehavior="automatic"
+      data={items}
+      keyExtractor={keyExtractor}
+      keyboardShouldPersistTaps="handled"
+      refreshControl={<RefreshControl onRefresh={handleRefresh} refreshing={refreshing} />}
+      renderItem={renderItem}
+    />
   );
 }
+
+function keyExtractor(item: NotificationItem): string {
+  return item.id;
+}
+
+const NotificationRow = memo(function NotificationRow({
+  item,
+  markReadPending,
+  onMarkRead,
+  onOpenDomain,
+}: {
+  item: NotificationItem;
+  markReadPending: boolean;
+  onMarkRead: (id: string) => void;
+  onOpenDomain: (trackedDomainId: string) => void;
+}) {
+  const handleOpen = useCallback(() => {
+    if (item.trackedDomainId) onOpenDomain(item.trackedDomainId);
+  }, [item.trackedDomainId, onOpenDomain]);
+
+  const handleMarkRead = useCallback(() => onMarkRead(item.id), [item.id, onMarkRead]);
+
+  return (
+    <GlassCard>
+      <View className="gap-2">
+        <View className="flex-row items-start justify-between gap-3">
+          <Text className="flex-1 text-lg font-semibold" numberOfLines={2}>
+            {item.title}
+          </Text>
+          {item.readAt ? null : (
+            <Badge tone="warning">
+              <Text>Unread</Text>
+            </Badge>
+          )}
+        </View>
+        <MutedText>{item.message}</MutedText>
+        <MutedText>{formatDate(item.sentAt)}</MutedText>
+      </View>
+      <View className="flex-row gap-2">
+        {item.trackedDomainId ? (
+          <Button className="flex-1" onPress={handleOpen} variant="secondary">
+            <Text>Open domain</Text>
+          </Button>
+        ) : null}
+        {item.readAt ? null : (
+          <Button className="flex-1" loading={markReadPending} onPress={handleMarkRead}>
+            <Text>Mark read</Text>
+          </Button>
+        )}
+      </View>
+    </GlassCard>
+  );
+});

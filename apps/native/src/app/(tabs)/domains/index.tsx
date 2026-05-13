@@ -1,7 +1,8 @@
+import { FlashList } from "@shopify/flash-list";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
-import { useMemo, useState } from "react";
-import { View } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import { RefreshControl, View } from "react-native";
 
 import { Button } from "@/components/button";
 import { DomainRow } from "@/components/domain-row";
@@ -70,6 +71,7 @@ function PortfolioScreen() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<PortfolioStatusFilter>("all");
   const [sort, setSort] = useState<PortfolioSort>("name");
+  const [refreshing, setRefreshing] = useState(false);
 
   const domainsQuery = useQuery(trpc.tracking.listDomains.queryOptions({ includeArchived: true }));
 
@@ -90,8 +92,30 @@ function PortfolioScreen() {
     [domains, filter, query, sort],
   );
 
-  return (
-    <Screen onRefresh={() => domainsQuery.refetch()}>
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await domainsQuery.refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [domainsQuery]);
+
+  const handleRowPress = useCallback((id: string) => {
+    router.push(`/(tabs)/domains/${id}`);
+  }, []);
+
+  const renderItem = useCallback(
+    ({ item }: { item: PortfolioDomain }) => (
+      <View className="px-4 pb-3">
+        <DomainRow domain={item} onPress={handleRowPress} />
+      </View>
+    ),
+    [handleRowPress],
+  );
+
+  const listHeader = (
+    <View className="gap-5 px-4 pt-3 pb-2">
       <HeaderMenu />
       <MutedText>Track ownership, expiry, DNS, hosting, mail, and certificate state.</MutedText>
 
@@ -108,35 +132,46 @@ function PortfolioScreen() {
       <SegmentedControl onChange={setFilter} options={filters} value={filter} />
       <SegmentedControl onChange={setSort} options={sorts} value={sort} />
 
-      {domainsQuery.isPending && <SkeletonRows />}
+      {domainsQuery.isPending ? <SkeletonRows /> : null}
 
-      {domainsQuery.error && (
+      {domainsQuery.error ? (
         <EmptyState
           actionLabel="Retry"
           body={domainsQuery.error.message}
           onAction={() => void domainsQuery.refetch()}
           title="Domains did not load"
         />
-      )}
+      ) : null}
+    </View>
+  );
 
-      {!domainsQuery.isPending && !domainsQuery.error && visibleDomains.length === 0 && (
+  const listEmpty =
+    !domainsQuery.isPending && !domainsQuery.error ? (
+      <View className="px-4 pb-8">
         <EmptyState
           actionLabel="Add domain"
           body="Add a domain to keep its registration, DNS, providers, and notifications close at hand."
           onAction={() => router.push("/(tabs)/domains/add")}
           title="No domains found"
         />
-      )}
-
-      <View className="gap-3">
-        {visibleDomains.map((domain) => (
-          <DomainRow
-            domain={domain}
-            key={domain.id}
-            onPress={() => router.push(`/(tabs)/domains/${domain.id}`)}
-          />
-        ))}
       </View>
-    </Screen>
+    ) : null;
+
+  return (
+    <FlashList
+      ListEmptyComponent={listEmpty}
+      ListHeaderComponent={listHeader}
+      contentContainerStyle={{ paddingBottom: 32 }}
+      contentInsetAdjustmentBehavior="automatic"
+      data={visibleDomains}
+      keyExtractor={keyExtractor}
+      keyboardShouldPersistTaps="handled"
+      refreshControl={<RefreshControl onRefresh={handleRefresh} refreshing={refreshing} />}
+      renderItem={renderItem}
+    />
   );
+}
+
+function keyExtractor(item: PortfolioDomain): string {
+  return item.id;
 }

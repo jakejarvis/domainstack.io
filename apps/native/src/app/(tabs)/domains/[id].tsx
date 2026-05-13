@@ -65,7 +65,12 @@ function DomainDetailContent() {
   const domainQuery = useQuery(trpc.tracking.getDomainDetails.queryOptions({ trackedDomainId }));
 
   const invalidate = async () => {
-    await queryClient.invalidateQueries();
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: trpc.tracking.getDomainDetails.queryKey({ trackedDomainId }),
+      }),
+      queryClient.invalidateQueries({ queryKey: trpc.tracking.listDomains.queryKey() }),
+    ]);
   };
 
   const setMuted = useMutation(trpc.user.setDomainMuted.mutationOptions({ onSuccess: invalidate }));
@@ -118,18 +123,18 @@ function DomainDetailContent() {
             </Text>
             <View className="flex-row flex-wrap gap-2">
               <Badge tone={domain.verified ? "success" : "warning"}>
-                {domain.verified ? "Verified" : "Needs verification"}
+                <Text>{domain.verified ? "Verified" : "Needs verification"}</Text>
               </Badge>
-              {domain.muted && (
+              {domain.muted ? (
                 <Badge>
                   <Text>Muted</Text>
                 </Badge>
-              )}
-              {domain.archivedAt && (
+              ) : null}
+              {domain.archivedAt ? (
                 <Badge>
                   <Text>Archived</Text>
                 </Badge>
-              )}
+              ) : null}
             </View>
           </View>
 
@@ -143,7 +148,7 @@ function DomainDetailContent() {
             <MetricRow label="Last verified" value={formatDate(domain.lastVerifiedAt)} />
           </GlassCard>
 
-          {!domain.verified && (
+          {domain.verified ? null : (
             <GlassCard>
               <Text className="text-lg font-semibold">Verification</Text>
               <MutedText>
@@ -185,7 +190,7 @@ function DomainDetailContent() {
               }
               variant="secondary"
             >
-              {domain.muted ? "Unmute notifications" : "Mute notifications"}
+              <Text>{domain.muted ? "Unmute notifications" : "Mute notifications"}</Text>
             </Button>
             <Button
               loading={archive.isPending || unarchive.isPending}
@@ -198,7 +203,7 @@ function DomainDetailContent() {
               }
               variant="secondary"
             >
-              {domain.archivedAt ? "Unarchive" : "Archive"}
+              <Text>{domain.archivedAt ? "Unarchive" : "Archive"}</Text>
             </Button>
             <Button
               loading={remove.isPending}

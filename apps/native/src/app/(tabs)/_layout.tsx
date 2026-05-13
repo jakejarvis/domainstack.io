@@ -49,7 +49,7 @@ export default function TabsLayout() {
           sf={{ default: "bell", selected: "bell.fill" }}
         />
         <NativeTabs.Trigger.Label>Notifications</NativeTabs.Trigger.Label>
-        {unreadBadge && <NativeTabs.Trigger.Badge>{unreadBadge}</NativeTabs.Trigger.Badge>}
+        {unreadBadge ? <NativeTabs.Trigger.Badge>{unreadBadge}</NativeTabs.Trigger.Badge> : null}
       </NativeTabs.Trigger>
       <NativeTabs.Trigger contentStyle={{ backgroundColor: canvas }} name="search">
         <NativeTabs.Trigger.Icon md="search" sf="magnifyingglass" />

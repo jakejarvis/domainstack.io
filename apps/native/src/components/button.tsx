@@ -4,8 +4,6 @@ import { ActivityIndicator, Pressable } from "react-native";
 import { cn } from "@/lib/cn";
 import { useCSSVariable } from "@/tw";
 
-import { Text } from "./text";
-
 export function Button({
   children,
   className,
@@ -33,26 +31,19 @@ export function Button({
   );
   const variantClassName =
     variant === "primary"
-      ? "bg-control-primary"
+      ? "bg-control-primary text-control-primary-text"
       : variant === "danger"
-        ? "bg-danger"
+        ? "bg-danger text-danger-text"
         : variant === "secondary"
-          ? "border border-line bg-control-secondary"
-          : "bg-transparent";
-  const textClassName =
-    variant === "primary"
-      ? "text-control-primary-text"
-      : variant === "danger"
-        ? "text-danger-text"
-        : variant === "ghost"
-          ? "text-brand"
-          : "text-control-secondary-text";
+          ? "border border-line bg-control-secondary text-control-secondary-text"
+          : "bg-transparent text-brand";
 
   return (
     <Pressable
       accessibilityRole="button"
       className={cn(
         "min-h-12 flex-row items-center justify-center gap-2 rounded-xl px-4",
+        "text-base font-semibold",
         variantClassName,
         isDisabled && "opacity-55",
         className,
@@ -68,8 +59,8 @@ export function Button({
         opacity: pressed && !isDisabled ? 0.82 : 1,
       })}
     >
-      {loading && <ActivityIndicator color={foregroundColor} size="small" />}
-      <Text className={cn("text-center text-base font-semibold", textClassName)}>{children}</Text>
+      {loading ? <ActivityIndicator color={foregroundColor} size="small" /> : null}
+      {children}
     </Pressable>
   );
 }

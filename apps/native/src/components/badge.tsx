@@ -1,12 +1,14 @@
-import { cn } from "@/lib/cn";
+import { View } from "react-native";
 
-import { Text } from "./text";
+import { cn } from "@/lib/cn";
 
 export function Badge({
   children,
+  className,
   tone = "neutral",
 }: {
   children: React.ReactNode;
+  className?: string;
   tone?: "neutral" | "success" | "warning" | "danger";
 }) {
   const toneStyles = {
@@ -17,13 +19,15 @@ export function Badge({
   } satisfies Record<typeof tone, string>;
 
   return (
-    <Text
+    <View
       className={cn(
-        "self-start rounded-full border px-2.5 py-1 text-xs font-semibold",
+        "flex-row items-center gap-1 self-start rounded-full border px-2.5 py-1",
+        "text-xs font-semibold",
         toneStyles[tone],
+        className,
       )}
     >
       {children}
-    </Text>
+    </View>
   );
 }
