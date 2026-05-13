@@ -4,7 +4,7 @@ import {
   IconChevronDown,
   IconChevronUp,
 } from "@tabler/icons-react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { Fragment, useState } from "react";
 
 import { CertificateAlert } from "@/components/domain/certificate-alert";
@@ -147,7 +147,7 @@ export function CertificatesSection({
           {remainingCerts.length > 0 && (
             <AnimatePresence initial={false}>
               {showAll && (
-                <motion.div
+                <m.div
                   key="cert-chain"
                   initial={{
                     height: shouldReduceMotion ? "auto" : 0,
@@ -192,7 +192,7 @@ export function CertificatesSection({
                       <span>Hide Chain</span>
                     </Button>
                   </div>
-                </motion.div>
+                </m.div>
               )}
             </AnimatePresence>
           )}

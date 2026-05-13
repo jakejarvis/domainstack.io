@@ -12,7 +12,7 @@ type StepInstructionsErrorProps = {
 
 export function StepInstructionsError({ error, onRetry, isRetrying }: StepInstructionsErrorProps) {
   return (
-    <div className="flex h-[200px] flex-col items-center justify-center space-y-4">
+    <div className="flex h-[200px] flex-col items-center justify-center gap-4">
       <Icon size="lg" variant="destructive" className="mx-auto">
         <IconAlertCircle />
       </Icon>

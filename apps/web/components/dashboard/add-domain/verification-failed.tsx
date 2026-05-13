@@ -85,7 +85,7 @@ export function VerificationFailed({
       </div>
 
       <p className="text-center text-xs text-muted-foreground">
-        Don&apos;t worry—we&apos;ll automatically check your domain daily and verify it once the
+        Don&apos;t worry, we&apos;ll automatically check your domain daily and verify it once the
         changes have propagated.
       </p>
     </div>

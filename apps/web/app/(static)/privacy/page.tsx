@@ -100,7 +100,7 @@ export default function PrivacyPage() {
                 <IconExternalLink />
               </a>
             </strong>{" "}
-            — Our merchant of record for subscription management. Polar collects and processes your
+            : Our merchant of record for subscription management. Polar collects and processes your
             payment information, including billing address and payment method. See{" "}
             <a href="https://polar.sh/legal/privacy" target="_blank" rel="noopener noreferrer">
               Polar&apos;s Privacy Policy
@@ -115,7 +115,7 @@ export default function PrivacyPage() {
                 <IconExternalLink />
               </a>
             </strong>{" "}
-            — Payment processing infrastructure. Stripe handles your payment card data securely. See{" "}
+            : Payment processing infrastructure. Stripe handles your payment card data securely. See{" "}
             <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer">
               Stripe&apos;s Privacy Policy
               <IconExternalLink />
@@ -304,7 +304,7 @@ export default function PrivacyPage() {
           <li>Access your personal data</li>
           <li>Correct inaccurate data</li>
           <li>
-            Delete your account and data — You can permanently delete your account at any time from
+            Delete your account and data: You can permanently delete your account at any time from
             your dashboard settings. This will remove all your personal data, tracked domains, and
             notification preferences. If you have an active subscription, it will be automatically
             canceled.

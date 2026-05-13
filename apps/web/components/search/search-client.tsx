@@ -42,7 +42,7 @@ export function SearchClient({
   initialValue = "",
   onFocusChangeAction,
 }: SearchClientProps) {
-  const router = useRouter();
+  const { push } = useRouter();
   const params = useParams<{ domain?: string }>();
   const isMobile = useIsMobile();
 
@@ -91,7 +91,7 @@ export function SearchClient({
     const current = params?.domain ? normalizeDomainInput(decodeURIComponent(params.domain)) : null;
 
     setLoading(true);
-    router.push(`/${encodeURIComponent(target)}`);
+    push(`/${encodeURIComponent(target)}`);
 
     // If pushing to the same route, Next won't navigate. Clear loading shortly
     // to avoid an infinite spinner when the path doesn't actually change.

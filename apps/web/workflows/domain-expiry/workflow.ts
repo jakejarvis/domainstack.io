@@ -153,8 +153,10 @@ async function createNotificationRecord(params: {
 }): Promise<{ notificationId: string; title: string; subject: string }> {
   "use step";
 
-  const { format } = await import("date-fns");
-  const { createNotification } = await import("@domainstack/db/queries");
+  const [{ format }, { createNotification }] = await Promise.all([
+    import("date-fns"),
+    import("@domainstack/db/queries"),
+  ]);
 
   const {
     trackedDomainId,
@@ -220,9 +222,11 @@ async function sendDomainExpiryEmail(params: {
 }): Promise<{ emailId: string }> {
   "use step";
 
-  const { format } = await import("date-fns");
-  const { default: DomainExpiryEmail } = await import("@domainstack/email/templates/domain-expiry");
-  const { sendEmail } = await import("@/workflows/shared/send-email");
+  const [{ format }, { default: DomainExpiryEmail }, { sendEmail }] = await Promise.all([
+    import("date-fns"),
+    import("@domainstack/email/templates/domain-expiry"),
+    import("@/workflows/shared/send-email"),
+  ]);
 
   const { userEmail, userName, domainName, expirationDate, daysRemaining, registrar, subject } =
     params;

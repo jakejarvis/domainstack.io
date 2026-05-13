@@ -37,7 +37,7 @@ export async function GET(request: Request) {
     // Fetch and parse all blocklists in parallel
     const fetchResults = await Promise.allSettled(
       sources.map(async (sourceUrl) => {
-        const response = await fetch(sourceUrl);
+        const response = await fetch(sourceUrl, { cache: "no-store" });
 
         if (!response.ok) {
           logger.warn({ sourceUrl, status: response.status }, "Failed to fetch blocklist");

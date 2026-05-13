@@ -235,50 +235,42 @@ export function extractAvailableProviders(
   for (const domain of domains) {
     if (!domain.verified || domain.archivedAt !== null) continue;
 
-    if (domain.registrar.id && domain.registrar.name) {
-      if (!registrarMap.has(domain.registrar.id)) {
-        registrarMap.set(domain.registrar.id, {
-          id: domain.registrar.id,
-          name: domain.registrar.name,
-          domain: domain.registrar.domain,
-        });
-      }
+    const { registrar, dns, hosting, email, ca } = domain;
+
+    if (registrar.id && registrar.name && !registrarMap.has(registrar.id)) {
+      registrarMap.set(registrar.id, {
+        id: registrar.id,
+        name: registrar.name,
+        domain: registrar.domain,
+      });
     }
-    if (domain.dns.id && domain.dns.name) {
-      if (!dnsMap.has(domain.dns.id)) {
-        dnsMap.set(domain.dns.id, {
-          id: domain.dns.id,
-          name: domain.dns.name,
-          domain: domain.dns.domain,
-        });
-      }
+    if (dns.id && dns.name && !dnsMap.has(dns.id)) {
+      dnsMap.set(dns.id, {
+        id: dns.id,
+        name: dns.name,
+        domain: dns.domain,
+      });
     }
-    if (domain.hosting.id && domain.hosting.name) {
-      if (!hostingMap.has(domain.hosting.id)) {
-        hostingMap.set(domain.hosting.id, {
-          id: domain.hosting.id,
-          name: domain.hosting.name,
-          domain: domain.hosting.domain,
-        });
-      }
+    if (hosting.id && hosting.name && !hostingMap.has(hosting.id)) {
+      hostingMap.set(hosting.id, {
+        id: hosting.id,
+        name: hosting.name,
+        domain: hosting.domain,
+      });
     }
-    if (domain.email.id && domain.email.name) {
-      if (!emailMap.has(domain.email.id)) {
-        emailMap.set(domain.email.id, {
-          id: domain.email.id,
-          name: domain.email.name,
-          domain: domain.email.domain,
-        });
-      }
+    if (email.id && email.name && !emailMap.has(email.id)) {
+      emailMap.set(email.id, {
+        id: email.id,
+        name: email.name,
+        domain: email.domain,
+      });
     }
-    if (domain.ca.id && domain.ca.name) {
-      if (!caMap.has(domain.ca.id)) {
-        caMap.set(domain.ca.id, {
-          id: domain.ca.id,
-          name: domain.ca.name,
-          domain: domain.ca.domain,
-        });
-      }
+    if (ca.id && ca.name && !caMap.has(ca.id)) {
+      caMap.set(ca.id, {
+        id: ca.id,
+        name: ca.name,
+        domain: ca.domain,
+      });
     }
   }
 

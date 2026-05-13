@@ -11,13 +11,13 @@ export function AddDomainSkeleton() {
         </div>
         {/* Stepper skeleton */}
         <div className="flex items-center justify-between pt-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="flex flex-1 items-center">
+          {[1, 2, 3].map((step) => (
+            <div key={`step-${step}`} className="flex flex-1 items-center">
               <div className="flex flex-col items-center gap-1.5">
                 <Skeleton className="size-8 rounded-full" />
                 <Skeleton className="h-4 w-20" />
               </div>
-              {i < 3 && <Skeleton className="mx-2 h-px flex-1" />}
+              {step < 3 && <Skeleton className="mx-2 h-px flex-1" />}
             </div>
           ))}
         </div>

@@ -9,7 +9,11 @@ export async function getModelStep(): Promise<CompatibleLanguageModel> {
   "use step";
 
   // Create the AI model instance
-  const { createGateway } = await import("@ai-sdk/gateway");
+  const [{ createGateway }, { getAiChatModel }, { DEFAULT_CHAT_MODEL }] = await Promise.all([
+    import("@ai-sdk/gateway"),
+    import("@domainstack/server/edge-config"),
+    import("@domainstack/constants"),
+  ]);
   const gateway = createGateway({
     headers: {
       // Opt into the Vercel leaderboard: https://vercel.com/docs/ai-gateway/app-attribution
@@ -18,9 +22,6 @@ export async function getModelStep(): Promise<CompatibleLanguageModel> {
     },
   });
 
-  // Get the AI model ID from Edge Config, fallback to constants string
-  const { getAiChatModel } = await import("@domainstack/server/edge-config");
-  const { DEFAULT_CHAT_MODEL } = await import("@domainstack/constants");
   const modelId = await getAiChatModel();
   const model = gateway(modelId || DEFAULT_CHAT_MODEL);
 

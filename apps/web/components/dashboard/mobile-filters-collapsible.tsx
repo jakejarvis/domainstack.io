@@ -1,6 +1,6 @@
 import { IconChevronDown, IconFilter } from "@tabler/icons-react";
 import type { Table } from "@tanstack/react-table";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { useState } from "react";
 
 import { DashboardTableColumnMenu } from "@/components/dashboard/dashboard-table-column-menu";
@@ -38,7 +38,7 @@ export function MobileFiltersCollapsible({
                 <span className="text-sm">Filters</span>
                 <AnimatePresence initial={false}>
                   {hasActiveFilters && (
-                    <motion.span
+                    <m.span
                       initial={{
                         opacity: 0,
                         scale: shouldReduceMotion ? 1 : 0.9,
@@ -52,7 +52,7 @@ export function MobileFiltersCollapsible({
                       className="ml-1 inline-flex"
                     >
                       <Badge variant="secondary">{activeFilterCount}</Badge>
-                    </motion.span>
+                    </m.span>
                   )}
                 </AnimatePresence>
               </span>
@@ -71,7 +71,7 @@ export function MobileFiltersCollapsible({
           const { children: contentChildren, ...rest } = contentProps;
           return (
             <div {...rest}>
-              <motion.div
+              <m.div
                 initial={false}
                 animate={
                   mobileOpen
@@ -85,7 +85,7 @@ export function MobileFiltersCollapsible({
                 style={{ overflow: shouldReduceMotion ? undefined : "hidden" }}
               >
                 {contentChildren}
-              </motion.div>
+              </m.div>
             </div>
           );
         }}

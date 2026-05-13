@@ -23,7 +23,7 @@ export function KeyValueSkeleton({
           </div>
         ) : null}
         <div className="flex w-full shrink-0 items-center gap-2">
-          {withLeading && <Skeleton className="h-4 w-4 shrink-0 rounded" />}
+          {withLeading && <Skeleton className="size-4 shrink-0 rounded" />}
           <Skeleton className={cn("h-4 shrink-0", widthClass)} />
           {withSuffix && <Skeleton className="h-3 w-15 shrink-0" />}
         </div>

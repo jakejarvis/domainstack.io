@@ -1,4 +1,4 @@
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { useEffect, useRef } from "react";
 
 import { DashboardGridCard } from "@/components/dashboard/dashboard-grid-card";
@@ -43,15 +43,15 @@ export function DashboardGrid({ domains }: DashboardGridProps) {
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
       <AnimatePresence>
         {domains.map((domain, index) => (
-          <motion.div key={domain.id} className="h-full" {...getItemMotionProps(index)}>
+          <m.div key={domain.id} className="h-full" {...getItemMotionProps(index)}>
             <DashboardGridCard domain={domain} />
-          </motion.div>
+          </m.div>
         ))}
 
         {/* Free-tier CTA: treated as just another (last) grid item */}
-        <motion.div key="upgrade-cta" className="h-full" {...getItemMotionProps(domains.length)}>
+        <m.div key="upgrade-cta" className="h-full" {...getItemMotionProps(domains.length)}>
           <GridUpgradeCard />
-        </motion.div>
+        </m.div>
       </AnimatePresence>
     </div>
   );

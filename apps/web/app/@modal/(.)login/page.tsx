@@ -1,33 +1,12 @@
-"use client";
+import type { Metadata } from "next";
 
-import { Suspense, useState } from "react";
+import { LoginModalClient } from "./login-modal-client";
 
-import { LoginContent } from "@/components/auth/login-content";
-import { LoginSkeleton } from "@/components/auth/login-skeleton";
-import { Modal, ModalContent } from "@/components/modal";
-import { useRouter } from "@/hooks/use-router";
-import { useSession } from "@domainstack/auth/client";
+export const metadata: Metadata = {
+  title: "Sign in",
+  description: "Sign in to Domainstack to track domains and receive notifications.",
+};
 
 export default function InterceptedLoginPage() {
-  const [open, setOpen] = useState(true);
-  return (
-    <Modal open={open}>
-      <ModalContent className="!max-w-md px-5 py-6">
-        <Suspense fallback={<LoginSkeleton />}>
-          <AuthorizedLoginContent onNavigate={() => setOpen(false)} />
-        </Suspense>
-      </ModalContent>
-    </Modal>
-  );
-}
-
-function AuthorizedLoginContent({ onNavigate }: { onNavigate: () => void }) {
-  const { data: session } = useSession();
-  const router = useRouter();
-
-  if (session?.user) {
-    router.replace("/dashboard");
-  }
-
-  return <LoginContent onNavigate={onNavigate} />;
+  return <LoginModalClient />;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { IconArrowUpRight, IconMeteor, IconX } from "@tabler/icons-react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import useLocalStorageState from "use-local-storage-state";
 
@@ -22,7 +22,7 @@ export function AnnouncementPill() {
   return (
     <AnimatePresence>
       {!dismissed && (
-        <motion.div
+        <m.div
           initial={{
             opacity: 0,
             y: shouldReduceMotion ? 0 : -10,
@@ -68,7 +68,7 @@ export function AnnouncementPill() {
               <IconX className="size-3.5" />
             </button>
           </div>
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

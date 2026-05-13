@@ -93,8 +93,8 @@ export function AccountPanel() {
         description="Protect your account with additional third-party services."
       >
         <ItemGroup className="gap-2.5">
-          {[...enabledProviders]
-            .sort((a, b) => {
+          {enabledProviders
+            .toSorted((a, b) => {
               const aLinked = linkedProviderIds.has(a.id);
               const bLinked = linkedProviderIds.has(b.id);
               // Linked providers first, then alphabetically by name

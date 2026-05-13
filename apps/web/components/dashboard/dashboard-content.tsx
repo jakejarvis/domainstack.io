@@ -1,6 +1,6 @@
 import { IconFilterX, IconHourglass, IconPlus, IconWorld } from "@tabler/icons-react";
 import type { Table } from "@tanstack/react-table";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -120,7 +120,7 @@ export function DashboardContent({
   return (
     <>
       <AnimatePresence mode="wait" initial={false}>
-        <motion.div
+        <m.div
           key={viewMode}
           initial={hasHydrated ? { opacity: 0, y: shouldReduceMotion ? 0 : 8 } : false}
           animate={{ opacity: 1, y: 0 }}
@@ -139,7 +139,7 @@ export function DashboardContent({
           ) : (
             <DashboardGrid domains={domains} />
           )}
-        </motion.div>
+        </m.div>
       </AnimatePresence>
 
       {/* Bulk actions toolbar - appears when items are selected */}

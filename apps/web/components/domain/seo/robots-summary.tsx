@@ -12,7 +12,7 @@ import {
   IconWaveSquare,
   IconX,
 } from "@tabler/icons-react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import { PillCount } from "@/components/domain/pill-count";
@@ -384,7 +384,7 @@ function GroupsAccordion({
         const stableKey = g.userAgents.join(",");
 
         return (
-          <motion.div
+          <m.div
             key={stableKey}
             initial={{
               opacity: 0,
@@ -399,7 +399,7 @@ function GroupsAccordion({
             style={{ overflow: shouldReduceMotion ? undefined : "hidden" }}
           >
             <AccordionItem value={`g-${idx}`}>
-              <AccordionTrigger className="group/accordion px-2 py-2 hover:bg-accent/35 hover:no-underline data-[panel-open]:pr-2 [&>svg]:hidden">
+              <AccordionTrigger className="group/accordion p-2 hover:bg-accent/35 hover:no-underline data-[panel-open]:pr-2 [&>svg]:hidden">
                 <RobotsGroupHeader
                   userAgents={g.userAgents}
                   allowN={allowN}
@@ -419,7 +419,7 @@ function GroupsAccordion({
                 />
               </AccordionContent>
             </AccordionItem>
-          </motion.div>
+          </m.div>
         );
       })}
     </AnimatePresence>
@@ -504,7 +504,7 @@ function GroupContent({
         />
       ))}
       {added.length > 0 ? (
-        <motion.div
+        <m.div
           key={`added-${visible}`}
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: "auto", opacity: 1 }}
@@ -515,7 +515,7 @@ function GroupContent({
           {addedItems.map(({ key, rule }) => (
             <RuleRow key={key} rule={rule} query={query} highlight={highlight} />
           ))}
-        </motion.div>
+        </m.div>
       ) : null}
       {more > 0 ? (
         <div className="mt-1 flex justify-start">
@@ -633,7 +633,7 @@ function SitemapsList({ items }: { items: string[] }) {
           <SitemapLink key={`sm-ex-${u}`} url={u} />
         ))}
         {added.length > 0 ? (
-          <motion.div
+          <m.div
             key={`sitemaps-added-${visible}`}
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
@@ -644,7 +644,7 @@ function SitemapsList({ items }: { items: string[] }) {
             {added.map((u) => (
               <SitemapLink key={`sm-add-${u}`} url={u} />
             ))}
-          </motion.div>
+          </m.div>
         ) : null}
         {more > 0 ? (
           <div className="mt-1 flex justify-start">

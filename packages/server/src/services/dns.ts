@@ -58,16 +58,20 @@ async function persistDnsRecords(domain: string, fetchData: DnsFetchData): Promi
   const recordsByType = Object.fromEntries(
     types.map((t) => [
       t,
-      fetchData.recordsWithExpiry
-        .filter((r) => r.type === t)
-        .map((r) => ({
-          name: r.name,
-          value: r.value,
-          ttl: r.ttl,
-          priority: r.priority,
-          isCloudflare: r.isCloudflare,
-          expiresAt: new Date(r.expiresAt),
-        })),
+      fetchData.recordsWithExpiry.flatMap((r) =>
+        r.type === t
+          ? [
+              {
+                name: r.name,
+                value: r.value,
+                ttl: r.ttl,
+                priority: r.priority,
+                isCloudflare: r.isCloudflare,
+                expiresAt: new Date(r.expiresAt),
+              },
+            ]
+          : [],
+      ),
     ]),
   ) as Record<
     DnsRecordType,

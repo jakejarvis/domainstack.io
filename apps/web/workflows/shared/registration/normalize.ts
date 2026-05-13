@@ -58,10 +58,15 @@ export async function normalizeAndBuildResponseStep(
   "use step";
 
   // Dynamic imports for Node.js modules and database operations
-  const { getProviderCatalog } = await import("@domainstack/server/edge-config");
-  const { detectRegistrar, getProvidersFromCatalog } = await import("@domainstack/utils/providers");
-  const { upsertCatalogProvider, resolveOrCreateProviderId } =
-    await import("@domainstack/db/queries");
+  const [
+    { getProviderCatalog },
+    { detectRegistrar, getProvidersFromCatalog },
+    { upsertCatalogProvider, resolveOrCreateProviderId },
+  ] = await Promise.all([
+    import("@domainstack/server/edge-config"),
+    import("@domainstack/utils/providers"),
+    import("@domainstack/db/queries"),
+  ]);
 
   const record = JSON.parse(recordJson) as ParsedRdapRecord;
   const catalog = await getProviderCatalog();

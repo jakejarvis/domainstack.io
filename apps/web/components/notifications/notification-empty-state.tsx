@@ -11,7 +11,7 @@ interface NotificationEmptyStateProps {
 }
 
 export function NotificationEmptyState({ variant, onClosePopover }: NotificationEmptyStateProps) {
-  const router = useRouter();
+  const { push } = useRouter();
 
   return (
     <div className="flex flex-col items-center justify-center p-10 text-center">
@@ -25,7 +25,7 @@ export function NotificationEmptyState({ variant, onClosePopover }: Notification
         className="mt-5 text-[13px]"
         onClick={(e) => {
           e.preventDefault();
-          router.push("/dashboard");
+          push("/dashboard");
           onClosePopover?.();
         }}
         nativeButton={false}

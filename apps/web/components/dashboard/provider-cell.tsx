@@ -26,7 +26,7 @@ export function ProviderCell({ provider, trackedDomainId, providerType }: Provid
   });
 
   if (!provider.name) {
-    return <span className="text-xs text-muted-foreground">—</span>;
+    return <span className="text-xs text-muted-foreground">{"—"}</span>;
   }
 
   const providerContent = (

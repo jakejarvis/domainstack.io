@@ -9,7 +9,7 @@ type DashboardErrorProps = {
 
 export function DashboardError({ onRetry }: DashboardErrorProps) {
   return (
-    <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4 rounded-xl border border-destructive/20 bg-destructive/5 p-8 text-center">
+    <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 rounded-xl border border-destructive/20 bg-destructive/5 p-8 text-center">
       <Icon size="lg" variant="destructive">
         <IconAlertTriangle />
       </Icon>

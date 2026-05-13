@@ -83,9 +83,7 @@ async function getStaleSections(domain: string): Promise<Section[]> {
     })),
   );
 
-  return staleChecks
-    .filter((c): c is { section: Section; stale: true } => c.stale)
-    .map((c) => c.section);
+  return staleChecks.flatMap((c) => (c.stale ? [c.section] : []));
 }
 
 /**

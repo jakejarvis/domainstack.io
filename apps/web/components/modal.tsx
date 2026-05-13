@@ -22,14 +22,14 @@ type ModalProps = ComponentPropsWithoutRef<typeof ModalPrimitive>;
  * Used for intercepted routes in Next.js App Router.
  */
 function Modal({ onOpenChange, ...props }: ModalProps) {
-  const router = useRouter();
+  const { back } = useRouter();
 
   return (
     <ModalPrimitive
       open
       onOpenChange={(open, eventDetails) => {
         if (!open) {
-          router.back();
+          back();
         }
         onOpenChange?.(open, eventDetails);
       }}

@@ -45,7 +45,7 @@ export function sortPortfolioDomains(
   domains: PortfolioDomain[],
   sort: PortfolioSort,
 ): PortfolioDomain[] {
-  return [...domains].sort((a, b) => {
+  return domains.toSorted((a, b) => {
     switch (sort) {
       case "expiry":
         return time(a.expirationDate) - time(b.expirationDate);

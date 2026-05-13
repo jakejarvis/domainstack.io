@@ -11,8 +11,8 @@ import {
 import MapLibreGL, { type MarkerOptions, type PopupOptions } from "maplibre-gl";
 import {
   createContext,
+  use,
   useCallback,
-  useContext,
   useEffect,
   useId,
   useMemo,
@@ -37,7 +37,7 @@ type MapContextValue = {
 const MapContext = createContext<MapContextValue | null>(null);
 
 function useMap() {
-  const context = useContext(MapContext);
+  const context = use(MapContext);
   if (!context) {
     throw new Error("useMap must be used within a Map component");
   }
@@ -65,7 +65,7 @@ const DefaultLoader = () => (
   <div className="absolute inset-0 flex h-full w-full items-center justify-center">
     <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
       <Spinner className="size-4" />
-      Loading map...
+      Loading map…
     </div>
   </div>
 );
@@ -162,7 +162,7 @@ type MarkerContextValue = {
 const MarkerContext = createContext<MarkerContextValue | null>(null);
 
 function useMarkerContext() {
-  const context = useContext(MarkerContext);
+  const context = use(MarkerContext);
   if (!context) {
     throw new Error("Marker components must be used within MapMarker");
   }
@@ -339,7 +339,7 @@ function DefaultMarkerIcon() {
   return (
     <div
       aria-hidden="true"
-      className="relative h-4 w-4 rounded-full border-2 border-white bg-blue-500 shadow-lg"
+      className="relative size-4 rounded-full border-2 border-white bg-blue-500 shadow-lg"
     />
   );
 }
@@ -421,7 +421,7 @@ function MapMarkerPopup({
           className="absolute top-1 right-1 z-10 cursor-pointer rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
           aria-label="Close popup"
         >
-          <IconX className="h-4 w-4" />
+          <IconX className="size-4" />
           <span className="sr-only">Close</span>
         </button>
       )}
@@ -847,7 +847,7 @@ function MapPopup({
           className="absolute top-1 right-1 z-10 cursor-pointer rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
           aria-label="Close popup"
         >
-          <IconX className="h-4 w-4" />
+          <IconX className="size-4" />
           <span className="sr-only">Close</span>
         </button>
       )}

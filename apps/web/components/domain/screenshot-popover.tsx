@@ -81,9 +81,9 @@ export function ScreenshotPopover({
             >
               {/* Traffic Light Dots */}
               <div className="flex items-center gap-1.5">
-                <div className="h-2 w-2 rounded-full bg-[#FF5F57]" />
-                <div className="h-2 w-2 rounded-full bg-[#FEBC2E]" />
-                <div className="h-2 w-2 rounded-full bg-[#28C840]" />
+                <div className="size-2 rounded-full bg-[#FF5F57]" />
+                <div className="size-2 rounded-full bg-[#FEBC2E]" />
+                <div className="size-2 rounded-full bg-[#28C840]" />
               </div>
 
               {/* Address Bar */}

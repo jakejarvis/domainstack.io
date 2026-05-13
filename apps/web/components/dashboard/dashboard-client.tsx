@@ -52,7 +52,7 @@ import { Button } from "@domainstack/ui/button";
 
 export function DashboardClient() {
   const { data: session, isPending: isSessionPending } = useSession();
-  const router = useRouter();
+  const { push, replace } = useRouter();
   const trpc = useTRPC();
   const {
     subscription,
@@ -196,13 +196,13 @@ export function DashboardClient() {
       params.delete("upgraded");
       const newSearch = params.toString();
       const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
-      router.replace(newUrl, { scroll: false });
+      replace(newUrl, { scroll: false });
     }
-  }, [router, searchParams]);
+  }, [replace, searchParams]);
 
   const handleAddDomain = useCallback(() => {
-    router.push("/dashboard/add-domain", { scroll: false });
-  }, [router]);
+    push("/dashboard/add-domain", { scroll: false });
+  }, [push]);
 
   const handleVerify = useCallback(
     (id: string, verificationMethod: VerificationMethod | null) => {
@@ -215,11 +215,11 @@ export function DashboardClient() {
         params.set("method", verificationMethod);
       }
 
-      router.push(`/dashboard/add-domain?${params.toString()}`, {
+      push(`/dashboard/add-domain?${params.toString()}`, {
         scroll: false,
       });
     },
-    [router],
+    [push],
   );
 
   const handleRemove = useCallback((id: string, domainName: string) => {
@@ -278,9 +278,9 @@ export function DashboardClient() {
   const shouldRedirect = !isLoading && !session;
   useLayoutEffect(() => {
     if (shouldRedirect) {
-      router.replace("/login");
+      replace("/login");
     }
-  }, [shouldRedirect, router]);
+  }, [shouldRedirect, replace]);
 
   if (isLoading) {
     return <DashboardSkeleton />;

@@ -31,17 +31,21 @@ export function createRegistrarRouter({ pricingProviders }: RegistrarRouterDeps)
         if (!normalizedTld) return { success: false, data: { tld: null, providers: [] } };
 
         const results = await Promise.all(
-          pricingProviders
-            .filter((p) => p.enabled)
-            .map(async (provider) => {
-              try {
-                const payload = await provider.fetchPricing();
-                const price = payload[normalizedTld]?.registration;
-                return price ? { provider: provider.name, price } : null;
-              } catch {
-                return null;
-              }
-            }),
+          pricingProviders.flatMap((provider) =>
+            provider.enabled
+              ? [
+                  (async () => {
+                    try {
+                      const payload = await provider.fetchPricing();
+                      const price = payload[normalizedTld]?.registration;
+                      return price ? { provider: provider.name, price } : null;
+                    } catch {
+                      return null;
+                    }
+                  })(),
+                ]
+              : [],
+          ),
         );
 
         return {

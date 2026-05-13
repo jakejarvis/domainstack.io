@@ -30,8 +30,10 @@ export async function persistDnsRecordsStep(
   "use step";
 
   // Dynamic imports for Node.js modules and database operations
-  const { DNS_RECORD_TYPES } = await import("@domainstack/constants");
-  const { ensureDomainRecord, replaceDns } = await import("@domainstack/db/queries");
+  const [{ DNS_RECORD_TYPES }, { ensureDomainRecord, replaceDns }] = await Promise.all([
+    import("@domainstack/constants"),
+    import("@domainstack/db/queries"),
+  ]);
 
   const types = DNS_RECORD_TYPES;
   const now = new Date();
@@ -44,16 +46,20 @@ export async function persistDnsRecordsStep(
     const recordsByType = Object.fromEntries(
       types.map((t) => [
         t,
-        fetchData.recordsWithExpiry
-          .filter((r) => r.type === t)
-          .map((r) => ({
-            name: r.name,
-            value: r.value,
-            ttl: r.ttl,
-            priority: r.priority,
-            isCloudflare: r.isCloudflare,
-            expiresAt: new Date(r.expiresAt),
-          })),
+        fetchData.recordsWithExpiry.flatMap((r) =>
+          r.type === t
+            ? [
+                {
+                  name: r.name,
+                  value: r.value,
+                  ttl: r.ttl,
+                  priority: r.priority,
+                  isCloudflare: r.isCloudflare,
+                  expiresAt: new Date(r.expiresAt),
+                },
+              ]
+            : [],
+        ),
       ]),
     ) as Record<
       DnsRecordType,

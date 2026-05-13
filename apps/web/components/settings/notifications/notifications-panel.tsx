@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Suspense } from "react";
 
 import {
@@ -64,14 +65,14 @@ export function NotificationsPanel() {
                   </p>
                   <p>
                     To change it, sign in with a different external account or{" "}
-                    <a
+                    <Link
                       href="/help#contact"
                       className="underline underline-offset-3"
                       target="_blank"
                       rel="noopener"
                     >
                       contact support
-                    </a>
+                    </Link>
                     .
                   </p>
                 </div>

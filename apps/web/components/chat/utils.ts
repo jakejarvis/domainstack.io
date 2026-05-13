@@ -25,8 +25,7 @@ export function formatMessagesAsMarkdown(messages: UIMessage[]): string {
     .map((message) => {
       const role = message.role === "user" ? "User" : "Assistant";
       const textParts = message.parts
-        .filter((part) => part.type === "text")
-        .map((part) => part.text)
+        .flatMap((part) => (part.type === "text" ? [part.text] : []))
         .join("\n\n");
       return `**${role}:** ${textParts}`;
     })

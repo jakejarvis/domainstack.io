@@ -3,7 +3,7 @@
 import { IconLego, IconMessageCircleFilled } from "@tabler/icons-react";
 import {
   type MotionValue,
-  motion,
+  m,
   useAnimationFrame,
   useMotionTemplate,
   useMotionValue,
@@ -13,7 +13,7 @@ import {
 import { CHATBOT_NAME } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
 
-const MotionButton = motion.create(Button);
+const MotionButton = m.create(Button);
 
 interface ChatFabProps {
   onClick: () => void;
@@ -31,7 +31,7 @@ function MeshGradientBackground({
   meshGradient: MotionValue<string>;
 }) {
   return (
-    <motion.span
+    <m.span
       className="pointer-events-none absolute inset-0 rounded-[inherit]"
       initial={{ opacity: alwaysVisible ? 1 : 0 }}
       animate={alwaysVisible ? { opacity: 1 } : undefined}

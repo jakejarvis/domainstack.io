@@ -192,10 +192,15 @@ async function sendNotificationInternal(
   shouldSendInApp: boolean,
   shouldSendPush: boolean,
 ): Promise<boolean> {
-  const { createNotification, updateNotificationResendId } =
-    await import("@domainstack/db/queries");
-  const { sendEmail } = await import("@domainstack/email");
-  const { sendPushForNotificationStep } = await import("./push");
+  const [
+    { createNotification, updateNotificationResendId },
+    { sendEmail },
+    { sendPushForNotificationStep },
+  ] = await Promise.all([
+    import("@domainstack/db/queries"),
+    import("@domainstack/email"),
+    import("./push"),
+  ]);
 
   const {
     userId,
@@ -306,9 +311,10 @@ export async function sendRegistrationChangeNotificationStep(
 ): Promise<boolean> {
   "use step";
 
-  const { getStepMetadata } = await import("workflow");
-  const { default: RegistrationChangeEmail } =
-    await import("@domainstack/email/templates/registration-change");
+  const [{ getStepMetadata }, { default: RegistrationChangeEmail }] = await Promise.all([
+    import("workflow"),
+    import("@domainstack/email/templates/registration-change"),
+  ]);
 
   const { stepId } = getStepMetadata();
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
@@ -378,9 +384,10 @@ export async function sendProviderChangeNotificationStep(
 ): Promise<boolean> {
   "use step";
 
-  const { getStepMetadata } = await import("workflow");
-  const { default: ProviderChangeEmail } =
-    await import("@domainstack/email/templates/provider-change");
+  const [{ getStepMetadata }, { default: ProviderChangeEmail }] = await Promise.all([
+    import("workflow"),
+    import("@domainstack/email/templates/provider-change"),
+  ]);
 
   const { stepId } = getStepMetadata();
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
@@ -444,9 +451,10 @@ export async function sendCertificateChangeNotificationStep(
 ): Promise<boolean> {
   "use step";
 
-  const { getStepMetadata } = await import("workflow");
-  const { default: CertificateChangeEmail } =
-    await import("@domainstack/email/templates/certificate-change");
+  const [{ getStepMetadata }, { default: CertificateChangeEmail }] = await Promise.all([
+    import("workflow"),
+    import("@domainstack/email/templates/certificate-change"),
+  ]);
 
   const { stepId } = getStepMetadata();
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;

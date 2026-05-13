@@ -48,11 +48,11 @@ export async function chatWorkflow(input: ChatWorkflowInput) {
 
   const { messages, domain, ip, userId } = input;
 
-  // Convert UI messages to model messages
-  const modelMessages = await convertToModelMessages(messages);
-
-  // Compile system prompt
-  const systemPrompt = await buildSystemPromptStep(domain);
+  // Convert UI messages and compile system prompt in parallel
+  const [modelMessages, systemPrompt] = await Promise.all([
+    convertToModelMessages(messages),
+    buildSystemPromptStep(domain),
+  ]);
 
   // Create agent with domain tools
   // Per AI SDK best practices: use temperature: 0 for deterministic tool calls

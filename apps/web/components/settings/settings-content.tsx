@@ -88,7 +88,7 @@ export function SettingsTabsRouter({
   navigationMode: "page" | "modal";
   tabsListPortalId?: string;
 }) {
-  const router = useRouter();
+  const { prefetch, replace } = useRouter();
   const segment = useSelectedLayoutSegment();
   const [isPending, startTransition] = useTransition();
   const tabsRootRef = useRef<HTMLDivElement | null>(null);
@@ -134,9 +134,9 @@ export function SettingsTabsRouter({
   useEffect(() => {
     for (const tab of SETTINGS_TABS) {
       const href = `/settings/${tab.value}`;
-      router.prefetch(href);
+      prefetch(href);
     }
-  }, [router]);
+  }, [prefetch]);
 
   const onValueChange = (nextValue: string) => {
     if (!isSettingsTabValue(nextValue)) return;
@@ -153,7 +153,7 @@ export function SettingsTabsRouter({
     if (isPending) return;
 
     startTransition(() => {
-      router.replace(href, { scroll: true });
+      replace(href, { scroll: true });
     });
   };
 

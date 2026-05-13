@@ -10,7 +10,7 @@ import {
   IconTrash,
 } from "@tabler/icons-react";
 import { format } from "date-fns";
-import { motion } from "motion/react";
+import { m } from "motion/react";
 import Link from "next/link";
 import { memo, useCallback } from "react";
 
@@ -108,7 +108,7 @@ export const DashboardGridCard = memo(function DashboardGridCard({
   const isPending = !verified;
 
   return (
-    <motion.div
+    <m.div
       className="group relative h-full"
       animate={{ scale: selected ? 1.01 : 1 }}
       transition={{ duration: 0.1 }}
@@ -386,7 +386,7 @@ export const DashboardGridCard = memo(function DashboardGridCard({
           )}
         </CardContent>
       </Card>
-    </motion.div>
+    </m.div>
   );
 });
 
@@ -468,7 +468,7 @@ function InfoRow({
               providerContent
             )
           ) : (
-            <span className="text-xs text-muted-foreground">—</span>
+            <span className="text-xs text-muted-foreground">{"—"}</span>
           ))}
       </span>
     </div>

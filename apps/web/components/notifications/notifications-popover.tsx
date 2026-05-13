@@ -13,7 +13,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip
 import { cn } from "@domainstack/ui/utils";
 
 export function NotificationsPopover() {
-  const router = useRouter();
+  const { push } = useRouter();
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<"inbox" | "archive">("inbox");
@@ -170,7 +170,7 @@ export function NotificationsPopover() {
                       nativeButton={false}
                       onClick={(e) => {
                         e.preventDefault();
-                        router.push("/settings/notifications");
+                        push("/settings/notifications");
                         setOpen(false);
                       }}
                       render={

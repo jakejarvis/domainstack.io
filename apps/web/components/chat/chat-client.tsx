@@ -34,7 +34,9 @@ interface ChatClientProps {
   suggestions?: string[];
 }
 
-export function ChatClient({ suggestions = [] }: ChatClientProps) {
+const EMPTY_SUGGESTIONS: string[] = [];
+
+export function ChatClient({ suggestions = EMPTY_SUGGESTIONS }: ChatClientProps) {
   const [open, setOpen] = useAtom(chatOpenAtom);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const params = useParams<{ domain?: string }>();

@@ -102,7 +102,7 @@ export function HeadersSection({ data }: { domain?: string; data?: HeadersRespon
                         className="inline-flex items-center text-foreground/80 hover:text-muted-foreground"
                         title={`View report for ${locationDomain}`}
                       >
-                        <IconSearch className="h-4 w-4" />
+                        <IconSearch className="size-4" />
                       </Link>
                     ) : undefined
                   }
@@ -115,7 +115,7 @@ export function HeadersSection({ data }: { domain?: string; data?: HeadersRespon
         <div className="space-y-4">
           {status === 0 && statusMessage ? (
             <Alert variant="destructive">
-              <IconInfoCircle className="h-4 w-4" />
+              <IconInfoCircle className="size-4" />
               <AlertDescription>{statusMessage}</AlertDescription>
             </Alert>
           ) : null}

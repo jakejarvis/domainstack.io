@@ -2,7 +2,7 @@
 
 import {
   type MotionProps,
-  motion,
+  m,
   type TargetAndTransition,
   type Transition,
   useReducedMotion,
@@ -45,7 +45,7 @@ export function AnimatedBackground() {
 
       {/* Lava-lamp blobs: randomized paths + irregular timing (stable within a mount). */}
       {blobParams?.map((b) => (
-        <motion.div
+        <m.div
           key={b.key}
           className={b.className}
           initial={b.initial}

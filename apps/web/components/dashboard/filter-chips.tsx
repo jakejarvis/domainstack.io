@@ -1,5 +1,5 @@
 import { IconX } from "@tabler/icons-react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, m, useReducedMotion } from "motion/react";
 
 import { Badge } from "@domainstack/ui/badge";
 
@@ -25,7 +25,7 @@ export function FilterChips({ chips, onRemove }: FilterChipsProps) {
 
   return (
     <AnimatePresence initial={false}>
-      <motion.div
+      <m.div
         key="active-filter-chips"
         initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -38,7 +38,7 @@ export function FilterChips({ chips, onRemove }: FilterChipsProps) {
       >
         <AnimatePresence initial={false}>
           {chips.map((chip, index) => (
-            <motion.div
+            <m.div
               key={chip.type === "search" ? "search" : `${chip.type}-${chip.value}`}
               layout={shouldReduceMotion ? false : "position"}
               initial={{
@@ -76,10 +76,10 @@ export function FilterChips({ chips, onRemove }: FilterChipsProps) {
                   <IconX className="size-3" />
                 </button>
               </Badge>
-            </motion.div>
+            </m.div>
           ))}
         </AnimatePresence>
-      </motion.div>
+      </m.div>
     </AnimatePresence>
   );
 }

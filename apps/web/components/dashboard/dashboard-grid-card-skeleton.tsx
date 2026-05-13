@@ -5,6 +5,8 @@ type DashboardGridCardSkeletonProps = {
   infoRows?: number;
 };
 
+const INFO_ROW_KEYS = ["a", "b", "c", "d", "e", "f", "g", "h"];
+
 export function DashboardGridCardSkeleton({ infoRows = 3 }: DashboardGridCardSkeletonProps) {
   return (
     <div className="rounded-xl border border-black/15 bg-background/60 p-6 dark:border-white/15">
@@ -22,8 +24,8 @@ export function DashboardGridCardSkeleton({ infoRows = 3 }: DashboardGridCardSke
       </div>
       {/* Info rows - configurable count */}
       <div className="mt-4 space-y-2">
-        {Array.from({ length: infoRows }, (_, i) => (
-          <Skeleton key={`info-row-${i}`} className="h-10 w-full rounded-xl" />
+        {INFO_ROW_KEYS.slice(0, infoRows).map((key) => (
+          <Skeleton key={`info-row-${key}`} className="h-10 w-full rounded-xl" />
         ))}
       </div>
     </div>

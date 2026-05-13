@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -7,6 +8,11 @@ import { AddDomainSkeleton } from "@/components/dashboard/add-domain/add-domain-
 import { Modal, ModalContent } from "@/components/modal";
 import { auth } from "@domainstack/auth/server";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
+
+export const metadata: Metadata = {
+  title: "Add domain",
+  description: "Track a new domain and start receiving change notifications.",
+};
 
 export default function InterceptedAddDomainPage({
   searchParams,

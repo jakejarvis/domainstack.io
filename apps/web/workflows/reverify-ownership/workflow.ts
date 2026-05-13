@@ -129,9 +129,15 @@ interface FailureActionResult {
 async function determineFailureAction(domain: DomainForFailureCheck): Promise<FailureActionResult> {
   "use step";
 
-  const { differenceInDays: diffInDays } = await import("date-fns");
-  const { VERIFICATION_GRACE_PERIOD_DAYS } = await import("@domainstack/constants");
-  const { markVerificationFailing, revokeVerification } = await import("@domainstack/db/queries");
+  const [
+    { differenceInDays: diffInDays },
+    { VERIFICATION_GRACE_PERIOD_DAYS },
+    { markVerificationFailing, revokeVerification },
+  ] = await Promise.all([
+    import("date-fns"),
+    import("@domainstack/constants"),
+    import("@domainstack/db/queries"),
+  ]);
 
   const now = new Date();
 
@@ -199,13 +205,19 @@ interface DomainForEmail {
 async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boolean> {
   "use step";
 
-  const { default: VerificationFailingEmail } =
-    await import("@domainstack/email/templates/verification-failing");
-  const { VERIFICATION_GRACE_PERIOD_DAYS } = await import("@domainstack/constants");
-  const { hasRecentNotification, createNotification, updateNotificationResendId } =
-    await import("@domainstack/db/queries");
-  const { sendEmail } = await import("@/workflows/shared/send-email");
-  const { sendPushForNotificationStep } = await import("@/workflows/shared/push");
+  const [
+    { default: VerificationFailingEmail },
+    { VERIFICATION_GRACE_PERIOD_DAYS },
+    { hasRecentNotification, createNotification, updateNotificationResendId },
+    { sendEmail },
+    { sendPushForNotificationStep },
+  ] = await Promise.all([
+    import("@domainstack/email/templates/verification-failing"),
+    import("@domainstack/constants"),
+    import("@domainstack/db/queries"),
+    import("@/workflows/shared/send-email"),
+    import("@/workflows/shared/push"),
+  ]);
 
   const alreadySent = await hasRecentNotification(domain.id, "verification_failing");
   if (alreadySent) return false;
@@ -267,12 +279,17 @@ async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boo
 async function sendVerificationRevokedEmail(domain: DomainForEmail): Promise<boolean> {
   "use step";
 
-  const { default: VerificationRevokedEmail } =
-    await import("@domainstack/email/templates/verification-revoked");
-  const { hasRecentNotification, createNotification, updateNotificationResendId } =
-    await import("@domainstack/db/queries");
-  const { sendEmail } = await import("@/workflows/shared/send-email");
-  const { sendPushForNotificationStep } = await import("@/workflows/shared/push");
+  const [
+    { default: VerificationRevokedEmail },
+    { hasRecentNotification, createNotification, updateNotificationResendId },
+    { sendEmail },
+    { sendPushForNotificationStep },
+  ] = await Promise.all([
+    import("@domainstack/email/templates/verification-revoked"),
+    import("@domainstack/db/queries"),
+    import("@/workflows/shared/send-email"),
+    import("@/workflows/shared/push"),
+  ]);
 
   const alreadySent = await hasRecentNotification(domain.id, "verification_revoked");
   if (alreadySent) return false;

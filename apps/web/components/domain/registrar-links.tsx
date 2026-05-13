@@ -58,28 +58,28 @@ const REGISTRAR_PROVIDERS: Record<
  * Exported for use as Suspense fallback in parent components.
  */
 export function RegistrarLinksSkeleton({ className }: { className?: string }) {
-  const providerCount = Object.keys(REGISTRAR_PROVIDERS ?? {}).length;
-
   return (
     <div className={cn("flex flex-col items-center justify-center", className)}>
       <Skeleton className="mt-1 mb-1 h-3 w-20" aria-hidden />
-      {Array.from({ length: providerCount }, (_, i) => (
-        <Skeleton key={i} className="mt-2 h-8 w-48" aria-hidden />
+      {Object.keys(REGISTRAR_PROVIDERS).map((key) => (
+        <Skeleton key={key} className="mt-2 h-8 w-48" aria-hidden />
       ))}
       <Skeleton className="mt-7 mb-1 h-3 w-64" aria-hidden />
     </div>
   );
 }
 
+const PRICE_FORMATTER = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 2,
+});
+
 function formatPrice(value: string): string | null {
   const amount = Number.parseFloat(value);
   if (!Number.isFinite(amount)) return null;
   try {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 2,
-    }).format(amount);
+    return PRICE_FORMATTER.format(amount);
   } catch {
     return `$${amount.toFixed(2)}`;
   }
@@ -113,7 +113,7 @@ export function RegistrarLinks({
   const providers = data?.data?.providers ?? [];
   if (providers.length === 0) return null;
 
-  const sortedProviders = [...providers].sort((a, b) => {
+  const sortedProviders = providers.toSorted((a, b) => {
     const priceA = Number.parseFloat(a.price);
     const priceB = Number.parseFloat(b.price);
     return priceA - priceB;

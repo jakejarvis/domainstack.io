@@ -31,15 +31,14 @@ async function fetchRepoStars(): Promise<number | null> {
   }
 }
 
+const STAR_FORMATTER = new Intl.NumberFormat("en-US", {
+  notation: "compact",
+  compactDisplay: "short",
+});
+
 export async function GithubStars() {
   const stars = await fetchRepoStars();
-  const label =
-    stars === null
-      ? "0"
-      : new Intl.NumberFormat("en-US", {
-          notation: "compact",
-          compactDisplay: "short",
-        }).format(stars);
+  const label = stars === null ? "0" : STAR_FORMATTER.format(stars);
 
   return (
     <Button

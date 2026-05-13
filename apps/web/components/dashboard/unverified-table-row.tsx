@@ -1,6 +1,6 @@
 "use no memo"; // Disable React Compiler memoization - TanStack Table has issues with it
 import { type Cell, flexRender } from "@tanstack/react-table";
-import { motion, useReducedMotion } from "motion/react";
+import { m, useReducedMotion } from "motion/react";
 
 import { useDashboardActions } from "@/context/dashboard-context";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
@@ -35,7 +35,7 @@ export function UnverifiedTableRow({
   const collapseCount = cells.length - explicitColumns.length;
 
   return (
-    <motion.tr
+    <m.tr
       key={rowId}
       layout={shouldReduceMotion ? false : "position"}
       initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 6 }}
@@ -118,6 +118,6 @@ export function UnverifiedTableRow({
           {flexRender(actionsCell.column.columnDef.cell, actionsCell.getContext())}
         </td>
       )}
-    </motion.tr>
+    </m.tr>
   );
 }

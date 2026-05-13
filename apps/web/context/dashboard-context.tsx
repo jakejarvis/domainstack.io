@@ -1,7 +1,7 @@
 "use client";
 
 import type { Table } from "@tanstack/react-table";
-import { createContext, useContext, useMemo } from "react";
+import { createContext, use, useMemo } from "react";
 
 import type {
   AvailableProvidersByCategory,
@@ -198,7 +198,7 @@ export function DashboardProvider({
 // ---------------------------------------------------------------------------
 
 function useDashboardContext() {
-  const context = useContext(DashboardContext);
+  const context = use(DashboardContext);
   if (!context) {
     throw new Error("useDashboardContext must be used within a DashboardProvider");
   }

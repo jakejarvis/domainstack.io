@@ -151,8 +151,10 @@ export function parseRobotsTxt(text: string, opts?: ParseRobotsTxtOptions): Robo
       }
     }
     const mergedGroups: RobotsGroup[] = order
-      .map((k) => mergedByKey.get(k))
-      .filter((x): x is RobotsGroup => Boolean(x))
+      .flatMap((k) => {
+        const g = mergedByKey.get(k);
+        return g ? [g] : [];
+      })
       .map((g) => {
         // Deduplicate identical rules while preserving first occurrence order
         const seen = new Set<string>();

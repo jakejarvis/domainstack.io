@@ -18,29 +18,32 @@ export function MetaTagsGrid({
         <PillCount count={count} color="orange" />
       </div>
       <KeyValueGrid colsDesktop={2}>
-        {metaTagValues
-          .filter((t) => t.value != null)
-          .map((t) => (
-            <KeyValue
-              key={t.label}
-              label={t.label}
-              value={String(t.value)}
-              suffix={
-                String(t.value).startsWith("http://") || String(t.value).startsWith("https://") ? (
-                  <a
-                    href={String(t.value)}
-                    target="_blank"
-                    rel="noopener"
-                    className="text-muted-foreground hover:text-foreground"
-                    title="Open URL in new tab"
-                  >
-                    <IconExternalLink className="!size-3.5" aria-hidden />
-                  </a>
-                ) : null
-              }
-              copyable
-            />
-          ))}
+        {metaTagValues.flatMap((t) =>
+          t.value == null
+            ? []
+            : [
+                <KeyValue
+                  key={t.label}
+                  label={t.label}
+                  value={String(t.value)}
+                  suffix={
+                    String(t.value).startsWith("http://") ||
+                    String(t.value).startsWith("https://") ? (
+                      <a
+                        href={String(t.value)}
+                        target="_blank"
+                        rel="noopener"
+                        className="text-muted-foreground hover:text-foreground"
+                        title="Open URL in new tab"
+                      >
+                        <IconExternalLink className="!size-3.5" aria-hidden />
+                      </a>
+                    ) : null
+                  }
+                  copyable
+                />,
+              ],
+        )}
       </KeyValueGrid>
     </div>
   );

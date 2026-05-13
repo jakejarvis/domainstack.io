@@ -11,13 +11,13 @@ import { isValidVerificationMethod } from "@/lib/verification-instructions";
 import type { ResumeDomainData } from "@domainstack/types";
 
 export function AddDomainModalClient({ prefillDomain }: { prefillDomain?: string }) {
-  const router = useRouter();
+  const { back } = useRouter();
   const searchParams = useSearchParams();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
   const handleClose = () => {
-    router.back();
+    back();
   };
 
   const handleSuccess = () => {
@@ -28,7 +28,7 @@ export function AddDomainModalClient({ prefillDomain }: { prefillDomain?: string
     void queryClient.invalidateQueries({
       queryKey: trpc.user.getSubscription.queryKey(),
     });
-    router.back();
+    back();
   };
 
   const resumeDomain = useMemo<ResumeDomainData | null>(() => {

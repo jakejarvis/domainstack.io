@@ -25,7 +25,7 @@ import {
 } from "@domainstack/ui/dropdown-menu";
 
 export function UserMenu() {
-  const router = useRouter();
+  const { push } = useRouter();
   const analytics = useAnalytics();
   const { data: session } = useSession();
   const { theme, toggleTheme } = useTheme();
@@ -47,8 +47,7 @@ export function UserMenu() {
   const initials =
     (user.name || "")
       .split(" ")
-      .filter((n) => n.length > 0)
-      .map((n) => n[0])
+      .flatMap((n) => (n.length > 0 ? [n[0]] : []))
       .join("")
       .toUpperCase()
       .slice(0, 2) || "?";
@@ -61,7 +60,7 @@ export function UserMenu() {
           onSuccess: () => {
             // Reset PostHog identity to prevent event crossover between users
             analytics.reset();
-            router.push("/");
+            push("/");
           },
         },
       });
@@ -77,7 +76,7 @@ export function UserMenu() {
           <Button
             variant="ghost"
             size="icon"
-            className="rounded-full px-0 py-0 hover:bg-transparent active:scale-95 dark:hover:bg-transparent"
+            className="rounded-full p-0 hover:bg-transparent active:scale-95 dark:hover:bg-transparent"
             aria-label="User menu"
           >
             <Avatar className="size-8">
@@ -97,7 +96,7 @@ export function UserMenu() {
               {initials}
             </AvatarFallback>
           </Avatar>
-          <div className="flex flex-col space-y-[5px]">
+          <div className="flex flex-col gap-y-[5px]">
             <p className="text-sm leading-none font-medium">{user.name || "User"}</p>
             <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
           </div>

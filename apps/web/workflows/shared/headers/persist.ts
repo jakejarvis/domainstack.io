@@ -29,8 +29,10 @@ export async function persistHeadersStep(
   "use step";
 
   // Dynamic imports for Node.js modules and database operations
-  const { ttlForHeaders } = await import("@domainstack/server/ttl");
-  const { ensureDomainRecord, replaceHeaders } = await import("@domainstack/db/queries");
+  const [{ ttlForHeaders }, { ensureDomainRecord, replaceHeaders }] = await Promise.all([
+    import("@domainstack/server/ttl"),
+    import("@domainstack/db/queries"),
+  ]);
 
   const now = new Date();
   const expiresAt = ttlForHeaders(now);

@@ -2,7 +2,7 @@
 
 import { IconBrain, IconChevronDown } from "@tabler/icons-react";
 import type { ComponentProps, ReactNode } from "react";
-import { createContext, memo, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, memo, use, useCallback, useEffect, useMemo, useState } from "react";
 import { Streamdown } from "streamdown";
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@domainstack/ui/collapsible";
@@ -20,7 +20,7 @@ interface ReasoningContextValue {
 const ReasoningContext = createContext<ReasoningContextValue | null>(null);
 
 export const useReasoning = () => {
-  const context = useContext(ReasoningContext);
+  const context = use(ReasoningContext);
   if (!context) {
     throw new Error("Reasoning components must be used within Reasoning");
   }

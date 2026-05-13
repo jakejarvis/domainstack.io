@@ -12,7 +12,7 @@ import type { ResumeDomainData } from "@domainstack/types";
 import { Card } from "@domainstack/ui/card";
 
 export function AddDomainPageClient({ prefillDomain }: { prefillDomain?: string }) {
-  const router = useRouter();
+  const { push } = useRouter();
   const searchParams = useSearchParams();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -25,7 +25,7 @@ export function AddDomainPageClient({ prefillDomain }: { prefillDomain?: string 
     void queryClient.invalidateQueries({
       queryKey: trpc.user.getSubscription.queryKey(),
     });
-    router.push("/dashboard", { scroll: false });
+    push("/dashboard", { scroll: false });
   };
 
   const resumeDomain = useMemo<ResumeDomainData | null>(() => {

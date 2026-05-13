@@ -57,10 +57,15 @@ export async function processChainStep(chainJson: string): Promise<CertificatesP
   "use step";
 
   // Dynamic imports to avoid top-level db/network dependencies
-  const { getProviderCatalog } = await import("@domainstack/server/edge-config");
-  const { detectCertificateAuthority, getProvidersFromCatalog } =
-    await import("@domainstack/utils/providers");
-  const { upsertCatalogProvider } = await import("@domainstack/db/queries");
+  const [
+    { getProviderCatalog },
+    { detectCertificateAuthority, getProvidersFromCatalog },
+    { upsertCatalogProvider },
+  ] = await Promise.all([
+    import("@domainstack/server/edge-config"),
+    import("@domainstack/utils/providers"),
+    import("@domainstack/db/queries"),
+  ]);
 
   const chain = JSON.parse(chainJson) as RawCertificate[];
   const catalog = await getProviderCatalog();

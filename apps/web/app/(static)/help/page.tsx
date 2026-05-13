@@ -26,7 +26,7 @@ const faqSections = [
           <>
             <p>
               Domainstack is a domain intelligence platform that lets you look up detailed
-              information about any domain — registration details, DNS records, SSL certificates,
+              information about any domain: registration details, DNS records, SSL certificates,
               hosting information, and more.
             </p>
             <p>
@@ -58,28 +58,28 @@ const faqSections = [
             <p>Each domain report includes:</p>
             <ul>
               <li>
-                <strong>Registration data</strong> — Registrar, creation date, expiration date, and
+                <strong>Registration data</strong>: Registrar, creation date, expiration date, and
                 WHOIS/RDAP information
               </li>
               <li>
-                <strong>DNS records</strong> — A, AAAA, MX, TXT, NS, CNAME, and other record types
+                <strong>DNS records</strong>: A, AAAA, MX, TXT, NS, CNAME, and other record types
               </li>
               <li>
-                <strong>SSL/TLS certificates</strong> — Issuer, validity period, and certificate
+                <strong>SSL/TLS certificates</strong>: Issuer, validity period, and certificate
                 chain
               </li>
               <li>
-                <strong>HTTP headers</strong> — Server type, security headers, and caching policies
+                <strong>HTTP headers</strong>: Server type, security headers, and caching policies
               </li>
               <li>
-                <strong>Hosting provider</strong> — Who&apos;s serving the website based on IP and
+                <strong>Hosting provider</strong>: Who&apos;s serving the website based on IP and
                 infrastructure
               </li>
               <li>
-                <strong>SEO metadata</strong> — Title, description, and Open Graph tags
+                <strong>SEO metadata</strong>: Title, description, and Open Graph tags
               </li>
               <li>
-                <strong>Live screenshot</strong> — A visual preview of the website
+                <strong>Live screenshot</strong>: A visual preview of the website
               </li>
             </ul>
           </>
@@ -105,8 +105,8 @@ const faqSections = [
         answer: (
           <p>
             Domain data is cached to ensure fast load times. Different data types have different
-            refresh intervals — DNS records update more frequently than registration data, for
-            example.
+            refresh intervals; DNS records, for example, update more frequently than registration
+            data.
           </p>
         ),
       },
@@ -146,19 +146,19 @@ const faqSections = [
         question: "How do I verify domain ownership?",
         answer: (
           <>
-            <p>We offer three verification methods — use whichever is easiest for you:</p>
+            <p>We offer three verification methods. Use whichever is easiest for you:</p>
             <ul>
               <li>
-                <strong>DNS TXT record</strong> — Add a TXT record to your apex domain
+                <strong>DNS TXT record</strong>: Add a TXT record to your apex domain
               </li>
               <li>
-                <strong>HTML file</strong> — Upload a verification file to{" "}
+                <strong>HTML file</strong>: Upload a verification file to{" "}
                 <code className="rounded bg-muted px-1.5 py-0.5 text-sm">
                   /.well-known/domainstack-verify.html
                 </code>
               </li>
               <li>
-                <strong>Meta tag</strong> — Add a{" "}
+                <strong>Meta tag</strong>: Add a{" "}
                 <code className="rounded bg-muted px-1.5 py-0.5 text-sm">domainstack-verify</code>{" "}
                 meta tag to your homepage
               </li>
@@ -200,7 +200,7 @@ const faqSections = [
         answer: (
           <p>
             Active domains count toward your tracking limit and receive notifications. Archived
-            domains are paused — they don&apos;t count against your limit and won&apos;t trigger
+            domains are paused; they don&apos;t count against your limit and won&apos;t trigger
             notifications. You can archive domains you&apos;re not actively managing and reactivate
             them anytime.
           </p>
@@ -218,20 +218,19 @@ const faqSections = [
             <p>We send email notifications for:</p>
             <ul>
               <li>
-                <strong>Domain expiration</strong> — 30, 14, 7, and 1&nbsp;day before your domain
+                <strong>Domain expiration</strong>: 30, 14, 7, and 1&nbsp;day before your domain
                 expires
               </li>
               <li>
-                <strong>Certificate expiration</strong> — 14, 7, 3, and 1&nbsp;day before your SSL
+                <strong>Certificate expiration</strong>: 14, 7, 3, and 1&nbsp;day before your SSL
                 certificate expires
               </li>
               <li>
-                <strong>Change detection</strong> — Updates to registration details, DNS providers,
+                <strong>Change detection</strong>: Updates to registration details, DNS providers,
                 hosting, or email providers
               </li>
               <li>
-                <strong>Verification status</strong> — When verification starts failing or is
-                revoked
+                <strong>Verification status</strong>: When verification starts failing or is revoked
               </li>
             </ul>
           </>
@@ -242,7 +241,7 @@ const faqSections = [
         answer: (
           <p>
             Yes! Each tracked domain has its own notification settings. You can override global
-            preferences on a per-domain basis — for example, disable certificate alerts for a domain
+            preferences on a per-domain basis; for example, disable certificate alerts for a domain
             that handles its own renewal while keeping domain expiry and change alerts enabled.
           </p>
         ),
@@ -336,7 +335,7 @@ const faqSections = [
               <li>Basic usage analytics</li>
             </ul>
             <p>
-              Domain data shown in reports is all publicly available — we don&apos;t access anything
+              Domain data shown in reports is all publicly available; we don&apos;t access anything
               private. See our <Link href="/privacy">Privacy Policy</Link> for full details.
             </p>
           </>
@@ -394,7 +393,7 @@ export default function HelpPage() {
       <section>
         <p>
           Domainstack helps you understand and monitor your domains. Look up any domain to see
-          registration details, DNS records, SSL certificates, and more — all in one place. Track
+          registration details, DNS records, SSL certificates, and more, all in one place. Track
           domains you own to get notified about critical changes and get a heads up before they're
           due to expire.
         </p>

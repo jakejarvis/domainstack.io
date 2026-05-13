@@ -25,6 +25,12 @@ import {
 } from "@domainstack/ui/stepper";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 
+const SUBSCRIPTION_LOADING_CONTENT = (
+  <div className="flex min-h-[200px] items-center justify-center">
+    <Spinner className="size-6" />
+  </div>
+);
+
 export type AddDomainContentProps = {
   /** Additional classes for the wrapper */
   className?: string;
@@ -95,13 +101,7 @@ export function AddDomainContent({
 
   // Show loading spinner while checking subscription
   if (isSubscriptionLoading) {
-    const loadingContent = (
-      <div className="flex min-h-[200px] items-center justify-center">
-        <Spinner className="size-6" />
-      </div>
-    );
-
-    return <div className={className}>{loadingContent}</div>;
+    return <div className={className}>{SUBSCRIPTION_LOADING_CONTENT}</div>;
   }
 
   // Show error state if subscription check failed
@@ -321,7 +321,7 @@ export function AddDomainContent({
                   </div>
                 </>
               ) : (
-                <div className="flex h-[200px] flex-col items-center justify-center space-y-4">
+                <div className="flex h-[200px] flex-col items-center justify-center gap-4">
                   <Icon size="lg" variant="destructive" className="mx-auto">
                     <IconAlertCircle />
                   </Icon>

@@ -78,9 +78,10 @@ export function useSectionTracking({
       }
 
       // Find active section based on scroll position
-      const sectionEls = sectionIds
-        .map((id) => document.getElementById(id))
-        .filter((el): el is HTMLElement => el instanceof HTMLElement);
+      const sectionEls = sectionIds.flatMap((id) => {
+        const el = document.getElementById(id);
+        return el instanceof HTMLElement ? [el] : [];
+      });
 
       let nextActive = sectionEls[0]?.id ?? sectionIds[0] ?? "";
       for (const el of sectionEls) {

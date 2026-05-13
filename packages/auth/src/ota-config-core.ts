@@ -18,8 +18,8 @@ export function buildOtaConfig({ enabledProviders }: BuildOtaConfigOptions): Ota
   const enabled = new Set<OAuthProvider>(enabledProviders);
 
   return {
-    authProviders: OAUTH_PROVIDER_METADATA.filter((provider) => enabled.has(provider.id)).map(
-      ({ id, name }) => ({ id, name }),
+    authProviders: OAUTH_PROVIDER_METADATA.flatMap((provider) =>
+      enabled.has(provider.id) ? [{ id: provider.id, name: provider.name }] : [],
     ),
   };
 }

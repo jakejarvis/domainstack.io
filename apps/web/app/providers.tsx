@@ -1,7 +1,7 @@
 "use client";
 
 import { AppProgressProvider as ProgressProvider } from "@bprogress/next";
-import { MotionConfig } from "motion/react";
+import { domAnimation, LazyMotion, MotionConfig } from "motion/react";
 import { ThemeProvider } from "next-themes";
 
 import { PostHogIdentityProvider } from "@/components/analytics/posthog-identity";
@@ -29,8 +29,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
                   ease: [0.22, 1, 0.36, 1] as const,
                 }}
               >
-                {children}
-                <VibrationProvider />
+                <LazyMotion features={domAnimation}>
+                  {children}
+                  <VibrationProvider />
+                </LazyMotion>
               </MotionConfig>
             </ProgressProvider>
           </TooltipProvider>

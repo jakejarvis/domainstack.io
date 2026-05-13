@@ -128,7 +128,7 @@ function PreviewImage({
 
   return (
     <div className={`flex h-full w-full items-center justify-center ${placeholderClassName}`}>
-      <IconPhotoOff className="h-5 w-5" aria-hidden />
+      <IconPhotoOff className="size-5" aria-hidden />
       <span className="sr-only">No image</span>
     </div>
   );

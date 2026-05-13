@@ -17,8 +17,8 @@ import {
 } from "@domainstack/constants";
 
 // Pre-sorted thresholds (ascending) for efficient lookup - sort once at module load
-const SORTED_DOMAIN_THRESHOLDS = [...DOMAIN_EXPIRY_THRESHOLDS].sort((a, b) => a - b);
-const SORTED_CERTIFICATE_THRESHOLDS = [...CERTIFICATE_EXPIRY_THRESHOLDS].sort((a, b) => a - b);
+const SORTED_DOMAIN_THRESHOLDS = DOMAIN_EXPIRY_THRESHOLDS.toSorted((a, b) => a - b);
+const SORTED_CERTIFICATE_THRESHOLDS = CERTIFICATE_EXPIRY_THRESHOLDS.toSorted((a, b) => a - b);
 
 /**
  * Generate a stable idempotency key for Resend.

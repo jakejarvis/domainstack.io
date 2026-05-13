@@ -1,7 +1,7 @@
 "use client";
 
 import { IconXboxX } from "@tabler/icons-react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import type { RefObject } from "react";
 
 import { NotificationCard } from "@/components/notifications/notification-card";
@@ -56,7 +56,7 @@ export function NotificationList({
         <div className="divide-y">
           <AnimatePresence mode="popLayout" initial={false}>
             {notifications.map((notification) => (
-              <motion.div
+              <m.div
                 key={notification.id}
                 initial={{
                   opacity: 0,
@@ -73,7 +73,7 @@ export function NotificationList({
                   notification={notification}
                   onClick={() => onNotificationClick?.(notification)}
                 />
-              </motion.div>
+              </m.div>
             ))}
           </AnimatePresence>
 

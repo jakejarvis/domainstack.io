@@ -28,18 +28,13 @@ export function parseAltNames(subjectAltName: string | undefined): string[] {
   if (typeof subjectAltName !== "string" || subjectAltName.length === 0) {
     return [];
   }
-  return subjectAltName
-    .split(",")
-    .map((segment) => segment.trim())
-    .map((segment) => {
-      const idx = segment.indexOf(":");
-      if (idx === -1) return ["", segment] as const;
-      const kind = segment.slice(0, idx).trim().toUpperCase();
-      const value = segment.slice(idx + 1).trim();
-      return [kind, value] as const;
-    })
-    .filter(([kind, value]) => !!value && (kind === "DNS" || kind === "IP ADDRESS"))
-    .map(([_, value]) => value);
+  return subjectAltName.split(",").flatMap((rawSegment) => {
+    const segment = rawSegment.trim();
+    const idx = segment.indexOf(":");
+    const kind = idx === -1 ? "" : segment.slice(0, idx).trim().toUpperCase();
+    const value = idx === -1 ? segment : segment.slice(idx + 1).trim();
+    return !!value && (kind === "DNS" || kind === "IP ADDRESS") ? [value] : [];
+  });
 }
 
 /**

@@ -38,12 +38,17 @@ export async function detectAndResolveProvidersStep(
   "use step";
 
   // Dynamic imports for Node.js modules and database operations
-  const { toRegistrableDomain } = await import("@/lib/normalize-domain");
-  const { getProviderCatalog } = await import("@domainstack/server/edge-config");
-  const { detectDnsProvider, detectEmailProvider, detectHostingProvider, getProvidersFromCatalog } =
-    await import("@domainstack/utils/providers");
-  const { upsertCatalogProvider, resolveOrCreateProviderId } =
-    await import("@domainstack/db/queries");
+  const [
+    { toRegistrableDomain },
+    { getProviderCatalog },
+    { detectDnsProvider, detectEmailProvider, detectHostingProvider, getProvidersFromCatalog },
+    { upsertCatalogProvider, resolveOrCreateProviderId },
+  ] = await Promise.all([
+    import("@/lib/normalize-domain"),
+    import("@domainstack/server/edge-config"),
+    import("@domainstack/utils/providers"),
+    import("@domainstack/db/queries"),
+  ]);
 
   // Extract MX and NS records
   const mx = dnsRecords.filter((d) => d.type === "MX");

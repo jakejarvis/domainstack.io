@@ -19,7 +19,7 @@ type TrackDomainButtonProps = {
 
 export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonProps) {
   const { data: session, isPending: isSessionPending } = useSession();
-  const router = useRouter();
+  const { push } = useRouter();
   const trpc = useTRPC();
 
   // Only query tracked domains when user is authenticated (read-only, no mutations needed)
@@ -50,17 +50,17 @@ export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonP
           params.set("method", trackedDomain.verificationMethod);
         }
 
-        router.push(`/dashboard/add-domain?${params.toString()}`, {
+        push(`/dashboard/add-domain?${params.toString()}`, {
           scroll: false,
         });
       } else {
         // Add new domain flow
-        router.push(`/dashboard/add-domain?domain=${encodeURIComponent(domain)}`, {
+        push(`/dashboard/add-domain?domain=${encodeURIComponent(domain)}`, {
           scroll: false,
         });
       }
     }
-  }, [session?.user, isPendingVerification, trackedDomain, domain, router]);
+  }, [session?.user, isPendingVerification, trackedDomain, domain, push]);
 
   // Show loading state during SSR, initial hydration, while data is loading,
   // or while the button is disabled (e.g., waiting for registration confirmation)

@@ -5,6 +5,16 @@ import { render, screen, within } from "@/mocks/react";
 
 import { SocialPreviews } from "./social-previews";
 
+const TAB_NAME_PATTERNS = {
+  Twitter: /twitter/i,
+  Facebook: /facebook/i,
+  LinkedIn: /linkedin/i,
+  Discord: /discord/i,
+  Slack: /slack/i,
+} satisfies Record<string, RegExp>;
+
+type TabName = keyof typeof TAB_NAME_PATTERNS;
+
 describe("SocialPreviews", () => {
   const mockPreview = {
     title: "Test Title",
@@ -113,7 +123,7 @@ describe("SocialPreviews", () => {
   describe("social preview rendering across providers", () => {
     const providers: Array<{
       provider: "twitter" | "facebook" | "linkedin" | "discord" | "slack";
-      tabName: string;
+      tabName: TabName;
     }> = [
       { provider: "twitter", tabName: "Twitter" },
       { provider: "facebook", tabName: "Facebook" },
@@ -135,7 +145,7 @@ describe("SocialPreviews", () => {
         render(<SocialPreviews preview={preview} twitterVariant="compact" />);
 
         // Switch to the provider's tab
-        const tab = screen.getByRole("tab", { name: new RegExp(tabName, "i") });
+        const tab = screen.getByRole("tab", { name: TAB_NAME_PATTERNS[tabName] });
         await user.click(tab);
 
         // Verify the preview is rendered with correct provider
@@ -156,7 +166,7 @@ describe("SocialPreviews", () => {
         };
         render(<SocialPreviews preview={preview} twitterVariant="compact" />);
 
-        const tab = screen.getByRole("tab", { name: new RegExp(tabName, "i") });
+        const tab = screen.getByRole("tab", { name: TAB_NAME_PATTERNS[tabName] });
         await user.click(tab);
 
         const previewLink = screen.getByRole("link", {

@@ -76,8 +76,8 @@ function NotificationMatrixSkeleton({ className }: { className?: string }) {
 
       {/* Category rows */}
       <div className="divide-y divide-border/30">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="flex items-center py-2.5 pr-2 pl-1">
+        {["a", "b", "c", "d", "e"].map((row) => (
+          <div key={row} className="flex items-center py-2.5 pr-2 pl-1">
             <div className="flex min-w-0 flex-1 items-center gap-2">
               <Skeleton className="mr-0.5 size-4 shrink-0" />
               <Skeleton className="h-4 w-28" />

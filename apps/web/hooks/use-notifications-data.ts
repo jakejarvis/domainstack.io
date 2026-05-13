@@ -47,9 +47,11 @@ export function useNotificationsData({ filter, enabled }: UseNotificationsDataOp
   const markRead = useMutation({
     mutationFn: trpc.notifications.markRead.mutationOptions().mutationFn,
     onMutate: async ({ id }) => {
-      await queryClient.cancelQueries({ queryKey: inboxListQueryKey });
-      await queryClient.cancelQueries({ queryKey: archiveListQueryKey });
-      await queryClient.cancelQueries({ queryKey: countQueryKey });
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: inboxListQueryKey }),
+        queryClient.cancelQueries({ queryKey: archiveListQueryKey }),
+        queryClient.cancelQueries({ queryKey: countQueryKey }),
+      ]);
 
       const previousCount = queryClient.getQueryData(countQueryKey);
       const previousInbox = queryClient.getQueryData(inboxListQueryKey);
@@ -111,9 +113,11 @@ export function useNotificationsData({ filter, enabled }: UseNotificationsDataOp
   const markAllRead = useMutation({
     mutationFn: trpc.notifications.markAllRead.mutationOptions().mutationFn,
     onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: inboxListQueryKey });
-      await queryClient.cancelQueries({ queryKey: archiveListQueryKey });
-      await queryClient.cancelQueries({ queryKey: countQueryKey });
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: inboxListQueryKey }),
+        queryClient.cancelQueries({ queryKey: archiveListQueryKey }),
+        queryClient.cancelQueries({ queryKey: countQueryKey }),
+      ]);
 
       const previousCount = queryClient.getQueryData(countQueryKey);
       const previousInbox = queryClient.getQueryData(inboxListQueryKey);

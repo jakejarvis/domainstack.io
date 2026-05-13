@@ -43,8 +43,8 @@ export function AppFooter() {
 
   return (
     <>
-      <footer className="space-y-1.5 px-4 pt-6 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center text-xs leading-relaxed text-muted-foreground sm:px-6 [&_a]:inline-flex [&_a]:items-center [&_a]:gap-1 [&_a]:text-foreground/85 [&_a]:hover:text-foreground/60 [&_a]:hover:no-underline [&_svg]:inline-block [&_svg]:size-4 [&_svg]:px-[1px]">
-        <div className="flex flex-wrap items-center justify-center space-x-[1.25em] gap-y-2 [&_a]:whitespace-nowrap">
+      <footer className="flex flex-col gap-y-1.5 px-4 pt-6 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center text-xs leading-relaxed text-muted-foreground sm:px-6 [&_a]:inline-flex [&_a]:items-center [&_a]:gap-1 [&_a]:text-foreground/85 [&_a]:hover:text-foreground/60 [&_a]:hover:no-underline [&_svg]:inline-block [&_svg]:size-4 [&_svg]:px-[1px]">
+        <div className="flex flex-wrap items-center justify-center gap-x-[1.25em] gap-y-2 [&_a]:whitespace-nowrap">
           <Link href="/help">
             <IconLifebuoy className="text-muted-foreground" />
             Help

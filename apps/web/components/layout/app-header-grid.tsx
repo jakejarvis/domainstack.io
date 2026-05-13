@@ -1,7 +1,7 @@
 "use client";
 
 import { useAtomValue } from "jotai";
-import { motion } from "motion/react";
+import { m } from "motion/react";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useScrollDirection } from "@/hooks/use-scroll-direction";
@@ -20,7 +20,7 @@ export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <motion.header
+      <m.header
         className={cn(
           "top-0 right-0 left-0 z-100 grid h-[var(--header-height)] grid-cols-[1fr_minmax(0,var(--container-2xl))_1fr] items-center gap-4 border-b border-black/15 bg-background/80 py-3 pr-4 pl-6 backdrop-blur dark:border-white/10",
           "md:sticky md:right-auto md:left-auto",
@@ -44,7 +44,7 @@ export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
         initial={false}
       >
         {children}
-      </motion.header>
+      </m.header>
 
       {/* Spacer to prevent content jump when header is fixed/absolute on mobile */}
       {isMobile && <div className="h-[var(--header-height)]" aria-hidden />}

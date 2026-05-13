@@ -30,22 +30,25 @@ export function generateCalendarFeed(domains: TrackedDomainWithDetails[]): Calen
   const expiringDomains = domains.filter((d) => d.verified && d.expirationDate !== null);
 
   const now = new Date();
-  const events: IcsEvent[] = expiringDomains
-    .filter((domain) => domain.expirationDate !== null)
-    .map((domain) => ({
-      // Stable UID: uses trackedDomainId which is unique per user+domain
-      uid: `${domain.id}@domainstack.io`,
-      // Required: timestamp when this event was created/modified
-      stamp: { date: now },
-      // For all-day events, use DATE type (not DATE-TIME)
-      start: { date: domain.expirationDate as Date, type: "DATE" as const },
-      // All-day events need a duration of 1 day
-      duration: { days: 1 },
-      summary: `🌐 ${domain.domainName} expires`,
-      description: buildEventDescription(domain),
-      url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard?domainId=${domain.id}`,
-      categories: ["Domain Expiration"],
-    }));
+  const events: IcsEvent[] = expiringDomains.flatMap((domain) => {
+    if (domain.expirationDate === null) return [];
+    return [
+      {
+        // Stable UID: uses trackedDomainId which is unique per user+domain
+        uid: `${domain.id}@domainstack.io`,
+        // Required: timestamp when this event was created/modified
+        stamp: { date: now },
+        // For all-day events, use DATE type (not DATE-TIME)
+        start: { date: domain.expirationDate, type: "DATE" as const },
+        // All-day events need a duration of 1 day
+        duration: { days: 1 },
+        summary: `🌐 ${domain.domainName} expires`,
+        description: buildEventDescription(domain),
+        url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard?domainId=${domain.id}`,
+        categories: ["Domain Expiration"],
+      },
+    ];
+  });
 
   const calendar: IcsCalendar = {
     version: "2.0",

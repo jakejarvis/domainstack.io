@@ -37,7 +37,7 @@ export function KeyValue({
           : "border-border",
       )}
     >
-      <div className="flex min-w-0 flex-col space-y-1.5">
+      <div className="flex min-w-0 flex-col gap-y-1.5">
         {label && (
           <div
             className={cn(
@@ -50,7 +50,7 @@ export function KeyValue({
         )}
         <div className="inline-flex min-w-0 items-center gap-1.5 text-[13px] text-foreground/95">
           {leading ? (
-            <span className="h-4 w-4 rounded leading-none [&>img]:block [&>img]:h-full [&>img]:w-full [&>svg]:block [&>svg]:h-full [&>svg]:w-full">
+            <span className="size-4 rounded leading-none [&>img]:block [&>img]:h-full [&>img]:w-full [&>svg]:block [&>svg]:h-full [&>svg]:w-full">
               {leading}
             </span>
           ) : null}

@@ -16,7 +16,7 @@ const SUBSCRIPTION_EXPIRY_THRESHOLDS = [7, 3, 1] as const;
 type SubscriptionExpiryThreshold = (typeof SUBSCRIPTION_EXPIRY_THRESHOLDS)[number];
 
 // Pre-sorted ascending for threshold lookup (most urgent first)
-const SORTED_THRESHOLDS = [...SUBSCRIPTION_EXPIRY_THRESHOLDS].sort((a, b) => a - b);
+const SORTED_THRESHOLDS = SUBSCRIPTION_EXPIRY_THRESHOLDS.toSorted((a, b) => a - b);
 
 /**
  * Get the subscription expiry notification threshold for a given number of days remaining.
@@ -161,10 +161,11 @@ async function sendSubscriptionExpiryNotification(params: {
 }): Promise<boolean> {
   "use step";
 
-  const { format } = await import("date-fns");
-  const { default: SubscriptionCancelingEmail } =
-    await import("@domainstack/email/templates/subscription-canceling");
-  const { sendEmail } = await import("@/workflows/shared/send-email");
+  const [{ format }, { default: SubscriptionCancelingEmail }, { sendEmail }] = await Promise.all([
+    import("date-fns"),
+    import("@domainstack/email/templates/subscription-canceling"),
+    import("@/workflows/shared/send-email"),
+  ]);
 
   const { userName, userEmail, endsAt, daysRemaining, threshold: _ } = params;
 
