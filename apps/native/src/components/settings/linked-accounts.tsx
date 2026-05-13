@@ -7,6 +7,7 @@ import { Button } from "@/components/button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ProviderIcon } from "@/components/provider-icon";
 import { MutedText, Text } from "@/components/text";
+import { analytics } from "@/lib/analytics";
 import { useTRPC } from "@/lib/api";
 import { type AuthProvider, getOtaConfig, linkProvider, unlinkProvider } from "@/lib/auth";
 import { getEnabledNativeAuthProviders } from "@/lib/auth-providers";
@@ -67,6 +68,7 @@ export function LinkedAccountsSection() {
       await invalidateLinkedAccounts();
     } catch (error) {
       if (!isAuthCanceled(error)) {
+        analytics.trackException(error, { action: "link_account", provider });
         Alert.alert(
           "Could not link account",
           error instanceof Error ? error.message : "Unable to link this provider.",
@@ -86,6 +88,7 @@ export function LinkedAccountsSection() {
       }
       setPendingUnlink(null);
     } catch (error) {
+      analytics.trackException(error, { action: "unlink_account", provider: pendingUnlink });
       const message = error instanceof Error ? error.message : "Unable to unlink this provider.";
       Alert.alert("Could not unlink account", message);
     }

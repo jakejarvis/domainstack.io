@@ -20,6 +20,7 @@ import {
 import { SkeletonRows } from "@/components/skeleton";
 import { MutedText, Text } from "@/components/text";
 import { usePushRegistration } from "@/hooks/use-push-registration";
+import { analytics } from "@/lib/analytics";
 import { useTRPC } from "@/lib/api";
 import { authClient, signOut } from "@/lib/auth";
 import { usePrivacyStore } from "@/lib/stores/privacy-store";
@@ -277,6 +278,7 @@ function AccountSection() {
       <LinkedAccountsSection />
       <Button
         onPress={() => {
+          analytics.track("sign_out_clicked");
           void signOut().then(() => router.replace("/(tabs)/search"));
         }}
         variant="secondary"

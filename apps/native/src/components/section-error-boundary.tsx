@@ -2,6 +2,8 @@ import { useQueryErrorResetBoundary } from "@tanstack/react-query";
 import { Component, type ErrorInfo, type ReactNode, useCallback, useState } from "react";
 import { View } from "react-native";
 
+import { analytics } from "@/lib/analytics";
+
 import { Button } from "./button";
 import { GlassCard } from "./glass-card";
 import { MutedText, Text } from "./text";
@@ -35,9 +37,11 @@ class ErrorBoundaryInner extends Component<BoundaryProps, BoundaryState> {
     return null;
   }
 
-  componentDidCatch(_error: Error, _info: ErrorInfo) {
-    // Native analytics wiring is a future TODO (see apps/native/TODO.md
-    // "Observability & infra"). When that lands, capture exceptions here.
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    analytics.trackException(error, {
+      section: this.props.sectionName,
+      componentStack: info.componentStack,
+    });
   }
 
   render() {

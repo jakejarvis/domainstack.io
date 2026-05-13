@@ -7,6 +7,7 @@ import { Button } from "@/components/button";
 import { GlassCard } from "@/components/glass-card";
 import { SkeletonRows } from "@/components/skeleton";
 import { MutedText, Text } from "@/components/text";
+import { analytics } from "@/lib/analytics";
 import { useTRPC } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 
@@ -29,6 +30,7 @@ export function BillingSection() {
   );
 
   async function handleUpgrade() {
+    analytics.track("upgrade_clicked");
     const result = await checkout.mutateAsync({
       successUrl: Linking.createURL("/settings?upgraded=true"),
     });
@@ -37,6 +39,7 @@ export function BillingSection() {
   }
 
   async function handleManage() {
+    analytics.track("customer_portal_opened");
     const result = await portal.mutateAsync();
     await WebBrowser.openAuthSessionAsync(result.url, Linking.createURL("/"));
     await queryClient.invalidateQueries({ queryKey: subscriptionKey });

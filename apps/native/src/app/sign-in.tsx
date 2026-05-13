@@ -9,6 +9,7 @@ import { GlassCard } from "@/components/glass-card";
 import { ProviderIcon } from "@/components/provider-icon";
 import { Screen } from "@/components/screen";
 import { MutedText, Text } from "@/components/text";
+import { analytics } from "@/lib/analytics";
 import {
   type AuthProvider,
   getOtaConfig,
@@ -83,6 +84,7 @@ export default function SignInScreen() {
   };
 
   const handleProviderSignIn = async (provider: AuthProvider) => {
+    analytics.track("sign_in_clicked", { provider });
     setLoadingProvider(provider);
 
     try {
@@ -99,6 +101,7 @@ export default function SignInScreen() {
   };
 
   const handleNativeAppleSignIn = async () => {
+    analytics.track("sign_in_clicked", { provider: "apple" });
     setLoadingProvider("apple");
 
     try {
@@ -128,6 +131,7 @@ export default function SignInScreen() {
   };
 
   const handleNativeGoogleSignIn = async () => {
+    analytics.track("sign_in_clicked", { provider: "google" });
     setLoadingProvider("google");
 
     try {

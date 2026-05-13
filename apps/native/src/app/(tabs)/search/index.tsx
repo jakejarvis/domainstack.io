@@ -9,6 +9,7 @@ import { HeaderMenu } from "@/components/header-menu";
 import { Screen } from "@/components/screen";
 import { MutedText, Text } from "@/components/text";
 import { TextField } from "@/components/text-field";
+import { analytics } from "@/lib/analytics";
 import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
 import { isValidDomain, normalizeDomainInput } from "@domainstack/utils/domain/client";
 
@@ -29,9 +30,11 @@ export default function SearchScreen() {
   function handleSubmit() {
     const normalized = normalizeDomainInput(domain);
     if (!isValidDomain(normalized)) {
+      analytics.track("search_invalid_input", { input: domain });
       Alert.alert("Invalid domain", "Enter a hostname like example.com.");
       return;
     }
+    analytics.track("search_submitted", { domain: normalized });
     setDomain("");
     openDomain(normalized);
   }

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import type { ImageSourcePropType } from "react-native";
 import { Platform } from "react-native";
 
+import { analytics } from "@/lib/analytics";
 import { authClient, signOut } from "@/lib/auth";
 import { useCSSVariable } from "@/tw";
 
@@ -100,6 +101,7 @@ export function HeaderMenu({
                 android: sources.logoutDanger ?? sources.logout,
               })}
               onPress={() => {
+                analytics.track("sign_out_clicked");
                 void signOut().then(() => router.replace("/(tabs)/search"));
               }}
             >

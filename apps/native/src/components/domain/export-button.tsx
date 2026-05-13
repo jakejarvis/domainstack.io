@@ -3,6 +3,7 @@ import { Alert, Share } from "react-native";
 
 import { Button } from "@/components/button";
 import { Text } from "@/components/text";
+import { analytics } from "@/lib/analytics";
 import { useTRPC } from "@/lib/api";
 
 export function ExportButton({ domain }: { domain: string }) {
@@ -10,6 +11,7 @@ export function ExportButton({ domain }: { domain: string }) {
   const queryClient = useQueryClient();
 
   async function handleExport() {
+    analytics.track("export_json_clicked", { domain });
     try {
       const input = { domain };
       const registration = queryClient.getQueryData(trpc.domain.getRegistration.queryKey(input));
@@ -35,6 +37,7 @@ export function ExportButton({ domain }: { domain: string }) {
         title: `${domain} report`,
       });
     } catch (error) {
+      analytics.trackException(error, { domain });
       const message = error instanceof Error ? error.message : "Export failed";
       Alert.alert("Domainstack", message);
     }

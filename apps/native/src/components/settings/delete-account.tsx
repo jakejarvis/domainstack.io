@@ -6,6 +6,7 @@ import { Button } from "@/components/button";
 import { GlassCard } from "@/components/glass-card";
 import { Spinner } from "@/components/spinner";
 import { MutedText, Text } from "@/components/text";
+import { analytics } from "@/lib/analytics";
 import { deleteAccount } from "@/lib/auth";
 
 type DialogState =
@@ -51,6 +52,7 @@ export function DeleteAccountSection() {
   }, [open]);
 
   async function handleDelete() {
+    analytics.track("delete_account_initiated");
     dispatch({ type: "START_DELETE" });
     try {
       const result = await deleteAccount();

@@ -22,6 +22,7 @@ import { ReportSectionSkeleton } from "@/components/report-section-skeleton";
 import { Screen } from "@/components/screen";
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
 import { MutedText, Text } from "@/components/text";
+import { analytics } from "@/lib/analytics";
 import { useTRPC } from "@/lib/api";
 import { authClient } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
@@ -80,6 +81,10 @@ function DomainReportContent({ domain }: { domain: string }) {
     void queryClient.prefetchQuery(trpc.domain.getHeaders.queryOptions(input));
     void queryClient.prefetchQuery(trpc.domain.getSeo.queryOptions(input));
   }, [domain, queryClient, trpc]);
+
+  useEffect(() => {
+    analytics.track("report_viewed", { domain });
+  }, [domain]);
 
   const invalidate = async () => {
     const input = { domain };

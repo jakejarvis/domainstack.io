@@ -8,13 +8,15 @@ import { useEffect } from "react";
 import { Platform, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
-import { AnalyticsProvider } from "@/lib/analytics";
+import { AnalyticsProvider } from "@/lib/analytics-provider";
 import { ApiProvider } from "@/lib/api";
 import { authClient } from "@/lib/auth";
+import { installGlobalErrorHandler } from "@/lib/error-handler";
 import { routeFromNotificationData } from "@/lib/navigation";
 import { useCSSVariable } from "@/tw";
 
 void SplashScreen.preventAutoHideAsync();
+installGlobalErrorHandler();
 
 function RootNavigator() {
   const canvas = useCSSVariable("--color-canvas");
