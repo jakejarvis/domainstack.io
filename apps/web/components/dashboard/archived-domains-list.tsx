@@ -1,9 +1,10 @@
 import { IconArchive, IconCircleArrowUp, IconRefresh, IconTrash } from "@tabler/icons-react";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistance } from "date-fns";
 
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
 import { Favicon } from "@/components/icons/favicon";
 import { useDashboardActions } from "@/context/dashboard-context";
+import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { useSubscription } from "@/hooks/use-subscription";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
@@ -25,6 +26,7 @@ type ArchivedDomainsListProps = {
 export function ArchivedDomainsList({ domains }: ArchivedDomainsListProps) {
   const { onUnarchive, onRemove } = useDashboardActions();
   const { subscription, isPro } = useSubscription();
+  const now = useHydratedNow();
 
   if (domains.length === 0) {
     return (
@@ -64,10 +66,10 @@ export function ArchivedDomainsList({ domains }: ArchivedDomainsListProps) {
                 <Favicon domain={domain.domainName} className="size-6" />
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-medium">{domain.domainName}</div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-muted-foreground" suppressHydrationWarning>
                     Archived{" "}
-                    {domain.archivedAt
-                      ? formatDistanceToNow(new Date(domain.archivedAt), {
+                    {domain.archivedAt && now
+                      ? formatDistance(new Date(domain.archivedAt), now, {
                           addSuffix: true,
                           includeSeconds: false,
                         })

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import { LoginContent } from "@/components/auth/login-content";
+import { LoginSkeleton } from "@/components/auth/login-skeleton";
 import { Card } from "@domainstack/ui/card";
 import { cn } from "@domainstack/ui/utils";
 
@@ -17,7 +19,9 @@ export default function LoginPage() {
         "border-black/15 bg-background/70 shadow-2xl ring-1 ring-black/5 backdrop-blur-2xl dark:border-white/8 dark:bg-background/60 dark:ring-white/5",
       )}
     >
-      <LoginContent />
+      <Suspense fallback={<LoginSkeleton />}>
+        <LoginContent />
+      </Suspense>
     </Card>
   );
 }

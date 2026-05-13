@@ -38,13 +38,6 @@ export function NotificationsPopover() {
     getLatestUnreadCount,
   } = useNotificationsData({ filter, enabled: open });
 
-  // Avoid duplicate auto-mark calls within a single open session.
-  useEffect(() => {
-    if (open) {
-      autoMarkedThisOpenRef.current = false;
-    }
-  }, [open]);
-
   const maybeAutoMarkAllRead = () => {
     if (autoMarkedThisOpenRef.current) return;
     if (markAllRead.isPending) return;
@@ -110,8 +103,11 @@ export function NotificationsPopover() {
     <Popover
       open={open}
       onOpenChange={(nextOpen) => {
-        // When closing from Inbox with unread notifications, mark them all as read.
-        if (!nextOpen) {
+        if (nextOpen) {
+          // Reset the auto-mark guard so the next session can fire again.
+          autoMarkedThisOpenRef.current = false;
+        } else {
+          // When closing from Inbox with unread notifications, mark them all as read.
           maybeAutoMarkAllRead();
         }
         setOpen(nextOpen);

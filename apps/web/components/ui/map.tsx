@@ -22,6 +22,7 @@ import {
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 
+import { useIsHydrated } from "@/hooks/use-is-hydrated";
 import { useTheme } from "@/hooks/use-theme";
 import { analytics } from "@domainstack/analytics/client";
 import { Spinner } from "@domainstack/ui/spinner";
@@ -73,7 +74,7 @@ const DefaultLoader = () => (
 function MapInstance({ children, styles, className, ...props }: MapInstanceProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreGL.Map | null>(null);
-  const [isMounted, setIsMounted] = useState(false);
+  const isMounted = useIsHydrated();
   const [isLoaded, setIsLoaded] = useState(false);
   const [isStyleLoaded, setIsStyleLoaded] = useState(false);
   const { theme: resolvedTheme } = useTheme();
@@ -90,10 +91,6 @@ function MapInstance({ children, styles, className, ...props }: MapInstanceProps
   if (initialMapStyleRef.current === null) {
     initialMapStyleRef.current = resolvedTheme === "dark" ? mapStyles.dark : mapStyles.light;
   }
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   useEffect(() => {
     if (!isMounted || !containerRef.current) return;

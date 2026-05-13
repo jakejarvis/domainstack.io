@@ -31,11 +31,12 @@ export function ChatClientLazy({ suggestions }: { suggestions?: string[] }) {
     }
   }, [hydrated, hideAiFeatures, setHideAiFeatures]);
 
-  // Once loaded, stay loaded (keeps settings dialog working when user disables AI)
+  // Once loaded, stay loaded (keeps settings dialog working when user disables AI).
+  // Adjust state during render — see https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
   const shouldLoad = hydrated && !hideAiFeatures;
-  useEffect(() => {
-    if (shouldLoad) setHasLoaded(true);
-  }, [shouldLoad]);
+  if (shouldLoad && !hasLoaded) {
+    setHasLoaded(true);
+  }
 
   if (!hasLoaded) return null;
   return <DynamicChatClient suggestions={suggestions} />;
