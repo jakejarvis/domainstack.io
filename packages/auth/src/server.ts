@@ -23,6 +23,7 @@ import { checkout, polar, portal, webhooks } from "@domainstack/polar/better-aut
 import { Polar } from "@domainstack/polar/sdk";
 import { getRedis } from "@domainstack/redis";
 
+import { otaConfig } from "./ota-config";
 import { buildOAuthProviders, validateOAuthCredentialPair } from "./providers";
 import { createRedisStorage } from "./storage";
 
@@ -254,6 +255,7 @@ export const auth = betterAuth({
         ]
       : []),
     dash(),
+    otaConfig({ enabledProviders }),
     expo(),
     // must be last: https://www.better-auth.com/docs/integrations/next#server-action-cookies
     nextCookies(),

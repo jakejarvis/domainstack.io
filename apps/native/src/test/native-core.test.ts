@@ -35,17 +35,18 @@ describe("native app core helpers", () => {
   it("filters native auth providers in web parity order", () => {
     expect(
       getEnabledNativeAuthProviders(
-        {
-          apple: true,
-          github: true,
-          gitlab: true,
-          google: true,
-          vercel: true,
-        },
+        [
+          { id: "apple", name: "Apple" },
+          { id: "github", name: "GitHub" },
+          { id: "gitlab", name: "GitLab" },
+          { id: "google", name: "Google" },
+          { id: "vercel", name: "Vercel" },
+        ],
         {
           iosClientId: "ios-client",
           webClientId: "web-client",
         },
+        { appleAuthAvailable: true },
       ),
     ).toEqual([
       { id: "apple", name: "Apple", supportsNativeIdToken: true },
@@ -56,38 +57,30 @@ describe("native app core helpers", () => {
     ]);
 
     expect(
-      getEnabledNativeAuthProviders(
-        {
-          apple: false,
-          github: false,
-          gitlab: false,
-          google: true,
-          vercel: false,
-        },
-        {
-          iosClientId: "",
-          webClientId: "",
-        },
-      ),
+      getEnabledNativeAuthProviders([{ id: "google", name: "Google" }], {
+        iosClientId: "",
+        webClientId: "",
+      }),
     ).toEqual([{ id: "google", name: "Google", supportsNativeIdToken: false }]);
   });
 
   it("builds Google native sign-in configuration", () => {
     expect(
       getEnabledNativeAuthProviders(
-        {
-          apple: false,
-          github: false,
-          gitlab: false,
-          google: true,
-          vercel: false,
-        },
+        [
+          { id: "apple", name: "Apple" },
+          { id: "google", name: "Google" },
+        ],
         {
           iosClientId: "",
           webClientId: "web-client",
         },
+        { appleAuthAvailable: false },
       ),
-    ).toEqual([{ id: "google", name: "Google", supportsNativeIdToken: false }]);
+    ).toEqual([
+      { id: "apple", name: "Apple", supportsNativeIdToken: false },
+      { id: "google", name: "Google", supportsNativeIdToken: false },
+    ]);
 
     expect(
       buildGoogleSignInConfig({

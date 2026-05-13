@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
@@ -9,17 +10,18 @@ import { Screen } from "@/components/screen";
 import { MutedText, Text } from "@/components/text";
 import {
   type AuthProvider,
+  getOtaConfig,
   signInWithAppleToken,
   signInWithGoogleToken,
   signInWithProvider,
 } from "@/lib/auth";
 import { getEnabledNativeAuthProviders, type NativeAuthProviderOption } from "@/lib/auth-providers";
-import { googleNativeConfig, nativeOAuthEnabled } from "@/lib/env";
+import { googleNativeConfig } from "@/lib/env";
 import { getGoogleIdentityToken } from "@/lib/google-auth";
 import { getInitialRoute } from "@/lib/navigation";
 import { createAuthNonce } from "@/lib/nonce";
 
-const providerOptions = getEnabledNativeAuthProviders(nativeOAuthEnabled, googleNativeConfig);
+const OTA_CONFIG_QUERY_KEY = ["auth", "ota-config"] as const;
 
 function isAuthCanceled(error: unknown): boolean {
   return error instanceof Error && "code" in error && error.code === "ERR_REQUEST_CANCELED";
@@ -28,6 +30,17 @@ function isAuthCanceled(error: unknown): boolean {
 export default function SignInScreen() {
   const [appleAuthAvailable, setAppleAuthAvailable] = useState<boolean | null>(null);
   const [loadingProvider, setLoadingProvider] = useState<AuthProvider | null>(null);
+  const otaConfig = useQuery({
+    queryFn: getOtaConfig,
+    queryKey: OTA_CONFIG_QUERY_KEY,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const providerOptions = otaConfig.data
+    ? getEnabledNativeAuthProviders(otaConfig.data.authProviders, googleNativeConfig, {
+        appleAuthAvailable: appleAuthAvailable === true,
+      })
+    : [];
 
   useEffect(() => {
     void AppleAuthentication.isAvailableAsync().then(setAppleAuthAvailable);
@@ -167,6 +180,33 @@ export default function SignInScreen() {
     );
   };
 
+  const renderProviderContent = () => {
+    if (otaConfig.isPending) {
+      return (
+        <Button disabled loading variant="primary">
+          Loading sign-in options…
+        </Button>
+      );
+    }
+
+    if (otaConfig.isError) {
+      return (
+        <>
+          <MutedText>Sign-in options are unavailable.</MutedText>
+          <Button onPress={() => void otaConfig.refetch()} variant="secondary">
+            Try again
+          </Button>
+        </>
+      );
+    }
+
+    if (providerOptions.length === 0) {
+      return <MutedText>No sign-in providers are available right now.</MutedText>;
+    }
+
+    return providerOptions.map(renderProviderButton);
+  };
+
   return (
     <Screen>
       <View className="gap-2">
@@ -174,13 +214,7 @@ export default function SignInScreen() {
         <MutedText>Sign in to manage tracked domains, verification, and notifications.</MutedText>
       </View>
 
-      <GlassCard>
-        {providerOptions.length > 0 ? (
-          providerOptions.map(renderProviderButton)
-        ) : (
-          <MutedText>No sign-in providers are enabled for this build.</MutedText>
-        )}
-      </GlassCard>
+      <GlassCard>{renderProviderContent()}</GlassCard>
     </Screen>
   );
 }

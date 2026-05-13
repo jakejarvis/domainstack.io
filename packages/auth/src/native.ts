@@ -11,6 +11,7 @@ import {
   type NativeIdTokenAuthProvider,
   type NativeAuthProvider,
 } from "./client-core";
+import { otaConfigClient, type OtaConfigClientActions } from "./ota-config-client";
 
 export type NativeAuthStorage = {
   getItem: (key: string) => string | null;
@@ -24,9 +25,10 @@ export type CreateNativeAuthClientOptions = {
   storagePrefix?: string;
 };
 
-export type NativeAuthClient = ReturnType<typeof createAuthClient> & {
-  getCookie: () => string;
-};
+export type NativeAuthClient = ReturnType<typeof createAuthClient> &
+  OtaConfigClientActions & {
+    getCookie: () => string;
+  };
 
 export function createNativeAuthClient({
   baseURL,
@@ -42,6 +44,7 @@ export function createNativeAuthClient({
         storage,
         storagePrefix,
       }),
+      otaConfigClient(),
     ],
   }) as NativeAuthClient;
 }

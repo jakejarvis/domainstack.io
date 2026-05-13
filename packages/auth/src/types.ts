@@ -1,7 +1,17 @@
+import type { SocialProviderList } from "better-auth/social-providers";
+
 /**
  * OAuth provider identifiers supported by the auth system.
  */
-export const OAUTH_PROVIDER_IDS = ["apple", "github", "gitlab", "google", "vercel"] as const;
+type BetterAuthSocialProvider = SocialProviderList[number];
+
+export const OAUTH_PROVIDER_IDS = [
+  "apple",
+  "github",
+  "gitlab",
+  "google",
+  "vercel",
+] as const satisfies readonly BetterAuthSocialProvider[];
 
 export type OAuthProvider = (typeof OAUTH_PROVIDER_IDS)[number];
 

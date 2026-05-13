@@ -40,15 +40,10 @@
     },
     "extra": {
       "apiBaseUrl": "${EXPO_PUBLIC_DOMAINSTACK_API_URL}",
-      "appleOauthEnabled": "${EXPO_PUBLIC_APPLE_OAUTH_ENABLED}",
-      "githubOauthEnabled": "${EXPO_PUBLIC_GITHUB_OAUTH_ENABLED}",
-      "gitlabOauthEnabled": "${EXPO_PUBLIC_GITLAB_OAUTH_ENABLED}",
       "googleIosClientId": "${EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID}",
-      "googleOauthEnabled": "${EXPO_PUBLIC_GOOGLE_OAUTH_ENABLED}",
       "googleWebClientId": "${EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID}",
       "posthogKey": "${EXPO_PUBLIC_POSTHOG_KEY}",
       "posthogHost": "${EXPO_PUBLIC_POSTHOG_HOST}",
-      "vercelOauthEnabled": "${EXPO_PUBLIC_VERCEL_OAUTH_ENABLED}",
       "router": {},
       "eas": {
         "projectId": "ff044af0-bf08-40bb-919f-04c950d11b14"

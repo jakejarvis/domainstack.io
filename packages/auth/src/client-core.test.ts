@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import type { SocialProviderList } from "better-auth/social-providers";
+import { describe, expect, expectTypeOf, it } from "vitest";
 
 import {
   AUTH_SCHEME,
@@ -9,6 +10,7 @@ import {
   normalizeBaseUrl,
 } from "./client-core";
 import { OAUTH_PROVIDER_METADATA } from "./providers";
+import { OAUTH_PROVIDER_IDS } from "./types";
 
 describe("auth client core", () => {
   it("normalizes optional base URLs without inventing a default", () => {
@@ -26,6 +28,7 @@ describe("auth client core", () => {
   });
 
   it("keeps native auth constants centralized", () => {
+    expectTypeOf(OAUTH_PROVIDER_IDS).toMatchTypeOf<readonly SocialProviderList[number][]>();
     expect(AUTH_SCHEME).toBe("domainstack");
     expect(AUTH_STORAGE_PREFIX).toBe("domainstack");
     expect(NATIVE_AUTH_PROVIDERS).toEqual(["apple", "github", "gitlab", "google", "vercel"]);
