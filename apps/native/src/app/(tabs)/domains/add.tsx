@@ -141,7 +141,11 @@ function AddDomainFlow() {
         dispatch({ type: "verified" });
         Alert.alert("Domain verified", `${flow.domain} is now tracked.`, [
           {
-            onPress: () => router.replace(`/(tabs)/domains/${trackedDomainId}`),
+            onPress: () =>
+              router.replace({
+                params: { domain: flow.domain },
+                pathname: "/(tabs)/domains/[domain]",
+              }),
             text: "Open domain",
           },
         ]);

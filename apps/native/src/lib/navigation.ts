@@ -4,8 +4,8 @@ export type DomainstackTab = "domains" | "notifications" | "search";
 
 const protectedTabs = new Set<DomainstackTab>(["domains", "notifications"]);
 
-function domainDetailRoute(id: string): Href {
-  return { params: { id }, pathname: "/(tabs)/domains/[id]" };
+function domainDetailRoute(domain: string): Href {
+  return { params: { domain }, pathname: "/(tabs)/domains/[domain]" };
 }
 
 export function getInitialRoute(isAuthenticated: boolean): Href {
@@ -17,18 +17,19 @@ export function canAccessTab(tab: DomainstackTab, isAuthenticated: boolean): boo
 }
 
 export function routeFromNotificationData(data: Record<string, unknown>): Href {
-  const trackedDomainId = data.trackedDomainId;
-  if (typeof trackedDomainId === "string" && trackedDomainId.length > 0) {
-    return domainDetailRoute(trackedDomainId);
-  }
+  const fromData = extractDomainName(data.data);
+  if (fromData) return domainDetailRoute(fromData);
 
-  const url = data.url;
-  if (typeof url === "string" && url.startsWith("domainstack://domains/")) {
-    const domainId = url.split("/").pop();
-    if (domainId) {
-      return domainDetailRoute(domainId);
-    }
+  const topLevelDomain = data.domainName;
+  if (typeof topLevelDomain === "string" && topLevelDomain.length > 0) {
+    return domainDetailRoute(topLevelDomain);
   }
 
   return "/(tabs)/notifications";
+}
+
+function extractDomainName(value: unknown): string | null {
+  if (!value || typeof value !== "object") return null;
+  const candidate = (value as { domainName?: unknown }).domainName;
+  return typeof candidate === "string" && candidate.length > 0 ? candidate : null;
 }

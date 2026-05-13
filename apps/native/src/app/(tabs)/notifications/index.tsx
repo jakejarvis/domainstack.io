@@ -95,8 +95,11 @@ function NotificationsList() {
     }
   }, [invalidate]);
 
-  const handleOpenDomain = useCallback((trackedDomainId: string) => {
-    router.push(`/(tabs)/domains/${trackedDomainId}`);
+  const handleOpenDomain = useCallback((domainName: string) => {
+    router.push({
+      params: { domain: domainName },
+      pathname: "/(tabs)/domains/[domain]",
+    });
   }, []);
 
   const handleMarkRead = useCallback(
@@ -192,11 +195,12 @@ const NotificationRow = memo(function NotificationRow({
   item: NotificationItem;
   markReadPending: boolean;
   onMarkRead: (id: string) => void;
-  onOpenDomain: (trackedDomainId: string) => void;
+  onOpenDomain: (domainName: string) => void;
 }) {
+  const domainName = extractDomainNameFromData(item.data);
   const handleOpen = useCallback(() => {
-    if (item.trackedDomainId) onOpenDomain(item.trackedDomainId);
-  }, [item.trackedDomainId, onOpenDomain]);
+    if (domainName) onOpenDomain(domainName);
+  }, [domainName, onOpenDomain]);
 
   const handleMarkRead = useCallback(() => onMarkRead(item.id), [item.id, onMarkRead]);
 
@@ -217,9 +221,9 @@ const NotificationRow = memo(function NotificationRow({
         <MutedText>{formatDate(item.sentAt)}</MutedText>
       </View>
       <View className="flex-row gap-2">
-        {item.trackedDomainId ? (
+        {domainName ? (
           <Button className="flex-1" onPress={handleOpen} variant="secondary">
-            <Text>Open domain</Text>
+            <Text>Open {domainName}</Text>
           </Button>
         ) : null}
         {item.readAt ? null : (
@@ -231,3 +235,9 @@ const NotificationRow = memo(function NotificationRow({
     </GlassCard>
   );
 });
+
+function extractDomainNameFromData(data: unknown): string | null {
+  if (!data || typeof data !== "object") return null;
+  const candidate = (data as { domainName?: unknown }).domainName;
+  return typeof candidate === "string" && candidate.length > 0 ? candidate : null;
+}

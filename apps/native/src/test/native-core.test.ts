@@ -169,10 +169,17 @@ describe("native app core helpers", () => {
   });
 
   it("routes push payloads to domain detail or notifications", () => {
-    expect(routeFromNotificationData({ trackedDomainId: "tracked-1" })).toEqual({
-      params: { id: "tracked-1" },
-      pathname: "/(tabs)/domains/[id]",
+    expect(routeFromNotificationData({ data: { domainName: "example.com" } })).toEqual({
+      params: { domain: "example.com" },
+      pathname: "/(tabs)/domains/[domain]",
     });
+    expect(routeFromNotificationData({ domainName: "fallback.com" })).toEqual({
+      params: { domain: "fallback.com" },
+      pathname: "/(tabs)/domains/[domain]",
+    });
+    expect(routeFromNotificationData({ trackedDomainId: "tracked-1" })).toBe(
+      "/(tabs)/notifications",
+    );
     expect(routeFromNotificationData({})).toBe("/(tabs)/notifications");
   });
 

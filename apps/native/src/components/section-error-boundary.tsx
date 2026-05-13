@@ -1,0 +1,81 @@
+import { useQueryErrorResetBoundary } from "@tanstack/react-query";
+import { Component, type ErrorInfo, type ReactNode, useCallback, useState } from "react";
+import { View } from "react-native";
+
+import { Button } from "./button";
+import { GlassCard } from "./glass-card";
+import { MutedText, Text } from "./text";
+
+interface BoundaryProps {
+  children: ReactNode;
+  sectionName: string;
+  resetKey: number;
+  onReset: () => void;
+}
+
+interface BoundaryState {
+  error: Error | null;
+  resetKey: number;
+}
+
+class ErrorBoundaryInner extends Component<BoundaryProps, BoundaryState> {
+  state: BoundaryState = { error: null, resetKey: this.props.resetKey };
+
+  static getDerivedStateFromError(error: unknown): Partial<BoundaryState> {
+    return { error: error instanceof Error ? error : new Error(String(error)) };
+  }
+
+  static getDerivedStateFromProps(
+    props: BoundaryProps,
+    state: BoundaryState,
+  ): Partial<BoundaryState> | null {
+    if (props.resetKey !== state.resetKey) {
+      return { error: null, resetKey: props.resetKey };
+    }
+    return null;
+  }
+
+  componentDidCatch(_error: Error, _info: ErrorInfo) {
+    // Native analytics wiring is a future TODO (see apps/native/TODO.md
+    // "Observability & infra"). When that lands, capture exceptions here.
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <GlassCard>
+          <View className="gap-1">
+            <Text className="text-base font-semibold">{this.props.sectionName} failed</Text>
+            <MutedText>{this.state.error.message || "Something went wrong."}</MutedText>
+          </View>
+          <Button onPress={this.props.onReset} variant="secondary">
+            <Text>Try again</Text>
+          </Button>
+        </GlassCard>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export function SectionErrorBoundary({
+  children,
+  sectionName,
+}: {
+  children: ReactNode;
+  sectionName: string;
+}) {
+  const { reset } = useQueryErrorResetBoundary();
+  const [resetKey, setResetKey] = useState(0);
+
+  const handleReset = useCallback(() => {
+    reset();
+    setResetKey((key) => key + 1);
+  }, [reset]);
+
+  return (
+    <ErrorBoundaryInner onReset={handleReset} resetKey={resetKey} sectionName={sectionName}>
+      {children}
+    </ErrorBoundaryInner>
+  );
+}

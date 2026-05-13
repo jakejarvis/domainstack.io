@@ -6,6 +6,7 @@
 
 export * from "./country-emoji";
 export * from "./date";
+export * from "./relative-time";
 export * from "./simple-hash";
 export * from "./slugify";
 export * from "./verification";

@@ -13,13 +13,13 @@ function DomainRowImpl({
   onPress,
 }: {
   domain: PortfolioDomain;
-  onPress: (id: string) => void;
+  onPress: (domainName: string) => void;
 }) {
   const days = daysUntil(domain.expirationDate);
   const expiryTone =
     days == null ? "neutral" : days < 14 ? "danger" : days < 45 ? "warning" : "success";
 
-  const handlePress = useCallback(() => onPress(domain.id), [domain.id, onPress]);
+  const handlePress = useCallback(() => onPress(domain.domainName), [domain.domainName, onPress]);
 
   return (
     <Pressable accessibilityRole="button" onPress={handlePress}>

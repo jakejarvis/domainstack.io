@@ -102,8 +102,11 @@ function PortfolioScreen() {
     }
   }, [domainsQuery]);
 
-  const handleRowPress = useCallback((id: string) => {
-    router.push(`/(tabs)/domains/${id}`);
+  const handleRowPress = useCallback((domainName: string) => {
+    router.push({
+      params: { domain: domainName },
+      pathname: "/(tabs)/domains/[domain]",
+    });
   }, []);
 
   const renderItem = useCallback(

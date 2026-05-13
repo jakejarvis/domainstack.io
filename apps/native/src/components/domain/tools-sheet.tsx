@@ -1,0 +1,125 @@
+import { useState } from "react";
+import { Linking, Modal, Pressable, ScrollView, View } from "react-native";
+
+import { Button } from "@/components/button";
+import { GlassCard } from "@/components/glass-card";
+import { MutedText, Text } from "@/components/text";
+
+interface Tool {
+  name: string;
+  buildUrl: (domain: string) => string;
+}
+
+const TOOLS: Tool[] = [
+  { buildUrl: (d) => `https://censys.io/domain/${encodeURIComponent(d)}`, name: "Censys" },
+  {
+    buildUrl: (d) => `https://radar.cloudflare.com/domains/domain/${encodeURIComponent(d)}`,
+    name: "Cloudflare Radar",
+  },
+  { buildUrl: (d) => `https://crt.sh/?q=${encodeURIComponent(d)}`, name: "crt.sh" },
+  { buildUrl: (d) => `https://dnsviz.net/d/${encodeURIComponent(d)}/dnssec/`, name: "DNSViz" },
+  {
+    buildUrl: (d) => `https://whois.domaintools.com/${encodeURIComponent(d)}`,
+    name: "DomainTools",
+  },
+  {
+    buildUrl: (d) => `https://exchange.xforce.ibmcloud.com/url/${encodeURIComponent(d)}`,
+    name: "IBM X-Force",
+  },
+  { buildUrl: (d) => `https://intodns.com/${encodeURIComponent(d)}`, name: "intoDNS" },
+  {
+    buildUrl: (d) =>
+      `https://mxtoolbox.com/SuperTool.aspx?action=mx%3a${encodeURIComponent(d)}&run=toolpage`,
+    name: "MxToolbox",
+  },
+  {
+    buildUrl: (d) => `https://otx.alienvault.com/indicator/domain/${encodeURIComponent(d)}`,
+    name: "Open Threat Exchange",
+  },
+  {
+    buildUrl: (d) =>
+      `https://securityheaders.com/?q=${encodeURIComponent(`https://${d}`)}&hide=on&followRedirects=on`,
+    name: "Security Headers",
+  },
+  {
+    buildUrl: (d) => `https://securitytrails.com/domain/${encodeURIComponent(d)}/dns`,
+    name: "SecurityTrails",
+  },
+  {
+    buildUrl: (d) =>
+      `https://developers.facebook.com/tools/debug/?q=${encodeURIComponent(`https://${d}`)}`,
+    name: "Sharing Debugger",
+  },
+  {
+    buildUrl: (d) => `https://www.shodan.io/search?query=hostname:${encodeURIComponent(d)}`,
+    name: "Shodan",
+  },
+  {
+    buildUrl: (d) =>
+      `https://www.ssllabs.com/ssltest/analyze.html?d=${encodeURIComponent(d)}&hideResults=on`,
+    name: "SSL Labs",
+  },
+  { buildUrl: (d) => `https://traffic.cv/${encodeURIComponent(d)}`, name: "Traffic.cv" },
+  {
+    buildUrl: (d) => `https://www.virustotal.com/gui/domain/${encodeURIComponent(d)}/relations`,
+    name: "VirusTotal",
+  },
+  {
+    buildUrl: (d) => `https://web.archive.org/web/*/${encodeURIComponent(d)}`,
+    name: "Wayback Machine",
+  },
+  {
+    buildUrl: (d) => `https://www.whatsmydns.net/#A/${encodeURIComponent(d)}`,
+    name: "What's My DNS?",
+  },
+  { buildUrl: (d) => `https://who.is/whois/${encodeURIComponent(d)}`, name: "who.is" },
+];
+
+export function ToolsSheet({ domain }: { domain: string }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Button onPress={() => setOpen(true)} variant="secondary">
+        <Text>Open in…</Text>
+      </Button>
+      <Modal
+        animationType="slide"
+        onRequestClose={() => setOpen(false)}
+        presentationStyle="pageSheet"
+        visible={open}
+      >
+        <View className="bg-canvas flex-1">
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{ gap: 12, padding: 16 }}
+            contentInsetAdjustmentBehavior="automatic"
+          >
+            <View className="gap-1">
+              <Text className="text-2xl font-semibold">Open in…</Text>
+              <MutedText>Inspect {domain} in an external tool.</MutedText>
+            </View>
+            <GlassCard>
+              {TOOLS.map((tool) => (
+                <Pressable
+                  accessibilityRole="link"
+                  className="border-line border-b py-3 last:border-b-0"
+                  key={tool.name}
+                  onPress={() => {
+                    setOpen(false);
+                    void Linking.openURL(tool.buildUrl(domain));
+                  }}
+                >
+                  <Text className="font-semibold">{tool.name}</Text>
+                </Pressable>
+              ))}
+            </GlassCard>
+            <Button onPress={() => setOpen(false)} variant="ghost">
+              <Text>Close</Text>
+            </Button>
+          </ScrollView>
+        </View>
+      </Modal>
+    </>
+  );
+}

@@ -1,9 +1,9 @@
 "use client";
 
-import { formatDistanceToNowStrict } from "date-fns";
 import { useMemo } from "react";
 
 import { cn } from "@domainstack/ui/utils";
+import { formatRelativeTime } from "@domainstack/utils";
 
 export function RelativeAgeString({
   from,
@@ -14,13 +14,7 @@ export function RelativeAgeString({
   /** className applied to the wrapper span */
   className?: string;
 }) {
-  const text = useMemo(() => {
-    try {
-      return formatDistanceToNowStrict(new Date(from), { addSuffix: true });
-    } catch {
-      return null;
-    }
-  }, [from]);
+  const text = useMemo(() => formatRelativeTime(from), [from]);
 
   // Render invisible placeholder during SSR to prevent layout shift
   if (!text) {
