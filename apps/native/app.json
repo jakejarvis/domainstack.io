@@ -20,12 +20,7 @@
       "expo-apple-authentication",
       "expo-secure-store",
       "expo-web-browser",
-      [
-        "@react-native-google-signin/google-signin",
-        {
-          "iosUrlScheme": "com.googleusercontent.apps.domainstack"
-        }
-      ],
+      "./plugins/with-google-sign-in-url-scheme.cjs",
       [
         "expo-notifications",
         {

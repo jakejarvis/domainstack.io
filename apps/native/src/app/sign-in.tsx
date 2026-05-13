@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Alert, View } from "react-native";
+import { Alert, Platform, View } from "react-native";
 
 import { Button } from "@/components/button";
 import { GlassCard } from "@/components/glass-card";
@@ -39,6 +39,7 @@ export default function SignInScreen() {
   const providerOptions = otaConfig.data
     ? getEnabledNativeAuthProviders(otaConfig.data.authProviders, googleNativeConfig, {
         appleAuthAvailable: appleAuthAvailable === true,
+        platform: Platform.OS,
       })
     : [];
 

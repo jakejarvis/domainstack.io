@@ -1,19 +1,27 @@
-import type { GoogleNativeAuthConfig } from "@/lib/auth-providers";
+import type { GoogleNativeAuthConfig, NativeAuthPlatform } from "@/lib/auth-providers";
 
 const GOOGLE_SIGN_IN_SCOPES = ["email", "profile"];
 
 export type GoogleSignInConfig = {
-  iosClientId: string | undefined;
+  iosClientId?: string;
   scopes: string[];
   webClientId: string;
 };
 
-export function buildGoogleSignInConfig(config: GoogleNativeAuthConfig): GoogleSignInConfig {
-  return {
-    iosClientId: config.iosClientId || undefined,
+export function buildGoogleSignInConfig(
+  config: GoogleNativeAuthConfig,
+  platform: NativeAuthPlatform = "ios",
+): GoogleSignInConfig {
+  const googleConfig: GoogleSignInConfig = {
     scopes: GOOGLE_SIGN_IN_SCOPES,
     webClientId: config.webClientId,
   };
+
+  if (platform === "ios" && config.iosClientId.length > 0) {
+    googleConfig.iosClientId = config.iosClientId;
+  }
+
+  return googleConfig;
 }
 
 export async function getGoogleIdentityToken(
@@ -23,10 +31,11 @@ export async function getGoogleIdentityToken(
     import("react-native"),
     import("@react-native-google-signin/google-signin"),
   ]);
+  const platform = Platform.OS;
 
-  GoogleSignin.configure(buildGoogleSignInConfig(config));
+  GoogleSignin.configure(buildGoogleSignInConfig(config, platform));
 
-  if (Platform.OS === "android") {
+  if (platform === "android") {
     await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
   }
 

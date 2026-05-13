@@ -11,8 +11,9 @@ type ExpoExtra = {
 const extra = (Constants.expoConfig?.extra ?? {}) as ExpoExtra;
 
 function clean(value: string | undefined, fallback: string): string {
-  if (!value || value.startsWith("${")) return fallback;
-  return value.replace(/\/$/, "");
+  const trimmed = value?.trim();
+  if (!trimmed || trimmed.startsWith("${")) return fallback;
+  return trimmed.replace(/\/$/, "");
 }
 
 export const apiBaseUrl = clean(

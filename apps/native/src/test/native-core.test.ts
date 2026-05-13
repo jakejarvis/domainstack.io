@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { getEnabledNativeAuthProviders } from "@/lib/auth-providers";
+import {
+  canUseNativeGoogleAuthOnPlatform,
+  getEnabledNativeAuthProviders,
+} from "@/lib/auth-providers";
 import { reduceAddDomainFlow } from "@/lib/domain-lifecycle";
 import { buildGoogleSignInConfig } from "@/lib/google-auth";
 import { canAccessTab, getInitialRoute, routeFromNotificationData } from "@/lib/navigation";
@@ -57,11 +60,15 @@ describe("native app core helpers", () => {
     ]);
 
     expect(
-      getEnabledNativeAuthProviders([{ id: "google", name: "Google" }], {
-        iosClientId: "",
-        webClientId: "",
-      }),
-    ).toEqual([{ id: "google", name: "Google", supportsNativeIdToken: false }]);
+      getEnabledNativeAuthProviders(
+        [{ id: "google", name: "Google" }],
+        {
+          iosClientId: "",
+          webClientId: "web-client",
+        },
+        { platform: "android" },
+      ),
+    ).toEqual([{ id: "google", name: "Google", supportsNativeIdToken: true }]);
   });
 
   it("builds Google native sign-in configuration", () => {
@@ -75,7 +82,7 @@ describe("native app core helpers", () => {
           iosClientId: "",
           webClientId: "web-client",
         },
-        { appleAuthAvailable: false },
+        { appleAuthAvailable: false, platform: "ios" },
       ),
     ).toEqual([
       { id: "apple", name: "Apple", supportsNativeIdToken: false },
@@ -92,6 +99,49 @@ describe("native app core helpers", () => {
       scopes: ["email", "profile"],
       webClientId: "web-client",
     });
+
+    expect(
+      buildGoogleSignInConfig(
+        {
+          iosClientId: "ios-client",
+          webClientId: "web-client",
+        },
+        "android",
+      ),
+    ).toEqual({
+      scopes: ["email", "profile"],
+      webClientId: "web-client",
+    });
+  });
+
+  it("gates native Google auth by platform-specific client ID requirements", () => {
+    expect(
+      canUseNativeGoogleAuthOnPlatform(
+        {
+          iosClientId: "",
+          webClientId: "web-client",
+        },
+        "android",
+      ),
+    ).toBe(true);
+    expect(
+      canUseNativeGoogleAuthOnPlatform(
+        {
+          iosClientId: "",
+          webClientId: "web-client",
+        },
+        "ios",
+      ),
+    ).toBe(false);
+    expect(
+      canUseNativeGoogleAuthOnPlatform(
+        {
+          iosClientId: "ios-client",
+          webClientId: "",
+        },
+        "android",
+      ),
+    ).toBe(false);
   });
 
   it("formats nonce bytes as stable hex", () => {
