@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { RefreshControl, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
 
+import { RefreshControl } from "@/components/refresh-control";
 import { cn } from "@/lib/cn";
 
 export function Screen({

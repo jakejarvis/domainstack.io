@@ -50,7 +50,7 @@ export function Button({
       )}
       disabled={isDisabled}
       onPress={() => {
-        if (process.env.EXPO_OS === "ios") {
+        if (process.env.EXPO_OS !== "web") {
           void Haptics.selectionAsync();
         }
         onPress?.();

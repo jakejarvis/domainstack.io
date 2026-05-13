@@ -5,7 +5,7 @@ import { Stack } from "expo-router/stack";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { useColorScheme } from "react-native";
+import { Platform, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { AnalyticsProvider } from "@/lib/analytics";
@@ -49,7 +49,7 @@ function RootNavigator() {
       <StatusBar style={isDark ? "light" : "dark"} />
       <Stack
         screenOptions={{
-          animation: "ios_from_right",
+          animation: Platform.OS === "ios" ? "ios_from_right" : "slide_from_right",
           contentStyle: { backgroundColor: canvas },
           headerBlurEffect: isDark ? "systemChromeMaterialDark" : "systemChromeMaterialLight",
           headerLargeTitle: false,

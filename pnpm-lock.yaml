@@ -79,6 +79,9 @@ importers:
       '@expo/ui':
         specifier: ^56.0.5
         version: 56.0.5(6f40c185291c92f9f3e4de5bb34a8c91)
+      '@expo/vector-icons':
+        specifier: ^15.1.1
+        version: 15.1.1(expo-font@56.0.3)(react-native@0.85.3(@babel/core@7.29.0)(@react-native/metro-config@0.85.3(@babel/core@7.29.0))(@types/react@19.2.14)(bufferutil@4.1.0)(react@19.2.6))(react@19.2.6)
       '@react-native-async-storage/async-storage':
         specifier: 3.0.2
         version: 3.0.2(react-native@0.85.3(@babel/core@7.29.0)(@react-native/metro-config@0.85.3(@babel/core@7.29.0))(@types/react@19.2.14)(bufferutil@4.1.0)(react@19.2.6))(react@19.2.6)

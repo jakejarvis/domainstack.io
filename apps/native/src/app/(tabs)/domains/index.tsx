@@ -2,12 +2,13 @@ import { FlashList } from "@shopify/flash-list";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { RefreshControl, View } from "react-native";
+import { View } from "react-native";
 
 import { Button } from "@/components/button";
 import { DomainRow } from "@/components/domain-row";
 import { EmptyState } from "@/components/empty-state";
 import { HeaderMenu } from "@/components/header-menu";
+import { RefreshControl } from "@/components/refresh-control";
 import { Screen } from "@/components/screen";
 import { SegmentedControl } from "@/components/segmented-control";
 import { SkeletonRows } from "@/components/skeleton";
