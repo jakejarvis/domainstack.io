@@ -98,7 +98,7 @@ function DomainDetailContent() {
   }
 
   return (
-    <Screen>
+    <Screen onRefresh={invalidate}>
       {domainQuery.isPending && <SkeletonRows count={4} />}
 
       {domainQuery.error && (

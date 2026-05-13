@@ -91,7 +91,7 @@ function PortfolioScreen() {
   );
 
   return (
-    <Screen>
+    <Screen onRefresh={() => domainsQuery.refetch()}>
       <HeaderMenu />
       <MutedText>Track ownership, expiry, DNS, hosting, mail, and certificate state.</MutedText>
 

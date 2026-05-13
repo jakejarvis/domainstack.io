@@ -78,7 +78,7 @@ function NotificationsList() {
   );
 
   return (
-    <Screen>
+    <Screen onRefresh={invalidate}>
       <HeaderMenu />
 
       <SegmentedControl onChange={setFilter} options={filters} value={filter} />
