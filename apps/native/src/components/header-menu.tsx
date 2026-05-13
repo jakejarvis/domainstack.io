@@ -55,7 +55,13 @@ function useMaterialIconSources(
   return sources;
 }
 
-export function HeaderMenu() {
+export function HeaderMenu({
+  children,
+  leading,
+}: {
+  children?: React.ReactNode;
+  leading?: React.ReactNode;
+}) {
   const session = authClient.useSession();
   const user = session.data?.user;
   const isSignedIn = Boolean(user);
@@ -66,6 +72,7 @@ export function HeaderMenu() {
 
   return (
     <Stack.Toolbar placement="right">
+      {leading}
       <Stack.Toolbar.Menu accessibilityLabel={isSignedIn ? "Account menu" : "Account"}>
         {avatarUri ? (
           <Stack.Toolbar.Icon renderingMode="original" src={{ uri: avatarUri }} />
@@ -76,6 +83,7 @@ export function HeaderMenu() {
         ) : null}
         {isSignedIn ? (
           <>
+            {children}
             <Stack.Toolbar.MenuAction
               icon={Platform.select<MenuActionIcon>({
                 ios: "gearshape",

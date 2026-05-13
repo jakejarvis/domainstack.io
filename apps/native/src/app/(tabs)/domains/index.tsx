@@ -1,35 +1,33 @@
 import { FlashList } from "@shopify/flash-list";
-import { useQuery } from "@tanstack/react-query";
-import { router } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
-import { View } from "react-native";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { router, useNavigation } from "expo-router";
+import { Stack } from "expo-router/stack";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { NativeSyntheticEvent, TextInputFocusEventData } from "react-native";
+import { Alert, Platform, View } from "react-native";
 
+import type { AppBottomSheetRef } from "@/components/bottom-sheet";
 import { Button } from "@/components/button";
-import { DomainRow } from "@/components/domain-row";
 import { EmptyState } from "@/components/empty-state";
 import { HeaderMenu } from "@/components/header-menu";
+import { BulkActionsBar } from "@/components/portfolio/bulk-actions-bar";
+import { CalendarFeedSheet } from "@/components/portfolio/calendar-feed-sheet";
+import { FilterChips } from "@/components/portfolio/filter-chips";
+import { FilterSheet } from "@/components/portfolio/filter-sheet";
+import { QuotaMeter } from "@/components/portfolio/quota-meter";
+import { SubscriptionBanner } from "@/components/portfolio/subscription-banner";
+import { SwipeableRow } from "@/components/portfolio/swipeable-row";
 import { RefreshControl } from "@/components/refresh-control";
 import { Screen } from "@/components/screen";
 import { SegmentedControl } from "@/components/segmented-control";
 import { SkeletonRows } from "@/components/skeleton";
 import { MutedText, Text } from "@/components/text";
-import { TextField } from "@/components/text-field";
+import { useSelectionMode } from "@/hooks/use-portfolio-selection";
 import { useTRPC } from "@/lib/api";
 import { authClient } from "@/lib/auth";
-import {
-  type PortfolioDomain,
-  type PortfolioSort,
-  type PortfolioStatusFilter,
-  filterPortfolioDomains,
-  sortPortfolioDomains,
-} from "@/lib/portfolio";
-
-const filters: Array<{ label: string; value: PortfolioStatusFilter }> = [
-  { label: "All", value: "all" },
-  { label: "Verified", value: "verified" },
-  { label: "Verify", value: "needs-verification" },
-  { label: "Muted", value: "muted" },
-];
+import { type PortfolioDomain, type PortfolioSort, sortPortfolioDomains } from "@/lib/portfolio";
+import { activeFilterCount, applyFilters, availableTldsFrom } from "@/lib/portfolio-filters";
+import { usePortfolioStore } from "@/lib/stores/portfolio-store";
 
 const sorts: Array<{ label: string; value: PortfolioSort }> = [
   { label: "Name", value: "name" },
@@ -69,12 +67,34 @@ export default function DomainsScreen() {
 
 function PortfolioScreen() {
   const trpc = useTRPC();
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<PortfolioStatusFilter>("all");
-  const [sort, setSort] = useState<PortfolioSort>("name");
+  const navigation = useNavigation();
+  const queryClient = useQueryClient();
+  const query = usePortfolioStore((state) => state.query);
+  const sort = usePortfolioStore((state) => state.sort);
+  const status = usePortfolioStore((state) => state.status);
+  const health = usePortfolioStore((state) => state.health);
+  const tlds = usePortfolioStore((state) => state.tlds);
+  const setQuery = usePortfolioStore((state) => state.setQuery);
+  const setSort = usePortfolioStore((state) => state.setSort);
+  const selectionMode = useSelectionMode();
   const [refreshing, setRefreshing] = useState(false);
 
-  const domainsQuery = useQuery(trpc.tracking.listDomains.queryOptions({ includeArchived: true }));
+  const filterSheetRef = useRef<AppBottomSheetRef | null>(null);
+  const calendarSheetRef = useRef<AppBottomSheetRef | null>(null);
+
+  const domainsQuery = useQuery(trpc.tracking.listDomains.queryOptions({ includeArchived: false }));
+  const subscriptionQuery = useQuery(trpc.user.getSubscription.queryOptions());
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerSearchBarOptions: {
+        hideWhenScrolling: false,
+        onChangeText: (event: NativeSyntheticEvent<TextInputFocusEventData>) =>
+          setQuery(event.nativeEvent.text),
+        placeholder: "Filter domains",
+      },
+    });
+  }, [navigation, setQuery]);
 
   const domains = useMemo<PortfolioDomain[]>(() => {
     return (domainsQuery.data ?? []).map((item) => ({
@@ -88,52 +108,160 @@ function PortfolioScreen() {
     }));
   }, [domainsQuery.data]);
 
+  const availableTlds = useMemo(() => availableTldsFrom(domains), [domains]);
+
   const visibleDomains = useMemo(
-    () => sortPortfolioDomains(filterPortfolioDomains(domains, filter, query), sort),
-    [domains, filter, query, sort],
+    () => sortPortfolioDomains(applyFilters(domains, { health, status, tlds }, query), sort),
+    [domains, health, status, tlds, query, sort],
   );
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await domainsQuery.refetch();
+      await Promise.all([domainsQuery.refetch(), subscriptionQuery.refetch()]);
     } finally {
       setRefreshing(false);
     }
-  }, [domainsQuery]);
+  }, [domainsQuery, subscriptionQuery]);
 
-  const handleRowPress = useCallback((domainName: string) => {
+  const handleRowPress = useCallback((domain: PortfolioDomain) => {
+    const state = usePortfolioStore.getState();
+    if (state.selection.mode === "selecting") {
+      state.toggle(domain.id);
+      return;
+    }
     router.push({
-      params: { domain: domainName },
+      params: { domain: domain.domainName },
       pathname: "/(tabs)/domains/[domain]",
     });
   }, []);
 
-  const renderItem = useCallback(
-    ({ item }: { item: PortfolioDomain }) => (
-      <View className="px-4 pb-3">
-        <DomainRow domain={item} onPress={handleRowPress} />
-      </View>
-    ),
-    [handleRowPress],
+  const handleRowLongPress = useCallback((domain: PortfolioDomain) => {
+    const state = usePortfolioStore.getState();
+    if (state.selection.mode === "selecting") {
+      state.toggle(domain.id);
+    } else {
+      state.enterSelection(domain.id);
+    }
+  }, []);
+
+  const invalidatePortfolio = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: trpc.tracking.listDomains.queryKey() }),
+      queryClient.invalidateQueries({ queryKey: trpc.user.getSubscription.queryKey() }),
+    ]);
+  }, [queryClient, trpc]);
+
+  const archive = useMutation(
+    trpc.tracking.archiveDomain.mutationOptions({
+      onError: (error) => Alert.alert("Archive failed", error.message),
+      onSettled: () => void invalidatePortfolio(),
+    }),
   );
 
+  const setMuted = useMutation(
+    trpc.user.setDomainMuted.mutationOptions({
+      onError: (error) => Alert.alert("Mute failed", error.message),
+      onSettled: () => void invalidatePortfolio(),
+    }),
+  );
+
+  const handleArchive = useCallback(
+    (domain: PortfolioDomain) => {
+      archive.mutate({ trackedDomainId: domain.id });
+    },
+    [archive],
+  );
+
+  const handleMute = useCallback(
+    (domain: PortfolioDomain) => {
+      setMuted.mutate({ muted: !domain.muted, trackedDomainId: domain.id });
+    },
+    [setMuted],
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: PortfolioDomain }) => (
+      <SwipeableRow
+        domain={item}
+        onArchive={handleArchive}
+        onLongPress={handleRowLongPress}
+        onMute={handleMute}
+        onPress={handleRowPress}
+      />
+    ),
+    [handleArchive, handleMute, handleRowLongPress, handleRowPress],
+  );
+
+  const subscription = subscriptionQuery.data;
+  const isSelecting = selectionMode === "selecting";
+  const archivedCount = subscription?.archivedCount ?? 0;
+  const filterCount = activeFilterCount({ health, status, tlds });
+
   const listHeader = (
-    <View className="gap-5 px-4 pt-3 pb-2">
-      <HeaderMenu />
-      <MutedText>Track ownership, expiry, DNS, hosting, mail, and certificate state.</MutedText>
+    <View className="gap-4 px-4 pt-3 pb-2">
+      <HeaderMenu
+        leading={
+          <Stack.Toolbar.Button
+            accessibilityLabel="Open filters"
+            icon={Platform.OS === "ios" ? "line.3.horizontal.decrease.circle" : undefined}
+            onPress={() => filterSheetRef.current?.present()}
+          >
+            {Platform.OS === "android"
+              ? filterCount > 0
+                ? `Filters (${filterCount})`
+                : "Filters"
+              : undefined}
+          </Stack.Toolbar.Button>
+        }
+      >
+        <Stack.Toolbar.MenuAction
+          icon={Platform.OS === "ios" ? "calendar.badge.clock" : undefined}
+          onPress={() => calendarSheetRef.current?.present()}
+        >
+          Calendar feed
+        </Stack.Toolbar.MenuAction>
+        <Stack.Toolbar.MenuAction
+          icon={Platform.OS === "ios" ? "archivebox" : undefined}
+          onPress={() => router.push("/(tabs)/domains/archived")}
+        >
+          {archivedCount > 0 ? `Archived (${archivedCount})` : "Archived"}
+        </Stack.Toolbar.MenuAction>
+      </HeaderMenu>
+
+      {Platform.OS === "ios" ? (
+        <Stack.Toolbar placement="left">
+          <Stack.Toolbar.Button
+            onPress={() => {
+              const store = usePortfolioStore.getState();
+              if (store.selection.mode === "selecting") {
+                store.exitSelection();
+              } else {
+                store.enterSelection();
+              }
+            }}
+          >
+            {isSelecting ? "Cancel" : "Edit"}
+          </Stack.Toolbar.Button>
+        </Stack.Toolbar>
+      ) : null}
+
+      {subscription ? (
+        <QuotaMeter
+          activeCount={subscription.activeCount}
+          plan={subscription.plan}
+          planQuota={subscription.planQuota}
+        />
+      ) : null}
+
+      {subscription ? <SubscriptionBanner subscription={subscription} /> : null}
 
       <Button onPress={() => router.push("/(tabs)/domains/add")}>
         <Text>Add domain</Text>
       </Button>
 
-      <TextField
-        label="Filter domains"
-        onChangeText={setQuery}
-        placeholder="example.com"
-        value={query}
-      />
-      <SegmentedControl onChange={setFilter} options={filters} value={filter} />
+      <FilterChips />
+
       <SegmentedControl onChange={setSort} options={sorts} value={sort} />
 
       {domainsQuery.isPending ? <SkeletonRows /> : null}
@@ -153,26 +281,35 @@ function PortfolioScreen() {
     !domainsQuery.isPending && !domainsQuery.error ? (
       <View className="px-4 pb-8">
         <EmptyState
-          actionLabel="Add domain"
-          body="Add a domain to keep its registration, DNS, providers, and notifications close at hand."
-          onAction={() => router.push("/(tabs)/domains/add")}
-          title="No domains found"
+          actionLabel={filterCount > 0 || query ? undefined : "Add domain"}
+          body={
+            filterCount > 0 || query
+              ? "Try removing some filters or clearing the search bar."
+              : "Add a domain to keep its registration, DNS, providers, and notifications close at hand."
+          }
+          onAction={filterCount > 0 || query ? undefined : () => router.push("/(tabs)/domains/add")}
+          title={filterCount > 0 || query ? "No domains match" : "No domains found"}
         />
       </View>
     ) : null;
 
   return (
-    <FlashList
-      ListEmptyComponent={listEmpty}
-      ListHeaderComponent={listHeader}
-      contentContainerStyle={{ paddingBottom: 32 }}
-      contentInsetAdjustmentBehavior="automatic"
-      data={visibleDomains}
-      keyExtractor={keyExtractor}
-      keyboardShouldPersistTaps="handled"
-      refreshControl={<RefreshControl onRefresh={handleRefresh} refreshing={refreshing} />}
-      renderItem={renderItem}
-    />
+    <View className="flex-1">
+      <FlashList
+        ListEmptyComponent={listEmpty}
+        ListHeaderComponent={listHeader}
+        contentContainerStyle={{ paddingBottom: isSelecting ? 120 : 32 }}
+        contentInsetAdjustmentBehavior="automatic"
+        data={visibleDomains}
+        keyExtractor={keyExtractor}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={<RefreshControl onRefresh={handleRefresh} refreshing={refreshing} />}
+        renderItem={renderItem}
+      />
+      <BulkActionsBar />
+      <FilterSheet availableTlds={availableTlds} ref={filterSheetRef} />
+      <CalendarFeedSheet ref={calendarSheetRef} />
+    </View>
   );
 }
 

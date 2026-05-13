@@ -17,6 +17,7 @@ import { ToolsSheet } from "@/components/domain/tools-sheet";
 import { UnregisteredCard } from "@/components/domain/unregistered-card";
 import { EmptyState } from "@/components/empty-state";
 import { GlassCard } from "@/components/glass-card";
+import { DomainHealthBadge } from "@/components/portfolio/domain-health-badge";
 import { ReportSectionSkeleton } from "@/components/report-section-skeleton";
 import { Screen } from "@/components/screen";
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
@@ -141,6 +142,7 @@ type TrackedEntry = {
   muted: boolean;
   archivedAt: Date | null;
   lastVerifiedAt: Date | null;
+  expirationDate: Date | null;
 };
 
 function ReportHeader({
@@ -166,6 +168,10 @@ function ReportHeader({
             <Badge tone={trackedEntry.verified ? "success" : "warning"}>
               <Text>{trackedEntry.verified ? "Verified" : "Needs verification"}</Text>
             </Badge>
+            <DomainHealthBadge
+              expirationDate={trackedEntry.expirationDate}
+              verified={trackedEntry.verified}
+            />
             {trackedEntry.muted ? (
               <Badge>
                 <Text>Muted</Text>
