@@ -5,11 +5,13 @@ import { Alert, Platform, View } from "react-native";
 
 import { Button } from "@/components/button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { ProviderIcon } from "@/components/provider-icon";
 import { MutedText, Text } from "@/components/text";
 import { useTRPC } from "@/lib/api";
 import { type AuthProvider, getOtaConfig, linkProvider, unlinkProvider } from "@/lib/auth";
 import { getEnabledNativeAuthProviders } from "@/lib/auth-providers";
 import { googleNativeConfig } from "@/lib/env";
+import { useCSSVariable } from "@/tw";
 
 const OTA_CONFIG_QUERY_KEY = ["auth", "ota-config"] as const;
 
@@ -20,6 +22,7 @@ function isAuthCanceled(error: unknown): boolean {
 export function LinkedAccountsSection() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const iconColor = useCSSVariable("--color-text-primary");
   const [appleAuthAvailable, setAppleAuthAvailable] = useState<boolean | null>(null);
   const [pendingUnlink, setPendingUnlink] = useState<AuthProvider | null>(null);
   const [linkingProvider, setLinkingProvider] = useState<AuthProvider | null>(null);
@@ -104,6 +107,7 @@ export function LinkedAccountsSection() {
               className="border-line bg-canvas-2 flex-row items-center gap-3 rounded-xl border p-3"
               key={provider.id}
             >
+              <ProviderIcon color={iconColor} provider={provider.id} size={22} />
               <View className="flex-1 gap-1">
                 <Text className="font-semibold">{provider.name}</Text>
                 {isLinked && unlinkDisabled ? (

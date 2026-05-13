@@ -6,6 +6,7 @@ import { Alert, Platform, View } from "react-native";
 
 import { Button } from "@/components/button";
 import { GlassCard } from "@/components/glass-card";
+import { ProviderIcon } from "@/components/provider-icon";
 import { Screen } from "@/components/screen";
 import { MutedText, Text } from "@/components/text";
 import {
@@ -20,11 +21,26 @@ import { googleNativeConfig } from "@/lib/env";
 import { getGoogleIdentityToken } from "@/lib/google-auth";
 import { getInitialRoute } from "@/lib/navigation";
 import { createAuthNonce } from "@/lib/nonce";
+import { useCSSVariable } from "@/tw";
 
 const OTA_CONFIG_QUERY_KEY = ["auth", "ota-config"] as const;
 
 function isAuthCanceled(error: unknown): boolean {
   return error instanceof Error && "code" in error && error.code === "ERR_REQUEST_CANCELED";
+}
+
+function isPlatformPreferredProvider(provider: NativeAuthProviderOption): boolean {
+  if (provider.id === "apple" && Platform.OS === "ios") return true;
+  if (provider.id === "google" && Platform.OS === "android" && provider.supportsNativeIdToken) {
+    return true;
+  }
+  return false;
+}
+
+function isProviderAvailableOnPlatform(provider: NativeAuthProviderOption): boolean {
+  // Apple sign-in is iOS-only; hide it elsewhere.
+  if (provider.id === "apple" && Platform.OS !== "ios") return false;
+  return true;
 }
 
 export default function SignInScreen() {
@@ -41,6 +57,10 @@ export default function SignInScreen() {
         appleAuthAvailable: appleAuthAvailable === true,
         platform: Platform.OS,
       })
+        .filter(isProviderAvailableOnPlatform)
+        .toSorted(
+          (a, b) => Number(isPlatformPreferredProvider(b)) - Number(isPlatformPreferredProvider(a)),
+        )
     : [];
 
   useEffect(() => {
@@ -188,9 +208,15 @@ function ProviderButton({
   onPress: (provider: NativeAuthProviderOption) => void;
   provider: NativeAuthProviderOption;
 }) {
+  const variant = isPlatformPreferredProvider(provider) ? "primary" : "secondary";
+  const primaryColor = useCSSVariable("--color-control-primary-text");
+  const secondaryColor = useCSSVariable("--color-control-secondary-text");
+  const iconColor = variant === "primary" ? primaryColor : secondaryColor;
+
   if (provider.id === "apple" && appleAuthAvailable === null) {
     return (
       <Button disabled loading variant="primary">
+        <ProviderIcon color={primaryColor} provider="apple" size={18} />
         <Text>Continue with Apple</Text>
       </Button>
     );
@@ -219,8 +245,9 @@ function ProviderButton({
       disabled={loadingProvider !== null}
       loading={loadingProvider === provider.id}
       onPress={() => onPress(provider)}
-      variant={provider.supportsNativeIdToken ? "primary" : "secondary"}
+      variant={variant}
     >
+      <ProviderIcon color={iconColor} provider={provider.id} size={18} />
       <Text>Continue with {provider.name}</Text>
     </Button>
   );
