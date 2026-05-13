@@ -120,8 +120,16 @@ function DomainDetailContent() {
               <Badge tone={domain.verified ? "success" : "warning"}>
                 {domain.verified ? "Verified" : "Needs verification"}
               </Badge>
-              {domain.muted && <Badge>Muted</Badge>}
-              {domain.archivedAt && <Badge>Archived</Badge>}
+              {domain.muted && (
+                <Badge>
+                  <Text>Muted</Text>
+                </Badge>
+              )}
+              {domain.archivedAt && (
+                <Badge>
+                  <Text>Archived</Text>
+                </Badge>
+              )}
             </View>
           </View>
 
@@ -151,7 +159,7 @@ function DomainDetailContent() {
                 }
                 variant="secondary"
               >
-                Resume verification
+                <Text>Resume verification</Text>
               </Button>
               <Button
                 loading={verify.isPending}
@@ -159,7 +167,7 @@ function DomainDetailContent() {
                   void runNetworkAction(() => verify.mutateAsync({ trackedDomainId: domain.id }))
                 }
               >
-                Verify now
+                <Text>Verify now</Text>
               </Button>
             </GlassCard>
           )}
@@ -209,7 +217,7 @@ function DomainDetailContent() {
               }
               variant="danger"
             >
-              Remove
+              <Text>Remove</Text>
             </Button>
           </GlassCard>
         </>

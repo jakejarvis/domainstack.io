@@ -35,14 +35,14 @@ function InstructionValue({ label, value }: { label: string; value: string | num
             onPress={() => void Clipboard.setStringAsync(stringValue)}
             variant="secondary"
           >
-            Copy
+            <Text>Copy</Text>
           </Button>
           <Button
             className="flex-1"
             onPress={() => void Share.share({ message: stringValue })}
             variant="secondary"
           >
-            Share
+            <Text>Share</Text>
           </Button>
         </View>
       </View>
@@ -183,7 +183,7 @@ function AddDomainFlow() {
             value={flow.domain}
           />
           <Button disabled={!canSubmit} loading={addDomain.isPending} onPress={() => void submit()}>
-            Add domain
+            <Text>Add domain</Text>
           </Button>
         </GlassCard>
       )}
@@ -207,7 +207,7 @@ function AddDomainFlow() {
             <InstructionValue label="Value" value={instructions.dns_txt.value} />
             <InstructionValue label="TTL" value={instructions.dns_txt.suggestedTTLLabel} />
             <Button loading={verifyDomain.isPending} onPress={() => void verify("dns_txt")}>
-              Verify DNS
+              <Text>Verify DNS</Text>
             </Button>
           </GlassCard>
 
@@ -221,7 +221,7 @@ function AddDomainFlow() {
               onPress={() => void verify("html_file")}
               variant="secondary"
             >
-              Verify file
+              <Text>Verify file</Text>
             </Button>
           </GlassCard>
 
@@ -234,7 +234,7 @@ function AddDomainFlow() {
               onPress={() => void verify("meta_tag")}
               variant="secondary"
             >
-              Verify meta tag
+              <Text>Verify meta tag</Text>
             </Button>
           </GlassCard>
         </View>

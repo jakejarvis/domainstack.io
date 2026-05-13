@@ -158,7 +158,7 @@ export default function SettingsScreen() {
           onPress={() => void pushRegistration.register()}
           variant="secondary"
         >
-          Register this device
+          <Text>Register this device</Text>
         </Button>
         {pushRegistration.error && <MutedText>{pushRegistration.error.message}</MutedText>}
         {devices.data?.map((device) => (
@@ -183,7 +183,7 @@ export default function SettingsScreen() {
               }
               variant="danger"
             >
-              Unregister
+              <Text>Unregister</Text>
             </Button>
           </View>
         ))}
@@ -215,7 +215,7 @@ export default function SettingsScreen() {
           }}
           variant="secondary"
         >
-          Sign out
+          <Text>Sign out</Text>
         </Button>
       </GlassCard>
     </Screen>

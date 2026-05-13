@@ -150,13 +150,13 @@ export default function SignInScreen() {
       <GlassCard>
         {otaConfig.isPending ? (
           <Button disabled loading variant="primary">
-            Loading sign-in options…
+            <Text>Loading sign-in options…</Text>
           </Button>
         ) : otaConfig.isError ? (
           <>
             <MutedText>Sign-in options are unavailable.</MutedText>
             <Button onPress={() => void otaConfig.refetch()} variant="secondary">
-              Try again
+              <Text>Try again</Text>
             </Button>
           </>
         ) : providerOptions.length === 0 ? (
@@ -191,7 +191,7 @@ function ProviderButton({
   if (provider.id === "apple" && appleAuthAvailable === null) {
     return (
       <Button disabled loading variant="primary">
-        Continue with Apple
+        <Text>Continue with Apple</Text>
       </Button>
     );
   }
@@ -221,7 +221,7 @@ function ProviderButton({
       onPress={() => onPress(provider)}
       variant={provider.supportsNativeIdToken ? "primary" : "secondary"}
     >
-      Continue with {provider.name}
+      <Text>Continue with {provider.name}</Text>
     </Button>
   );
 }

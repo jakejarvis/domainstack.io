@@ -87,7 +87,7 @@ export default function SearchScreen() {
           disabled={domain.trim().length === 0}
           onPress={() => setSubmittedDomain(domain.trim())}
         >
-          Run lookup
+          <Text>Run lookup</Text>
         </Button>
       </GlassCard>
 
@@ -101,7 +101,7 @@ export default function SearchScreen() {
             </MutedText>
           </View>
           <Button onPress={() => router.push("/sign-in")} variant="secondary">
-            Sign in
+            <Text>Sign in</Text>
           </Button>
         </GlassCard>
       )}
@@ -123,7 +123,9 @@ export default function SearchScreen() {
             <Text className="text-2xl font-semibold" numberOfLines={1}>
               {submittedDomain}
             </Text>
-            <Badge tone="success">Live report</Badge>
+            <Badge tone="success">
+              <Text>Live report</Text>
+            </Badge>
           </View>
 
           {summary.map((row) => (

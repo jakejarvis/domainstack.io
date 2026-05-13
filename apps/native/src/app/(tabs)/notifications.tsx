@@ -95,7 +95,7 @@ function NotificationsList() {
           onPress={() => void markAllRead.mutateAsync()}
           variant="secondary"
         >
-          Mark all read
+          <Text>Mark all read</Text>
         </Button>
       )}
 
@@ -125,7 +125,11 @@ function NotificationsList() {
                 <Text className="flex-1 text-lg font-semibold" numberOfLines={2}>
                   {item.title}
                 </Text>
-                {!item.readAt && <Badge tone="warning">Unread</Badge>}
+                {!item.readAt && (
+                  <Badge tone="warning">
+                    <Text>Unread</Text>
+                  </Badge>
+                )}
               </View>
               <MutedText>{item.message}</MutedText>
               <MutedText>{formatDate(item.sentAt)}</MutedText>
@@ -137,7 +141,7 @@ function NotificationsList() {
                   onPress={() => router.push(`/(tabs)/domains/${item.trackedDomainId}`)}
                   variant="secondary"
                 >
-                  Open domain
+                  <Text>Open domain</Text>
                 </Button>
               )}
               {!item.readAt && (
@@ -146,7 +150,7 @@ function NotificationsList() {
                   loading={markRead.isPending}
                   onPress={() => void markRead.mutateAsync({ id: item.id })}
                 >
-                  Mark read
+                  <Text>Mark read</Text>
                 </Button>
               )}
             </View>

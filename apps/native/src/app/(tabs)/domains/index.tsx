@@ -99,10 +99,10 @@ function PortfolioScreen() {
 
       <View className="flex-row gap-3">
         <Button className="flex-1" onPress={() => router.push("/(tabs)/domains/add")}>
-          Add domain
+          <Text>Add domain</Text>
         </Button>
         <Button className="flex-1" onPress={() => router.push("/settings")} variant="secondary">
-          Settings
+          <Text>Settings</Text>
         </Button>
       </View>
 

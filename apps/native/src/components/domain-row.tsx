@@ -28,8 +28,16 @@ export function DomainRow({ domain, onPress }: { domain: PortfolioDomain; onPres
         </View>
         <View className="flex-row flex-wrap gap-2">
           <Badge tone={expiryTone}>{days == null ? "Expiry unknown" : `${days} days`}</Badge>
-          {domain.muted && <Badge>Muted</Badge>}
-          {domain.archivedAt && <Badge>Archived</Badge>}
+          {domain.muted && (
+            <Badge>
+              <Text>Muted</Text>
+            </Badge>
+          )}
+          {domain.archivedAt && (
+            <Badge>
+              <Text>Archived</Text>
+            </Badge>
+          )}
         </View>
       </GlassCard>
     </Pressable>

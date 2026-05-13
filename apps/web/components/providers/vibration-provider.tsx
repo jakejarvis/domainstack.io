@@ -28,10 +28,13 @@ export function VibrationProvider() {
       return;
     }
 
+    const originalVibrate = navigator.vibrate?.bind(navigator);
+
     // State
     let label: HTMLLabelElement;
     let checkbox: HTMLInputElement;
-    let timeout: ReturnType<typeof setTimeout>;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    let mountTimeout: ReturnType<typeof setTimeout> | undefined;
     let lastTouch: number | null = null;
     let state: [number, number[]] = [Date.now(), []];
 
@@ -148,8 +151,21 @@ export function VibrationProvider() {
     if (document.head) {
       document.head.appendChild(label);
     } else {
-      setTimeout(() => document.head.appendChild(label), 0);
+      mountTimeout = setTimeout(() => document.head.appendChild(label), 0);
     }
+
+    return () => {
+      if (timeout !== undefined) clearTimeout(timeout);
+      if (mountTimeout !== undefined) clearTimeout(mountTimeout);
+      window.removeEventListener("click", onInteraction);
+      window.removeEventListener("touchend", onInteraction);
+      window.removeEventListener("keyup", onInteraction);
+      window.removeEventListener("keypress", onInteraction);
+      label.parentNode?.removeChild(label);
+      if (originalVibrate) {
+        navigator.vibrate = originalVibrate;
+      }
+    };
   }, []);
 
   return null;
