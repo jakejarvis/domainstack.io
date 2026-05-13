@@ -12,7 +12,8 @@
     "./downgrade": "./src/downgrade.ts",
     "./better-auth/server": "./src/better-auth/server.ts",
     "./better-auth/client": "./src/better-auth/client.ts",
-    "./sdk": "./src/sdk.ts"
+    "./sdk": "./src/sdk.ts",
+    "./server": "./src/server.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit",

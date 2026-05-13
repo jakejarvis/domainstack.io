@@ -50,6 +50,21 @@ export async function signOut() {
   return authClient.signOut();
 }
 
+export async function linkProvider(provider: AuthProvider) {
+  return authClient.linkSocial({
+    provider,
+    callbackURL: Linking.createURL("/settings"),
+  });
+}
+
+export async function unlinkProvider(providerId: AuthProvider, accountId?: string) {
+  return authClient.unlinkAccount({ providerId, accountId });
+}
+
+export async function deleteAccount() {
+  return authClient.deleteUser();
+}
+
 export function getAuthCookieHeader(): string | null {
   return getNativeAuthCookieHeader(authClient);
 }

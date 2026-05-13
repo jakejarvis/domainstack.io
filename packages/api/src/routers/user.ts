@@ -20,6 +20,8 @@ import {
   unregisterPushDevice,
   updateUserNotificationPreferences,
 } from "@domainstack/db/queries";
+import { PRO_TIER_INFO } from "@domainstack/polar/products";
+import { polarClient } from "@domainstack/polar/server";
 
 import { protectedProcedure } from "../procedures";
 import { createTRPCRouter } from "../trpc";
@@ -305,5 +307,56 @@ export const userRouter = createTRPCRouter({
     analytics.track("calendar_feed_deleted", {}, ctx.user.id);
 
     return { success: true };
+  }),
+
+  // ============================================================================
+  // Polar URL Procedures (for native — web uses the better-auth Polar plugin directly)
+  // ============================================================================
+
+  /**
+   * Create a Polar hosted checkout session and return its URL.
+   * Native opens this in WebBrowser; the user can pick monthly/yearly on the page.
+   */
+  createCheckoutUrl: protectedProcedure
+    .input(z.object({ successUrl: z.string().url() }))
+    .mutation(async ({ ctx, input }) => {
+      if (!polarClient) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Billing is not configured on this server.",
+        });
+      }
+
+      const checkout = await polarClient.checkouts.create({
+        products: [PRO_TIER_INFO.monthly.productId, PRO_TIER_INFO.yearly.productId],
+        successUrl: input.successUrl,
+        externalCustomerId: ctx.user.id,
+        customerEmail: ctx.user.email,
+      });
+
+      analytics.track("checkout_url_created", {}, ctx.user.id);
+
+      return { url: checkout.url };
+    }),
+
+  /**
+   * Create a Polar customer portal session and return its URL.
+   * Native opens this in WebBrowser so the user can manage payment, cancel, etc.
+   */
+  createPortalUrl: protectedProcedure.mutation(async ({ ctx }) => {
+    if (!polarClient) {
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: "Billing is not configured on this server.",
+      });
+    }
+
+    const session = await polarClient.customerSessions.create({
+      externalCustomerId: ctx.user.id,
+    });
+
+    analytics.track("portal_url_created", {}, ctx.user.id);
+
+    return { url: session.customerPortalUrl };
   }),
 });

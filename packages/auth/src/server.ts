@@ -20,7 +20,7 @@ import {
   handleSubscriptionUncanceled,
 } from "@domainstack/polar";
 import { checkout, polar, portal, webhooks } from "@domainstack/polar/better-auth/server";
-import { Polar } from "@domainstack/polar/sdk";
+import { polarClient } from "@domainstack/polar/server";
 import { getRedis } from "@domainstack/redis";
 
 import { otaConfig } from "./ota-config";
@@ -118,15 +118,6 @@ const trustedOrigins = [
   "exp://localhost:8081",
   "http://localhost:8081",
 ].filter((origin): origin is string => Boolean(origin));
-
-// Use VERCEL_ENV to determine Polar environment (not NODE_ENV, which is "production" on preview deployments too)
-// This prevents preview deployments from hitting the production Polar API
-const polarClient = process.env.POLAR_ACCESS_TOKEN
-  ? new Polar({
-      accessToken: process.env.POLAR_ACCESS_TOKEN,
-      server: process.env.VERCEL_ENV === "production" ? "production" : "sandbox",
-    })
-  : null;
 
 export const auth = betterAuth({
   appName: "Domainstack",
