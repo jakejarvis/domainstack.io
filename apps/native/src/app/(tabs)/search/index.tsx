@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { View } from "react-native";
 
@@ -7,12 +6,12 @@ import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
 import { EmptyState } from "@/components/empty-state";
 import { GlassCard } from "@/components/glass-card";
+import { HeaderMenu } from "@/components/header-menu";
 import { Screen } from "@/components/screen";
 import { SkeletonRows } from "@/components/skeleton";
 import { MutedText, Text } from "@/components/text";
 import { TextField } from "@/components/text-field";
 import { useTRPC } from "@/lib/api";
-import { authClient } from "@/lib/auth";
 import { formatCount } from "@/lib/format";
 
 function getRecordCount(data: unknown): number {
@@ -36,7 +35,6 @@ function getProviderName(data: unknown): string {
 
 export default function SearchScreen() {
   const trpc = useTRPC();
-  const session = authClient.useSession();
   const [domain, setDomain] = useState("");
   const [submittedDomain, setSubmittedDomain] = useState("");
 
@@ -71,10 +69,9 @@ export default function SearchScreen() {
 
   return (
     <Screen>
-      <View className="gap-2">
-        <Text className="text-4xl font-semibold">Search</Text>
-        <MutedText>Look up public registration, DNS, hosting, and certificate data.</MutedText>
-      </View>
+      <HeaderMenu />
+
+      <MutedText>Look up public registration, DNS, hosting, and certificate data.</MutedText>
 
       <GlassCard>
         <TextField
@@ -90,21 +87,6 @@ export default function SearchScreen() {
           <Text>Run lookup</Text>
         </Button>
       </GlassCard>
-
-      {!session.data?.user && (
-        <GlassCard>
-          <View className="gap-2">
-            <Text className="text-lg font-semibold">Portfolio features are locked</Text>
-            <MutedText>
-              Public lookup works without an account. Sign in to track domains and receive
-              notifications.
-            </MutedText>
-          </View>
-          <Button onPress={() => router.push("/sign-in")} variant="secondary">
-            <Text>Sign in</Text>
-          </Button>
-        </GlassCard>
-      )}
 
       {enabled && loading && <SkeletonRows count={4} />}
 

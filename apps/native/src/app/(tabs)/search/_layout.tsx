@@ -3,7 +3,7 @@ import { useColorScheme } from "react-native";
 
 import { useCSSVariable } from "@/tw";
 
-export default function DomainsLayout() {
+export default function SearchLayout() {
   const canvas = useCSSVariable("--color-canvas");
   const surface = useCSSVariable("--color-glass");
   const text = useCSSVariable("--color-text-primary");
@@ -19,9 +19,7 @@ export default function DomainsLayout() {
         headerTintColor: text,
       }}
     >
-      <Stack.Screen name="index" options={{ headerLargeTitle: true, title: "Portfolio" }} />
-      <Stack.Screen name="add" options={{ title: "Add Domain" }} />
-      <Stack.Screen name="[id]" options={{ title: "Domain" }} />
+      <Stack.Screen name="index" options={{ headerLargeTitle: true, title: "Search" }} />
     </Stack>
   );
 }

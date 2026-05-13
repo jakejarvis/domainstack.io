@@ -7,6 +7,7 @@ import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
 import { EmptyState } from "@/components/empty-state";
 import { GlassCard } from "@/components/glass-card";
+import { HeaderMenu } from "@/components/header-menu";
 import { Screen } from "@/components/screen";
 import { SegmentedControl } from "@/components/segmented-control";
 import { SkeletonRows } from "@/components/skeleton";
@@ -29,6 +30,7 @@ export default function NotificationsScreen() {
   if (session.isPending) {
     return (
       <Screen>
+        <HeaderMenu />
         <SkeletonRows count={4} />
       </Screen>
     );
@@ -37,12 +39,10 @@ export default function NotificationsScreen() {
   if (!session.data?.user) {
     return (
       <Screen>
-        <View className="gap-2">
-          <Text className="text-4xl font-semibold">Notifications</Text>
-          <MutedText>
-            Sign in to review ownership, expiry, provider, and certificate changes.
-          </MutedText>
-        </View>
+        <HeaderMenu />
+        <MutedText>
+          Sign in to review ownership, expiry, provider, and certificate changes.
+        </MutedText>
         <EmptyState
           actionLabel="Sign in"
           body="Notifications are tied to tracked portfolio domains and push registration."
@@ -79,13 +79,7 @@ function NotificationsList() {
 
   return (
     <Screen>
-      <View className="gap-2">
-        <View className="flex-row items-center gap-3">
-          <Text className="text-4xl font-semibold">Notifications</Text>
-          {(unread.data ?? 0) > 0 && <Badge tone="warning">{unread.data}</Badge>}
-        </View>
-        <MutedText>Review ownership, expiry, provider, and certificate changes.</MutedText>
-      </View>
+      <HeaderMenu />
 
       <SegmentedControl onChange={setFilter} options={filters} value={filter} />
 
@@ -95,7 +89,7 @@ function NotificationsList() {
           onPress={() => void markAllRead.mutateAsync()}
           variant="secondary"
         >
-          <Text>Mark all read</Text>
+          <Text>Mark all read ({unread.data})</Text>
         </Button>
       )}
 

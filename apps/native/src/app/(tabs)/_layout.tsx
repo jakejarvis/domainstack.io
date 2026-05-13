@@ -1,12 +1,29 @@
+import { useQuery } from "@tanstack/react-query";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 
+import { useTRPC } from "@/lib/api";
+import { authClient } from "@/lib/auth";
 import { useCSSVariable } from "@/tw";
+
+function formatBadge(count: number): string | undefined {
+  if (count <= 0) return undefined;
+  if (count > 99) return "99+";
+  return String(count);
+}
 
 export default function TabsLayout() {
   const accent = useCSSVariable("--color-brand");
   const canvas = useCSSVariable("--color-canvas");
   const surface = useCSSVariable("--color-glass");
   const textMuted = useCSSVariable("--color-text-secondary");
+
+  const trpc = useTRPC();
+  const session = authClient.useSession();
+  const isSignedIn = Boolean(session.data?.user);
+  const unreadQuery = useQuery(
+    trpc.notifications.unreadCount.queryOptions(undefined, { enabled: isSignedIn }),
+  );
+  const unreadBadge = formatBadge(unreadQuery.data ?? 0);
 
   return (
     <NativeTabs
@@ -32,6 +49,7 @@ export default function TabsLayout() {
           sf={{ default: "bell", selected: "bell.fill" }}
         />
         <NativeTabs.Trigger.Label>Notifications</NativeTabs.Trigger.Label>
+        {unreadBadge && <NativeTabs.Trigger.Badge>{unreadBadge}</NativeTabs.Trigger.Badge>}
       </NativeTabs.Trigger>
       <NativeTabs.Trigger contentStyle={{ backgroundColor: canvas }} name="search">
         <NativeTabs.Trigger.Icon md="search" sf="magnifyingglass" />

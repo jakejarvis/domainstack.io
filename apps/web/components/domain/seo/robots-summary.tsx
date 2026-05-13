@@ -373,7 +373,7 @@ function GroupsAccordion({
     [groups, isSearching],
   );
 
-  const renderItems = () => (
+  const items = (
     <AnimatePresence initial={false}>
       {groups.map((g, idx) => {
         const allowN = g.rules.filter((r) => r.type === "allow").length;
@@ -427,14 +427,14 @@ function GroupsAccordion({
 
   return isSearching ? (
     <Accordion key="accordion-search" multiple value={openValues}>
-      {renderItems()}
+      {items}
     </Accordion>
   ) : (
     <Accordion
       key={`accordion-default-${defaultValue}`}
       defaultValue={defaultValue ? [defaultValue] : []}
     >
-      {renderItems()}
+      {items}
     </Accordion>
   );
 }

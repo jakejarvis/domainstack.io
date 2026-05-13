@@ -6,6 +6,7 @@ import { View } from "react-native";
 import { Button } from "@/components/button";
 import { DomainRow } from "@/components/domain-row";
 import { EmptyState } from "@/components/empty-state";
+import { HeaderMenu } from "@/components/header-menu";
 import { Screen } from "@/components/screen";
 import { SegmentedControl } from "@/components/segmented-control";
 import { SkeletonRows } from "@/components/skeleton";
@@ -40,6 +41,7 @@ export default function DomainsScreen() {
   if (session.isPending) {
     return (
       <Screen>
+        <HeaderMenu />
         <SkeletonRows count={4} />
       </Screen>
     );
@@ -48,10 +50,8 @@ export default function DomainsScreen() {
   if (!session.data?.user) {
     return (
       <Screen>
-        <View className="gap-2">
-          <Text className="text-4xl font-semibold">Portfolio</Text>
-          <MutedText>Sign in to track ownership, expiry, providers, and notifications.</MutedText>
-        </View>
+        <HeaderMenu />
+        <MutedText>Sign in to track ownership, expiry, providers, and notifications.</MutedText>
         <EmptyState
           actionLabel="Sign in"
           body="Search remains available without an account. Your portfolio syncs after sign in."
@@ -92,19 +92,12 @@ function PortfolioScreen() {
 
   return (
     <Screen>
-      <View className="gap-2">
-        <Text className="text-4xl font-semibold">Portfolio</Text>
-        <MutedText>Track ownership, expiry, DNS, hosting, mail, and certificate state.</MutedText>
-      </View>
+      <HeaderMenu />
+      <MutedText>Track ownership, expiry, DNS, hosting, mail, and certificate state.</MutedText>
 
-      <View className="flex-row gap-3">
-        <Button className="flex-1" onPress={() => router.push("/(tabs)/domains/add")}>
-          <Text>Add domain</Text>
-        </Button>
-        <Button className="flex-1" onPress={() => router.push("/settings")} variant="secondary">
-          <Text>Settings</Text>
-        </Button>
-      </View>
+      <Button onPress={() => router.push("/(tabs)/domains/add")}>
+        <Text>Add domain</Text>
+      </Button>
 
       <TextField
         label="Filter domains"
