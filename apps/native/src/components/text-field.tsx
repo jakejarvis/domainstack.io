@@ -1,12 +1,17 @@
-import type { ReturnKeyTypeOptions } from "react-native";
+import type { InputModeOptions, ReturnKeyTypeOptions } from "react-native";
 import { TextInput, View } from "react-native";
 
+import { cn } from "@/lib/cn";
 import { useCSSVariable } from "@/tw";
 
 import { MutedText } from "./text";
 
 export function TextField({
   autoCapitalize = "none",
+  autoComplete,
+  editable = true,
+  error,
+  inputMode = "url",
   label,
   onChangeText,
   onSubmitEditing,
@@ -15,6 +20,10 @@ export function TextField({
   value,
 }: {
   autoCapitalize?: "none" | "sentences" | "words" | "characters";
+  autoComplete?: "email" | "off";
+  editable?: boolean;
+  error?: string;
+  inputMode?: InputModeOptions;
   label: string;
   onChangeText: (value: string) => void;
   onSubmitEditing?: () => void;
@@ -23,23 +32,31 @@ export function TextField({
   value: string;
 }) {
   const placeholderTextColor = useCSSVariable("--color-text-secondary");
+  const dangerColor = useCSSVariable("--color-danger");
 
   return (
     <View className="gap-2">
       <MutedText className="font-semibold">{label}</MutedText>
       <TextInput
         autoCapitalize={autoCapitalize}
+        autoComplete={autoComplete}
         autoCorrect={false}
-        className="border-line bg-glass text-text-primary min-h-12 rounded-xl border px-4 text-base"
-        inputMode="url"
+        className={cn(
+          "border-line bg-glass text-text-primary min-h-12 rounded-xl border px-4 text-base",
+          !editable && "opacity-60",
+        )}
+        editable={editable}
+        inputMode={inputMode}
         onChangeText={onChangeText}
         onSubmitEditing={onSubmitEditing}
         placeholder={placeholder}
         placeholderTextColor={placeholderTextColor}
         returnKeyType={returnKeyType}
         spellCheck={false}
+        style={error ? { borderColor: dangerColor } : undefined}
         value={value}
       />
+      {error ? <MutedText style={{ color: dangerColor }}>{error}</MutedText> : null}
     </View>
   );
 }

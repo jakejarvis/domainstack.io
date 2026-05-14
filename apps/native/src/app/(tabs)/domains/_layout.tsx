@@ -20,7 +20,7 @@ export default function DomainsLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ headerLargeTitle: true, title: "Portfolio" }} />
-      <Stack.Screen name="add" options={{ title: "Add Domain" }} />
+      <Stack.Screen name="add" options={{ presentation: "modal", title: "Add Domain" }} />
       <Stack.Screen name="archived" options={{ title: "Archived" }} />
       <Stack.Screen name="[domain]" options={{ title: "Domain" }} />
     </Stack>

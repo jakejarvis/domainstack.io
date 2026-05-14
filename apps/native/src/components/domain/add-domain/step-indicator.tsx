@@ -1,0 +1,95 @@
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { View } from "react-native";
+
+import { Spinner } from "@/components/spinner";
+import { Text } from "@/components/text";
+import { cn } from "@/lib/cn";
+
+type StepState = "completed" | "active" | "pending";
+
+function stepState(step: number, current: number): StepState {
+  if (step < current) return "completed";
+  if (step === current) return "active";
+  return "pending";
+}
+
+function StepDot({ state, label, loading }: { state: StepState; label: number; loading: boolean }) {
+  const sizeClass = "size-7";
+  const containerClass = cn(
+    "items-center justify-center rounded-full border",
+    sizeClass,
+    state === "completed" && "border-success bg-success",
+    state === "active" && "bg-control-primary border-control-primary",
+    state === "pending" && "bg-canvas-2 border-line",
+  );
+
+  return (
+    <View className={containerClass}>
+      {loading ? (
+        <Spinner tone={state === "pending" ? "muted" : "default"} />
+      ) : state === "completed" ? (
+        <MaterialIcons color="white" name="check" size={16} />
+      ) : (
+        <Text
+          className={cn(
+            "text-xs font-semibold",
+            state === "active" ? "text-control-primary-text" : "text-text-secondary",
+          )}
+        >
+          {label}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+export function StepIndicator({
+  current,
+  loadingStep,
+}: {
+  current: 1 | 2 | 3;
+  loadingStep?: 1 | 2 | 3;
+}) {
+  const steps: Array<{ step: 1 | 2 | 3; label: string }> = [
+    { step: 1, label: "Enter" },
+    { step: 2, label: "Verify" },
+    { step: 3, label: "Done" },
+  ];
+
+  return (
+    <View className="gap-2">
+      <View className="flex-row items-center">
+        {steps.map((entry, index) => {
+          const state = stepState(entry.step, current);
+          const nextState = steps[index + 1] ? stepState(steps[index + 1].step, current) : null;
+          const separatorActive = state === "completed";
+          return (
+            <View className="flex-row items-center" key={entry.step} style={{ flex: 1 }}>
+              <StepDot label={entry.step} loading={loadingStep === entry.step} state={state} />
+              {nextState !== null ? (
+                <View className={cn("h-px flex-1", separatorActive ? "bg-success" : "bg-line")} />
+              ) : null}
+            </View>
+          );
+        })}
+      </View>
+      <View className="flex-row items-center">
+        {steps.map((entry) => {
+          const state = stepState(entry.step, current);
+          return (
+            <View key={entry.step} style={{ flex: 1 }}>
+              <Text
+                className={cn(
+                  "text-xs",
+                  state === "active" ? "text-text-primary font-medium" : "text-text-secondary",
+                )}
+              >
+                {entry.label}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
