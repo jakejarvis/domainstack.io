@@ -100,11 +100,16 @@ function PortfolioScreen() {
   const domains = useMemo<PortfolioDomain[]>(() => {
     return (domainsQuery.data ?? []).map((item) => ({
       archivedAt: item.archivedAt,
+      ca: item.ca ?? null,
       createdAt: item.createdAt,
+      dns: item.dns ?? null,
       domainName: item.domainName,
+      email: item.email ?? null,
       expirationDate: item.expirationDate,
+      hosting: item.hosting ?? null,
       id: item.id,
       muted: item.muted,
+      registrar: item.registrar ?? null,
       verified: item.verified,
     }));
   }, [domainsQuery.data]);

@@ -11,7 +11,6 @@ import * as schema from "@domainstack/db/schema";
 import { addContact, removeContact, sendEmail } from "@domainstack/email";
 import DeleteAccountVerifyEmail from "@domainstack/email/templates/delete-account-verify";
 import { createLogger } from "@domainstack/logger";
-import { getNativeAppConfig } from "@domainstack/server/edge-config";
 import {
   getProductsForCheckout,
   handleSubscriptionActive,
@@ -23,6 +22,7 @@ import {
 import { checkout, polar, portal, webhooks } from "@domainstack/polar/better-auth/server";
 import { polarClient } from "@domainstack/polar/server";
 import { getRedis } from "@domainstack/redis";
+import { getNativeAppConfig } from "@domainstack/server/edge-config";
 
 import { otaConfig } from "./ota-config";
 import { buildOAuthProviders, validateOAuthCredentialPair } from "./providers";

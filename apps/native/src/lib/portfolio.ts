@@ -1,3 +1,5 @@
+import type { ProviderInfo } from "@domainstack/types";
+
 export type PortfolioStatusFilter = "all" | "verified" | "needs-verification" | "muted";
 export type PortfolioSort = "name" | "expiry" | "created";
 
@@ -9,6 +11,11 @@ export type PortfolioDomain = {
   createdAt: Date | string;
   expirationDate: Date | string | null;
   archivedAt?: Date | string | null;
+  registrar: ProviderInfo | null;
+  dns: ProviderInfo | null;
+  hosting: ProviderInfo | null;
+  email: ProviderInfo | null;
+  ca: ProviderInfo | null;
 };
 
 function time(value: Date | string | null | undefined): number {

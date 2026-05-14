@@ -10,6 +10,7 @@ import type { PortfolioDomain } from "@/lib/portfolio";
 import { Badge } from "./badge";
 import { GlassCard } from "./glass-card";
 import { DomainHealthBadge } from "./portfolio/domain-health-badge";
+import { ProviderChips } from "./portfolio/provider-chips";
 import { RelativeExpiry } from "./relative-expiry";
 import { MutedText, Text } from "./text";
 
@@ -84,6 +85,7 @@ function DomainRowImpl({
               </Badge>
             ) : null}
           </View>
+          <ProviderChips domain={domain} />
         </View>
       </View>
     </GlassCard>
