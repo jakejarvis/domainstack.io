@@ -4,6 +4,7 @@ import { useCallback } from "react";
 
 import { useTRPC } from "@/lib/api";
 import { getPushPlatform, type PushRegistrationResult, requestExpoPushToken } from "@/lib/push";
+import { usePushPromptStore } from "@/lib/stores/push-prompt-store";
 
 export function usePushRegistration() {
   const trpc = useTRPC();
@@ -28,6 +29,7 @@ export function usePushRegistration() {
       expoPushToken: result.expoPushToken,
       platform: getPushPlatform(),
     });
+    usePushPromptStore.getState().setLastRegisteredToken(result.expoPushToken);
     return "granted";
   }, [registerDevice]);
 

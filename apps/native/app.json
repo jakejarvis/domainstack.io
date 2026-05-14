@@ -37,7 +37,9 @@
       [
         "expo-notifications",
         {
-          "mode": "production"
+          "mode": "production",
+          "icon": "./assets/adaptive-icon-mono.png",
+          "color": "#000000"
         }
       ],
       "expo-image",

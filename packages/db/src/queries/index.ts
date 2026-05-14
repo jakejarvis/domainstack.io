@@ -37,6 +37,9 @@ export * from "./providers";
 // Push devices
 export * from "./push-devices";
 
+// Push receipts
+export * from "./push-receipts";
+
 // Registrations
 export * from "./registrations";
 

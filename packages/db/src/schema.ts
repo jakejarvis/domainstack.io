@@ -311,6 +311,26 @@ export const userPushDevices = pgTable(
   ],
 );
 
+export const pushReceipts = pgTable(
+  "push_receipts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ticketId: text("ticket_id").notNull(),
+    expoPushToken: text("expo_push_token").notNull(),
+    notificationId: uuid("notification_id"),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    processedAt: timestamp("processed_at", { withTimezone: true }),
+    errorCode: text("error_code"),
+  },
+  (t) => [
+    unique("u_push_receipts_ticket").on(t.ticketId),
+    index("idx_push_receipts_pending").on(t.processedAt, t.createdAt),
+  ],
+);
+
 // ============================================================================
 // Domain Data Tables
 // ============================================================================

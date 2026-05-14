@@ -81,8 +81,12 @@ export async function sendPushForNotificationStep(input: {
 }): Promise<void> {
   "use step";
 
-  const { getEnabledPushDevicesForUser, markPushDeviceSendError, markPushDeviceSendSuccess } =
-    await import("@domainstack/db/queries");
+  const {
+    getEnabledPushDevicesForUser,
+    insertPendingReceipts,
+    markPushDeviceSendError,
+    markPushDeviceSendSuccess,
+  } = await import("@domainstack/db/queries");
 
   const devices = await getEnabledPushDevicesForUser(input.userId);
   if (devices.length === 0) return;
@@ -107,12 +111,26 @@ export async function sendPushForNotificationStep(input: {
 
   const payload = (await response.json().catch(() => null)) as { data?: ExpoPushTicket[] } | null;
   const tickets = payload?.data ?? [];
+  const pendingReceipts: Array<{
+    ticketId: string;
+    expoPushToken: string;
+    userId: string;
+    notificationId: string | null;
+  }> = [];
 
   await Promise.all(
     deliveryDevices.map(async (device, index) => {
       const ticket = tickets[index];
       if (!ticket || ticket.status === "ok") {
         await markPushDeviceSendSuccess(device.expoPushToken);
+        if (ticket?.id) {
+          pendingReceipts.push({
+            ticketId: ticket.id,
+            expoPushToken: device.expoPushToken,
+            userId: input.userId,
+            notificationId: input.notificationId,
+          });
+        }
         return;
       }
 
@@ -121,4 +139,8 @@ export async function sendPushForNotificationStep(input: {
       logger.warn({ error, userId: input.userId }, "expo push ticket failed");
     }),
   );
+
+  if (pendingReceipts.length > 0) {
+    await insertPendingReceipts(pendingReceipts);
+  }
 }

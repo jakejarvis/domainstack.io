@@ -2,7 +2,8 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { FlashList } from "@shopify/flash-list";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
-import { Link, router } from "expo-router";
+import * as Notifications from "expo-notifications";
+import { Link, router, useFocusEffect } from "expo-router";
 import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { Pressable, View } from "react-native";
 import ReanimatedSwipeable, {
@@ -86,6 +87,13 @@ function NotificationsList() {
     ),
   );
   const unread = useQuery(trpc.notifications.unreadCount.queryOptions());
+
+  useFocusEffect(
+    useCallback(() => {
+      void Notifications.setBadgeCountAsync(0);
+      void Notifications.dismissAllNotificationsAsync();
+    }, []),
+  );
 
   const listKeys = useMemo(
     () => ({

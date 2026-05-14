@@ -11,6 +11,7 @@ import { useCSSVariable } from "uniwind";
 
 import { PushPermissionSheet } from "@/components/notifications/push-permission-sheet";
 import { useVersionGateReady, VersionGate } from "@/components/version-gate";
+import { useForegroundPushRefresh } from "@/hooks/use-foreground-push-refresh";
 import { AnalyticsProvider } from "@/lib/analytics-provider";
 import { ApiProvider } from "@/lib/api";
 import { authClient } from "@/lib/auth";
@@ -30,6 +31,7 @@ function RootNavigator() {
   const session = authClient.useSession();
   const isSignedIn = Boolean(session.data?.user);
   const versionGateReady = useVersionGateReady();
+  useForegroundPushRefresh();
 
   useEffect(() => {
     if (!session.isPending && versionGateReady) {
@@ -38,18 +40,29 @@ function RootNavigator() {
   }, [session.isPending, versionGateReady]);
 
   useEffect(() => {
+    const route = (data: Record<string, unknown>) => {
+      const target = routeFromNotificationData(data);
+      // Protected routes redirect to sign-in if there's no session; public routes
+      // (domain reports) work fine signed-out.
+      if (!isSignedIn && target === "/(tabs)/notifications") {
+        router.push("/sign-in");
+        return;
+      }
+      router.push(target);
+    };
+
     const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-      router.push(routeFromNotificationData(response.notification.request.content.data ?? {}));
+      route(response.notification.request.content.data ?? {});
     });
 
     const lastResponse = Notifications.getLastNotificationResponse();
     if (lastResponse) {
-      router.push(routeFromNotificationData(lastResponse.notification.request.content.data ?? {}));
+      route(lastResponse.notification.request.content.data ?? {});
       Notifications.clearLastNotificationResponse();
     }
 
     return () => subscription.remove();
-  }, []);
+  }, [isSignedIn]);
 
   return (
     <>

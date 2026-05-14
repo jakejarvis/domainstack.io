@@ -141,6 +141,13 @@
       "when": 1778277928212,
       "tag": "0019_rare_silhouette",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1778784341823,
+      "tag": "0020_unknown_maelstrom",
+      "breakpoints": true
     }
   ]
 }

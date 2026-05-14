@@ -1,6 +1,7 @@
 import Constants from "expo-constants";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
+import { Platform } from "react-native";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -10,6 +11,19 @@ Notifications.setNotificationHandler({
     shouldShowList: true,
   }),
 });
+
+if (Platform.OS === "android") {
+  // Android 8+ requires every notification to belong to a channel; without an
+  // explicit one the OS surfaces our pushes under a generic "Miscellaneous"
+  // label in the system settings.
+  void Notifications.setNotificationChannelAsync("default", {
+    name: "Domain alerts",
+    importance: Notifications.AndroidImportance.HIGH,
+    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    showBadge: true,
+    enableVibrate: true,
+  });
+}
 
 export type PushRegistrationResult =
   | { status: "granted"; expoPushToken: string; deviceName: string | null }

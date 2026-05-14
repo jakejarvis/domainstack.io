@@ -8,6 +8,7 @@ interface PushPromptState {
   handledTriggers: PushPromptTrigger[];
   isOpen: boolean;
   hasHydrated: boolean;
+  lastRegisteredToken: string | null;
 }
 
 interface PushPromptActions {
@@ -16,6 +17,7 @@ interface PushPromptActions {
   open: () => void;
   close: () => void;
   reset: () => void;
+  setLastRegisteredToken: (token: string | null) => void;
 }
 
 type PushPromptStore = PushPromptState & PushPromptActions;
@@ -26,6 +28,7 @@ export const usePushPromptStore = create<PushPromptStore>()(
       handledTriggers: [],
       isOpen: false,
       hasHydrated: false,
+      lastRegisteredToken: null,
 
       isTriggerHandled: (trigger) => get().handledTriggers.includes(trigger),
       markTriggerHandled: (trigger) =>
@@ -36,13 +39,17 @@ export const usePushPromptStore = create<PushPromptStore>()(
         ),
       open: () => set({ isOpen: true }),
       close: () => set({ isOpen: false }),
-      reset: () => set({ handledTriggers: [], isOpen: false }),
+      reset: () => set({ handledTriggers: [], isOpen: false, lastRegisteredToken: null }),
+      setLastRegisteredToken: (token) => set({ lastRegisteredToken: token }),
     }),
     {
       name: "domainstack-native-push-prompt",
       version: 1,
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ handledTriggers: state.handledTriggers }),
+      partialize: (state) => ({
+        handledTriggers: state.handledTriggers,
+        lastRegisteredToken: state.lastRegisteredToken,
+      }),
       onRehydrateStorage: () => () => {
         usePushPromptStore.setState({ hasHydrated: true });
       },

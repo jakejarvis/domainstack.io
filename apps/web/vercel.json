@@ -45,6 +45,10 @@
     {
       "path": "/api/cron/sync-blocklist",
       "schedule": "0 2 * * 0"
+    },
+    {
+      "path": "/api/cron/check-push-receipts",
+      "schedule": "*/15 * * * *"
     }
   ]
 }
