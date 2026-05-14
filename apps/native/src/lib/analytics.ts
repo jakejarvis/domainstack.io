@@ -1,17 +1,16 @@
 import type { PostHogEventProperties } from "@posthog/core";
 import { PostHog } from "posthog-react-native";
-import { useMemo } from "react";
 
 import { posthogHost, posthogKey } from "./env";
 import { usePrivacyStore } from "./stores/privacy-store";
 
-export interface IdentifyProperties {
+interface IdentifyProperties {
   email?: string;
   name?: string;
   tier?: string;
 }
 
-export interface IdentifySetOnceProperties {
+interface IdentifySetOnceProperties {
   createdAt?: string;
 }
 
@@ -97,17 +96,3 @@ export const analytics = {
   isIdentified,
   getDistinctId,
 };
-
-export function useAnalytics() {
-  return useMemo(
-    () => ({
-      track,
-      trackException,
-      identify,
-      reset,
-      isIdentified,
-      getDistinctId,
-    }),
-    [],
-  );
-}

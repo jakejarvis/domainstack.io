@@ -27,7 +27,7 @@ function usePulseStyle() {
   return useAnimatedStyle(() => ({ opacity: progress.get() }));
 }
 
-export function NotificationCardSkeleton() {
+function NotificationCardSkeleton() {
   const pulseStyle = usePulseStyle();
   return (
     <GlassCard>

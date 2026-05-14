@@ -22,10 +22,6 @@ const providerMetadataById = new Map<OAuthProviderId, OAuthProviderMetadata>(
   OAUTH_PROVIDER_METADATA.map((provider) => [provider.id, provider]),
 );
 
-export function canUseNativeGoogleAuth(config: GoogleNativeAuthConfig): boolean {
-  return canUseNativeGoogleAuthOnPlatform(config, "ios");
-}
-
 export function canUseNativeGoogleAuthOnPlatform(
   config: GoogleNativeAuthConfig,
   platform: NativeAuthPlatform,

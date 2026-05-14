@@ -54,13 +54,11 @@ function ArchivedScreen() {
   type ListItem = NonNullable<typeof domainsQuery.data>[number];
 
   const archivedDomains = useMemo<ArchivedRowDomain[]>(() => {
-    return (domainsQuery.data ?? [])
-      .filter((domain) => domain.archivedAt != null)
-      .map((domain) => ({
-        archivedAt: domain.archivedAt,
-        domainName: domain.domainName,
-        id: domain.id,
-      }));
+    return (domainsQuery.data ?? []).flatMap((domain) =>
+      domain.archivedAt != null
+        ? [{ archivedAt: domain.archivedAt, domainName: domain.domainName, id: domain.id }]
+        : [],
+    );
   }, [domainsQuery.data]);
 
   const listKey = trpc.tracking.listDomains.queryKey(LIST_INPUT);

@@ -4,18 +4,12 @@ const DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
   year: "numeric",
 });
 
-const COUNT_FORMATTER = new Intl.NumberFormat(undefined);
-
 export function formatDate(value: Date | string | null | undefined): string {
   if (!value) return "Unknown";
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return "Unknown";
 
   return DATE_FORMATTER.format(date);
-}
-
-export function formatCount(value: number): string {
-  return COUNT_FORMATTER.format(value);
 }
 
 export function daysUntil(value: Date | string | null | undefined): number | null {

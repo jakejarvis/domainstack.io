@@ -49,9 +49,9 @@ export function showActionSheetIOS({
 }): boolean {
   if (Platform.OS !== "ios") return false;
   const labels = options.map((option) => option.label).concat(cancelLabel);
-  const destructiveIndexes = options
-    .map((option, index) => (option.destructive ? index : -1))
-    .filter((index) => index >= 0);
+  const destructiveIndexes = options.flatMap((option, index) =>
+    option.destructive ? [index] : [],
+  );
   ActionSheetIOS.showActionSheetWithOptions(
     {
       cancelButtonIndex: labels.length - 1,

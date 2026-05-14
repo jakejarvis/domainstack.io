@@ -14,7 +14,7 @@ import { toast } from "@/lib/toast";
 import { isValidDomain, normalizeDomainInput } from "@domainstack/utils/domain/client";
 
 export default function SearchScreen() {
-  const router = useRouter();
+  const { push } = useRouter();
   const navigation = useNavigation();
   const [query, setQuery] = useState("");
   const history = useSearchHistoryStore((s) => s.history);
@@ -25,7 +25,7 @@ export default function SearchScreen() {
 
   function openDomain(target: string) {
     addDomain(target);
-    router.push({ params: { domain: target }, pathname: "/(tabs)/domains/[domain]" });
+    push({ params: { domain: target }, pathname: "/(tabs)/domains/[domain]" });
   }
 
   function handleSubmit(text: string) {

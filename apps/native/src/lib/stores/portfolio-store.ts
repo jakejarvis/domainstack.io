@@ -4,7 +4,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 
 import type { PortfolioSort, PortfolioStatusFilter } from "@/lib/portfolio";
 
-export type SelectionMode = "idle" | "selecting";
+type SelectionMode = "idle" | "selecting";
 export type HealthBucket = "healthy" | "expiring" | "expired";
 
 interface PortfolioState {

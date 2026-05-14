@@ -57,7 +57,7 @@ export function healthBucketFor(
   return "healthy";
 }
 
-export function tldFor(domainName: string): string {
+function tldFor(domainName: string): string {
   const parts = domainName.toLowerCase().split(".");
   return parts.length > 1 ? (parts.at(-1) ?? "") : "";
 }

@@ -90,7 +90,7 @@ function buildItems(data: RegistrationResponse): KeyValueItem[] {
     });
   }
 
-  const nameservers = data.nameservers?.map((ns) => ns.host).filter(Boolean) ?? [];
+  const nameservers = data.nameservers?.flatMap((ns) => (ns.host ? [ns.host] : [])) ?? [];
   if (nameservers.length > 0) {
     items.push({
       key: "nameservers",

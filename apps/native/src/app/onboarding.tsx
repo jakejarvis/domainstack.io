@@ -86,7 +86,7 @@ export default function OnboardingScreen() {
       >
         {SLIDES.map((slide) => (
           <View key={slide.icon} className="items-center justify-center px-8" style={{ width }}>
-            <View className="bg-control-secondary mb-6 h-24 w-24 items-center justify-center rounded-full">
+            <View className="bg-control-secondary mb-6 size-24 items-center justify-center rounded-full">
               <MaterialIcons color={iconColor} name={slide.icon} size={56} />
             </View>
             <Text className="mb-3 text-center text-3xl font-semibold">{slide.title}</Text>

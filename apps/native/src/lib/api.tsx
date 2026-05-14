@@ -15,11 +15,9 @@ import { apiBaseUrl } from "./env";
 import { makeQueryClient } from "./query-client";
 import { buildTrpcHeaders } from "./trpc-headers";
 
-export const {
-  TRPCProvider: BaseTRPCProvider,
-  useTRPC,
-  useTRPCClient,
-} = createTRPCContext<AppRouter>();
+const { TRPCProvider: BaseTRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+
+export { useTRPC };
 
 function useNetworkOnlineManager() {
   useEffect(() => {
