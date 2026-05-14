@@ -14,10 +14,12 @@ import { AnalyticsProvider } from "@/lib/analytics-provider";
 import { ApiProvider } from "@/lib/api";
 import { authClient } from "@/lib/auth";
 import { installGlobalErrorHandler } from "@/lib/error-handler";
+import { configureImageCache } from "@/lib/image-cache";
 import { routeFromNotificationData } from "@/lib/navigation";
 
 void SplashScreen.preventAutoHideAsync();
 installGlobalErrorHandler();
+configureImageCache();
 
 function RootNavigator() {
   const canvas = useCSSVariable("--color-canvas") as string;

@@ -48,9 +48,12 @@ export function ProviderLogo({
   if (url) {
     return (
       <Image
+        cachePolicy="memory-disk"
         contentFit="contain"
+        recyclingKey={providerId ?? undefined}
         source={{ uri: url }}
         style={{ borderRadius: 3, height: size, width: size }}
+        transition={150}
       />
     );
   }

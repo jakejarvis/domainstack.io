@@ -49,9 +49,12 @@ export function SeoSection({ domain }: { domain: string }) {
       {previewImage ? (
         <View className="border-line overflow-hidden rounded-lg border">
           <Image
+            cachePolicy="memory-disk"
             contentFit="cover"
+            recyclingKey={previewImage}
             source={{ uri: previewImage }}
             style={{ aspectRatio: 1200 / 630, width: "100%" }}
+            transition={200}
           />
         </View>
       ) : null}

@@ -17,7 +17,14 @@ export function Favicon({ domain }: { domain: string }) {
       style={{ height: SIZE, width: SIZE }}
     >
       {url ? (
-        <Image contentFit="cover" source={{ uri: url }} style={{ height: SIZE, width: SIZE }} />
+        <Image
+          cachePolicy="memory-disk"
+          contentFit="cover"
+          recyclingKey={domain}
+          source={{ uri: url }}
+          style={{ height: SIZE, width: SIZE }}
+          transition={150}
+        />
       ) : null}
     </View>
   );
