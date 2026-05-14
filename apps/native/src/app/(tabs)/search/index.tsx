@@ -1,13 +1,13 @@
 import { Link, useNavigation, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import type { NativeSyntheticEvent, TextInputFocusEventData } from "react-native";
-import { Alert, Pressable, View } from "react-native";
+import type { NativeSyntheticEvent } from "react-native";
+import { Alert, Pressable } from "react-native";
 
 import { EmptyState } from "@/components/empty-state";
-import { GlassCard } from "@/components/glass-card";
+import { GroupedRow, GroupedSection } from "@/components/form/group";
 import { HeaderMenu } from "@/components/header-menu";
 import { Screen } from "@/components/screen";
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 import { analytics } from "@/lib/analytics";
 import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
 import { toast } from "@/lib/toast";
@@ -45,7 +45,7 @@ export default function SearchScreen() {
       headerSearchBarOptions: {
         autoCapitalize: "none",
         hideWhenScrolling: false,
-        onChangeText: (event: NativeSyntheticEvent<TextInputFocusEventData>) =>
+        onChangeText: (event: NativeSyntheticEvent<{ text: string }>) =>
           setQuery(event.nativeEvent.text),
         onSearchButtonPress: (event: NativeSyntheticEvent<{ text: string }>) =>
           handleSubmit(event.nativeEvent.text),
@@ -72,72 +72,47 @@ export default function SearchScreen() {
     <Screen>
       <HeaderMenu />
 
-      {hasHydrated && filtered.length > 0 && (
-        <View className="gap-3">
-          <View className="flex-row items-center justify-between">
-            <Text className="text-lg font-semibold">
-              {query.trim().length > 0 ? "Matches" : "Recent"}
-            </Text>
-            {query.trim().length === 0 ? (
-              <Pressable
-                accessibilityLabel="Clear recent searches"
-                accessibilityRole="button"
-                hitSlop={8}
-                onPress={handleClearAll}
-              >
-                <MutedText className="font-semibold">Clear all</MutedText>
-              </Pressable>
-            ) : null}
-          </View>
+      {hasHydrated && filtered.length > 0 ? (
+        <GroupedSection title={query.trim().length > 0 ? "Matches" : "Recent"}>
+          {filtered.map((item) => (
+            <Link
+              asChild
+              href={{ params: { domain: item }, pathname: "/(tabs)/domains/[domain]" }}
+              key={item}
+              onPress={() => addDomain(item)}
+            >
+              <Link.Trigger>
+                <Pressable accessibilityLabel={`Open report for ${item}`} accessibilityRole="link">
+                  <GroupedRow showChevron>
+                    <Text numberOfLines={1}>{item}</Text>
+                  </GroupedRow>
+                </Pressable>
+              </Link.Trigger>
+              <Link.Preview />
+              <Link.Menu>
+                <Link.MenuAction destructive icon="trash" onPress={() => removeDomain(item)}>
+                  Remove from recent
+                </Link.MenuAction>
+              </Link.Menu>
+            </Link>
+          ))}
+        </GroupedSection>
+      ) : null}
 
-          <View className="gap-2">
-            {filtered.map((item) => (
-              <Link
-                asChild
-                href={{ params: { domain: item }, pathname: "/(tabs)/domains/[domain]" }}
-                key={item}
-                onPress={() => addDomain(item)}
-              >
-                <Link.Trigger>
-                  <Pressable
-                    accessibilityLabel={`Open report for ${item}`}
-                    accessibilityRole="link"
-                  >
-                    <GlassCard>
-                      <View className="flex-row items-center justify-between gap-3">
-                        <Text className="flex-1" numberOfLines={1}>
-                          {item}
-                        </Text>
-                        <Pressable
-                          accessibilityLabel={`Remove ${item} from recent searches`}
-                          accessibilityRole="button"
-                          hitSlop={12}
-                          onPress={() => removeDomain(item)}
-                        >
-                          <MutedText className="font-semibold">Remove</MutedText>
-                        </Pressable>
-                      </View>
-                    </GlassCard>
-                  </Pressable>
-                </Link.Trigger>
-                <Link.Preview />
-                <Link.Menu>
-                  <Link.MenuAction destructive icon="trash" onPress={() => removeDomain(item)}>
-                    Remove from recent
-                  </Link.MenuAction>
-                </Link.Menu>
-              </Link>
-            ))}
-          </View>
-        </View>
-      )}
+      {hasHydrated && history.length > 0 && query.trim().length === 0 ? (
+        <GroupedSection>
+          <GroupedRow onPress={handleClearAll}>
+            <Text className="font-semibold text-danger">Clear recents</Text>
+          </GroupedRow>
+        </GroupedSection>
+      ) : null}
 
-      {hasHydrated && history.length === 0 && (
+      {hasHydrated && history.length === 0 ? (
         <EmptyState
           body="Tap the search bar above and enter a hostname to look up its registration, DNS, hosting, and certificate data."
           title="No recent searches"
         />
-      )}
+      ) : null}
 
       {hasHydrated && history.length > 0 && filtered.length === 0 ? (
         <EmptyState body={`No recent searches match "${query.trim()}".`} title="No matches" />

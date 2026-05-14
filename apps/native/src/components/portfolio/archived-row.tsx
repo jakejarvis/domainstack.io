@@ -3,7 +3,6 @@ import { memo, useCallback } from "react";
 import { Pressable, View } from "react-native";
 
 import { Button } from "@/components/button";
-import { GlassCard } from "@/components/glass-card";
 import { MutedText, Text } from "@/components/text";
 import { formatRelativeTime } from "@domainstack/utils";
 
@@ -36,8 +35,11 @@ function ArchivedRowImpl({
     >
       <Link.Trigger>
         <Pressable accessibilityRole="link">
-          <GlassCard>
-            <View className="gap-2">
+          <View
+            className="border-line bg-glass gap-3 overflow-hidden rounded-2xl border p-4"
+            style={{ borderCurve: "continuous" }}
+          >
+            <View className="gap-1">
               <Text className="text-lg font-semibold" numberOfLines={1}>
                 {domain.domainName}
               </Text>
@@ -63,7 +65,7 @@ function ArchivedRowImpl({
                 Plan limit reached — upgrade or remove a tracked domain to reactivate.
               </MutedText>
             ) : null}
-          </GlassCard>
+          </View>
         </Pressable>
       </Link.Trigger>
       <Link.Preview />

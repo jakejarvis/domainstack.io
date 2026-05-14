@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { View } from "react-native";
 
 import { Button } from "./button";
-import { GlassCard } from "./glass-card";
 import { MutedText, Text } from "./text";
 
 export function EmptyState({
@@ -20,7 +19,10 @@ export function EmptyState({
 }) {
   const centered = Boolean(icon);
   return (
-    <GlassCard>
+    <View
+      className="border-line bg-glass gap-4 overflow-hidden rounded-2xl border p-4"
+      style={{ borderCurve: "continuous" }}
+    >
       <View className={centered ? "items-center gap-2" : "gap-2"}>
         {icon ? <View className="mb-1">{icon}</View> : null}
         <Text className={centered ? "text-center text-lg font-semibold" : "text-lg font-semibold"}>
@@ -33,6 +35,6 @@ export function EmptyState({
           <Text>{actionLabel}</Text>
         </Button>
       ) : null}
-    </GlassCard>
+    </View>
   );
 }

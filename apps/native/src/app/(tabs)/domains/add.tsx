@@ -11,6 +11,7 @@ import { StepConfirmation } from "@/components/domain/add-domain/step-confirmati
 import { StepIndicator } from "@/components/domain/add-domain/step-indicator";
 import { VerificationFailed } from "@/components/domain/add-domain/verification-failed";
 import { EmptyState } from "@/components/empty-state";
+import { GroupedSection } from "@/components/form/group";
 import { GlassCard } from "@/components/glass-card";
 import { Screen } from "@/components/screen";
 import { SegmentedControl } from "@/components/segmented-control";
@@ -246,24 +247,29 @@ function AddDomainFlow() {
         <StepIndicator current={step} loadingStep={activeLoading} />
 
         {step === 1 ? (
-          <View className="gap-4">
-            <TextField
-              error={domainError}
-              label="Domain"
-              onChangeText={(domain) => dispatch({ domain, type: "edit" })}
-              onSubmitEditing={() => void submit()}
-              placeholder="example.com"
-              returnKeyType="go"
-              value={flow.domain}
-            />
-            <Button
-              disabled={flow.domain.trim().length === 0}
-              loading={addDomain.isPending || flow.status === "submitting"}
-              onPress={() => void submit()}
-            >
-              <Text>Continue</Text>
-            </Button>
-          </View>
+          <GroupedSection>
+            <View className="gap-3 px-4 pt-3 pb-4">
+              <TextField
+                bare
+                error={domainError}
+                label="Domain"
+                onChangeText={(domain) => dispatch({ domain, type: "edit" })}
+                onSubmitEditing={() => void submit()}
+                placeholder="example.com"
+                returnKeyType="go"
+                value={flow.domain}
+              />
+            </View>
+            <View className="border-line border-t p-3">
+              <Button
+                disabled={flow.domain.trim().length === 0}
+                loading={addDomain.isPending || flow.status === "submitting"}
+                onPress={() => void submit()}
+              >
+                <Text>Continue</Text>
+              </Button>
+            </View>
+          </GroupedSection>
         ) : null}
 
         {resumeTrackedDomainId && verificationData.isPending ? <SkeletonRows count={3} /> : null}

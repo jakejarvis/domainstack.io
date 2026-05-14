@@ -68,13 +68,6 @@ export default function SettingsScreen() {
 
   return (
     <Screen>
-      <View className="gap-2">
-        <Text className="text-4xl font-semibold">Settings</Text>
-        <MutedText>
-          Account, notification channels, device registration, plan, and privacy controls.
-        </MutedText>
-      </View>
-
       <SectionErrorBoundary sectionName="Plan">
         <BillingSection />
       </SectionErrorBoundary>

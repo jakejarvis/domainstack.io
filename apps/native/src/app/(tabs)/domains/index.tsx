@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useNavigation } from "expo-router";
 import { Stack } from "expo-router/stack";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { NativeSyntheticEvent, TextInputFocusEventData } from "react-native";
+import type { NativeSyntheticEvent } from "react-native";
 import { Platform, View } from "react-native";
 
 import type { AppBottomSheetRef } from "@/components/bottom-sheet";
@@ -91,7 +91,7 @@ function PortfolioScreen() {
     navigation.setOptions({
       headerSearchBarOptions: {
         hideWhenScrolling: false,
-        onChangeText: (event: NativeSyntheticEvent<TextInputFocusEventData>) =>
+        onChangeText: (event: NativeSyntheticEvent<{ text: string }>) =>
           setQuery(event.nativeEvent.text),
         placeholder: "Filter domains",
       },

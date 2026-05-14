@@ -13,7 +13,6 @@ import { useCSSVariable } from "uniwind";
 import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
 import { EmptyState } from "@/components/empty-state";
-import { GlassCard } from "@/components/glass-card";
 import { HeaderMenu } from "@/components/header-menu";
 import { NotificationListSkeleton } from "@/components/notifications/notification-card-skeleton";
 import { RefreshControl } from "@/components/refresh-control";
@@ -230,22 +229,23 @@ const NotificationRow = memo(function NotificationRow({
   }, [item.id, onMarkRead]);
 
   const body = (
-    <GlassCard>
-      <View className="gap-2">
-        <View className="flex-row items-start justify-between gap-3">
-          <Text className="flex-1 text-lg font-semibold" numberOfLines={2}>
-            {item.title}
-          </Text>
-          {item.readAt ? null : (
-            <Badge tone="warning">
-              <Text>Unread</Text>
-            </Badge>
-          )}
-        </View>
-        <MutedText>{item.message}</MutedText>
-        <MutedText>{formatDate(item.sentAt)}</MutedText>
+    <View
+      className="border-line bg-glass gap-2 overflow-hidden rounded-2xl border p-4"
+      style={{ borderCurve: "continuous" }}
+    >
+      <View className="flex-row items-start justify-between gap-3">
+        <Text className="flex-1 text-lg font-semibold" numberOfLines={2}>
+          {item.title}
+        </Text>
+        {item.readAt ? null : (
+          <Badge tone="warning">
+            <Text>Unread</Text>
+          </Badge>
+        )}
       </View>
-    </GlassCard>
+      <MutedText>{item.message}</MutedText>
+      <MutedText>{formatDate(item.sentAt)}</MutedText>
+    </View>
   );
 
   const renderLeftActions = useCallback(

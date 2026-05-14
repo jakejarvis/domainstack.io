@@ -5,7 +5,7 @@ import { Stack } from "expo-router/stack";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { Platform, useColorScheme } from "react-native";
+import { useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useCSSVariable } from "uniwind";
 
@@ -54,7 +54,7 @@ function RootNavigator() {
       <StatusBar style={isDark ? "light" : "dark"} />
       <Stack
         screenOptions={{
-          animation: Platform.OS === "ios" ? "ios_from_right" : "slide_from_right",
+          animation: "ios_from_right",
           contentStyle: { backgroundColor: canvas },
           headerBlurEffect: isDark ? "systemChromeMaterialDark" : "systemChromeMaterialLight",
           headerLargeTitle: false,
@@ -67,7 +67,7 @@ function RootNavigator() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />
         <Stack.Protected guard={isSignedIn}>
-          <Stack.Screen name="settings" options={{ title: "Settings" }} />
+          <Stack.Screen name="settings" options={{ headerLargeTitle: true, title: "Settings" }} />
           <Stack.Screen
             name="delete-account"
             options={{ presentation: "formSheet", title: "Delete account" }}

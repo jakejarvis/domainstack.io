@@ -9,6 +9,7 @@ import { MutedText } from "./text";
 export function TextField({
   autoCapitalize = "none",
   autoComplete,
+  bare = false,
   editable = true,
   error,
   inputMode = "url",
@@ -21,6 +22,7 @@ export function TextField({
 }: {
   autoCapitalize?: "none" | "sentences" | "words" | "characters";
   autoComplete?: "email" | "off";
+  bare?: boolean;
   editable?: boolean;
   error?: string;
   inputMode?: InputModeOptions;
@@ -42,7 +44,8 @@ export function TextField({
         autoComplete={autoComplete}
         autoCorrect={false}
         className={cn(
-          "border-line bg-glass text-text-primary min-h-12 rounded-xl border px-4 text-base",
+          "text-text-primary min-h-12 text-base",
+          !bare && "border-line bg-glass rounded-xl border px-4",
           !editable && "opacity-60",
         )}
         editable={editable}
@@ -53,7 +56,11 @@ export function TextField({
         placeholderTextColor={placeholderTextColor}
         returnKeyType={returnKeyType}
         spellCheck={false}
-        style={{ borderCurve: "continuous", borderColor: error ? dangerColor : undefined }}
+        style={
+          bare
+            ? undefined
+            : { borderCurve: "continuous", borderColor: error ? dangerColor : undefined }
+        }
         value={value}
       />
       {error ? <MutedText style={{ color: dangerColor }}>{error}</MutedText> : null}
