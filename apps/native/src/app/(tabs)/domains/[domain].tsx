@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
-import { Suspense, useEffect, useMemo } from "react";
-import { Alert, View } from "react-native";
+import { Suspense, useCallback, useEffect, useMemo, useRef } from "react";
+import { Alert, findNodeHandle, type ScrollView, View } from "react-native";
 
 import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
@@ -28,11 +28,20 @@ import { authClient } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import { assertOnline } from "@/lib/network";
 import { toast } from "@/lib/toast";
+import { REPORT_SECTIONS, type ReportSection } from "@domainstack/constants";
+
+const REPORT_SECTION_SET = new Set<ReportSection>(REPORT_SECTIONS);
+
+function isReportSection(value: string | undefined): value is ReportSection {
+  return typeof value === "string" && (REPORT_SECTION_SET as Set<string>).has(value);
+}
 
 export default function DomainReportScreen() {
-  const params = useLocalSearchParams<{ domain: string }>();
+  const params = useLocalSearchParams<{ domain: string; section?: string }>();
   const raw = Array.isArray(params.domain) ? params.domain[0] : params.domain;
   const domain = (raw ?? "").trim().toLowerCase();
+  const rawSection = Array.isArray(params.section) ? params.section[0] : params.section;
+  const section = isReportSection(rawSection) ? rawSection : undefined;
 
   if (!domain) {
     return (
@@ -45,10 +54,10 @@ export default function DomainReportScreen() {
     );
   }
 
-  return <DomainReportContent domain={domain} />;
+  return <DomainReportContent domain={domain} section={section} />;
 }
 
-function DomainReportContent({ domain }: { domain: string }) {
+function DomainReportContent({ domain, section }: { domain: string; section?: ReportSection }) {
   const session = authClient.useSession();
   const isAuthenticated = Boolean(session.data?.user);
   const trpc = useTRPC();
@@ -105,30 +114,99 @@ function DomainReportContent({ domain }: { domain: string }) {
     await Promise.all(promises);
   };
 
+  const scrollRef = useRef<ScrollView | null>(null);
+  const sectionNodes = useRef<Map<ReportSection, View>>(new Map());
+  const hasScrolledRef = useRef(false);
+
+  useEffect(() => {
+    hasScrolledRef.current = false;
+  }, [domain, section]);
+
+  const handleSectionLayout = useCallback(
+    (name: ReportSection) => {
+      if (!section || section !== name || hasScrolledRef.current) return;
+      const node = sectionNodes.current.get(name);
+      const scrollNode = scrollRef.current;
+      if (!node || !scrollNode) return;
+      const handle = findNodeHandle(scrollNode);
+      if (handle === null) return;
+      node.measureLayout(
+        handle,
+        (_x, y) => {
+          hasScrolledRef.current = true;
+          scrollRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: true });
+        },
+        () => {},
+      );
+    },
+    [section],
+  );
+
+  const registerSectionNode = useCallback((name: ReportSection, node: View | null) => {
+    if (node) sectionNodes.current.set(name, node);
+    else sectionNodes.current.delete(name);
+  }, []);
+
   return (
-    <Screen onRefresh={invalidate}>
+    <Screen onRefresh={invalidate} scrollRef={scrollRef}>
       <ReportHeader domain={domain} isAuthenticated={isAuthenticated} trackedEntry={trackedEntry} />
 
       {isUnregistered ? (
         <UnregisteredCard domain={domain} />
       ) : (
         <View className="gap-5">
-          <ReportSlot domain={domain} sectionName="Registration">
+          <ReportSlot
+            domain={domain}
+            name="registration"
+            onLayoutSection={handleSectionLayout}
+            onRegisterNode={registerSectionNode}
+            sectionName="Registration"
+          >
             <RegistrationSection domain={domain} />
           </ReportSlot>
-          <ReportSlot domain={domain} sectionName="Hosting">
+          <ReportSlot
+            domain={domain}
+            name="hosting"
+            onLayoutSection={handleSectionLayout}
+            onRegisterNode={registerSectionNode}
+            sectionName="Hosting"
+          >
             <HostingSection domain={domain} />
           </ReportSlot>
-          <ReportSlot domain={domain} sectionName="DNS">
+          <ReportSlot
+            domain={domain}
+            name="dns"
+            onLayoutSection={handleSectionLayout}
+            onRegisterNode={registerSectionNode}
+            sectionName="DNS"
+          >
             <DnsSection domain={domain} />
           </ReportSlot>
-          <ReportSlot domain={domain} sectionName="Certificates">
+          <ReportSlot
+            domain={domain}
+            name="certificates"
+            onLayoutSection={handleSectionLayout}
+            onRegisterNode={registerSectionNode}
+            sectionName="Certificates"
+          >
             <CertificatesSection domain={domain} />
           </ReportSlot>
-          <ReportSlot domain={domain} sectionName="Headers">
+          <ReportSlot
+            domain={domain}
+            name="headers"
+            onLayoutSection={handleSectionLayout}
+            onRegisterNode={registerSectionNode}
+            sectionName="Headers"
+          >
             <HeadersSection domain={domain} />
           </ReportSlot>
-          <ReportSlot domain={domain} sectionName="SEO">
+          <ReportSlot
+            domain={domain}
+            name="seo"
+            onLayoutSection={handleSectionLayout}
+            onRegisterNode={registerSectionNode}
+            sectionName="SEO"
+          >
             <SeoSection domain={domain} />
           </ReportSlot>
         </View>
@@ -343,15 +421,29 @@ function TrackingActions({
 function ReportSlot({
   children,
   domain,
+  name,
+  onLayoutSection,
+  onRegisterNode,
   sectionName,
 }: {
   children: React.ReactNode;
   domain: string;
+  name: ReportSection;
+  onLayoutSection: (name: ReportSection) => void;
+  onRegisterNode: (name: ReportSection, node: View | null) => void;
   sectionName: string;
 }) {
+  const handleRef = useCallback(
+    (node: View | null) => onRegisterNode(name, node),
+    [name, onRegisterNode],
+  );
+  const handleLayout = useCallback(() => onLayoutSection(name), [name, onLayoutSection]);
+
   return (
-    <SectionErrorBoundary key={domain} sectionName={sectionName}>
-      <Suspense fallback={<ReportSectionSkeleton />}>{children}</Suspense>
-    </SectionErrorBoundary>
+    <View onLayout={handleLayout} ref={handleRef}>
+      <SectionErrorBoundary key={domain} sectionName={sectionName}>
+        <Suspense fallback={<ReportSectionSkeleton />}>{children}</Suspense>
+      </SectionErrorBoundary>
+    </View>
   );
 }

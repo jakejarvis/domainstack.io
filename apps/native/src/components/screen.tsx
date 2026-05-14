@@ -1,3 +1,4 @@
+import type { Ref } from "react";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
 
@@ -9,11 +10,13 @@ export function Screen({
   className,
   onRefresh,
   scroll = true,
+  scrollRef,
 }: {
   children: React.ReactNode;
   className?: string;
   onRefresh?: () => Promise<unknown> | void;
   scroll?: boolean;
+  scrollRef?: Ref<ScrollView>;
 }) {
   const [refreshing, setRefreshing] = useState(false);
 
@@ -39,6 +42,7 @@ export function Screen({
       className="bg-canvas flex-1"
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
+      ref={scrollRef}
       refreshControl={
         onRefresh ? <RefreshControl onRefresh={handleRefresh} refreshing={refreshing} /> : undefined
       }

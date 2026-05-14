@@ -7,4 +7,5 @@ export * from "./notifications";
 export * from "./plans";
 export * from "./providers";
 export * from "./registration";
+export * from "./report-sections";
 export * from "./verification";

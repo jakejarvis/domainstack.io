@@ -6,6 +6,7 @@ import {
   archiveTrackedDomain,
   bulkArchiveTrackedDomains,
   bulkRemoveTrackedDomains,
+  bulkSetTrackedDomainsMuted,
   createTrackedDomainWithLimitCheck,
   deleteTrackedDomain,
   ensureDomainRecord,
@@ -524,6 +525,36 @@ export function createTrackingRouter(deps: TrackingRouterDeps) {
 
         if (successCount > 0) {
           analytics.track("domains_bulk_removed", { count: successCount }, ctx.user.id);
+        }
+
+        return { successCount, failedCount };
+      }),
+
+    /**
+     * Bulk set the muted state for multiple tracked domains.
+     * Uses batch operations for efficiency (2 queries instead of N+1).
+     */
+    bulkSetMuted: protectedProcedure
+      .input(
+        z.object({
+          trackedDomainIds: z.array(z.string().uuid()).min(1).max(100),
+          muted: z.boolean(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        const { trackedDomainIds, muted } = input;
+
+        const result = await bulkSetTrackedDomainsMuted(ctx.user.id, trackedDomainIds, muted);
+
+        const successCount = result.succeeded.length;
+        const failedCount = result.notFound.length + result.notOwned.length;
+
+        if (successCount > 0) {
+          analytics.track(
+            muted ? "domains_bulk_muted" : "domains_bulk_unmuted",
+            { count: successCount },
+            ctx.user.id,
+          );
         }
 
         return { successCount, failedCount };

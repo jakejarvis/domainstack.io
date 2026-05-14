@@ -227,7 +227,7 @@ const NotificationRow = memo(function NotificationRow({
   markReadPending: boolean;
   onMarkRead: (id: string) => void;
 }) {
-  const domainName = extractDomainNameFromData(item.data);
+  const { domainName, targetSection } = item;
   const handleMarkRead = useCallback(() => onMarkRead(item.id), [item.id, onMarkRead]);
 
   const body = (
@@ -256,8 +256,11 @@ const NotificationRow = memo(function NotificationRow({
 
   if (!domainName) return body;
 
+  const params: { domain: string; section?: string } = { domain: domainName };
+  if (targetSection) params.section = targetSection;
+
   return (
-    <Link asChild href={{ params: { domain: domainName }, pathname: "/(tabs)/domains/[domain]" }}>
+    <Link asChild href={{ params, pathname: "/(tabs)/domains/[domain]" }}>
       <Link.Trigger>
         <Pressable accessibilityLabel={`Open ${domainName}`} accessibilityRole="link">
           {body}
@@ -274,9 +277,3 @@ const NotificationRow = memo(function NotificationRow({
     </Link>
   );
 });
-
-function extractDomainNameFromData(data: unknown): string | null {
-  if (!data || typeof data !== "object") return null;
-  const candidate = (data as { domainName?: unknown }).domainName;
-  return typeof candidate === "string" && candidate.length > 0 ? candidate : null;
-}

@@ -1,13 +1,15 @@
 import { Host, Switch as NativeSwitch } from "@expo/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
-import { Suspense, useState } from "react";
+import { Suspense, useRef, useState } from "react";
 import { Pressable, View } from "react-native";
 
+import { type AppBottomSheetRef } from "@/components/bottom-sheet";
 import { Button } from "@/components/button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { GlassCard } from "@/components/glass-card";
+import { CalendarFeedSheet } from "@/components/portfolio/calendar-feed-sheet";
 import { Screen } from "@/components/screen";
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
 import { BillingSection } from "@/components/settings/billing";
@@ -62,6 +64,8 @@ function ToggleRow({
 }
 
 export default function SettingsScreen() {
+  const calendarSheetRef = useRef<AppBottomSheetRef | null>(null);
+
   return (
     <Screen>
       <View className="gap-2">
@@ -83,6 +87,10 @@ export default function SettingsScreen() {
         <PushDeviceSection />
       </SectionErrorBoundary>
 
+      <SectionErrorBoundary sectionName="Calendar feed">
+        <CalendarFeedRow onOpen={() => calendarSheetRef.current?.present()} />
+      </SectionErrorBoundary>
+
       <SectionErrorBoundary sectionName="Muted domains">
         <Suspense fallback={<MutedDomainsSectionSkeleton />}>
           <MutedDomainsSection />
@@ -100,7 +108,23 @@ export default function SettingsScreen() {
       <SectionErrorBoundary sectionName="Danger zone">
         <DeleteAccountSection />
       </SectionErrorBoundary>
+
+      <CalendarFeedSheet ref={calendarSheetRef} />
     </Screen>
+  );
+}
+
+function CalendarFeedRow({ onOpen }: { onOpen: () => void }) {
+  return (
+    <GlassCard>
+      <View className="gap-1">
+        <Text className="text-xl font-semibold">Calendar feed</Text>
+        <MutedText>Subscribe to your domain expirations in any calendar app.</MutedText>
+      </View>
+      <Button onPress={onOpen} variant="secondary">
+        <Text>Manage feed</Text>
+      </Button>
+    </GlassCard>
   );
 }
 

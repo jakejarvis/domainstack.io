@@ -1,9 +1,36 @@
 import { and, count, desc, eq, gt, isNotNull, isNull, like, lt, or, sql } from "drizzle-orm";
 
-import type { NotificationType } from "@domainstack/constants";
+import type { NotificationType, ReportSection } from "@domainstack/constants";
 
 import { db } from "../client";
-import { notifications } from "../schema";
+import { domains, notifications, userTrackedDomains } from "../schema";
+
+/**
+ * Map a notification type to the section of the domain report that
+ * surfaces the underlying change. Returns `null` for notifications that
+ * don't correspond to a report section (e.g. verification status).
+ */
+function targetSectionForType(type: string): ReportSection | null {
+  if (type.startsWith("domain_expiry_")) return "registration";
+  if (type === "registration_change") return "registration";
+  if (type.startsWith("certificate_expiry_")) return "certificates";
+  if (type === "certificate_change") return "certificates";
+  if (type === "provider_change") return "hosting";
+  return null;
+}
+
+type RawNotificationRow = typeof notifications.$inferSelect & {
+  domainName: string | null;
+};
+
+export type NotificationListItem = typeof notifications.$inferSelect & {
+  domainName: string | null;
+  targetSection: ReportSection | null;
+};
+
+function enrich(row: RawNotificationRow): NotificationListItem {
+  return { ...row, targetSection: targetSectionForType(row.type) };
+}
 
 export interface CreateNotificationParams {
   userId: string;
@@ -68,7 +95,7 @@ export async function getUserNotifications(
   limit = 50,
   cursor?: string,
   filter: NotificationFilter = "all",
-) {
+): Promise<NotificationListItem[]> {
   const getReadStatusCondition = () => {
     switch (filter) {
       case "unread":
@@ -79,6 +106,26 @@ export async function getUserNotifications(
         return;
     }
   };
+
+  const baseSelect = () =>
+    db
+      .select({
+        id: notifications.id,
+        userId: notifications.userId,
+        trackedDomainId: notifications.trackedDomainId,
+        type: notifications.type,
+        title: notifications.title,
+        message: notifications.message,
+        data: notifications.data,
+        channels: notifications.channels,
+        readAt: notifications.readAt,
+        sentAt: notifications.sentAt,
+        resendId: notifications.resendId,
+        domainName: domains.name,
+      })
+      .from(notifications)
+      .leftJoin(userTrackedDomains, eq(userTrackedDomains.id, notifications.trackedDomainId))
+      .leftJoin(domains, eq(domains.id, userTrackedDomains.domainId));
 
   if (!cursor) {
     const conditions = [
@@ -91,16 +138,16 @@ export async function getUserNotifications(
       conditions.push(readStatusCondition);
     }
 
-    return db
-      .select()
-      .from(notifications)
+    const rows = await baseSelect()
       .where(and(...conditions))
       .orderBy(desc(notifications.sentAt), desc(notifications.id))
       .limit(limit);
+
+    return rows.map(enrich);
   }
 
   const [cursorNotif] = await db
-    .select()
+    .select({ id: notifications.id, sentAt: notifications.sentAt })
     .from(notifications)
     .where(and(eq(notifications.id, cursor), eq(notifications.userId, userId)))
     .limit(1);
@@ -116,12 +163,12 @@ export async function getUserNotifications(
       conditions.push(readStatusCondition);
     }
 
-    return db
-      .select()
-      .from(notifications)
+    const rows = await baseSelect()
       .where(and(...conditions))
       .orderBy(desc(notifications.sentAt), desc(notifications.id))
       .limit(limit);
+
+    return rows.map(enrich);
   }
 
   const conditions = [
@@ -138,12 +185,12 @@ export async function getUserNotifications(
     conditions.push(readStatusCondition);
   }
 
-  return db
-    .select()
-    .from(notifications)
+  const rows = await baseSelect()
     .where(and(...conditions))
     .orderBy(desc(notifications.sentAt), desc(notifications.id))
     .limit(limit);
+
+  return rows.map(enrich);
 }
 
 /**
