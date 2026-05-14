@@ -5,14 +5,34 @@ import { Pressable, ScrollView, View } from "react-native";
 import { AppBottomSheet, type AppBottomSheetRef } from "@/components/bottom-sheet";
 import { Button } from "@/components/button";
 import { Text } from "@/components/text";
+import { showActionSheetIOS } from "@/lib/native-confirm";
 import { EXTERNAL_TOOLS } from "@domainstack/constants";
+
+function openExternalTool(url: string) {
+  void WebBrowser.openBrowserAsync(url, {
+    dismissButtonStyle: "close",
+    presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
+  });
+}
 
 export function ToolsSheet({ domain }: { domain: string }) {
   const sheetRef = useRef<AppBottomSheetRef>(null);
 
+  function open() {
+    const handled = showActionSheetIOS({
+      message: `Inspect ${domain} in an external tool.`,
+      options: EXTERNAL_TOOLS.map((tool) => ({
+        label: tool.name,
+        onPress: () => openExternalTool(tool.buildUrl(domain)),
+      })),
+      title: "Open in…",
+    });
+    if (!handled) sheetRef.current?.present();
+  }
+
   return (
     <>
-      <Button onPress={() => sheetRef.current?.present()} variant="secondary">
+      <Button onPress={open} variant="secondary">
         <Text>Open in…</Text>
       </Button>
       <AppBottomSheet
@@ -36,10 +56,7 @@ export function ToolsSheet({ domain }: { domain: string }) {
                 key={tool.name}
                 onPress={() => {
                   sheetRef.current?.dismiss();
-                  void WebBrowser.openBrowserAsync(tool.buildUrl(domain), {
-                    dismissButtonStyle: "close",
-                    presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
-                  });
+                  openExternalTool(tool.buildUrl(domain));
                 }}
               >
                 <Text className="font-semibold">{tool.name}</Text>

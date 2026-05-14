@@ -1,13 +1,12 @@
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
-import { useState } from "react";
 import { Pressable, View } from "react-native";
 
 import { Button } from "@/components/button";
-import { ConfirmDialog } from "@/components/confirm-dialog";
 import { GlassCard } from "@/components/glass-card";
 import { MutedText, Text } from "@/components/text";
 import { useTRPC } from "@/lib/api";
+import { confirm } from "@/lib/native-confirm";
 import { assertOnline } from "@/lib/network";
 import { toast } from "@/lib/toast";
 
@@ -19,8 +18,6 @@ export function MutedDomainsSection() {
   const { data } = useSuspenseQuery(trpc.tracking.listDomains.queryOptions(LIST_INPUT));
   const muted = data.filter((entry) => entry.muted);
 
-  const [pendingId, setPendingId] = useState<string | null>(null);
-
   const setMuted = useMutation(
     trpc.user.setDomainMuted.mutationOptions({
       onSettled: () =>
@@ -28,14 +25,16 @@ export function MutedDomainsSection() {
     }),
   );
 
-  const target = muted.find((entry) => entry.id === pendingId) ?? null;
-
-  async function handleConfirm() {
-    if (!target) return;
+  async function handleUnmute(id: string, domainName: string) {
+    const accepted = await confirm({
+      confirmLabel: "Unmute",
+      message: `You'll start receiving notifications for ${domainName} again.`,
+      title: `Unmute ${domainName}?`,
+    });
+    if (!accepted) return;
     try {
       await assertOnline();
-      await setMuted.mutateAsync({ muted: false, trackedDomainId: target.id });
-      setPendingId(null);
+      await setMuted.mutateAsync({ muted: false, trackedDomainId: id });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Could not unmute domain.";
       toast.error({ title: "Unmute failed", message });
@@ -70,14 +69,21 @@ export function MutedDomainsSection() {
                       {entry.domainName}
                     </Text>
                   </View>
-                  <Button onPress={() => setPendingId(entry.id)} variant="secondary">
+                  <Button
+                    disabled={setMuted.isPending}
+                    onPress={() => void handleUnmute(entry.id, entry.domainName)}
+                    variant="secondary"
+                  >
                     <Text>Unmute</Text>
                   </Button>
                 </Pressable>
               </Link.Trigger>
               <Link.Preview />
               <Link.Menu>
-                <Link.MenuAction icon="bell" onPress={() => setPendingId(entry.id)}>
+                <Link.MenuAction
+                  icon="bell"
+                  onPress={() => void handleUnmute(entry.id, entry.domainName)}
+                >
                   Unmute notifications
                 </Link.MenuAction>
               </Link.Menu>
@@ -85,21 +91,6 @@ export function MutedDomainsSection() {
           ))}
         </View>
       )}
-      <ConfirmDialog
-        confirmLabel="Unmute"
-        description={
-          target
-            ? `You'll start receiving notifications for ${target.domainName} again.`
-            : undefined
-        }
-        loading={setMuted.isPending}
-        onConfirm={handleConfirm}
-        onOpenChange={(open) => {
-          if (!open) setPendingId(null);
-        }}
-        open={target !== null}
-        title={target ? `Unmute ${target.domainName}?` : "Unmute domain?"}
-      />
     </GlassCard>
   );
 }

@@ -1,12 +1,11 @@
 import { Host, Switch as NativeSwitch } from "@expo/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
-import { Suspense, useRef, useState } from "react";
-import { Pressable, View } from "react-native";
+import { Suspense, useRef } from "react";
+import { Alert, Pressable, View } from "react-native";
 
 import { type AppBottomSheetRef } from "@/components/bottom-sheet";
 import { Button } from "@/components/button";
-import { ConfirmDialog } from "@/components/confirm-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { GlassCard } from "@/components/glass-card";
 import { CalendarFeedSheet } from "@/components/portfolio/calendar-feed-sheet";
@@ -277,7 +276,6 @@ function PrivacySection() {
 
 function AccountSection() {
   const session = authClient.useSession();
-  const [emailHelpOpen, setEmailHelpOpen] = useState(false);
   const email = session.data?.user?.email;
 
   return (
@@ -292,7 +290,13 @@ function AccountSection() {
             accessibilityLabel="Why can't I change my email?"
             accessibilityRole="button"
             className="border-line bg-canvas-2 min-h-8 min-w-8 items-center justify-center rounded-full border px-2"
-            onPress={() => setEmailHelpOpen(true)}
+            onPress={() =>
+              Alert.alert(
+                "Why can't I change my email?",
+                "This is the email address that was verified with the linked account provider you chose at sign up. To change it, sign in with a different external account or contact support.",
+                [{ text: "Got it" }],
+              )
+            }
           >
             <Text className="text-xs font-semibold">?</Text>
           </Pressable>
@@ -308,14 +312,6 @@ function AccountSection() {
       >
         <Text>Sign out</Text>
       </Button>
-      <ConfirmDialog
-        confirmLabel="Got it"
-        description="This is the email address that was verified with the linked account provider you chose at sign up. To change it, sign in with a different external account or contact support."
-        onOpenChange={setEmailHelpOpen}
-        open={emailHelpOpen}
-        title="Why can't I change my email?"
-        variant="info"
-      />
     </GlassCard>
   );
 }

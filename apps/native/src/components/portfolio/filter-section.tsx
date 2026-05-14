@@ -1,8 +1,9 @@
 import { useCallback, useState } from "react";
 import { Pressable, View } from "react-native";
+import { useCSSVariable } from "uniwind";
 
+import { Symbol } from "@/components/symbol";
 import { MutedText, Text } from "@/components/text";
-import { cn } from "@/lib/cn";
 
 export function FilterSection({
   children,
@@ -17,6 +18,7 @@ export function FilterSection({
 }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const handleToggle = useCallback(() => setExpanded((value) => !value), []);
+  const chevronColor = useCSSVariable("--color-text-secondary") as string;
 
   return (
     <View className="border-line border-b">
@@ -25,7 +27,11 @@ export function FilterSection({
           <Text className="text-base font-semibold">{title}</Text>
           <View className="flex-row items-center gap-2">
             {summary ? <MutedText>{summary}</MutedText> : null}
-            <Text className="text-text-secondary text-base">{expanded ? "▾" : "▸"}</Text>
+            <Symbol
+              color={chevronColor}
+              name={expanded ? "chevron.down" : "chevron.right"}
+              size={14}
+            />
           </View>
         </View>
       </Pressable>
@@ -45,7 +51,13 @@ export function FilterOptionRow({
   selected: boolean;
   variant?: "checkbox" | "radio";
 }) {
-  const indicatorClass = variant === "radio" ? "rounded-full" : "rounded";
+  const accent = useCSSVariable("--color-brand") as string;
+  const muted = useCSSVariable("--color-text-secondary") as string;
+  const symbolName = selected
+    ? variant === "radio"
+      ? "largecircle.fill.circle"
+      : "checkmark.circle.fill"
+    : "circle";
 
   return (
     <Pressable
@@ -54,19 +66,7 @@ export function FilterOptionRow({
       onPress={onPress}
     >
       <View className="flex-row items-center gap-3 py-2">
-        <View
-          className={cn(
-            "h-5 w-5 items-center justify-center border-2",
-            indicatorClass,
-            selected ? "border-brand bg-brand" : "border-line",
-          )}
-        >
-          {selected ? (
-            <Text className="text-control-primary-text text-xs leading-none font-bold">
-              {variant === "radio" ? "●" : "✓"}
-            </Text>
-          ) : null}
-        </View>
+        <Symbol color={selected ? accent : muted} name={symbolName} size={22} />
         <Text className="flex-1 text-base">{label}</Text>
       </View>
     </Pressable>

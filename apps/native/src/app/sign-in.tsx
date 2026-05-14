@@ -152,6 +152,8 @@ export default function SignInScreen() {
   };
 
   const handleSignIn = (provider: NativeAuthProviderOption) => {
+    if (loadingProvider !== null) return;
+
     if (provider.id === "apple" && appleAuthAvailable) {
       void handleNativeAppleSignIn();
       return;
@@ -228,20 +230,24 @@ function ProviderButton({
   }
 
   if (provider.id === "apple" && appleAuthAvailable) {
+    if (loadingProvider === "apple") {
+      return (
+        <Button disabled loading variant="primary">
+          <ProviderIcon color={primaryColor} provider="apple" size={18} />
+          <Text>Continue with Apple</Text>
+        </Button>
+      );
+    }
+    if (loadingProvider !== null) return null;
     return (
-      <View
-        className={loadingProvider !== null ? "opacity-55" : undefined}
-        style={{ pointerEvents: loadingProvider !== null ? "none" : "auto" }}
-      >
-        <AppleAuthentication.AppleAuthenticationButton
-          accessibilityLabel="Continue with Apple"
-          buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-          buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-          cornerRadius={12}
-          onPress={() => onPress(provider)}
-          style={{ height: 48, width: "100%" }}
-        />
-      </View>
+      <AppleAuthentication.AppleAuthenticationButton
+        accessibilityLabel="Continue with Apple"
+        buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+        buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+        cornerRadius={12}
+        onPress={() => onPress(provider)}
+        style={{ height: 48, width: "100%" }}
+      />
     );
   }
 

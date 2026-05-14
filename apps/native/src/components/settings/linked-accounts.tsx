@@ -5,7 +5,6 @@ import { Platform, View } from "react-native";
 import { useCSSVariable } from "uniwind";
 
 import { Button } from "@/components/button";
-import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ProviderIcon } from "@/components/provider-icon";
 import { MutedText, Text } from "@/components/text";
 import { analytics } from "@/lib/analytics";
@@ -19,6 +18,7 @@ import {
 } from "@/lib/auth";
 import { getEnabledNativeAuthProviders } from "@/lib/auth-providers";
 import { googleNativeConfig } from "@/lib/env";
+import { confirm } from "@/lib/native-confirm";
 import { toast } from "@/lib/toast";
 
 function isAuthCanceled(error: unknown): boolean {
@@ -30,7 +30,7 @@ export function LinkedAccountsSection() {
   const queryClient = useQueryClient();
   const iconColor = useCSSVariable("--color-text-primary") as string;
   const [appleAuthAvailable, setAppleAuthAvailable] = useState<boolean | null>(null);
-  const [pendingUnlink, setPendingUnlink] = useState<AuthProvider | null>(null);
+  const [unlinkingProvider, setUnlinkingProvider] = useState<AuthProvider | null>(null);
   const [linkingProvider, setLinkingProvider] = useState<AuthProvider | null>(null);
 
   useEffect(() => {
@@ -85,18 +85,26 @@ export function LinkedAccountsSection() {
     }
   }
 
-  async function handleUnlinkConfirm() {
-    if (!pendingUnlink) return;
+  async function handleUnlink(provider: AuthProvider) {
+    const accepted = await confirm({
+      confirmLabel: "Unlink",
+      destructive: true,
+      message: `You won't be able to sign in with ${provider} again until you re-link it.`,
+      title: `Unlink ${provider}?`,
+    });
+    if (!accepted) return;
+    setUnlinkingProvider(provider);
     try {
-      const result = await unlink.mutateAsync({ providerId: pendingUnlink });
+      const result = await unlink.mutateAsync({ providerId: provider });
       if (result.error) {
         throw new Error(result.error.message ?? "Unable to unlink this provider.");
       }
-      setPendingUnlink(null);
     } catch (error) {
-      analytics.trackException(error, { action: "unlink_account", provider: pendingUnlink });
+      analytics.trackException(error, { action: "unlink_account", provider });
       const message = error instanceof Error ? error.message : "Unable to unlink this provider.";
       toast.error({ title: "Could not unlink account", message });
+    } finally {
+      setUnlinkingProvider(null);
     }
   }
 
@@ -126,8 +134,8 @@ export function LinkedAccountsSection() {
               {isLinked ? (
                 <Button
                   disabled={unlinkDisabled || unlink.isPending}
-                  loading={unlink.isPending && pendingUnlink === provider.id}
-                  onPress={() => setPendingUnlink(provider.id)}
+                  loading={unlinkingProvider === provider.id}
+                  onPress={() => void handleUnlink(provider.id)}
                   variant="secondary"
                 >
                   <Text>Unlink</Text>
@@ -145,22 +153,6 @@ export function LinkedAccountsSection() {
           );
         })
       )}
-      <ConfirmDialog
-        confirmLabel="Unlink"
-        description={
-          pendingUnlink
-            ? `You won't be able to sign in with ${pendingUnlink} again until you re-link it.`
-            : undefined
-        }
-        destructive
-        loading={unlink.isPending}
-        onConfirm={handleUnlinkConfirm}
-        onOpenChange={(open) => {
-          if (!open) setPendingUnlink(null);
-        }}
-        open={pendingUnlink !== null}
-        title={pendingUnlink ? `Unlink ${pendingUnlink}?` : "Unlink account?"}
-      />
     </View>
   );
 }

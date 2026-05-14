@@ -1,9 +1,10 @@
 import { Link } from "expo-router";
 import { memo, useCallback } from "react";
 import { Pressable, View } from "react-native";
+import { useCSSVariable } from "uniwind";
 
+import { Symbol } from "@/components/symbol";
 import { useIsSelected, useSelectionMode } from "@/hooks/use-portfolio-selection";
-import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
 import type { PortfolioDomain } from "@/lib/portfolio";
 
@@ -30,6 +31,8 @@ function DomainRowImpl({
   const selectionMode = useSelectionMode();
   const selected = useIsSelected(domain.id);
   const isSelecting = selectionMode === "selecting";
+  const accent = useCSSVariable("--color-brand") as string;
+  const muted = useCSSVariable("--color-text-secondary") as string;
 
   const handlePress = useCallback(() => onPress(domain), [domain, onPress]);
   const handleLongPress = useCallback(() => onLongPress?.(domain), [domain, onLongPress]);
@@ -45,16 +48,12 @@ function DomainRowImpl({
     <GlassCard>
       <View className="flex-row items-start gap-3">
         {isSelecting ? (
-          <View
-            accessibilityLabel={selected ? "Selected" : "Not selected"}
-            className={cn(
-              "mt-1 h-6 w-6 items-center justify-center rounded-full border-2",
-              selected ? "border-brand bg-brand" : "border-line",
-            )}
-          >
-            {selected ? (
-              <Text className="text-control-primary-text text-xs leading-none font-bold">✓</Text>
-            ) : null}
+          <View accessibilityLabel={selected ? "Selected" : "Not selected"} className="mt-1">
+            <Symbol
+              color={selected ? accent : muted}
+              name={selected ? "checkmark.circle.fill" : "circle"}
+              size={24}
+            />
           </View>
         ) : null}
         <View className="min-w-0 flex-1 gap-3">
