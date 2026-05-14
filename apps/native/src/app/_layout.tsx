@@ -10,7 +10,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useCSSVariable } from "uniwind";
 
 import { PushPermissionSheet } from "@/components/notifications/push-permission-sheet";
-import { VersionGate } from "@/components/version-gate";
+import { useVersionGateReady, VersionGate } from "@/components/version-gate";
 import { AnalyticsProvider } from "@/lib/analytics-provider";
 import { ApiProvider } from "@/lib/api";
 import { authClient } from "@/lib/auth";
@@ -29,12 +29,13 @@ function RootNavigator() {
   const isDark = useColorScheme() === "dark";
   const session = authClient.useSession();
   const isSignedIn = Boolean(session.data?.user);
+  const versionGateReady = useVersionGateReady();
 
   useEffect(() => {
-    if (!session.isPending) {
+    if (!session.isPending && versionGateReady) {
       void SplashScreen.hideAsync();
     }
-  }, [session.isPending]);
+  }, [session.isPending, versionGateReady]);
 
   useEffect(() => {
     const subscription = Notifications.addNotificationResponseReceivedListener((response) => {

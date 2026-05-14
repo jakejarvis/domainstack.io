@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import Constants from "expo-constants";
+import { useEffect, useState } from "react";
 import { Linking, Platform, View } from "react-native";
 
 import { Button } from "@/components/button";
@@ -11,13 +12,37 @@ import { isVersionBelow } from "@/lib/version";
 import type { OtaConfigNativeApp } from "@domainstack/auth/ota-config/client";
 
 const STALE_TIME = 5 * 60 * 1000;
+const READINESS_TIMEOUT_MS = 2000;
 
-export function VersionGate({ children }: { children: React.ReactNode }) {
-  const otaConfig = useQuery({
+function useOtaConfigQuery() {
+  return useQuery({
     queryFn: getOtaConfig,
     queryKey: OTA_CONFIG_QUERY_KEY,
     staleTime: STALE_TIME,
   });
+}
+
+/**
+ * Resolves true once the OTA config query has settled (success or error — the
+ * gate is fail-open) or after a 2s timeout so a hung config never holds the
+ * splash forever. Splash hide gates on this.
+ */
+export function useVersionGateReady(): boolean {
+  const otaConfig = useOtaConfigQuery();
+  const settled = !otaConfig.isPending;
+  const [timedOut, setTimedOut] = useState(false);
+
+  useEffect(() => {
+    if (settled) return;
+    const id = setTimeout(() => setTimedOut(true), READINESS_TIMEOUT_MS);
+    return () => clearTimeout(id);
+  }, [settled]);
+
+  return settled || timedOut;
+}
+
+export function VersionGate({ children }: { children: React.ReactNode }) {
+  const otaConfig = useOtaConfigQuery();
 
   const nativeApp = otaConfig.data?.nativeApp ?? null;
   const currentVersion = Constants.expoConfig?.version;

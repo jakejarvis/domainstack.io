@@ -1,5 +1,5 @@
 import { FlashList } from "@shopify/flash-list";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { Alert, View } from "react-native";
@@ -10,9 +10,9 @@ import { RefreshControl } from "@/components/refresh-control";
 import { Screen } from "@/components/screen";
 import { SkeletonRows } from "@/components/skeleton";
 import { MutedText } from "@/components/text";
+import { useDashboardMutations } from "@/hooks/use-dashboard-mutations";
 import { useTRPC } from "@/lib/api";
 import { authClient } from "@/lib/auth";
-import { toast } from "@/lib/toast";
 
 const LIST_INPUT = { includeArchived: true } as const;
 
@@ -45,13 +45,11 @@ export default function ArchivedDomainsScreen() {
 
 function ArchivedScreen() {
   const trpc = useTRPC();
-  const queryClient = useQueryClient();
+  const dashboard = useDashboardMutations();
   const [refreshing, setRefreshing] = useState(false);
 
   const domainsQuery = useQuery(trpc.tracking.listDomains.queryOptions(LIST_INPUT));
   const subscriptionQuery = useQuery(trpc.user.getSubscription.queryOptions());
-
-  type ListItem = NonNullable<typeof domainsQuery.data>[number];
 
   const archivedDomains = useMemo<ArchivedRowDomain[]>(() => {
     return (domainsQuery.data ?? []).flatMap((domain) =>
@@ -60,59 +58,6 @@ function ArchivedScreen() {
         : [],
     );
   }, [domainsQuery.data]);
-
-  const listKey = trpc.tracking.listDomains.queryKey(LIST_INPUT);
-
-  const invalidateAll = async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: trpc.tracking.listDomains.queryKey() }),
-      queryClient.invalidateQueries({ queryKey: trpc.user.getSubscription.queryKey() }),
-    ]);
-  };
-
-  const unarchive = useMutation({
-    mutationFn: trpc.tracking.unarchiveDomain.mutationOptions().mutationFn,
-    onError: (error, _variables, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(listKey, context.previous);
-      }
-      toast.error({ title: "Reactivation failed", message: error.message });
-    },
-    onMutate: async (variables: { trackedDomainId: string }) => {
-      await queryClient.cancelQueries({ queryKey: listKey });
-      const previous = queryClient.getQueryData<ListItem[]>(listKey);
-      queryClient.setQueryData<ListItem[]>(listKey, (old) =>
-        old?.map((item) =>
-          item.id === variables.trackedDomainId ? { ...item, archivedAt: null } : item,
-        ),
-      );
-      return { previous };
-    },
-    onSettled: () => {
-      void invalidateAll();
-    },
-  });
-
-  const remove = useMutation({
-    mutationFn: trpc.tracking.removeDomain.mutationOptions().mutationFn,
-    onError: (error, _variables, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(listKey, context.previous);
-      }
-      toast.error({ title: "Removal failed", message: error.message });
-    },
-    onMutate: async (variables: { trackedDomainId: string }) => {
-      await queryClient.cancelQueries({ queryKey: listKey });
-      const previous = queryClient.getQueryData<ListItem[]>(listKey);
-      queryClient.setQueryData<ListItem[]>(listKey, (old) =>
-        old?.filter((item) => item.id !== variables.trackedDomainId),
-      );
-      return { previous };
-    },
-    onSettled: () => {
-      void invalidateAll();
-    },
-  });
 
   const canReactivate = subscriptionQuery.data?.canAddMore ?? true;
 
@@ -127,9 +72,9 @@ function ArchivedScreen() {
 
   const handleReactivate = useCallback(
     (domain: ArchivedRowDomain) => {
-      unarchive.mutate({ trackedDomainId: domain.id });
+      void dashboard.unarchive(domain.id);
     },
-    [unarchive],
+    [dashboard],
   );
 
   const handleRemove = useCallback(
@@ -140,14 +85,14 @@ function ArchivedScreen() {
         [
           { style: "cancel", text: "Cancel" },
           {
-            onPress: () => remove.mutate({ trackedDomainId: domain.id }),
+            onPress: () => void dashboard.remove(domain.id),
             style: "destructive",
             text: "Remove",
           },
         ],
       );
     },
-    [remove],
+    [dashboard],
   );
 
   const renderItem = useCallback(

@@ -176,6 +176,7 @@ export function ShareInstructionsSheet({
             onChangeText={(email) => dispatch({ type: "setEmail", email })}
             placeholder={`admin@${domain}`}
             returnKeyType="send"
+            textContentType="emailAddress"
             value={state.email}
           />
           <Button disabled={!validEmail || sent} loading={sending} onPress={handleSend}>

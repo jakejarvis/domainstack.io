@@ -22,6 +22,7 @@ import { ReportSectionSkeleton } from "@/components/report-section-skeleton";
 import { Screen } from "@/components/screen";
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
 import { MutedText, Text } from "@/components/text";
+import { useDashboardMutations } from "@/hooks/use-dashboard-mutations";
 import { analytics } from "@/lib/analytics";
 import { useTRPC } from "@/lib/api";
 import { authClient } from "@/lib/auth";
@@ -81,10 +82,11 @@ function DomainReportContent({ domain, section }: { domain: string; section?: Re
   const registrationQuery = useQuery(trpc.domain.getRegistration.queryOptions({ domain }));
   const isUnregistered = registrationQuery.data?.data?.isRegistered === false;
 
-  // Kick off all six per-section queries in parallel as soon as we render.
+  // Kick off the five Suspense-gated section queries in parallel. Registration
+  // is already in-flight via the useQuery above (used here to gate the
+  // unregistered card), so prefetching it again would be redundant.
   useEffect(() => {
     const input = { domain };
-    void queryClient.prefetchQuery(trpc.domain.getRegistration.queryOptions(input));
     void queryClient.prefetchQuery(trpc.domain.getHosting.queryOptions(input));
     void queryClient.prefetchQuery(trpc.domain.getDnsRecords.queryOptions(input));
     void queryClient.prefetchQuery(trpc.domain.getCertificates.queryOptions(input));
@@ -302,24 +304,10 @@ function TrackingActions({
   invalidate: () => Promise<void>;
 }) {
   const trpc = useTRPC();
-  const setMuted = useMutation(trpc.user.setDomainMuted.mutationOptions({ onSuccess: invalidate }));
-  const archive = useMutation(
-    trpc.tracking.archiveDomain.mutationOptions({ onSuccess: invalidate }),
-  );
-  const unarchive = useMutation(
-    trpc.tracking.unarchiveDomain.mutationOptions({ onSuccess: invalidate }),
-  );
-  const remove = useMutation(
-    trpc.tracking.removeDomain.mutationOptions({
-      onSuccess: async () => {
-        await invalidate();
-        router.back();
-      },
-    }),
-  );
+  const dashboard = useDashboardMutations();
   const verify = useMutation(
     trpc.tracking.verifyDomain.mutationOptions({
-      onSuccess: async (_data, _vars) => {
+      onSuccess: async () => {
         toast.success(`Verified ${trackedEntry.domainName}`);
         await invalidate();
       },
@@ -328,7 +316,7 @@ function TrackingActions({
 
   async function runNetworkAction(action: () => Promise<unknown>) {
     try {
-      await assertOnline();
+      assertOnline();
       await action();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Action failed";
@@ -368,26 +356,21 @@ function TrackingActions({
       )}
       <GlassCard>
         <Button
-          loading={setMuted.isPending}
+          loading={dashboard.isMuting}
           onPress={() =>
-            void runNetworkAction(() =>
-              setMuted.mutateAsync({
-                muted: !trackedEntry.muted,
-                trackedDomainId: trackedEntry.id,
-              }),
-            )
+            void runNetworkAction(() => dashboard.setMuted(trackedEntry.id, !trackedEntry.muted))
           }
           variant="secondary"
         >
           <Text>{trackedEntry.muted ? "Unmute notifications" : "Mute notifications"}</Text>
         </Button>
         <Button
-          loading={archive.isPending || unarchive.isPending}
+          loading={dashboard.isArchiving || dashboard.isUnarchiving}
           onPress={() =>
             void runNetworkAction(() =>
               trackedEntry.archivedAt
-                ? unarchive.mutateAsync({ trackedDomainId: trackedEntry.id })
-                : archive.mutateAsync({ trackedDomainId: trackedEntry.id }),
+                ? dashboard.unarchive(trackedEntry.id)
+                : dashboard.archive(trackedEntry.id),
             )
           }
           variant="secondary"
@@ -395,15 +378,16 @@ function TrackingActions({
           <Text>{trackedEntry.archivedAt ? "Unarchive" : "Archive"}</Text>
         </Button>
         <Button
-          loading={remove.isPending}
+          loading={dashboard.isRemoving}
           onPress={() =>
             Alert.alert("Remove domain?", `${trackedEntry.domainName} will stop being tracked.`, [
               { style: "cancel", text: "Cancel" },
               {
                 onPress: () =>
-                  void runNetworkAction(() =>
-                    remove.mutateAsync({ trackedDomainId: trackedEntry.id }),
-                  ),
+                  void runNetworkAction(async () => {
+                    await dashboard.remove(trackedEntry.id);
+                    router.back();
+                  }),
                 style: "destructive",
                 text: "Remove",
               },

@@ -155,7 +155,7 @@ function AddDomainFlow() {
     dispatch({ domain: trimmed, type: "edit" });
     dispatch({ type: "submit" });
     try {
-      await assertOnline();
+      assertOnline();
       const result = await addDomain.mutateAsync({ domain: trimmed });
       dispatch({
         method: "dns_txt",
@@ -177,7 +177,7 @@ function AddDomainFlow() {
     dispatch({ method, type: "setMethod" });
     dispatch({ type: "verify" });
     try {
-      await assertOnline();
+      assertOnline();
       const result = await verifyDomain.mutateAsync({
         method,
         trackedDomainId,
@@ -260,6 +260,7 @@ function AddDomainFlow() {
                 onSubmitEditing={() => void submit()}
                 placeholder="example.com"
                 returnKeyType="go"
+                textContentType="URL"
                 value={flow.domain}
               />
             </View>

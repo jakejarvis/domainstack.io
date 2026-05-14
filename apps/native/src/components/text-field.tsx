@@ -1,4 +1,4 @@
-import type { InputModeOptions, ReturnKeyTypeOptions } from "react-native";
+import type { InputModeOptions, ReturnKeyTypeOptions, TextInputProps } from "react-native";
 import { TextInput, View } from "react-native";
 import { useCSSVariable } from "uniwind";
 
@@ -18,6 +18,7 @@ export function TextField({
   onSubmitEditing,
   placeholder,
   returnKeyType,
+  textContentType,
   value,
 }: {
   autoCapitalize?: "none" | "sentences" | "words" | "characters";
@@ -31,6 +32,7 @@ export function TextField({
   onSubmitEditing?: () => void;
   placeholder: string;
   returnKeyType?: ReturnKeyTypeOptions;
+  textContentType?: TextInputProps["textContentType"];
   value: string;
 }) {
   const placeholderTextColor = useCSSVariable("--color-text-secondary") as string;
@@ -56,6 +58,7 @@ export function TextField({
         placeholderTextColor={placeholderTextColor}
         returnKeyType={returnKeyType}
         spellCheck={false}
+        textContentType={textContentType}
         style={
           bare
             ? undefined

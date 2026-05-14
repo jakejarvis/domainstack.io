@@ -1,14 +1,13 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Stack } from "expo-router/stack";
 import { Alert, Platform } from "react-native";
 
+import { useDashboardMutations } from "@/hooks/use-dashboard-mutations";
 import {
   getSelectedIds,
   useSelectionActions,
   useSelectionCount,
   useSelectionMode,
 } from "@/hooks/use-portfolio-selection";
-import { useTRPC } from "@/lib/api";
 import { toast } from "@/lib/toast";
 
 const BULK_LIMIT = 100;
@@ -17,78 +16,26 @@ export function BulkActionsToolbar() {
   const mode = useSelectionMode();
   const count = useSelectionCount();
   const { exitSelection } = useSelectionActions();
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-
-  const invalidate = async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: trpc.tracking.listDomains.queryKey() }),
-      queryClient.invalidateQueries({ queryKey: trpc.user.getSubscription.queryKey() }),
-    ]);
-  };
-
-  const archive = useMutation(
-    trpc.tracking.bulkArchiveDomains.mutationOptions({
-      onSuccess: (_data, variables) => {
-        const n = variables.trackedDomainIds.length;
-        toast.success(`Archived ${n} ${n === 1 ? "domain" : "domains"}`);
-      },
-      onError: (err) => {
-        toast.error({ title: "Archive failed", message: err.message });
-      },
-      onSettled: async () => {
-        await invalidate();
-        exitSelection();
-      },
-    }),
-  );
-
-  const remove = useMutation(
-    trpc.tracking.bulkRemoveDomains.mutationOptions({
-      onSuccess: (_data, variables) => {
-        const n = variables.trackedDomainIds.length;
-        toast.success(`Removed ${n} ${n === 1 ? "domain" : "domains"}`);
-      },
-      onError: (err) => {
-        toast.error({ title: "Remove failed", message: err.message });
-      },
-      onSettled: async () => {
-        await invalidate();
-        exitSelection();
-      },
-    }),
-  );
-
-  const setMuted = useMutation(
-    trpc.tracking.bulkSetMuted.mutationOptions({
-      onSuccess: ({ successCount }, variables) => {
-        const verb = variables.muted ? "Muted" : "Unmuted";
-        toast.success(`${verb} ${successCount} ${successCount === 1 ? "domain" : "domains"}`);
-      },
-      onError: (err, variables) => {
-        toast.error({
-          title: variables.muted ? "Mute failed" : "Unmute failed",
-          message: err.message,
-        });
-      },
-      onSettled: async () => {
-        await invalidate();
-        exitSelection();
-      },
-    }),
-  );
+  const dashboard = useDashboardMutations();
 
   if (mode !== "selecting") return null;
 
   const overLimit = count > BULK_LIMIT;
-  const busy = archive.isPending || remove.isPending || setMuted.isPending;
+  const busy =
+    dashboard.isBulkArchiving || dashboard.isBulkRemoving || dashboard.isBulkSettingMuted;
   const disabled = count === 0 || overLimit || busy;
 
   const handleArchive = () => {
     if (disabled) return;
     const ids = getSelectedIds();
     if (ids.length === 0) return;
-    archive.mutate({ trackedDomainIds: ids });
+    void dashboard.bulkArchive(ids).then(
+      () => {
+        toast.success(`Archived ${ids.length} ${ids.length === 1 ? "domain" : "domains"}`);
+        exitSelection();
+      },
+      () => exitSelection(),
+    );
   };
 
   const handleRemove = () => {
@@ -101,7 +48,14 @@ export function BulkActionsToolbar() {
       [
         { style: "cancel", text: "Cancel" },
         {
-          onPress: () => remove.mutate({ trackedDomainIds: ids }),
+          onPress: () =>
+            void dashboard.bulkRemove(ids).then(
+              () => {
+                toast.success(`Removed ${ids.length} ${ids.length === 1 ? "domain" : "domains"}`);
+                exitSelection();
+              },
+              () => exitSelection(),
+            ),
           style: "destructive",
           text: "Remove",
         },
@@ -120,7 +74,14 @@ export function BulkActionsToolbar() {
       });
       return;
     }
-    setMuted.mutate({ muted, trackedDomainIds: ids });
+    void dashboard.bulkSetMuted(ids, muted).then(
+      ({ successCount }) => {
+        const verb = muted ? "Muted" : "Unmuted";
+        toast.success(`${verb} ${successCount} ${successCount === 1 ? "domain" : "domains"}`);
+        exitSelection();
+      },
+      () => exitSelection(),
+    );
   };
 
   return (

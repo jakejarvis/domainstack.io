@@ -22,6 +22,12 @@ export { useTRPC };
 
 function useNetworkOnlineManager() {
   useEffect(() => {
+    // Seed onlineManager synchronously so assertOnline doesn't read an
+    // undefined value before the first state-change event fires.
+    void Network.getNetworkStateAsync().then((state) => {
+      onlineManager.setOnline(Boolean(state.isConnected && state.isInternetReachable !== false));
+    });
+
     const subscription = Network.addNetworkStateListener((state) => {
       onlineManager.setOnline(Boolean(state.isConnected && state.isInternetReachable !== false));
     });

@@ -33,7 +33,7 @@ export function MutedDomainsSection() {
     });
     if (!accepted) return;
     try {
-      await assertOnline();
+      assertOnline();
       await setMuted.mutateAsync({ muted: false, trackedDomainId: id });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Could not unmute domain.";

@@ -1,8 +1,7 @@
-import * as Network from "expo-network";
+import { onlineManager } from "@tanstack/react-query";
 
-export async function assertOnline(): Promise<void> {
-  const state = await Network.getNetworkStateAsync();
-  if (!state.isConnected || state.isInternetReachable === false) {
+export function assertOnline(): void {
+  if (!onlineManager.isOnline()) {
     throw new Error("A network connection is required for this action.");
   }
 }

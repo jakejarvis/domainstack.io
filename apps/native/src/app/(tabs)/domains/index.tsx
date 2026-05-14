@@ -1,5 +1,5 @@
 import { FlashList } from "@shopify/flash-list";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { router, useNavigation } from "expo-router";
 import { Stack } from "expo-router/stack";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -22,13 +22,13 @@ import { Screen } from "@/components/screen";
 import { SegmentedControl } from "@/components/segmented-control";
 import { SkeletonRows } from "@/components/skeleton";
 import { MutedText, Text } from "@/components/text";
+import { useDashboardMutations } from "@/hooks/use-dashboard-mutations";
 import { useSelectionMode } from "@/hooks/use-portfolio-selection";
 import { useTRPC } from "@/lib/api";
 import { authClient } from "@/lib/auth";
 import { type PortfolioDomain, type PortfolioSort, sortPortfolioDomains } from "@/lib/portfolio";
 import { activeFilterCount, applyFilters, availableTldsFrom } from "@/lib/portfolio-filters";
 import { usePortfolioStore } from "@/lib/stores/portfolio-store";
-import { toast } from "@/lib/toast";
 
 const sorts: Array<{ label: string; value: PortfolioSort }> = [
   { label: "Name", value: "name" },
@@ -69,7 +69,7 @@ export default function DomainsScreen() {
 function PortfolioScreen() {
   const trpc = useTRPC();
   const navigation = useNavigation();
-  const queryClient = useQueryClient();
+  const dashboard = useDashboardMutations();
   const query = usePortfolioStore((state) => state.query);
   const sort = usePortfolioStore((state) => state.sort);
   const status = usePortfolioStore((state) => state.status);
@@ -153,39 +153,18 @@ function PortfolioScreen() {
     }
   }, []);
 
-  const invalidatePortfolio = useCallback(async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: trpc.tracking.listDomains.queryKey() }),
-      queryClient.invalidateQueries({ queryKey: trpc.user.getSubscription.queryKey() }),
-    ]);
-  }, [queryClient, trpc]);
-
-  const archive = useMutation(
-    trpc.tracking.archiveDomain.mutationOptions({
-      onError: (error) => toast.error({ title: "Archive failed", message: error.message }),
-      onSettled: () => void invalidatePortfolio(),
-    }),
-  );
-
-  const setMuted = useMutation(
-    trpc.user.setDomainMuted.mutationOptions({
-      onError: (error) => toast.error({ title: "Mute failed", message: error.message }),
-      onSettled: () => void invalidatePortfolio(),
-    }),
-  );
-
   const handleArchive = useCallback(
     (domain: PortfolioDomain) => {
-      archive.mutate({ trackedDomainId: domain.id });
+      void dashboard.archive(domain.id);
     },
-    [archive],
+    [dashboard],
   );
 
   const handleMute = useCallback(
     (domain: PortfolioDomain) => {
-      setMuted.mutate({ muted: !domain.muted, trackedDomainId: domain.id });
+      void dashboard.setMuted(domain.id, !domain.muted);
     },
-    [setMuted],
+    [dashboard],
   );
 
   const renderItem = useCallback(
