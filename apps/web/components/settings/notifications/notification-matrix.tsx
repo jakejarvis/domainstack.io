@@ -13,13 +13,17 @@ import { cn } from "@domainstack/ui/utils";
 
 interface NotificationMatrixProps {
   preferences: UserNotificationPreferences;
-  onToggle: (category: NotificationCategory, type: "email" | "inApp", enabled: boolean) => void;
+  onToggle: (
+    category: NotificationCategory,
+    type: "email" | "inApp" | "push",
+    enabled: boolean,
+  ) => void;
   disabled?: boolean;
 }
 
 /**
  * A clean matrix-style notification preferences grid.
- * Displays categories as rows with Web/Email checkboxes as columns.
+ * Displays categories as rows with Web/Email/Push checkboxes as columns.
  */
 export function NotificationMatrix({
   preferences,
@@ -34,6 +38,7 @@ export function NotificationMatrix({
         <div className="flex items-center gap-1">
           <div className="w-14 text-center">Web</div>
           <div className="w-14 text-center">Email</div>
+          <div className="w-14 text-center">Push</div>
         </div>
       </div>
       <div className="divide-y divide-border/30">
@@ -41,7 +46,7 @@ export function NotificationMatrix({
           const info = NOTIFICATION_CATEGORY_INFO[category];
           const Icon = info.icon;
           const pref = preferences[category];
-          const anyEnabled = pref.inApp || pref.email;
+          const anyEnabled = pref.inApp || pref.email || pref.push;
 
           return (
             <div key={category} className="group flex items-center py-2 pr-2 pl-1">
@@ -89,6 +94,14 @@ export function NotificationMatrix({
                     onCheckedChange={(checked) => onToggle(category, "email", checked === true)}
                     disabled={disabled}
                     aria-label={`Email notifications for ${info.label}`}
+                  />
+                </div>
+                <div className="flex w-14 items-center justify-center py-1">
+                  <Checkbox
+                    checked={pref.push}
+                    onCheckedChange={(checked) => onToggle(category, "push", checked === true)}
+                    disabled={disabled}
+                    aria-label={`Push notifications for ${info.label}`}
                   />
                 </div>
               </div>

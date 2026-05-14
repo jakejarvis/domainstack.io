@@ -7,8 +7,9 @@ import type { ImageSourcePropType } from "react-native";
 import { Platform } from "react-native";
 import { useCSSVariable } from "uniwind";
 
+import { useSignOut } from "@/hooks/use-sign-out";
 import { analytics } from "@/lib/analytics";
-import { authClient, signOut } from "@/lib/auth";
+import { authClient } from "@/lib/auth";
 
 type MenuActionIcon = ComponentProps<typeof Stack.Toolbar.MenuAction>["icon"];
 
@@ -78,6 +79,7 @@ export function HeaderMenu({
   const user = session.data?.user;
   const isSignedIn = Boolean(user);
   const avatarUri = user?.image ?? null;
+  const signOut = useSignOut();
   const iconColor = useCSSVariable("--color-text-primary") as string;
   const dangerColor = useCSSVariable("--color-danger") as string;
   const sources = useMaterialIconSources(iconColor, dangerColor);

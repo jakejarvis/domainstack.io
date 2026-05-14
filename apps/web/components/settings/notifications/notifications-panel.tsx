@@ -77,7 +77,8 @@ export function NotificationsPanel() {
                   </p>
                 </div>
               </ResponsiveTooltipContent>
-            </ResponsiveTooltip>
+            </ResponsiveTooltip>{" "}
+            Push notifications require the Domainstack mobile app.
           </>
         }
       >

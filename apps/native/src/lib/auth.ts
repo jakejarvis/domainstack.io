@@ -48,10 +48,6 @@ export async function getOtaConfig(): Promise<OtaConfigResponse> {
   return result.data;
 }
 
-export async function signOut() {
-  return authClient.signOut();
-}
-
 export async function linkProvider(provider: AuthProvider) {
   return authClient.linkSocial({
     provider,

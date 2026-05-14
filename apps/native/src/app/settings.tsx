@@ -19,9 +19,10 @@ import {
 import { SkeletonRows } from "@/components/skeleton";
 import { MutedText, Text } from "@/components/text";
 import { usePushRegistration } from "@/hooks/use-push-registration";
+import { useSignOut } from "@/hooks/use-sign-out";
 import { analytics } from "@/lib/analytics";
 import { useTRPC } from "@/lib/api";
-import { authClient, signOut } from "@/lib/auth";
+import { authClient } from "@/lib/auth";
 import { usePrivacyStore } from "@/lib/stores/privacy-store";
 
 type PreferenceKey =
@@ -304,6 +305,7 @@ function PrivacySection() {
 function AccountSection() {
   const session = authClient.useSession();
   const email = session.data?.user?.email;
+  const signOut = useSignOut();
 
   return (
     <View className="gap-6">
