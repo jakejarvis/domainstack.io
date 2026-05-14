@@ -7,13 +7,21 @@
     "platforms": ["ios", "android"],
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
     "ios": {
       "bundleIdentifier": "io.domainstack.app",
+      "appleTeamId": "B5ZWKBCUTU",
+      "icon": "./assets/AppIcon.icon",
       "supportsTablet": true,
       "usesAppleSignIn": true
     },
     "android": {
       "package": "io.domainstack.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "monochromeImage": "./assets/adaptive-icon-mono.png",
+        "backgroundColor": "#FFFFFF"
+      },
       "config": {
         "googleMaps": {
           "apiKey": "${EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_KEY}"
@@ -33,7 +41,19 @@
         }
       ],
       "expo-image",
-      "expo-splash-screen",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon-light.png",
+          "imageWidth": 200,
+          "backgroundColor": "#FFFFFF",
+          "resizeMode": "contain",
+          "dark": {
+            "image": "./assets/splash-icon-dark.png",
+            "backgroundColor": "#000000"
+          }
+        }
+      ],
       [
         "expo-maps",
         {

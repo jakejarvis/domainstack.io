@@ -36,6 +36,7 @@
     "coverage",
     "packages/db/drizzle",
     "apps/native/uniwind-types.d.ts",
+    "**/*.icon",
     "**/.well-known/workflow"
   ]
 }
