@@ -7,21 +7,21 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { Platform, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useCSSVariable } from "uniwind";
 
 import { AnalyticsProvider } from "@/lib/analytics-provider";
 import { ApiProvider } from "@/lib/api";
 import { authClient } from "@/lib/auth";
 import { installGlobalErrorHandler } from "@/lib/error-handler";
 import { routeFromNotificationData } from "@/lib/navigation";
-import { useCSSVariable } from "@/tw";
 
 void SplashScreen.preventAutoHideAsync();
 installGlobalErrorHandler();
 
 function RootNavigator() {
-  const canvas = useCSSVariable("--color-canvas");
-  const surface = useCSSVariable("--color-glass");
-  const text = useCSSVariable("--color-text-primary");
+  const canvas = useCSSVariable("--color-canvas") as string;
+  const surface = useCSSVariable("--color-glass") as string;
+  const text = useCSSVariable("--color-text-primary") as string;
   const isDark = useColorScheme() === "dark";
   const session = authClient.useSession();
   const isSignedIn = Boolean(session.data?.user);

@@ -5,6 +5,7 @@ import type { inferRouterOutputs } from "@trpc/server";
 import { Link, router } from "expo-router";
 import { memo, useCallback, useState } from "react";
 import { Pressable, View } from "react-native";
+import { useCSSVariable } from "uniwind";
 
 import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
@@ -21,7 +22,6 @@ import { MutedText, Text } from "@/components/text";
 import { useTRPC } from "@/lib/api";
 import { authClient } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
-import { useCSSVariable } from "@/tw";
 import type { AppRouter } from "@domainstack/api";
 
 const PAGE_SIZE = 20;
@@ -72,7 +72,7 @@ function NotificationsList() {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<NotificationFilter>("unread");
   const [refreshing, setRefreshing] = useState(false);
-  const mutedIconColor = useCSSVariable("--color-text-secondary");
+  const mutedIconColor = useCSSVariable("--color-text-secondary") as string;
 
   const notifications = useInfiniteQuery(
     trpc.notifications.list.infiniteQueryOptions(

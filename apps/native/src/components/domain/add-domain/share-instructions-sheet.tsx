@@ -4,6 +4,7 @@ import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import { useEffect, useReducer, useRef, useState } from "react";
 import { Share, View } from "react-native";
+import { useCSSVariable } from "uniwind";
 
 import { AppBottomSheet, type AppBottomSheetRef } from "@/components/bottom-sheet";
 import { Button } from "@/components/button";
@@ -12,7 +13,6 @@ import { MutedText, Text } from "@/components/text";
 import { TextField } from "@/components/text-field";
 import { useTRPC } from "@/lib/api";
 import { toast } from "@/lib/toast";
-import { useCSSVariable } from "@/tw";
 import { formatInstructionsForSharing } from "@domainstack/utils/verification";
 
 type EmailStatus = "idle" | "sending" | "sent";
@@ -59,8 +59,8 @@ export function ShareInstructionsSheet({
   const trpc = useTRPC();
   const [state, dispatch] = useReducer(reducer, initialState);
   const [copied, setCopied] = useState(false);
-  const successColor = useCSSVariable("--color-success");
-  const mutedColor = useCSSVariable("--color-text-secondary");
+  const successColor = useCSSVariable("--color-success") as string;
+  const mutedColor = useCSSVariable("--color-text-secondary") as string;
 
   useEffect(() => {
     if (open) ref.current?.present();

@@ -42,7 +42,8 @@
       ]
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "reactCompiler": true
     },
     "extra": {
       "apiBaseUrl": "${EXPO_PUBLIC_DOMAINSTACK_API_URL}",

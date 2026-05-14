@@ -1,8 +1,8 @@
 import type { InputModeOptions, ReturnKeyTypeOptions } from "react-native";
 import { TextInput, View } from "react-native";
+import { useCSSVariable } from "uniwind";
 
 import { cn } from "@/lib/cn";
-import { useCSSVariable } from "@/tw";
 
 import { MutedText } from "./text";
 
@@ -31,8 +31,8 @@ export function TextField({
   returnKeyType?: ReturnKeyTypeOptions;
   value: string;
 }) {
-  const placeholderTextColor = useCSSVariable("--color-text-secondary");
-  const dangerColor = useCSSVariable("--color-danger");
+  const placeholderTextColor = useCSSVariable("--color-text-secondary") as string;
+  const dangerColor = useCSSVariable("--color-danger") as string;
 
   return (
     <View className="gap-2">

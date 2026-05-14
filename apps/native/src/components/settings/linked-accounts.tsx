@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { useEffect, useState } from "react";
 import { Platform, View } from "react-native";
+import { useCSSVariable } from "uniwind";
 
 import { Button } from "@/components/button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -13,7 +14,6 @@ import { type AuthProvider, getOtaConfig, linkProvider, unlinkProvider } from "@
 import { getEnabledNativeAuthProviders } from "@/lib/auth-providers";
 import { googleNativeConfig } from "@/lib/env";
 import { toast } from "@/lib/toast";
-import { useCSSVariable } from "@/tw";
 
 const OTA_CONFIG_QUERY_KEY = ["auth", "ota-config"] as const;
 
@@ -24,7 +24,7 @@ function isAuthCanceled(error: unknown): boolean {
 export function LinkedAccountsSection() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const iconColor = useCSSVariable("--color-text-primary");
+  const iconColor = useCSSVariable("--color-text-primary") as string;
   const [appleAuthAvailable, setAppleAuthAvailable] = useState<boolean | null>(null);
   const [pendingUnlink, setPendingUnlink] = useState<AuthProvider | null>(null);
   const [linkingProvider, setLinkingProvider] = useState<AuthProvider | null>(null);

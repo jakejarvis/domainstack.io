@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
+import { useCSSVariable } from "uniwind";
 
 import { useTRPC } from "@/lib/api";
 import { authClient } from "@/lib/auth";
-import { useCSSVariable } from "@/tw";
 
 function formatBadge(count: number): string | undefined {
   if (count <= 0) return undefined;
@@ -12,10 +12,10 @@ function formatBadge(count: number): string | undefined {
 }
 
 export default function TabsLayout() {
-  const accent = useCSSVariable("--color-brand");
-  const canvas = useCSSVariable("--color-canvas");
-  const surface = useCSSVariable("--color-glass");
-  const textMuted = useCSSVariable("--color-text-secondary");
+  const accent = useCSSVariable("--color-brand") as string;
+  const canvas = useCSSVariable("--color-canvas") as string;
+  const surface = useCSSVariable("--color-glass") as string;
+  const textMuted = useCSSVariable("--color-text-secondary") as string;
 
   const trpc = useTRPC();
   const session = authClient.useSession();

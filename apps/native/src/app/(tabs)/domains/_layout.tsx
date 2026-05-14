@@ -1,12 +1,11 @@
 import { Stack } from "expo-router/stack";
 import { useColorScheme } from "react-native";
-
-import { useCSSVariable } from "@/tw";
+import { useCSSVariable } from "uniwind";
 
 export default function DomainsLayout() {
-  const canvas = useCSSVariable("--color-canvas");
-  const surface = useCSSVariable("--color-glass");
-  const text = useCSSVariable("--color-text-primary");
+  const canvas = useCSSVariable("--color-canvas") as string;
+  const surface = useCSSVariable("--color-glass") as string;
+  const text = useCSSVariable("--color-text-primary") as string;
   const isDark = useColorScheme() === "dark";
 
   return (

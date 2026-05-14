@@ -1,6 +1,5 @@
 import { ActivityIndicator } from "react-native";
-
-import { useCSSVariable } from "@/tw";
+import { useCSSVariable } from "uniwind";
 
 export function Spinner({
   size = "small",
@@ -15,6 +14,6 @@ export function Spinner({
       : tone === "muted"
         ? "--color-text-secondary"
         : "--color-text-primary";
-  const color = useCSSVariable(variable);
+  const color = useCSSVariable(variable) as string;
   return <ActivityIndicator color={color} size={size} />;
 }

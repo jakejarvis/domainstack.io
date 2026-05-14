@@ -1,10 +1,10 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { View } from "react-native";
+import { useCSSVariable } from "uniwind";
 
 import { Button } from "@/components/button";
 import { GlassCard } from "@/components/glass-card";
 import { MutedText, Text } from "@/components/text";
-import { useCSSVariable } from "@/tw";
 import type { VerificationMethod } from "@domainstack/constants";
 
 const TROUBLESHOOTING_TIPS: Record<VerificationMethod, { title: string; tips: string[] }> = {
@@ -53,8 +53,8 @@ export function VerificationFailed({
   onCheckAgain: () => void;
   onReturnLater: () => void;
 }) {
-  const dangerColor = useCSSVariable("--color-danger");
-  const mutedColor = useCSSVariable("--color-text-secondary");
+  const dangerColor = useCSSVariable("--color-danger") as string;
+  const mutedColor = useCSSVariable("--color-text-secondary") as string;
   const { title, tips } = TROUBLESHOOTING_TIPS[method];
 
   return (

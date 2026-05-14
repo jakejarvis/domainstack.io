@@ -1,10 +1,9 @@
 import { RefreshControl as NativeRefreshControl, type RefreshControlProps } from "react-native";
-
-import { useCSSVariable } from "@/tw";
+import { useCSSVariable } from "uniwind";
 
 export function RefreshControl(props: RefreshControlProps) {
-  const accent = useCSSVariable("--color-brand");
-  const surface = useCSSVariable("--color-glass");
+  const accent = useCSSVariable("--color-brand") as string;
+  const surface = useCSSVariable("--color-glass") as string;
 
   return (
     <NativeRefreshControl

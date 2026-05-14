@@ -1,11 +1,11 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { View } from "react-native";
+import { useCSSVariable } from "uniwind";
 
 import { MutedText, Text } from "@/components/text";
-import { useCSSVariable } from "@/tw";
 
 export function StepConfirmation({ domain }: { domain: string }) {
-  const successColor = useCSSVariable("--color-success");
+  const successColor = useCSSVariable("--color-success") as string;
   return (
     <View accessibilityLiveRegion="polite" className="items-center gap-4 py-6">
       <MaterialIcons color={successColor} name="check-circle" size={56} />

@@ -6,8 +6,7 @@ import {
 import type { Ref } from "react";
 import { useColorScheme, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-import { useCSSVariable } from "@/tw";
+import { useCSSVariable } from "uniwind";
 
 import { MutedText, Text } from "./text";
 
@@ -33,7 +32,7 @@ export function AppBottomSheet({
   title?: string;
 }) {
   const insets = useSafeAreaInsets();
-  const canvas = useCSSVariable("--color-canvas");
+  const canvas = useCSSVariable("--color-canvas") as string;
   const isDark = useColorScheme() === "dark";
 
   return (

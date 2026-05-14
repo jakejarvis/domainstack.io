@@ -3,6 +3,7 @@ import * as AppleAuthentication from "expo-apple-authentication";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { Platform, View } from "react-native";
+import { useCSSVariable } from "uniwind";
 
 import { Button } from "@/components/button";
 import { GlassCard } from "@/components/glass-card";
@@ -23,7 +24,6 @@ import { getGoogleIdentityToken } from "@/lib/google-auth";
 import { getInitialRoute } from "@/lib/navigation";
 import { createAuthNonce } from "@/lib/nonce";
 import { toast } from "@/lib/toast";
-import { useCSSVariable } from "@/tw";
 
 const OTA_CONFIG_QUERY_KEY = ["auth", "ota-config"] as const;
 
@@ -215,8 +215,8 @@ function ProviderButton({
   provider: NativeAuthProviderOption;
 }) {
   const variant = isPlatformPreferredProvider(provider) ? "primary" : "secondary";
-  const primaryColor = useCSSVariable("--color-control-primary-text");
-  const secondaryColor = useCSSVariable("--color-control-secondary-text");
+  const primaryColor = useCSSVariable("--color-control-primary-text") as string;
+  const secondaryColor = useCSSVariable("--color-control-secondary-text") as string;
   const iconColor = variant === "primary" ? primaryColor : secondaryColor;
 
   if (provider.id === "apple" && appleAuthAvailable === null) {

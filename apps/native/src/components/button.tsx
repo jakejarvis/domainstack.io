@@ -1,8 +1,8 @@
 import * as Haptics from "expo-haptics";
 import { ActivityIndicator, Pressable } from "react-native";
+import { useCSSVariable } from "uniwind";
 
 import { cn } from "@/lib/cn";
-import { useCSSVariable } from "@/tw";
 
 export function Button({
   children,
@@ -28,7 +28,7 @@ export function Button({
         : variant === "ghost"
           ? "--color-brand"
           : "--color-control-secondary-text",
-  );
+  ) as string;
   const variantClassName =
     variant === "primary"
       ? "bg-control-primary text-control-primary-text"

@@ -1,8 +1,7 @@
 import SegmentedControlNative from "@expo/ui/community/segmented-control";
 import { useMemo } from "react";
 import { useColorScheme, View } from "react-native";
-
-import { useCSSVariable } from "@/tw";
+import { useCSSVariable } from "uniwind";
 
 export function SegmentedControl<T extends string>({
   onChange,
@@ -13,7 +12,7 @@ export function SegmentedControl<T extends string>({
   options: Array<{ label: string; value: T }>;
   value: T;
 }) {
-  const tintColor = useCSSVariable("--color-brand");
+  const tintColor = useCSSVariable("--color-brand") as string;
   const appearance = useColorScheme() === "dark" ? "dark" : "light";
   const selectedIndex = Math.max(
     0,
