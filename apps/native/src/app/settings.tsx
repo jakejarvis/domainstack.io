@@ -241,10 +241,9 @@ function PrivacySection() {
         onValueChange={setAnalyticsEnabled}
         value={analyticsEnabled}
       />
-      {/* Persisted now; takes effect once native error capture lands (see TODO.md "Observability & infra"). */}
       <ToggleRow
         disabled={!hasHydrated}
-        label="Error capture"
+        label="Error reporting"
         onValueChange={setErrorCaptureEnabled}
         value={errorCaptureEnabled}
       />

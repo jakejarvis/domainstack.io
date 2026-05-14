@@ -56,7 +56,8 @@ export function Button({
         onPress?.();
       }}
       style={({ pressed }) => ({
-        opacity: pressed && !isDisabled ? 0.82 : 1,
+        borderCurve: "continuous",
+        transform: [{ scale: pressed && !isDisabled ? 0.96 : 1 }],
       })}
     >
       {loading ? <ActivityIndicator color={foregroundColor} size="small" /> : null}

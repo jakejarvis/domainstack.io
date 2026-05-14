@@ -2,9 +2,9 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { FlashList } from "@shopify/flash-list";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
-import { router } from "expo-router";
+import { Link, router } from "expo-router";
 import { memo, useCallback, useState } from "react";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 
 import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
@@ -105,13 +105,6 @@ function NotificationsList() {
     }
   }, [invalidate]);
 
-  const handleOpenDomain = useCallback((domainName: string) => {
-    router.push({
-      params: { domain: domainName },
-      pathname: "/(tabs)/domains/[domain]",
-    });
-  }, []);
-
   const handleMarkRead = useCallback(
     (id: string) => {
       void markRead.mutateAsync({ id });
@@ -133,11 +126,10 @@ function NotificationsList() {
           item={item}
           markReadPending={markReadPending}
           onMarkRead={handleMarkRead}
-          onOpenDomain={handleOpenDomain}
         />
       </View>
     ),
-    [handleMarkRead, handleOpenDomain, markReadPending],
+    [handleMarkRead, markReadPending],
   );
 
   const items = notifications.data?.pages.flatMap((page) => page.items) ?? [];
@@ -230,21 +222,15 @@ const NotificationRow = memo(function NotificationRow({
   item,
   markReadPending,
   onMarkRead,
-  onOpenDomain,
 }: {
   item: NotificationItem;
   markReadPending: boolean;
   onMarkRead: (id: string) => void;
-  onOpenDomain: (domainName: string) => void;
 }) {
   const domainName = extractDomainNameFromData(item.data);
-  const handleOpen = useCallback(() => {
-    if (domainName) onOpenDomain(domainName);
-  }, [domainName, onOpenDomain]);
-
   const handleMarkRead = useCallback(() => onMarkRead(item.id), [item.id, onMarkRead]);
 
-  return (
+  const body = (
     <GlassCard>
       <View className="gap-2">
         <View className="flex-row items-start justify-between gap-3">
@@ -260,19 +246,32 @@ const NotificationRow = memo(function NotificationRow({
         <MutedText>{item.message}</MutedText>
         <MutedText>{formatDate(item.sentAt)}</MutedText>
       </View>
-      <View className="flex-row gap-2">
-        {domainName ? (
-          <Button className="flex-1" onPress={handleOpen} variant="secondary">
-            <Text>Open {domainName}</Text>
-          </Button>
-        ) : null}
-        {item.readAt ? null : (
-          <Button className="flex-1" loading={markReadPending} onPress={handleMarkRead}>
-            <Text>Mark read</Text>
-          </Button>
-        )}
-      </View>
+      {item.readAt ? null : (
+        <Button loading={markReadPending} onPress={handleMarkRead}>
+          <Text>Mark read</Text>
+        </Button>
+      )}
     </GlassCard>
+  );
+
+  if (!domainName) return body;
+
+  return (
+    <Link asChild href={{ params: { domain: domainName }, pathname: "/(tabs)/domains/[domain]" }}>
+      <Link.Trigger>
+        <Pressable accessibilityLabel={`Open ${domainName}`} accessibilityRole="link">
+          {body}
+        </Pressable>
+      </Link.Trigger>
+      <Link.Preview />
+      <Link.Menu>
+        {item.readAt ? null : (
+          <Link.MenuAction icon="checkmark.circle" onPress={handleMarkRead}>
+            Mark as read
+          </Link.MenuAction>
+        )}
+      </Link.Menu>
+    </Link>
   );
 });
 

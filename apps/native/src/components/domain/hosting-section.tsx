@@ -53,11 +53,6 @@ export function HostingSection({ domain }: { domain: string }) {
   return (
     <ReportSection title="Hosting">
       <KeyValueGrid items={items} />
-      {hosting.geo?.lat != null && hosting.geo?.lon != null ? (
-        <MutedText className="text-xs">
-          Map view is coming in a future release — see apps/native/TODO.md.
-        </MutedText>
-      ) : null}
     </ReportSection>
   );
 }

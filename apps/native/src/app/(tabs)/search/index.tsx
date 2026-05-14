@@ -1,4 +1,4 @@
-import { useRouter } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, Pressable, View } from "react-native";
 
@@ -82,27 +82,41 @@ export default function SearchScreen() {
 
           <View className="gap-2">
             {history.map((item) => (
-              <GlassCard key={item}>
-                <View className="flex-row items-center justify-between gap-3">
+              <Link
+                asChild
+                href={{ params: { domain: item }, pathname: "/(tabs)/domains/[domain]" }}
+                key={item}
+                onPress={() => addDomain(item)}
+              >
+                <Link.Trigger>
                   <Pressable
                     accessibilityLabel={`Open report for ${item}`}
-                    accessibilityRole="button"
-                    className="flex-1"
-                    hitSlop={8}
-                    onPress={() => openDomain(item)}
+                    accessibilityRole="link"
                   >
-                    <Text numberOfLines={1}>{item}</Text>
+                    <GlassCard>
+                      <View className="flex-row items-center justify-between gap-3">
+                        <Text className="flex-1" numberOfLines={1}>
+                          {item}
+                        </Text>
+                        <Pressable
+                          accessibilityLabel={`Remove ${item} from recent searches`}
+                          accessibilityRole="button"
+                          hitSlop={12}
+                          onPress={() => removeDomain(item)}
+                        >
+                          <MutedText className="font-semibold">Remove</MutedText>
+                        </Pressable>
+                      </View>
+                    </GlassCard>
                   </Pressable>
-                  <Pressable
-                    accessibilityLabel={`Remove ${item} from recent searches`}
-                    accessibilityRole="button"
-                    hitSlop={12}
-                    onPress={() => removeDomain(item)}
-                  >
-                    <MutedText className="font-semibold">Remove</MutedText>
-                  </Pressable>
-                </View>
-              </GlassCard>
+                </Link.Trigger>
+                <Link.Preview />
+                <Link.Menu>
+                  <Link.MenuAction destructive icon="trash" onPress={() => removeDomain(item)}>
+                    Remove from recent
+                  </Link.MenuAction>
+                </Link.Menu>
+              </Link>
             ))}
           </View>
         </View>

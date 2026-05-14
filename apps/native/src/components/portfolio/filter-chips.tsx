@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Pressable, ScrollView, View } from "react-native";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
 import { MutedText, Text } from "@/components/text";
 import { buildChips, type FilterChip } from "@/lib/portfolio-filters";
@@ -22,7 +23,11 @@ export function FilterChips() {
   if (chips.length === 0) return null;
 
   return (
-    <View className="flex-row items-center gap-2">
+    <Animated.View
+      className="flex-row items-center gap-2"
+      entering={FadeIn.duration(200)}
+      exiting={FadeOut.duration(140)}
+    >
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ alignItems: "center", gap: 8 }}
@@ -49,6 +54,6 @@ export function FilterChips() {
           <MutedText className="text-xs font-semibold">Clear</MutedText>
         </Pressable>
       ) : null}
-    </View>
+    </Animated.View>
   );
 }

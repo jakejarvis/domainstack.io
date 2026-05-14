@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { router } from "expo-router";
+import { Link } from "expo-router";
 import { useState } from "react";
 import { Alert, Pressable, View } from "react-native";
 
@@ -49,29 +49,38 @@ export function MutedDomainsSection() {
       ) : (
         <View className="gap-2">
           {muted.map((entry) => (
-            <View
-              className="border-line bg-canvas-2 flex-row items-center gap-3 rounded-xl border p-3"
+            <Link
+              asChild
+              href={{
+                params: { domain: entry.domainName },
+                pathname: "/(tabs)/domains/[domain]",
+              }}
               key={entry.id}
             >
-              <Pressable
-                accessibilityLabel={`Open ${entry.domainName}`}
-                accessibilityRole="button"
-                className="min-h-12 flex-1 justify-center"
-                onPress={() =>
-                  router.push({
-                    params: { domain: entry.domainName },
-                    pathname: "/(tabs)/domains/[domain]",
-                  })
-                }
-              >
-                <Text className="font-semibold" numberOfLines={1}>
-                  {entry.domainName}
-                </Text>
-              </Pressable>
-              <Button onPress={() => setPendingId(entry.id)} variant="secondary">
-                <Text>Unmute</Text>
-              </Button>
-            </View>
+              <Link.Trigger>
+                <Pressable
+                  accessibilityLabel={`Open ${entry.domainName}`}
+                  accessibilityRole="link"
+                  className="border-line bg-canvas-2 flex-row items-center gap-3 rounded-xl border p-3"
+                  style={{ borderCurve: "continuous" }}
+                >
+                  <View className="min-h-12 flex-1 justify-center">
+                    <Text className="font-semibold" numberOfLines={1}>
+                      {entry.domainName}
+                    </Text>
+                  </View>
+                  <Button onPress={() => setPendingId(entry.id)} variant="secondary">
+                    <Text>Unmute</Text>
+                  </Button>
+                </Pressable>
+              </Link.Trigger>
+              <Link.Preview />
+              <Link.Menu>
+                <Link.MenuAction icon="bell" onPress={() => setPendingId(entry.id)}>
+                  Unmute notifications
+                </Link.MenuAction>
+              </Link.Menu>
+            </Link>
           ))}
         </View>
       )}

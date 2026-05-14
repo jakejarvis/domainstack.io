@@ -1,5 +1,6 @@
 import { router } from "expo-router";
 import { View } from "react-native";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
 import { Button } from "@/components/button";
 import { GlassCard } from "@/components/glass-card";
@@ -36,36 +37,40 @@ export function SubscriptionBanner({
 
   if (variant.kind === "ending") {
     return (
-      <GlassCard>
-        <View className="gap-1">
-          <Text className="text-base font-semibold">
-            Your Pro plan ends in {variant.daysLeft} {variant.daysLeft === 1 ? "day" : "days"}
-          </Text>
-          <MutedText>
-            Resubscribe to keep tracking your full portfolio without interruption.
-          </MutedText>
-        </View>
-        <View className="flex-row gap-2">
-          <Button className="flex-1" onPress={goToSettings}>
-            <Text>Resubscribe</Text>
-          </Button>
-          <Button className="flex-1" onPress={goToSettings} variant="secondary">
-            <Text>Manage</Text>
-          </Button>
-        </View>
-      </GlassCard>
+      <Animated.View entering={FadeIn.duration(220)} exiting={FadeOut.duration(160)}>
+        <GlassCard>
+          <View className="gap-1">
+            <Text className="text-base font-semibold">
+              Your Pro plan ends in {variant.daysLeft} {variant.daysLeft === 1 ? "day" : "days"}
+            </Text>
+            <MutedText>
+              Resubscribe to keep tracking your full portfolio without interruption.
+            </MutedText>
+          </View>
+          <View className="flex-row gap-2">
+            <Button className="flex-1" onPress={goToSettings}>
+              <Text>Resubscribe</Text>
+            </Button>
+            <Button className="flex-1" onPress={goToSettings} variant="secondary">
+              <Text>Manage</Text>
+            </Button>
+          </View>
+        </GlassCard>
+      </Animated.View>
     );
   }
 
   return (
-    <GlassCard>
-      <View className="gap-1">
-        <Text className="text-base font-semibold">You've reached your plan limit</Text>
-        <MutedText>Upgrade to Pro to track more domains and unlock notifications.</MutedText>
-      </View>
-      <Button onPress={goToSettings}>
-        <Text>Upgrade</Text>
-      </Button>
-    </GlassCard>
+    <Animated.View entering={FadeIn.duration(220)} exiting={FadeOut.duration(160)}>
+      <GlassCard>
+        <View className="gap-1">
+          <Text className="text-base font-semibold">You've reached your plan limit</Text>
+          <MutedText>Upgrade to Pro to track more domains and unlock notifications.</MutedText>
+        </View>
+        <Button onPress={goToSettings}>
+          <Text>Upgrade</Text>
+        </Button>
+      </GlassCard>
+    </Animated.View>
   );
 }

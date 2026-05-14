@@ -29,5 +29,7 @@ export function RelativeExpiry({
 
   if (!state) return null;
 
-  return <Text className={cn(toneClass[state.tone], className)}>({state.text})</Text>;
+  return (
+    <Text className={cn("tabular-nums", toneClass[state.tone], className)}>({state.text})</Text>
+  );
 }

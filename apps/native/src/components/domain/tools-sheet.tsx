@@ -93,7 +93,10 @@ export function ToolsSheet({ domain }: { domain: string }) {
           contentContainerStyle={{ paddingBottom: 8 }}
           keyboardShouldPersistTaps="handled"
         >
-          <View className="border-line bg-glass overflow-hidden rounded-2xl border">
+          <View
+            className="border-line bg-glass overflow-hidden rounded-2xl border"
+            style={{ borderCurve: "continuous" }}
+          >
             {TOOLS.map((tool, index) => (
               <Pressable
                 accessibilityRole="link"

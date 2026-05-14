@@ -102,7 +102,10 @@ export function BulkActionsBar() {
         animatedStyle,
       ]}
     >
-      <View className="border-line bg-glass gap-2 rounded-2xl border p-3">
+      <View
+        className="border-line bg-glass gap-2 rounded-2xl border p-3"
+        style={{ borderCurve: "continuous" }}
+      >
         <View className="flex-row items-center justify-between gap-3">
           <View className="flex-row items-center gap-3">
             {Platform.OS === "android" ? (

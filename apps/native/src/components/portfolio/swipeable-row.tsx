@@ -47,7 +47,7 @@ export function SwipeableRow({
           accessibilityRole="button"
           className="items-center justify-center rounded-2xl bg-warning px-4"
           onPress={handleMutePress}
-          style={{ width: ACTION_WIDTH }}
+          style={{ borderCurve: "continuous", width: ACTION_WIDTH }}
         >
           <Text className="text-warning-text font-semibold">{muteLabel}</Text>
         </Pressable>
@@ -63,7 +63,7 @@ export function SwipeableRow({
           accessibilityRole="button"
           className="items-center justify-center rounded-2xl bg-danger px-4"
           onPress={handleArchivePress}
-          style={{ width: ACTION_WIDTH }}
+          style={{ borderCurve: "continuous", width: ACTION_WIDTH }}
         >
           <Text className="text-danger-text font-semibold">Archive</Text>
         </Pressable>
@@ -83,7 +83,13 @@ export function SwipeableRow({
         renderRightActions={renderRightActions}
         rightThreshold={64}
       >
-        <DomainRow domain={domain} onLongPress={onLongPress} onPress={onPress} />
+        <DomainRow
+          domain={domain}
+          onArchive={onArchive}
+          onLongPress={onLongPress}
+          onMute={onMute}
+          onPress={onPress}
+        />
       </ReanimatedSwipeable>
     </View>
   );

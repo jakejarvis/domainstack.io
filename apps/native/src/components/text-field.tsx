@@ -53,7 +53,7 @@ export function TextField({
         placeholderTextColor={placeholderTextColor}
         returnKeyType={returnKeyType}
         spellCheck={false}
-        style={error ? { borderColor: dangerColor } : undefined}
+        style={{ borderCurve: "continuous", borderColor: error ? dangerColor : undefined }}
         value={value}
       />
       {error ? <MutedText style={{ color: dangerColor }}>{error}</MutedText> : null}

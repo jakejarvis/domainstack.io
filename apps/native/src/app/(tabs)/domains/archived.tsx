@@ -151,26 +151,18 @@ function ArchivedScreen() {
     [remove],
   );
 
-  const handleRowPress = useCallback((domain: ArchivedRowDomain) => {
-    router.push({
-      params: { domain: domain.domainName },
-      pathname: "/(tabs)/domains/[domain]",
-    });
-  }, []);
-
   const renderItem = useCallback(
     ({ item }: { item: ArchivedRowDomain }) => (
       <View className="px-4 pb-3">
         <ArchivedRow
           canReactivate={canReactivate}
           domain={item}
-          onPress={handleRowPress}
           onReactivate={handleReactivate}
           onRemove={handleRemove}
         />
       </View>
     ),
-    [canReactivate, handleReactivate, handleRemove, handleRowPress],
+    [canReactivate, handleReactivate, handleRemove],
   );
 
   const listHeader = (

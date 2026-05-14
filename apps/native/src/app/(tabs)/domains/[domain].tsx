@@ -163,7 +163,7 @@ function ReportHeader({
     <View className="gap-3">
       <View className="flex-row items-center gap-3">
         <Favicon domain={domain} />
-        <Text className="flex-1 text-4xl font-semibold" numberOfLines={1}>
+        <Text className="flex-1 text-4xl font-semibold" numberOfLines={1} selectable>
           {domain}
         </Text>
       </View>
