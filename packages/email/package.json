@@ -18,15 +18,15 @@
   },
   "dependencies": {
     "@domainstack/constants": "workspace:*",
-    "@react-email/components": "^1.0.12",
+    "react-email": "^6.1.4",
     "resend": "^6.12.3"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@types/node": "catalog:",
-    "@types/react": "19.2.14"
+    "@types/react": "catalog:"
   },
   "peerDependencies": {
-    "react": ">=19"
+    "react": "catalog:"
   }
 }

@@ -16,17 +16,17 @@
     "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json"
   },
   "dependencies": {
-    "posthog-js": "^1.373.2",
-    "posthog-node": "^5.33.7",
+    "posthog-js": "^1.373.4",
+    "posthog-node": "^5.34.1",
     "uuid": "^14.0.0"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@types/node": "catalog:",
-    "@types/react": "19.2.14"
+    "@types/react": "catalog:"
   },
   "peerDependencies": {
     "next": ">=16",
-    "react": ">=19"
+    "react": "catalog:"
   }
 }

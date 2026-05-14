@@ -39,7 +39,9 @@
         {
           "requestLocationPermission": false
         }
-      ]
+      ],
+      "expo-status-bar",
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true,

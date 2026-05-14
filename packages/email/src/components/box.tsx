@@ -1,4 +1,4 @@
-import { Section, Text } from "@react-email/components";
+import { Section, Text } from "react-email";
 
 type EmailBoxProps = {
   variant: "info" | "warning" | "success" | "tip" | "danger";

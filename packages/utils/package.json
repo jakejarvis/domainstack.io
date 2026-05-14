@@ -35,6 +35,6 @@
     "zod": "catalog:"
   },
   "peerDependencies": {
-    "zod": "^4"
+    "zod": "catalog:"
   }
 }

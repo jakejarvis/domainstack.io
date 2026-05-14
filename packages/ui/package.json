@@ -28,16 +28,16 @@
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@tabler/icons-react": "catalog:",
-    "@types/react": "19.2.14",
-    "@types/react-dom": "19.2.3",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
     "motion": "catalog:",
     "sonner": "catalog:"
   },
   "peerDependencies": {
-    "@tabler/icons-react": "^3",
-    "motion": "^12",
-    "react": ">=19",
-    "react-dom": ">=19",
-    "sonner": "^2"
+    "@tabler/icons-react": "catalog:",
+    "motion": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "sonner": "catalog:"
   }
 }
