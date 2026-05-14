@@ -18,6 +18,7 @@ import { SegmentedControl } from "@/components/segmented-control";
 import { SkeletonRows } from "@/components/skeleton";
 import { MutedText, Text } from "@/components/text";
 import { TextField } from "@/components/text-field";
+import { usePushSoftPrompt } from "@/hooks/use-push-soft-prompt";
 import { useTRPC } from "@/lib/api";
 import { authClient } from "@/lib/auth";
 import { type AddDomainFlowState, reduceAddDomainFlow } from "@/lib/domain-lifecycle";
@@ -118,6 +119,7 @@ function AddDomainFlow() {
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const trpc = useTRPC();
+  const triggerPushPrompt = usePushSoftPrompt();
 
   const addDomain = useMutation(trpc.tracking.addDomain.mutationOptions());
   const verifyDomain = useMutation(trpc.tracking.verifyDomain.mutationOptions());
@@ -183,6 +185,7 @@ function AddDomainFlow() {
       if (result.verified) {
         dispatch({ type: "verified" });
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        void triggerPushPrompt("firstDomain");
       } else {
         dispatch({
           message:

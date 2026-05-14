@@ -10,6 +10,7 @@ import { GlassCard } from "@/components/glass-card";
 import { ProviderIcon } from "@/components/provider-icon";
 import { Screen } from "@/components/screen";
 import { MutedText, Text } from "@/components/text";
+import { usePushSoftPrompt } from "@/hooks/use-push-soft-prompt";
 import { analytics } from "@/lib/analytics";
 import {
   type AuthProvider,
@@ -47,6 +48,7 @@ function isProviderAvailableOnPlatform(provider: NativeAuthProviderOption): bool
 export default function SignInScreen() {
   const [appleAuthAvailable, setAppleAuthAvailable] = useState<boolean | null>(null);
   const [loadingProvider, setLoadingProvider] = useState<AuthProvider | null>(null);
+  const triggerPushPrompt = usePushSoftPrompt();
   const otaConfig = useQuery({
     queryFn: getOtaConfig,
     queryKey: OTA_CONFIG_QUERY_KEY,
@@ -69,6 +71,7 @@ export default function SignInScreen() {
   }, []);
 
   const finishSignIn = () => {
+    void triggerPushPrompt("signIn");
     router.replace(getInitialRoute(true));
   };
 

@@ -9,6 +9,7 @@ import { useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useCSSVariable } from "uniwind";
 
+import { PushPermissionSheet } from "@/components/notifications/push-permission-sheet";
 import { VersionGate } from "@/components/version-gate";
 import { AnalyticsProvider } from "@/lib/analytics-provider";
 import { ApiProvider } from "@/lib/api";
@@ -77,6 +78,7 @@ function RootNavigator() {
           <Stack.Screen name="sign-in" options={{ presentation: "modal", title: "Sign in" }} />
         </Stack.Protected>
       </Stack>
+      <PushPermissionSheet />
     </>
   );
 }
