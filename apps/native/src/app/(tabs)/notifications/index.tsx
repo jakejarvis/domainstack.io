@@ -1,5 +1,6 @@
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { FlashList } from "@shopify/flash-list";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
 import { router } from "expo-router";
 import { memo, useCallback, useState } from "react";
@@ -10,15 +11,20 @@ import { Button } from "@/components/button";
 import { EmptyState } from "@/components/empty-state";
 import { GlassCard } from "@/components/glass-card";
 import { HeaderMenu } from "@/components/header-menu";
+import { NotificationListSkeleton } from "@/components/notifications/notification-card-skeleton";
 import { RefreshControl } from "@/components/refresh-control";
 import { Screen } from "@/components/screen";
 import { SegmentedControl } from "@/components/segmented-control";
 import { SkeletonRows } from "@/components/skeleton";
+import { Spinner } from "@/components/spinner";
 import { MutedText, Text } from "@/components/text";
 import { useTRPC } from "@/lib/api";
 import { authClient } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
+import { useCSSVariable } from "@/tw";
 import type { AppRouter } from "@domainstack/api";
+
+const PAGE_SIZE = 20;
 
 type NotificationItem = inferRouterOutputs<AppRouter>["notifications"]["list"]["items"][number];
 type NotificationFilter = "all" | "unread" | "read";
@@ -66,9 +72,13 @@ function NotificationsList() {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<NotificationFilter>("unread");
   const [refreshing, setRefreshing] = useState(false);
+  const mutedIconColor = useCSSVariable("--color-text-secondary");
 
-  const notifications = useQuery(
-    trpc.notifications.list.queryOptions({ cursor: undefined, filter, limit: 50 }),
+  const notifications = useInfiniteQuery(
+    trpc.notifications.list.infiniteQueryOptions(
+      { filter, limit: PAGE_SIZE },
+      { getNextPageParam: (lastPage) => lastPage.nextCursor },
+    ),
   );
   const unread = useQuery(trpc.notifications.unreadCount.queryOptions());
 
@@ -109,6 +119,11 @@ function NotificationsList() {
     [markRead],
   );
 
+  const { fetchNextPage, hasNextPage, isFetchingNextPage } = notifications;
+  const handleEndReached = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
   const markReadPending = markRead.isPending;
 
   const renderItem = useCallback(
@@ -125,8 +140,9 @@ function NotificationsList() {
     [handleMarkRead, handleOpenDomain, markReadPending],
   );
 
-  const items = notifications.data?.items ?? [];
+  const items = notifications.data?.pages.flatMap((page) => page.items) ?? [];
   const unreadCount = unread.data ?? 0;
+  const isInitialLoading = notifications.isPending && !notifications.error;
 
   const listHeader = (
     <View className="gap-5 px-4 pt-3 pb-2">
@@ -144,12 +160,11 @@ function NotificationsList() {
         </Button>
       ) : null}
 
-      {notifications.isPending ? <SkeletonRows /> : null}
-
       {notifications.error ? (
         <EmptyState
           actionLabel="Retry"
           body={notifications.error.message}
+          icon={<MaterialIcons color={mutedIconColor} name="error-outline" size={48} />}
           onAction={() => void notifications.refetch()}
           title="Notifications did not load"
         />
@@ -157,25 +172,50 @@ function NotificationsList() {
     </View>
   );
 
-  const listEmpty =
-    !notifications.isPending && !notifications.error && items.length === 0 ? (
-      <View className="px-4 pb-8">
-        <EmptyState
-          body="Notifications you have not read yet will appear here."
-          title={filter === "read" ? "No archived notifications" : "No notifications"}
-        />
-      </View>
-    ) : null;
+  const listEmpty = isInitialLoading ? (
+    <View className="gap-3 px-4 pb-8">
+      <NotificationListSkeleton />
+    </View>
+  ) : !notifications.error && items.length === 0 ? (
+    <View className="px-4 pb-8">
+      <EmptyState
+        actionLabel="Browse portfolio"
+        body={
+          filter === "read"
+            ? "Notifications you have marked read will appear here."
+            : "You're all caught up. New domain, certificate, and provider changes will show up here."
+        }
+        icon={
+          <MaterialIcons
+            color={mutedIconColor}
+            name={filter === "read" ? "archive" : "celebration"}
+            size={48}
+          />
+        }
+        onAction={() => router.push("/(tabs)/domains")}
+        title={filter === "read" ? "No archived notifications" : "All caught up!"}
+      />
+    </View>
+  ) : null;
+
+  const listFooter = isFetchingNextPage ? (
+    <View className="items-center py-4">
+      <Spinner tone="muted" />
+    </View>
+  ) : null;
 
   return (
     <FlashList
       ListEmptyComponent={listEmpty}
+      ListFooterComponent={listFooter}
       ListHeaderComponent={listHeader}
       contentContainerStyle={{ paddingBottom: 32 }}
       contentInsetAdjustmentBehavior="automatic"
       data={items}
       keyExtractor={keyExtractor}
       keyboardShouldPersistTaps="handled"
+      onEndReached={handleEndReached}
+      onEndReachedThreshold={0.5}
       refreshControl={<RefreshControl onRefresh={handleRefresh} refreshing={refreshing} />}
       renderItem={renderItem}
     />
