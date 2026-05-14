@@ -1,5 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 
+import { HostingMap } from "@/components/domain/hosting-map";
 import { KeyValueGrid, type KeyValueItem } from "@/components/key-value-grid";
 import { ReportSection } from "@/components/report-section";
 import { MutedText } from "@/components/text";
@@ -53,6 +54,9 @@ export function HostingSection({ domain }: { domain: string }) {
   return (
     <ReportSection title="Hosting">
       <KeyValueGrid items={items} />
+      {hosting.geo?.lat != null && hosting.geo?.lon != null ? (
+        <HostingMap lat={hosting.geo.lat} lon={hosting.geo.lon} domain={domain} />
+      ) : null}
     </ReportSection>
   );
 }

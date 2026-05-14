@@ -71,7 +71,7 @@ const { providers: socialProviders, enabledProviders } = buildOAuthProviders({
       ? {
           clientId: process.env.APPLE_CLIENT_ID,
           clientSecret: process.env.APPLE_CLIENT_SECRET,
-          appBundleIdentifier: process.env.APPLE_APP_BUNDLE_IDENTIFIER ?? "io.domainstack.native",
+          appBundleIdentifier: process.env.APPLE_APP_BUNDLE_IDENTIFIER ?? "io.domainstack.app",
         }
       : undefined,
   github:

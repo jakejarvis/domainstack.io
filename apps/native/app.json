@@ -8,12 +8,17 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "bundleIdentifier": "io.domainstack.native",
+      "bundleIdentifier": "io.domainstack.app",
       "supportsTablet": true,
       "usesAppleSignIn": true
     },
     "android": {
-      "package": "io.domainstack.app"
+      "package": "io.domainstack.app",
+      "config": {
+        "googleMaps": {
+          "apiKey": "${EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_KEY}"
+        }
+      }
     },
     "plugins": [
       "expo-router",
@@ -28,7 +33,13 @@
         }
       ],
       "expo-image",
-      "expo-splash-screen"
+      "expo-splash-screen",
+      [
+        "expo-maps",
+        {
+          "requestLocationPermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
