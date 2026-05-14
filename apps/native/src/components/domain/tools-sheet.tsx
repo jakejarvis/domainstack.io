@@ -1,5 +1,6 @@
+import * as WebBrowser from "expo-web-browser";
 import { useRef } from "react";
-import { Linking, Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 
 import { AppBottomSheet, type AppBottomSheetRef } from "@/components/bottom-sheet";
 import { Button } from "@/components/button";
@@ -35,7 +36,10 @@ export function ToolsSheet({ domain }: { domain: string }) {
                 key={tool.name}
                 onPress={() => {
                   sheetRef.current?.dismiss();
-                  void Linking.openURL(tool.buildUrl(domain));
+                  void WebBrowser.openBrowserAsync(tool.buildUrl(domain), {
+                    dismissButtonStyle: "close",
+                    presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
+                  });
                 }}
               >
                 <Text className="font-semibold">{tool.name}</Text>

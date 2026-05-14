@@ -1,5 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Linking, Pressable, View } from "react-native";
+import * as Linking from "expo-linking";
+import { Pressable, View } from "react-native";
 
 import { MutedText, Text } from "@/components/text";
 import { analytics } from "@/lib/analytics";
