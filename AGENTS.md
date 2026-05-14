@@ -13,10 +13,13 @@ Do not proceed with commits until all four checks are clean.
 
 ## Commands
 
+All commands run from the **monorepo root** via Turborepo. Scope to a single app/package with `pnpm --filter <name> <script>` (e.g., `pnpm --filter @domainstack/web build`, `pnpm --filter @domainstack/native dev`).
+
 ### Development
-- `pnpm dev` — Start Next.js dev server at http://localhost:3000
-- `pnpm build` — Compile production bundle
-- `pnpm check-types` — Run `tsc --noEmit` for type diagnostics
+- `pnpm dev` — Start dev servers (Next.js at http://localhost:3000; runs all apps in parallel)
+- `pnpm --filter @domainstack/native dev` — Start the Expo dev server only
+- `pnpm build` — Compile production bundles
+- `pnpm check-types` — Run `tsc --noEmit` across the workspace
 
 ### Linting & Formatting
 - `pnpm lint` — Run oxlint lint
@@ -29,10 +32,16 @@ Do not proceed with commits until all four checks are clean.
 - `pnpm test:coverage` — Run tests with coverage report
 
 ### Database
-- `pnpm db:generate` — Generate Drizzle migrations
+- `pnpm db:generate` — Generate Drizzle migrations (in `packages/db`)
 - `pnpm db:push` — Push schema to database
 - `pnpm db:migrate` — Apply migrations
 - `pnpm db:studio` — Open Drizzle Studio
+
+### Native (iOS / Android)
+- `pnpm --filter @domainstack/native ios` — Build and launch on the iOS Simulator
+- `pnpm --filter @domainstack/native android` — Build and launch on the Android Emulator
+- `pnpm --filter @domainstack/native prebuild` — Regenerate the `ios/`/`android/` projects from `app.json`
+- EAS builds are triggered via the **EAS Build** GitHub Actions workflow (`.github/workflows/eas-build.yml`) or `eas build` from `apps/native`
 
 ## Code Style
 
@@ -48,20 +57,22 @@ Do not proceed with commits until all four checks are clean.
 - **Helpers/hooks:** camelCase named exports (`useUserSettings`)
 
 ### Imports
-- Use `@/...` path aliases for app-specific imports
-- Import shared UI components from `@domainstack/ui/*` (e.g., `@domainstack/ui/button`)
+- Use `@/...` path aliases for app-specific imports (resolves to `apps/web` or `apps/native`)
+- Import shared modules from their workspace package (e.g., `@domainstack/api`, `@domainstack/auth`, `@domainstack/db`, `@domainstack/ui/button`)
 - oxfmt auto-organizes imports on save
-- Client components must start with `"use client"`
+- Web client components must start with `"use client"`
+- Native screens use Expo Router; place files under `apps/native/src/app/`
 
 ### Types
-- Shared domain types in `@domainstack/types` package
+- Shared domain types in `@domainstack/types`
 - Enum const arrays (primitives) in `@domainstack/constants` (Drizzle pgEnums derive from these)
 - Do NOT use Zod for simple enums or internal database types
 - Import types from `@domainstack/types`
 
 ### Tailwind Classes
 - oxfmt enforces sorted Tailwind classes via `useSortedClasses` rule
-- Use `cn()` from `@domainstack/ui/utils` for conditional classes
+- Web: use `cn()` from `@domainstack/ui/utils` for conditional classes
+- Native: use `cn()` from `@/lib/cn` (wraps `tailwind-merge` for Uniwind); styling is via [Uniwind](https://uniwind.dev) (Tailwind CSS v4 for React Native)
 
 ## Web Interface Guidelines
 
@@ -215,10 +226,31 @@ Concise rules for building accessible, fast, delightful UIs. Use MUST/SHOULD/NEV
 - SHOULD: Match browser UI to bg
 - SHOULD: Avoid gradient banding (use masks when needed)
 
+## Native App Guidelines
+
+The native app (`apps/native`) shares the tRPC API, auth, types, and constants with the web app. Treat it as a first-class consumer of the same backend.
+
+### Architecture
+- **Expo Router** with typed routes under `apps/native/src/app/`
+- **tRPC client** wired up in `apps/native/src/lib/api.tsx`, reusing `AppRouter` from `@domainstack/api`
+- **Auth** via `@domainstack/auth/client` with `expo-secure-store` token persistence; native Apple Sign-In and Google Sign-In are supported
+- **Push notifications** via `expo-notifications`; device tokens are persisted server-side (`packages/db/src/queries/push-devices.ts`) and dispatched from notification workflows
+- **Local UI state** uses Zustand stores in `apps/native/src/lib/stores/` (persisted to AsyncStorage where appropriate)
+- **Styling** uses [Uniwind](https://uniwind.dev) (Tailwind CSS v4 for React Native) with the shared `global.css`
+
+### Conventions
+- Wrap string children in `<Text>` — React Native does not auto-wrap text in `<Button>`, `<Badge>`, etc.
+- Prefer `<Link>` + `expo-router` over imperative `router.push` for navigation that should support long-press previews and native context menus
+- Use `expo-image` for remote images; cache prefetched icons via `apps/native/src/lib/image-cache.ts`
+- Use `@shopify/flash-list` for any list >20 items
+- Use the `Screen` component (`apps/native/src/components/screen.tsx`) for pull-to-refresh and safe-area handling
+- Toasts go through the unified utility in `apps/native/src/lib/toast.ts` (backed by `burnt`) — never call `Alert.alert` directly
+- Confirmation dialogs use `nativeConfirm` from `apps/native/src/lib/native-confirm.ts`
+
 ## Error Handling
 
 ### Workflow Steps
-Use `lib/workflow/errors.ts` utilities for proper error classification:
+Use `apps/web/lib/workflow/errors.ts` utilities for proper error classification:
 ```typescript
 import { classifyFetchError, withFetchErrorHandling } from "@/lib/workflow";
 
@@ -257,9 +289,9 @@ throw new TRPCError({ code: "NOT_FOUND", message: "Domain not found" });
 ```
 
 ### Rate Limiting
-Use Upstash Redis for rate limiting via the `withRateLimit` middleware:
+Use Upstash Redis for rate limiting via the `withRateLimit` middleware exported from `@domainstack/api`:
 ```typescript
-import { publicProcedure, withRateLimit } from "@/trpc/init";
+import { publicProcedure, withRateLimit } from "@domainstack/api";
 
 export const myRouter = createTRPCRouter({
   expensiveOperation: publicProcedure
@@ -274,7 +306,8 @@ export const myRouter = createTRPCRouter({
 - Middleware uses user ID for authenticated requests, IP for anonymous
 - Each procedure gets its own bucket (keyed by procedure path)
 - On limit exceeded: throws `TOO_MANY_REQUESTS` with retry timing
-- Client-side: `rateLimitLink` in tRPC client shows toasts automatically
+- Web client: `rateLimitLink` in tRPC client shows toasts automatically
+- Native client: tRPC errors surface via the shared toast utility
 - For API routes, use `checkRateLimit()` from `@/lib/ratelimit/api`
 
 ## Logging
@@ -288,19 +321,20 @@ logger.info({ domain: "example.com", count: 5 }, "resolution complete");
 logger.error({ err: error, domain: "example.com" }, "failed to resolve");
 ```
 
-Client-side: Use `analytics.trackException(error, context)` for errors.
+Client-side (web & native): Use `analytics.trackException(error, context)` for errors.
 
 ## Testing Patterns
 
 ### File Organization
 - Node tests: `**/*.test.ts` (run in Node environment)
 - Browser tests: `**/*.test.tsx` (run in Playwright browser)
+- Native tests: `**/*.test.ts` under `apps/native/` (run via Vitest with the config in `apps/native/vitest.config.ts`)
 - Tests live next to the code they test
 
 ### Mocking
 - Analytics and logger are globally mocked in `vitest.setup.node.ts`
 - Use `vi.hoisted` for ESM module mocks
-- Use PGlite (`@/lib/db/pglite`) for isolated database testing
+- Use PGlite (`@domainstack/db/testing`) for isolated database testing
 - Mock `@vercel/blob` for storage tests
 
 ### Example Test
@@ -322,35 +356,50 @@ This is a **Turborepo monorepo** with the following structure:
 ```
 domainstack.io/
 ├── apps/
-│   └── web/                    # Next.js application (@domainstack/web)
-│       ├── app/                # Next.js App Router
-│       ├── components/         # App-specific components
-│       │   └── ui/             # App-specific UI wrappers (Next.js-aware)
-│       ├── hooks/              # App-specific React hooks
-│       ├── lib/                # Domain utilities and shared modules
-│       │   ├── db/             # Drizzle schema and repository layer
-│       │   └── workflow/       # Workflow utilities (deduplication, SWR, errors)
-│       ├── server/routers/     # tRPC router definitions
-│       ├── workflows/          # Vercel Workflow definitions
-│       ├── emails/             # React Email templates
-│       └── trpc/               # tRPC client setup
+│   ├── web/                    # Next.js application (@domainstack/web)
+│   │   ├── app/                # Next.js App Router
+│   │   ├── components/         # App-specific components
+│   │   │   └── ui/             # App-specific UI wrappers (Next.js-aware)
+│   │   ├── hooks/              # App-specific React hooks
+│   │   ├── lib/                # Domain utilities and shared modules
+│   │   │   └── workflow/       # Workflow utilities (deduplication, SWR, errors)
+│   │   ├── server/routers/     # Web-only tRPC routers (most live in @domainstack/api)
+│   │   ├── workflows/          # Vercel Workflow definitions
+│   │   └── trpc/               # tRPC client setup
+│   └── native/                 # Expo / React Native app (@domainstack/native)
+│       ├── app.json            # Expo config (bundle IDs, plugins, permissions)
+│       ├── eas.json            # EAS Build / Submit profiles
+│       └── src/
+│           ├── app/            # Expo Router routes (tabs, modals, settings)
+│           ├── components/     # Native UI components (incl. domain/, portfolio/, settings/)
+│           ├── hooks/          # Native React hooks
+│           └── lib/            # API client, auth, push, stores, toast, …
 ├── packages/
+│   ├── analytics/              # PostHog client/server (@domainstack/analytics)
+│   ├── api/                    # tRPC routers shared by web + native (@domainstack/api)
+│   ├── auth/                   # Better Auth server + client (@domainstack/auth)
+│   ├── blob/                   # Vercel Blob helpers (@domainstack/blob)
 │   ├── constants/              # Shared constants (@domainstack/constants)
+│   ├── db/                     # Drizzle schema, migrations, queries (@domainstack/db)
+│   │   ├── drizzle/            # Generated SQL migrations
 │   │   └── src/
-│   │       ├── primitives/     # Enum arrays (DNS types, plans, providers, etc.)
-│   │       ├── cache/          # TTL constants
-│   │       └── validation/     # Domain validation constants
+│   │       ├── queries/        # Repository functions
+│   │       └── schema.ts       # Drizzle schema
+│   ├── email/                  # React Email templates + Resend (@domainstack/email)
+│   ├── image/                  # Image processing helpers (@domainstack/image)
+│   ├── logger/                 # Pino logger (@domainstack/logger)
+│   ├── polar/                  # Polar subscriptions client (@domainstack/polar)
+│   ├── redis/                  # Upstash Redis + rate limiting (@domainstack/redis)
+│   ├── safe-fetch/             # SSRF-safe fetch wrapper (@domainstack/safe-fetch)
+│   ├── screenshot/             # Server-side screenshot pipeline (@domainstack/screenshot)
+│   ├── server/                 # Domain intelligence services (@domainstack/server)
 │   ├── types/                  # Shared TypeScript types (@domainstack/types)
-│   │   └── src/
-│   │       └── domain/         # Domain-related types (DNS, certs, headers, etc.)
-│   ├── ui/                     # Shared UI component library (@domainstack/ui)
-│   │   └── src/
-│   │       ├── components/     # Framework-agnostic UI primitives
-│   │       ├── hooks/          # Shared React hooks
-│   │       └── lib/            # Utilities (cn, etc.)
+│   ├── ui/                     # Shared web UI library (@domainstack/ui)
+│   ├── utils/                  # Framework-agnostic utilities (@domainstack/utils)
 │   └── typescript-config/      # Shared TypeScript configs (@domainstack/typescript-config)
+├── .github/workflows/eas-build.yml  # Manual EAS Build trigger for the native app
 ├── turbo.json                  # Turborepo task configuration
-├── pnpm-workspace.yaml         # pnpm workspace definition
+├── pnpm-workspace.yaml         # pnpm workspace + catalog definitions
 └── package.json                # Root workspace config
 ```
 
@@ -369,7 +418,27 @@ import { DNS_RECORD_TYPES, PLANS, REPOSITORY_SLUG } from "@domainstack/constants
 import type { DnsRecord, RegistrationResponse, Certificate } from "@domainstack/types";
 ```
 
-**UI Components** (`@domainstack/ui`):
+**Database** (`@domainstack/db`):
+```typescript
+import { db } from "@domainstack/db/client";
+import { getCachedRegistration, getCachedDns } from "@domainstack/db/queries";
+import { trackedDomains } from "@domainstack/db/schema";
+```
+
+**API / tRPC** (`@domainstack/api`):
+```typescript
+import type { AppRouter } from "@domainstack/api";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  protectedProcedure,
+  withRateLimit,
+} from "@domainstack/api";
+```
+
+Middleware can also be imported from the dedicated entry: `@domainstack/api/middleware`.
+
+**UI Components** (`@domainstack/ui`, web only):
 ```typescript
 import { Button } from "@domainstack/ui/button";
 import { Card, CardHeader, CardContent } from "@domainstack/ui/card";
@@ -377,15 +446,16 @@ import { cn } from "@domainstack/ui/utils";
 import { useMediaQuery } from "@domainstack/ui/hooks";
 ```
 
-**App-specific wrappers** (in `apps/web/components/ui/`):
-- `sonner.tsx` — Configures toast notifications with theme support
+**App-specific wrappers**:
+- Web (`apps/web/components/ui/`): `sonner.tsx` configures toast notifications with theme support
+- Native (`apps/native/src/components/`): primitives like `button.tsx`, `text.tsx`, `badge.tsx` wrap React Native + Uniwind
 
 ## Key Patterns
 
 ### SWR Caching
-Repository functions return `CacheResult<T>` with staleness metadata:
+Repository functions in `@domainstack/db/queries` return `CacheResult<T>` with staleness metadata:
 ```typescript
-const { data, stale } = await getRegistration("example.com");
+const { data, stale } = await getCachedRegistration("example.com");
 if (stale) {
   // Trigger background revalidation
 }
@@ -409,7 +479,7 @@ const { result, deduplicated, source } = await startWithDeduplication(
 
 ### Protected tRPC Procedures
 ```typescript
-import { protectedProcedure } from "@/trpc/init";
+import { createTRPCRouter, protectedProcedure } from "@domainstack/api";
 
 export const myRouter = createTRPCRouter({
   myProcedure: protectedProcedure.mutation(async ({ ctx }) => {
@@ -435,10 +505,12 @@ const mutation = useMutation({
 });
 ```
 
+On native, prefer the centralized `useDashboardMutations` hook (`apps/native/src/hooks/use-dashboard-mutations.ts`) so cache updates stay consistent across screens.
+
 ### Suspense with TanStack Query
 
 Use `useSuspenseQuery` for declarative data fetching with React Suspense boundaries.
-Exemplar: `components/domain/report-client.tsx`
+Exemplar: `apps/web/components/domain/report-client.tsx`
 
 **When to use Suspense:**
 - Simple read-only queries without `enabled` flag
@@ -483,25 +555,25 @@ function MyComponent() {
 ```
 
 **Error boundaries:**
-- Use `SectionErrorBoundary` for domain report sections
-- Use `SettingsErrorBoundary` for settings panels
+- Use `SectionErrorBoundary` for domain report sections (both web and native)
+- Use `SettingsErrorBoundary` for settings panels (web)
 - Create context-specific boundaries with `CreateIssueButton` for error reporting
 
 **Skeleton requirements:**
 - MUST mirror final content layout to prevent CLS
-- Export skeleton components for reuse (e.g., `CalendarInstructionsSkeleton`)
+- Export skeleton components for reuse (e.g., `CalendarInstructionsSkeleton`, `ReportSectionSkeleton`)
 
 ## AI Chat
 
-The AI chat assistant (`components/chat/`) provides natural language domain lookups using Vercel's Workflow SDK.
+The AI chat assistant (`apps/web/components/chat/`) provides natural language domain lookups using Vercel's Workflow SDK.
 
 ### Architecture
 - **Client**: `useDomainChat` hook with session persistence via localStorage
 - **API**: `POST /api/chat` starts workflow, returns streaming response
-- **Workflow**: `workflows/chat/workflow.ts` uses `DurableAgent` for durable tool execution
-- **Tools**: `workflows/chat/tools.ts` defines domain lookup tools (WHOIS, DNS, SSL, etc.)
+- **Workflow**: `apps/web/workflows/chat/workflow.ts` uses `DurableAgent` for durable tool execution
+- **Tools**: `apps/web/workflows/chat/tools.ts` defines domain lookup tools (WHOIS, DNS, SSL, etc.)
 
-### Constants (`lib/constants/ai.ts`)
+### Constants (`apps/web/lib/constants/ai.ts`)
 All chat limits are centralized for client/server consistency.
 
 ### Rate Limits
@@ -514,6 +586,6 @@ Differentiated by auth status and endpoint.
 4. **System prompt defense**: Refuses off-topic questions, ignores override attempts
 
 ### Adding New Tools
-1. Define tool in `workflows/chat/tools.ts` using `createDomainToolset()`
-2. Add human-readable title in `components/chat/utils.ts` (`TOOL_TITLES`)
+1. Define tool in `apps/web/workflows/chat/tools.ts` using `createDomainToolset()`
+2. Add human-readable title in `apps/web/components/chat/utils.ts` (`TOOL_TITLES`)
 3. Tools call tRPC procedures which have their own rate limits
