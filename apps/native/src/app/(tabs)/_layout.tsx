@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { useCSSVariable } from "uniwind";
 
+import { useSelectionMode } from "@/hooks/use-portfolio-selection";
 import { useTRPC } from "@/lib/api";
 import { authClient } from "@/lib/auth";
 
@@ -24,10 +25,12 @@ export default function TabsLayout() {
     trpc.notifications.unreadCount.queryOptions(undefined, { enabled: isSignedIn }),
   );
   const unreadBadge = formatBadge(unreadQuery.data ?? 0);
+  const selectionMode = useSelectionMode();
 
   return (
     <NativeTabs
       backgroundColor={surface}
+      hidden={selectionMode === "selecting"}
       iconColor={{ default: textMuted, selected: accent }}
       labelStyle={{
         default: { color: textMuted },

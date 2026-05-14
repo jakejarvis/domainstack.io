@@ -15,10 +15,15 @@ const NOW = new Date("2026-06-01T00:00:00.000Z").getTime();
 function makeDomain(overrides: Partial<PortfolioDomain> & { id: string }): PortfolioDomain {
   return {
     archivedAt: null,
+    ca: null,
     createdAt: "2026-01-01T00:00:00.000Z",
+    dns: null,
     domainName: "example.com",
+    email: null,
     expirationDate: "2027-06-01T00:00:00.000Z",
+    hosting: null,
     muted: false,
+    registrar: null,
     verified: true,
     ...overrides,
   };

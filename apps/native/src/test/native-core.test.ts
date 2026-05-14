@@ -17,19 +17,29 @@ import { buildTrpcHeaders } from "@/lib/trpc-headers";
 
 const domains: PortfolioDomain[] = [
   {
+    ca: null,
     createdAt: "2026-01-01T00:00:00.000Z",
+    dns: null,
     domainName: "zeta.com",
+    email: null,
     expirationDate: "2026-12-01T00:00:00.000Z",
+    hosting: null,
     id: "1",
     muted: false,
+    registrar: null,
     verified: true,
   },
   {
+    ca: null,
     createdAt: "2026-02-01T00:00:00.000Z",
+    dns: null,
     domainName: "alpha.com",
+    email: null,
     expirationDate: "2026-06-01T00:00:00.000Z",
+    hosting: null,
     id: "2",
     muted: true,
+    registrar: null,
     verified: false,
   },
 ];
