@@ -27,6 +27,10 @@ export function buildGoogleSignInConfig(
 export async function getGoogleIdentityToken(
   config: GoogleNativeAuthConfig,
 ): Promise<string | null> {
+  // TODO: thread a SHA256 nonce through to Google sign-in once we move off the
+  // free tier of @react-native-google-signin/google-signin — its `signIn`
+  // params don't accept `nonce` in 16.x (it's a paid-tier feature). Apple's
+  // path uses a hashed nonce; this one is currently nonce-less.
   const [{ Platform }, { GoogleSignin, isSuccessResponse }] = await Promise.all([
     import("react-native"),
     import("@react-native-google-signin/google-signin"),

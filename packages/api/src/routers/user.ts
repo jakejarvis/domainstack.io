@@ -23,8 +23,14 @@ import {
 import { PRO_TIER_INFO } from "@domainstack/polar/products";
 import { polarClient } from "@domainstack/polar/server";
 
+import { withRateLimit } from "../middleware";
 import { protectedProcedure } from "../procedures";
 import { createTRPCRouter } from "../trpc";
+
+const ExpoPushTokenSchema = z
+  .string()
+  .min(1)
+  .regex(/^(?:Exponent|Expo)PushToken\[[^\]]+\]$/, "Invalid Expo push token format");
 
 const NotificationChannelsSchema = z.object({
   inApp: z.boolean(),
@@ -104,9 +110,11 @@ export const userRouter = createTRPCRouter({
   getPushDevices: protectedProcedure.query(async ({ ctx }) => getPushDevicesForUser(ctx.user.id)),
 
   registerPushDevice: protectedProcedure
+    .use(withRateLimit)
+    .meta({ rateLimit: { requests: 10, window: "1 m" } })
     .input(
       z.object({
-        expoPushToken: z.string().min(1),
+        expoPushToken: ExpoPushTokenSchema,
         platform: z.enum(["ios", "android"]),
         deviceName: z.string().min(1).max(120).optional(),
         appVersion: z.string().min(1).max(80).optional(),
@@ -127,9 +135,11 @@ export const userRouter = createTRPCRouter({
     }),
 
   setPushDeviceEnabled: protectedProcedure
+    .use(withRateLimit)
+    .meta({ rateLimit: { requests: 10, window: "1 m" } })
     .input(
       z.object({
-        expoPushToken: z.string().min(1),
+        expoPushToken: ExpoPushTokenSchema,
         enabled: z.boolean(),
       }),
     )
@@ -153,7 +163,9 @@ export const userRouter = createTRPCRouter({
     }),
 
   unregisterPushDevice: protectedProcedure
-    .input(z.object({ expoPushToken: z.string().min(1) }))
+    .use(withRateLimit)
+    .meta({ rateLimit: { requests: 10, window: "1 m" } })
+    .input(z.object({ expoPushToken: ExpoPushTokenSchema }))
     .mutation(async ({ ctx, input }) => {
       const deleted = await unregisterPushDevice(ctx.user.id, input.expoPushToken);
 

@@ -64,8 +64,10 @@ export function UserMenu() {
           },
         },
       });
-    } catch {
-      // Sign-out failure is rare; user sees they're still logged in
+    } catch (error) {
+      analytics.trackException(error instanceof Error ? error : new Error(String(error)), {
+        action: "sign_out",
+      });
     }
   };
 

@@ -79,7 +79,7 @@ export async function markReceiptsProcessed(updates: ReceiptProcessingUpdate[]) 
   await db
     .update(pushReceipts)
     .set({ processedAt: now, errorCode: errorExpression })
-    .where(inArray(pushReceipts.ticketId, ticketIds));
+    .where(and(inArray(pushReceipts.ticketId, ticketIds), isNull(pushReceipts.processedAt)));
 }
 
 export async function expireStaleReceipts(): Promise<number> {

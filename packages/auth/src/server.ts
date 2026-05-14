@@ -24,9 +24,11 @@ import { polarClient } from "@domainstack/polar/server";
 import { getRedis } from "@domainstack/redis";
 import { getNativeAppConfig } from "@domainstack/server/edge-config";
 
+import { decodeApplePrivateKey, generateAppleClientSecret } from "./apple-client-secret";
 import { otaConfig } from "./ota-config";
 import { buildOAuthProviders, validateOAuthCredentialPair } from "./providers";
 import { createRedisStorage } from "./storage";
+import type { OAuthCredentials } from "./types";
 
 const logger = createLogger({ source: "auth" });
 
@@ -63,18 +65,38 @@ validateOAuthCredentialPair(
   process.env.VERCEL_CLIENT_ID,
   process.env.VERCEL_CLIENT_SECRET,
 );
-validateOAuthCredentialPair("APPLE", process.env.APPLE_CLIENT_ID, process.env.APPLE_CLIENT_SECRET);
+// Apple's "client secret" is a short-lived JWT signed with the .p8 key — we
+// regenerate it on every cold start so it never needs manual rotation.
+async function buildAppleCredentials(): Promise<OAuthCredentials | undefined> {
+  const clientId = process.env.APPLE_CLIENT_ID;
+  if (!clientId) return undefined;
+
+  const teamId = process.env.APPLE_TEAM_ID;
+  const keyId = process.env.APPLE_KEY_ID;
+  const privateKeyBase64 = process.env.APPLE_PRIVATE_KEY_BASE64;
+  const appBundleIdentifier = process.env.APPLE_APP_BUNDLE_IDENTIFIER;
+
+  if (!teamId || !keyId || !privateKeyBase64 || !appBundleIdentifier) {
+    throw new Error(
+      "Apple sign-in requires APPLE_TEAM_ID, APPLE_KEY_ID, APPLE_PRIVATE_KEY_BASE64, and APPLE_APP_BUNDLE_IDENTIFIER when APPLE_CLIENT_ID is set",
+    );
+  }
+
+  const clientSecret = await generateAppleClientSecret({
+    teamId,
+    keyId,
+    clientId,
+    privateKey: decodeApplePrivateKey(privateKeyBase64),
+  });
+
+  return { clientId, clientSecret, appBundleIdentifier };
+}
+
+const appleCredentials = await buildAppleCredentials();
 
 // Build OAuth providers from env vars
 const { providers: socialProviders, enabledProviders } = buildOAuthProviders({
-  apple:
-    process.env.APPLE_CLIENT_ID && process.env.APPLE_CLIENT_SECRET
-      ? {
-          clientId: process.env.APPLE_CLIENT_ID,
-          clientSecret: process.env.APPLE_CLIENT_SECRET,
-          appBundleIdentifier: process.env.APPLE_APP_BUNDLE_IDENTIFIER ?? "io.domainstack.app",
-        }
-      : undefined,
+  apple: appleCredentials,
   github:
     process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
       ? {

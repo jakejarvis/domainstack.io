@@ -109,7 +109,7 @@ export default function SignInScreen() {
     setLoadingProvider("apple");
 
     try {
-      const nonce = await createAuthNonce();
+      const { hashed: nonce } = await createAuthNonce();
       const credential = await AppleAuthentication.signInAsync({
         nonce,
         requestedScopes: [

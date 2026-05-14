@@ -133,92 +133,99 @@ export function createTrackingRouter(deps: TrackingRouterDeps) {
      * Returns the verification token (instructions are generated client-side).
      * If the domain is already being tracked but unverified, returns the existing record.
      */
-    addDomain: protectedProcedure.input(DomainInputSchema).mutation(async ({ ctx, input }) => {
-      const { domain } = input;
+    addDomain: protectedProcedure
+      .use(withRateLimit)
+      .meta({ rateLimit: { requests: 10, window: "1 m" } })
+      .input(DomainInputSchema)
+      .mutation(async ({ ctx, input }) => {
+        const { domain } = input;
 
-      // Ensure domain record exists in DB
-      const domainRecord = await ensureDomainRecord(domain);
+        // Ensure domain record exists in DB
+        const domainRecord = await ensureDomainRecord(domain);
 
-      // Check if already tracking this domain
-      const existing = await findTrackedDomain(ctx.user.id, domainRecord.id);
+        // Check if already tracking this domain
+        const existing = await findTrackedDomain(ctx.user.id, domainRecord.id);
 
-      if (existing) {
-        // If already verified, don't allow re-adding
-        if (existing.verified) {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message: "You are already tracking this domain",
-          });
-        }
+        if (existing) {
+          // If already verified, don't allow re-adding
+          if (existing.verified) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "You are already tracking this domain",
+            });
+          }
 
-        // If unverified, return the existing record so user can resume verification
-        return {
-          id: existing.id,
-          domain,
-          verificationToken: existing.verificationToken,
-          resumed: true, // Flag to indicate this is resuming verification
-        };
-      }
-
-      // Get user's subscription to know their limit
-      const sub = await getUserSubscription(ctx.user.id);
-
-      // Generate verification token
-      const verificationToken = generateVerificationToken();
-
-      // Create tracked domain with atomic limit check (prevents race conditions)
-      const result = await createTrackedDomainWithLimitCheck({
-        userId: ctx.user.id,
-        domainId: domainRecord.id,
-        verificationToken,
-        maxDomains: sub.planQuota,
-      });
-
-      // Handle different failure cases
-      if (!result.success) {
-        if (result.reason === "limit_exceeded") {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "You have reached your domain tracking limit. Upgrade to add more domains.",
-          });
-        }
-
-        // "already_exists" - race condition where another request created it first
-        const raceExisting = await findTrackedDomain(ctx.user.id, domainRecord.id);
-        if (raceExisting) {
+          // If unverified, return the existing record so user can resume verification
           return {
-            id: raceExisting.id,
+            id: existing.id,
             domain,
-            verificationToken: raceExisting.verificationToken,
-            resumed: true,
+            verificationToken: existing.verificationToken,
+            resumed: true, // Flag to indicate this is resuming verification
           };
         }
 
-        // This shouldn't happen, but guard against it
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create tracked domain",
+        // Get user's subscription to know their limit
+        const sub = await getUserSubscription(ctx.user.id);
+
+        // Generate verification token
+        const verificationToken = generateVerificationToken();
+
+        // Create tracked domain with atomic limit check (prevents race conditions)
+        const result = await createTrackedDomainWithLimitCheck({
+          userId: ctx.user.id,
+          domainId: domainRecord.id,
+          verificationToken,
+          maxDomains: sub.planQuota,
         });
-      }
 
-      const tracked = result.trackedDomain;
+        // Handle different failure cases
+        if (!result.success) {
+          if (result.reason === "limit_exceeded") {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "You have reached your domain tracking limit. Upgrade to add more domains.",
+            });
+          }
 
-      // Trigger auto-verification workflow in the background
-      // The workflow handles a 30-day retry schedule with increasing delays.
-      void deps.startAutoVerify({ trackedDomainId: tracked.id }).catch((err: unknown) => {
-        // Log but don't fail the request - user can still manually verify
-        logger.error({ err, trackedDomainId: tracked.id }, "failed to start auto-verify workflow");
-      });
+          // "already_exists" - race condition where another request created it first
+          const raceExisting = await findTrackedDomain(ctx.user.id, domainRecord.id);
+          if (raceExisting) {
+            return {
+              id: raceExisting.id,
+              domain,
+              verificationToken: raceExisting.verificationToken,
+              resumed: true,
+            };
+          }
 
-      analytics.track("domain_added", { domain, resumed: false }, ctx.user.id);
+          // This shouldn't happen, but guard against it
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create tracked domain",
+          });
+        }
 
-      return {
-        id: tracked.id,
-        domain,
-        verificationToken,
-        resumed: false,
-      };
-    }),
+        const tracked = result.trackedDomain;
+
+        // Trigger auto-verification workflow in the background
+        // The workflow handles a 30-day retry schedule with increasing delays.
+        void deps.startAutoVerify({ trackedDomainId: tracked.id }).catch((err: unknown) => {
+          // Log but don't fail the request - user can still manually verify
+          logger.error(
+            { err, trackedDomainId: tracked.id },
+            "failed to start auto-verify workflow",
+          );
+        });
+
+        analytics.track("domain_added", { domain, resumed: false }, ctx.user.id);
+
+        return {
+          id: tracked.id,
+          domain,
+          verificationToken,
+          resumed: false,
+        };
+      }),
 
     /**
      * Verify domain ownership.

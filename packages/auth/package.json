@@ -15,7 +15,6 @@
     "./server": "./src/server.ts",
     "./errors": "./src/errors.ts",
     "./storage": "./src/storage.ts",
-    "./config": "./src/config.ts",
     "./providers": "./src/providers.ts",
     "./types": "./src/types.ts"
   },
@@ -28,7 +27,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@better-auth/expo": "^1.6.11",
+    "@better-auth/expo": "1.6.11",
     "@better-auth/infra": "^0.2.8",
     "@domainstack/db": "workspace:*",
     "@domainstack/email": "workspace:*",
@@ -36,7 +35,8 @@
     "@domainstack/polar": "workspace:*",
     "@domainstack/redis": "workspace:*",
     "@domainstack/server": "workspace:*",
-    "better-auth": "1.6.11"
+    "better-auth": "1.6.11",
+    "jose": "^6.2.3"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",

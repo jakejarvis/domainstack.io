@@ -82,18 +82,6 @@ function DomainReportContent({ domain, section }: { domain: string; section?: Re
   const registrationQuery = useQuery(trpc.domain.getRegistration.queryOptions({ domain }));
   const isUnregistered = registrationQuery.data?.data?.isRegistered === false;
 
-  // Kick off the five Suspense-gated section queries in parallel. Registration
-  // is already in-flight via the useQuery above (used here to gate the
-  // unregistered card), so prefetching it again would be redundant.
-  useEffect(() => {
-    const input = { domain };
-    void queryClient.prefetchQuery(trpc.domain.getHosting.queryOptions(input));
-    void queryClient.prefetchQuery(trpc.domain.getDnsRecords.queryOptions(input));
-    void queryClient.prefetchQuery(trpc.domain.getCertificates.queryOptions(input));
-    void queryClient.prefetchQuery(trpc.domain.getHeaders.queryOptions(input));
-    void queryClient.prefetchQuery(trpc.domain.getSeo.queryOptions(input));
-  }, [domain, queryClient, trpc]);
-
   useEffect(() => {
     analytics.track("report_viewed", { domain });
   }, [domain]);

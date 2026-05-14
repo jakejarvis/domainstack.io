@@ -24,6 +24,11 @@ export function usePushSoftPrompt() {
         return;
       }
 
+      // Pre-hydration the persisted handledTriggers list is empty; trusting it
+      // would falsely mark this trigger handled and suppress the prompt for the
+      // rest of the session. Caller can re-trigger after hydration finishes.
+      if (!store.hasHydrated) return;
+
       if (store.isTriggerHandled(context)) return;
       store.markTriggerHandled(context);
 

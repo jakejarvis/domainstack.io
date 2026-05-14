@@ -30,7 +30,7 @@ export type PushRegistrationResult =
   | { status: "denied" | "undetermined"; expoPushToken: null; deviceName: string | null };
 
 export function getPushPlatform(): "ios" | "android" {
-  return process.env.EXPO_OS === "android" ? "android" : "ios";
+  return Platform.OS === "android" ? "android" : "ios";
 }
 
 export async function requestExpoPushToken(): Promise<PushRegistrationResult> {

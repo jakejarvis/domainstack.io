@@ -18,6 +18,14 @@ export function useForegroundPushRefresh() {
   const isSignedIn = Boolean(session.data?.user);
   const lastRefreshRef = useRef(0);
 
+  // useMutation returns a new object each render, and `register` isn't guaranteed
+  // stable upstream. Stash both via refs so the effect re-installs the AppState
+  // listener only when sign-in state changes.
+  const registerRef = useRef(register);
+  registerRef.current = register;
+  const unregisterRef = useRef(unregisterDevice.mutateAsync);
+  unregisterRef.current = unregisterDevice.mutateAsync;
+
   useEffect(() => {
     if (!isSignedIn) return;
 
@@ -32,10 +40,10 @@ export function useForegroundPushRefresh() {
 
         if (status === "granted") {
           // Re-register: covers token rotation and re-grant-after-deny.
-          await register();
+          await registerRef.current();
         } else if (storedToken) {
           // Permission revoked at the OS level — clean up the now-dead row.
-          await unregisterDevice.mutateAsync({ expoPushToken: storedToken }).catch(() => undefined);
+          await unregisterRef.current({ expoPushToken: storedToken }).catch(() => undefined);
           usePushPromptStore.getState().setLastRegisteredToken(null);
         }
       } catch {
@@ -50,5 +58,5 @@ export function useForegroundPushRefresh() {
     });
 
     return () => subscription.remove();
-  }, [isSignedIn, register, unregisterDevice]);
+  }, [isSignedIn]);
 }

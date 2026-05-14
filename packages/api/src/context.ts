@@ -1,5 +1,9 @@
 import { ipAddress } from "@vercel/functions";
 
+import { createLogger } from "@domainstack/logger";
+
+const logger = createLogger({ source: "trpc/context" });
+
 export type Session = {
   user: { id: string; name: string; email: string };
 };
@@ -44,10 +48,10 @@ export async function createContext(opts: CreateContextOptions = {}): Promise<Co
           },
         };
       }
-    } catch (error) {
+    } catch (err) {
       // Log auth errors but don't crash - session remains null
       // This can happen if auth is misconfigured or database is unavailable
-      console.error("[tRPC context] Auth error:", error);
+      logger.error({ err }, "auth session lookup failed");
     }
   }
 

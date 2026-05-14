@@ -40,6 +40,11 @@ function RootNavigator() {
   }, [session.isPending, versionGateReady]);
 
   useEffect(() => {
+    // Wait for the session to settle — a cold-start tap that runs while
+    // `isSignedIn` is still false would otherwise route to /sign-in and the
+    // `clearLastNotificationResponse()` call would consume the payload.
+    if (session.isPending) return;
+
     const route = (data: Record<string, unknown>) => {
       const target = routeFromNotificationData(data);
       // Protected routes redirect to sign-in if there's no session; public routes
@@ -62,7 +67,7 @@ function RootNavigator() {
     }
 
     return () => subscription.remove();
-  }, [isSignedIn]);
+  }, [isSignedIn, session.isPending]);
 
   return (
     <>

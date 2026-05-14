@@ -13,6 +13,7 @@ interface PortfolioState {
   status: PortfolioStatusFilter;
   health: HealthBucket[];
   tlds: string[];
+  hasHydrated: boolean;
   selection: {
     mode: SelectionMode;
     ids: Set<string>;
@@ -43,6 +44,7 @@ const emptySelection: PortfolioState["selection"] = {
 export const usePortfolioStore = create<PortfolioStore>()(
   persist(
     (set) => ({
+      hasHydrated: false,
       health: [],
       query: "",
       selection: emptySelection,
@@ -105,6 +107,9 @@ export const usePortfolioStore = create<PortfolioStore>()(
       partialize: (state) => ({ sort: state.sort, status: state.status }),
       storage: createJSONStorage(() => AsyncStorage),
       version: 1,
+      onRehydrateStorage: () => () => {
+        usePortfolioStore.setState({ hasHydrated: true });
+      },
     },
   ),
 );

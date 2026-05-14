@@ -1,7 +1,7 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 import { db } from "../client";
-import { userPushDevices } from "../schema";
+import { pushReceipts, userPushDevices } from "../schema";
 
 export type PushDevicePlatform = "ios" | "android";
 
@@ -15,32 +15,53 @@ export interface RegisterPushDeviceParams {
 
 export async function registerPushDevice(params: RegisterPushDeviceParams) {
   const now = new Date();
-  const [device] = await db
-    .insert(userPushDevices)
-    .values({
-      userId: params.userId,
-      expoPushToken: params.expoPushToken,
-      platform: params.platform,
-      deviceName: params.deviceName ?? null,
-      appVersion: params.appVersion ?? null,
-      enabled: true,
-      lastSeenAt: now,
-    })
-    .onConflictDoUpdate({
-      target: userPushDevices.expoPushToken,
-      set: {
+  return await db.transaction(async (tx) => {
+    const [existing] = await tx
+      .select({ id: userPushDevices.id, userId: userPushDevices.userId })
+      .from(userPushDevices)
+      .where(eq(userPushDevices.expoPushToken, params.expoPushToken));
+
+    // Expo tokens are tied to (device, install). If a different user previously
+    // claimed this token, the device has changed hands — drop the stale row and
+    // its pending receipts so notifications can't leak across accounts.
+    if (existing && existing.userId !== params.userId) {
+      await tx
+        .delete(pushReceipts)
+        .where(
+          and(
+            eq(pushReceipts.expoPushToken, params.expoPushToken),
+            isNull(pushReceipts.processedAt),
+          ),
+        );
+      await tx.delete(userPushDevices).where(eq(userPushDevices.id, existing.id));
+    }
+
+    const [device] = await tx
+      .insert(userPushDevices)
+      .values({
         userId: params.userId,
+        expoPushToken: params.expoPushToken,
         platform: params.platform,
         deviceName: params.deviceName ?? null,
         appVersion: params.appVersion ?? null,
         enabled: true,
         lastSeenAt: now,
-        updatedAt: now,
-      },
-    })
-    .returning();
+      })
+      .onConflictDoUpdate({
+        target: userPushDevices.expoPushToken,
+        set: {
+          platform: params.platform,
+          deviceName: params.deviceName ?? null,
+          appVersion: params.appVersion ?? null,
+          enabled: true,
+          lastSeenAt: now,
+          updatedAt: now,
+        },
+      })
+      .returning();
 
-  return device;
+    return device;
+  });
 }
 
 export async function getPushDevicesForUser(userId: string) {
@@ -82,10 +103,11 @@ export async function unregisterPushDevice(userId: string, expoPushToken: string
 }
 
 export async function markPushDeviceSendSuccess(expoPushToken: string) {
+  // Preserve `enabled` state — a device the user explicitly disabled in settings
+  // shouldn't flip back on after a successful send.
   await db
     .update(userPushDevices)
     .set({
-      enabled: true,
       lastSuccessAt: new Date(),
       lastErrorAt: null,
       lastError: null,
@@ -95,15 +117,18 @@ export async function markPushDeviceSendSuccess(expoPushToken: string) {
 }
 
 export async function markPushDeviceSendError(expoPushToken: string, error: string) {
-  const updates = {
-    lastErrorAt: new Date(),
-    lastError: error,
-    updatedAt: new Date(),
-    ...(error === "DeviceNotRegistered" ? { enabled: false } : {}),
-  };
+  // DeviceNotRegistered means the token is permanently dead per Expo's API.
+  if (error === "DeviceNotRegistered") {
+    await db.delete(userPushDevices).where(eq(userPushDevices.expoPushToken, expoPushToken));
+    return;
+  }
 
   await db
     .update(userPushDevices)
-    .set(updates)
+    .set({
+      lastErrorAt: new Date(),
+      lastError: error,
+      updatedAt: new Date(),
+    })
     .where(eq(userPushDevices.expoPushToken, expoPushToken));
 }

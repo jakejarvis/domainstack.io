@@ -70,6 +70,7 @@ function PortfolioScreen() {
   const trpc = useTRPC();
   const navigation = useNavigation();
   const dashboard = useDashboardMutations();
+  const hasHydrated = usePortfolioStore((state) => state.hasHydrated);
   const query = usePortfolioStore((state) => state.query);
   const sort = usePortfolioStore((state) => state.sort);
   const status = usePortfolioStore((state) => state.status);
@@ -184,6 +185,9 @@ function PortfolioScreen() {
   const isSelecting = selectionMode === "selecting";
   const archivedCount = subscription?.archivedCount ?? 0;
   const filterCount = activeFilterCount({ health, status, tlds });
+  // Treat pre-hydration as loading so we don't flash a default-sorted list
+  // before AsyncStorage restores the user's persisted sort.
+  const isLoading = !hasHydrated || domainsQuery.isPending;
 
   const listHeader = (
     <View className="gap-4 px-4 pt-3 pb-2">
@@ -249,7 +253,7 @@ function PortfolioScreen() {
 
       <SegmentedControl onChange={setSort} options={sorts} value={sort} />
 
-      {domainsQuery.isPending ? <SkeletonRows /> : null}
+      {isLoading ? <SkeletonRows /> : null}
 
       {domainsQuery.error ? (
         <EmptyState
@@ -263,7 +267,7 @@ function PortfolioScreen() {
   );
 
   const listEmpty =
-    !domainsQuery.isPending && !domainsQuery.error ? (
+    !isLoading && !domainsQuery.error ? (
       <View className="px-4 pb-8">
         <EmptyState
           actionLabel={filterCount > 0 || query ? undefined : "Add domain"}
@@ -285,7 +289,7 @@ function PortfolioScreen() {
         ListHeaderComponent={listHeader}
         contentContainerStyle={{ paddingBottom: 32 }}
         contentInsetAdjustmentBehavior="automatic"
-        data={visibleDomains}
+        data={isLoading ? [] : visibleDomains}
         keyExtractor={keyExtractor}
         keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl onRefresh={handleRefresh} refreshing={refreshing} />}

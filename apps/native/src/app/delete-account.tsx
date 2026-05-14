@@ -1,3 +1,4 @@
+import { useMutation } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useEffect, useReducer, useRef } from "react";
 import { View } from "react-native";
@@ -7,7 +8,10 @@ import { Screen } from "@/components/screen";
 import { Spinner } from "@/components/spinner";
 import { MutedText, Text } from "@/components/text";
 import { analytics } from "@/lib/analytics";
+import { useTRPC } from "@/lib/api";
 import { deleteAccount } from "@/lib/auth";
+import { raceUnregister, resolveTokenToUnregister } from "@/lib/push-unregister";
+import { usePushPromptStore } from "@/lib/stores/push-prompt-store";
 
 type State = { status: "loading" } | { status: "success" } | { status: "error"; message: string };
 
@@ -29,6 +33,8 @@ function reducer(state: State, action: Action): State {
 export default function DeleteAccountScreen() {
   const [state, dispatch] = useReducer(reducer, { status: "loading" });
   const startedRef = useRef(false);
+  const trpc = useTRPC();
+  const unregisterDevice = useMutation(trpc.user.unregisterPushDevice.mutationOptions());
 
   useEffect(() => {
     if (startedRef.current && state.status !== "loading") return;
@@ -37,6 +43,14 @@ export default function DeleteAccountScreen() {
     void (async () => {
       analytics.track("delete_account_initiated");
       try {
+        // Unregister this device's push token before deletion so the server
+        // doesn't leave an orphan row referencing a soon-to-be-deleted user.
+        const token = await resolveTokenToUnregister();
+        if (token) {
+          await raceUnregister(unregisterDevice.mutateAsync({ expoPushToken: token }));
+        }
+        usePushPromptStore.getState().setLastRegisteredToken(null);
+
         const result = await deleteAccount();
         if (cancelled) return;
         if (result.error) {
@@ -58,7 +72,7 @@ export default function DeleteAccountScreen() {
     return () => {
       cancelled = true;
     };
-  }, [state.status]);
+  }, [state.status, unregisterDevice]);
 
   return (
     <Screen>
