@@ -35,6 +35,7 @@
     "@domainstack/logger": "workspace:*",
     "@domainstack/polar": "workspace:*",
     "@domainstack/redis": "workspace:*",
+    "@domainstack/server": "workspace:*",
     "better-auth": "1.6.11"
   },
   "devDependencies": {

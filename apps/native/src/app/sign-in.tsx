@@ -14,6 +14,7 @@ import { analytics } from "@/lib/analytics";
 import {
   type AuthProvider,
   getOtaConfig,
+  OTA_CONFIG_QUERY_KEY,
   signInWithAppleToken,
   signInWithGoogleToken,
   signInWithProvider,
@@ -24,8 +25,6 @@ import { getGoogleIdentityToken } from "@/lib/google-auth";
 import { getInitialRoute } from "@/lib/navigation";
 import { createAuthNonce } from "@/lib/nonce";
 import { toast } from "@/lib/toast";
-
-const OTA_CONFIG_QUERY_KEY = ["auth", "ota-config"] as const;
 
 function isAuthCanceled(error: unknown): boolean {
   return error instanceof Error && "code" in error && error.code === "ERR_REQUEST_CANCELED";

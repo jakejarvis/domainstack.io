@@ -9,6 +9,7 @@ import { Platform, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useCSSVariable } from "uniwind";
 
+import { VersionGate } from "@/components/version-gate";
 import { AnalyticsProvider } from "@/lib/analytics-provider";
 import { ApiProvider } from "@/lib/api";
 import { authClient } from "@/lib/auth";
@@ -62,6 +63,7 @@ function RootNavigator() {
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
         <Stack.Protected guard={isSignedIn}>
           <Stack.Screen name="settings" options={{ title: "Settings" }} />
         </Stack.Protected>
@@ -78,7 +80,9 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AnalyticsProvider>
         <ApiProvider>
-          <RootNavigator />
+          <VersionGate>
+            <RootNavigator />
+          </VersionGate>
         </ApiProvider>
       </AnalyticsProvider>
     </GestureHandlerRootView>

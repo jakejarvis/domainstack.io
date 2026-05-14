@@ -33,4 +33,8 @@ export function otaConfigClient() {
   } satisfies BetterAuthClientPlugin;
 }
 
-export type { OtaConfigAuthProvider, OtaConfigResponse } from "./ota-config-core";
+export type {
+  OtaConfigAuthProvider,
+  OtaConfigNativeApp,
+  OtaConfigResponse,
+} from "./ota-config-core";

@@ -11,6 +11,7 @@ import * as schema from "@domainstack/db/schema";
 import { addContact, removeContact, sendEmail } from "@domainstack/email";
 import DeleteAccountVerifyEmail from "@domainstack/email/templates/delete-account-verify";
 import { createLogger } from "@domainstack/logger";
+import { getNativeAppConfig } from "@domainstack/server/edge-config";
 import {
   getProductsForCheckout,
   handleSubscriptionActive,
@@ -246,7 +247,7 @@ export const auth = betterAuth({
         ]
       : []),
     dash(),
-    otaConfig({ enabledProviders }),
+    otaConfig({ enabledProviders, getNativeApp: getNativeAppConfig }),
     expo(),
     // must be last: https://www.better-auth.com/docs/integrations/next#server-action-cookies
     nextCookies(),

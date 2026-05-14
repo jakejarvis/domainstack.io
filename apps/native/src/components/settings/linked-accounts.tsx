@@ -10,12 +10,16 @@ import { ProviderIcon } from "@/components/provider-icon";
 import { MutedText, Text } from "@/components/text";
 import { analytics } from "@/lib/analytics";
 import { useTRPC } from "@/lib/api";
-import { type AuthProvider, getOtaConfig, linkProvider, unlinkProvider } from "@/lib/auth";
+import {
+  type AuthProvider,
+  getOtaConfig,
+  linkProvider,
+  OTA_CONFIG_QUERY_KEY,
+  unlinkProvider,
+} from "@/lib/auth";
 import { getEnabledNativeAuthProviders } from "@/lib/auth-providers";
 import { googleNativeConfig } from "@/lib/env";
 import { toast } from "@/lib/toast";
-
-const OTA_CONFIG_QUERY_KEY = ["auth", "ota-config"] as const;
 
 function isAuthCanceled(error: unknown): boolean {
   return error instanceof Error && "code" in error && error.code === "ERR_REQUEST_CANCELED";

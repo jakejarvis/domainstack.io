@@ -129,3 +129,50 @@ export async function getAiChatModel(): Promise<string | null> {
     return null;
   }
 }
+
+/** Configuration that drives the native app version gate. */
+export interface NativeAppConfig {
+  minVersion: string;
+  storeUrlIos: string;
+  storeUrlAndroid: string;
+  messageTitle?: string;
+  messageBody?: string;
+}
+
+function isNativeAppConfig(value: unknown): value is NativeAppConfig {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  if (typeof v.minVersion !== "string" || v.minVersion.length === 0) return false;
+  if (typeof v.storeUrlIos !== "string" || v.storeUrlIos.length === 0) return false;
+  if (typeof v.storeUrlAndroid !== "string" || v.storeUrlAndroid.length === 0) return false;
+  if (v.messageTitle !== undefined && typeof v.messageTitle !== "string") return false;
+  if (v.messageBody !== undefined && typeof v.messageBody !== "string") return false;
+  return true;
+}
+
+/**
+ * Fetches native app gating config from Vercel Edge Config.
+ *
+ * Returns null when Edge Config is not configured, the key is missing, or the
+ * payload fails validation. Callers should treat null as "no gate active".
+ *
+ * Edge Config key: `native_app_config`
+ */
+export async function getNativeAppConfig(): Promise<NativeAppConfig | null> {
+  if (!process.env.EDGE_CONFIG) {
+    return null;
+  }
+
+  try {
+    const raw = await get<unknown>("native_app_config");
+    if (!raw) return null;
+    if (!isNativeAppConfig(raw)) {
+      logger.warn({ raw }, "native_app_config failed validation");
+      return null;
+    }
+    return raw;
+  } catch (err) {
+    logger.error(err, "failed to fetch native app config");
+    return null;
+  }
+}

@@ -35,6 +35,8 @@ export async function signInWithGoogleToken(token: string, nonce?: string) {
   return signInWithGoogleIdentityToken(authClient, token, Linking.createURL("/"), nonce);
 }
 
+export const OTA_CONFIG_QUERY_KEY = ["auth", "ota-config"] as const;
+
 export async function getOtaConfig(): Promise<OtaConfigResponse> {
   const result = await authClient.otaConfig.config();
   if (result.error) {
