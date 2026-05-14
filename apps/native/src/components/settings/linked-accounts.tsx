@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { useEffect, useState } from "react";
-import { Alert, Platform, View } from "react-native";
+import { Platform, View } from "react-native";
 
 import { Button } from "@/components/button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -12,6 +12,7 @@ import { useTRPC } from "@/lib/api";
 import { type AuthProvider, getOtaConfig, linkProvider, unlinkProvider } from "@/lib/auth";
 import { getEnabledNativeAuthProviders } from "@/lib/auth-providers";
 import { googleNativeConfig } from "@/lib/env";
+import { toast } from "@/lib/toast";
 import { useCSSVariable } from "@/tw";
 
 const OTA_CONFIG_QUERY_KEY = ["auth", "ota-config"] as const;
@@ -66,13 +67,14 @@ export function LinkedAccountsSection() {
         throw new Error(result.error.message ?? `Unable to link ${provider}.`);
       }
       await invalidateLinkedAccounts();
+      toast.success("Account linked");
     } catch (error) {
       if (!isAuthCanceled(error)) {
         analytics.trackException(error, { action: "link_account", provider });
-        Alert.alert(
-          "Could not link account",
-          error instanceof Error ? error.message : "Unable to link this provider.",
-        );
+        toast.error({
+          title: "Could not link account",
+          message: error instanceof Error ? error.message : "Unable to link this provider.",
+        });
       }
     } finally {
       setLinkingProvider(null);
@@ -90,7 +92,7 @@ export function LinkedAccountsSection() {
     } catch (error) {
       analytics.trackException(error, { action: "unlink_account", provider: pendingUnlink });
       const message = error instanceof Error ? error.message : "Unable to unlink this provider.";
-      Alert.alert("Could not unlink account", message);
+      toast.error({ title: "Could not unlink account", message });
     }
   }
 

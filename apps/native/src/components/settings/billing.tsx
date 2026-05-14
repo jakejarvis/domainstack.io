@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
-import { Alert, View } from "react-native";
+import { View } from "react-native";
 
 import { Button } from "@/components/button";
 import { GlassCard } from "@/components/glass-card";
@@ -10,6 +10,7 @@ import { MutedText, Text } from "@/components/text";
 import { analytics } from "@/lib/analytics";
 import { useTRPC } from "@/lib/api";
 import { formatDate } from "@/lib/format";
+import { toast } from "@/lib/toast";
 
 export function BillingSection() {
   const trpc = useTRPC();
@@ -19,13 +20,15 @@ export function BillingSection() {
 
   const checkout = useMutation(
     trpc.user.createCheckoutUrl.mutationOptions({
-      onError: (error) => Alert.alert("Could not start checkout", error.message),
+      onError: (error) =>
+        toast.error({ title: "Could not start checkout", message: error.message }),
     }),
   );
 
   const portal = useMutation(
     trpc.user.createPortalUrl.mutationOptions({
-      onError: (error) => Alert.alert("Could not open subscription", error.message),
+      onError: (error) =>
+        toast.error({ title: "Could not open subscription", message: error.message }),
     }),
   );
 

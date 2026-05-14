@@ -11,6 +11,7 @@ import { MutedText, Text } from "@/components/text";
 import { TextField } from "@/components/text-field";
 import { analytics } from "@/lib/analytics";
 import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
+import { toast } from "@/lib/toast";
 import { isValidDomain, normalizeDomainInput } from "@domainstack/utils/domain/client";
 
 export default function SearchScreen() {
@@ -31,7 +32,7 @@ export default function SearchScreen() {
     const normalized = normalizeDomainInput(domain);
     if (!isValidDomain(normalized)) {
       analytics.track("search_invalid_input", { input: domain });
-      Alert.alert("Invalid domain", "Enter a hostname like example.com.");
+      toast.warning({ title: "Invalid domain", message: "Enter a hostname like example.com." });
       return;
     }
     analytics.track("search_submitted", { domain: normalized });

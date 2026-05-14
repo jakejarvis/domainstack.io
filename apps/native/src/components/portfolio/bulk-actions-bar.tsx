@@ -13,6 +13,7 @@ import {
   useSelectionMode,
 } from "@/hooks/use-portfolio-selection";
 import { useTRPC } from "@/lib/api";
+import { toast } from "@/lib/toast";
 
 const BULK_LIMIT = 100;
 const HIDDEN_OFFSET = 120;
@@ -44,6 +45,13 @@ export function BulkActionsBar() {
 
   const archive = useMutation(
     trpc.tracking.bulkArchiveDomains.mutationOptions({
+      onSuccess: (_data, variables) => {
+        const n = variables.trackedDomainIds.length;
+        toast.success(`Archived ${n} ${n === 1 ? "domain" : "domains"}`);
+      },
+      onError: (err) => {
+        toast.error({ title: "Archive failed", message: err.message });
+      },
       onSettled: async () => {
         await invalidate();
         exitSelection();
@@ -53,6 +61,13 @@ export function BulkActionsBar() {
 
   const remove = useMutation(
     trpc.tracking.bulkRemoveDomains.mutationOptions({
+      onSuccess: (_data, variables) => {
+        const n = variables.trackedDomainIds.length;
+        toast.success(`Removed ${n} ${n === 1 ? "domain" : "domains"}`);
+      },
+      onError: (err) => {
+        toast.error({ title: "Remove failed", message: err.message });
+      },
       onSettled: async () => {
         await invalidate();
         exitSelection();

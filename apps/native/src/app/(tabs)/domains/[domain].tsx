@@ -27,6 +27,7 @@ import { useTRPC } from "@/lib/api";
 import { authClient } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import { assertOnline } from "@/lib/network";
+import { toast } from "@/lib/toast";
 
 export default function DomainReportScreen() {
   const params = useLocalSearchParams<{ domain: string }>();
@@ -238,7 +239,14 @@ function TrackingActions({
       },
     }),
   );
-  const verify = useMutation(trpc.tracking.verifyDomain.mutationOptions({ onSuccess: invalidate }));
+  const verify = useMutation(
+    trpc.tracking.verifyDomain.mutationOptions({
+      onSuccess: async (_data, _vars) => {
+        toast.success(`Verified ${trackedEntry.domainName}`);
+        await invalidate();
+      },
+    }),
+  );
 
   async function runNetworkAction(action: () => Promise<unknown>) {
     try {
@@ -246,7 +254,7 @@ function TrackingActions({
       await action();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Action failed";
-      Alert.alert("Domainstack", message);
+      toast.error({ title: "Action failed", message });
     }
   }
 

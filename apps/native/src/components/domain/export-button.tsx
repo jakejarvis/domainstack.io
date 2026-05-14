@@ -1,10 +1,11 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Alert, Share } from "react-native";
+import { Share } from "react-native";
 
 import { Button } from "@/components/button";
 import { Text } from "@/components/text";
 import { analytics } from "@/lib/analytics";
 import { useTRPC } from "@/lib/api";
+import { toast } from "@/lib/toast";
 
 export function ExportButton({ domain }: { domain: string }) {
   const trpc = useTRPC();
@@ -39,7 +40,7 @@ export function ExportButton({ domain }: { domain: string }) {
     } catch (error) {
       analytics.trackException(error, { domain });
       const message = error instanceof Error ? error.message : "Export failed";
-      Alert.alert("Domainstack", message);
+      toast.error({ title: "Export failed", message });
     }
   }
 

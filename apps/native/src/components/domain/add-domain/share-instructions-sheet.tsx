@@ -3,7 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import { useEffect, useReducer, useRef, useState } from "react";
-import { Alert, Share, View } from "react-native";
+import { Share, View } from "react-native";
 
 import { AppBottomSheet, type AppBottomSheetRef } from "@/components/bottom-sheet";
 import { Button } from "@/components/button";
@@ -11,6 +11,7 @@ import { GlassCard } from "@/components/glass-card";
 import { MutedText, Text } from "@/components/text";
 import { TextField } from "@/components/text-field";
 import { useTRPC } from "@/lib/api";
+import { toast } from "@/lib/toast";
 import { useCSSVariable } from "@/tw";
 import { formatInstructionsForSharing } from "@domainstack/utils/verification";
 
@@ -83,7 +84,7 @@ export function ShareInstructionsSheet({
     trpc.tracking.sendVerificationInstructions.mutationOptions({
       onError: (error) => {
         dispatch({ type: "reset" });
-        Alert.alert("Failed to send email", error.message);
+        toast.error({ title: "Failed to send email", message: error.message });
       },
       onMutate: () => {
         dispatch({ type: "sending" });

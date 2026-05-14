@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Alert, Platform, View } from "react-native";
+import { Platform, View } from "react-native";
 
 import { Button } from "@/components/button";
 import { GlassCard } from "@/components/glass-card";
@@ -22,6 +22,7 @@ import { googleNativeConfig } from "@/lib/env";
 import { getGoogleIdentityToken } from "@/lib/google-auth";
 import { getInitialRoute } from "@/lib/navigation";
 import { createAuthNonce } from "@/lib/nonce";
+import { toast } from "@/lib/toast";
 import { useCSSVariable } from "@/tw";
 
 const OTA_CONFIG_QUERY_KEY = ["auth", "ota-config"] as const;
@@ -75,12 +76,13 @@ export default function SignInScreen() {
   const showSignInError = (provider: string, error: unknown) => {
     if (isAuthCanceled(error)) return;
 
-    Alert.alert(
-      "Sign in failed",
-      error instanceof Error
-        ? error.message
-        : `Unable to sign in with ${provider}. Please try again.`,
-    );
+    toast.error({
+      title: "Sign in failed",
+      message:
+        error instanceof Error
+          ? error.message
+          : `Unable to sign in with ${provider}. Please try again.`,
+    });
   };
 
   const handleProviderSignIn = async (provider: AuthProvider) => {

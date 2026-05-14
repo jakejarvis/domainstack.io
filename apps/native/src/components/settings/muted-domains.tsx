@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
 import { useState } from "react";
-import { Alert, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 
 import { Button } from "@/components/button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -9,6 +9,7 @@ import { GlassCard } from "@/components/glass-card";
 import { MutedText, Text } from "@/components/text";
 import { useTRPC } from "@/lib/api";
 import { assertOnline } from "@/lib/network";
+import { toast } from "@/lib/toast";
 
 const LIST_INPUT = { includeArchived: true } as const;
 
@@ -37,7 +38,7 @@ export function MutedDomainsSection() {
       setPendingId(null);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Could not unmute domain.";
-      Alert.alert("Domainstack", message);
+      toast.error({ title: "Unmute failed", message });
     }
   }
 

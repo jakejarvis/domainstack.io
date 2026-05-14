@@ -12,6 +12,7 @@ import { SkeletonRows } from "@/components/skeleton";
 import { MutedText } from "@/components/text";
 import { useTRPC } from "@/lib/api";
 import { authClient } from "@/lib/auth";
+import { toast } from "@/lib/toast";
 
 const LIST_INPUT = { includeArchived: true } as const;
 
@@ -77,7 +78,7 @@ function ArchivedScreen() {
       if (context?.previous) {
         queryClient.setQueryData(listKey, context.previous);
       }
-      Alert.alert("Reactivation failed", error.message);
+      toast.error({ title: "Reactivation failed", message: error.message });
     },
     onMutate: async (variables: { trackedDomainId: string }) => {
       await queryClient.cancelQueries({ queryKey: listKey });
@@ -100,7 +101,7 @@ function ArchivedScreen() {
       if (context?.previous) {
         queryClient.setQueryData(listKey, context.previous);
       }
-      Alert.alert("Removal failed", error.message);
+      toast.error({ title: "Removal failed", message: error.message });
     },
     onMutate: async (variables: { trackedDomainId: string }) => {
       await queryClient.cancelQueries({ queryKey: listKey });

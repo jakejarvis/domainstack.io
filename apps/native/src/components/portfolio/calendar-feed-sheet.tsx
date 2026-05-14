@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Clipboard from "expo-clipboard";
-import * as Haptics from "expo-haptics";
 import * as Linking from "expo-linking";
 import type { Ref } from "react";
 import { Alert, ScrollView, View } from "react-native";
@@ -11,6 +10,7 @@ import { GlassCard } from "@/components/glass-card";
 import { Spinner } from "@/components/spinner";
 import { MutedText, Text } from "@/components/text";
 import { useTRPC } from "@/lib/api";
+import { toast } from "@/lib/toast";
 
 function toWebcalUrl(httpsUrl: string): string {
   return httpsUrl.replace(/^https?:/i, "webcal:");
@@ -26,28 +26,29 @@ export function CalendarFeedSheet({ ref }: { ref?: Ref<AppBottomSheetRef> }) {
 
   const enable = useMutation(
     trpc.user.enableCalendarFeed.mutationOptions({
-      onError: (error) => Alert.alert("Could not enable feed", error.message),
+      onError: (error) => toast.error({ title: "Could not enable feed", message: error.message }),
       onSettled: invalidate,
     }),
   );
 
   const disable = useMutation(
     trpc.user.disableCalendarFeed.mutationOptions({
-      onError: (error) => Alert.alert("Could not disable feed", error.message),
+      onError: (error) => toast.error({ title: "Could not disable feed", message: error.message }),
       onSettled: invalidate,
     }),
   );
 
   const rotate = useMutation(
     trpc.user.rotateCalendarFeedToken.mutationOptions({
-      onError: (error) => Alert.alert("Could not rotate URL", error.message),
+      onSuccess: () => toast.success("Feed URL rotated"),
+      onError: (error) => toast.error({ title: "Could not rotate URL", message: error.message }),
       onSettled: invalidate,
     }),
   );
 
   const remove = useMutation(
     trpc.user.deleteCalendarFeed.mutationOptions({
-      onError: (error) => Alert.alert("Could not delete feed", error.message),
+      onError: (error) => toast.error({ title: "Could not delete feed", message: error.message }),
       onSettled: invalidate,
     }),
   );
@@ -60,8 +61,7 @@ export function CalendarFeedSheet({ ref }: { ref?: Ref<AppBottomSheetRef> }) {
   async function handleCopy() {
     if (!feedUrl) return;
     await Clipboard.setStringAsync(feedUrl);
-    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Alert.alert("Copied", "Feed URL copied to clipboard.");
+    toast.success({ title: "Copied", message: "Feed URL copied to clipboard." });
   }
 
   function handleSubscribe() {

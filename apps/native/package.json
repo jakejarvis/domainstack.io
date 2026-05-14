@@ -37,6 +37,7 @@
     "@tanstack/react-query-persist-client": "^5.100.10",
     "@trpc/client": "^11.17.0",
     "@trpc/tanstack-react-query": "^11.17.0",
+    "burnt": "^0.13.0",
     "clsx": "^2.1.1",
     "expo": "56.0.0-preview.11",
     "expo-apple-authentication": "^56.0.3",

@@ -4,7 +4,7 @@ import { router, useNavigation } from "expo-router";
 import { Stack } from "expo-router/stack";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { NativeSyntheticEvent, TextInputFocusEventData } from "react-native";
-import { Alert, Platform, View } from "react-native";
+import { Platform, View } from "react-native";
 
 import type { AppBottomSheetRef } from "@/components/bottom-sheet";
 import { Button } from "@/components/button";
@@ -28,6 +28,7 @@ import { authClient } from "@/lib/auth";
 import { type PortfolioDomain, type PortfolioSort, sortPortfolioDomains } from "@/lib/portfolio";
 import { activeFilterCount, applyFilters, availableTldsFrom } from "@/lib/portfolio-filters";
 import { usePortfolioStore } from "@/lib/stores/portfolio-store";
+import { toast } from "@/lib/toast";
 
 const sorts: Array<{ label: string; value: PortfolioSort }> = [
   { label: "Name", value: "name" },
@@ -154,14 +155,14 @@ function PortfolioScreen() {
 
   const archive = useMutation(
     trpc.tracking.archiveDomain.mutationOptions({
-      onError: (error) => Alert.alert("Archive failed", error.message),
+      onError: (error) => toast.error({ title: "Archive failed", message: error.message }),
       onSettled: () => void invalidatePortfolio(),
     }),
   );
 
   const setMuted = useMutation(
     trpc.user.setDomainMuted.mutationOptions({
-      onError: (error) => Alert.alert("Mute failed", error.message),
+      onError: (error) => toast.error({ title: "Mute failed", message: error.message }),
       onSettled: () => void invalidatePortfolio(),
     }),
   );
