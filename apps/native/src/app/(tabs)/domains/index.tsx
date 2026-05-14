@@ -10,7 +10,7 @@ import type { AppBottomSheetRef } from "@/components/bottom-sheet";
 import { Button } from "@/components/button";
 import { EmptyState } from "@/components/empty-state";
 import { HeaderMenu } from "@/components/header-menu";
-import { BulkActionsBar } from "@/components/portfolio/bulk-actions-bar";
+import { BulkActionsToolbar } from "@/components/portfolio/bulk-actions-toolbar";
 import { CalendarFeedSheet } from "@/components/portfolio/calendar-feed-sheet";
 import { FilterChips } from "@/components/portfolio/filter-chips";
 import { FilterSheet } from "@/components/portfolio/filter-sheet";
@@ -78,6 +78,7 @@ function PortfolioScreen() {
   const setQuery = usePortfolioStore((state) => state.setQuery);
   const setSort = usePortfolioStore((state) => state.setSort);
   const selectionMode = useSelectionMode();
+  const selectionCount = usePortfolioStore((state) => state.selection.ids.size);
   const [refreshing, setRefreshing] = useState(false);
 
   const filterSheetRef = useRef<AppBottomSheetRef | null>(null);
@@ -94,8 +95,9 @@ function PortfolioScreen() {
           setQuery(event.nativeEvent.text),
         placeholder: "Filter domains",
       },
+      title: selectionMode === "selecting" ? `${selectionCount} selected` : "Portfolio",
     });
-  }, [navigation, setQuery]);
+  }, [navigation, selectionCount, selectionMode, setQuery]);
 
   const domains = useMemo<PortfolioDomain[]>(() => {
     return (domainsQuery.data ?? []).map((item) => ({
@@ -235,22 +237,20 @@ function PortfolioScreen() {
         </Stack.Toolbar.MenuAction>
       </HeaderMenu>
 
-      {Platform.OS === "ios" ? (
-        <Stack.Toolbar placement="left">
-          <Stack.Toolbar.Button
-            onPress={() => {
-              const store = usePortfolioStore.getState();
-              if (store.selection.mode === "selecting") {
-                store.exitSelection();
-              } else {
-                store.enterSelection();
-              }
-            }}
-          >
-            {isSelecting ? "Cancel" : "Edit"}
-          </Stack.Toolbar.Button>
-        </Stack.Toolbar>
-      ) : null}
+      <Stack.Toolbar placement="left">
+        <Stack.Toolbar.Button
+          onPress={() => {
+            const store = usePortfolioStore.getState();
+            if (store.selection.mode === "selecting") {
+              store.exitSelection();
+            } else {
+              store.enterSelection();
+            }
+          }}
+        >
+          {isSelecting ? "Cancel" : "Edit"}
+        </Stack.Toolbar.Button>
+      </Stack.Toolbar>
 
       {subscription ? (
         <QuotaMeter
@@ -304,7 +304,7 @@ function PortfolioScreen() {
       <FlashList
         ListEmptyComponent={listEmpty}
         ListHeaderComponent={listHeader}
-        contentContainerStyle={{ paddingBottom: isSelecting ? 120 : 32 }}
+        contentContainerStyle={{ paddingBottom: 32 }}
         contentInsetAdjustmentBehavior="automatic"
         data={visibleDomains}
         keyExtractor={keyExtractor}
@@ -312,7 +312,7 @@ function PortfolioScreen() {
         refreshControl={<RefreshControl onRefresh={handleRefresh} refreshing={refreshing} />}
         renderItem={renderItem}
       />
-      <BulkActionsBar />
+      <BulkActionsToolbar />
       <FilterSheet availableTlds={availableTlds} ref={filterSheetRef} />
       <CalendarFeedSheet ref={calendarSheetRef} />
     </View>

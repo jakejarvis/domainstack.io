@@ -3,8 +3,11 @@ import { FlashList } from "@shopify/flash-list";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
 import { Link, router } from "expo-router";
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useRef, useState } from "react";
 import { Pressable, View } from "react-native";
+import ReanimatedSwipeable, {
+  type SwipeableMethods,
+} from "react-native-gesture-handler/ReanimatedSwipeable";
 import { useCSSVariable } from "uniwind";
 
 import { Badge } from "@/components/badge";
@@ -23,6 +26,8 @@ import { useTRPC } from "@/lib/api";
 import { authClient } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import type { AppRouter } from "@domainstack/api";
+
+const SWIPE_ACTION_WIDTH = 96;
 
 const PAGE_SIZE = 20;
 
@@ -117,19 +122,11 @@ function NotificationsList() {
     if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
-  const markReadPending = markRead.isPending;
-
   const renderItem = useCallback(
     ({ item }: { item: NotificationItem }) => (
-      <View className="px-4 pb-3">
-        <NotificationRow
-          item={item}
-          markReadPending={markReadPending}
-          onMarkRead={handleMarkRead}
-        />
-      </View>
+      <NotificationRow item={item} onMarkRead={handleMarkRead} />
     ),
-    [handleMarkRead, markReadPending],
+    [handleMarkRead],
   );
 
   const items = notifications.data?.pages.flatMap((page) => page.items) ?? [];
@@ -220,15 +217,17 @@ function keyExtractor(item: NotificationItem): string {
 
 const NotificationRow = memo(function NotificationRow({
   item,
-  markReadPending,
   onMarkRead,
 }: {
   item: NotificationItem;
-  markReadPending: boolean;
   onMarkRead: (id: string) => void;
 }) {
   const { domainName, targetSection } = item;
-  const handleMarkRead = useCallback(() => onMarkRead(item.id), [item.id, onMarkRead]);
+  const swipeableRef = useRef<SwipeableMethods>(null);
+  const handleMarkRead = useCallback(() => {
+    swipeableRef.current?.close();
+    onMarkRead(item.id);
+  }, [item.id, onMarkRead]);
 
   const body = (
     <GlassCard>
@@ -246,34 +245,66 @@ const NotificationRow = memo(function NotificationRow({
         <MutedText>{item.message}</MutedText>
         <MutedText>{formatDate(item.sentAt)}</MutedText>
       </View>
-      {item.readAt ? null : (
-        <Button loading={markReadPending} onPress={handleMarkRead}>
-          <Text>Mark read</Text>
-        </Button>
-      )}
     </GlassCard>
   );
 
-  if (!domainName) return body;
+  const renderLeftActions = useCallback(
+    () => (
+      <View className="flex-row items-stretch pr-2">
+        <Pressable
+          accessibilityLabel="Mark as read"
+          accessibilityRole="button"
+          className="bg-brand items-center justify-center rounded-2xl px-4"
+          onPress={handleMarkRead}
+          style={{ borderCurve: "continuous", width: SWIPE_ACTION_WIDTH }}
+        >
+          <Text className="text-control-primary-text font-semibold">Mark read</Text>
+        </Pressable>
+      </View>
+    ),
+    [handleMarkRead],
+  );
+
+  const swipeable = (content: React.ReactNode) =>
+    item.readAt ? (
+      content
+    ) : (
+      <ReanimatedSwipeable
+        friction={2}
+        leftThreshold={64}
+        ref={swipeableRef}
+        renderLeftActions={renderLeftActions}
+      >
+        {content}
+      </ReanimatedSwipeable>
+    );
+
+  if (!domainName) {
+    return <View className="px-4 pb-3">{swipeable(body)}</View>;
+  }
 
   const params: { domain: string; section?: string } = { domain: domainName };
   if (targetSection) params.section = targetSection;
 
   return (
-    <Link asChild href={{ params, pathname: "/(tabs)/domains/[domain]" }}>
-      <Link.Trigger>
-        <Pressable accessibilityLabel={`Open ${domainName}`} accessibilityRole="link">
-          {body}
-        </Pressable>
-      </Link.Trigger>
-      <Link.Preview />
-      <Link.Menu>
-        {item.readAt ? null : (
-          <Link.MenuAction icon="checkmark.circle" onPress={handleMarkRead}>
-            Mark as read
-          </Link.MenuAction>
-        )}
-      </Link.Menu>
-    </Link>
+    <View className="px-4 pb-3">
+      {swipeable(
+        <Link asChild href={{ params, pathname: "/(tabs)/domains/[domain]" }}>
+          <Link.Trigger>
+            <Pressable accessibilityLabel={`Open ${domainName}`} accessibilityRole="link">
+              {body}
+            </Pressable>
+          </Link.Trigger>
+          <Link.Preview />
+          <Link.Menu>
+            {item.readAt ? null : (
+              <Link.MenuAction icon="checkmark.circle" onPress={handleMarkRead}>
+                Mark as read
+              </Link.MenuAction>
+            )}
+          </Link.Menu>
+        </Link>,
+      )}
+    </View>
   );
 });
