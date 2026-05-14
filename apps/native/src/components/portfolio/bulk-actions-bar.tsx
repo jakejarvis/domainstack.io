@@ -106,11 +106,11 @@ export function BulkActionsBar() {
 
   return (
     <Animated.View
-      pointerEvents={mode === "selecting" ? "auto" : "none"}
       style={[
         {
           bottom: insets.bottom + 12,
           left: 12,
+          pointerEvents: mode === "selecting" ? "auto" : "none",
           position: "absolute",
           right: 12,
         },

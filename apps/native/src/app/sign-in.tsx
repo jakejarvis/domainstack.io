@@ -232,7 +232,7 @@ function ProviderButton({
     return (
       <View
         className={loadingProvider !== null ? "opacity-55" : undefined}
-        pointerEvents={loadingProvider !== null ? "none" : "auto"}
+        style={{ pointerEvents: loadingProvider !== null ? "none" : "auto" }}
       >
         <AppleAuthentication.AppleAuthenticationButton
           accessibilityLabel="Continue with Apple"

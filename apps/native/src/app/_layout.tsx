@@ -37,11 +37,11 @@ function RootNavigator() {
       router.push(routeFromNotificationData(response.notification.request.content.data ?? {}));
     });
 
-    void Notifications.getLastNotificationResponseAsync().then((response) => {
-      if (!response) return;
-      router.push(routeFromNotificationData(response.notification.request.content.data ?? {}));
-      void Notifications.clearLastNotificationResponseAsync();
-    });
+    const lastResponse = Notifications.getLastNotificationResponse();
+    if (lastResponse) {
+      router.push(routeFromNotificationData(lastResponse.notification.request.content.data ?? {}));
+      Notifications.clearLastNotificationResponse();
+    }
 
     return () => subscription.remove();
   }, []);
