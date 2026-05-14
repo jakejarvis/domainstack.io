@@ -6,6 +6,8 @@ import { Text } from "@/components/text";
 import { analytics } from "@/lib/analytics";
 import { useTRPC } from "@/lib/api";
 import { toast } from "@/lib/toast";
+import type { DomainResponse } from "@domainstack/types";
+import { serializeDomainExport } from "@domainstack/utils";
 
 export function ExportButton({ domain }: { domain: string }) {
   const trpc = useTRPC();
@@ -15,24 +17,16 @@ export function ExportButton({ domain }: { domain: string }) {
     analytics.track("export_json_clicked", { domain });
     try {
       const input = { domain };
-      const registration = queryClient.getQueryData(trpc.domain.getRegistration.queryKey(input));
-      const hosting = queryClient.getQueryData(trpc.domain.getHosting.queryKey(input));
-      const dns = queryClient.getQueryData(trpc.domain.getDnsRecords.queryKey(input));
-      const certificates = queryClient.getQueryData(trpc.domain.getCertificates.queryKey(input));
-      const headers = queryClient.getQueryData(trpc.domain.getHeaders.queryKey(input));
-      const seo = queryClient.getQueryData(trpc.domain.getSeo.queryKey(input));
-
-      const payload = {
-        domain,
-        exportedAt: new Date().toISOString(),
-        registration,
-        hosting,
-        dns,
-        certificates,
-        headers,
-        seo,
+      const data: Partial<DomainResponse> = {
+        registration: unwrap(queryClient.getQueryData(trpc.domain.getRegistration.queryKey(input))),
+        hosting: unwrap(queryClient.getQueryData(trpc.domain.getHosting.queryKey(input))),
+        dns: unwrap(queryClient.getQueryData(trpc.domain.getDnsRecords.queryKey(input))),
+        certificates: unwrap(queryClient.getQueryData(trpc.domain.getCertificates.queryKey(input))),
+        headers: unwrap(queryClient.getQueryData(trpc.domain.getHeaders.queryKey(input))),
+        seo: unwrap(queryClient.getQueryData(trpc.domain.getSeo.queryKey(input))),
       };
 
+      const payload = serializeDomainExport(domain, data);
       await Share.share({
         message: JSON.stringify(payload, null, 2),
         title: `${domain} report`,
@@ -49,4 +43,8 @@ export function ExportButton({ domain }: { domain: string }) {
       <Text>Export</Text>
     </Button>
   );
+}
+
+function unwrap<T>(response: { data?: T | null } | undefined): T | undefined {
+  return response?.data ?? undefined;
 }

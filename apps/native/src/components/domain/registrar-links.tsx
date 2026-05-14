@@ -4,42 +4,8 @@ import { Linking, Pressable, View } from "react-native";
 import { MutedText, Text } from "@/components/text";
 import { analytics } from "@/lib/analytics";
 import { useTRPC } from "@/lib/api";
-
-interface RegistrarConfig {
-  name: string;
-  searchUrl: (domain: string) => string;
-}
-
-const REGISTRAR_PROVIDERS: Record<string, RegistrarConfig> = {
-  cloudflare: {
-    name: "Cloudflare Registrar",
-    searchUrl: (domain) => `https://domains.cloudflare.com/?domain=${domain}`,
-  },
-  dynadot: {
-    name: "Dynadot",
-    searchUrl: (domain) => `https://www.dynadot.com/domain/search?domain=${domain}`,
-  },
-  porkbun: {
-    name: "Porkbun",
-    searchUrl: (domain) => `https://porkbun.com/checkout/search?q=${domain}`,
-  },
-};
-
-const PRICE_FORMATTER = new Intl.NumberFormat("en-US", {
-  currency: "USD",
-  maximumFractionDigits: 2,
-  style: "currency",
-});
-
-function formatPrice(value: string): string | null {
-  const amount = Number.parseFloat(value);
-  if (!Number.isFinite(amount)) return null;
-  try {
-    return PRICE_FORMATTER.format(amount);
-  } catch {
-    return `$${amount.toFixed(2)}`;
-  }
-}
+import { REGISTRAR_PROVIDERS, type RegistrarKey } from "@domainstack/constants";
+import { formatPrice } from "@domainstack/utils";
 
 export function RegistrarLinks({ domain, tld }: { domain: string; tld: string }) {
   const trpc = useTRPC();
@@ -52,7 +18,7 @@ export function RegistrarLinks({ domain, tld }: { domain: string; tld: string })
   if (providers.length === 0) return null;
 
   const sorted = providers
-    .filter((p) => REGISTRAR_PROVIDERS[p.provider])
+    .filter((p) => REGISTRAR_PROVIDERS[p.provider as RegistrarKey])
     .sort((a, b) => Number.parseFloat(a.price) - Number.parseFloat(b.price));
 
   if (sorted.length === 0) return null;
@@ -62,7 +28,7 @@ export function RegistrarLinks({ domain, tld }: { domain: string; tld: string })
       <MutedText className="text-center text-xs">Register this domain</MutedText>
       <View className="gap-2">
         {sorted.map((entry) => {
-          const config = REGISTRAR_PROVIDERS[entry.provider];
+          const config = REGISTRAR_PROVIDERS[entry.provider as RegistrarKey];
           const price = formatPrice(entry.price);
           if (!config || !price) return null;
           return (
