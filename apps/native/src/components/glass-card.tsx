@@ -17,6 +17,7 @@ export function GlassCard({
     <BlurView
       className={cn("overflow-hidden rounded-2xl", className)}
       intensity={isDark ? 26 : 18}
+      style={{ borderCurve: "continuous" }}
       tint={isDark ? "dark" : "light"}
     >
       <View className="border-line bg-glass gap-4 border p-4">{children}</View>

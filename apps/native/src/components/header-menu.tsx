@@ -23,31 +23,42 @@ const ICON_REQUESTS: Array<{ key: IconKey; name: MaterialName; useDangerColor?: 
   { key: "logoutDanger", name: "logout", useDangerColor: true },
 ];
 
-function useMaterialIconSources(
-  color: string,
-  dangerColor: string,
-): Partial<Record<IconKey, ImageSourcePropType>> {
-  const [sources, setSources] = useState<Partial<Record<IconKey, ImageSourcePropType>>>({});
+type IconSources = Partial<Record<IconKey, ImageSourcePropType>>;
+
+const iconSourceCache = new Map<string, Promise<IconSources>>();
+
+function loadIconSources(color: string, dangerColor: string): Promise<IconSources> {
+  const cacheKey = `${color}|${dangerColor}`;
+  const cached = iconSourceCache.get(cacheKey);
+  if (cached) return cached;
+
+  const promise = Promise.all(
+    ICON_REQUESTS.map(async (request) => {
+      const tint = request.useDangerColor ? dangerColor : color;
+      const src = await MaterialIcons.getImageSource(request.name, 24, tint);
+      return [request.key, src] as const;
+    }),
+  ).then((entries) => {
+    const next: IconSources = {};
+    for (const [key, src] of entries) {
+      if (src) next[key] = src;
+    }
+    return next;
+  });
+
+  iconSourceCache.set(cacheKey, promise);
+  return promise;
+}
+
+function useMaterialIconSources(color: string, dangerColor: string): IconSources {
+  const [sources, setSources] = useState<IconSources>({});
 
   useEffect(() => {
     if (Platform.OS !== "android") return;
     let cancelled = false;
-
-    void Promise.all(
-      ICON_REQUESTS.map(async (request) => {
-        const tint = request.useDangerColor ? dangerColor : color;
-        const src = await MaterialIcons.getImageSource(request.name, 24, tint);
-        return [request.key, src] as const;
-      }),
-    ).then((entries) => {
-      if (cancelled) return;
-      const next: Partial<Record<IconKey, ImageSourcePropType>> = {};
-      for (const [key, src] of entries) {
-        if (src) next[key] = src;
-      }
-      setSources(next);
+    void loadIconSources(color, dangerColor).then((resolved) => {
+      if (!cancelled) setSources(resolved);
     });
-
     return () => {
       cancelled = true;
     };

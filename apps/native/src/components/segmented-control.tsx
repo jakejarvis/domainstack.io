@@ -1,4 +1,5 @@
 import SegmentedControlNative from "@expo/ui/community/segmented-control";
+import { useMemo } from "react";
 import { useColorScheme, View } from "react-native";
 
 import { useCSSVariable } from "@/tw";
@@ -18,6 +19,7 @@ export function SegmentedControl<T extends string>({
     0,
     options.findIndex((option) => option.value === value),
   );
+  const values = useMemo(() => options.map((option) => option.label), [options]);
 
   return (
     <View>
@@ -29,7 +31,7 @@ export function SegmentedControl<T extends string>({
         }}
         selectedIndex={selectedIndex}
         tintColor={tintColor}
-        values={options.map((option) => option.label)}
+        values={values}
       />
     </View>
   );

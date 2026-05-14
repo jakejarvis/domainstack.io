@@ -3,7 +3,7 @@ import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useReducer, useState } from "react";
-import { ScrollView, Share, View } from "react-native";
+import { Share, View } from "react-native";
 
 import { Button } from "@/components/button";
 import { ShareInstructionsSheet } from "@/components/domain/add-domain/share-instructions-sheet";
@@ -235,10 +235,7 @@ function AddDomainFlow() {
 
   return (
     <Screen>
-      <ScrollView
-        contentContainerStyle={{ gap: 16, paddingBottom: 32 }}
-        keyboardShouldPersistTaps="handled"
-      >
+      <View className="gap-4">
         <View className="gap-2">
           <Text className="text-3xl font-semibold">
             {flow.status === "verified" ? "All set!" : "Add domain"}
@@ -355,7 +352,7 @@ function AddDomainFlow() {
             </Button>
           </View>
         ) : null}
-      </ScrollView>
+      </View>
 
       {trackedDomainId && verificationToken ? (
         <ShareInstructionsSheet

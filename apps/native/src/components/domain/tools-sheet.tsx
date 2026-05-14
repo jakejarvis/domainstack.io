@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { Linking, Modal, Pressable, ScrollView, View } from "react-native";
+import { useRef } from "react";
+import { Linking, Pressable, ScrollView, View } from "react-native";
 
+import { AppBottomSheet, type AppBottomSheetRef } from "@/components/bottom-sheet";
 import { Button } from "@/components/button";
-import { GlassCard } from "@/components/glass-card";
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 
 interface Tool {
   name: string;
@@ -76,50 +76,40 @@ const TOOLS: Tool[] = [
 ];
 
 export function ToolsSheet({ domain }: { domain: string }) {
-  const [open, setOpen] = useState(false);
+  const sheetRef = useRef<AppBottomSheetRef>(null);
 
   return (
     <>
-      <Button onPress={() => setOpen(true)} variant="secondary">
+      <Button onPress={() => sheetRef.current?.present()} variant="secondary">
         <Text>Open in…</Text>
       </Button>
-      <Modal
-        animationType="slide"
-        onRequestClose={() => setOpen(false)}
-        presentationStyle="pageSheet"
-        visible={open}
+      <AppBottomSheet
+        description={`Inspect ${domain} in an external tool.`}
+        ref={sheetRef}
+        title="Open in…"
       >
-        <View className="bg-canvas flex-1">
-          <ScrollView
-            className="flex-1"
-            contentContainerStyle={{ gap: 12, padding: 16 }}
-            contentInsetAdjustmentBehavior="automatic"
-          >
-            <View className="gap-1">
-              <Text className="text-2xl font-semibold">Open in…</Text>
-              <MutedText>Inspect {domain} in an external tool.</MutedText>
-            </View>
-            <GlassCard>
-              {TOOLS.map((tool) => (
-                <Pressable
-                  accessibilityRole="link"
-                  className="border-line border-b py-3 last:border-b-0"
-                  key={tool.name}
-                  onPress={() => {
-                    setOpen(false);
-                    void Linking.openURL(tool.buildUrl(domain));
-                  }}
-                >
-                  <Text className="font-semibold">{tool.name}</Text>
-                </Pressable>
-              ))}
-            </GlassCard>
-            <Button onPress={() => setOpen(false)} variant="ghost">
-              <Text>Close</Text>
-            </Button>
-          </ScrollView>
-        </View>
-      </Modal>
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ paddingBottom: 8 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View className="border-line bg-glass overflow-hidden rounded-2xl border">
+            {TOOLS.map((tool, index) => (
+              <Pressable
+                accessibilityRole="link"
+                className={index > 0 ? "border-line border-t px-4 py-3" : "px-4 py-3"}
+                key={tool.name}
+                onPress={() => {
+                  sheetRef.current?.dismiss();
+                  void Linking.openURL(tool.buildUrl(domain));
+                }}
+              >
+                <Text className="font-semibold">{tool.name}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </ScrollView>
+      </AppBottomSheet>
     </>
   );
 }

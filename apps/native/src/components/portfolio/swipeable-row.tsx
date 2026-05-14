@@ -7,7 +7,6 @@ import ReanimatedSwipeable, {
 import { DomainRow } from "@/components/domain-row";
 import { Text } from "@/components/text";
 import { useSelectionMode } from "@/hooks/use-portfolio-selection";
-import { cn } from "@/lib/cn";
 import type { PortfolioDomain } from "@/lib/portfolio";
 
 const ACTION_WIDTH = 96;
@@ -46,10 +45,7 @@ export function SwipeableRow({
       <View className="flex-row items-stretch pr-2">
         <Pressable
           accessibilityRole="button"
-          className={cn(
-            "items-center justify-center rounded-2xl bg-warning px-4",
-            "min-w-[" + ACTION_WIDTH + "px]",
-          )}
+          className="items-center justify-center rounded-2xl bg-warning px-4"
           onPress={handleMutePress}
           style={{ width: ACTION_WIDTH }}
         >

@@ -1,7 +1,8 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useRef } from "react";
 import { ScrollView, View } from "react-native";
 
+import { AppBottomSheet, type AppBottomSheetRef } from "@/components/bottom-sheet";
 import { Button } from "@/components/button";
 import { KeyValueGrid, type KeyValueItem } from "@/components/key-value-grid";
 import { RelativeAge } from "@/components/relative-age";
@@ -141,26 +142,25 @@ function RawDataToggle({
   raw: Record<string, unknown> | string;
   format: RegistrationResponse["source"];
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const sheetRef = useRef<AppBottomSheetRef>(null);
   const text = useMemo(() => (typeof raw === "string" ? raw : JSON.stringify(raw, null, 2)), [raw]);
+  const label = format === "rdap" ? "RDAP" : "WHOIS";
 
   return (
     <View className="gap-2">
-      <Button onPress={() => setExpanded((prev) => !prev)} variant="ghost">
-        <Text>
-          {expanded ? "Hide" : "View"} raw {format === "rdap" ? "RDAP" : "WHOIS"}
-        </Text>
+      <Button onPress={() => sheetRef.current?.present()} variant="ghost">
+        <Text>View raw {label}</Text>
       </Button>
-      {expanded ? (
+      <AppBottomSheet description={`Raw ${label} response`} ref={sheetRef} title={`Raw ${label}`}>
         <ScrollView
-          className="border-line bg-control-secondary max-h-64 rounded-lg border p-3"
-          horizontal={false}
+          className="border-line bg-control-secondary flex-1 rounded-lg border p-3"
+          contentContainerStyle={{ paddingBottom: 8 }}
         >
           <Text className="font-mono text-xs" selectable>
             {text}
           </Text>
         </ScrollView>
-      ) : null}
+      </AppBottomSheet>
     </View>
   );
 }

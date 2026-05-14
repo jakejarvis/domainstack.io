@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
-import { Alert, Animated, Platform, Pressable, View } from "react-native";
+import { useEffect } from "react";
+import { Alert, Platform, Pressable, View } from "react-native";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button } from "@/components/button";
@@ -14,6 +15,7 @@ import {
 import { useTRPC } from "@/lib/api";
 
 const BULK_LIMIT = 100;
+const HIDDEN_OFFSET = 120;
 
 export function BulkActionsBar() {
   const mode = useSelectionMode();
@@ -23,15 +25,15 @@ export function BulkActionsBar() {
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
 
-  const translateY = useRef(new Animated.Value(120)).current;
+  const progress = useSharedValue(0);
 
   useEffect(() => {
-    Animated.timing(translateY, {
-      duration: 220,
-      toValue: mode === "selecting" ? 0 : 120,
-      useNativeDriver: true,
-    }).start();
-  }, [mode, translateY]);
+    progress.set(withTiming(mode === "selecting" ? 1 : 0, { duration: 220 }));
+  }, [mode, progress]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: (1 - progress.get()) * HIDDEN_OFFSET }],
+  }));
 
   const invalidate = async () => {
     await Promise.all([
@@ -90,13 +92,15 @@ export function BulkActionsBar() {
   return (
     <Animated.View
       pointerEvents={mode === "selecting" ? "auto" : "none"}
-      style={{
-        bottom: insets.bottom + 12,
-        left: 12,
-        position: "absolute",
-        right: 12,
-        transform: [{ translateY }],
-      }}
+      style={[
+        {
+          bottom: insets.bottom + 12,
+          left: 12,
+          position: "absolute",
+          right: 12,
+        },
+        animatedStyle,
+      ]}
     >
       <View className="border-line bg-glass gap-2 rounded-2xl border p-3">
         <View className="flex-row items-center justify-between gap-3">
