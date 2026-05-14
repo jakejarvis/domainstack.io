@@ -68,6 +68,10 @@ function RootNavigator() {
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />
         <Stack.Protected guard={isSignedIn}>
           <Stack.Screen name="settings" options={{ title: "Settings" }} />
+          <Stack.Screen
+            name="delete-account"
+            options={{ presentation: "formSheet", title: "Delete account" }}
+          />
         </Stack.Protected>
         <Stack.Protected guard={!isSignedIn}>
           <Stack.Screen name="sign-in" options={{ presentation: "modal", title: "Sign in" }} />

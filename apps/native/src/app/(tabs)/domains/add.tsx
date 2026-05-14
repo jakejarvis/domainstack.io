@@ -246,7 +246,7 @@ function AddDomainFlow() {
         <StepIndicator current={step} loadingStep={activeLoading} />
 
         {step === 1 ? (
-          <GlassCard>
+          <View className="gap-4">
             <TextField
               error={domainError}
               label="Domain"
@@ -263,7 +263,7 @@ function AddDomainFlow() {
             >
               <Text>Continue</Text>
             </Button>
-          </GlassCard>
+          </View>
         ) : null}
 
         {resumeTrackedDomainId && verificationData.isPending ? <SkeletonRows count={3} /> : null}

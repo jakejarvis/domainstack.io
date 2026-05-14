@@ -3,8 +3,8 @@ import { Link } from "expo-router";
 import { Pressable, View } from "react-native";
 
 import { Button } from "@/components/button";
-import { GlassCard } from "@/components/glass-card";
-import { MutedText, Text } from "@/components/text";
+import { GroupedRow, GroupedSection } from "@/components/form/group";
+import { Text } from "@/components/text";
 import { useTRPC } from "@/lib/api";
 import { confirm } from "@/lib/native-confirm";
 import { assertOnline } from "@/lib/network";
@@ -41,34 +41,30 @@ export function MutedDomainsSection() {
     }
   }
 
+  if (muted.length === 0) {
+    return (
+      <GroupedSection
+        footer="Mute a domain from its detail screen to silence its notifications."
+        title="Muted domains"
+      />
+    );
+  }
+
   return (
-    <GlassCard>
-      <Text className="text-xl font-semibold">Muted domains</Text>
-      {muted.length === 0 ? (
-        <MutedText>Mute a domain from its detail screen to silence its notifications.</MutedText>
-      ) : (
-        <View className="gap-2">
-          {muted.map((entry) => (
-            <Link
-              asChild
-              href={{
-                params: { domain: entry.domainName },
-                pathname: "/(tabs)/domains/[domain]",
-              }}
-              key={entry.id}
-            >
-              <Link.Trigger>
-                <Pressable
-                  accessibilityLabel={`Open ${entry.domainName}`}
-                  accessibilityRole="link"
-                  className="border-line bg-canvas-2 flex-row items-center gap-3 rounded-xl border p-3"
-                  style={{ borderCurve: "continuous" }}
-                >
-                  <View className="min-h-12 flex-1 justify-center">
-                    <Text className="font-semibold" numberOfLines={1}>
-                      {entry.domainName}
-                    </Text>
-                  </View>
+    <GroupedSection title="Muted domains">
+      {muted.map((entry) => (
+        <Link
+          asChild
+          href={{
+            params: { domain: entry.domainName },
+            pathname: "/(tabs)/domains/[domain]",
+          }}
+          key={entry.id}
+        >
+          <Link.Trigger>
+            <Pressable accessibilityLabel={`Open ${entry.domainName}`} accessibilityRole="link">
+              <GroupedRow
+                trailing={
                   <Button
                     disabled={setMuted.isPending}
                     onPress={() => void handleUnmute(entry.id, entry.domainName)}
@@ -76,34 +72,37 @@ export function MutedDomainsSection() {
                   >
                     <Text>Unmute</Text>
                   </Button>
-                </Pressable>
-              </Link.Trigger>
-              <Link.Preview />
-              <Link.Menu>
-                <Link.MenuAction
-                  icon="bell"
-                  onPress={() => void handleUnmute(entry.id, entry.domainName)}
-                >
-                  Unmute notifications
-                </Link.MenuAction>
-              </Link.Menu>
-            </Link>
-          ))}
-        </View>
-      )}
-    </GlassCard>
+                }
+              >
+                <Text className="font-semibold" numberOfLines={1}>
+                  {entry.domainName}
+                </Text>
+              </GroupedRow>
+            </Pressable>
+          </Link.Trigger>
+          <Link.Preview />
+          <Link.Menu>
+            <Link.MenuAction
+              icon="bell"
+              onPress={() => void handleUnmute(entry.id, entry.domainName)}
+            >
+              Unmute notifications
+            </Link.MenuAction>
+          </Link.Menu>
+        </Link>
+      ))}
+    </GroupedSection>
   );
 }
 
 export function MutedDomainsSectionSkeleton() {
   return (
-    <GlassCard>
-      <Text className="text-xl font-semibold">Muted domains</Text>
-      <View className="gap-2">
+    <GroupedSection title="Muted domains">
+      <View className="gap-2 p-3">
         {[0, 1, 2].map((i) => (
-          <View className="border-line bg-canvas-2 h-14 rounded-xl border" key={i} />
+          <View className="bg-canvas-2 h-10 rounded-xl" key={i} />
         ))}
       </View>
-    </GlassCard>
+    </GroupedSection>
   );
 }

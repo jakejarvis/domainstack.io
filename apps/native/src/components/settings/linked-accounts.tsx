@@ -5,6 +5,7 @@ import { Platform, View } from "react-native";
 import { useCSSVariable } from "uniwind";
 
 import { Button } from "@/components/button";
+import { GroupedRow, GroupedSection } from "@/components/form/group";
 import { ProviderIcon } from "@/components/provider-icon";
 import { MutedText, Text } from "@/components/text";
 import { analytics } from "@/lib/analytics";
@@ -108,30 +109,39 @@ export function LinkedAccountsSection() {
     }
   }
 
+  if (otaConfig.isPending || linkedAccounts.isPending) {
+    return (
+      <GroupedSection title="Sign-in methods">
+        <View className="p-3">
+          <MutedText>Loading providers…</MutedText>
+        </View>
+      </GroupedSection>
+    );
+  }
+
+  if (providerOptions.length === 0) {
+    return (
+      <GroupedSection title="Sign-in methods">
+        <View className="p-3">
+          <MutedText>No sign-in providers are available right now.</MutedText>
+        </View>
+      </GroupedSection>
+    );
+  }
+
   return (
-    <View className="gap-3">
-      <Text className="font-semibold">Linked sign-in accounts</Text>
-      {otaConfig.isPending || linkedAccounts.isPending ? (
-        <MutedText>Loading providers…</MutedText>
-      ) : providerOptions.length === 0 ? (
-        <MutedText>No sign-in providers are available right now.</MutedText>
-      ) : (
-        providerOptions.map((provider) => {
-          const isLinked = linkedProviderIds.has(provider.id);
-          const unlinkDisabled = isLinked && linkedCount < 2;
-          return (
-            <View
-              className="border-line bg-canvas-2 flex-row items-center gap-3 rounded-xl border p-3"
-              key={provider.id}
-            >
-              <ProviderIcon color={iconColor} provider={provider.id} size={22} />
-              <View className="flex-1 gap-1">
-                <Text className="font-semibold">{provider.name}</Text>
-                {isLinked && unlinkDisabled ? (
-                  <MutedText className="text-xs">Must keep at least one sign-in method.</MutedText>
-                ) : null}
-              </View>
-              {isLinked ? (
+    <GroupedSection
+      footer="Add a second sign-in method so you can recover access even if one provider is unavailable."
+      title="Sign-in methods"
+    >
+      {providerOptions.map((provider) => {
+        const isLinked = linkedProviderIds.has(provider.id);
+        const unlinkDisabled = isLinked && linkedCount < 2;
+        return (
+          <GroupedRow
+            key={provider.id}
+            trailing={
+              isLinked ? (
                 <Button
                   disabled={unlinkDisabled || unlink.isPending}
                   loading={unlinkingProvider === provider.id}
@@ -148,11 +158,21 @@ export function LinkedAccountsSection() {
                 >
                   <Text>Link</Text>
                 </Button>
-              )}
+              )
+            }
+          >
+            <ProviderIcon color={iconColor} provider={provider.id} size={22} />
+            <View className="min-w-0 flex-1 gap-0.5">
+              <Text className="font-semibold" numberOfLines={1}>
+                {provider.name}
+              </Text>
+              {isLinked && unlinkDisabled ? (
+                <MutedText className="text-xs">Must keep at least one sign-in method.</MutedText>
+              ) : null}
             </View>
-          );
-        })
-      )}
-    </View>
+          </GroupedRow>
+        );
+      })}
+    </GroupedSection>
   );
 }

@@ -4,7 +4,7 @@ import * as WebBrowser from "expo-web-browser";
 import { View } from "react-native";
 
 import { Button } from "@/components/button";
-import { GlassCard } from "@/components/glass-card";
+import { GroupedSection } from "@/components/form/group";
 import { SkeletonRows } from "@/components/skeleton";
 import { MutedText, Text } from "@/components/text";
 import { analytics } from "@/lib/analytics";
@@ -49,36 +49,37 @@ export function BillingSection() {
   }
 
   return (
-    <GlassCard>
-      <Text className="text-xl font-semibold">Plan</Text>
-      {subscription.isPending ? (
-        <SkeletonRows count={1} />
-      ) : subscription.data ? (
-        <View className="gap-2">
-          <Text className="text-lg font-semibold">{subscription.data.plan}</Text>
-          <MutedText>
-            {subscription.data.activeCount} of {subscription.data.planQuota} active domains used
-          </MutedText>
-          {subscription.data.endsAt ? (
-            <MutedText>Access ends {formatDate(subscription.data.endsAt)}</MutedText>
-          ) : null}
-          {subscription.data.plan === "free" ? (
-            <Button loading={checkout.isPending} onPress={() => void handleUpgrade()}>
-              <Text>Upgrade to Pro</Text>
-            </Button>
-          ) : (
-            <Button
-              loading={portal.isPending}
-              onPress={() => void handleManage()}
-              variant="secondary"
-            >
-              <Text>Manage subscription</Text>
-            </Button>
-          )}
-        </View>
-      ) : (
-        <MutedText>Plan details are unavailable.</MutedText>
-      )}
-    </GlassCard>
+    <GroupedSection title="Plan">
+      <View className="gap-3 p-4">
+        {subscription.isPending ? (
+          <SkeletonRows count={1} />
+        ) : subscription.data ? (
+          <>
+            <Text className="text-lg font-semibold">{subscription.data.plan}</Text>
+            <MutedText>
+              {subscription.data.activeCount} of {subscription.data.planQuota} active domains used
+            </MutedText>
+            {subscription.data.endsAt ? (
+              <MutedText>Access ends {formatDate(subscription.data.endsAt)}</MutedText>
+            ) : null}
+            {subscription.data.plan === "free" ? (
+              <Button loading={checkout.isPending} onPress={() => void handleUpgrade()}>
+                <Text>Upgrade to Pro</Text>
+              </Button>
+            ) : (
+              <Button
+                loading={portal.isPending}
+                onPress={() => void handleManage()}
+                variant="secondary"
+              >
+                <Text>Manage subscription</Text>
+              </Button>
+            )}
+          </>
+        ) : (
+          <MutedText>Plan details are unavailable.</MutedText>
+        )}
+      </View>
+    </GroupedSection>
   );
 }

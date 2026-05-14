@@ -2,17 +2,15 @@ import { Host, Switch as NativeSwitch } from "@expo/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { Suspense, useRef } from "react";
-import { Alert, Pressable, View } from "react-native";
+import { Alert, View } from "react-native";
 
 import { type AppBottomSheetRef } from "@/components/bottom-sheet";
-import { Button } from "@/components/button";
-import { EmptyState } from "@/components/empty-state";
-import { GlassCard } from "@/components/glass-card";
+import { GroupedRow, GroupedSection } from "@/components/form/group";
 import { CalendarFeedSheet } from "@/components/portfolio/calendar-feed-sheet";
 import { Screen } from "@/components/screen";
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
 import { BillingSection } from "@/components/settings/billing";
-import { DeleteAccountSection } from "@/components/settings/delete-account";
+import { DeleteAccountRow } from "@/components/settings/delete-account";
 import { LinkedAccountsSection } from "@/components/settings/linked-accounts";
 import {
   MutedDomainsSection,
@@ -33,6 +31,8 @@ type PreferenceKey =
   | "providerChanges"
   | "certificateChanges";
 
+type Channel = "inApp" | "email" | "push";
+
 const preferenceLabels: Array<{ key: PreferenceKey; label: string }> = [
   { key: "domainExpiry", label: "Domain expiry" },
   { key: "certificateExpiry", label: "Certificate expiry" },
@@ -41,24 +41,25 @@ const preferenceLabels: Array<{ key: PreferenceKey; label: string }> = [
   { key: "certificateChanges", label: "Certificate changes" },
 ];
 
-function ToggleRow({
+const channels: Array<{ key: Channel; title: string }> = [
+  { key: "inApp", title: "In-app" },
+  { key: "email", title: "Email" },
+  { key: "push", title: "Push" },
+];
+
+function NativeToggle({
   disabled,
-  label,
   onValueChange,
   value,
 }: {
   disabled?: boolean;
-  label: string;
   onValueChange: (value: boolean) => void;
   value: boolean;
 }) {
   return (
-    <View className="min-h-12 flex-row items-center justify-between gap-4">
-      <Text className="flex-1 font-semibold">{label}</Text>
-      <Host matchContents style={{ minHeight: 36, minWidth: 52 }}>
-        <NativeSwitch disabled={disabled} onValueChange={onValueChange} value={value} />
-      </Host>
-    </View>
+    <Host matchContents style={{ minHeight: 32, minWidth: 52 }}>
+      <NativeSwitch disabled={disabled} onValueChange={onValueChange} value={value} />
+    </Host>
   );
 }
 
@@ -87,7 +88,7 @@ export default function SettingsScreen() {
       </SectionErrorBoundary>
 
       <SectionErrorBoundary sectionName="Calendar feed">
-        <CalendarFeedRow onOpen={() => calendarSheetRef.current?.present()} />
+        <CalendarFeedSection onOpen={() => calendarSheetRef.current?.present()} />
       </SectionErrorBoundary>
 
       <SectionErrorBoundary sectionName="Muted domains">
@@ -105,7 +106,12 @@ export default function SettingsScreen() {
       </SectionErrorBoundary>
 
       <SectionErrorBoundary sectionName="Danger zone">
-        <DeleteAccountSection />
+        <GroupedSection
+          footer="Deletes your account, tracked domains, notification preferences, and any active subscription. This action cannot be undone."
+          title="Danger zone"
+        >
+          <DeleteAccountRow />
+        </GroupedSection>
       </SectionErrorBoundary>
 
       <CalendarFeedSheet ref={calendarSheetRef} />
@@ -113,17 +119,16 @@ export default function SettingsScreen() {
   );
 }
 
-function CalendarFeedRow({ onOpen }: { onOpen: () => void }) {
+function CalendarFeedSection({ onOpen }: { onOpen: () => void }) {
   return (
-    <GlassCard>
-      <View className="gap-1">
-        <Text className="text-xl font-semibold">Calendar feed</Text>
-        <MutedText>Subscribe to your domain expirations in any calendar app.</MutedText>
-      </View>
-      <Button onPress={onOpen} variant="secondary">
-        <Text>Manage feed</Text>
-      </Button>
-    </GlassCard>
+    <GroupedSection
+      footer="Subscribe to your domain expirations in any calendar app."
+      title="Calendar feed"
+    >
+      <GroupedRow onPress={onOpen} showChevron>
+        <Text className="font-semibold">Manage feed</Text>
+      </GroupedRow>
+    </GroupedSection>
   );
 }
 
@@ -140,54 +145,52 @@ function NotificationChannelsSection() {
     }),
   );
 
+  if (preferences.isPending) {
+    return (
+      <GroupedSection title="Notifications">
+        <View className="p-3">
+          <SkeletonRows count={3} />
+        </View>
+      </GroupedSection>
+    );
+  }
+
+  if (preferences.error || !preferences.data) {
+    return (
+      <GroupedSection title="Notifications">
+        <View className="p-3">
+          <MutedText>{preferences.error?.message ?? "Preferences did not load."}</MutedText>
+        </View>
+      </GroupedSection>
+    );
+  }
+
   const prefs = preferences.data;
 
   return (
-    <GlassCard>
-      <Text className="text-xl font-semibold">Notification channels</Text>
-      {preferences.isPending && <SkeletonRows count={2} />}
-      {preferences.error && (
-        <EmptyState
-          actionLabel="Retry"
-          body={preferences.error.message}
-          onAction={() => void preferences.refetch()}
-          title="Preferences did not load"
-        />
-      )}
-      {prefs &&
-        preferenceLabels.map((pref) => (
-          <View className="gap-2" key={pref.key}>
-            <Text className="font-semibold">{pref.label}</Text>
-            <ToggleRow
-              label="In-app"
-              onValueChange={(inApp) =>
-                void updatePreferences.mutateAsync({
-                  [pref.key]: { ...prefs[pref.key], inApp },
-                })
+    <View className="gap-6">
+      {channels.map((channel) => (
+        <GroupedSection key={channel.key} title={`${channel.title} notifications`}>
+          {preferenceLabels.map((pref) => (
+            <GroupedRow
+              key={pref.key}
+              trailing={
+                <NativeToggle
+                  onValueChange={(next) =>
+                    void updatePreferences.mutateAsync({
+                      [pref.key]: { ...prefs[pref.key], [channel.key]: next },
+                    })
+                  }
+                  value={prefs[pref.key][channel.key]}
+                />
               }
-              value={prefs[pref.key].inApp}
-            />
-            <ToggleRow
-              label="Email"
-              onValueChange={(email) =>
-                void updatePreferences.mutateAsync({
-                  [pref.key]: { ...prefs[pref.key], email },
-                })
-              }
-              value={prefs[pref.key].email}
-            />
-            <ToggleRow
-              label="Push"
-              onValueChange={(push) =>
-                void updatePreferences.mutateAsync({
-                  [pref.key]: { ...prefs[pref.key], push },
-                })
-              }
-              value={prefs[pref.key].push}
-            />
-          </View>
-        ))}
-    </GlassCard>
+            >
+              <Text className="font-semibold">{pref.label}</Text>
+            </GroupedRow>
+          ))}
+        </GroupedSection>
+      ))}
+    </View>
   );
 }
 
@@ -208,43 +211,65 @@ function PushDeviceSection() {
   );
 
   return (
-    <GlassCard>
-      <Text className="text-xl font-semibold">Push device</Text>
-      <Button
-        loading={pushRegistration.registering}
-        onPress={() => void pushRegistration.register()}
-        variant="secondary"
+    <View className="gap-6">
+      <GroupedSection
+        footer={
+          pushRegistration.error
+            ? pushRegistration.error.message
+            : "Receive push notifications on this device."
+        }
+        title="This device"
       >
-        <Text>Register this device</Text>
-      </Button>
-      {pushRegistration.error ? <MutedText>{pushRegistration.error.message}</MutedText> : null}
+        <GroupedRow
+          disabled={pushRegistration.registering}
+          onPress={() => void pushRegistration.register()}
+        >
+          <Text className="font-semibold">
+            {pushRegistration.registering ? "Registering…" : "Register this device"}
+          </Text>
+        </GroupedRow>
+      </GroupedSection>
+
       {devices.data?.map((device) => (
-        <View className="border-line bg-canvas-2 gap-2 rounded-xl border p-3" key={device.id}>
-          <Text className="font-semibold">{device.deviceName ?? device.platform}</Text>
-          <MutedText numberOfLines={1}>{device.expoPushToken}</MutedText>
-          {device.lastError ? <MutedText>{device.lastError}</MutedText> : null}
-          <ToggleRow
-            label="Enabled"
-            onValueChange={(enabled) =>
-              void setDeviceEnabled.mutateAsync({
-                enabled,
-                expoPushToken: device.expoPushToken,
-              })
+        <GroupedSection
+          footer={device.lastError ?? undefined}
+          key={device.id}
+          title={device.deviceName ?? device.platform}
+        >
+          <GroupedRow
+            trailing={
+              <NativeToggle
+                onValueChange={(enabled) =>
+                  void setDeviceEnabled.mutateAsync({
+                    enabled,
+                    expoPushToken: device.expoPushToken,
+                  })
+                }
+                value={device.enabled}
+              />
             }
-            value={device.enabled}
-          />
-          <Button
-            loading={unregisterDevice.isPending}
-            onPress={() =>
-              void unregisterDevice.mutateAsync({ expoPushToken: device.expoPushToken })
-            }
-            variant="danger"
           >
-            <Text>Unregister</Text>
-          </Button>
-        </View>
+            <Text className="font-semibold">Enabled</Text>
+          </GroupedRow>
+          <GroupedRow
+            disabled={unregisterDevice.isPending}
+            onPress={() =>
+              Alert.alert("Unregister device?", "Push notifications will stop on this device.", [
+                { style: "cancel", text: "Cancel" },
+                {
+                  onPress: () =>
+                    void unregisterDevice.mutateAsync({ expoPushToken: device.expoPushToken }),
+                  style: "destructive",
+                  text: "Unregister",
+                },
+              ])
+            }
+          >
+            <Text className="font-semibold text-danger">Unregister</Text>
+          </GroupedRow>
+        </GroupedSection>
       ))}
-    </GlassCard>
+    </View>
   );
 }
 
@@ -256,21 +281,30 @@ function PrivacySection() {
   const setErrorCaptureEnabled = usePrivacyStore((state) => state.setErrorCaptureEnabled);
 
   return (
-    <GlassCard>
-      <Text className="text-xl font-semibold">Privacy</Text>
-      <ToggleRow
-        disabled={!hasHydrated}
-        label="Product analytics"
-        onValueChange={setAnalyticsEnabled}
-        value={analyticsEnabled}
-      />
-      <ToggleRow
-        disabled={!hasHydrated}
-        label="Error reporting"
-        onValueChange={setErrorCaptureEnabled}
-        value={errorCaptureEnabled}
-      />
-    </GlassCard>
+    <GroupedSection title="Privacy">
+      <GroupedRow
+        trailing={
+          <NativeToggle
+            disabled={!hasHydrated}
+            onValueChange={setAnalyticsEnabled}
+            value={analyticsEnabled}
+          />
+        }
+      >
+        <Text className="font-semibold">Product analytics</Text>
+      </GroupedRow>
+      <GroupedRow
+        trailing={
+          <NativeToggle
+            disabled={!hasHydrated}
+            onValueChange={setErrorCaptureEnabled}
+            value={errorCaptureEnabled}
+          />
+        }
+      >
+        <Text className="font-semibold">Error reporting</Text>
+      </GroupedRow>
+    </GroupedSection>
   );
 }
 
@@ -279,39 +313,30 @@ function AccountSection() {
   const email = session.data?.user?.email;
 
   return (
-    <GlassCard>
-      <Text className="text-xl font-semibold">Account</Text>
+    <View className="gap-6">
       {email ? (
-        <View className="flex-row flex-wrap items-center gap-2">
-          <MutedText className="flex-1" numberOfLines={1} selectable>
-            {email}
-          </MutedText>
-          <Pressable
-            accessibilityLabel="Why can't I change my email?"
-            accessibilityRole="button"
-            className="border-line bg-canvas-2 min-h-8 min-w-8 items-center justify-center rounded-full border px-2"
-            onPress={() =>
-              Alert.alert(
-                "Why can't I change my email?",
-                "This is the email address that was verified with the linked account provider you chose at sign up. To change it, sign in with a different external account or contact support.",
-                [{ text: "Got it" }],
-              )
-            }
-          >
-            <Text className="text-xs font-semibold">?</Text>
-          </Pressable>
-        </View>
+        <GroupedSection
+          footer="To change your email, sign in with a different external account or contact support."
+          title="Account"
+        >
+          <GroupedRow>
+            <MutedText className="flex-1" numberOfLines={1} selectable>
+              {email}
+            </MutedText>
+          </GroupedRow>
+        </GroupedSection>
       ) : null}
       <LinkedAccountsSection />
-      <Button
-        onPress={() => {
-          analytics.track("sign_out_clicked");
-          void signOut().then(() => router.replace("/(tabs)/search"));
-        }}
-        variant="secondary"
-      >
-        <Text>Sign out</Text>
-      </Button>
-    </GlassCard>
+      <GroupedSection>
+        <GroupedRow
+          onPress={() => {
+            analytics.track("sign_out_clicked");
+            void signOut().then(() => router.replace("/(tabs)/search"));
+          }}
+        >
+          <Text className="font-semibold text-danger">Sign out</Text>
+        </GroupedRow>
+      </GroupedSection>
+    </View>
   );
 }
