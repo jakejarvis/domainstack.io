@@ -1177,3 +1177,21 @@ export async function deleteStaleUnverifiedDomains(ids: string[]): Promise<numbe
 
   return deleted.length;
 }
+
+/**
+ * Delete stale unverified domains directly by cutoff date in a single query.
+ * Optimized to avoid N+1 select-then-delete pattern.
+ *
+ * @param cutoffDate - Domains created before this date that are unverified will be deleted
+ * @returns Number of domains deleted
+ */
+export async function deleteStaleUnverifiedDomainsByCutoff(cutoffDate: Date): Promise<number> {
+  const deleted = await db
+    .delete(userTrackedDomains)
+    .where(
+      and(eq(userTrackedDomains.verified, false), lt(userTrackedDomains.createdAt, cutoffDate)),
+    )
+    .returning({ id: userTrackedDomains.id });
+
+  return deleted.length;
+}
