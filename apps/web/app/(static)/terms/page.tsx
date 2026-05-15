@@ -12,7 +12,7 @@ export default function TermsPage() {
       <header className="not-prose">
         <h1 className="text-2xl font-semibold tracking-tight">Terms of Service</h1>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Last updated: January 20, 2026
+          Last updated: May 15, 2026
         </p>
       </header>
 
@@ -29,11 +29,12 @@ export default function TermsPage() {
         <p>
           Domainstack is a domain intelligence platform that provides information about domain
           registrations, DNS records, SSL certificates, hosting details, and SEO metadata. The
-          Service allows users to:
+          Service is available through our website and our iOS and Android mobile apps, and allows
+          users to:
         </p>
         <ul>
           <li>Look up publicly available domain information</li>
-          <li>Track domains and receive expiration notifications</li>
+          <li>Track domains and receive expiration notifications by email or push notification</li>
           <li>Monitor SSL certificate validity</li>
           <li>View hosting and DNS provider information</li>
         </ul>
@@ -42,8 +43,9 @@ export default function TermsPage() {
       <section id="account-registration">
         <h2>Account Registration</h2>
         <p>
-          To access certain features, you must create an account using one of our supported external
-          providers. You agree to:
+          To access certain features, you must create an account using one of our supported sign-in
+          providers (such as GitHub, GitLab, Google, Vercel, or Apple). On our mobile apps you may
+          sign in natively with Apple or Google. You agree to:
         </p>
         <ul>
           <li>Provide accurate and complete information</li>
@@ -51,6 +53,61 @@ export default function TermsPage() {
           <li>Accept responsibility for all activities under your account</li>
           <li>Notify us immediately of any unauthorized access</li>
         </ul>
+      </section>
+
+      <section id="mobile-applications">
+        <h2>Mobile Applications</h2>
+        <p>
+          Our iOS and Android apps are distributed through the Apple App Store and Google Play. Your
+          use of an app is also subject to the applicable app store&apos;s terms of service, and you
+          agree to comply with them.
+        </p>
+
+        <h3>Push Notifications</h3>
+        <p>
+          The apps can send push notifications. You may grant or revoke notification permission at
+          any time from your device settings, and you can manage notification categories in your
+          account settings. Notification delivery depends on Apple and Google and is not guaranteed.
+        </p>
+
+        <h3>Apple App Store</h3>
+        <p>
+          If you download the app from the Apple App Store, the following additional terms apply.
+          You acknowledge and agree that:
+        </p>
+        <ul>
+          <li>
+            These Terms are between you and Domainstack only, and not with Apple. Apple is not
+            responsible for the app or its content.
+          </li>
+          <li>
+            Apple has no obligation to furnish any maintenance or support services for the app.
+          </li>
+          <li>
+            In the event of any failure of the app to conform to any applicable warranty, you may
+            notify Apple, and Apple will refund any applicable purchase price for the app; to the
+            maximum extent permitted by law, Apple has no other warranty obligation with respect to
+            the app.
+          </li>
+          <li>
+            Apple is not responsible for addressing any claims by you or any third party relating to
+            the app, including product liability, regulatory, or intellectual property claims.
+          </li>
+          <li>
+            Apple and its subsidiaries are third-party beneficiaries of these Terms and, upon your
+            acceptance, will have the right to enforce these Terms against you.
+          </li>
+          <li>
+            You represent that you are not located in a country subject to a U.S. Government embargo
+            and are not listed on any U.S. Government prohibited or restricted-parties list.
+          </li>
+        </ul>
+
+        <h3>No In-App Purchases</h3>
+        <p>
+          The apps do not sell digital goods or subscriptions. Pro subscriptions are purchased and
+          managed only through our website (see Paid Subscriptions below).
+        </p>
       </section>
 
       <section id="acceptable-use">
@@ -171,8 +228,10 @@ export default function TermsPage() {
       <section id="paid-subscriptions">
         <h2>Paid Subscriptions</h2>
         <p>
-          Pro subscriptions are billed on a recurring basis (monthly or annually) through our
-          payment partners.
+          Pro subscriptions are purchased and managed through our website and are billed on a
+          recurring basis (monthly or annually) through our payment partners. Subscriptions are not
+          sold through the mobile apps or the Apple App Store or Google Play, and your subscription
+          applies to your account across the website and apps.
         </p>
 
         <h3>Payment Processing</h3>

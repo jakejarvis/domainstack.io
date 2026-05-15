@@ -12,7 +12,7 @@ export default function PrivacyPage() {
       <header className="not-prose">
         <h1 className="text-2xl font-semibold tracking-tight">Privacy Policy</h1>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Last updated: January 20, 2026
+          Last updated: May 15, 2026
         </p>
       </header>
 
@@ -21,7 +21,8 @@ export default function PrivacyPage() {
         <p>
           Domainstack ("we," "our," or "us") respects your privacy and is committed to protecting
           your personal data. This privacy policy explains how we collect, use, and safeguard your
-          information when you use our domain intelligence platform.
+          information when you use our domain intelligence platform, whether through our website or
+          our iOS and Android mobile apps.
         </p>
       </section>
 
@@ -30,14 +31,20 @@ export default function PrivacyPage() {
 
         <h3>Account Information</h3>
         <p>
-          When you create an account, we collect the following details from the login provider you
-          choose:
+          When you create an account, we collect the following details from the sign-in provider you
+          choose (such as GitHub, GitLab, Google, Vercel, or Apple):
         </p>
         <ul>
           <li>Name</li>
           <li>Email address (with verification status)</li>
           <li>Profile picture (optional)</li>
         </ul>
+        <p>
+          On our mobile apps you can sign in natively with Apple or Google. If you use{" "}
+          <strong>Sign in with Apple</strong> and choose to hide your email, Apple provides us with
+          a private relay email address instead of your personal address; we use this relay address
+          to communicate with you and to send notifications.
+        </p>
 
         <h3>Domain Data</h3>
         <p>
@@ -59,6 +66,24 @@ export default function PrivacyPage() {
           <li>Device and browser information</li>
           <li>IP address and approximate location</li>
         </ul>
+
+        <h3>Mobile App Data</h3>
+        <p>
+          When you use our iOS or Android app, we additionally collect and store the following so we
+          can deliver push notifications and support the app:
+        </p>
+        <ul>
+          <li>
+            A push notification token issued by Apple or Google (via the Expo push service) for each
+            device on which you enable notifications
+          </li>
+          <li>The device platform (iOS or Android), device name, and app version</li>
+        </ul>
+        <p>
+          Your authentication session is stored securely on the device using the platform&apos;s
+          encrypted credential storage (iOS Keychain / Android Keystore). We do not collect
+          advertising identifiers, and the app does not track you across other apps or websites.
+        </p>
       </section>
 
       <section id="how-we-use-your-information">
@@ -66,7 +91,11 @@ export default function PrivacyPage() {
         <p>We use your information to:</p>
         <ul>
           <li>Provide and maintain our service</li>
-          <li>Send domain and certificate expiration notifications</li>
+          <li>Send domain and certificate expiration notifications by email</li>
+          <li>
+            Deliver push notifications to your mobile devices, if you use our app and grant
+            notification permission
+          </li>
           <li>Improve and personalize your experience</li>
           <li>Communicate important updates about our service</li>
           <li>Detect and prevent fraud or abuse</li>
@@ -158,6 +187,42 @@ export default function PrivacyPage() {
             <IconExternalLink />
           </a>
           .
+        </p>
+      </section>
+
+      <section id="push-notifications">
+        <h2>Push Notifications</h2>
+        <p>
+          If you use our mobile app and grant notification permission, we send push notifications
+          for the same events covered by email (domain and certificate expiration, change detection,
+          and verification status). To deliver these, the notification content and your
+          device&apos;s push token are processed by:
+        </p>
+        <ul>
+          <li>
+            <strong>
+              <a href="https://expo.dev" target="_blank" rel="noopener noreferrer">
+                Expo
+                <IconExternalLink />
+              </a>
+            </strong>{" "}
+            : Relays notifications from our servers to Apple and Google. See{" "}
+            <a href="https://expo.dev/privacy" target="_blank" rel="noopener noreferrer">
+              Expo&apos;s Privacy Policy
+              <IconExternalLink />
+            </a>
+            .
+          </li>
+          <li>
+            <strong>Apple Push Notification service</strong> (for iOS devices) and{" "}
+            <strong>Firebase Cloud Messaging</strong> (for Android devices), operated by Apple and
+            Google respectively, which transmit the notification to your device.
+          </li>
+        </ul>
+        <p>
+          You can turn push notifications off at any time from your device settings or from within
+          the app, and you can manage which notification categories you receive in your account
+          settings.
         </p>
       </section>
 
@@ -271,6 +336,12 @@ export default function PrivacyPage() {
           </a>
           .
         </p>
+        <p>
+          PostHog is also used in our mobile app to capture basic app-lifecycle and usage events.
+          Session replay is disabled, and the app does not autocapture errors. In the app you can
+          turn analytics and error reporting on or off at any time from the privacy controls in
+          Settings.
+        </p>
       </section>
 
       <section id="data-sharing">
@@ -286,6 +357,14 @@ export default function PrivacyPage() {
           <li>
             <strong>Email delivery:</strong> Resend for transactional email (see Email
             Communications section above)
+          </li>
+          <li>
+            <strong>Push notifications:</strong> Expo, Apple, and Google to deliver mobile push
+            notifications (see Push Notifications section above)
+          </li>
+          <li>
+            <strong>Authentication providers:</strong> The sign-in provider you choose (GitHub,
+            GitLab, Google, Vercel, or Apple) to verify your identity
           </li>
           <li>
             <strong>Payment processors:</strong> Polar and Stripe for subscription billing (see
@@ -363,13 +442,23 @@ export default function PrivacyPage() {
           storage for this site, then revisit to see the consent banner again (EU/EEA visitors
           only).
         </p>
+
+        <h3>Mobile App</h3>
+        <p>
+          Our mobile apps do not use cookies. They store a small amount of data locally on your
+          device (such as your authentication session and app preferences) to keep you signed in and
+          remember your settings. Instead of a cookie banner, the app provides in-app controls in
+          Settings to turn analytics and error reporting on or off.
+        </p>
       </section>
 
       <section id="security">
         <h2>Security</h2>
         <p>
           We implement industry-standard security measures to protect your data, including
-          encryption in transit and at rest, secure authentication, and regular security audits.
+          encryption in transit and at rest, secure authentication, and regular security audits. On
+          our mobile apps, your authentication session is stored in the device&apos;s
+          hardware-backed encrypted storage (iOS Keychain / Android Keystore).
         </p>
       </section>
 

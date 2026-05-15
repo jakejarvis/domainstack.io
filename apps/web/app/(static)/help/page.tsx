@@ -1,3 +1,4 @@
+import { IconExternalLink } from "@tabler/icons-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -42,7 +43,67 @@ const faqSections = [
           <p>
             Nope! You can look up any domain and view its full report without signing in. An account
             is only required if you want to track domains you own and receive expiration
-            notifications. Sign up is free and uses GitHub for authentication.
+            notifications. Sign up is free and uses a supported login provider (GitHub, GitLab,
+            Google, Vercel, or Apple) so you never need a separate password.
+          </p>
+        ),
+      },
+    ],
+  },
+  {
+    title: "Mobile App",
+    items: [
+      {
+        question: "Is there a mobile app?",
+        answer: (
+          <>
+            <p>
+              Yes! Domainstack has native iOS and Android apps, available for free on the{" "}
+              <a
+                href="https://apps.apple.com/app/domainstack/id6769468861"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                App Store
+                <IconExternalLink />
+              </a>
+              and{" "}
+              <a
+                href="https://play.google.com/store/apps/details?id=io.domainstack.app"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Google Play
+                <IconExternalLink />
+              </a>
+              . They use the same account as the website, so anything you track stays in sync across
+              web and mobile.
+            </p>
+            <p>
+              The app gives you anywhere, anytime access to full domain reports, portfolio
+              management, and push notifications for expirations and changes.
+            </p>
+          </>
+        ),
+      },
+      {
+        question: "How do I get notifications on my phone?",
+        answer: (
+          <p>
+            Sign in to the app and allow notifications when prompted. You&apos;ll then receive push
+            notifications for the same events as email, domain and certificate expirations, change
+            detection, and verification status. You can manage them per device in the app&apos;s
+            settings or your phone&apos;s system settings.
+          </p>
+        ),
+      },
+      {
+        question: "Can I subscribe to Pro in the app?",
+        answer: (
+          <p>
+            The app itself is free. For now, Pro subscriptions are purchased and managed on the
+            website rather than through the app stores or in-app purchases. Your subscription will
+            always apply to your account on both web and mobile automatically.
           </p>
         ),
       },
@@ -215,7 +276,7 @@ const faqSections = [
         question: "What notifications will I receive?",
         answer: (
           <>
-            <p>We send email notifications for:</p>
+            <p>We send email notifications (and push notifications in the mobile app) for:</p>
             <ul>
               <li>
                 <strong>Domain expiration</strong>: 30, 14, 7, and 1&nbsp;day before your domain
@@ -249,11 +310,17 @@ const faqSections = [
       {
         question: "How do I disable notifications?",
         answer: (
-          <p>
-            Go to <Link href="/settings">your settings</Link> to toggle notification categories on
-            or off globally. You can disable domain expiration alerts, certificate expiration
-            alerts, or verification status alerts independently.
-          </p>
+          <>
+            <p>
+              Go to <Link href="/settings">your settings</Link> to toggle notification categories on
+              or off globally. You can disable domain expiration alerts, certificate expiration
+              alerts, or verification status alerts independently.
+            </p>
+            <p>
+              Push notifications can additionally be turned off per device from the app&apos;s
+              settings or your phone&apos;s system notification settings.
+            </p>
+          </>
         ),
       },
     ],
@@ -333,6 +400,10 @@ const faqSections = [
               <li>Your account information (name and email via your login provider)</li>
               <li>The domains you choose to track</li>
               <li>Basic usage analytics</li>
+              <li>
+                If you use the mobile app and enable notifications, a push token plus your device
+                name, platform, and app version
+              </li>
             </ul>
             <p>
               Domain data shown in reports is all publicly available; we don&apos;t access anything
@@ -362,7 +433,8 @@ const faqSections = [
           <p>
             Click "Sign in" in the header (or <Link href="/login">click here</Link>) and
             authenticate with one of the supported services. We use OAuth so you don&apos;t need to
-            worry about a password. You can always change your linked account later in Settings.
+            worry about a password. In the mobile app you can also sign in natively with Apple or
+            Google. You can always change your linked account later in Settings.
           </p>
         ),
       },
