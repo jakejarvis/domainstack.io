@@ -96,12 +96,13 @@ export async function replaceDns(params: UpsertDnsParams) {
     }
 
     // Identify records to delete (exist in DB but not in the new set)
-    const idsToDelete = allExisting
-      .filter((e) => {
-        const key = makeDnsRecordKey(e.type, e.name, e.value, e.priority);
-        return !allNextKeys.has(key);
-      })
-      .map((e) => e.id);
+    const idsToDelete = allExisting.reduce<string[]>((acc, e) => {
+      const key = makeDnsRecordKey(e.type, e.name, e.value, e.priority);
+      if (!allNextKeys.has(key)) {
+        acc.push(e.id);
+      }
+      return acc;
+    }, []);
 
     // Delete obsolete records
     if (idsToDelete.length > 0) {
