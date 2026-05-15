@@ -191,15 +191,10 @@ async function sendNotificationInternal(
   shouldSendEmail: boolean,
   shouldSendInApp: boolean,
   shouldSendPush: boolean,
-): Promise<boolean> {
-  const [
-    { createNotification, updateNotificationResendId },
-    { sendEmail },
-    { sendPushForNotificationStep },
-  ] = await Promise.all([
+): Promise<{ sent: boolean; notificationId: string | null }> {
+  const [{ createNotification, updateNotificationResendId }, { sendEmail }] = await Promise.all([
     import("@domainstack/db/queries"),
     import("@domainstack/email"),
-    import("./push"),
   ]);
 
   const {
@@ -215,8 +210,12 @@ async function sendNotificationInternal(
     emailSubject,
   } = options;
 
-  if (!shouldSendEmail && !shouldSendInApp && !shouldSendPush) return false;
+  if (!shouldSendEmail && !shouldSendInApp && !shouldSendPush) {
+    return { sent: false, notificationId: null };
+  }
 
+  // Push is dispatched as its own durable workflow step (hoisted out of this
+  // function); we still record "push" in the channel list for bookkeeping.
   const channels: string[] = [];
   if (shouldSendEmail && emailComponent && emailSubject) channels.push("email");
   if (shouldSendInApp) channels.push("in-app");
@@ -257,18 +256,7 @@ async function sendNotificationInternal(
     }
   }
 
-  if (shouldSendPush) {
-    await sendPushForNotificationStep({
-      userId,
-      notificationId: notification.id,
-      title,
-      message,
-      trackedDomainId,
-      domainName,
-    });
-  }
-
-  return true;
+  return { sent: true, notificationId: notification.id };
 }
 
 // ============================================================================
@@ -308,7 +296,7 @@ export async function sendRegistrationChangeNotificationStep(
   shouldSendEmail: boolean,
   shouldSendInApp: boolean,
   shouldSendPush: boolean,
-): Promise<boolean> {
+): Promise<{ sent: boolean; notificationId: string | null }> {
   "use step";
 
   const [{ getStepMetadata }, { default: RegistrationChangeEmail }] = await Promise.all([
@@ -381,7 +369,7 @@ export async function sendProviderChangeNotificationStep(
   shouldSendEmail: boolean,
   shouldSendInApp: boolean,
   shouldSendPush: boolean,
-): Promise<boolean> {
+): Promise<{ sent: boolean; notificationId: string | null }> {
   "use step";
 
   const [{ getStepMetadata }, { default: ProviderChangeEmail }] = await Promise.all([
@@ -448,7 +436,7 @@ export async function sendCertificateChangeNotificationStep(
   shouldSendEmail: boolean,
   shouldSendInApp: boolean,
   shouldSendPush: boolean,
-): Promise<boolean> {
+): Promise<{ sent: boolean; notificationId: string | null }> {
   "use step";
 
   const [{ getStepMetadata }, { default: CertificateChangeEmail }] = await Promise.all([

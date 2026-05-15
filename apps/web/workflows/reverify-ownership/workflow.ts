@@ -1,5 +1,6 @@
 import { FatalError } from "workflow";
 
+import { sendPushForNotificationStep } from "@/workflows/shared/push";
 import { verifyDomainOwnershipByMethod } from "@/workflows/shared/verify-domain";
 import type { VerificationMethod } from "@domainstack/constants";
 
@@ -58,23 +59,31 @@ export async function reverifyOwnershipWorkflow(
 
   // Step 4: Send notification email based on the action (separate steps for retry isolation)
   if (failureResult.shouldSendEmail) {
-    if (failureResult.emailType === "failing") {
-      await sendVerificationFailingEmail({
-        id: domain.id,
-        domainName: domain.domainName,
+    const emailDomain = {
+      id: domain.id,
+      domainName: domain.domainName,
+      userId: domain.userId,
+      userName: domain.userName,
+      userEmail: domain.userEmail,
+      verificationMethod: domain.verificationMethod,
+    };
+
+    const notified =
+      failureResult.emailType === "failing"
+        ? await sendVerificationFailingEmail(emailDomain)
+        : await sendVerificationRevokedEmail(emailDomain);
+
+    // Step 5: Dispatch push as its own durable step (idempotent by
+    // notificationId). Reverify always pushes when an email is sent — there
+    // is no per-user push preference for verification alerts.
+    if (notified.sent && notified.notificationId) {
+      await sendPushForNotificationStep({
         userId: domain.userId,
-        userName: domain.userName,
-        userEmail: domain.userEmail,
-        verificationMethod: domain.verificationMethod,
-      });
-    } else {
-      await sendVerificationRevokedEmail({
-        id: domain.id,
+        notificationId: notified.notificationId,
+        title: notified.title,
+        message: notified.message,
+        trackedDomainId: domain.id,
         domainName: domain.domainName,
-        userId: domain.userId,
-        userName: domain.userName,
-        userEmail: domain.userEmail,
-        verificationMethod: domain.verificationMethod,
       });
     }
   }
@@ -202,7 +211,9 @@ interface DomainForEmail {
 /**
  * Step: Send verification failing notification email.
  */
-async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boolean> {
+async function sendVerificationFailingEmail(
+  domain: DomainForEmail,
+): Promise<{ sent: boolean; notificationId: string | null; title: string; message: string }> {
   "use step";
 
   const [
@@ -210,17 +221,15 @@ async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boo
     { VERIFICATION_GRACE_PERIOD_DAYS },
     { hasRecentNotification, createNotification, updateNotificationResendId },
     { sendEmail },
-    { sendPushForNotificationStep },
   ] = await Promise.all([
     import("@domainstack/email/templates/verification-failing"),
     import("@domainstack/constants"),
     import("@domainstack/db/queries"),
     import("@/workflows/shared/send-email"),
-    import("@/workflows/shared/push"),
   ]);
 
   const alreadySent = await hasRecentNotification(domain.id, "verification_failing");
-  if (alreadySent) return false;
+  if (alreadySent) return { sent: false, notificationId: null, title: "", message: "" };
 
   const title = `Verification failing for ${domain.domainName}`;
   const subject = `⚠️ ${title}`;
@@ -261,38 +270,29 @@ async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boo
   // Update notification with email ID
   await updateNotificationResendId(notification.id, result.emailId);
 
-  await sendPushForNotificationStep({
-    userId: domain.userId,
-    notificationId: notification.id,
-    title,
-    message,
-    trackedDomainId: domain.id,
-    domainName: domain.domainName,
-  });
-
-  return true;
+  return { sent: true, notificationId: notification.id, title, message };
 }
 
 /**
  * Step: Send verification revoked notification email.
  */
-async function sendVerificationRevokedEmail(domain: DomainForEmail): Promise<boolean> {
+async function sendVerificationRevokedEmail(
+  domain: DomainForEmail,
+): Promise<{ sent: boolean; notificationId: string | null; title: string; message: string }> {
   "use step";
 
   const [
     { default: VerificationRevokedEmail },
     { hasRecentNotification, createNotification, updateNotificationResendId },
     { sendEmail },
-    { sendPushForNotificationStep },
   ] = await Promise.all([
     import("@domainstack/email/templates/verification-revoked"),
     import("@domainstack/db/queries"),
     import("@/workflows/shared/send-email"),
-    import("@/workflows/shared/push"),
   ]);
 
   const alreadySent = await hasRecentNotification(domain.id, "verification_revoked");
-  if (alreadySent) return false;
+  if (alreadySent) return { sent: false, notificationId: null, title: "", message: "" };
 
   const title = `Verification revoked for ${domain.domainName}`;
   const subject = `❌ ${title}`;
@@ -331,14 +331,5 @@ async function sendVerificationRevokedEmail(domain: DomainForEmail): Promise<boo
   // Update notification with email ID
   await updateNotificationResendId(notification.id, result.emailId);
 
-  await sendPushForNotificationStep({
-    userId: domain.userId,
-    notificationId: notification.id,
-    title,
-    message,
-    trackedDomainId: domain.id,
-    domainName: domain.domainName,
-  });
-
-  return true;
+  return { sent: true, notificationId: notification.id, title, message };
 }

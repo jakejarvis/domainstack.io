@@ -7,6 +7,7 @@ import {
   getThresholdNotificationType,
   updateNotificationEmailIdStep,
 } from "@/workflows/shared/notifications";
+import { sendPushForNotificationStep } from "@/workflows/shared/push";
 import { DOMAIN_EXPIRY_THRESHOLDS, type NotificationType } from "@domainstack/constants";
 
 export interface DomainExpiryWorkflowInput {
@@ -81,7 +82,7 @@ export async function domainExpiryWorkflow(
 
   // Step 6: Create notification record
   const expirationDate = new Date(domain.expirationDate);
-  const { notificationId, subject } = await createNotificationRecord({
+  const { notificationId, title, message, subject } = await createNotificationRecord({
     trackedDomainId,
     domainName: domain.domainName,
     userId: domain.userId,
@@ -108,6 +109,18 @@ export async function domainExpiryWorkflow(
 
     // Step 8: Update notification with email ID
     await updateNotificationEmailIdStep(notificationId, emailId);
+  }
+
+  // Step 9: Dispatch push as its own durable step (idempotent by notificationId)
+  if (prefs.shouldSendPush) {
+    await sendPushForNotificationStep({
+      userId: domain.userId,
+      notificationId,
+      title,
+      message,
+      trackedDomainId,
+      domainName: domain.domainName,
+    });
   }
 
   return { skipped: false, sent: true };
@@ -150,7 +163,7 @@ async function createNotificationRecord(params: {
   shouldSendEmail: boolean;
   shouldSendInApp: boolean;
   shouldSendPush: boolean;
-}): Promise<{ notificationId: string; title: string; subject: string }> {
+}): Promise<{ notificationId: string; title: string; message: string; subject: string }> {
   "use step";
 
   const [{ format }, { createNotification }] = await Promise.all([
@@ -196,19 +209,7 @@ async function createNotificationRecord(params: {
     );
   }
 
-  if (shouldSendPush) {
-    const { sendPushForNotificationStep } = await import("@/workflows/shared/push");
-    await sendPushForNotificationStep({
-      userId,
-      notificationId: notification.id,
-      title,
-      message,
-      trackedDomainId,
-      domainName,
-    });
-  }
-
-  return { notificationId: notification.id, title, subject };
+  return { notificationId: notification.id, title, message, subject };
 }
 
 async function sendDomainExpiryEmail(params: {

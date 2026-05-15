@@ -17,6 +17,7 @@ import {
   sendProviderChangeNotificationStep,
   sendRegistrationChangeNotificationStep,
 } from "@/workflows/shared/notifications";
+import { sendPushForNotificationStep } from "@/workflows/shared/push";
 import {
   lookupWhoisStep,
   normalizeAndBuildResponseStep,
@@ -262,7 +263,7 @@ export async function detectChangesWorkflow(
             : `Registration details updated for ${domainName}.`;
 
         // Step 3c: Send notification (imports email component in step)
-        const sent = await sendRegistrationChangeNotificationStep(
+        const { sent, notificationId } = await sendRegistrationChangeNotificationStep(
           {
             userId,
             userEmail,
@@ -295,6 +296,16 @@ export async function detectChangesWorkflow(
         if (sent) {
           results.registrationChanges = true;
           await updateRegistrationSnapshot(trackedDomainId, currentRegistration);
+          if (notificationId && channels.shouldSendPush) {
+            await sendPushForNotificationStep({
+              userId,
+              notificationId,
+              title,
+              message,
+              trackedDomainId,
+              domainName,
+            });
+          }
         }
       }
     }
@@ -420,7 +431,7 @@ export async function detectChangesWorkflow(
             ? `${providerChangeDetails.join(". ")}.`
             : `Provider configuration updated for ${domainName}.`;
 
-        const sent = await sendProviderChangeNotificationStep(
+        const { sent, notificationId } = await sendProviderChangeNotificationStep(
           {
             userId,
             userEmail,
@@ -440,6 +451,16 @@ export async function detectChangesWorkflow(
         if (sent) {
           results.providerChanges = true;
           await updateProviderSnapshot(trackedDomainId, currentProviderIds);
+          if (notificationId && channels.shouldSendPush) {
+            await sendPushForNotificationStep({
+              userId,
+              notificationId,
+              title,
+              message,
+              trackedDomainId,
+              domainName,
+            });
+          }
         }
       }
     }
@@ -520,7 +541,7 @@ export async function detectChangesWorkflow(
         const emailSubject = `🔒 ${title}`;
         const message = `${certChangeDetails.join(". ")}.`;
 
-        const sent = await sendCertificateChangeNotificationStep(
+        const { sent, notificationId } = await sendCertificateChangeNotificationStep(
           {
             userId,
             userEmail,
@@ -541,6 +562,16 @@ export async function detectChangesWorkflow(
         if (sent) {
           results.certificateChanges = true;
           await updateCertificateSnapshot(trackedDomainId, currentCertificate);
+          if (notificationId && channels.shouldSendPush) {
+            await sendPushForNotificationStep({
+              userId,
+              notificationId,
+              title,
+              message,
+              trackedDomainId,
+              domainName,
+            });
+          }
         }
       }
     }

@@ -10,7 +10,13 @@ export interface RegisterPushDeviceParams {
   expoPushToken: string;
   platform: PushDevicePlatform;
   deviceName?: string | null;
+  deviceModel?: string | null;
+  deviceType?: string | null;
+  manufacturer?: string | null;
+  osName?: string | null;
+  osVersion?: string | null;
   appVersion?: string | null;
+  ipAddress?: string | null;
 }
 
 export async function registerPushDevice(params: RegisterPushDeviceParams) {
@@ -36,6 +42,8 @@ export async function registerPushDevice(params: RegisterPushDeviceParams) {
       await tx.delete(userPushDevices).where(eq(userPushDevices.id, existing.id));
     }
 
+    const ipAddress = params.ipAddress ?? null;
+
     const [device] = await tx
       .insert(userPushDevices)
       .values({
@@ -43,7 +51,14 @@ export async function registerPushDevice(params: RegisterPushDeviceParams) {
         expoPushToken: params.expoPushToken,
         platform: params.platform,
         deviceName: params.deviceName ?? null,
+        deviceModel: params.deviceModel ?? null,
+        deviceType: params.deviceType ?? null,
+        manufacturer: params.manufacturer ?? null,
+        osName: params.osName ?? null,
+        osVersion: params.osVersion ?? null,
         appVersion: params.appVersion ?? null,
+        createdIp: ipAddress,
+        lastIp: ipAddress,
         enabled: true,
         lastSeenAt: now,
       })
@@ -52,7 +67,15 @@ export async function registerPushDevice(params: RegisterPushDeviceParams) {
         set: {
           platform: params.platform,
           deviceName: params.deviceName ?? null,
+          deviceModel: params.deviceModel ?? null,
+          deviceType: params.deviceType ?? null,
+          manufacturer: params.manufacturer ?? null,
+          osName: params.osName ?? null,
+          osVersion: params.osVersion ?? null,
           appVersion: params.appVersion ?? null,
+          // createdIp is intentionally omitted so the original registration
+          // IP is preserved; only the latest IP is refreshed.
+          lastIp: ipAddress,
           enabled: true,
           lastSeenAt: now,
           updatedAt: now,

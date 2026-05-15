@@ -77,7 +77,15 @@ export default function PrivacyPage() {
             A push notification token issued by Apple or Google (via the Expo push service) for each
             device on which you enable notifications
           </li>
-          <li>The device platform (iOS or Android), device name, and app version</li>
+          <li>
+            Device information: the platform (iOS or Android), device name, device model, device
+            type, manufacturer, operating system name and version, and app version
+          </li>
+          <li>
+            The IP address recorded when a device first registers for notifications and the most
+            recent IP address seen for that device, used to support the app and to detect and
+            prevent abuse
+          </li>
         </ul>
         <p>
           Your authentication session is stored securely on the device using the platform&apos;s

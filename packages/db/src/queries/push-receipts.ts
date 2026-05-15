@@ -1,4 +1,4 @@
-import { and, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
 
 import { db } from "../client";
 import { pushReceipts } from "../schema";
@@ -26,6 +26,22 @@ export interface PendingReceiptRow {
 export interface ReceiptProcessingUpdate {
   ticketId: string;
   errorCode: string | null;
+}
+
+/**
+ * Tokens that already have a receipt row for this notification. Used as the
+ * idempotency key for the push send step: on a durable retry, any device that
+ * already received a ticket is skipped so the user isn't pushed twice. Devices
+ * that errored without a ticket have no receipt and are correctly retried.
+ */
+export async function getDispatchedTokensForNotification(
+  notificationId: string,
+): Promise<Set<string>> {
+  const rows = await db
+    .selectDistinct({ expoPushToken: pushReceipts.expoPushToken })
+    .from(pushReceipts)
+    .where(eq(pushReceipts.notificationId, notificationId));
+  return new Set(rows.map((row) => row.expoPushToken));
 }
 
 export async function insertPendingReceipts(rows: PendingReceiptInput[]) {

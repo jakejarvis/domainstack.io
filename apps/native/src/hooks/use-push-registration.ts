@@ -26,6 +26,11 @@ export function usePushRegistration() {
     await registerDevice.mutateAsync({
       appVersion: Constants.expoConfig?.version ?? undefined,
       deviceName: result.deviceName ?? undefined,
+      deviceModel: result.deviceModel ?? undefined,
+      deviceType: result.deviceType ?? undefined,
+      manufacturer: result.manufacturer ?? undefined,
+      osName: result.osName ?? undefined,
+      osVersion: result.osVersion ?? undefined,
       expoPushToken: result.expoPushToken,
       platform: getPushPlatform(),
     });

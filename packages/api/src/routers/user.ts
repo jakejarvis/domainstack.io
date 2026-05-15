@@ -117,6 +117,11 @@ export const userRouter = createTRPCRouter({
         expoPushToken: ExpoPushTokenSchema,
         platform: z.enum(["ios", "android"]),
         deviceName: z.string().min(1).max(120).optional(),
+        deviceModel: z.string().min(1).max(120).optional(),
+        deviceType: z.string().min(1).max(32).optional(),
+        manufacturer: z.string().min(1).max(80).optional(),
+        osName: z.string().min(1).max(40).optional(),
+        osVersion: z.string().min(1).max(40).optional(),
         appVersion: z.string().min(1).max(80).optional(),
       }),
     )
@@ -126,7 +131,13 @@ export const userRouter = createTRPCRouter({
         expoPushToken: input.expoPushToken,
         platform: input.platform,
         deviceName: input.deviceName ?? null,
+        deviceModel: input.deviceModel ?? null,
+        deviceType: input.deviceType ?? null,
+        manufacturer: input.manufacturer ?? null,
+        osName: input.osName ?? null,
+        osVersion: input.osVersion ?? null,
         appVersion: input.appVersion ?? null,
+        ipAddress: ctx.ip,
       });
 
       analytics.track("push_device_registered", { platform: input.platform }, ctx.user.id);

@@ -148,6 +148,13 @@
       "when": 1778784341823,
       "tag": "0020_unknown_maelstrom",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1778881595658,
+      "tag": "0021_equal_the_twelve",
+      "breakpoints": true
     }
   ]
 }

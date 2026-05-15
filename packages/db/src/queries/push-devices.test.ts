@@ -80,6 +80,49 @@ describe("push devices and notification preferences", () => {
     expect(await unregisterPushDevice(TEST_USER_ID, "ExponentPushToken[test]")).toBe(false);
   });
 
+  it("stores device model/type and preserves the created IP while refreshing the latest IP", async () => {
+    const first = await registerPushDevice({
+      deviceName: "Jake's iPhone",
+      deviceModel: "iPhone 15 Pro",
+      deviceType: "phone",
+      manufacturer: "Apple",
+      osName: "iOS",
+      osVersion: "17.4.1",
+      expoPushToken: "ExponentPushToken[ip]",
+      platform: "ios",
+      userId: TEST_USER_ID,
+      ipAddress: "203.0.113.10",
+    });
+
+    expect(first.deviceModel).toBe("iPhone 15 Pro");
+    expect(first.deviceType).toBe("phone");
+    expect(first.manufacturer).toBe("Apple");
+    expect(first.osName).toBe("iOS");
+    expect(first.osVersion).toBe("17.4.1");
+    expect(first.createdIp).toBe("203.0.113.10");
+    expect(first.lastIp).toBe("203.0.113.10");
+
+    const updated = await registerPushDevice({
+      deviceName: "Jake's iPhone",
+      deviceModel: "iPhone 15 Pro",
+      deviceType: "phone",
+      manufacturer: "Apple",
+      osName: "iOS",
+      osVersion: "18.0",
+      expoPushToken: "ExponentPushToken[ip]",
+      platform: "ios",
+      userId: TEST_USER_ID,
+      ipAddress: "198.51.100.42",
+    });
+
+    expect(updated.id).toBe(first.id);
+    expect(updated.osVersion).toBe("18.0");
+    expect(updated.createdIp).toBe("203.0.113.10");
+    expect(updated.lastIp).toBe("198.51.100.42");
+
+    await unregisterPushDevice(TEST_USER_ID, "ExponentPushToken[ip]");
+  });
+
   it("reassigns a token when a different user registers it", async () => {
     const original = await registerPushDevice({
       deviceName: "Shared iPad",

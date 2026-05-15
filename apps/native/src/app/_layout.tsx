@@ -1,10 +1,10 @@
 import "@/global.css";
 import * as Notifications from "expo-notifications";
-import { router } from "expo-router";
+import { type Href, router } from "expo-router";
 import { Stack } from "expo-router/stack";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useCSSVariable } from "uniwind";
@@ -33,11 +33,23 @@ function RootNavigator() {
   const versionGateReady = useVersionGateReady();
   useForegroundPushRefresh();
 
+  // A killed-state tap on a protected target while signed-out is stashed here
+  // and replayed once the user signs in, so the notification isn't lost.
+  const pendingTargetRef = useRef<Href | null>(null);
+
   useEffect(() => {
     if (!session.isPending && versionGateReady) {
       void SplashScreen.hideAsync();
     }
   }, [session.isPending, versionGateReady]);
+
+  useEffect(() => {
+    if (isSignedIn && pendingTargetRef.current) {
+      const pending = pendingTargetRef.current;
+      pendingTargetRef.current = null;
+      router.push(pending);
+    }
+  }, [isSignedIn]);
 
   useEffect(() => {
     // Wait for the session to settle — a cold-start tap that runs while
@@ -48,8 +60,10 @@ function RootNavigator() {
     const route = (data: Record<string, unknown>) => {
       const target = routeFromNotificationData(data);
       // Protected routes redirect to sign-in if there's no session; public routes
-      // (domain reports) work fine signed-out.
+      // (domain reports) work fine signed-out. Stash the protected target so it
+      // can be replayed after the user signs in instead of being lost.
       if (!isSignedIn && target === "/(tabs)/notifications") {
+        pendingTargetRef.current = target;
         router.push("/sign-in");
         return;
       }

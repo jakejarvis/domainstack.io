@@ -2,6 +2,11 @@ import { createLogger } from "@domainstack/logger";
 
 const logger = createLogger({ source: "push-notifications" });
 
+const EXPO_PUSH_ENDPOINT = "https://exp.host/--/api/v2/push/send";
+// Expo rejects a /push/send POST with more than 100 messages
+// (PUSH_TOO_MANY_NOTIFICATIONS); fan out in chunks.
+const EXPO_PUSH_CHUNK_SIZE = 100;
+
 type ExpoPushMessage = {
   to: string;
   title: string;
@@ -17,6 +22,11 @@ type ExpoPushTicket = {
   details?: { error?: string };
 };
 
+type ExpoPushSendResponse = {
+  data?: ExpoPushTicket[];
+  errors?: { code: string; message: string }[];
+};
+
 type PushDeviceForDelivery = {
   expoPushToken: string;
 };
@@ -26,12 +36,17 @@ export function buildPushData(input: {
   trackedDomainId?: string | null;
   domainName?: string | null;
 }) {
+  // The native tap router (`routeFromNotificationData`) keys the domain route
+  // by domain *name*, not the tracked-domain UUID — keep `url` consistent so
+  // it stays a valid deep link if expo-router URL handling is ever enabled.
   if (input.trackedDomainId) {
     return {
       notificationId: input.notificationId,
       trackedDomainId: input.trackedDomainId,
       domainName: input.domainName ?? null,
-      url: `domainstack://domains/${input.trackedDomainId}`,
+      url: input.domainName
+        ? `domainstack://domains/${input.domainName}`
+        : "domainstack://notifications",
     };
   }
 
@@ -71,6 +86,24 @@ export function buildExpoPushMessages(
   }));
 }
 
+function chunk<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
+/**
+ * Durable workflow step that fans a notification out to the user's enabled
+ * push devices via Expo.
+ *
+ * Idempotent by `notificationId`: devices that already have a receipt row for
+ * this notification are skipped, so a durable retry never double-pushes.
+ * Transient Expo failures (429/5xx, request-level `errors`) throw so the step
+ * retries; a 2xx response with a missing per-device ticket is recorded as a
+ * device error (never a false success) and retried on the next notification.
+ */
 export async function sendPushForNotificationStep(input: {
   userId: string;
   notificationId: string;
@@ -82,6 +115,7 @@ export async function sendPushForNotificationStep(input: {
   "use step";
 
   const {
+    getDispatchedTokensForNotification,
     getEnabledPushDevicesForUser,
     insertPendingReceipts,
     markPushDeviceSendError,
@@ -91,56 +125,105 @@ export async function sendPushForNotificationStep(input: {
   const devices = await getEnabledPushDevicesForUser(input.userId);
   if (devices.length === 0) return;
 
-  const deliveryDevices = uniquePushDevices(devices);
-  const messages = buildExpoPushMessages(input, deliveryDevices);
+  let deliveryDevices = uniquePushDevices(devices);
 
-  const response = await fetch("https://exp.host/--/api/v2/push/send", {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      "Accept-Encoding": "gzip, deflate",
-    },
-    body: JSON.stringify(messages),
-  });
-
-  if (!response.ok) {
-    logger.error({ status: response.status }, "expo push service request failed");
-    return;
+  // Idempotency guard: skip any device already dispatched for this
+  // notification (set on a prior, partially-completed run of this step).
+  const alreadyDispatched = await getDispatchedTokensForNotification(input.notificationId);
+  if (alreadyDispatched.size > 0) {
+    deliveryDevices = deliveryDevices.filter(
+      (device) => !alreadyDispatched.has(device.expoPushToken),
+    );
   }
+  if (deliveryDevices.length === 0) return;
 
-  const payload = (await response.json().catch(() => null)) as { data?: ExpoPushTicket[] } | null;
-  const tickets = payload?.data ?? [];
-  const pendingReceipts: Array<{
-    ticketId: string;
-    expoPushToken: string;
-    userId: string;
-    notificationId: string | null;
-  }> = [];
+  const messages = buildExpoPushMessages(input, deliveryDevices);
+  const deviceChunks = chunk(deliveryDevices, EXPO_PUSH_CHUNK_SIZE);
+  const messageChunks = chunk(messages, EXPO_PUSH_CHUNK_SIZE);
 
-  await Promise.all(
-    deliveryDevices.map(async (device, index) => {
-      const ticket = tickets[index];
-      if (!ticket || ticket.status === "ok") {
-        await markPushDeviceSendSuccess(device.expoPushToken);
-        if (ticket?.id) {
-          pendingReceipts.push({
-            ticketId: ticket.id,
-            expoPushToken: device.expoPushToken,
-            userId: input.userId,
-            notificationId: input.notificationId,
-          });
-        }
-        return;
+  for (let c = 0; c < messageChunks.length; c++) {
+    const chunkDevices = deviceChunks[c];
+    const chunkMessages = messageChunks[c];
+
+    const response = await fetch(EXPO_PUSH_ENDPOINT, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "Accept-Encoding": "gzip, deflate",
+      },
+      body: JSON.stringify(chunkMessages),
+    });
+
+    if (!response.ok) {
+      // 429 / 5xx are transient — throw so the durable step retries. The
+      // idempotency guard prevents double-pushing already-delivered devices.
+      if (response.status === 429 || response.status >= 500) {
+        logger.error(
+          { status: response.status, retryAfter: response.headers.get("retry-after") },
+          "expo push service request failed (retryable)",
+        );
+        throw new Error(`Expo push send failed with status ${response.status}`);
       }
+      // Other 4xx are not retryable — log and skip this chunk.
+      logger.error({ status: response.status }, "expo push service request failed");
+      continue;
+    }
 
-      const error = ticket.details?.error ?? ticket.message ?? "Unknown push error";
-      await markPushDeviceSendError(device.expoPushToken, error);
-      logger.warn({ error, userId: input.userId }, "expo push ticket failed");
-    }),
-  );
+    const payload = (await response.json().catch(() => null)) as ExpoPushSendResponse | null;
 
-  if (pendingReceipts.length > 0) {
-    await insertPendingReceipts(pendingReceipts);
+    if (payload?.errors && payload.errors.length > 0) {
+      // Request-level failure (rate limit, too many notifications, malformed):
+      // no per-message tickets. Throw so the step retries durably rather than
+      // silently recording a delivery that never happened.
+      const codes = payload.errors.map((error) => error.code).join(", ");
+      logger.error({ codes, userId: input.userId }, "expo push send returned request errors");
+      throw new Error(`Expo push send returned errors: ${codes}`);
+    }
+
+    const tickets = payload?.data ?? [];
+    const pendingReceipts: Array<{
+      ticketId: string;
+      expoPushToken: string;
+      userId: string;
+      notificationId: string | null;
+    }> = [];
+
+    await Promise.all(
+      chunkDevices.map(async (device, index) => {
+        const ticket = tickets[index];
+
+        if (!ticket) {
+          // 2xx response but no ticket for this device — not a success. No
+          // receipt is written, so the device is retried on the next send.
+          await markPushDeviceSendError(device.expoPushToken, "NoTicketReturned");
+          logger.warn({ userId: input.userId }, "expo push ticket missing for device");
+          return;
+        }
+
+        if (ticket.status === "ok") {
+          await markPushDeviceSendSuccess(device.expoPushToken);
+          if (ticket.id) {
+            pendingReceipts.push({
+              ticketId: ticket.id,
+              expoPushToken: device.expoPushToken,
+              userId: input.userId,
+              notificationId: input.notificationId,
+            });
+          }
+          return;
+        }
+
+        const error = ticket.details?.error ?? ticket.message ?? "Unknown push error";
+        await markPushDeviceSendError(device.expoPushToken, error);
+        logger.warn({ error, userId: input.userId }, "expo push ticket failed");
+      }),
+    );
+
+    // Persist this chunk's receipts before attempting the next chunk so a
+    // later-chunk throw can't lose the idempotency record for delivered ones.
+    if (pendingReceipts.length > 0) {
+      await insertPendingReceipts(pendingReceipts);
+    }
   }
 }

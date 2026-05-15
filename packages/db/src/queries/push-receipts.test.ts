@@ -5,6 +5,7 @@ import { closePGliteDb, makePGliteDb } from "../testing";
 import {
   deleteOldProcessedReceipts,
   expireStaleReceipts,
+  getDispatchedTokensForNotification,
   getPendingReceiptsBatch,
   insertPendingReceipts,
   markReceiptsProcessed,
@@ -31,6 +32,39 @@ describe("push receipts queries", () => {
 
   afterAll(async () => {
     await closePGliteDb();
+  });
+
+  it("returns the distinct dispatched tokens for a notification", async () => {
+    const notif1 = "11111111-1111-4111-8111-111111111111";
+    const notif2 = "22222222-2222-4222-8222-222222222222";
+    const notifUnknown = "33333333-3333-4333-8333-333333333333";
+
+    await insertPendingReceipts([
+      {
+        expoPushToken: "ExponentPushToken[a]",
+        notificationId: notif1,
+        ticketId: "t-a",
+        userId: TEST_USER_ID,
+      },
+      {
+        expoPushToken: "ExponentPushToken[b]",
+        notificationId: notif1,
+        ticketId: "t-b",
+        userId: TEST_USER_ID,
+      },
+      {
+        expoPushToken: "ExponentPushToken[c]",
+        notificationId: notif2,
+        ticketId: "t-c",
+        userId: TEST_USER_ID,
+      },
+    ]);
+
+    const dispatched = await getDispatchedTokensForNotification(notif1);
+    expect(dispatched).toEqual(new Set(["ExponentPushToken[a]", "ExponentPushToken[b]"]));
+
+    const none = await getDispatchedTokensForNotification(notifUnknown);
+    expect(none.size).toBe(0);
   });
 
   it("inserts pending receipts and skips duplicate ticket IDs", async () => {
