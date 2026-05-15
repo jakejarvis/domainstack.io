@@ -5,20 +5,32 @@ import { createLogger } from "@domainstack/logger";
 const logger = createLogger({ source: "redis" });
 
 /**
- * Lazy-initialized Redis client.
- * Deferred to avoid errors when env vars aren't set (e.g., in tests).
+ * Per-config Redis client cache. The default client (no overrides) and any
+ * variant (e.g. auto-deserialization disabled) each get their own singleton so
+ * we don't reconnect on every call.
  */
-let redis: Redis | undefined;
+const clientCache = new Map<string, Redis>();
+
+export type GetRedisOptions = {
+  /**
+   * Disable Upstash's automatic JSON (de)serialization. With this off, strings
+   * round-trip verbatim — required by consumers that store opaque strings (e.g.
+   * Better Auth's secondary storage). Leave enabled for callers that rely on
+   * auto-deserialization (rate limiting, app caches). Defaults to enabled.
+   */
+  automaticDeserialization?: boolean;
+};
 
 /**
- * Get the shared Redis client instance.
+ * Get a shared Redis client instance.
  *
  * Uses Upstash Redis with HTTP-based connection (serverless-friendly).
  * Requires UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN env vars.
  *
+ * @param options - Optional client config overrides (cached per distinct config)
  * @returns Redis client instance, or undefined if not configured
  */
-export function getRedis(): Redis | undefined {
+export function getRedis(options?: GetRedisOptions): Redis | undefined {
   if (
     process.env.NODE_ENV !== "production" &&
     (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN)
@@ -28,11 +40,22 @@ export function getRedis(): Redis | undefined {
     return undefined;
   }
 
-  if (!redis) {
-    redis = Redis.fromEnv();
+  const automaticDeserialization = options?.automaticDeserialization ?? true;
+  const cacheKey = `autoDeser:${automaticDeserialization}`;
+
+  let client = clientCache.get(cacheKey);
+  if (!client) {
+    client = automaticDeserialization
+      ? Redis.fromEnv()
+      : new Redis({
+          url: process.env.UPSTASH_REDIS_REST_URL as string,
+          token: process.env.UPSTASH_REDIS_REST_TOKEN as string,
+          automaticDeserialization: false,
+        });
+    clientCache.set(cacheKey, client);
   }
 
-  return redis;
+  return client;
 }
 
 /**

@@ -28,11 +28,11 @@ export type SecondaryStorage = {
 export function createRedisStorage(redis: Redis | null): SecondaryStorage | undefined {
   if (!redis) return undefined;
 
+  // Pass the Redis client created with `automaticDeserialization: false` so
+  // Better Auth's opaque JSON strings round-trip verbatim — no parse/stringify.
   return {
     get: async (key: string) => {
-      const value = await redis.get<string>(key);
-      // JSON.stringify needed for Redis compatibility
-      return value ? JSON.stringify(value) : null;
+      return (await redis.get<string>(key)) ?? null;
     },
     set: async (key: string, value: string, ttl?: number) => {
       if (ttl) {

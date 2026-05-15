@@ -14,12 +14,16 @@ import {
   type AuthProvider,
   getOtaConfig,
   linkProvider,
+  linkProviderWithAppleToken,
+  linkProviderWithGoogleToken,
   OTA_CONFIG_QUERY_KEY,
   unlinkProvider,
 } from "@/lib/auth";
-import { getEnabledNativeAuthProviders } from "@/lib/auth-providers";
+import { getEnabledNativeAuthProviders, type NativeAuthProviderOption } from "@/lib/auth-providers";
 import { googleNativeConfig } from "@/lib/env";
+import { getGoogleIdentityToken } from "@/lib/google-auth";
 import { confirm } from "@/lib/native-confirm";
+import { createAuthNonce } from "@/lib/nonce";
 import { toast } from "@/lib/toast";
 
 function isAuthCanceled(error: unknown): boolean {
@@ -64,18 +68,39 @@ export function LinkedAccountsSection() {
   const linkedProviderIds = new Set((linkedAccounts.data ?? []).map((a) => a.providerId));
   const linkedCount = linkedAccounts.data?.length ?? 0;
 
-  async function handleLink(provider: AuthProvider) {
-    setLinkingProvider(provider);
+  async function handleLink(provider: NativeAuthProviderOption) {
+    setLinkingProvider(provider.id);
+    analytics.track("link_account_clicked", { provider: provider.id });
     try {
-      const result = await linkProvider(provider);
+      let result: Awaited<ReturnType<typeof linkProvider>>;
+      if (provider.id === "apple" && appleAuthAvailable) {
+        const { hashed: nonce } = await createAuthNonce();
+        const credential = await AppleAuthentication.signInAsync({
+          nonce,
+          requestedScopes: [
+            AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+            AppleAuthentication.AppleAuthenticationScope.EMAIL,
+          ],
+        });
+        if (!credential.identityToken) {
+          throw new Error("Apple did not return an identity token.");
+        }
+        result = await linkProviderWithAppleToken(credential.identityToken, nonce);
+      } else if (provider.id === "google" && provider.supportsNativeIdToken) {
+        const token = await getGoogleIdentityToken(googleNativeConfig);
+        if (!token) return; // user cancelled the native sheet
+        result = await linkProviderWithGoogleToken(token);
+      } else {
+        result = await linkProvider(provider.id);
+      }
       if (result.error) {
-        throw new Error(result.error.message ?? `Unable to link ${provider}.`);
+        throw new Error(result.error.message ?? `Unable to link ${provider.id}.`);
       }
       await invalidateLinkedAccounts();
       toast.success("Account linked");
     } catch (error) {
       if (!isAuthCanceled(error)) {
-        analytics.trackException(error, { action: "link_account", provider });
+        analytics.trackException(error, { action: "link_account", provider: provider.id });
         toast.error({
           title: "Could not link account",
           message: error instanceof Error ? error.message : "Unable to link this provider.",
@@ -153,7 +178,7 @@ export function LinkedAccountsSection() {
               ) : (
                 <Button
                   loading={linkingProvider === provider.id}
-                  onPress={() => void handleLink(provider.id)}
+                  onPress={() => void handleLink(provider)}
                   variant="primary"
                 >
                   <Text>Link</Text>

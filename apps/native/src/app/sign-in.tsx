@@ -14,6 +14,7 @@ import { usePushSoftPrompt } from "@/hooks/use-push-soft-prompt";
 import { analytics } from "@/lib/analytics";
 import {
   type AuthProvider,
+  authClient,
   getOtaConfig,
   OTA_CONFIG_QUERY_KEY,
   signInWithAppleToken,
@@ -96,6 +97,11 @@ export default function SignInScreen() {
       if (result.error) {
         throw new Error(result.error.message ?? `Unable to sign in with ${provider}.`);
       }
+      // The browser OAuth flow resolves without an error even when the user
+      // dismisses the auth sheet, so confirm the session cookie actually
+      // landed before navigating away from the sign-in screen.
+      const session = await authClient.getSession();
+      if (!session.data?.user) return;
       finishSignIn();
     } catch (error) {
       showSignInError(provider, error);

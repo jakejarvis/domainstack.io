@@ -41,9 +41,10 @@ const persister = createAsyncStoragePersister({
   storage: AsyncStorage,
 });
 
-// Wipe the per-user tRPC cache when the session ends. Without this, the
-// persisted cache survives sign-out and a different user on the same device
-// can briefly see the previous user's portfolio before queries refetch.
+// Wipe the per-user tRPC cache whenever the active user changes. Without this,
+// the persisted cache survives sign-out (or a direct A->B switch) and the next
+// user on the same device can briefly see the previous user's portfolio before
+// queries refetch.
 function useResetCacheOnSignOut(queryClient: QueryClient) {
   const session = authClient.useSession();
   const previousUserIdRef = useRef<string | null>(null);
@@ -53,7 +54,7 @@ function useResetCacheOnSignOut(queryClient: QueryClient) {
     const previousUserId = previousUserIdRef.current;
     previousUserIdRef.current = currentUserId;
 
-    if (previousUserId && !currentUserId) {
+    if (previousUserId !== null && previousUserId !== currentUserId) {
       queryClient.clear();
       void persister.removeClient();
       usePushPromptStore.getState().reset();

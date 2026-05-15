@@ -24,7 +24,7 @@ import { polarClient } from "@domainstack/polar/server";
 import { getRedis } from "@domainstack/redis";
 import { getNativeAppConfig } from "@domainstack/server/edge-config";
 
-import { decodeApplePrivateKey, generateAppleClientSecret } from "./apple-client-secret";
+import { AppleClientSecret, decodeApplePrivateKey } from "./apple-client-secret";
 import { otaConfig } from "./ota-config";
 import { buildOAuthProviders, validateOAuthCredentialPair } from "./providers";
 import { createRedisStorage } from "./storage";
@@ -32,7 +32,10 @@ import type { OAuthCredentials } from "./types";
 
 const logger = createLogger({ source: "auth" });
 
-const redis = getRedis();
+// Better Auth's secondary storage (sessions + its own rate-limit buckets)
+// stores opaque JSON strings; disable auto-deserialization so they round-trip
+// verbatim instead of being parsed and re-stringified.
+const redis = getRedis({ automaticDeserialization: false });
 
 // Validate required env vars
 if (!process.env.BETTER_AUTH_SECRET) {
@@ -65,8 +68,9 @@ validateOAuthCredentialPair(
   process.env.VERCEL_CLIENT_ID,
   process.env.VERCEL_CLIENT_SECRET,
 );
-// Apple's "client secret" is a short-lived JWT signed with the .p8 key — we
-// regenerate it on every cold start so it never needs manual rotation.
+// Apple's "client secret" is a short-lived JWT signed with the .p8 key. It is
+// re-signed lazily before expiry (see AppleClientSecret) so it never needs
+// manual rotation regardless of process lifetime.
 async function buildAppleCredentials(): Promise<OAuthCredentials | undefined> {
   const clientId = process.env.APPLE_CLIENT_ID;
   if (!clientId) return undefined;
@@ -82,14 +86,23 @@ async function buildAppleCredentials(): Promise<OAuthCredentials | undefined> {
     );
   }
 
-  const clientSecret = await generateAppleClientSecret({
+  const secret = await AppleClientSecret.create({
     teamId,
     keyId,
     clientId,
     privateKey: decodeApplePrivateKey(privateKeyBase64),
   });
 
-  return { clientId, clientSecret, appBundleIdentifier };
+  // `clientSecret` is a live getter: Better Auth reads it on every Apple
+  // authorization-code exchange, so it always sees a non-expired JWT. Do NOT
+  // spread this object — `{ ...creds }` would freeze the getter into a stale
+  // snapshot. buildOAuthProviders assigns by reference, which preserves it.
+  const credentials = { clientId, appBundleIdentifier } as OAuthCredentials;
+  Object.defineProperty(credentials, "clientSecret", {
+    get: () => secret.current(),
+    enumerable: true,
+  });
+  return credentials;
 }
 
 const appleCredentials = await buildAppleCredentials();
@@ -138,8 +151,10 @@ const trustedOrigins = [
   process.env.NEXT_PUBLIC_BASE_URL,
   "https://appleid.apple.com",
   "domainstack://",
-  "exp://localhost:8081",
-  "http://localhost:8081",
+  // Expo dev clients deep-link via exp:// on a LAN IP (exp://192.168.x.x:8081);
+  // a bare "exp://" prefix matches any of them since non-http origins are
+  // compared with startsWith. Mirrors the Expo plugin's own dev injection.
+  ...(process.env.NODE_ENV !== "production" ? ["exp://"] : []),
 ].filter((origin): origin is string => Boolean(origin));
 
 export const auth = betterAuth({

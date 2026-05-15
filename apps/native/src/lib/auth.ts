@@ -55,6 +55,22 @@ export async function linkProvider(provider: AuthProvider) {
   });
 }
 
+export async function linkProviderWithAppleToken(token: string, nonce?: string) {
+  return authClient.linkSocial({
+    provider: "apple",
+    idToken: { token, nonce },
+    callbackURL: Linking.createURL("/settings"),
+  });
+}
+
+export async function linkProviderWithGoogleToken(token: string, nonce?: string) {
+  return authClient.linkSocial({
+    provider: "google",
+    idToken: { token, nonce },
+    callbackURL: Linking.createURL("/settings"),
+  });
+}
+
 export async function unlinkProvider(providerId: AuthProvider, accountId?: string) {
   return authClient.unlinkAccount({ providerId, accountId });
 }
