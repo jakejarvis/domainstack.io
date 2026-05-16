@@ -1,19 +1,15 @@
 import type { WebhooksOptions } from "@polar-sh/better-auth";
 
-import {
-  clearSubscriptionEndsAt,
-  setSubscriptionEndsAt,
-  updateUserTier,
-} from "@domainstack/db/queries";
+import { recomputeEntitlement, upsertBillingSubscription } from "@domainstack/db/queries";
 import { logger } from "@domainstack/logger";
 
-import { handleDowngrade } from "./downgrade";
 import {
   sendProUpgradeEmail,
   sendSubscriptionCancelingEmail,
   sendSubscriptionExpiredEmail,
 } from "./emails";
 import { getTierForProductId } from "./products";
+import { polarProvider } from "./provider";
 import { getCustomerSubscriptionState } from "./reconcile";
 
 // Extract payload types from WebhooksOptions
@@ -35,22 +31,19 @@ type SubscriptionUncanceledPayload = Parameters<
 
 /**
  * Handle subscription.created webhook.
- * This is called when a subscription is created but payment is not yet confirmed.
- * We only log here - tier upgrade happens in subscription.active.
+ * Payment is not yet confirmed — log only; the entitlement is granted on
+ * subscription.active.
  */
 export async function handleSubscriptionCreated(
   payload: SubscriptionCreatedPayload,
 ): Promise<void> {
   const { data } = payload;
-  const userId = data.customer.externalId;
-  const tier = getTierForProductId(data.product.id);
-
   logger.info(
     {
       subscriptionId: data.id,
-      userId,
+      userId: data.customer.externalId,
       productId: data.product.id,
-      tier,
+      tier: getTierForProductId(data.product.id),
       status: data.status,
     },
     "Subscription created (awaiting payment confirmation)",
@@ -59,12 +52,12 @@ export async function handleSubscriptionCreated(
 
 /**
  * Handle subscription.active webhook.
- * This is called when payment is confirmed and the subscription is active.
- * Upgrade the user's tier and send a welcome email.
+ * Payment confirmed: upsert the Polar billing row, recompute the entitlement,
+ * and send the welcome email.
  */
 export async function handleSubscriptionActive(payload: SubscriptionActivePayload): Promise<void> {
   const { data } = payload;
-  const userId = data.customer.externalId;
+  const { userId, upsert } = await polarProvider.normalizeEvent(payload);
   // Single paid tier: any active subscription means "pro". We log the
   // product→tier mapping for observability but no longer gate the upgrade on
   // it — a sandbox/prod product-id mismatch must not silently leave a paying
@@ -72,16 +65,11 @@ export async function handleSubscriptionActive(payload: SubscriptionActivePayloa
   const mappedTier = getTierForProductId(data.product.id);
 
   logger.info(
-    {
-      subscriptionId: data.id,
-      userId,
-      productId: data.product.id,
-      mappedTier,
-    },
+    { subscriptionId: data.id, userId, productId: data.product.id, mappedTier },
     "Subscription active",
   );
 
-  if (!userId) {
+  if (!userId || !upsert) {
     logger.warn({ subscriptionId: data.id }, "No externalId on customer, skipping tier upgrade");
     return;
   }
@@ -93,11 +81,8 @@ export async function handleSubscriptionActive(payload: SubscriptionActivePayloa
     );
   }
 
-  // Upgrade user tier
-  await updateUserTier(userId, "pro");
-
-  // Clear any pending subscription end date (in case they re-subscribed)
-  await clearSubscriptionEndsAt(userId);
+  await upsertBillingSubscription(userId, upsert);
+  await recomputeEntitlement(userId);
 
   // Send welcome email (don't fail webhook if email fails)
   try {
@@ -109,7 +94,6 @@ export async function handleSubscriptionActive(payload: SubscriptionActivePayloa
 
 /**
  * Handle subscription.canceled webhook.
- * This is called when the user cancels their subscription.
  * The subscription remains active until currentPeriodEnd.
  */
 export async function handleSubscriptionCanceled(
@@ -150,8 +134,13 @@ export async function handleSubscriptionCanceled(
     return;
   }
 
-  // Set the subscription end date
-  await setSubscriptionEndsAt(userId, data.currentPeriodEnd);
+  const { upsert } = await polarProvider.normalizeEvent(payload);
+  if (!upsert) {
+    return;
+  }
+
+  await upsertBillingSubscription(userId, upsert);
+  await recomputeEntitlement(userId);
 
   // Send cancellation confirmation email (don't fail webhook if email fails)
   try {
@@ -163,8 +152,7 @@ export async function handleSubscriptionCanceled(
 
 /**
  * Handle subscription.revoked webhook.
- * This is called when the subscription ends (either naturally or due to non-payment).
- * Downgrade the user to the free tier.
+ * The subscription has ended (naturally or due to non-payment).
  */
 export async function handleSubscriptionRevoked(
   payload: SubscriptionRevokedPayload,
@@ -172,13 +160,7 @@ export async function handleSubscriptionRevoked(
   const { data } = payload;
   const userId = data.customer.externalId;
 
-  logger.info(
-    {
-      subscriptionId: data.id,
-      userId,
-    },
-    "Subscription revoked",
-  );
+  logger.info({ subscriptionId: data.id, userId }, "Subscription revoked");
 
   if (!userId) {
     logger.warn({ subscriptionId: data.id }, "No externalId on customer, skipping downgrade");
@@ -206,43 +188,43 @@ export async function handleSubscriptionRevoked(
     return;
   }
 
-  // Downgrade user to free tier (may archive domains if over limit)
-  const archivedCount = await handleDowngrade(userId);
+  const { upsert } = await polarProvider.normalizeEvent(payload);
+  if (!upsert) {
+    return;
+  }
 
-  // Clear the subscription end date
-  await clearSubscriptionEndsAt(userId);
+  await upsertBillingSubscription(userId, upsert);
+  const result = await recomputeEntitlement(userId);
 
-  // Send expiration email (don't fail webhook if email fails)
-  try {
-    await sendSubscriptionExpiredEmail(userId, archivedCount);
-  } catch (err) {
-    logger.error({ err, userId }, "Failed to send expired email");
+  // Only email if this revoke actually downgraded the user. A multi-provider
+  // user still active elsewhere stays pro — don't tell them Pro ended. For
+  // Polar-only users this is always true here, so behavior is unchanged.
+  if (result.downgraded) {
+    try {
+      await sendSubscriptionExpiredEmail(userId, result.archivedCount);
+    } catch (err) {
+      logger.error({ err, userId }, "Failed to send expired email");
+    }
   }
 }
 
 /**
  * Handle subscription.uncanceled webhook.
- * This is called when the user re-activates a canceled subscription before it ends.
+ * The user re-activated a canceled subscription before it ended.
  */
 export async function handleSubscriptionUncanceled(
   payload: SubscriptionUncanceledPayload,
 ): Promise<void> {
   const { data } = payload;
-  const userId = data.customer.externalId;
+  const { userId, upsert } = await polarProvider.normalizeEvent(payload);
 
-  logger.info(
-    {
-      subscriptionId: data.id,
-      userId,
-    },
-    "Subscription uncanceled",
-  );
+  logger.info({ subscriptionId: data.id, userId }, "Subscription uncanceled");
 
-  if (!userId) {
+  if (!userId || !upsert) {
     logger.warn({ subscriptionId: data.id }, "No externalId on customer, skipping end date clear");
     return;
   }
 
-  // Clear the subscription end date since they're no longer canceling
-  await clearSubscriptionEndsAt(userId);
+  await upsertBillingSubscription(userId, upsert);
+  await recomputeEntitlement(userId);
 }

@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { RecomputeResult } from "@domainstack/db/queries";
+import type { BillingSubscriptionUpsert } from "@domainstack/types";
+
 import type { WebhooksOptions } from "./better-auth/server";
 
 // Extract payload types from WebhooksOptions (same as handlers.ts)
@@ -21,9 +24,8 @@ type SubscriptionUncanceledPayload = Parameters<
 
 // Hoist mock functions so they're available to vi.mock factory
 const {
-  updateUserTier,
-  setSubscriptionEndsAt,
-  clearSubscriptionEndsAt,
+  upsertBillingSubscription,
+  recomputeEntitlement,
   getCustomerSubscriptionState,
   createMockLogger,
 } = vi.hoisted(() => {
@@ -44,9 +46,9 @@ const {
   });
 
   return {
-    updateUserTier: vi.fn<(userId: string, tier: "free" | "pro") => Promise<void>>(),
-    setSubscriptionEndsAt: vi.fn<(userId: string, endsAt: Date) => Promise<void>>(),
-    clearSubscriptionEndsAt: vi.fn<(userId: string) => Promise<void>>(),
+    upsertBillingSubscription:
+      vi.fn<(userId: string, input: BillingSubscriptionUpsert) => Promise<void>>(),
+    recomputeEntitlement: vi.fn<(userId: string) => Promise<RecomputeResult>>(),
     getCustomerSubscriptionState:
       vi.fn<
         (
@@ -60,11 +62,9 @@ const {
   };
 });
 
-// Mock the dependencies - export functions directly (not via repo objects)
 vi.mock("@domainstack/db/queries", () => ({
-  updateUserTier,
-  setSubscriptionEndsAt,
-  clearSubscriptionEndsAt,
+  upsertBillingSubscription,
+  recomputeEntitlement,
 }));
 
 vi.mock("@domainstack/logger", () => ({
@@ -72,10 +72,6 @@ vi.mock("@domainstack/logger", () => ({
   createLogger: vi.fn<(...args: unknown[]) => ReturnType<typeof createMockLogger>>(() =>
     createMockLogger(),
   ),
-}));
-
-vi.mock("./downgrade", () => ({
-  handleDowngrade: vi.fn<(userId: string) => Promise<number>>(),
 }));
 
 vi.mock("./products", () => ({
@@ -92,7 +88,6 @@ vi.mock("./emails", () => ({
   sendSubscriptionExpiredEmail: vi.fn<(userId: string, archivedCount: number) => Promise<void>>(),
 }));
 
-import { handleDowngrade } from "./downgrade";
 import {
   sendProUpgradeEmail,
   sendSubscriptionCancelingEmail,
@@ -107,8 +102,22 @@ import {
 } from "./handlers";
 import { getTierForProductId } from "./products";
 
+const DOWNGRADED: RecomputeResult = {
+  plan: "free",
+  endsAt: null,
+  changed: true,
+  downgraded: true,
+  archivedCount: 0,
+};
+const PRO: RecomputeResult = {
+  plan: "pro",
+  endsAt: null,
+  changed: true,
+  downgraded: false,
+  archivedCount: 0,
+};
+
 // Helper to create subscription data for webhook payloads
-// Uses type assertions since we only need the fields our handlers access
 function createSubscriptionData(overrides: {
   userId?: string | null;
   productId?: string;
@@ -140,7 +149,6 @@ function createSubscriptionData(overrides: {
   };
 }
 
-// Helper factories for each payload type
 function createCreatedPayload(
   overrides: Parameters<typeof createSubscriptionData>[0] = {},
 ): SubscriptionCreatedPayload {
@@ -196,14 +204,13 @@ describe("handleSubscriptionCreated", () => {
     vi.resetAllMocks();
   });
 
-  it("only logs (does not upgrade tier - payment not confirmed yet)", async () => {
+  it("only logs (no billing write - payment not confirmed yet)", async () => {
     vi.mocked(getTierForProductId).mockReturnValue("pro");
 
     await handleSubscriptionCreated(createCreatedPayload());
 
-    // Should NOT upgrade tier - payment not confirmed yet
-    // getTierForProductId is called for analytics tracking, but updateUserTier should not be called
-    expect(updateUserTier).not.toHaveBeenCalled();
+    expect(upsertBillingSubscription).not.toHaveBeenCalled();
+    expect(recomputeEntitlement).not.toHaveBeenCalled();
     expect(getTierForProductId).toHaveBeenCalledWith("prod-789");
   });
 });
@@ -211,23 +218,25 @@ describe("handleSubscriptionCreated", () => {
 describe("handleSubscriptionActive", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    vi.mocked(recomputeEntitlement).mockResolvedValue(PRO);
   });
 
-  it("upgrades user tier when product ID is recognized", async () => {
+  it("upserts an active Polar row and recomputes the entitlement", async () => {
     vi.mocked(getTierForProductId).mockReturnValue("pro");
 
     await handleSubscriptionActive(createActivePayload());
 
     expect(getTierForProductId).toHaveBeenCalledWith("prod-789");
-    expect(updateUserTier).toHaveBeenCalledWith("user-456", "pro");
-  });
-
-  it("clears any pending subscription end date", async () => {
-    vi.mocked(getTierForProductId).mockReturnValue("pro");
-
-    await handleSubscriptionActive(createActivePayload());
-
-    expect(clearSubscriptionEndsAt).toHaveBeenCalledWith("user-456");
+    expect(upsertBillingSubscription).toHaveBeenCalledWith("user-456", {
+      provider: "polar",
+      externalId: "user-456",
+      providerSubscriptionId: "sub-123",
+      productId: "prod-789",
+      status: "active",
+      currentPeriodEnd: null,
+      cancelAtPeriodEnd: false,
+    });
+    expect(recomputeEntitlement).toHaveBeenCalledWith("user-456");
   });
 
   it("still upgrades to pro when product ID is unknown (single-tier model)", async () => {
@@ -235,10 +244,11 @@ describe("handleSubscriptionActive", () => {
 
     await handleSubscriptionActive(createActivePayload({ productId: "unknown-product" }));
 
-    // A sandbox/prod product-id mismatch must NOT silently leave a paying
-    // customer un-upgraded — any active subscription means pro.
-    expect(updateUserTier).toHaveBeenCalledWith("user-456", "pro");
-    expect(clearSubscriptionEndsAt).toHaveBeenCalledWith("user-456");
+    expect(upsertBillingSubscription).toHaveBeenCalledWith(
+      "user-456",
+      expect.objectContaining({ status: "active", productId: "unknown-product" }),
+    );
+    expect(recomputeEntitlement).toHaveBeenCalledWith("user-456");
   });
 
   it("does not upgrade tier when externalId (userId) is missing", async () => {
@@ -246,18 +256,18 @@ describe("handleSubscriptionActive", () => {
 
     await handleSubscriptionActive(createActivePayload({ userId: null }));
 
-    expect(updateUserTier).not.toHaveBeenCalled();
-    expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
+    expect(upsertBillingSubscription).not.toHaveBeenCalled();
+    expect(recomputeEntitlement).not.toHaveBeenCalled();
   });
 
-  it("re-throws errors from updateUserTier for webhook retry", async () => {
+  it("re-throws errors from upsertBillingSubscription for webhook retry", async () => {
     vi.mocked(getTierForProductId).mockReturnValue("pro");
-    vi.mocked(updateUserTier).mockRejectedValue(new Error("Database error"));
+    vi.mocked(upsertBillingSubscription).mockRejectedValue(new Error("Database error"));
 
     await expect(handleSubscriptionActive(createActivePayload())).rejects.toThrow("Database error");
   });
 
-  it("sends pro upgrade email after tier upgrade", async () => {
+  it("sends pro upgrade email after the upgrade", async () => {
     vi.mocked(getTierForProductId).mockReturnValue("pro");
 
     await handleSubscriptionActive(createActivePayload());
@@ -269,19 +279,19 @@ describe("handleSubscriptionActive", () => {
     vi.mocked(getTierForProductId).mockReturnValue("pro");
     vi.mocked(sendProUpgradeEmail).mockRejectedValue(new Error("Email failed"));
 
-    // Should not throw - email errors are logged but swallowed
     await expect(handleSubscriptionActive(createActivePayload())).resolves.not.toThrow();
 
-    expect(updateUserTier).toHaveBeenCalled();
-    expect(clearSubscriptionEndsAt).toHaveBeenCalled();
+    expect(upsertBillingSubscription).toHaveBeenCalled();
+    expect(recomputeEntitlement).toHaveBeenCalled();
   });
 });
 
 describe("handleSubscriptionCanceled", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    vi.mocked(recomputeEntitlement).mockResolvedValue(PRO);
     // Default: Polar confirms no non-canceling active subscription, so the
-    // canceled event is honored (end date set).
+    // canceled event is honored.
     vi.mocked(getCustomerSubscriptionState).mockResolvedValue({
       status: "ok",
       hasActiveSubscription: true,
@@ -303,10 +313,10 @@ describe("handleSubscriptionCanceled", () => {
       }),
     );
 
-    expect(setSubscriptionEndsAt).not.toHaveBeenCalled();
+    expect(upsertBillingSubscription).not.toHaveBeenCalled();
   });
 
-  it("sets subscription end date when currentPeriodEnd is provided", async () => {
+  it("upserts a canceling row when currentPeriodEnd is provided", async () => {
     const periodEnd = new Date("2025-02-01T00:00:00Z");
 
     await handleSubscriptionCanceled(
@@ -317,23 +327,25 @@ describe("handleSubscriptionCanceled", () => {
       }),
     );
 
-    expect(setSubscriptionEndsAt).toHaveBeenCalledWith("user-456", periodEnd);
-    // Should NOT change tier yet
-    expect(updateUserTier).not.toHaveBeenCalled();
-    expect(handleDowngrade).not.toHaveBeenCalled();
+    expect(upsertBillingSubscription).toHaveBeenCalledWith("user-456", {
+      provider: "polar",
+      externalId: "user-456",
+      providerSubscriptionId: "sub-123",
+      productId: "prod-789",
+      status: "canceling",
+      currentPeriodEnd: periodEnd,
+      cancelAtPeriodEnd: true,
+    });
+    expect(recomputeEntitlement).toHaveBeenCalledWith("user-456");
   });
 
-  it("does not set end date when currentPeriodEnd is null", async () => {
-    await handleSubscriptionCanceled(
-      createCanceledPayload({
-        currentPeriodEnd: null,
-      }),
-    );
+  it("does not write when currentPeriodEnd is null", async () => {
+    await handleSubscriptionCanceled(createCanceledPayload({ currentPeriodEnd: null }));
 
-    expect(setSubscriptionEndsAt).not.toHaveBeenCalled();
+    expect(upsertBillingSubscription).not.toHaveBeenCalled();
   });
 
-  it("does not set end date when userId is missing", async () => {
+  it("does not write when userId is missing", async () => {
     await handleSubscriptionCanceled(
       createCanceledPayload({
         userId: null,
@@ -341,17 +353,15 @@ describe("handleSubscriptionCanceled", () => {
       }),
     );
 
-    expect(setSubscriptionEndsAt).not.toHaveBeenCalled();
+    expect(upsertBillingSubscription).not.toHaveBeenCalled();
   });
 
-  it("re-throws errors from setSubscriptionEndsAt for webhook retry", async () => {
-    vi.mocked(setSubscriptionEndsAt).mockRejectedValue(new Error("Database error"));
+  it("re-throws errors from upsertBillingSubscription for webhook retry", async () => {
+    vi.mocked(upsertBillingSubscription).mockRejectedValue(new Error("Database error"));
 
     await expect(
       handleSubscriptionCanceled(
-        createCanceledPayload({
-          currentPeriodEnd: new Date("2025-02-01T00:00:00Z"),
-        }),
+        createCanceledPayload({ currentPeriodEnd: new Date("2025-02-01T00:00:00Z") }),
       ),
     ).rejects.toThrow("Database error");
   });
@@ -359,11 +369,7 @@ describe("handleSubscriptionCanceled", () => {
   it("sends immediate cancellation confirmation email", async () => {
     const periodEnd = new Date("2025-02-01T00:00:00Z");
 
-    await handleSubscriptionCanceled(
-      createCanceledPayload({
-        currentPeriodEnd: periodEnd,
-      }),
-    );
+    await handleSubscriptionCanceled(createCanceledPayload({ currentPeriodEnd: periodEnd }));
 
     expect(sendSubscriptionCancelingEmail).toHaveBeenCalledWith("user-456", periodEnd);
   });
@@ -371,26 +377,22 @@ describe("handleSubscriptionCanceled", () => {
   it("does not fail webhook if cancellation email fails", async () => {
     vi.mocked(sendSubscriptionCancelingEmail).mockRejectedValue(new Error("Email failed"));
 
-    // Should not throw - email errors are logged but swallowed
     await expect(
       handleSubscriptionCanceled(
-        createCanceledPayload({
-          currentPeriodEnd: new Date("2025-02-01T00:00:00Z"),
-        }),
+        createCanceledPayload({ currentPeriodEnd: new Date("2025-02-01T00:00:00Z") }),
       ),
     ).resolves.not.toThrow();
 
-    expect(setSubscriptionEndsAt).toHaveBeenCalled();
+    expect(upsertBillingSubscription).toHaveBeenCalled();
   });
 });
 
 describe("handleSubscriptionRevoked", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    // Default: handleDowngrade returns 0 archived domains
-    vi.mocked(handleDowngrade).mockResolvedValue(0);
-    // Default: Polar confirms the customer has no active subscription, so the
-    // revoke is honored (downgrade proceeds).
+    // Default: recompute reports a genuine pro→free downgrade.
+    vi.mocked(recomputeEntitlement).mockResolvedValue(DOWNGRADED);
+    // Default: Polar confirms the customer has no active subscription.
     vi.mocked(getCustomerSubscriptionState).mockResolvedValue({
       status: "ok",
       hasActiveSubscription: false,
@@ -407,8 +409,8 @@ describe("handleSubscriptionRevoked", () => {
 
     await handleSubscriptionRevoked(createRevokedPayload());
 
-    expect(handleDowngrade).not.toHaveBeenCalled();
-    expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
+    expect(upsertBillingSubscription).not.toHaveBeenCalled();
+    expect(recomputeEntitlement).not.toHaveBeenCalled();
   });
 
   it("skips downgrade when Polar state cannot be verified", async () => {
@@ -416,49 +418,56 @@ describe("handleSubscriptionRevoked", () => {
 
     await handleSubscriptionRevoked(createRevokedPayload());
 
-    expect(handleDowngrade).not.toHaveBeenCalled();
+    expect(upsertBillingSubscription).not.toHaveBeenCalled();
+    expect(recomputeEntitlement).not.toHaveBeenCalled();
   });
 
-  it("calls handleDowngrade with user ID from customer.externalId", async () => {
+  it("upserts an expired row and recomputes for the user from customer.externalId", async () => {
     await handleSubscriptionRevoked(createRevokedPayload());
 
-    expect(handleDowngrade).toHaveBeenCalledWith("user-456");
+    expect(upsertBillingSubscription).toHaveBeenCalledWith(
+      "user-456",
+      expect.objectContaining({ provider: "polar", externalId: "user-456", status: "expired" }),
+    );
+    expect(recomputeEntitlement).toHaveBeenCalledWith("user-456");
   });
 
-  it("clears subscription end date after downgrade", async () => {
-    await handleSubscriptionRevoked(createRevokedPayload());
-
-    expect(clearSubscriptionEndsAt).toHaveBeenCalledWith("user-456");
-  });
-
-  it("sends subscription expired email with archived count", async () => {
-    vi.mocked(handleDowngrade).mockResolvedValue(3);
+  it("sends subscription expired email with archived count when downgraded", async () => {
+    vi.mocked(recomputeEntitlement).mockResolvedValue({ ...DOWNGRADED, archivedCount: 3 });
 
     await handleSubscriptionRevoked(createRevokedPayload());
 
     expect(sendSubscriptionExpiredEmail).toHaveBeenCalledWith("user-456", 3);
   });
 
+  it("does not send expired email when recompute did not downgrade (multi-provider)", async () => {
+    vi.mocked(recomputeEntitlement).mockResolvedValue(PRO);
+
+    await handleSubscriptionRevoked(createRevokedPayload());
+
+    expect(upsertBillingSubscription).toHaveBeenCalled();
+    expect(sendSubscriptionExpiredEmail).not.toHaveBeenCalled();
+  });
+
   it("does not fail webhook if email sending fails", async () => {
     vi.mocked(sendSubscriptionExpiredEmail).mockRejectedValue(new Error("Email failed"));
 
-    // Should not throw - email errors are logged but swallowed
     await expect(handleSubscriptionRevoked(createRevokedPayload())).resolves.not.toThrow();
 
-    expect(handleDowngrade).toHaveBeenCalled();
-    expect(clearSubscriptionEndsAt).toHaveBeenCalled();
+    expect(upsertBillingSubscription).toHaveBeenCalled();
+    expect(recomputeEntitlement).toHaveBeenCalled();
   });
 
   it("does not downgrade when externalId (userId) is missing", async () => {
     await handleSubscriptionRevoked(createRevokedPayload({ userId: null }));
 
-    expect(handleDowngrade).not.toHaveBeenCalled();
-    expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
+    expect(upsertBillingSubscription).not.toHaveBeenCalled();
+    expect(recomputeEntitlement).not.toHaveBeenCalled();
     expect(sendSubscriptionExpiredEmail).not.toHaveBeenCalled();
   });
 
-  it("re-throws errors from handleDowngrade for webhook retry", async () => {
-    vi.mocked(handleDowngrade).mockRejectedValue(new Error("Downgrade failed"));
+  it("re-throws errors from recomputeEntitlement for webhook retry", async () => {
+    vi.mocked(recomputeEntitlement).mockRejectedValue(new Error("Downgrade failed"));
 
     await expect(handleSubscriptionRevoked(createRevokedPayload())).rejects.toThrow(
       "Downgrade failed",
@@ -469,22 +478,27 @@ describe("handleSubscriptionRevoked", () => {
 describe("handleSubscriptionUncanceled", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    vi.mocked(recomputeEntitlement).mockResolvedValue(PRO);
   });
 
-  it("clears subscription end date when user uncancels", async () => {
+  it("upserts an active row and recomputes when the user uncancels", async () => {
     await handleSubscriptionUncanceled(createUncanceledPayload());
 
-    expect(clearSubscriptionEndsAt).toHaveBeenCalledWith("user-456");
+    expect(upsertBillingSubscription).toHaveBeenCalledWith(
+      "user-456",
+      expect.objectContaining({ provider: "polar", status: "active", cancelAtPeriodEnd: false }),
+    );
+    expect(recomputeEntitlement).toHaveBeenCalledWith("user-456");
   });
 
-  it("does not clear end date when externalId (userId) is missing", async () => {
+  it("does not write when externalId (userId) is missing", async () => {
     await handleSubscriptionUncanceled(createUncanceledPayload({ userId: null }));
 
-    expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
+    expect(upsertBillingSubscription).not.toHaveBeenCalled();
   });
 
-  it("re-throws errors from clearSubscriptionEndsAt for webhook retry", async () => {
-    vi.mocked(clearSubscriptionEndsAt).mockRejectedValue(new Error("Database error"));
+  it("re-throws errors from upsertBillingSubscription for webhook retry", async () => {
+    vi.mocked(upsertBillingSubscription).mockRejectedValue(new Error("Database error"));
 
     await expect(handleSubscriptionUncanceled(createUncanceledPayload())).rejects.toThrow(
       "Database error",

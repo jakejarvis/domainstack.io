@@ -2,6 +2,7 @@
  * Primitive constants and types for pgEnums and shared type definitions.
  */
 
+export * from "./billing";
 export * from "./dns";
 export * from "./notifications";
 export * from "./plans";

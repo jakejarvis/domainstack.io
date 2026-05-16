@@ -15,6 +15,8 @@ import {
 } from "drizzle-orm/pg-core";
 
 import {
+  BILLING_PROVIDERS,
+  BILLING_SUBSCRIPTION_STATUSES,
   DNS_RECORD_TYPES,
   NOTIFICATION_CHANNELS,
   PLANS,
@@ -43,6 +45,11 @@ export const registrationSource = pgEnum("registration_source", REGISTRATION_SOU
 export const verificationMethod = pgEnum("verification_method", VERIFICATION_METHODS);
 export const verificationStatus = pgEnum("verification_status", VERIFICATION_STATUSES);
 export const userTier = pgEnum("user_tier", PLANS);
+export const billingProvider = pgEnum("billing_provider", BILLING_PROVIDERS);
+export const billingSubscriptionStatus = pgEnum(
+  "billing_subscription_status",
+  BILLING_SUBSCRIPTION_STATUSES,
+);
 
 // ============================================================================
 // Authentication Tables (better-auth)
@@ -159,6 +166,44 @@ export const userSubscriptions = pgTable(
     lastExpiryNotification: integer("last_expiry_notification"),
   },
   (t) => [unique("u_user_subscription_user").on(t.userId)],
+);
+
+// Per-provider subscription rows. Source of truth for entitlement;
+// `userSubscriptions` is a derived cache recomputed from these rows via
+// `recomputeEntitlement()`. One row per (provider, externalId): a re-subscribe
+// overwrites in place.
+export const billingSubscriptions = pgTable(
+  "billing_subscriptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    provider: billingProvider("provider").notNull(),
+    // Provider-side subscription id (Polar subscription id, App Store
+    // original_transaction_id, Play purchase token, …). Observability only;
+    // NOT the upsert key.
+    providerSubscriptionId: text("provider_subscription_id").notNull(),
+    // The provider's customer identifier that maps to our user. For Polar this
+    // is customer.externalId (== our userId). Upsert key together with
+    // provider.
+    externalId: text("external_id").notNull(),
+    // Nullable: a product-id mismatch must not lose the row (single-tier model
+    // still grants pro on any active subscription).
+    productId: text("product_id"),
+    status: billingSubscriptionStatus("status").notNull(),
+    currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+    cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (t) => [
+    unique("u_billing_sub_provider_external").on(t.provider, t.externalId),
+    index("i_billing_sub_user").on(t.userId),
+  ],
 );
 
 // User's tracked domains

@@ -45,13 +45,13 @@ export async function subscriptionDowngradeWorkflow(
   }
   if (state.hasActiveSubscription) {
     // User actually renewed; a missed uncanceled/active webhook left a stale
-    // end date. Self-heal by clearing it instead of downgrading.
-    await clearEndsAt(userId);
+    // end date. Self-heal the Polar billing row to active and recompute.
+    await healActive(userId);
     return { downgraded: false, reason: "still_active" };
   }
 
   // Step 3: Genuinely expired with no active Polar subscription — downgrade.
-  const archivedCount = await downgrade(userId);
+  const archivedCount = await expireAndDowngrade(userId);
   return { downgraded: true, archivedCount };
 }
 
@@ -75,27 +75,51 @@ async function fetchPolarState(userId: string) {
   return await getCustomerSubscriptionState(userId);
 }
 
-async function clearEndsAt(userId: string): Promise<void> {
-  "use step";
-
-  const { clearSubscriptionEndsAt } = await import("@domainstack/db/queries");
-  await clearSubscriptionEndsAt(userId);
+// Polar reconcile only returns booleans, not subscription ids. The
+// providerSubscriptionId is observability-only and the next genuine webhook
+// re-keys the (provider, externalId) row in place, so a `reconcile:` sentinel
+// is safe here (same approach as the migration backfill).
+function reconcileSentinelUpsert(
+  userId: string,
+  status: "active" | "expired",
+): import("@domainstack/types").BillingSubscriptionUpsert {
+  return {
+    provider: "polar",
+    externalId: userId,
+    providerSubscriptionId: `reconcile:${userId}`,
+    productId: null,
+    status,
+    currentPeriodEnd: null,
+    cancelAtPeriodEnd: false,
+  };
 }
 
-async function downgrade(userId: string): Promise<number> {
+async function healActive(userId: string): Promise<void> {
   "use step";
 
-  const [{ clearSubscriptionEndsAt }, { handleDowngrade, sendSubscriptionExpiredEmail }] =
+  const { upsertBillingSubscription, recomputeEntitlement } =
+    await import("@domainstack/db/queries");
+
+  await upsertBillingSubscription(userId, reconcileSentinelUpsert(userId, "active"));
+  await recomputeEntitlement(userId);
+}
+
+async function expireAndDowngrade(userId: string): Promise<number> {
+  "use step";
+
+  const [{ upsertBillingSubscription, recomputeEntitlement }, { sendSubscriptionExpiredEmail }] =
     await Promise.all([import("@domainstack/db/queries"), import("@domainstack/polar")]);
 
-  const archivedCount = await handleDowngrade(userId);
-  await clearSubscriptionEndsAt(userId);
+  await upsertBillingSubscription(userId, reconcileSentinelUpsert(userId, "expired"));
+  const result = await recomputeEntitlement(userId);
 
-  try {
-    await sendSubscriptionExpiredEmail(userId, archivedCount);
-  } catch {
-    // Best-effort: don't fail the downgrade if the email send fails.
+  if (result.downgraded) {
+    try {
+      await sendSubscriptionExpiredEmail(userId, result.archivedCount);
+    } catch {
+      // Best-effort: don't fail the downgrade if the email send fails.
+    }
   }
 
-  return archivedCount;
+  return result.archivedCount;
 }

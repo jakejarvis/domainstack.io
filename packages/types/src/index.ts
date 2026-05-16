@@ -14,6 +14,15 @@
 // Domain types
 export * from "./domain";
 
+// Billing seam
+export type {
+  BillingProvider,
+  BillingReconcileState,
+  BillingSideEffect,
+  BillingSubscriptionUpsert,
+  NormalizedBillingEvent,
+} from "./billing";
+
 // Other types
 export type {
   ChannelToggles,

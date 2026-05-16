@@ -1,9 +1,13 @@
-import { and, asc, count, eq, gt, inArray, isNotNull, isNull, lt } from "drizzle-orm";
+import { and, asc, count, eq, gt, inArray, isNotNull, isNull, notExists, or } from "drizzle-orm";
 
 import { PLAN_QUOTAS, type PLANS } from "@domainstack/constants";
+import type { BillingSubscriptionUpsert } from "@domainstack/types";
 
-import { db } from "../client";
-import { userSubscriptions, users, userTrackedDomains } from "../schema";
+import { db, type Database } from "../client";
+import { billingSubscriptions, userSubscriptions, users, userTrackedDomains } from "../schema";
+
+/** Drizzle transaction handle (callback arg of `db.transaction`). */
+type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 /** Plan type derived from PLANS constant (single source of truth). */
 type Plan = (typeof PLANS)[number];
@@ -71,6 +75,9 @@ export async function getUserSubscription(userId: string): Promise<UserSubscript
 
 /**
  * Update user tier.
+ *
+ * @deprecated Entitlement is derived by {@link recomputeEntitlement}. Kept for
+ * legacy callers; new code upserts a `billing_subscriptions` row instead.
  */
 export async function updateUserTier(userId: string, tier: Plan): Promise<void> {
   const updated = await db
@@ -92,6 +99,9 @@ export async function updateUserTier(userId: string, tier: Plan): Promise<void> 
 
 /**
  * Set subscription end date.
+ *
+ * @deprecated Entitlement is derived by {@link recomputeEntitlement}. Kept for
+ * legacy callers; new code upserts a `billing_subscriptions` row instead.
  */
 export async function setSubscriptionEndsAt(userId: string, endsAt: Date): Promise<void> {
   const updated = await db
@@ -107,6 +117,9 @@ export async function setSubscriptionEndsAt(userId: string, endsAt: Date): Promi
 
 /**
  * Clear subscription end date.
+ *
+ * @deprecated Entitlement is derived by {@link recomputeEntitlement}. Kept for
+ * legacy callers; new code upserts a `billing_subscriptions` row instead.
  */
 export async function clearSubscriptionEndsAt(userId: string): Promise<void> {
   await db
@@ -148,26 +161,40 @@ export async function getUserIdsWithEndingSubscriptions(): Promise<string[]> {
 }
 
 /**
- * Get user IDs whose paid period has elapsed but are still on the pro tier.
+ * Get user IDs that are cached as `pro` but whose `billing_subscriptions` rows
+ * no longer grant pro (i.e. a `recomputeEntitlement` would downgrade them).
  *
- * These users need a server-side downgrade reconciliation: normally the Polar
- * `subscription.revoked` webhook downgrades them, but if that webhook is
+ * These users need a server-side downgrade reconciliation: normally a provider
+ * revoke webhook downgrades them, but if that webhook is
  * delayed/dropped/misconfigured they would otherwise keep Pro indefinitely.
- * The reconcile workflow re-checks Polar before actually downgrading.
+ * Multi-provider-safe: a user still active on another provider is excluded
+ * because that provider's row satisfies the EXISTS. The reconcile workflow
+ * re-checks the provider before actually downgrading.
  */
 export async function getUserIdsPastDue(): Promise<string[]> {
   const now = new Date();
 
+  const granting = db
+    .select({ userId: billingSubscriptions.userId })
+    .from(billingSubscriptions)
+    .where(
+      and(
+        eq(billingSubscriptions.userId, userSubscriptions.userId),
+        or(
+          eq(billingSubscriptions.status, "active"),
+          and(
+            eq(billingSubscriptions.status, "canceling"),
+            isNotNull(billingSubscriptions.currentPeriodEnd),
+            gt(billingSubscriptions.currentPeriodEnd, now),
+          ),
+        ),
+      ),
+    );
+
   const rows = await db
     .select({ userId: userSubscriptions.userId })
     .from(userSubscriptions)
-    .where(
-      and(
-        eq(userSubscriptions.tier, "pro"),
-        isNotNull(userSubscriptions.endsAt),
-        lt(userSubscriptions.endsAt, now),
-      ),
-    );
+    .where(and(eq(userSubscriptions.tier, "pro"), notExists(granting)));
 
   return rows.map((row) => row.userId);
 }
@@ -220,11 +247,55 @@ export async function setLastExpiryNotification(userId: string, threshold: numbe
 }
 
 /**
- * Downgrade user from Pro to Free tier.
+ * Archive the oldest active tracked domains beyond the free quota. Shared by
+ * `downgradeToFree` and `recomputeEntitlement`. Returns the number archived.
  */
-export async function downgradeToFree(userId: string): Promise<number> {
+async function archiveExcessDomains(tx: Tx, userId: string): Promise<number> {
   const freeLimit = PLAN_QUOTAS.free;
 
+  const [countResult] = await tx
+    .select({ count: count() })
+    .from(userTrackedDomains)
+    .where(and(eq(userTrackedDomains.userId, userId), isNull(userTrackedDomains.archivedAt)));
+
+  const activeCount = countResult?.count ?? 0;
+
+  if (activeCount <= freeLimit) {
+    return 0;
+  }
+
+  const toArchive = activeCount - freeLimit;
+
+  const domainsToArchive = await tx
+    .select({ id: userTrackedDomains.id })
+    .from(userTrackedDomains)
+    .where(and(eq(userTrackedDomains.userId, userId), isNull(userTrackedDomains.archivedAt)))
+    .orderBy(asc(userTrackedDomains.createdAt))
+    .limit(toArchive);
+
+  if (domainsToArchive.length === 0) {
+    return 0;
+  }
+
+  const idsToArchive = domainsToArchive.map((d) => d.id);
+
+  const result = await tx
+    .update(userTrackedDomains)
+    .set({ archivedAt: new Date() })
+    .where(inArray(userTrackedDomains.id, idsToArchive))
+    .returning({ id: userTrackedDomains.id });
+
+  return result.length;
+}
+
+/**
+ * Downgrade user from Pro to Free tier.
+ *
+ * @deprecated Entitlement is now derived by {@link recomputeEntitlement} from
+ * `billing_subscriptions`. Kept for the legacy direct-downgrade path; new code
+ * should upsert a billing row and call `recomputeEntitlement`.
+ */
+export async function downgradeToFree(userId: string): Promise<number> {
   return await db.transaction(async (tx) => {
     const updated = await tx
       .update(userSubscriptions)
@@ -236,38 +307,179 @@ export async function downgradeToFree(userId: string): Promise<number> {
       await tx.insert(userSubscriptions).values({ userId, tier: "free" });
     }
 
-    const [countResult] = await tx
-      .select({ count: count() })
-      .from(userTrackedDomains)
-      .where(and(eq(userTrackedDomains.userId, userId), isNull(userTrackedDomains.archivedAt)));
-
-    const activeCount = countResult?.count ?? 0;
-
-    if (activeCount <= freeLimit) {
-      return 0;
-    }
-
-    const toArchive = activeCount - freeLimit;
-
-    const domainsToArchive = await tx
-      .select({ id: userTrackedDomains.id })
-      .from(userTrackedDomains)
-      .where(and(eq(userTrackedDomains.userId, userId), isNull(userTrackedDomains.archivedAt)))
-      .orderBy(asc(userTrackedDomains.createdAt))
-      .limit(toArchive);
-
-    if (domainsToArchive.length === 0) {
-      return 0;
-    }
-
-    const idsToArchive = domainsToArchive.map((d) => d.id);
-
-    const result = await tx
-      .update(userTrackedDomains)
-      .set({ archivedAt: new Date() })
-      .where(inArray(userTrackedDomains.id, idsToArchive))
-      .returning({ id: userTrackedDomains.id });
-
-    return result.length;
+    return await archiveExcessDomains(tx, userId);
   });
+}
+
+export interface RecomputeResult {
+  /** Resulting cached tier. */
+  plan: Plan;
+  /** Resulting cached endsAt. */
+  endsAt: Date | null;
+  /** The cached row's entitlement state actually changed. */
+  changed: boolean;
+  /** A pro→free transition happened on this call. */
+  downgraded: boolean;
+  /** Domains archived (only non-zero when `downgraded`). */
+  archivedCount: number;
+}
+
+function sameInstant(a: Date | null, b: Date | null): boolean {
+  if (a === null || b === null) return a === b;
+  return a.getTime() === b.getTime();
+}
+
+/**
+ * Derive the cached `userSubscriptions` row from ALL `billing_subscriptions`
+ * rows for the user. This is the single function allowed to write
+ * tier/endsAt/lastExpiryNotification. Idempotent; safe under concurrent
+ * webhooks (the cache row is locked `FOR UPDATE` so interleaved recomputes
+ * serialize and converge — recompute is a pure function of the current row
+ * set).
+ *
+ * Rules:
+ * - A row grants pro if `status="active"`, or `status="canceling"` with a
+ *   future `currentPeriodEnd`. tier = pro iff ANY row grants (OR across
+ *   providers — no single provider's revoke can downgrade a user still active
+ *   on another).
+ * - endsAt is non-null iff pro AND zero `active` rows AND ≥1 future-dated
+ *   `canceling` row, in which case it is the latest such `currentPeriodEnd`.
+ *   (An `active` row anywhere ⇒ endsAt null: nothing to warn about.)
+ * - lastExpiryNotification is reset only when the cancellation cycle changes
+ *   (endsAt cleared, or moved to a different instant); otherwise preserved so
+ *   repeated recomputes never re-fire 7/3/1 reminders.
+ * - The domain-archiving path runs only on a pro→free transition.
+ */
+export async function recomputeEntitlement(userId: string): Promise<RecomputeResult> {
+  const now = new Date();
+
+  return await db.transaction(async (tx) => {
+    const [prev] = await tx
+      .select({
+        tier: userSubscriptions.tier,
+        endsAt: userSubscriptions.endsAt,
+        lastExpiryNotification: userSubscriptions.lastExpiryNotification,
+      })
+      .from(userSubscriptions)
+      .where(eq(userSubscriptions.userId, userId))
+      .limit(1)
+      .for("update");
+
+    const prevTier: Plan = prev?.tier ?? "free";
+    const prevEndsAt: Date | null = prev?.endsAt ?? null;
+    const prevMarker: number | null = prev?.lastExpiryNotification ?? null;
+
+    const rows = await tx
+      .select({
+        status: billingSubscriptions.status,
+        currentPeriodEnd: billingSubscriptions.currentPeriodEnd,
+      })
+      .from(billingSubscriptions)
+      .where(eq(billingSubscriptions.userId, userId));
+
+    let hasActive = false;
+    const cancelingEnds: Date[] = [];
+    for (const row of rows) {
+      if (row.status === "active") {
+        hasActive = true;
+      } else if (
+        row.status === "canceling" &&
+        row.currentPeriodEnd !== null &&
+        row.currentPeriodEnd.getTime() > now.getTime()
+      ) {
+        cancelingEnds.push(row.currentPeriodEnd);
+      }
+    }
+
+    const nextTier: Plan = hasActive || cancelingEnds.length > 0 ? "pro" : "free";
+
+    let nextEndsAt: Date | null = null;
+    if (nextTier === "pro" && !hasActive && cancelingEnds.length > 0) {
+      nextEndsAt = cancelingEnds.reduce((latest, d) =>
+        d.getTime() > latest.getTime() ? d : latest,
+      );
+    }
+
+    let nextMarker: number | null;
+    if (nextEndsAt === null || prevEndsAt === null || !sameInstant(nextEndsAt, prevEndsAt)) {
+      nextMarker = null;
+    } else {
+      nextMarker = prevMarker;
+    }
+
+    const updated = await tx
+      .update(userSubscriptions)
+      .set({
+        tier: nextTier,
+        endsAt: nextEndsAt,
+        lastExpiryNotification: nextMarker,
+        updatedAt: new Date(),
+      })
+      .where(eq(userSubscriptions.userId, userId))
+      .returning({ userId: userSubscriptions.userId });
+
+    if (updated.length === 0) {
+      await tx
+        .insert(userSubscriptions)
+        .values({
+          userId,
+          tier: nextTier,
+          endsAt: nextEndsAt,
+          lastExpiryNotification: nextMarker,
+        })
+        .onConflictDoUpdate({
+          target: userSubscriptions.userId,
+          set: {
+            tier: nextTier,
+            endsAt: nextEndsAt,
+            lastExpiryNotification: nextMarker,
+            updatedAt: new Date(),
+          },
+        });
+    }
+
+    const downgraded = prevTier === "pro" && nextTier === "free";
+    const archivedCount = downgraded ? await archiveExcessDomains(tx, userId) : 0;
+
+    const changed =
+      prevTier !== nextTier || !sameInstant(prevEndsAt, nextEndsAt) || prevMarker !== nextMarker;
+
+    return { plan: nextTier, endsAt: nextEndsAt, changed, downgraded, archivedCount };
+  });
+}
+
+/**
+ * Upsert a single provider's subscription row (keyed by provider+externalId)
+ * then the caller is expected to call {@link recomputeEntitlement}. No
+ * ordering guard in Phase 1: behavior parity with the prior Polar handlers is
+ * provided by their existing reconcile-before-destructive guard.
+ */
+export async function upsertBillingSubscription(
+  userId: string,
+  input: BillingSubscriptionUpsert,
+): Promise<void> {
+  await db
+    .insert(billingSubscriptions)
+    .values({
+      userId,
+      provider: input.provider,
+      providerSubscriptionId: input.providerSubscriptionId,
+      externalId: input.externalId,
+      productId: input.productId,
+      status: input.status,
+      currentPeriodEnd: input.currentPeriodEnd,
+      cancelAtPeriodEnd: input.cancelAtPeriodEnd,
+    })
+    .onConflictDoUpdate({
+      target: [billingSubscriptions.provider, billingSubscriptions.externalId],
+      set: {
+        userId,
+        providerSubscriptionId: input.providerSubscriptionId,
+        productId: input.productId,
+        status: input.status,
+        currentPeriodEnd: input.currentPeriodEnd,
+        cancelAtPeriodEnd: input.cancelAtPeriodEnd,
+        updatedAt: new Date(),
+      },
+    });
 }
