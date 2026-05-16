@@ -318,6 +318,8 @@ export interface RecomputeResult {
   endsAt: Date | null;
   /** The cached row's entitlement state actually changed. */
   changed: boolean;
+  /** A free→pro transition happened on this call. */
+  upgraded: boolean;
   /** A pro→free transition happened on this call. */
   downgraded: boolean;
   /** Domains archived (only non-zero when `downgraded`). */
@@ -438,13 +440,14 @@ export async function recomputeEntitlement(userId: string): Promise<RecomputeRes
         });
     }
 
+    const upgraded = prevTier === "free" && nextTier === "pro";
     const downgraded = prevTier === "pro" && nextTier === "free";
     const archivedCount = downgraded ? await archiveExcessDomains(tx, userId) : 0;
 
     const changed =
       prevTier !== nextTier || !sameInstant(prevEndsAt, nextEndsAt) || prevMarker !== nextMarker;
 
-    return { plan: nextTier, endsAt: nextEndsAt, changed, downgraded, archivedCount };
+    return { plan: nextTier, endsAt: nextEndsAt, changed, upgraded, downgraded, archivedCount };
   });
 }
 

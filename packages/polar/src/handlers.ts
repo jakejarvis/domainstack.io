@@ -82,13 +82,18 @@ export async function handleSubscriptionActive(payload: SubscriptionActivePayloa
   }
 
   await upsertBillingSubscription(userId, upsert);
-  await recomputeEntitlement(userId);
+  const result = await recomputeEntitlement(userId);
 
-  // Send welcome email (don't fail webhook if email fails)
-  try {
-    await sendProUpgradeEmail(userId);
-  } catch (err) {
-    logger.error({ err, userId }, "Failed to send pro upgrade email");
+  // Polar delivers webhooks at-least-once. Only send the welcome email on a
+  // real free→pro transition: a redelivered `subscription.active` recomputes
+  // to the same pro state (`upgraded === false`) and must not re-send it.
+  if (result.upgraded) {
+    // Send welcome email (don't fail webhook if email fails)
+    try {
+      await sendProUpgradeEmail(userId);
+    } catch (err) {
+      logger.error({ err, userId }, "Failed to send pro upgrade email");
+    }
   }
 }
 
@@ -140,13 +145,18 @@ export async function handleSubscriptionCanceled(
   }
 
   await upsertBillingSubscription(userId, upsert);
-  await recomputeEntitlement(userId);
+  const result = await recomputeEntitlement(userId);
 
-  // Send cancellation confirmation email (don't fail webhook if email fails)
-  try {
-    await sendSubscriptionCancelingEmail(userId, data.currentPeriodEnd);
-  } catch (err) {
-    logger.error({ err, userId }, "Failed to send canceling email");
+  // Only email when this established a new cancellation cycle. A redelivered
+  // `canceled` event recomputes to the same endsAt (`changed === false`) and
+  // must not re-send the "subscription ending" email.
+  if (result.changed) {
+    // Send cancellation confirmation email (don't fail webhook if email fails)
+    try {
+      await sendSubscriptionCancelingEmail(userId, data.currentPeriodEnd);
+    } catch (err) {
+      logger.error({ err, userId }, "Failed to send canceling email");
+    }
   }
 }
 

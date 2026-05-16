@@ -106,6 +106,7 @@ const DOWNGRADED: RecomputeResult = {
   plan: "free",
   endsAt: null,
   changed: true,
+  upgraded: false,
   downgraded: true,
   archivedCount: 0,
 };
@@ -113,6 +114,7 @@ const PRO: RecomputeResult = {
   plan: "pro",
   endsAt: null,
   changed: true,
+  upgraded: true,
   downgraded: false,
   archivedCount: 0,
 };
@@ -284,6 +286,19 @@ describe("handleSubscriptionActive", () => {
     expect(upsertBillingSubscription).toHaveBeenCalled();
     expect(recomputeEntitlement).toHaveBeenCalled();
   });
+
+  it("does not re-send the welcome email on webhook redelivery (no upgrade transition)", async () => {
+    vi.mocked(getTierForProductId).mockReturnValue("pro");
+    // Already pro: a redelivered subscription.active recomputes to the same
+    // state (upgraded=false) — the row is still upserted but no email fires.
+    vi.mocked(recomputeEntitlement).mockResolvedValue({ ...PRO, upgraded: false, changed: false });
+
+    await handleSubscriptionActive(createActivePayload());
+
+    expect(upsertBillingSubscription).toHaveBeenCalled();
+    expect(recomputeEntitlement).toHaveBeenCalledWith("user-456");
+    expect(sendProUpgradeEmail).not.toHaveBeenCalled();
+  });
 });
 
 describe("handleSubscriptionCanceled", () => {
@@ -384,6 +399,19 @@ describe("handleSubscriptionCanceled", () => {
     ).resolves.not.toThrow();
 
     expect(upsertBillingSubscription).toHaveBeenCalled();
+  });
+
+  it("does not re-send the canceling email on redelivery (no cycle change)", async () => {
+    // Redelivered canceled event: same endsAt, recompute reports changed=false.
+    vi.mocked(recomputeEntitlement).mockResolvedValue({ ...PRO, changed: false });
+
+    await handleSubscriptionCanceled(
+      createCanceledPayload({ currentPeriodEnd: new Date("2025-02-01T00:00:00Z") }),
+    );
+
+    expect(upsertBillingSubscription).toHaveBeenCalled();
+    expect(recomputeEntitlement).toHaveBeenCalledWith("user-456");
+    expect(sendSubscriptionCancelingEmail).not.toHaveBeenCalled();
   });
 });
 

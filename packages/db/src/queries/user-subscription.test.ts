@@ -109,6 +109,7 @@ describe("user subscription queries", () => {
         plan: "free",
         endsAt: null,
         changed: false,
+        upgraded: false,
         downgraded: false,
         archivedCount: 0,
       });
@@ -127,7 +128,20 @@ describe("user subscription queries", () => {
       expect(result.plan).toBe("pro");
       expect(result.endsAt).toBeNull();
       expect(result.changed).toBe(true);
+      expect(result.upgraded).toBe(true);
       expect(result.downgraded).toBe(false);
+    });
+
+    it("upgraded is true once on free→pro, false on a redelivered pro→pro recompute", async () => {
+      await seedPolarRow(USER_A, "active");
+
+      const first = await recomputeEntitlement(USER_A);
+      expect(first.upgraded).toBe(true);
+
+      // Webhook redelivery: same active row, already pro -> no transition.
+      const replay = await recomputeEntitlement(USER_A);
+      expect(replay.upgraded).toBe(false);
+      expect(replay.changed).toBe(false);
     });
 
     it("grants pro on a future canceling row and preserves the reminder marker", async () => {
@@ -245,6 +259,7 @@ describe("user subscription queries", () => {
       const result = await recomputeEntitlement(USER_A);
 
       expect(result.plan).toBe("pro");
+      expect(result.upgraded).toBe(false);
       expect(result.downgraded).toBe(false);
       expect(result.archivedCount).toBe(0);
       const tracked = await testDb
