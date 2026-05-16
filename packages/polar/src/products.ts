@@ -1,16 +1,28 @@
+import { createLogger } from "@domainstack/logger";
+
+const logger = createLogger({ source: "polar/products" });
+
+let missingProductIdsWarned = false;
+
 /**
- * Get Polar product IDs from environment variables with validation.
- * These are required and must be set for the application to function.
+ * Resolve Polar product IDs from environment variables.
  *
  * Uses NEXT_PUBLIC_ prefix because these are needed client-side for checkout.
+ *
+ * IMPORTANT: this must NOT throw. It is reached at module-evaluation time via
+ * `getProductsForCheckout()` inside the Better Auth `polar()` plugin config in
+ * `@domainstack/auth/server`, which is imported app-wide — a throw here would
+ * 500 every authenticated route. Missing IDs simply disable checkout (logged
+ * once) instead of taking the app down.
  */
-function getProductIds() {
+function getProductIds(): { monthlyId?: string; yearlyId?: string } {
   const monthlyId = process.env.NEXT_PUBLIC_POLAR_MONTHLY_PRODUCT_ID;
   const yearlyId = process.env.NEXT_PUBLIC_POLAR_YEARLY_PRODUCT_ID;
 
-  if (!monthlyId || !yearlyId) {
-    throw new Error(
-      "Missing required Polar product IDs. Set NEXT_PUBLIC_POLAR_MONTHLY_PRODUCT_ID and NEXT_PUBLIC_POLAR_YEARLY_PRODUCT_ID environment variables.",
+  if ((!monthlyId || !yearlyId) && !missingProductIdsWarned) {
+    missingProductIdsWarned = true;
+    logger.warn(
+      "Missing Polar product IDs (NEXT_PUBLIC_POLAR_MONTHLY_PRODUCT_ID / NEXT_PUBLIC_POLAR_YEARLY_PRODUCT_ID); checkout is disabled.",
     );
   }
 
@@ -65,12 +77,15 @@ export function getProduct(slug: ProductSlug) {
 
 /**
  * Get all products as an array for checkout config.
+ *
+ * Products whose env-configured ID is missing are filtered out (rather than
+ * throwing); an empty result means checkout is effectively disabled.
  */
 export function getProductsForCheckout() {
-  return Object.values(POLAR_PRODUCTS).map((product) => ({
-    productId: product.productId,
-    slug: product.slug,
-  }));
+  return Object.values(POLAR_PRODUCTS).flatMap((product) => {
+    const productId = product.productId;
+    return productId ? [{ productId, slug: product.slug }] : [];
+  });
 }
 
 /**

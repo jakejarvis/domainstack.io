@@ -246,7 +246,16 @@ export async function markAllAsRead(userId: string): Promise<number> {
 }
 
 /**
- * Check if a notification of this type has been FULLY sent recently.
+ * Check whether a notification of this type for the domain was already created
+ * within the recent window.
+ *
+ * The guard is the existence of the notification row (created atomically with
+ * its `sentAt`), NOT the presence of a Resend `resendId`. Tying it to
+ * `resendId` previously caused a re-fire storm: if `updateNotificationResendId`
+ * failed or Resend returned no id, every subsequent cron run treated the
+ * notification as unsent and re-created + re-sent it. Email send failures are
+ * already handled by step-level retry + the Resend idempotency key, so they
+ * must not drive duplicate-notification suppression here.
  */
 export async function hasRecentNotification(
   trackedDomainId: string,
@@ -257,10 +266,7 @@ export async function hasRecentNotification(
   cutoff.setDate(cutoff.getDate() - days);
 
   const rows = await db
-    .select({
-      channels: notifications.channels,
-      resendId: notifications.resendId,
-    })
+    .select({ id: notifications.id })
     .from(notifications)
     .where(
       and(
@@ -271,18 +277,7 @@ export async function hasRecentNotification(
     )
     .limit(1);
 
-  if (rows.length === 0) {
-    return false;
-  }
-
-  const [notification] = rows;
-  const channels = (notification.channels as string[]) ?? [];
-
-  if (channels.includes("email") && !notification.resendId) {
-    return false;
-  }
-
-  return true;
+  return rows.length > 0;
 }
 
 /**

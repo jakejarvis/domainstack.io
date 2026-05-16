@@ -20,31 +20,45 @@ type SubscriptionUncanceledPayload = Parameters<
 >[0];
 
 // Hoist mock functions so they're available to vi.mock factory
-const { updateUserTier, setSubscriptionEndsAt, clearSubscriptionEndsAt, createMockLogger } =
-  vi.hoisted(() => {
-    type MockLogger = Record<
-      "log" | "trace" | "debug" | "info" | "warn" | "error" | "fatal" | "child",
-      ReturnType<typeof vi.fn>
-    >;
+const {
+  updateUserTier,
+  setSubscriptionEndsAt,
+  clearSubscriptionEndsAt,
+  getCustomerSubscriptionState,
+  createMockLogger,
+} = vi.hoisted(() => {
+  type MockLogger = Record<
+    "log" | "trace" | "debug" | "info" | "warn" | "error" | "fatal" | "child",
+    ReturnType<typeof vi.fn>
+  >;
 
-    const buildMockLogger = (): MockLogger => ({
-      log: vi.fn<(...args: unknown[]) => void>(),
-      trace: vi.fn<(...args: unknown[]) => void>(),
-      debug: vi.fn<(...args: unknown[]) => void>(),
-      info: vi.fn<(...args: unknown[]) => void>(),
-      warn: vi.fn<(...args: unknown[]) => void>(),
-      error: vi.fn<(...args: unknown[]) => void>(),
-      fatal: vi.fn<(...args: unknown[]) => void>(),
-      child: vi.fn<(...args: unknown[]) => MockLogger>(() => buildMockLogger()),
-    });
-
-    return {
-      updateUserTier: vi.fn<(userId: string, tier: "free" | "pro") => Promise<void>>(),
-      setSubscriptionEndsAt: vi.fn<(userId: string, endsAt: Date) => Promise<void>>(),
-      clearSubscriptionEndsAt: vi.fn<(userId: string) => Promise<void>>(),
-      createMockLogger: buildMockLogger,
-    };
+  const buildMockLogger = (): MockLogger => ({
+    log: vi.fn<(...args: unknown[]) => void>(),
+    trace: vi.fn<(...args: unknown[]) => void>(),
+    debug: vi.fn<(...args: unknown[]) => void>(),
+    info: vi.fn<(...args: unknown[]) => void>(),
+    warn: vi.fn<(...args: unknown[]) => void>(),
+    error: vi.fn<(...args: unknown[]) => void>(),
+    fatal: vi.fn<(...args: unknown[]) => void>(),
+    child: vi.fn<(...args: unknown[]) => MockLogger>(() => buildMockLogger()),
   });
+
+  return {
+    updateUserTier: vi.fn<(userId: string, tier: "free" | "pro") => Promise<void>>(),
+    setSubscriptionEndsAt: vi.fn<(userId: string, endsAt: Date) => Promise<void>>(),
+    clearSubscriptionEndsAt: vi.fn<(userId: string) => Promise<void>>(),
+    getCustomerSubscriptionState:
+      vi.fn<
+        (
+          userId: string,
+        ) => Promise<
+          | { status: "ok"; hasActiveSubscription: boolean; hasNonCancelingActive: boolean }
+          | { status: "unknown" }
+        >
+      >(),
+    createMockLogger: buildMockLogger,
+  };
+});
 
 // Mock the dependencies - export functions directly (not via repo objects)
 vi.mock("@domainstack/db/queries", () => ({
@@ -66,6 +80,10 @@ vi.mock("./downgrade", () => ({
 
 vi.mock("./products", () => ({
   getTierForProductId: vi.fn<(productId: string) => "pro" | null>(),
+}));
+
+vi.mock("./reconcile", () => ({
+  getCustomerSubscriptionState,
 }));
 
 vi.mock("./emails", () => ({
@@ -212,14 +230,15 @@ describe("handleSubscriptionActive", () => {
     expect(clearSubscriptionEndsAt).toHaveBeenCalledWith("user-456");
   });
 
-  it("does not upgrade tier when product ID is unknown", async () => {
+  it("still upgrades to pro when product ID is unknown (single-tier model)", async () => {
     vi.mocked(getTierForProductId).mockReturnValue(null);
 
     await handleSubscriptionActive(createActivePayload({ productId: "unknown-product" }));
 
-    expect(getTierForProductId).toHaveBeenCalledWith("unknown-product");
-    expect(updateUserTier).not.toHaveBeenCalled();
-    expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
+    // A sandbox/prod product-id mismatch must NOT silently leave a paying
+    // customer un-upgraded — any active subscription means pro.
+    expect(updateUserTier).toHaveBeenCalledWith("user-456", "pro");
+    expect(clearSubscriptionEndsAt).toHaveBeenCalledWith("user-456");
   });
 
   it("does not upgrade tier when externalId (userId) is missing", async () => {
@@ -261,6 +280,30 @@ describe("handleSubscriptionActive", () => {
 describe("handleSubscriptionCanceled", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    // Default: Polar confirms no non-canceling active subscription, so the
+    // canceled event is honored (end date set).
+    vi.mocked(getCustomerSubscriptionState).mockResolvedValue({
+      status: "ok",
+      hasActiveSubscription: true,
+      hasNonCancelingActive: false,
+    });
+  });
+
+  it("ignores a stale canceled event when a non-canceling active subscription exists", async () => {
+    vi.mocked(getCustomerSubscriptionState).mockResolvedValue({
+      status: "ok",
+      hasActiveSubscription: true,
+      hasNonCancelingActive: true,
+    });
+
+    await handleSubscriptionCanceled(
+      createCanceledPayload({
+        cancelAtPeriodEnd: true,
+        currentPeriodEnd: new Date("2025-02-01T00:00:00Z"),
+      }),
+    );
+
+    expect(setSubscriptionEndsAt).not.toHaveBeenCalled();
   });
 
   it("sets subscription end date when currentPeriodEnd is provided", async () => {
@@ -346,6 +389,34 @@ describe("handleSubscriptionRevoked", () => {
     vi.resetAllMocks();
     // Default: handleDowngrade returns 0 archived domains
     vi.mocked(handleDowngrade).mockResolvedValue(0);
+    // Default: Polar confirms the customer has no active subscription, so the
+    // revoke is honored (downgrade proceeds).
+    vi.mocked(getCustomerSubscriptionState).mockResolvedValue({
+      status: "ok",
+      hasActiveSubscription: false,
+      hasNonCancelingActive: false,
+    });
+  });
+
+  it("ignores a stale revoked event when the customer still has an active subscription", async () => {
+    vi.mocked(getCustomerSubscriptionState).mockResolvedValue({
+      status: "ok",
+      hasActiveSubscription: true,
+      hasNonCancelingActive: true,
+    });
+
+    await handleSubscriptionRevoked(createRevokedPayload());
+
+    expect(handleDowngrade).not.toHaveBeenCalled();
+    expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
+  });
+
+  it("skips downgrade when Polar state cannot be verified", async () => {
+    vi.mocked(getCustomerSubscriptionState).mockResolvedValue({ status: "unknown" });
+
+    await handleSubscriptionRevoked(createRevokedPayload());
+
+    expect(handleDowngrade).not.toHaveBeenCalled();
   });
 
   it("calls handleDowngrade with user ID from customer.externalId", async () => {

@@ -52,13 +52,13 @@ describe("getProductsForCheckout", () => {
 
 describe("getTierForProductId", () => {
   it("returns pro tier for pro-monthly product ID", () => {
-    const { productId } = POLAR_PRODUCTS["pro-monthly"];
+    const productId = POLAR_PRODUCTS["pro-monthly"].productId ?? "";
     const tier = getTierForProductId(productId);
     expect(tier).toBe("pro");
   });
 
   it("returns pro tier for pro-yearly product ID", () => {
-    const { productId } = POLAR_PRODUCTS["pro-yearly"];
+    const productId = POLAR_PRODUCTS["pro-yearly"].productId ?? "";
     const tier = getTierForProductId(productId);
     expect(tier).toBe("pro");
   });

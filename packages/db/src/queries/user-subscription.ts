@@ -1,4 +1,4 @@
-import { and, asc, count, eq, gt, inArray, isNotNull, isNull } from "drizzle-orm";
+import { and, asc, count, eq, gt, inArray, isNotNull, isNull, lt } from "drizzle-orm";
 
 import { PLAN_QUOTAS, type PLANS } from "@domainstack/constants";
 
@@ -25,6 +25,12 @@ export interface UserWithEndingSubscription {
 
 /**
  * Get user's subscription data.
+ *
+ * If no row exists (e.g. the best-effort signup insert in `createSubscription`
+ * was lost to a transient DB error), this self-heals by lazily upserting a
+ * free-tier row and returns the free default rather than throwing — callers
+ * (addDomain, getSubscription, withProTier, …) must never 500 over a missing
+ * billing row.
  */
 export async function getUserSubscription(userId: string): Promise<UserSubscriptionData> {
   const [record] = await db
@@ -38,7 +44,19 @@ export async function getUserSubscription(userId: string): Promise<UserSubscript
     .limit(1);
 
   if (!record) {
-    throw new Error(`Subscription not found for user: ${userId}`);
+    // Self-heal: create the missing free-tier row. onConflictDoNothing keeps
+    // this safe under a race with createSubscription / another request.
+    await db
+      .insert(userSubscriptions)
+      .values({ userId, tier: "free" })
+      .onConflictDoNothing({ target: userSubscriptions.userId });
+
+    return {
+      userId,
+      plan: "free",
+      planQuota: PLAN_QUOTAS.free,
+      endsAt: null,
+    };
   }
 
   const planQuota = PLAN_QUOTAS[record.tier];
@@ -125,6 +143,31 @@ export async function getUserIdsWithEndingSubscriptions(): Promise<string[]> {
     .select({ userId: userSubscriptions.userId })
     .from(userSubscriptions)
     .where(and(isNotNull(userSubscriptions.endsAt), gt(userSubscriptions.endsAt, now)));
+
+  return rows.map((row) => row.userId);
+}
+
+/**
+ * Get user IDs whose paid period has elapsed but are still on the pro tier.
+ *
+ * These users need a server-side downgrade reconciliation: normally the Polar
+ * `subscription.revoked` webhook downgrades them, but if that webhook is
+ * delayed/dropped/misconfigured they would otherwise keep Pro indefinitely.
+ * The reconcile workflow re-checks Polar before actually downgrading.
+ */
+export async function getUserIdsPastDue(): Promise<string[]> {
+  const now = new Date();
+
+  const rows = await db
+    .select({ userId: userSubscriptions.userId })
+    .from(userSubscriptions)
+    .where(
+      and(
+        eq(userSubscriptions.tier, "pro"),
+        isNotNull(userSubscriptions.endsAt),
+        lt(userSubscriptions.endsAt, now),
+      ),
+    );
 
   return rows.map((row) => row.userId);
 }

@@ -350,8 +350,17 @@ export const userRouter = createTRPCRouter({
         });
       }
 
+      const monthlyProductId = PRO_TIER_INFO.monthly.productId;
+      const yearlyProductId = PRO_TIER_INFO.yearly.productId;
+      if (!monthlyProductId || !yearlyProductId) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Billing is not configured on this server.",
+        });
+      }
+
       const checkout = await polarClient.checkouts.create({
-        products: [PRO_TIER_INFO.monthly.productId, PRO_TIER_INFO.yearly.productId],
+        products: [monthlyProductId, yearlyProductId],
         successUrl: input.successUrl,
         externalCustomerId: ctx.user.id,
         customerEmail: ctx.user.email,

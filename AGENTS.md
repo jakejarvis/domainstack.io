@@ -362,7 +362,7 @@ domainstack.io/
 │   │   │   └── ui/             # App-specific UI wrappers (Next.js-aware)
 │   │   ├── hooks/              # App-specific React hooks
 │   │   ├── lib/                # Domain utilities and shared modules
-│   │   │   └── workflow/       # Workflow utilities (deduplication, SWR, errors)
+│   │   │   └── workflow/       # Workflow utilities (errors, monitor dedup lock)
 │   │   ├── server/routers/     # Web-only tRPC routers (most live in @domainstack/api)
 │   │   ├── workflows/          # Vercel Workflow definitions
 │   │   └── trpc/               # tRPC client setup
@@ -462,19 +462,22 @@ if (stale) {
 ```
 
 ### Workflow Concurrency
-Use deduplication for concurrent requests:
+The hourly `monitor-domains` cron starts `detectChangesWorkflow` per tracked
+domain. A per-domain Redis lock prevents starting a duplicate run while a prior
+run (e.g. stuck in retry backoff) is still in-flight — the cron acquires the
+lock, the workflow releases it on successful completion, and a TTL is the
+crash safety net. It fails open when Redis is unavailable.
+
 ```typescript
-import { startWithDeduplication, getDeduplicationKey } from "@/lib/workflow";
+import { acquireMonitorLock, releaseMonitorLock } from "@/lib/workflow/monitor-dedup";
 import { start } from "workflow/api";
 
-const key = getDeduplicationKey("registration", domain);
-const { result, deduplicated, source } = await startWithDeduplication(
-  key,
-  () => start(registrationWorkflow, [{ domain }]),
-);
-// result: T - the workflow return value
-// deduplicated: boolean - true if attached to existing run
-// source: "memory" | "redis" | "new" - where deduplication occurred
+// Cron: only start if the per-domain lock was acquired
+if (await acquireMonitorLock(trackedDomainId)) {
+  await start(detectChangesWorkflow, [{ trackedDomainId }]);
+}
+// detectChangesWorkflow calls releaseMonitorLock(trackedDomainId) in a final
+// step on success; a failed/retrying run keeps the lock until its TTL.
 ```
 
 ### Protected tRPC Procedures

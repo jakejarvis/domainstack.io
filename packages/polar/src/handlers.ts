@@ -14,6 +14,7 @@ import {
   sendSubscriptionExpiredEmail,
 } from "./emails";
 import { getTierForProductId } from "./products";
+import { getCustomerSubscriptionState } from "./reconcile";
 
 // Extract payload types from WebhooksOptions
 type SubscriptionCreatedPayload = Parameters<
@@ -64,14 +65,18 @@ export async function handleSubscriptionCreated(
 export async function handleSubscriptionActive(payload: SubscriptionActivePayload): Promise<void> {
   const { data } = payload;
   const userId = data.customer.externalId;
-  const tier = getTierForProductId(data.product.id);
+  // Single paid tier: any active subscription means "pro". We log the
+  // product→tier mapping for observability but no longer gate the upgrade on
+  // it — a sandbox/prod product-id mismatch must not silently leave a paying
+  // customer un-upgraded.
+  const mappedTier = getTierForProductId(data.product.id);
 
   logger.info(
     {
       subscriptionId: data.id,
       userId,
       productId: data.product.id,
-      tier,
+      mappedTier,
     },
     "Subscription active",
   );
@@ -81,13 +86,15 @@ export async function handleSubscriptionActive(payload: SubscriptionActivePayloa
     return;
   }
 
-  if (!tier) {
-    logger.warn({ productId: data.product.id }, "Unknown product ID, skipping tier upgrade");
-    return;
+  if (!mappedTier) {
+    logger.warn(
+      { subscriptionId: data.id, productId: data.product.id },
+      "Active subscription product is not in POLAR_PRODUCTS; upgrading to pro anyway (single-tier model)",
+    );
   }
 
   // Upgrade user tier
-  await updateUserTier(userId, tier);
+  await updateUserTier(userId, "pro");
 
   // Clear any pending subscription end date (in case they re-subscribed)
   await clearSubscriptionEndsAt(userId);
@@ -131,6 +138,18 @@ export async function handleSubscriptionCanceled(
     return;
   }
 
+  // Reconcile against Polar: an out-of-order `canceled` (for an old
+  // subscription) arriving after the customer re-subscribed must not set a
+  // bogus end date that triggers expiry emails / downgrade.
+  const state = await getCustomerSubscriptionState(userId);
+  if (state.status === "ok" && state.hasNonCancelingActive) {
+    logger.info(
+      { subscriptionId: data.id, userId },
+      "Customer has a non-canceling active subscription; ignoring stale canceled event",
+    );
+    return;
+  }
+
   // Set the subscription end date
   await setSubscriptionEndsAt(userId, data.currentPeriodEnd);
 
@@ -163,6 +182,27 @@ export async function handleSubscriptionRevoked(
 
   if (!userId) {
     logger.warn({ subscriptionId: data.id }, "No externalId on customer, skipping downgrade");
+    return;
+  }
+
+  // Reconcile against Polar before the destructive downgrade+archive. A
+  // duplicate/out-of-order `revoked` (for an old subscription) must not
+  // downgrade and archive the domains of a user who has re-subscribed. If the
+  // live lookup fails ("unknown"), skip too — the check-subscription-expiry
+  // reconcile cron will downgrade genuinely-expired users safely.
+  const state = await getCustomerSubscriptionState(userId);
+  if (state.status !== "ok") {
+    logger.warn(
+      { subscriptionId: data.id, userId },
+      "Could not verify Polar customer state; skipping downgrade (cron will reconcile)",
+    );
+    return;
+  }
+  if (state.hasActiveSubscription) {
+    logger.info(
+      { subscriptionId: data.id, userId },
+      "Customer still has an active subscription; ignoring stale revoked event",
+    );
     return;
   }
 

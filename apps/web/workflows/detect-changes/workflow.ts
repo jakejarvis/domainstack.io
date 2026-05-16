@@ -83,6 +83,7 @@ export async function detectChangesWorkflow(
   const snapshot = await fetchSnapshot(trackedDomainId);
 
   if (!snapshot) {
+    await releaseMonitorLockStep(trackedDomainId);
     return {
       skipped: true,
       reason: "snapshot_not_found",
@@ -171,6 +172,14 @@ export async function detectChangesWorkflow(
     const registrationChange = detectRegistrationChange(snapshot.registration, currentRegistration);
 
     if (registrationChange) {
+      results.registrationChanges = true;
+      // Advance the snapshot as soon as the change is detected and the new
+      // state is computed — independent of notification delivery. A muted
+      // domain or disabled category must NOT leave the snapshot stale (that
+      // causes infinite hourly re-detection and a stale change replayed as
+      // "fresh" when the user later unmutes / re-enables the category).
+      await updateRegistrationSnapshot(trackedDomainId, currentRegistration);
+
       // Step 3a: Check notification preferences
       const channels = await determineNotificationChannelsStep(
         userId,
@@ -293,19 +302,15 @@ export async function detectChangesWorkflow(
           channels.shouldSendPush,
         );
 
-        if (sent) {
-          results.registrationChanges = true;
-          await updateRegistrationSnapshot(trackedDomainId, currentRegistration);
-          if (notificationId && channels.shouldSendPush) {
-            await sendPushForNotificationStep({
-              userId,
-              notificationId,
-              title,
-              message,
-              trackedDomainId,
-              domainName,
-            });
-          }
+        if (sent && notificationId && channels.shouldSendPush) {
+          await sendPushForNotificationStep({
+            userId,
+            notificationId,
+            title,
+            message,
+            trackedDomainId,
+            domainName,
+          });
         }
       }
     }
@@ -333,6 +338,11 @@ export async function detectChangesWorkflow(
     );
 
     if (providerChange) {
+      results.providerChanges = true;
+      // Advance the snapshot on detection, independent of notification
+      // delivery (see registration branch rationale).
+      await updateProviderSnapshot(trackedDomainId, currentProviderIds);
+
       // Step 4a: Check notification preferences
       const channels = await determineNotificationChannelsStep(
         userId,
@@ -448,19 +458,15 @@ export async function detectChangesWorkflow(
           channels.shouldSendPush,
         );
 
-        if (sent) {
-          results.providerChanges = true;
-          await updateProviderSnapshot(trackedDomainId, currentProviderIds);
-          if (notificationId && channels.shouldSendPush) {
-            await sendPushForNotificationStep({
-              userId,
-              notificationId,
-              title,
-              message,
-              trackedDomainId,
-              domainName,
-            });
-          }
+        if (sent && notificationId && channels.shouldSendPush) {
+          await sendPushForNotificationStep({
+            userId,
+            notificationId,
+            title,
+            message,
+            trackedDomainId,
+            domainName,
+          });
         }
       }
     }
@@ -480,6 +486,11 @@ export async function detectChangesWorkflow(
     const certificateChange = detectCertificateChange(snapshot.certificate, currentCertificate);
 
     if (certificateChange) {
+      results.certificateChanges = true;
+      // Advance the snapshot on detection, independent of notification
+      // delivery (see registration branch rationale).
+      await updateCertificateSnapshot(trackedDomainId, currentCertificate);
+
       // Step 5a: Check notification preferences
       const channels = await determineNotificationChannelsStep(
         userId,
@@ -559,28 +570,37 @@ export async function detectChangesWorkflow(
           channels.shouldSendPush,
         );
 
-        if (sent) {
-          results.certificateChanges = true;
-          await updateCertificateSnapshot(trackedDomainId, currentCertificate);
-          if (notificationId && channels.shouldSendPush) {
-            await sendPushForNotificationStep({
-              userId,
-              notificationId,
-              title,
-              message,
-              trackedDomainId,
-              domainName,
-            });
-          }
+        if (sent && notificationId && channels.shouldSendPush) {
+          await sendPushForNotificationStep({
+            userId,
+            notificationId,
+            title,
+            message,
+            trackedDomainId,
+            domainName,
+          });
         }
       }
     }
   }
 
+  // Release the per-domain monitor lock so the next hourly cron can re-run.
+  // Only runs on successful completion — if a step above threw, the SDK
+  // retries this same run and the lock is intentionally held (TTL safety net)
+  // so the cron doesn't start a duplicate.
+  await releaseMonitorLockStep(trackedDomainId);
+
   return results;
 }
 
 // --- Step Functions ---
+
+async function releaseMonitorLockStep(trackedDomainId: string): Promise<void> {
+  "use step";
+
+  const { releaseMonitorLock } = await import("@/lib/workflow/monitor-dedup");
+  await releaseMonitorLock(trackedDomainId);
+}
 
 // Import SnapshotForMonitoring type for proper typing
 type SnapshotData = Awaited<ReturnType<typeof import("@domainstack/db/queries").getSnapshot>>;
