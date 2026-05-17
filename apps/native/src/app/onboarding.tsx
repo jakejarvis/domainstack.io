@@ -1,5 +1,5 @@
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { router } from "expo-router";
+import { SymbolView, type SymbolViewProps } from "expo-symbols";
 import { useCallback, useState } from "react";
 import {
   type NativeScrollEvent,
@@ -16,27 +16,25 @@ import { Button } from "@/components/button";
 import { Text } from "@/components/text";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
 
-type SlideName = "search" | "bookmark" | "notifications";
-
 interface Slide {
-  icon: SlideName;
+  icon: SymbolViewProps["name"];
   title: string;
   body: string;
 }
 
 const SLIDES: readonly Slide[] = [
   {
-    icon: "search",
+    icon: { ios: "magnifyingglass", android: "search" },
     title: "Search any domain",
     body: "Look up registration, DNS, SSL, hosting, and SEO for any domain on the public internet.",
   },
   {
-    icon: "bookmark",
+    icon: { ios: "bookmark", android: "bookmark" },
     title: "Track your portfolio",
     body: "Add domains you own to get a continuously refreshed view of every change that matters.",
   },
   {
-    icon: "notifications",
+    icon: { ios: "bell", android: "notifications" },
     title: "Get notified",
     body: "We'll push and email you before registrations or certificates expire, or when providers change.",
   },
@@ -85,9 +83,9 @@ export default function OnboardingScreen() {
         className="flex-1"
       >
         {SLIDES.map((slide) => (
-          <View key={slide.icon} className="items-center justify-center px-8" style={{ width }}>
+          <View key={slide.title} className="items-center justify-center px-8" style={{ width }}>
             <View className="mb-6 size-24 items-center justify-center rounded-full bg-secondary">
-              <MaterialIcons color={iconColor} name={slide.icon} size={56} />
+              <SymbolView name={slide.icon} size={56} tintColor={iconColor} />
             </View>
             <Text className="mb-3 text-center text-3xl font-semibold">{slide.title}</Text>
             <Text className="text-center text-base leading-6 text-muted-foreground">
@@ -100,7 +98,7 @@ export default function OnboardingScreen() {
       <View className="flex-row items-center justify-center gap-2 py-4">
         {SLIDES.map((slide, i) => (
           <View
-            key={slide.icon}
+            key={slide.title}
             className="h-2 rounded-full"
             style={{
               backgroundColor: i === index ? iconColor : mutedColor,

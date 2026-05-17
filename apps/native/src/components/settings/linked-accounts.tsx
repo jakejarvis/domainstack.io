@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { Platform, View } from "react-native";
 import { useCSSVariable } from "uniwind";
 
+import { AuthIcon } from "@/components/auth-icon";
 import { Button } from "@/components/button";
 import { GroupedRow, GroupedSection } from "@/components/form/group";
-import { ProviderIcon } from "@/components/provider-icon";
 import { Text } from "@/components/text";
 import { analytics } from "@/lib/analytics";
 import { useTRPC } from "@/lib/api";
@@ -188,7 +188,7 @@ export function LinkedAccountsSection() {
               )
             }
           >
-            <ProviderIcon color={iconColor} provider={provider.id} size={22} />
+            <AuthIcon color={iconColor} provider={provider.id} size={22} />
             <View className="min-w-0 flex-1 gap-0.5">
               <Text className="font-semibold" numberOfLines={1}>
                 {provider.name}

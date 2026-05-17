@@ -1,5 +1,6 @@
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { SymbolView } from "expo-symbols";
 import { View } from "react-native";
+import { useCSSVariable } from "uniwind";
 
 import { Spinner } from "@/components/spinner";
 import { Text } from "@/components/text";
@@ -14,10 +15,9 @@ function stepState(step: number, current: number): StepState {
 }
 
 function StepDot({ state, label, loading }: { state: StepState; label: number; loading: boolean }) {
-  const sizeClass = "size-7";
+  const successForeground = useCSSVariable("--color-success-foreground") as string;
   const containerClass = cn(
-    "items-center justify-center rounded-full border",
-    sizeClass,
+    "size-7 items-center justify-center rounded-full border",
     state === "completed" && "border-success bg-success",
     state === "active" && "border-primary bg-primary",
     state === "pending" && "border-border bg-muted",
@@ -28,7 +28,11 @@ function StepDot({ state, label, loading }: { state: StepState; label: number; l
       {loading ? (
         <Spinner variant={state === "pending" ? "muted" : "default"} />
       ) : state === "completed" ? (
-        <MaterialIcons color="white" name="check" size={16} />
+        <SymbolView
+          name={{ ios: "checkmark", android: "check" }}
+          size={16}
+          tintColor={successForeground}
+        />
       ) : (
         <Text
           className={cn(

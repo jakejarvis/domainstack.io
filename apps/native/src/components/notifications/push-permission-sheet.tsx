@@ -1,4 +1,4 @@
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { SymbolView, type SymbolViewProps } from "expo-symbols";
 import { useEffect, useRef } from "react";
 import { View } from "react-native";
 import { useCSSVariable } from "uniwind";
@@ -41,17 +41,17 @@ export function PushPermissionSheet() {
         <View className="gap-3">
           <PerkRow
             color={brand}
-            icon="schedule"
+            icon={{ ios: "clock", android: "schedule" }}
             label="Expiry warnings before it's too late to renew"
           />
           <PerkRow
             color={brand}
-            icon="verified-user"
+            icon={{ ios: "checkmark.shield", android: "verified_user" }}
             label="SSL certificate changes and renewals"
           />
           <PerkRow
             color={brand}
-            icon="swap-horiz"
+            icon={{ ios: "arrow.left.arrow.right", android: "swap_horiz" }}
             label="Registrar, DNS, and hosting provider changes"
           />
         </View>
@@ -75,12 +75,12 @@ function PerkRow({
   label,
 }: {
   color: string;
-  icon: React.ComponentProps<typeof MaterialIcons>["name"];
+  icon: SymbolViewProps["name"];
   label: string;
 }) {
   return (
     <View className="flex-row items-center gap-3">
-      <MaterialIcons color={color} name={icon} size={22} />
+      <SymbolView name={icon} size={22} tintColor={color} />
       <Text className="flex-1">{label}</Text>
     </View>
   );

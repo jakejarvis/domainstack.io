@@ -5,9 +5,9 @@ import { useEffect, useState } from "react";
 import { Platform } from "react-native";
 import { useCSSVariable } from "uniwind";
 
+import { AuthIcon } from "@/components/auth-icon";
 import { Button } from "@/components/button";
 import { GlassCard } from "@/components/glass-card";
-import { ProviderIcon } from "@/components/provider-icon";
 import { Screen } from "@/components/screen";
 import { Text } from "@/components/text";
 import { usePushSoftPrompt } from "@/hooks/use-push-soft-prompt";
@@ -231,7 +231,7 @@ function ProviderButton({
   if (provider.id === "apple" && appleAuthAvailable === null) {
     return (
       <Button disabled loading variant="primary">
-        <ProviderIcon color={primaryColor} provider="apple" size={18} />
+        <AuthIcon color={primaryColor} provider="apple" size={18} />
         <Text>Continue with Apple</Text>
       </Button>
     );
@@ -241,7 +241,7 @@ function ProviderButton({
     if (loadingProvider === "apple") {
       return (
         <Button disabled loading variant="primary">
-          <ProviderIcon color={primaryColor} provider="apple" size={18} />
+          <AuthIcon color={primaryColor} provider="apple" size={18} />
           <Text>Continue with Apple</Text>
         </Button>
       );
@@ -266,7 +266,7 @@ function ProviderButton({
       onPress={() => onPress(provider)}
       variant={variant}
     >
-      <ProviderIcon color={iconColor} provider={provider.id} size={18} />
+      <AuthIcon color={iconColor} provider={provider.id} size={18} />
       <Text>Continue with {provider.name}</Text>
     </Button>
   );

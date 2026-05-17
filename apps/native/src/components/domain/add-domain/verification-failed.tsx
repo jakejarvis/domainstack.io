@@ -1,4 +1,4 @@
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { SymbolView } from "expo-symbols";
 import { View } from "react-native";
 import { useCSSVariable } from "uniwind";
 
@@ -61,7 +61,11 @@ export function VerificationFailed({
     <View className="gap-4">
       <GlassCard>
         <View className="flex-row items-start gap-3">
-          <MaterialIcons color={dangerColor} name="error-outline" size={20} />
+          <SymbolView
+            name={{ ios: "exclamationmark.circle", android: "error_outline" }}
+            size={20}
+            tintColor={dangerColor}
+          />
           <View className="flex-1 gap-1">
             <Text className="text-base font-semibold">Verification failed</Text>
             <Text className="text-sm text-muted-foreground">
@@ -77,11 +81,11 @@ export function VerificationFailed({
         <View className="gap-2">
           {tips.map((tip) => (
             <View className="flex-row gap-2" key={tip}>
-              <MaterialIcons
-                color={mutedColor}
-                name="fiber-manual-record"
+              <SymbolView
+                name={{ ios: "circle.fill", android: "fiber_manual_record" }}
                 size={6}
                 style={{ marginTop: 8 }}
+                tintColor={mutedColor}
               />
               <Text className="flex-1 text-sm text-muted-foreground">{tip}</Text>
             </View>

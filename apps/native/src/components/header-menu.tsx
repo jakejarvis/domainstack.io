@@ -1,6 +1,6 @@
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { router } from "expo-router";
 import { Stack } from "expo-router/stack";
+import { type AndroidSymbol, unstable_getMaterialSymbolSourceAsync } from "expo-symbols";
 import type { ComponentProps } from "react";
 import { useEffect, useState } from "react";
 import type { ImageSourcePropType } from "react-native";
@@ -13,12 +13,11 @@ import { authClient } from "@/lib/auth";
 
 type MenuActionIcon = ComponentProps<typeof Stack.Toolbar.MenuAction>["icon"];
 
-type MaterialName = keyof typeof MaterialIcons.glyphMap;
 type IconKey = "account" | "addPerson" | "settings" | "logout" | "logoutDanger";
 
-const ICON_REQUESTS: Array<{ key: IconKey; name: MaterialName; useDangerColor?: boolean }> = [
-  { key: "account", name: "account-circle" },
-  { key: "addPerson", name: "person-add" },
+const ICON_REQUESTS: Array<{ key: IconKey; name: AndroidSymbol; useDangerColor?: boolean }> = [
+  { key: "account", name: "account_circle" },
+  { key: "addPerson", name: "person_add" },
   { key: "settings", name: "settings" },
   { key: "logout", name: "logout" },
   { key: "logoutDanger", name: "logout", useDangerColor: true },
@@ -36,7 +35,7 @@ function loadIconSources(color: string, dangerColor: string): Promise<IconSource
   const promise = Promise.all(
     ICON_REQUESTS.map(async (request) => {
       const tint = request.useDangerColor ? dangerColor : color;
-      const src = await MaterialIcons.getImageSource(request.name, 24, tint);
+      const src = await unstable_getMaterialSymbolSourceAsync(request.name, 24, tint);
       return [request.key, src] as const;
     }),
   ).then((entries) => {

@@ -1,8 +1,8 @@
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { FlashList } from "@shopify/flash-list";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Notifications from "expo-notifications";
 import { Link, router, useFocusEffect } from "expo-router";
+import { SymbolView } from "expo-symbols";
 import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { Pressable, View } from "react-native";
 import ReanimatedSwipeable, {
@@ -301,7 +301,13 @@ function NotificationsList() {
         <EmptyState
           actionLabel="Retry"
           body={notifications.error.message}
-          icon={<MaterialIcons color={mutedIconColor} name="error-outline" size={48} />}
+          icon={
+            <SymbolView
+              name={{ ios: "exclamationmark.circle", android: "error_outline" }}
+              size={48}
+              tintColor={mutedIconColor}
+            />
+          }
           onAction={() => void notifications.refetch()}
           title="Notifications did not load"
         />
@@ -323,10 +329,14 @@ function NotificationsList() {
             : "You're all caught up. New domain, certificate, and provider changes will show up here."
         }
         icon={
-          <MaterialIcons
-            color={mutedIconColor}
-            name={filter === "read" ? "archive" : "celebration"}
+          <SymbolView
+            name={
+              filter === "read"
+                ? { ios: "archivebox", android: "archive" }
+                : { ios: "party.popper", android: "celebration" }
+            }
             size={48}
+            tintColor={mutedIconColor}
           />
         }
         onAction={() => router.push("/(tabs)/domains")}

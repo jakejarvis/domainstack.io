@@ -1,7 +1,7 @@
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useMutation } from "@tanstack/react-query";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
+import { SymbolView } from "expo-symbols";
 import { useEffect, useReducer, useRef, useState } from "react";
 import { Share, View } from "react-native";
 import { useCSSVariable } from "uniwind";
@@ -61,6 +61,7 @@ export function ShareInstructionsSheet({
   const [copied, setCopied] = useState(false);
   const successColor = useCSSVariable("--color-success") as string;
   const mutedColor = useCSSVariable("--color-muted-foreground") as string;
+  const primaryForeground = useCSSVariable("--color-primary-foreground") as string;
 
   useEffect(() => {
     if (open) ref.current?.present();
@@ -129,7 +130,11 @@ export function ShareInstructionsSheet({
       <View className="gap-3">
         <GlassCard>
           <View className="flex-row items-start gap-3">
-            <MaterialIcons color={mutedColor} name="content-copy" size={20} />
+            <SymbolView
+              name={{ ios: "doc.on.doc", android: "content_copy" }}
+              size={20}
+              tintColor={mutedColor}
+            />
             <View className="flex-1 gap-1">
               <Text className="font-semibold">Copy to clipboard</Text>
               <Text className="text-sm text-muted-foreground">
@@ -140,7 +145,11 @@ export function ShareInstructionsSheet({
           <Button onPress={() => void handleCopy()} variant="secondary">
             {copied ? (
               <>
-                <MaterialIcons color={successColor} name="check" size={16} />
+                <SymbolView
+                  name={{ ios: "checkmark", android: "check" }}
+                  size={16}
+                  tintColor={successColor}
+                />
                 <Text>Copied</Text>
               </>
             ) : (
@@ -151,7 +160,11 @@ export function ShareInstructionsSheet({
 
         <GlassCard>
           <View className="flex-row items-start gap-3">
-            <MaterialIcons color={mutedColor} name="ios-share" size={20} />
+            <SymbolView
+              name={{ ios: "square.and.arrow.up", android: "ios_share" }}
+              size={20}
+              tintColor={mutedColor}
+            />
             <View className="flex-1 gap-1">
               <Text className="font-semibold">Share via system</Text>
               <Text className="text-sm text-muted-foreground">
@@ -166,7 +179,11 @@ export function ShareInstructionsSheet({
 
         <GlassCard>
           <View className="flex-row items-start gap-3">
-            <MaterialIcons color={mutedColor} name="alternate-email" size={20} />
+            <SymbolView
+              name={{ ios: "at", android: "alternate_email" }}
+              size={20}
+              tintColor={mutedColor}
+            />
             <View className="flex-1 gap-1">
               <Text className="font-semibold">Send via email</Text>
               <Text className="text-sm text-muted-foreground">
@@ -188,7 +205,11 @@ export function ShareInstructionsSheet({
           <Button disabled={!validEmail || sent} loading={sending} onPress={handleSend}>
             {sent ? (
               <>
-                <MaterialIcons color="white" name="check" size={16} />
+                <SymbolView
+                  name={{ ios: "checkmark", android: "check" }}
+                  size={16}
+                  tintColor={primaryForeground}
+                />
                 <Text>Sent</Text>
               </>
             ) : (
