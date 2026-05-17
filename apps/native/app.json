@@ -10,6 +10,9 @@
     "icon": "./assets/icon.png",
     "ios": {
       "bundleIdentifier": "io.domainstack.app",
+      "entitlements": {
+        "com.apple.security.application-groups": ["group.io.domainstack.app"]
+      },
       "appleTeamId": "B5ZWKBCUTU",
       "icon": "./assets/AppIcon.icon",
       "config": {
@@ -65,6 +68,7 @@
           "color": "#000000"
         }
       ],
+      "expo-font",
       "expo-image",
       [
         "expo-splash-screen",
@@ -86,7 +90,19 @@
         }
       ],
       "expo-status-bar",
-      "expo-localization"
+      "expo-localization",
+      [
+        "expo-share-intent",
+        {
+          "iosAppGroupIdentifier": "group.io.domainstack.app",
+          "iosActivationRules": {
+            "NSExtensionActivationSupportsWebURLWithMaxCount": 1,
+            "NSExtensionActivationSupportsWebPageWithMaxCount": 1,
+            "NSExtensionActivationSupportsText": true
+          },
+          "androidIntentFilters": ["text/*"]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

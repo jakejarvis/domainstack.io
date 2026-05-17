@@ -47,6 +47,7 @@
     "expo-crypto": "~56.0.3",
     "expo-device": "~56.0.4",
     "expo-file-system": "~56.0.5",
+    "expo-font": "~56.0.4",
     "expo-glass-effect": "~56.0.4",
     "expo-haptics": "~56.0.3",
     "expo-image": "~56.0.4",
@@ -57,6 +58,7 @@
     "expo-notifications": "~56.0.9",
     "expo-router": "~56.2.1",
     "expo-secure-store": "~56.0.3",
+    "expo-share-intent": "6.1.0",
     "expo-splash-screen": "~56.0.7",
     "expo-status-bar": "~56.0.4",
     "expo-symbols": "~56.0.5",
@@ -90,6 +92,7 @@
   "expo": {
     "autolinking": {
       "exclude": [
+        "expo-share-intent",
         "react",
         "react-dom"
       ]
