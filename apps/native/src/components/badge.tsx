@@ -1,33 +1,55 @@
 import { View } from "react-native";
 
-import { cn } from "@/lib/cn";
+import { cn, cva, type VariantProps } from "@/lib/cn";
+
+import { TextClassContext } from "./text";
+
+const badgeVariants = cva({
+  base: "flex-row items-center gap-1 self-start rounded-full border px-2.5 py-1",
+  variants: {
+    variant: {
+      default: "border-border bg-secondary",
+      success: "border-success bg-success/16",
+      warning: "border-warning bg-warning/16",
+      danger: "border-destructive bg-destructive/16",
+    },
+  },
+  defaultVariants: {
+    variant: "default",
+  },
+});
+
+const badgeLabelVariants = cva({
+  base: "text-xs font-semibold",
+  variants: {
+    variant: {
+      default: "text-muted-foreground",
+      success: "text-success",
+      warning: "text-warning",
+      danger: "text-destructive",
+    },
+  },
+  defaultVariants: {
+    variant: "default",
+  },
+});
+
+type Variant = NonNullable<VariantProps<typeof badgeVariants>["variant"]>;
 
 export function Badge({
   children,
   className,
-  tone = "neutral",
+  variant = "default",
 }: {
   children: React.ReactNode;
   className?: string;
-  tone?: "neutral" | "success" | "warning" | "danger";
+  variant?: Variant;
 }) {
-  const toneStyles = {
-    danger: "border-danger bg-danger-soft text-danger",
-    neutral: "border-line bg-control-secondary text-text-secondary",
-    success: "border-success bg-success-soft text-success",
-    warning: "border-warning bg-warning-soft text-warning",
-  } satisfies Record<typeof tone, string>;
+  const labelClassName = badgeLabelVariants({ variant });
 
   return (
-    <View
-      className={cn(
-        "flex-row items-center gap-1 self-start rounded-full border px-2.5 py-1",
-        "text-xs font-semibold",
-        toneStyles[tone],
-        className,
-      )}
-    >
-      {children}
+    <View className={cn(badgeVariants({ variant }), className)}>
+      <TextClassContext.Provider value={labelClassName}>{children}</TextClassContext.Provider>
     </View>
   );
 }

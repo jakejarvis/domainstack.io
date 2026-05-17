@@ -21,7 +21,7 @@ export function DeleteAccountRow() {
 
   return (
     <GroupedRow onPress={handlePress}>
-      <Text className="font-semibold text-danger">Delete account</Text>
+      <Text className="font-semibold text-destructive">Delete account</Text>
     </GroupedRow>
   );
 }

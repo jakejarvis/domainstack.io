@@ -13,11 +13,11 @@ export function ReportSectionSkeleton({
 }) {
   return (
     <GlassCard className={className}>
-      <View className="bg-control-secondary h-4 w-32 rounded" />
+      <View className="h-4 w-32 rounded bg-secondary" />
       <View className="gap-3">
         {Array.from({ length: rows }, (_, index) => (
           <View
-            className={cn("bg-control-secondary h-4 rounded", index % 2 === 0 ? "w-3/4" : "w-2/3")}
+            className={cn("h-4 rounded bg-secondary", index % 2 === 0 ? "w-3/4" : "w-2/3")}
             key={index}
           />
         ))}

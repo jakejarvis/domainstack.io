@@ -3,7 +3,7 @@ import { memo, useCallback } from "react";
 import { Pressable, View } from "react-native";
 
 import { Button } from "@/components/button";
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 import { formatRelativeTime } from "@domainstack/utils";
 
 export type ArchivedRowDomain = {
@@ -36,16 +36,16 @@ function ArchivedRowImpl({
       <Link.Trigger>
         <Pressable accessibilityRole="link">
           <View
-            className="border-line bg-glass gap-3 overflow-hidden rounded-2xl border p-4"
+            className="bg-glass gap-3 overflow-hidden rounded-2xl border border-border p-4"
             style={{ borderCurve: "continuous" }}
           >
             <View className="gap-1">
               <Text className="text-lg font-semibold" numberOfLines={1}>
                 {domain.domainName}
               </Text>
-              <MutedText numberOfLines={1}>
+              <Text numberOfLines={1} className="text-sm text-muted-foreground">
                 {archivedRelative ? `Archived ${archivedRelative}` : "Archived"}
-              </MutedText>
+              </Text>
             </View>
             <View className="flex-row gap-2">
               <Button
@@ -61,9 +61,9 @@ function ArchivedRowImpl({
               </Button>
             </View>
             {!canReactivate ? (
-              <MutedText className="text-xs">
+              <Text className="text-xs text-muted-foreground">
                 Plan limit reached — upgrade or remove a tracked domain to reactivate.
-              </MutedText>
+              </Text>
             ) : null}
           </View>
         </Pressable>

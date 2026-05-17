@@ -19,19 +19,20 @@
   "dependencies": {
     "@base-ui/react": "^1.4.1",
     "clipboard-copy": "^4.0.1",
-    "clsx": "^2.1.1",
+    "clsx": "catalog:",
     "cmdk": "^1.1.1",
-    "cva": "1.0.0-beta.4",
+    "cva": "catalog:",
     "media-chrome": "^4.19.0",
-    "tailwind-merge": "^3.6.0"
+    "tailwind-merge": "catalog:"
   },
   "devDependencies": {
-    "@domainstack/typescript-config": "workspace:*",
+    "@domainstack/tsconfig": "workspace:*",
     "@tabler/icons-react": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "motion": "catalog:",
-    "sonner": "catalog:"
+    "sonner": "catalog:",
+    "typescript": "catalog:"
   },
   "peerDependencies": {
     "@tabler/icons-react": "catalog:",

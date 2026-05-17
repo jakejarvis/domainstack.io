@@ -6,7 +6,7 @@ import { View } from "react-native";
 import { Button } from "@/components/button";
 import { Screen } from "@/components/screen";
 import { Spinner } from "@/components/spinner";
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 import { analytics } from "@/lib/analytics";
 import { useTRPC } from "@/lib/api";
 import { deleteAccount } from "@/lib/auth";
@@ -79,17 +79,17 @@ export default function DeleteAccountScreen() {
       {state.status === "loading" ? (
         <View className="items-center gap-3 py-12">
           <Spinner />
-          <MutedText>Sending confirmation email…</MutedText>
+          <Text className="text-sm text-muted-foreground">Sending confirmation email…</Text>
         </View>
       ) : null}
 
       {state.status === "success" ? (
         <View className="gap-4">
           <Text className="text-2xl font-semibold">Check your email</Text>
-          <MutedText>
+          <Text className="text-sm text-muted-foreground">
             We&apos;ve sent a confirmation link to your email address. Click the link to permanently
             delete your account.
-          </MutedText>
+          </Text>
           <Button onPress={() => router.back()}>
             <Text>Close</Text>
           </Button>
@@ -99,7 +99,7 @@ export default function DeleteAccountScreen() {
       {state.status === "error" ? (
         <View className="gap-4">
           <Text className="text-2xl font-semibold">Deletion failed</Text>
-          <MutedText className="text-danger">{state.message}</MutedText>
+          <Text className="text-sm text-destructive">{state.message}</Text>
           <View className="flex-row gap-2">
             <Button className="flex-1" onPress={() => router.back()} variant="secondary">
               <Text>Cancel</Text>

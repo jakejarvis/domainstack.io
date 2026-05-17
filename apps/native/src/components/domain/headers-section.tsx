@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { Badge } from "@/components/badge";
 import { KeyValueGrid, type KeyValueItem } from "@/components/key-value-grid";
 import { ReportSection } from "@/components/report-section";
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 import { useTRPC } from "@/lib/api";
 import type { Header } from "@domainstack/types";
 
@@ -26,7 +26,7 @@ export function HeadersSection({ domain }: { domain: string }) {
   if (!data.success || !data.data) {
     return (
       <ReportSection title="Headers">
-        <MutedText>Headers could not be retrieved.</MutedText>
+        <Text className="text-sm text-muted-foreground">Headers could not be retrieved.</Text>
       </ReportSection>
     );
   }
@@ -36,7 +36,7 @@ export function HeadersSection({ domain }: { domain: string }) {
     <ReportSection
       title="Headers"
       trailing={
-        <Badge tone={status >= 200 && status < 400 ? "success" : "warning"}>
+        <Badge variant={status >= 200 && status < 400 ? "success" : "warning"}>
           <Text className="text-xs font-semibold">HTTP {status}</Text>
         </Badge>
       }
@@ -54,7 +54,7 @@ function buildItems(headers: Header[]): KeyValueItem[] {
       key: name,
       label: name,
       mono: true,
-      value: value ? value : <MutedText>Not set</MutedText>,
+      value: value ? value : <Text className="text-sm text-muted-foreground">Not set</Text>,
     };
   });
 }

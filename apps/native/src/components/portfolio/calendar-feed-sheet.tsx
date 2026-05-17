@@ -8,7 +8,7 @@ import { AppBottomSheet, type AppBottomSheetRef } from "@/components/bottom-shee
 import { Button } from "@/components/button";
 import { GlassCard } from "@/components/glass-card";
 import { Spinner } from "@/components/spinner";
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 import { useTRPC } from "@/lib/api";
 import { toast } from "@/lib/toast";
 
@@ -131,7 +131,7 @@ export function CalendarFeedSheet({ ref }: { ref?: Ref<AppBottomSheetRef> }) {
         ) : feedQuery.error ? (
           <GlassCard>
             <Text className="font-semibold">Feed unavailable</Text>
-            <MutedText>{feedQuery.error.message}</MutedText>
+            <Text className="text-sm text-muted-foreground">{feedQuery.error.message}</Text>
             <Button onPress={() => void feedQuery.refetch()} variant="secondary">
               <Text>Retry</Text>
             </Button>
@@ -140,9 +140,13 @@ export function CalendarFeedSheet({ ref }: { ref?: Ref<AppBottomSheetRef> }) {
           <>
             <GlassCard>
               <Text className="font-semibold">Feed URL</Text>
-              <MutedText className="font-mono text-xs" numberOfLines={3} selectable>
+              <Text
+                className="font-mono text-xs text-muted-foreground"
+                numberOfLines={3}
+                selectable
+              >
                 {feedUrl}
-              </MutedText>
+              </Text>
               <View className="flex-row gap-2">
                 <Button className="flex-1" onPress={handleCopy} variant="secondary">
                   <Text>Copy</Text>
@@ -183,10 +187,10 @@ export function CalendarFeedSheet({ ref }: { ref?: Ref<AppBottomSheetRef> }) {
         ) : (
           <GlassCard>
             <Text className="font-semibold">Feed not set up</Text>
-            <MutedText>
+            <Text className="text-sm text-muted-foreground">
               Enable to generate a private webcal URL. Subscribe in Apple Calendar, Google Calendar,
               or any standards-compliant client to see expiries.
-            </MutedText>
+            </Text>
             <Button
               disabled={busy}
               loading={enable.isPending}

@@ -26,11 +26,13 @@
   "dependencies": {
     "@domainstack/constants": "workspace:*",
     "@domainstack/types": "workspace:*",
-    "date-fns": "^4.1.0",
-    "rdapper": "^0.13.0"
+    "date-fns": "catalog:",
+    "rdapper": "catalog:"
   },
   "devDependencies": {
-    "@domainstack/typescript-config": "workspace:*",
+    "@domainstack/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:"
   },

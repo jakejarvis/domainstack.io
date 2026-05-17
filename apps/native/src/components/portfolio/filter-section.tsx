@@ -3,7 +3,7 @@ import { Pressable, View } from "react-native";
 import { useCSSVariable } from "uniwind";
 
 import { Symbol } from "@/components/symbol";
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 
 export function FilterSection({
   children,
@@ -18,15 +18,15 @@ export function FilterSection({
 }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const handleToggle = useCallback(() => setExpanded((value) => !value), []);
-  const chevronColor = useCSSVariable("--color-text-secondary") as string;
+  const chevronColor = useCSSVariable("--color-muted-foreground") as string;
 
   return (
-    <View className="border-line border-b">
+    <View className="border-b border-border">
       <Pressable accessibilityRole="button" hitSlop={4} onPress={handleToggle}>
         <View className="flex-row items-center justify-between py-3">
           <Text className="text-base font-semibold">{title}</Text>
           <View className="flex-row items-center gap-2">
-            {summary ? <MutedText>{summary}</MutedText> : null}
+            {summary ? <Text className="text-sm text-muted-foreground">{summary}</Text> : null}
             <Symbol
               color={chevronColor}
               name={expanded ? "chevron.down" : "chevron.right"}
@@ -52,7 +52,7 @@ export function FilterOptionRow({
   variant?: "checkbox" | "radio";
 }) {
   const accent = useCSSVariable("--color-brand") as string;
-  const muted = useCSSVariable("--color-text-secondary") as string;
+  const muted = useCSSVariable("--color-muted-foreground") as string;
   const symbolName = selected
     ? variant === "radio"
       ? "largecircle.fill.circle"

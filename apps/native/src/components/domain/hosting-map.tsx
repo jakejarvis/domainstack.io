@@ -13,7 +13,7 @@ export function HostingMap({ lat, lon, domain }: { lat: number; lon: number; dom
   if (Platform.OS === "ios") {
     return (
       <View
-        className="border-line overflow-hidden rounded-xl border"
+        className="overflow-hidden rounded-xl border border-border"
         style={{ height: MAP_HEIGHT }}
       >
         <AppleMaps.View
@@ -44,7 +44,7 @@ export function HostingMap({ lat, lon, domain }: { lat: number; lon: number; dom
   if (Platform.OS === "android") {
     return (
       <View
-        className="border-line overflow-hidden rounded-xl border"
+        className="overflow-hidden rounded-xl border border-border"
         style={{ height: MAP_HEIGHT }}
       >
         <GoogleMaps.View

@@ -4,7 +4,7 @@ import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
 import { Button } from "@/components/button";
 import { GlassCard } from "@/components/glass-card";
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 import { daysUntil } from "@/lib/format";
 
 type Variant = { kind: "ending"; daysLeft: number } | { kind: "at-limit" } | { kind: "none" };
@@ -43,9 +43,9 @@ export function SubscriptionBanner({
             <Text className="text-base font-semibold">
               Your Pro plan ends in {variant.daysLeft} {variant.daysLeft === 1 ? "day" : "days"}
             </Text>
-            <MutedText>
+            <Text className="text-sm text-muted-foreground">
               Resubscribe to keep tracking your full portfolio without interruption.
-            </MutedText>
+            </Text>
           </View>
           <View className="flex-row gap-2">
             <Button className="flex-1" onPress={goToSettings}>
@@ -65,7 +65,9 @@ export function SubscriptionBanner({
       <GlassCard>
         <View className="gap-1">
           <Text className="text-base font-semibold">You've reached your plan limit</Text>
-          <MutedText>Upgrade to Pro to track more domains and unlock notifications.</MutedText>
+          <Text className="text-sm text-muted-foreground">
+            Upgrade to Pro to track more domains and unlock notifications.
+          </Text>
         </View>
         <Button onPress={goToSettings}>
           <Text>Upgrade</Text>

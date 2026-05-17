@@ -6,7 +6,7 @@ import { View } from "react-native";
 import { Button } from "@/components/button";
 import { GroupedSection } from "@/components/form/group";
 import { SkeletonRows } from "@/components/skeleton";
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 import { analytics } from "@/lib/analytics";
 import { useTRPC } from "@/lib/api";
 import { formatDate } from "@/lib/format";
@@ -56,11 +56,13 @@ export function BillingSection() {
         ) : subscription.data ? (
           <>
             <Text className="text-lg font-semibold">{subscription.data.plan}</Text>
-            <MutedText>
+            <Text className="text-sm text-muted-foreground">
               {subscription.data.activeCount} of {subscription.data.planQuota} active domains used
-            </MutedText>
+            </Text>
             {subscription.data.endsAt ? (
-              <MutedText>Access ends {formatDate(subscription.data.endsAt)}</MutedText>
+              <Text className="text-sm text-muted-foreground">
+                Access ends {formatDate(subscription.data.endsAt)}
+              </Text>
             ) : null}
             {subscription.data.plan === "free" ? (
               <Button loading={checkout.isPending} onPress={() => void handleUpgrade()}>
@@ -77,7 +79,7 @@ export function BillingSection() {
             )}
           </>
         ) : (
-          <MutedText>Plan details are unavailable.</MutedText>
+          <Text className="text-sm text-muted-foreground">Plan details are unavailable.</Text>
         )}
       </View>
     </GroupedSection>

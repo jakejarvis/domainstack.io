@@ -39,8 +39,10 @@
     "jose": "^6.2.3"
   },
   "devDependencies": {
-    "@domainstack/typescript-config": "workspace:*",
+    "@domainstack/tsconfig": "workspace:*",
     "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "typescript": "catalog:",
     "vitest": "catalog:"
   },
   "peerDependencies": {

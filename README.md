@@ -73,8 +73,8 @@ domainstack.io/
 │   ├── safe-fetch/          # SSRF-safe fetch wrapper
 │   ├── screenshot/          # Server-side screenshot pipeline
 │   ├── server/              # Domain intelligence services (DNS, TLS, SEO, …)
+│   ├── tsconfig/            # Shared TypeScript configs
 │   ├── types/               # Shared TypeScript types
-│   ├── typescript-config/   # Shared TypeScript configs
 │   ├── ui/                  # Shared web UI primitives (Base UI + Tailwind)
 │   └── utils/               # Framework-agnostic utilities
 └── turbo.json               # Turborepo task configuration

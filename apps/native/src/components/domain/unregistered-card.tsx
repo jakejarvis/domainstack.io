@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { View } from "react-native";
 
 import { GlassCard } from "@/components/glass-card";
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 import { NONPUBLIC_TLDS } from "@domainstack/constants";
 import { extractTldClient } from "@domainstack/utils/domain/client";
 
@@ -20,7 +20,7 @@ export function UnregisteredCard({ domain }: { domain: string }) {
         <Text className="text-2xl font-semibold" numberOfLines={1}>
           {domain}
         </Text>
-        <MutedText>appears to be unregistered…</MutedText>
+        <Text className="text-sm text-muted-foreground">appears to be unregistered…</Text>
       </View>
       {canShowRegistrarLinks ? (
         <Suspense fallback={null}>

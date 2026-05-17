@@ -3,7 +3,6 @@ import { memo, useCallback } from "react";
 import { Pressable, View } from "react-native";
 import { useCSSVariable } from "uniwind";
 
-import { Symbol } from "@/components/symbol";
 import { useIsSelected, useSelectionMode } from "@/hooks/use-portfolio-selection";
 import { formatDate } from "@/lib/format";
 import type { PortfolioDomain } from "@/lib/portfolio";
@@ -13,7 +12,8 @@ import { GlassCard } from "./glass-card";
 import { DomainHealthBadge } from "./portfolio/domain-health-badge";
 import { ProviderChips } from "./portfolio/provider-chips";
 import { RelativeExpiry } from "./relative-expiry";
-import { MutedText, Text } from "./text";
+import { Symbol } from "./symbol";
+import { Text } from "./text";
 
 function DomainRowImpl({
   domain,
@@ -32,7 +32,7 @@ function DomainRowImpl({
   const selected = useIsSelected(domain.id);
   const isSelecting = selectionMode === "selecting";
   const accent = useCSSVariable("--color-brand") as string;
-  const muted = useCSSVariable("--color-text-secondary") as string;
+  const muted = useCSSVariable("--color-muted-foreground") as string;
 
   const handlePress = useCallback(() => onPress(domain), [domain, onPress]);
   const handleLongPress = useCallback(() => onLongPress?.(domain), [domain, onLongPress]);
@@ -63,16 +63,18 @@ function DomainRowImpl({
                 {domain.domainName}
               </Text>
               <View className="flex-row flex-wrap items-baseline gap-1">
-                <MutedText numberOfLines={1}>Expires {formatDate(domain.expirationDate)}</MutedText>
+                <Text numberOfLines={1} className="text-sm text-muted-foreground">
+                  Expires {formatDate(domain.expirationDate)}
+                </Text>
                 {domain.expirationDate ? (
                   <RelativeExpiry
-                    className="text-text-secondary text-sm"
+                    className="text-sm text-muted-foreground"
                     to={domain.expirationDate}
                   />
                 ) : null}
               </View>
             </View>
-            <Badge tone={domain.verified ? "success" : "warning"}>
+            <Badge variant={domain.verified ? "success" : "warning"}>
               <Text>{domain.verified ? "Verified" : "Verify"}</Text>
             </Badge>
           </View>

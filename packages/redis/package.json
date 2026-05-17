@@ -21,7 +21,8 @@
     "@upstash/redis": "^1.38.0"
   },
   "devDependencies": {
-    "@domainstack/typescript-config": "workspace:*",
-    "@types/node": "catalog:"
+    "@domainstack/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
   }
 }

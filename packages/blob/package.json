@@ -20,7 +20,8 @@
     "file-type": "^22.0.1"
   },
   "devDependencies": {
-    "@domainstack/typescript-config": "workspace:*",
-    "@types/node": "catalog:"
+    "@domainstack/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
   }
 }

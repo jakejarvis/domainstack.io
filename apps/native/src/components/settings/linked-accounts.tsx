@@ -7,7 +7,7 @@ import { useCSSVariable } from "uniwind";
 import { Button } from "@/components/button";
 import { GroupedRow, GroupedSection } from "@/components/form/group";
 import { ProviderIcon } from "@/components/provider-icon";
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 import { analytics } from "@/lib/analytics";
 import { useTRPC } from "@/lib/api";
 import {
@@ -33,7 +33,7 @@ function isAuthCanceled(error: unknown): boolean {
 export function LinkedAccountsSection() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const iconColor = useCSSVariable("--color-text-primary") as string;
+  const iconColor = useCSSVariable("--color-foreground") as string;
   const [appleAuthAvailable, setAppleAuthAvailable] = useState<boolean | null>(null);
   const [unlinkingProvider, setUnlinkingProvider] = useState<AuthProvider | null>(null);
   const [linkingProvider, setLinkingProvider] = useState<AuthProvider | null>(null);
@@ -138,7 +138,7 @@ export function LinkedAccountsSection() {
     return (
       <GroupedSection title="Sign-in methods">
         <View className="p-3">
-          <MutedText>Loading providers…</MutedText>
+          <Text className="text-sm text-muted-foreground">Loading providers…</Text>
         </View>
       </GroupedSection>
     );
@@ -148,7 +148,9 @@ export function LinkedAccountsSection() {
     return (
       <GroupedSection title="Sign-in methods">
         <View className="p-3">
-          <MutedText>No sign-in providers are available right now.</MutedText>
+          <Text className="text-sm text-muted-foreground">
+            No sign-in providers are available right now.
+          </Text>
         </View>
       </GroupedSection>
     );
@@ -192,7 +194,9 @@ export function LinkedAccountsSection() {
                 {provider.name}
               </Text>
               {isLinked && unlinkDisabled ? (
-                <MutedText className="text-xs">Must keep at least one sign-in method.</MutedText>
+                <Text className="text-xs text-muted-foreground">
+                  Must keep at least one sign-in method.
+                </Text>
               ) : null}
             </View>
           </GroupedRow>

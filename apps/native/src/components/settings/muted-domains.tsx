@@ -100,7 +100,7 @@ export function MutedDomainsSectionSkeleton() {
     <GroupedSection title="Muted domains">
       <View className="gap-2 p-3">
         {[0, 1, 2].map((i) => (
-          <View className="bg-canvas-2 h-10 rounded-xl" key={i} />
+          <View className="h-10 rounded-xl bg-muted" key={i} />
         ))}
       </View>
     </GroupedSection>

@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCSSVariable } from "uniwind";
 
 import { Button } from "@/components/button";
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
 
 type SlideName = "search" | "bookmark" | "notifications";
@@ -48,7 +48,7 @@ export default function OnboardingScreen() {
   const markSeen = useOnboardingStore((state) => state.markSeen);
   const [index, setIndex] = useState(0);
   const iconColor = useCSSVariable("--color-brand") as string;
-  const mutedColor = useCSSVariable("--color-text-secondary") as string;
+  const mutedColor = useCSSVariable("--color-muted-foreground") as string;
 
   const handleScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -70,10 +70,10 @@ export default function OnboardingScreen() {
   }, [markSeen]);
 
   return (
-    <View className="bg-canvas flex-1" style={{ paddingTop: insets.top }}>
+    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       <View className="flex-row justify-end px-4 py-2">
         <Pressable accessibilityRole="button" hitSlop={8} onPress={goSearch}>
-          <Text className="text-text-secondary text-sm font-semibold">Skip</Text>
+          <Text className="text-sm font-semibold text-muted-foreground">Skip</Text>
         </Pressable>
       </View>
 
@@ -86,11 +86,13 @@ export default function OnboardingScreen() {
       >
         {SLIDES.map((slide) => (
           <View key={slide.icon} className="items-center justify-center px-8" style={{ width }}>
-            <View className="bg-control-secondary mb-6 size-24 items-center justify-center rounded-full">
+            <View className="mb-6 size-24 items-center justify-center rounded-full bg-secondary">
               <MaterialIcons color={iconColor} name={slide.icon} size={56} />
             </View>
             <Text className="mb-3 text-center text-3xl font-semibold">{slide.title}</Text>
-            <MutedText className="text-center text-base leading-6">{slide.body}</MutedText>
+            <Text className="text-center text-base leading-6 text-muted-foreground">
+              {slide.body}
+            </Text>
           </View>
         ))}
       </ScrollView>

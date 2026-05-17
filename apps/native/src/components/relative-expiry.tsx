@@ -6,7 +6,7 @@ import { getRelativeExpiry, type RelativeExpiryTone } from "@domainstack/utils";
 import { Text } from "./text";
 
 const toneClass: Record<RelativeExpiryTone, string> = {
-  danger: "text-danger",
+  danger: "text-destructive",
   default: "",
   warn: "text-warning",
 };

@@ -14,9 +14,9 @@ function formatBadge(count: number): string | undefined {
 
 export default function TabsLayout() {
   const accent = useCSSVariable("--color-brand") as string;
-  const canvas = useCSSVariable("--color-canvas") as string;
+  const canvas = useCSSVariable("--color-background") as string;
   const surface = useCSSVariable("--color-glass") as string;
-  const textMuted = useCSSVariable("--color-text-secondary") as string;
+  const textMuted = useCSSVariable("--color-muted-foreground") as string;
 
   const trpc = useTRPC();
   const session = authClient.useSession();

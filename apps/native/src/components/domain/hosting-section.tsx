@@ -3,7 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { HostingMap } from "@/components/domain/hosting-map";
 import { KeyValueGrid, type KeyValueItem } from "@/components/key-value-grid";
 import { ReportSection } from "@/components/report-section";
-import { MutedText } from "@/components/text";
+import { Text } from "@/components/text";
 import { useTRPC } from "@/lib/api";
 import { countryCodeToEmoji } from "@domainstack/utils";
 
@@ -14,7 +14,7 @@ export function HostingSection({ domain }: { domain: string }) {
   if (!data.success || !data.data) {
     return (
       <ReportSection title="Hosting">
-        <MutedText>Hosting information is unavailable.</MutedText>
+        <Text className="text-sm text-muted-foreground">Hosting information is unavailable.</Text>
       </ReportSection>
     );
   }

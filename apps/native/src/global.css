@@ -1,37 +1,73 @@
 @import "tailwindcss";
 @import "uniwind";
 
-@theme {
-  --color-brand: light-dark(rgb(37 99 235), rgb(96 165 250));
-  --color-brand-soft: light-dark(rgb(219 234 254), rgb(96 165 250 / 0.16));
-  --color-brand-strong: light-dark(rgb(17 24 39), rgb(244 244 245));
-  --color-canvas: light-dark(rgb(246 247 248), rgb(16 17 20));
-  --color-canvas-2: light-dark(rgb(238 240 243), rgb(23 25 29));
-  --color-control-primary: light-dark(rgb(17 24 39), rgb(244 244 245));
-  --color-control-primary-text: light-dark(rgb(255 255 255), rgb(16 17 20));
-  --color-control-secondary: light-dark(rgb(255 255 255), rgb(255 255 255 / 0.08));
-  --color-control-secondary-text: light-dark(rgb(17 24 39), rgb(244 244 245));
-  --color-danger: light-dark(rgb(220 38 38), rgb(251 113 133));
-  --color-danger-soft: light-dark(rgb(254 226 226), rgb(251 113 133 / 0.15));
-  --color-danger-text: rgb(255 255 255);
-  --color-glass: light-dark(rgb(255 255 255 / 0.88), rgb(255 255 255 / 0.08));
-  --color-line: light-dark(rgb(17 24 39 / 0.12), rgb(255 255 255 / 0.13));
-  --color-success: light-dark(rgb(21 128 61), rgb(74 222 128));
-  --color-success-soft: light-dark(rgb(220 252 231), rgb(74 222 128 / 0.14));
-  --color-text-primary: light-dark(rgb(17 24 39), rgb(244 244 245));
-  --color-text-secondary: light-dark(rgb(95 102 115), rgb(161 161 170));
-  --color-warning: light-dark(rgb(180 83 9), rgb(251 191 36));
-  --color-warning-soft: light-dark(rgb(254 243 199), rgb(251 191 36 / 0.15));
-}
-
 @layer theme {
   :root {
+    @variant light {
+      --color-background: oklch(1 0 0);
+      --color-foreground: oklch(0.145 0 0);
+      --color-card: oklch(1 0 0);
+      --color-card-foreground: oklch(0.145 0 0);
+      --color-popover: oklch(1 0 0);
+      --color-popover-foreground: oklch(0.145 0 0);
+      --color-primary: oklch(0.205 0 0);
+      --color-primary-foreground: oklch(0.985 0 0);
+      --color-secondary: oklch(0.97 0 0);
+      --color-secondary-foreground: oklch(0.205 0 0);
+      --color-muted: oklch(0.97 0 0);
+      --color-muted-foreground: oklch(0.556 0 0);
+      --color-accent: oklch(0.97 0 0);
+      --color-accent-foreground: oklch(0.205 0 0);
+      --color-success: oklch(0.527 0.154 150.069);
+      --color-success-foreground: oklch(0.985 0 0);
+      --color-warning: oklch(0.554 0.135 66.442);
+      --color-warning-foreground: oklch(0.985 0 0);
+      --color-destructive: oklch(0.577 0.245 27.325);
+      --color-destructive-foreground: oklch(0.985 0 0);
+      --color-border: oklch(0.922 0 0);
+      --color-input: oklch(0.922 0 0);
+      --color-ring: oklch(0.708 0 0);
+      --color-brand: oklch(0.546 0.215 262.881);
+      --color-brand-strong: oklch(0.205 0 0);
+      --color-glass: oklch(1 0 0 / 0.85);
+    }
+
+    @variant dark {
+      --color-background: oklch(0.145 0 0);
+      --color-foreground: oklch(0.985 0 0);
+      --color-card: oklch(0.205 0 0);
+      --color-card-foreground: oklch(0.985 0 0);
+      --color-popover: oklch(0.205 0 0);
+      --color-popover-foreground: oklch(0.985 0 0);
+      --color-primary: oklch(0.922 0 0);
+      --color-primary-foreground: oklch(0.205 0 0);
+      --color-secondary: oklch(0.269 0 0);
+      --color-secondary-foreground: oklch(0.985 0 0);
+      --color-muted: oklch(0.269 0 0);
+      --color-muted-foreground: oklch(0.708 0 0);
+      --color-accent: oklch(0.269 0 0);
+      --color-accent-foreground: oklch(0.985 0 0);
+      --color-success: oklch(0.792 0.209 151.711);
+      --color-success-foreground: oklch(0.205 0 0);
+      --color-warning: oklch(0.828 0.189 84.429);
+      --color-warning-foreground: oklch(0.205 0 0);
+      --color-destructive: oklch(0.704 0.191 22.216);
+      --color-destructive-foreground: oklch(0.985 0 0);
+      --color-border: oklch(1 0 0 / 0.1);
+      --color-input: oklch(1 0 0 / 0.15);
+      --color-ring: oklch(0.556 0 0);
+      --color-brand: oklch(0.707 0.149 254.624);
+      --color-brand-strong: oklch(0.985 0 0);
+      --color-glass: oklch(1 0 0 / 0.08);
+    }
+
     @variant ios {
       --font-mono: ui-monospace;
       --font-rounded: ui-rounded;
       --font-sans: system-ui;
       --font-serif: ui-serif;
     }
+
     @variant android {
       --font-mono: monospace;
       --font-rounded: normal;

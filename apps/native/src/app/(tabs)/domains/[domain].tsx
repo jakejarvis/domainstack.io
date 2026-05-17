@@ -21,7 +21,7 @@ import { DomainHealthBadge } from "@/components/portfolio/domain-health-badge";
 import { ReportSectionSkeleton } from "@/components/report-section-skeleton";
 import { Screen } from "@/components/screen";
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 import { useDashboardMutations } from "@/hooks/use-dashboard-mutations";
 import { analytics } from "@/lib/analytics";
 import { useTRPC } from "@/lib/api";
@@ -239,7 +239,7 @@ function ReportHeader({
       <View className="flex-row flex-wrap items-center gap-2">
         {trackedEntry ? (
           <>
-            <Badge tone={trackedEntry.verified ? "success" : "warning"}>
+            <Badge variant={trackedEntry.verified ? "success" : "warning"}>
               <Text>{trackedEntry.verified ? "Verified" : "Needs verification"}</Text>
             </Badge>
             <DomainHealthBadge
@@ -256,9 +256,9 @@ function ReportHeader({
                 <Text>Archived</Text>
               </Badge>
             ) : null}
-            <MutedText className="text-xs">
+            <Text className="text-xs text-muted-foreground">
               Last verified {formatDate(trackedEntry.lastVerifiedAt)}
-            </MutedText>
+            </Text>
           </>
         ) : isAuthenticated ? (
           <Button
@@ -273,7 +273,7 @@ function ReportHeader({
             <Text>+ Track this domain</Text>
           </Button>
         ) : (
-          <MutedText className="text-xs">Sign in to track this domain.</MutedText>
+          <Text className="text-xs text-muted-foreground">Sign in to track this domain.</Text>
         )}
       </View>
       <View className="flex-row flex-wrap gap-2">
@@ -317,10 +317,10 @@ function TrackingActions({
       {trackedEntry.verified ? null : (
         <GlassCard>
           <Text className="text-lg font-semibold">Verification</Text>
-          <MutedText>
+          <Text className="text-sm text-muted-foreground">
             Return to the verification flow to copy DNS TXT, HTML file, or meta tag instructions and
             check ownership.
-          </MutedText>
+          </Text>
           <Button
             onPress={() =>
               router.push({

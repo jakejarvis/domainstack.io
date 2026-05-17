@@ -21,8 +21,9 @@
     "puppeteer-core": "24.35.0"
   },
   "devDependencies": {
-    "@domainstack/typescript-config": "workspace:*",
+    "@domainstack/tsconfig": "workspace:*",
     "@types/node": "catalog:",
-    "puppeteer": "24.35.0"
+    "puppeteer": "24.35.0",
+    "typescript": "catalog:"
   }
 }

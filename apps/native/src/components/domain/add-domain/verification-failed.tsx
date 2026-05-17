@@ -4,7 +4,7 @@ import { useCSSVariable } from "uniwind";
 
 import { Button } from "@/components/button";
 import { GlassCard } from "@/components/glass-card";
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 import type { VerificationMethod } from "@domainstack/constants";
 
 const TROUBLESHOOTING_TIPS: Record<VerificationMethod, { title: string; tips: string[] }> = {
@@ -53,8 +53,8 @@ export function VerificationFailed({
   onCheckAgain: () => void;
   onReturnLater: () => void;
 }) {
-  const dangerColor = useCSSVariable("--color-danger") as string;
-  const mutedColor = useCSSVariable("--color-text-secondary") as string;
+  const dangerColor = useCSSVariable("--color-destructive") as string;
+  const mutedColor = useCSSVariable("--color-muted-foreground") as string;
   const { title, tips } = TROUBLESHOOTING_TIPS[method];
 
   return (
@@ -64,10 +64,10 @@ export function VerificationFailed({
           <MaterialIcons color={dangerColor} name="error-outline" size={20} />
           <View className="flex-1 gap-1">
             <Text className="text-base font-semibold">Verification failed</Text>
-            <MutedText>
+            <Text className="text-sm text-muted-foreground">
               {message ??
                 "We couldn’t verify your domain ownership yet. Check your setup and try again."}
-            </MutedText>
+            </Text>
           </View>
         </View>
       </GlassCard>
@@ -83,7 +83,7 @@ export function VerificationFailed({
                 size={6}
                 style={{ marginTop: 8 }}
               />
-              <MutedText className="flex-1">{tip}</MutedText>
+              <Text className="flex-1 text-sm text-muted-foreground">{tip}</Text>
             </View>
           ))}
         </View>
@@ -98,10 +98,10 @@ export function VerificationFailed({
         </Button>
       </View>
 
-      <MutedText className="text-center text-xs">
+      <Text className="text-center text-xs text-muted-foreground">
         Don’t worry — we’ll automatically check your domain daily and verify once the changes
         propagate.
-      </MutedText>
+      </Text>
     </View>
   );
 }

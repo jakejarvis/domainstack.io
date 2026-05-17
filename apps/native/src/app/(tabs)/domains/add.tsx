@@ -16,7 +16,7 @@ import { GlassCard } from "@/components/glass-card";
 import { Screen } from "@/components/screen";
 import { SegmentedControl } from "@/components/segmented-control";
 import { SkeletonRows } from "@/components/skeleton";
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 import { TextField } from "@/components/text-field";
 import { usePushSoftPrompt } from "@/hooks/use-push-soft-prompt";
 import { useTRPC } from "@/lib/api";
@@ -57,8 +57,8 @@ function InstructionValue({ label, value }: { label: string; value: string | num
 
   return (
     <View className="gap-2">
-      <MutedText className="font-semibold">{label}</MutedText>
-      <View className="border-line bg-canvas-2 gap-2 rounded-xl border p-3">
+      <Text className="text-sm font-semibold text-muted-foreground">{label}</Text>
+      <View className="gap-2 rounded-xl border border-border bg-muted p-3">
         <Text className="font-mono text-sm" selectable>
           {stringValue}
         </Text>
@@ -95,7 +95,9 @@ export default function AddDomainScreen() {
       <Screen>
         <View className="gap-2">
           <Text className="text-4xl font-semibold">Add domain</Text>
-          <MutedText>Sign in to verify ownership and add domains to your portfolio.</MutedText>
+          <Text className="text-sm text-muted-foreground">
+            Sign in to verify ownership and add domains to your portfolio.
+          </Text>
         </View>
         <EmptyState
           actionLabel="Sign in"
@@ -244,7 +246,9 @@ function AddDomainFlow() {
           <Text className="text-3xl font-semibold">
             {flow.status === "verified" ? "All set!" : "Add domain"}
           </Text>
-          <MutedText>Verify ownership once, then Domainstack can track changes natively.</MutedText>
+          <Text className="text-sm text-muted-foreground">
+            Verify ownership once, then Domainstack can track changes natively.
+          </Text>
         </View>
 
         <StepIndicator current={step} loadingStep={activeLoading} />
@@ -264,7 +268,7 @@ function AddDomainFlow() {
                 value={flow.domain}
               />
             </View>
-            <View className="border-line border-t p-3">
+            <View className="border-t border-border p-3">
               <Button
                 disabled={flow.domain.trim().length === 0}
                 loading={addDomain.isPending || flow.status === "submitting"}
@@ -299,7 +303,9 @@ function AddDomainFlow() {
                 {activeMethod === "dns_txt" ? (
                   <>
                     <Text className="text-xl font-semibold">DNS TXT record</Text>
-                    <MutedText>{instructionsBundle.dns_txt.description}</MutedText>
+                    <Text className="text-sm text-muted-foreground">
+                      {instructionsBundle.dns_txt.description}
+                    </Text>
                     <InstructionValue
                       label="Hostname"
                       value={instructionsBundle.dns_txt.hostname}
@@ -316,7 +322,9 @@ function AddDomainFlow() {
                 {activeMethod === "html_file" ? (
                   <>
                     <Text className="text-xl font-semibold">HTML file</Text>
-                    <MutedText>{instructionsBundle.html_file.description}</MutedText>
+                    <Text className="text-sm text-muted-foreground">
+                      {instructionsBundle.html_file.description}
+                    </Text>
                     <InstructionValue label="Path" value={instructionsBundle.html_file.fullPath} />
                     <InstructionValue
                       label="Contents"
@@ -328,7 +336,9 @@ function AddDomainFlow() {
                 {activeMethod === "meta_tag" ? (
                   <>
                     <Text className="text-xl font-semibold">Meta tag</Text>
-                    <MutedText>{instructionsBundle.meta_tag.description}</MutedText>
+                    <Text className="text-sm text-muted-foreground">
+                      {instructionsBundle.meta_tag.description}
+                    </Text>
                     <InstructionValue label="Tag" value={instructionsBundle.meta_tag.metaTag} />
                   </>
                 ) : null}

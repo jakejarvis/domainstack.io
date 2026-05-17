@@ -57,7 +57,6 @@
       "expo-apple-authentication",
       "expo-secure-store",
       "expo-web-browser",
-      "./plugins/with-google-sign-in-url-scheme.cjs",
       [
         "expo-notifications",
         {

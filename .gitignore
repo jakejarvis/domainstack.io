@@ -10,6 +10,7 @@ node_modules
 coverage
 __screenshots__
 test-results
+.vitest-attachments
 
 # Turbo
 .turbo

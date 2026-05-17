@@ -2,9 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { View } from "react-native";
 
-import { Text } from "@/components/text";
 import { useTRPC } from "@/lib/api";
 import { simpleHash } from "@domainstack/utils";
+
+import { Text } from "./text";
 
 const PLACEHOLDER_COLORS = [
   "#3b82f6",

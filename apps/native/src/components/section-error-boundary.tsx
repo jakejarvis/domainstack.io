@@ -6,7 +6,7 @@ import { analytics } from "@/lib/analytics";
 
 import { Button } from "./button";
 import { GlassCard } from "./glass-card";
-import { MutedText, Text } from "./text";
+import { Text } from "./text";
 
 interface BoundaryProps {
   children: ReactNode;
@@ -50,7 +50,9 @@ class ErrorBoundaryInner extends Component<BoundaryProps, BoundaryState> {
         <GlassCard>
           <View className="gap-1">
             <Text className="text-base font-semibold">{this.props.sectionName} failed</Text>
-            <MutedText>{this.state.error.message || "Something went wrong."}</MutedText>
+            <Text className="text-sm text-muted-foreground">
+              {this.state.error.message || "Something went wrong."}
+            </Text>
           </View>
           <Button onPress={this.props.onReset} variant="secondary">
             <Text>Try again</Text>

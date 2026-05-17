@@ -2,8 +2,9 @@ import type { Ref } from "react";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
 
-import { RefreshControl } from "@/components/refresh-control";
 import { cn } from "@/lib/cn";
+
+import { RefreshControl } from "./refresh-control";
 
 export function Screen({
   children,
@@ -33,13 +34,13 @@ export function Screen({
   const body = <View className={cn("gap-5 px-4 pt-3 pb-8", className)}>{children}</View>;
 
   if (!scroll) {
-    return <View className="bg-canvas flex-1">{body}</View>;
+    return <View className="flex-1 bg-background">{body}</View>;
   }
 
   return (
     <ScrollView
       alwaysBounceVertical={Boolean(onRefresh)}
-      className="bg-canvas flex-1"
+      className="flex-1 bg-background"
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
       ref={scrollRef}

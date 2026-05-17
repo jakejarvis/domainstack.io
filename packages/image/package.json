@@ -21,7 +21,8 @@
     "sharp": "^0.34.5"
   },
   "devDependencies": {
-    "@domainstack/typescript-config": "workspace:*",
-    "@types/node": "catalog:"
+    "@domainstack/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
   }
 }

@@ -36,15 +36,16 @@
     "@readme/http-status-codes": "^9.0.6",
     "@vercel/edge-config": "^1.4.3",
     "cheerio": "^1.2.0",
-    "ipaddr.js": "^2.4.0",
-    "lru-cache": "^11.3.6",
-    "rdapper": "^0.13.0"
+    "ipaddr.js": "catalog:",
+    "lru-cache": "catalog:",
+    "rdapper": "catalog:"
   },
   "devDependencies": {
-    "@domainstack/typescript-config": "workspace:*",
+    "@domainstack/tsconfig": "workspace:*",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
-    "msw": "^2.14.6",
+    "msw": "catalog:",
+    "typescript": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:"
   },

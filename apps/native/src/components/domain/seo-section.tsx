@@ -5,7 +5,7 @@ import { View } from "react-native";
 import { Badge } from "@/components/badge";
 import { KeyValueGrid, type KeyValueItem } from "@/components/key-value-grid";
 import { ReportSection } from "@/components/report-section";
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 import { useTRPC } from "@/lib/api";
 
 export function SeoSection({ domain }: { domain: string }) {
@@ -15,7 +15,7 @@ export function SeoSection({ domain }: { domain: string }) {
   if (!data.success || !data.data) {
     return (
       <ReportSection title="SEO">
-        <MutedText>SEO data could not be retrieved.</MutedText>
+        <Text className="text-sm text-muted-foreground">SEO data could not be retrieved.</Text>
       </ReportSection>
     );
   }
@@ -39,7 +39,7 @@ export function SeoSection({ domain }: { domain: string }) {
       title="SEO"
       trailing={
         source.status ? (
-          <Badge tone={source.status >= 200 && source.status < 400 ? "success" : "warning"}>
+          <Badge variant={source.status >= 200 && source.status < 400 ? "success" : "warning"}>
             <Text className="text-xs font-semibold">HTTP {source.status}</Text>
           </Badge>
         ) : undefined
@@ -47,7 +47,7 @@ export function SeoSection({ domain }: { domain: string }) {
     >
       {items.length > 0 ? <KeyValueGrid items={items} /> : null}
       {previewImage ? (
-        <View className="border-line overflow-hidden rounded-lg border">
+        <View className="overflow-hidden rounded-lg border border-border">
           <Image
             cachePolicy="memory-disk"
             contentFit="cover"
@@ -60,7 +60,7 @@ export function SeoSection({ domain }: { domain: string }) {
       ) : null}
       {robots && robots.groups.length > 0 ? (
         <View className="gap-1">
-          <MutedText className="text-xs tracking-wide uppercase">robots.txt</MutedText>
+          <Text className="text-xs tracking-wide text-muted-foreground uppercase">robots.txt</Text>
           <Text className="font-mono text-xs">
             {robots.groups.length} group{robots.groups.length === 1 ? "" : "s"}
             {robots.sitemaps.length > 0 ? ` · ${robots.sitemaps.length} sitemap(s)` : ""}

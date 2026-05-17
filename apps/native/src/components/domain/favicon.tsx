@@ -13,7 +13,7 @@ export function Favicon({ domain }: { domain: string }) {
 
   return (
     <View
-      className="border-line bg-control-secondary overflow-hidden rounded-md border"
+      className="overflow-hidden rounded-md border border-border bg-secondary"
       style={{ height: SIZE, width: SIZE }}
     >
       {url ? (

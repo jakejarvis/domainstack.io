@@ -3,17 +3,17 @@ import { useCSSVariable } from "uniwind";
 
 export function Spinner({
   size = "small",
-  tone = "default",
+  variant = "default",
 }: {
   size?: "small" | "large";
-  tone?: "default" | "muted" | "brand";
+  variant?: "default" | "muted" | "brand";
 }) {
   const variable =
-    tone === "brand"
+    variant === "brand"
       ? "--color-brand"
-      : tone === "muted"
-        ? "--color-text-secondary"
-        : "--color-text-primary";
+      : variant === "muted"
+        ? "--color-muted-foreground"
+        : "--color-foreground";
   const color = useCSSVariable(variable) as string;
   return <ActivityIndicator color={color} size={size} />;
 }

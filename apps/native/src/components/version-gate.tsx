@@ -3,13 +3,14 @@ import Constants from "expo-constants";
 import { useEffect, useState } from "react";
 import { Linking, Platform, View } from "react-native";
 
-import { Button } from "@/components/button";
-import { GlassCard } from "@/components/glass-card";
-import { Screen } from "@/components/screen";
-import { MutedText, Text } from "@/components/text";
 import { getOtaConfig, OTA_CONFIG_QUERY_KEY } from "@/lib/auth";
 import { isVersionBelow } from "@/lib/version";
 import type { OtaConfigNativeApp } from "@domainstack/auth/ota-config/client";
+
+import { Button } from "./button";
+import { GlassCard } from "./glass-card";
+import { Screen } from "./screen";
+import { Text } from "./text";
 
 const STALE_TIME = 5 * 60 * 1000;
 const READINESS_TIMEOUT_MS = 2000;
@@ -68,10 +69,10 @@ function UpdateRequiredScreen({ nativeApp }: { nativeApp: OtaConfigNativeApp }) 
           <Text className="text-3xl font-semibold">
             {nativeApp.messageTitle ?? "Update required"}
           </Text>
-          <MutedText>
+          <Text className="text-sm text-muted-foreground">
             {nativeApp.messageBody ??
               "Please update Domainstack to the latest version to continue."}
-          </MutedText>
+          </Text>
           <Button onPress={() => void Linking.openURL(storeUrl)}>
             <Text>Update Domainstack</Text>
           </Button>

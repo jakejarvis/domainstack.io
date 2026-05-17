@@ -4,7 +4,7 @@ import { useCSSVariable } from "uniwind";
 
 import { cn } from "@/lib/cn";
 
-import { MutedText } from "./text";
+import { Text } from "./text";
 
 export function TextField({
   autoCapitalize = "none",
@@ -35,19 +35,19 @@ export function TextField({
   textContentType?: TextInputProps["textContentType"];
   value: string;
 }) {
-  const placeholderTextColor = useCSSVariable("--color-text-secondary") as string;
-  const dangerColor = useCSSVariable("--color-danger") as string;
+  const placeholderTextColor = useCSSVariable("--color-muted-foreground") as string;
+  const dangerColor = useCSSVariable("--color-destructive") as string;
 
   return (
     <View className="gap-2">
-      <MutedText className="font-semibold">{label}</MutedText>
+      <Text className="text-sm font-semibold text-muted-foreground">{label}</Text>
       <TextInput
         autoCapitalize={autoCapitalize}
         autoComplete={autoComplete}
         autoCorrect={false}
         className={cn(
-          "text-text-primary min-h-12 text-base",
-          !bare && "border-line bg-glass rounded-xl border px-4",
+          "min-h-12 text-base text-foreground",
+          !bare && "bg-glass rounded-xl border border-border px-4",
           !editable && "opacity-60",
         )}
         editable={editable}
@@ -66,7 +66,11 @@ export function TextField({
         }
         value={value}
       />
-      {error ? <MutedText style={{ color: dangerColor }}>{error}</MutedText> : null}
+      {error ? (
+        <Text style={{ color: dangerColor }} className="text-sm text-muted-foreground">
+          {error}
+        </Text>
+      ) : null}
     </View>
   );
 }

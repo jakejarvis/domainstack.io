@@ -19,21 +19,21 @@ function StepDot({ state, label, loading }: { state: StepState; label: number; l
     "items-center justify-center rounded-full border",
     sizeClass,
     state === "completed" && "border-success bg-success",
-    state === "active" && "bg-control-primary border-control-primary",
-    state === "pending" && "bg-canvas-2 border-line",
+    state === "active" && "border-primary bg-primary",
+    state === "pending" && "border-border bg-muted",
   );
 
   return (
     <View className={containerClass}>
       {loading ? (
-        <Spinner tone={state === "pending" ? "muted" : "default"} />
+        <Spinner variant={state === "pending" ? "muted" : "default"} />
       ) : state === "completed" ? (
         <MaterialIcons color="white" name="check" size={16} />
       ) : (
         <Text
           className={cn(
             "text-xs font-semibold",
-            state === "active" ? "text-control-primary-text" : "text-text-secondary",
+            state === "active" ? "text-primary-foreground" : "text-muted-foreground",
           )}
         >
           {label}
@@ -67,7 +67,7 @@ export function StepIndicator({
             <View className="flex-row items-center" key={entry.step} style={{ flex: 1 }}>
               <StepDot label={entry.step} loading={loadingStep === entry.step} state={state} />
               {nextState !== null ? (
-                <View className={cn("h-px flex-1", separatorActive ? "bg-success" : "bg-line")} />
+                <View className={cn("h-px flex-1", separatorActive ? "bg-success" : "bg-border")} />
               ) : null}
             </View>
           );
@@ -81,7 +81,7 @@ export function StepIndicator({
               <Text
                 className={cn(
                   "text-xs",
-                  state === "active" ? "text-text-primary font-medium" : "text-text-secondary",
+                  state === "active" ? "font-medium text-foreground" : "text-muted-foreground",
                 )}
               >
                 {entry.label}

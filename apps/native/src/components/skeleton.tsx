@@ -31,7 +31,7 @@ export function SkeletonRows({ count = 3 }: { count?: number }) {
     <Animated.View className="gap-3" style={pulseStyle}>
       {Array.from({ length: count }, (_, index) => (
         <Animated.View
-          className="border-line bg-glass h-24 rounded-2xl border"
+          className="bg-glass h-24 rounded-2xl border border-border"
           key={index}
           style={{ borderCurve: "continuous" }}
         />

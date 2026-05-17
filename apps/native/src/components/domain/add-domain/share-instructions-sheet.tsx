@@ -9,7 +9,7 @@ import { useCSSVariable } from "uniwind";
 import { AppBottomSheet, type AppBottomSheetRef } from "@/components/bottom-sheet";
 import { Button } from "@/components/button";
 import { GlassCard } from "@/components/glass-card";
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 import { TextField } from "@/components/text-field";
 import { useTRPC } from "@/lib/api";
 import { toast } from "@/lib/toast";
@@ -60,7 +60,7 @@ export function ShareInstructionsSheet({
   const [state, dispatch] = useReducer(reducer, initialState);
   const [copied, setCopied] = useState(false);
   const successColor = useCSSVariable("--color-success") as string;
-  const mutedColor = useCSSVariable("--color-text-secondary") as string;
+  const mutedColor = useCSSVariable("--color-muted-foreground") as string;
 
   useEffect(() => {
     if (open) ref.current?.present();
@@ -132,7 +132,9 @@ export function ShareInstructionsSheet({
             <MaterialIcons color={mutedColor} name="content-copy" size={20} />
             <View className="flex-1 gap-1">
               <Text className="font-semibold">Copy to clipboard</Text>
-              <MutedText>Paste the instructions wherever you need them.</MutedText>
+              <Text className="text-sm text-muted-foreground">
+                Paste the instructions wherever you need them.
+              </Text>
             </View>
           </View>
           <Button onPress={() => void handleCopy()} variant="secondary">
@@ -152,7 +154,9 @@ export function ShareInstructionsSheet({
             <MaterialIcons color={mutedColor} name="ios-share" size={20} />
             <View className="flex-1 gap-1">
               <Text className="font-semibold">Share via system</Text>
-              <MutedText>Open the iOS share sheet to send via Mail, Messages, and more.</MutedText>
+              <Text className="text-sm text-muted-foreground">
+                Open the iOS share sheet to send via Mail, Messages, and more.
+              </Text>
             </View>
           </View>
           <Button onPress={handleSystemShare} variant="secondary">
@@ -165,7 +169,9 @@ export function ShareInstructionsSheet({
             <MaterialIcons color={mutedColor} name="alternate-email" size={20} />
             <View className="flex-1 gap-1">
               <Text className="font-semibold">Send via email</Text>
-              <MutedText>We’ll email the instructions on your behalf.</MutedText>
+              <Text className="text-sm text-muted-foreground">
+                We’ll email the instructions on your behalf.
+              </Text>
             </View>
           </View>
           <TextField

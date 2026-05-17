@@ -1,7 +1,7 @@
 import { Redirect } from "expo-router";
 
 import { Screen } from "@/components/screen";
-import { MutedText } from "@/components/text";
+import { Text } from "@/components/text";
 import { authClient } from "@/lib/auth";
 import { getInitialRoute } from "@/lib/navigation";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
@@ -14,7 +14,7 @@ export default function IndexRoute() {
   if (session.isPending || !onboardingHydrated) {
     return (
       <Screen>
-        <MutedText>Loading Domainstack…</MutedText>
+        <Text className="text-sm text-muted-foreground">Loading…</Text>
       </Screen>
     );
   }

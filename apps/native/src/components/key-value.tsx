@@ -5,7 +5,7 @@ import { Pressable, View } from "react-native";
 
 import { cn } from "@/lib/cn";
 
-import { MutedText, Text } from "./text";
+import { Text } from "./text";
 
 export function KeyValue({
   label,
@@ -40,7 +40,7 @@ export function KeyValue({
 
   const body = (
     <View className={cn("gap-1", className)}>
-      <MutedText className="text-xs tracking-wide uppercase">{label}</MutedText>
+      <Text className="text-xs tracking-wide text-muted-foreground uppercase">{label}</Text>
       {valueNode}
     </View>
   );

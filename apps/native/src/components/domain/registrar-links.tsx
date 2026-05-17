@@ -2,7 +2,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import * as Linking from "expo-linking";
 import { Pressable, View } from "react-native";
 
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 import { analytics } from "@/lib/analytics";
 import { useTRPC } from "@/lib/api";
 import { REGISTRAR_PROVIDERS, type RegistrarKey } from "@domainstack/constants";
@@ -26,7 +26,7 @@ export function RegistrarLinks({ domain, tld }: { domain: string; tld: string })
 
   return (
     <View className="gap-2">
-      <MutedText className="text-center text-xs">Register this domain</MutedText>
+      <Text className="text-center text-xs text-muted-foreground">Register this domain</Text>
       <View className="gap-2">
         {sorted.map((entry) => {
           const config = REGISTRAR_PROVIDERS[entry.provider as RegistrarKey];
@@ -35,7 +35,7 @@ export function RegistrarLinks({ domain, tld }: { domain: string; tld: string })
           return (
             <Pressable
               accessibilityRole="button"
-              className="border-line bg-control-secondary flex-row items-center justify-between gap-3 rounded-xl border px-4 py-3"
+              className="flex-row items-center justify-between gap-3 rounded-xl border border-border bg-secondary px-4 py-3"
               key={entry.provider}
               onPress={() => {
                 analytics.track("registrar_referral_clicked", { registrar: entry.provider });
@@ -43,9 +43,9 @@ export function RegistrarLinks({ domain, tld }: { domain: string; tld: string })
               }}
             >
               <Text className="font-semibold">{config.name}</Text>
-              <Text className="text-text-secondary text-sm">
+              <Text className="text-sm text-muted-foreground">
                 <Text className="font-semibold">{price}</Text>
-                <Text className="text-text-secondary text-xs">/year</Text>
+                <Text className="text-xs text-muted-foreground">/year</Text>
               </Text>
             </Pressable>
           );

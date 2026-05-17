@@ -80,8 +80,8 @@ export function HeaderMenu({
   const isSignedIn = Boolean(user);
   const avatarUri = user?.image ?? null;
   const signOut = useSignOut();
-  const iconColor = useCSSVariable("--color-text-primary") as string;
-  const dangerColor = useCSSVariable("--color-danger") as string;
+  const iconColor = useCSSVariable("--color-foreground") as string;
+  const dangerColor = useCSSVariable("--color-destructive") as string;
   const sources = useMaterialIconSources(iconColor, dangerColor);
 
   return (

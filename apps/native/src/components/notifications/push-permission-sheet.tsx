@@ -5,7 +5,7 @@ import { useCSSVariable } from "uniwind";
 
 import { AppBottomSheet, type AppBottomSheetRef } from "@/components/bottom-sheet";
 import { Button } from "@/components/button";
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 import { usePushRegistration } from "@/hooks/use-push-registration";
 import { usePushPromptStore } from "@/lib/stores/push-prompt-store";
 
@@ -62,7 +62,7 @@ export function PushPermissionSheet() {
           <Button disabled={registering} onPress={close} variant="secondary">
             <Text>Not now</Text>
           </Button>
-          {error ? <MutedText className="text-danger">{error.message}</MutedText> : null}
+          {error ? <Text className="text-sm text-destructive">{error.message}</Text> : null}
         </View>
       </View>
     </AppBottomSheet>

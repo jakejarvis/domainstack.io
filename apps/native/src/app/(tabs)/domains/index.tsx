@@ -21,7 +21,7 @@ import { RefreshControl } from "@/components/refresh-control";
 import { Screen } from "@/components/screen";
 import { SegmentedControl } from "@/components/segmented-control";
 import { SkeletonRows } from "@/components/skeleton";
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 import { useDashboardMutations } from "@/hooks/use-dashboard-mutations";
 import { useSelectionMode } from "@/hooks/use-portfolio-selection";
 import { useTRPC } from "@/lib/api";
@@ -52,7 +52,9 @@ export default function DomainsScreen() {
     return (
       <Screen>
         <HeaderMenu />
-        <MutedText>Sign in to track ownership, expiry, providers, and notifications.</MutedText>
+        <Text className="text-sm text-muted-foreground">
+          Sign in to track ownership, expiry, providers, and notifications.
+        </Text>
         <EmptyState
           actionLabel="Sign in"
           body="Search remains available without an account. Your portfolio syncs after sign in."

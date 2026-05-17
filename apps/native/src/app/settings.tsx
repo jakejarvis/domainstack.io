@@ -17,7 +17,7 @@ import {
   MutedDomainsSectionSkeleton,
 } from "@/components/settings/muted-domains";
 import { SkeletonRows } from "@/components/skeleton";
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 import { usePushRegistration } from "@/hooks/use-push-registration";
 import { useSignOut } from "@/hooks/use-sign-out";
 import { analytics } from "@/lib/analytics";
@@ -153,7 +153,9 @@ function NotificationChannelsSection() {
     return (
       <GroupedSection title="Notifications">
         <View className="p-3">
-          <MutedText>{preferences.error?.message ?? "Preferences did not load."}</MutedText>
+          <Text className="text-sm text-muted-foreground">
+            {preferences.error?.message ?? "Preferences did not load."}
+          </Text>
         </View>
       </GroupedSection>
     );
@@ -259,7 +261,7 @@ function PushDeviceSection() {
               ])
             }
           >
-            <Text className="font-semibold text-danger">Unregister</Text>
+            <Text className="font-semibold text-destructive">Unregister</Text>
           </GroupedRow>
         </GroupedSection>
       ))}
@@ -315,9 +317,9 @@ function AccountSection() {
           title="Account"
         >
           <GroupedRow>
-            <MutedText className="flex-1" numberOfLines={1} selectable>
+            <Text numberOfLines={1} selectable className="flex-1 text-sm text-muted-foreground">
               {email}
-            </MutedText>
+            </Text>
           </GroupedRow>
         </GroupedSection>
       ) : null}
@@ -329,7 +331,7 @@ function AccountSection() {
             void signOut().then(() => router.replace("/(tabs)/search"));
           }}
         >
-          <Text className="font-semibold text-danger">Sign out</Text>
+          <Text className="font-semibold text-destructive">Sign out</Text>
         </GroupedRow>
       </GroupedSection>
     </View>

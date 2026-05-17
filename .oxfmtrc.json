@@ -29,6 +29,8 @@
   "ignorePatterns": [
     "dist",
     "node_modules",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
     ".turbo",
     ".next",
     ".vercel",

@@ -18,6 +18,8 @@
     "@domainstack/constants": "workspace:*"
   },
   "devDependencies": {
-    "@domainstack/typescript-config": "workspace:*"
+    "@domainstack/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
   }
 }

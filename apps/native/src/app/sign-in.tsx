@@ -2,14 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Platform, View } from "react-native";
+import { Platform } from "react-native";
 import { useCSSVariable } from "uniwind";
 
 import { Button } from "@/components/button";
 import { GlassCard } from "@/components/glass-card";
 import { ProviderIcon } from "@/components/provider-icon";
 import { Screen } from "@/components/screen";
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 import { usePushSoftPrompt } from "@/hooks/use-push-soft-prompt";
 import { analytics } from "@/lib/analytics";
 import {
@@ -62,7 +62,9 @@ export default function SignInScreen() {
         platform: Platform.OS,
       })
         .filter(isProviderAvailableOnPlatform)
-        .toSorted(
+        // `.filter()` returns a fresh array, so sorting it in place is safe.
+        // (Hermes in RN 0.85 doesn't implement `Array.prototype.toSorted`.)
+        .sort(
           (a, b) => Number(isPlatformPreferredProvider(b)) - Number(isPlatformPreferredProvider(a)),
         )
     : [];
@@ -178,11 +180,6 @@ export default function SignInScreen() {
 
   return (
     <Screen>
-      <View className="gap-2">
-        <Text className="text-4xl font-semibold">Domainstack</Text>
-        <MutedText>Sign in to manage tracked domains, verification, and notifications.</MutedText>
-      </View>
-
       <GlassCard>
         {otaConfig.isPending ? (
           <Button disabled loading variant="primary">
@@ -190,13 +187,15 @@ export default function SignInScreen() {
           </Button>
         ) : otaConfig.isError ? (
           <>
-            <MutedText>Sign-in options are unavailable.</MutedText>
+            <Text className="text-sm text-muted-foreground">Sign-in options are unavailable.</Text>
             <Button onPress={() => void otaConfig.refetch()} variant="secondary">
               <Text>Try again</Text>
             </Button>
           </>
         ) : providerOptions.length === 0 ? (
-          <MutedText>No sign-in providers are available right now.</MutedText>
+          <Text className="text-sm text-muted-foreground">
+            No sign-in providers are available right now.
+          </Text>
         ) : (
           providerOptions.map((provider) => (
             <ProviderButton
@@ -225,8 +224,8 @@ function ProviderButton({
   provider: NativeAuthProviderOption;
 }) {
   const variant = isPlatformPreferredProvider(provider) ? "primary" : "secondary";
-  const primaryColor = useCSSVariable("--color-control-primary-text") as string;
-  const secondaryColor = useCSSVariable("--color-control-secondary-text") as string;
+  const primaryColor = useCSSVariable("--color-primary-foreground") as string;
+  const secondaryColor = useCSSVariable("--color-secondary-foreground") as string;
   const iconColor = variant === "primary" ? primaryColor : secondaryColor;
 
   if (provider.id === "apple" && appleAuthAvailable === null) {

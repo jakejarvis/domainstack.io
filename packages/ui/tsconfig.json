@@ -1,5 +1,5 @@
 {
-  "extends": "@domainstack/typescript-config/react-library.json",
+  "extends": "@domainstack/tsconfig/react-library.json",
   "compilerOptions": {
     "noEmit": true
   },

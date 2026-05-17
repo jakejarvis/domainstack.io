@@ -3,13 +3,13 @@ import { Text } from "@/components/text";
 
 type HealthStatus = "healthy" | "warning" | "critical" | "unknown";
 
-type BadgeTone = "neutral" | "success" | "warning" | "danger";
+type BadgeVariant = "default" | "success" | "warning" | "danger";
 
-const CONFIG: Record<HealthStatus, { tone: BadgeTone; label: string }> = {
-  critical: { label: "Critical", tone: "danger" },
-  healthy: { label: "Healthy", tone: "success" },
-  unknown: { label: "Unknown", tone: "neutral" },
-  warning: { label: "Needs attention", tone: "warning" },
+const CONFIG: Record<HealthStatus, { variant: BadgeVariant; label: string }> = {
+  critical: { label: "Critical", variant: "danger" },
+  healthy: { label: "Healthy", variant: "success" },
+  unknown: { label: "Unknown", variant: "default" },
+  warning: { label: "Needs attention", variant: "warning" },
 };
 
 function statusFor(
@@ -36,7 +36,7 @@ export function DomainHealthBadge({
   const status = statusFor(expirationDate, verified);
   const config = CONFIG[status];
   return (
-    <Badge tone={config.tone}>
+    <Badge variant={config.variant}>
       <Text>{config.label}</Text>
     </Badge>
   );

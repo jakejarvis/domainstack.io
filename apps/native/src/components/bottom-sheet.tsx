@@ -8,7 +8,7 @@ import { useColorScheme, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCSSVariable } from "uniwind";
 
-import { MutedText, Text } from "./text";
+import { Text } from "./text";
 
 export type AppBottomSheetRef = BottomSheetMethods;
 
@@ -32,7 +32,7 @@ export function AppBottomSheet({
   title?: string;
 }) {
   const insets = useSafeAreaInsets();
-  const canvas = useCSSVariable("--color-canvas") as string;
+  const canvas = useCSSVariable("--color-background") as string;
   const isDark = useColorScheme() === "dark";
 
   return (
@@ -53,7 +53,9 @@ export function AppBottomSheet({
           {title ? (
             <View className="gap-1">
               <Text className="text-xl font-semibold">{title}</Text>
-              {description ? <MutedText>{description}</MutedText> : null}
+              {description ? (
+                <Text className="text-sm text-muted-foreground">{description}</Text>
+              ) : null}
             </View>
           ) : null}
           {children}

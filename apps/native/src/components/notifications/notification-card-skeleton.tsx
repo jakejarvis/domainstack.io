@@ -33,12 +33,12 @@ function NotificationCardSkeleton() {
     <GlassCard>
       <Animated.View className="gap-2" style={pulseStyle}>
         <Animated.View className="flex-row items-start justify-between gap-3">
-          <Animated.View className="bg-control-secondary h-5 w-2/3 rounded" />
-          <Animated.View className="bg-control-secondary h-5 w-12 rounded-full" />
+          <Animated.View className="h-5 w-2/3 rounded bg-secondary" />
+          <Animated.View className="h-5 w-12 rounded-full bg-secondary" />
         </Animated.View>
-        <Animated.View className="bg-control-secondary h-4 w-full rounded" />
-        <Animated.View className="bg-control-secondary h-4 w-5/6 rounded" />
-        <Animated.View className="bg-control-secondary h-3 w-24 rounded" />
+        <Animated.View className="h-4 w-full rounded bg-secondary" />
+        <Animated.View className="h-4 w-5/6 rounded bg-secondary" />
+        <Animated.View className="h-3 w-24 rounded bg-secondary" />
       </Animated.View>
     </GlassCard>
   );

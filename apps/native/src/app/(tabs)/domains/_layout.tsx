@@ -3,9 +3,9 @@ import { useColorScheme } from "react-native";
 import { useCSSVariable } from "uniwind";
 
 export default function DomainsLayout() {
-  const canvas = useCSSVariable("--color-canvas") as string;
+  const canvas = useCSSVariable("--color-background") as string;
   const surface = useCSSVariable("--color-glass") as string;
-  const text = useCSSVariable("--color-text-primary") as string;
+  const text = useCSSVariable("--color-foreground") as string;
   const isDark = useColorScheme() === "dark";
 
   return (

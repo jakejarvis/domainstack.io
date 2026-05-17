@@ -19,14 +19,22 @@ import { installGlobalErrorHandler } from "@/lib/error-handler";
 import { configureImageCache } from "@/lib/image-cache";
 import { routeFromNotificationData } from "@/lib/navigation";
 
+// Pin the tab navigator as the permanent base of the root stack. Without an
+// anchor, redirect/`replace` flows (onboarding → sign-in, sign-out) can leave
+// the `presentation: "modal"` sign-in screen as the stack root, which makes
+// React Navigation render the whole app inside a stuck modal sheet.
+export const unstable_settings = {
+  anchor: "(tabs)",
+};
+
 void SplashScreen.preventAutoHideAsync();
 installGlobalErrorHandler();
 configureImageCache();
 
 function RootNavigator() {
-  const canvas = useCSSVariable("--color-canvas") as string;
+  const canvas = useCSSVariable("--color-background") as string;
   const surface = useCSSVariable("--color-glass") as string;
-  const text = useCSSVariable("--color-text-primary") as string;
+  const text = useCSSVariable("--color-foreground") as string;
   const isDark = useColorScheme() === "dark";
   const session = authClient.useSession();
   const isSignedIn = Boolean(session.data?.user);
@@ -99,7 +107,7 @@ function RootNavigator() {
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+        <Stack.Screen name="onboarding" options={{ gestureEnabled: false, headerShown: false }} />
         <Stack.Protected guard={isSignedIn}>
           <Stack.Screen name="settings" options={{ headerLargeTitle: true, title: "Settings" }} />
           <Stack.Screen

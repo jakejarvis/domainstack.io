@@ -2,22 +2,38 @@ packages:
   - apps/*
   - packages/*
 
-nodeLinker: hoisted
-
 catalog:
   '@tabler/icons-react': ^3.44.0
-  '@types/node': 25.7.0
+  '@tanstack/react-query': ^5.100.10
+  '@trpc/client': ^11.17.0
+  '@trpc/server': ^11.17.0
+  '@trpc/tanstack-react-query': ^11.17.0
+  '@types/node': 25.8.0
   '@types/react': 19.2.14
   '@types/react-dom': 19.2.3
-  '@vercel/functions': ^3.5.1
+  '@vercel/functions': ^3.6.0
+  clsx: ^2.1.1
+  cva: 1.0.0-beta.4
+  date-fns: ^4.1.0
+  ipaddr.js: ^2.4.0
+  lru-cache: ^11.3.6
   motion: ^12.38.0
+  msw: ^2.14.6
+  posthog-js: ^1.373.5
+  rdapper: ^0.13.0
   react: 19.2.6
   react-dom: 19.2.6
   sonner: ^2.0.7
+  superjson: ^2.2.6
+  tailwind-merge: ^3.6.0
+  tailwindcss: ^4.3.0
+  typescript: 6.0.3
   vitest: ^4.1.6
   zod: ^4.4.3
+  zustand: ^5.0.13
 
 ignoredBuiltDependencies:
+  - '@google/genai'
   - '@nestjs/core'
 
 onlyBuiltDependencies:
@@ -27,6 +43,7 @@ onlyBuiltDependencies:
   - cbor-extract
   - core-js
   - esbuild
+  - msgpackr-extract
   - msw
   - protobufjs
   - puppeteer
@@ -35,10 +52,6 @@ onlyBuiltDependencies:
 overrides:
   '@types/react': 19.2.14
   '@types/react-dom': 19.2.3
-  lightningcss: 1.30.1
-  next: 16.2.6
-  react: 19.2.6
-  react-dom: 19.2.6
 
 publicHoistPattern:
   - '@sparticuz/chromium'

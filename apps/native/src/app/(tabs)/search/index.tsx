@@ -102,7 +102,7 @@ export default function SearchScreen() {
       {hasHydrated && history.length > 0 && query.trim().length === 0 ? (
         <GroupedSection>
           <GroupedRow onPress={handleClearAll}>
-            <Text className="font-semibold text-danger">Clear recents</Text>
+            <Text className="font-semibold text-destructive">Clear recents</Text>
           </GroupedRow>
         </GroupedSection>
       ) : null}

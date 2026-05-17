@@ -52,7 +52,9 @@ export function sortPortfolioDomains(
   domains: PortfolioDomain[],
   sort: PortfolioSort,
 ): PortfolioDomain[] {
-  return domains.toSorted((a, b) => {
+  // Copy first: callers pass shared arrays and `toSorted` (non-mutating) isn't
+  // implemented by Hermes in RN 0.85, so emulate it with `slice().sort()`.
+  return domains.slice().sort((a, b) => {
     switch (sort) {
       case "expiry":
         return time(a.expirationDate) - time(b.expirationDate);

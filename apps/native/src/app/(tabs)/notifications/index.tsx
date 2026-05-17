@@ -1,7 +1,6 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { FlashList } from "@shopify/flash-list";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { inferRouterOutputs } from "@trpc/server";
 import * as Notifications from "expo-notifications";
 import { Link, router, useFocusEffect } from "expo-router";
 import { memo, useCallback, useMemo, useRef, useState } from "react";
@@ -21,18 +20,18 @@ import { Screen } from "@/components/screen";
 import { SegmentedControl } from "@/components/segmented-control";
 import { SkeletonRows } from "@/components/skeleton";
 import { Spinner } from "@/components/spinner";
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 import { useTRPC } from "@/lib/api";
 import { authClient } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import { toast } from "@/lib/toast";
-import type { AppRouter } from "@domainstack/api";
+import type { RouterOutputs } from "@domainstack/api";
 
 const SWIPE_ACTION_WIDTH = 96;
 
 const PAGE_SIZE = 20;
 
-type NotificationItem = inferRouterOutputs<AppRouter>["notifications"]["list"]["items"][number];
+type NotificationItem = RouterOutputs["notifications"]["list"]["items"][number];
 type NotificationFilter = "all" | "unread" | "read";
 
 const filters: Array<{ label: string; value: NotificationFilter }> = [
@@ -57,9 +56,9 @@ export default function NotificationsScreen() {
     return (
       <Screen>
         <HeaderMenu />
-        <MutedText>
+        <Text className="text-sm text-muted-foreground">
           Sign in to review ownership, expiry, provider, and certificate changes.
-        </MutedText>
+        </Text>
         <EmptyState
           actionLabel="Sign in"
           body="Notifications are tied to tracked portfolio domains and push registration."
@@ -78,7 +77,7 @@ function NotificationsList() {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<NotificationFilter>("unread");
   const [refreshing, setRefreshing] = useState(false);
-  const mutedIconColor = useCSSVariable("--color-text-secondary") as string;
+  const mutedIconColor = useCSSVariable("--color-muted-foreground") as string;
 
   const notifications = useInfiniteQuery(
     trpc.notifications.list.infiniteQueryOptions(
@@ -338,7 +337,7 @@ function NotificationsList() {
 
   const listFooter = isFetchingNextPage ? (
     <View className="items-center py-4">
-      <Spinner tone="muted" />
+      <Spinner variant="muted" />
     </View>
   ) : null;
 
@@ -380,7 +379,7 @@ const NotificationRow = memo(function NotificationRow({
 
   const body = (
     <View
-      className="border-line bg-glass gap-2 overflow-hidden rounded-2xl border p-4"
+      className="bg-glass gap-2 overflow-hidden rounded-2xl border border-border p-4"
       style={{ borderCurve: "continuous" }}
     >
       <View className="flex-row items-start justify-between gap-3">
@@ -388,13 +387,13 @@ const NotificationRow = memo(function NotificationRow({
           {item.title}
         </Text>
         {item.readAt ? null : (
-          <Badge tone="warning">
+          <Badge variant="warning">
             <Text>Unread</Text>
           </Badge>
         )}
       </View>
-      <MutedText>{item.message}</MutedText>
-      <MutedText>{formatDate(item.sentAt)}</MutedText>
+      <Text className="text-sm text-muted-foreground">{item.message}</Text>
+      <Text className="text-sm text-muted-foreground">{formatDate(item.sentAt)}</Text>
     </View>
   );
 
@@ -408,7 +407,7 @@ const NotificationRow = memo(function NotificationRow({
           onPress={handleMarkRead}
           style={{ borderCurve: "continuous", width: SWIPE_ACTION_WIDTH }}
         >
-          <Text className="text-control-primary-text font-semibold">Mark read</Text>
+          <Text className="font-semibold text-primary-foreground">Mark read</Text>
         </Pressable>
       </View>
     ),

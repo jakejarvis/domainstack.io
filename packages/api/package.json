@@ -28,14 +28,15 @@
     "@domainstack/server": "workspace:*",
     "@domainstack/types": "workspace:*",
     "@domainstack/utils": "workspace:*",
-    "@trpc/server": "^11.17.0",
+    "@trpc/server": "catalog:",
     "@vercel/functions": "catalog:",
-    "superjson": "^2.2.6",
+    "superjson": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@domainstack/typescript-config": "workspace:*",
+    "@domainstack/tsconfig": "workspace:*",
     "@types/node": "catalog:",
+    "typescript": "catalog:",
     "vitest": "catalog:"
   },
   "peerDependencies": {

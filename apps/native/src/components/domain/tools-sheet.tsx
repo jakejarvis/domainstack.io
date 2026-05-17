@@ -46,13 +46,13 @@ export function ToolsSheet({ domain }: { domain: string }) {
           keyboardShouldPersistTaps="handled"
         >
           <View
-            className="border-line bg-glass overflow-hidden rounded-2xl border"
+            className="bg-glass overflow-hidden rounded-2xl border border-border"
             style={{ borderCurve: "continuous" }}
           >
             {EXTERNAL_TOOLS.map((tool, index) => (
               <Pressable
                 accessibilityRole="link"
-                className={index > 0 ? "border-line border-t px-4 py-3" : "px-4 py-3"}
+                className={index > 0 ? "border-t border-border px-4 py-3" : "px-4 py-3"}
                 key={tool.name}
                 onPress={() => {
                   sheetRef.current?.dismiss();

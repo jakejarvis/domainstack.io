@@ -19,11 +19,12 @@
     "@domainstack/constants": "workspace:*",
     "@domainstack/logger": "workspace:*",
     "@domainstack/utils": "workspace:*",
-    "ipaddr.js": "^2.4.0"
+    "ipaddr.js": "catalog:"
   },
   "devDependencies": {
-    "@domainstack/typescript-config": "workspace:*",
+    "@domainstack/tsconfig": "workspace:*",
     "@types/node": "catalog:",
+    "typescript": "catalog:",
     "vitest": "catalog:"
   }
 }

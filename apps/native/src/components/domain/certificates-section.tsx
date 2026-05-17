@@ -5,7 +5,7 @@ import { View } from "react-native";
 import { Badge } from "@/components/badge";
 import { RelativeExpiry } from "@/components/relative-expiry";
 import { ReportSection } from "@/components/report-section";
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 import { useTRPC } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import type { Certificate } from "@domainstack/types";
@@ -24,7 +24,9 @@ export function CertificatesSection({ domain }: { domain: string }) {
   if (!data.success || certs.length === 0) {
     return (
       <ReportSection title="Certificates">
-        <MutedText>No certificates were detected for this domain.</MutedText>
+        <Text className="text-sm text-muted-foreground">
+          No certificates were detected for this domain.
+        </Text>
       </ReportSection>
     );
   }
@@ -32,12 +34,12 @@ export function CertificatesSection({ domain }: { domain: string }) {
   return (
     <ReportSection title="Certificates">
       {expiryWarning ? (
-        <View className="bg-warning-soft gap-1 rounded-lg border border-warning p-3">
+        <View className="gap-1 rounded-lg border border-warning bg-warning/16 p-3">
           <Text className="font-semibold text-warning">Certificate expiring soon</Text>
-          <MutedText>
+          <Text className="text-sm text-muted-foreground">
             {expiryWarning.subject} expires {formatDate(expiryWarning.validTo)} (
             {expiryWarning.daysUntil} days).
-          </MutedText>
+          </Text>
         </View>
       ) : null}
       <View className="gap-3">
@@ -51,7 +53,7 @@ export function CertificatesSection({ domain }: { domain: string }) {
 
 function CertificateCard({ cert }: { cert: Certificate }) {
   return (
-    <View className="border-line gap-2 rounded-lg border p-3">
+    <View className="gap-2 rounded-lg border border-border p-3">
       <View className="flex-row items-center justify-between gap-3">
         <Text className="font-semibold" numberOfLines={1}>
           {cert.subject}
@@ -60,18 +62,18 @@ function CertificateCard({ cert }: { cert: Certificate }) {
           <Text className="text-xs">{cert.caProvider.name ?? "Unknown CA"}</Text>
         </Badge>
       </View>
-      <MutedText className="text-xs">Issuer: {cert.issuer}</MutedText>
+      <Text className="text-xs text-muted-foreground">Issuer: {cert.issuer}</Text>
       <View className="flex-row flex-wrap items-baseline gap-x-2">
-        <MutedText className="text-xs">Valid {formatDate(cert.validFrom)}</MutedText>
-        <MutedText className="text-xs">→ {formatDate(cert.validTo)}</MutedText>
+        <Text className="text-xs text-muted-foreground">Valid {formatDate(cert.validFrom)}</Text>
+        <Text className="text-xs text-muted-foreground">→ {formatDate(cert.validTo)}</Text>
         <Text className="text-xs">
           <RelativeExpiry dangerDays={7} to={cert.validTo} warnDays={14} />
         </Text>
       </View>
       {cert.altNames.length > 0 ? (
-        <MutedText className="text-xs" numberOfLines={3}>
+        <Text numberOfLines={3} className="text-xs text-muted-foreground">
           SANs: {cert.altNames.join(", ")}
-        </MutedText>
+        </Text>
       ) : null}
     </View>
   );

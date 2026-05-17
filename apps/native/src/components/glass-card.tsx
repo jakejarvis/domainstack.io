@@ -21,7 +21,7 @@ export function GlassCard({
         glassEffectStyle="regular"
         style={{ borderCurve: "continuous", borderRadius: 16, overflow: "hidden" }}
       >
-        <View className={cn("border-line gap-4 border p-4", className)}>{children}</View>
+        <View className={cn("gap-4 border border-border p-4", className)}>{children}</View>
       </GlassView>
     );
   }
@@ -33,7 +33,7 @@ export function GlassCard({
       style={{ borderCurve: "continuous" }}
       tint={isDark ? "dark" : "light"}
     >
-      <View className="border-line bg-glass gap-4 border p-4">{children}</View>
+      <View className="bg-glass gap-4 border border-border p-4">{children}</View>
     </BlurView>
   );
 }

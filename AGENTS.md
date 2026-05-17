@@ -356,7 +356,7 @@ This is a **Turborepo monorepo** with the following structure:
 ```
 domainstack.io/
 ├── apps/
-│   ├── web/                    # Next.js application (@domainstack/web)
+│   ├── web/                    # Web frontend & backend
 │   │   ├── app/                # Next.js App Router
 │   │   ├── components/         # App-specific components
 │   │   │   └── ui/             # App-specific UI wrappers (Next.js-aware)
@@ -366,7 +366,7 @@ domainstack.io/
 │   │   ├── server/routers/     # Web-only tRPC routers (most live in @domainstack/api)
 │   │   ├── workflows/          # Vercel Workflow definitions
 │   │   └── trpc/               # tRPC client setup
-│   └── native/                 # Expo / React Native app (@domainstack/native)
+│   └── native/                 # Expo / React Native app
 │       ├── app.json            # Expo config (bundle IDs, plugins, permissions)
 │       ├── eas.json            # EAS Build / Submit profiles
 │       └── src/
@@ -393,10 +393,10 @@ domainstack.io/
 │   ├── safe-fetch/             # SSRF-safe fetch wrapper (@domainstack/safe-fetch)
 │   ├── screenshot/             # Server-side screenshot pipeline (@domainstack/screenshot)
 │   ├── server/                 # Domain intelligence services (@domainstack/server)
+│   ├── tsconfig/               # Shared TypeScript configs (@domainstack/tsconfig)
 │   ├── types/                  # Shared TypeScript types (@domainstack/types)
 │   ├── ui/                     # Shared web UI library (@domainstack/ui)
-│   ├── utils/                  # Framework-agnostic utilities (@domainstack/utils)
-│   └── typescript-config/      # Shared TypeScript configs (@domainstack/typescript-config)
+│   └── utils/                  # Framework-agnostic utilities (@domainstack/utils)
 ├── .github/workflows/eas-build.yml  # Manual EAS Build trigger for the native app
 ├── turbo.json                  # Turborepo task configuration
 ├── pnpm-workspace.yaml         # pnpm workspace + catalog definitions

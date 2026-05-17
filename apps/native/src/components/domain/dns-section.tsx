@@ -4,7 +4,7 @@ import { View } from "react-native";
 
 import { Badge } from "@/components/badge";
 import { ReportSection } from "@/components/report-section";
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 import { useTRPC } from "@/lib/api";
 import type { DnsRecord } from "@domainstack/types";
 
@@ -17,7 +17,9 @@ export function DnsSection({ domain }: { domain: string }) {
   if (!data.success || groups.length === 0) {
     return (
       <ReportSection title="DNS">
-        <MutedText>No DNS records were returned for this domain.</MutedText>
+        <Text className="text-sm text-muted-foreground">
+          No DNS records were returned for this domain.
+        </Text>
       </ReportSection>
     );
   }
@@ -30,12 +32,12 @@ export function DnsSection({ domain }: { domain: string }) {
             <Badge>
               <Text className="font-semibold">{group.type}</Text>
             </Badge>
-            <MutedText>{group.records.length}</MutedText>
+            <Text className="text-sm text-muted-foreground">{group.records.length}</Text>
           </View>
           <View className="gap-2">
             {group.records.map((record) => (
               <View
-                className="border-line gap-1 rounded-lg border p-3"
+                className="gap-1 rounded-lg border border-border p-3"
                 key={`${group.type}-${record.name}-${record.value}-${record.priority ?? "none"}`}
               >
                 <Text className="font-mono text-sm" selectable>
@@ -43,10 +45,12 @@ export function DnsSection({ domain }: { domain: string }) {
                 </Text>
                 <View className="flex-row flex-wrap gap-2">
                   {record.ttl != null ? (
-                    <MutedText className="text-xs">TTL {record.ttl}</MutedText>
+                    <Text className="text-xs text-muted-foreground">TTL {record.ttl}</Text>
                   ) : null}
                   {record.priority != null ? (
-                    <MutedText className="text-xs">Priority {record.priority}</MutedText>
+                    <Text className="text-xs text-muted-foreground">
+                      Priority {record.priority}
+                    </Text>
                   ) : null}
                 </View>
               </View>

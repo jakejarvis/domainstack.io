@@ -8,7 +8,7 @@ import { KeyValueGrid, type KeyValueItem } from "@/components/key-value-grid";
 import { RelativeAge } from "@/components/relative-age";
 import { RelativeExpiry } from "@/components/relative-expiry";
 import { ReportSection } from "@/components/report-section";
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 import { useTRPC } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import type { RegistrationContact, RegistrationResponse } from "@domainstack/types";
@@ -20,7 +20,9 @@ export function RegistrationSection({ domain }: { domain: string }) {
   if (!data.success || !data.data) {
     return (
       <ReportSection title="Registration">
-        <MutedText>Registration data is unavailable for this domain.</MutedText>
+        <Text className="text-sm text-muted-foreground">
+          Registration data is unavailable for this domain.
+        </Text>
       </ReportSection>
     );
   }
@@ -67,9 +69,9 @@ function buildItems(data: RegistrationResponse): KeyValueItem[] {
       value: (
         <View className="flex-row flex-wrap items-baseline gap-x-2">
           <Text>{formatDate(data.creationDate)}</Text>
-          <MutedText className="text-xs">
+          <Text className="text-xs text-muted-foreground">
             <RelativeAge from={data.creationDate} />
-          </MutedText>
+          </Text>
         </View>
       ),
     });
@@ -122,15 +124,15 @@ function UnavailableBanner({
   tld: string;
 }) {
   return (
-    <View className="bg-warning-soft gap-1 rounded-lg border border-warning p-3">
+    <View className="gap-1 rounded-lg border border-warning bg-warning/16 p-3">
       <Text className="font-semibold text-warning">Registration data unavailable</Text>
-      <MutedText>
+      <Text className="text-sm text-muted-foreground">
         {reason === "timeout"
           ? "WHOIS/RDAP lookup timed out. This may be a temporary issue with the registry."
           : reason === "unsupported_tld"
             ? `The .${tld} registry does not publish public WHOIS/RDAP data.`
             : "Registration information could not be retrieved at this time."}
-      </MutedText>
+      </Text>
     </View>
   );
 }
@@ -153,7 +155,7 @@ function RawDataToggle({
       </Button>
       <AppBottomSheet description={`Raw ${label} response`} ref={sheetRef} title={`Raw ${label}`}>
         <ScrollView
-          className="border-line bg-control-secondary flex-1 rounded-lg border p-3"
+          className="flex-1 rounded-lg border border-border bg-secondary p-3"
           contentContainerStyle={{ paddingBottom: 8 }}
         >
           <Text className="font-mono text-xs" selectable>

@@ -9,7 +9,7 @@ import { ArchivedRow, type ArchivedRowDomain } from "@/components/portfolio/arch
 import { RefreshControl } from "@/components/refresh-control";
 import { Screen } from "@/components/screen";
 import { SkeletonRows } from "@/components/skeleton";
-import { MutedText } from "@/components/text";
+import { Text } from "@/components/text";
 import { useDashboardMutations } from "@/hooks/use-dashboard-mutations";
 import { useTRPC } from "@/lib/api";
 import { authClient } from "@/lib/auth";
@@ -111,9 +111,9 @@ function ArchivedScreen() {
 
   const listHeader = (
     <View className="gap-4 px-4 pt-3 pb-2">
-      <MutedText>
+      <Text className="text-sm text-muted-foreground">
         Archived domains don't count toward your plan limit. Reactivate to resume tracking.
-      </MutedText>
+      </Text>
       {domainsQuery.isPending ? <SkeletonRows /> : null}
       {domainsQuery.error ? (
         <EmptyState

@@ -3,7 +3,7 @@ import { Pressable, View } from "react-native";
 import { useCSSVariable } from "uniwind";
 
 import { Symbol } from "@/components/symbol";
-import { MutedText } from "@/components/text";
+import { Text } from "@/components/text";
 import { cn } from "@/lib/cn";
 
 export function GroupedSection({
@@ -18,19 +18,19 @@ export function GroupedSection({
   return (
     <View className="gap-1.5">
       {title ? (
-        <MutedText className="ml-4 text-xs font-semibold tracking-wider uppercase">
+        <Text className="ml-4 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
           {title}
-        </MutedText>
+        </Text>
       ) : null}
       {children ? (
         <View
-          className="border-line bg-glass overflow-hidden rounded-2xl border"
+          className="bg-glass overflow-hidden rounded-2xl border border-border"
           style={{ borderCurve: "continuous" }}
         >
           {children}
         </View>
       ) : null}
-      {footer ? <MutedText className="ml-4 text-xs">{footer}</MutedText> : null}
+      {footer ? <Text className="ml-4 text-xs text-muted-foreground">{footer}</Text> : null}
     </View>
   );
 }
@@ -48,13 +48,13 @@ export function GroupedRow({
   showChevron?: boolean;
   trailing?: ReactNode;
 }) {
-  const muted = useCSSVariable("--color-text-secondary") as string;
+  const muted = useCSSVariable("--color-muted-foreground") as string;
   const hasTrailing = trailing !== undefined || showChevron;
 
   const content = (
     <View
       className={cn(
-        "border-line min-h-12 flex-row items-center gap-3 border-b px-4 py-3 last:border-b-0",
+        "min-h-12 flex-row items-center gap-3 border-b border-border px-4 py-3 last:border-b-0",
         disabled && "opacity-55",
       )}
     >

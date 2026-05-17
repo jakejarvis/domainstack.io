@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
-import { MutedText, Text } from "@/components/text";
+import { Text } from "@/components/text";
 import { buildChips, type FilterChip } from "@/lib/portfolio-filters";
 import { usePortfolioStore } from "@/lib/stores/portfolio-store";
 
@@ -42,16 +42,16 @@ export function FilterChips() {
             key={chip.key}
             onPress={chip.remove}
           >
-            <View className="bg-control-secondary border-line flex-row items-center gap-1.5 rounded-full border px-3 py-1.5">
+            <View className="flex-row items-center gap-1.5 rounded-full border border-border bg-secondary px-3 py-1.5">
               <Text className="text-xs font-semibold">{chip.label}</Text>
-              <Text className="text-text-secondary text-xs">✕</Text>
+              <Text className="text-xs text-muted-foreground">✕</Text>
             </View>
           </Pressable>
         ))}
       </ScrollView>
       {chips.length > 1 ? (
         <Pressable accessibilityRole="button" hitSlop={6} onPress={resetFilters}>
-          <MutedText className="text-xs font-semibold">Clear</MutedText>
+          <Text className="text-xs font-semibold text-muted-foreground">Clear</Text>
         </Pressable>
       ) : null}
     </Animated.View>

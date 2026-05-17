@@ -13,6 +13,8 @@
   "type": "module",
   "scripts": {
     "dev": "turbo run dev",
+    "dev:web": "turbo run dev --filter=@domainstack/web",
+    "dev:native": "turbo run dev --filter=@domainstack/native",
     "build": "turbo run build",
     "start": "turbo run start",
     "check-types": "turbo run check-types",
@@ -26,14 +28,13 @@
     "db:push": "turbo run db:push",
     "db:migrate": "turbo run db:migrate",
     "db:studio": "turbo run db:studio",
-    "clean": "shx rm -rf .turbo \"apps/*/.turbo\" \"apps/*/node_modules\" \"apps/*/*.tsbuildinfo\" apps/web/.next \"packages/*/.turbo\" \"packages/*/node_modules\" \"packages/*/*.tsbuildinfo\" node_modules pnpm-lock.yaml"
+    "clean": "rm -rf .turbo apps/*/.turbo apps/*/node_modules apps/*/*.tsbuildinfo apps/web/.next packages/*/.turbo packages/*/node_modules packages/*/*.tsbuildinfo node_modules pnpm-lock.yaml"
   },
   "devDependencies": {
-    "oxfmt": "^0.49.0",
-    "oxlint": "^1.64.0",
-    "shx": "^0.4.0",
-    "turbo": "^2.9.12",
-    "typescript": "6.0.3"
+    "oxfmt": "^0.50.0",
+    "oxlint": "^1.65.0",
+    "turbo": "^2.9.14",
+    "typescript": "catalog:"
   },
   "engines": {
     "node": ">=24.x"

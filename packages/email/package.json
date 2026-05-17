@@ -22,9 +22,10 @@
     "resend": "^6.12.3"
   },
   "devDependencies": {
-    "@domainstack/typescript-config": "workspace:*",
+    "@domainstack/tsconfig": "workspace:*",
     "@types/node": "catalog:",
-    "@types/react": "catalog:"
+    "@types/react": "catalog:",
+    "typescript": "catalog:"
   },
   "peerDependencies": {
     "react": "catalog:"

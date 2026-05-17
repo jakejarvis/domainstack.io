@@ -69,7 +69,7 @@ export function FilterSheet({
           title="Top-level domain"
         >
           {availableTlds.length === 0 ? (
-            <Text className="text-text-secondary py-2 text-sm">
+            <Text className="py-2 text-sm text-muted-foreground">
               No TLDs yet — add domains to your portfolio first.
             </Text>
           ) : (

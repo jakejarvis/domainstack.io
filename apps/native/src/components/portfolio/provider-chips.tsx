@@ -1,7 +1,7 @@
 import { ScrollView, View } from "react-native";
 
 import { ProviderLogo } from "@/components/provider-logo";
-import { MutedText } from "@/components/text";
+import { Text } from "@/components/text";
 import type { PortfolioDomain } from "@/lib/portfolio";
 
 type Slot = {
@@ -30,13 +30,13 @@ export function ProviderChips({ domain }: { domain: PortfolioDomain }) {
       {visible.map(({ key, provider, label }) => (
         <View
           accessibilityLabel={`${label}: ${provider?.name ?? ""}`}
-          className="border-line bg-control-secondary flex-row items-center gap-1.5 rounded-full border px-2.5 py-1"
+          className="flex-row items-center gap-1.5 rounded-full border border-border bg-secondary px-2.5 py-1"
           key={key}
         >
           <ProviderLogo providerId={provider?.id} providerName={provider?.name} size={14} />
-          <MutedText className="text-xs" numberOfLines={1}>
+          <Text numberOfLines={1} className="text-xs text-muted-foreground">
             {provider?.name}
-          </MutedText>
+          </Text>
         </View>
       ))}
     </ScrollView>
