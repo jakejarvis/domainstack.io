@@ -1,5 +1,9 @@
 import { importPKCS8, SignJWT } from "jose";
 
+import { createLogger } from "@domainstack/logger";
+
+const logger = createLogger({ source: "apple-client-secret" });
+
 const APPLE_AUDIENCE = "https://appleid.apple.com";
 // Apple's documented maximum lifetime for the client-secret JWT.
 const MAX_LIFETIME_SECONDS = 60 * 60 * 24 * 180;
@@ -84,7 +88,16 @@ export class AppleClientSecret {
           this.value = next;
           this.expiresAt = Date.now() + MAX_LIFETIME_SECONDS * 1000;
         })
-        .catch(() => undefined)
+        .catch((err) => {
+          // Keep serving the previous JWT (set in the constructor / a prior
+          // refresh). Without this log a persistently failing re-sign — e.g.
+          // a revoked/rotated .p8 key — would be silent until Apple starts
+          // rejecting authorization-code exchanges months later.
+          logger.error(
+            { err },
+            "Apple client secret background re-sign failed; continuing to serve the previous JWT",
+          );
+        })
         .finally(() => {
           this.refreshing = false;
         });

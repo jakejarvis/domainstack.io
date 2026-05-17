@@ -1,6 +1,19 @@
 import { exportPKCS8, generateKeyPair, type CryptoKey, jwtVerify, SignJWT } from "jose";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
+const { errorSpy } = vi.hoisted(() => ({
+  errorSpy: vi.fn<(...args: unknown[]) => void>(),
+}));
+
+vi.mock("@domainstack/logger", () => ({
+  createLogger: () => ({
+    error: errorSpy,
+    warn: vi.fn<(...args: unknown[]) => void>(),
+    info: vi.fn<(...args: unknown[]) => void>(),
+    debug: vi.fn<(...args: unknown[]) => void>(),
+  }),
+}));
+
 import { AppleClientSecret, type AppleClientSecretInput } from "./apple-client-secret";
 
 let INPUT: AppleClientSecretInput;
@@ -64,10 +77,11 @@ describe("AppleClientSecret", () => {
     expect(await expiry(secret.current())).toBeGreaterThan(originalExp);
   });
 
-  it("keeps the old value if a background re-sign fails", async () => {
+  it("keeps the old value and logs when a background re-sign fails", async () => {
     const secret = await AppleClientSecret.create(INPUT);
     const original = secret.current();
 
+    errorSpy.mockClear();
     const signSpy = vi
       .spyOn(SignJWT.prototype, "sign")
       .mockRejectedValueOnce(new Error("signing unavailable"));
@@ -79,5 +93,13 @@ describe("AppleClientSecret", () => {
       expect(signSpy).toHaveBeenCalled();
     });
     expect(secret.current()).toBe(original);
+
+    // A persistent re-sign failure must be observable, not silent.
+    await vi.waitFor(() => {
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ err: expect.any(Error) }),
+        expect.stringContaining("re-sign failed"),
+      );
+    });
   });
 });

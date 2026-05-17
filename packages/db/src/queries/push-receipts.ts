@@ -59,6 +59,35 @@ export async function insertPendingReceipts(rows: PendingReceiptInput[]) {
     .onConflictDoNothing({ target: pushReceipts.ticketId });
 }
 
+/**
+ * Record a dispatch marker for a device that received a status-ok Expo
+ * response *without* a ticket id (rare). No Expo receipt can ever be polled
+ * for it, so the row is written pre-processed (`processedAt` set): the receipt
+ * poller (`getPendingReceiptsBatch`) and `expireStaleReceipts` skip it, while
+ * `deleteOldProcessedReceipts` still GCs it. Its sole purpose is cross-run
+ * idempotency — `getDispatchedTokensForNotification` keys on `notificationId`
+ * regardless of `processedAt`, so a durable retry skips the device. The
+ * synthetic `ticketId` must be deterministic so retries collide on the unique
+ * constraint.
+ */
+export async function insertDispatchedMarkers(rows: PendingReceiptInput[]) {
+  if (rows.length === 0) return;
+  const now = new Date();
+  await db
+    .insert(pushReceipts)
+    .values(
+      rows.map((row) => ({
+        ticketId: row.ticketId,
+        expoPushToken: row.expoPushToken,
+        userId: row.userId,
+        notificationId: row.notificationId ?? null,
+        processedAt: now,
+        errorCode: "NoTicketId",
+      })),
+    )
+    .onConflictDoNothing({ target: pushReceipts.ticketId });
+}
+
 export async function getPendingReceiptsBatch(): Promise<PendingReceiptRow[]> {
   const minAge = new Date(Date.now() - RECEIPT_MIN_AGE_MS);
   return await db

@@ -102,7 +102,9 @@ function chunk<T>(items: T[], size: number): T[][] {
  * this notification are skipped, so a durable retry never double-pushes.
  * Transient Expo failures (429/5xx, request-level `errors`) throw so the step
  * retries; a 2xx response with a missing per-device ticket is recorded as a
- * device error (never a false success) and retried on the next notification.
+ * device error (never a false success) and retried on the next notification. A
+ * status-ok ticket without an id still records a dispatch marker, so it too is
+ * idempotent across durable retries.
  */
 export async function sendPushForNotificationStep(input: {
   userId: string;
@@ -117,6 +119,7 @@ export async function sendPushForNotificationStep(input: {
   const {
     getDispatchedTokensForNotification,
     getEnabledPushDevicesForUser,
+    insertDispatchedMarkers,
     insertPendingReceipts,
     markPushDeviceSendError,
     markPushDeviceSendSuccess,
@@ -188,6 +191,9 @@ export async function sendPushForNotificationStep(input: {
       userId: string;
       notificationId: string | null;
     }> = [];
+    // Status-ok tickets that lacked an id (rare): no receipt to poll, but we
+    // still record a marker so a durable retry doesn't re-push the device.
+    const dispatchedMarkers: typeof pendingReceipts = [];
 
     await Promise.all(
       chunkDevices.map(async (device, index) => {
@@ -210,6 +216,15 @@ export async function sendPushForNotificationStep(input: {
               userId: input.userId,
               notificationId: input.notificationId,
             });
+          } else {
+            // Deterministic synthetic id so a retry collides on the unique
+            // constraint instead of inserting a duplicate marker.
+            dispatchedMarkers.push({
+              ticketId: `noid:${input.notificationId}:${device.expoPushToken}`,
+              expoPushToken: device.expoPushToken,
+              userId: input.userId,
+              notificationId: input.notificationId,
+            });
           }
           return;
         }
@@ -224,6 +239,9 @@ export async function sendPushForNotificationStep(input: {
     // later-chunk throw can't lose the idempotency record for delivered ones.
     if (pendingReceipts.length > 0) {
       await insertPendingReceipts(pendingReceipts);
+    }
+    if (dispatchedMarkers.length > 0) {
+      await insertDispatchedMarkers(dispatchedMarkers);
     }
   }
 }

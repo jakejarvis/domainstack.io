@@ -60,6 +60,9 @@ export interface DetectChangesWorkflowInput {
 export interface DetectChangesWorkflowResult {
   skipped?: boolean;
   reason?: string;
+  // These flags mean "a change was detected" (not "a notification was sent").
+  // The hourly cron starts this workflow fire-and-forget without awaiting the
+  // result, so nothing consumes these for metrics — the field is informational.
   registrationChanges: boolean;
   providerChanges: boolean;
   certificateChanges: boolean;
@@ -173,12 +176,6 @@ export async function detectChangesWorkflow(
 
     if (registrationChange) {
       results.registrationChanges = true;
-      // Advance the snapshot as soon as the change is detected and the new
-      // state is computed — independent of notification delivery. A muted
-      // domain or disabled category must NOT leave the snapshot stale (that
-      // causes infinite hourly re-detection and a stale change replayed as
-      // "fresh" when the user later unmutes / re-enables the category).
-      await updateRegistrationSnapshot(trackedDomainId, currentRegistration);
 
       // Step 3a: Check notification preferences
       const channels = await determineNotificationChannelsStep(
@@ -187,7 +184,13 @@ export async function detectChangesWorkflow(
         "registrationChanges",
       );
 
-      if (channels.shouldSendEmail || channels.shouldSendInApp || channels.shouldSendPush) {
+      if (!channels.shouldSendEmail && !channels.shouldSendInApp && !channels.shouldSendPush) {
+        // Muted domain / disabled category: nothing to deliver. Advance the
+        // snapshot now so we don't infinitely re-detect this change (and
+        // don't replay a stale change as "fresh" when the user later unmutes
+        // / re-enables the category).
+        await updateRegistrationSnapshot(trackedDomainId, currentRegistration);
+      } else {
         // Step 3b: Resolve registrar provider names
         const registrarIds = [
           registrationChange.previousRegistrar,
@@ -302,6 +305,13 @@ export async function detectChangesWorkflow(
           channels.shouldSendPush,
         );
 
+        // Advance the snapshot only after the email/in-app notification was
+        // delivered. If a step above threw (permanent failure) the snapshot
+        // stays stale and the next hourly cron retries the full notification —
+        // no lost alert. Push is dispatched after; a permanently-failing push
+        // loses only the redundant push channel (email/in-app already sent).
+        await updateRegistrationSnapshot(trackedDomainId, currentRegistration);
+
         if (sent && notificationId && channels.shouldSendPush) {
           await sendPushForNotificationStep({
             userId,
@@ -339,9 +349,6 @@ export async function detectChangesWorkflow(
 
     if (providerChange) {
       results.providerChanges = true;
-      // Advance the snapshot on detection, independent of notification
-      // delivery (see registration branch rationale).
-      await updateProviderSnapshot(trackedDomainId, currentProviderIds);
 
       // Step 4a: Check notification preferences
       const channels = await determineNotificationChannelsStep(
@@ -350,7 +357,11 @@ export async function detectChangesWorkflow(
         "providerChanges",
       );
 
-      if (channels.shouldSendEmail || channels.shouldSendInApp || channels.shouldSendPush) {
+      if (!channels.shouldSendEmail && !channels.shouldSendInApp && !channels.shouldSendPush) {
+        // Muted / disabled: advance on detection so we don't infinitely
+        // re-detect (see registration branch rationale).
+        await updateProviderSnapshot(trackedDomainId, currentProviderIds);
+      } else {
         // Step 4b: Fetch provider names for notification
         const providerIds = [
           snapshot.dnsProviderId,
@@ -458,6 +469,9 @@ export async function detectChangesWorkflow(
           channels.shouldSendPush,
         );
 
+        // Advance only after delivery (see registration branch rationale).
+        await updateProviderSnapshot(trackedDomainId, currentProviderIds);
+
         if (sent && notificationId && channels.shouldSendPush) {
           await sendPushForNotificationStep({
             userId,
@@ -487,9 +501,6 @@ export async function detectChangesWorkflow(
 
     if (certificateChange) {
       results.certificateChanges = true;
-      // Advance the snapshot on detection, independent of notification
-      // delivery (see registration branch rationale).
-      await updateCertificateSnapshot(trackedDomainId, currentCertificate);
 
       // Step 5a: Check notification preferences
       const channels = await determineNotificationChannelsStep(
@@ -498,7 +509,11 @@ export async function detectChangesWorkflow(
         "certificateChanges",
       );
 
-      if (channels.shouldSendEmail || channels.shouldSendInApp || channels.shouldSendPush) {
+      if (!channels.shouldSendEmail && !channels.shouldSendInApp && !channels.shouldSendPush) {
+        // Muted / disabled: advance on detection so we don't infinitely
+        // re-detect (see registration branch rationale).
+        await updateCertificateSnapshot(trackedDomainId, currentCertificate);
+      } else {
         // Step 5b: Resolve CA provider names
         const caIds = [
           certificateChange.previousCaProviderId,
@@ -569,6 +584,9 @@ export async function detectChangesWorkflow(
           channels.shouldSendInApp,
           channels.shouldSendPush,
         );
+
+        // Advance only after delivery (see registration branch rationale).
+        await updateCertificateSnapshot(trackedDomainId, currentCertificate);
 
         if (sent && notificationId && channels.shouldSendPush) {
           await sendPushForNotificationStep({

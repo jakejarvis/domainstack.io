@@ -17,6 +17,7 @@ const mockQueries = {
     vi.fn<(userId: string) => Promise<Array<{ expoPushToken: string }>>>(),
   getDispatchedTokensForNotification: vi.fn<(id: string) => Promise<Set<string>>>(),
   insertPendingReceipts: vi.fn<(rows: unknown[]) => Promise<void>>(),
+  insertDispatchedMarkers: vi.fn<(rows: unknown[]) => Promise<void>>(),
   markPushDeviceSendSuccess: vi.fn<(token: string) => Promise<void>>(),
   markPushDeviceSendError: vi.fn<(token: string, error: string) => Promise<void>>(),
 };
@@ -76,6 +77,7 @@ describe("sendPushForNotificationStep", () => {
     for (const fn of Object.values(mockQueries)) fn.mockReset();
     mockQueries.getDispatchedTokensForNotification.mockResolvedValue(new Set());
     mockQueries.insertPendingReceipts.mockResolvedValue(undefined);
+    mockQueries.insertDispatchedMarkers.mockResolvedValue(undefined);
     mockQueries.markPushDeviceSendSuccess.mockResolvedValue(undefined);
     mockQueries.markPushDeviceSendError.mockResolvedValue(undefined);
   });
@@ -165,6 +167,30 @@ describe("sendPushForNotificationStep", () => {
     );
     expect(mockQueries.insertPendingReceipts).toHaveBeenCalledWith([
       expect.objectContaining({ ticketId: "receipt-a", expoPushToken: "ExponentPushToken[a]" }),
+    ]);
+  });
+
+  it("records a dispatch marker for a status-ok ticket without an id", async () => {
+    mockQueries.getEnabledPushDevicesForUser.mockResolvedValue([
+      { expoPushToken: "ExponentPushToken[a]" },
+    ]);
+    server.use(
+      // Status-ok but no ticket id (rare from Expo).
+      http.post(EXPO_SEND_URL, () => HttpResponse.json({ data: [{ status: "ok" }] })),
+    );
+
+    await sendPushForNotificationStep(baseInput);
+
+    expect(mockQueries.markPushDeviceSendSuccess).toHaveBeenCalledExactlyOnceWith(
+      "ExponentPushToken[a]",
+    );
+    expect(mockQueries.insertPendingReceipts).not.toHaveBeenCalled();
+    expect(mockQueries.insertDispatchedMarkers).toHaveBeenCalledWith([
+      expect.objectContaining({
+        ticketId: "noid:notif-1:ExponentPushToken[a]",
+        expoPushToken: "ExponentPushToken[a]",
+        notificationId: "notif-1",
+      }),
     ]);
   });
 

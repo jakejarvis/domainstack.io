@@ -1,4 +1,16 @@
-import { and, asc, count, eq, gt, inArray, isNotNull, isNull, notExists, or } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  eq,
+  gt,
+  inArray,
+  isNotNull,
+  isNull,
+  notExists,
+  or,
+  sql,
+} from "drizzle-orm";
 
 import { PLAN_QUOTAS, type PLANS } from "@domainstack/constants";
 import type { BillingSubscriptionUpsert } from "@domainstack/types";
@@ -335,9 +347,10 @@ function sameInstant(a: Date | null, b: Date | null): boolean {
  * Derive the cached `userSubscriptions` row from ALL `billing_subscriptions`
  * rows for the user. This is the single function allowed to write
  * tier/endsAt/lastExpiryNotification. Idempotent; safe under concurrent
- * webhooks (the cache row is locked `FOR UPDATE` so interleaved recomputes
- * serialize and converge — recompute is a pure function of the current row
- * set).
+ * webhooks: a per-user `pg_advisory_xact_lock` serializes interleaved
+ * recomputes unconditionally (the `FOR UPDATE` below does NOT lock a
+ * not-yet-existing cache row), so they run one-at-a-time and converge —
+ * recompute is a pure function of the current row set.
  *
  * Rules:
  * - A row grants pro if `status="active"`, or `status="canceling"` with a
@@ -356,6 +369,15 @@ export async function recomputeEntitlement(userId: string): Promise<RecomputeRes
   const now = new Date();
 
   return await db.transaction(async (tx) => {
+    // Serialize concurrent recomputes for this user. The `FOR UPDATE` below
+    // does NOT lock a not-yet-existing cache row, so without this two
+    // first-time webhooks could both observe prevTier="free" and double-send
+    // the pro-upgrade email. The xact lock auto-releases on commit/rollback;
+    // the constant namespace avoids collisions with any other advisory lock.
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtext('recompute-entitlement'), hashtext(${userId}))`,
+    );
+
     const [prev] = await tx
       .select({
         tier: userSubscriptions.tier,
@@ -453,9 +475,17 @@ export async function recomputeEntitlement(userId: string): Promise<RecomputeRes
 
 /**
  * Upsert a single provider's subscription row (keyed by provider+externalId)
- * then the caller is expected to call {@link recomputeEntitlement}. No
- * ordering guard in Phase 1: behavior parity with the prior Polar handlers is
- * provided by their existing reconcile-before-destructive guard.
+ * then the caller is expected to call {@link recomputeEntitlement}.
+ *
+ * Phase 1 constraint: one row per (provider, externalId). Overlapping
+ * subscriptions for the same provider collapse into a single row, and an
+ * out-of-order event for an old subscription overwrites the current one. The
+ * dangerous direction (a stale `canceled`/`revoked` downgrading a
+ * re-subscribed user) is covered by the handler-level
+ * reconcile-before-destructive guard (see `handleSubscriptionCanceled` /
+ * `handleSubscriptionRevoked` in `@domainstack/polar`), and the entitlement
+ * model is single-tier, so this is acceptable here. Revisit (one row per
+ * provider *subscription*) for any future multi-subscription work.
  */
 export async function upsertBillingSubscription(
   userId: string,

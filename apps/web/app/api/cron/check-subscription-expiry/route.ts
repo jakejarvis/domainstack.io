@@ -28,6 +28,13 @@ export async function GET(request: Request) {
     // Server-side downgrade safety net: users whose paid period has elapsed
     // but who are still on `pro` (Polar `subscription.revoked` webhook missed
     // or delayed). The workflow re-checks Polar before downgrading.
+    //
+    // Operational note: the FIRST run after migration 0022 deploys will process
+    // the entire already-lapsed pro cohort in one burst — that backfill mapped
+    // pro users with a past `ends_at` to a `canceling` billing row with an
+    // expired `current_period_end`, so they all qualify here at once and get
+    // downgraded + archived + emailed together. This is correct cleanup; expect
+    // the spike in `downgradesStarted` / expired emails on that first run.
     const pastDueIds = await getUserIdsPastDue();
     const downgradeResults = await Promise.allSettled(
       pastDueIds.map((id) => start(subscriptionDowngradeWorkflow, [{ userId: id }])),
