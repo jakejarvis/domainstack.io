@@ -44,6 +44,11 @@ function RootNavigator() {
   // A killed-state tap on a protected target while signed-out is stashed here
   // and replayed once the user signs in, so the notification isn't lost.
   const pendingTargetRef = useRef<Href | null>(null);
+  // The notification listener is subscribed once and never torn down; it reads
+  // the latest auth-aware router through this ref so an auth flip can't open a
+  // teardown/re-add gap that drops a foreground tap.
+  const routeRef = useRef<(data: Record<string, unknown>) => void>(() => {});
+  const coldStartHandledRef = useRef(false);
 
   useEffect(() => {
     if (!session.isPending && versionGateReady) {
@@ -59,17 +64,15 @@ function RootNavigator() {
     }
   }, [isSignedIn]);
 
+  // Keep the router function current with the latest auth state without
+  // resubscribing the listener below.
   useEffect(() => {
-    // Wait for the session to settle — a cold-start tap that runs while
-    // `isSignedIn` is still false would otherwise route to /sign-in and the
-    // `clearLastNotificationResponse()` call would consume the payload.
-    if (session.isPending) return;
-
-    const route = (data: Record<string, unknown>) => {
+    routeRef.current = (data: Record<string, unknown>) => {
       const target = routeFromNotificationData(data);
-      // Protected routes redirect to sign-in if there's no session; public routes
-      // (domain reports) work fine signed-out. Stash the protected target so it
-      // can be replayed after the user signs in instead of being lost.
+      // Protected routes redirect to sign-in if there's no session; public
+      // routes (domain reports) work fine signed-out. Stash the protected
+      // target so it can be replayed after the user signs in instead of
+      // being lost.
       if (!isSignedIn && target === "/(tabs)/notifications") {
         pendingTargetRef.current = target;
         router.push("/sign-in");
@@ -77,19 +80,31 @@ function RootNavigator() {
       }
       router.push(target);
     };
+  }, [isSignedIn]);
 
+  // Subscribe exactly once for the app's lifetime; the handler delegates to the
+  // ref so it always sees the current auth state.
+  useEffect(() => {
     const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-      route(response.notification.request.content.data ?? {});
+      routeRef.current(response.notification.request.content.data ?? {});
     });
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    // Handle a cold-start tap once the session has settled — running it while
+    // `isSignedIn` is still resolving would route a protected target to
+    // /sign-in and the `clearLastNotificationResponse()` call would consume
+    // the payload before it could be stashed/replayed.
+    if (session.isPending || coldStartHandledRef.current) return;
+    coldStartHandledRef.current = true;
 
     const lastResponse = Notifications.getLastNotificationResponse();
     if (lastResponse) {
-      route(lastResponse.notification.request.content.data ?? {});
+      routeRef.current(lastResponse.notification.request.content.data ?? {});
       Notifications.clearLastNotificationResponse();
     }
-
-    return () => subscription.remove();
-  }, [isSignedIn, session.isPending]);
+  }, [session.isPending]);
 
   return (
     <>

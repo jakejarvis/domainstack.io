@@ -78,6 +78,22 @@ export default function SignInScreen() {
     router.replace(getInitialRoute(true));
   };
 
+  // A no-error result doesn't guarantee a session: the browser OAuth sheet can
+  // resolve without error if dismissed, and a native token exchange can succeed
+  // without the session landing. Confirm before navigating, and give feedback
+  // instead of a dead tap if it didn't.
+  const confirmSessionAndFinish = async () => {
+    const session = await authClient.getSession();
+    if (!session.data?.user) {
+      toast.error({
+        title: "Sign-in didn't complete",
+        message: "Please try again.",
+      });
+      return;
+    }
+    finishSignIn();
+  };
+
   const showSignInError = (provider: string, error: unknown) => {
     if (isAuthCanceled(error)) return;
 
@@ -99,12 +115,7 @@ export default function SignInScreen() {
       if (result.error) {
         throw new Error(result.error.message ?? `Unable to sign in with ${provider}.`);
       }
-      // The browser OAuth flow resolves without an error even when the user
-      // dismisses the auth sheet, so confirm the session cookie actually
-      // landed before navigating away from the sign-in screen.
-      const session = await authClient.getSession();
-      if (!session.data?.user) return;
-      finishSignIn();
+      await confirmSessionAndFinish();
     } catch (error) {
       showSignInError(provider, error);
     } finally {
@@ -134,7 +145,7 @@ export default function SignInScreen() {
       if (result.error) {
         throw new Error(result.error.message ?? "Unable to sign in with Apple.");
       }
-      finishSignIn();
+      await confirmSessionAndFinish();
     } catch (error) {
       showSignInError("Apple", error);
     } finally {
@@ -154,7 +165,7 @@ export default function SignInScreen() {
       if (result.error) {
         throw new Error(result.error.message ?? "Unable to sign in with Google.");
       }
-      finishSignIn();
+      await confirmSessionAndFinish();
     } catch (error) {
       showSignInError("Google", error);
     } finally {
