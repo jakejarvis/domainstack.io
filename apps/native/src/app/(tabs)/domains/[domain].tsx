@@ -39,6 +39,23 @@ function isReportSection(value: string | undefined): value is ReportSection {
   return typeof value === "string" && (REPORT_SECTION_SET as Set<string>).has(value);
 }
 
+async function runNetworkAction(action: () => Promise<unknown>) {
+  try {
+    assertOnline();
+    await action();
+  } catch (error) {
+    // A pre-mutation offline bail-out bypasses the global mutation cache —
+    // report it here so it isn't invisible. Real mutation rejections are
+    // reported centrally in query-client.
+    if (isOfflineError(error)) {
+      analytics.trackException(error, { context: "domain_action", offline: true });
+    }
+    // Centralized: friendly offline toast, UNAUTHORIZED → sign-out, and
+    // rate-limit handling instead of dumping a raw error message.
+    toastMutationError("Action failed", error);
+  }
+}
+
 export { ScreenErrorBoundary as ErrorBoundary } from "@/components/screen-error-boundary";
 
 export default function DomainReportScreen() {
@@ -159,6 +176,10 @@ function DomainReportContent({ domain, section }: { domain: string; section?: Re
     <Screen onRefresh={invalidate} scrollRef={scrollRef}>
       <ReportHeader domain={domain} isAuthenticated={isAuthenticated} trackedEntry={trackedEntry} />
 
+      {trackedEntry && !trackedEntry.verified && !isUnregistered ? (
+        <VerificationPrompt invalidate={invalidate} trackedEntry={trackedEntry} />
+      ) : null}
+
       {!registrationSettled ? (
         <View className="gap-5">
           <ReportSectionSkeleton />
@@ -225,9 +246,7 @@ function DomainReportContent({ domain, section }: { domain: string; section?: Re
         </View>
       )}
 
-      {trackedEntry && !isUnregistered ? (
-        <TrackingActions trackedEntry={trackedEntry} invalidate={invalidate} />
-      ) : null}
+      {trackedEntry && !isUnregistered ? <TrackingActions trackedEntry={trackedEntry} /> : null}
     </Screen>
   );
 }
@@ -304,7 +323,10 @@ function ReportHeader({
   );
 }
 
-function TrackingActions({
+// Hoisted above the report sections (rendered directly under the header) so an
+// unverified owner sees how to unlock notifications without scrolling past six
+// sections to find it. Management actions stay in `TrackingActions` below.
+function VerificationPrompt({
   trackedEntry,
   invalidate,
 }: {
@@ -312,7 +334,6 @@ function TrackingActions({
   invalidate: () => Promise<void>;
 }) {
   const trpc = useTRPC();
-  const dashboard = useDashboardMutations();
   const verify = useMutation(
     trpc.tracking.verifyDomain.mutationOptions({
       onSuccess: async () => {
@@ -322,97 +343,83 @@ function TrackingActions({
     }),
   );
 
-  async function runNetworkAction(action: () => Promise<unknown>) {
-    try {
-      assertOnline();
-      await action();
-    } catch (error) {
-      // A pre-mutation offline bail-out bypasses the global mutation cache —
-      // report it here so it isn't invisible. Real mutation rejections are
-      // reported centrally in query-client.
-      if (isOfflineError(error)) {
-        analytics.trackException(error, { context: "domain_action", offline: true });
-      }
-      // Centralized: friendly offline toast, UNAUTHORIZED → sign-out, and
-      // rate-limit handling instead of dumping a raw error message.
-      toastMutationError("Action failed", error);
-    }
-  }
+  return (
+    <Card>
+      <Text className="text-lg font-semibold">Verify ownership</Text>
+      <Text className="text-sm text-muted-foreground">
+        Verify {trackedEntry.domainName} to unlock change notifications. Resume the flow to copy the
+        DNS TXT, HTML file, or meta tag instructions, or re-check now if you’ve already added them.
+      </Text>
+      <Button
+        onPress={() =>
+          router.push({
+            params: { trackedDomainId: trackedEntry.id },
+            pathname: "/(tabs)/domains/add",
+          })
+        }
+        variant="secondary"
+      >
+        <Text>Resume verification</Text>
+      </Button>
+      <Button
+        loading={verify.isPending}
+        onPress={() =>
+          void runNetworkAction(() => verify.mutateAsync({ trackedDomainId: trackedEntry.id }))
+        }
+      >
+        <Text>Verify now</Text>
+      </Button>
+    </Card>
+  );
+}
+
+function TrackingActions({ trackedEntry }: { trackedEntry: TrackedEntry }) {
+  const dashboard = useDashboardMutations();
 
   return (
-    <>
-      {trackedEntry.verified ? null : (
-        <Card>
-          <Text className="text-lg font-semibold">Verification</Text>
-          <Text className="text-sm text-muted-foreground">
-            Return to the verification flow to copy DNS TXT, HTML file, or meta tag instructions and
-            check ownership.
-          </Text>
-          <Button
-            onPress={() =>
-              router.push({
-                params: { trackedDomainId: trackedEntry.id },
-                pathname: "/(tabs)/domains/add",
-              })
-            }
-            variant="secondary"
-          >
-            <Text>Resume verification</Text>
-          </Button>
-          <Button
-            loading={verify.isPending}
-            onPress={() =>
-              void runNetworkAction(() => verify.mutateAsync({ trackedDomainId: trackedEntry.id }))
-            }
-          >
-            <Text>Verify now</Text>
-          </Button>
-        </Card>
-      )}
-      <Card>
-        <Button
-          loading={dashboard.isMuting}
-          onPress={() =>
-            void runNetworkAction(() => dashboard.setMuted(trackedEntry.id, !trackedEntry.muted))
-          }
-          variant="secondary"
-        >
-          <Text>{trackedEntry.muted ? "Unmute notifications" : "Mute notifications"}</Text>
-        </Button>
-        <Button
-          loading={dashboard.isArchiving || dashboard.isUnarchiving}
-          onPress={() =>
-            void runNetworkAction(() =>
-              trackedEntry.archivedAt
-                ? dashboard.unarchive(trackedEntry.id)
-                : dashboard.archive(trackedEntry.id),
-            )
-          }
-          variant="secondary"
-        >
-          <Text>{trackedEntry.archivedAt ? "Unarchive" : "Archive"}</Text>
-        </Button>
-        <Button
-          loading={dashboard.isRemoving}
-          onPress={() =>
-            void confirmDestructive({
-              confirmLabel: "Remove",
-              message: `${trackedEntry.domainName} will stop being tracked.`,
-              title: "Remove domain?",
-            }).then((confirmed) => {
-              if (!confirmed) return;
-              void runNetworkAction(async () => {
-                await dashboard.remove(trackedEntry.id);
-                router.back();
-              });
-            })
-          }
-          variant="danger"
-        >
-          <Text>Remove</Text>
-        </Button>
-      </Card>
-    </>
+    <Card>
+      <Button
+        loading={dashboard.isMuting}
+        onPress={() =>
+          void runNetworkAction(() => dashboard.setMuted(trackedEntry.id, !trackedEntry.muted))
+        }
+        variant="secondary"
+      >
+        <Text>{trackedEntry.muted ? "Unmute notifications" : "Mute notifications"}</Text>
+      </Button>
+      <Button
+        loading={dashboard.isArchiving || dashboard.isUnarchiving}
+        onPress={() =>
+          void runNetworkAction(() =>
+            trackedEntry.archivedAt
+              ? dashboard.unarchive(trackedEntry.id)
+              : dashboard.archive(trackedEntry.id),
+          )
+        }
+        variant="secondary"
+      >
+        <Text>{trackedEntry.archivedAt ? "Unarchive" : "Archive"}</Text>
+      </Button>
+      <Button
+        loading={dashboard.isRemoving}
+        onPress={() =>
+          void confirmDestructive({
+            confirmLabel: "Remove",
+            message: `${trackedEntry.domainName} will stop being tracked.`,
+            title: "Remove domain?",
+          }).then((confirmed) => {
+            if (!confirmed) return;
+            void runNetworkAction(async () => {
+              await dashboard.remove(trackedEntry.id);
+              router.back();
+            });
+          })
+        }
+        variant="danger"
+      >
+        <Text>Remove</Text>
+      </Button>
+    </Card>
   );
 }
 

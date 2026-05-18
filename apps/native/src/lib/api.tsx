@@ -15,7 +15,6 @@ import { markNetworkStateKnown } from "./network";
 import { makeQueryClient } from "./query-client";
 import { queryPersister, shouldDehydrateQuery } from "./query-persister";
 import { resetUserScopedState } from "./reset-user-state";
-import { resetSignOutGuard } from "./trpc-error-handler";
 import { buildTrpcHeaders } from "./trpc-headers";
 
 const { TRPCProvider: BaseTRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
@@ -61,9 +60,8 @@ function useResetCacheOnSignOut(queryClient: QueryClient) {
       queryClient.clear();
       void queryPersister.removeClient();
       resetUserScopedState();
-      // Session transition observed and cache cleared — re-arm the auto
-      // sign-out guard for the next session's potential expiry.
-      resetSignOutGuard();
+      // The auto-sign-out guard re-arms itself: a new sign-in mints a new
+      // session cookie, which is a fresh epoch for `handleCrossCuttingTrpcError`.
     }
   }, [queryClient, session.data]);
 }

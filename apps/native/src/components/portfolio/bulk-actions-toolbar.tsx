@@ -1,4 +1,5 @@
 import { Stack } from "expo-router/stack";
+import { useEffect, useRef } from "react";
 import { Platform } from "react-native";
 
 import { useDashboardMutations } from "@/hooks/use-dashboard-mutations";
@@ -19,9 +20,25 @@ export function BulkActionsToolbar() {
   const { exitSelection } = useSelectionActions();
   const dashboard = useDashboardMutations();
 
+  const overLimit = count > BULK_LIMIT;
+
+  // Surface the cap the moment selection crosses it — not only after the user
+  // taps a now-disabled action. Warn once per crossing; re-arm when back under.
+  const warnedRef = useRef(false);
+  useEffect(() => {
+    if (mode === "selecting" && overLimit && !warnedRef.current) {
+      warnedRef.current = true;
+      toast.warning({
+        title: "Selection limit",
+        message: `You can act on up to ${BULK_LIMIT} domains at once. Deselect some to continue.`,
+      });
+    } else if (!overLimit) {
+      warnedRef.current = false;
+    }
+  }, [mode, overLimit]);
+
   if (mode !== "selecting") return null;
 
-  const overLimit = count > BULK_LIMIT;
   const busy =
     dashboard.isBulkArchiving || dashboard.isBulkRemoving || dashboard.isBulkSettingMuted;
   const disabled = count === 0 || overLimit || busy;

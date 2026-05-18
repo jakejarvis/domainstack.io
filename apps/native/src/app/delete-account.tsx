@@ -13,6 +13,18 @@ import { deleteAccount } from "@/lib/auth";
 import { raceUnregister, resolveTokenToUnregister } from "@/lib/push-unregister";
 import { usePushPromptStore } from "@/lib/stores/push-prompt-store";
 
+// Without a ceiling a hung request strands the screen on the "Sending…"
+// spinner forever. The email may still go out after we give up, so the copy
+// says "may be on its way" rather than implying failure.
+const DELETION_TIMEOUT_MS = 20_000;
+
+class DeletionTimeoutError extends Error {
+  constructor() {
+    super("deletion request timed out");
+    this.name = "DeletionTimeoutError";
+  }
+}
+
 type State = { status: "loading" } | { status: "success" } | { status: "error"; message: string };
 
 type Action = { type: "RETRY" } | { type: "SUCCESS" } | { type: "ERROR"; message: string };
@@ -76,8 +88,12 @@ export default function DeleteAccountScreen() {
       // swallow — see comment above
     }
 
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
     try {
-      const result = await deleteAccount();
+      const timeout = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new DeletionTimeoutError()), DELETION_TIMEOUT_MS);
+      });
+      const result = await Promise.race([deleteAccount(), timeout]);
       if (!mountedRef.current) return;
       if (result.error) {
         dispatch({
@@ -89,11 +105,15 @@ export default function DeleteAccountScreen() {
       dispatch({ type: "SUCCESS" });
     } catch (error) {
       if (!mountedRef.current) return;
-      dispatch({
-        message: error instanceof Error ? error.message : "An unexpected error occurred.",
-        type: "ERROR",
-      });
+      const message =
+        error instanceof DeletionTimeoutError
+          ? "This is taking longer than expected. The confirmation email may still be on its way — check your inbox, or try again."
+          : error instanceof Error
+            ? error.message
+            : "An unexpected error occurred.";
+      dispatch({ message, type: "ERROR" });
     } finally {
+      clearTimeout(timeoutId);
       inFlightRef.current = false;
     }
   }, [unregisterDevice]);
@@ -122,8 +142,9 @@ export default function DeleteAccountScreen() {
         <View className="gap-4">
           <Text variant="title2">Check your email</Text>
           <Text className="text-sm text-muted-foreground">
-            We’ve sent a confirmation link to your email address. Click the link to permanently
-            delete your account.
+            Your account is still active. We’ve emailed a confirmation link — your account and data
+            are permanently deleted only after you tap it. Nothing else is needed here; you can
+            close this screen.
           </Text>
           <Button onPress={() => router.back()}>
             <Text>Close</Text>

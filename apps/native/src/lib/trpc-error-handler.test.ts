@@ -4,19 +4,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("./auth", () => ({
   authClient: { signOut: vi.fn<() => Promise<void>>(() => Promise.resolve()) },
+  getAuthCookieHeader: vi.fn<() => string | null>(),
 }));
 vi.mock("./toast", () => ({
   toast: { error: vi.fn<(opts: { title: string; message: string }) => void>() },
 }));
 
-import { authClient } from "./auth";
+import { authClient, getAuthCookieHeader } from "./auth";
 import { OfflineError } from "./network";
 import { toast } from "./toast";
-import {
-  handleCrossCuttingTrpcError,
-  isNonRetryableTrpcError,
-  resetSignOutGuard,
-} from "./trpc-error-handler";
+import { handleCrossCuttingTrpcError, isNonRetryableTrpcError } from "./trpc-error-handler";
 
 function trpcError(opts: {
   message?: string;
@@ -34,6 +31,12 @@ function trpcError(opts: {
 
 const signOutMock = vi.mocked(authClient.signOut);
 const toastMock = vi.mocked(toast.error);
+const cookieMock = vi.mocked(getAuthCookieHeader);
+
+// The sign-out guard is keyed by the session cookie with no reset hook, so
+// give every test a distinct default cookie — module state can't bleed across
+// tests, and a test that needs a transition overrides this explicitly.
+let testCookieSeq = 0;
 
 // `lastRateLimitToastAt` is a module global with a 3s dedup window. Drive a
 // monotonic absolute clock so each rate-limit assertion clears the window
@@ -48,7 +51,8 @@ beforeEach(() => {
   vi.useFakeTimers();
   signOutMock.mockClear();
   toastMock.mockClear();
-  resetSignOutGuard();
+  cookieMock.mockReset();
+  cookieMock.mockReturnValue(`cookie-${testCookieSeq++}`);
 });
 
 afterEach(() => {
@@ -122,27 +126,40 @@ describe("offline guard", () => {
   });
 });
 
-// L3 — sign-out fires once per session, re-armed only on session change/failure.
+// L3 — sign-out fires once per session cookie; the cookie identity is the
+// guard's epoch (no external reset hook).
 describe("auto sign-out dedup", () => {
-  it("signs out once across a burst of UNAUTHORIZED errors", () => {
+  // Literals are unique per test: the guard is module-level with no reset, so
+  // reusing a value across tests would let one test's marker dedupe another's.
+  it("signs out once across a burst of UNAUTHORIZED errors for one session", () => {
+    cookieMock.mockReturnValue("burst-session");
     handleCrossCuttingTrpcError(trpcError({ code: "UNAUTHORIZED" }));
     handleCrossCuttingTrpcError(trpcError({ code: "UNAUTHORIZED" }));
     handleCrossCuttingTrpcError(trpcError({ httpStatus: 401 }));
     expect(signOutMock).toHaveBeenCalledTimes(1);
   });
 
-  it("re-arms after resetSignOutGuard (new session transition)", () => {
+  it("signs out again when the session cookie changes (re-sign-in)", () => {
+    cookieMock.mockReturnValue("change-session-a");
     handleCrossCuttingTrpcError(trpcError({ code: "UNAUTHORIZED" }));
-    resetSignOutGuard();
+    cookieMock.mockReturnValue("change-session-b");
     handleCrossCuttingTrpcError(trpcError({ code: "UNAUTHORIZED" }));
     expect(signOutMock).toHaveBeenCalledTimes(2);
   });
 
-  it("re-arms when signOut() rejects (offline)", async () => {
+  it("does not sign out when there is no session cookie (post-sign-out storm)", () => {
+    cookieMock.mockReturnValue(null);
+    const handled = handleCrossCuttingTrpcError(trpcError({ code: "UNAUTHORIZED" }));
+    expect(handled).toBe(true);
+    expect(signOutMock).not.toHaveBeenCalled();
+  });
+
+  it("re-arms for the same session when signOut() rejects (offline)", async () => {
+    cookieMock.mockReturnValue("session-x");
     signOutMock.mockRejectedValueOnce(new Error("offline"));
     handleCrossCuttingTrpcError(trpcError({ code: "UNAUTHORIZED" }));
     expect(signOutMock).toHaveBeenCalledTimes(1);
-    // Let the rejection's .catch re-arm the guard (microtasks, not timers).
+    // Let the rejection's .catch re-arm the marker (microtasks, not timers).
     await Promise.resolve();
     await Promise.resolve();
     handleCrossCuttingTrpcError(trpcError({ code: "UNAUTHORIZED" }));

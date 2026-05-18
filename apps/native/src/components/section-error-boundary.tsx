@@ -1,15 +1,34 @@
 import { useQueryErrorResetBoundary } from "@tanstack/react-query";
-import { Component, type ErrorInfo, type ReactNode, useCallback, useState } from "react";
+import {
+  Component,
+  createContext,
+  type ErrorInfo,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useState,
+} from "react";
 
 import { analytics } from "@/lib/analytics";
 
 import { QueryErrorState } from "./query-error-state";
+
+/**
+ * Lets a parent (e.g. Settings) observe how many of its sibling sections are
+ * currently failed so it can surface an aggregate banner. Default is a no-op,
+ * so every other consumer (the domain report) is unaffected and needs no
+ * provider.
+ */
+export type SectionErrorReporter = (sectionName: string, hasError: boolean) => void;
+
+export const SectionErrorReporterContext = createContext<SectionErrorReporter>(() => {});
 
 interface BoundaryProps {
   children: ReactNode;
   sectionName: string;
   resetKey: number;
   onReset: () => void;
+  report: SectionErrorReporter;
 }
 
 interface BoundaryState {
@@ -39,6 +58,13 @@ class ErrorBoundaryInner extends Component<BoundaryProps, BoundaryState> {
       section: this.props.sectionName,
       componentStack: info.componentStack,
     });
+    this.props.report(this.props.sectionName, true);
+  }
+
+  componentWillUnmount() {
+    // Don't leave a stale failure counted if the section is torn down while
+    // still errored (e.g. navigating away). No-op when not errored.
+    if (this.state.error) this.props.report(this.props.sectionName, false);
   }
 
   render() {
@@ -66,14 +92,23 @@ export function SectionErrorBoundary({
 }) {
   const { reset } = useQueryErrorResetBoundary();
   const [resetKey, setResetKey] = useState(0);
+  const report = useContext(SectionErrorReporterContext);
 
   const handleReset = useCallback(() => {
+    // Optimistically clear from the aggregate; if the retry re-throws,
+    // componentDidCatch re-reports it.
+    report(sectionName, false);
     reset();
     setResetKey((key) => key + 1);
-  }, [reset]);
+  }, [reset, report, sectionName]);
 
   return (
-    <ErrorBoundaryInner onReset={handleReset} resetKey={resetKey} sectionName={sectionName}>
+    <ErrorBoundaryInner
+      onReset={handleReset}
+      report={report}
+      resetKey={resetKey}
+      sectionName={sectionName}
+    >
       {children}
     </ErrorBoundaryInner>
   );

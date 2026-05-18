@@ -6,10 +6,15 @@ import { Linking, View } from "react-native";
 
 import { type AppBottomSheetRef } from "@/components/bottom-sheet";
 import { Button } from "@/components/button";
+import { Callout } from "@/components/callout";
 import { GroupedRow, GroupedSection } from "@/components/form/group";
 import { CalendarFeedSheet } from "@/components/portfolio/calendar-feed-sheet";
 import { Screen } from "@/components/screen";
-import { SectionErrorBoundary } from "@/components/section-error-boundary";
+import {
+  SectionErrorBoundary,
+  type SectionErrorReporter,
+  SectionErrorReporterContext,
+} from "@/components/section-error-boundary";
 import { BillingSection } from "@/components/settings/billing";
 import { DeleteAccountRow } from "@/components/settings/delete-account";
 import { LinkedAccountsSection } from "@/components/settings/linked-accounts";
@@ -73,47 +78,66 @@ export { ScreenErrorBoundary as ErrorBoundary } from "@/components/screen-error-
 
 export default function SettingsScreen() {
   const calendarSheetRef = useRef<AppBottomSheetRef | null>(null);
+  const [failedSections, setFailedSections] = useState<ReadonlySet<string>>(() => new Set());
+
+  const reportSectionError = useCallback<SectionErrorReporter>((name, hasError) => {
+    setFailedSections((prev) => {
+      if (hasError === prev.has(name)) return prev; // no-op → no needless render
+      const next = new Set(prev);
+      if (hasError) next.add(name);
+      else next.delete(name);
+      return next;
+    });
+  }, []);
 
   return (
     <Screen>
-      <SectionErrorBoundary sectionName="Plan">
-        <BillingSection />
-      </SectionErrorBoundary>
+      {failedSections.size > 2 ? (
+        <Callout variant="warn">
+          Several settings sections couldn’t load. Pull down to refresh, or retry them individually
+          below.
+        </Callout>
+      ) : null}
+      <SectionErrorReporterContext.Provider value={reportSectionError}>
+        <SectionErrorBoundary sectionName="Plan">
+          <BillingSection />
+        </SectionErrorBoundary>
 
-      <SectionErrorBoundary sectionName="Notification channels">
-        <NotificationChannelsSection />
-      </SectionErrorBoundary>
+        <SectionErrorBoundary sectionName="Notification channels">
+          <NotificationChannelsSection />
+        </SectionErrorBoundary>
 
-      <SectionErrorBoundary sectionName="Push device">
-        <PushDeviceSection />
-      </SectionErrorBoundary>
+        <SectionErrorBoundary sectionName="Push device">
+          <PushDeviceSection />
+        </SectionErrorBoundary>
 
-      <SectionErrorBoundary sectionName="Calendar feed">
-        <CalendarFeedSection onOpen={() => calendarSheetRef.current?.present()} />
-      </SectionErrorBoundary>
+        <SectionErrorBoundary sectionName="Calendar feed">
+          <CalendarFeedSection onOpen={() => calendarSheetRef.current?.present()} />
+        </SectionErrorBoundary>
 
-      <SectionErrorBoundary sectionName="Muted domains">
-        <Suspense fallback={<MutedDomainsSectionSkeleton />}>
-          <MutedDomainsSection />
-        </Suspense>
-      </SectionErrorBoundary>
+        <SectionErrorBoundary sectionName="Muted domains">
+          <Suspense fallback={<MutedDomainsSectionSkeleton />}>
+            <MutedDomainsSection />
+          </Suspense>
+        </SectionErrorBoundary>
 
-      <SectionErrorBoundary sectionName="Privacy">
-        <PrivacySection />
-      </SectionErrorBoundary>
+        <SectionErrorBoundary sectionName="Privacy">
+          <PrivacySection />
+        </SectionErrorBoundary>
 
-      <SectionErrorBoundary sectionName="Account">
-        <AccountSection />
-      </SectionErrorBoundary>
+        <SectionErrorBoundary sectionName="Account">
+          <AccountSection />
+        </SectionErrorBoundary>
 
-      <SectionErrorBoundary sectionName="Danger zone">
-        <GroupedSection
-          footer="Deletes your account, tracked domains, notification preferences, and any active subscription. This action cannot be undone."
-          title="Danger zone"
-        >
-          <DeleteAccountRow />
-        </GroupedSection>
-      </SectionErrorBoundary>
+        <SectionErrorBoundary sectionName="Danger zone">
+          <GroupedSection
+            footer="Deletes your account, tracked domains, notification preferences, and any active subscription. This action cannot be undone."
+            title="Danger zone"
+          >
+            <DeleteAccountRow />
+          </GroupedSection>
+        </SectionErrorBoundary>
+      </SectionErrorReporterContext.Provider>
 
       <CalendarFeedSheet ref={calendarSheetRef} />
     </Screen>

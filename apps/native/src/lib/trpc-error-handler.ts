@@ -1,6 +1,6 @@
 import { TRPCClientError } from "@trpc/client";
 
-import { authClient } from "./auth";
+import { authClient, getAuthCookieHeader } from "./auth";
 import { isOfflineError } from "./network";
 import { toast } from "./toast";
 
@@ -75,17 +75,17 @@ function parseRetryAfterSeconds(error: unknown): number {
   return DEFAULT_RETRY_AFTER_SECONDS;
 }
 
-// Stays true for the lifetime of the signed-out session. NOT reset when
-// `signOut()` resolves: the post-resolution refetch storm from the persisted
-// cache would otherwise fire a duplicate `signOut()` per stale 401. It is
-// re-armed only when the active user actually changes (via `resetSignOutGuard`,
-// called from `useResetCacheOnSignOut`) or when `signOut()` itself fails.
-let signedOutForSession = false;
-
-/** Re-arm the auto-sign-out guard once a user/session transition is observed. */
-export function resetSignOutGuard(): void {
-  signedOutForSession = false;
-}
+// The better-auth session cookie is the session's synchronous identity: it is
+// minted on sign-in and cleared on sign-out, so keying the sign-out guard to it
+// makes the guard self-scoping with no external re-arm hook to keep in sync:
+//
+//  - First UNAUTHORIZED for a cookie → sign out once; further 401s for the same
+//    cookie (the in-flight-signOut window / batched failures) are deduped.
+//  - After signOut resolves the cookie is gone → 401s from the persisted-cache
+//    refetch storm see no cookie and are no-ops (no duplicate sign-out).
+//  - A new sign-in mints a new cookie value → automatically a fresh epoch.
+//  - signOut failure (offline) clears the marker so the next 401 retries.
+let signedOutForCookie: string | null = null;
 let lastRateLimitToastAt = 0;
 let lastOfflineToastAt = 0;
 
@@ -95,11 +95,11 @@ let lastOfflineToastAt = 0;
  *  - OFFLINE — a guarded action bailed out before it ran (`assertOnline`).
  *    Show one friendly, deduped "you're offline" toast instead of the raw
  *    "<Action> failed: A network connection is required…" message.
- *  - UNAUTHORIZED — the session is invalid/expired. Clear it ONCE so the app
- *    leaves the half-signed-in state (stale `useSession` user + generic
- *    "failed" toasts) and the `Stack.Protected` guards redirect. The
- *    active-user change is observed by `useResetCacheOnSignOut`, which wipes
- *    the cache and user-scoped stores.
+ *  - UNAUTHORIZED — the session is invalid/expired. Sign out ONCE per session
+ *    cookie so the app leaves the half-signed-in state (stale `useSession`
+ *    user + generic "failed" toasts) and the `Stack.Protected` guards
+ *    redirect. The resulting active-user change is observed by
+ *    `useResetCacheOnSignOut`, which wipes the cache and user-scoped stores.
  *  - TOO_MANY_REQUESTS — surface a friendly, deduped toast with retry timing
  *    instead of dumping the raw tRPC message.
  *
@@ -122,12 +122,16 @@ export function handleCrossCuttingTrpcError(error: unknown): boolean {
   }
 
   if (isUnauthorizedError(error)) {
-    if (!signedOutForSession) {
-      signedOutForSession = true;
+    const cookie = getAuthCookieHeader();
+    // No session credential → already signed out (or the post-sign-out
+    // refetch storm). Nothing to revoke; still own the feedback so per-call
+    // handlers don't dump a generic "failed" toast.
+    if (cookie && cookie !== signedOutForCookie) {
+      signedOutForCookie = cookie;
       void Promise.resolve(authClient.signOut()).catch(() => {
-        // Sign-out failed (likely offline). Re-arm so a later attempt can
-        // retry; the auth client clears local session state regardless.
-        signedOutForSession = false;
+        // Sign-out failed (likely offline). Re-arm so a later 401 retries —
+        // unless a newer session has since taken over this marker.
+        if (signedOutForCookie === cookie) signedOutForCookie = null;
       });
     }
     return true;

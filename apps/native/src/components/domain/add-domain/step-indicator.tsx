@@ -56,8 +56,18 @@ export function StepIndicator({
     { step: 3, label: "Done" },
   ];
 
+  const currentLabel = steps[current - 1]?.label ?? "";
+
   return (
-    <View className="gap-2">
+    // One accessible element so VoiceOver/TalkBack announces progress instead
+    // of reading the loose "1 2 3 Enter Verify Done" dots. Visuals unchanged.
+    <View
+      accessible
+      accessibilityLabel={`Step ${current} of 3: ${currentLabel}`}
+      accessibilityRole="progressbar"
+      accessibilityValue={{ max: 3, min: 1, now: current }}
+      className="gap-2"
+    >
       <View className="flex-row items-center">
         {steps.map((entry, index) => {
           const state = stepState(entry.step, current);
