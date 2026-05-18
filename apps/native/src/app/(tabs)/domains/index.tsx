@@ -22,6 +22,7 @@ import { QueryErrorState } from "@/components/query-error-state";
 import { RefreshControl } from "@/components/refresh-control";
 import { RequireAuth } from "@/components/require-auth";
 import { Screen } from "@/components/screen";
+import { type ErrorBoundaryProps, ScreenErrorBoundary } from "@/components/screen-error-boundary";
 import { SegmentedControl } from "@/components/segmented-control";
 import { PortfolioListSkeleton } from "@/components/skeleton";
 import { Text } from "@/components/text";
@@ -49,6 +50,10 @@ export default function DomainsScreen() {
       <PortfolioScreen />
     </RequireAuth>
   );
+}
+
+export function ErrorBoundary(props: ErrorBoundaryProps) {
+  return <ScreenErrorBoundary {...props} title="Couldn’t load your portfolio" />;
 }
 
 function PortfolioScreen() {

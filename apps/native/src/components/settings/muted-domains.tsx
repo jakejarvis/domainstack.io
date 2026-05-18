@@ -5,10 +5,11 @@ import { Pressable, View } from "react-native";
 import { Button } from "@/components/button";
 import { GroupedRow, GroupedSection } from "@/components/form/group";
 import { Text } from "@/components/text";
+import { analytics } from "@/lib/analytics";
 import { useTRPC } from "@/lib/api";
 import { confirm } from "@/lib/native-confirm";
-import { assertOnline } from "@/lib/network";
-import { toast } from "@/lib/toast";
+import { assertOnline, isOfflineError } from "@/lib/network";
+import { toastMutationError } from "@/lib/trpc-error-handler";
 
 const LIST_INPUT = { includeArchived: true } as const;
 
@@ -44,8 +45,11 @@ export function MutedDomainsSection() {
       assertOnline();
       await setMuted.mutateAsync({ muted: false, trackedDomainId: id });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Could not unmute domain.";
-      toast.error({ title: "Unmute failed", message });
+      // Pre-mutation offline bail-out bypasses the global mutation cache.
+      if (isOfflineError(error)) {
+        analytics.trackException(error, { context: "unmute_domain", offline: true });
+      }
+      toastMutationError("Unmute failed", error);
     }
   }
 

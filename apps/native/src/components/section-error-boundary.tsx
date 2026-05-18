@@ -1,12 +1,9 @@
 import { useQueryErrorResetBoundary } from "@tanstack/react-query";
 import { Component, type ErrorInfo, type ReactNode, useCallback, useState } from "react";
-import { View } from "react-native";
 
 import { analytics } from "@/lib/analytics";
 
-import { Button } from "./button";
-import { Card } from "./card";
-import { Text } from "./text";
+import { QueryErrorState } from "./query-error-state";
 
 interface BoundaryProps {
   children: ReactNode;
@@ -46,18 +43,14 @@ class ErrorBoundaryInner extends Component<BoundaryProps, BoundaryState> {
 
   render() {
     if (this.state.error) {
+      // No raw `error.message` dead-end: QueryErrorState distinguishes a
+      // genuine offline condition from a generic failure and always offers a
+      // retry. The technical detail is already captured in componentDidCatch.
       return (
-        <Card>
-          <View className="gap-1">
-            <Text className="text-base font-semibold">{this.props.sectionName} failed</Text>
-            <Text className="text-sm text-muted-foreground">
-              {this.state.error.message || "Something went wrong."}
-            </Text>
-          </View>
-          <Button onPress={this.props.onReset} variant="secondary">
-            <Text>Try again</Text>
-          </Button>
-        </Card>
+        <QueryErrorState
+          onRetry={this.props.onReset}
+          title={`${this.props.sectionName} couldn’t load`}
+        />
       );
     }
     return this.props.children;

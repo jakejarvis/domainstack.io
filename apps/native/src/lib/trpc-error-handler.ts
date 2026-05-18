@@ -1,6 +1,7 @@
 import { TRPCClientError } from "@trpc/client";
 
 import { authClient } from "./auth";
+import { isOfflineError } from "./network";
 import { toast } from "./toast";
 
 function getTrpcErrorData(error: unknown): { code?: string; httpStatus?: number } | null {
@@ -86,10 +87,14 @@ export function resetSignOutGuard(): void {
   signedOutForSession = false;
 }
 let lastRateLimitToastAt = 0;
+let lastOfflineToastAt = 0;
 
 /**
- * Centralized handling for the two cross-cutting tRPC failures:
+ * Centralized handling for the cross-cutting failures:
  *
+ *  - OFFLINE — a guarded action bailed out before it ran (`assertOnline`).
+ *    Show one friendly, deduped "you're offline" toast instead of the raw
+ *    "<Action> failed: A network connection is required…" message.
  *  - UNAUTHORIZED — the session is invalid/expired. Clear it ONCE so the app
  *    leaves the half-signed-in state (stale `useSession` user + generic
  *    "failed" toasts) and the `Stack.Protected` guards redirect. The
@@ -102,6 +107,20 @@ let lastRateLimitToastAt = 0;
  * handlers can skip their generic toast and avoid double toasts.
  */
 export function handleCrossCuttingTrpcError(error: unknown): boolean {
+  if (isOfflineError(error)) {
+    const now = Date.now();
+    // Dedupe: a burst of guarded taps (or a bulk action) must not stack
+    // identical offline toasts.
+    if (now - lastOfflineToastAt > 3000) {
+      lastOfflineToastAt = now;
+      toast.error({
+        title: "You’re offline",
+        message: "Connect to the internet and try again.",
+      });
+    }
+    return true;
+  }
+
   if (isUnauthorizedError(error)) {
     if (!signedOutForSession) {
       signedOutForSession = true;

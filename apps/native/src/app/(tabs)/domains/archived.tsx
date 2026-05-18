@@ -9,6 +9,7 @@ import { QueryErrorState } from "@/components/query-error-state";
 import { RefreshControl } from "@/components/refresh-control";
 import { RequireAuth } from "@/components/require-auth";
 import { Screen } from "@/components/screen";
+import { type ErrorBoundaryProps, ScreenErrorBoundary } from "@/components/screen-error-boundary";
 import { SkeletonRows } from "@/components/skeleton";
 import { Text } from "@/components/text";
 import { useDashboardMutations } from "@/hooks/use-dashboard-mutations";
@@ -46,6 +47,10 @@ export default function ArchivedDomainsScreen() {
       <ArchivedScreen />
     </RequireAuth>
   );
+}
+
+export function ErrorBoundary(props: ErrorBoundaryProps) {
+  return <ScreenErrorBoundary {...props} title="Couldn’t load archived domains" />;
 }
 
 function ArchivedScreen() {

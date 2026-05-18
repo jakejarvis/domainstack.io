@@ -20,9 +20,10 @@ import { SkeletonRows } from "@/components/skeleton";
 import { Text } from "@/components/text";
 import { TextField } from "@/components/text-field";
 import { usePushSoftPrompt } from "@/hooks/use-push-soft-prompt";
+import { analytics } from "@/lib/analytics";
 import { useTRPC } from "@/lib/api";
 import { type AddDomainFlowState, reduceAddDomainFlow } from "@/lib/domain-lifecycle";
-import { assertOnline } from "@/lib/network";
+import { assertOnline, isOfflineError } from "@/lib/network";
 import type { VerificationMethod } from "@domainstack/constants";
 import { isValidDomain, normalizeDomainInput } from "@domainstack/utils/domain/client";
 import { buildVerificationInstructions } from "@domainstack/utils/verification";
@@ -78,6 +79,8 @@ function InstructionValue({ label, value }: { label: string; value: string | num
     </View>
   );
 }
+
+export { ScreenErrorBoundary as ErrorBoundary } from "@/components/screen-error-boundary";
 
 export default function AddDomainScreen() {
   return (
@@ -156,8 +159,16 @@ function AddDomainFlow() {
         type: "instructions",
       });
     } catch (error) {
+      const offline = isOfflineError(error);
+      // A pre-mutation offline bail-out bypasses the global mutation cache, so
+      // report it here; real mutation rejections are reported centrally.
+      if (offline) analytics.trackException(error, { context: "add_domain", offline: true });
       dispatch({
-        message: error instanceof Error ? error.message : "Domain could not be added",
+        message: offline
+          ? "You’re offline. Reconnect and try again."
+          : error instanceof Error
+            ? error.message
+            : "Domain could not be added",
         type: "fail",
       });
     }
@@ -186,8 +197,14 @@ function AddDomainFlow() {
         });
       }
     } catch (error) {
+      const offline = isOfflineError(error);
+      if (offline) analytics.trackException(error, { context: "verify_domain", offline: true });
       dispatch({
-        message: error instanceof Error ? error.message : "Verification failed",
+        message: offline
+          ? "You’re offline. Reconnect and try again."
+          : error instanceof Error
+            ? error.message
+            : "Verification failed",
         type: "fail",
       });
     }

@@ -33,6 +33,8 @@ function reducer(state: State, action: Action): State {
 // This screen auto-initiates deletion on mount. It is ONLY reachable from
 // `DeleteAccountRow`, which gates navigation behind a destructive confirm
 // dialog — keep it that way (no other route should push here).
+export { ScreenErrorBoundary as ErrorBoundary } from "@/components/screen-error-boundary";
+
 export default function DeleteAccountScreen() {
   const [state, dispatch] = useReducer(reducer, { status: "loading" });
   const trpc = useTRPC();

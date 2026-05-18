@@ -10,6 +10,7 @@ import { useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { PushPermissionSheet } from "@/components/notifications/push-permission-sheet";
+import { RootErrorBoundary } from "@/components/root-error-boundary";
 import { useVersionGateReady, VersionGate } from "@/components/version-gate";
 import { useCalendarSync } from "@/hooks/use-calendar-sync";
 import { useForegroundPushRefresh } from "@/hooks/use-foreground-push-refresh";
@@ -80,17 +81,28 @@ function RootNavigator() {
   // resubscribing the listener below.
   useEffect(() => {
     routeRef.current = (data: Record<string, unknown>) => {
-      const target = routeFromNotificationData(data);
-      // Protected routes redirect to sign-in if there's no session; public
-      // routes (domain reports) work fine signed-out. Stash the protected
-      // target so it can be replayed after the user signs in instead of
-      // being lost.
-      if (!isSignedIn && target === NOTIFICATIONS_ROUTE) {
-        pendingTargetRef.current = target;
-        router.push("/sign-in");
-        return;
+      try {
+        const target = routeFromNotificationData(data);
+        analytics.track("notification_opened", {
+          route: typeof target === "string" ? target : target.pathname,
+        });
+        // Protected routes redirect to sign-in if there's no session; public
+        // routes (domain reports) work fine signed-out. Stash the protected
+        // target so it can be replayed after the user signs in instead of
+        // being lost.
+        if (!isSignedIn && target === NOTIFICATIONS_ROUTE) {
+          pendingTargetRef.current = target;
+          router.push("/sign-in");
+          return;
+        }
+        router.push(target);
+      } catch (error) {
+        // This runs from a notification-listener callback / cold-start effect,
+        // not a React render — an error boundary can't catch it. A malformed
+        // payload or a router failure must not bubble into an unhandled
+        // rejection; report it and stay put.
+        analytics.trackException(error, { context: "notification_route" });
       }
-      router.push(target);
     };
   }, [isSignedIn]);
 
@@ -185,15 +197,17 @@ function RootNavigator() {
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ShareIntentProvider options={{ resetOnBackground: true, debug: false }}>
-        <AnalyticsProvider>
-          <ApiProvider>
-            <VersionGate>
-              <RootNavigator />
-            </VersionGate>
-          </ApiProvider>
-        </AnalyticsProvider>
-      </ShareIntentProvider>
+      <RootErrorBoundary>
+        <ShareIntentProvider options={{ resetOnBackground: true, debug: false }}>
+          <AnalyticsProvider>
+            <ApiProvider>
+              <VersionGate>
+                <RootNavigator />
+              </VersionGate>
+            </ApiProvider>
+          </AnalyticsProvider>
+        </ShareIntentProvider>
+      </RootErrorBoundary>
     </GestureHandlerRootView>
   );
 }

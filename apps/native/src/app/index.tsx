@@ -7,6 +7,8 @@ import { authClient } from "@/lib/auth";
 import { getInitialRoute } from "@/lib/navigation";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
 
+export { ScreenErrorBoundary as ErrorBoundary } from "@/components/screen-error-boundary";
+
 export default function IndexRoute() {
   const session = authClient.useSession();
   const onboardingSeen = useOnboardingStore((state) => state.seen);

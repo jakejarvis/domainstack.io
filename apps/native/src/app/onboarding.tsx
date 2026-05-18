@@ -78,6 +78,8 @@ function Dot({
   return <Animated.View className="h-2 rounded-full" style={[{ backgroundColor: color }, style]} />;
 }
 
+export { ScreenErrorBoundary as ErrorBoundary } from "@/components/screen-error-boundary";
+
 export default function OnboardingScreen() {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();

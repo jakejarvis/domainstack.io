@@ -90,6 +90,8 @@ function isProviderAvailableOnPlatform(provider: NativeAuthProviderOption): bool
   return true;
 }
 
+export { ScreenErrorBoundary as ErrorBoundary } from "@/components/screen-error-boundary";
+
 export default function SignInScreen() {
   // Optimistically true on iOS (isAvailableAsync is effectively always true on
   // iOS 13+). This avoids flashing a fake disabled "Continue with Apple"

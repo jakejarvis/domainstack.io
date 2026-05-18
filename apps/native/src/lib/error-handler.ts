@@ -7,12 +7,19 @@ interface ErrorUtilsLike {
   setGlobalHandler(handler: GlobalErrorHandler): void;
 }
 
+interface RejectionTrackingOptions {
+  allRejections?: boolean;
+  onUnhandled?: (id: string | number, error: unknown) => void;
+  onHandled?: (id: string | number) => void;
+}
+
 interface RejectionTracking {
-  enable(options: {
-    allRejections?: boolean;
-    onUnhandled?: (id: string | number, error: unknown) => void;
-    onHandled?: (id: string | number) => void;
-  }): void;
+  enable(options: RejectionTrackingOptions): void;
+}
+
+interface HermesInternalLike {
+  hasPromise?: () => boolean;
+  enablePromiseRejectionTracker?: (options: RejectionTrackingOptions) => void;
 }
 
 let installed = false;
@@ -30,21 +37,33 @@ export function installGlobalErrorHandler() {
     });
   }
 
+  // `allRejections: false` so only rejections still unhandled after the
+  // detection delay are reported. `true` floods PostHog with rejections that
+  // are handled a tick later (the no-op `onHandled` can't retract an
+  // already-sent exception) — a constant stream of false positives in prod.
+  const rejectionOptions: RejectionTrackingOptions = {
+    allRejections: false,
+    onHandled: () => {},
+    onUnhandled: (_id, reason) => {
+      const error = reason instanceof Error ? reason : new Error(String(reason));
+      analytics.trackException(error, { unhandledRejection: true });
+    },
+  };
+
+  // Hermes (the default engine) provides its own native Promise, so the
+  // JSC-only `promise` polyfill isn't bundled and `require`-ing it throws.
+  // Hermes exposes an equivalent tracker — prefer it so unhandled rejections
+  // are actually reported instead of silently dropped.
+  const hermes = (globalThis as unknown as { HermesInternal?: HermesInternalLike }).HermesInternal;
+  if (hermes?.hasPromise?.() && hermes.enablePromiseRejectionTracker) {
+    hermes.enablePromiseRejectionTracker(rejectionOptions);
+    return;
+  }
+
   try {
     const rejectionTracking: RejectionTracking = require("promise/setimmediate/rejection-tracking");
-    // `allRejections: false` so only rejections still unhandled after the
-    // detection delay are reported. `true` floods PostHog with rejections that
-    // are handled a tick later (the no-op `onHandled` can't retract an
-    // already-sent exception) — a constant stream of false positives in prod.
-    rejectionTracking.enable({
-      allRejections: false,
-      onHandled: () => {},
-      onUnhandled: (_id, reason) => {
-        const error = reason instanceof Error ? reason : new Error(String(reason));
-        analytics.trackException(error, { unhandledRejection: true });
-      },
-    });
+    rejectionTracking.enable(rejectionOptions);
   } catch {
-    // promise polyfill not present — skip silently
+    // Non-Hermes engine without the promise polyfill — nothing to hook into.
   }
 }

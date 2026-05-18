@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/empty-state";
 import { GroupedRow, GroupedSection } from "@/components/form/group";
 import { HeaderMenu } from "@/components/header-menu";
 import { Screen } from "@/components/screen";
+import { type ErrorBoundaryProps, ScreenErrorBoundary } from "@/components/screen-error-boundary";
 import { SkeletonRows } from "@/components/skeleton";
 import { Text } from "@/components/text";
 import { analytics } from "@/lib/analytics";
@@ -146,4 +147,8 @@ export default function SearchScreen() {
       ) : null}
     </Screen>
   );
+}
+
+export function ErrorBoundary(props: ErrorBoundaryProps) {
+  return <ScreenErrorBoundary {...props} title="Couldn’t open search" />;
 }

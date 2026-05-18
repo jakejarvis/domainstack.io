@@ -10,6 +10,7 @@ vi.mock("./toast", () => ({
 }));
 
 import { authClient } from "./auth";
+import { OfflineError } from "./network";
 import { toast } from "./toast";
 import {
   handleCrossCuttingTrpcError,
@@ -99,6 +100,25 @@ describe("rate-limit retry hint", () => {
     expect(toastMock).toHaveBeenCalledWith(
       expect.objectContaining({ message: "Please wait 60 seconds before trying again." }),
     );
+  });
+});
+
+// Offline bail-out owns the user feedback (one friendly toast, deduped) so the
+// per-mutation handler skips its "<Action> failed" message and no sign-out fires.
+describe("offline guard", () => {
+  it("shows one friendly offline toast and owns the feedback", () => {
+    tickPastDedup();
+    const handled = handleCrossCuttingTrpcError(new OfflineError());
+    expect(handled).toBe(true);
+    expect(toastMock).toHaveBeenCalledWith(expect.objectContaining({ title: "You’re offline" }));
+    expect(signOutMock).not.toHaveBeenCalled();
+  });
+
+  it("dedupes a burst within the 3s window", () => {
+    tickPastDedup();
+    handleCrossCuttingTrpcError(new OfflineError());
+    handleCrossCuttingTrpcError(new OfflineError());
+    expect(toastMock).toHaveBeenCalledTimes(1);
   });
 });
 

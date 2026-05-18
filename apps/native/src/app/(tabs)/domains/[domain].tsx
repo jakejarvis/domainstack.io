@@ -28,8 +28,9 @@ import { useTRPC } from "@/lib/api";
 import { authClient } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import { confirmDestructive } from "@/lib/native-confirm";
-import { assertOnline } from "@/lib/network";
+import { assertOnline, isOfflineError } from "@/lib/network";
 import { toast } from "@/lib/toast";
+import { toastMutationError } from "@/lib/trpc-error-handler";
 import { REPORT_SECTIONS, type ReportSection } from "@domainstack/constants";
 
 const REPORT_SECTION_SET = new Set<ReportSection>(REPORT_SECTIONS);
@@ -37,6 +38,8 @@ const REPORT_SECTION_SET = new Set<ReportSection>(REPORT_SECTIONS);
 function isReportSection(value: string | undefined): value is ReportSection {
   return typeof value === "string" && (REPORT_SECTION_SET as Set<string>).has(value);
 }
+
+export { ScreenErrorBoundary as ErrorBoundary } from "@/components/screen-error-boundary";
 
 export default function DomainReportScreen() {
   const params = useLocalSearchParams<{ domain: string; section?: string }>();
@@ -324,8 +327,15 @@ function TrackingActions({
       assertOnline();
       await action();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Action failed";
-      toast.error({ title: "Action failed", message });
+      // A pre-mutation offline bail-out bypasses the global mutation cache —
+      // report it here so it isn't invisible. Real mutation rejections are
+      // reported centrally in query-client.
+      if (isOfflineError(error)) {
+        analytics.trackException(error, { context: "domain_action", offline: true });
+      }
+      // Centralized: friendly offline toast, UNAUTHORIZED → sign-out, and
+      // rate-limit handling instead of dumping a raw error message.
+      toastMutationError("Action failed", error);
     }
   }
 

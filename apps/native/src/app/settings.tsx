@@ -67,6 +67,8 @@ function NativeToggle({
   );
 }
 
+export { ScreenErrorBoundary as ErrorBoundary } from "@/components/screen-error-boundary";
+
 export default function SettingsScreen() {
   const calendarSheetRef = useRef<AppBottomSheetRef | null>(null);
 
