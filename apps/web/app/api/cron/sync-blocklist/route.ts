@@ -45,25 +45,61 @@ export async function GET(request: Request) {
         }
 
         const text = await response.text();
-        const lines = text.split("\n");
         const domains: string[] = [];
 
         // Parse domains from blocklist format
         // OISD uses wildcard format: *.example.com or example.com
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed || trimmed.startsWith("#")) continue;
+        let start = 0;
+        const len = text.length;
 
-          const domain = trimmed.startsWith("*.") ? trimmed.slice(2) : trimmed;
+        while (start < len) {
+          let end = text.indexOf("\n", start);
+          if (end === -1) end = len;
 
+          let tStart = start;
+          let tEnd = end - 1;
+
+          // Fast trim spaces and carriage returns
+          while (tStart <= tEnd && text.charCodeAt(tStart) <= 32) tStart++;
+          while (tEnd >= tStart && text.charCodeAt(tEnd) <= 32) tEnd--;
+
+          start = end + 1;
+
+          if (tStart > tEnd || text.charCodeAt(tStart) === 35) continue; // Empty line or '#' comment
+
+          // Remove "*." prefix
           if (
-            domain?.includes(".") &&
-            !domain.includes(" ") &&
-            domain.length <= 253 &&
-            !domain.startsWith(".") &&
-            !domain.endsWith(".")
+            tEnd - tStart >= 1 &&
+            text.charCodeAt(tStart) === 42 &&
+            text.charCodeAt(tStart + 1) === 46
           ) {
-            domains.push(domain.toLowerCase());
+            tStart += 2;
+          }
+
+          const dLen = tEnd - tStart + 1;
+          // Length check and check for leading/trailing dot
+          if (
+            dLen > 253 ||
+            dLen < 3 ||
+            text.charCodeAt(tStart) === 46 ||
+            text.charCodeAt(tEnd) === 46
+          ) {
+            continue;
+          }
+
+          let hasDot = false;
+          let valid = true;
+          for (let i = tStart + 1; i < tEnd; i++) {
+            const c = text.charCodeAt(i);
+            if (c === 46) hasDot = true;
+            else if (c <= 32) {
+              valid = false;
+              break;
+            }
+          }
+
+          if (valid && hasDot) {
+            domains.push(text.slice(tStart, tEnd + 1).toLowerCase());
           }
         }
 
