@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { View } from "react-native";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import Animated, { FadeIn, FadeOut, ReduceMotion } from "react-native-reanimated";
 
 import { Button } from "@/components/button";
 import { Card } from "@/components/card";
@@ -37,7 +37,10 @@ export function SubscriptionBanner({
 
   if (variant.kind === "ending") {
     return (
-      <Animated.View entering={FadeIn.duration(220)} exiting={FadeOut.duration(160)}>
+      <Animated.View
+        entering={FadeIn.duration(220).reduceMotion(ReduceMotion.System)}
+        exiting={FadeOut.duration(160).reduceMotion(ReduceMotion.System)}
+      >
         <Card>
           <View className="gap-1">
             <Text className="text-base font-semibold">
@@ -64,7 +67,7 @@ export function SubscriptionBanner({
     <Animated.View entering={FadeIn.duration(220)} exiting={FadeOut.duration(160)}>
       <Card>
         <View className="gap-1">
-          <Text className="text-base font-semibold">You've reached your plan limit</Text>
+          <Text className="text-base font-semibold">You’ve reached your plan limit</Text>
           <Text className="text-sm text-muted-foreground">
             Upgrade to Pro to track more domains and unlock notifications.
           </Text>

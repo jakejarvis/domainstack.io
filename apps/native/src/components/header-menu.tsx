@@ -109,7 +109,9 @@ export function HeaderMenu({
               })}
               onPress={() => {
                 analytics.track("sign_out_clicked");
-                void signOut().then(() => router.replace("/(tabs)/search"));
+                void signOut().then((ok) => {
+                  if (ok) router.replace("/(tabs)/search");
+                });
               }}
             >
               Sign out

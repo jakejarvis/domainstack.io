@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { router } from "expo-router";
-import { useEffect, useReducer, useRef } from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 import { View } from "react-native";
 
 import { Button } from "@/components/button";
@@ -30,49 +30,82 @@ function reducer(state: State, action: Action): State {
   }
 }
 
+// This screen auto-initiates deletion on mount. It is ONLY reachable from
+// `DeleteAccountRow`, which gates navigation behind a destructive confirm
+// dialog — keep it that way (no other route should push here).
 export default function DeleteAccountScreen() {
   const [state, dispatch] = useReducer(reducer, { status: "loading" });
-  const startedRef = useRef(false);
   const trpc = useTRPC();
   const unregisterDevice = useMutation(trpc.user.unregisterPushDevice.mutationOptions());
 
-  useEffect(() => {
-    if (startedRef.current && state.status !== "loading") return;
-    startedRef.current = true;
-    let cancelled = false;
-    void (async () => {
-      analytics.track("delete_account_initiated");
-      try {
-        // Unregister this device's push token before deletion so the server
-        // doesn't leave an orphan row referencing a soon-to-be-deleted user.
-        const token = await resolveTokenToUnregister();
-        if (token) {
-          await raceUnregister(unregisterDevice.mutateAsync({ expoPushToken: token }));
-        }
-        usePushPromptStore.getState().setLastRegisteredToken(null);
+  const mountedRef = useRef(true);
+  const startedRef = useRef(false);
+  const inFlightRef = useRef(false);
+  const analyticsFiredRef = useRef(false);
 
-        const result = await deleteAccount();
-        if (cancelled) return;
-        if (result.error) {
-          dispatch({
-            message: result.error.message ?? "Failed to request account deletion.",
-            type: "ERROR",
-          });
-          return;
-        }
-        dispatch({ type: "SUCCESS" });
-      } catch (error) {
-        if (cancelled) return;
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const runDeletion = useCallback(async () => {
+    // Idempotent: an in-flight run (or a retry tapped twice) must not stack
+    // requests or re-fire analytics.
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+
+    if (!analyticsFiredRef.current) {
+      analyticsFiredRef.current = true;
+      analytics.track("delete_account_initiated");
+    }
+
+    // Best-effort push cleanup. A failure here must NEVER surface as a
+    // deletion failure — the account is still fully intact, and an orphaned
+    // push row is reconciled server-side after the account is gone.
+    try {
+      const token = await resolveTokenToUnregister();
+      if (token) {
+        await raceUnregister(unregisterDevice.mutateAsync({ expoPushToken: token }));
+      }
+      usePushPromptStore.getState().setLastRegisteredToken(null);
+    } catch {
+      // swallow — see comment above
+    }
+
+    try {
+      const result = await deleteAccount();
+      if (!mountedRef.current) return;
+      if (result.error) {
         dispatch({
-          message: error instanceof Error ? error.message : "An unexpected error occurred.",
+          message: result.error.message ?? "Failed to request account deletion.",
           type: "ERROR",
         });
+        return;
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [state.status, unregisterDevice]);
+      dispatch({ type: "SUCCESS" });
+    } catch (error) {
+      if (!mountedRef.current) return;
+      dispatch({
+        message: error instanceof Error ? error.message : "An unexpected error occurred.",
+        type: "ERROR",
+      });
+    } finally {
+      inFlightRef.current = false;
+    }
+  }, [unregisterDevice]);
+
+  useEffect(() => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    void runDeletion();
+  }, [runDeletion]);
+
+  const retry = useCallback(() => {
+    dispatch({ type: "RETRY" });
+    void runDeletion();
+  }, [runDeletion]);
 
   return (
     <Screen>
@@ -87,7 +120,7 @@ export default function DeleteAccountScreen() {
         <View className="gap-4">
           <Text variant="title2">Check your email</Text>
           <Text className="text-sm text-muted-foreground">
-            We&apos;ve sent a confirmation link to your email address. Click the link to permanently
+            We’ve sent a confirmation link to your email address. Click the link to permanently
             delete your account.
           </Text>
           <Button onPress={() => router.back()}>
@@ -104,7 +137,7 @@ export default function DeleteAccountScreen() {
             <Button className="flex-1" onPress={() => router.back()} variant="secondary">
               <Text>Cancel</Text>
             </Button>
-            <Button className="flex-1" onPress={() => dispatch({ type: "RETRY" })} variant="danger">
+            <Button className="flex-1" onPress={retry} variant="danger">
               <Text>Try again</Text>
             </Button>
           </View>

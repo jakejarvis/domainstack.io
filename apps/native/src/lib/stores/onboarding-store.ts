@@ -2,6 +2,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
+import { onHydrated } from "./persist-hydration";
+
 interface OnboardingState {
   seen: boolean;
   hasHydrated: boolean;
@@ -26,9 +28,7 @@ export const useOnboardingStore = create<OnboardingStore>()(
       version: 1,
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({ seen: state.seen }),
-      onRehydrateStorage: () => () => {
-        useOnboardingStore.setState({ hasHydrated: true });
-      },
+      onRehydrateStorage: onHydrated(() => useOnboardingStore.setState({ hasHydrated: true })),
     },
   ),
 );

@@ -103,7 +103,7 @@ export function VerificationFailed({
       </View>
 
       <Text className="text-center text-xs text-muted-foreground">
-        Don’t worry — we’ll automatically check your domain daily and verify once the changes
+        Don’t worry: we’ll automatically check your domain daily and verify once the changes
         propagate.
       </Text>
     </View>

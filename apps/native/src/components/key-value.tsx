@@ -50,7 +50,16 @@ export function KeyValue({
   if (!copyable) return body;
 
   return (
-    <Pressable accessibilityRole="button" delayLongPress={400} onLongPress={handleLongPress}>
+    <Pressable
+      accessibilityActions={[{ name: "longpress", label: "Copy" }]}
+      accessibilityHint="Press and hold to copy"
+      accessibilityRole="button"
+      delayLongPress={400}
+      onAccessibilityAction={(event) => {
+        if (event.nativeEvent.actionName === "longpress") void handleLongPress();
+      }}
+      onLongPress={handleLongPress}
+    >
       {body}
     </Pressable>
   );

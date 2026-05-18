@@ -32,8 +32,12 @@ export function installGlobalErrorHandler() {
 
   try {
     const rejectionTracking: RejectionTracking = require("promise/setimmediate/rejection-tracking");
+    // `allRejections: false` so only rejections still unhandled after the
+    // detection delay are reported. `true` floods PostHog with rejections that
+    // are handled a tick later (the no-op `onHandled` can't retract an
+    // already-sent exception) — a constant stream of false positives in prod.
     rejectionTracking.enable({
-      allRejections: true,
+      allRejections: false,
       onHandled: () => {},
       onUnhandled: (_id, reason) => {
         const error = reason instanceof Error ? reason : new Error(String(reason));

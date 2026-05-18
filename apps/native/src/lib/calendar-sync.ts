@@ -67,7 +67,13 @@ function resolveCalendarSource(): Calendar.Source {
 
   const sources = Calendar.getSourcesSync();
   const local = sources.find((s) => s.type === Calendar.SourceType.LOCAL);
-  const source = local ?? sources[0];
+  // Never fall back to a read-only source (subscribed/birthday calendars) —
+  // `createCalendar` against one throws an opaque native error surfaced as a
+  // generic toast. Prefer LOCAL, then any other writable source.
+  const writable = sources.find(
+    (s) => s.type !== Calendar.SourceType.SUBSCRIBED && s.type !== Calendar.SourceType.BIRTHDAYS,
+  );
+  const source = local ?? writable;
   if (!source) {
     throw new Error("No writable calendar source available on this device.");
   }
@@ -79,7 +85,7 @@ function resolveCalendarSource(): Calendar.Source {
  * still exists on the device, otherwise creating it. The resolved id is
  * written back to the store.
  */
-export async function ensureCalendar(): Promise<Calendar.ExpoCalendar> {
+async function ensureCalendar(): Promise<Calendar.ExpoCalendar> {
   const existingId = useCalendarSyncStore.getState().calendarId;
 
   if (existingId) {
@@ -156,7 +162,7 @@ export function diffEvents(
  * expiration's calendar date** (derived from its UTC Y/M/D, matching the web
  * ICS `DATE` value) to avoid a timezone off-by-one.
  */
-function allDayWindow(expirationDate: Date): { startDate: Date; endDate: Date } {
+export function allDayWindow(expirationDate: Date): { startDate: Date; endDate: Date } {
   const year = expirationDate.getUTCFullYear();
   const month = expirationDate.getUTCMonth();
   const day = expirationDate.getUTCDate();
@@ -201,53 +207,82 @@ function eventMatches(existing: Calendar.ExpoCalendarEvent, event: DomainExpiryE
   );
 }
 
-/**
- * Reconcile the device calendar with the user's verified, expiring domains:
- * create missing events, update changed ones, delete stale ones, then persist
- * the refreshed `trackedDomainId → eventId` map and `lastSyncedAt`.
- *
- * Returns the number of events the calendar now tracks.
- */
-export async function reconcile(domains: TrackedDomainWithDetails[]): Promise<number> {
+async function reconcileInner(domains: TrackedDomainWithDetails[]): Promise<number> {
   const calendar = await ensureCalendar();
   const targets = buildDomainExpiryEvents(domains, { baseUrl: apiBaseUrl });
   const eventMap = { ...useCalendarSyncStore.getState().eventMap };
   const { creates, updates, deletes } = diffEvents(targets, eventMap);
 
-  for (const event of creates) {
-    const created = await calendar.createEvent(eventDetails(event));
-    eventMap[event.trackedDomainId] = created.id;
-  }
+  try {
+    for (const event of creates) {
+      const created = await calendar.createEvent(eventDetails(event));
+      eventMap[event.trackedDomainId] = created.id;
+    }
 
-  for (const { eventId, event } of updates) {
-    try {
-      const existing = await Calendar.ExpoCalendarEvent.get(eventId);
-      if (!eventMatches(existing, event)) {
-        await existing.update(eventDetails(event));
+    for (const { eventId, event } of updates) {
+      try {
+        const existing = await Calendar.ExpoCalendarEvent.get(eventId);
+        if (!eventMatches(existing, event)) {
+          await existing.update(eventDetails(event));
+        }
+      } catch {
+        // The user deleted the event (or it otherwise vanished) — recreate it
+        // and re-point the map at the fresh id.
+        const recreated = await calendar.createEvent(eventDetails(event));
+        eventMap[event.trackedDomainId] = recreated.id;
       }
-    } catch {
-      // The user deleted the event (or it otherwise vanished) — recreate it
-      // and re-point the map at the fresh id.
-      const recreated = await calendar.createEvent(eventDetails(event));
-      eventMap[event.trackedDomainId] = recreated.id;
     }
-  }
 
-  for (const eventId of deletes) {
-    try {
-      const stale = await Calendar.ExpoCalendarEvent.get(eventId);
-      await stale.delete();
-    } catch {
-      // Already gone — fine.
+    for (const eventId of deletes) {
+      try {
+        const stale = await Calendar.ExpoCalendarEvent.get(eventId);
+        await stale.delete();
+      } catch {
+        // Already gone — fine.
+      }
+      for (const [trackedDomainId, id] of Object.entries(eventMap)) {
+        if (id === eventId) delete eventMap[trackedDomainId];
+      }
     }
-    for (const [trackedDomainId, id] of Object.entries(eventMap)) {
-      if (id === eventId) delete eventMap[trackedDomainId];
-    }
-  }
 
-  useCalendarSyncStore.getState().setEventMap(eventMap);
-  useCalendarSyncStore.getState().setLastSyncedAt(Date.now());
-  return targets.length;
+    useCalendarSyncStore.getState().setLastSyncedAt(Date.now());
+    return targets.length;
+  } finally {
+    // Always persist the in-memory map — even if a loop threw partway (e.g.
+    // calendar permission revoked between createEvent calls). Without this the
+    // freshly-created event ids are lost and the next run recreates them as
+    // duplicates.
+    useCalendarSyncStore.getState().setEventMap(eventMap);
+  }
+}
+
+// Serialize reconcile runs. `use-calendar-sync.ts` can fire a throttled
+// foreground run and a debounced portfolio-change run near-simultaneously;
+// without this, both read the same `eventMap` snapshot and race to
+// `createEvent`, producing duplicate calendar events. Each call still gets its
+// own result/error; a prior failure does not block subsequent runs.
+let reconcileTail: Promise<unknown> = Promise.resolve();
+
+/**
+ * Reconcile the device calendar with the user's verified, expiring domains:
+ * create missing events, update changed ones, delete stale ones, then persist
+ * the refreshed `trackedDomainId → eventId` map and `lastSyncedAt`.
+ *
+ * Runs are serialized (never concurrent) and the event map is persisted even
+ * on partial failure.
+ *
+ * Returns the number of events the calendar now tracks.
+ */
+export function reconcile(domains: TrackedDomainWithDetails[]): Promise<number> {
+  const result = reconcileTail.then(
+    () => reconcileInner(domains),
+    () => reconcileInner(domains),
+  );
+  reconcileTail = result.then(
+    () => undefined,
+    () => undefined,
+  );
+  return result;
 }
 
 /**

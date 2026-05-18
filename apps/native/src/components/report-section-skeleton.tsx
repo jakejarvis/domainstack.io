@@ -11,10 +11,13 @@ export function ReportSectionSkeleton({ rows = 4 }: { rows?: number }) {
         className="gap-3 rounded-2xl border border-border bg-card p-4"
         style={{ borderCurve: "continuous" }}
       >
-        {Array.from({ length: rows }, (_, index) => (
+        {Array.from({ length: rows }, (_, i) => ({
+          key: `report-skeleton-${i}`,
+          wide: i % 2 === 0,
+        })).map((row) => (
           <View
-            className={cn("h-4 rounded bg-secondary", index % 2 === 0 ? "w-3/4" : "w-2/3")}
-            key={index}
+            className={cn("h-4 rounded bg-secondary", row.wide ? "w-3/4" : "w-2/3")}
+            key={row.key}
           />
         ))}
       </View>

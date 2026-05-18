@@ -5,6 +5,7 @@ import { Suspense, useRef } from "react";
 import { View } from "react-native";
 
 import { type AppBottomSheetRef } from "@/components/bottom-sheet";
+import { Button } from "@/components/button";
 import { GroupedRow, GroupedSection } from "@/components/form/group";
 import { CalendarFeedSheet } from "@/components/portfolio/calendar-feed-sheet";
 import { Screen } from "@/components/screen";
@@ -25,6 +26,7 @@ import { useTRPC } from "@/lib/api";
 import { authClient } from "@/lib/auth";
 import { confirmDestructive } from "@/lib/native-confirm";
 import { usePrivacyStore } from "@/lib/stores/privacy-store";
+import { toastMutationError } from "@/lib/trpc-error-handler";
 
 type PreferenceKey =
   | "domainExpiry"
@@ -128,12 +130,28 @@ function NotificationChannelsSection() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const preferences = useQuery(trpc.user.getNotificationPreferences.queryOptions());
+  const prefsKey = trpc.user.getNotificationPreferences.queryKey();
+  type Prefs = NonNullable<typeof preferences.data>;
+
   const updatePreferences = useMutation(
     trpc.user.updateGlobalNotificationPreferences.mutationOptions({
-      onSuccess: () =>
-        queryClient.invalidateQueries({
-          queryKey: trpc.user.getNotificationPreferences.queryKey(),
-        }),
+      // Optimistic: rapid toggles must feel instant and not snap back while a
+      // whole-query invalidation refetches. Apply the partial locally, roll
+      // back on failure, reconcile once the request settles.
+      onMutate: async (vars) => {
+        await queryClient.cancelQueries({ queryKey: prefsKey });
+        const previous = queryClient.getQueryData<Prefs>(prefsKey);
+        queryClient.setQueryData<Prefs | undefined>(prefsKey, (old) =>
+          old ? { ...old, ...(vars as Partial<Prefs>) } : old,
+        );
+        return { previous };
+      },
+      onError: (err, _vars, ctx) => {
+        const previous = (ctx as { previous?: Prefs } | undefined)?.previous;
+        if (previous) queryClient.setQueryData(prefsKey, previous);
+        toastMutationError("Couldn’t update notifications", err);
+      },
+      onSettled: () => queryClient.invalidateQueries({ queryKey: prefsKey }),
     }),
   );
 
@@ -150,10 +168,13 @@ function NotificationChannelsSection() {
   if (preferences.error || !preferences.data) {
     return (
       <GroupedSection title="Notifications">
-        <View className="p-3">
+        <View className="gap-3 p-3">
           <Text className="text-sm text-muted-foreground">
             {preferences.error?.message ?? "Preferences did not load."}
           </Text>
+          <Button onPress={() => void preferences.refetch()} variant="secondary">
+            <Text>Try again</Text>
+          </Button>
         </View>
       </GroupedSection>
     );
@@ -194,14 +215,37 @@ function PushDeviceSection() {
   const pushRegistration = usePushRegistration();
   const devices = useQuery(trpc.user.getPushDevices.queryOptions());
 
-  const invalidateDevices = () =>
-    queryClient.invalidateQueries({ queryKey: trpc.user.getPushDevices.queryKey() });
+  const devicesKey = trpc.user.getPushDevices.queryKey();
+  type Devices = NonNullable<typeof devices.data>;
+  const invalidateDevices = () => queryClient.invalidateQueries({ queryKey: devicesKey });
 
   const setDeviceEnabled = useMutation(
-    trpc.user.setPushDeviceEnabled.mutationOptions({ onSuccess: invalidateDevices }),
+    trpc.user.setPushDeviceEnabled.mutationOptions({
+      // Optimistic so the native switch doesn't lag a round-trip; roll back
+      // and toast on failure (previously a failed toggle did nothing at all).
+      onMutate: async (vars: { enabled: boolean; expoPushToken: string }) => {
+        await queryClient.cancelQueries({ queryKey: devicesKey });
+        const previous = queryClient.getQueryData<Devices>(devicesKey);
+        queryClient.setQueryData<Devices | undefined>(devicesKey, (old) =>
+          old?.map((d) =>
+            d.expoPushToken === vars.expoPushToken ? { ...d, enabled: vars.enabled } : d,
+          ),
+        );
+        return { previous };
+      },
+      onError: (err, _vars, ctx) => {
+        const previous = (ctx as { previous?: Devices } | undefined)?.previous;
+        if (previous) queryClient.setQueryData(devicesKey, previous);
+        toastMutationError("Couldn’t update device", err);
+      },
+      onSettled: invalidateDevices,
+    }),
   );
   const unregisterDevice = useMutation(
-    trpc.user.unregisterPushDevice.mutationOptions({ onSuccess: invalidateDevices }),
+    trpc.user.unregisterPushDevice.mutationOptions({
+      onSuccess: invalidateDevices,
+      onError: (err) => toastMutationError("Couldn’t unregister device", err),
+    }),
   );
 
   return (
@@ -326,7 +370,9 @@ function AccountSection() {
         <GroupedRow
           onPress={() => {
             analytics.track("sign_out_clicked");
-            void signOut().then(() => router.replace("/(tabs)/search"));
+            void signOut().then((ok) => {
+              if (ok) router.replace("/(tabs)/search");
+            });
           }}
         >
           <Text className="font-semibold">Sign out</Text>

@@ -43,4 +43,22 @@ describe("routeFromNotificationData", () => {
     expect(routeFromNotificationData({ data: "not-an-object" })).toBe("/(tabs)/notifications");
     expect(routeFromNotificationData({ domainName: 123 })).toBe("/(tabs)/notifications");
   });
+
+  it("rejects hostile/non-domain string payloads instead of deep-linking a garbage report", () => {
+    expect(routeFromNotificationData({ domainName: "not a domain!!" })).toBe(
+      "/(tabs)/notifications",
+    );
+    expect(routeFromNotificationData({ domainName: "javascript:alert(1)" })).toBe(
+      "/(tabs)/notifications",
+    );
+    expect(routeFromNotificationData({ data: { domainName: "../../etc/passwd" } })).toBe(
+      "/(tabs)/notifications",
+    );
+  });
+
+  it("normalizes a URL-shaped payload to its bare hostname", () => {
+    expect(routeFromNotificationData({ domainName: "https://www.Example.com/path?x=1" })).toEqual(
+      domainRoute("example.com"),
+    );
+  });
 });

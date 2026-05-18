@@ -50,8 +50,7 @@ function SignInHero() {
       />
       <Text variant="title">Domainstack</Text>
       <Text variant="subhead" className="text-center text-muted-foreground">
-        Track ownership, expiry, DNS, and certificate changes — and get notified before anything
-        breaks.
+        Track ownership, expiry, DNS, and certificate changes; get notified before anything breaks.
       </Text>
     </View>
   );
@@ -92,7 +91,11 @@ function isProviderAvailableOnPlatform(provider: NativeAuthProviderOption): bool
 }
 
 export default function SignInScreen() {
-  const [appleAuthAvailable, setAppleAuthAvailable] = useState<boolean | null>(null);
+  // Optimistically true on iOS (isAvailableAsync is effectively always true on
+  // iOS 13+). This avoids flashing a fake disabled "Continue with Apple"
+  // placeholder before the native button mounts; the effect still corrects the
+  // rare unavailable case.
+  const [appleAuthAvailable, setAppleAuthAvailable] = useState<boolean>(Platform.OS === "ios");
   const [loadingProvider, setLoadingProvider] = useState<AuthProvider | null>(null);
   const triggerPushPrompt = usePushSoftPrompt();
   const otaConfig = useQuery({
@@ -131,7 +134,7 @@ export default function SignInScreen() {
     const session = await authClient.getSession();
     if (!session.data?.user) {
       toast.error({
-        title: "Sign-in didn't complete",
+        title: "Sign-in didn’t complete",
         message: "Please try again.",
       });
       return;
@@ -250,9 +253,14 @@ export default function SignInScreen() {
             </Button>
           </>
         ) : providerOptions.length === 0 ? (
-          <Text className="text-sm text-muted-foreground">
-            No sign-in providers are available right now.
-          </Text>
+          <>
+            <Text className="text-sm text-muted-foreground">
+              No sign-in providers are available right now.
+            </Text>
+            <Button onPress={() => void otaConfig.refetch()} variant="secondary">
+              <Text>Try again</Text>
+            </Button>
+          </>
         ) : (
           providerOptions.map((provider) => (
             <ProviderButton
@@ -276,7 +284,7 @@ function ProviderButton({
   onPress,
   provider,
 }: {
-  appleAuthAvailable: boolean | null;
+  appleAuthAvailable: boolean;
   loadingProvider: AuthProvider | null;
   onPress: (provider: NativeAuthProviderOption) => void;
   provider: NativeAuthProviderOption;
@@ -285,15 +293,6 @@ function ProviderButton({
   const primaryColor = useCSSVariable("--color-primary-foreground") as string;
   const secondaryColor = useCSSVariable("--color-secondary-foreground") as string;
   const iconColor = variant === "primary" ? primaryColor : secondaryColor;
-
-  if (provider.id === "apple" && appleAuthAvailable === null) {
-    return (
-      <Button disabled loading variant="primary">
-        <AuthIcon color={primaryColor} provider="apple" size={18} />
-        <Text>Continue with Apple</Text>
-      </Button>
-    );
-  }
 
   if (provider.id === "apple" && appleAuthAvailable) {
     if (loadingProvider === "apple") {

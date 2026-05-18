@@ -3,11 +3,13 @@ import * as Clipboard from "expo-clipboard";
 import * as Linking from "expo-linking";
 import { type Ref, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
+import { useCSSVariable } from "uniwind";
 
 import { AppBottomSheet, type AppBottomSheetRef } from "@/components/bottom-sheet";
 import { Button } from "@/components/button";
 import { Card } from "@/components/card";
 import { Spinner } from "@/components/spinner";
+import { Symbol } from "@/components/symbol";
 import { Text } from "@/components/text";
 import { analytics } from "@/lib/analytics";
 import { useTRPC } from "@/lib/api";
@@ -117,7 +119,7 @@ function ManagedCalendarCard() {
       });
     } catch (error) {
       analytics.trackException(error, { context: "calendar-add" });
-      toast.error({ title: "Couldn't add to calendar", message: errorMessage(error) });
+      toast.error({ title: "Couldn’t add to calendar", message: errorMessage(error) });
     } finally {
       setAdding(false);
     }
@@ -149,7 +151,7 @@ function ManagedCalendarCard() {
     void confirmDestructive({
       confirmLabel: "Remove",
       message:
-        "Deletes the Domainstack calendar and its events from this device. Your tracked domains aren't affected.",
+        "Deletes the Domainstack calendar and its events from this device. Your tracked domains aren’t affected.",
       title: "Remove from calendar?",
     }).then(async (confirmed) => {
       if (!confirmed) return;
@@ -159,7 +161,7 @@ function ManagedCalendarCard() {
         toast.success("Removed from calendar");
       } catch (error) {
         analytics.trackException(error, { context: "calendar-teardown" });
-        toast.error({ title: "Couldn't remove", message: errorMessage(error) });
+        toast.error({ title: "Couldn’t remove", message: errorMessage(error) });
       } finally {
         setRemoving(false);
       }
@@ -203,6 +205,7 @@ function ManagedCalendarCard() {
 
 function AdvancedSubscriptionSection() {
   const [expanded, setExpanded] = useState(false);
+  const chevronColor = useCSSVariable("--color-muted-foreground") as string;
 
   return (
     <Card>
@@ -214,7 +217,7 @@ function AdvancedSubscriptionSection() {
         onPress={() => setExpanded((v) => !v)}
       >
         <Text className="font-semibold">Subscription URL (advanced)</Text>
-        <Text className="text-muted-foreground">{expanded ? "▾" : "▸"}</Text>
+        <Symbol color={chevronColor} name={expanded ? "chevron.down" : "chevron.right"} size={14} />
       </Pressable>
       {expanded ? <SubscriptionFeedManager /> : null}
     </Card>

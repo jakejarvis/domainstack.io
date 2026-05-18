@@ -4,6 +4,8 @@ import { createJSONStorage, persist } from "zustand/middleware";
 
 import type { PortfolioSort, PortfolioStatusFilter } from "@/lib/portfolio";
 
+import { onHydrated } from "./persist-hydration";
+
 type SelectionMode = "idle" | "selecting";
 export type HealthBucket = "healthy" | "expiring" | "expired";
 
@@ -107,9 +109,7 @@ export const usePortfolioStore = create<PortfolioStore>()(
       partialize: (state) => ({ sort: state.sort, status: state.status }),
       storage: createJSONStorage(() => AsyncStorage),
       version: 1,
-      onRehydrateStorage: () => () => {
-        usePortfolioStore.setState({ hasHydrated: true });
-      },
+      onRehydrateStorage: onHydrated(() => usePortfolioStore.setState({ hasHydrated: true })),
     },
   ),
 );

@@ -42,6 +42,8 @@ export function TextField({
     <View className="gap-2">
       <Text className="text-sm font-semibold text-muted-foreground">{label}</Text>
       <TextInput
+        accessibilityLabel={label}
+        aria-invalid={Boolean(error)}
         autoCapitalize={autoCapitalize}
         autoComplete={autoComplete}
         autoCorrect={false}
@@ -67,7 +69,12 @@ export function TextField({
         value={value}
       />
       {error ? (
-        <Text style={{ color: dangerColor }} className="text-sm text-muted-foreground">
+        <Text
+          accessibilityLiveRegion="polite"
+          role="alert"
+          style={{ color: dangerColor }}
+          className="text-sm"
+        >
           {error}
         </Text>
       ) : null}

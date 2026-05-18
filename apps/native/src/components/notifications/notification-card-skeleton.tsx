@@ -1,31 +1,7 @@
-import { useEffect } from "react";
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-} from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 
 import { Card } from "@/components/card";
-
-const PULSE_DURATION = 900;
-
-function usePulseStyle() {
-  const progress = useSharedValue(0.6);
-
-  useEffect(() => {
-    progress.set(
-      withRepeat(
-        withTiming(1, { duration: PULSE_DURATION, easing: Easing.inOut(Easing.ease) }),
-        -1,
-        true,
-      ),
-    );
-  }, [progress]);
-
-  return useAnimatedStyle(() => ({ opacity: progress.get() }));
-}
+import { usePulseStyle } from "@/lib/use-pulse-style";
 
 function NotificationCardSkeleton() {
   const pulseStyle = usePulseStyle();
@@ -46,9 +22,13 @@ function NotificationCardSkeleton() {
 
 export function NotificationListSkeleton({ count = 4 }: { count?: number }) {
   return (
-    <Animated.View className="gap-3">
-      {Array.from({ length: count }, (_, index) => (
-        <NotificationCardSkeleton key={index} />
+    <Animated.View
+      accessibilityElementsHidden
+      className="gap-3"
+      importantForAccessibility="no-hide-descendants"
+    >
+      {Array.from({ length: count }, (_, i) => ({ key: `notif-skeleton-${i}` })).map((row) => (
+        <NotificationCardSkeleton key={row.key} />
       ))}
     </Animated.View>
   );

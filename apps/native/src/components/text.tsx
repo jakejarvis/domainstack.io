@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react";
+import { createContext, use } from "react";
 import { Text as NativeText, type TextProps } from "react-native";
 
 import { cn, cva, type VariantProps } from "@/lib/cn";
@@ -47,7 +47,7 @@ type TextVariant = NonNullable<VariantProps<typeof textVariants>["variant"]>;
  * `variant` for role, `className` for everything else.
  */
 export function Text({ className, variant, ...props }: TextProps & { variant?: TextVariant }) {
-  const contextClassName = useContext(TextClassContext);
+  const contextClassName = use(TextClassContext);
   return (
     <NativeText className={cn(textVariants({ variant }), contextClassName, className)} {...props} />
   );

@@ -12,7 +12,7 @@ export function DeleteAccountRow() {
       confirmLabel: "Delete",
       destructive: true,
       message:
-        "This action cannot be undone. We'll send a confirmation link to your email; clicking it will permanently delete your account, tracked domains, notification preferences, and any active subscription.",
+        "This action cannot be undone. We’ll send a confirmation link to your email; clicking it will permanently delete your account, tracked domains, notification preferences, and any active subscription.",
       title: "Delete your account?",
     });
     if (!accepted) return;

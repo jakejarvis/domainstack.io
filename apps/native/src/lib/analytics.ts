@@ -17,6 +17,11 @@ interface IdentifySetOnceProperties {
 export const posthog: PostHog | null = posthogKey
   ? new PostHog(posthogKey, {
       captureAppLifecycleEvents: true,
+      // Start opted-out. `PrivacySync` (analytics-provider.tsx) calls `optIn()`
+      // only after the privacy store rehydrates from AsyncStorage and confirms
+      // consent, so a previously opted-out user has nothing captured (including
+      // lifecycle events) during the cold-start hydration window.
+      defaultOptIn: false,
       enableSessionReplay: false,
       errorTracking: { autocapture: false },
       host: posthogHost,
@@ -25,12 +30,20 @@ export const posthog: PostHog | null = posthogKey
 
 let identifiedUserId: string | null = null;
 
+// Defense-in-depth alongside `defaultOptIn: false`: drop every capture until the
+// privacy store has rehydrated and consent state is known. This makes the
+// pre-consent contract explicit at each call site rather than relying solely on
+// PostHog's internal opt-out state.
+function consentReady(): boolean {
+  return usePrivacyStore.getState().hasHydrated;
+}
+
 function withPlatform(properties?: Record<string, unknown>): PostHogEventProperties {
   return { ...properties, platform: "native" } as PostHogEventProperties;
 }
 
 function track(event: string, properties?: Record<string, unknown>) {
-  if (!posthog) return;
+  if (!posthog || !consentReady()) return;
   try {
     posthog.capture(event, withPlatform(properties));
   } catch {
@@ -39,7 +52,7 @@ function track(event: string, properties?: Record<string, unknown>) {
 }
 
 function trackException(error: Error | unknown, properties?: Record<string, unknown>) {
-  if (!posthog) return;
+  if (!posthog || !consentReady()) return;
   if (!usePrivacyStore.getState().errorCaptureEnabled) return;
   try {
     posthog.captureException(error, withPlatform(properties));
@@ -53,7 +66,7 @@ function identify(
   properties?: IdentifyProperties,
   setOnceProperties?: IdentifySetOnceProperties,
 ) {
-  if (!posthog) return;
+  if (!posthog || !consentReady()) return;
   try {
     posthog.identify(userId, {
       $set: properties,

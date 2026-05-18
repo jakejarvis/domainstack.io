@@ -19,7 +19,7 @@ import { ApiProvider } from "@/lib/api";
 import { authClient } from "@/lib/auth";
 import { installGlobalErrorHandler } from "@/lib/error-handler";
 import { configureImageCache } from "@/lib/image-cache";
-import { routeFromNotificationData } from "@/lib/navigation";
+import { NOTIFICATIONS_ROUTE, routeFromNotificationData } from "@/lib/navigation";
 import { useStackScreenOptions } from "@/lib/screen-options";
 import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
 import { toast } from "@/lib/toast";
@@ -60,7 +60,7 @@ function RootNavigator() {
   // (public) report. Independent of the notification routing above.
   const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntentContext();
   const addDomain = useSearchHistoryStore((s) => s.addDomain);
-  const shareHandledRef = useRef(false);
+  const lastShareSignatureRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!session.isPending && versionGateReady) {
@@ -85,7 +85,7 @@ function RootNavigator() {
       // routes (domain reports) work fine signed-out. Stash the protected
       // target so it can be replayed after the user signs in instead of
       // being lost.
-      if (!isSignedIn && target === "/(tabs)/notifications") {
+      if (!isSignedIn && target === NOTIFICATIONS_ROUTE) {
         pendingTargetRef.current = target;
         router.push("/sign-in");
         return;
@@ -120,8 +120,6 @@ function RootNavigator() {
 
   useEffect(() => {
     if (!hasShareIntent) return;
-    if (shareHandledRef.current) return;
-    shareHandledRef.current = true;
 
     // Prefer the library's pre-parsed `webUrl` (clean URL that
     // `normalizeDomainInput` handles perfectly). Free-form `text` must have a
@@ -133,22 +131,32 @@ function RootNavigator() {
       return m ? m[0] : t;
     })();
     const value = shareIntent?.webUrl || fromText;
-    const domain = normalizeDomainInput(value);
+    const signature = value || "";
 
-    if (isValidDomain(domain)) {
-      analytics.track("share_intent_received", { domain });
-      addDomain(domain);
-      router.push({ pathname: "/(tabs)/domains/[domain]", params: { domain } });
-    } else {
-      analytics.track("share_intent_invalid", { input: value });
-      toast.warning({
-        title: "Invalid link",
-        message: "Couldn't find a domain in what you shared.",
-      });
+    // Only act once per distinct shared payload. `resetShareIntent()` mutates
+    // context and retriggers this effect, and the OS can re-deliver the same
+    // intent; a synchronously-cleared ref guard is a no-op, a payload
+    // signature is not. We still clear the intent on every run so a duplicate
+    // or empty delivery can't wedge the effect.
+    const alreadyHandled = signature !== "" && lastShareSignatureRef.current === signature;
+    if (!alreadyHandled) {
+      lastShareSignatureRef.current = signature;
+      const domain = normalizeDomainInput(value);
+
+      if (isValidDomain(domain)) {
+        analytics.track("share_intent_received", { domain });
+        addDomain(domain);
+        router.push({ pathname: "/(tabs)/domains/[domain]", params: { domain } });
+      } else {
+        analytics.track("share_intent_invalid", { input: value });
+        toast.warning({
+          title: "Invalid link",
+          message: "Couldn’t find a domain in what you shared.",
+        });
+      }
     }
 
     resetShareIntent();
-    shareHandledRef.current = false;
   }, [hasShareIntent, shareIntent, resetShareIntent, addDomain]);
 
   return (

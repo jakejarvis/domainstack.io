@@ -115,7 +115,7 @@ export function LinkedAccountsSection() {
     const accepted = await confirm({
       confirmLabel: "Unlink",
       destructive: true,
-      message: `You won't be able to sign in with ${provider} again until you re-link it.`,
+      message: `You won’t be able to sign in with ${provider} again until you re-link it.`,
       title: `Unlink ${provider}?`,
     });
     if (!accepted) return;

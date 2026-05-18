@@ -3,7 +3,7 @@ import * as Notifications from "expo-notifications";
 
 import { usePushPromptStore } from "@/lib/stores/push-prompt-store";
 
-export const UNREGISTER_TIMEOUT_MS = 3000;
+const UNREGISTER_TIMEOUT_MS = 3000;
 
 export async function resolveTokenToUnregister(): Promise<string | null> {
   const stored = usePushPromptStore.getState().lastRegisteredToken;

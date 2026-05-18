@@ -1,41 +1,22 @@
-import { useEffect } from "react";
 import { View } from "react-native";
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-} from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 
 import { cn } from "@/lib/cn";
-
-const PULSE_DURATION = 900;
-
-function usePulseStyle() {
-  const progress = useSharedValue(0.6);
-
-  useEffect(() => {
-    progress.set(
-      withRepeat(
-        withTiming(1, { duration: PULSE_DURATION, easing: Easing.inOut(Easing.ease) }),
-        -1,
-        true,
-      ),
-    );
-  }, [progress]);
-
-  return useAnimatedStyle(() => ({ opacity: progress.get() }));
-}
+import { usePulseStyle } from "@/lib/use-pulse-style";
 
 export function SkeletonRows({ count = 3 }: { count?: number }) {
   const pulseStyle = usePulseStyle();
   return (
-    <Animated.View className="gap-3" style={pulseStyle}>
-      {Array.from({ length: count }, (_, index) => (
+    <Animated.View
+      accessibilityElementsHidden
+      className="gap-3"
+      importantForAccessibility="no-hide-descendants"
+      style={pulseStyle}
+    >
+      {Array.from({ length: count }, (_, i) => ({ key: `skeleton-row-${i}` })).map((row) => (
         <Animated.View
           className="bg-glass h-24 rounded-2xl border border-border"
-          key={index}
+          key={row.key}
           style={{ borderCurve: "continuous" }}
         />
       ))}
@@ -54,11 +35,16 @@ function Bar({ className }: { className?: string }) {
 export function PortfolioListSkeleton({ count = 5 }: { count?: number }) {
   const pulseStyle = usePulseStyle();
   return (
-    <Animated.View className="gap-3" style={pulseStyle}>
-      {Array.from({ length: count }, (_, index) => (
+    <Animated.View
+      accessibilityElementsHidden
+      className="gap-3"
+      importantForAccessibility="no-hide-descendants"
+      style={pulseStyle}
+    >
+      {Array.from({ length: count }, (_, i) => ({ key: `portfolio-skeleton-${i}` })).map((row) => (
         <View
           className="gap-3 rounded-2xl border border-border bg-card p-4"
-          key={index}
+          key={row.key}
           style={{ borderCurve: "continuous" }}
         >
           <View className="flex-row items-center justify-between gap-3">

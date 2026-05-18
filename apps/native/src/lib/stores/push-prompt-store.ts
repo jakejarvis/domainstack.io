@@ -2,6 +2,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
+import { onHydrated } from "./persist-hydration";
+
 export type PushPromptTrigger = "signIn" | "firstDomain";
 
 interface PushPromptState {
@@ -50,9 +52,7 @@ export const usePushPromptStore = create<PushPromptStore>()(
         handledTriggers: state.handledTriggers,
         lastRegisteredToken: state.lastRegisteredToken,
       }),
-      onRehydrateStorage: () => () => {
-        usePushPromptStore.setState({ hasHydrated: true });
-      },
+      onRehydrateStorage: onHydrated(() => usePushPromptStore.setState({ hasHydrated: true })),
     },
   ),
 );

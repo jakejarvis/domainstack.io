@@ -2,6 +2,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
+import { onHydrated } from "./persist-hydration";
+
 interface PrivacyState {
   analyticsEnabled: boolean;
   errorCaptureEnabled: boolean;
@@ -33,9 +35,7 @@ export const usePrivacyStore = create<PrivacyStore>()(
         analyticsEnabled: state.analyticsEnabled,
         errorCaptureEnabled: state.errorCaptureEnabled,
       }),
-      onRehydrateStorage: () => () => {
-        usePrivacyStore.setState({ hasHydrated: true });
-      },
+      onRehydrateStorage: onHydrated(() => usePrivacyStore.setState({ hasHydrated: true })),
     },
   ),
 );

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Linking, Platform, View } from "react-native";
 
 import { getOtaConfig, OTA_CONFIG_QUERY_KEY } from "@/lib/auth";
+import { toast } from "@/lib/toast";
 import { isVersionBelow } from "@/lib/version";
 import type { OtaConfigNativeApp } from "@domainstack/auth/ota-config/client";
 
@@ -62,18 +63,34 @@ export function VersionGate({ children }: { children: React.ReactNode }) {
 function UpdateRequiredScreen({ nativeApp }: { nativeApp: OtaConfigNativeApp }) {
   const storeUrl = Platform.OS === "android" ? nativeApp.storeUrlAndroid : nativeApp.storeUrlIos;
 
+  const openStore = () => {
+    if (!storeUrl) {
+      toast.error({
+        title: "Update unavailable",
+        message: "Please update Domainstack from the App Store or Play Store.",
+      });
+      return;
+    }
+    Linking.openURL(storeUrl).catch(() => {
+      toast.error({
+        title: "Couldn’t open the store",
+        message: "Please update Domainstack manually from your app store.",
+      });
+    });
+  };
+
   return (
     <Screen scroll={false}>
       <View className="flex-1 items-center justify-center">
         <Card className="w-full max-w-md gap-4">
-          <Text className="text-3xl font-semibold">
+          <Text accessibilityRole="header" className="text-3xl font-semibold">
             {nativeApp.messageTitle ?? "Update required"}
           </Text>
           <Text className="text-sm text-muted-foreground">
             {nativeApp.messageBody ??
               "Please update Domainstack to the latest version to continue."}
           </Text>
-          <Button onPress={() => void Linking.openURL(storeUrl)}>
+          <Button onPress={openStore}>
             <Text>Update Domainstack</Text>
           </Button>
         </Card>

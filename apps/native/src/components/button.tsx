@@ -1,5 +1,6 @@
 import * as Haptics from "expo-haptics";
 import { ActivityIndicator, Pressable } from "react-native";
+import { useReducedMotion } from "react-native-reanimated";
 import { useCSSVariable } from "uniwind";
 
 import { cn, cva, type VariantProps } from "@/lib/cn";
@@ -74,10 +75,12 @@ export function Button({
   const isDisabled = Boolean(disabled || loading);
   const foregroundColor = useCSSVariable(labelColorVariable[variant]) as string;
   const labelClassName = buttonLabelVariants({ variant });
+  const reduceMotion = useReducedMotion();
 
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityState={{ busy: Boolean(loading), disabled: isDisabled }}
       className={cn(buttonVariants({ variant }), isDisabled && "opacity-40", className)}
       disabled={isDisabled}
       onPress={() => {
@@ -89,7 +92,7 @@ export function Button({
       style={({ pressed }) => ({
         borderCurve: "continuous",
         opacity: pressed && !isDisabled ? 0.9 : 1,
-        transform: [{ scale: pressed && !isDisabled ? 0.97 : 1 }],
+        transform: [{ scale: pressed && !isDisabled && !reduceMotion ? 0.97 : 1 }],
       })}
     >
       <TextClassContext.Provider value={labelClassName}>

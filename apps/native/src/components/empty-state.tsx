@@ -26,7 +26,11 @@ export function EmptyState({
     >
       <View className="items-center gap-2">
         {icon ? (
-          <View className="mb-1">
+          <View
+            accessibilityElementsHidden
+            className="mb-1"
+            importantForAccessibility="no-hide-descendants"
+          >
             <Symbol color={muted} name={icon} size={44} />
           </View>
         ) : null}

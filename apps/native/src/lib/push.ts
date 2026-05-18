@@ -15,7 +15,7 @@ Notifications.setNotificationHandler({
 // Android 8+ requires every notification to belong to a channel; without an
 // explicit one the OS surfaces our pushes under a generic "Miscellaneous"
 // label in the system settings.
-export async function ensureAndroidChannelAsync(): Promise<void> {
+async function ensureAndroidChannelAsync(): Promise<void> {
   if (Platform.OS !== "android") return;
   try {
     await Notifications.setNotificationChannelAsync("default", {

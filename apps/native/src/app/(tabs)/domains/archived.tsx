@@ -1,48 +1,51 @@
 import { FlashList } from "@shopify/flash-list";
-import { useQuery } from "@tanstack/react-query";
-import { router } from "expo-router";
+import { useIsRestoring, useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
 import { View } from "react-native";
 
 import { EmptyState } from "@/components/empty-state";
 import { ArchivedRow, type ArchivedRowDomain } from "@/components/portfolio/archived-row";
+import { QueryErrorState } from "@/components/query-error-state";
 import { RefreshControl } from "@/components/refresh-control";
+import { RequireAuth } from "@/components/require-auth";
 import { Screen } from "@/components/screen";
 import { SkeletonRows } from "@/components/skeleton";
 import { Text } from "@/components/text";
 import { useDashboardMutations } from "@/hooks/use-dashboard-mutations";
 import { useTRPC } from "@/lib/api";
-import { authClient } from "@/lib/auth";
 import { confirmDestructive } from "@/lib/native-confirm";
 
 const LIST_INPUT = { includeArchived: true } as const;
 
+// Fully static — hoisted so FlashList's header/empty aren't rebuilt each render.
+const ARCHIVED_LIST_HEADER = (
+  <View className="gap-4 px-4 pt-3 pb-2">
+    <Text className="text-sm text-muted-foreground">
+      Archived domains don’t count toward your plan limit. Reactivate to resume tracking.
+    </Text>
+  </View>
+);
+
+const ARCHIVED_LIST_EMPTY = (
+  <View className="px-4 pb-8">
+    <EmptyState
+      body="Archive domains from the detail screen to keep them here for later."
+      icon={{ android: "archive", ios: "archivebox" }}
+      title="No archived domains"
+    />
+  </View>
+);
+
 export default function ArchivedDomainsScreen() {
-  const session = authClient.useSession();
-
-  if (session.isPending) {
-    return (
-      <Screen>
-        <SkeletonRows count={4} />
-      </Screen>
-    );
-  }
-
-  if (!session.data?.user) {
-    return (
-      <Screen>
-        <EmptyState
-          actionLabel="Sign in"
-          body="Sign in to view your archived portfolio."
-          icon={{ android: "lock", ios: "lock" }}
-          onAction={() => router.push("/sign-in")}
-          title="Sign in required"
-        />
-      </Screen>
-    );
-  }
-
-  return <ArchivedScreen />;
+  return (
+    <RequireAuth
+      body="Sign in to view your archived domains."
+      loading={<SkeletonRows count={6} />}
+      title="Archived is locked"
+    >
+      <ArchivedScreen />
+    </RequireAuth>
+  );
 }
 
 function ArchivedScreen() {
@@ -50,6 +53,7 @@ function ArchivedScreen() {
   const dashboard = useDashboardMutations();
   const [refreshing, setRefreshing] = useState(false);
 
+  const isRestoring = useIsRestoring();
   const domainsQuery = useQuery(trpc.tracking.listDomains.queryOptions(LIST_INPUT));
   const subscriptionQuery = useQuery(trpc.user.getSubscription.queryOptions());
 
@@ -61,7 +65,10 @@ function ArchivedScreen() {
     );
   }, [domainsQuery.data]);
 
-  const canReactivate = subscriptionQuery.data?.canAddMore ?? true;
+  // Default closed until the subscription is known — better to briefly disable
+  // Reactivate than to let a user at their plan limit tap it and get a server
+  // rejection.
+  const canReactivate = subscriptionQuery.data?.canAddMore ?? false;
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -106,39 +113,29 @@ function ArchivedScreen() {
     [canReactivate, handleReactivate, handleRemove],
   );
 
-  const listHeader = (
-    <View className="gap-4 px-4 pt-3 pb-2">
-      <Text className="text-sm text-muted-foreground">
-        Archived domains don't count toward your plan limit. Reactivate to resume tracking.
-      </Text>
-      {domainsQuery.isPending ? <SkeletonRows /> : null}
-      {domainsQuery.error ? (
-        <EmptyState
-          actionLabel="Retry"
-          body={domainsQuery.error.message}
-          icon={{ android: "error_outline", ios: "exclamationmark.circle" }}
-          onAction={() => void domainsQuery.refetch()}
-          title="Archived domains did not load"
-        />
-      ) : null}
-    </View>
-  );
+  if (isRestoring || domainsQuery.isPending) {
+    return (
+      <Screen>
+        <SkeletonRows count={6} />
+      </Screen>
+    );
+  }
 
-  const listEmpty =
-    !domainsQuery.isPending && !domainsQuery.error ? (
-      <View className="px-4 pb-8">
-        <EmptyState
-          body="Archive domains from the detail screen to keep them here for later."
-          icon={{ android: "archive", ios: "archivebox" }}
-          title="No archived domains"
+  if (domainsQuery.error) {
+    return (
+      <Screen>
+        <QueryErrorState
+          onRetry={() => void domainsQuery.refetch()}
+          title="Couldn’t load archived domains"
         />
-      </View>
-    ) : null;
+      </Screen>
+    );
+  }
 
   return (
     <FlashList
-      ListEmptyComponent={listEmpty}
-      ListHeaderComponent={listHeader}
+      ListEmptyComponent={ARCHIVED_LIST_EMPTY}
+      ListHeaderComponent={ARCHIVED_LIST_HEADER}
       contentContainerStyle={{ paddingBottom: 32 }}
       contentInsetAdjustmentBehavior="automatic"
       data={archivedDomains}

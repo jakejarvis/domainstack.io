@@ -14,6 +14,7 @@ import Animated, {
   type SharedValue,
   useAnimatedScrollHandler,
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -44,7 +45,7 @@ const SLIDES: readonly Slide[] = [
   {
     icon: { ios: "bell", android: "notifications" },
     title: "Get notified",
-    body: "We'll push and email you before registrations or certificates expire, or when providers change.",
+    body: "We’ll push and email you before registrations or certificates expire, or when providers change.",
   },
 ];
 
@@ -59,7 +60,14 @@ function Dot({
   width: number;
   color: string;
 }) {
+  const reduceMotion = useReducedMotion();
   const style = useAnimatedStyle(() => {
+    // Reduced motion: snap the active indicator discretely instead of morphing
+    // width/opacity as the carousel scrolls.
+    if (reduceMotion) {
+      const active = Math.round(scrollX.value / width) === index;
+      return { opacity: active ? 1 : 0.3, width: active ? 24 : 8 };
+    }
     const inputRange = [(index - 1) * width, index * width, (index + 1) * width];
     return {
       opacity: interpolate(scrollX.value, inputRange, [0.3, 1, 0.3], Extrapolation.CLAMP),

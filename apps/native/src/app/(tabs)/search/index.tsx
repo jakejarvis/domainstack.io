@@ -7,12 +7,17 @@ import { EmptyState } from "@/components/empty-state";
 import { GroupedRow, GroupedSection } from "@/components/form/group";
 import { HeaderMenu } from "@/components/header-menu";
 import { Screen } from "@/components/screen";
+import { SkeletonRows } from "@/components/skeleton";
 import { Text } from "@/components/text";
 import { analytics } from "@/lib/analytics";
 import { confirmDestructive } from "@/lib/native-confirm";
 import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
 import { toast } from "@/lib/toast";
 import { isValidDomain, normalizeDomainInput } from "@domainstack/utils/domain/client";
+
+function truncate(value: string, max: number): string {
+  return value.length > max ? `${value.slice(0, max)}…` : value;
+}
 
 export default function SearchScreen() {
   const { push } = useRouter();
@@ -41,7 +46,10 @@ export default function SearchScreen() {
         return;
       }
       analytics.track("search_submitted", { domain: normalized });
-      setQuery("");
+      // Don't reset `query` here: the native search bar text can't be cleared
+      // programmatically via headerSearchBarOptions, so zeroing internal state
+      // would desync the visible field from the filter. Leaving it keeps them
+      // consistent when the user returns to this screen.
       openDomain(normalized);
     },
     [openDomain],
@@ -83,6 +91,8 @@ export default function SearchScreen() {
   return (
     <Screen>
       <HeaderMenu />
+
+      {!hasHydrated ? <SkeletonRows count={3} /> : null}
 
       {hasHydrated && filtered.length > 0 ? (
         <GroupedSection title={query.trim().length > 0 ? "Matches" : "Recent"}>
@@ -129,7 +139,7 @@ export default function SearchScreen() {
 
       {hasHydrated && history.length > 0 && filtered.length === 0 ? (
         <EmptyState
-          body={`No recent searches match "${query.trim()}".`}
+          body={`No recent searches match “${truncate(query.trim(), 40)}”.`}
           icon={{ android: "search", ios: "magnifyingglass" }}
           title="No matches"
         />

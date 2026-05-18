@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Pressable, ScrollView, View } from "react-native";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import Animated, { FadeIn, FadeOut, ReduceMotion } from "react-native-reanimated";
 import { useCSSVariable } from "uniwind";
 
 import { Symbol } from "@/components/symbol";
@@ -28,8 +28,8 @@ export function FilterChips() {
   return (
     <Animated.View
       className="flex-row items-center gap-2"
-      entering={FadeIn.duration(200)}
-      exiting={FadeOut.duration(140)}
+      entering={FadeIn.duration(200).reduceMotion(ReduceMotion.System)}
+      exiting={FadeOut.duration(140).reduceMotion(ReduceMotion.System)}
     >
       <ScrollView
         className="flex-1"

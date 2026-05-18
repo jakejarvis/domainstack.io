@@ -1,6 +1,7 @@
 import type { Ref } from "react";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { RefreshControl } from "./refresh-control";
 
@@ -26,6 +27,7 @@ export function Screen({
   scrollRef?: Ref<ScrollView>;
 }) {
   const [refreshing, setRefreshing] = useState(false);
+  const insets = useSafeAreaInsets();
 
   async function handleRefresh() {
     if (!onRefresh) return;
@@ -38,7 +40,16 @@ export function Screen({
   }
 
   if (!scroll) {
-    return <View className="flex-1 gap-5 bg-background px-4 pt-3 pb-8">{children}</View>;
+    // Non-scroll screens (e.g. the full-screen VersionGate block) must still
+    // respect the notch / home indicator — there's no navigator inset here.
+    return (
+      <View
+        className="flex-1 gap-5 bg-background px-4"
+        style={{ paddingBottom: insets.bottom + 32, paddingTop: insets.top + 12 }}
+      >
+        {children}
+      </View>
+    );
   }
 
   return (

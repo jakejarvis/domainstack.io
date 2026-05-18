@@ -70,7 +70,7 @@ export function FilterSheet({
         >
           {availableTlds.length === 0 ? (
             <Text className="py-2 text-sm text-muted-foreground">
-              No TLDs yet — add domains to your portfolio first.
+              No TLDs yet. Add domains to your portfolio first.
             </Text>
           ) : (
             availableTlds.map((tld) => (

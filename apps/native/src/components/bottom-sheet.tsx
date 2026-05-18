@@ -49,10 +49,16 @@ export function AppBottomSheet({
       snapPoints={snapPoints}
     >
       <BottomSheetView style={{ flex: 1 }}>
-        <View className="flex-1 gap-4 px-4 pt-2" style={{ paddingBottom: insets.bottom + 16 }}>
+        <View
+          accessibilityViewIsModal
+          className="flex-1 gap-4 px-4 pt-2"
+          style={{ paddingBottom: insets.bottom + 16 }}
+        >
           {title ? (
             <View className="gap-1">
-              <Text className="text-xl font-semibold">{title}</Text>
+              <Text accessibilityRole="header" className="text-xl font-semibold">
+                {title}
+              </Text>
               {description ? (
                 <Text className="text-sm text-muted-foreground">{description}</Text>
               ) : null}

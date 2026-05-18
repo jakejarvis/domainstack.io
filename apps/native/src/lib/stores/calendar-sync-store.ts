@@ -2,6 +2,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
+import { onHydrated } from "./persist-hydration";
+
 interface CalendarSyncState {
   /** Whether managed calendar sync is turned on for this device. */
   enabled: boolean;
@@ -54,9 +56,7 @@ export const useCalendarSyncStore = create<CalendarSyncStore>()(
         eventMap: state.eventMap,
         lastSyncedAt: state.lastSyncedAt,
       }),
-      onRehydrateStorage: () => () => {
-        useCalendarSyncStore.setState({ hasHydrated: true });
-      },
+      onRehydrateStorage: onHydrated(() => useCalendarSyncStore.setState({ hasHydrated: true })),
     },
   ),
 );

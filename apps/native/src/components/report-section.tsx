@@ -1,4 +1,4 @@
-import Animated, { FadeIn } from "react-native-reanimated";
+import Animated, { FadeIn, ReduceMotion } from "react-native-reanimated";
 
 import { GroupedSection } from "./form/group";
 
@@ -17,7 +17,7 @@ export function ReportSection({
   children: React.ReactNode;
 }) {
   return (
-    <Animated.View entering={FadeIn.duration(200)}>
+    <Animated.View entering={FadeIn.duration(200).reduceMotion(ReduceMotion.System)}>
       <GroupedSection padded title={title} trailing={trailing}>
         {children}
       </GroupedSection>

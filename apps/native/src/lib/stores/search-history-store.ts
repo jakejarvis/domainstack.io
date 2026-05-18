@@ -4,6 +4,8 @@ import { createJSONStorage, persist } from "zustand/middleware";
 
 import { MAX_HISTORY_ITEMS } from "@domainstack/constants";
 
+import { onHydrated } from "./persist-hydration";
+
 interface SearchHistoryState {
   history: string[];
   hasHydrated: boolean;
@@ -49,9 +51,7 @@ export const useSearchHistoryStore = create<SearchHistoryStore>()(
       version: 1,
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({ history: state.history }),
-      onRehydrateStorage: () => () => {
-        useSearchHistoryStore.setState({ hasHydrated: true });
-      },
+      onRehydrateStorage: onHydrated(() => useSearchHistoryStore.setState({ hasHydrated: true })),
     },
   ),
 );

@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
-import { useEffect, useMemo, useReducer, useState } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Share, View } from "react-native";
 
 import { Button } from "@/components/button";
@@ -11,8 +11,9 @@ import { ShareInstructionsSheet } from "@/components/domain/add-domain/share-ins
 import { StepConfirmation } from "@/components/domain/add-domain/step-confirmation";
 import { StepIndicator } from "@/components/domain/add-domain/step-indicator";
 import { VerificationFailed } from "@/components/domain/add-domain/verification-failed";
-import { EmptyState } from "@/components/empty-state";
 import { GroupedSection } from "@/components/form/group";
+import { QueryErrorState } from "@/components/query-error-state";
+import { RequireAuth } from "@/components/require-auth";
 import { Screen } from "@/components/screen";
 import { SegmentedControl } from "@/components/segmented-control";
 import { SkeletonRows } from "@/components/skeleton";
@@ -20,7 +21,6 @@ import { Text } from "@/components/text";
 import { TextField } from "@/components/text-field";
 import { usePushSoftPrompt } from "@/hooks/use-push-soft-prompt";
 import { useTRPC } from "@/lib/api";
-import { authClient } from "@/lib/auth";
 import { type AddDomainFlowState, reduceAddDomainFlow } from "@/lib/domain-lifecycle";
 import { assertOnline } from "@/lib/network";
 import type { VerificationMethod } from "@domainstack/constants";
@@ -80,31 +80,15 @@ function InstructionValue({ label, value }: { label: string; value: string | num
 }
 
 export default function AddDomainScreen() {
-  const session = authClient.useSession();
-
-  if (session.isPending) {
-    return (
-      <Screen>
-        <SkeletonRows count={3} />
-      </Screen>
-    );
-  }
-
-  if (!session.data?.user) {
-    return (
-      <Screen>
-        <EmptyState
-          actionLabel="Sign in"
-          body="Domain ownership verification is attached to your account. Sign in to add domains to your portfolio."
-          icon={{ android: "lock", ios: "lock" }}
-          onAction={() => router.push("/sign-in")}
-          title="Account required"
-        />
-      </Screen>
-    );
-  }
-
-  return <AddDomainFlow />;
+  return (
+    <RequireAuth
+      body="Domain ownership verification is attached to your account. Sign in to add domains to your portfolio."
+      loading={<SkeletonRows count={3} />}
+      title="Adding domains is locked"
+    >
+      <AddDomainFlow />
+    </RequireAuth>
+  );
 }
 
 function AddDomainFlow() {
@@ -132,8 +116,14 @@ function AddDomainFlow() {
     ),
   );
 
+  // Resume-from-verification must run exactly once per trackedDomainId. Without
+  // this guard a refetch of `verificationData` (focus/reconnect) re-dispatches
+  // edit→submit→instructions and clobbers a user who has progressed to step 2/3.
+  const resumedRef = useRef<string | null>(null);
   useEffect(() => {
     if (!verificationData.data || !resumeTrackedDomainId) return;
+    if (resumedRef.current === resumeTrackedDomainId) return;
+    resumedRef.current = resumeTrackedDomainId;
     dispatch({ domain: verificationData.data.domain, type: "edit" });
     dispatch({ type: "submit" });
     dispatch({
@@ -244,10 +234,11 @@ function AddDomainFlow() {
       <View className="gap-4">
         <StepIndicator current={step} loadingStep={activeLoading} />
 
-        {step === 1 ? (
+        {step === 1 && !resumeTrackedDomainId ? (
           <GroupedSection>
             <View className="gap-3 px-4 pt-3 pb-4">
               <TextField
+                autoComplete="off"
                 bare
                 error={domainError}
                 label="Domain"
@@ -271,7 +262,16 @@ function AddDomainFlow() {
           </GroupedSection>
         ) : null}
 
-        {resumeTrackedDomainId && verificationData.isPending ? <SkeletonRows count={3} /> : null}
+        {resumeTrackedDomainId && step === 1 ? (
+          verificationData.error ? (
+            <QueryErrorState
+              onRetry={() => void verificationData.refetch()}
+              title="Couldn’t load verification"
+            />
+          ) : (
+            <SkeletonRows count={3} />
+          )
+        ) : null}
 
         {step === 2 && instructionsBundle ? (
           <View className="gap-4">

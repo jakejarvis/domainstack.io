@@ -28,7 +28,7 @@ vi.mock("expo-calendar/next", () => ({
 vi.mock("react-native", () => ({ Platform: { OS: "ios" } }));
 vi.mock("./env", () => ({ apiBaseUrl: "https://domainstack.io" }));
 
-const { diffEvents, ensurePermission } = await import("./calendar-sync");
+const { allDayWindow, diffEvents, ensurePermission } = await import("./calendar-sync");
 
 function perm(granted: boolean, canAskAgain: boolean) {
   return { granted, canAskAgain, status: granted ? "granted" : "denied", expires: "never" };
@@ -83,6 +83,32 @@ function event(id: string, overrides: Partial<DomainExpiryEvent> = {}): DomainEx
     ...overrides,
   };
 }
+
+describe("allDayWindow", () => {
+  // The window must anchor to the UTC calendar date of the expiration (to match
+  // the web ICS DATE value) — NOT the device-local date — so native and web
+  // calendars never disagree by a day for an expiry within 24h of UTC midnight.
+  it("uses the UTC calendar date regardless of the time component", () => {
+    const { startDate, endDate } = allDayWindow(new Date("2030-01-01T23:30:00.000Z"));
+    expect([startDate.getFullYear(), startDate.getMonth(), startDate.getDate()]).toEqual([
+      2030, 0, 1,
+    ]);
+    expect(endDate.getDate()).toBe(2);
+  });
+
+  it("does not shift the day for a just-after-UTC-midnight expiry", () => {
+    const { startDate } = allDayWindow(new Date("2030-03-15T00:15:00.000Z"));
+    expect([startDate.getFullYear(), startDate.getMonth(), startDate.getDate()]).toEqual([
+      2030, 2, 15,
+    ]);
+  });
+
+  it("ends on the following calendar day", () => {
+    const { startDate, endDate } = allDayWindow(new Date("2030-06-10T12:00:00.000Z"));
+    expect([startDate.getMonth(), startDate.getDate()]).toEqual([5, 10]);
+    expect([endDate.getMonth(), endDate.getDate()]).toEqual([5, 11]);
+  });
+});
 
 describe("diffEvents", () => {
   it("creates events for targets with no mapping", () => {

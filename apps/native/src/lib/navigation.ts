@@ -1,6 +1,12 @@
 import type { Href } from "expo-router";
 
+import { isValidDomain, normalizeDomainInput } from "@domainstack/utils/domain/client";
+
 export type DomainstackTab = "domains" | "notifications" | "search";
+
+// Shared so `_layout.tsx`'s stash-and-replay check compares against the same
+// literal this module returns instead of a copy-pasted string.
+export const NOTIFICATIONS_ROUTE = "/(tabs)/notifications" as const satisfies Href;
 
 const protectedTabs = new Set<DomainstackTab>(["domains", "notifications"]);
 
@@ -17,15 +23,18 @@ export function canAccessTab(tab: DomainstackTab, isAuthenticated: boolean): boo
 }
 
 export function routeFromNotificationData(data: Record<string, unknown>): Href {
-  const fromData = extractDomainName(data.data);
-  if (fromData) return domainDetailRoute(fromData);
+  const candidate =
+    extractDomainName(data.data) ?? (typeof data.domainName === "string" ? data.domainName : null);
 
-  const topLevelDomain = data.domainName;
-  if (typeof topLevelDomain === "string" && topLevelDomain.length > 0) {
-    return domainDetailRoute(topLevelDomain);
+  if (candidate) {
+    // A malformed/hostile push payload must never deep-link into a garbage
+    // report screen. Normalize then validate; anything that isn't a real
+    // domain falls back to the notifications tab.
+    const normalized = normalizeDomainInput(candidate);
+    if (isValidDomain(normalized)) return domainDetailRoute(normalized);
   }
 
-  return "/(tabs)/notifications";
+  return NOTIFICATIONS_ROUTE;
 }
 
 function extractDomainName(value: unknown): string | null {

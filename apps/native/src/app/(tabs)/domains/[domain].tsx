@@ -49,8 +49,10 @@ export default function DomainReportScreen() {
     return (
       <Screen>
         <EmptyState
+          actionLabel="Go to search"
           body="Open this screen from your portfolio or a notification."
           icon={{ android: "help_outline", ios: "questionmark.circle" }}
+          onAction={() => router.replace("/(tabs)/search")}
           title="No domain selected"
         />
       </Screen>
@@ -89,6 +91,10 @@ function DomainReportContent({ domain, section }: { domain: string; section?: Re
   // or the unregistered card. Reading it here is free since each section already
   // uses the same query via useSuspenseQuery; the cache is shared.
   const registrationQuery = useQuery(trpc.domain.getRegistration.queryOptions({ domain }));
+  // Gate the section stack on registration settling. Mounting all six sections
+  // while this is pending fires six wasted fetches and six skeletons that then
+  // collapse to the UnregisteredCard (large CLS) for unregistered domains.
+  const registrationSettled = !registrationQuery.isPending;
   const isUnregistered = registrationQuery.data?.data?.isRegistered === false;
 
   useEffect(() => {
@@ -150,7 +156,12 @@ function DomainReportContent({ domain, section }: { domain: string; section?: Re
     <Screen onRefresh={invalidate} scrollRef={scrollRef}>
       <ReportHeader domain={domain} isAuthenticated={isAuthenticated} trackedEntry={trackedEntry} />
 
-      {isUnregistered ? (
+      {!registrationSettled ? (
+        <View className="gap-5">
+          <ReportSectionSkeleton />
+          <ReportSectionSkeleton />
+        </View>
+      ) : isUnregistered ? (
         <UnregisteredCard domain={domain} />
       ) : (
         <View className="gap-5">

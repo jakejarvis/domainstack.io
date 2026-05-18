@@ -62,7 +62,7 @@ function ArchivedRowImpl({
             </View>
             {!canReactivate ? (
               <Text className="text-xs text-muted-foreground">
-                Plan limit reached — upgrade or remove a tracked domain to reactivate.
+                Plan limit reached. Upgrade or remove a tracked domain to reactivate.
               </Text>
             ) : null}
           </View>

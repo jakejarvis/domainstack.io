@@ -1,5 +1,5 @@
 import { FlashList } from "@shopify/flash-list";
-import { useQuery } from "@tanstack/react-query";
+import { useIsRestoring, useQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import { router, useNavigation } from "expo-router";
 import { Stack } from "expo-router/stack";
@@ -18,7 +18,9 @@ import { FilterSheet } from "@/components/portfolio/filter-sheet";
 import { QuotaMeter } from "@/components/portfolio/quota-meter";
 import { SubscriptionBanner } from "@/components/portfolio/subscription-banner";
 import { SwipeableRow } from "@/components/portfolio/swipeable-row";
+import { QueryErrorState } from "@/components/query-error-state";
 import { RefreshControl } from "@/components/refresh-control";
+import { RequireAuth } from "@/components/require-auth";
 import { Screen } from "@/components/screen";
 import { SegmentedControl } from "@/components/segmented-control";
 import { PortfolioListSkeleton } from "@/components/skeleton";
@@ -26,7 +28,6 @@ import { Text } from "@/components/text";
 import { useDashboardMutations } from "@/hooks/use-dashboard-mutations";
 import { useSelectionMode } from "@/hooks/use-portfolio-selection";
 import { useTRPC } from "@/lib/api";
-import { authClient } from "@/lib/auth";
 import { type PortfolioDomain, type PortfolioSort, sortPortfolioDomains } from "@/lib/portfolio";
 import { activeFilterCount, applyFilters, availableTldsFrom } from "@/lib/portfolio-filters";
 import { usePortfolioStore } from "@/lib/stores/portfolio-store";
@@ -38,33 +39,16 @@ const sorts: Array<{ label: string; value: PortfolioSort }> = [
 ];
 
 export default function DomainsScreen() {
-  const session = authClient.useSession();
-
-  if (session.isPending) {
-    return (
-      <Screen>
-        <HeaderMenu />
-        <PortfolioListSkeleton count={4} />
-      </Screen>
-    );
-  }
-
-  if (!session.data?.user) {
-    return (
-      <Screen>
-        <HeaderMenu />
-        <EmptyState
-          actionLabel="Sign in"
-          body="Track ownership, expiry, providers, and notifications. Search stays available without an account; your portfolio syncs after sign in."
-          icon={{ android: "lock", ios: "lock" }}
-          onAction={() => router.push("/sign-in")}
-          title="Portfolio is locked"
-        />
-      </Screen>
-    );
-  }
-
-  return <PortfolioScreen />;
+  return (
+    <RequireAuth
+      body="Track ownership, expiry, providers, and notifications. Search stays available without an account; your portfolio syncs after sign in."
+      header={<HeaderMenu />}
+      loading={<PortfolioListSkeleton count={4} />}
+      title="Portfolio is locked"
+    >
+      <PortfolioScreen />
+    </RequireAuth>
+  );
 }
 
 function PortfolioScreen() {
@@ -86,6 +70,7 @@ function PortfolioScreen() {
   const filterSheetRef = useRef<AppBottomSheetRef | null>(null);
   const calendarSheetRef = useRef<AppBottomSheetRef | null>(null);
 
+  const isRestoring = useIsRestoring();
   const domainsQuery = useQuery(trpc.tracking.listDomains.queryOptions({ includeArchived: false }));
   const subscriptionQuery = useQuery(trpc.user.getSubscription.queryOptions());
 
@@ -191,9 +176,33 @@ function PortfolioScreen() {
   const isSelecting = selectionMode === "selecting";
   const archivedCount = subscription?.archivedCount ?? 0;
   const filterCount = activeFilterCount({ health, status, tlds });
-  // Treat pre-hydration as loading so we don't flash a default-sorted list
-  // before AsyncStorage restores the user's persisted sort.
-  const isLoading = !hasHydrated || domainsQuery.isPending;
+  const isFiltering = filterCount > 0 || Boolean(query);
+  // Treat pre-hydration AND the persisted-cache restore as loading so we never
+  // flash a default-sorted or stale-from-disk list before either settles.
+  const isLoading = !hasHydrated || isRestoring || domainsQuery.isPending;
+
+  // Loading/error replace the interactive chrome entirely — never render
+  // QuotaMeter/filters/sort over a skeleton (CLS + tappable empty controls).
+  if (isLoading) {
+    return (
+      <Screen>
+        <HeaderMenu />
+        <PortfolioListSkeleton count={6} />
+      </Screen>
+    );
+  }
+
+  if (domainsQuery.error) {
+    return (
+      <Screen>
+        <HeaderMenu />
+        <QueryErrorState
+          onRetry={() => void domainsQuery.refetch()}
+          title="Couldn’t load your portfolio"
+        />
+      </Screen>
+    );
+  }
 
   const listHeader = (
     <View className="gap-4 px-4 pt-3 pb-2">
@@ -258,41 +267,28 @@ function PortfolioScreen() {
       <FilterChips />
 
       <SegmentedControl onChange={setSort} options={sorts} value={sort} />
-
-      {isLoading ? <PortfolioListSkeleton /> : null}
-
-      {domainsQuery.error ? (
-        <EmptyState
-          actionLabel="Retry"
-          body={domainsQuery.error.message}
-          icon={{ android: "error_outline", ios: "exclamationmark.circle" }}
-          onAction={() => void domainsQuery.refetch()}
-          title="Domains did not load"
-        />
-      ) : null}
     </View>
   );
 
-  const listEmpty =
-    !isLoading && !domainsQuery.error ? (
-      <View className="px-4 pb-8">
-        <EmptyState
-          actionLabel={filterCount > 0 || query ? undefined : "Add domain"}
-          body={
-            filterCount > 0 || query
-              ? "Try removing some filters or clearing the search bar."
-              : "Add a domain to keep its registration, DNS, providers, and notifications close at hand."
-          }
-          icon={
-            filterCount > 0 || query
-              ? { android: "filter_list", ios: "line.3.horizontal.decrease.circle" }
-              : { android: "language", ios: "globe" }
-          }
-          onAction={filterCount > 0 || query ? undefined : () => router.push("/(tabs)/domains/add")}
-          title={filterCount > 0 || query ? "No domains match" : "No domains found"}
-        />
-      </View>
-    ) : null;
+  const listEmpty = (
+    <View className="px-4 pb-8">
+      <EmptyState
+        actionLabel={isFiltering ? undefined : "Add domain"}
+        body={
+          isFiltering
+            ? "Try removing some filters or clearing the search bar."
+            : "Add a domain to keep its registration, DNS, providers, and notifications close at hand."
+        }
+        icon={
+          isFiltering
+            ? { android: "filter_list", ios: "line.3.horizontal.decrease.circle" }
+            : { android: "language", ios: "globe" }
+        }
+        onAction={isFiltering ? undefined : () => router.push("/(tabs)/domains/add")}
+        title={isFiltering ? "No domains match" : "No domains found"}
+      />
+    </View>
+  );
 
   return (
     <View className="flex-1">
@@ -301,7 +297,7 @@ function PortfolioScreen() {
         ListHeaderComponent={listHeader}
         contentContainerStyle={{ paddingBottom: 32 }}
         contentInsetAdjustmentBehavior="automatic"
-        data={isLoading ? [] : visibleDomains}
+        data={visibleDomains}
         keyExtractor={keyExtractor}
         keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl onRefresh={handleRefresh} refreshing={refreshing} />}

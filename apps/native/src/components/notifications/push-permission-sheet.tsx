@@ -31,7 +31,7 @@ export function PushPermissionSheet() {
 
   return (
     <AppBottomSheet
-      description="We'll only ping you about things that matter — registrations or certificates about to expire, providers switching, or DNS changes you didn't make."
+      description="We’ll only ping you about things that matter — registrations or certificates about to expire, providers switching, or DNS changes you didn’t make."
       onDismiss={close}
       ref={ref}
       snapPoints={["55%"]}
@@ -42,7 +42,7 @@ export function PushPermissionSheet() {
           <PerkRow
             color={brand}
             icon={{ ios: "clock", android: "schedule" }}
-            label="Expiry warnings before it's too late to renew"
+            label="Expiry warnings before it’s too late to renew"
           />
           <PerkRow
             color={brand}

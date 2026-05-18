@@ -2,7 +2,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 
 import { useTRPC } from "@/lib/api";
-import { toast } from "@/lib/toast";
+import { assertOnline } from "@/lib/network";
+import { affectedCounts, applySubscriptionDelta } from "@/lib/portfolio-mutations";
+import { toastMutationError } from "@/lib/trpc-error-handler";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 
 interface BulkMutationResult {
@@ -63,30 +65,13 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
     }
   };
 
-  // Count affected domains by their current lifecycle state, deduped across
-  // every cached listDomains variant so a domain present in multiple entries
-  // (e.g. includeArchived true/false) is counted once. The subscription delta
-  // must reflect actual state transitions, not a blind ±1.
-  const affectedCounts = (previousDomains: [unknown, unknown][], ids: Iterable<string>) => {
-    const idSet = new Set(ids);
-    const seen = new Set<string>();
-    let active = 0;
-    let archived = 0;
-    for (const [, domains] of previousDomains) {
-      if (!domains) continue;
-      for (const d of domains as TrackedDomainWithDetails[]) {
-        if (!idSet.has(d.id) || seen.has(d.id)) continue;
-        seen.add(d.id);
-        if (d.archivedAt) archived += 1;
-        else active += 1;
-      }
-    }
-    return { active, archived };
-  };
-
   const removeMutation = useMutation({
     mutationFn: trpc.tracking.removeDomain.mutationOptions().mutationFn,
     onMutate: async ({ trackedDomainId }: { trackedDomainId: string }) => {
+      // Guard before any optimistic write so an offline action can't flash the
+      // row out and back in; `onError` still fires (context undefined → no
+      // rollback needed) and surfaces the friendly message.
+      assertOnline();
       await queryClient.cancelQueries({ queryKey: domainsQueryKey });
       await queryClient.cancelQueries({ queryKey: subscriptionQueryKey });
 
@@ -100,17 +85,9 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
       queryClient.setQueriesData({ queryKey: domainsQueryKey }, (old: DomainsData) =>
         old?.filter((d) => d.id !== trackedDomainId),
       );
-      queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) => {
-        if (!old) return old;
-        const activeCount = Math.max(0, old.activeCount - active);
-        const archivedCount = Math.max(0, old.archivedCount - archived);
-        return {
-          ...old,
-          activeCount,
-          archivedCount,
-          canAddMore: activeCount < old.planQuota,
-        };
-      });
+      queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) =>
+        old ? applySubscriptionDelta(old, -active, -archived) : old,
+      );
 
       return {
         previousDomains: previousDomains as [unknown, unknown][],
@@ -122,7 +99,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
       if (context?.previousSubscription) {
         queryClient.setQueryData(subscriptionQueryKey, context.previousSubscription);
       }
-      toast.error({ title: "Remove failed", message: _err.message });
+      toastMutationError("Remove failed", _err);
     },
     onSettled: invalidateDomainQueries,
   });
@@ -136,6 +113,8 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
       const previousDomains = queryClient.getQueriesData({ queryKey: domainsQueryKey });
       const previousSubscription = queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
 
+      assertOnline();
+
       const { active: toArchive } = affectedCounts(previousDomains as [unknown, unknown][], [
         trackedDomainId,
       ]);
@@ -143,16 +122,9 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
       queryClient.setQueriesData({ queryKey: domainsQueryKey }, (old: DomainsData) =>
         old?.map((d) => (d.id === trackedDomainId ? { ...d, archivedAt: new Date() } : d)),
       );
-      queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) => {
-        if (!old) return old;
-        const activeCount = Math.max(0, old.activeCount - toArchive);
-        return {
-          ...old,
-          activeCount,
-          archivedCount: old.archivedCount + toArchive,
-          canAddMore: activeCount < old.planQuota,
-        };
-      });
+      queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) =>
+        old ? applySubscriptionDelta(old, -toArchive, toArchive) : old,
+      );
 
       return {
         previousDomains: previousDomains as [unknown, unknown][],
@@ -164,7 +136,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
       if (context?.previousSubscription) {
         queryClient.setQueryData(subscriptionQueryKey, context.previousSubscription);
       }
-      toast.error({ title: "Archive failed", message: err.message });
+      toastMutationError("Archive failed", err);
     },
     onSettled: invalidateDomainQueries,
   });
@@ -178,6 +150,8 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
       const previousDomains = queryClient.getQueriesData({ queryKey: domainsQueryKey });
       const previousSubscription = queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
 
+      assertOnline();
+
       const { archived: toActivate } = affectedCounts(previousDomains as [unknown, unknown][], [
         trackedDomainId,
       ]);
@@ -185,16 +159,9 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
       queryClient.setQueriesData({ queryKey: domainsQueryKey }, (old: DomainsData) =>
         old?.map((d) => (d.id === trackedDomainId ? { ...d, archivedAt: null } : d)),
       );
-      queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) => {
-        if (!old) return old;
-        const activeCount = old.activeCount + toActivate;
-        return {
-          ...old,
-          activeCount,
-          archivedCount: Math.max(0, old.archivedCount - toActivate),
-          canAddMore: activeCount < old.planQuota,
-        };
-      });
+      queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) =>
+        old ? applySubscriptionDelta(old, toActivate, -toActivate) : old,
+      );
 
       return {
         previousDomains: previousDomains as [unknown, unknown][],
@@ -206,7 +173,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
       if (context?.previousSubscription) {
         queryClient.setQueryData(subscriptionQueryKey, context.previousSubscription);
       }
-      toast.error({ title: "Reactivation failed", message: err.message });
+      toastMutationError("Reactivation failed", err);
     },
     onSettled: invalidateDomainQueries,
   });
@@ -214,6 +181,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
   const muteMutation = useMutation({
     mutationFn: trpc.user.setDomainMuted.mutationOptions().mutationFn,
     onMutate: async ({ trackedDomainId, muted }: { trackedDomainId: string; muted: boolean }) => {
+      assertOnline();
       await queryClient.cancelQueries({ queryKey: domainsQueryKey });
 
       const previousDomains = queryClient.getQueriesData({ queryKey: domainsQueryKey });
@@ -226,7 +194,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
     },
     onError: (err, _vars, context: { previousDomains: [unknown, unknown][] } | undefined) => {
       if (context?.previousDomains) rollbackDomains(context.previousDomains);
-      toast.error({ title: "Mute failed", message: err.message });
+      toastMutationError("Mute failed", err);
     },
     onSettled: () => void queryClient.invalidateQueries({ queryKey: domainsQueryKey }),
   });
@@ -241,6 +209,8 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
       const previousSubscription = queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
 
       const idsSet = new Set(trackedDomainIds);
+      assertOnline();
+
       const { active: archiveCount } = affectedCounts(
         previousDomains as [unknown, unknown][],
         idsSet,
@@ -249,16 +219,9 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
       queryClient.setQueriesData({ queryKey: domainsQueryKey }, (old: DomainsData) =>
         old?.map((d) => (idsSet.has(d.id) ? { ...d, archivedAt: new Date() } : d)),
       );
-      queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) => {
-        if (!old) return old;
-        const activeCount = Math.max(0, old.activeCount - archiveCount);
-        return {
-          ...old,
-          activeCount,
-          archivedCount: old.archivedCount + archiveCount,
-          canAddMore: activeCount < old.planQuota,
-        };
-      });
+      queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) =>
+        old ? applySubscriptionDelta(old, -archiveCount, archiveCount) : old,
+      );
 
       return {
         previousDomains: previousDomains as [unknown, unknown][],
@@ -270,7 +233,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
       if (context?.previousSubscription) {
         queryClient.setQueryData(subscriptionQueryKey, context.previousSubscription);
       }
-      toast.error({ title: "Archive failed", message: err.message });
+      toastMutationError("Archive failed", err);
     },
     onSettled: invalidateDomainQueries,
   });
@@ -285,6 +248,8 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
       const previousSubscription = queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
 
       const idsSet = new Set(trackedDomainIds);
+      assertOnline();
+
       const { active: activeDeleted, archived: archivedDeleted } = affectedCounts(
         previousDomains as [unknown, unknown][],
         idsSet,
@@ -293,17 +258,9 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
       queryClient.setQueriesData({ queryKey: domainsQueryKey }, (old: DomainsData) =>
         old?.filter((d) => !idsSet.has(d.id)),
       );
-      queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) => {
-        if (!old) return old;
-        const activeCount = Math.max(0, old.activeCount - activeDeleted);
-        const archivedCount = Math.max(0, old.archivedCount - archivedDeleted);
-        return {
-          ...old,
-          activeCount,
-          archivedCount,
-          canAddMore: activeCount < old.planQuota,
-        };
-      });
+      queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) =>
+        old ? applySubscriptionDelta(old, -activeDeleted, -archivedDeleted) : old,
+      );
 
       return {
         previousDomains: previousDomains as [unknown, unknown][],
@@ -315,7 +272,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
       if (context?.previousSubscription) {
         queryClient.setQueryData(subscriptionQueryKey, context.previousSubscription);
       }
-      toast.error({ title: "Remove failed", message: err.message });
+      toastMutationError("Remove failed", err);
     },
     onSettled: invalidateDomainQueries,
   });
@@ -329,6 +286,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
       trackedDomainIds: string[];
       muted: boolean;
     }) => {
+      assertOnline();
       await queryClient.cancelQueries({ queryKey: domainsQueryKey });
 
       const previousDomains = queryClient.getQueriesData({ queryKey: domainsQueryKey });
@@ -342,10 +300,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
     },
     onError: (err, vars, context: { previousDomains: [unknown, unknown][] } | undefined) => {
       if (context?.previousDomains) rollbackDomains(context.previousDomains);
-      toast.error({
-        title: vars.muted ? "Mute failed" : "Unmute failed",
-        message: err.message,
-      });
+      toastMutationError(vars.muted ? "Mute failed" : "Unmute failed", err);
     },
     onSettled: () => void queryClient.invalidateQueries({ queryKey: domainsQueryKey }),
   });
