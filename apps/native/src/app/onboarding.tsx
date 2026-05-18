@@ -85,6 +85,8 @@ export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const markSeen = useOnboardingStore((state) => state.markSeen);
   const iconColor = useCSSVariable("--color-brand") as string;
+  const accentBlue = useCSSVariable("--color-accent-blue") as string;
+  const accentPurple = useCSSVariable("--color-accent-purple") as string;
   const scrollX = useSharedValue(0);
   const pageRef = useRef(0);
 
@@ -138,8 +140,42 @@ export default function OnboardingScreen() {
       >
         {SLIDES.map((slide) => (
           <View key={slide.title} className="items-center justify-center px-8" style={{ width }}>
-            <View className="mb-6 size-24 items-center justify-center rounded-full bg-secondary">
-              <Symbol name={slide.icon} size={56} color={iconColor} />
+            <View
+              className="mb-8 size-52 items-center justify-center overflow-hidden rounded-[36px]"
+              style={{ borderCurve: "continuous" }}
+            >
+              <View
+                pointerEvents="none"
+                style={{
+                  bottom: 0,
+                  experimental_backgroundImage: `linear-gradient(155deg, ${accentBlue}, ${accentPurple})`,
+                  left: 0,
+                  opacity: 0.16,
+                  position: "absolute",
+                  right: 0,
+                  top: 0,
+                }}
+              />
+              <View
+                pointerEvents="none"
+                style={{
+                  backgroundColor: accentPurple,
+                  borderRadius: 999,
+                  boxShadow: `0 0 44px 12px ${accentPurple}`,
+                  height: 64,
+                  left: 28,
+                  opacity: 0.4,
+                  position: "absolute",
+                  right: 28,
+                  top: -12,
+                }}
+              />
+              <View
+                className="size-36 items-center justify-center rounded-3xl border border-border bg-card"
+                style={{ borderCurve: "continuous" }}
+              >
+                <Symbol name={slide.icon} size={60} color={iconColor} />
+              </View>
             </View>
             <Text variant="title" className="mb-3 text-center">
               {slide.title}

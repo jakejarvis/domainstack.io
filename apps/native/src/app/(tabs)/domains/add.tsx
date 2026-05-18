@@ -6,6 +6,7 @@ import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Share, View } from "react-native";
 
 import { Button } from "@/components/button";
+import { Callout } from "@/components/callout";
 import { Card } from "@/components/card";
 import { ShareInstructionsSheet } from "@/components/domain/add-domain/share-instructions-sheet";
 import { StepConfirmation } from "@/components/domain/add-domain/step-confirmation";
@@ -297,6 +298,16 @@ function AddDomainFlow() {
               options={METHOD_OPTIONS}
               value={activeMethod}
             />
+
+            {flow.status !== "failed" ? (
+              <Callout>
+                {activeMethod === "dns_txt"
+                  ? "Add the record below at your DNS provider. Changes can take up to 24 hours to propagate — we’ll keep checking."
+                  : activeMethod === "html_file"
+                    ? "Upload the file to your site, then check. It must stay reachable while verification runs."
+                    : "Add the meta tag to your homepage’s <head>, then check ownership."}
+              </Callout>
+            ) : null}
 
             {flow.status === "failed" && trackedDomainId && verificationToken ? (
               <VerificationFailed

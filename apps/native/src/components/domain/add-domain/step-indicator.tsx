@@ -15,10 +15,10 @@ function stepState(step: number, current: number): StepState {
 }
 
 function StepDot({ state, label, loading }: { state: StepState; label: number; loading: boolean }) {
-  const successForeground = useCSSVariable("--color-success-foreground") as string;
+  const accentBlue = useCSSVariable("--color-accent-blue") as string;
   const containerClass = cn(
     "size-7 items-center justify-center rounded-full border",
-    state === "completed" && "border-success bg-success",
+    state === "completed" && "border-accent-blue/40 bg-accent-blue/15",
     state === "active" && "border-primary bg-primary",
     state === "pending" && "border-border bg-muted",
   );
@@ -28,7 +28,7 @@ function StepDot({ state, label, loading }: { state: StepState; label: number; l
       {loading ? (
         <Spinner variant={state === "pending" ? "muted" : "default"} />
       ) : state === "completed" ? (
-        <Symbol color={successForeground} name={{ android: "check", ios: "checkmark" }} size={16} />
+        <Symbol color={accentBlue} name={{ android: "check", ios: "checkmark" }} size={16} />
       ) : (
         <Text
           className={cn(
@@ -67,7 +67,9 @@ export function StepIndicator({
             <View className="flex-row items-center" key={entry.step} style={{ flex: 1 }}>
               <StepDot label={entry.step} loading={loadingStep === entry.step} state={state} />
               {nextState !== null ? (
-                <View className={cn("h-px flex-1", separatorActive ? "bg-success" : "bg-border")} />
+                <View
+                  className={cn("h-px flex-1", separatorActive ? "bg-accent-blue/50" : "bg-border")}
+                />
               ) : null}
             </View>
           );

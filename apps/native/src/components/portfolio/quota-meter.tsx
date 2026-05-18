@@ -1,20 +1,12 @@
 import { View } from "react-native";
 
-import { Badge } from "@/components/badge";
-import { Card } from "@/components/card";
 import { Text } from "@/components/text";
-import { cn } from "@/lib/cn";
 
-type Tone = "success" | "warning" | "danger";
-
-function ratioToTone(activeCount: number, planQuota: number): Tone {
-  if (planQuota <= 0) return "success";
-  const ratio = activeCount / planQuota;
-  if (ratio >= 1) return "danger";
-  if (ratio >= 0.8) return "warning";
-  return "success";
-}
-
+/**
+ * Plan-usage nudge. A gold-tinted panel (not a raised card) with a mono
+ * counter and a thin track — the design's quota affordance. Over-quota flips
+ * the panel to the destructive tint.
+ */
 export function QuotaMeter({
   activeCount,
   plan,
@@ -24,33 +16,38 @@ export function QuotaMeter({
   plan: string;
   planQuota: number;
 }) {
-  const tone = ratioToTone(activeCount, planQuota);
   const percent = planQuota > 0 ? Math.min(100, Math.round((activeCount / planQuota) * 100)) : 0;
+  const over = planQuota > 0 && activeCount >= planQuota;
 
-  const fillClass =
-    tone === "danger" ? "bg-destructive" : tone === "warning" ? "bg-warning" : "bg-success";
+  const panel = over
+    ? "border-destructive-border bg-destructive-surface"
+    : "border-accent-gold/25 bg-accent-gold/10";
+  const accentText = over ? "text-destructive" : "text-accent-gold";
+  const trackBg = over ? "bg-destructive/20" : "bg-accent-gold/20";
+  const fillBg = over ? "bg-destructive" : "bg-accent-gold";
 
   return (
-    <Card>
-      <View className="flex-row items-center justify-between gap-3">
-        <View className="min-w-0 flex-1 gap-1">
-          <Text className="text-sm text-muted-foreground">Plan usage</Text>
-          <Text className="text-lg font-semibold tabular-nums">
-            {activeCount} / {planQuota} domains
-          </Text>
-        </View>
-        <Badge variant={tone === "success" ? "default" : tone}>
-          <Text>{plan}</Text>
-        </Badge>
+    <View
+      className={`gap-2 rounded-2xl border p-3.5 ${panel}`}
+      style={{ borderCurve: "continuous" }}
+    >
+      <View className="flex-row items-baseline justify-between gap-3">
+        <Text className="text-sm font-medium">{plan}</Text>
+        <Text className="text-xs text-muted-foreground">
+          <Text className={`font-mono text-sm font-medium tabular-nums ${accentText}`}>
+            {activeCount}
+          </Text>{" "}
+          / {planQuota} domains
+        </Text>
       </View>
       <View
         accessibilityLabel={`${percent} percent of plan used`}
         accessibilityRole="progressbar"
         accessibilityValue={{ max: 100, min: 0, now: percent }}
-        className="h-2 overflow-hidden rounded-full bg-secondary"
+        className={`h-1 overflow-hidden rounded-full ${trackBg}`}
       >
-        <View className={cn("h-full rounded-full", fillClass)} style={{ width: `${percent}%` }} />
+        <View className={`h-full rounded-full ${fillBg}`} style={{ width: `${percent}%` }} />
       </View>
-    </Card>
+    </View>
   );
 }

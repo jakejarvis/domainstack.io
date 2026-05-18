@@ -19,7 +19,12 @@ export function RegistrationSection({ domain }: { domain: string }) {
 
   if (!data.success || !data.data) {
     return (
-      <ReportSection title="Registration">
+      <ReportSection
+        accent="purple"
+        icon={{ android: "contact_page", ios: "person.text.rectangle" }}
+        subtitle="WHOIS · RDAP"
+        title="Registration"
+      >
         <Text className="text-sm text-muted-foreground">
           Registration data is unavailable for this domain.
         </Text>
@@ -36,7 +41,12 @@ function RegistrationSectionBody({ data }: { data: RegistrationResponse }) {
   const rawResponse = data.rawResponse;
 
   return (
-    <ReportSection title="Registration">
+    <ReportSection
+      accent="purple"
+      icon={{ android: "contact_page", ios: "person.text.rectangle" }}
+      subtitle="WHOIS · RDAP"
+      title="Registration"
+    >
       {isUnavailable ? (
         <UnavailableBanner reason={data.unavailableReason} tld={data.tld} />
       ) : (
@@ -131,7 +141,10 @@ function UnavailableBanner({
   tld: string;
 }) {
   return (
-    <View className="gap-1 rounded-lg border border-warning bg-warning/16 p-3">
+    <View
+      className="bg-warning-surface gap-1 rounded-xl border border-warning-border p-3"
+      style={{ borderCurve: "continuous" }}
+    >
       <Text className="font-semibold text-warning">Registration data unavailable</Text>
       <Text className="text-sm text-muted-foreground">
         {reason === "timeout"

@@ -124,7 +124,49 @@
           "color": "#000000"
         }
       ],
-      "expo-font",
+      [
+        "expo-font",
+        {
+          "android": {
+            "fonts": [
+              {
+                "fontFamily": "Geist",
+                "fontDefinitions": [
+                  { "path": "./assets/fonts/Geist/Geist-Light.ttf", "weight": 300 },
+                  { "path": "./assets/fonts/Geist/Geist-Regular.ttf", "weight": 400 },
+                  { "path": "./assets/fonts/Geist/Geist-Medium.ttf", "weight": 500 },
+                  { "path": "./assets/fonts/Geist/Geist-SemiBold.ttf", "weight": 600 },
+                  { "path": "./assets/fonts/Geist/Geist-Bold.ttf", "weight": 700 },
+                  { "path": "./assets/fonts/Geist/Geist-ExtraBold.ttf", "weight": 800 }
+                ]
+              },
+              {
+                "fontFamily": "Geist Mono",
+                "fontDefinitions": [
+                  { "path": "./assets/fonts/GeistMono/GeistMono-Regular.ttf", "weight": 400 },
+                  { "path": "./assets/fonts/GeistMono/GeistMono-Medium.ttf", "weight": 500 },
+                  { "path": "./assets/fonts/GeistMono/GeistMono-SemiBold.ttf", "weight": 600 },
+                  { "path": "./assets/fonts/GeistMono/GeistMono-Bold.ttf", "weight": 700 }
+                ]
+              }
+            ]
+          },
+          "ios": {
+            "fonts": [
+              "./assets/fonts/Geist/Geist-Light.ttf",
+              "./assets/fonts/Geist/Geist-Regular.ttf",
+              "./assets/fonts/Geist/Geist-Medium.ttf",
+              "./assets/fonts/Geist/Geist-SemiBold.ttf",
+              "./assets/fonts/Geist/Geist-Bold.ttf",
+              "./assets/fonts/Geist/Geist-ExtraBold.ttf",
+              "./assets/fonts/GeistMono/GeistMono-Regular.ttf",
+              "./assets/fonts/GeistMono/GeistMono-Medium.ttf",
+              "./assets/fonts/GeistMono/GeistMono-SemiBold.ttf",
+              "./assets/fonts/GeistMono/GeistMono-Bold.ttf"
+            ]
+          }
+        }
+      ],
       "expo-image",
       [
         "expo-calendar",

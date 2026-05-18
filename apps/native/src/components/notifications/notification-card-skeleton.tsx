@@ -7,14 +7,13 @@ function NotificationCardSkeleton() {
   const pulseStyle = usePulseStyle();
   return (
     <Card>
-      <Animated.View className="gap-2" style={pulseStyle}>
-        <Animated.View className="flex-row items-start justify-between gap-3">
-          <Animated.View className="h-5 w-2/3 rounded bg-secondary" />
-          <Animated.View className="h-5 w-12 rounded-full bg-secondary" />
+      <Animated.View className="flex-row items-start gap-3" style={pulseStyle}>
+        <Animated.View className="size-9 rounded-full bg-secondary" />
+        <Animated.View className="flex-1 gap-2">
+          <Animated.View className="h-4 w-2/3 rounded bg-secondary" />
+          <Animated.View className="h-4 w-full rounded bg-secondary" />
+          <Animated.View className="h-3 w-24 rounded bg-secondary" />
         </Animated.View>
-        <Animated.View className="h-4 w-full rounded bg-secondary" />
-        <Animated.View className="h-4 w-5/6 rounded bg-secondary" />
-        <Animated.View className="h-3 w-24 rounded bg-secondary" />
       </Animated.View>
     </Card>
   );

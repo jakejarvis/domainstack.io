@@ -119,7 +119,9 @@ export function PushPermissionSheet() {
 function PerkRow({ color, icon, label }: { color: string; icon: SymbolName; label: string }) {
   return (
     <View className="flex-row items-center gap-3">
-      <Symbol color={color} name={icon} size={22} />
+      <View className="size-10 items-center justify-center rounded-full bg-accent-blue/15">
+        <Symbol color={color} name={icon} size={20} />
+      </View>
       <Text className="flex-1">{label}</Text>
     </View>
   );

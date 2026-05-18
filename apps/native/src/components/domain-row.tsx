@@ -9,6 +9,7 @@ import type { PortfolioDomain } from "@/lib/portfolio";
 
 import { Badge } from "./badge";
 import { Card } from "./card";
+import { Favicon } from "./domain/favicon";
 import { DomainHealthBadge } from "./portfolio/domain-health-badge";
 import { ProviderChips } from "./portfolio/provider-chips";
 import { RelativeExpiry } from "./relative-expiry";
@@ -57,9 +58,10 @@ function DomainRowImpl({
           </View>
         ) : null}
         <View className="min-w-0 flex-1 gap-3">
-          <View className="flex-row items-start justify-between gap-3">
-            <View className="min-w-0 flex-1 gap-2">
-              <Text className="text-lg font-semibold" numberOfLines={1}>
+          <View className="flex-row items-start gap-3">
+            <Favicon domain={domain.domainName} size={40} />
+            <View className="min-w-0 flex-1 gap-1">
+              <Text className="font-mono text-base font-semibold" numberOfLines={1}>
                 {domain.domainName}
               </Text>
               <View className="flex-row flex-wrap items-baseline gap-1">
@@ -74,7 +76,7 @@ function DomainRowImpl({
                 ) : null}
               </View>
             </View>
-            <Badge variant={domain.verified ? "success" : "warning"}>
+            <Badge dot variant={domain.verified ? "success" : "warning"}>
               <Text>{domain.verified ? "Verified" : "Verify"}</Text>
             </Badge>
           </View>

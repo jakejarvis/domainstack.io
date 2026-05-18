@@ -254,10 +254,10 @@ function ReportHeader({
   return (
     <View className="gap-3">
       <View className="flex-row flex-wrap items-center gap-2">
-        <Favicon domain={domain} />
+        <Favicon domain={domain} size={40} />
         {trackedEntry ? (
           <>
-            <Badge variant={trackedEntry.verified ? "success" : "warning"}>
+            <Badge dot variant={trackedEntry.verified ? "success" : "warning"}>
               <Text>{trackedEntry.verified ? "Verified" : "Needs verification"}</Text>
             </Badge>
             <DomainHealthBadge

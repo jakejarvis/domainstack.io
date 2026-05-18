@@ -23,7 +23,12 @@ export function CertificatesSection({ domain }: { domain: string }) {
 
   if (!data.success || certs.length === 0) {
     return (
-      <ReportSection title="Certificates">
+      <ReportSection
+        accent="orange"
+        icon={{ android: "verified", ios: "checkmark.seal" }}
+        subtitle="Active SSL certificates"
+        title="Certificates"
+      >
         <Text className="text-sm text-muted-foreground">
           No certificates were detected for this domain.
         </Text>
@@ -32,9 +37,18 @@ export function CertificatesSection({ domain }: { domain: string }) {
   }
 
   return (
-    <ReportSection title="Certificates">
+    <ReportSection
+      accent="orange"
+      count={certs.length}
+      icon={{ android: "verified", ios: "checkmark.seal" }}
+      subtitle="Active SSL certificates"
+      title="Certificates"
+    >
       {expiryWarning ? (
-        <View className="gap-1 rounded-lg border border-warning bg-warning/16 p-3">
+        <View
+          className="bg-warning-surface gap-1 rounded-xl border border-warning-border p-3"
+          style={{ borderCurve: "continuous" }}
+        >
           <Text className="font-semibold text-warning">Certificate expiring soon</Text>
           <Text className="text-sm text-muted-foreground">
             {expiryWarning.subject} expires {formatDate(expiryWarning.validTo)} (

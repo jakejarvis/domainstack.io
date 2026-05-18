@@ -13,7 +13,12 @@ export function HostingSection({ domain }: { domain: string }) {
 
   if (!data.success || !data.data) {
     return (
-      <ReportSection title="Hosting">
+      <ReportSection
+        accent="blue"
+        icon={{ android: "cloud", ios: "cloud" }}
+        subtitle="DNS · hosting · email"
+        title="Hosting"
+      >
         <Text className="text-sm text-muted-foreground">Hosting information is unavailable.</Text>
       </ReportSection>
     );
@@ -52,7 +57,12 @@ export function HostingSection({ domain }: { domain: string }) {
   }
 
   return (
-    <ReportSection title="Hosting">
+    <ReportSection
+      accent="blue"
+      icon={{ android: "cloud", ios: "cloud" }}
+      subtitle="DNS · hosting · email"
+      title="Hosting"
+    >
       <KeyValueGrid items={items} />
       {hosting.geo?.lat != null && hosting.geo?.lon != null ? (
         <HostingMap lat={hosting.geo.lat} lon={hosting.geo.lon} domain={domain} />

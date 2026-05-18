@@ -14,7 +14,12 @@ export function SeoSection({ domain }: { domain: string }) {
 
   if (!data.success || !data.data) {
     return (
-      <ReportSection title="SEO">
+      <ReportSection
+        accent="cyan"
+        icon={{ android: "query_stats", ios: "chart.bar.doc.horizontal" }}
+        subtitle="Meta · OG · robots"
+        title="SEO"
+      >
         <Text className="text-sm text-muted-foreground">SEO data could not be retrieved.</Text>
       </ReportSection>
     );
@@ -36,6 +41,9 @@ export function SeoSection({ domain }: { domain: string }) {
 
   return (
     <ReportSection
+      accent="cyan"
+      icon={{ android: "query_stats", ios: "chart.bar.doc.horizontal" }}
+      subtitle="Meta · OG · robots"
       title="SEO"
       trailing={
         source.status ? (

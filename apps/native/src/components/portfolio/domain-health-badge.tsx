@@ -36,7 +36,7 @@ export function DomainHealthBadge({
   const status = statusFor(expirationDate, verified);
   const config = CONFIG[status];
   return (
-    <Badge variant={config.variant}>
+    <Badge dot={status !== "unknown"} variant={config.variant}>
       <Text>{config.label}</Text>
     </Badge>
   );

@@ -1,22 +1,44 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Fragment, useMemo } from "react";
+import { Fragment } from "react";
 import { View } from "react-native";
 
-import { Badge } from "@/components/badge";
 import { ReportSection } from "@/components/report-section";
 import { Text } from "@/components/text";
 import { useTRPC } from "@/lib/api";
-import type { DnsRecord } from "@domainstack/types";
+import { cn } from "@/lib/cn";
+
+// Per-record-type colored mono chip — mirrors the web report's record palette.
+const TYPE_CHIP: Record<string, string> = {
+  A: "bg-accent-green/15 text-accent-green",
+  AAAA: "bg-accent-cyan/15 text-accent-cyan",
+  CNAME: "bg-accent-blue/15 text-accent-blue",
+  MX: "bg-accent-orange/15 text-accent-orange",
+  TXT: "bg-accent-pink/15 text-accent-pink",
+  NS: "bg-accent-slate/15 text-accent-slate",
+  SOA: "bg-accent-indigo/15 text-accent-indigo",
+  SRV: "bg-accent-purple/15 text-accent-purple",
+  CAA: "bg-accent-gold/15 text-accent-gold",
+};
+const TYPE_CHIP_FALLBACK = "bg-accent-slate/15 text-accent-slate";
+
+function typeChip(type: string): string {
+  return TYPE_CHIP[type.toUpperCase()] ?? TYPE_CHIP_FALLBACK;
+}
 
 export function DnsSection({ domain }: { domain: string }) {
   const trpc = useTRPC();
   const { data } = useSuspenseQuery(trpc.domain.getDnsRecords.queryOptions({ domain }));
 
-  const groups = useMemo(() => groupByType(data.data?.records ?? []), [data.data?.records]);
+  const records = data.data?.records ?? [];
 
-  if (!data.success || groups.length === 0) {
+  if (!data.success || records.length === 0) {
     return (
-      <ReportSection title="DNS">
+      <ReportSection
+        accent="green"
+        icon={{ android: "dns", ios: "point.3.connected.trianglepath.dotted" }}
+        subtitle="A · AAAA · MX · TXT · NS"
+        title="DNS"
+      >
         <Text className="text-sm text-muted-foreground">
           No DNS records were returned for this domain.
         </Text>
@@ -25,55 +47,52 @@ export function DnsSection({ domain }: { domain: string }) {
   }
 
   return (
-    <ReportSection title="DNS">
-      {groups.map((group) => (
-        <View className="gap-2" key={group.type}>
-          <View className="flex-row items-center gap-2">
-            <Badge>
-              <Text className="font-semibold">{group.type}</Text>
-            </Badge>
-            <Text className="text-sm text-muted-foreground tabular-nums">
-              {group.records.length}
-            </Text>
-          </View>
-          <View className="gap-3">
-            {group.records.map((record, recordIndex) => (
-              <Fragment
-                key={`${group.type}-${record.name}-${record.value}-${record.priority ?? "none"}`}
+    <ReportSection
+      accent="green"
+      count={records.length}
+      icon={{ android: "dns", ios: "point.3.connected.trianglepath.dotted" }}
+      subtitle="A · AAAA · MX · TXT · NS"
+      title="DNS"
+    >
+      <View>
+        {records.map((record, index) => {
+          const chip = typeChip(record.type);
+          return (
+            <Fragment
+              key={`${record.type}-${record.name}-${record.value}-${record.priority ?? "none"}`}
+            >
+              <View
+                className={cn(
+                  "flex-row items-center gap-2 py-2.5",
+                  index > 0 && "border-t border-dashed border-border",
+                )}
               >
-                {recordIndex > 0 ? <View className="h-px bg-border" /> : null}
-                <View className="gap-1">
-                  <Text className="font-mono text-sm" selectable>
-                    {record.value}
+                <View
+                  className={cn("rounded px-1.5 py-0.5", chip.split(" ")[0])}
+                  style={{ borderCurve: "continuous" }}
+                >
+                  <Text className={cn("font-mono text-[11px] font-medium", chip.split(" ")[1])}>
+                    {record.type}
                   </Text>
-                  <View className="flex-row flex-wrap gap-2">
-                    {record.ttl != null ? (
-                      <Text className="text-xs text-muted-foreground tabular-nums">
-                        TTL {record.ttl}
-                      </Text>
-                    ) : null}
-                    {record.priority != null ? (
-                      <Text className="text-xs text-muted-foreground tabular-nums">
-                        Priority {record.priority}
-                      </Text>
-                    ) : null}
-                  </View>
                 </View>
-              </Fragment>
-            ))}
-          </View>
-        </View>
-      ))}
+                <Text className="min-w-0 flex-1 font-mono text-xs" numberOfLines={1} selectable>
+                  {record.value}
+                </Text>
+                {record.priority != null ? (
+                  <Text className="font-mono text-[11px] text-muted-foreground tabular-nums">
+                    P{record.priority}
+                  </Text>
+                ) : null}
+                {record.ttl != null ? (
+                  <Text className="font-mono text-[11px] text-muted-foreground tabular-nums">
+                    {record.ttl}s
+                  </Text>
+                ) : null}
+              </View>
+            </Fragment>
+          );
+        })}
+      </View>
     </ReportSection>
   );
-}
-
-function groupByType(records: DnsRecord[]) {
-  const map = new Map<string, DnsRecord[]>();
-  for (const record of records) {
-    const list = map.get(record.type) ?? [];
-    list.push(record);
-    map.set(record.type, list);
-  }
-  return Array.from(map, ([type, recs]) => ({ type, records: recs }));
 }

@@ -25,7 +25,12 @@ export function HeadersSection({ domain }: { domain: string }) {
 
   if (!data.success || !data.data) {
     return (
-      <ReportSection title="Headers">
+      <ReportSection
+        accent="pink"
+        icon={{ android: "list_alt", ios: "list.bullet.rectangle" }}
+        subtitle="HTTP response"
+        title="Headers"
+      >
         <Text className="text-sm text-muted-foreground">Headers could not be retrieved.</Text>
       </ReportSection>
     );
@@ -34,6 +39,10 @@ export function HeadersSection({ domain }: { domain: string }) {
   const status = data.data.status;
   return (
     <ReportSection
+      accent="pink"
+      count={data.data.headers.length}
+      icon={{ android: "list_alt", ios: "list.bullet.rectangle" }}
+      subtitle="HTTP response"
       title="Headers"
       trailing={
         <Badge variant={status >= 200 && status < 400 ? "success" : "warning"}>

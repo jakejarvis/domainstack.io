@@ -1,8 +1,9 @@
 import { Link, useNavigation, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { NativeSyntheticEvent } from "react-native";
-import { Pressable } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 
+import { Favicon } from "@/components/domain/favicon";
 import { EmptyState } from "@/components/empty-state";
 import { GroupedRow, GroupedSection } from "@/components/form/group";
 import { HeaderMenu } from "@/components/header-menu";
@@ -18,6 +19,57 @@ import { isValidDomain, normalizeDomainInput } from "@domainstack/utils/domain/c
 
 function truncate(value: string, max: number): string {
   return value.length > max ? `${value.slice(0, max)}…` : value;
+}
+
+const SUGGESTIONS = ["vercel.com", "github.com", "cloudflare.com", "stripe.com"];
+
+function SearchHero() {
+  return (
+    <View className="gap-1 px-1 pt-1">
+      <Text className="text-3xl leading-tight font-semibold" style={{ letterSpacing: -0.7 }}>
+        Inspect any domain’s{" "}
+        <Text className="rounded-lg bg-accent-purple/15 px-1.5 text-3xl font-semibold text-accent-purple">
+          registration
+        </Text>
+        .
+      </Text>
+      <Text className="text-sm text-muted-foreground">
+        WHOIS, DNS, hosting, certs, headers, SEO — one tap.
+      </Text>
+    </View>
+  );
+}
+
+function SuggestionChips({ onPick }: { onPick: (domain: string) => void }) {
+  return (
+    <View className="gap-2">
+      <Text variant="footnote" className="ml-1 text-muted-foreground">
+        Try
+      </Text>
+      <ScrollView
+        contentContainerStyle={{ gap: 8, paddingRight: 8 }}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+      >
+        {SUGGESTIONS.map((domain) => (
+          <Pressable
+            accessibilityLabel={`Inspect ${domain}`}
+            accessibilityRole="button"
+            key={domain}
+            onPress={() => onPick(domain)}
+          >
+            <View
+              className="flex-row items-center gap-2 rounded-full border border-border bg-secondary px-3 py-2"
+              style={{ borderCurve: "continuous" }}
+            >
+              <Favicon domain={domain} size={16} />
+              <Text className="font-mono text-sm">{domain}</Text>
+            </View>
+          </Pressable>
+        ))}
+      </ScrollView>
+    </View>
+  );
 }
 
 export default function SearchScreen() {
@@ -93,6 +145,13 @@ export default function SearchScreen() {
     <Screen>
       <HeaderMenu />
 
+      {query.trim().length === 0 ? (
+        <>
+          <SearchHero />
+          <SuggestionChips onPick={openDomain} />
+        </>
+      ) : null}
+
       {!hasHydrated ? <SkeletonRows count={3} /> : null}
 
       {hasHydrated && filtered.length > 0 ? (
@@ -107,7 +166,10 @@ export default function SearchScreen() {
               <Link.Trigger>
                 <Pressable accessibilityLabel={`Open report for ${item}`} accessibilityRole="link">
                   <GroupedRow showChevron>
-                    <Text numberOfLines={1}>{item}</Text>
+                    <Favicon domain={item} size={28} />
+                    <Text className="flex-1 font-mono" numberOfLines={1}>
+                      {item}
+                    </Text>
                   </GroupedRow>
                 </Pressable>
               </Link.Trigger>
