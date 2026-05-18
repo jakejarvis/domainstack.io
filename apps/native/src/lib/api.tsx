@@ -1,5 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import { onlineManager, type QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createTRPCClient, httpBatchLink, loggerLink } from "@trpc/client";
@@ -15,6 +13,7 @@ import { authClient, getAuthCookieHeader } from "./auth";
 import { apiBaseUrl } from "./env";
 import { markNetworkStateKnown } from "./network";
 import { makeQueryClient } from "./query-client";
+import { queryPersister } from "./query-persister";
 import { resetUserScopedState } from "./reset-user-state";
 import { buildTrpcHeaders } from "./trpc-headers";
 
@@ -41,11 +40,6 @@ function useNetworkOnlineManager() {
   }, []);
 }
 
-const persister = createAsyncStoragePersister({
-  key: "domainstack-native-query-cache",
-  storage: AsyncStorage,
-});
-
 // Wipe per-user state whenever the active user changes. Without this, the
 // persisted query cache AND local stores (recent searches, portfolio filters)
 // survive sign-out (or a direct A->B switch) and the next user on the same
@@ -61,7 +55,7 @@ function useResetCacheOnSignOut(queryClient: QueryClient) {
 
     if (previousUserId !== null && previousUserId !== currentUserId) {
       queryClient.clear();
-      void persister.removeClient();
+      void queryPersister.removeClient();
       resetUserScopedState();
     }
   }, [queryClient, session.data]);
@@ -99,7 +93,7 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
         // cache instead of deserializing stale data.
         buster: `domainstack-native-${Constants.expoConfig?.version ?? "dev"}`,
         maxAge: 1000 * 60 * 60 * 24,
-        persister,
+        persister: queryPersister,
       }}
     >
       <BaseTRPCProvider queryClient={queryClient} trpcClient={trpcClient}>
