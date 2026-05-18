@@ -1,5 +1,4 @@
 import * as Linking from "expo-linking";
-import * as SecureStore from "expo-secure-store";
 import * as WebBrowser from "expo-web-browser";
 
 import {
@@ -13,12 +12,13 @@ import {
 import type { OtaConfigResponse } from "@domainstack/auth/ota-config/client";
 
 import { apiBaseUrl } from "./env";
+import { secureAuthStorage } from "./secure-auth-storage";
 
 WebBrowser.maybeCompleteAuthSession();
 
 export const authClient = createNativeAuthClient({
   baseURL: apiBaseUrl,
-  storage: SecureStore,
+  storage: secureAuthStorage,
 });
 
 export type AuthProvider = NativeAuthProvider;
