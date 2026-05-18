@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Clipboard from "expo-clipboard";
 import * as Linking from "expo-linking";
 import type { Ref } from "react";
-import { Alert, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
 
 import { AppBottomSheet, type AppBottomSheetRef } from "@/components/bottom-sheet";
 import { Button } from "@/components/button";
@@ -10,6 +10,7 @@ import { Card } from "@/components/card";
 import { Spinner } from "@/components/spinner";
 import { Text } from "@/components/text";
 import { useTRPC } from "@/lib/api";
+import { confirm, confirmDestructive } from "@/lib/native-confirm";
 import { toast } from "@/lib/toast";
 
 function toWebcalUrl(httpsUrl: string): string {
@@ -70,47 +71,35 @@ export function CalendarFeedSheet({ ref }: { ref?: Ref<AppBottomSheetRef> }) {
   }
 
   function handleRotate() {
-    Alert.alert(
-      "Generate new URL?",
-      "The current URL stops working immediately. Any subscribed calendar apps need to resubscribe.",
-      [
-        { style: "cancel", text: "Cancel" },
-        {
-          onPress: () => rotate.mutate(undefined),
-          style: "destructive",
-          text: "Rotate",
-        },
-      ],
-    );
+    void confirmDestructive({
+      confirmLabel: "Rotate",
+      message:
+        "The current URL stops working immediately. Any subscribed calendar apps need to resubscribe.",
+      title: "Generate new URL?",
+    }).then((confirmed) => {
+      if (confirmed) rotate.mutate(undefined);
+    });
   }
 
   function handleDisable() {
-    Alert.alert(
-      "Disable feed?",
-      "Subscribed calendars will stop receiving updates. You can re-enable later with the same URL.",
-      [
-        { style: "cancel", text: "Cancel" },
-        {
-          onPress: () => disable.mutate(undefined),
-          text: "Disable",
-        },
-      ],
-    );
+    void confirm({
+      confirmLabel: "Disable",
+      message:
+        "Subscribed calendars will stop receiving updates. You can re-enable later with the same URL.",
+      title: "Disable feed?",
+    }).then((confirmed) => {
+      if (confirmed) disable.mutate(undefined);
+    });
   }
 
   function handleDelete() {
-    Alert.alert(
-      "Delete feed?",
-      "This permanently removes the feed and any subscribed calendars will stop syncing.",
-      [
-        { style: "cancel", text: "Cancel" },
-        {
-          onPress: () => remove.mutate(undefined),
-          style: "destructive",
-          text: "Delete",
-        },
-      ],
-    );
+    void confirmDestructive({
+      confirmLabel: "Delete",
+      message: "This permanently removes the feed and any subscribed calendars will stop syncing.",
+      title: "Delete feed?",
+    }).then((confirmed) => {
+      if (confirmed) remove.mutate(undefined);
+    });
   }
 
   return (
