@@ -54,7 +54,11 @@ export function SwipeableRow({
           accessibilityRole="button"
           className="items-center justify-center rounded-2xl bg-warning px-4"
           onPress={handleMutePress}
-          style={{ borderCurve: "continuous", width: ACTION_WIDTH }}
+          style={({ pressed }) => ({
+            borderCurve: "continuous",
+            opacity: pressed ? 0.6 : 1,
+            width: ACTION_WIDTH,
+          })}
         >
           <Text className="font-semibold text-warning-foreground">{muteLabel}</Text>
         </Pressable>
@@ -70,7 +74,11 @@ export function SwipeableRow({
           accessibilityRole="button"
           className="items-center justify-center rounded-2xl bg-destructive px-4"
           onPress={handleArchivePress}
-          style={{ borderCurve: "continuous", width: ACTION_WIDTH }}
+          style={({ pressed }) => ({
+            borderCurve: "continuous",
+            opacity: pressed ? 0.6 : 1,
+            width: ACTION_WIDTH,
+          })}
         >
           <Text className="font-semibold text-destructive-foreground">Archive</Text>
         </Pressable>

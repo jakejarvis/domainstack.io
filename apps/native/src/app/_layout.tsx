@@ -1,5 +1,7 @@
 import "@/global.css";
 import * as Notifications from "expo-notifications";
+import * as QuickActions from "expo-quick-actions";
+import { type RouterAction, useQuickActionRouting } from "expo-quick-actions/router";
 import { type Href, router } from "expo-router";
 import { Stack } from "expo-router/stack";
 import { ShareIntentProvider, useShareIntentContext } from "expo-share-intent";
@@ -46,6 +48,34 @@ function RootNavigator() {
   const versionGateReady = useVersionGateReady();
   useForegroundPushRefresh();
   useCalendarSync();
+
+  // Home-screen long-press shortcuts. `useQuickActionRouting()` navigates to
+  // `params.href` on cold start (initial action) and while backgrounded; the
+  // effect registers the items. iOS renders the `symbol:` SF Symbols; Android
+  // ignores them and falls back to the system default icon.
+  useQuickActionRouting();
+  useEffect(() => {
+    void QuickActions.setItems<RouterAction>([
+      {
+        id: "search",
+        title: "Search",
+        icon: "symbol:magnifyingglass",
+        params: { href: "/(tabs)/search" },
+      },
+      {
+        id: "portfolio",
+        title: "Portfolio",
+        icon: "symbol:globe",
+        params: { href: "/(tabs)/domains" },
+      },
+      {
+        id: "notifications",
+        title: "Notifications",
+        icon: "symbol:bell",
+        params: { href: "/(tabs)/notifications" },
+      },
+    ]);
+  }, []);
 
   // A killed-state tap on a protected target while signed-out is stashed here
   // and replayed once the user signs in, so the notification isn't lost.

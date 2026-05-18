@@ -44,6 +44,7 @@ export function FilterChips() {
             hitSlop={{ bottom: 10, left: 6, right: 6, top: 10 }}
             key={chip.key}
             onPress={chip.remove}
+            style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
           >
             <View className="flex-row items-center gap-1.5 rounded-full border border-border bg-secondary px-3 py-1.5">
               <Text className="text-xs font-semibold">{chip.label}</Text>
@@ -57,6 +58,7 @@ export function FilterChips() {
           accessibilityRole="button"
           hitSlop={{ bottom: 12, left: 12, right: 12, top: 12 }}
           onPress={resetFilters}
+          style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
         >
           <Text className="text-xs font-semibold text-muted-foreground">Clear</Text>
         </Pressable>

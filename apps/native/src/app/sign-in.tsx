@@ -24,16 +24,14 @@ import {
   signInWithProvider,
 } from "@/lib/auth";
 import { getEnabledNativeAuthProviders, type NativeAuthProviderOption } from "@/lib/auth-providers";
-import { googleNativeConfig } from "@/lib/env";
+import { googleNativeConfig, webBaseUrl } from "@/lib/env";
 import { getGoogleIdentityToken } from "@/lib/google-auth";
 import { getInitialRoute } from "@/lib/navigation";
 import { createAuthNonce } from "@/lib/nonce";
 import { toast } from "@/lib/toast";
 
-const WEB_URL = "https://domainstack.io";
-
 function openLegal(path: "terms" | "privacy") {
-  void WebBrowser.openBrowserAsync(`${WEB_URL}/${path}`, {
+  void WebBrowser.openBrowserAsync(`${webBaseUrl}/${path}`, {
     dismissButtonStyle: "close",
     presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
   });

@@ -22,7 +22,12 @@ export function FilterSection({
 
   return (
     <View className="border-b border-border">
-      <Pressable accessibilityRole="button" hitSlop={4} onPress={handleToggle}>
+      <Pressable
+        accessibilityRole="button"
+        hitSlop={4}
+        onPress={handleToggle}
+        style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+      >
         <View className="flex-row items-center justify-between py-3">
           <Text className="text-base font-semibold">{title}</Text>
           <View className="flex-row items-center gap-2">
@@ -64,6 +69,7 @@ export function FilterOptionRow({
       accessibilityRole={variant === "radio" ? "radio" : "checkbox"}
       accessibilityState={{ selected, checked: selected }}
       onPress={onPress}
+      style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
     >
       <View className="flex-row items-center gap-3 py-2">
         <Symbol color={selected ? accent : muted} name={symbolName} size={22} />

@@ -17,5 +17,11 @@ export function daysUntil(value: Date | string | null | undefined): number | nul
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return null;
   const diff = date.getTime() - Date.now();
-  return Math.ceil(diff / 86_400_000);
+  return Math.floor(diff / 86_400_000);
+}
+
+const PLURAL_RULES = new Intl.PluralRules();
+
+export function plural(count: number, one: string, other: string): string {
+  return PLURAL_RULES.select(count) === "one" ? one : other;
 }

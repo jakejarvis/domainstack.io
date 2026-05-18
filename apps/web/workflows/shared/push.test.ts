@@ -26,7 +26,7 @@ const mockQueries = {
 vi.mock("@domainstack/db/queries", () => mockQueries);
 
 describe("push notification fanout", () => {
-  it("routes domain notifications to the name-keyed native deep link", () => {
+  it("builds domain notification data keyed by domain name", () => {
     expect(
       buildPushData({
         domainName: "example.com",
@@ -37,18 +37,21 @@ describe("push notification fanout", () => {
       domainName: "example.com",
       notificationId: "notification-1",
       trackedDomainId: "tracked-1",
-      url: "domainstack://domains/example.com",
     });
   });
 
-  it("falls back to the notifications deep link when the domain name is missing", () => {
+  it("preserves a null domain name when it is missing", () => {
     expect(
       buildPushData({
         domainName: null,
         notificationId: "notification-1",
         trackedDomainId: "tracked-1",
-      }).url,
-    ).toBe("domainstack://notifications");
+      }),
+    ).toEqual({
+      domainName: null,
+      notificationId: "notification-1",
+      trackedDomainId: "tracked-1",
+    });
   });
 
   it("deduplicates devices by Expo push token before fanout", () => {
@@ -69,7 +72,7 @@ describe("push notification fanout", () => {
     );
 
     expect(messages).toHaveLength(2);
-    expect(messages[0]?.data.url).toBe("domainstack://notifications");
+    expect(messages[0]?.data.notificationId).toBe("notification-1");
   });
 });
 

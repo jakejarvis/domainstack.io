@@ -58,6 +58,7 @@
     "expo-maps": "~56.0.5",
     "expo-network": "~56.0.3",
     "expo-notifications": "~56.0.9",
+    "expo-quick-actions": "^6.0.1",
     "expo-router": "~56.2.1",
     "expo-secure-store": "~56.0.3",
     "expo-share-intent": "6.1.0",

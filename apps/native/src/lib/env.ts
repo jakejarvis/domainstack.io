@@ -30,6 +30,10 @@ if (!rawApiBaseUrl && !__DEV__) {
 
 export const apiBaseUrl = rawApiBaseUrl || "http://localhost:3000";
 
+// The same Next app serves the API, marketing, and legal pages, so the web
+// origin is the API origin. Aliased for call-site clarity and a future split.
+export const webBaseUrl = apiBaseUrl;
+
 export const googleNativeConfig = {
   iosClientId: clean(process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? extra.googleIosClientId, ""),
   webClientId: clean(process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? extra.googleWebClientId, ""),

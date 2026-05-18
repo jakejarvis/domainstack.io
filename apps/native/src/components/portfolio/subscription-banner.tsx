@@ -5,7 +5,7 @@ import Animated, { FadeIn, FadeOut, ReduceMotion } from "react-native-reanimated
 import { Button } from "@/components/button";
 import { Card } from "@/components/card";
 import { Text } from "@/components/text";
-import { daysUntil } from "@/lib/format";
+import { daysUntil, plural } from "@/lib/format";
 
 type Variant = { kind: "ending"; daysLeft: number } | { kind: "at-limit" } | { kind: "none" };
 
@@ -44,7 +44,9 @@ export function SubscriptionBanner({
         <Card>
           <View className="gap-1">
             <Text className="text-base font-semibold">
-              Your Pro plan ends in {variant.daysLeft} {variant.daysLeft === 1 ? "day" : "days"}
+              {variant.daysLeft === 0
+                ? "Your Pro plan ends today"
+                : `Your Pro plan ends in ${variant.daysLeft} ${plural(variant.daysLeft, "day", "days")}`}
             </Text>
             <Text className="text-sm text-muted-foreground">
               Resubscribe to keep tracking your full portfolio without interruption.

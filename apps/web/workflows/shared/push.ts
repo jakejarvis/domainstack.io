@@ -39,17 +39,11 @@ export function buildPushData(input: {
   trackedDomainId?: string | null;
   domainName?: string | null;
 }) {
-  // The native tap router (`routeFromNotificationData`) keys the domain route
-  // by domain *name*, not the tracked-domain UUID — keep `url` consistent so
-  // it stays a valid deep link if expo-router URL handling is ever enabled.
   if (input.trackedDomainId) {
     return {
       notificationId: input.notificationId,
       trackedDomainId: input.trackedDomainId,
       domainName: input.domainName ?? null,
-      url: input.domainName
-        ? `domainstack://domains/${input.domainName}`
-        : "domainstack://notifications",
     };
   }
 
@@ -57,7 +51,6 @@ export function buildPushData(input: {
     notificationId: input.notificationId,
     trackedDomainId: null,
     domainName: input.domainName ?? null,
-    url: "domainstack://notifications",
   };
 }
 
