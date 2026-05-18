@@ -1186,12 +1186,11 @@ export async function deleteStaleUnverifiedDomains(ids: string[]): Promise<numbe
  * @returns Number of domains deleted
  */
 export async function deleteStaleUnverifiedDomainsByCutoff(cutoffDate: Date): Promise<number> {
-  const deleted = await db
+  const result = await db
     .delete(userTrackedDomains)
     .where(
       and(eq(userTrackedDomains.verified, false), lt(userTrackedDomains.createdAt, cutoffDate)),
-    )
-    .returning({ id: userTrackedDomains.id });
+    );
 
-  return deleted.length;
+  return result.rowCount;
 }
