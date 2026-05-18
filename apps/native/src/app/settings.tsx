@@ -1,8 +1,8 @@
 import { Host, Switch as NativeSwitch } from "@expo/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { router } from "expo-router";
-import { Suspense, useRef } from "react";
-import { View } from "react-native";
+import { router, useFocusEffect } from "expo-router";
+import { Suspense, useCallback, useRef, useState } from "react";
+import { Linking, View } from "react-native";
 
 import { type AppBottomSheetRef } from "@/components/bottom-sheet";
 import { Button } from "@/components/button";
@@ -25,7 +25,9 @@ import { analytics } from "@/lib/analytics";
 import { useTRPC } from "@/lib/api";
 import { authClient } from "@/lib/auth";
 import { confirmDestructive } from "@/lib/native-confirm";
+import { getPushPermissionStatus, type PushPermissionStatus } from "@/lib/push";
 import { usePrivacyStore } from "@/lib/stores/privacy-store";
+import { toast } from "@/lib/toast";
 import { toastMutationError } from "@/lib/trpc-error-handler";
 
 type PreferenceKey =
@@ -217,6 +219,28 @@ function PushDeviceSection() {
   const pushRegistration = usePushRegistration();
   const devices = useQuery(trpc.user.getPushDevices.queryOptions());
 
+  const [permission, setPermission] = useState<PushPermissionStatus | null>(null);
+  const refreshPermission = useCallback(() => {
+    void getPushPermissionStatus().then(setPermission);
+  }, []);
+  // Re-check on focus so returning from the OS Settings app reflects a freshly
+  // granted/denied permission without a manual refresh.
+  useFocusEffect(refreshPermission);
+
+  async function handleRegister() {
+    const outcome = await pushRegistration.register();
+    refreshPermission();
+    if (outcome === "granted") {
+      toast.success("This device is registered for notifications.");
+    } else if (outcome === "error") {
+      toast.error({
+        title: "Couldn’t register device",
+        message: "Something went wrong. Please try again.",
+      });
+    }
+    // "denied"/"undetermined": the recovery notice below now reflects it.
+  }
+
   const devicesKey = trpc.user.getPushDevices.queryKey();
   type Devices = NonNullable<typeof devices.data>;
   const invalidateDevices = () => queryClient.invalidateQueries({ queryKey: devicesKey });
@@ -252,23 +276,24 @@ function PushDeviceSection() {
 
   return (
     <View className="gap-6">
-      <GroupedSection
-        footer={
-          pushRegistration.error
-            ? pushRegistration.error.message
-            : "Receive push notifications on this device."
-        }
-        title="This device"
-      >
-        <GroupedRow
-          disabled={pushRegistration.registering}
-          onPress={() => void pushRegistration.register()}
+      {permission === "denied" ? (
+        <GroupedSection
+          footer="Notifications are turned off for Domainstack. Enable them in Settings, then come back."
+          title="This device"
         >
-          <Text className="font-semibold">
-            {pushRegistration.registering ? "Registering…" : "Register this device"}
-          </Text>
-        </GroupedRow>
-      </GroupedSection>
+          <GroupedRow onPress={() => void Linking.openSettings()}>
+            <Text className="font-semibold">Open Settings</Text>
+          </GroupedRow>
+        </GroupedSection>
+      ) : (
+        <GroupedSection footer="Receive push notifications on this device." title="This device">
+          <GroupedRow disabled={pushRegistration.registering} onPress={() => void handleRegister()}>
+            <Text className="font-semibold">
+              {pushRegistration.registering ? "Registering…" : "Register this device"}
+            </Text>
+          </GroupedRow>
+        </GroupedSection>
+      )}
 
       {devices.data?.map((device) => (
         <GroupedSection

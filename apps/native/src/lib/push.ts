@@ -51,6 +51,20 @@ export function getPushPlatform(): "ios" | "android" {
   return Platform.OS === "android" ? "android" : "ios";
 }
 
+export type PushPermissionStatus = "granted" | "denied" | "undetermined";
+
+/**
+ * Collapses Expo's permission shape to the three states the UI branches on:
+ * `granted` (done), `denied` (only the OS Settings app can re-enable — show a
+ * recovery affordance), `undetermined` (safe to show the soft prompt + OS
+ * dialog).
+ */
+export async function getPushPermissionStatus(): Promise<PushPermissionStatus> {
+  const { status } = await Notifications.getPermissionsAsync();
+  if (status === "granted") return "granted";
+  return status === "denied" ? "denied" : "undetermined";
+}
+
 function getDeviceTypeLabel(): string | null {
   switch (Device.deviceType) {
     case Device.DeviceType.PHONE:

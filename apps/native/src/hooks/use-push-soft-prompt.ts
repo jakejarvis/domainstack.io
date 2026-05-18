@@ -1,7 +1,7 @@
-import * as Notifications from "expo-notifications";
 import { useCallback } from "react";
 
 import { usePushRegistration } from "@/hooks/use-push-registration";
+import { getPushPermissionStatus } from "@/lib/push";
 import { type PushPromptTrigger, usePushPromptStore } from "@/lib/stores/push-prompt-store";
 
 export function usePushSoftPrompt() {
@@ -9,18 +9,15 @@ export function usePushSoftPrompt() {
 
   return useCallback(
     async (context: PushPromptTrigger) => {
-      const { status } = await Notifications.getPermissionsAsync();
+      const status = await getPushPermissionStatus();
       const store = usePushPromptStore.getState();
 
-      // Already granted — silently refresh the token (handles reinstall + token rotation)
-      // regardless of whether this trigger was previously handled.
+      // Already granted — silently refresh the token (handles reinstall + token
+      // rotation) regardless of whether this trigger was previously handled.
+      // `register()` is total, so no try/catch is needed.
       if (status === "granted") {
         store.markTriggerHandled(context);
-        try {
-          await register();
-        } catch {
-          // Swallow: settings has a manual "Register this device" fallback.
-        }
+        await register();
         return;
       }
 
@@ -32,10 +29,11 @@ export function usePushSoftPrompt() {
       if (store.isTriggerHandled(context)) return;
       store.markTriggerHandled(context);
 
-      // Denied: OS won't show the dialog again — sending users to Settings is a separate flow.
-      if (status === "denied") return;
-
-      // Undetermined: show the soft pre-prompt before burning the OS dialog.
+      // Undetermined → the sheet shows the soft pre-prompt before burning the
+      // OS dialog. Denied → the sheet shows an "Open Settings" recovery (the OS
+      // won't prompt again, and a single mis-tap must not permanently kill a
+      // core feature). Gated by markTriggerHandled, so it appears at most once
+      // per trigger — not naggy.
       store.open();
     },
     [register],
