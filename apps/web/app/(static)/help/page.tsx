@@ -2,8 +2,8 @@ import { IconExternalLink } from "@tabler/icons-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { PRO_TIER_INFO } from "@domainstack/billing/polar/products";
 import { PLAN_QUOTAS } from "@domainstack/constants";
-import { PRO_TIER_INFO } from "@domainstack/polar/products";
 import {
   Accordion,
   AccordionContent,

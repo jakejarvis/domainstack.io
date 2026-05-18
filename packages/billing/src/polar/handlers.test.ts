@@ -82,7 +82,7 @@ vi.mock("./reconcile", () => ({
   getCustomerSubscriptionState,
 }));
 
-vi.mock("./emails", () => ({
+vi.mock("../emails", () => ({
   sendProUpgradeEmail: vi.fn<(userId: string) => Promise<void>>(),
   sendSubscriptionCancelingEmail: vi.fn<(userId: string, periodEnd: Date) => Promise<void>>(),
   sendSubscriptionExpiredEmail: vi.fn<(userId: string, archivedCount: number) => Promise<void>>(),
@@ -92,7 +92,7 @@ import {
   sendProUpgradeEmail,
   sendSubscriptionCancelingEmail,
   sendSubscriptionExpiredEmail,
-} from "./emails";
+} from "../emails";
 import {
   handleSubscriptionActive,
   handleSubscriptionCanceled,

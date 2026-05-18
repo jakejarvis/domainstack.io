@@ -82,14 +82,19 @@ export function buildExpoPushMessages(
   badge?: number,
 ): ExpoPushMessage[] {
   const hasBadge = typeof badge === "number" && Number.isFinite(badge) && badge >= 0;
-  return uniquePushDevices(devices).map((device) => ({
-    to: device.expoPushToken,
-    title: input.title,
-    body: input.message,
-    sound: "default",
-    ...(hasBadge ? { badge } : {}),
-    data: buildPushData(input),
-  }));
+  return uniquePushDevices(devices).map((device) => {
+    const message: ExpoPushMessage = {
+      to: device.expoPushToken,
+      title: input.title,
+      body: input.message,
+      sound: "default",
+      data: buildPushData(input),
+    };
+    if (hasBadge) {
+      message.badge = badge;
+    }
+    return message;
+  });
 }
 
 function chunk<T>(items: T[], size: number): T[][] {

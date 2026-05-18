@@ -5,12 +5,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { getSessionCookie } from "better-auth/cookies";
 import { nextCookies, toNextJsHandler } from "better-auth/next-js";
 
-import { db } from "@domainstack/db/client";
-import { createSubscription } from "@domainstack/db/queries";
-import * as schema from "@domainstack/db/schema";
-import { addContact, removeContact, sendEmail } from "@domainstack/email";
-import DeleteAccountVerifyEmail from "@domainstack/email/templates/delete-account-verify";
-import { createLogger } from "@domainstack/logger";
+import { sendStoreSubscriptionCancelReminderEmail } from "@domainstack/billing/emails";
 import {
   getProductsForCheckout,
   handleSubscriptionActive,
@@ -18,9 +13,19 @@ import {
   handleSubscriptionCreated,
   handleSubscriptionRevoked,
   handleSubscriptionUncanceled,
-} from "@domainstack/polar";
-import { checkout, polar, portal, webhooks } from "@domainstack/polar/better-auth/server";
-import { polarClient } from "@domainstack/polar/server";
+} from "@domainstack/billing/polar";
+import { checkout, polar, portal, webhooks } from "@domainstack/billing/polar/better-auth/server";
+import { polarClient } from "@domainstack/billing/polar/server";
+import {
+  deleteRevenueCatSubscriber,
+  getRevenueCatCustomerState,
+} from "@domainstack/billing/revenuecat";
+import { db } from "@domainstack/db/client";
+import { createSubscription } from "@domainstack/db/queries";
+import * as schema from "@domainstack/db/schema";
+import { addContact, removeContact, sendEmail } from "@domainstack/email";
+import DeleteAccountVerifyEmail from "@domainstack/email/templates/delete-account-verify";
+import { createLogger } from "@domainstack/logger";
 import { getRedis } from "@domainstack/redis";
 import { getNativeAppConfig } from "@domainstack/server/edge-config";
 
@@ -202,6 +207,36 @@ export const auth = betterAuth({
           } catch (err) {
             // Don't block account deletion if Polar cleanup fails
             logger.error({ err, userId: user.id }, "failed to delete Polar customer");
+          }
+        }
+
+        // RevenueCat has no server-side cancel: deleting the subscriber only
+        // stops our tracking — an active App Store / Play subscription keeps
+        // billing until the user cancels it themselves in the store. Flag that
+        // case for support follow-up; never block account deletion.
+        if (process.env.REVENUECAT_API_KEY) {
+          try {
+            const state = await getRevenueCatCustomerState(user.id);
+            if (state.status === "ok" && state.hasActiveSubscription) {
+              logger.warn(
+                { userId: user.id },
+                "Account deleted with an active RevenueCat store subscription that must be cancelled in-store by the user",
+              );
+              // The store keeps billing until the user cancels it themselves —
+              // tell them how. Best-effort: a mail failure must not block
+              // deletion or the RevenueCat cleanup below.
+              try {
+                await sendStoreSubscriptionCancelReminderEmail(user.id);
+              } catch (err) {
+                logger.error(
+                  { err, userId: user.id },
+                  "failed to send store-subscription cancel reminder email",
+                );
+              }
+            }
+            await deleteRevenueCatSubscriber(user.id);
+          } catch (err) {
+            logger.error({ err, userId: user.id }, "failed to delete RevenueCat subscriber");
           }
         }
 

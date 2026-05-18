@@ -12,6 +12,7 @@ import type { AppRouter } from "@domainstack/api";
 import { authClient, getAuthCookieHeader } from "./auth";
 import { apiBaseUrl } from "./env";
 import { markNetworkStateKnown } from "./network";
+import { syncPurchasesUser } from "./purchases";
 import { makeQueryClient } from "./query-client";
 import { queryPersister, shouldDehydrateQuery } from "./query-persister";
 import { resetUserScopedState } from "./reset-user-state";
@@ -66,8 +67,20 @@ function useResetCacheOnSignOut(queryClient: QueryClient) {
   }, [queryClient, session.data]);
 }
 
+// Keep the RevenueCat SDK identity in lockstep with the auth session so the
+// IAP webhook's `app_user_id` is always our user id (never an anonymous id).
+function usePurchasesIdentity() {
+  const session = authClient.useSession();
+  const userId = session.data?.user?.id ?? null;
+
+  useEffect(() => {
+    void syncPurchasesUser(userId);
+  }, [userId]);
+}
+
 export function ApiProvider({ children }: { children: React.ReactNode }) {
   useNetworkOnlineManager();
+  usePurchasesIdentity();
 
   const [queryClient] = useState(() => makeQueryClient());
   useResetCacheOnSignOut(queryClient);

@@ -1,5 +1,5 @@
-// Emails
-export * from "./emails";
+// Shared, provider-agnostic emails
+export * from "../emails";
 // Handlers
 export * from "./handlers";
 // Products

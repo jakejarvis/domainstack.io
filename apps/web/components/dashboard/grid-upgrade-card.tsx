@@ -2,8 +2,8 @@ import { IconCircleArrowUp, IconRocket } from "@tabler/icons-react";
 
 import { UpgradeButton } from "@/components/upgrade-button";
 import { useSubscription } from "@/hooks/use-subscription";
+import { PRO_TIER_INFO } from "@domainstack/billing/polar/products";
 import { PLAN_QUOTAS } from "@domainstack/constants";
-import { PRO_TIER_INFO } from "@domainstack/polar/products";
 import { Card, CardContent } from "@domainstack/ui/card";
 
 export function GridUpgradeCard() {

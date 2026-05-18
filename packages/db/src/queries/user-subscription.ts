@@ -12,7 +12,7 @@ import {
   sql,
 } from "drizzle-orm";
 
-import { PLAN_QUOTAS, type PLANS } from "@domainstack/constants";
+import { type BillingProviderId, PLAN_QUOTAS, type PLANS } from "@domainstack/constants";
 import type { BillingSubscriptionUpsert } from "@domainstack/types";
 
 import { db, type Database } from "../client";
@@ -483,7 +483,7 @@ export async function recomputeEntitlement(userId: string): Promise<RecomputeRes
  * dangerous direction (a stale `canceled`/`revoked` downgrading a
  * re-subscribed user) is covered by the handler-level
  * reconcile-before-destructive guard (see `handleSubscriptionCanceled` /
- * `handleSubscriptionRevoked` in `@domainstack/polar`), and the entitlement
+ * `handleSubscriptionRevoked` in `@domainstack/billing/polar`), and the entitlement
  * model is single-tier, so this is acceptable here. Revisit (one row per
  * provider *subscription*) for any future multi-subscription work.
  */
@@ -515,4 +515,38 @@ export async function upsertBillingSubscription(
         updatedAt: new Date(),
       },
     });
+}
+
+/**
+ * The billing provider whose row currently grants the pro entitlement, or
+ * `null` if the user is on free. Matches {@link recomputeEntitlement}'s rule
+ * (an `active` row, or a `canceling` row still inside its paid period). Used by
+ * the native app's double-billing guard: a pro user whose entitling provider is
+ * `polar` is steered to manage on the web instead of seeing in-app purchase.
+ */
+export async function getActiveBillingProvider(userId: string): Promise<BillingProviderId | null> {
+  const rows = await db
+    .select({
+      provider: billingSubscriptions.provider,
+      status: billingSubscriptions.status,
+      currentPeriodEnd: billingSubscriptions.currentPeriodEnd,
+    })
+    .from(billingSubscriptions)
+    .where(eq(billingSubscriptions.userId, userId));
+
+  const now = Date.now();
+  const entitling = rows.filter(
+    (r) =>
+      r.status === "active" ||
+      (r.status === "canceling" &&
+        r.currentPeriodEnd !== null &&
+        r.currentPeriodEnd.getTime() > now),
+  );
+  if (entitling.length === 0) return null;
+
+  // Deterministic tiebreak (DB row order is unspecified). A Polar (web)
+  // subscription wins so the native double-billing guard consistently steers
+  // the user to manage on the web; otherwise pick a stable provider order.
+  if (entitling.some((r) => r.provider === "polar")) return "polar";
+  return entitling.map((r) => r.provider).sort()[0] ?? null;
 }

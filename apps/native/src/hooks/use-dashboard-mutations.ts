@@ -5,6 +5,7 @@ import { useTRPC } from "@/lib/api";
 import { assertOnline } from "@/lib/network";
 import { affectedCounts, applySubscriptionDelta } from "@/lib/portfolio-mutations";
 import { toastMutationError } from "@/lib/trpc-error-handler";
+import type { BillingProviderId } from "@domainstack/constants";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 
 interface BulkMutationResult {
@@ -18,6 +19,7 @@ interface SubscriptionData {
   plan: "free" | "pro";
   planQuota: number;
   endsAt: Date | null;
+  provider: BillingProviderId | null;
   activeCount: number;
   archivedCount: number;
   canAddMore: boolean;

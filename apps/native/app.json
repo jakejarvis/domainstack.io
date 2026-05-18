@@ -190,7 +190,8 @@
       [
         "expo-maps",
         {
-          "requestLocationPermission": false
+          "requestLocationPermission": false,
+          "locationPermission": "Allow $(PRODUCT_NAME) to show your location on hosting maps."
         }
       ],
       "expo-status-bar",
@@ -218,6 +219,8 @@
       "googleWebClientId": "${EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID}",
       "posthogKey": "${EXPO_PUBLIC_POSTHOG_KEY}",
       "posthogHost": "${EXPO_PUBLIC_POSTHOG_HOST}",
+      "revenueCatIosKey": "${EXPO_PUBLIC_REVENUECAT_IOS_KEY}",
+      "revenueCatAndroidKey": "${EXPO_PUBLIC_REVENUECAT_ANDROID_KEY}",
       "router": {},
       "eas": {
         "projectId": "ff044af0-bf08-40bb-919f-04c950d11b14"

@@ -2,12 +2,15 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { analytics } from "@domainstack/analytics/server";
+import { PRO_TIER_INFO } from "@domainstack/billing/polar/products";
+import { polarClient } from "@domainstack/billing/polar/server";
 import {
   countTrackedDomainsByStatus,
   deleteCalendarFeed,
   disableCalendarFeed,
   enableCalendarFeed,
   findTrackedDomainById,
+  getActiveBillingProvider,
   getCalendarFeed,
   getLinkedAccounts,
   getOrCreateUserNotificationPreferences,
@@ -20,8 +23,6 @@ import {
   unregisterPushDevice,
   updateUserNotificationPreferences,
 } from "@domainstack/db/queries";
-import { PRO_TIER_INFO } from "@domainstack/polar/products";
-import { polarClient } from "@domainstack/polar/server";
 
 import { withRateLimit } from "../middleware";
 import { protectedProcedure } from "../procedures";
@@ -68,9 +69,10 @@ export const userRouter = createTRPCRouter({
    */
   getSubscription: protectedProcedure.query(async ({ ctx }) => {
     // Run all independent queries in parallel for better performance
-    const [subscription, counts] = await Promise.all([
+    const [subscription, counts, provider] = await Promise.all([
       getUserSubscription(ctx.user.id),
       countTrackedDomainsByStatus(ctx.user.id),
+      getActiveBillingProvider(ctx.user.id),
     ]);
 
     return {
@@ -78,6 +80,9 @@ export const userRouter = createTRPCRouter({
       planQuota: subscription.planQuota,
       // When a canceled subscription expires (null = no pending cancellation)
       endsAt: subscription.endsAt,
+      // Which provider currently grants pro (null on free). The native app
+      // hides in-app purchase when this is "polar" (manage on web instead).
+      provider,
       activeCount: counts.active,
       archivedCount: counts.archived,
       // Only active domains count against limit

@@ -6,6 +6,8 @@ type ExpoExtra = {
   googleWebClientId?: string;
   posthogKey?: string;
   posthogHost?: string;
+  revenueCatIosKey?: string;
+  revenueCatAndroidKey?: string;
 };
 
 const extra = (Constants.expoConfig?.extra ?? {}) as ExpoExtra;
@@ -38,4 +40,14 @@ export const posthogKey = clean(process.env.EXPO_PUBLIC_POSTHOG_KEY ?? extra.pos
 export const posthogHost = clean(
   process.env.EXPO_PUBLIC_POSTHOG_HOST ?? extra.posthogHost,
   "https://us.i.posthog.com",
+);
+
+export const revenueCatIosKey = clean(
+  process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? extra.revenueCatIosKey,
+  "",
+);
+
+export const revenueCatAndroidKey = clean(
+  process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY ?? extra.revenueCatAndroidKey,
+  "",
 );

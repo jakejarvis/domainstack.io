@@ -3,6 +3,7 @@ import { useCallback } from "react";
 import { toast } from "sonner";
 
 import { useTRPC } from "@/lib/trpc/client";
+import type { BillingProviderId } from "@domainstack/constants";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 
 // ---------------------------------------------------------------------------
@@ -20,6 +21,7 @@ interface SubscriptionData {
   plan: "free" | "pro";
   planQuota: number;
   endsAt: Date | null;
+  provider: BillingProviderId | null;
   activeCount: number;
   archivedCount: number;
   canAddMore: boolean;

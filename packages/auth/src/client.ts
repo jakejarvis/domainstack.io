@@ -1,7 +1,7 @@
 import { sentinelClient } from "@better-auth/infra/client";
 import { createAuthClient } from "better-auth/react";
 
-import { polarClient } from "@domainstack/polar/better-auth/client";
+import { polarClient } from "@domainstack/billing/polar/better-auth/client";
 
 import { normalizeBaseUrl } from "./client-core";
 

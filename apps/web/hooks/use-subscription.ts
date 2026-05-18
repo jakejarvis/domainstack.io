@@ -9,7 +9,7 @@ import { useTRPC } from "@/lib/trpc/client";
 import type { AppRouter } from "@/server/routers/_app";
 import { analytics } from "@domainstack/analytics/client";
 import { checkoutEmbed, customer } from "@domainstack/auth/client";
-import { PRO_TIER_INFO } from "@domainstack/polar/products";
+import { PRO_TIER_INFO } from "@domainstack/billing/polar/products";
 
 /**
  * Subscription data shape inferred from user.getSubscription procedure.

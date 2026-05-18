@@ -12,10 +12,16 @@
       }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_DOMAINSTACK_API_URL": "https://domainstack.io"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_DOMAINSTACK_API_URL": "https://domainstack.io"
+      }
     }
   },
   "submit": {

@@ -7,7 +7,7 @@
 1. `pnpm lint` — Must pass with zero warnings
 2. `pnpm fmt:check` — Must pass with zero warnings
 3. `pnpm check-types` — Must pass with zero warnings
-3. `pnpm test` — Must pass with zero warnings
+4. `pnpm test` — Must pass with zero warnings
 
 Do not proceed with commits until all four checks are clean.
 
@@ -16,28 +16,33 @@ Do not proceed with commits until all four checks are clean.
 All commands run from the **monorepo root** via Turborepo. Scope to a single app/package with `pnpm --filter <name> <script>` (e.g., `pnpm --filter @domainstack/web build`, `pnpm --filter @domainstack/native dev`).
 
 ### Development
+
 - `pnpm dev` — Start dev servers (Next.js at http://localhost:3000; runs all apps in parallel)
 - `pnpm --filter @domainstack/native dev` — Start the Expo dev server only
 - `pnpm build` — Compile production bundles
 - `pnpm check-types` — Run `tsc --noEmit` across the workspace
 
 ### Linting & Formatting
+
 - `pnpm lint` — Run oxlint lint
 - `pnpm fmt` — Apply oxfmt formatting
 
 ### Testing
+
 - `pnpm test` — Run all tests once
 - `pnpm test path/to/file.test.ts` — Run a single test file
 - `pnpm test -t "test name"` — Run tests matching a pattern
 - `pnpm test:coverage` — Run tests with coverage report
 
 ### Database
+
 - `pnpm db:generate` — Generate Drizzle migrations (in `packages/db`)
 - `pnpm db:push` — Push schema to database
 - `pnpm db:migrate` — Apply migrations
 - `pnpm db:studio` — Open Drizzle Studio
 
 ### Native (iOS / Android)
+
 - `pnpm --filter @domainstack/native ios` — Build and launch on the iOS Simulator
 - `pnpm --filter @domainstack/native android` — Build and launch on the Android Emulator
 - `pnpm --filter @domainstack/native prebuild` — Regenerate the `ios/`/`android/` projects from `app.json`
@@ -46,17 +51,20 @@ All commands run from the **monorepo root** via Turborepo. Scope to a single app
 ## Code Style
 
 ### General
+
 - TypeScript only, `strict` enabled
 - 2-space indentation (oxfmt enforces)
 - Prefer small, pure modules
 - Node.js >= 24 required
 
 ### Naming Conventions
+
 - **Files/folders:** kebab-case (`user-settings.ts`)
 - **React components:** PascalCase exports (`UserSettings`)
 - **Helpers/hooks:** camelCase named exports (`useUserSettings`)
 
 ### Imports
+
 - Use `@/...` path aliases for app-specific imports (resolves to `apps/web` or `apps/native`)
 - Import shared modules from their workspace package (e.g., `@domainstack/api`, `@domainstack/auth`, `@domainstack/db`, `@domainstack/ui/button`)
 - oxfmt auto-organizes imports on save
@@ -64,12 +72,14 @@ All commands run from the **monorepo root** via Turborepo. Scope to a single app
 - Native screens use Expo Router; place files under `apps/native/src/app/`
 
 ### Types
+
 - Shared domain types in `@domainstack/types`
 - Enum const arrays (primitives) in `@domainstack/constants` (Drizzle pgEnums derive from these)
 - Do NOT use Zod for simple enums or internal database types
 - Import types from `@domainstack/types`
 
 ### Tailwind Classes
+
 - oxfmt enforces sorted Tailwind classes via `useSortedClasses` rule
 - Web: use `cn()` from `@domainstack/ui/utils` for conditional classes
 - Native: use `cn()` from `@/lib/cn` (wraps `tailwind-merge` for Uniwind); styling is via [Uniwind](https://uniwind.dev) (Tailwind CSS v4 for React Native)
@@ -231,6 +241,7 @@ Concise rules for building accessible, fast, delightful UIs. Use MUST/SHOULD/NEV
 The native app (`apps/native`) shares the tRPC API, auth, types, and constants with the web app. Treat it as a first-class consumer of the same backend.
 
 ### Architecture
+
 - **Expo Router** with typed routes under `apps/native/src/app/`
 - **tRPC client** wired up in `apps/native/src/lib/api.tsx`, reusing `AppRouter` from `@domainstack/api`
 - **Auth** via `@domainstack/auth/client` with `expo-secure-store` token persistence; native Apple Sign-In and Google Sign-In are supported
@@ -239,6 +250,7 @@ The native app (`apps/native`) shares the tRPC API, auth, types, and constants w
 - **Styling** uses [Uniwind](https://uniwind.dev) (Tailwind CSS v4 for React Native) with the shared `global.css`
 
 ### Conventions
+
 - Wrap string children in `<Text>` — React Native does not auto-wrap text in `<Button>`, `<Badge>`, etc.
 - Prefer `<Link>` + `expo-router` over imperative `router.push` for navigation that should support long-press previews and native context menus
 - Use `expo-image` for remote images; cache prefetched icons via `apps/native/src/lib/image-cache.ts`
@@ -250,25 +262,27 @@ The native app (`apps/native`) shares the tRPC API, auth, types, and constants w
 ## Error Handling
 
 ### Workflow Steps
+
 Use `apps/web/lib/workflow/errors.ts` utilities for proper error classification:
+
 ```typescript
 import { classifyFetchError, withFetchErrorHandling } from "@/lib/workflow";
 
 async function fetchDataStep(domain: string): Promise<Data> {
   "use step";
-  return await withFetchErrorHandling(
-    () => fetchData(domain),
-    { context: `fetching ${domain}` }
-  );
+  return await withFetchErrorHandling(() => fetchData(domain), { context: `fetching ${domain}` });
 }
 ```
 
 Error classification:
+
 - **FatalError** (don't retry): DNS errors, TLS errors, invalid URLs, blocked hosts
 - **RetryableError** (retry with backoff): Timeouts, network errors, server errors
 
 ### Custom Error Classes
+
 Create domain-specific errors with typed codes:
+
 ```typescript
 export class SafeFetchError extends Error {
   constructor(
@@ -282,14 +296,18 @@ export class SafeFetchError extends Error {
 ```
 
 ### tRPC Errors
+
 Use `TRPCError` with appropriate codes:
+
 ```typescript
 throw new TRPCError({ code: "UNAUTHORIZED", message: "Not authenticated" });
 throw new TRPCError({ code: "NOT_FOUND", message: "Domain not found" });
 ```
 
 ### Rate Limiting
+
 Use Upstash Redis for rate limiting via the `withRateLimit` middleware exported from `@domainstack/api`:
+
 ```typescript
 import { publicProcedure, withRateLimit } from "@domainstack/api";
 
@@ -313,6 +331,7 @@ export const myRouter = createTRPCRouter({
 ## Logging
 
 Server-side only using Pino (object-first API):
+
 ```typescript
 import { createLogger } from "@domainstack/logger";
 const logger = createLogger({ source: "dns" });
@@ -326,18 +345,21 @@ Client-side (web & native): Use `analytics.trackException(error, context)` for e
 ## Testing Patterns
 
 ### File Organization
+
 - Node tests: `**/*.test.ts` (run in Node environment)
 - Browser tests: `**/*.test.tsx` (run in Playwright browser)
 - Native tests: `**/*.test.ts` under `apps/native/` (run via Vitest with the config in `apps/native/vitest.config.ts`)
 - Tests live next to the code they test
 
 ### Mocking
+
 - Analytics and logger are globally mocked in `vitest.setup.node.ts`
 - Use `vi.hoisted` for ESM module mocks
 - Use PGlite (`@domainstack/db/testing`) for isolated database testing
 - Mock `@vercel/blob` for storage tests
 
 ### Example Test
+
 ```typescript
 import { describe, expect, it, vi } from "vitest";
 
@@ -378,6 +400,7 @@ domainstack.io/
 │   ├── analytics/              # PostHog client/server (@domainstack/analytics)
 │   ├── api/                    # tRPC routers shared by web + native (@domainstack/api)
 │   ├── auth/                   # Better Auth server + client (@domainstack/auth)
+│   ├── billing/                # Polar + RevenueCat billing seam & shared emails (@domainstack/billing)
 │   ├── blob/                   # Vercel Blob helpers (@domainstack/blob)
 │   ├── constants/              # Shared constants (@domainstack/constants)
 │   ├── db/                     # Drizzle schema, migrations, queries (@domainstack/db)
@@ -388,7 +411,6 @@ domainstack.io/
 │   ├── email/                  # React Email templates + Resend (@domainstack/email)
 │   ├── image/                  # Image processing helpers (@domainstack/image)
 │   ├── logger/                 # Pino logger (@domainstack/logger)
-│   ├── polar/                  # Polar subscriptions client (@domainstack/polar)
 │   ├── redis/                  # Upstash Redis + rate limiting (@domainstack/redis)
 │   ├── safe-fetch/             # SSRF-safe fetch wrapper (@domainstack/safe-fetch)
 │   ├── screenshot/             # Server-side screenshot pipeline (@domainstack/screenshot)
@@ -408,17 +430,20 @@ All commands run from the **monorepo root** via Turborepo.
 ### Package Imports
 
 **Constants** (`@domainstack/constants`):
+
 ```typescript
 // Pure constants - no runtime dependencies
 import { DNS_RECORD_TYPES, PLANS, REPOSITORY_SLUG } from "@domainstack/constants";
 ```
 
 **Types** (`@domainstack/types`):
+
 ```typescript
 import type { DnsRecord, RegistrationResponse, Certificate } from "@domainstack/types";
 ```
 
 **Database** (`@domainstack/db`):
+
 ```typescript
 import { db } from "@domainstack/db/client";
 import { getCachedRegistration, getCachedDns } from "@domainstack/db/queries";
@@ -426,6 +451,7 @@ import { trackedDomains } from "@domainstack/db/schema";
 ```
 
 **API / tRPC** (`@domainstack/api`):
+
 ```typescript
 import type { AppRouter } from "@domainstack/api";
 import {
@@ -439,6 +465,7 @@ import {
 Middleware can also be imported from the dedicated entry: `@domainstack/api/middleware`.
 
 **UI Components** (`@domainstack/ui`, web only):
+
 ```typescript
 import { Button } from "@domainstack/ui/button";
 import { Card, CardHeader, CardContent } from "@domainstack/ui/card";
@@ -447,13 +474,16 @@ import { useMediaQuery } from "@domainstack/ui/hooks";
 ```
 
 **App-specific wrappers**:
+
 - Web (`apps/web/components/ui/`): `sonner.tsx` configures toast notifications with theme support
 - Native (`apps/native/src/components/`): primitives like `button.tsx`, `text.tsx`, `badge.tsx` wrap React Native + Uniwind
 
 ## Key Patterns
 
 ### SWR Caching
+
 Repository functions in `@domainstack/db/queries` return `CacheResult<T>` with staleness metadata:
+
 ```typescript
 const { data, stale } = await getCachedRegistration("example.com");
 if (stale) {
@@ -462,6 +492,7 @@ if (stale) {
 ```
 
 ### Workflow Concurrency
+
 The hourly `monitor-domains` cron starts `detectChangesWorkflow` per tracked
 domain. A per-domain Redis lock prevents starting a duplicate run while a prior
 run (e.g. stuck in retry backoff) is still in-flight — the cron acquires the
@@ -481,6 +512,7 @@ if (await acquireMonitorLock(trackedDomainId)) {
 ```
 
 ### Protected tRPC Procedures
+
 ```typescript
 import { createTRPCRouter, protectedProcedure } from "@domainstack/api";
 
@@ -492,6 +524,7 @@ export const myRouter = createTRPCRouter({
 ```
 
 ### Optimistic Updates (TanStack Query)
+
 ```typescript
 const mutation = useMutation({
   ...trpc.tracking.removeDomain.mutationOptions(),
@@ -516,53 +549,54 @@ Use `useSuspenseQuery` for declarative data fetching with React Suspense boundar
 Exemplar: `apps/web/components/domain/report-client.tsx`
 
 **When to use Suspense:**
+
 - Simple read-only queries without `enabled` flag
 - Components that render data immediately (no conditional logic)
 - Parallel independent data sections that can load separately
 
 **When NOT to use Suspense:**
+
 - Queries with `enabled` option (conditional fetching)
 - Hooks with mutations and optimistic updates (e.g., `useTrackedDomains`)
 - Lazy-loaded data (hover triggers, infinite scroll)
 - Polling-based queries
 
 **Pattern:**
+
 ```tsx
 // Parent wraps with boundaries
 <ErrorBoundary fallback={<ErrorFallback />}>
   <Suspense fallback={<MySkeleton />}>
     <MyComponent />
   </Suspense>
-</ErrorBoundary>
+</ErrorBoundary>;
 
 // Component uses useSuspenseQuery - data is guaranteed non-null
 function MyComponent() {
-  const { data } = useSuspenseQuery(
-    trpc.myRouter.myQuery.queryOptions()
-  );
+  const { data } = useSuspenseQuery(trpc.myRouter.myQuery.queryOptions());
   return <div>{data.value}</div>;
 }
 ```
 
 **Parallel queries:**
+
 ```tsx
 function MyComponent() {
   const [query1, query2] = useSuspenseQueries({
-    queries: [
-      trpc.router1.query1.queryOptions(),
-      trpc.router2.query2.queryOptions(),
-    ],
+    queries: [trpc.router1.query1.queryOptions(), trpc.router2.query2.queryOptions()],
   });
   // Both are guaranteed to have data
 }
 ```
 
 **Error boundaries:**
+
 - Use `SectionErrorBoundary` for domain report sections (both web and native)
 - Use `SettingsErrorBoundary` for settings panels (web)
 - Create context-specific boundaries with `CreateIssueButton` for error reporting
 
 **Skeleton requirements:**
+
 - MUST mirror final content layout to prevent CLS
 - Export skeleton components for reuse (e.g., `CalendarInstructionsSkeleton`, `ReportSectionSkeleton`)
 
@@ -571,24 +605,29 @@ function MyComponent() {
 The AI chat assistant (`apps/web/components/chat/`) provides natural language domain lookups using Vercel's Workflow SDK.
 
 ### Architecture
+
 - **Client**: `useDomainChat` hook with session persistence via localStorage
 - **API**: `POST /api/chat` starts workflow, returns streaming response
 - **Workflow**: `apps/web/workflows/chat/workflow.ts` uses `DurableAgent` for durable tool execution
 - **Tools**: `apps/web/workflows/chat/tools.ts` defines domain lookup tools (WHOIS, DNS, SSL, etc.)
 
 ### Constants (`apps/web/lib/constants/ai.ts`)
+
 All chat limits are centralized for client/server consistency.
 
 ### Rate Limits
+
 Differentiated by auth status and endpoint.
 
 ### Security Layers
+
 1. **Rate limiting**: Per-user/IP via Upstash Redis
 2. **Input validation**: Zod schema validates message structure and length
 3. **Conversation truncation**: Only last N messages sent to model
 4. **System prompt defense**: Refuses off-topic questions, ignores override attempts
 
 ### Adding New Tools
+
 1. Define tool in `apps/web/workflows/chat/tools.ts` using `createDomainToolset()`
 2. Add human-readable title in `apps/web/components/chat/utils.ts` (`TOOL_TITLES`)
 3. Tools call tRPC procedures which have their own rate limits

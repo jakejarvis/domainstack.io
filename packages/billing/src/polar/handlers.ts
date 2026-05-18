@@ -7,7 +7,7 @@ import {
   sendProUpgradeEmail,
   sendSubscriptionCancelingEmail,
   sendSubscriptionExpiredEmail,
-} from "./emails";
+} from "../emails";
 import { getTierForProductId } from "./products";
 import { polarProvider } from "./provider";
 import { getCustomerSubscriptionState } from "./reconcile";

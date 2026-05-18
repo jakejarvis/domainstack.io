@@ -71,7 +71,7 @@ async function fetchLocalSubscription(userId: string): Promise<LocalSubscription
 async function fetchPolarState(userId: string) {
   "use step";
 
-  const { getCustomerSubscriptionState } = await import("@domainstack/polar");
+  const { getCustomerSubscriptionState } = await import("@domainstack/billing/polar");
   return await getCustomerSubscriptionState(userId);
 }
 
@@ -108,7 +108,7 @@ async function expireAndDowngrade(userId: string): Promise<number> {
   "use step";
 
   const [{ upsertBillingSubscription, recomputeEntitlement }, { sendSubscriptionExpiredEmail }] =
-    await Promise.all([import("@domainstack/db/queries"), import("@domainstack/polar")]);
+    await Promise.all([import("@domainstack/db/queries"), import("@domainstack/billing/polar")]);
 
   await upsertBillingSubscription(userId, reconcileSentinelUpsert(userId, "expired"));
   const result = await recomputeEntitlement(userId);
