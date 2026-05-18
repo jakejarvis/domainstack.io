@@ -27,7 +27,7 @@
     "@expo/metro-runtime": "~56.0.8",
     "@expo/ui": "~56.0.8",
     "@posthog/core": "^1.29.2",
-    "@react-native-async-storage/async-storage": "3.0.2",
+    "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-google-signin/google-signin": "16.1.2",
     "@shopify/flash-list": "^2.3.1",
     "@tanstack/query-async-storage-persister": "^5.100.10",
@@ -100,7 +100,6 @@
     },
     "install": {
       "exclude": [
-        "@react-native-async-storage/async-storage",
         "@shopify/flash-list"
       ]
     }
