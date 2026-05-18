@@ -1,27 +1,16 @@
 import { Stack } from "expo-router/stack";
-import { useColorScheme } from "react-native";
-import { useCSSVariable } from "uniwind";
+
+import { useStackScreenOptions } from "@/lib/screen-options";
 
 export default function DomainsLayout() {
-  const canvas = useCSSVariable("--color-background") as string;
-  const surface = useCSSVariable("--color-glass") as string;
-  const text = useCSSVariable("--color-foreground") as string;
-  const isDark = useColorScheme() === "dark";
+  const screenOptions = useStackScreenOptions();
 
   return (
-    <Stack
-      screenOptions={{
-        contentStyle: { backgroundColor: canvas },
-        headerBlurEffect: isDark ? "systemChromeMaterialDark" : "systemChromeMaterialLight",
-        headerShadowVisible: false,
-        headerStyle: { backgroundColor: surface },
-        headerTintColor: text,
-      }}
-    >
+    <Stack screenOptions={screenOptions}>
       <Stack.Screen name="index" options={{ headerLargeTitle: true, title: "Portfolio" }} />
-      <Stack.Screen name="add" options={{ presentation: "modal", title: "Add Domain" }} />
-      <Stack.Screen name="archived" options={{ title: "Archived" }} />
-      <Stack.Screen name="[domain]" options={{ title: "Domain" }} />
+      <Stack.Screen name="add" options={{ presentation: "modal", title: "Add domain" }} />
+      <Stack.Screen name="archived" options={{ headerLargeTitle: true, title: "Archived" }} />
+      <Stack.Screen name="[domain]" options={{ headerLargeTitle: true, title: "Domain" }} />
     </Stack>
   );
 }

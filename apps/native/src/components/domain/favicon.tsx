@@ -13,11 +13,14 @@ export function Favicon({ domain }: { domain: string }) {
 
   return (
     <View
+      accessibilityElementsHidden
       className="overflow-hidden rounded-md border border-border bg-secondary"
+      importantForAccessibility="no-hide-descendants"
       style={{ height: SIZE, width: SIZE }}
     >
       {url ? (
         <Image
+          accessible={false}
           cachePolicy="memory-disk"
           contentFit="cover"
           recyclingKey={domain}

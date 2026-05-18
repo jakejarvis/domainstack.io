@@ -85,7 +85,7 @@ export default function DeleteAccountScreen() {
 
       {state.status === "success" ? (
         <View className="gap-4">
-          <Text className="text-2xl font-semibold">Check your email</Text>
+          <Text variant="title2">Check your email</Text>
           <Text className="text-sm text-muted-foreground">
             We&apos;ve sent a confirmation link to your email address. Click the link to permanently
             delete your account.
@@ -98,7 +98,7 @@ export default function DeleteAccountScreen() {
 
       {state.status === "error" ? (
         <View className="gap-4">
-          <Text className="text-2xl font-semibold">Deletion failed</Text>
+          <Text variant="title2">Deletion failed</Text>
           <Text className="text-sm text-destructive">{state.message}</Text>
           <View className="flex-row gap-2">
             <Button className="flex-1" onPress={() => router.back()} variant="secondary">

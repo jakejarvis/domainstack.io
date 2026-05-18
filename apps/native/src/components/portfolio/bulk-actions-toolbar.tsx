@@ -1,5 +1,5 @@
 import { Stack } from "expo-router/stack";
-import { Alert, Platform } from "react-native";
+import { Platform } from "react-native";
 
 import { useDashboardMutations } from "@/hooks/use-dashboard-mutations";
 import {
@@ -8,6 +8,7 @@ import {
   useSelectionCount,
   useSelectionMode,
 } from "@/hooks/use-portfolio-selection";
+import { confirmDestructive } from "@/lib/native-confirm";
 import { toast } from "@/lib/toast";
 
 const BULK_LIMIT = 100;
@@ -42,25 +43,20 @@ export function BulkActionsToolbar() {
     if (disabled) return;
     const ids = getSelectedIds();
     if (ids.length === 0) return;
-    Alert.alert(
-      `Remove ${count} ${count === 1 ? "domain" : "domains"}?`,
-      "This permanently removes tracking and notification settings.",
-      [
-        { style: "cancel", text: "Cancel" },
-        {
-          onPress: () =>
-            void dashboard.bulkRemove(ids).then(
-              () => {
-                toast.success(`Removed ${ids.length} ${ids.length === 1 ? "domain" : "domains"}`);
-                exitSelection();
-              },
-              () => exitSelection(),
-            ),
-          style: "destructive",
-          text: "Remove",
+    void confirmDestructive({
+      confirmLabel: "Remove",
+      message: "This permanently removes tracking and notification settings.",
+      title: `Remove ${count} ${count === 1 ? "domain" : "domains"}?`,
+    }).then((confirmed) => {
+      if (!confirmed) return;
+      void dashboard.bulkRemove(ids).then(
+        () => {
+          toast.success(`Removed ${ids.length} ${ids.length === 1 ? "domain" : "domains"}`);
+          exitSelection();
         },
-      ],
-    );
+        () => exitSelection(),
+      );
+    });
   };
 
   const handleSetMuted = (muted: boolean) => {

@@ -19,7 +19,7 @@ export function KeyValueGrid({ items, className }: { items: KeyValueItem[]; clas
     <View className={cn("gap-3", className)}>
       {items.map((item, index) => (
         <Fragment key={item.key}>
-          {index > 0 ? <View className="border-t border-border opacity-60" /> : null}
+          {index > 0 ? <View className="h-px bg-border" /> : null}
           <KeyValue
             copyable={item.copyable}
             label={item.label}

@@ -8,7 +8,7 @@ import { isVersionBelow } from "@/lib/version";
 import type { OtaConfigNativeApp } from "@domainstack/auth/ota-config/client";
 
 import { Button } from "./button";
-import { GlassCard } from "./glass-card";
+import { Card } from "./card";
 import { Screen } from "./screen";
 import { Text } from "./text";
 
@@ -65,7 +65,7 @@ function UpdateRequiredScreen({ nativeApp }: { nativeApp: OtaConfigNativeApp }) 
   return (
     <Screen scroll={false}>
       <View className="flex-1 items-center justify-center">
-        <GlassCard className="w-full max-w-md gap-4">
+        <Card className="w-full max-w-md gap-4">
           <Text className="text-3xl font-semibold">
             {nativeApp.messageTitle ?? "Update required"}
           </Text>
@@ -76,7 +76,7 @@ function UpdateRequiredScreen({ nativeApp }: { nativeApp: OtaConfigNativeApp }) 
           <Button onPress={() => void Linking.openURL(storeUrl)}>
             <Text>Update Domainstack</Text>
           </Button>
-        </GlassCard>
+        </Card>
       </View>
     </Screen>
   );

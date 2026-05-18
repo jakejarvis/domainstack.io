@@ -40,7 +40,9 @@ export function KeyValue({
 
   const body = (
     <View className={cn("gap-1", className)}>
-      <Text className="text-xs tracking-wide text-muted-foreground uppercase">{label}</Text>
+      <Text variant="footnote" className="text-muted-foreground">
+        {label}
+      </Text>
       {valueNode}
     </View>
   );

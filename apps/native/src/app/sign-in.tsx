@@ -1,13 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import * as AppleAuthentication from "expo-apple-authentication";
+import { Image } from "expo-image";
 import { router } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
 import { useEffect, useState } from "react";
-import { Platform } from "react-native";
+import { Platform, View } from "react-native";
 import { useCSSVariable } from "uniwind";
 
 import { AuthIcon } from "@/components/auth-icon";
 import { Button } from "@/components/button";
-import { GlassCard } from "@/components/glass-card";
+import { Card } from "@/components/card";
 import { Screen } from "@/components/screen";
 import { Text } from "@/components/text";
 import { usePushSoftPrompt } from "@/hooks/use-push-soft-prompt";
@@ -27,6 +29,49 @@ import { getGoogleIdentityToken } from "@/lib/google-auth";
 import { getInitialRoute } from "@/lib/navigation";
 import { createAuthNonce } from "@/lib/nonce";
 import { toast } from "@/lib/toast";
+
+const WEB_URL = "https://domainstack.io";
+
+function openLegal(path: "terms" | "privacy") {
+  void WebBrowser.openBrowserAsync(`${WEB_URL}/${path}`, {
+    dismissButtonStyle: "close",
+    presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
+  });
+}
+
+function SignInHero() {
+  return (
+    <View className="items-center gap-3 pt-4 pb-2">
+      <Image
+        accessible={false}
+        contentFit="cover"
+        source={require("../../assets/icon.png")}
+        style={{ borderRadius: 18, height: 76, width: 76 }}
+      />
+      <Text variant="title">Domainstack</Text>
+      <Text variant="subhead" className="text-center text-muted-foreground">
+        Track ownership, expiry, DNS, and certificate changes — and get notified before anything
+        breaks.
+      </Text>
+    </View>
+  );
+}
+
+function LegalFooter() {
+  return (
+    <Text variant="footnote" className="text-center text-muted-foreground">
+      By continuing you agree to our{" "}
+      <Text variant="footnote" className="text-brand" onPress={() => openLegal("terms")}>
+        Terms
+      </Text>{" "}
+      and{" "}
+      <Text variant="footnote" className="text-brand" onPress={() => openLegal("privacy")}>
+        Privacy Policy
+      </Text>
+      .
+    </Text>
+  );
+}
 
 function isAuthCanceled(error: unknown): boolean {
   return error instanceof Error && "code" in error && error.code === "ERR_REQUEST_CANCELED";
@@ -191,7 +236,8 @@ export default function SignInScreen() {
 
   return (
     <Screen>
-      <GlassCard>
+      <SignInHero />
+      <Card>
         {otaConfig.isPending ? (
           <Button disabled loading variant="primary">
             <Text>Loading sign-in options…</Text>
@@ -218,7 +264,8 @@ export default function SignInScreen() {
             />
           ))
         )}
-      </GlassCard>
+      </Card>
+      <LegalFooter />
     </Screen>
   );
 }

@@ -1,10 +1,10 @@
-import { SymbolView, type SymbolViewProps } from "expo-symbols";
 import { useEffect, useRef } from "react";
 import { View } from "react-native";
 import { useCSSVariable } from "uniwind";
 
 import { AppBottomSheet, type AppBottomSheetRef } from "@/components/bottom-sheet";
 import { Button } from "@/components/button";
+import { Symbol, type SymbolName } from "@/components/symbol";
 import { Text } from "@/components/text";
 import { usePushRegistration } from "@/hooks/use-push-registration";
 import { usePushPromptStore } from "@/lib/stores/push-prompt-store";
@@ -69,18 +69,10 @@ export function PushPermissionSheet() {
   );
 }
 
-function PerkRow({
-  color,
-  icon,
-  label,
-}: {
-  color: string;
-  icon: SymbolViewProps["name"];
-  label: string;
-}) {
+function PerkRow({ color, icon, label }: { color: string; icon: SymbolName; label: string }) {
   return (
     <View className="flex-row items-center gap-3">
-      <SymbolView name={icon} size={22} tintColor={color} />
+      <Symbol color={color} name={icon} size={22} />
       <Text className="flex-1">{label}</Text>
     </View>
   );

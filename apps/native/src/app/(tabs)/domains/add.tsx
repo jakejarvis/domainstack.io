@@ -1,18 +1,18 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { useEffect, useMemo, useReducer, useState } from "react";
 import { Share, View } from "react-native";
 
 import { Button } from "@/components/button";
+import { Card } from "@/components/card";
 import { ShareInstructionsSheet } from "@/components/domain/add-domain/share-instructions-sheet";
 import { StepConfirmation } from "@/components/domain/add-domain/step-confirmation";
 import { StepIndicator } from "@/components/domain/add-domain/step-indicator";
 import { VerificationFailed } from "@/components/domain/add-domain/verification-failed";
 import { EmptyState } from "@/components/empty-state";
 import { GroupedSection } from "@/components/form/group";
-import { GlassCard } from "@/components/glass-card";
 import { Screen } from "@/components/screen";
 import { SegmentedControl } from "@/components/segmented-control";
 import { SkeletonRows } from "@/components/skeleton";
@@ -93,15 +93,10 @@ export default function AddDomainScreen() {
   if (!session.data?.user) {
     return (
       <Screen>
-        <View className="gap-2">
-          <Text className="text-4xl font-semibold">Add domain</Text>
-          <Text className="text-sm text-muted-foreground">
-            Sign in to verify ownership and add domains to your portfolio.
-          </Text>
-        </View>
         <EmptyState
           actionLabel="Sign in"
-          body="Domain ownership verification is attached to your account."
+          body="Domain ownership verification is attached to your account. Sign in to add domains to your portfolio."
+          icon={{ android: "lock", ios: "lock" }}
           onAction={() => router.push("/sign-in")}
           title="Account required"
         />
@@ -121,7 +116,12 @@ function AddDomainFlow() {
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const trpc = useTRPC();
+  const navigation = useNavigation();
   const triggerPushPrompt = usePushSoftPrompt();
+
+  useEffect(() => {
+    navigation.setOptions({ title: flow.status === "verified" ? "All set" : "Add domain" });
+  }, [navigation, flow.status]);
 
   const addDomain = useMutation(trpc.tracking.addDomain.mutationOptions());
   const verifyDomain = useMutation(trpc.tracking.verifyDomain.mutationOptions());
@@ -242,15 +242,6 @@ function AddDomainFlow() {
   return (
     <Screen>
       <View className="gap-4">
-        <View className="gap-2">
-          <Text className="text-3xl font-semibold">
-            {flow.status === "verified" ? "All set!" : "Add domain"}
-          </Text>
-          <Text className="text-sm text-muted-foreground">
-            Verify ownership once, then Domainstack can track changes natively.
-          </Text>
-        </View>
-
         <StepIndicator current={step} loadingStep={activeLoading} />
 
         {step === 1 ? (
@@ -299,7 +290,7 @@ function AddDomainFlow() {
                 onReturnLater={() => router.back()}
               />
             ) : (
-              <GlassCard>
+              <Card>
                 {activeMethod === "dns_txt" ? (
                   <>
                     <Text className="text-xl font-semibold">DNS TXT record</Text>
@@ -342,7 +333,7 @@ function AddDomainFlow() {
                     <InstructionValue label="Tag" value={instructionsBundle.meta_tag.metaTag} />
                   </>
                 ) : null}
-              </GlassCard>
+              </Card>
             )}
 
             {flow.status !== "failed" ? (
@@ -364,9 +355,9 @@ function AddDomainFlow() {
 
         {step === 3 ? (
           <View className="gap-4">
-            <GlassCard>
+            <Card>
               <StepConfirmation domain={flow.domain} />
-            </GlassCard>
+            </Card>
             <Button onPress={handleDone}>
               <Text>Open domain</Text>
             </Button>

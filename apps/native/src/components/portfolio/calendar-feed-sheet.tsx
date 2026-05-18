@@ -6,7 +6,7 @@ import { Alert, ScrollView, View } from "react-native";
 
 import { AppBottomSheet, type AppBottomSheetRef } from "@/components/bottom-sheet";
 import { Button } from "@/components/button";
-import { GlassCard } from "@/components/glass-card";
+import { Card } from "@/components/card";
 import { Spinner } from "@/components/spinner";
 import { Text } from "@/components/text";
 import { useTRPC } from "@/lib/api";
@@ -129,16 +129,16 @@ export function CalendarFeedSheet({ ref }: { ref?: Ref<AppBottomSheetRef> }) {
             <Spinner />
           </View>
         ) : feedQuery.error ? (
-          <GlassCard>
+          <Card>
             <Text className="font-semibold">Feed unavailable</Text>
             <Text className="text-sm text-muted-foreground">{feedQuery.error.message}</Text>
             <Button onPress={() => void feedQuery.refetch()} variant="secondary">
               <Text>Retry</Text>
             </Button>
-          </GlassCard>
+          </Card>
         ) : enabled && feedUrl ? (
           <>
-            <GlassCard>
+            <Card>
               <Text className="font-semibold">Feed URL</Text>
               <Text
                 className="font-mono text-xs text-muted-foreground"
@@ -155,8 +155,8 @@ export function CalendarFeedSheet({ ref }: { ref?: Ref<AppBottomSheetRef> }) {
                   <Text>Subscribe</Text>
                 </Button>
               </View>
-            </GlassCard>
-            <GlassCard>
+            </Card>
+            <Card>
               <Text className="font-semibold">Manage</Text>
               <Button
                 disabled={busy}
@@ -182,10 +182,10 @@ export function CalendarFeedSheet({ ref }: { ref?: Ref<AppBottomSheetRef> }) {
               >
                 <Text>Delete feed</Text>
               </Button>
-            </GlassCard>
+            </Card>
           </>
         ) : (
-          <GlassCard>
+          <Card>
             <Text className="font-semibold">Feed not set up</Text>
             <Text className="text-sm text-muted-foreground">
               Enable to generate a private webcal URL. Subscribe in Apple Calendar, Google Calendar,
@@ -198,7 +198,7 @@ export function CalendarFeedSheet({ ref }: { ref?: Ref<AppBottomSheetRef> }) {
             >
               <Text>Enable</Text>
             </Button>
-          </GlassCard>
+          </Card>
         )}
       </ScrollView>
     </AppBottomSheet>

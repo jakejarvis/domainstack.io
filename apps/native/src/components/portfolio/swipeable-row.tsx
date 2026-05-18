@@ -1,3 +1,4 @@
+import * as Haptics from "expo-haptics";
 import { useCallback, useRef } from "react";
 import { Pressable, View } from "react-native";
 import ReanimatedSwipeable, {
@@ -29,11 +30,17 @@ export function SwipeableRow({
   const enabled = selectionMode === "idle";
 
   const handleMutePress = useCallback(() => {
+    if (process.env.EXPO_OS !== "web") {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     swipeableRef.current?.close();
     onMute(domain);
   }, [domain, onMute]);
 
   const handleArchivePress = useCallback(() => {
+    if (process.env.EXPO_OS !== "web") {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     swipeableRef.current?.close();
     onArchive(domain);
   }, [domain, onArchive]);

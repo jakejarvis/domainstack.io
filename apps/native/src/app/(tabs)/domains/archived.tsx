@@ -2,7 +2,7 @@ import { FlashList } from "@shopify/flash-list";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { Alert, View } from "react-native";
+import { View } from "react-native";
 
 import { EmptyState } from "@/components/empty-state";
 import { ArchivedRow, type ArchivedRowDomain } from "@/components/portfolio/archived-row";
@@ -13,6 +13,7 @@ import { Text } from "@/components/text";
 import { useDashboardMutations } from "@/hooks/use-dashboard-mutations";
 import { useTRPC } from "@/lib/api";
 import { authClient } from "@/lib/auth";
+import { confirmDestructive } from "@/lib/native-confirm";
 
 const LIST_INPUT = { includeArchived: true } as const;
 
@@ -33,6 +34,7 @@ export default function ArchivedDomainsScreen() {
         <EmptyState
           actionLabel="Sign in"
           body="Sign in to view your archived portfolio."
+          icon={{ android: "lock", ios: "lock" }}
           onAction={() => router.push("/sign-in")}
           title="Sign in required"
         />
@@ -79,18 +81,13 @@ function ArchivedScreen() {
 
   const handleRemove = useCallback(
     (domain: ArchivedRowDomain) => {
-      Alert.alert(
-        `Remove ${domain.domainName}?`,
-        "This permanently removes the domain and any notification settings.",
-        [
-          { style: "cancel", text: "Cancel" },
-          {
-            onPress: () => void dashboard.remove(domain.id),
-            style: "destructive",
-            text: "Remove",
-          },
-        ],
-      );
+      void confirmDestructive({
+        confirmLabel: "Remove",
+        message: "This permanently removes the domain and any notification settings.",
+        title: `Remove ${domain.domainName}?`,
+      }).then((confirmed) => {
+        if (confirmed) void dashboard.remove(domain.id);
+      });
     },
     [dashboard],
   );
@@ -119,6 +116,7 @@ function ArchivedScreen() {
         <EmptyState
           actionLabel="Retry"
           body={domainsQuery.error.message}
+          icon={{ android: "error_outline", ios: "exclamationmark.circle" }}
           onAction={() => void domainsQuery.refetch()}
           title="Archived domains did not load"
         />
@@ -131,6 +129,7 @@ function ArchivedScreen() {
       <View className="px-4 pb-8">
         <EmptyState
           body="Archive domains from the detail screen to keep them here for later."
+          icon={{ android: "archive", ios: "archivebox" }}
           title="No archived domains"
         />
       </View>

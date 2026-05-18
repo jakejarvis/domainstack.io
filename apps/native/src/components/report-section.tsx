@@ -1,28 +1,26 @@
-import { View } from "react-native";
+import Animated, { FadeIn } from "react-native-reanimated";
 
-import { cn } from "@/lib/cn";
+import { GroupedSection } from "./form/group";
 
-import { GlassCard } from "./glass-card";
-import { Text } from "./text";
-
+/**
+ * Domain report section. A thin alias over {@link GroupedSection} (padded
+ * mode) so the report speaks the same inset-grouped language as Settings.
+ * Fades in as its Suspense boundary resolves so sections don't pop in.
+ */
 export function ReportSection({
   title,
   trailing,
   children,
-  className,
 }: {
   title: string;
   trailing?: React.ReactNode;
   children: React.ReactNode;
-  className?: string;
 }) {
   return (
-    <GlassCard className={className}>
-      <View className="flex-row items-center justify-between gap-3">
-        <Text className="text-base font-semibold tracking-wide uppercase">{title}</Text>
-        {trailing}
-      </View>
-      <View className={cn("gap-3")}>{children}</View>
-    </GlassCard>
+    <Animated.View entering={FadeIn.duration(200)}>
+      <GroupedSection padded title={title} trailing={trailing}>
+        {children}
+      </GroupedSection>
+    </Animated.View>
   );
 }

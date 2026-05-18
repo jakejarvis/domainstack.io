@@ -6,31 +6,53 @@ import { Symbol } from "@/components/symbol";
 import { Text } from "@/components/text";
 import { cn } from "@/lib/cn";
 
+/**
+ * The single section primitive for the whole app — iOS inset-grouped: a
+ * sentence-case grey header *outside* a bordered opaque container, optional
+ * grey footer below. `padded` switches the body from edge-to-edge rows
+ * (settings-style lists) to a padded container for free-form content (the
+ * domain report sections), so report and settings screens read identically.
+ */
 export function GroupedSection({
   children,
   footer,
+  padded = false,
   title,
+  trailing,
 }: {
   children?: ReactNode;
   footer?: string;
+  padded?: boolean;
   title?: string;
+  trailing?: ReactNode;
 }) {
   return (
     <View className="gap-1.5">
-      {title ? (
-        <Text className="ml-4 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-          {title}
-        </Text>
+      {title || trailing ? (
+        <View className="mr-1 ml-4 min-h-6 flex-row items-center justify-between gap-3">
+          {title ? (
+            <Text variant="footnote" className="flex-1 text-muted-foreground">
+              {title}
+            </Text>
+          ) : (
+            <View className="flex-1" />
+          )}
+          {trailing}
+        </View>
       ) : null}
       {children ? (
         <View
-          className="bg-glass overflow-hidden rounded-2xl border border-border"
+          className="overflow-hidden rounded-2xl border border-border bg-card"
           style={{ borderCurve: "continuous" }}
         >
-          {children}
+          {padded ? <View className="gap-3 p-4">{children}</View> : children}
         </View>
       ) : null}
-      {footer ? <Text className="ml-4 text-xs text-muted-foreground">{footer}</Text> : null}
+      {footer ? (
+        <Text variant="footnote" className="ml-4 text-muted-foreground">
+          {footer}
+        </Text>
+      ) : null}
     </View>
   );
 }

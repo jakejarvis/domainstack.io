@@ -1,7 +1,7 @@
 import { View } from "react-native";
 
 import { Badge } from "@/components/badge";
-import { GlassCard } from "@/components/glass-card";
+import { Card } from "@/components/card";
 import { Text } from "@/components/text";
 import { cn } from "@/lib/cn";
 
@@ -31,7 +31,7 @@ export function QuotaMeter({
     tone === "danger" ? "bg-destructive" : tone === "warning" ? "bg-warning" : "bg-success";
 
   return (
-    <GlassCard>
+    <Card>
       <View className="flex-row items-center justify-between gap-3">
         <View className="min-w-0 flex-1 gap-1">
           <Text className="text-sm text-muted-foreground">Plan usage</Text>
@@ -51,6 +51,6 @@ export function QuotaMeter({
       >
         <View className={cn("h-full rounded-full", fillClass)} style={{ width: `${percent}%` }} />
       </View>
-    </GlassCard>
+    </Card>
   );
 }

@@ -5,7 +5,7 @@ import { View } from "react-native";
 import { analytics } from "@/lib/analytics";
 
 import { Button } from "./button";
-import { GlassCard } from "./glass-card";
+import { Card } from "./card";
 import { Text } from "./text";
 
 interface BoundaryProps {
@@ -47,7 +47,7 @@ class ErrorBoundaryInner extends Component<BoundaryProps, BoundaryState> {
   render() {
     if (this.state.error) {
       return (
-        <GlassCard>
+        <Card>
           <View className="gap-1">
             <Text className="text-base font-semibold">{this.props.sectionName} failed</Text>
             <Text className="text-sm text-muted-foreground">
@@ -57,7 +57,7 @@ class ErrorBoundaryInner extends Component<BoundaryProps, BoundaryState> {
           <Button onPress={this.props.onReset} variant="secondary">
             <Text>Try again</Text>
           </Button>
-        </GlassCard>
+        </Card>
       );
     }
     return this.props.children;

@@ -1,14 +1,14 @@
 import { useMutation } from "@tanstack/react-query";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
-import { SymbolView } from "expo-symbols";
 import { useEffect, useReducer, useRef, useState } from "react";
 import { Share, View } from "react-native";
 import { useCSSVariable } from "uniwind";
 
 import { AppBottomSheet, type AppBottomSheetRef } from "@/components/bottom-sheet";
 import { Button } from "@/components/button";
-import { GlassCard } from "@/components/glass-card";
+import { Card } from "@/components/card";
+import { Symbol } from "@/components/symbol";
 import { Text } from "@/components/text";
 import { TextField } from "@/components/text-field";
 import { useTRPC } from "@/lib/api";
@@ -128,12 +128,12 @@ export function ShareInstructionsSheet({
       title="Share instructions"
     >
       <View className="gap-3">
-        <GlassCard>
+        <Card>
           <View className="flex-row items-start gap-3">
-            <SymbolView
-              name={{ ios: "doc.on.doc", android: "content_copy" }}
+            <Symbol
+              color={mutedColor}
+              name={{ android: "content_copy", ios: "doc.on.doc" }}
               size={20}
-              tintColor={mutedColor}
             />
             <View className="flex-1 gap-1">
               <Text className="font-semibold">Copy to clipboard</Text>
@@ -145,10 +145,10 @@ export function ShareInstructionsSheet({
           <Button onPress={() => void handleCopy()} variant="secondary">
             {copied ? (
               <>
-                <SymbolView
-                  name={{ ios: "checkmark", android: "check" }}
+                <Symbol
+                  color={successColor}
+                  name={{ android: "check", ios: "checkmark" }}
                   size={16}
-                  tintColor={successColor}
                 />
                 <Text>Copied</Text>
               </>
@@ -156,14 +156,14 @@ export function ShareInstructionsSheet({
               <Text>Copy</Text>
             )}
           </Button>
-        </GlassCard>
+        </Card>
 
-        <GlassCard>
+        <Card>
           <View className="flex-row items-start gap-3">
-            <SymbolView
-              name={{ ios: "square.and.arrow.up", android: "ios_share" }}
+            <Symbol
+              color={mutedColor}
+              name={{ android: "ios_share", ios: "square.and.arrow.up" }}
               size={20}
-              tintColor={mutedColor}
             />
             <View className="flex-1 gap-1">
               <Text className="font-semibold">Share via system</Text>
@@ -175,15 +175,11 @@ export function ShareInstructionsSheet({
           <Button onPress={handleSystemShare} variant="secondary">
             <Text>Share…</Text>
           </Button>
-        </GlassCard>
+        </Card>
 
-        <GlassCard>
+        <Card>
           <View className="flex-row items-start gap-3">
-            <SymbolView
-              name={{ ios: "at", android: "alternate_email" }}
-              size={20}
-              tintColor={mutedColor}
-            />
+            <Symbol color={mutedColor} name={{ android: "alternate_email", ios: "at" }} size={20} />
             <View className="flex-1 gap-1">
               <Text className="font-semibold">Send via email</Text>
               <Text className="text-sm text-muted-foreground">
@@ -205,10 +201,10 @@ export function ShareInstructionsSheet({
           <Button disabled={!validEmail || sent} loading={sending} onPress={handleSend}>
             {sent ? (
               <>
-                <SymbolView
-                  name={{ ios: "checkmark", android: "check" }}
+                <Symbol
+                  color={primaryForeground}
+                  name={{ android: "check", ios: "checkmark" }}
                   size={16}
-                  tintColor={primaryForeground}
                 />
                 <Text>Sent</Text>
               </>
@@ -216,7 +212,7 @@ export function ShareInstructionsSheet({
               <Text>Send</Text>
             )}
           </Button>
-        </GlassCard>
+        </Card>
       </View>
     </AppBottomSheet>
   );

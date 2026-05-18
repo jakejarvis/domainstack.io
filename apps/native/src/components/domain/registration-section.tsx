@@ -97,8 +97,15 @@ function buildItems(data: RegistrationResponse): KeyValueItem[] {
     items.push({
       key: "nameservers",
       label: "Nameservers",
-      mono: true,
-      value: nameservers.join("\n"),
+      value: (
+        <View className="gap-0.5">
+          {nameservers.map((ns) => (
+            <Text className="font-mono text-sm" key={ns} selectable>
+              {ns}
+            </Text>
+          ))}
+        </View>
+      ),
     });
   }
 

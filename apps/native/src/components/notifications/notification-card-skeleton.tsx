@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-import { GlassCard } from "@/components/glass-card";
+import { Card } from "@/components/card";
 
 const PULSE_DURATION = 900;
 
@@ -30,7 +30,7 @@ function usePulseStyle() {
 function NotificationCardSkeleton() {
   const pulseStyle = usePulseStyle();
   return (
-    <GlassCard>
+    <Card>
       <Animated.View className="gap-2" style={pulseStyle}>
         <Animated.View className="flex-row items-start justify-between gap-3">
           <Animated.View className="h-5 w-2/3 rounded bg-secondary" />
@@ -40,7 +40,7 @@ function NotificationCardSkeleton() {
         <Animated.View className="h-4 w-5/6 rounded bg-secondary" />
         <Animated.View className="h-3 w-24 rounded bg-secondary" />
       </Animated.View>
-    </GlassCard>
+    </Card>
   );
 }
 

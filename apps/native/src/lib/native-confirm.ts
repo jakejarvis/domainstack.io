@@ -30,6 +30,40 @@ export function confirm({
   });
 }
 
+/**
+ * Destructive confirmation, native to each platform: iOS gets a bottom
+ * action sheet with a red destructive button (the iOS convention for
+ * irreversible actions), Android gets the Material alert dialog. Resolves
+ * `true` only if the user confirms.
+ */
+export function confirmDestructive({
+  cancelLabel = "Cancel",
+  confirmLabel,
+  message,
+  title,
+}: {
+  cancelLabel?: string;
+  confirmLabel: string;
+  message?: string;
+  title: string;
+}): Promise<boolean> {
+  if (Platform.OS !== "ios") {
+    return confirm({ cancelLabel, confirmLabel, destructive: true, message, title });
+  }
+  return new Promise((resolve) => {
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        cancelButtonIndex: 1,
+        destructiveButtonIndex: 0,
+        message,
+        options: [confirmLabel, cancelLabel],
+        title,
+      },
+      (buttonIndex) => resolve(buttonIndex === 0),
+    );
+  });
+}
+
 export type ActionSheetOption = {
   label: string;
   destructive?: boolean;

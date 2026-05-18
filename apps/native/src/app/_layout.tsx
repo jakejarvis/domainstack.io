@@ -8,7 +8,6 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef } from "react";
 import { useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { useCSSVariable } from "uniwind";
 
 import { PushPermissionSheet } from "@/components/notifications/push-permission-sheet";
 import { useVersionGateReady, VersionGate } from "@/components/version-gate";
@@ -20,6 +19,7 @@ import { authClient } from "@/lib/auth";
 import { installGlobalErrorHandler } from "@/lib/error-handler";
 import { configureImageCache } from "@/lib/image-cache";
 import { routeFromNotificationData } from "@/lib/navigation";
+import { useStackScreenOptions } from "@/lib/screen-options";
 import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
 import { toast } from "@/lib/toast";
 import { isValidDomain, normalizeDomainInput } from "@domainstack/utils/domain/client";
@@ -37,9 +37,7 @@ installGlobalErrorHandler();
 configureImageCache();
 
 function RootNavigator() {
-  const canvas = useCSSVariable("--color-background") as string;
-  const surface = useCSSVariable("--color-glass") as string;
-  const text = useCSSVariable("--color-foreground") as string;
+  const screenOptions = useStackScreenOptions();
   const isDark = useColorScheme() === "dark";
   const session = authClient.useSession();
   const isSignedIn = Boolean(session.data?.user);
@@ -154,17 +152,7 @@ function RootNavigator() {
   return (
     <>
       <StatusBar style={isDark ? "light" : "dark"} />
-      <Stack
-        screenOptions={{
-          animation: "ios_from_right",
-          contentStyle: { backgroundColor: canvas },
-          headerBlurEffect: isDark ? "systemChromeMaterialDark" : "systemChromeMaterialLight",
-          headerLargeTitle: false,
-          headerShadowVisible: false,
-          headerStyle: { backgroundColor: surface },
-          headerTintColor: text,
-        }}
-      >
+      <Stack screenOptions={screenOptions}>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="onboarding" options={{ gestureEnabled: false, headerShown: false }} />

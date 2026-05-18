@@ -1,8 +1,8 @@
-import { SymbolView } from "expo-symbols";
 import { View } from "react-native";
 import { useCSSVariable } from "uniwind";
 
 import { Spinner } from "@/components/spinner";
+import { Symbol } from "@/components/symbol";
 import { Text } from "@/components/text";
 import { cn } from "@/lib/cn";
 
@@ -28,11 +28,7 @@ function StepDot({ state, label, loading }: { state: StepState; label: number; l
       {loading ? (
         <Spinner variant={state === "pending" ? "muted" : "default"} />
       ) : state === "completed" ? (
-        <SymbolView
-          name={{ ios: "checkmark", android: "check" }}
-          size={16}
-          tintColor={successForeground}
-        />
+        <Symbol color={successForeground} name={{ android: "check", ios: "checkmark" }} size={16} />
       ) : (
         <Text
           className={cn(

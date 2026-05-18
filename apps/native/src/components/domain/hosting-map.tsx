@@ -1,10 +1,12 @@
 import { AppleMaps, GoogleMaps } from "expo-maps";
 import { Platform, View } from "react-native";
+import { useCSSVariable } from "uniwind";
 
 const MAP_HEIGHT = 240;
 const ZOOM = 4;
 
 export function HostingMap({ lat, lon, domain }: { lat: number; lon: number; domain?: string }) {
+  const brand = useCSSVariable("--color-brand") as string;
   const cameraPosition = {
     coordinates: { latitude: lat, longitude: lon },
     zoom: ZOOM,
@@ -32,7 +34,7 @@ export function HostingMap({ lat, lon, domain }: { lat: number; lon: number; dom
               id: "host",
               coordinates: { latitude: lat, longitude: lon },
               title: domain,
-              tintColor: "#06b6d4",
+              tintColor: brand,
               systemImage: "globe",
             },
           ]}

@@ -1,9 +1,9 @@
-import { SymbolView } from "expo-symbols";
 import { View } from "react-native";
 import { useCSSVariable } from "uniwind";
 
 import { Button } from "@/components/button";
-import { GlassCard } from "@/components/glass-card";
+import { Card } from "@/components/card";
+import { Symbol } from "@/components/symbol";
 import { Text } from "@/components/text";
 import type { VerificationMethod } from "@domainstack/constants";
 
@@ -59,39 +59,39 @@ export function VerificationFailed({
 
   return (
     <View className="gap-4">
-      <GlassCard>
+      <Card>
         <View className="flex-row items-start gap-3">
-          <SymbolView
-            name={{ ios: "exclamationmark.circle", android: "error_outline" }}
+          <Symbol
+            color={dangerColor}
+            name={{ android: "error_outline", ios: "exclamationmark.circle" }}
             size={20}
-            tintColor={dangerColor}
           />
           <View className="flex-1 gap-1">
-            <Text className="text-base font-semibold">Verification failed</Text>
+            <Text variant="headline">Verification failed</Text>
             <Text className="text-sm text-muted-foreground">
               {message ??
                 "We couldn’t verify your domain ownership yet. Check your setup and try again."}
             </Text>
           </View>
         </View>
-      </GlassCard>
+      </Card>
 
-      <GlassCard>
+      <Card>
         <Text className="text-sm font-medium">{title}</Text>
         <View className="gap-2">
           {tips.map((tip) => (
             <View className="flex-row gap-2" key={tip}>
-              <SymbolView
-                name={{ ios: "circle.fill", android: "fiber_manual_record" }}
+              <Symbol
+                color={mutedColor}
+                name={{ android: "fiber_manual_record", ios: "circle.fill" }}
                 size={6}
                 style={{ marginTop: 8 }}
-                tintColor={mutedColor}
               />
               <Text className="flex-1 text-sm text-muted-foreground">{tip}</Text>
             </View>
           ))}
         </View>
-      </GlassCard>
+      </Card>
 
       <View className="flex-row gap-2">
         <Button className="flex-1" loading={loading} onPress={onCheckAgain}>

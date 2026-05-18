@@ -3,7 +3,7 @@ import { View } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
 import { Button } from "@/components/button";
-import { GlassCard } from "@/components/glass-card";
+import { Card } from "@/components/card";
 import { Text } from "@/components/text";
 import { daysUntil } from "@/lib/format";
 
@@ -38,7 +38,7 @@ export function SubscriptionBanner({
   if (variant.kind === "ending") {
     return (
       <Animated.View entering={FadeIn.duration(220)} exiting={FadeOut.duration(160)}>
-        <GlassCard>
+        <Card>
           <View className="gap-1">
             <Text className="text-base font-semibold">
               Your Pro plan ends in {variant.daysLeft} {variant.daysLeft === 1 ? "day" : "days"}
@@ -55,14 +55,14 @@ export function SubscriptionBanner({
               <Text>Manage</Text>
             </Button>
           </View>
-        </GlassCard>
+        </Card>
       </Animated.View>
     );
   }
 
   return (
     <Animated.View entering={FadeIn.duration(220)} exiting={FadeOut.duration(160)}>
-      <GlassCard>
+      <Card>
         <View className="gap-1">
           <Text className="text-base font-semibold">You've reached your plan limit</Text>
           <Text className="text-sm text-muted-foreground">
@@ -72,7 +72,7 @@ export function SubscriptionBanner({
         <Button onPress={goToSettings}>
           <Text>Upgrade</Text>
         </Button>
-      </GlassCard>
+      </Card>
     </Animated.View>
   );
 }

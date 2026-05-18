@@ -1,4 +1,5 @@
 import SegmentedControlNative from "@expo/ui/community/segmented-control";
+import * as Haptics from "expo-haptics";
 import { useMemo } from "react";
 import { useColorScheme, View } from "react-native";
 import { useCSSVariable } from "uniwind";
@@ -26,7 +27,10 @@ export function SegmentedControl<T extends string>({
         appearance={appearance}
         onChange={(event) => {
           const option = options[event.nativeEvent.selectedSegmentIndex];
-          if (option) onChange(option.value);
+          if (option) {
+            if (process.env.EXPO_OS !== "web") void Haptics.selectionAsync();
+            onChange(option.value);
+          }
         }}
         selectedIndex={selectedIndex}
         tintColor={tintColor}

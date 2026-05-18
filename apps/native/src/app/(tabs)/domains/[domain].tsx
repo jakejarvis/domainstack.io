@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { Suspense, useCallback, useEffect, useMemo, useRef } from "react";
-import { Alert, findNodeHandle, type ScrollView, View } from "react-native";
+import { findNodeHandle, type ScrollView, View } from "react-native";
 
 import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
+import { Card } from "@/components/card";
 import { CertificatesSection } from "@/components/domain/certificates-section";
 import { DnsSection } from "@/components/domain/dns-section";
 import { ExportButton } from "@/components/domain/export-button";
@@ -16,7 +17,6 @@ import { SeoSection } from "@/components/domain/seo-section";
 import { ToolsSheet } from "@/components/domain/tools-sheet";
 import { UnregisteredCard } from "@/components/domain/unregistered-card";
 import { EmptyState } from "@/components/empty-state";
-import { GlassCard } from "@/components/glass-card";
 import { DomainHealthBadge } from "@/components/portfolio/domain-health-badge";
 import { ReportSectionSkeleton } from "@/components/report-section-skeleton";
 import { Screen } from "@/components/screen";
@@ -27,6 +27,7 @@ import { analytics } from "@/lib/analytics";
 import { useTRPC } from "@/lib/api";
 import { authClient } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
+import { confirmDestructive } from "@/lib/native-confirm";
 import { assertOnline } from "@/lib/network";
 import { toast } from "@/lib/toast";
 import { REPORT_SECTIONS, type ReportSection } from "@domainstack/constants";
@@ -49,6 +50,7 @@ export default function DomainReportScreen() {
       <Screen>
         <EmptyState
           body="Open this screen from your portfolio or a notification."
+          icon={{ android: "help_outline", ios: "questionmark.circle" }}
           title="No domain selected"
         />
       </Screen>
@@ -63,6 +65,13 @@ function DomainReportContent({ domain, section }: { domain: string; section?: Re
   const isAuthenticated = Boolean(session.data?.user);
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const navigation = useNavigation();
+
+  // The domain *is* the screen — surface it as the native collapsing large
+  // title rather than as body text.
+  useEffect(() => {
+    navigation.setOptions({ title: domain });
+  }, [navigation, domain]);
 
   // Tracking lookup is gated on auth — anonymous users still see the report
   // but get no portfolio-specific actions.
@@ -230,13 +239,8 @@ function ReportHeader({
 }) {
   return (
     <View className="gap-3">
-      <View className="flex-row items-center gap-3">
-        <Favicon domain={domain} />
-        <Text className="flex-1 text-4xl font-semibold" numberOfLines={1} selectable>
-          {domain}
-        </Text>
-      </View>
       <View className="flex-row flex-wrap items-center gap-2">
+        <Favicon domain={domain} />
         {trackedEntry ? (
           <>
             <Badge variant={trackedEntry.verified ? "success" : "warning"}>
@@ -256,9 +260,11 @@ function ReportHeader({
                 <Text>Archived</Text>
               </Badge>
             ) : null}
-            <Text className="text-xs text-muted-foreground">
-              Last verified {formatDate(trackedEntry.lastVerifiedAt)}
-            </Text>
+            {trackedEntry.lastVerifiedAt ? (
+              <Text className="text-xs text-muted-foreground">
+                Verified {formatDate(trackedEntry.lastVerifiedAt)}
+              </Text>
+            ) : null}
           </>
         ) : isAuthenticated ? (
           <Button
@@ -315,7 +321,7 @@ function TrackingActions({
   return (
     <>
       {trackedEntry.verified ? null : (
-        <GlassCard>
+        <Card>
           <Text className="text-lg font-semibold">Verification</Text>
           <Text className="text-sm text-muted-foreground">
             Return to the verification flow to copy DNS TXT, HTML file, or meta tag instructions and
@@ -340,9 +346,9 @@ function TrackingActions({
           >
             <Text>Verify now</Text>
           </Button>
-        </GlassCard>
+        </Card>
       )}
-      <GlassCard>
+      <Card>
         <Button
           loading={dashboard.isMuting}
           onPress={() =>
@@ -368,24 +374,23 @@ function TrackingActions({
         <Button
           loading={dashboard.isRemoving}
           onPress={() =>
-            Alert.alert("Remove domain?", `${trackedEntry.domainName} will stop being tracked.`, [
-              { style: "cancel", text: "Cancel" },
-              {
-                onPress: () =>
-                  void runNetworkAction(async () => {
-                    await dashboard.remove(trackedEntry.id);
-                    router.back();
-                  }),
-                style: "destructive",
-                text: "Remove",
-              },
-            ])
+            void confirmDestructive({
+              confirmLabel: "Remove",
+              message: `${trackedEntry.domainName} will stop being tracked.`,
+              title: "Remove domain?",
+            }).then((confirmed) => {
+              if (!confirmed) return;
+              void runNetworkAction(async () => {
+                await dashboard.remove(trackedEntry.id);
+                router.back();
+              });
+            })
           }
           variant="danger"
         >
           <Text>Remove</Text>
         </Button>
-      </GlassCard>
+      </Card>
     </>
   );
 }

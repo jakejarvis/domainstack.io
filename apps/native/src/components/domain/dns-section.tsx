@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import { View } from "react-native";
 
 import { Badge } from "@/components/badge";
@@ -32,28 +32,34 @@ export function DnsSection({ domain }: { domain: string }) {
             <Badge>
               <Text className="font-semibold">{group.type}</Text>
             </Badge>
-            <Text className="text-sm text-muted-foreground">{group.records.length}</Text>
+            <Text className="text-sm text-muted-foreground tabular-nums">
+              {group.records.length}
+            </Text>
           </View>
-          <View className="gap-2">
-            {group.records.map((record) => (
-              <View
-                className="gap-1 rounded-lg border border-border p-3"
+          <View className="gap-3">
+            {group.records.map((record, recordIndex) => (
+              <Fragment
                 key={`${group.type}-${record.name}-${record.value}-${record.priority ?? "none"}`}
               >
-                <Text className="font-mono text-sm" selectable>
-                  {record.value}
-                </Text>
-                <View className="flex-row flex-wrap gap-2">
-                  {record.ttl != null ? (
-                    <Text className="text-xs text-muted-foreground">TTL {record.ttl}</Text>
-                  ) : null}
-                  {record.priority != null ? (
-                    <Text className="text-xs text-muted-foreground">
-                      Priority {record.priority}
-                    </Text>
-                  ) : null}
+                {recordIndex > 0 ? <View className="h-px bg-border" /> : null}
+                <View className="gap-1">
+                  <Text className="font-mono text-sm" selectable>
+                    {record.value}
+                  </Text>
+                  <View className="flex-row flex-wrap gap-2">
+                    {record.ttl != null ? (
+                      <Text className="text-xs text-muted-foreground tabular-nums">
+                        TTL {record.ttl}
+                      </Text>
+                    ) : null}
+                    {record.priority != null ? (
+                      <Text className="text-xs text-muted-foreground tabular-nums">
+                        Priority {record.priority}
+                      </Text>
+                    ) : null}
+                  </View>
                 </View>
-              </View>
+              </Fragment>
             ))}
           </View>
         </View>

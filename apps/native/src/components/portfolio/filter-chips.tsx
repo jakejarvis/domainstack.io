@@ -1,7 +1,9 @@
 import { useMemo } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import { useCSSVariable } from "uniwind";
 
+import { Symbol } from "@/components/symbol";
 import { Text } from "@/components/text";
 import { buildChips, type FilterChip } from "@/lib/portfolio-filters";
 import { usePortfolioStore } from "@/lib/stores/portfolio-store";
@@ -14,6 +16,7 @@ export function FilterChips() {
   const toggleHealth = usePortfolioStore((state) => state.toggleHealth);
   const toggleTld = usePortfolioStore((state) => state.toggleTld);
   const resetFilters = usePortfolioStore((state) => state.resetFilters);
+  const mutedColor = useCSSVariable("--color-muted-foreground") as string;
 
   const chips = useMemo<FilterChip[]>(
     () => buildChips({ health, status, tlds }, { setStatus, toggleHealth, toggleTld }),
@@ -44,7 +47,7 @@ export function FilterChips() {
           >
             <View className="flex-row items-center gap-1.5 rounded-full border border-border bg-secondary px-3 py-1.5">
               <Text className="text-xs font-semibold">{chip.label}</Text>
-              <Text className="text-xs text-muted-foreground">✕</Text>
+              <Symbol color={mutedColor} name={{ android: "close", ios: "xmark" }} size={11} />
             </View>
           </Pressable>
         ))}

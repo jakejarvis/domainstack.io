@@ -8,7 +8,7 @@ import { formatDate } from "@/lib/format";
 import type { PortfolioDomain } from "@/lib/portfolio";
 
 import { Badge } from "./badge";
-import { GlassCard } from "./glass-card";
+import { Card } from "./card";
 import { DomainHealthBadge } from "./portfolio/domain-health-badge";
 import { ProviderChips } from "./portfolio/provider-chips";
 import { RelativeExpiry } from "./relative-expiry";
@@ -45,7 +45,7 @@ function DomainRowImpl({
   }`;
 
   const card = (
-    <GlassCard>
+    <Card>
       <View className="flex-row items-start gap-3">
         {isSelecting ? (
           <View accessibilityLabel={selected ? "Selected" : "Not selected"} className="mt-1">
@@ -89,7 +89,7 @@ function DomainRowImpl({
           <ProviderChips domain={domain} />
         </View>
       </View>
-    </GlassCard>
+    </Card>
   );
 
   if (isSelecting) {
@@ -97,8 +97,8 @@ function DomainRowImpl({
       <Pressable
         accessibilityHint="Double tap to toggle selection"
         accessibilityLabel={accessibilityLabel}
-        accessibilityRole="button"
-        accessibilityState={{ selected }}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: selected }}
         onPress={handlePress}
       >
         {card}

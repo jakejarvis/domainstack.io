@@ -60,7 +60,9 @@ export function SeoSection({ domain }: { domain: string }) {
       ) : null}
       {robots && robots.groups.length > 0 ? (
         <View className="gap-1">
-          <Text className="text-xs tracking-wide text-muted-foreground uppercase">robots.txt</Text>
+          <Text variant="footnote" className="text-muted-foreground">
+            robots.txt
+          </Text>
           <Text className="font-mono text-xs">
             {robots.groups.length} group{robots.groups.length === 1 ? "" : "s"}
             {robots.sitemaps.length > 0 ? ` · ${robots.sitemaps.length} sitemap(s)` : ""}

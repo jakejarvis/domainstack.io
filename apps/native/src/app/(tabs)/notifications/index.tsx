@@ -1,14 +1,13 @@
 import { FlashList } from "@shopify/flash-list";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
 import { Link, router, useFocusEffect } from "expo-router";
-import { SymbolView } from "expo-symbols";
 import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { Pressable, View } from "react-native";
 import ReanimatedSwipeable, {
   type SwipeableMethods,
 } from "react-native-gesture-handler/ReanimatedSwipeable";
-import { useCSSVariable } from "uniwind";
 
 import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
@@ -56,12 +55,10 @@ export default function NotificationsScreen() {
     return (
       <Screen>
         <HeaderMenu />
-        <Text className="text-sm text-muted-foreground">
-          Sign in to review ownership, expiry, provider, and certificate changes.
-        </Text>
         <EmptyState
           actionLabel="Sign in"
-          body="Notifications are tied to tracked portfolio domains and push registration."
+          body="Get notified of ownership, expiry, provider, and certificate changes. Notifications are tied to your tracked portfolio domains."
+          icon={{ android: "lock", ios: "lock" }}
           onAction={() => router.push("/sign-in")}
           title="Notifications are locked"
         />
@@ -77,7 +74,6 @@ function NotificationsList() {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<NotificationFilter>("unread");
   const [refreshing, setRefreshing] = useState(false);
-  const mutedIconColor = useCSSVariable("--color-muted-foreground") as string;
 
   const notifications = useInfiniteQuery(
     trpc.notifications.list.infiniteQueryOptions(
@@ -293,7 +289,7 @@ function NotificationsList() {
           onPress={() => void markAllRead.mutateAsync()}
           variant="secondary"
         >
-          <Text>Mark all read ({unreadCount})</Text>
+          <Text className="tabular-nums">Mark all read ({unreadCount})</Text>
         </Button>
       ) : null}
 
@@ -301,13 +297,7 @@ function NotificationsList() {
         <EmptyState
           actionLabel="Retry"
           body={notifications.error.message}
-          icon={
-            <SymbolView
-              name={{ ios: "exclamationmark.circle", android: "error_outline" }}
-              size={48}
-              tintColor={mutedIconColor}
-            />
-          }
+          icon={{ android: "error_outline", ios: "exclamationmark.circle" }}
           onAction={() => void notifications.refetch()}
           title="Notifications did not load"
         />
@@ -329,15 +319,9 @@ function NotificationsList() {
             : "You're all caught up. New domain, certificate, and provider changes will show up here."
         }
         icon={
-          <SymbolView
-            name={
-              filter === "read"
-                ? { ios: "archivebox", android: "archive" }
-                : { ios: "party.popper", android: "celebration" }
-            }
-            size={48}
-            tintColor={mutedIconColor}
-          />
+          filter === "read"
+            ? { android: "archive", ios: "archivebox" }
+            : { android: "celebration", ios: "party.popper" }
         }
         onAction={() => router.push("/(tabs)/domains")}
         title={filter === "read" ? "No archived notifications" : "All caught up!"}
@@ -383,6 +367,9 @@ const NotificationRow = memo(function NotificationRow({
   const { domainName, targetSection } = item;
   const swipeableRef = useRef<SwipeableMethods>(null);
   const handleMarkRead = useCallback(() => {
+    if (process.env.EXPO_OS !== "web") {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     swipeableRef.current?.close();
     onMarkRead(item.id);
   }, [item.id, onMarkRead]);

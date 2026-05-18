@@ -1,23 +1,31 @@
+import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import { SymbolView, type SymbolViewProps } from "expo-symbols";
-import { useCallback, useState } from "react";
+import { useCallback, useRef } from "react";
 import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   Pressable,
-  ScrollView,
   useWindowDimensions,
   View,
 } from "react-native";
+import Animated, {
+  Extrapolation,
+  interpolate,
+  type SharedValue,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCSSVariable } from "uniwind";
 
 import { Button } from "@/components/button";
+import { Symbol, type SymbolName } from "@/components/symbol";
 import { Text } from "@/components/text";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
 
 interface Slide {
-  icon: SymbolViewProps["name"];
+  icon: SymbolName;
   title: string;
   body: string;
 }
@@ -40,21 +48,49 @@ const SLIDES: readonly Slide[] = [
   },
 ];
 
+function Dot({
+  index,
+  scrollX,
+  width,
+  color,
+}: {
+  index: number;
+  scrollX: SharedValue<number>;
+  width: number;
+  color: string;
+}) {
+  const style = useAnimatedStyle(() => {
+    const inputRange = [(index - 1) * width, index * width, (index + 1) * width];
+    return {
+      opacity: interpolate(scrollX.value, inputRange, [0.3, 1, 0.3], Extrapolation.CLAMP),
+      width: interpolate(scrollX.value, inputRange, [8, 24, 8], Extrapolation.CLAMP),
+    };
+  });
+
+  return <Animated.View className="h-2 rounded-full" style={[{ backgroundColor: color }, style]} />;
+}
+
 export default function OnboardingScreen() {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const markSeen = useOnboardingStore((state) => state.markSeen);
-  const [index, setIndex] = useState(0);
   const iconColor = useCSSVariable("--color-brand") as string;
-  const mutedColor = useCSSVariable("--color-muted-foreground") as string;
+  const scrollX = useSharedValue(0);
+  const pageRef = useRef(0);
 
-  const handleScroll = useCallback(
+  const onScroll = useAnimatedScrollHandler((event) => {
+    scrollX.value = event.contentOffset.x;
+  });
+
+  const handleMomentumEnd = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const x = event.nativeEvent.contentOffset.x;
-      const next = Math.round(x / width);
-      if (next !== index) setIndex(next);
+      const page = Math.round(event.nativeEvent.contentOffset.x / width);
+      if (page !== pageRef.current) {
+        pageRef.current = page;
+        if (process.env.EXPO_OS !== "web") void Haptics.selectionAsync();
+      }
     },
-    [index, width],
+    [width],
   );
 
   const goSignIn = useCallback(() => {
@@ -69,43 +105,44 @@ export default function OnboardingScreen() {
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
-      <View className="flex-row justify-end px-4 py-2">
-        <Pressable accessibilityRole="button" hitSlop={8} onPress={goSearch}>
+      <View className="flex-row justify-end px-2 py-1">
+        <Pressable
+          accessibilityRole="button"
+          className="px-4 py-2"
+          hitSlop={{ bottom: 16, left: 16, right: 16, top: 16 }}
+          onPress={goSearch}
+        >
           <Text className="text-sm font-semibold text-muted-foreground">Skip</Text>
         </Pressable>
       </View>
 
-      <ScrollView
+      <Animated.ScrollView
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={handleScroll}
+        onScroll={onScroll}
+        onMomentumScrollEnd={handleMomentumEnd}
+        scrollEventThrottle={16}
         className="flex-1"
       >
         {SLIDES.map((slide) => (
           <View key={slide.title} className="items-center justify-center px-8" style={{ width }}>
             <View className="mb-6 size-24 items-center justify-center rounded-full bg-secondary">
-              <SymbolView name={slide.icon} size={56} tintColor={iconColor} />
+              <Symbol name={slide.icon} size={56} color={iconColor} />
             </View>
-            <Text className="mb-3 text-center text-3xl font-semibold">{slide.title}</Text>
+            <Text variant="title" className="mb-3 text-center">
+              {slide.title}
+            </Text>
             <Text className="text-center text-base leading-6 text-muted-foreground">
               {slide.body}
             </Text>
           </View>
         ))}
-      </ScrollView>
+      </Animated.ScrollView>
 
       <View className="flex-row items-center justify-center gap-2 py-4">
         {SLIDES.map((slide, i) => (
-          <View
-            key={slide.title}
-            className="h-2 rounded-full"
-            style={{
-              backgroundColor: i === index ? iconColor : mutedColor,
-              opacity: i === index ? 1 : 0.4,
-              width: i === index ? 24 : 8,
-            }}
-          />
+          <Dot color={iconColor} index={i} key={slide.title} scrollX={scrollX} width={width} />
         ))}
       </View>
 

@@ -2,7 +2,7 @@ import { Host, Switch as NativeSwitch } from "@expo/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { Suspense, useRef } from "react";
-import { Alert, View } from "react-native";
+import { View } from "react-native";
 
 import { type AppBottomSheetRef } from "@/components/bottom-sheet";
 import { GroupedRow, GroupedSection } from "@/components/form/group";
@@ -23,6 +23,7 @@ import { useSignOut } from "@/hooks/use-sign-out";
 import { analytics } from "@/lib/analytics";
 import { useTRPC } from "@/lib/api";
 import { authClient } from "@/lib/auth";
+import { confirmDestructive } from "@/lib/native-confirm";
 import { usePrivacyStore } from "@/lib/stores/privacy-store";
 
 type PreferenceKey =
@@ -250,15 +251,15 @@ function PushDeviceSection() {
           <GroupedRow
             disabled={unregisterDevice.isPending}
             onPress={() =>
-              Alert.alert("Unregister device?", "Push notifications will stop on this device.", [
-                { style: "cancel", text: "Cancel" },
-                {
-                  onPress: () =>
-                    void unregisterDevice.mutateAsync({ expoPushToken: device.expoPushToken }),
-                  style: "destructive",
-                  text: "Unregister",
-                },
-              ])
+              void confirmDestructive({
+                confirmLabel: "Unregister",
+                message: "Push notifications will stop on this device.",
+                title: "Unregister device?",
+              }).then((confirmed) => {
+                if (confirmed) {
+                  void unregisterDevice.mutateAsync({ expoPushToken: device.expoPushToken });
+                }
+              })
             }
           >
             <Text className="font-semibold text-destructive">Unregister</Text>

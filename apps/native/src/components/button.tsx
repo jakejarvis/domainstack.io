@@ -46,6 +46,16 @@ const labelColorVariable = {
   ghost: "--color-brand",
 } satisfies Record<Variant, string>;
 
+// Match the haptic to intent rather than firing one generic selection tick
+// for every press: a primary action has weight, a destructive one warns,
+// and incidental/secondary taps stay light.
+const variantHaptic = {
+  primary: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium),
+  secondary: () => Haptics.selectionAsync(),
+  danger: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning),
+  ghost: () => Haptics.selectionAsync(),
+} satisfies Record<Variant, () => void>;
+
 export function Button({
   children,
   className,
@@ -68,17 +78,18 @@ export function Button({
   return (
     <Pressable
       accessibilityRole="button"
-      className={cn(buttonVariants({ variant }), isDisabled && "opacity-55", className)}
+      className={cn(buttonVariants({ variant }), isDisabled && "opacity-40", className)}
       disabled={isDisabled}
       onPress={() => {
         if (process.env.EXPO_OS !== "web") {
-          void Haptics.selectionAsync();
+          void variantHaptic[variant]();
         }
         onPress?.();
       }}
       style={({ pressed }) => ({
         borderCurve: "continuous",
-        transform: [{ scale: pressed && !isDisabled ? 0.96 : 1 }],
+        opacity: pressed && !isDisabled ? 0.9 : 1,
+        transform: [{ scale: pressed && !isDisabled ? 0.97 : 1 }],
       })}
     >
       <TextClassContext.Provider value={labelClassName}>

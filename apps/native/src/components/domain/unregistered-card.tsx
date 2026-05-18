@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { View } from "react-native";
 
-import { GlassCard } from "@/components/glass-card";
+import { Card } from "@/components/card";
 import { Text } from "@/components/text";
 import { NONPUBLIC_TLDS } from "@domainstack/constants";
 import { extractTldClient } from "@domainstack/utils/domain/client";
@@ -15,7 +15,7 @@ export function UnregisteredCard({ domain }: { domain: string }) {
   const canShowRegistrarLinks = !isNonPublic && tld;
 
   return (
-    <GlassCard>
+    <Card>
       <View className="items-center gap-2">
         <Text className="text-2xl font-semibold" numberOfLines={1}>
           {domain}
@@ -27,6 +27,6 @@ export function UnregisteredCard({ domain }: { domain: string }) {
           <RegistrarLinks domain={domain} tld={tld} />
         </Suspense>
       ) : null}
-    </GlassCard>
+    </Card>
   );
 }

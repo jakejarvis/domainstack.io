@@ -1,5 +1,6 @@
 import { FlashList } from "@shopify/flash-list";
 import { useQuery } from "@tanstack/react-query";
+import * as Haptics from "expo-haptics";
 import { router, useNavigation } from "expo-router";
 import { Stack } from "expo-router/stack";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -20,7 +21,7 @@ import { SwipeableRow } from "@/components/portfolio/swipeable-row";
 import { RefreshControl } from "@/components/refresh-control";
 import { Screen } from "@/components/screen";
 import { SegmentedControl } from "@/components/segmented-control";
-import { SkeletonRows } from "@/components/skeleton";
+import { PortfolioListSkeleton } from "@/components/skeleton";
 import { Text } from "@/components/text";
 import { useDashboardMutations } from "@/hooks/use-dashboard-mutations";
 import { useSelectionMode } from "@/hooks/use-portfolio-selection";
@@ -43,7 +44,7 @@ export default function DomainsScreen() {
     return (
       <Screen>
         <HeaderMenu />
-        <SkeletonRows count={4} />
+        <PortfolioListSkeleton count={4} />
       </Screen>
     );
   }
@@ -52,12 +53,10 @@ export default function DomainsScreen() {
     return (
       <Screen>
         <HeaderMenu />
-        <Text className="text-sm text-muted-foreground">
-          Sign in to track ownership, expiry, providers, and notifications.
-        </Text>
         <EmptyState
           actionLabel="Sign in"
-          body="Search remains available without an account. Your portfolio syncs after sign in."
+          body="Track ownership, expiry, providers, and notifications. Search stays available without an account; your portfolio syncs after sign in."
+          icon={{ android: "lock", ios: "lock" }}
           onAction={() => router.push("/sign-in")}
           title="Portfolio is locked"
         />
@@ -93,7 +92,7 @@ function PortfolioScreen() {
   useEffect(() => {
     navigation.setOptions({
       headerSearchBarOptions: {
-        hideWhenScrolling: false,
+        hideWhenScrolling: true,
         onChangeText: (event: NativeSyntheticEvent<{ text: string }>) =>
           setQuery(event.nativeEvent.text),
         placeholder: "Filter domains",
@@ -138,6 +137,7 @@ function PortfolioScreen() {
   const handleRowPress = useCallback((domain: PortfolioDomain) => {
     const state = usePortfolioStore.getState();
     if (state.selection.mode === "selecting") {
+      if (process.env.EXPO_OS !== "web") void Haptics.selectionAsync();
       state.toggle(domain.id);
       return;
     }
@@ -150,8 +150,12 @@ function PortfolioScreen() {
   const handleRowLongPress = useCallback((domain: PortfolioDomain) => {
     const state = usePortfolioStore.getState();
     if (state.selection.mode === "selecting") {
+      if (process.env.EXPO_OS !== "web") void Haptics.selectionAsync();
       state.toggle(domain.id);
     } else {
+      if (process.env.EXPO_OS !== "web") {
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      }
       state.enterSelection(domain.id);
     }
   }, []);
@@ -255,12 +259,13 @@ function PortfolioScreen() {
 
       <SegmentedControl onChange={setSort} options={sorts} value={sort} />
 
-      {isLoading ? <SkeletonRows /> : null}
+      {isLoading ? <PortfolioListSkeleton /> : null}
 
       {domainsQuery.error ? (
         <EmptyState
           actionLabel="Retry"
           body={domainsQuery.error.message}
+          icon={{ android: "error_outline", ios: "exclamationmark.circle" }}
           onAction={() => void domainsQuery.refetch()}
           title="Domains did not load"
         />
@@ -277,6 +282,11 @@ function PortfolioScreen() {
             filterCount > 0 || query
               ? "Try removing some filters or clearing the search bar."
               : "Add a domain to keep its registration, DNS, providers, and notifications close at hand."
+          }
+          icon={
+            filterCount > 0 || query
+              ? { android: "filter_list", ios: "line.3.horizontal.decrease.circle" }
+              : { android: "language", ios: "globe" }
           }
           onAction={filterCount > 0 || query ? undefined : () => router.push("/(tabs)/domains/add")}
           title={filterCount > 0 || query ? "No domains match" : "No domains found"}
