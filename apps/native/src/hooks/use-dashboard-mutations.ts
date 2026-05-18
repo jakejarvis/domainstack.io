@@ -107,13 +107,14 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
   const archiveMutation = useMutation({
     mutationFn: trpc.tracking.archiveDomain.mutationOptions().mutationFn,
     onMutate: async ({ trackedDomainId }: { trackedDomainId: string }) => {
+      // Guard first (like removeMutation): an offline action must not cancel an
+      // in-flight listDomains/getSubscription refetch before bailing out.
+      assertOnline();
       await queryClient.cancelQueries({ queryKey: domainsQueryKey });
       await queryClient.cancelQueries({ queryKey: subscriptionQueryKey });
 
       const previousDomains = queryClient.getQueriesData({ queryKey: domainsQueryKey });
       const previousSubscription = queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
-
-      assertOnline();
 
       const { active: toArchive } = affectedCounts(previousDomains as [unknown, unknown][], [
         trackedDomainId,
@@ -144,13 +145,14 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
   const unarchiveMutation = useMutation({
     mutationFn: trpc.tracking.unarchiveDomain.mutationOptions().mutationFn,
     onMutate: async ({ trackedDomainId }: { trackedDomainId: string }) => {
+      // Guard first (like removeMutation): an offline action must not cancel an
+      // in-flight listDomains/getSubscription refetch before bailing out.
+      assertOnline();
       await queryClient.cancelQueries({ queryKey: domainsQueryKey });
       await queryClient.cancelQueries({ queryKey: subscriptionQueryKey });
 
       const previousDomains = queryClient.getQueriesData({ queryKey: domainsQueryKey });
       const previousSubscription = queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
-
-      assertOnline();
 
       const { archived: toActivate } = affectedCounts(previousDomains as [unknown, unknown][], [
         trackedDomainId,
@@ -202,6 +204,9 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
   const bulkArchiveMutation = useMutation({
     mutationFn: trpc.tracking.bulkArchiveDomains.mutationOptions().mutationFn,
     onMutate: async ({ trackedDomainIds }: { trackedDomainIds: string[] }) => {
+      // Guard first (like removeMutation): an offline action must not cancel an
+      // in-flight listDomains/getSubscription refetch before bailing out.
+      assertOnline();
       await queryClient.cancelQueries({ queryKey: domainsQueryKey });
       await queryClient.cancelQueries({ queryKey: subscriptionQueryKey });
 
@@ -209,7 +214,6 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
       const previousSubscription = queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
 
       const idsSet = new Set(trackedDomainIds);
-      assertOnline();
 
       const { active: archiveCount } = affectedCounts(
         previousDomains as [unknown, unknown][],
@@ -241,6 +245,9 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
   const bulkRemoveMutation = useMutation({
     mutationFn: trpc.tracking.bulkRemoveDomains.mutationOptions().mutationFn,
     onMutate: async ({ trackedDomainIds }: { trackedDomainIds: string[] }) => {
+      // Guard first (like removeMutation): an offline action must not cancel an
+      // in-flight listDomains/getSubscription refetch before bailing out.
+      assertOnline();
       await queryClient.cancelQueries({ queryKey: domainsQueryKey });
       await queryClient.cancelQueries({ queryKey: subscriptionQueryKey });
 
@@ -248,7 +255,6 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
       const previousSubscription = queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
 
       const idsSet = new Set(trackedDomainIds);
-      assertOnline();
 
       const { active: activeDeleted, archived: archivedDeleted } = affectedCounts(
         previousDomains as [unknown, unknown][],

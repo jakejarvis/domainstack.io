@@ -3,16 +3,27 @@ import { TRPCClientError } from "@trpc/client";
 import { authClient } from "./auth";
 import { toast } from "./toast";
 
-function getTrpcErrorCode(error: unknown): string | undefined {
+function getTrpcErrorData(error: unknown): { code?: string; httpStatus?: number } | null {
   if (error instanceof TRPCClientError) {
-    const data = error.data as { code?: string } | null | undefined;
-    return data?.code;
+    return (error.data as { code?: string; httpStatus?: number } | null) ?? null;
   }
-  return undefined;
+  return null;
+}
+
+function getTrpcErrorCode(error: unknown): string | undefined {
+  return getTrpcErrorData(error)?.code;
+}
+
+// Pre-tRPC layers (edge auth, gateway, CDN) can reject with a bare HTTP status
+// that never gets a tRPC `code`. Fall back to the HTTP status so a transport
+// 401/403/429 is still classified instead of being retried into oblivion.
+function getTrpcHttpStatus(error: unknown): number | undefined {
+  const status = getTrpcErrorData(error)?.httpStatus;
+  return typeof status === "number" ? status : undefined;
 }
 
 function isUnauthorizedError(error: unknown): boolean {
-  return getTrpcErrorCode(error) === "UNAUTHORIZED";
+  return getTrpcErrorCode(error) === "UNAUTHORIZED" || getTrpcHttpStatus(error) === 401;
 }
 
 function isRateLimitError(error: unknown): boolean {
@@ -37,18 +48,43 @@ const NON_RETRYABLE_CODES = new Set([
 
 export function isNonRetryableTrpcError(error: unknown): boolean {
   const code = getTrpcErrorCode(error);
-  return code !== undefined && NON_RETRYABLE_CODES.has(code);
+  if (code !== undefined && NON_RETRYABLE_CODES.has(code)) return true;
+  const status = getTrpcHttpStatus(error);
+  return status !== undefined && status >= 400 && status < 500;
 }
 
-function parseRetryAfterSeconds(error: unknown): number | null {
+// The server attaches the authoritative wait time as `cause.retryAfter` and
+// also embeds it in the message. Prefer the structured value, fall back to the
+// message, then to a sane default — never leave the user without a number
+// (the failure mode if the server message is ever reworded/localized).
+const DEFAULT_RETRY_AFTER_SECONDS = 60;
+
+function parseRetryAfterSeconds(error: unknown): number {
+  if (error && typeof error === "object") {
+    const { retryAfter } = (error as { cause?: { retryAfter?: unknown } }).cause ?? {};
+    if (typeof retryAfter === "number" && retryAfter > 0) return retryAfter;
+  }
   if (error instanceof Error) {
     const match = error.message.match(/try again in (\d+)\s*s/i);
-    if (match) return Number.parseInt(match[1], 10);
+    if (match) {
+      const seconds = Number.parseInt(match[1], 10);
+      if (seconds > 0) return seconds;
+    }
   }
-  return null;
+  return DEFAULT_RETRY_AFTER_SECONDS;
 }
 
-let signingOut = false;
+// Stays true for the lifetime of the signed-out session. NOT reset when
+// `signOut()` resolves: the post-resolution refetch storm from the persisted
+// cache would otherwise fire a duplicate `signOut()` per stale 401. It is
+// re-armed only when the active user actually changes (via `resetSignOutGuard`,
+// called from `useResetCacheOnSignOut`) or when `signOut()` itself fails.
+let signedOutForSession = false;
+
+/** Re-arm the auto-sign-out guard once a user/session transition is observed. */
+export function resetSignOutGuard(): void {
+  signedOutForSession = false;
+}
 let lastRateLimitToastAt = 0;
 
 /**
@@ -67,13 +103,13 @@ let lastRateLimitToastAt = 0;
  */
 export function handleCrossCuttingTrpcError(error: unknown): boolean {
   if (isUnauthorizedError(error)) {
-    if (!signingOut) {
-      signingOut = true;
-      void Promise.resolve(authClient.signOut())
-        .catch(() => {})
-        .finally(() => {
-          signingOut = false;
-        });
+    if (!signedOutForSession) {
+      signedOutForSession = true;
+      void Promise.resolve(authClient.signOut()).catch(() => {
+        // Sign-out failed (likely offline). Re-arm so a later attempt can
+        // retry; the auth client clears local session state regardless.
+        signedOutForSession = false;
+      });
     }
     return true;
   }
@@ -86,10 +122,7 @@ export function handleCrossCuttingTrpcError(error: unknown): boolean {
       const retry = parseRetryAfterSeconds(error);
       toast.error({
         title: "Too many requests",
-        message:
-          retry && retry > 0
-            ? `Please wait ${retry} second${retry === 1 ? "" : "s"} before trying again.`
-            : "Please wait a moment before trying again.",
+        message: `Please wait ${retry} second${retry === 1 ? "" : "s"} before trying again.`,
       });
     }
     return true;

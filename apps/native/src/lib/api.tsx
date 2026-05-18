@@ -13,8 +13,9 @@ import { authClient, getAuthCookieHeader } from "./auth";
 import { apiBaseUrl } from "./env";
 import { markNetworkStateKnown } from "./network";
 import { makeQueryClient } from "./query-client";
-import { queryPersister } from "./query-persister";
+import { queryPersister, shouldDehydrateQuery } from "./query-persister";
 import { resetUserScopedState } from "./reset-user-state";
+import { resetSignOutGuard } from "./trpc-error-handler";
 import { buildTrpcHeaders } from "./trpc-headers";
 
 const { TRPCProvider: BaseTRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
@@ -23,18 +24,21 @@ export { useTRPC };
 
 function useNetworkOnlineManager() {
   useEffect(() => {
+    const apply = (state: Network.NetworkState) => {
+      onlineManager.setOnline(Boolean(state.isConnected && state.isInternetReachable !== false));
+      markNetworkStateKnown();
+    };
+
     // Seed onlineManager from the first real reading. Until this resolves,
     // `assertOnline` treats the state as unknown→offline so an early mutation
-    // can't slip past the offline guard.
-    void Network.getNetworkStateAsync().then((state) => {
-      onlineManager.setOnline(Boolean(state.isConnected && state.isInternetReachable !== false));
-      markNetworkStateKnown();
-    });
+    // can't slip past the offline guard. A rejected probe must still mark the
+    // state "known" — otherwise `assertOnline` would treat the device as
+    // permanently offline, since the listener only fires on subsequent change.
+    void Network.getNetworkStateAsync()
+      .then(apply)
+      .catch(() => markNetworkStateKnown());
 
-    const subscription = Network.addNetworkStateListener((state) => {
-      onlineManager.setOnline(Boolean(state.isConnected && state.isInternetReachable !== false));
-      markNetworkStateKnown();
-    });
+    const subscription = Network.addNetworkStateListener(apply);
 
     return () => subscription.remove();
   }, []);
@@ -57,6 +61,9 @@ function useResetCacheOnSignOut(queryClient: QueryClient) {
       queryClient.clear();
       void queryPersister.removeClient();
       resetUserScopedState();
+      // Session transition observed and cache cleared — re-arm the auto
+      // sign-out guard for the next session's potential expiry.
+      resetSignOutGuard();
     }
   }, [queryClient, session.data]);
 }
@@ -92,6 +99,7 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
         // shipped in a release auto-invalidates any incompatible persisted
         // cache instead of deserializing stale data.
         buster: `domainstack-native-${Constants.expoConfig?.version ?? "dev"}`,
+        dehydrateOptions: { shouldDehydrateQuery },
         maxAge: 1000 * 60 * 60 * 24,
         persister: queryPersister,
       }}

@@ -64,9 +64,15 @@ export function useNotificationMutations() {
       const previousAll = queryClient.getQueryData<InfinitePages>(listKeys.all);
       const previousCount = queryClient.getQueryData<number>(countKey);
 
-      const wasInUnread = previousUnread?.pages.some((page) => page.items.some((n) => n.id === id));
+      // Decrement based on the item's prior read state in ANY cached list, not
+      // just the loaded `unread` pages: marking-read from the "All" tab (or a
+      // deep-link menu) when the unread list was never fetched must still drop
+      // the badge. If the item isn't cached anywhere, leave it for `invalidate`.
+      const findItem = (pages: InfinitePages | undefined) =>
+        pages?.pages.flatMap((p) => p.items).find((n) => n.id === id);
+      const known = findItem(previousUnread) ?? findItem(previousAll) ?? findItem(previousRead);
 
-      if (wasInUnread) {
+      if (known && known.readAt === null) {
         queryClient.setQueryData<number | undefined>(countKey, (old) =>
           typeof old === "number" ? Math.max(0, old - 1) : old,
         );

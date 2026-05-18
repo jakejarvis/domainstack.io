@@ -1,8 +1,13 @@
 /* @vitest-environment node */
+import type { Query } from "@tanstack/react-query";
 import type { PersistedClient } from "@tanstack/react-query-persist-client";
 import { describe, expect, it } from "vitest";
 
-import { deserializeQueryClient, serializeQueryClient } from "./query-persister";
+import {
+  deserializeQueryClient,
+  serializeQueryClient,
+  shouldDehydrateQuery,
+} from "./query-persister";
 
 // Regression: the tRPC client decodes responses with superjson, so the query
 // cache holds real Date objects (tracked-domain expiry, subscription period
@@ -66,5 +71,30 @@ describe("query persister serialization", () => {
 
     expect(row.createdAt).not.toBeInstanceOf(Date);
     expect(typeof row.createdAt).toBe("string");
+  });
+});
+
+// Regression: an optimistic mutation marks queries invalidated, then onSettled
+// refetches to reconcile. If that refetch is interrupted (offline / app killed)
+// the un-reconciled optimistic snapshot must NOT be persisted — otherwise e.g.
+// a "mark all read" empty inbox + unreadCount 0 survives the next cold start.
+describe("shouldDehydrateQuery", () => {
+  function query(status: string, isInvalidated: boolean): Query {
+    return {
+      state: { status, fetchStatus: "idle", isInvalidated, data: {} },
+    } as unknown as Query;
+  }
+
+  it("persists a settled successful query", () => {
+    expect(shouldDehydrateQuery(query("success", false))).toBe(true);
+  });
+
+  it("does NOT persist a successful query still flagged invalidated", () => {
+    expect(shouldDehydrateQuery(query("success", true))).toBe(false);
+  });
+
+  it("does NOT persist pending or errored queries", () => {
+    expect(shouldDehydrateQuery(query("pending", false))).toBe(false);
+    expect(shouldDehydrateQuery(query("error", false))).toBe(false);
   });
 });

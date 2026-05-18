@@ -17,6 +17,7 @@ export function usePushRegistration() {
       },
     }),
   );
+  const unregisterDevice = useMutation(trpc.user.unregisterPushDevice.mutationOptions());
 
   const register = useCallback(async (): Promise<PushRegistrationResult["status"]> => {
     const result = await requestExpoPushToken();
@@ -34,9 +35,17 @@ export function usePushRegistration() {
       expoPushToken: result.expoPushToken,
       platform: getPushPlatform(),
     });
+    // Token rotated (OS restore / APNs↔FCM refresh): the new token is now
+    // registered, so drop the stale device row. Otherwise push dispatch fans
+    // out to a dead duplicate until Expo eventually reports DeviceNotRegistered,
+    // and Settings shows a phantom device. Best-effort — never block on it.
+    const previousToken = usePushPromptStore.getState().lastRegisteredToken;
+    if (previousToken && previousToken !== result.expoPushToken) {
+      await unregisterDevice.mutateAsync({ expoPushToken: previousToken }).catch(() => undefined);
+    }
     usePushPromptStore.getState().setLastRegisteredToken(result.expoPushToken);
     return "granted";
-  }, [registerDevice]);
+  }, [registerDevice, unregisterDevice]);
 
   return {
     error: registerDevice.error,
