@@ -71,6 +71,12 @@
       "expo-font",
       "expo-image",
       [
+        "expo-calendar",
+        {
+          "calendarPermission": "Allow $(PRODUCT_NAME) to sync domain expiration dates to your calendar."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/splash-icon-light.png",

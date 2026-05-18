@@ -11,6 +11,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { PushPermissionSheet } from "@/components/notifications/push-permission-sheet";
 import { useVersionGateReady, VersionGate } from "@/components/version-gate";
+import { useCalendarSync } from "@/hooks/use-calendar-sync";
 import { useForegroundPushRefresh } from "@/hooks/use-foreground-push-refresh";
 import { analytics } from "@/lib/analytics";
 import { AnalyticsProvider } from "@/lib/analytics-provider";
@@ -43,6 +44,7 @@ function RootNavigator() {
   const isSignedIn = Boolean(session.data?.user);
   const versionGateReady = useVersionGateReady();
   useForegroundPushRefresh();
+  useCalendarSync();
 
   // A killed-state tap on a protected target while signed-out is stashed here
   // and replayed once the user signs in, so the notification isn't lost.

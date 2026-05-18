@@ -116,12 +116,9 @@ export default function SettingsScreen() {
 
 function CalendarFeedSection({ onOpen }: { onOpen: () => void }) {
   return (
-    <GroupedSection
-      footer="Subscribe to your domain expirations in any calendar app."
-      title="Calendar feed"
-    >
+    <GroupedSection footer="Add your domain expirations to your phone's calendar." title="Calendar">
       <GroupedRow onPress={onOpen} showChevron>
-        <Text className="font-semibold">Manage feed</Text>
+        <Text className="font-semibold">Manage calendar</Text>
       </GroupedRow>
     </GroupedSection>
   );
