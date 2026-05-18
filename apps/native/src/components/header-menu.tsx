@@ -13,29 +13,26 @@ import { authClient } from "@/lib/auth";
 
 type MenuActionIcon = ComponentProps<typeof Stack.Toolbar.MenuAction>["icon"];
 
-type IconKey = "account" | "addPerson" | "settings" | "logout" | "logoutDanger";
+type IconKey = "account" | "addPerson" | "settings" | "logout";
 
-const ICON_REQUESTS: Array<{ key: IconKey; name: AndroidSymbol; useDangerColor?: boolean }> = [
+const ICON_REQUESTS: Array<{ key: IconKey; name: AndroidSymbol }> = [
   { key: "account", name: "account_circle" },
   { key: "addPerson", name: "person_add" },
   { key: "settings", name: "settings" },
   { key: "logout", name: "logout" },
-  { key: "logoutDanger", name: "logout", useDangerColor: true },
 ];
 
 type IconSources = Partial<Record<IconKey, ImageSourcePropType>>;
 
 const iconSourceCache = new Map<string, Promise<IconSources>>();
 
-function loadIconSources(color: string, dangerColor: string): Promise<IconSources> {
-  const cacheKey = `${color}|${dangerColor}`;
-  const cached = iconSourceCache.get(cacheKey);
+function loadIconSources(color: string): Promise<IconSources> {
+  const cached = iconSourceCache.get(color);
   if (cached) return cached;
 
   const promise = Promise.all(
     ICON_REQUESTS.map(async (request) => {
-      const tint = request.useDangerColor ? dangerColor : color;
-      const src = await unstable_getMaterialSymbolSourceAsync(request.name, 24, tint);
+      const src = await unstable_getMaterialSymbolSourceAsync(request.name, 24, color);
       return [request.key, src] as const;
     }),
   ).then((entries) => {
@@ -46,23 +43,23 @@ function loadIconSources(color: string, dangerColor: string): Promise<IconSource
     return next;
   });
 
-  iconSourceCache.set(cacheKey, promise);
+  iconSourceCache.set(color, promise);
   return promise;
 }
 
-function useMaterialIconSources(color: string, dangerColor: string): IconSources {
+function useMaterialIconSources(color: string): IconSources {
   const [sources, setSources] = useState<IconSources>({});
 
   useEffect(() => {
     if (Platform.OS !== "android") return;
     let cancelled = false;
-    void loadIconSources(color, dangerColor).then((resolved) => {
+    void loadIconSources(color).then((resolved) => {
       if (!cancelled) setSources(resolved);
     });
     return () => {
       cancelled = true;
     };
-  }, [color, dangerColor]);
+  }, [color]);
 
   return sources;
 }
@@ -80,8 +77,7 @@ export function HeaderMenu({
   const avatarUri = user?.image ?? null;
   const signOut = useSignOut();
   const iconColor = useCSSVariable("--color-foreground") as string;
-  const dangerColor = useCSSVariable("--color-destructive") as string;
-  const sources = useMaterialIconSources(iconColor, dangerColor);
+  const sources = useMaterialIconSources(iconColor);
 
   return (
     <Stack.Toolbar placement="right">
@@ -107,10 +103,9 @@ export function HeaderMenu({
               Settings
             </Stack.Toolbar.MenuAction>
             <Stack.Toolbar.MenuAction
-              destructive
               icon={Platform.select<MenuActionIcon>({
                 ios: "rectangle.portrait.and.arrow.right",
-                android: sources.logoutDanger ?? sources.logout,
+                android: sources.logout,
               })}
               onPress={() => {
                 analytics.track("sign_out_clicked");

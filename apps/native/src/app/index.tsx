@@ -1,7 +1,8 @@
 import { Redirect } from "expo-router";
+import { View } from "react-native";
 
 import { Screen } from "@/components/screen";
-import { Text } from "@/components/text";
+import { Spinner } from "@/components/spinner";
 import { authClient } from "@/lib/auth";
 import { getInitialRoute } from "@/lib/navigation";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
@@ -13,8 +14,10 @@ export default function IndexRoute() {
 
   if (session.isPending || !onboardingHydrated) {
     return (
-      <Screen>
-        <Text className="text-sm text-muted-foreground">Loading…</Text>
+      <Screen scroll={false}>
+        <View className="flex-1 items-center justify-center">
+          <Spinner variant="muted" />
+        </View>
       </Screen>
     );
   }

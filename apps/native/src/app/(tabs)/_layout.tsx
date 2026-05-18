@@ -54,7 +54,7 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Label>Notifications</NativeTabs.Trigger.Label>
         {unreadBadge ? <NativeTabs.Trigger.Badge>{unreadBadge}</NativeTabs.Trigger.Badge> : null}
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger contentStyle={{ backgroundColor: canvas }} name="search">
+      <NativeTabs.Trigger contentStyle={{ backgroundColor: canvas }} name="search" role="search">
         <NativeTabs.Trigger.Icon md="search" sf="magnifyingglass" />
         <NativeTabs.Trigger.Label>Search</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>

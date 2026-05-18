@@ -332,7 +332,7 @@ function AccountSection() {
             void signOut().then(() => router.replace("/(tabs)/search"));
           }}
         >
-          <Text className="font-semibold text-destructive">Sign out</Text>
+          <Text className="font-semibold">Sign out</Text>
         </GroupedRow>
       </GroupedSection>
     </View>

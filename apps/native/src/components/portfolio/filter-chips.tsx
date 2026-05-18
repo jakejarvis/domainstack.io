@@ -41,7 +41,7 @@ export function FilterChips() {
           <Pressable
             accessibilityLabel={`Remove ${chip.label} filter`}
             accessibilityRole="button"
-            hitSlop={4}
+            hitSlop={{ bottom: 10, left: 6, right: 6, top: 10 }}
             key={chip.key}
             onPress={chip.remove}
           >
@@ -53,7 +53,11 @@ export function FilterChips() {
         ))}
       </ScrollView>
       {chips.length > 1 ? (
-        <Pressable accessibilityRole="button" hitSlop={6} onPress={resetFilters}>
+        <Pressable
+          accessibilityRole="button"
+          hitSlop={{ bottom: 12, left: 12, right: 12, top: 12 }}
+          onPress={resetFilters}
+        >
           <Text className="text-xs font-semibold text-muted-foreground">Clear</Text>
         </Pressable>
       ) : null}

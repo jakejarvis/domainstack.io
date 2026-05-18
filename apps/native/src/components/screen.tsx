@@ -2,19 +2,25 @@ import type { Ref } from "react";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
 
-import { cn } from "@/lib/cn";
-
 import { RefreshControl } from "./refresh-control";
+
+// Padding lives on the scroll content container (not an inner View) so card
+// shadows aren't clipped at the edges and safe-area insets compose correctly
+// with `contentInsetAdjustmentBehavior="automatic"`.
+const CONTENT_STYLE = {
+  paddingBottom: 32,
+  paddingHorizontal: 16,
+  paddingTop: 12,
+  rowGap: 20,
+} as const;
 
 export function Screen({
   children,
-  className,
   onRefresh,
   scroll = true,
   scrollRef,
 }: {
   children: React.ReactNode;
-  className?: string;
   onRefresh?: () => Promise<unknown> | void;
   scroll?: boolean;
   scrollRef?: Ref<ScrollView>;
@@ -31,16 +37,15 @@ export function Screen({
     }
   }
 
-  const body = <View className={cn("gap-5 px-4 pt-3 pb-8", className)}>{children}</View>;
-
   if (!scroll) {
-    return <View className="flex-1 bg-background">{body}</View>;
+    return <View className="flex-1 gap-5 bg-background px-4 pt-3 pb-8">{children}</View>;
   }
 
   return (
     <ScrollView
       alwaysBounceVertical={Boolean(onRefresh)}
       className="flex-1 bg-background"
+      contentContainerStyle={CONTENT_STYLE}
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
       ref={scrollRef}
@@ -48,7 +53,7 @@ export function Screen({
         onRefresh ? <RefreshControl onRefresh={handleRefresh} refreshing={refreshing} /> : undefined
       }
     >
-      {body}
+      {children}
     </ScrollView>
   );
 }
