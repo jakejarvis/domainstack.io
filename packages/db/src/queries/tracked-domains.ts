@@ -1192,5 +1192,5 @@ export async function deleteStaleUnverifiedDomainsByCutoff(cutoffDate: Date): Pr
       and(eq(userTrackedDomains.verified, false), lt(userTrackedDomains.createdAt, cutoffDate)),
     );
 
-  return result.rowCount;
+  return result.rowCount ?? 0;
 }
