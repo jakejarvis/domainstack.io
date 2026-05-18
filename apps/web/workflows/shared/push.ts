@@ -12,6 +12,9 @@ type ExpoPushMessage = {
   title: string;
   body: string;
   sound: "default";
+  // iOS app-icon badge. The client only ever *clears* it (to 0, on opening the
+  // inbox); without it on the payload the badge would never show a count.
+  badge?: number;
   data: Record<string, string | null>;
 };
 
@@ -76,12 +79,15 @@ export function buildExpoPushMessages(
     domainName?: string | null;
   },
   devices: PushDeviceForDelivery[],
+  badge?: number,
 ): ExpoPushMessage[] {
+  const hasBadge = typeof badge === "number" && Number.isFinite(badge) && badge >= 0;
   return uniquePushDevices(devices).map((device) => ({
     to: device.expoPushToken,
     title: input.title,
     body: input.message,
     sound: "default",
+    ...(hasBadge ? { badge } : {}),
     data: buildPushData(input),
   }));
 }
@@ -119,6 +125,7 @@ export async function sendPushForNotificationStep(input: {
   const {
     getDispatchedTokensForNotification,
     getEnabledPushDevicesForUser,
+    getUnreadCount,
     insertDispatchedMarkers,
     insertPendingReceipts,
     markPushDeviceSendError,
@@ -140,7 +147,10 @@ export async function sendPushForNotificationStep(input: {
   }
   if (deliveryDevices.length === 0) return;
 
-  const messages = buildExpoPushMessages(input, deliveryDevices);
+  // Unread count (includes the just-created notification) → iOS app-icon
+  // badge. Best-effort: a count failure must not block delivery.
+  const badge = await getUnreadCount(input.userId).catch(() => undefined);
+  const messages = buildExpoPushMessages(input, deliveryDevices, badge);
   const deviceChunks = chunk(deliveryDevices, EXPO_PUSH_CHUNK_SIZE);
   const messageChunks = chunk(messages, EXPO_PUSH_CHUNK_SIZE);
 

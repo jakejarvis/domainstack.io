@@ -64,7 +64,10 @@ export function SubscriptionBanner({
   }
 
   return (
-    <Animated.View entering={FadeIn.duration(220)} exiting={FadeOut.duration(160)}>
+    <Animated.View
+      entering={FadeIn.duration(220).reduceMotion(ReduceMotion.System)}
+      exiting={FadeOut.duration(160).reduceMotion(ReduceMotion.System)}
+    >
       <Card>
         <View className="gap-1">
           <Text className="text-base font-semibold">You’ve reached your plan limit</Text>

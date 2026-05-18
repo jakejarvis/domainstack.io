@@ -23,9 +23,10 @@ export function useSignOut() {
   return useCallback(async (): Promise<boolean> => {
     const token = await resolveTokenToUnregister();
     if (token) {
+      // Must run while still authenticated — the RPC needs the auth cookie,
+      // which `signOut()` is about to drop.
       await raceUnregister(unregisterDevice.mutateAsync({ expoPushToken: token }));
     }
-    usePushPromptStore.getState().setLastRegisteredToken(null);
 
     try {
       const result = await authClient.signOut();
@@ -36,7 +37,6 @@ export function useSignOut() {
         });
         return false;
       }
-      return true;
     } catch {
       toast.error({
         title: "Sign out failed",
@@ -44,5 +44,13 @@ export function useSignOut() {
       });
       return false;
     }
+
+    // Drop the token reference ONLY now that the session is actually gone.
+    // Clearing it on a failed sign-out would orphan the server-side device row
+    // (the token is the only handle needed to unregister it later); the user
+    // stays signed in, so a retry — or the next foreground refresh — can still
+    // reconcile it.
+    usePushPromptStore.getState().setLastRegisteredToken(null);
+    return true;
   }, [unregisterDevice]);
 }

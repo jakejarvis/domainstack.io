@@ -16,6 +16,7 @@ const mockQueries = {
   getEnabledPushDevicesForUser:
     vi.fn<(userId: string) => Promise<Array<{ expoPushToken: string }>>>(),
   getDispatchedTokensForNotification: vi.fn<(id: string) => Promise<Set<string>>>(),
+  getUnreadCount: vi.fn<(userId: string) => Promise<number>>(),
   insertPendingReceipts: vi.fn<(rows: unknown[]) => Promise<void>>(),
   insertDispatchedMarkers: vi.fn<(rows: unknown[]) => Promise<void>>(),
   markPushDeviceSendSuccess: vi.fn<(token: string) => Promise<void>>(),
@@ -76,6 +77,7 @@ describe("sendPushForNotificationStep", () => {
   beforeEach(() => {
     for (const fn of Object.values(mockQueries)) fn.mockReset();
     mockQueries.getDispatchedTokensForNotification.mockResolvedValue(new Set());
+    mockQueries.getUnreadCount.mockResolvedValue(0);
     mockQueries.insertPendingReceipts.mockResolvedValue(undefined);
     mockQueries.insertDispatchedMarkers.mockResolvedValue(undefined);
     mockQueries.markPushDeviceSendSuccess.mockResolvedValue(undefined);
@@ -118,6 +120,25 @@ describe("sendPushForNotificationStep", () => {
 
     await expect(sendPushForNotificationStep(baseInput)).rejects.toThrow(/429/);
     expect(mockQueries.markPushDeviceSendSuccess).not.toHaveBeenCalled();
+  });
+
+  it("sets the iOS badge to the user's unread count", async () => {
+    mockQueries.getEnabledPushDevicesForUser.mockResolvedValue([
+      { expoPushToken: "ExponentPushToken[a]" },
+    ]);
+    mockQueries.getUnreadCount.mockResolvedValue(7);
+    let sentBadge: unknown;
+    server.use(
+      http.post(EXPO_SEND_URL, async ({ request }) => {
+        const body = (await request.json()) as Array<{ badge?: number }>;
+        sentBadge = body[0]?.badge;
+        return HttpResponse.json({ data: body.map((_, i) => ({ status: "ok", id: `r-${i}` })) });
+      }),
+    );
+
+    await sendPushForNotificationStep(baseInput);
+
+    expect(sentBadge).toBe(7);
   });
 
   it("chunks >100 devices into separate Expo requests", async () => {

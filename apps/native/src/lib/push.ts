@@ -3,6 +3,8 @@ import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
+import { analytics } from "./analytics";
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldPlaySound: false,
@@ -25,8 +27,11 @@ async function ensureAndroidChannelAsync(): Promise<void> {
       showBadge: true,
       enableVibrate: true,
     });
-  } catch {
-    // Best-effort: a missing channel only downgrades to default importance.
+  } catch (error) {
+    // Best-effort: a missing channel only downgrades pushes to default
+    // importance — but report it so this silent, app-wide degradation
+    // (Settings shows "Miscellaneous" instead of "Domain alerts") is visible.
+    analytics.trackException(error, { context: "android_push_channel" });
   }
 }
 

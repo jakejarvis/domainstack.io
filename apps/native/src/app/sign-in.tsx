@@ -133,15 +133,21 @@ export default function SignInScreen() {
   // without the session landing. Confirm before navigating, and give feedback
   // instead of a dead tap if it didn't.
   const confirmSessionAndFinish = async () => {
-    const session = await authClient.getSession();
-    if (!session.data?.user) {
-      toast.error({
-        title: "Sign-in didn’t complete",
-        message: "Please try again.",
-      });
-      return;
+    // The token exchange can still be settling when the OAuth flow resolves, so
+    // a single getSession() may read null even though the session lands a beat
+    // later. Retry briefly before declaring failure (~1.2s worst case).
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const session = await authClient.getSession();
+      if (session.data?.user) {
+        finishSignIn();
+        return;
+      }
+      if (attempt < 4) await new Promise((resolve) => setTimeout(resolve, 300));
     }
-    finishSignIn();
+    toast.error({
+      title: "Sign-in didn’t complete",
+      message: "Please try again.",
+    });
   };
 
   const showSignInError = (provider: string, error: unknown) => {

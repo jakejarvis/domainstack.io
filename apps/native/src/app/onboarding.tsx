@@ -117,6 +117,7 @@ export default function OnboardingScreen() {
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       <View className="flex-row justify-end px-2 py-1">
         <Pressable
+          accessibilityLabel="Skip onboarding"
           accessibilityRole="button"
           className="px-4 py-2"
           hitSlop={{ bottom: 16, left: 16, right: 16, top: 16 }}

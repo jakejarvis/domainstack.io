@@ -58,6 +58,7 @@ const variantHaptic = {
 } satisfies Record<Variant, () => void>;
 
 export function Button({
+  accessibilityLabel,
   children,
   className,
   disabled,
@@ -65,6 +66,9 @@ export function Button({
   onPress,
   variant = "primary",
 }: {
+  // Required for icon-only buttons; for text buttons RN derives the name from
+  // the child <Text>, so leaving it undefined is correct (no override).
+  accessibilityLabel?: string;
   children: React.ReactNode;
   className?: string;
   disabled?: boolean;
@@ -79,6 +83,7 @@ export function Button({
 
   return (
     <Pressable
+      accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
       accessibilityState={{ busy: Boolean(loading), disabled: isDisabled }}
       className={cn(buttonVariants({ variant }), isDisabled && "opacity-40", className)}

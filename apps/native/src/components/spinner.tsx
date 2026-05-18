@@ -2,9 +2,11 @@ import { ActivityIndicator } from "react-native";
 import { useCSSVariable } from "uniwind";
 
 export function Spinner({
+  accessibilityLabel = "Loading",
   size = "small",
   variant = "default",
 }: {
+  accessibilityLabel?: string;
   size?: "small" | "large";
   variant?: "default" | "muted" | "brand";
 }) {
@@ -15,5 +17,12 @@ export function Spinner({
         ? "--color-muted-foreground"
         : "--color-foreground";
   const color = useCSSVariable(variable) as string;
-  return <ActivityIndicator color={color} size={size} />;
+  return (
+    <ActivityIndicator
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="progressbar"
+      color={color}
+      size={size}
+    />
+  );
 }
