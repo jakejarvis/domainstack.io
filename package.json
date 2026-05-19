@@ -24,6 +24,8 @@
     "fmt:check": "turbo run fmt:check",
     "test": "turbo run test",
     "test:coverage": "turbo run test:coverage",
+    "i18n:extract": "turbo run i18n:extract",
+    "i18n:compile": "turbo run i18n:compile",
     "db:generate": "turbo run db:generate",
     "db:push": "turbo run db:push",
     "db:migrate": "turbo run db:migrate",

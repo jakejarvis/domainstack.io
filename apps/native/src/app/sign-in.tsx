@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { Image } from "expo-image";
@@ -48,7 +49,10 @@ function SignInHero() {
       />
       <Text variant="title">Domainstack</Text>
       <Text variant="subhead" className="text-center text-muted-foreground">
-        Track ownership, expiry, DNS, and certificate changes; get notified before anything breaks.
+        <Trans>
+          Track ownership, expiry, DNS, and certificate changes; get notified before anything
+          breaks.
+        </Trans>
       </Text>
     </View>
   );
@@ -57,15 +61,17 @@ function SignInHero() {
 function LegalFooter() {
   return (
     <Text variant="footnote" className="text-center text-muted-foreground">
-      By continuing you agree to our{" "}
-      <Text variant="footnote" className="text-brand" onPress={() => openLegal("terms")}>
-        Terms
-      </Text>{" "}
-      and{" "}
-      <Text variant="footnote" className="text-brand" onPress={() => openLegal("privacy")}>
-        Privacy Policy
-      </Text>
-      .
+      <Trans>
+        By continuing you agree to our{" "}
+        <Text variant="footnote" className="text-brand" onPress={() => openLegal("terms")}>
+          Terms
+        </Text>{" "}
+        and{" "}
+        <Text variant="footnote" className="text-brand" onPress={() => openLegal("privacy")}>
+          Privacy Policy
+        </Text>
+        .
+      </Trans>
     </Text>
   );
 }
@@ -95,6 +101,7 @@ export default function SignInScreen() {
   // iOS 13+). This avoids flashing a fake disabled "Continue with Apple"
   // placeholder before the native button mounts; the effect still corrects the
   // rare unavailable case.
+  const { t } = useLingui();
   const [appleAuthAvailable, setAppleAuthAvailable] = useState<boolean>(Platform.OS === "ios");
   const [loadingProvider, setLoadingProvider] = useState<AuthProvider | null>(null);
   const triggerPushPrompt = usePushSoftPrompt();
@@ -143,8 +150,8 @@ export default function SignInScreen() {
       if (attempt < 4) await new Promise((resolve) => setTimeout(resolve, 300));
     }
     toast.error({
-      title: "Sign-in didn’t complete",
-      message: "Please try again.",
+      title: t`Sign-in didn’t complete`,
+      message: t`Please try again.`,
     });
   };
 
@@ -152,11 +159,11 @@ export default function SignInScreen() {
     if (isAuthCanceled(error)) return;
 
     toast.error({
-      title: "Sign in failed",
+      title: t`Sign in failed`,
       message:
         error instanceof Error
           ? error.message
-          : `Unable to sign in with ${provider}. Please try again.`,
+          : t`Unable to sign in with ${provider}. Please try again.`,
     });
   };
 
@@ -249,22 +256,30 @@ export default function SignInScreen() {
       <Card>
         {otaConfig.isPending ? (
           <Button disabled loading variant="primary">
-            <Text>Loading sign-in options…</Text>
+            <Text>
+              <Trans>Loading sign-in options…</Trans>
+            </Text>
           </Button>
         ) : otaConfig.isError ? (
           <>
-            <Text className="text-sm text-muted-foreground">Sign-in options are unavailable.</Text>
+            <Text className="text-sm text-muted-foreground">
+              <Trans>Sign-in options are unavailable.</Trans>
+            </Text>
             <Button onPress={() => void otaConfig.refetch()} variant="secondary">
-              <Text>Try again</Text>
+              <Text>
+                <Trans>Try again</Trans>
+              </Text>
             </Button>
           </>
         ) : providerOptions.length === 0 ? (
           <>
             <Text className="text-sm text-muted-foreground">
-              No sign-in providers are available right now.
+              <Trans>No sign-in providers are available right now.</Trans>
             </Text>
             <Button onPress={() => void otaConfig.refetch()} variant="secondary">
-              <Text>Try again</Text>
+              <Text>
+                <Trans>Try again</Trans>
+              </Text>
             </Button>
           </>
         ) : (
@@ -295,24 +310,28 @@ function ProviderButton({
   onPress: (provider: NativeAuthProviderOption) => void;
   provider: NativeAuthProviderOption;
 }) {
+  const { t } = useLingui();
   const variant = isPlatformPreferredProvider(provider) ? "primary" : "secondary";
   const primaryColor = useCSSVariable("--color-primary-foreground") as string;
   const secondaryColor = useCSSVariable("--color-secondary-foreground") as string;
   const iconColor = variant === "primary" ? primaryColor : secondaryColor;
+  const providerName = provider.name;
 
   if (provider.id === "apple" && appleAuthAvailable) {
     if (loadingProvider === "apple") {
       return (
         <Button disabled loading variant="primary">
           <AuthIcon color={primaryColor} provider="apple" size={18} />
-          <Text>Continue with Apple</Text>
+          <Text>
+            <Trans>Continue with Apple</Trans>
+          </Text>
         </Button>
       );
     }
     if (loadingProvider !== null) return null;
     return (
       <AppleAuthentication.AppleAuthenticationButton
-        accessibilityLabel="Continue with Apple"
+        accessibilityLabel={t`Continue with Apple`}
         buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
         buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
         cornerRadius={12}
@@ -330,7 +349,9 @@ function ProviderButton({
       variant={variant}
     >
       <AuthIcon color={iconColor} provider={provider.id} size={18} />
-      <Text>Continue with {provider.name}</Text>
+      <Text>
+        <Trans>Continue with {providerName}</Trans>
+      </Text>
     </Button>
   );
 }

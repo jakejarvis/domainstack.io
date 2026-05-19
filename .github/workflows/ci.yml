@@ -34,6 +34,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Hard fail (no continue-on-error): a stale catalog would ship raw
+      # message-id hashes to users. If this fails, run the two commands
+      # locally and commit the regenerated catalogs.
+      - name: Check i18n catalogs are up to date
+        run: |
+          pnpm --filter @domainstack/i18n i18n:extract
+          pnpm --filter @domainstack/i18n i18n:compile
+          git diff --exit-code -- packages/i18n/src/locales
+
       - name: Install Playwright browsers
         run: pnpm --filter @domainstack/web exec playwright install chromium --with-deps
 

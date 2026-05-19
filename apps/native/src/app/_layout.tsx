@@ -1,4 +1,7 @@
+// MUST be first: installs the FormatJS Intl polyfills before any formatter runs.
+import "@/lib/intl-polyfill";
 import "@/global.css";
+import { I18nProvider } from "@lingui/react";
 import * as Notifications from "expo-notifications";
 import * as QuickActions from "expo-quick-actions";
 import { type RouterAction, useQuickActionRouting } from "expo-quick-actions/router";
@@ -7,7 +10,7 @@ import { Stack } from "expo-router/stack";
 import { ShareIntentProvider, useShareIntentContext } from "expo-share-intent";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
@@ -21,11 +24,14 @@ import { AnalyticsProvider } from "@/lib/analytics-provider";
 import { ApiProvider } from "@/lib/api";
 import { authClient } from "@/lib/auth";
 import { installGlobalErrorHandler } from "@/lib/error-handler";
+import { deviceLocale, loadCatalog } from "@/lib/i18n";
 import { configureImageCache } from "@/lib/image-cache";
 import { NOTIFICATIONS_ROUTE, routeFromNotificationData } from "@/lib/navigation";
 import { useStackScreenOptions } from "@/lib/screen-options";
+import { useLocaleStore } from "@/lib/stores/locale-store";
 import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
 import { toast } from "@/lib/toast";
+import { i18n } from "@domainstack/i18n";
 import { isValidDomain, normalizeDomainInput } from "@domainstack/utils/domain/client";
 
 // Pin the tab navigator as the permanent base of the root stack. Without an
@@ -48,6 +54,25 @@ function RootNavigator() {
   const versionGateReady = useVersionGateReady();
   useForegroundPushRefresh();
   useCalendarSync();
+
+  const localeOverride = useLocaleStore((s) => s.locale);
+  const localeHydrated = useLocaleStore((s) => s.hasHydrated);
+  const [i18nReady, setI18nReady] = useState(false);
+
+  // Activate the Lingui catalog for the effective locale (explicit override,
+  // else device locale). Re-runs when the user changes language so the UI
+  // switches live. Waits for the persisted override to hydrate first to avoid
+  // a flash of the device locale.
+  useEffect(() => {
+    if (!localeHydrated) return;
+    let cancelled = false;
+    void loadCatalog(localeOverride ?? deviceLocale()).finally(() => {
+      if (!cancelled) setI18nReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [localeHydrated, localeOverride]);
 
   // Home-screen long-press shortcuts. `useQuickActionRouting()` navigates to
   // `params.href` on cold start (initial action) and while backgrounded; the
@@ -94,10 +119,10 @@ function RootNavigator() {
   const lastShareSignatureRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!session.isPending && versionGateReady) {
+    if (!session.isPending && versionGateReady && i18nReady) {
       void SplashScreen.hideAsync();
     }
-  }, [session.isPending, versionGateReady]);
+  }, [session.isPending, versionGateReady, i18nReady]);
 
   useEffect(() => {
     if (isSignedIn && pendingTargetRef.current) {
@@ -232,7 +257,9 @@ export default function RootLayout() {
           <AnalyticsProvider>
             <ApiProvider>
               <VersionGate>
-                <RootNavigator />
+                <I18nProvider i18n={i18n}>
+                  <RootNavigator />
+                </I18nProvider>
               </VersionGate>
             </ApiProvider>
           </AnalyticsProvider>

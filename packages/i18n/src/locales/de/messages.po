@@ -1,0 +1,74 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: de\n"
+"Project-Id-Version: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+"Report-Msgid-Bugs-To: \n"
+
+#: ../../apps/native/src/app/sign-in.tsx
+msgid "By continuing you agree to our <0>Terms</0> and <1>Privacy Policy</1>."
+msgstr "Mit der Fortsetzung stimmst du unseren <0>Bedingungen</0> und der <1>Datenschutzrichtlinie</1> zu."
+
+#: ../../apps/native/src/app/sign-in.tsx
+msgid "Continue with {providerName}"
+msgstr "Weiter mit {providerName}"
+
+#: ../../apps/native/src/app/sign-in.tsx
+msgid "Continue with Apple"
+msgstr "Weiter mit Apple"
+
+#: ../../apps/web/app/layout.tsx
+msgid "Domainstack — Domain Intelligence Made Easy"
+msgstr "Domainstack – Domain-Intelligence leicht gemacht"
+
+#: ../../apps/web/app/layout.tsx
+msgid "Instant lookups for WHOIS, DNS, hosting, certificates, SEO and more, plus free domain tracking and change alerts."
+msgstr "Sofortabfragen für WHOIS, DNS, Hosting, Zertifikate, SEO und mehr – plus kostenlose Domain-Überwachung und Änderungswarnungen."
+
+#: ../../apps/native/src/app/sign-in.tsx
+msgid "Loading sign-in options…"
+msgstr "Anmeldeoptionen werden geladen…"
+
+#: ../../apps/native/src/app/sign-in.tsx
+msgid "No sign-in providers are available right now."
+msgstr "Derzeit sind keine Anmeldeanbieter verfügbar."
+
+#: ../../apps/native/src/app/sign-in.tsx
+msgid "Please try again."
+msgstr "Bitte versuche es erneut."
+
+#: ../../apps/native/src/app/sign-in.tsx
+msgid "Sign in failed"
+msgstr "Anmeldung fehlgeschlagen"
+
+#: ../../apps/native/src/app/sign-in.tsx
+msgid "Sign-in didn’t complete"
+msgstr "Anmeldung wurde nicht abgeschlossen"
+
+#: ../../apps/native/src/app/sign-in.tsx
+msgid "Sign-in options are unavailable."
+msgstr "Anmeldeoptionen sind nicht verfügbar."
+
+#: ../../apps/web/app/layout.tsx
+msgid "Skip to content"
+msgstr "Zum Inhalt springen"
+
+#: ../../apps/native/src/app/sign-in.tsx
+msgid "Track ownership, expiry, DNS, and certificate changes; get notified before anything breaks."
+msgstr "Verfolge Inhaberschaft, Ablauf, DNS und Zertifikatsänderungen; werde benachrichtigt, bevor etwas kaputtgeht."
+
+#: ../../apps/native/src/app/sign-in.tsx
+msgid "Try again"
+msgstr "Erneut versuchen"
+
+#: ../../apps/native/src/app/sign-in.tsx
+msgid "Unable to sign in with {provider}. Please try again."
+msgstr "Anmeldung mit {provider} nicht möglich. Bitte versuche es erneut."

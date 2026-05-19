@@ -5,6 +5,14 @@ import { withWorkflow } from "workflow/next";
 let nextConfig: NextConfig = {
   reactCompiler: true,
   cacheComponents: true,
+  experimental: {
+    // Lingui macro transform. NOTE: Next gives no way to order SWC plugins, so
+    // with `reactCompiler: true` the macro output can be rewritten before it is
+    // recognized as compiled. We neutralize that at runtime via
+    // `i18n.setMessagesCompiler(compileMessage)` (see lib/i18n-server.ts and
+    // app/i18n-provider.tsx) and by NOT using nested-element <Trans> on web.
+    swcPlugins: [["@lingui/swc-plugin", {}]],
+  },
   typescript: {
     ignoreBuildErrors: true,
   },

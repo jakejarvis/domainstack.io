@@ -1,16 +1,18 @@
 /**
  * Formats a date string in UTC using the native Intl.DateTimeFormat API.
  * @param iso - ISO 8601 date string or any valid date string
+ * @param locale - BCP 47 locale tag; defaults to `en-US` so existing callers
+ *   and snapshots are byte-identical. Pass the active locale to localize.
  * @returns Formatted date string (e.g., "Oct 2, 2025")
  */
-export function formatDate(iso: string): string {
+export function formatDate(iso: string, locale: string = "en-US"): string {
   try {
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return iso;
 
     // Use Intl.DateTimeFormat for native, zero-bundle formatting
     // Output: "Oct 2, 2025"
-    return new Intl.DateTimeFormat("en-US", {
+    return new Intl.DateTimeFormat(locale, {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -24,15 +26,18 @@ export function formatDate(iso: string): string {
 /**
  * Formats a date string as ISO-like datetime in UTC using native Intl.DateTimeFormat API.
  * @param iso - ISO 8601 date string or any valid date string
+ * @param locale - BCP 47 locale tag; defaults to `en-US`. The output shape
+ *   (`YYYY-MM-DD HH:mm:ss UTC`) is locale-stable; the locale only affects
+ *   digit shaping for non-Latin numbering systems.
  * @returns Formatted datetime string (e.g., "2025-10-02 14:30:05 UTC")
  */
-export function formatDateTimeUtc(iso: string): string {
+export function formatDateTimeUtc(iso: string, locale: string = "en-US"): string {
   try {
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return iso;
 
     // Use Intl.DateTimeFormat with formatToParts for precise control
-    const formatter = new Intl.DateTimeFormat("en-US", {
+    const formatter = new Intl.DateTimeFormat(locale, {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",

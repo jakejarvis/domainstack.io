@@ -20,6 +20,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { BetaBadge } from "@/components/beta-badge";
+import { LocaleSwitcher } from "@/components/layout/locale-switcher";
 import { APPLE_SHORTCUT_ID } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@domainstack/ui/dialog";
@@ -118,6 +119,8 @@ export function AppFooter() {
             <IconCookie className="text-muted-foreground" />
             Privacy
           </Link>
+
+          <LocaleSwitcher />
         </div>
         <div>
           Made with{" "}

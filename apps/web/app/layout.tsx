@@ -1,30 +1,38 @@
+import { msg } from "@lingui/core/macro";
 import { Analytics } from "@vercel/analytics/next";
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 
+import { I18nClientProvider } from "@/app/i18n-provider";
 import { Providers } from "@/app/providers";
 import { ChatServer } from "@/components/chat/chat-server";
 import { CookiePromptGeofenced } from "@/components/consent/cookie-prompt-geofenced";
 import { AppFooter } from "@/components/layout/app-footer";
 import { AppHeader } from "@/components/layout/app-header";
 import { Toaster } from "@/components/ui/sonner";
+import { getI18n, getRequestLocale } from "@/lib/i18n-server";
+import { getMessages } from "@domainstack/i18n";
 
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: {
-    default: "Domainstack — Domain Intelligence Made Easy",
-    template: "%s — Domainstack",
-  },
-  description:
-    "Instant lookups for WHOIS, DNS, hosting, certificates, SEO and more, plus free domain tracking and change alerts.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"),
-  alternates: {
-    canonical: "/",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const i18n = await getI18n();
+  return {
+    title: {
+      default: i18n._(msg`Domainstack — Domain Intelligence Made Easy`),
+      template: "%s — Domainstack",
+    },
+    description: i18n._(
+      msg`Instant lookups for WHOIS, DNS, hosting, certificates, SEO and more, plus free domain tracking and change alerts.`,
+    ),
+    metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"),
+    alternates: {
+      canonical: "/",
+    },
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -36,16 +44,19 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
   modal,
 }: Readonly<{
   children: React.ReactNode;
   modal: React.ReactNode;
 }>) {
+  const locale = await getRequestLocale();
+  const [messages, i18n] = await Promise.all([getMessages(locale), getI18n()]);
+
   return (
     <html
-      lang="en"
+      lang={locale}
       className={`${GeistSans.variable} ${GeistMono.variable} touch-manipulation`}
       suppressHydrationWarning
     >
@@ -58,35 +69,37 @@ export default function RootLayout({
         />
       </head>
       <body className="relative min-h-svh overscroll-none bg-background font-sans text-foreground tabular-nums antialiased [--header-height:72px]">
-        <Providers>
-          {/* Skip to main content link for keyboard navigation */}
-          <a
-            href="#main-content"
-            className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:font-medium focus:text-foreground focus:shadow-lg focus:ring-2 focus:ring-ring"
-          >
-            Skip to content
-          </a>
+        <I18nClientProvider locale={locale} messages={messages}>
+          <Providers>
+            {/* Skip to main content link for keyboard navigation */}
+            <a
+              href="#main-content"
+              className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:font-medium focus:text-foreground focus:shadow-lg focus:ring-2 focus:ring-ring"
+            >
+              {i18n._(msg`Skip to content`)}
+            </a>
 
-          {/* App Shell */}
-          <div data-slot="layout" className="isolate flex min-h-svh flex-col">
-            <AppHeader />
-            <main id="main-content" className="flex min-h-0 flex-1 flex-col">
-              {children}
-            </main>
-            <AppFooter />
+            {/* App Shell */}
+            <div data-slot="layout" className="isolate flex min-h-svh flex-col">
+              <AppHeader />
+              <main id="main-content" className="flex min-h-0 flex-1 flex-col">
+                {children}
+              </main>
+              <AppFooter />
 
-            {/* Fixed-positioned elements that should be inside flex context for Safari */}
-            <Suspense fallback={null}>
-              <CookiePromptGeofenced />
-            </Suspense>
-            <Suspense fallback={null}>
-              <ChatServer />
-            </Suspense>
-          </div>
-          <Toaster />
+              {/* Fixed-positioned elements that should be inside flex context for Safari */}
+              <Suspense fallback={null}>
+                <CookiePromptGeofenced />
+              </Suspense>
+              <Suspense fallback={null}>
+                <ChatServer />
+              </Suspense>
+            </div>
+            <Toaster />
 
-          {modal}
-        </Providers>
+            {modal}
+          </Providers>
+        </I18nClientProvider>
         <Analytics />
       </body>
     </html>

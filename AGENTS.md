@@ -11,6 +11,19 @@
 
 Do not proceed with commits until all four checks are clean.
 
+**i18n catalogs:** If you added or changed any user-facing string wrapped in a
+Lingui macro (`Trans`, `t`, `msg`, …), regenerate and commit the shared catalogs
+before the four checks:
+
+```
+pnpm i18n:extract
+pnpm i18n:compile
+```
+
+Web translations MUST NOT use nested-element `<Trans>` (rich text with child
+tags) — it is the known failure mode of Lingui + `reactCompiler: true`. Use
+interpolation or split into separate messages instead.
+
 ## Commands
 
 All commands run from the **monorepo root** via Turborepo. Scope to a single app/package with `pnpm --filter <name> <script>` (e.g., `pnpm --filter @domainstack/web build`, `pnpm --filter @domainstack/native dev`).

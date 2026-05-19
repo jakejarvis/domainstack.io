@@ -1,0 +1,74 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: en\n"
+"Project-Id-Version: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+"Report-Msgid-Bugs-To: \n"
+
+#: ../../apps/native/src/app/sign-in.tsx
+msgid "By continuing you agree to our <0>Terms</0> and <1>Privacy Policy</1>."
+msgstr "By continuing you agree to our <0>Terms</0> and <1>Privacy Policy</1>."
+
+#: ../../apps/native/src/app/sign-in.tsx
+msgid "Continue with {providerName}"
+msgstr "Continue with {providerName}"
+
+#: ../../apps/native/src/app/sign-in.tsx
+msgid "Continue with Apple"
+msgstr "Continue with Apple"
+
+#: ../../apps/web/app/layout.tsx
+msgid "Domainstack — Domain Intelligence Made Easy"
+msgstr "Domainstack — Domain Intelligence Made Easy"
+
+#: ../../apps/web/app/layout.tsx
+msgid "Instant lookups for WHOIS, DNS, hosting, certificates, SEO and more, plus free domain tracking and change alerts."
+msgstr "Instant lookups for WHOIS, DNS, hosting, certificates, SEO and more, plus free domain tracking and change alerts."
+
+#: ../../apps/native/src/app/sign-in.tsx
+msgid "Loading sign-in options…"
+msgstr "Loading sign-in options…"
+
+#: ../../apps/native/src/app/sign-in.tsx
+msgid "No sign-in providers are available right now."
+msgstr "No sign-in providers are available right now."
+
+#: ../../apps/native/src/app/sign-in.tsx
+msgid "Please try again."
+msgstr "Please try again."
+
+#: ../../apps/native/src/app/sign-in.tsx
+msgid "Sign in failed"
+msgstr "Sign in failed"
+
+#: ../../apps/native/src/app/sign-in.tsx
+msgid "Sign-in didn’t complete"
+msgstr "Sign-in didn’t complete"
+
+#: ../../apps/native/src/app/sign-in.tsx
+msgid "Sign-in options are unavailable."
+msgstr "Sign-in options are unavailable."
+
+#: ../../apps/web/app/layout.tsx
+msgid "Skip to content"
+msgstr "Skip to content"
+
+#: ../../apps/native/src/app/sign-in.tsx
+msgid "Track ownership, expiry, DNS, and certificate changes; get notified before anything breaks."
+msgstr "Track ownership, expiry, DNS, and certificate changes; get notified before anything breaks."
+
+#: ../../apps/native/src/app/sign-in.tsx
+msgid "Try again"
+msgstr "Try again"
+
+#: ../../apps/native/src/app/sign-in.tsx
+msgid "Unable to sign in with {provider}. Please try again."
+msgstr "Unable to sign in with {provider}. Please try again."

@@ -79,6 +79,13 @@
       "outputs": ["coverage/**"],
       "env": ["CI"]
     },
+    "i18n:extract": {
+      "cache": false
+    },
+    "i18n:compile": {
+      "cache": false,
+      "outputs": ["src/locales/**/messages.ts"]
+    },
     "db:generate": {
       "cache": false
     },

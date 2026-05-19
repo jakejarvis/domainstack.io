@@ -37,6 +37,7 @@
     ".swc",
     "coverage",
     "packages/db/drizzle",
+    "packages/i18n/src/locales",
     "apps/native/uniwind-types.d.ts",
     "**/*.icon",
     "**/.well-known/workflow"
