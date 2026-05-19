@@ -12,6 +12,8 @@ import { Text } from "./text";
 
 export type AppBottomSheetRef = BottomSheetMethods;
 
+const DEFAULT_SNAP_POINTS: Array<string | number> = ["55%", "92%"];
+
 export function AppBottomSheet({
   children,
   description,
@@ -19,7 +21,7 @@ export function AppBottomSheet({
   index = 0,
   onDismiss,
   ref,
-  snapPoints = ["55%", "92%"],
+  snapPoints = DEFAULT_SNAP_POINTS,
   title,
 }: {
   children: React.ReactNode;

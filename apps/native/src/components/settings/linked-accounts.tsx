@@ -13,11 +13,9 @@ import { analytics } from "@/lib/analytics";
 import { useTRPC } from "@/lib/api";
 import {
   type AuthProvider,
-  getOtaConfig,
   linkProvider,
   linkProviderWithAppleToken,
   linkProviderWithGoogleToken,
-  OTA_CONFIG_QUERY_KEY,
   unlinkProvider,
 } from "@/lib/auth";
 import { getEnabledNativeAuthProviders, type NativeAuthProviderOption } from "@/lib/auth-providers";
@@ -44,9 +42,8 @@ export function LinkedAccountsSection() {
     void AppleAuthentication.isAvailableAsync().then(setAppleAuthAvailable);
   }, []);
 
-  const otaConfig = useQuery({
-    queryFn: getOtaConfig,
-    queryKey: OTA_CONFIG_QUERY_KEY,
+  const oauthProviders = useQuery({
+    ...trpc.auth.getOauthProviders.queryOptions(),
     staleTime: 1000 * 60 * 5,
   });
   const linkedAccountsKey = trpc.user.getLinkedAccounts.queryKey();
@@ -60,8 +57,8 @@ export function LinkedAccountsSection() {
     onSettled: invalidateLinkedAccounts,
   });
 
-  const providerOptions = otaConfig.data
-    ? getEnabledNativeAuthProviders(otaConfig.data.authProviders, googleNativeConfig, {
+  const providerOptions = oauthProviders.data
+    ? getEnabledNativeAuthProviders(oauthProviders.data, googleNativeConfig, {
         appleAuthAvailable: appleAuthAvailable === true,
         platform: Platform.OS,
       })
@@ -136,13 +133,34 @@ export function LinkedAccountsSection() {
     }
   }
 
-  if (otaConfig.isPending || linkedAccounts.isPending) {
+  if (oauthProviders.isPending || linkedAccounts.isPending) {
     return (
       <GroupedSection title={t`Sign-in methods`}>
         <View className="p-3">
           <Text className="text-sm text-muted-foreground">
             <Trans>Loading providers…</Trans>
           </Text>
+        </View>
+      </GroupedSection>
+    );
+  }
+
+  if (oauthProviders.isError) {
+    return (
+      <GroupedSection title={t`Sign-in methods`}>
+        <View className="gap-3 p-3">
+          <Text className="text-sm text-muted-foreground">
+            <Trans>Couldn’t load your sign-in methods. Check your connection and try again.</Trans>
+          </Text>
+          <Button
+            loading={oauthProviders.isFetching}
+            onPress={() => void oauthProviders.refetch()}
+            variant="secondary"
+          >
+            <Text>
+              <Trans>Try again</Trans>
+            </Text>
+          </Button>
         </View>
       </GroupedSection>
     );

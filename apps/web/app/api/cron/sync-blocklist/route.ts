@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { syncBlockedDomains } from "@domainstack/db/queries";
+import { getBlocklistSources } from "@domainstack/edge-config";
 import { createLogger } from "@domainstack/logger";
-import { getBlocklistSources } from "@domainstack/server/edge-config";
 
 const logger = createLogger({ source: "cron/sync-blocklist" });
 

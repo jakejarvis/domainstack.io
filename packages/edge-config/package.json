@@ -1,12 +1,11 @@
 {
-  "name": "@domainstack/analytics",
+  "name": "@domainstack/edge-config",
   "version": "0.0.0-beta.1",
   "private": true,
-  "type": "module",
-  "sideEffects": false,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
   "exports": {
-    "./client": "./src/client.ts",
-    "./server": "./src/server.ts"
+    ".": "./src/index.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit",
@@ -16,9 +15,9 @@
     "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json"
   },
   "dependencies": {
-    "posthog-js": "catalog:",
-    "posthog-node": "^5.34.4",
-    "uuid": "^14.0.0"
+    "@domainstack/logger": "workspace:*",
+    "@domainstack/utils": "workspace:*",
+    "@vercel/edge-config": "^1.4.3"
   },
   "devDependencies": {
     "@domainstack/tsconfig": "workspace:*",
@@ -27,7 +26,6 @@
     "typescript": "catalog:"
   },
   "peerDependencies": {
-    "next": ">=16",
     "react": "^19.2.0"
   }
 }

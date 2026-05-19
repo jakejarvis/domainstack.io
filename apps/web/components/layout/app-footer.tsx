@@ -32,6 +32,8 @@ import {
   DropdownMenuTrigger,
 } from "@domainstack/ui/dropdown-menu";
 
+const BOOKMARKLET_TOAST_ICON = <IconCornerLeftUp className="size-4" />;
+
 export function AppFooter() {
   const { t } = useLingui();
   const [isBookmarkletsOpen, setIsBookmarkletsOpen] = useState(false);
@@ -166,7 +168,7 @@ export function AppFooter() {
               onClick={(e) => {
                 e.preventDefault();
                 toast.info(t`Drag the button to your bookmarks bar to use it.`, {
-                  icon: <IconCornerLeftUp className="size-4" />,
+                  icon: BOOKMARKLET_TOAST_ICON,
                   position: "top-center",
                 });
               }}

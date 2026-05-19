@@ -37,6 +37,14 @@ import { Skeleton } from "@domainstack/ui/skeleton";
 import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
 
+function OutlookIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" role="img" aria-label="Microsoft" {...props}>
+      <path d="M11.4 24H0V12.6h11.4zM24 24H12.6V12.6H24zM11.4 11.4H0V0h11.4zm12.6 0H12.6V0H24z" />
+    </svg>
+  );
+}
+
 /**
  * Skeleton for calendar instructions.
  * Exported for use as Suspense fallback in parent components.
@@ -91,11 +99,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
       {
         id: "outlook",
         label: "Outlook",
-        icon: (props: React.SVGProps<SVGSVGElement>) => (
-          <svg viewBox="0 0 24 24" fill="currentColor" role="img" aria-label="Microsoft" {...props}>
-            <path d="M11.4 24H0V12.6h11.4zM24 24H12.6V12.6H24zM11.4 11.4H0V0h11.4zm12.6 0H12.6V0H24z" />
-          </svg>
-        ),
+        icon: OutlookIcon,
         href: `https://outlook.office.com/calendar/0/addfromweb?url=${encodeURIComponent(feedUrl.replace("https://", "webcal://"))}`,
       },
       {

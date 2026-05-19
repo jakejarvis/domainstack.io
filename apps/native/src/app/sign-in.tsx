@@ -15,16 +15,19 @@ import { Screen } from "@/components/screen";
 import { Text } from "@/components/text";
 import { usePushSoftPrompt } from "@/hooks/use-push-soft-prompt";
 import { analytics } from "@/lib/analytics";
+import { useTRPC } from "@/lib/api";
 import {
   type AuthProvider,
   authClient,
-  getOtaConfig,
-  OTA_CONFIG_QUERY_KEY,
   signInWithAppleToken,
   signInWithGoogleToken,
   signInWithProvider,
 } from "@/lib/auth";
-import { getEnabledNativeAuthProviders, type NativeAuthProviderOption } from "@/lib/auth-providers";
+import {
+  FALLBACK_AUTH_PROVIDERS,
+  getEnabledNativeAuthProviders,
+  type NativeAuthProviderOption,
+} from "@/lib/auth-providers";
 import { googleNativeConfig, webBaseUrl } from "@/lib/env";
 import { getGoogleIdentityToken } from "@/lib/google-auth";
 import { getInitialRoute } from "@/lib/navigation";
@@ -105,24 +108,25 @@ export default function SignInScreen() {
   const [appleAuthAvailable, setAppleAuthAvailable] = useState<boolean>(Platform.OS === "ios");
   const [loadingProvider, setLoadingProvider] = useState<AuthProvider | null>(null);
   const triggerPushPrompt = usePushSoftPrompt();
-  const otaConfig = useQuery({
-    queryFn: getOtaConfig,
-    queryKey: OTA_CONFIG_QUERY_KEY,
+  const trpc = useTRPC();
+  const oauthProviders = useQuery({
+    ...trpc.auth.getOauthProviders.queryOptions(),
     staleTime: 1000 * 60 * 5,
   });
 
-  const providerOptions = otaConfig.data
-    ? getEnabledNativeAuthProviders(otaConfig.data.authProviders, googleNativeConfig, {
-        appleAuthAvailable: appleAuthAvailable === true,
-        platform: Platform.OS,
-      })
-        .filter(isProviderAvailableOnPlatform)
-        // `.filter()` returns a fresh array, so sorting it in place is safe.
-        // (Hermes in RN 0.85 doesn't implement `Array.prototype.toSorted`.)
-        .sort(
-          (a, b) => Number(isPlatformPreferredProvider(b)) - Number(isPlatformPreferredProvider(a)),
-        )
-    : [];
+  // Fall back to the full supported set when the providers couldn't load so an
+  // unreachable backend never locks the user out of sign-in entirely.
+  const authProviders = oauthProviders.data ?? FALLBACK_AUTH_PROVIDERS;
+  const providerOptions = getEnabledNativeAuthProviders(authProviders, googleNativeConfig, {
+    appleAuthAvailable: appleAuthAvailable === true,
+    platform: Platform.OS,
+  })
+    .filter(isProviderAvailableOnPlatform)
+    // `.filter()` returns a fresh array, so sorting it in place is safe.
+    // (Hermes in RN 0.85 doesn't implement `Array.prototype.toSorted`.)
+    .sort(
+      (a, b) => Number(isPlatformPreferredProvider(b)) - Number(isPlatformPreferredProvider(a)),
+    );
 
   useEffect(() => {
     void AppleAuthentication.isAvailableAsync().then(setAppleAuthAvailable);
@@ -254,29 +258,18 @@ export default function SignInScreen() {
     <Screen>
       <SignInHero />
       <Card>
-        {otaConfig.isPending ? (
+        {oauthProviders.isPending ? (
           <Button disabled loading variant="primary">
             <Text>
               <Trans>Loading sign-in options…</Trans>
             </Text>
           </Button>
-        ) : otaConfig.isError ? (
-          <>
-            <Text className="text-sm text-muted-foreground">
-              <Trans>Sign-in options are unavailable.</Trans>
-            </Text>
-            <Button onPress={() => void otaConfig.refetch()} variant="secondary">
-              <Text>
-                <Trans>Try again</Trans>
-              </Text>
-            </Button>
-          </>
         ) : providerOptions.length === 0 ? (
           <>
             <Text className="text-sm text-muted-foreground">
               <Trans>No sign-in providers are available right now.</Trans>
             </Text>
-            <Button onPress={() => void otaConfig.refetch()} variant="secondary">
+            <Button onPress={() => void oauthProviders.refetch()} variant="secondary">
               <Text>
                 <Trans>Try again</Trans>
               </Text>

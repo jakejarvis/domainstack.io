@@ -12,7 +12,6 @@
     "./tls": "./src/tls/index.ts",
     "./verification": "./src/verification/index.ts",
     "./whois": "./src/whois/index.ts",
-    "./edge-config": "./src/edge-config.ts",
     "./ttl": "./src/ttl.ts",
     "./cloudflare": "./src/cloudflare.ts"
   },
@@ -27,6 +26,7 @@
   "dependencies": {
     "@domainstack/constants": "workspace:*",
     "@domainstack/db": "workspace:*",
+    "@domainstack/edge-config": "workspace:*",
     "@domainstack/image": "workspace:*",
     "@domainstack/logger": "workspace:*",
     "@domainstack/redis": "workspace:*",
@@ -34,7 +34,6 @@
     "@domainstack/types": "workspace:*",
     "@domainstack/utils": "workspace:*",
     "@readme/http-status-codes": "^9.0.6",
-    "@vercel/edge-config": "^1.4.3",
     "cheerio": "^1.2.0",
     "ipaddr.js": "catalog:",
     "lru-cache": "catalog:",
@@ -43,14 +42,12 @@
   "devDependencies": {
     "@domainstack/tsconfig": "workspace:*",
     "@types/node": "catalog:",
-    "@types/react": "catalog:",
     "msw": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:"
   },
   "peerDependencies": {
-    "react": "^19.2.0",
     "zod": "catalog:"
   }
 }

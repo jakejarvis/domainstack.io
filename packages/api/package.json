@@ -22,6 +22,7 @@
     "@domainstack/billing": "workspace:*",
     "@domainstack/constants": "workspace:*",
     "@domainstack/db": "workspace:*",
+    "@domainstack/edge-config": "workspace:*",
     "@domainstack/email": "workspace:*",
     "@domainstack/logger": "workspace:*",
     "@domainstack/redis": "workspace:*",

@@ -33,7 +33,7 @@ catalog:
   lru-cache: ^11.4.0
   motion: ^12.39.0
   msw: ^2.14.6
-  posthog-js: ^1.374.0
+  posthog-js: ^1.374.1
   rdapper: ^0.13.0
   react: 19.2.6
   react-dom: 19.2.6

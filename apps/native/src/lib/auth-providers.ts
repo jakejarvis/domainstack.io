@@ -1,9 +1,12 @@
-import type { OtaConfigAuthProvider } from "@domainstack/auth/ota-config/client";
+import type { RouterOutputs } from "@domainstack/api";
 import {
   OAUTH_PROVIDER_METADATA,
   type OAuthProviderId,
   type OAuthProviderMetadata,
 } from "@domainstack/auth/providers";
+
+/** A configured OAuth provider as returned by the `auth.getOauthProviders` tRPC procedure. */
+export type AuthProviderSummary = RouterOutputs["auth"]["getOauthProviders"][number];
 
 export type NativeAuthPlatform = "android" | "ios" | "web" | "macos" | "windows";
 
@@ -20,6 +23,17 @@ export type NativeAuthProviderOption = {
 
 const providerMetadataById = new Map<OAuthProviderId, OAuthProviderMetadata>(
   OAUTH_PROVIDER_METADATA.map((provider) => [provider.id, provider]),
+);
+
+/**
+ * Provider list used when `auth.getOauthProviders` can't be reached (offline,
+ * DNS/TLS failure, server error). Offering the full set the app supports keeps
+ * users from being locked out of sign-in: a provider the server hasn't actually
+ * enabled just surfaces its own error at sign-in time, which is recoverable — a
+ * blank screen is not.
+ */
+export const FALLBACK_AUTH_PROVIDERS: readonly AuthProviderSummary[] = OAUTH_PROVIDER_METADATA.map(
+  ({ id, name }) => ({ id, name }),
 );
 
 export function canUseNativeGoogleAuthOnPlatform(
@@ -45,7 +59,7 @@ function canUseProviderIdentityToken(
 }
 
 export function getEnabledNativeAuthProviders(
-  authProviders: readonly OtaConfigAuthProvider[],
+  authProviders: readonly AuthProviderSummary[],
   googleConfig: GoogleNativeAuthConfig,
   options: { appleAuthAvailable?: boolean; platform?: NativeAuthPlatform } = {},
 ): NativeAuthProviderOption[] {

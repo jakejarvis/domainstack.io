@@ -3,10 +3,10 @@ import Constants from "expo-constants";
 import { useEffect, useState } from "react";
 import { Linking, Platform, View } from "react-native";
 
-import { getOtaConfig, OTA_CONFIG_QUERY_KEY } from "@/lib/auth";
+import { useTRPC } from "@/lib/api";
 import { toast } from "@/lib/toast";
 import { isVersionBelow } from "@/lib/version";
-import type { OtaConfigNativeApp } from "@domainstack/auth/ota-config/client";
+import type { RouterOutputs } from "@domainstack/api";
 
 import { Button } from "./button";
 import { Card } from "./card";
@@ -16,22 +16,24 @@ import { Text } from "./text";
 const STALE_TIME = 5 * 60 * 1000;
 const READINESS_TIMEOUT_MS = 2000;
 
-function useOtaConfigQuery() {
+type NativeAppConfig = NonNullable<RouterOutputs["app"]["getConfig"]>;
+
+function useNativeConfigQuery() {
+  const trpc = useTRPC();
   return useQuery({
-    queryFn: getOtaConfig,
-    queryKey: OTA_CONFIG_QUERY_KEY,
+    ...trpc.app.getConfig.queryOptions(),
     staleTime: STALE_TIME,
   });
 }
 
 /**
- * Resolves true once the OTA config query has settled (success or error — the
- * gate is fail-open) or after a 2s timeout so a hung config never holds the
- * splash forever. Splash hide gates on this.
+ * Resolves true once the native-config query has settled (success or error —
+ * the gate is fail-open) or after a 2s timeout so a hung request never holds
+ * the splash forever. Splash hide gates on this.
  */
 export function useVersionGateReady(): boolean {
-  const otaConfig = useOtaConfigQuery();
-  const settled = !otaConfig.isPending;
+  const nativeConfig = useNativeConfigQuery();
+  const settled = !nativeConfig.isPending;
   const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
@@ -44,9 +46,9 @@ export function useVersionGateReady(): boolean {
 }
 
 export function VersionGate({ children }: { children: React.ReactNode }) {
-  const otaConfig = useOtaConfigQuery();
+  const nativeConfig = useNativeConfigQuery();
 
-  const nativeApp = otaConfig.data?.nativeApp ?? null;
+  const nativeApp = nativeConfig.data ?? null;
   const currentVersion = Constants.expoConfig?.version;
   const shouldBlock =
     nativeApp !== null &&
@@ -60,7 +62,7 @@ export function VersionGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function UpdateRequiredScreen({ nativeApp }: { nativeApp: OtaConfigNativeApp }) {
+function UpdateRequiredScreen({ nativeApp }: { nativeApp: NativeAppConfig }) {
   const storeUrl = Platform.OS === "android" ? nativeApp.storeUrlAndroid : nativeApp.storeUrlIos;
 
   const openStore = () => {

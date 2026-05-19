@@ -1,4 +1,4 @@
-import { getDefaultSuggestions } from "@domainstack/server/edge-config";
+import { getDefaultSuggestions } from "@domainstack/edge-config";
 
 import { ChatClientLazy } from "./chat-client-lazy";
 

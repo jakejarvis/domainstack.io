@@ -11,7 +11,7 @@ export async function getModelStep(): Promise<CompatibleLanguageModel> {
   // Create the AI model instance
   const [{ createGateway }, { getAiChatModel }, { DEFAULT_CHAT_MODEL }] = await Promise.all([
     import("@ai-sdk/gateway"),
-    import("@domainstack/server/edge-config"),
+    import("@domainstack/edge-config"),
     import("@domainstack/constants"),
   ]);
   const gateway = createGateway({

@@ -63,7 +63,7 @@ export async function normalizeAndBuildResponseStep(
     { detectRegistrar, getProvidersFromCatalog },
     { upsertCatalogProvider, resolveOrCreateProviderId },
   ] = await Promise.all([
-    import("@domainstack/server/edge-config"),
+    import("@domainstack/edge-config"),
     import("@domainstack/utils/providers"),
     import("@domainstack/db/queries"),
   ]);

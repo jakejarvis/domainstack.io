@@ -45,7 +45,7 @@ export async function detectAndResolveProvidersStep(
     { upsertCatalogProvider, resolveOrCreateProviderId },
   ] = await Promise.all([
     import("@/lib/normalize-domain"),
-    import("@domainstack/server/edge-config"),
+    import("@domainstack/edge-config"),
     import("@domainstack/utils/providers"),
     import("@domainstack/db/queries"),
   ]);

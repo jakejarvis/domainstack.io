@@ -39,7 +39,7 @@ const mockCatalog = vi.hoisted(() => ({
   registrar: [],
 }));
 
-vi.mock("@domainstack/server/edge-config", () => ({
+vi.mock("@domainstack/edge-config", () => ({
   getProviderCatalog: vi
     .fn<(...args: unknown[]) => Promise<typeof mockCatalog>>()
     .mockResolvedValue(mockCatalog),

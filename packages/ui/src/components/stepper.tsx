@@ -47,6 +47,8 @@ interface StepItemContextValue {
   isLoading: boolean;
 }
 
+const EMPTY_STEP_INDICATORS: StepIndicators = {};
+
 const StepperContext = createContext<StepperContextValue | undefined>(undefined);
 const StepItemContext = createContext<StepItemContextValue | undefined>(undefined);
 
@@ -77,7 +79,7 @@ function Stepper({
   orientation = "horizontal",
   className,
   children,
-  indicators = {},
+  indicators = EMPTY_STEP_INDICATORS,
   ...rootProps
 }: StepperProps) {
   const [activeStep, setActiveStep] = useState(defaultValue);

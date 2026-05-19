@@ -46,6 +46,15 @@ void SplashScreen.preventAutoHideAsync();
 installGlobalErrorHandler();
 configureImageCache();
 
+// Absolute ceiling on time spent behind the native splash. The normal hide is
+// gated on session + version gate + i18n all settling; an unreachable backend
+// (e.g. `app.getConfig` never resolves, or the better-auth session fetch
+// hangs) can leave one of those gates pending forever, and a blocking version
+// gate means `RootNavigator` (which owns the gated hide) never even mounts.
+// This top-level deadline fires regardless, so the app always reaches its UI
+// and degrades gracefully from there.
+const SPLASH_MAX_WAIT_MS = 4000;
+
 function RootNavigator() {
   const screenOptions = useStackScreenOptions();
   const isDark = useColorScheme() === "dark";
@@ -250,6 +259,14 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
+  // Safety net independent of the gated hide in RootNavigator: this runs even
+  // when the version gate blocks (RootNavigator never mounts) or a network gate
+  // hangs. hideAsync is idempotent, so racing the gated hide is harmless.
+  useEffect(() => {
+    const id = setTimeout(() => void SplashScreen.hideAsync(), SPLASH_MAX_WAIT_MS);
+    return () => clearTimeout(id);
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <RootErrorBoundary>

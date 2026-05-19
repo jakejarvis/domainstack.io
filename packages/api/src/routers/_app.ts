@@ -1,6 +1,8 @@
 import type { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
 
 import { createCallerFactory, createTRPCRouter } from "../trpc";
+import { appRouter } from "./app";
+import { authRouter } from "./auth";
 import { domainRouter } from "./domain";
 import { notificationsRouter } from "./notifications";
 import { providerRouter } from "./provider";
@@ -14,6 +16,8 @@ export type AppRouterDeps = RegistrarRouterDeps & {
 
 export function createAppRouter(deps: AppRouterDeps) {
   return createTRPCRouter({
+    app: appRouter,
+    auth: authRouter,
     domain: domainRouter,
     notifications: notificationsRouter,
     provider: providerRouter,

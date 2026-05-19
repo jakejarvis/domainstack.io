@@ -8,11 +8,7 @@ import {
   NATIVE_ID_TOKEN_AUTH_PROVIDERS,
   NATIVE_AUTH_PROVIDERS,
   normalizeBaseUrl,
-  type NativeIdTokenAuthProvider,
-  type NativeAuthProvider,
 } from "./client-core";
-import { otaConfigClient, type OtaConfigClientActions } from "./ota-config-client";
-
 export type NativeAuthStorage = {
   getItem: (key: string) => string | null;
   setItem: (key: string, value: string) => unknown;
@@ -25,10 +21,9 @@ export type CreateNativeAuthClientOptions = {
   storagePrefix?: string;
 };
 
-export type NativeAuthClient = ReturnType<typeof createAuthClient> &
-  OtaConfigClientActions & {
-    getCookie: () => string;
-  };
+export type NativeAuthClient = ReturnType<typeof createAuthClient> & {
+  getCookie: () => string;
+};
 
 export function createNativeAuthClient({
   baseURL,
@@ -44,55 +39,8 @@ export function createNativeAuthClient({
         storage,
         storagePrefix,
       }),
-      otaConfigClient(),
     ],
   }) as NativeAuthClient;
-}
-
-export async function signInWithNativeProvider(
-  client: NativeAuthClient,
-  provider: NativeAuthProvider,
-  callbackURL: string,
-) {
-  return client.signIn.social({
-    provider,
-    callbackURL,
-  });
-}
-
-export async function signInWithAppleIdentityToken(
-  client: NativeAuthClient,
-  token: string,
-  callbackURL: string,
-  nonce?: string,
-) {
-  return signInWithProviderIdentityToken(client, "apple", token, callbackURL, nonce);
-}
-
-export async function signInWithGoogleIdentityToken(
-  client: NativeAuthClient,
-  token: string,
-  callbackURL: string,
-  nonce?: string,
-) {
-  return signInWithProviderIdentityToken(client, "google", token, callbackURL, nonce);
-}
-
-export async function signInWithProviderIdentityToken(
-  client: NativeAuthClient,
-  provider: NativeIdTokenAuthProvider,
-  token: string,
-  callbackURL: string,
-  nonce?: string,
-) {
-  return client.signIn.social({
-    provider,
-    idToken: {
-      token,
-      nonce,
-    },
-    callbackURL,
-  });
 }
 
 export function getNativeAuthCookieHeader(client: NativeAuthClient): string | null {

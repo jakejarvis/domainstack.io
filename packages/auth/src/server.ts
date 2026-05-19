@@ -27,10 +27,9 @@ import { addContact, removeContact, sendEmail } from "@domainstack/email";
 import DeleteAccountVerifyEmail from "@domainstack/email/templates/delete-account-verify";
 import { createLogger } from "@domainstack/logger";
 import { getRedis } from "@domainstack/redis";
-import { getNativeAppConfig } from "@domainstack/server/edge-config";
 
 import { AppleClientSecret, decodeApplePrivateKey } from "./apple-client-secret";
-import { otaConfig } from "./ota-config";
+import { getEnabledOAuthProviders } from "./oauth-config";
 import { buildOAuthProviders, validateOAuthCredentialPair } from "./providers";
 import { createRedisStorage } from "./storage";
 import type { OAuthCredentials } from "./types";
@@ -112,8 +111,15 @@ async function buildAppleCredentials(): Promise<OAuthCredentials | undefined> {
 
 const appleCredentials = await buildAppleCredentials();
 
+// `enabledProviders` (trustedProviders + the no-providers guard) comes from the
+// shared, env-only `getEnabledOAuthProviders()` so provider enablement has one
+// source of truth across the auth server and the `auth.getOauthProviders` tRPC
+// procedure. `buildOAuthProviders` still owns the live credential map (incl.
+// Apple's rotating secret) that Better Auth needs in `socialProviders`.
+const enabledProviders = getEnabledOAuthProviders().map((provider) => provider.id);
+
 // Build OAuth providers from env vars
-const { providers: socialProviders, enabledProviders } = buildOAuthProviders({
+const { providers: socialProviders } = buildOAuthProviders({
   apple: appleCredentials,
   github:
     process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
@@ -320,7 +326,6 @@ export const auth = betterAuth({
         ]
       : []),
     dash(),
-    otaConfig({ enabledProviders, getNativeApp: getNativeAppConfig }),
     expo(),
     // must be last: https://www.better-auth.com/docs/integrations/next#server-action-cookies
     nextCookies(),

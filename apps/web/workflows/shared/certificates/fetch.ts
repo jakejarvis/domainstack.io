@@ -62,7 +62,7 @@ export async function processChainStep(chainJson: string): Promise<CertificatesP
     { detectCertificateAuthority, getProvidersFromCatalog },
     { upsertCatalogProvider },
   ] = await Promise.all([
-    import("@domainstack/server/edge-config"),
+    import("@domainstack/edge-config"),
     import("@domainstack/utils/providers"),
     import("@domainstack/db/queries"),
   ]);
