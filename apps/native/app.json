@@ -226,6 +226,7 @@
       ],
       "expo-status-bar",
       "expo-localization",
+      "./plugins/with-share-extension-version.cjs",
       [
         "expo-share-intent",
         {
