@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { Link, useNavigation, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { NativeSyntheticEvent } from "react-native";
@@ -27,24 +28,27 @@ function SearchHero() {
   return (
     <View className="gap-1 px-1 pt-1">
       <Text className="text-3xl leading-tight font-semibold" style={{ letterSpacing: -0.7 }}>
-        Inspect any domain’s{" "}
-        <Text className="rounded-lg bg-accent-purple/15 px-1.5 text-3xl font-semibold text-accent-purple">
-          registration
-        </Text>
-        .
+        <Trans>
+          Inspect any domain’s{" "}
+          <Text className="rounded-lg bg-accent-purple/15 px-1.5 text-3xl font-semibold text-accent-purple">
+            registration
+          </Text>
+          .
+        </Trans>
       </Text>
       <Text className="text-sm text-muted-foreground">
-        WHOIS, DNS, hosting, certs, headers, SEO — one tap.
+        <Trans>WHOIS, DNS, hosting, certs, headers, SEO — one tap.</Trans>
       </Text>
     </View>
   );
 }
 
 function SuggestionChips({ onPick }: { onPick: (domain: string) => void }) {
+  const { t } = useLingui();
   return (
     <View className="gap-2">
       <Text variant="footnote" className="ml-1 text-muted-foreground">
-        Try
+        <Trans>Try</Trans>
       </Text>
       <ScrollView
         contentContainerStyle={{ gap: 8, paddingRight: 8 }}
@@ -53,7 +57,7 @@ function SuggestionChips({ onPick }: { onPick: (domain: string) => void }) {
       >
         {SUGGESTIONS.map((domain) => (
           <Pressable
-            accessibilityLabel={`Inspect ${domain}`}
+            accessibilityLabel={t`Inspect ${domain}`}
             accessibilityRole="button"
             key={domain}
             onPress={() => onPick(domain)}
@@ -73,6 +77,7 @@ function SuggestionChips({ onPick }: { onPick: (domain: string) => void }) {
 }
 
 export default function SearchScreen() {
+  const { t } = useLingui();
   const { push } = useRouter();
   const navigation = useNavigation();
   const [query, setQuery] = useState("");
@@ -95,7 +100,7 @@ export default function SearchScreen() {
       const normalized = normalizeDomainInput(text);
       if (!isValidDomain(normalized)) {
         analytics.track("search_invalid_input", { input: text });
-        toast.warning({ title: "Invalid domain", message: "Enter a hostname like example.com." });
+        toast.warning({ title: t`Invalid domain`, message: t`Enter a hostname like example.com.` });
         return;
       }
       analytics.track("search_submitted", { domain: normalized });
@@ -105,7 +110,7 @@ export default function SearchScreen() {
       // consistent when the user returns to this screen.
       openDomain(normalized);
     },
-    [openDomain],
+    [openDomain, t],
   );
 
   // Stable handlers → register the native search bar once instead of
@@ -127,9 +132,9 @@ export default function SearchScreen() {
 
   function handleClearAll() {
     void confirmDestructive({
-      confirmLabel: "Clear",
-      message: "This removes all entries from your history.",
-      title: "Clear recent searches?",
+      confirmLabel: t`Clear`,
+      message: t`This removes all entries from your history.`,
+      title: t`Clear recent searches?`,
     }).then((confirmed) => {
       if (confirmed) clearHistory();
     });
@@ -155,7 +160,7 @@ export default function SearchScreen() {
       {!hasHydrated ? <SkeletonRows count={3} /> : null}
 
       {hasHydrated && filtered.length > 0 ? (
-        <GroupedSection title={query.trim().length > 0 ? "Matches" : "Recent"}>
+        <GroupedSection title={query.trim().length > 0 ? t`Matches` : t`Recent`}>
           {filtered.map((item) => (
             <Link
               asChild
@@ -164,7 +169,7 @@ export default function SearchScreen() {
               onPress={() => addDomain(item)}
             >
               <Link.Trigger>
-                <Pressable accessibilityLabel={`Open report for ${item}`} accessibilityRole="link">
+                <Pressable accessibilityLabel={t`Open report for ${item}`} accessibilityRole="link">
                   <GroupedRow showChevron>
                     <Favicon domain={item} size={28} />
                     <Text className="flex-1 font-mono" numberOfLines={1}>
@@ -176,7 +181,7 @@ export default function SearchScreen() {
               <Link.Preview />
               <Link.Menu>
                 <Link.MenuAction destructive icon="trash" onPress={() => removeDomain(item)}>
-                  Remove from recent
+                  {t`Remove from recent`}
                 </Link.MenuAction>
               </Link.Menu>
             </Link>
@@ -187,24 +192,26 @@ export default function SearchScreen() {
       {hasHydrated && history.length > 0 && query.trim().length === 0 ? (
         <GroupedSection>
           <GroupedRow onPress={handleClearAll}>
-            <Text className="font-semibold text-destructive">Clear recents</Text>
+            <Text className="font-semibold text-destructive">
+              <Trans>Clear recents</Trans>
+            </Text>
           </GroupedRow>
         </GroupedSection>
       ) : null}
 
       {hasHydrated && history.length === 0 ? (
         <EmptyState
-          body="Tap the search bar above and enter a hostname to look up its registration, DNS, hosting, and certificate data."
+          body={t`Tap the search bar above and enter a hostname to look up its registration, DNS, hosting, and certificate data.`}
           icon={{ android: "search", ios: "magnifyingglass" }}
-          title="No recent searches"
+          title={t`No recent searches`}
         />
       ) : null}
 
       {hasHydrated && history.length > 0 && filtered.length === 0 ? (
         <EmptyState
-          body={`No recent searches match “${truncate(query.trim(), 40)}”.`}
+          body={t`No recent searches match “${truncate(query.trim(), 40)}”.`}
           icon={{ android: "search", ios: "magnifyingglass" }}
-          title="No matches"
+          title={t`No matches`}
         />
       ) : null}
     </Screen>
@@ -212,5 +219,6 @@ export default function SearchScreen() {
 }
 
 export function ErrorBoundary(props: ErrorBoundaryProps) {
-  return <ScreenErrorBoundary {...props} title="Couldn’t open search" />;
+  const { t } = useLingui();
+  return <ScreenErrorBoundary {...props} title={t`Couldn’t open search`} />;
 }

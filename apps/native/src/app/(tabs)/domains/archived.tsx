@@ -1,3 +1,4 @@
+import { useLingui } from "@lingui/react/macro";
 import { FlashList } from "@shopify/flash-list";
 import { useIsRestoring, useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
@@ -18,31 +19,13 @@ import { confirmDestructive } from "@/lib/native-confirm";
 
 const LIST_INPUT = { includeArchived: true } as const;
 
-// Fully static — hoisted so FlashList's header/empty aren't rebuilt each render.
-const ARCHIVED_LIST_HEADER = (
-  <View className="gap-4 px-4 pt-3 pb-2">
-    <Text className="text-sm text-muted-foreground">
-      Archived domains don’t count toward your plan limit. Reactivate to resume tracking.
-    </Text>
-  </View>
-);
-
-const ARCHIVED_LIST_EMPTY = (
-  <View className="px-4 pb-8">
-    <EmptyState
-      body="Archive domains from the detail screen to keep them here for later."
-      icon={{ android: "archive", ios: "archivebox" }}
-      title="No archived domains"
-    />
-  </View>
-);
-
 export default function ArchivedDomainsScreen() {
+  const { t } = useLingui();
   return (
     <RequireAuth
-      body="Sign in to view your archived domains."
+      body={t`Sign in to view your archived domains.`}
       loading={<SkeletonRows count={6} />}
-      title="Archived is locked"
+      title={t`Archived is locked`}
     >
       <ArchivedScreen />
     </RequireAuth>
@@ -50,13 +33,34 @@ export default function ArchivedDomainsScreen() {
 }
 
 export function ErrorBoundary(props: ErrorBoundaryProps) {
-  return <ScreenErrorBoundary {...props} title="Couldn’t load archived domains" />;
+  const { t } = useLingui();
+  return <ScreenErrorBoundary {...props} title={t`Couldn’t load archived domains`} />;
 }
 
 function ArchivedScreen() {
+  const { t } = useLingui();
   const trpc = useTRPC();
   const dashboard = useDashboardMutations();
   const [refreshing, setRefreshing] = useState(false);
+
+  // Built per-render so the localized copy updates on locale change; cheap.
+  const listHeader = (
+    <View className="gap-4 px-4 pt-3 pb-2">
+      <Text className="text-sm text-muted-foreground">
+        {t`Archived domains don’t count toward your plan limit. Reactivate to resume tracking.`}
+      </Text>
+    </View>
+  );
+
+  const listEmpty = (
+    <View className="px-4 pb-8">
+      <EmptyState
+        body={t`Archive domains from the detail screen to keep them here for later.`}
+        icon={{ android: "archive", ios: "archivebox" }}
+        title={t`No archived domains`}
+      />
+    </View>
+  );
 
   const isRestoring = useIsRestoring();
   const domainsQuery = useQuery(trpc.tracking.listDomains.queryOptions(LIST_INPUT));
@@ -94,14 +98,14 @@ function ArchivedScreen() {
   const handleRemove = useCallback(
     (domain: ArchivedRowDomain) => {
       void confirmDestructive({
-        confirmLabel: "Remove",
-        message: "This permanently removes the domain and any notification settings.",
-        title: `Remove ${domain.domainName}?`,
+        confirmLabel: t`Remove`,
+        message: t`This permanently removes the domain and any notification settings.`,
+        title: t`Remove ${domain.domainName}?`,
       }).then((confirmed) => {
         if (confirmed) void dashboard.remove(domain.id);
       });
     },
-    [dashboard],
+    [dashboard, t],
   );
 
   const renderItem = useCallback(
@@ -131,7 +135,7 @@ function ArchivedScreen() {
       <Screen>
         <QueryErrorState
           onRetry={() => void domainsQuery.refetch()}
-          title="Couldn’t load archived domains"
+          title={t`Couldn’t load archived domains`}
         />
       </Screen>
     );
@@ -139,8 +143,8 @@ function ArchivedScreen() {
 
   return (
     <FlashList
-      ListEmptyComponent={ARCHIVED_LIST_EMPTY}
-      ListHeaderComponent={ARCHIVED_LIST_HEADER}
+      ListEmptyComponent={listEmpty}
+      ListHeaderComponent={listHeader}
       contentContainerStyle={{ paddingBottom: 32 }}
       contentInsetAdjustmentBehavior="automatic"
       data={archivedDomains}

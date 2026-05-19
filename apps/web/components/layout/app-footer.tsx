@@ -1,6 +1,7 @@
 "use client";
 
 import { SiModelcontextprotocol, SiRaycast } from "@icons-pack/react-simple-icons";
+import { Trans, useLingui } from "@lingui/react/macro";
 import {
   IconBookmark,
   IconBookmarks,
@@ -32,6 +33,7 @@ import {
 } from "@domainstack/ui/dropdown-menu";
 
 export function AppFooter() {
+  const { t } = useLingui();
   const [isBookmarkletsOpen, setIsBookmarkletsOpen] = useState(false);
   const handleBookmarkletsOpenChange = (open: boolean) => {
     setIsBookmarkletsOpen(open);
@@ -48,13 +50,13 @@ export function AppFooter() {
         <div className="flex flex-wrap items-center justify-center gap-x-[1.25em] gap-y-2 [&_a]:whitespace-nowrap">
           <Link href="/help">
             <IconLifebuoy className="text-muted-foreground" />
-            Help
+            <Trans>Help</Trans>
           </Link>
 
           <DropdownMenu>
             <DropdownMenuTrigger className="inline-flex cursor-pointer items-center gap-1 text-foreground/85 hover:text-foreground/60">
               <IconPuzzle className="size-4 px-[1px] text-muted-foreground" />
-              Integrations
+              <Trans>Integrations</Trans>
               <BetaBadge className="ml-[1px] px-1.5 py-0 text-[11px] tracking-normal" />
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -68,7 +70,7 @@ export function AppFooter() {
                 render={
                   <Link href="/mcp">
                     <SiModelcontextprotocol className="text-muted-foreground" />
-                    MCP Server
+                    <Trans>MCP Server</Trans>
                   </Link>
                 }
               />
@@ -78,7 +80,7 @@ export function AppFooter() {
                 onClick={() => setIsBookmarkletsOpen(true)}
               >
                 <IconBookmarks className="text-muted-foreground" />
-                Bookmarklet
+                <Trans>Bookmarklet</Trans>
               </DropdownMenuItem>
               <DropdownMenuItem
                 nativeButton={false}
@@ -90,7 +92,7 @@ export function AppFooter() {
                     data-disable-progress
                   >
                     <IconBrandApple className="text-muted-foreground" />
-                    Shortcut
+                    <Trans>Shortcut</Trans>
                     <IconExternalLink className="ml-auto size-3.5 translate-y-[-1px] text-muted-foreground" />
                   </a>
                 }
@@ -101,7 +103,7 @@ export function AppFooter() {
                 render={
                   <span>
                     <SiRaycast className="text-muted-foreground" />
-                    Raycast (soon)
+                    <Trans>Raycast (soon)</Trans>
                     <IconExternalLink className="ml-auto size-3.5 translate-y-[-1px] text-muted-foreground" />
                   </span>
                 }
@@ -112,18 +114,18 @@ export function AppFooter() {
 
           <Link href="/terms">
             <IconGavel className="text-muted-foreground" />
-            Terms
+            <Trans>Terms</Trans>
           </Link>
 
           <Link href="/privacy">
             <IconCookie className="text-muted-foreground" />
-            Privacy
+            <Trans>Privacy</Trans>
           </Link>
 
           <LocaleSwitcher />
         </div>
         <div>
-          Made with{" "}
+          {t`Made with`}{" "}
           <motion.div
             className={"inline-flex translate-y-[3px] will-change-transform"}
             animate={{ scale: [1, 1.15, 1, 1.15, 1, 1] }}
@@ -135,7 +137,7 @@ export function AppFooter() {
           >
             <IconHeart className="fill-destructive stroke-destructive" />
           </motion.div>{" "}
-          by{" "}
+          {t`by`}{" "}
           <a href="https://jarv.is/" target="_blank" rel="noopener">
             @jakejarvis
           </a>
@@ -147,12 +149,14 @@ export function AppFooter() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-1.5 text-base font-medium tracking-tight">
               <IconBookmark className="size-4 text-muted-foreground" />
-              Bookmarklet
+              <Trans>Bookmarklet</Trans>
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Drag the button below to your bookmarks bar. Then, press it on any site and the report
-            for that domain will open in a new tab, like magic!
+            <Trans>
+              Drag the button below to your bookmarks bar. Then, press it on any site and the report
+              for that domain will open in a new tab, like magic!
+            </Trans>
           </p>
           <div className="my-2 flex justify-center">
             <Button
@@ -161,14 +165,14 @@ export function AppFooter() {
               render={<a ref={hrefScript} href="#" />}
               onClick={(e) => {
                 e.preventDefault();
-                toast.info("Drag the button to your bookmarks bar to use it.", {
+                toast.info(t`Drag the button to your bookmarks bar to use it.`, {
                   icon: <IconCornerLeftUp className="size-4" />,
                   position: "top-center",
                 });
               }}
             >
               <IconWorld />
-              Inspect Domain
+              <Trans>Inspect Domain</Trans>
             </Button>
           </div>
         </DialogContent>

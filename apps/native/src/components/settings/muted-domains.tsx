@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Link, router } from "expo-router";
 import { Pressable, View } from "react-native";
@@ -20,12 +21,14 @@ const LIST_INPUT = { includeArchived: true } as const;
 const MUTED_PREVIEW_LIMIT = 25;
 
 export function MutedDomainsSection() {
+  const { t } = useLingui();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const { data } = useSuspenseQuery(trpc.tracking.listDomains.queryOptions(LIST_INPUT));
   const muted = data.filter((entry) => entry.muted);
   const visibleMuted = muted.slice(0, MUTED_PREVIEW_LIMIT);
   const overflowCount = muted.length - visibleMuted.length;
+  const mutedCount = muted.length;
 
   const setMuted = useMutation(
     trpc.user.setDomainMuted.mutationOptions({
@@ -36,9 +39,9 @@ export function MutedDomainsSection() {
 
   async function handleUnmute(id: string, domainName: string) {
     const accepted = await confirm({
-      confirmLabel: "Unmute",
-      message: `You’ll start receiving notifications for ${domainName} again.`,
-      title: `Unmute ${domainName}?`,
+      confirmLabel: t`Unmute`,
+      message: t`You’ll start receiving notifications for ${domainName} again.`,
+      title: t`Unmute ${domainName}?`,
     });
     if (!accepted) return;
     try {
@@ -49,63 +52,67 @@ export function MutedDomainsSection() {
       if (isOfflineError(error)) {
         analytics.trackException(error, { context: "unmute_domain", offline: true });
       }
-      toastMutationError("Unmute failed", error);
+      toastMutationError(t`Unmute failed`, error);
     }
   }
 
   if (muted.length === 0) {
     return (
       <GroupedSection
-        footer="Mute a domain from its detail screen to silence its notifications."
-        title="Muted domains"
+        footer={t`Mute a domain from its detail screen to silence its notifications.`}
+        title={t`Muted domains`}
       />
     );
   }
 
   return (
-    <GroupedSection title="Muted domains">
-      {visibleMuted.map((entry) => (
-        <Link
-          asChild
-          href={{
-            params: { domain: entry.domainName },
-            pathname: "/(tabs)/domains/[domain]",
-          }}
-          key={entry.id}
-        >
-          <Link.Trigger>
-            <Pressable accessibilityLabel={`Open ${entry.domainName}`} accessibilityRole="link">
-              <GroupedRow
-                trailing={
-                  <Button
-                    disabled={setMuted.isPending}
-                    onPress={() => void handleUnmute(entry.id, entry.domainName)}
-                    variant="secondary"
-                  >
-                    <Text>Unmute</Text>
-                  </Button>
-                }
-              >
-                <Text className="font-semibold" numberOfLines={1}>
-                  {entry.domainName}
-                </Text>
-              </GroupedRow>
-            </Pressable>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction
-              icon="bell"
-              onPress={() => void handleUnmute(entry.id, entry.domainName)}
-            >
-              Unmute notifications
-            </Link.MenuAction>
-          </Link.Menu>
-        </Link>
-      ))}
+    <GroupedSection title={t`Muted domains`}>
+      {visibleMuted.map((entry) => {
+        const domainName = entry.domainName;
+        return (
+          <Link
+            asChild
+            href={{
+              params: { domain: domainName },
+              pathname: "/(tabs)/domains/[domain]",
+            }}
+            key={entry.id}
+          >
+            <Link.Trigger>
+              <Pressable accessibilityLabel={t`Open ${domainName}`} accessibilityRole="link">
+                <GroupedRow
+                  trailing={
+                    <Button
+                      disabled={setMuted.isPending}
+                      onPress={() => void handleUnmute(entry.id, domainName)}
+                      variant="secondary"
+                    >
+                      <Text>
+                        <Trans>Unmute</Trans>
+                      </Text>
+                    </Button>
+                  }
+                >
+                  <Text className="font-semibold" numberOfLines={1}>
+                    {domainName}
+                  </Text>
+                </GroupedRow>
+              </Pressable>
+            </Link.Trigger>
+            <Link.Preview />
+            <Link.Menu>
+              <Link.MenuAction icon="bell" onPress={() => void handleUnmute(entry.id, domainName)}>
+                {t`Unmute notifications`}
+              </Link.MenuAction>
+            </Link.Menu>
+          </Link>
+        );
+      })}
       {overflowCount > 0 ? (
         <GroupedRow onPress={() => router.push("/(tabs)/domains")} showChevron>
-          <Text className="font-semibold">View all {muted.length} muted in Portfolio</Text>
+          <Text className="font-semibold">
+            <Trans>View all {mutedCount} muted in Portfolio</Trans>
+          </Text>
         </GroupedRow>
       ) : null}
     </GroupedSection>
@@ -113,8 +120,9 @@ export function MutedDomainsSection() {
 }
 
 export function MutedDomainsSectionSkeleton() {
+  const { t } = useLingui();
   return (
-    <GroupedSection title="Muted domains">
+    <GroupedSection title={t`Muted domains`}>
       <View className="gap-2 p-3">
         {["muted-skeleton-a", "muted-skeleton-b", "muted-skeleton-c"].map((key) => (
           <View className="h-10 rounded-xl bg-muted" key={key} />

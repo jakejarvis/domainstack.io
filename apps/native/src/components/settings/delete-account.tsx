@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { type Href, router } from "expo-router";
 
 import { GroupedRow } from "@/components/form/group";
@@ -7,13 +8,14 @@ import { confirm } from "@/lib/native-confirm";
 const DELETE_ACCOUNT_ROUTE = "/delete-account" as Href;
 
 export function DeleteAccountRow() {
+  const { t } = useLingui();
+
   async function handlePress() {
     const accepted = await confirm({
-      confirmLabel: "Delete",
+      confirmLabel: t`Delete`,
       destructive: true,
-      message:
-        "This action cannot be undone. We’ll send a confirmation link to your email; clicking it will permanently delete your account, tracked domains, notification preferences, and any active subscription.",
-      title: "Delete your account?",
+      message: t`This action cannot be undone. We’ll send a confirmation link to your email; clicking it will permanently delete your account, tracked domains, notification preferences, and any active subscription.`,
+      title: t`Delete your account?`,
     });
     if (!accepted) return;
     router.push(DELETE_ACCOUNT_ROUTE);
@@ -21,7 +23,9 @@ export function DeleteAccountRow() {
 
   return (
     <GroupedRow onPress={handlePress}>
-      <Text className="font-semibold text-destructive">Delete account</Text>
+      <Text className="font-semibold text-destructive">
+        <Trans>Delete account</Trans>
+      </Text>
     </GroupedRow>
   );
 }

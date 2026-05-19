@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
@@ -31,6 +32,7 @@ const STORE_SUBSCRIPTIONS_URL =
     : "https://play.google.com/store/account/subscriptions";
 
 export function BillingSection() {
+  const { t } = useLingui();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const subscriptionKey = trpc.user.getSubscription.queryKey();
@@ -39,6 +41,9 @@ export function BillingSection() {
   const plan = subscription.data?.plan;
   const provider = subscription.data?.provider ?? null;
   const purchasesEnabled = isPurchasesEnabled();
+  const activeCount = subscription.data?.activeCount;
+  const planQuota = subscription.data?.planQuota;
+  const accessEndsDate = subscription.data?.endsAt ? formatDate(subscription.data.endsAt) : null;
 
   const [busyPackageId, setBusyPackageId] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
@@ -78,12 +83,12 @@ export function BillingSection() {
       const { cancelled } = await purchaseProPackage(pkg);
       if (!cancelled) {
         refreshSubscription();
-        toast.success({ title: "Welcome to Pro", message: "Your subscription is active." });
+        toast.success({ title: t`Welcome to Pro`, message: t`Your subscription is active.` });
       }
     } catch (error) {
       toast.error({
-        title: "Purchase failed",
-        message: error instanceof Error ? error.message : "Please try again.",
+        title: t`Purchase failed`,
+        message: error instanceof Error ? error.message : t`Please try again.`,
       });
     } finally {
       setBusyPackageId(null);
@@ -97,14 +102,14 @@ export function BillingSection() {
       analytics.track("purchases_restored");
       if (restored) {
         refreshSubscription();
-        toast.success({ title: "Purchases restored" });
+        toast.success({ title: t`Purchases restored` });
       } else {
-        toast.info({ title: "Nothing to restore", message: "No active purchases were found." });
+        toast.info({ title: t`Nothing to restore`, message: t`No active purchases were found.` });
       }
     } catch (error) {
       toast.error({
-        title: "Restore failed",
-        message: error instanceof Error ? error.message : "Please try again.",
+        title: t`Restore failed`,
+        message: error instanceof Error ? error.message : t`Please try again.`,
       });
     } finally {
       setRestoring(false);
@@ -122,7 +127,7 @@ export function BillingSection() {
   }
 
   return (
-    <GroupedSection title="Plan">
+    <GroupedSection title={t`Plan`}>
       <View className="gap-3 p-4">
         {subscription.isPending ? (
           <SkeletonRows count={1} />
@@ -130,11 +135,13 @@ export function BillingSection() {
           <>
             <Text className="text-lg font-semibold">{subscription.data.plan}</Text>
             <Text className="text-sm text-muted-foreground">
-              {subscription.data.activeCount} of {subscription.data.planQuota} active domains used
+              <Trans>
+                {activeCount} of {planQuota} active domains used
+              </Trans>
             </Text>
-            {subscription.data.endsAt ? (
+            {accessEndsDate ? (
               <Text className="text-sm text-muted-foreground">
-                Access ends {formatDate(subscription.data.endsAt)}
+                <Trans>Access ends {accessEndsDate}</Trans>
               </Text>
             ) : null}
 
@@ -144,51 +151,67 @@ export function BillingSection() {
               // manage the existing subscription.
               <>
                 <Text className="text-sm text-muted-foreground">
-                  You’re subscribed through the web app. Manage your subscription at domainstack.io.
+                  <Trans>
+                    You’re subscribed through the web app. Manage your subscription at
+                    domainstack.io.
+                  </Trans>
                 </Text>
                 <Button variant="secondary" onPress={() => void handleManageOnWeb()}>
-                  <Text>Manage on domainstack.io</Text>
+                  <Text>
+                    <Trans>Manage on domainstack.io</Trans>
+                  </Text>
                 </Button>
               </>
             ) : plan === "pro" ? (
               <Button variant="secondary" onPress={() => void handleManageOnStore()}>
-                <Text>Manage subscription</Text>
+                <Text>
+                  <Trans>Manage subscription</Trans>
+                </Text>
               </Button>
             ) : !purchasesEnabled ? (
               <Text className="text-sm text-muted-foreground">
-                In-app purchases are unavailable right now. Please try again later.
+                <Trans>In-app purchases are unavailable right now. Please try again later.</Trans>
               </Text>
             ) : offering.isPending ? (
               <SkeletonRows count={1} />
             ) : !offering.data ? (
               <Text className="text-sm text-muted-foreground">
-                In-app purchases are unavailable right now. Please try again later.
+                <Trans>In-app purchases are unavailable right now. Please try again later.</Trans>
               </Text>
             ) : (
               <>
-                {offering.data.availablePackages.map((pkg) => (
-                  <Button
-                    key={pkg.identifier}
-                    loading={busyPackageId === pkg.identifier}
-                    disabled={busyPackageId !== null || restoring}
-                    onPress={() => void handlePurchase(pkg)}
-                  >
-                    <Text>Upgrade to Pro — {pkg.product.priceString}</Text>
-                  </Button>
-                ))}
+                {offering.data.availablePackages.map((pkg) => {
+                  const priceString = pkg.product.priceString;
+                  return (
+                    <Button
+                      key={pkg.identifier}
+                      loading={busyPackageId === pkg.identifier}
+                      disabled={busyPackageId !== null || restoring}
+                      onPress={() => void handlePurchase(pkg)}
+                    >
+                      <Text>
+                        <Trans>Upgrade to Pro — {priceString}</Trans>
+                      </Text>
+                    </Button>
+                  );
+                })}
                 <Button
                   variant="ghost"
                   loading={restoring}
                   disabled={busyPackageId !== null}
                   onPress={() => void handleRestore()}
                 >
-                  <Text>Restore purchases</Text>
+                  <Text>
+                    <Trans>Restore purchases</Trans>
+                  </Text>
                 </Button>
               </>
             )}
           </>
         ) : (
-          <Text className="text-sm text-muted-foreground">Plan details are unavailable.</Text>
+          <Text className="text-sm text-muted-foreground">
+            <Trans>Plan details are unavailable.</Trans>
+          </Text>
         )}
       </View>
     </GroupedSection>

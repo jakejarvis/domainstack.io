@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { useEffect, useState } from "react";
@@ -31,6 +32,7 @@ function isAuthCanceled(error: unknown): boolean {
 }
 
 export function LinkedAccountsSection() {
+  const { t } = useLingui();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const iconColor = useCSSVariable("--color-foreground") as string;
@@ -97,13 +99,13 @@ export function LinkedAccountsSection() {
         throw new Error(result.error.message ?? `Unable to link ${provider.id}.`);
       }
       await invalidateLinkedAccounts();
-      toast.success("Account linked");
+      toast.success(t`Account linked`);
     } catch (error) {
       if (!isAuthCanceled(error)) {
         analytics.trackException(error, { action: "link_account", provider: provider.id });
         toast.error({
-          title: "Could not link account",
-          message: error instanceof Error ? error.message : "Unable to link this provider.",
+          title: t`Could not link account`,
+          message: error instanceof Error ? error.message : t`Unable to link this provider.`,
         });
       }
     } finally {
@@ -113,10 +115,10 @@ export function LinkedAccountsSection() {
 
   async function handleUnlink(provider: AuthProvider) {
     const accepted = await confirm({
-      confirmLabel: "Unlink",
+      confirmLabel: t`Unlink`,
       destructive: true,
-      message: `You won’t be able to sign in with ${provider} again until you re-link it.`,
-      title: `Unlink ${provider}?`,
+      message: t`You won’t be able to sign in with ${provider} again until you re-link it.`,
+      title: t`Unlink ${provider}?`,
     });
     if (!accepted) return;
     setUnlinkingProvider(provider);
@@ -127,8 +129,8 @@ export function LinkedAccountsSection() {
       }
     } catch (error) {
       analytics.trackException(error, { action: "unlink_account", provider });
-      const message = error instanceof Error ? error.message : "Unable to unlink this provider.";
-      toast.error({ title: "Could not unlink account", message });
+      const message = error instanceof Error ? error.message : t`Unable to unlink this provider.`;
+      toast.error({ title: t`Could not unlink account`, message });
     } finally {
       setUnlinkingProvider(null);
     }
@@ -136,9 +138,11 @@ export function LinkedAccountsSection() {
 
   if (otaConfig.isPending || linkedAccounts.isPending) {
     return (
-      <GroupedSection title="Sign-in methods">
+      <GroupedSection title={t`Sign-in methods`}>
         <View className="p-3">
-          <Text className="text-sm text-muted-foreground">Loading providers…</Text>
+          <Text className="text-sm text-muted-foreground">
+            <Trans>Loading providers…</Trans>
+          </Text>
         </View>
       </GroupedSection>
     );
@@ -146,10 +150,10 @@ export function LinkedAccountsSection() {
 
   if (providerOptions.length === 0) {
     return (
-      <GroupedSection title="Sign-in methods">
+      <GroupedSection title={t`Sign-in methods`}>
         <View className="p-3">
           <Text className="text-sm text-muted-foreground">
-            No sign-in providers are available right now.
+            <Trans>No sign-in providers are available right now.</Trans>
           </Text>
         </View>
       </GroupedSection>
@@ -158,8 +162,8 @@ export function LinkedAccountsSection() {
 
   return (
     <GroupedSection
-      footer="Add a second sign-in method so you can recover access even if one provider is unavailable."
-      title="Sign-in methods"
+      footer={t`Add a second sign-in method so you can recover access even if one provider is unavailable.`}
+      title={t`Sign-in methods`}
     >
       {providerOptions.map((provider) => {
         const isLinked = linkedProviderIds.has(provider.id);
@@ -175,7 +179,9 @@ export function LinkedAccountsSection() {
                   onPress={() => void handleUnlink(provider.id)}
                   variant="secondary"
                 >
-                  <Text>Unlink</Text>
+                  <Text>
+                    <Trans>Unlink</Trans>
+                  </Text>
                 </Button>
               ) : (
                 <Button
@@ -183,7 +189,9 @@ export function LinkedAccountsSection() {
                   onPress={() => void handleLink(provider)}
                   variant="primary"
                 >
-                  <Text>Link</Text>
+                  <Text>
+                    <Trans>Link</Trans>
+                  </Text>
                 </Button>
               )
             }
@@ -195,7 +203,7 @@ export function LinkedAccountsSection() {
               </Text>
               {isLinked && unlinkDisabled ? (
                 <Text className="text-xs text-muted-foreground">
-                  Must keep at least one sign-in method.
+                  <Trans>Must keep at least one sign-in method.</Trans>
                 </Text>
               ) : null}
             </View>

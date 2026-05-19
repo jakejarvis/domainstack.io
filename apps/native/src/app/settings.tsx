@@ -1,4 +1,7 @@
 import { Host, Switch as NativeSwitch } from "@expo/ui";
+import { type MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useFocusEffect } from "expo-router";
 import { Suspense, useCallback, useRef, useState } from "react";
@@ -44,18 +47,19 @@ type PreferenceKey =
 
 type Channel = "inApp" | "email" | "push";
 
-const preferenceLabels: Array<{ key: PreferenceKey; label: string }> = [
-  { key: "domainExpiry", label: "Domain expiry" },
-  { key: "certificateExpiry", label: "Certificate expiry" },
-  { key: "registrationChanges", label: "Registration changes" },
-  { key: "providerChanges", label: "Provider changes" },
-  { key: "certificateChanges", label: "Certificate changes" },
+// Module scope → use `msg` (lazy) and resolve with `t(...)` at render time.
+const preferenceLabels: Array<{ key: PreferenceKey; label: MessageDescriptor }> = [
+  { key: "domainExpiry", label: msg`Domain expiry` },
+  { key: "certificateExpiry", label: msg`Certificate expiry` },
+  { key: "registrationChanges", label: msg`Registration changes` },
+  { key: "providerChanges", label: msg`Provider changes` },
+  { key: "certificateChanges", label: msg`Certificate changes` },
 ];
 
-const channels: Array<{ key: Channel; title: string }> = [
-  { key: "inApp", title: "In-app" },
-  { key: "email", title: "Email" },
-  { key: "push", title: "Push" },
+const channels: Array<{ key: Channel; title: MessageDescriptor }> = [
+  { key: "inApp", title: msg`In-app notifications` },
+  { key: "email", title: msg`Email notifications` },
+  { key: "push", title: msg`Push notifications` },
 ];
 
 function NativeToggle({
@@ -77,6 +81,7 @@ function NativeToggle({
 export { ScreenErrorBoundary as ErrorBoundary } from "@/components/screen-error-boundary";
 
 export default function SettingsScreen() {
+  const { t } = useLingui();
   const calendarSheetRef = useRef<AppBottomSheetRef | null>(null);
   const [failedSections, setFailedSections] = useState<ReadonlySet<string>>(() => new Set());
 
@@ -94,8 +99,10 @@ export default function SettingsScreen() {
     <Screen>
       {failedSections.size > 2 ? (
         <Callout variant="warn">
-          Several settings sections couldn’t load. Pull down to refresh, or retry them individually
-          below.
+          <Trans>
+            Several settings sections couldn’t load. Pull down to refresh, or retry them
+            individually below.
+          </Trans>
         </Callout>
       ) : null}
       <SectionErrorReporterContext.Provider value={reportSectionError}>
@@ -131,8 +138,8 @@ export default function SettingsScreen() {
 
         <SectionErrorBoundary sectionName="Danger zone">
           <GroupedSection
-            footer="Deletes your account, tracked domains, notification preferences, and any active subscription. This action cannot be undone."
-            title="Danger zone"
+            footer={t`Deletes your account, tracked domains, notification preferences, and any active subscription. This action cannot be undone.`}
+            title={t`Danger zone`}
           >
             <DeleteAccountRow />
           </GroupedSection>
@@ -145,16 +152,23 @@ export default function SettingsScreen() {
 }
 
 function CalendarFeedSection({ onOpen }: { onOpen: () => void }) {
+  const { t } = useLingui();
   return (
-    <GroupedSection footer="Add your domain expirations to your phone's calendar." title="Calendar">
+    <GroupedSection
+      footer={t`Add your domain expirations to your phone's calendar.`}
+      title={t`Calendar`}
+    >
       <GroupedRow onPress={onOpen} showChevron>
-        <Text className="font-semibold">Manage calendar</Text>
+        <Text className="font-semibold">
+          <Trans>Manage calendar</Trans>
+        </Text>
       </GroupedRow>
     </GroupedSection>
   );
 }
 
 function NotificationChannelsSection() {
+  const { t } = useLingui();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const preferences = useQuery(trpc.user.getNotificationPreferences.queryOptions());
@@ -177,7 +191,7 @@ function NotificationChannelsSection() {
       onError: (err, _vars, ctx) => {
         const previous = (ctx as { previous?: Prefs } | undefined)?.previous;
         if (previous) queryClient.setQueryData(prefsKey, previous);
-        toastMutationError("Couldn’t update notifications", err);
+        toastMutationError(t`Couldn’t update notifications`, err);
       },
       onSettled: () => queryClient.invalidateQueries({ queryKey: prefsKey }),
     }),
@@ -185,7 +199,7 @@ function NotificationChannelsSection() {
 
   if (preferences.isPending) {
     return (
-      <GroupedSection title="Notifications">
+      <GroupedSection title={t`Notifications`}>
         <View className="p-3">
           <SkeletonRows count={3} />
         </View>
@@ -195,13 +209,15 @@ function NotificationChannelsSection() {
 
   if (preferences.error || !preferences.data) {
     return (
-      <GroupedSection title="Notifications">
+      <GroupedSection title={t`Notifications`}>
         <View className="gap-3 p-3">
           <Text className="text-sm text-muted-foreground">
-            {preferences.error?.message ?? "Preferences did not load."}
+            {preferences.error?.message ?? t`Preferences did not load.`}
           </Text>
           <Button onPress={() => void preferences.refetch()} variant="secondary">
-            <Text>Try again</Text>
+            <Text>
+              <Trans>Try again</Trans>
+            </Text>
           </Button>
         </View>
       </GroupedSection>
@@ -213,7 +229,7 @@ function NotificationChannelsSection() {
   return (
     <View className="gap-6">
       {channels.map((channel) => (
-        <GroupedSection key={channel.key} title={`${channel.title} notifications`}>
+        <GroupedSection key={channel.key} title={t(channel.title)}>
           {preferenceLabels.map((pref) => (
             <GroupedRow
               key={pref.key}
@@ -228,7 +244,7 @@ function NotificationChannelsSection() {
                 />
               }
             >
-              <Text className="font-semibold">{pref.label}</Text>
+              <Text className="font-semibold">{t(pref.label)}</Text>
             </GroupedRow>
           ))}
         </GroupedSection>
@@ -238,6 +254,7 @@ function NotificationChannelsSection() {
 }
 
 function PushDeviceSection() {
+  const { t } = useLingui();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const pushRegistration = usePushRegistration();
@@ -255,11 +272,11 @@ function PushDeviceSection() {
     const outcome = await pushRegistration.register();
     refreshPermission();
     if (outcome === "granted") {
-      toast.success("This device is registered for notifications.");
+      toast.success(t`This device is registered for notifications.`);
     } else if (outcome === "error") {
       toast.error({
-        title: "Couldn’t register device",
-        message: "Something went wrong. Please try again.",
+        title: t`Couldn’t register device`,
+        message: t`Something went wrong. Please try again.`,
       });
     }
     // "denied"/"undetermined": the recovery notice below now reflects it.
@@ -286,7 +303,7 @@ function PushDeviceSection() {
       onError: (err, _vars, ctx) => {
         const previous = (ctx as { previous?: Devices } | undefined)?.previous;
         if (previous) queryClient.setQueryData(devicesKey, previous);
-        toastMutationError("Couldn’t update device", err);
+        toastMutationError(t`Couldn’t update device`, err);
       },
       onSettled: invalidateDevices,
     }),
@@ -294,7 +311,7 @@ function PushDeviceSection() {
   const unregisterDevice = useMutation(
     trpc.user.unregisterPushDevice.mutationOptions({
       onSuccess: invalidateDevices,
-      onError: (err) => toastMutationError("Couldn’t unregister device", err),
+      onError: (err) => toastMutationError(t`Couldn’t unregister device`, err),
     }),
   );
 
@@ -302,18 +319,23 @@ function PushDeviceSection() {
     <View className="gap-6">
       {permission === "denied" ? (
         <GroupedSection
-          footer="Notifications are turned off for Domainstack. Enable them in Settings, then come back."
-          title="This device"
+          footer={t`Notifications are turned off for Domainstack. Enable them in Settings, then come back.`}
+          title={t`This device`}
         >
           <GroupedRow onPress={() => void Linking.openSettings()}>
-            <Text className="font-semibold">Open Settings</Text>
+            <Text className="font-semibold">
+              <Trans>Open Settings</Trans>
+            </Text>
           </GroupedRow>
         </GroupedSection>
       ) : (
-        <GroupedSection footer="Receive push notifications on this device." title="This device">
+        <GroupedSection
+          footer={t`Receive push notifications on this device.`}
+          title={t`This device`}
+        >
           <GroupedRow disabled={pushRegistration.registering} onPress={() => void handleRegister()}>
             <Text className="font-semibold">
-              {pushRegistration.registering ? "Registering…" : "Register this device"}
+              {pushRegistration.registering ? t`Registering…` : t`Register this device`}
             </Text>
           </GroupedRow>
         </GroupedSection>
@@ -338,15 +360,17 @@ function PushDeviceSection() {
               />
             }
           >
-            <Text className="font-semibold">Enabled</Text>
+            <Text className="font-semibold">
+              <Trans>Enabled</Trans>
+            </Text>
           </GroupedRow>
           <GroupedRow
             disabled={unregisterDevice.isPending}
             onPress={() =>
               void confirmDestructive({
-                confirmLabel: "Unregister",
-                message: "Push notifications will stop on this device.",
-                title: "Unregister device?",
+                confirmLabel: t`Unregister`,
+                message: t`Push notifications will stop on this device.`,
+                title: t`Unregister device?`,
               }).then((confirmed) => {
                 if (confirmed) {
                   void unregisterDevice.mutateAsync({ expoPushToken: device.expoPushToken });
@@ -354,7 +378,9 @@ function PushDeviceSection() {
               })
             }
           >
-            <Text className="font-semibold text-destructive">Unregister</Text>
+            <Text className="font-semibold text-destructive">
+              <Trans>Unregister</Trans>
+            </Text>
           </GroupedRow>
         </GroupedSection>
       ))}
@@ -368,9 +394,10 @@ function PrivacySection() {
   const hasHydrated = usePrivacyStore((state) => state.hasHydrated);
   const setAnalyticsEnabled = usePrivacyStore((state) => state.setAnalyticsEnabled);
   const setErrorCaptureEnabled = usePrivacyStore((state) => state.setErrorCaptureEnabled);
+  const { t } = useLingui();
 
   return (
-    <GroupedSection title="Privacy">
+    <GroupedSection title={t`Privacy`}>
       <GroupedRow
         trailing={
           <NativeToggle
@@ -380,7 +407,9 @@ function PrivacySection() {
           />
         }
       >
-        <Text className="font-semibold">Product analytics</Text>
+        <Text className="font-semibold">
+          <Trans>Product analytics</Trans>
+        </Text>
       </GroupedRow>
       <GroupedRow
         trailing={
@@ -391,13 +420,16 @@ function PrivacySection() {
           />
         }
       >
-        <Text className="font-semibold">Error reporting</Text>
+        <Text className="font-semibold">
+          <Trans>Error reporting</Trans>
+        </Text>
       </GroupedRow>
     </GroupedSection>
   );
 }
 
 function AccountSection() {
+  const { t } = useLingui();
   const session = authClient.useSession();
   const email = session.data?.user?.email;
   const signOut = useSignOut();
@@ -406,8 +438,8 @@ function AccountSection() {
     <View className="gap-6">
       {email ? (
         <GroupedSection
-          footer="To change your email, sign in with a different external account or contact support."
-          title="Account"
+          footer={t`To change your email, sign in with a different external account or contact support.`}
+          title={t`Account`}
         >
           <GroupedRow>
             <Text numberOfLines={1} selectable className="flex-1 text-sm text-muted-foreground">
@@ -426,7 +458,9 @@ function AccountSection() {
             });
           }}
         >
-          <Text className="font-semibold">Sign out</Text>
+          <Text className="font-semibold">
+            <Trans>Sign out</Trans>
+          </Text>
         </GroupedRow>
       </GroupedSection>
     </View>

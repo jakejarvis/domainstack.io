@@ -13,9 +13,179 @@ msgstr ""
 "Plural-Forms: \n"
 "Report-Msgid-Bugs-To: \n"
 
+#: ../../apps/native/src/components/settings/billing.tsx
+msgid "{activeCount} of {planQuota} active domains used"
+msgstr "{activeCount} of {planQuota} active domains used"
+
+#: ../../apps/native/src/app/(tabs)/domains/index.tsx
+msgid "{selectionCount} selected"
+msgstr "{selectionCount} selected"
+
+#: ../../apps/web/app/not-found.tsx
+msgid "404 — Not Found"
+msgstr "404 — Not Found"
+
+#: ../../apps/web/components/consent/cookie-prompt.tsx
+msgid "Accept"
+msgstr "Accept"
+
+#: ../../apps/native/src/components/settings/billing.tsx
+msgid "Access ends {accessEndsDate}"
+msgstr "Access ends {accessEndsDate}"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Account"
+msgstr "Account"
+
+#: ../../apps/native/src/components/settings/linked-accounts.tsx
+msgid "Account linked"
+msgstr "Account linked"
+
+#: ../../apps/native/src/app/(tabs)/domains/index.tsx
+msgid "Add a domain to keep its registration, DNS, providers, and notifications close at hand."
+msgstr "Add a domain to keep its registration, DNS, providers, and notifications close at hand."
+
+#: ../../apps/native/src/components/settings/linked-accounts.tsx
+msgid "Add a second sign-in method so you can recover access even if one provider is unavailable."
+msgstr "Add a second sign-in method so you can recover access even if one provider is unavailable."
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+#: ../../apps/native/src/app/(tabs)/domains/index.tsx
+msgid "Add domain"
+msgstr "Add domain"
+
+#: ../../apps/native/src/app/onboarding.tsx
+msgid "Add domains you own to get a continuously refreshed view of every change that matters."
+msgstr "Add domains you own to get a continuously refreshed view of every change that matters."
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "Add the meta tag to your homepage’s <head>, then check ownership."
+msgstr "Add the meta tag to your homepage’s <head>, then check ownership."
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "Add the record below at your DNS provider. Changes can take up to 24 hours to propagate — we’ll keep checking."
+msgstr "Add the record below at your DNS provider. Changes can take up to 24 hours to propagate — we’ll keep checking."
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Add your domain expirations to your phone's calendar."
+msgstr "Add your domain expirations to your phone's calendar."
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "Adding domains is locked"
+msgstr "Adding domains is locked"
+
+#: ../../apps/native/src/app/(tabs)/notifications/index.tsx
+msgid "All"
+msgstr "All"
+
+#: ../../apps/native/src/app/(tabs)/notifications/index.tsx
+msgid "All caught up!"
+msgstr "All caught up!"
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "All set"
+msgstr "All set"
+
+#: ../../apps/native/src/app/delete-account.tsx
+msgid "An unexpected error occurred."
+msgstr "An unexpected error occurred."
+
+#: ../../apps/web/app/error.tsx
+msgid "An unexpected error occurred. Please try again."
+msgstr "An unexpected error occurred. Please try again."
+
+#: ../../apps/native/src/app/(tabs)/notifications/index.tsx
+msgid "Archive"
+msgstr "Archive"
+
+#: ../../apps/native/src/app/(tabs)/domains/archived.tsx
+msgid "Archive domains from the detail screen to keep them here for later."
+msgstr "Archive domains from the detail screen to keep them here for later."
+
+#: ../../apps/native/src/app/(tabs)/domains/index.tsx
+msgid "Archived"
+msgstr "Archived"
+
+#: ../../apps/native/src/app/(tabs)/domains/index.tsx
+msgid "Archived ({archivedCount})"
+msgstr "Archived ({archivedCount})"
+
+#: ../../apps/native/src/app/(tabs)/domains/archived.tsx
+msgid "Archived domains don’t count toward your plan limit. Reactivate to resume tracking."
+msgstr "Archived domains don’t count toward your plan limit. Reactivate to resume tracking."
+
+#: ../../apps/native/src/app/(tabs)/domains/archived.tsx
+msgid "Archived is locked"
+msgstr "Archived is locked"
+
+#: ../../apps/web/components/layout/app-footer.tsx
+msgid "Bookmarklet"
+msgstr "Bookmarklet"
+
+#: ../../apps/native/src/app/(tabs)/notifications/index.tsx
+msgid "Browse portfolio"
+msgstr "Browse portfolio"
+
+#: ../../apps/web/components/layout/app-footer.tsx
+msgid "by"
+msgstr "by"
+
 #: ../../apps/native/src/app/sign-in.tsx
 msgid "By continuing you agree to our <0>Terms</0> and <1>Privacy Policy</1>."
 msgstr "By continuing you agree to our <0>Terms</0> and <1>Privacy Policy</1>."
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Calendar"
+msgstr "Calendar"
+
+#: ../../apps/native/src/app/(tabs)/domains/index.tsx
+msgid "Calendar feed"
+msgstr "Calendar feed"
+
+#: ../../apps/native/src/app/(tabs)/domains/index.tsx
+#: ../../apps/native/src/app/delete-account.tsx
+msgid "Cancel"
+msgstr "Cancel"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Certificate changes"
+msgstr "Certificate changes"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Certificate expiry"
+msgstr "Certificate expiry"
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "Check now"
+msgstr "Check now"
+
+#: ../../apps/native/src/app/delete-account.tsx
+msgid "Check your email"
+msgstr "Check your email"
+
+#: ../../apps/native/src/app/(tabs)/search/index.tsx
+msgid "Clear"
+msgstr "Clear"
+
+#: ../../apps/native/src/app/(tabs)/search/index.tsx
+msgid "Clear recent searches?"
+msgstr "Clear recent searches?"
+
+#: ../../apps/native/src/app/(tabs)/search/index.tsx
+msgid "Clear recents"
+msgstr "Clear recents"
+
+#: ../../apps/native/src/app/delete-account.tsx
+msgid "Close"
+msgstr "Close"
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "Contents"
+msgstr "Contents"
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "Continue"
+msgstr "Continue"
 
 #: ../../apps/native/src/app/sign-in.tsx
 msgid "Continue with {providerName}"
@@ -25,50 +195,803 @@ msgstr "Continue with {providerName}"
 msgid "Continue with Apple"
 msgstr "Continue with Apple"
 
+#: ../../apps/web/components/consent/cookie-prompt.tsx
+msgid "Cookie consent"
+msgstr "Cookie consent"
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "Copy"
+msgstr "Copy"
+
+#: ../../apps/native/src/components/settings/linked-accounts.tsx
+msgid "Could not link account"
+msgstr "Could not link account"
+
+#: ../../apps/native/src/components/settings/linked-accounts.tsx
+msgid "Could not unlink account"
+msgstr "Could not unlink account"
+
+#: ../../apps/native/src/app/(tabs)/domains/archived.tsx
+msgid "Couldn’t load archived domains"
+msgstr "Couldn’t load archived domains"
+
+#: ../../apps/native/src/app/(tabs)/notifications/index.tsx
+msgid "Couldn’t load more notifications."
+msgstr "Couldn’t load more notifications."
+
+#: ../../apps/native/src/app/(tabs)/notifications/index.tsx
+msgid "Couldn’t load notifications"
+msgstr "Couldn’t load notifications"
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "Couldn’t load verification"
+msgstr "Couldn’t load verification"
+
+#: ../../apps/native/src/app/(tabs)/domains/index.tsx
+msgid "Couldn’t load your portfolio"
+msgstr "Couldn’t load your portfolio"
+
+#: ../../apps/native/src/app/(tabs)/search/index.tsx
+msgid "Couldn’t open search"
+msgstr "Couldn’t open search"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Couldn’t register device"
+msgstr "Couldn’t register device"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Couldn’t unregister device"
+msgstr "Couldn’t unregister device"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Couldn’t update device"
+msgstr "Couldn’t update device"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Couldn’t update notifications"
+msgstr "Couldn’t update notifications"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Danger zone"
+msgstr "Danger zone"
+
+#: ../../apps/web/components/layout/app-header-client-buttons.tsx
+msgid "Dark mode"
+msgstr "Dark mode"
+
+#: ../../apps/web/components/layout/app-header-client-buttons.tsx
+msgid "Dashboard"
+msgstr "Dashboard"
+
+#: ../../apps/web/components/consent/cookie-prompt.tsx
+msgid "Decline"
+msgstr "Decline"
+
+#: ../../apps/native/src/components/settings/delete-account.tsx
+msgid "Delete"
+msgstr "Delete"
+
+#: ../../apps/native/src/components/settings/delete-account.tsx
+msgid "Delete account"
+msgstr "Delete account"
+
+#: ../../apps/native/src/components/settings/delete-account.tsx
+msgid "Delete your account?"
+msgstr "Delete your account?"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Deletes your account, tracked domains, notification preferences, and any active subscription. This action cannot be undone."
+msgstr "Deletes your account, tracked domains, notification preferences, and any active subscription. This action cannot be undone."
+
+#: ../../apps/native/src/app/delete-account.tsx
+msgid "Deletion failed"
+msgstr "Deletion failed"
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "DNS"
+msgstr "DNS"
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "DNS TXT record"
+msgstr "DNS TXT record"
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "Domain"
+msgstr "Domain"
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "Domain could not be added"
+msgstr "Domain could not be added"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Domain expiry"
+msgstr "Domain expiry"
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "Domain ownership verification is attached to your account. Sign in to add domains to your portfolio."
+msgstr "Domain ownership verification is attached to your account. Sign in to add domains to your portfolio."
+
 #: ../../apps/web/app/layout.tsx
 msgid "Domainstack — Domain Intelligence Made Easy"
 msgstr "Domainstack — Domain Intelligence Made Easy"
+
+#: ../../apps/web/components/layout/app-footer.tsx
+msgid "Drag the button below to your bookmarks bar. Then, press it on any site and the report for that domain will open in a new tab, like magic!"
+msgstr "Drag the button below to your bookmarks bar. Then, press it on any site and the report for that domain will open in a new tab, like magic!"
+
+#: ../../apps/web/components/layout/app-footer.tsx
+msgid "Drag the button to your bookmarks bar to use it."
+msgstr "Drag the button to your bookmarks bar to use it."
+
+#: ../../apps/native/src/app/(tabs)/domains/index.tsx
+msgid "Edit"
+msgstr "Edit"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Email notifications"
+msgstr "Email notifications"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Enabled"
+msgstr "Enabled"
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+#: ../../apps/native/src/app/(tabs)/search/index.tsx
+msgid "Enter a hostname like example.com."
+msgstr "Enter a hostname like example.com."
+
+#: ../../apps/web/app/error.tsx
+msgid "Error id: {digest}"
+msgstr "Error id: {digest}"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Error reporting"
+msgstr "Error reporting"
+
+#: ../../apps/native/src/app/(tabs)/domains/index.tsx
+msgid "Expiry"
+msgstr "Expiry"
+
+#: ../../apps/native/src/app/delete-account.tsx
+msgid "Failed to request account deletion."
+msgstr "Failed to request account deletion."
+
+#: ../../apps/native/src/app/(tabs)/domains/index.tsx
+msgid "Filter domains"
+msgstr "Filter domains"
+
+#: ../../apps/native/src/app/(tabs)/domains/index.tsx
+msgid "Filters"
+msgstr "Filters"
+
+#: ../../apps/native/src/app/(tabs)/domains/index.tsx
+msgid "Filters ({filterCount})"
+msgstr "Filters ({filterCount})"
+
+#: ../../apps/native/src/app/onboarding.tsx
+msgid "Get notified"
+msgstr "Get notified"
+
+#: ../../apps/native/src/app/(tabs)/notifications/index.tsx
+msgid "Get notified of ownership, expiry, provider, and certificate changes. Notifications are tied to your tracked portfolio domains."
+msgstr "Get notified of ownership, expiry, provider, and certificate changes. Notifications are tied to your tracked portfolio domains."
+
+#: ../../apps/web/components/layout/app-header.tsx
+msgid "Go to homepage"
+msgstr "Go to homepage"
+
+#: ../../apps/web/components/layout/app-footer.tsx
+msgid "Help"
+msgstr "Help"
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "Hostname"
+msgstr "Hostname"
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "HTML"
+msgstr "HTML"
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "HTML file"
+msgstr "HTML file"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "In-app notifications"
+msgstr "In-app notifications"
+
+#: ../../apps/native/src/components/settings/billing.tsx
+msgid "In-app purchases are unavailable right now. Please try again later."
+msgstr "In-app purchases are unavailable right now. Please try again later."
+
+#: ../../apps/native/src/app/(tabs)/notifications/index.tsx
+msgid "Inbox"
+msgstr "Inbox"
+
+#: ../../apps/native/src/app/(tabs)/search/index.tsx
+msgid "Inspect {domain}"
+msgstr "Inspect {domain}"
+
+#: ../../apps/native/src/app/(tabs)/search/index.tsx
+msgid "Inspect any domain’s <0>registration</0>."
+msgstr "Inspect any domain’s <0>registration</0>."
+
+#: ../../apps/web/components/layout/app-footer.tsx
+msgid "Inspect Domain"
+msgstr "Inspect Domain"
 
 #: ../../apps/web/app/layout.tsx
 msgid "Instant lookups for WHOIS, DNS, hosting, certificates, SEO and more, plus free domain tracking and change alerts."
 msgstr "Instant lookups for WHOIS, DNS, hosting, certificates, SEO and more, plus free domain tracking and change alerts."
 
+#: ../../apps/web/components/layout/app-footer.tsx
+msgid "Integrations"
+msgstr "Integrations"
+
+#: ../../apps/native/src/app/(tabs)/search/index.tsx
+msgid "Invalid domain"
+msgstr "Invalid domain"
+
+#: ../../apps/web/components/consent/cookie-prompt.tsx
+msgid "Learn more."
+msgstr "Learn more."
+
+#: ../../apps/web/components/layout/app-header-client-buttons.tsx
+msgid "Light mode"
+msgstr "Light mode"
+
+#: ../../apps/native/src/components/settings/linked-accounts.tsx
+msgid "Link"
+msgstr "Link"
+
+#: ../../apps/native/src/components/settings/linked-accounts.tsx
+msgid "Loading providers…"
+msgstr "Loading providers…"
+
 #: ../../apps/native/src/app/sign-in.tsx
 msgid "Loading sign-in options…"
 msgstr "Loading sign-in options…"
 
+#: ../../apps/native/src/app/onboarding.tsx
+msgid "Look up registration, DNS, SSL, hosting, and SEO for any domain on the public internet."
+msgstr "Look up registration, DNS, SSL, hosting, and SEO for any domain on the public internet."
+
+#: ../../apps/web/components/layout/app-footer.tsx
+msgid "Made with"
+msgstr "Made with"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Manage calendar"
+msgstr "Manage calendar"
+
+#: ../../apps/native/src/components/settings/billing.tsx
+msgid "Manage on domainstack.io"
+msgstr "Manage on domainstack.io"
+
+#: ../../apps/native/src/components/settings/billing.tsx
+msgid "Manage subscription"
+msgstr "Manage subscription"
+
+#: ../../apps/native/src/app/(tabs)/notifications/index.tsx
+msgid "Mark all read ({unreadCount})"
+msgstr "Mark all read ({unreadCount})"
+
+#: ../../apps/native/src/app/(tabs)/notifications/index.tsx
+msgid "Mark as read"
+msgstr "Mark as read"
+
+#: ../../apps/native/src/app/(tabs)/notifications/index.tsx
+msgid "Mark read"
+msgstr "Mark read"
+
+#: ../../apps/native/src/app/(tabs)/search/index.tsx
+msgid "Matches"
+msgstr "Matches"
+
+#: ../../apps/native/src/app/onboarding.tsx
+msgid "Maybe later"
+msgstr "Maybe later"
+
+#: ../../apps/web/components/layout/app-footer.tsx
+msgid "MCP Server"
+msgstr "MCP Server"
+
+#: ../../apps/web/components/layout/app-header-client-buttons.tsx
+msgid "Menu"
+msgstr "Menu"
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "Meta"
+msgstr "Meta"
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "Meta tag"
+msgstr "Meta tag"
+
+#: ../../apps/native/src/components/settings/linked-accounts.tsx
+msgid "Must keep at least one sign-in method."
+msgstr "Must keep at least one sign-in method."
+
+#: ../../apps/native/src/components/settings/muted-domains.tsx
+msgid "Mute a domain from its detail screen to silence its notifications."
+msgstr "Mute a domain from its detail screen to silence its notifications."
+
+#: ../../apps/native/src/components/settings/muted-domains.tsx
+msgid "Muted domains"
+msgstr "Muted domains"
+
+#: ../../apps/native/src/app/(tabs)/domains/index.tsx
+msgid "Name"
+msgstr "Name"
+
+#: ../../apps/native/src/components/settings/billing.tsx
+msgid "No active purchases were found."
+msgstr "No active purchases were found."
+
+#: ../../apps/native/src/app/(tabs)/domains/archived.tsx
+msgid "No archived domains"
+msgstr "No archived domains"
+
+#: ../../apps/native/src/app/(tabs)/notifications/index.tsx
+msgid "No archived notifications"
+msgstr "No archived notifications"
+
+#: ../../apps/native/src/app/(tabs)/domains/index.tsx
+msgid "No domains found"
+msgstr "No domains found"
+
+#: ../../apps/native/src/app/(tabs)/domains/index.tsx
+msgid "No domains match"
+msgstr "No domains match"
+
+#: ../../apps/native/src/app/(tabs)/search/index.tsx
+msgid "No matches"
+msgstr "No matches"
+
+#: ../../apps/native/src/app/(tabs)/search/index.tsx
+msgid "No recent searches"
+msgstr "No recent searches"
+
+#. placeholder {0}: truncate(query.trim(), 40)
+#: ../../apps/native/src/app/(tabs)/search/index.tsx
+msgid "No recent searches match “{0}”."
+msgstr "No recent searches match “{0}”."
+
 #: ../../apps/native/src/app/sign-in.tsx
+#: ../../apps/native/src/components/settings/linked-accounts.tsx
 msgid "No sign-in providers are available right now."
 msgstr "No sign-in providers are available right now."
 
+#: ../../apps/web/app/not-found.tsx
+msgid "Not Found"
+msgstr "Not Found"
+
+#: ../../apps/native/src/components/settings/billing.tsx
+msgid "Nothing to restore"
+msgstr "Nothing to restore"
+
+#: ../../apps/native/src/app/(tabs)/_layout.tsx
+#: ../../apps/native/src/app/settings.tsx
+msgid "Notifications"
+msgstr "Notifications"
+
+#: ../../apps/native/src/app/(tabs)/notifications/index.tsx
+msgid "Notifications are locked"
+msgstr "Notifications are locked"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Notifications are turned off for Domainstack. Enable them in Settings, then come back."
+msgstr "Notifications are turned off for Domainstack. Enable them in Settings, then come back."
+
+#: ../../apps/native/src/app/(tabs)/notifications/index.tsx
+msgid "Notifications you have marked read will appear here."
+msgstr "Notifications you have marked read will appear here."
+
+#: ../../apps/native/src/app/(tabs)/notifications/index.tsx
+#: ../../apps/native/src/components/settings/muted-domains.tsx
+msgid "Open {domainName}"
+msgstr "Open {domainName}"
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "Open domain"
+msgstr "Open domain"
+
+#: ../../apps/native/src/app/(tabs)/domains/index.tsx
+msgid "Open filters"
+msgstr "Open filters"
+
+#: ../../apps/native/src/app/(tabs)/search/index.tsx
+msgid "Open report for {item}"
+msgstr "Open report for {item}"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Open Settings"
+msgstr "Open Settings"
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "Path"
+msgstr "Path"
+
+#: ../../apps/native/src/components/settings/billing.tsx
+msgid "Plan"
+msgstr "Plan"
+
+#: ../../apps/native/src/components/settings/billing.tsx
+msgid "Plan details are unavailable."
+msgstr "Plan details are unavailable."
+
 #: ../../apps/native/src/app/sign-in.tsx
+#: ../../apps/native/src/components/settings/billing.tsx
 msgid "Please try again."
 msgstr "Please try again."
+
+#: ../../apps/native/src/app/(tabs)/_layout.tsx
+#: ../../apps/native/src/app/(tabs)/domains/index.tsx
+msgid "Portfolio"
+msgstr "Portfolio"
+
+#: ../../apps/native/src/app/(tabs)/domains/index.tsx
+msgid "Portfolio is locked"
+msgstr "Portfolio is locked"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Preferences did not load."
+msgstr "Preferences did not load."
+
+#: ../../apps/native/src/app/settings.tsx
+#: ../../apps/web/components/layout/app-footer.tsx
+msgid "Privacy"
+msgstr "Privacy"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Product analytics"
+msgstr "Product analytics"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Provider changes"
+msgstr "Provider changes"
+
+#: ../../apps/native/src/components/settings/billing.tsx
+msgid "Purchase failed"
+msgstr "Purchase failed"
+
+#: ../../apps/native/src/components/settings/billing.tsx
+msgid "Purchases restored"
+msgstr "Purchases restored"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Push notifications"
+msgstr "Push notifications"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Push notifications will stop on this device."
+msgstr "Push notifications will stop on this device."
+
+#: ../../apps/web/components/layout/app-footer.tsx
+msgid "Raycast (soon)"
+msgstr "Raycast (soon)"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Receive push notifications on this device."
+msgstr "Receive push notifications on this device."
+
+#: ../../apps/native/src/app/(tabs)/domains/index.tsx
+#: ../../apps/native/src/app/(tabs)/search/index.tsx
+msgid "Recent"
+msgstr "Recent"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Register this device"
+msgstr "Register this device"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Registering…"
+msgstr "Registering…"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Registration changes"
+msgstr "Registration changes"
+
+#: ../../apps/native/src/app/(tabs)/domains/archived.tsx
+msgid "Remove"
+msgstr "Remove"
+
+#. placeholder {0}: domain.domainName
+#: ../../apps/native/src/app/(tabs)/domains/archived.tsx
+msgid "Remove {0}?"
+msgstr "Remove {0}?"
+
+#: ../../apps/native/src/app/(tabs)/search/index.tsx
+msgid "Remove from recent"
+msgstr "Remove from recent"
+
+#: ../../apps/native/src/components/settings/billing.tsx
+msgid "Restore failed"
+msgstr "Restore failed"
+
+#: ../../apps/native/src/components/settings/billing.tsx
+msgid "Restore purchases"
+msgstr "Restore purchases"
+
+#: ../../apps/web/app/error.tsx
+msgid "Retry"
+msgstr "Retry"
+
+#: ../../apps/native/src/app/(tabs)/_layout.tsx
+msgid "Search"
+msgstr "Search"
+
+#: ../../apps/native/src/app/onboarding.tsx
+msgid "Search any domain"
+msgstr "Search any domain"
+
+#: ../../apps/native/src/app/delete-account.tsx
+msgid "Sending confirmation email…"
+msgstr "Sending confirmation email…"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Several settings sections couldn’t load. Pull down to refresh, or retry them individually below."
+msgstr "Several settings sections couldn’t load. Pull down to refresh, or retry them individually below."
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "Share"
+msgstr "Share"
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "Share…"
+msgstr "Share…"
+
+#: ../../apps/web/components/layout/app-footer.tsx
+msgid "Shortcut"
+msgstr "Shortcut"
+
+#: ../../apps/native/src/app/onboarding.tsx
+msgid "Sign in"
+msgstr "Sign in"
+
+#: ../../apps/web/components/layout/app-header-client-buttons.tsx
+msgid "Sign In"
+msgstr "Sign In"
 
 #: ../../apps/native/src/app/sign-in.tsx
 msgid "Sign in failed"
 msgstr "Sign in failed"
 
+#: ../../apps/native/src/app/(tabs)/domains/archived.tsx
+msgid "Sign in to view your archived domains."
+msgstr "Sign in to view your archived domains."
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Sign out"
+msgstr "Sign out"
+
 #: ../../apps/native/src/app/sign-in.tsx
 msgid "Sign-in didn’t complete"
 msgstr "Sign-in didn’t complete"
+
+#: ../../apps/native/src/components/settings/linked-accounts.tsx
+msgid "Sign-in methods"
+msgstr "Sign-in methods"
 
 #: ../../apps/native/src/app/sign-in.tsx
 msgid "Sign-in options are unavailable."
 msgstr "Sign-in options are unavailable."
 
+#: ../../apps/native/src/app/onboarding.tsx
+msgid "Skip"
+msgstr "Skip"
+
+#: ../../apps/native/src/app/onboarding.tsx
+msgid "Skip onboarding"
+msgstr "Skip onboarding"
+
 #: ../../apps/web/app/layout.tsx
 msgid "Skip to content"
 msgstr "Skip to content"
+
+#: ../../apps/web/app/error.tsx
+msgid "Something went wrong"
+msgstr "Something went wrong"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Something went wrong. Please try again."
+msgstr "Something went wrong. Please try again."
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "Tag"
+msgstr "Tag"
+
+#: ../../apps/native/src/app/(tabs)/search/index.tsx
+msgid "Tap the search bar above and enter a hostname to look up its registration, DNS, hosting, and certificate data."
+msgstr "Tap the search bar above and enter a hostname to look up its registration, DNS, hosting, and certificate data."
+
+#: ../../apps/web/components/layout/app-footer.tsx
+msgid "Terms"
+msgstr "Terms"
+
+#: ../../apps/web/app/not-found.tsx
+msgid "The page you’re looking for doesn’t exist."
+msgstr "The page you’re looking for doesn’t exist."
+
+#: ../../apps/native/src/components/settings/delete-account.tsx
+msgid "This action cannot be undone. We’ll send a confirmation link to your email; clicking it will permanently delete your account, tracked domains, notification preferences, and any active subscription."
+msgstr "This action cannot be undone. We’ll send a confirmation link to your email; clicking it will permanently delete your account, tracked domains, notification preferences, and any active subscription."
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "This device"
+msgstr "This device"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "This device is registered for notifications."
+msgstr "This device is registered for notifications."
+
+#: ../../apps/native/src/app/delete-account.tsx
+msgid "This is taking longer than expected. The confirmation email may still be on its way — check your inbox, or try again."
+msgstr "This is taking longer than expected. The confirmation email may still be on its way — check your inbox, or try again."
+
+#: ../../apps/native/src/app/(tabs)/domains/archived.tsx
+msgid "This permanently removes the domain and any notification settings."
+msgstr "This permanently removes the domain and any notification settings."
+
+#: ../../apps/native/src/app/(tabs)/search/index.tsx
+msgid "This removes all entries from your history."
+msgstr "This removes all entries from your history."
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "To change your email, sign in with a different external account or contact support."
+msgstr "To change your email, sign in with a different external account or contact support."
+
+#: ../../apps/web/components/layout/app-header-client-buttons.tsx
+msgid "Toggle theme"
+msgstr "Toggle theme"
 
 #: ../../apps/native/src/app/sign-in.tsx
 msgid "Track ownership, expiry, DNS, and certificate changes; get notified before anything breaks."
 msgstr "Track ownership, expiry, DNS, and certificate changes; get notified before anything breaks."
 
+#: ../../apps/native/src/app/(tabs)/domains/index.tsx
+msgid "Track ownership, expiry, providers, and notifications. Search stays available without an account; your portfolio syncs after sign in."
+msgstr "Track ownership, expiry, providers, and notifications. Search stays available without an account; your portfolio syncs after sign in."
+
+#: ../../apps/native/src/app/onboarding.tsx
+msgid "Track your portfolio"
+msgstr "Track your portfolio"
+
+#: ../../apps/native/src/app/(tabs)/search/index.tsx
+msgid "Try"
+msgstr "Try"
+
+#: ../../apps/native/src/app/(tabs)/notifications/index.tsx
+#: ../../apps/native/src/app/delete-account.tsx
+#: ../../apps/native/src/app/settings.tsx
 #: ../../apps/native/src/app/sign-in.tsx
 msgid "Try again"
 msgstr "Try again"
 
+#: ../../apps/native/src/app/(tabs)/domains/index.tsx
+msgid "Try removing some filters or clearing the search bar."
+msgstr "Try removing some filters or clearing the search bar."
+
+#: ../../apps/web/app/not-found.tsx
+msgid "Try searching for a domain below."
+msgstr "Try searching for a domain below."
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "TTL"
+msgstr "TTL"
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "Type"
+msgstr "Type"
+
+#: ../../apps/native/src/components/settings/linked-accounts.tsx
+msgid "Unable to link this provider."
+msgstr "Unable to link this provider."
+
 #: ../../apps/native/src/app/sign-in.tsx
 msgid "Unable to sign in with {provider}. Please try again."
 msgstr "Unable to sign in with {provider}. Please try again."
+
+#: ../../apps/native/src/components/settings/linked-accounts.tsx
+msgid "Unable to unlink this provider."
+msgstr "Unable to unlink this provider."
+
+#: ../../apps/native/src/components/settings/linked-accounts.tsx
+msgid "Unlink"
+msgstr "Unlink"
+
+#: ../../apps/native/src/components/settings/linked-accounts.tsx
+msgid "Unlink {provider}?"
+msgstr "Unlink {provider}?"
+
+#: ../../apps/native/src/components/settings/muted-domains.tsx
+msgid "Unmute"
+msgstr "Unmute"
+
+#: ../../apps/native/src/components/settings/muted-domains.tsx
+msgid "Unmute {domainName}?"
+msgstr "Unmute {domainName}?"
+
+#: ../../apps/native/src/components/settings/muted-domains.tsx
+msgid "Unmute failed"
+msgstr "Unmute failed"
+
+#: ../../apps/native/src/components/settings/muted-domains.tsx
+msgid "Unmute notifications"
+msgstr "Unmute notifications"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Unregister"
+msgstr "Unregister"
+
+#: ../../apps/native/src/app/settings.tsx
+msgid "Unregister device?"
+msgstr "Unregister device?"
+
+#: ../../apps/native/src/components/settings/billing.tsx
+msgid "Upgrade to Pro — {priceString}"
+msgstr "Upgrade to Pro — {priceString}"
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "Upload the file to your site, then check. It must stay reachable while verification runs."
+msgstr "Upload the file to your site, then check. It must stay reachable while verification runs."
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "Value"
+msgstr "Value"
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "Verification failed"
+msgstr "Verification failed"
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "Verification was not found yet. Try again after DNS or hosting changes propagate."
+msgstr "Verification was not found yet. Try again after DNS or hosting changes propagate."
+
+#: ../../apps/native/src/components/settings/muted-domains.tsx
+msgid "View all {mutedCount} muted in Portfolio"
+msgstr "View all {mutedCount} muted in Portfolio"
+
+#: ../../apps/web/components/consent/cookie-prompt.tsx
+msgid "We use cookies to understand how you use our service."
+msgstr "We use cookies to understand how you use our service."
+
+#: ../../apps/native/src/app/onboarding.tsx
+msgid "We’ll push and email you before registrations or certificates expire, or when providers change."
+msgstr "We’ll push and email you before registrations or certificates expire, or when providers change."
+
+#: ../../apps/native/src/components/settings/billing.tsx
+msgid "Welcome to Pro"
+msgstr "Welcome to Pro"
+
+#: ../../apps/native/src/app/(tabs)/search/index.tsx
+msgid "WHOIS, DNS, hosting, certs, headers, SEO — one tap."
+msgstr "WHOIS, DNS, hosting, certs, headers, SEO — one tap."
+
+#: ../../apps/native/src/components/settings/linked-accounts.tsx
+msgid "You won’t be able to sign in with {provider} again until you re-link it."
+msgstr "You won’t be able to sign in with {provider} again until you re-link it."
+
+#: ../../apps/native/src/components/settings/muted-domains.tsx
+msgid "You’ll start receiving notifications for {domainName} again."
+msgstr "You’ll start receiving notifications for {domainName} again."
+
+#: ../../apps/native/src/app/(tabs)/notifications/index.tsx
+msgid "You’re all caught up. New domain, certificate, and provider changes will show up here."
+msgstr "You’re all caught up. New domain, certificate, and provider changes will show up here."
+
+#: ../../apps/native/src/app/(tabs)/domains/add.tsx
+msgid "You’re offline. Reconnect and try again."
+msgstr "You’re offline. Reconnect and try again."
+
+#: ../../apps/native/src/components/settings/billing.tsx
+msgid "You’re subscribed through the web app. Manage your subscription at domainstack.io."
+msgstr "You’re subscribed through the web app. Manage your subscription at domainstack.io."
+
+#: ../../apps/native/src/app/delete-account.tsx
+msgid "Your account is still active. We’ve emailed a confirmation link — your account and data are permanently deleted only after you tap it. Nothing else is needed here; you can close this screen."
+msgstr "Your account is still active. We’ve emailed a confirmation link — your account and data are permanently deleted only after you tap it. Nothing else is needed here; you can close this screen."
+
+#: ../../apps/native/src/components/settings/billing.tsx
+msgid "Your subscription is active."
+msgstr "Your subscription is active."

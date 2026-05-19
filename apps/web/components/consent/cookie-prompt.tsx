@@ -1,5 +1,6 @@
 "use client";
 
+import { Trans, useLingui } from "@lingui/react/macro";
 import Link from "next/link";
 import posthogClient from "posthog-js";
 import { useEffect, useState } from "react";
@@ -19,6 +20,7 @@ type ConsentStatus = "pending" | "accepted" | "declined";
  * - Syncs with PostHog opt-in/opt-out
  */
 export function CookiePrompt({ consentRequired }: { consentRequired: boolean }) {
+  const { t } = useLingui();
   const [consent, setConsent, { isPersistent }] = useLocalStorageState<ConsentStatus>(CONSENT_KEY, {
     defaultValue: "pending",
   });
@@ -81,17 +83,17 @@ export function CookiePrompt({ consentRequired }: { consentRequired: boolean }) 
     >
       <div
         role="dialog"
-        aria-label="Cookie consent"
+        aria-label={t`Cookie consent`}
         className="rounded-lg border bg-card p-3 shadow-md"
       >
         <p className="text-xs leading-relaxed text-pretty text-muted-foreground">
-          We use cookies to understand how you use our service.{" "}
+          {t`We use cookies to understand how you use our service.`}{" "}
           <Link
             href="/privacy#cookies"
             prefetch={false}
             className="text-foreground/80 underline underline-offset-2 hover:text-foreground"
           >
-            Learn more.
+            {t`Learn more.`}
           </Link>
         </p>
         <div className="mt-2.5 flex items-center gap-1.5">
@@ -101,14 +103,14 @@ export function CookiePrompt({ consentRequired }: { consentRequired: boolean }) 
             onClick={decline}
             className="h-7 px-2.5 text-xs text-muted-foreground"
           >
-            Decline
+            <Trans>Decline</Trans>
           </Button>
           <Button
             size="sm"
             onClick={accept}
             className="h-7 bg-foreground px-2.5 text-xs text-background hover:bg-foreground/90"
           >
-            Accept
+            <Trans>Accept</Trans>
           </Button>
         </div>
       </div>

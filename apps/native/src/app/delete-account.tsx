@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useMutation } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useCallback, useEffect, useReducer, useRef } from "react";
@@ -48,6 +49,7 @@ function reducer(state: State, action: Action): State {
 export { ScreenErrorBoundary as ErrorBoundary } from "@/components/screen-error-boundary";
 
 export default function DeleteAccountScreen() {
+  const { t } = useLingui();
   const [state, dispatch] = useReducer(reducer, { status: "loading" });
   const trpc = useTRPC();
   const unregisterDevice = useMutation(trpc.user.unregisterPushDevice.mutationOptions());
@@ -97,7 +99,7 @@ export default function DeleteAccountScreen() {
       if (!mountedRef.current) return;
       if (result.error) {
         dispatch({
-          message: result.error.message ?? "Failed to request account deletion.",
+          message: result.error.message ?? t`Failed to request account deletion.`,
           type: "ERROR",
         });
         return;
@@ -107,16 +109,16 @@ export default function DeleteAccountScreen() {
       if (!mountedRef.current) return;
       const message =
         error instanceof DeletionTimeoutError
-          ? "This is taking longer than expected. The confirmation email may still be on its way — check your inbox, or try again."
+          ? t`This is taking longer than expected. The confirmation email may still be on its way — check your inbox, or try again.`
           : error instanceof Error
             ? error.message
-            : "An unexpected error occurred.";
+            : t`An unexpected error occurred.`;
       dispatch({ message, type: "ERROR" });
     } finally {
       clearTimeout(timeoutId);
       inFlightRef.current = false;
     }
-  }, [unregisterDevice]);
+  }, [unregisterDevice, t]);
 
   useEffect(() => {
     if (startedRef.current) return;
@@ -134,34 +136,48 @@ export default function DeleteAccountScreen() {
       {state.status === "loading" ? (
         <View className="items-center gap-3 py-12">
           <Spinner />
-          <Text className="text-sm text-muted-foreground">Sending confirmation email…</Text>
+          <Text className="text-sm text-muted-foreground">
+            <Trans>Sending confirmation email…</Trans>
+          </Text>
         </View>
       ) : null}
 
       {state.status === "success" ? (
         <View className="gap-4">
-          <Text variant="title2">Check your email</Text>
+          <Text variant="title2">
+            <Trans>Check your email</Trans>
+          </Text>
           <Text className="text-sm text-muted-foreground">
-            Your account is still active. We’ve emailed a confirmation link — your account and data
-            are permanently deleted only after you tap it. Nothing else is needed here; you can
-            close this screen.
+            <Trans>
+              Your account is still active. We’ve emailed a confirmation link — your account and
+              data are permanently deleted only after you tap it. Nothing else is needed here; you
+              can close this screen.
+            </Trans>
           </Text>
           <Button onPress={() => router.back()}>
-            <Text>Close</Text>
+            <Text>
+              <Trans>Close</Trans>
+            </Text>
           </Button>
         </View>
       ) : null}
 
       {state.status === "error" ? (
         <View className="gap-4">
-          <Text variant="title2">Deletion failed</Text>
+          <Text variant="title2">
+            <Trans>Deletion failed</Trans>
+          </Text>
           <Text className="text-sm text-destructive">{state.message}</Text>
           <View className="flex-row gap-2">
             <Button className="flex-1" onPress={() => router.back()} variant="secondary">
-              <Text>Cancel</Text>
+              <Text>
+                <Trans>Cancel</Trans>
+              </Text>
             </Button>
             <Button className="flex-1" onPress={retry} variant="danger">
-              <Text>Try again</Text>
+              <Text>
+                <Trans>Try again</Trans>
+              </Text>
             </Button>
           </View>
         </View>

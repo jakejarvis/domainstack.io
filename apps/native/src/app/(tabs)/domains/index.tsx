@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { FlashList } from "@shopify/flash-list";
 import { useIsRestoring, useQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
@@ -33,19 +34,14 @@ import { type PortfolioDomain, type PortfolioSort, sortPortfolioDomains } from "
 import { activeFilterCount, applyFilters, availableTldsFrom } from "@/lib/portfolio-filters";
 import { usePortfolioStore } from "@/lib/stores/portfolio-store";
 
-const sorts: Array<{ label: string; value: PortfolioSort }> = [
-  { label: "Name", value: "name" },
-  { label: "Expiry", value: "expiry" },
-  { label: "Recent", value: "created" },
-];
-
 export default function DomainsScreen() {
+  const { t } = useLingui();
   return (
     <RequireAuth
-      body="Track ownership, expiry, providers, and notifications. Search stays available without an account; your portfolio syncs after sign in."
+      body={t`Track ownership, expiry, providers, and notifications. Search stays available without an account; your portfolio syncs after sign in.`}
       header={<HeaderMenu />}
       loading={<PortfolioListSkeleton count={4} />}
-      title="Portfolio is locked"
+      title={t`Portfolio is locked`}
     >
       <PortfolioScreen />
     </RequireAuth>
@@ -53,10 +49,17 @@ export default function DomainsScreen() {
 }
 
 export function ErrorBoundary(props: ErrorBoundaryProps) {
-  return <ScreenErrorBoundary {...props} title="Couldn’t load your portfolio" />;
+  const { t } = useLingui();
+  return <ScreenErrorBoundary {...props} title={t`Couldn’t load your portfolio`} />;
 }
 
 function PortfolioScreen() {
+  const { t } = useLingui();
+  const sorts: Array<{ label: string; value: PortfolioSort }> = [
+    { label: t`Name`, value: "name" },
+    { label: t`Expiry`, value: "expiry" },
+    { label: t`Recent`, value: "created" },
+  ];
   const trpc = useTRPC();
   const navigation = useNavigation();
   const dashboard = useDashboardMutations();
@@ -85,11 +88,11 @@ function PortfolioScreen() {
         hideWhenScrolling: true,
         onChangeText: (event: NativeSyntheticEvent<{ text: string }>) =>
           setQuery(event.nativeEvent.text),
-        placeholder: "Filter domains",
+        placeholder: t`Filter domains`,
       },
-      title: selectionMode === "selecting" ? `${selectionCount} selected` : "Portfolio",
+      title: selectionMode === "selecting" ? t`${selectionCount} selected` : t`Portfolio`,
     });
-  }, [navigation, selectionCount, selectionMode, setQuery]);
+  }, [navigation, selectionCount, selectionMode, setQuery, t]);
 
   const domains = useMemo<PortfolioDomain[]>(() => {
     return (domainsQuery.data ?? []).map((item) => ({
@@ -203,7 +206,7 @@ function PortfolioScreen() {
         <HeaderMenu />
         <QueryErrorState
           onRetry={() => void domainsQuery.refetch()}
-          title="Couldn’t load your portfolio"
+          title={t`Couldn’t load your portfolio`}
         />
       </Screen>
     );
@@ -214,14 +217,14 @@ function PortfolioScreen() {
       <HeaderMenu
         leading={
           <Stack.Toolbar.Button
-            accessibilityLabel="Open filters"
+            accessibilityLabel={t`Open filters`}
             icon={Platform.OS === "ios" ? "line.3.horizontal.decrease.circle" : undefined}
             onPress={() => filterSheetRef.current?.present()}
           >
             {Platform.OS === "android"
               ? filterCount > 0
-                ? `Filters (${filterCount})`
-                : "Filters"
+                ? t`Filters (${filterCount})`
+                : t`Filters`
               : undefined}
           </Stack.Toolbar.Button>
         }
@@ -230,13 +233,13 @@ function PortfolioScreen() {
           icon={Platform.OS === "ios" ? "calendar.badge.clock" : undefined}
           onPress={() => calendarSheetRef.current?.present()}
         >
-          Calendar feed
+          {t`Calendar feed`}
         </Stack.Toolbar.MenuAction>
         <Stack.Toolbar.MenuAction
           icon={Platform.OS === "ios" ? "archivebox" : undefined}
           onPress={() => router.push("/(tabs)/domains/archived")}
         >
-          {archivedCount > 0 ? `Archived (${archivedCount})` : "Archived"}
+          {archivedCount > 0 ? t`Archived (${archivedCount})` : t`Archived`}
         </Stack.Toolbar.MenuAction>
       </HeaderMenu>
 
@@ -251,7 +254,7 @@ function PortfolioScreen() {
             }
           }}
         >
-          {isSelecting ? "Cancel" : "Edit"}
+          {isSelecting ? t`Cancel` : t`Edit`}
         </Stack.Toolbar.Button>
       </Stack.Toolbar>
 
@@ -266,7 +269,9 @@ function PortfolioScreen() {
       {subscription ? <SubscriptionBanner subscription={subscription} /> : null}
 
       <Button onPress={() => router.push("/(tabs)/domains/add")}>
-        <Text>Add domain</Text>
+        <Text>
+          <Trans>Add domain</Trans>
+        </Text>
       </Button>
 
       <FilterChips />
@@ -278,11 +283,11 @@ function PortfolioScreen() {
   const listEmpty = (
     <View className="px-4 pb-8">
       <EmptyState
-        actionLabel={isFiltering ? undefined : "Add domain"}
+        actionLabel={isFiltering ? undefined : t`Add domain`}
         body={
           isFiltering
-            ? "Try removing some filters or clearing the search bar."
-            : "Add a domain to keep its registration, DNS, providers, and notifications close at hand."
+            ? t`Try removing some filters or clearing the search bar.`
+            : t`Add a domain to keep its registration, DNS, providers, and notifications close at hand.`
         }
         icon={
           isFiltering
@@ -290,7 +295,7 @@ function PortfolioScreen() {
             : { android: "language", ios: "globe" }
         }
         onAction={isFiltering ? undefined : () => router.push("/(tabs)/domains/add")}
-        title={isFiltering ? "No domains match" : "No domains found"}
+        title={isFiltering ? t`No domains match` : t`No domains found`}
       />
     </View>
   );

@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
@@ -31,12 +32,6 @@ import { buildVerificationInstructions } from "@domainstack/utils/verification";
 
 const initialState: AddDomainFlowState = { domain: "", status: "idle" };
 
-const METHOD_OPTIONS: Array<{ label: string; value: VerificationMethod }> = [
-  { label: "DNS", value: "dns_txt" },
-  { label: "HTML", value: "html_file" },
-  { label: "Meta", value: "meta_tag" },
-];
-
 function currentStep(status: AddDomainFlowState["status"]): 1 | 2 | 3 {
   if (status === "verified") return 3;
   if (status === "instructions" || status === "verifying" || status === "failed") return 2;
@@ -66,14 +61,18 @@ function InstructionValue({ label, value }: { label: string; value: string | num
         </Text>
         <View className="flex-row gap-2">
           <Button className="flex-1" onPress={() => void handleCopy()} variant="secondary">
-            <Text>Copy</Text>
+            <Text>
+              <Trans>Copy</Trans>
+            </Text>
           </Button>
           <Button
             className="flex-1"
             onPress={() => void Share.share({ message: stringValue })}
             variant="secondary"
           >
-            <Text>Share</Text>
+            <Text>
+              <Trans>Share</Trans>
+            </Text>
           </Button>
         </View>
       </View>
@@ -84,11 +83,12 @@ function InstructionValue({ label, value }: { label: string; value: string | num
 export { ScreenErrorBoundary as ErrorBoundary } from "@/components/screen-error-boundary";
 
 export default function AddDomainScreen() {
+  const { t } = useLingui();
   return (
     <RequireAuth
-      body="Domain ownership verification is attached to your account. Sign in to add domains to your portfolio."
+      body={t`Domain ownership verification is attached to your account. Sign in to add domains to your portfolio.`}
       loading={<SkeletonRows count={3} />}
-      title="Adding domains is locked"
+      title={t`Adding domains is locked`}
     >
       <AddDomainFlow />
     </RequireAuth>
@@ -96,6 +96,12 @@ export default function AddDomainScreen() {
 }
 
 function AddDomainFlow() {
+  const { t } = useLingui();
+  const METHOD_OPTIONS: Array<{ label: string; value: VerificationMethod }> = [
+    { label: t`DNS`, value: "dns_txt" },
+    { label: t`HTML`, value: "html_file" },
+    { label: t`Meta`, value: "meta_tag" },
+  ];
   const params = useLocalSearchParams<{ trackedDomainId?: string }>();
   const resumeTrackedDomainId = Array.isArray(params.trackedDomainId)
     ? params.trackedDomainId[0]
@@ -108,8 +114,8 @@ function AddDomainFlow() {
   const triggerPushPrompt = usePushSoftPrompt();
 
   useEffect(() => {
-    navigation.setOptions({ title: flow.status === "verified" ? "All set" : "Add domain" });
-  }, [navigation, flow.status]);
+    navigation.setOptions({ title: flow.status === "verified" ? t`All set` : t`Add domain` });
+  }, [navigation, flow.status, t]);
 
   const addDomain = useMutation(trpc.tracking.addDomain.mutationOptions());
   const verifyDomain = useMutation(trpc.tracking.verifyDomain.mutationOptions());
@@ -141,7 +147,7 @@ function AddDomainFlow() {
   const normalized = normalizeDomainInput(flow.domain);
   const domainError =
     hasAttemptedSubmit && flow.domain.trim().length > 0 && !isValidDomain(normalized)
-      ? "Enter a hostname like example.com."
+      ? t`Enter a hostname like example.com.`
       : undefined;
 
   async function submit() {
@@ -166,10 +172,10 @@ function AddDomainFlow() {
       if (offline) analytics.trackException(error, { context: "add_domain", offline: true });
       dispatch({
         message: offline
-          ? "You’re offline. Reconnect and try again."
+          ? t`You’re offline. Reconnect and try again.`
           : error instanceof Error
             ? error.message
-            : "Domain could not be added",
+            : t`Domain could not be added`,
         type: "fail",
       });
     }
@@ -192,8 +198,7 @@ function AddDomainFlow() {
         void triggerPushPrompt("firstDomain");
       } else {
         dispatch({
-          message:
-            "Verification was not found yet. Try again after DNS or hosting changes propagate.",
+          message: t`Verification was not found yet. Try again after DNS or hosting changes propagate.`,
           type: "fail",
         });
       }
@@ -202,10 +207,10 @@ function AddDomainFlow() {
       if (offline) analytics.trackException(error, { context: "verify_domain", offline: true });
       dispatch({
         message: offline
-          ? "You’re offline. Reconnect and try again."
+          ? t`You’re offline. Reconnect and try again.`
           : error instanceof Error
             ? error.message
-            : "Verification failed",
+            : t`Verification failed`,
         type: "fail",
       });
     }
@@ -259,7 +264,7 @@ function AddDomainFlow() {
                 autoComplete="off"
                 bare
                 error={domainError}
-                label="Domain"
+                label={t`Domain`}
                 onChangeText={(domain) => dispatch({ domain, type: "edit" })}
                 onSubmitEditing={() => void submit()}
                 placeholder="example.com"
@@ -274,7 +279,9 @@ function AddDomainFlow() {
                 loading={addDomain.isPending || flow.status === "submitting"}
                 onPress={() => void submit()}
               >
-                <Text>Continue</Text>
+                <Text>
+                  <Trans>Continue</Trans>
+                </Text>
               </Button>
             </View>
           </GroupedSection>
@@ -284,7 +291,7 @@ function AddDomainFlow() {
           verificationData.error ? (
             <QueryErrorState
               onRetry={() => void verificationData.refetch()}
-              title="Couldn’t load verification"
+              title={t`Couldn’t load verification`}
             />
           ) : (
             <SkeletonRows count={3} />
@@ -302,10 +309,10 @@ function AddDomainFlow() {
             {flow.status !== "failed" ? (
               <Callout>
                 {activeMethod === "dns_txt"
-                  ? "Add the record below at your DNS provider. Changes can take up to 24 hours to propagate — we’ll keep checking."
+                  ? t`Add the record below at your DNS provider. Changes can take up to 24 hours to propagate — we’ll keep checking.`
                   : activeMethod === "html_file"
-                    ? "Upload the file to your site, then check. It must stay reachable while verification runs."
-                    : "Add the meta tag to your homepage’s <head>, then check ownership."}
+                    ? t`Upload the file to your site, then check. It must stay reachable while verification runs.`
+                    : t`Add the meta tag to your homepage’s <head>, then check ownership.`}
               </Callout>
             ) : null}
 
@@ -321,18 +328,23 @@ function AddDomainFlow() {
               <Card>
                 {activeMethod === "dns_txt" ? (
                   <>
-                    <Text className="text-xl font-semibold">DNS TXT record</Text>
+                    <Text className="text-xl font-semibold">
+                      <Trans>DNS TXT record</Trans>
+                    </Text>
                     <Text className="text-sm text-muted-foreground">
                       {instructionsBundle.dns_txt.description}
                     </Text>
                     <InstructionValue
-                      label="Hostname"
+                      label={t`Hostname`}
                       value={instructionsBundle.dns_txt.hostname}
                     />
-                    <InstructionValue label="Type" value={instructionsBundle.dns_txt.recordType} />
-                    <InstructionValue label="Value" value={instructionsBundle.dns_txt.value} />
                     <InstructionValue
-                      label="TTL"
+                      label={t`Type`}
+                      value={instructionsBundle.dns_txt.recordType}
+                    />
+                    <InstructionValue label={t`Value`} value={instructionsBundle.dns_txt.value} />
+                    <InstructionValue
+                      label={t`TTL`}
                       value={instructionsBundle.dns_txt.suggestedTTLLabel}
                     />
                   </>
@@ -340,13 +352,18 @@ function AddDomainFlow() {
 
                 {activeMethod === "html_file" ? (
                   <>
-                    <Text className="text-xl font-semibold">HTML file</Text>
+                    <Text className="text-xl font-semibold">
+                      <Trans>HTML file</Trans>
+                    </Text>
                     <Text className="text-sm text-muted-foreground">
                       {instructionsBundle.html_file.description}
                     </Text>
-                    <InstructionValue label="Path" value={instructionsBundle.html_file.fullPath} />
                     <InstructionValue
-                      label="Contents"
+                      label={t`Path`}
+                      value={instructionsBundle.html_file.fullPath}
+                    />
+                    <InstructionValue
+                      label={t`Contents`}
                       value={instructionsBundle.html_file.fileContent}
                     />
                   </>
@@ -354,11 +371,13 @@ function AddDomainFlow() {
 
                 {activeMethod === "meta_tag" ? (
                   <>
-                    <Text className="text-xl font-semibold">Meta tag</Text>
+                    <Text className="text-xl font-semibold">
+                      <Trans>Meta tag</Trans>
+                    </Text>
                     <Text className="text-sm text-muted-foreground">
                       {instructionsBundle.meta_tag.description}
                     </Text>
-                    <InstructionValue label="Tag" value={instructionsBundle.meta_tag.metaTag} />
+                    <InstructionValue label={t`Tag`} value={instructionsBundle.meta_tag.metaTag} />
                   </>
                 ) : null}
               </Card>
@@ -367,14 +386,18 @@ function AddDomainFlow() {
             {flow.status !== "failed" ? (
               <View className="flex-row gap-2">
                 <Button className="flex-1" onPress={() => setShareOpen(true)} variant="secondary">
-                  <Text>Share…</Text>
+                  <Text>
+                    <Trans>Share…</Trans>
+                  </Text>
                 </Button>
                 <Button
                   className="flex-1"
                   loading={verifyDomain.isPending || flow.status === "verifying"}
                   onPress={() => void verify(activeMethod)}
                 >
-                  <Text>Check now</Text>
+                  <Text>
+                    <Trans>Check now</Trans>
+                  </Text>
                 </Button>
               </View>
             ) : null}
@@ -387,7 +410,9 @@ function AddDomainFlow() {
               <StepConfirmation domain={flow.domain} />
             </Card>
             <Button onPress={handleDone}>
-              <Text>Open domain</Text>
+              <Text>
+                <Trans>Open domain</Trans>
+              </Text>
             </Button>
           </View>
         ) : null}

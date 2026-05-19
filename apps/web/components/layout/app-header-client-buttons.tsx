@@ -1,5 +1,6 @@
 "use client";
 
+import { Trans, useLingui } from "@lingui/react/macro";
 import { IconLayoutDashboard, IconLogin, IconMenu2, IconMoon, IconSun } from "@tabler/icons-react";
 import Link from "next/link";
 
@@ -28,6 +29,7 @@ export function AppHeaderClientButtons() {
   const { data: session, isPending } = useSession();
   const isMobile = useIsMobile();
   const { theme, toggleTheme } = useTheme();
+  const { t } = useLingui();
 
   // While loading, show skeleton matching signed-out state (most common on initial load)
   if (isPending) {
@@ -54,13 +56,13 @@ export function AppHeaderClientButtons() {
                 render={
                   <Link href="/dashboard">
                     <IconLayoutDashboard />
-                    <span className="sr-only">Dashboard</span>
+                    <span className="sr-only">{t`Dashboard`}</span>
                   </Link>
                 }
               />
             }
           />
-          <TooltipContent>Dashboard</TooltipContent>
+          <TooltipContent>{t`Dashboard`}</TooltipContent>
         </Tooltip>
         <AppHeaderSeparator className="hidden sm:inline-flex" />
         <NotificationsPopover />
@@ -76,7 +78,7 @@ export function AppHeaderClientButtons() {
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <Button variant="ghost" size="icon-sm" aria-label="Menu">
+            <Button variant="ghost" size="icon-sm" aria-label={t`Menu`}>
               <IconMenu2 />
             </Button>
           }
@@ -84,7 +86,7 @@ export function AppHeaderClientButtons() {
         <DropdownMenuContent align="end" className="min-w-48">
           <DropdownMenuItem onClick={toggleTheme}>
             {theme === "dark" ? <IconSun /> : <IconMoon />}
-            {theme === "dark" ? "Light mode" : "Dark mode"}
+            {theme === "dark" ? t`Light mode` : t`Dark mode`}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -92,7 +94,7 @@ export function AppHeaderClientButtons() {
             render={
               <Link href="/login" scroll={false}>
                 <IconLogin />
-                Sign In
+                <Trans>Sign In</Trans>
               </Link>
             }
           />
@@ -107,14 +109,14 @@ export function AppHeaderClientButtons() {
       <Tooltip>
         <TooltipTrigger
           render={
-            <Button aria-label="Toggle theme" variant="ghost" size="sm" onClick={toggleTheme}>
+            <Button aria-label={t`Toggle theme`} variant="ghost" size="sm" onClick={toggleTheme}>
               <IconSun className="scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
               <IconMoon className="absolute scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
-              <span className="sr-only">Toggle theme</span>
+              <span className="sr-only">{t`Toggle theme`}</span>
             </Button>
           }
         />
-        <TooltipContent>{theme === "dark" ? "Dark mode" : "Light mode"}</TooltipContent>
+        <TooltipContent>{theme === "dark" ? t`Dark mode` : t`Light mode`}</TooltipContent>
       </Tooltip>
       <AppHeaderSeparator />
       <Button
@@ -123,7 +125,7 @@ export function AppHeaderClientButtons() {
         nativeButton={false}
         render={
           <Link href="/login" scroll={false}>
-            Sign In
+            <Trans>Sign In</Trans>
           </Link>
         }
       />

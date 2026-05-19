@@ -1,3 +1,4 @@
+import { useLingui } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { useCSSVariable } from "uniwind";
@@ -13,6 +14,7 @@ function formatBadge(count: number): string | undefined {
 }
 
 export default function TabsLayout() {
+  const { t } = useLingui();
   const accent = useCSSVariable("--color-brand") as string;
   const canvas = useCSSVariable("--color-background") as string;
   const surface = useCSSVariable("--color-glass") as string;
@@ -44,19 +46,19 @@ export default function TabsLayout() {
           md="language"
           sf={{ default: "globe", selected: "globe.americas.fill" }}
         />
-        <NativeTabs.Trigger.Label>Portfolio</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{t`Portfolio`}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger contentStyle={{ backgroundColor: canvas }} name="notifications">
         <NativeTabs.Trigger.Icon
           md="notifications"
           sf={{ default: "bell", selected: "bell.fill" }}
         />
-        <NativeTabs.Trigger.Label>Notifications</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{t`Notifications`}</NativeTabs.Trigger.Label>
         {unreadBadge ? <NativeTabs.Trigger.Badge>{unreadBadge}</NativeTabs.Trigger.Badge> : null}
       </NativeTabs.Trigger>
       <NativeTabs.Trigger contentStyle={{ backgroundColor: canvas }} name="search" role="search">
         <NativeTabs.Trigger.Icon md="search" sf="magnifyingglass" />
-        <NativeTabs.Trigger.Label>Search</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{t`Search`}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
     </NativeTabs>
   );

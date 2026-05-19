@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { FlashList } from "@shopify/flash-list";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
@@ -98,19 +99,14 @@ const PAGE_SIZE = 20;
 type NotificationItem = RouterOutputs["notifications"]["list"]["items"][number];
 type NotificationFilter = "all" | "unread" | "read";
 
-const filters: Array<{ label: string; value: NotificationFilter }> = [
-  { label: "Inbox", value: "unread" },
-  { label: "Archive", value: "read" },
-  { label: "All", value: "all" },
-];
-
 export default function NotificationsScreen() {
+  const { t } = useLingui();
   return (
     <RequireAuth
-      body="Get notified of ownership, expiry, provider, and certificate changes. Notifications are tied to your tracked portfolio domains."
+      body={t`Get notified of ownership, expiry, provider, and certificate changes. Notifications are tied to your tracked portfolio domains.`}
       header={<HeaderMenu />}
       loading={<SkeletonRows count={4} />}
-      title="Notifications are locked"
+      title={t`Notifications are locked`}
     >
       <NotificationsList />
     </RequireAuth>
@@ -118,10 +114,17 @@ export default function NotificationsScreen() {
 }
 
 export function ErrorBoundary(props: ErrorBoundaryProps) {
-  return <ScreenErrorBoundary {...props} title="Couldn’t load notifications" />;
+  const { t } = useLingui();
+  return <ScreenErrorBoundary {...props} title={t`Couldn’t load notifications`} />;
 }
 
 function NotificationsList() {
+  const { t } = useLingui();
+  const filters: Array<{ label: string; value: NotificationFilter }> = [
+    { label: t`Inbox`, value: "unread" },
+    { label: t`Archive`, value: "read" },
+    { label: t`All`, value: "all" },
+  ];
   const trpc = useTRPC();
   const [filter, setFilter] = useState<NotificationFilter>("unread");
   const [refreshing, setRefreshing] = useState(false);
@@ -193,7 +196,7 @@ function NotificationsList() {
         <HeaderMenu />
         <QueryErrorState
           onRetry={() => void notifications.refetch()}
-          title="Couldn’t load notifications"
+          title={t`Couldn’t load notifications`}
         />
       </Screen>
     );
@@ -211,7 +214,9 @@ function NotificationsList() {
           onPress={() => void markAllRead.mutateAsync()}
           variant="secondary"
         >
-          <Text className="tabular-nums">Mark all read ({unreadCount})</Text>
+          <Text className="tabular-nums">
+            <Trans>Mark all read ({unreadCount})</Trans>
+          </Text>
         </Button>
       ) : null}
     </View>
@@ -220,11 +225,11 @@ function NotificationsList() {
   const listEmpty = (
     <View className="px-4 pb-8">
       <EmptyState
-        actionLabel="Browse portfolio"
+        actionLabel={t`Browse portfolio`}
         body={
           filter === "read"
-            ? "Notifications you have marked read will appear here."
-            : "You’re all caught up. New domain, certificate, and provider changes will show up here."
+            ? t`Notifications you have marked read will appear here.`
+            : t`You’re all caught up. New domain, certificate, and provider changes will show up here.`
         }
         icon={
           filter === "read"
@@ -232,7 +237,7 @@ function NotificationsList() {
             : { android: "celebration", ios: "party.popper" }
         }
         onAction={() => router.push("/(tabs)/domains")}
-        title={filter === "read" ? "No archived notifications" : "All caught up!"}
+        title={filter === "read" ? t`No archived notifications` : t`All caught up!`}
       />
     </View>
   );
@@ -246,10 +251,12 @@ function NotificationsList() {
   ) : notifications.isError && items.length > 0 ? (
     <View className="items-center gap-2 p-4">
       <Text className="text-center text-sm text-muted-foreground">
-        Couldn’t load more notifications.
+        <Trans>Couldn’t load more notifications.</Trans>
       </Text>
       <Button onPress={() => void fetchNextPage()} variant="secondary">
-        <Text>Try again</Text>
+        <Text>
+          <Trans>Try again</Trans>
+        </Text>
       </Button>
     </View>
   ) : null;
@@ -283,6 +290,7 @@ const NotificationRow = memo(function NotificationRow({
   item: NotificationItem;
   onMarkRead: (id: string) => void;
 }) {
+  const { t } = useLingui();
   const { domainName, targetSection } = item;
   const swipeableRef = useRef<SwipeableMethods>(null);
   const handleMarkRead = useCallback(() => {
@@ -319,17 +327,19 @@ const NotificationRow = memo(function NotificationRow({
     () => (
       <View className="flex-row items-stretch pr-2">
         <Pressable
-          accessibilityLabel="Mark as read"
+          accessibilityLabel={t`Mark as read`}
           accessibilityRole="button"
           className="bg-brand items-center justify-center rounded-2xl px-4"
           onPress={handleMarkRead}
           style={{ borderCurve: "continuous", width: SWIPE_ACTION_WIDTH }}
         >
-          <Text className="font-semibold text-primary-foreground">Mark read</Text>
+          <Text className="font-semibold text-primary-foreground">
+            <Trans>Mark read</Trans>
+          </Text>
         </Pressable>
       </View>
     ),
-    [handleMarkRead],
+    [handleMarkRead, t],
   );
 
   const swipeable = (content: React.ReactNode) =>
@@ -358,7 +368,7 @@ const NotificationRow = memo(function NotificationRow({
       {swipeable(
         <Link asChild href={{ params, pathname: "/(tabs)/domains/[domain]" }}>
           <Link.Trigger>
-            <Pressable accessibilityLabel={`Open ${domainName}`} accessibilityRole="link">
+            <Pressable accessibilityLabel={t`Open ${domainName}`} accessibilityRole="link">
               {body}
             </Pressable>
           </Link.Trigger>
@@ -366,7 +376,7 @@ const NotificationRow = memo(function NotificationRow({
           <Link.Menu>
             {item.readAt ? null : (
               <Link.MenuAction icon="checkmark.circle" onPress={handleMarkRead}>
-                Mark as read
+                {t`Mark as read`}
               </Link.MenuAction>
             )}
           </Link.Menu>
