@@ -1,3 +1,6 @@
+import { type I18n } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useRef } from "react";
 import { ScrollView, View } from "react-native";
@@ -14,6 +17,7 @@ import { formatDate } from "@/lib/format";
 import type { RegistrationContact, RegistrationResponse } from "@domainstack/types";
 
 export function RegistrationSection({ domain }: { domain: string }) {
+  const { t } = useLingui();
   const trpc = useTRPC();
   const { data } = useSuspenseQuery(trpc.domain.getRegistration.queryOptions({ domain }));
 
@@ -23,10 +27,10 @@ export function RegistrationSection({ domain }: { domain: string }) {
         accent="purple"
         icon={{ android: "contact_page", ios: "person.text.rectangle" }}
         subtitle="WHOIS · RDAP"
-        title="Registration"
+        title={t`Registration`}
       >
         <Text className="text-sm text-muted-foreground">
-          Registration data is unavailable for this domain.
+          <Trans>Registration data is unavailable for this domain.</Trans>
         </Text>
       </ReportSection>
     );
@@ -36,7 +40,8 @@ export function RegistrationSection({ domain }: { domain: string }) {
 }
 
 function RegistrationSectionBody({ data }: { data: RegistrationResponse }) {
-  const items = useMemo(() => buildItems(data), [data]);
+  const { t, i18n } = useLingui();
+  const items = useMemo(() => buildItems(data, i18n), [data, i18n]);
   const isUnavailable = data.status === "unknown";
   const rawResponse = data.rawResponse;
 
@@ -45,7 +50,7 @@ function RegistrationSectionBody({ data }: { data: RegistrationResponse }) {
       accent="purple"
       icon={{ android: "contact_page", ios: "person.text.rectangle" }}
       subtitle="WHOIS · RDAP"
-      title="Registration"
+      title={t`Registration`}
     >
       {isUnavailable ? (
         <UnavailableBanner reason={data.unavailableReason} tld={data.tld} />
@@ -57,25 +62,25 @@ function RegistrationSectionBody({ data }: { data: RegistrationResponse }) {
   );
 }
 
-function buildItems(data: RegistrationResponse): KeyValueItem[] {
+function buildItems(data: RegistrationResponse, i18n: I18n): KeyValueItem[] {
   const items: KeyValueItem[] = [];
   items.push({
     key: "registrar",
-    label: "Registrar",
-    value: data.registrarProvider?.name ?? data.registrar?.name ?? "Unknown",
+    label: i18n._(msg`Registrar`),
+    value: data.registrarProvider?.name ?? data.registrar?.name ?? i18n._(msg`Unknown`),
   });
 
   const registrant = extractRegistrant(data.contacts);
   items.push({
     key: "registrant",
-    label: "Registrant",
-    value: data.privacyEnabled || !registrant ? "Hidden" : registrant,
+    label: i18n._(msg`Registrant`),
+    value: data.privacyEnabled || !registrant ? i18n._(msg`Hidden`) : registrant,
   });
 
   if (data.creationDate) {
     items.push({
       key: "created",
-      label: "Created",
+      label: i18n._(msg`Created`),
       value: (
         <View className="flex-row flex-wrap items-baseline gap-x-2">
           <Text>{formatDate(data.creationDate)}</Text>
@@ -90,7 +95,7 @@ function buildItems(data: RegistrationResponse): KeyValueItem[] {
   if (data.expirationDate) {
     items.push({
       key: "expires",
-      label: "Expires",
+      label: i18n._(msg`Expires`),
       value: (
         <View className="flex-row flex-wrap items-baseline gap-x-2">
           <Text>{formatDate(data.expirationDate)}</Text>
@@ -106,7 +111,7 @@ function buildItems(data: RegistrationResponse): KeyValueItem[] {
   if (nameservers.length > 0) {
     items.push({
       key: "nameservers",
-      label: "Nameservers",
+      label: i18n._(msg`Nameservers`),
       value: (
         <View className="gap-0.5">
           {nameservers.map((ns) => (
@@ -140,18 +145,21 @@ function UnavailableBanner({
   reason: RegistrationResponse["unavailableReason"];
   tld: string;
 }) {
+  const { t } = useLingui();
   return (
     <View
       className="bg-warning-surface gap-1 rounded-xl border border-warning-border p-3"
       style={{ borderCurve: "continuous" }}
     >
-      <Text className="font-semibold text-warning">Registration data unavailable</Text>
+      <Text className="font-semibold text-warning">
+        <Trans>Registration data unavailable</Trans>
+      </Text>
       <Text className="text-sm text-muted-foreground">
         {reason === "timeout"
-          ? "WHOIS/RDAP lookup timed out. This may be a temporary issue with the registry."
+          ? t`WHOIS/RDAP lookup timed out. This may be a temporary issue with the registry.`
           : reason === "unsupported_tld"
-            ? `The .${tld} registry does not publish public WHOIS/RDAP data.`
-            : "Registration information could not be retrieved at this time."}
+            ? t`The .${tld} registry does not publish public WHOIS/RDAP data.`
+            : t`Registration information could not be retrieved at this time.`}
       </Text>
     </View>
   );
@@ -164,6 +172,7 @@ function RawDataToggle({
   raw: Record<string, unknown> | string;
   format: RegistrationResponse["source"];
 }) {
+  const { t } = useLingui();
   const sheetRef = useRef<AppBottomSheetRef>(null);
   const text = useMemo(() => (typeof raw === "string" ? raw : JSON.stringify(raw, null, 2)), [raw]);
   const label = format === "rdap" ? "RDAP" : "WHOIS";
@@ -171,9 +180,11 @@ function RawDataToggle({
   return (
     <View className="gap-2">
       <Button onPress={() => sheetRef.current?.present()} variant="ghost">
-        <Text>View raw {label}</Text>
+        <Text>
+          <Trans>View raw {label}</Trans>
+        </Text>
       </Button>
-      <AppBottomSheet description={`Raw ${label} response`} ref={sheetRef} title={`Raw ${label}`}>
+      <AppBottomSheet description={t`Raw ${label} response`} ref={sheetRef} title={t`Raw ${label}`}>
         <ScrollView
           className="flex-1 rounded-lg border border-border bg-secondary p-3"
           contentContainerStyle={{ paddingBottom: 8 }}

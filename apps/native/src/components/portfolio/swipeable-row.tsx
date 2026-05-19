@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import * as Haptics from "expo-haptics";
 import { useCallback, useRef } from "react";
 import { Pressable, View } from "react-native";
@@ -25,6 +26,7 @@ export function SwipeableRow({
   onMute: (domain: PortfolioDomain) => void;
   onPress: (domain: PortfolioDomain) => void;
 }) {
+  const { t } = useLingui();
   const swipeableRef = useRef<SwipeableMethods>(null);
   const selectionMode = useSelectionMode();
   const enabled = selectionMode === "idle";
@@ -45,7 +47,7 @@ export function SwipeableRow({
     onArchive(domain);
   }, [domain, onArchive]);
 
-  const muteLabel = domain.muted ? "Unmute" : "Mute";
+  const muteLabel = domain.muted ? t`Unmute` : t`Mute`;
 
   const renderLeftActions = useCallback(
     () => (
@@ -80,7 +82,9 @@ export function SwipeableRow({
             width: ACTION_WIDTH,
           })}
         >
-          <Text className="font-semibold text-destructive-foreground">Archive</Text>
+          <Text className="font-semibold text-destructive-foreground">
+            <Trans>Archive</Trans>
+          </Text>
         </Pressable>
       </View>
     ),

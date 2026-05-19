@@ -1,3 +1,4 @@
+import { useLingui } from "@lingui/react/macro";
 import { ScrollView, View } from "react-native";
 
 import { ProviderLogo } from "@/components/provider-logo";
@@ -11,12 +12,13 @@ type Slot = {
 };
 
 export function ProviderChips({ domain }: { domain: PortfolioDomain }) {
+  const { t } = useLingui();
   const slots: Slot[] = [
-    { key: "registrar", provider: domain.registrar, label: "Registrar" },
-    { key: "dns", provider: domain.dns, label: "DNS" },
-    { key: "hosting", provider: domain.hosting, label: "Host" },
-    { key: "email", provider: domain.email, label: "Email" },
-    { key: "ca", provider: domain.ca, label: "CA" },
+    { key: "registrar", provider: domain.registrar, label: t`Registrar` },
+    { key: "dns", provider: domain.dns, label: t`DNS` },
+    { key: "hosting", provider: domain.hosting, label: t`Host` },
+    { key: "email", provider: domain.email, label: t`Email` },
+    { key: "ca", provider: domain.ca, label: t`CA` },
   ];
   const visible = slots.filter((s) => s.provider?.name);
   if (visible.length === 0) return null;

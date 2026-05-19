@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useQueryClient } from "@tanstack/react-query";
 import { Share } from "react-native";
 
@@ -10,6 +11,7 @@ import type { DomainResponse } from "@domainstack/types";
 import { serializeDomainExport } from "@domainstack/utils";
 
 export function ExportButton({ domain }: { domain: string }) {
+  const { t } = useLingui();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
@@ -29,18 +31,20 @@ export function ExportButton({ domain }: { domain: string }) {
       const payload = serializeDomainExport(domain, data);
       await Share.share({
         message: JSON.stringify(payload, null, 2),
-        title: `${domain} report`,
+        title: t`${domain} report`,
       });
     } catch (error) {
       analytics.trackException(error, { domain });
-      const message = error instanceof Error ? error.message : "Export failed";
-      toast.error({ title: "Export failed", message });
+      const message = error instanceof Error ? error.message : t`Export failed`;
+      toast.error({ title: t`Export failed`, message });
     }
   }
 
   return (
     <Button onPress={() => void handleExport()} variant="secondary">
-      <Text>Export</Text>
+      <Text>
+        <Trans>Export</Trans>
+      </Text>
     </Button>
   );
 }

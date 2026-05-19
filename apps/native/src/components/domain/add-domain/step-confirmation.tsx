@@ -1,3 +1,4 @@
+import { Trans } from "@lingui/react/macro";
 import { View } from "react-native";
 import { useCSSVariable } from "uniwind";
 
@@ -14,10 +15,14 @@ export function StepConfirmation({ domain }: { domain: string }) {
         size={56}
       />
       <View className="items-center gap-2">
-        <Text variant="title2">Domain verified!</Text>
+        <Text variant="title2">
+          <Trans>Domain verified!</Trans>
+        </Text>
         <Text className="text-center text-sm text-muted-foreground">
-          <Text className="font-medium">{domain}</Text> has been added to your portfolio. You’ll get
-          notifications when it’s about to expire.
+          <Trans>
+            <Text className="font-medium">{domain}</Text> has been added to your portfolio. You’ll
+            get notifications when it’s about to expire.
+          </Trans>
         </Text>
       </View>
     </View>

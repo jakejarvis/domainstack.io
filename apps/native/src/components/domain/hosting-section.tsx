@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { HostingMap } from "@/components/domain/hosting-map";
@@ -8,6 +9,7 @@ import { useTRPC } from "@/lib/api";
 import { countryCodeToEmoji } from "@domainstack/utils";
 
 export function HostingSection({ domain }: { domain: string }) {
+  const { t } = useLingui();
   const trpc = useTRPC();
   const { data } = useSuspenseQuery(trpc.domain.getHosting.queryOptions({ domain }));
 
@@ -17,9 +19,11 @@ export function HostingSection({ domain }: { domain: string }) {
         accent="blue"
         icon={{ android: "cloud", ios: "cloud" }}
         subtitle="DNS · hosting · email"
-        title="Hosting"
+        title={t`Hosting`}
       >
-        <Text className="text-sm text-muted-foreground">Hosting information is unavailable.</Text>
+        <Text className="text-sm text-muted-foreground">
+          <Trans>Hosting information is unavailable.</Trans>
+        </Text>
       </ReportSection>
     );
   }
@@ -29,18 +33,18 @@ export function HostingSection({ domain }: { domain: string }) {
 
   items.push({
     key: "host",
-    label: "Host",
-    value: hosting.hostingProvider.name ?? "Unknown",
+    label: t`Host`,
+    value: hosting.hostingProvider.name ?? t`Unknown`,
   });
   items.push({
     key: "dns-provider",
-    label: "DNS provider",
-    value: hosting.dnsProvider.name ?? "Unknown",
+    label: t`DNS provider`,
+    value: hosting.dnsProvider.name ?? t`Unknown`,
   });
   items.push({
     key: "email-provider",
-    label: "Email provider",
-    value: hosting.emailProvider.name ?? "Unknown",
+    label: t`Email provider`,
+    value: hosting.emailProvider.name ?? t`Unknown`,
   });
 
   if (hosting.geo) {
@@ -48,10 +52,10 @@ export function HostingSection({ domain }: { domain: string }) {
     const locationParts = [hosting.geo.city, hosting.geo.region, hosting.geo.country].filter(
       Boolean,
     );
-    const location = locationParts.length > 0 ? locationParts.join(", ") : "Unknown";
+    const location = locationParts.length > 0 ? locationParts.join(", ") : t`Unknown`;
     items.push({
       key: "location",
-      label: "Location",
+      label: t`Location`,
       value: flag ? `${flag} ${location}` : location,
     });
   }
@@ -61,7 +65,7 @@ export function HostingSection({ domain }: { domain: string }) {
       accent="blue"
       icon={{ android: "cloud", ios: "cloud" }}
       subtitle="DNS · hosting · email"
-      title="Hosting"
+      title={t`Hosting`}
     >
       <KeyValueGrid items={items} />
       {hosting.geo?.lat != null && hosting.geo?.lon != null ? (

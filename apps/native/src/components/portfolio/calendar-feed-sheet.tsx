@@ -1,3 +1,6 @@
+import { i18n as globalI18n } from "@lingui/core";
+import { msg, plural } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Clipboard from "expo-clipboard";
 import * as Linking from "expo-linking";
@@ -29,11 +32,11 @@ function toWebcalUrl(httpsUrl: string): string {
 }
 
 function pluralizeExpirations(count: number): string {
-  return `${count} ${count === 1 ? "expiration" : "expirations"}`;
+  return plural(count, { one: "# expiration", other: "# expirations" });
 }
 
 function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Please try again.";
+  return error instanceof Error ? error.message : globalI18n._(msg`Please try again.`);
 }
 
 /**
@@ -42,26 +45,30 @@ function errorMessage(error: unknown): string {
  * is the only way the user can grant it.
  */
 function PermissionNotice({ status }: { status: Exclude<CalendarPermissionStatus, "granted"> }) {
+  const { t } = useLingui();
   return (
     <View className="gap-2">
       <Text className="text-sm text-destructive">
         {status === "blocked"
-          ? "Calendar access is currently disabled. Enable it in Settings and try again."
-          : "Calendar access was declined. Turn it on in Settings, then try again."}
+          ? t`Calendar access is currently disabled. Enable it in Settings and try again.`
+          : t`Calendar access was declined. Turn it on in Settings, then try again.`}
       </Text>
       <Button onPress={() => void Linking.openSettings()} variant="secondary">
-        <Text>Open Settings</Text>
+        <Text>
+          <Trans>Open Settings</Trans>
+        </Text>
       </Button>
     </View>
   );
 }
 
 export function CalendarFeedSheet({ ref }: { ref?: Ref<AppBottomSheetRef> }) {
+  const { t } = useLingui();
   return (
     <AppBottomSheet
-      description="Add your domain expirations to your phone's calendar."
+      description={t`Add your domain expirations to your phone's calendar.`}
       ref={ref}
-      title="Calendar"
+      title={t`Calendar`}
     >
       <ScrollView
         className="flex-1"
@@ -76,6 +83,7 @@ export function CalendarFeedSheet({ ref }: { ref?: Ref<AppBottomSheetRef> }) {
 }
 
 function ManagedCalendarCard() {
+  const { t, i18n } = useLingui();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
@@ -113,13 +121,14 @@ function ManagedCalendarCard() {
       setPermissionIssue(null);
       const count = await reconcile(await getDomains());
       setEnabled(true);
+      const expirations = pluralizeExpirations(count);
       toast.success({
-        title: "Added to calendar",
-        message: `Added ${pluralizeExpirations(count)} to your calendar.`,
+        title: t`Added to calendar`,
+        message: t`Added ${expirations} to your calendar.`,
       });
     } catch (error) {
       analytics.trackException(error, { context: "calendar-add" });
-      toast.error({ title: "Couldn’t add to calendar", message: errorMessage(error) });
+      toast.error({ title: t`Couldn’t add to calendar`, message: errorMessage(error) });
     } finally {
       setAdding(false);
     }
@@ -138,10 +147,11 @@ function ManagedCalendarCard() {
       }
       setPermissionIssue(null);
       const count = await reconcile(await getDomains());
-      toast.success(`${pluralizeExpirations(count)} synced`);
+      const expirations = pluralizeExpirations(count);
+      toast.success(t`${expirations} synced`);
     } catch (error) {
       analytics.trackException(error, { context: "calendar-sync-now" });
-      toast.error({ title: "Sync failed", message: errorMessage(error) });
+      toast.error({ title: t`Sync failed`, message: errorMessage(error) });
     } finally {
       setSyncing(false);
     }
@@ -149,19 +159,18 @@ function ManagedCalendarCard() {
 
   function handleRemove() {
     void confirmDestructive({
-      confirmLabel: "Remove",
-      message:
-        "Deletes the Domainstack calendar and its events from this device. Your tracked domains aren’t affected.",
-      title: "Remove from calendar?",
+      confirmLabel: t`Remove`,
+      message: t`Deletes the Domainstack calendar and its events from this device. Your tracked domains aren’t affected.`,
+      title: t`Remove from calendar?`,
     }).then(async (confirmed) => {
       if (!confirmed) return;
       setRemoving(true);
       try {
         await teardown();
-        toast.success("Removed from calendar");
+        toast.success(t`Removed from calendar`);
       } catch (error) {
         analytics.trackException(error, { context: "calendar-teardown" });
-        toast.error({ title: "Couldn’t remove", message: errorMessage(error) });
+        toast.error({ title: t`Couldn’t remove`, message: errorMessage(error) });
       } finally {
         setRemoving(false);
       }
@@ -169,20 +178,26 @@ function ManagedCalendarCard() {
   }
 
   if (enabled) {
-    const relative = lastSyncedAt ? formatRelativeTime(lastSyncedAt) : null;
+    const relative = lastSyncedAt ? formatRelativeTime(lastSyncedAt, i18n.locale) : null;
+    const expirations = pluralizeExpirations(syncedCount);
     return (
       <Card>
-        <Text className="font-semibold">Added to your calendar</Text>
+        <Text className="font-semibold">
+          <Trans>Added to your calendar</Trans>
+        </Text>
         <Text className="text-sm text-muted-foreground">
-          {pluralizeExpirations(syncedCount)}
-          {relative ? ` · updated ${relative}` : ""}
+          {relative ? t`${expirations} · updated ${relative}` : expirations}
         </Text>
         {permissionIssue ? <PermissionNotice status={permissionIssue} /> : null}
         <Button disabled={busy} loading={syncing} onPress={handleSyncNow} variant="secondary">
-          <Text>Sync now</Text>
+          <Text>
+            <Trans>Sync now</Trans>
+          </Text>
         </Button>
         <Button disabled={busy} loading={removing} onPress={handleRemove} variant="danger">
-          <Text>Remove from calendar</Text>
+          <Text>
+            <Trans>Remove from calendar</Trans>
+          </Text>
         </Button>
       </Card>
     );
@@ -190,33 +205,42 @@ function ManagedCalendarCard() {
 
   return (
     <Card>
-      <Text className="font-semibold">Add to your calendar</Text>
+      <Text className="font-semibold">
+        <Trans>Add to your calendar</Trans>
+      </Text>
       <Text className="text-sm text-muted-foreground">
-        Adds an all-day event for each verified domain's expiration to a dedicated “Domainstack”
-        calendar on this device. It stays in sync automatically as your portfolio changes.
+        <Trans>
+          Adds an all-day event for each verified domain's expiration to a dedicated “Domainstack”
+          calendar on this device. It stays in sync automatically as your portfolio changes.
+        </Trans>
       </Text>
       {permissionIssue ? <PermissionNotice status={permissionIssue} /> : null}
       <Button disabled={busy} loading={adding} onPress={handleAdd}>
-        <Text>Add to Calendar</Text>
+        <Text>
+          <Trans>Add to Calendar</Trans>
+        </Text>
       </Button>
     </Card>
   );
 }
 
 function AdvancedSubscriptionSection() {
+  const { t } = useLingui();
   const [expanded, setExpanded] = useState(false);
   const chevronColor = useCSSVariable("--color-muted-foreground") as string;
 
   return (
     <Card>
       <Pressable
-        accessibilityHint="Cross-device webcal subscription for desktop calendar apps"
+        accessibilityHint={t`Cross-device webcal subscription for desktop calendar apps`}
         accessibilityRole="button"
         accessibilityState={{ expanded }}
         className="flex-row items-center justify-between"
         onPress={() => setExpanded((v) => !v)}
       >
-        <Text className="font-semibold">Subscription URL (advanced)</Text>
+        <Text className="font-semibold">
+          <Trans>Subscription URL (advanced)</Trans>
+        </Text>
         <Symbol color={chevronColor} name={expanded ? "chevron.down" : "chevron.right"} size={14} />
       </Pressable>
       {expanded ? <SubscriptionFeedManager /> : null}
@@ -225,6 +249,7 @@ function AdvancedSubscriptionSection() {
 }
 
 function SubscriptionFeedManager() {
+  const { t } = useLingui();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const feedKey = trpc.user.getCalendarFeed.queryKey();
@@ -234,29 +259,29 @@ function SubscriptionFeedManager() {
 
   const enable = useMutation(
     trpc.user.enableCalendarFeed.mutationOptions({
-      onError: (error) => toast.error({ title: "Could not enable feed", message: error.message }),
+      onError: (error) => toast.error({ title: t`Could not enable feed`, message: error.message }),
       onSettled: invalidate,
     }),
   );
 
   const disable = useMutation(
     trpc.user.disableCalendarFeed.mutationOptions({
-      onError: (error) => toast.error({ title: "Could not disable feed", message: error.message }),
+      onError: (error) => toast.error({ title: t`Could not disable feed`, message: error.message }),
       onSettled: invalidate,
     }),
   );
 
   const rotate = useMutation(
     trpc.user.rotateCalendarFeedToken.mutationOptions({
-      onSuccess: () => toast.success("Feed URL rotated"),
-      onError: (error) => toast.error({ title: "Could not rotate URL", message: error.message }),
+      onSuccess: () => toast.success(t`Feed URL rotated`),
+      onError: (error) => toast.error({ title: t`Could not rotate URL`, message: error.message }),
       onSettled: invalidate,
     }),
   );
 
   const remove = useMutation(
     trpc.user.deleteCalendarFeed.mutationOptions({
-      onError: (error) => toast.error({ title: "Could not delete feed", message: error.message }),
+      onError: (error) => toast.error({ title: t`Could not delete feed`, message: error.message }),
       onSettled: invalidate,
     }),
   );
@@ -269,7 +294,7 @@ function SubscriptionFeedManager() {
   async function handleCopy() {
     if (!feedUrl) return;
     await Clipboard.setStringAsync(feedUrl);
-    toast.success({ title: "Copied", message: "Feed URL copied to clipboard." });
+    toast.success({ title: t`Copied`, message: t`Feed URL copied to clipboard.` });
   }
 
   function handleSubscribe() {
@@ -279,10 +304,9 @@ function SubscriptionFeedManager() {
 
   function handleRotate() {
     void confirmDestructive({
-      confirmLabel: "Rotate",
-      message:
-        "The current URL stops working immediately. Any subscribed calendar apps need to resubscribe.",
-      title: "Generate new URL?",
+      confirmLabel: t`Rotate`,
+      message: t`The current URL stops working immediately. Any subscribed calendar apps need to resubscribe.`,
+      title: t`Generate new URL?`,
     }).then((confirmed) => {
       if (confirmed) rotate.mutate(undefined);
     });
@@ -290,10 +314,9 @@ function SubscriptionFeedManager() {
 
   function handleDisable() {
     void confirm({
-      confirmLabel: "Disable",
-      message:
-        "Subscribed calendars will stop receiving updates. You can re-enable later with the same URL.",
-      title: "Disable feed?",
+      confirmLabel: t`Disable`,
+      message: t`Subscribed calendars will stop receiving updates. You can re-enable later with the same URL.`,
+      title: t`Disable feed?`,
     }).then((confirmed) => {
       if (confirmed) disable.mutate(undefined);
     });
@@ -301,9 +324,9 @@ function SubscriptionFeedManager() {
 
   function handleDelete() {
     void confirmDestructive({
-      confirmLabel: "Delete",
-      message: "This permanently removes the feed and any subscribed calendars will stop syncing.",
-      title: "Delete feed?",
+      confirmLabel: t`Delete`,
+      message: t`This permanently removes the feed and any subscribed calendars will stop syncing.`,
+      title: t`Delete feed?`,
     }).then((confirmed) => {
       if (confirmed) remove.mutate(undefined);
     });
@@ -322,7 +345,9 @@ function SubscriptionFeedManager() {
       <View className="gap-2">
         <Text className="text-sm text-muted-foreground">{feedQuery.error.message}</Text>
         <Button onPress={() => void feedQuery.refetch()} variant="secondary">
-          <Text>Retry</Text>
+          <Text>
+            <Trans>Retry</Trans>
+          </Text>
         </Button>
       </View>
     );
@@ -332,17 +357,21 @@ function SubscriptionFeedManager() {
     return (
       <View className="gap-3">
         <Text className="text-sm text-muted-foreground">
-          Subscribe in a desktop calendar app for read-only, cross-device sync.
+          <Trans>Subscribe in a desktop calendar app for read-only, cross-device sync.</Trans>
         </Text>
         <Text className="font-mono text-xs text-muted-foreground" numberOfLines={3} selectable>
           {feedUrl}
         </Text>
         <View className="flex-row gap-2">
           <Button className="flex-1" onPress={handleCopy} variant="secondary">
-            <Text>Copy</Text>
+            <Text>
+              <Trans>Copy</Trans>
+            </Text>
           </Button>
           <Button className="flex-1" onPress={handleSubscribe} variant="secondary">
-            <Text>Subscribe</Text>
+            <Text>
+              <Trans>Subscribe</Trans>
+            </Text>
           </Button>
         </View>
         <Button
@@ -351,7 +380,9 @@ function SubscriptionFeedManager() {
           onPress={handleRotate}
           variant="secondary"
         >
-          <Text>Rotate URL</Text>
+          <Text>
+            <Trans>Rotate URL</Trans>
+          </Text>
         </Button>
         <Button
           disabled={busy}
@@ -359,10 +390,14 @@ function SubscriptionFeedManager() {
           onPress={handleDisable}
           variant="secondary"
         >
-          <Text>Disable feed</Text>
+          <Text>
+            <Trans>Disable feed</Trans>
+          </Text>
         </Button>
         <Button disabled={busy} loading={remove.isPending} onPress={handleDelete} variant="danger">
-          <Text>Delete feed</Text>
+          <Text>
+            <Trans>Delete feed</Trans>
+          </Text>
         </Button>
       </View>
     );
@@ -371,11 +406,15 @@ function SubscriptionFeedManager() {
   return (
     <View className="gap-3">
       <Text className="text-sm text-muted-foreground">
-        Generates a private webcal URL to subscribe in Apple Calendar, Google Calendar, or any
-        standards-compliant client.
+        <Trans>
+          Generates a private webcal URL to subscribe in Apple Calendar, Google Calendar, or any
+          standards-compliant client.
+        </Trans>
       </Text>
       <Button disabled={busy} loading={enable.isPending} onPress={() => enable.mutate(undefined)}>
-        <Text>Enable</Text>
+        <Text>
+          <Trans>Enable</Trans>
+        </Text>
       </Button>
     </View>
   );

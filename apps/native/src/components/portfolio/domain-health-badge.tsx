@@ -1,3 +1,7 @@
+import { type MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
+
 import { Badge } from "@/components/badge";
 import { Text } from "@/components/text";
 
@@ -5,11 +9,11 @@ type HealthStatus = "healthy" | "warning" | "critical" | "unknown";
 
 type BadgeVariant = "default" | "success" | "warning" | "danger";
 
-const CONFIG: Record<HealthStatus, { variant: BadgeVariant; label: string }> = {
-  critical: { label: "Critical", variant: "danger" },
-  healthy: { label: "Healthy", variant: "success" },
-  unknown: { label: "Unknown", variant: "default" },
-  warning: { label: "Needs attention", variant: "warning" },
+const CONFIG: Record<HealthStatus, { variant: BadgeVariant; label: MessageDescriptor }> = {
+  critical: { label: msg`Critical`, variant: "danger" },
+  healthy: { label: msg`Healthy`, variant: "success" },
+  unknown: { label: msg`Unknown`, variant: "default" },
+  warning: { label: msg`Needs attention`, variant: "warning" },
 };
 
 function statusFor(
@@ -33,11 +37,12 @@ export function DomainHealthBadge({
   expirationDate: Date | string | null | undefined;
   verified: boolean;
 }) {
+  const { i18n } = useLingui();
   const status = statusFor(expirationDate, verified);
   const config = CONFIG[status];
   return (
     <Badge dot={status !== "unknown"} variant={config.variant}>
-      <Text>{config.label}</Text>
+      <Text>{i18n._(config.label)}</Text>
     </Badge>
   );
 }

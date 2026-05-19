@@ -13,12 +13,83 @@ msgstr ""
 "Plural-Forms: \n"
 "Report-Msgid-Bugs-To: \n"
 
+#. placeholder {0}: variant.daysLeft
+#: ../../apps/native/src/components/portfolio/subscription-banner.tsx
+msgid "{0, plural, =0 {Your Pro plan ends today} one {Your Pro plan ends in # day} other {Your Pro plan ends in # days}}"
+msgstr ""
+
+#. placeholder {0}: robots.sitemaps.length
+#: ../../apps/native/src/components/domain/seo-section.tsx
+msgid "{0, plural, one { · # sitemap} other { · # sitemaps}}"
+msgstr ""
+
+#. placeholder {0}: robots.groups.length
+#: ../../apps/native/src/components/domain/seo-section.tsx
+msgid "{0, plural, one {# group} other {# groups}}"
+msgstr ""
+
 #: ../../apps/native/src/components/settings/billing.tsx
 msgid "{activeCount} of {planQuota} active domains used"
 msgstr ""
 
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "{count, plural, one {# expiration} other {# expirations}}"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/export-button.tsx
+msgid "{domain} report"
+msgstr ""
+
+#: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
+msgid "{domainName} will stop being tracked."
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "{expirations} · updated {relative}"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "{expirations} synced"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/filter-sheet.tsx
+msgid "{healthCount} selected"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/quota-meter.tsx
+msgid "{percent} percent of plan used"
+msgstr ""
+
 #: ../../apps/native/src/app/(tabs)/domains/index.tsx
 msgid "{selectionCount} selected"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/filter-sheet.tsx
+msgid "{tldCount} selected"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/filter-sheet.tsx
+msgid "{tldOptionCount} options"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/certificates-section.tsx
+msgid "{warningSubject} expires {warningDate} ({warningDays} days)."
+msgstr ""
+
+#: ../../apps/native/src/components/domain/registrar-links.tsx
+msgid "/year"
+msgstr ""
+
+#: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
+msgid "+ Track this domain"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/quota-meter.tsx
+msgid "<0>{activeCount}</0> / {planQuota} domains"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/step-confirmation.tsx
+msgid "<0>{domain}</0> has been added to your portfolio. You’ll get notifications when it’s about to expire."
 msgstr ""
 
 #: ../../apps/web/app/not-found.tsx
@@ -39,6 +110,14 @@ msgstr ""
 
 #: ../../apps/native/src/components/settings/linked-accounts.tsx
 msgid "Account linked"
+msgstr ""
+
+#: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
+msgid "Action failed"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/certificates-section.tsx
+msgid "Active SSL certificates"
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/domains/index.tsx
@@ -66,15 +145,42 @@ msgstr ""
 msgid "Add the record below at your DNS provider. Changes can take up to 24 hours to propagate — we’ll keep checking."
 msgstr ""
 
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Add to Calendar"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Add to your calendar"
+msgstr ""
+
 #: ../../apps/native/src/app/settings.tsx
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
 msgid "Add your domain expirations to your phone's calendar."
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Added {expirations} to your calendar."
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Added to calendar"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Added to your calendar"
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/domains/add.tsx
 msgid "Adding domains is locked"
 msgstr ""
 
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Adds an all-day event for each verified domain's expiration to a dedicated “Domainstack” calendar on this device. It stays in sync automatically as your portfolio changes."
+msgstr ""
+
 #: ../../apps/native/src/app/(tabs)/notifications/index.tsx
+#: ../../apps/native/src/components/portfolio/filter-chips.tsx
+#: ../../apps/native/src/components/portfolio/filter-sheet.tsx
 msgid "All"
 msgstr ""
 
@@ -94,7 +200,14 @@ msgstr ""
 msgid "An unexpected error occurred. Please try again."
 msgstr ""
 
+#: ../../apps/native/src/components/domain/unregistered-card.tsx
+msgid "appears to be unregistered…"
+msgstr ""
+
+#: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
 #: ../../apps/native/src/app/(tabs)/notifications/index.tsx
+#: ../../apps/native/src/components/portfolio/bulk-actions-toolbar.tsx
+#: ../../apps/native/src/components/portfolio/swipeable-row.tsx
 msgid "Archive"
 msgstr ""
 
@@ -102,12 +215,27 @@ msgstr ""
 msgid "Archive domains from the detail screen to keep them here for later."
 msgstr ""
 
+#: ../../apps/native/src/components/portfolio/bulk-actions-toolbar.tsx
+msgid "Archive selected"
+msgstr ""
+
+#: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
 #: ../../apps/native/src/app/(tabs)/domains/index.tsx
+#: ../../apps/native/src/components/portfolio/archived-row.tsx
 msgid "Archived"
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/domains/index.tsx
 msgid "Archived ({archivedCount})"
+msgstr ""
+
+#. placeholder {0}: ids.length
+#: ../../apps/native/src/components/portfolio/bulk-actions-toolbar.tsx
+msgid "Archived {0, plural, one {# domain} other {# domains}}"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/archived-row.tsx
+msgid "Archived {archivedRelative}"
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/domains/archived.tsx
@@ -134,8 +262,21 @@ msgstr ""
 msgid "By continuing you agree to our <0>Terms</0> and <1>Privacy Policy</1>."
 msgstr "En continuant, vous acceptez nos <0>Conditions</0> et notre <1>Politique de confidentialité</1>."
 
+#: ../../apps/native/src/components/portfolio/provider-chips.tsx
+msgid "CA"
+msgstr ""
+
 #: ../../apps/native/src/app/settings.tsx
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
 msgid "Calendar"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Calendar access is currently disabled. Enable it in Settings and try again."
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Calendar access was declined. Turn it on in Settings, then try again."
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/domains/index.tsx
@@ -147,16 +288,44 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
+#: ../../apps/native/src/components/domain/seo-section.tsx
+msgid "Canonical"
+msgstr ""
+
 #: ../../apps/native/src/app/settings.tsx
 msgid "Certificate changes"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/certificates-section.tsx
+msgid "Certificate expiring soon"
 msgstr ""
 
 #: ../../apps/native/src/app/settings.tsx
 msgid "Certificate expiry"
 msgstr ""
 
+#: ../../apps/native/src/components/domain/certificates-section.tsx
+msgid "Certificates"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx
+msgid "Check again"
+msgstr ""
+
 #: ../../apps/native/src/app/(tabs)/domains/add.tsx
 msgid "Check now"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx
+msgid "Check that the value is copied correctly without extra spaces."
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx
+msgid "Check that there are no typos in the meta tag name or content."
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx
+msgid "Check that your server isn’t redirecting the request (e.g., to HTTPS or www)."
 msgstr ""
 
 #: ../../apps/native/src/app/delete-account.tsx
@@ -164,7 +333,12 @@ msgid "Check your email"
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/search/index.tsx
+#: ../../apps/native/src/components/portfolio/filter-chips.tsx
 msgid "Clear"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx
+msgid "Clear any page caches and verify the tag appears in the page source."
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/search/index.tsx
@@ -177,6 +351,10 @@ msgstr ""
 
 #: ../../apps/native/src/app/delete-account.tsx
 msgid "Close"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/filter-sheet.tsx
+msgid "Combine filters to narrow your portfolio."
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/domains/add.tsx
@@ -199,16 +377,47 @@ msgstr "Continuer avec Apple"
 msgid "Cookie consent"
 msgstr ""
 
+#: ../../apps/native/src/components/domain/add-domain/share-instructions-sheet.tsx
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Copied"
+msgstr ""
+
 #: ../../apps/native/src/app/(tabs)/domains/add.tsx
+#: ../../apps/native/src/components/domain/add-domain/share-instructions-sheet.tsx
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
 msgid "Copy"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/share-instructions-sheet.tsx
+msgid "Copy to clipboard"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Could not delete feed"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Could not disable feed"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Could not enable feed"
 msgstr ""
 
 #: ../../apps/native/src/components/settings/linked-accounts.tsx
 msgid "Could not link account"
 msgstr ""
 
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Could not rotate URL"
+msgstr ""
+
 #: ../../apps/native/src/components/settings/linked-accounts.tsx
 msgid "Could not unlink account"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Couldn’t add to calendar"
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/domains/archived.tsx
@@ -239,6 +448,10 @@ msgstr ""
 msgid "Couldn’t register device"
 msgstr ""
 
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Couldn’t remove"
+msgstr ""
+
 #: ../../apps/native/src/app/settings.tsx
 msgid "Couldn’t unregister device"
 msgstr ""
@@ -249,6 +462,18 @@ msgstr ""
 
 #: ../../apps/native/src/app/settings.tsx
 msgid "Couldn’t update notifications"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/registration-section.tsx
+msgid "Created"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/domain-health-badge.tsx
+msgid "Critical"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Cross-device webcal subscription for desktop calendar apps"
 msgstr ""
 
 #: ../../apps/native/src/app/settings.tsx
@@ -267,6 +492,7 @@ msgstr ""
 msgid "Decline"
 msgstr ""
 
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
 #: ../../apps/native/src/components/settings/delete-account.tsx
 msgid "Delete"
 msgstr ""
@@ -275,8 +501,20 @@ msgstr ""
 msgid "Delete account"
 msgstr ""
 
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Delete feed"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Delete feed?"
+msgstr ""
+
 #: ../../apps/native/src/components/settings/delete-account.tsx
 msgid "Delete your account?"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Deletes the Domainstack calendar and its events from this device. Your tracked domains aren’t affected."
 msgstr ""
 
 #: ../../apps/native/src/app/settings.tsx
@@ -287,8 +525,38 @@ msgstr ""
 msgid "Deletion failed"
 msgstr ""
 
+#: ../../apps/native/src/components/domain/seo-section.tsx
+msgid "Description"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Disable"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Disable feed"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Disable feed?"
+msgstr ""
+
 #: ../../apps/native/src/app/(tabs)/domains/add.tsx
+#: ../../apps/native/src/components/domain/dns-section.tsx
+#: ../../apps/native/src/components/portfolio/provider-chips.tsx
 msgid "DNS"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx
+msgid "DNS changes can take up to 24–48 hours to propagate globally."
+msgstr ""
+
+#: ../../apps/native/src/components/domain/hosting-section.tsx
+msgid "DNS provider"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx
+msgid "DNS Record Troubleshooting"
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/domains/add.tsx
@@ -311,9 +579,21 @@ msgstr ""
 msgid "Domain ownership verification is attached to your account. Sign in to add domains to your portfolio."
 msgstr ""
 
+#: ../../apps/native/src/components/domain/add-domain/step-confirmation.tsx
+msgid "Domain verified!"
+msgstr ""
+
 #: ../../apps/web/app/layout.tsx
 msgid "Domainstack — Domain Intelligence Made Easy"
 msgstr "Domainstack — l’intelligence de domaine simplifiée"
+
+#: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx
+msgid "Don’t worry: we’ll automatically check your domain daily and verify once the changes propagate."
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/step-indicator.tsx
+msgid "Done"
+msgstr ""
 
 #: ../../apps/web/components/layout/app-footer.tsx
 msgid "Drag the button below to your bookmarks bar. Then, press it on any site and the report for that domain will open in a new tab, like magic!"
@@ -327,12 +607,40 @@ msgstr ""
 msgid "Edit"
 msgstr ""
 
+#: ../../apps/native/src/components/portfolio/provider-chips.tsx
+msgid "Email"
+msgstr ""
+
 #: ../../apps/native/src/app/settings.tsx
 msgid "Email notifications"
 msgstr ""
 
+#: ../../apps/native/src/components/domain/hosting-section.tsx
+msgid "Email provider"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Enable"
+msgstr ""
+
 #: ../../apps/native/src/app/settings.tsx
 msgid "Enabled"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx
+msgid "Ensure the file is accessible at the exact path shown."
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx
+msgid "Ensure the hostname matches exactly (including the underscore prefix)."
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx
+msgid "Ensure the meta tag is placed inside the <head> section of your homepage."
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/step-indicator.tsx
+msgid "Enter"
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/domains/add.tsx
@@ -348,12 +656,50 @@ msgstr ""
 msgid "Error reporting"
 msgstr ""
 
+#: ../../apps/native/src/components/portfolio/filter-chips.tsx
+#: ../../apps/native/src/components/portfolio/filter-sheet.tsx
+msgid "Expired"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/registration-section.tsx
+msgid "Expires"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/filter-chips.tsx
+#: ../../apps/native/src/components/portfolio/filter-sheet.tsx
+msgid "Expiring soon"
+msgstr ""
+
 #: ../../apps/native/src/app/(tabs)/domains/index.tsx
 msgid "Expiry"
 msgstr ""
 
+#: ../../apps/native/src/components/domain/export-button.tsx
+msgid "Export"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/export-button.tsx
+msgid "Export failed"
+msgstr ""
+
 #: ../../apps/native/src/app/delete-account.tsx
 msgid "Failed to request account deletion."
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/share-instructions-sheet.tsx
+msgid "Failed to send email"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Feed URL copied to clipboard."
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Feed URL rotated"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/filter-sheet.tsx
+msgid "Filter"
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/domains/index.tsx
@@ -368,6 +714,18 @@ msgstr ""
 msgid "Filters ({filterCount})"
 msgstr ""
 
+#: ../../apps/native/src/components/domain/seo-section.tsx
+msgid "Final URL"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Generate new URL?"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Generates a private webcal URL to subscribe in Apple Calendar, Google Calendar, or any standards-compliant client."
+msgstr ""
+
 #: ../../apps/native/src/app/onboarding.tsx
 msgid "Get notified"
 msgstr ""
@@ -380,8 +738,47 @@ msgstr ""
 msgid "Go to homepage"
 msgstr ""
 
+#: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
+msgid "Go to search"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/headers-section.tsx
+msgid "Headers"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/headers-section.tsx
+msgid "Headers could not be retrieved."
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/filter-sheet.tsx
+msgid "Health"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/domain-health-badge.tsx
+#: ../../apps/native/src/components/portfolio/filter-chips.tsx
+#: ../../apps/native/src/components/portfolio/filter-sheet.tsx
+msgid "Healthy"
+msgstr ""
+
 #: ../../apps/web/components/layout/app-footer.tsx
 msgid "Help"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/registration-section.tsx
+msgid "Hidden"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/hosting-section.tsx
+#: ../../apps/native/src/components/portfolio/provider-chips.tsx
+msgid "Host"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/hosting-section.tsx
+msgid "Hosting"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/hosting-section.tsx
+msgid "Hosting information is unavailable."
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/domains/add.tsx
@@ -394,6 +791,14 @@ msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/domains/add.tsx
 msgid "HTML file"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx
+msgid "HTML File Troubleshooting"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx
+msgid "If using a framework, ensure the meta tag renders on the server (SSR)."
 msgstr ""
 
 #: ../../apps/native/src/app/settings.tsx
@@ -410,6 +815,10 @@ msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/search/index.tsx
 msgid "Inspect {domain}"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/tools-sheet.tsx
+msgid "Inspect {domain} in an external tool."
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/search/index.tsx
@@ -432,6 +841,10 @@ msgstr ""
 msgid "Invalid domain"
 msgstr ""
 
+#: ../../apps/native/src/components/domain/certificates-section.tsx
+msgid "Issuer: {issuer}"
+msgstr ""
+
 #: ../../apps/web/components/consent/cookie-prompt.tsx
 msgid "Learn more."
 msgstr ""
@@ -452,12 +865,20 @@ msgstr ""
 msgid "Loading sign-in options…"
 msgstr "Chargement des options de connexion…"
 
+#: ../../apps/native/src/components/domain/hosting-section.tsx
+msgid "Location"
+msgstr ""
+
 #: ../../apps/native/src/app/onboarding.tsx
 msgid "Look up registration, DNS, SSL, hosting, and SEO for any domain on the public internet."
 msgstr ""
 
 #: ../../apps/web/components/layout/app-footer.tsx
 msgid "Made with"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/subscription-banner.tsx
+msgid "Manage"
 msgstr ""
 
 #: ../../apps/native/src/app/settings.tsx
@@ -508,12 +929,39 @@ msgstr ""
 msgid "Meta tag"
 msgstr ""
 
+#: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx
+msgid "Meta Tag Troubleshooting"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/bulk-actions-toolbar.tsx
+msgid "More actions"
+msgstr ""
+
 #: ../../apps/native/src/components/settings/linked-accounts.tsx
 msgid "Must keep at least one sign-in method."
 msgstr ""
 
+#: ../../apps/native/src/components/portfolio/swipeable-row.tsx
+msgid "Mute"
+msgstr ""
+
 #: ../../apps/native/src/components/settings/muted-domains.tsx
 msgid "Mute a domain from its detail screen to silence its notifications."
+msgstr ""
+
+#: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
+#: ../../apps/native/src/components/portfolio/bulk-actions-toolbar.tsx
+msgid "Mute notifications"
+msgstr ""
+
+#: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
+#: ../../apps/native/src/components/portfolio/filter-chips.tsx
+#: ../../apps/native/src/components/portfolio/filter-sheet.tsx
+msgid "Muted"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/bulk-actions-toolbar.tsx
+msgid "Muted {successCount, plural, one {# domain} other {# domains}}"
 msgstr ""
 
 #: ../../apps/native/src/components/settings/muted-domains.tsx
@@ -522,6 +970,20 @@ msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/domains/index.tsx
 msgid "Name"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/registration-section.tsx
+msgid "Nameservers"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/domain-health-badge.tsx
+msgid "Needs attention"
+msgstr ""
+
+#: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
+#: ../../apps/native/src/components/portfolio/filter-chips.tsx
+#: ../../apps/native/src/components/portfolio/filter-sheet.tsx
+msgid "Needs verification"
 msgstr ""
 
 #: ../../apps/native/src/components/settings/billing.tsx
@@ -534,6 +996,18 @@ msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/notifications/index.tsx
 msgid "No archived notifications"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/certificates-section.tsx
+msgid "No certificates were detected for this domain."
+msgstr ""
+
+#: ../../apps/native/src/components/domain/dns-section.tsx
+msgid "No DNS records were returned for this domain."
+msgstr ""
+
+#: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
+msgid "No domain selected"
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/domains/index.tsx
@@ -562,8 +1036,16 @@ msgstr ""
 msgid "No sign-in providers are available right now."
 msgstr "Aucun fournisseur de connexion n’est disponible pour le moment."
 
+#: ../../apps/native/src/components/portfolio/filter-sheet.tsx
+msgid "No TLDs yet. Add domains to your portfolio first."
+msgstr ""
+
 #: ../../apps/web/app/not-found.tsx
 msgid "Not Found"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/headers-section.tsx
+msgid "Not set"
 msgstr ""
 
 #: ../../apps/native/src/components/settings/billing.tsx
@@ -600,12 +1082,29 @@ msgstr ""
 msgid "Open filters"
 msgstr ""
 
+#: ../../apps/native/src/components/domain/tools-sheet.tsx
+msgid "Open in…"
+msgstr ""
+
 #: ../../apps/native/src/app/(tabs)/search/index.tsx
 msgid "Open report for {item}"
 msgstr ""
 
 #: ../../apps/native/src/app/settings.tsx
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
 msgid "Open Settings"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/share-instructions-sheet.tsx
+msgid "Open the iOS share sheet to send via Mail, Messages, and more."
+msgstr ""
+
+#: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
+msgid "Open this screen from your portfolio or a notification."
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/share-instructions-sheet.tsx
+msgid "Paste the instructions wherever you need them."
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/domains/add.tsx
@@ -620,7 +1119,12 @@ msgstr ""
 msgid "Plan details are unavailable."
 msgstr ""
 
+#: ../../apps/native/src/components/portfolio/archived-row.tsx
+msgid "Plan limit reached. Upgrade or remove a tracked domain to reactivate."
+msgstr ""
+
 #: ../../apps/native/src/app/sign-in.tsx
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
 #: ../../apps/native/src/components/settings/billing.tsx
 msgid "Please try again."
 msgstr "Veuillez réessayer."
@@ -667,8 +1171,20 @@ msgstr ""
 msgid "Push notifications will stop on this device."
 msgstr ""
 
+#: ../../apps/native/src/components/domain/registration-section.tsx
+msgid "Raw {label}"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/registration-section.tsx
+msgid "Raw {label} response"
+msgstr ""
+
 #: ../../apps/web/components/layout/app-footer.tsx
 msgid "Raycast (soon)"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/archived-row.tsx
+msgid "Reactivate"
 msgstr ""
 
 #: ../../apps/native/src/app/settings.tsx
@@ -680,19 +1196,56 @@ msgstr ""
 msgid "Recent"
 msgstr ""
 
+#: ../../apps/native/src/components/domain/add-domain/share-instructions-sheet.tsx
+msgid "Recipient"
+msgstr ""
+
 #: ../../apps/native/src/app/settings.tsx
 msgid "Register this device"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/registrar-links.tsx
+msgid "Register this domain"
 msgstr ""
 
 #: ../../apps/native/src/app/settings.tsx
 msgid "Registering…"
 msgstr ""
 
+#: ../../apps/native/src/components/domain/registration-section.tsx
+msgid "Registrant"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/registration-section.tsx
+#: ../../apps/native/src/components/portfolio/provider-chips.tsx
+msgid "Registrar"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/registration-section.tsx
+msgid "Registration"
+msgstr ""
+
 #: ../../apps/native/src/app/settings.tsx
 msgid "Registration changes"
 msgstr ""
 
+#: ../../apps/native/src/components/domain/registration-section.tsx
+msgid "Registration data is unavailable for this domain."
+msgstr ""
+
+#: ../../apps/native/src/components/domain/registration-section.tsx
+msgid "Registration data unavailable"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/registration-section.tsx
+msgid "Registration information could not be retrieved at this time."
+msgstr ""
+
+#: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
 #: ../../apps/native/src/app/(tabs)/domains/archived.tsx
+#: ../../apps/native/src/components/portfolio/archived-row.tsx
+#: ../../apps/native/src/components/portfolio/bulk-actions-toolbar.tsx
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
 msgid "Remove"
 msgstr ""
 
@@ -701,8 +1254,45 @@ msgstr ""
 msgid "Remove {0}?"
 msgstr ""
 
+#: ../../apps/native/src/components/portfolio/bulk-actions-toolbar.tsx
+msgid "Remove {count, plural, one {# domain} other {# domains}}?"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/filter-chips.tsx
+msgid "Remove {label} filter"
+msgstr ""
+
+#: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
+msgid "Remove domain?"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Remove from calendar"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Remove from calendar?"
+msgstr ""
+
 #: ../../apps/native/src/app/(tabs)/search/index.tsx
 msgid "Remove from recent"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/bulk-actions-toolbar.tsx
+msgid "Remove selected"
+msgstr ""
+
+#. placeholder {0}: ids.length
+#: ../../apps/native/src/components/portfolio/bulk-actions-toolbar.tsx
+msgid "Removed {0, plural, one {# domain} other {# domains}}"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Removed from calendar"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/filter-sheet.tsx
+msgid "Reset"
 msgstr ""
 
 #: ../../apps/native/src/components/settings/billing.tsx
@@ -713,8 +1303,37 @@ msgstr ""
 msgid "Restore purchases"
 msgstr ""
 
+#: ../../apps/native/src/components/portfolio/subscription-banner.tsx
+msgid "Resubscribe"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/subscription-banner.tsx
+msgid "Resubscribe to keep tracking your full portfolio without interruption."
+msgstr ""
+
+#: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
+msgid "Resume verification"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
 #: ../../apps/web/app/error.tsx
 msgid "Retry"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx
+msgid "Return later"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/seo-section.tsx
+msgid "Robots"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Rotate"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Rotate URL"
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/_layout.tsx
@@ -725,8 +1344,40 @@ msgstr ""
 msgid "Search any domain"
 msgstr ""
 
+#: ../../apps/native/src/components/portfolio/bulk-actions-toolbar.tsx
+msgid "Select up to {BULK_LIMIT} domains at a time."
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/bulk-actions-toolbar.tsx
+msgid "Selection limit"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/share-instructions-sheet.tsx
+msgid "Send"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/share-instructions-sheet.tsx
+msgid "Send these instructions to someone who manages your domain — IT admin, web developer, or registrar contact."
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/share-instructions-sheet.tsx
+msgid "Send via email"
+msgstr ""
+
 #: ../../apps/native/src/app/delete-account.tsx
 msgid "Sending confirmation email…"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/share-instructions-sheet.tsx
+msgid "Sent"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/seo-section.tsx
+msgid "SEO"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/seo-section.tsx
+msgid "SEO data could not be retrieved."
 msgstr ""
 
 #: ../../apps/native/src/app/settings.tsx
@@ -737,7 +1388,16 @@ msgstr ""
 msgid "Share"
 msgstr ""
 
+#: ../../apps/native/src/components/domain/add-domain/share-instructions-sheet.tsx
+msgid "Share instructions"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/share-instructions-sheet.tsx
+msgid "Share via system"
+msgstr ""
+
 #: ../../apps/native/src/app/(tabs)/domains/add.tsx
+#: ../../apps/native/src/components/domain/add-domain/share-instructions-sheet.tsx
 msgid "Share…"
 msgstr ""
 
@@ -756,6 +1416,10 @@ msgstr ""
 #: ../../apps/native/src/app/sign-in.tsx
 msgid "Sign in failed"
 msgstr "Échec de la connexion"
+
+#: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
+msgid "Sign in to track this domain."
+msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/domains/archived.tsx
 msgid "Sign in to view your archived domains."
@@ -789,12 +1453,52 @@ msgstr ""
 msgid "Skip to content"
 msgstr "Aller au contenu"
 
+#: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx
+msgid "Some DNS providers require removing the domain suffix from the hostname."
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx
+msgid "Some hosting providers may cache files — try clearing your CDN cache."
+msgstr ""
+
 #: ../../apps/web/app/error.tsx
 msgid "Something went wrong"
 msgstr ""
 
 #: ../../apps/native/src/app/settings.tsx
 msgid "Something went wrong. Please try again."
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/filter-sheet.tsx
+msgid "Status"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/step-indicator.tsx
+msgid "Step {current} of 3: {currentLabel}"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Subscribe"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Subscribe in a desktop calendar app for read-only, cross-device sync."
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Subscribed calendars will stop receiving updates. You can re-enable later with the same URL."
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Subscription URL (advanced)"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Sync failed"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "Sync now"
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/domains/add.tsx
@@ -807,6 +1511,22 @@ msgstr ""
 
 #: ../../apps/web/components/layout/app-footer.tsx
 msgid "Terms"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/registration-section.tsx
+msgid "The .{tld} registry does not publish public WHOIS/RDAP data."
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "The current URL stops working immediately. Any subscribed calendar apps need to resubscribe."
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx
+msgid "The file should contain only the verification token, with no extra content."
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx
+msgid "The page must be publicly accessible (not behind authentication)."
 msgstr ""
 
 #: ../../apps/web/app/not-found.tsx
@@ -833,8 +1553,20 @@ msgstr ""
 msgid "This permanently removes the domain and any notification settings."
 msgstr ""
 
+#: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
+msgid "This permanently removes the feed and any subscribed calendars will stop syncing."
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/bulk-actions-toolbar.tsx
+msgid "This permanently removes tracking and notification settings."
+msgstr ""
+
 #: ../../apps/native/src/app/(tabs)/search/index.tsx
 msgid "This removes all entries from your history."
+msgstr ""
+
+#: ../../apps/native/src/components/domain/seo-section.tsx
+msgid "Title"
 msgstr ""
 
 #: ../../apps/native/src/app/settings.tsx
@@ -843,6 +1575,14 @@ msgstr ""
 
 #: ../../apps/web/components/layout/app-header-client-buttons.tsx
 msgid "Toggle theme"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/bulk-actions-toolbar.tsx
+msgid "Too many selected"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/filter-sheet.tsx
+msgid "Top-level domain"
 msgstr ""
 
 #: ../../apps/native/src/app/sign-in.tsx
@@ -896,6 +1636,20 @@ msgstr "Impossible de se connecter avec {provider}. Veuillez réessayer."
 msgid "Unable to unlink this provider."
 msgstr ""
 
+#: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
+msgid "Unarchive"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/hosting-section.tsx
+#: ../../apps/native/src/components/domain/registration-section.tsx
+#: ../../apps/native/src/components/portfolio/domain-health-badge.tsx
+msgid "Unknown"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/certificates-section.tsx
+msgid "Unknown CA"
+msgstr ""
+
 #: ../../apps/native/src/components/settings/linked-accounts.tsx
 msgid "Unlink"
 msgstr ""
@@ -904,6 +1658,7 @@ msgstr ""
 msgid "Unlink {provider}?"
 msgstr ""
 
+#: ../../apps/native/src/components/portfolio/swipeable-row.tsx
 #: ../../apps/native/src/components/settings/muted-domains.tsx
 msgid "Unmute"
 msgstr ""
@@ -916,8 +1671,14 @@ msgstr ""
 msgid "Unmute failed"
 msgstr ""
 
+#: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
+#: ../../apps/native/src/components/portfolio/bulk-actions-toolbar.tsx
 #: ../../apps/native/src/components/settings/muted-domains.tsx
 msgid "Unmute notifications"
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/bulk-actions-toolbar.tsx
+msgid "Unmuted {successCount, plural, one {# domain} other {# domains}}"
 msgstr ""
 
 #: ../../apps/native/src/app/settings.tsx
@@ -928,12 +1689,24 @@ msgstr ""
 msgid "Unregister device?"
 msgstr ""
 
+#: ../../apps/native/src/components/portfolio/subscription-banner.tsx
+msgid "Upgrade"
+msgstr ""
+
 #: ../../apps/native/src/components/settings/billing.tsx
 msgid "Upgrade to Pro — {priceString}"
 msgstr ""
 
+#: ../../apps/native/src/components/portfolio/subscription-banner.tsx
+msgid "Upgrade to Pro to track more domains and unlock notifications."
+msgstr ""
+
 #: ../../apps/native/src/app/(tabs)/domains/add.tsx
 msgid "Upload the file to your site, then check. It must stay reachable while verification runs."
+msgstr ""
+
+#: ../../apps/native/src/components/domain/certificates-section.tsx
+msgid "Valid {validFrom}"
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/domains/add.tsx
@@ -941,6 +1714,7 @@ msgid "Value"
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/domains/add.tsx
+#: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx
 msgid "Verification failed"
 msgstr ""
 
@@ -948,12 +1722,62 @@ msgstr ""
 msgid "Verification was not found yet. Try again after DNS or hosting changes propagate."
 msgstr ""
 
+#: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
+#: ../../apps/native/src/components/portfolio/filter-chips.tsx
+#: ../../apps/native/src/components/portfolio/filter-sheet.tsx
+msgid "Verified"
+msgstr ""
+
+#: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
+msgid "Verified {domainName}"
+msgstr ""
+
+#: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
+msgid "Verified {lastVerifiedDate}"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/step-indicator.tsx
+msgid "Verify"
+msgstr ""
+
+#: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
+msgid "Verify {domainName} to unlock change notifications. Resume the flow to copy the DNS TXT, HTML file, or meta tag instructions, or re-check now if you’ve already added them."
+msgstr ""
+
+#: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
+msgid "Verify now"
+msgstr ""
+
+#: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
+msgid "Verify ownership"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx
+msgid "Verify the TXT record exists in your DNS provider’s dashboard."
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx
+msgid "Verify there are no permission issues blocking access to the file."
+msgstr ""
+
 #: ../../apps/native/src/components/settings/muted-domains.tsx
 msgid "View all {mutedCount} muted in Portfolio"
 msgstr ""
 
+#: ../../apps/native/src/components/domain/registration-section.tsx
+msgid "View raw {label}"
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx
+msgid "We couldn’t verify your domain ownership yet. Check your setup and try again."
+msgstr ""
+
 #: ../../apps/web/components/consent/cookie-prompt.tsx
 msgid "We use cookies to understand how you use our service."
+msgstr ""
+
+#: ../../apps/native/src/components/domain/add-domain/share-instructions-sheet.tsx
+msgid "We’ll email the instructions on your behalf."
 msgstr ""
 
 #: ../../apps/native/src/app/onboarding.tsx
@@ -966,6 +1790,14 @@ msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/search/index.tsx
 msgid "WHOIS, DNS, hosting, certs, headers, SEO — one tap."
+msgstr ""
+
+#: ../../apps/native/src/components/domain/registration-section.tsx
+msgid "WHOIS/RDAP lookup timed out. This may be a temporary issue with the registry."
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/bulk-actions-toolbar.tsx
+msgid "You can act on up to {BULK_LIMIT} domains at once. Deselect some to continue."
 msgstr ""
 
 #: ../../apps/native/src/components/settings/linked-accounts.tsx
@@ -986,6 +1818,10 @@ msgstr ""
 
 #: ../../apps/native/src/components/settings/billing.tsx
 msgid "You’re subscribed through the web app. Manage your subscription at domainstack.io."
+msgstr ""
+
+#: ../../apps/native/src/components/portfolio/subscription-banner.tsx
+msgid "You’ve reached your plan limit"
 msgstr ""
 
 #: ../../apps/native/src/app/delete-account.tsx

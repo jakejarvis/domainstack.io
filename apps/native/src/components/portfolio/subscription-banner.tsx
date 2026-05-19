@@ -1,3 +1,4 @@
+import { Plural, Trans } from "@lingui/react/macro";
 import { router } from "expo-router";
 import { View } from "react-native";
 import Animated, { FadeIn, FadeOut, ReduceMotion } from "react-native-reanimated";
@@ -5,7 +6,7 @@ import Animated, { FadeIn, FadeOut, ReduceMotion } from "react-native-reanimated
 import { Button } from "@/components/button";
 import { Card } from "@/components/card";
 import { Text } from "@/components/text";
-import { daysUntil, plural } from "@/lib/format";
+import { daysUntil } from "@/lib/format";
 
 type Variant = { kind: "ending"; daysLeft: number } | { kind: "at-limit" } | { kind: "none" };
 
@@ -44,20 +45,27 @@ export function SubscriptionBanner({
         <Card>
           <View className="gap-1">
             <Text className="text-base font-semibold">
-              {variant.daysLeft === 0
-                ? "Your Pro plan ends today"
-                : `Your Pro plan ends in ${variant.daysLeft} ${plural(variant.daysLeft, "day", "days")}`}
+              <Plural
+                value={variant.daysLeft}
+                _0="Your Pro plan ends today"
+                one="Your Pro plan ends in # day"
+                other="Your Pro plan ends in # days"
+              />
             </Text>
             <Text className="text-sm text-muted-foreground">
-              Resubscribe to keep tracking your full portfolio without interruption.
+              <Trans>Resubscribe to keep tracking your full portfolio without interruption.</Trans>
             </Text>
           </View>
           <View className="flex-row gap-2">
             <Button className="flex-1" onPress={goToSettings}>
-              <Text>Resubscribe</Text>
+              <Text>
+                <Trans>Resubscribe</Trans>
+              </Text>
             </Button>
             <Button className="flex-1" onPress={goToSettings} variant="secondary">
-              <Text>Manage</Text>
+              <Text>
+                <Trans>Manage</Trans>
+              </Text>
             </Button>
           </View>
         </Card>
@@ -72,13 +80,17 @@ export function SubscriptionBanner({
     >
       <Card>
         <View className="gap-1">
-          <Text className="text-base font-semibold">You’ve reached your plan limit</Text>
+          <Text className="text-base font-semibold">
+            <Trans>You’ve reached your plan limit</Trans>
+          </Text>
           <Text className="text-sm text-muted-foreground">
-            Upgrade to Pro to track more domains and unlock notifications.
+            <Trans>Upgrade to Pro to track more domains and unlock notifications.</Trans>
           </Text>
         </View>
         <Button onPress={goToSettings}>
-          <Text>Upgrade</Text>
+          <Text>
+            <Trans>Upgrade</Trans>
+          </Text>
         </Button>
       </Card>
     </Animated.View>

@@ -1,3 +1,4 @@
+import { Trans } from "@lingui/react/macro";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import * as Linking from "expo-linking";
 import { Pressable, View } from "react-native";
@@ -26,7 +27,9 @@ export function RegistrarLinks({ domain, tld }: { domain: string; tld: string })
 
   return (
     <View className="gap-2">
-      <Text className="text-center text-xs text-muted-foreground">Register this domain</Text>
+      <Text className="text-center text-xs text-muted-foreground">
+        <Trans>Register this domain</Trans>
+      </Text>
       <View className="gap-2">
         {sorted.map((entry) => {
           const config = REGISTRAR_PROVIDERS[entry.provider as RegistrarKey];
@@ -45,7 +48,9 @@ export function RegistrarLinks({ domain, tld }: { domain: string; tld: string })
               <Text className="font-semibold">{config.name}</Text>
               <Text className="text-sm text-muted-foreground">
                 <Text className="font-semibold">{price}</Text>
-                <Text className="text-xs text-muted-foreground">/year</Text>
+                <Text className="text-xs text-muted-foreground">
+                  <Trans>/year</Trans>
+                </Text>
               </Text>
             </Pressable>
           );

@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { View } from "react-native";
 
 import { Text } from "@/components/text";
@@ -16,6 +17,7 @@ export function QuotaMeter({
   plan: string;
   planQuota: number;
 }) {
+  const { t } = useLingui();
   const percent = planQuota > 0 ? Math.min(100, Math.round((activeCount / planQuota) * 100)) : 0;
   const over = planQuota > 0 && activeCount >= planQuota;
 
@@ -34,14 +36,16 @@ export function QuotaMeter({
       <View className="flex-row items-baseline justify-between gap-3">
         <Text className="text-sm font-medium">{plan}</Text>
         <Text className="text-xs text-muted-foreground">
-          <Text className={`font-mono text-sm font-medium tabular-nums ${accentText}`}>
-            {activeCount}
-          </Text>{" "}
-          / {planQuota} domains
+          <Trans>
+            <Text className={`font-mono text-sm font-medium tabular-nums ${accentText}`}>
+              {activeCount}
+            </Text>{" "}
+            / {planQuota} domains
+          </Trans>
         </Text>
       </View>
       <View
-        accessibilityLabel={`${percent} percent of plan used`}
+        accessibilityLabel={t`${percent} percent of plan used`}
         accessibilityRole="progressbar"
         accessibilityValue={{ max: 100, min: 0, now: percent }}
         className={`h-1 overflow-hidden rounded-full ${trackBg}`}

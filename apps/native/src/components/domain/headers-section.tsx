@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
@@ -18,6 +19,7 @@ const SECURITY_HEADERS = [
 ] as const;
 
 export function HeadersSection({ domain }: { domain: string }) {
+  const { t } = useLingui();
   const trpc = useTRPC();
   const { data } = useSuspenseQuery(trpc.domain.getHeaders.queryOptions({ domain }));
 
@@ -29,9 +31,11 @@ export function HeadersSection({ domain }: { domain: string }) {
         accent="pink"
         icon={{ android: "list_alt", ios: "list.bullet.rectangle" }}
         subtitle="HTTP response"
-        title="Headers"
+        title={t`Headers`}
       >
-        <Text className="text-sm text-muted-foreground">Headers could not be retrieved.</Text>
+        <Text className="text-sm text-muted-foreground">
+          <Trans>Headers could not be retrieved.</Trans>
+        </Text>
       </ReportSection>
     );
   }
@@ -43,7 +47,7 @@ export function HeadersSection({ domain }: { domain: string }) {
       count={data.data.headers.length}
       icon={{ android: "list_alt", ios: "list.bullet.rectangle" }}
       subtitle="HTTP response"
-      title="Headers"
+      title={t`Headers`}
       trailing={
         <Badge variant={status >= 200 && status < 400 ? "success" : "warning"}>
           <Text className="text-xs font-semibold">HTTP {status}</Text>
@@ -63,7 +67,13 @@ function buildItems(headers: Header[]): KeyValueItem[] {
       key: name,
       label: name,
       mono: true,
-      value: value ? value : <Text className="text-sm text-muted-foreground">Not set</Text>,
+      value: value ? (
+        value
+      ) : (
+        <Text className="text-sm text-muted-foreground">
+          <Trans>Not set</Trans>
+        </Text>
+      ),
     };
   });
 }

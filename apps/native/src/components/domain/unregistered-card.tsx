@@ -1,3 +1,4 @@
+import { Trans } from "@lingui/react/macro";
 import { Suspense } from "react";
 import { View } from "react-native";
 
@@ -20,7 +21,9 @@ export function UnregisteredCard({ domain }: { domain: string }) {
         <Text className="text-2xl font-semibold" numberOfLines={1}>
           {domain}
         </Text>
-        <Text className="text-sm text-muted-foreground">appears to be unregistered…</Text>
+        <Text className="text-sm text-muted-foreground">
+          <Trans>appears to be unregistered…</Trans>
+        </Text>
       </View>
       {canShowRegistrarLinks ? (
         <Suspense fallback={null}>

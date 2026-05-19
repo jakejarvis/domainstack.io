@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Fragment } from "react";
 import { View } from "react-native";
@@ -26,6 +27,7 @@ function typeChip(type: string): string {
 }
 
 export function DnsSection({ domain }: { domain: string }) {
+  const { t } = useLingui();
   const trpc = useTRPC();
   const { data } = useSuspenseQuery(trpc.domain.getDnsRecords.queryOptions({ domain }));
 
@@ -37,10 +39,10 @@ export function DnsSection({ domain }: { domain: string }) {
         accent="green"
         icon={{ android: "dns", ios: "point.3.connected.trianglepath.dotted" }}
         subtitle="A · AAAA · MX · TXT · NS"
-        title="DNS"
+        title={t`DNS`}
       >
         <Text className="text-sm text-muted-foreground">
-          No DNS records were returned for this domain.
+          <Trans>No DNS records were returned for this domain.</Trans>
         </Text>
       </ReportSection>
     );
@@ -52,7 +54,7 @@ export function DnsSection({ domain }: { domain: string }) {
       count={records.length}
       icon={{ android: "dns", ios: "point.3.connected.trianglepath.dotted" }}
       subtitle="A · AAAA · MX · TXT · NS"
-      title="DNS"
+      title={t`DNS`}
     >
       <View>
         {records.map((record, index) => {

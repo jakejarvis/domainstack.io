@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useMutation } from "@tanstack/react-query";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
@@ -55,6 +56,7 @@ export function ShareInstructionsSheet({
   trackedDomainId: string;
   verificationToken: string;
 }) {
+  const { t } = useLingui();
   const ref = useRef<AppBottomSheetRef>(null);
   const trpc = useTRPC();
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -77,15 +79,15 @@ export function ShareInstructionsSheet({
 
   useEffect(() => {
     if (!copied) return;
-    const t = setTimeout(() => setCopied(false), 2000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(timer);
   }, [copied]);
 
   const sendEmail = useMutation(
     trpc.tracking.sendVerificationInstructions.mutationOptions({
       onError: (error) => {
         dispatch({ type: "reset" });
-        toast.error({ title: "Failed to send email", message: error.message });
+        toast.error({ title: t`Failed to send email`, message: error.message });
       },
       onMutate: () => {
         dispatch({ type: "sending" });
@@ -121,11 +123,11 @@ export function ShareInstructionsSheet({
 
   return (
     <AppBottomSheet
-      description="Send these instructions to someone who manages your domain — IT admin, web developer, or registrar contact."
+      description={t`Send these instructions to someone who manages your domain — IT admin, web developer, or registrar contact.`}
       onDismiss={() => onOpenChange(false)}
       ref={ref}
       snapPoints={["65%", "92%"]}
-      title="Share instructions"
+      title={t`Share instructions`}
     >
       <View className="gap-3">
         <Card>
@@ -136,9 +138,11 @@ export function ShareInstructionsSheet({
               size={20}
             />
             <View className="flex-1 gap-1">
-              <Text className="font-semibold">Copy to clipboard</Text>
+              <Text className="font-semibold">
+                <Trans>Copy to clipboard</Trans>
+              </Text>
               <Text className="text-sm text-muted-foreground">
-                Paste the instructions wherever you need them.
+                <Trans>Paste the instructions wherever you need them.</Trans>
               </Text>
             </View>
           </View>
@@ -150,10 +154,14 @@ export function ShareInstructionsSheet({
                   name={{ android: "check", ios: "checkmark" }}
                   size={16}
                 />
-                <Text>Copied</Text>
+                <Text>
+                  <Trans>Copied</Trans>
+                </Text>
               </>
             ) : (
-              <Text>Copy</Text>
+              <Text>
+                <Trans>Copy</Trans>
+              </Text>
             )}
           </Button>
         </Card>
@@ -166,14 +174,18 @@ export function ShareInstructionsSheet({
               size={20}
             />
             <View className="flex-1 gap-1">
-              <Text className="font-semibold">Share via system</Text>
+              <Text className="font-semibold">
+                <Trans>Share via system</Trans>
+              </Text>
               <Text className="text-sm text-muted-foreground">
-                Open the iOS share sheet to send via Mail, Messages, and more.
+                <Trans>Open the iOS share sheet to send via Mail, Messages, and more.</Trans>
               </Text>
             </View>
           </View>
           <Button onPress={handleSystemShare} variant="secondary">
-            <Text>Share…</Text>
+            <Text>
+              <Trans>Share…</Trans>
+            </Text>
           </Button>
         </Card>
 
@@ -181,9 +193,11 @@ export function ShareInstructionsSheet({
           <View className="flex-row items-start gap-3">
             <Symbol color={mutedColor} name={{ android: "alternate_email", ios: "at" }} size={20} />
             <View className="flex-1 gap-1">
-              <Text className="font-semibold">Send via email</Text>
+              <Text className="font-semibold">
+                <Trans>Send via email</Trans>
+              </Text>
               <Text className="text-sm text-muted-foreground">
-                We’ll email the instructions on your behalf.
+                <Trans>We’ll email the instructions on your behalf.</Trans>
               </Text>
             </View>
           </View>
@@ -191,7 +205,7 @@ export function ShareInstructionsSheet({
             autoComplete="email"
             editable={!sending && !sent}
             inputMode="email"
-            label="Recipient"
+            label={t`Recipient`}
             onChangeText={(email) => dispatch({ type: "setEmail", email })}
             placeholder={`admin@${domain}`}
             returnKeyType="send"
@@ -206,10 +220,14 @@ export function ShareInstructionsSheet({
                   name={{ android: "check", ios: "checkmark" }}
                   size={16}
                 />
-                <Text>Sent</Text>
+                <Text>
+                  <Trans>Sent</Trans>
+                </Text>
               </>
             ) : (
-              <Text>Send</Text>
+              <Text>
+                <Trans>Send</Trans>
+              </Text>
             )}
           </Button>
         </Card>

@@ -1,3 +1,4 @@
+import { useLingui } from "@lingui/react/macro";
 import { View } from "react-native";
 import { useCSSVariable } from "uniwind";
 
@@ -50,10 +51,11 @@ export function StepIndicator({
   current: 1 | 2 | 3;
   loadingStep?: 1 | 2 | 3;
 }) {
+  const { t } = useLingui();
   const steps: Array<{ step: 1 | 2 | 3; label: string }> = [
-    { step: 1, label: "Enter" },
-    { step: 2, label: "Verify" },
-    { step: 3, label: "Done" },
+    { step: 1, label: t`Enter` },
+    { step: 2, label: t`Verify` },
+    { step: 3, label: t`Done` },
   ];
 
   const currentLabel = steps[current - 1]?.label ?? "";
@@ -63,7 +65,7 @@ export function StepIndicator({
     // of reading the loose "1 2 3 Enter Verify Done" dots. Visuals unchanged.
     <View
       accessible
-      accessibilityLabel={`Step ${current} of 3: ${currentLabel}`}
+      accessibilityLabel={t`Step ${current} of 3: ${currentLabel}`}
       accessibilityRole="progressbar"
       accessibilityValue={{ max: 3, min: 1, now: current }}
       className="gap-2"

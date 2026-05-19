@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import * as WebBrowser from "expo-web-browser";
 import { useRef } from "react";
 import { Pressable, ScrollView, View } from "react-native";
@@ -16,16 +17,17 @@ function openExternalTool(url: string) {
 }
 
 export function ToolsSheet({ domain }: { domain: string }) {
+  const { t } = useLingui();
   const sheetRef = useRef<AppBottomSheetRef>(null);
 
   function open() {
     const handled = showActionSheetIOS({
-      message: `Inspect ${domain} in an external tool.`,
+      message: t`Inspect ${domain} in an external tool.`,
       options: EXTERNAL_TOOLS.map((tool) => ({
         label: tool.name,
         onPress: () => openExternalTool(tool.buildUrl(domain)),
       })),
-      title: "Open in…",
+      title: t`Open in…`,
     });
     if (!handled) sheetRef.current?.present();
   }
@@ -33,12 +35,14 @@ export function ToolsSheet({ domain }: { domain: string }) {
   return (
     <>
       <Button onPress={open} variant="secondary">
-        <Text>Open in…</Text>
+        <Text>
+          <Trans>Open in…</Trans>
+        </Text>
       </Button>
       <AppBottomSheet
-        description={`Inspect ${domain} in an external tool.`}
+        description={t`Inspect ${domain} in an external tool.`}
         ref={sheetRef}
-        title="Open in…"
+        title={t`Open in…`}
       >
         <ScrollView
           className="flex-1"

@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { Suspense, useCallback, useEffect, useMemo, useRef } from "react";
@@ -39,7 +40,7 @@ function isReportSection(value: string | undefined): value is ReportSection {
   return typeof value === "string" && (REPORT_SECTION_SET as Set<string>).has(value);
 }
 
-async function runNetworkAction(action: () => Promise<unknown>) {
+async function runNetworkAction(action: () => Promise<unknown>, errorTitle: string) {
   try {
     assertOnline();
     await action();
@@ -52,13 +53,14 @@ async function runNetworkAction(action: () => Promise<unknown>) {
     }
     // Centralized: friendly offline toast, UNAUTHORIZED → sign-out, and
     // rate-limit handling instead of dumping a raw error message.
-    toastMutationError("Action failed", error);
+    toastMutationError(errorTitle, error);
   }
 }
 
 export { ScreenErrorBoundary as ErrorBoundary } from "@/components/screen-error-boundary";
 
 export default function DomainReportScreen() {
+  const { t } = useLingui();
   const params = useLocalSearchParams<{ domain: string; section?: string }>();
   const raw = Array.isArray(params.domain) ? params.domain[0] : params.domain;
   const domain = (raw ?? "").trim().toLowerCase();
@@ -69,11 +71,11 @@ export default function DomainReportScreen() {
     return (
       <Screen>
         <EmptyState
-          actionLabel="Go to search"
-          body="Open this screen from your portfolio or a notification."
+          actionLabel={t`Go to search`}
+          body={t`Open this screen from your portfolio or a notification.`}
           icon={{ android: "help_outline", ios: "questionmark.circle" }}
           onAction={() => router.replace("/(tabs)/search")}
-          title="No domain selected"
+          title={t`No domain selected`}
         />
       </Screen>
     );
@@ -270,6 +272,10 @@ function ReportHeader({
   isAuthenticated: boolean;
   trackedEntry: TrackedEntry | null;
 }) {
+  const { t } = useLingui();
+  const lastVerifiedDate = trackedEntry?.lastVerifiedAt
+    ? formatDate(trackedEntry.lastVerifiedAt)
+    : null;
   return (
     <View className="gap-3">
       <View className="flex-row flex-wrap items-center gap-2">
@@ -277,7 +283,7 @@ function ReportHeader({
         {trackedEntry ? (
           <>
             <Badge dot variant={trackedEntry.verified ? "success" : "warning"}>
-              <Text>{trackedEntry.verified ? "Verified" : "Needs verification"}</Text>
+              <Text>{trackedEntry.verified ? t`Verified` : t`Needs verification`}</Text>
             </Badge>
             <DomainHealthBadge
               expirationDate={trackedEntry.expirationDate}
@@ -285,17 +291,21 @@ function ReportHeader({
             />
             {trackedEntry.muted ? (
               <Badge>
-                <Text>Muted</Text>
+                <Text>
+                  <Trans>Muted</Trans>
+                </Text>
               </Badge>
             ) : null}
             {trackedEntry.archivedAt ? (
               <Badge>
-                <Text>Archived</Text>
+                <Text>
+                  <Trans>Archived</Trans>
+                </Text>
               </Badge>
             ) : null}
-            {trackedEntry.lastVerifiedAt ? (
+            {lastVerifiedDate ? (
               <Text className="text-xs text-muted-foreground">
-                Verified {formatDate(trackedEntry.lastVerifiedAt)}
+                <Trans>Verified {lastVerifiedDate}</Trans>
               </Text>
             ) : null}
           </>
@@ -309,10 +319,14 @@ function ReportHeader({
             }
             variant="secondary"
           >
-            <Text>+ Track this domain</Text>
+            <Text>
+              <Trans>+ Track this domain</Trans>
+            </Text>
           </Button>
         ) : (
-          <Text className="text-xs text-muted-foreground">Sign in to track this domain.</Text>
+          <Text className="text-xs text-muted-foreground">
+            <Trans>Sign in to track this domain.</Trans>
+          </Text>
         )}
       </View>
       <View className="flex-row flex-wrap gap-2">
@@ -333,11 +347,13 @@ function VerificationPrompt({
   trackedEntry: TrackedEntry;
   invalidate: () => Promise<void>;
 }) {
+  const { t } = useLingui();
   const trpc = useTRPC();
+  const domainName = trackedEntry.domainName;
   const verify = useMutation(
     trpc.tracking.verifyDomain.mutationOptions({
       onSuccess: async () => {
-        toast.success(`Verified ${trackedEntry.domainName}`);
+        toast.success(t`Verified ${domainName}`);
         await invalidate();
       },
     }),
@@ -345,10 +361,14 @@ function VerificationPrompt({
 
   return (
     <Card>
-      <Text className="text-lg font-semibold">Verify ownership</Text>
+      <Text className="text-lg font-semibold">
+        <Trans>Verify ownership</Trans>
+      </Text>
       <Text className="text-sm text-muted-foreground">
-        Verify {trackedEntry.domainName} to unlock change notifications. Resume the flow to copy the
-        DNS TXT, HTML file, or meta tag instructions, or re-check now if you’ve already added them.
+        <Trans>
+          Verify {domainName} to unlock change notifications. Resume the flow to copy the DNS TXT,
+          HTML file, or meta tag instructions, or re-check now if you’ve already added them.
+        </Trans>
       </Text>
       <Button
         onPress={() =>
@@ -359,65 +379,84 @@ function VerificationPrompt({
         }
         variant="secondary"
       >
-        <Text>Resume verification</Text>
+        <Text>
+          <Trans>Resume verification</Trans>
+        </Text>
       </Button>
       <Button
         loading={verify.isPending}
         onPress={() =>
-          void runNetworkAction(() => verify.mutateAsync({ trackedDomainId: trackedEntry.id }))
+          void runNetworkAction(
+            () => verify.mutateAsync({ trackedDomainId: trackedEntry.id }),
+            t`Action failed`,
+          )
         }
       >
-        <Text>Verify now</Text>
+        <Text>
+          <Trans>Verify now</Trans>
+        </Text>
       </Button>
     </Card>
   );
 }
 
 function TrackingActions({ trackedEntry }: { trackedEntry: TrackedEntry }) {
+  const { t } = useLingui();
   const dashboard = useDashboardMutations();
+  const domainName = trackedEntry.domainName;
 
   return (
     <Card>
       <Button
         loading={dashboard.isMuting}
         onPress={() =>
-          void runNetworkAction(() => dashboard.setMuted(trackedEntry.id, !trackedEntry.muted))
-        }
-        variant="secondary"
-      >
-        <Text>{trackedEntry.muted ? "Unmute notifications" : "Mute notifications"}</Text>
-      </Button>
-      <Button
-        loading={dashboard.isArchiving || dashboard.isUnarchiving}
-        onPress={() =>
-          void runNetworkAction(() =>
-            trackedEntry.archivedAt
-              ? dashboard.unarchive(trackedEntry.id)
-              : dashboard.archive(trackedEntry.id),
+          void runNetworkAction(
+            () => dashboard.setMuted(trackedEntry.id, !trackedEntry.muted),
+            t`Action failed`,
           )
         }
         variant="secondary"
       >
-        <Text>{trackedEntry.archivedAt ? "Unarchive" : "Archive"}</Text>
+        <Text>{trackedEntry.muted ? t`Unmute notifications` : t`Mute notifications`}</Text>
+      </Button>
+      <Button
+        loading={dashboard.isArchiving || dashboard.isUnarchiving}
+        onPress={() =>
+          void runNetworkAction(
+            () =>
+              trackedEntry.archivedAt
+                ? dashboard.unarchive(trackedEntry.id)
+                : dashboard.archive(trackedEntry.id),
+            t`Action failed`,
+          )
+        }
+        variant="secondary"
+      >
+        <Text>{trackedEntry.archivedAt ? t`Unarchive` : t`Archive`}</Text>
       </Button>
       <Button
         loading={dashboard.isRemoving}
         onPress={() =>
           void confirmDestructive({
-            confirmLabel: "Remove",
-            message: `${trackedEntry.domainName} will stop being tracked.`,
-            title: "Remove domain?",
+            confirmLabel: t`Remove`,
+            message: t`${domainName} will stop being tracked.`,
+            title: t`Remove domain?`,
           }).then((confirmed) => {
             if (!confirmed) return;
-            void runNetworkAction(async () => {
-              await dashboard.remove(trackedEntry.id);
-              router.back();
-            });
+            void runNetworkAction(
+              async () => {
+                await dashboard.remove(trackedEntry.id);
+                router.back();
+              },
+              t`Action failed`,
+            );
           })
         }
         variant="danger"
       >
-        <Text>Remove</Text>
+        <Text>
+          <Trans>Remove</Trans>
+        </Text>
       </Button>
     </Card>
   );

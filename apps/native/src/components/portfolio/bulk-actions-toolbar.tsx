@@ -1,3 +1,5 @@
+import { plural } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { Stack } from "expo-router/stack";
 import { useEffect, useRef } from "react";
 import { Platform } from "react-native";
@@ -15,6 +17,7 @@ import { toast } from "@/lib/toast";
 const BULK_LIMIT = 100;
 
 export function BulkActionsToolbar() {
+  const { t } = useLingui();
   const mode = useSelectionMode();
   const count = useSelectionCount();
   const { exitSelection } = useSelectionActions();
@@ -29,13 +32,13 @@ export function BulkActionsToolbar() {
     if (mode === "selecting" && overLimit && !warnedRef.current) {
       warnedRef.current = true;
       toast.warning({
-        title: "Selection limit",
-        message: `You can act on up to ${BULK_LIMIT} domains at once. Deselect some to continue.`,
+        title: t`Selection limit`,
+        message: t`You can act on up to ${BULK_LIMIT} domains at once. Deselect some to continue.`,
       });
     } else if (!overLimit) {
       warnedRef.current = false;
     }
-  }, [mode, overLimit]);
+  }, [mode, overLimit, t]);
 
   if (mode !== "selecting") return null;
 
@@ -49,7 +52,7 @@ export function BulkActionsToolbar() {
     if (ids.length === 0) return;
     void dashboard.bulkArchive(ids).then(
       () => {
-        toast.success(`Archived ${ids.length} ${ids.length === 1 ? "domain" : "domains"}`);
+        toast.success(t`Archived ${plural(ids.length, { one: "# domain", other: "# domains" })}`);
         exitSelection();
       },
       () => exitSelection(),
@@ -61,14 +64,14 @@ export function BulkActionsToolbar() {
     const ids = getSelectedIds();
     if (ids.length === 0) return;
     void confirmDestructive({
-      confirmLabel: "Remove",
-      message: "This permanently removes tracking and notification settings.",
-      title: `Remove ${count} ${count === 1 ? "domain" : "domains"}?`,
+      confirmLabel: t`Remove`,
+      message: t`This permanently removes tracking and notification settings.`,
+      title: t`Remove ${plural(count, { one: "# domain", other: "# domains" })}?`,
     }).then((confirmed) => {
       if (!confirmed) return;
       void dashboard.bulkRemove(ids).then(
         () => {
-          toast.success(`Removed ${ids.length} ${ids.length === 1 ? "domain" : "domains"}`);
+          toast.success(t`Removed ${plural(ids.length, { one: "# domain", other: "# domains" })}`);
           exitSelection();
         },
         () => exitSelection(),
@@ -82,15 +85,18 @@ export function BulkActionsToolbar() {
     if (ids.length === 0) return;
     if (overLimit) {
       toast.warning({
-        title: "Too many selected",
-        message: `Select up to ${BULK_LIMIT} domains at a time.`,
+        title: t`Too many selected`,
+        message: t`Select up to ${BULK_LIMIT} domains at a time.`,
       });
       return;
     }
     void dashboard.bulkSetMuted(ids, muted).then(
       ({ successCount }) => {
-        const verb = muted ? "Muted" : "Unmuted";
-        toast.success(`${verb} ${successCount} ${successCount === 1 ? "domain" : "domains"}`);
+        toast.success(
+          muted
+            ? t`Muted ${plural(successCount, { one: "# domain", other: "# domains" })}`
+            : t`Unmuted ${plural(successCount, { one: "# domain", other: "# domains" })}`,
+        );
         exitSelection();
       },
       () => exitSelection(),
@@ -100,16 +106,16 @@ export function BulkActionsToolbar() {
   return (
     <Stack.Toolbar placement="bottom">
       <Stack.Toolbar.Button
-        accessibilityLabel="Archive selected"
+        accessibilityLabel={t`Archive selected`}
         disabled={disabled}
         icon={Platform.OS === "ios" ? "archivebox" : undefined}
         onPress={handleArchive}
       >
-        Archive
+        {t`Archive`}
       </Stack.Toolbar.Button>
       <Stack.Toolbar.Spacer />
       <Stack.Toolbar.Menu
-        accessibilityLabel="More actions"
+        accessibilityLabel={t`More actions`}
         disabled={busy}
         icon={Platform.OS === "ios" ? "ellipsis.circle" : undefined}
       >
@@ -117,23 +123,23 @@ export function BulkActionsToolbar() {
           icon={Platform.OS === "ios" ? "bell.slash" : undefined}
           onPress={() => handleSetMuted(true)}
         >
-          Mute notifications
+          {t`Mute notifications`}
         </Stack.Toolbar.MenuAction>
         <Stack.Toolbar.MenuAction
           icon={Platform.OS === "ios" ? "bell" : undefined}
           onPress={() => handleSetMuted(false)}
         >
-          Unmute notifications
+          {t`Unmute notifications`}
         </Stack.Toolbar.MenuAction>
       </Stack.Toolbar.Menu>
       <Stack.Toolbar.Spacer />
       <Stack.Toolbar.Button
-        accessibilityLabel="Remove selected"
+        accessibilityLabel={t`Remove selected`}
         disabled={disabled}
         icon={Platform.OS === "ios" ? "trash" : undefined}
         onPress={handleRemove}
       >
-        Remove
+        {t`Remove`}
       </Stack.Toolbar.Button>
     </Stack.Toolbar>
   );

@@ -1,3 +1,4 @@
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { View } from "react-native";
@@ -9,6 +10,7 @@ import { Text } from "@/components/text";
 import { useTRPC } from "@/lib/api";
 
 export function SeoSection({ domain }: { domain: string }) {
+  const { t } = useLingui();
   const trpc = useTRPC();
   const { data } = useSuspenseQuery(trpc.domain.getSeo.queryOptions({ domain }));
 
@@ -18,24 +20,31 @@ export function SeoSection({ domain }: { domain: string }) {
         accent="cyan"
         icon={{ android: "query_stats", ios: "chart.bar.doc.horizontal" }}
         subtitle="Meta · OG · robots"
-        title="SEO"
+        title={t`SEO`}
       >
-        <Text className="text-sm text-muted-foreground">SEO data could not be retrieved.</Text>
+        <Text className="text-sm text-muted-foreground">
+          <Trans>SEO data could not be retrieved.</Trans>
+        </Text>
       </ReportSection>
     );
   }
 
   const { meta, robots, preview, source } = data.data;
   const items: KeyValueItem[] = [];
-  if (meta?.general.title) items.push({ key: "title", label: "Title", value: meta.general.title });
+  if (meta?.general.title) items.push({ key: "title", label: t`Title`, value: meta.general.title });
   if (meta?.general.description)
-    items.push({ key: "description", label: "Description", value: meta.general.description });
+    items.push({ key: "description", label: t`Description`, value: meta.general.description });
   if (meta?.general.canonical)
-    items.push({ key: "canonical", label: "Canonical", value: meta.general.canonical, mono: true });
+    items.push({
+      key: "canonical",
+      label: t`Canonical`,
+      value: meta.general.canonical,
+      mono: true,
+    });
   if (meta?.general.robots)
-    items.push({ key: "robots", label: "Robots", value: meta.general.robots, mono: true });
+    items.push({ key: "robots", label: t`Robots`, value: meta.general.robots, mono: true });
   if (source.finalUrl && source.finalUrl !== `https://${domain}/`)
-    items.push({ key: "final-url", label: "Final URL", value: source.finalUrl, mono: true });
+    items.push({ key: "final-url", label: t`Final URL`, value: source.finalUrl, mono: true });
 
   const previewImage = preview?.image ?? preview?.imageUploaded ?? null;
 
@@ -44,7 +53,7 @@ export function SeoSection({ domain }: { domain: string }) {
       accent="cyan"
       icon={{ android: "query_stats", ios: "chart.bar.doc.horizontal" }}
       subtitle="Meta · OG · robots"
-      title="SEO"
+      title={t`SEO`}
       trailing={
         source.status ? (
           <Badge variant={source.status >= 200 && source.status < 400 ? "success" : "warning"}>
@@ -72,8 +81,10 @@ export function SeoSection({ domain }: { domain: string }) {
             robots.txt
           </Text>
           <Text className="font-mono text-xs">
-            {robots.groups.length} group{robots.groups.length === 1 ? "" : "s"}
-            {robots.sitemaps.length > 0 ? ` · ${robots.sitemaps.length} sitemap(s)` : ""}
+            <Plural value={robots.groups.length} one="# group" other="# groups" />
+            {robots.sitemaps.length > 0 ? (
+              <Plural value={robots.sitemaps.length} one=" · # sitemap" other=" · # sitemaps" />
+            ) : null}
           </Text>
         </View>
       ) : null}

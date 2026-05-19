@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { Link } from "expo-router";
 import { memo, useCallback } from "react";
 import { Pressable, View } from "react-native";
@@ -23,10 +24,13 @@ function ArchivedRowImpl({
   onReactivate: (domain: ArchivedRowDomain) => void;
   onRemove: (domain: ArchivedRowDomain) => void;
 }) {
+  const { t, i18n } = useLingui();
   const handleReactivate = useCallback(() => onReactivate(domain), [domain, onReactivate]);
   const handleRemove = useCallback(() => onRemove(domain), [domain, onRemove]);
 
-  const archivedRelative = domain.archivedAt ? formatRelativeTime(domain.archivedAt) : null;
+  const archivedRelative = domain.archivedAt
+    ? formatRelativeTime(domain.archivedAt, i18n.locale)
+    : null;
 
   return (
     <Link
@@ -44,7 +48,7 @@ function ArchivedRowImpl({
                 {domain.domainName}
               </Text>
               <Text numberOfLines={1} className="text-sm text-muted-foreground">
-                {archivedRelative ? `Archived ${archivedRelative}` : "Archived"}
+                {archivedRelative ? t`Archived ${archivedRelative}` : t`Archived`}
               </Text>
             </View>
             <View className="flex-row gap-2">
@@ -54,15 +58,19 @@ function ArchivedRowImpl({
                 onPress={handleReactivate}
                 variant="secondary"
               >
-                <Text>Reactivate</Text>
+                <Text>
+                  <Trans>Reactivate</Trans>
+                </Text>
               </Button>
               <Button className="flex-1" onPress={handleRemove} variant="danger">
-                <Text>Remove</Text>
+                <Text>
+                  <Trans>Remove</Trans>
+                </Text>
               </Button>
             </View>
             {!canReactivate ? (
               <Text className="text-xs text-muted-foreground">
-                Plan limit reached. Upgrade or remove a tracked domain to reactivate.
+                <Trans>Plan limit reached. Upgrade or remove a tracked domain to reactivate.</Trans>
               </Text>
             ) : null}
           </View>
@@ -75,10 +83,10 @@ function ArchivedRowImpl({
           icon="arrow.uturn.backward"
           onPress={handleReactivate}
         >
-          Reactivate
+          {t`Reactivate`}
         </Link.MenuAction>
         <Link.MenuAction destructive icon="trash" onPress={handleRemove}>
-          Remove
+          {t`Remove`}
         </Link.MenuAction>
       </Link.Menu>
     </Link>

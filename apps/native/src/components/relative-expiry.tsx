@@ -1,3 +1,4 @@
+import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 
 import { cn } from "@/lib/cn";
@@ -22,9 +23,10 @@ export function RelativeExpiry({
   warnDays?: number;
   className?: string;
 }) {
+  const { i18n } = useLingui();
   const state = useMemo(
-    () => getRelativeExpiry(to, { dangerDays, warnDays }),
-    [to, dangerDays, warnDays],
+    () => getRelativeExpiry(to, { dangerDays, warnDays, locale: i18n.locale }),
+    [to, dangerDays, warnDays, i18n.locale],
   );
 
   if (!state) return null;
