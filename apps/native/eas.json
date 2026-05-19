@@ -4,20 +4,29 @@
     "appVersionSource": "remote"
   },
   "build": {
+    "base": {
+      "node": "24.15.0"
+    },
     "development": {
+      "extends": "base",
       "developmentClient": true,
       "distribution": "internal",
       "ios": {
         "simulator": true
+      },
+      "env": {
+        "EXPO_PUBLIC_DOMAINSTACK_API_URL": "http://localhost:3000"
       }
     },
     "preview": {
+      "extends": "base",
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_DOMAINSTACK_API_URL": "https://domainstack.io"
       }
     },
     "production": {
+      "extends": "base",
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_DOMAINSTACK_API_URL": "https://domainstack.io"
