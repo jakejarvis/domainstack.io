@@ -1,3 +1,6 @@
+"use client";
+
+import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 
 import { TtlBadge } from "@/components/domain/dns/ttl-badge";
@@ -17,6 +20,7 @@ export function DnsRecordList({
   records: DnsRecord[];
   type: DnsRecord["type"];
 }) {
+  const { t } = useLingui();
   const filtered = useMemo(() => {
     const arr = records.filter((r) => r.type === type);
     return arr;
@@ -27,7 +31,7 @@ export function DnsRecordList({
       {filtered.map((r) => (
         <KeyValue
           key={`${type}-${r.value}${type === "MX" ? `-${r.priority ?? ""}` : ""}`}
-          label={type === "MX" && r.priority != null ? `Priority ${r.priority}` : undefined}
+          label={type === "MX" && r.priority != null ? t`Priority ${r.priority}` : undefined}
           value={r.value}
           trailing={typeof r.ttl === "number" ? <TtlBadge ttl={r.ttl} /> : undefined}
           suffix={

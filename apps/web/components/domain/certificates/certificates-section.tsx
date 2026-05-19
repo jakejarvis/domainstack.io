@@ -1,3 +1,6 @@
+"use client";
+
+import { useLingui } from "@lingui/react/macro";
 import {
   IconArrowUp,
   IconCertificateOff,
@@ -33,6 +36,7 @@ import {
 import { formatDate, formatDateTimeUtc } from "@domainstack/utils";
 
 function CertificateCard({ cert }: { cert: Certificate }) {
+  const { t } = useLingui();
   const sans = Array.isArray(cert.altNames)
     ? cert.altNames.filter((n) => !equalHostname(n, cert.subject))
     : [];
@@ -41,7 +45,7 @@ function CertificateCard({ cert }: { cert: Certificate }) {
     <div className="relative overflow-hidden rounded-xl border bg-background/60 p-3 backdrop-blur-lg">
       <KeyValueGrid colsDesktop={2}>
         <KeyValue
-          label="Issuer"
+          label={t`Issuer`}
           value={cert.issuer}
           leading={
             cert.caProvider?.id ? (
@@ -56,7 +60,7 @@ function CertificateCard({ cert }: { cert: Certificate }) {
         />
 
         <KeyValue
-          label="Subject"
+          label={t`Subject`}
           value={cert.subject}
           suffix={
             sans.length > 0 ? (
@@ -82,7 +86,7 @@ function CertificateCard({ cert }: { cert: Certificate }) {
         />
 
         <KeyValue
-          label="Valid from"
+          label={t`Valid from`}
           value={formatDate(cert.validFrom)}
           valueTooltip={formatDateTimeUtc(cert.validFrom)}
           suffix={
@@ -93,7 +97,7 @@ function CertificateCard({ cert }: { cert: Certificate }) {
         />
 
         <KeyValue
-          label="Valid to"
+          label={t`Valid to`}
           value={formatDate(cert.validTo)}
           valueTooltip={formatDateTimeUtc(cert.validTo)}
           suffix={
@@ -113,6 +117,7 @@ export function CertificatesSection({
   domain?: string;
   data?: CertificatesResponse | null;
 }) {
+  const { t } = useLingui();
   const shouldReduceMotion = useReducedMotion();
   const [showAll, setShowAll] = useState(false);
   const certificates = data?.certificates ?? [];
@@ -139,7 +144,7 @@ export function CertificatesSection({
                 className="text-[13px]"
               >
                 <IconChevronDown className="size-4" aria-hidden />
-                <span>Show Chain</span>
+                <span>{t`Show Chain`}</span>
               </Button>
             </div>
           )}
@@ -189,7 +194,7 @@ export function CertificatesSection({
                       aria-expanded
                     >
                       <IconChevronUp className="size-4" aria-hidden />
-                      <span>Hide Chain</span>
+                      <span>{t`Hide Chain`}</span>
                     </Button>
                   </div>
                 </m.div>
@@ -203,10 +208,9 @@ export function CertificatesSection({
             <EmptyMedia variant="icon">
               <IconCertificateOff />
             </EmptyMedia>
-            <EmptyTitle>No certificates found</EmptyTitle>
+            <EmptyTitle>{t`No certificates found`}</EmptyTitle>
             <EmptyDescription>
-              We couldn&apos;t retrieve a TLS certificate chain for this site. Ensure the domain
-              resolves and serves HTTPS on port 443.
+              {t`We couldn’t retrieve a TLS certificate chain for this site. Ensure the domain resolves and serves HTTPS on port 443.`}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>

@@ -1,3 +1,6 @@
+"use client";
+
+import { useLingui } from "@lingui/react/macro";
 import { IconHelp } from "@tabler/icons-react";
 import dynamic from "next/dynamic";
 
@@ -42,6 +45,7 @@ export function HostingSection({
   const emailProvider = data?.emailProvider ?? null;
   const hasAnyProvider = dnsProvider?.name || hostingProvider?.name || emailProvider?.name;
   const geolocation = data?.geo ?? null;
+  const { t } = useLingui();
 
   return (
     <ReportSection {...sections.hosting}>
@@ -49,8 +53,8 @@ export function HostingSection({
         <>
           <KeyValueGrid colsDesktop={3}>
             <KeyValue
-              label="DNS"
-              value={dnsProvider?.name ?? "Not configured"}
+              label={t`DNS`}
+              value={dnsProvider?.name ?? t`Not configured`}
               leading={
                 dnsProvider?.id ? (
                   <ProviderLogo providerId={dnsProvider.id} providerName={dnsProvider.name} />
@@ -58,8 +62,8 @@ export function HostingSection({
               }
             />
             <KeyValue
-              label="Hosting"
-              value={hostingProvider?.name ?? "Not configured"}
+              label={t`Hosting`}
+              value={hostingProvider?.name ?? t`Not configured`}
               leading={
                 hostingProvider?.id ? (
                   <ProviderLogo
@@ -70,8 +74,8 @@ export function HostingSection({
               }
             />
             <KeyValue
-              label="Email"
-              value={emailProvider?.name ?? "Not configured"}
+              label={t`Email`}
+              value={emailProvider?.name ?? t`Not configured`}
               leading={
                 emailProvider?.id ? (
                   <ProviderLogo providerId={emailProvider.id} providerName={emailProvider.name} />
@@ -83,7 +87,7 @@ export function HostingSection({
           {geolocation ? (
             <>
               <KeyValue
-                label="Location"
+                label={t`Location`}
                 value={formatLocation(geolocation)}
                 leading={
                   geolocation.country_code ? (
@@ -111,10 +115,9 @@ export function HostingSection({
             <EmptyMedia variant="icon">
               <IconHelp />
             </EmptyMedia>
-            <EmptyTitle>No hosting details available</EmptyTitle>
+            <EmptyTitle>{t`No hosting details available`}</EmptyTitle>
             <EmptyDescription>
-              We couldn&apos;t detect hosting, email, or DNS provider info. If the domain has no
-              A/AAAA records or blocked headers, details may be unavailable.
+              {t`We couldn’t detect hosting, email, or DNS provider info. If the domain has no A/AAAA records or blocked headers, details may be unavailable.`}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>

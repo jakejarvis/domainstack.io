@@ -1,5 +1,6 @@
 "use client";
 
+import { useLingui } from "@lingui/react/macro";
 import { IconExternalLink, IconInfoCircle, IconList, IconSearch } from "@tabler/icons-react";
 import Link from "next/link";
 import { useMemo } from "react";
@@ -36,6 +37,7 @@ function extractDomainFromLocation(locationValue: string): string | null {
 }
 
 export function HeadersSection({ data }: { domain?: string; data?: HeadersResponse | null }) {
+  const { t } = useLingui();
   const status = data?.status;
   const statusMessage = data?.statusMessage;
 
@@ -63,7 +65,7 @@ export function HeadersSection({ data }: { domain?: string; data?: HeadersRespon
               <IconInfoCircle aria-hidden />
               <AlertDescription>
                 <p className="text-[13px]">
-                  Server returned{" "}
+                  {t`Server returned`}{" "}
                   <a
                     href={`https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/${status}`}
                     target="_blank"
@@ -100,7 +102,7 @@ export function HeadersSection({ data }: { domain?: string; data?: HeadersRespon
                         href={`/${encodeURIComponent(locationDomain)}`}
                         prefetch={false}
                         className="inline-flex items-center text-foreground/80 hover:text-muted-foreground"
-                        title={`View report for ${locationDomain}`}
+                        title={t`View report for ${locationDomain}`}
                       >
                         <IconSearch className="size-4" />
                       </Link>
@@ -124,10 +126,9 @@ export function HeadersSection({ data }: { domain?: string; data?: HeadersRespon
               <EmptyMedia variant="icon">
                 <IconList />
               </EmptyMedia>
-              <EmptyTitle>No HTTP headers detected</EmptyTitle>
+              <EmptyTitle>{t`No HTTP headers detected`}</EmptyTitle>
               <EmptyDescription>
-                We couldn&apos;t fetch any HTTP response headers for this site. It may be offline or
-                blocking requests.
+                {t`We couldn’t fetch any HTTP response headers for this site. It may be offline or blocking requests.`}
               </EmptyDescription>
             </EmptyHeader>
           </Empty>

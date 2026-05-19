@@ -96,6 +96,14 @@ msgstr ""
 msgid "404 — Not Found"
 msgstr ""
 
+#: ../../apps/web/components/domain/dns/dns-section.tsx
+msgid "A Records"
+msgstr ""
+
+#: ../../apps/web/components/domain/dns/dns-section.tsx
+msgid "AAAA Records"
+msgstr ""
+
 #: ../../apps/web/components/consent/cookie-prompt.tsx
 msgid "Accept"
 msgstr ""
@@ -449,6 +457,10 @@ msgstr ""
 msgid "Couldn’t load your portfolio"
 msgstr ""
 
+#: ../../apps/native/src/components/settings/linked-accounts.tsx
+msgid "Couldn’t load your sign-in methods. Check your connection and try again."
+msgstr ""
+
 #: ../../apps/native/src/app/(tabs)/search/index.tsx
 msgid "Couldn’t open search"
 msgstr ""
@@ -554,6 +566,7 @@ msgstr ""
 #: ../../apps/native/src/app/(tabs)/domains/add.tsx
 #: ../../apps/native/src/components/domain/dns-section.tsx
 #: ../../apps/native/src/components/portfolio/provider-chips.tsx
+#: ../../apps/web/components/domain/hosting/hosting-section.tsx
 msgid "DNS"
 msgstr ""
 
@@ -618,6 +631,7 @@ msgid "Edit"
 msgstr ""
 
 #: ../../apps/native/src/components/portfolio/provider-chips.tsx
+#: ../../apps/web/components/domain/hosting/hosting-section.tsx
 msgid "Email"
 msgstr ""
 
@@ -801,12 +815,17 @@ msgstr ""
 msgid "Hidden"
 msgstr ""
 
+#: ../../apps/web/components/domain/certificates/certificates-section.tsx
+msgid "Hide Chain"
+msgstr ""
+
 #: ../../apps/native/src/components/domain/hosting-section.tsx
 #: ../../apps/native/src/components/portfolio/provider-chips.tsx
 msgid "Host"
 msgstr ""
 
 #: ../../apps/native/src/components/domain/hosting-section.tsx
+#: ../../apps/web/components/domain/hosting/hosting-section.tsx
 msgid "Hosting"
 msgstr ""
 
@@ -878,6 +897,10 @@ msgstr ""
 msgid "Invalid SSL certificate"
 msgstr ""
 
+#: ../../apps/web/components/domain/certificates/certificates-section.tsx
+msgid "Issuer"
+msgstr ""
+
 #: ../../apps/native/src/components/domain/certificates-section.tsx
 msgid "Issuer: {issuer}"
 msgstr ""
@@ -911,6 +934,7 @@ msgid "Loading sign-in options…"
 msgstr "Cargando opciones de inicio de sesión…"
 
 #: ../../apps/native/src/components/domain/hosting-section.tsx
+#: ../../apps/web/components/domain/hosting/hosting-section.tsx
 msgid "Location"
 msgstr ""
 
@@ -1013,6 +1037,10 @@ msgstr ""
 msgid "Muted domains"
 msgstr ""
 
+#: ../../apps/web/components/domain/dns/dns-section.tsx
+msgid "MX Records"
+msgstr ""
+
 #: ../../apps/native/src/app/(tabs)/domains/index.tsx
 msgid "Name"
 msgstr ""
@@ -1043,8 +1071,16 @@ msgstr ""
 msgid "No archived notifications"
 msgstr ""
 
+#: ../../apps/web/components/domain/certificates/certificates-section.tsx
+msgid "No certificates found"
+msgstr ""
+
 #: ../../apps/native/src/components/domain/certificates-section.tsx
 msgid "No certificates were detected for this domain."
+msgstr ""
+
+#: ../../apps/web/components/domain/dns/dns-section.tsx
+msgid "No DNS records found"
 msgstr ""
 
 #: ../../apps/native/src/components/domain/dns-section.tsx
@@ -1061,6 +1097,14 @@ msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/domains/index.tsx
 msgid "No domains match"
+msgstr ""
+
+#: ../../apps/web/components/domain/hosting/hosting-section.tsx
+msgid "No hosting details available"
+msgstr ""
+
+#: ../../apps/web/components/domain/headers/headers-section.tsx
+msgid "No HTTP headers detected"
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/search/index.tsx
@@ -1083,6 +1127,10 @@ msgstr "No hay proveedores de inicio de sesión disponibles ahora mismo."
 
 #: ../../apps/native/src/components/portfolio/filter-sheet.tsx
 msgid "No TLDs yet. Add domains to your portfolio first."
+msgstr ""
+
+#: ../../apps/web/components/domain/hosting/hosting-section.tsx
+msgid "Not configured"
 msgstr ""
 
 #: ../../apps/web/app/not-found.tsx
@@ -1112,6 +1160,10 @@ msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/notifications/index.tsx
 msgid "Notifications you have marked read will appear here."
+msgstr ""
+
+#: ../../apps/web/components/domain/dns/dns-section.tsx
+msgid "NS Records"
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/notifications/index.tsx
@@ -1193,6 +1245,11 @@ msgstr ""
 
 #: ../../apps/native/src/app/settings.tsx
 msgid "Preferences did not load."
+msgstr ""
+
+#. placeholder {0}: r.priority
+#: ../../apps/web/components/domain/dns/dns-record-list.tsx
+msgid "Priority {0}"
 msgstr ""
 
 #: ../../apps/native/src/app/settings.tsx
@@ -1444,6 +1501,10 @@ msgstr ""
 msgid "SEO data could not be retrieved."
 msgstr ""
 
+#: ../../apps/web/components/domain/headers/headers-section.tsx
+msgid "Server returned"
+msgstr ""
+
 #: ../../apps/native/src/app/settings.tsx
 msgid "Several settings sections couldn’t load. Pull down to refresh, or retry them individually below."
 msgstr ""
@@ -1467,6 +1528,10 @@ msgstr ""
 
 #: ../../apps/web/components/layout/app-footer.tsx
 msgid "Shortcut"
+msgstr ""
+
+#: ../../apps/web/components/domain/certificates/certificates-section.tsx
+msgid "Show Chain"
 msgstr ""
 
 #: ../../apps/native/src/app/onboarding.tsx
@@ -1500,10 +1565,6 @@ msgstr "El inicio de sesión no se completó"
 #: ../../apps/native/src/components/settings/linked-accounts.tsx
 msgid "Sign-in methods"
 msgstr ""
-
-#: ../../apps/native/src/app/sign-in.tsx
-msgid "Sign-in options are unavailable."
-msgstr "Las opciones de inicio de sesión no están disponibles."
 
 #: ../../apps/native/src/app/onboarding.tsx
 msgid "Skip"
@@ -1539,6 +1600,10 @@ msgstr ""
 
 #: ../../apps/native/src/components/domain/add-domain/step-indicator.tsx
 msgid "Step {current} of 3: {currentLabel}"
+msgstr ""
+
+#: ../../apps/web/components/domain/certificates/certificates-section.tsx
+msgid "Subject"
 msgstr ""
 
 #: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
@@ -1706,6 +1771,7 @@ msgstr ""
 #: ../../apps/native/src/app/delete-account.tsx
 #: ../../apps/native/src/app/settings.tsx
 #: ../../apps/native/src/app/sign-in.tsx
+#: ../../apps/native/src/components/settings/linked-accounts.tsx
 msgid "Try again"
 msgstr "Reintentar"
 
@@ -1719,6 +1785,10 @@ msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/domains/add.tsx
 msgid "TTL"
+msgstr ""
+
+#: ../../apps/web/components/domain/dns/dns-section.tsx
+msgid "TXT Records"
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/domains/add.tsx
@@ -1811,6 +1881,14 @@ msgstr ""
 msgid "Valid {validFrom}"
 msgstr ""
 
+#: ../../apps/web/components/domain/certificates/certificates-section.tsx
+msgid "Valid from"
+msgstr ""
+
+#: ../../apps/web/components/domain/certificates/certificates-section.tsx
+msgid "Valid to"
+msgstr ""
+
 #: ../../apps/native/src/app/(tabs)/domains/add.tsx
 msgid "Value"
 msgstr ""
@@ -1881,6 +1959,26 @@ msgstr ""
 
 #: ../../apps/native/src/components/domain/registration-section.tsx
 msgid "View raw {label}"
+msgstr ""
+
+#: ../../apps/web/components/domain/headers/headers-section.tsx
+msgid "View report for {locationDomain}"
+msgstr ""
+
+#: ../../apps/web/components/domain/hosting/hosting-section.tsx
+msgid "We couldn’t detect hosting, email, or DNS provider info. If the domain has no A/AAAA records or blocked headers, details may be unavailable."
+msgstr ""
+
+#: ../../apps/web/components/domain/headers/headers-section.tsx
+msgid "We couldn’t fetch any HTTP response headers for this site. It may be offline or blocking requests."
+msgstr ""
+
+#: ../../apps/web/components/domain/dns/dns-section.tsx
+msgid "We couldn’t resolve A/AAAA, MX, TXT, or NS records for this domain. If DNS was recently updated, it may take time to propagate."
+msgstr ""
+
+#: ../../apps/web/components/domain/certificates/certificates-section.tsx
+msgid "We couldn’t retrieve a TLS certificate chain for this site. Ensure the domain resolves and serves HTTPS on port 443."
 msgstr ""
 
 #: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx

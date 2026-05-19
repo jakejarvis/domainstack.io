@@ -1,3 +1,6 @@
+"use client";
+
+import { useLingui } from "@lingui/react/macro";
 import { IconWorld } from "@tabler/icons-react";
 import { useMemo } from "react";
 
@@ -15,6 +18,7 @@ import {
 } from "@domainstack/ui/empty";
 
 export function DnsSection({ data }: { domain?: string; data?: DnsRecordsResponse | null }) {
+  const { t } = useLingui();
   const records = data?.records;
   const recordsByType = useMemo(() => {
     const byType: Record<DnsRecord["type"], DnsRecord[]> = {
@@ -36,19 +40,19 @@ export function DnsSection({ data }: { domain?: string; data?: DnsRecordsRespons
     <ReportSection {...sections.dns}>
       {records && records.length > 0 ? (
         <div className="space-y-4">
-          <DnsGroup title="A Records" color="blue" count={recordsByType.A.length}>
+          <DnsGroup title={t`A Records`} color="blue" count={recordsByType.A.length}>
             <DnsRecordList records={recordsByType.A} type="A" />
           </DnsGroup>
-          <DnsGroup title="AAAA Records" color="cyan" count={recordsByType.AAAA.length}>
+          <DnsGroup title={t`AAAA Records`} color="cyan" count={recordsByType.AAAA.length}>
             <DnsRecordList records={recordsByType.AAAA} type="AAAA" />
           </DnsGroup>
-          <DnsGroup title="MX Records" color="green" count={recordsByType.MX.length}>
+          <DnsGroup title={t`MX Records`} color="green" count={recordsByType.MX.length}>
             <DnsRecordList records={recordsByType.MX} type="MX" />
           </DnsGroup>
-          <DnsGroup title="TXT Records" color="orange" count={recordsByType.TXT.length}>
+          <DnsGroup title={t`TXT Records`} color="orange" count={recordsByType.TXT.length}>
             <DnsRecordList records={recordsByType.TXT} type="TXT" />
           </DnsGroup>
-          <DnsGroup title="NS Records" color="purple" count={recordsByType.NS.length}>
+          <DnsGroup title={t`NS Records`} color="purple" count={recordsByType.NS.length}>
             <DnsRecordList records={recordsByType.NS} type="NS" />
           </DnsGroup>
         </div>
@@ -58,10 +62,9 @@ export function DnsSection({ data }: { domain?: string; data?: DnsRecordsRespons
             <EmptyMedia variant="icon">
               <IconWorld />
             </EmptyMedia>
-            <EmptyTitle>No DNS records found</EmptyTitle>
+            <EmptyTitle>{t`No DNS records found`}</EmptyTitle>
             <EmptyDescription>
-              We couldn&apos;t resolve A/AAAA, MX, TXT, or NS records for this domain. If DNS was
-              recently updated, it may take time to propagate.
+              {t`We couldn’t resolve A/AAAA, MX, TXT, or NS records for this domain. If DNS was recently updated, it may take time to propagate.`}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
