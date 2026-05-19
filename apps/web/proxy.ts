@@ -3,9 +3,28 @@ import { NextResponse } from "next/server";
 
 import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { getSessionCookie } from "@domainstack/auth/server";
+import { LOCALE_COOKIE, isLocale, negotiateLocale } from "@domainstack/i18n/config";
 
 // Routes that require authentication (pre-check for faster redirects)
 const PROTECTED_ROUTES = ["/dashboard", "/settings"];
+
+/**
+ * Cookie-only locale negotiation (no URL prefix). If the visitor has no valid
+ * `ds_locale` cookie yet, negotiate from `Accept-Language` and persist it on the
+ * pass-through response so subsequent requests (and RSC) read a stable locale.
+ */
+function negotiateLocaleCookie(request: NextRequest, response: NextResponse): NextResponse {
+  const existing = request.cookies.get(LOCALE_COOKIE)?.value;
+  if (isLocale(existing)) return response;
+
+  const locale = negotiateLocale(request.headers.get("accept-language"));
+  response.cookies.set(LOCALE_COOKIE, locale, {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: "lax",
+  });
+  return response;
+}
 
 export function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
@@ -25,7 +44,7 @@ export function proxy(request: NextRequest) {
       }
     }
 
-    return NextResponse.next();
+    return negotiateLocaleCookie(request, NextResponse.next());
   }
 
   // Quick redirect for unauthenticated users trying to access protected routes
@@ -66,7 +85,7 @@ export function proxy(request: NextRequest) {
   const registrable = toRegistrableDomain(decodedInput);
   if (!registrable) {
     // Not a valid domain - pass through to Next.js routing
-    return NextResponse.next();
+    return negotiateLocaleCookie(request, NextResponse.next());
   }
 
   // 4. Redirect if necessary
@@ -80,7 +99,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  return NextResponse.next();
+  return negotiateLocaleCookie(request, NextResponse.next());
 }
 
 export const config = {
