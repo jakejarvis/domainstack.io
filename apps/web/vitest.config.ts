@@ -10,6 +10,7 @@ export default defineConfig({
     alias: {
       "next/image": fileURLToPath(new URL("./mocks/next-image.ts", import.meta.url)),
     },
+    dedupe: ["react", "react-dom"],
     tsconfigPaths: true,
   },
   define: {

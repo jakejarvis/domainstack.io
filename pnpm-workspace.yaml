@@ -22,18 +22,18 @@ catalog:
   '@trpc/client': ^11.17.0
   '@trpc/server': ^11.17.0
   '@trpc/tanstack-react-query': ^11.17.0
-  '@types/node': 25.8.0
+  '@types/node': 25.9.0
   '@types/react': 19.2.14
   '@types/react-dom': 19.2.3
   '@vercel/functions': ^3.6.0
   clsx: ^2.1.1
   cva: 1.0.0-beta.4
-  date-fns: ^4.1.0
+  date-fns: ^4.2.1
   ipaddr.js: ^2.4.0
-  lru-cache: ^11.3.6
-  motion: ^12.38.0
+  lru-cache: ^11.4.0
+  motion: ^12.39.0
   msw: ^2.14.6
-  posthog-js: ^1.373.5
+  posthog-js: ^1.374.0
   rdapper: ^0.13.0
   react: 19.2.6
   react-dom: 19.2.6
@@ -66,6 +66,10 @@ onlyBuiltDependencies:
 overrides:
   '@types/react': 19.2.14
   '@types/react-dom': 19.2.3
+
+peerDependencyRules:
+  allowedVersions:
+    'react-dom>react': '19'
 
 publicHoistPattern:
   - '@sparticuz/chromium'

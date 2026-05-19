@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "posthog-js": "catalog:",
-    "posthog-node": "^5.34.2",
+    "posthog-node": "^5.34.3",
     "uuid": "^14.0.0"
   },
   "devDependencies": {
@@ -28,6 +28,6 @@
   },
   "peerDependencies": {
     "next": ">=16",
-    "react": "catalog:"
+    "react": "^19.2.0"
   }
 }

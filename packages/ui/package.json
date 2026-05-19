@@ -37,8 +37,8 @@
   "peerDependencies": {
     "@tabler/icons-react": "catalog:",
     "motion": "catalog:",
-    "react": "catalog:",
-    "react-dom": "catalog:",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "sonner": "catalog:"
   }
 }

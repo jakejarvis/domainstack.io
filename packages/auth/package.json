@@ -47,7 +47,7 @@
   },
   "peerDependencies": {
     "next": ">=16",
-    "react": "catalog:"
+    "react": "^19.2.0"
   },
   "peerDependenciesMeta": {
     "next": {

@@ -1,8 +1,10 @@
-const path = require("node:path");
+const { createRequire } = require("node:module");
 
 const { getDefaultConfig } = require("expo/metro-config");
 const { wrapWithReanimatedMetroConfig } = require("react-native-reanimated/metro-config");
 const { withUniwindConfig } = require("uniwind/metro");
+
+const appRequire = createRequire(`${__dirname}/package.json`);
 
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(__dirname);
@@ -12,25 +14,24 @@ const finalConfig = withUniwindConfig(wrapWithReanimatedMetroConfig(config), {
   polyfills: { rem: 14 },
 });
 
-// Force a single React instance in the native bundle
-const reactRoot = path.dirname(require.resolve("react/package.json"));
-const reactDomRoot = path.dirname(require.resolve("react-dom/package.json"));
-
-const pinReactModule = (moduleName) => {
-  if (moduleName === "react" || moduleName.startsWith("react/")) {
-    return path.join(reactRoot, moduleName.slice("react".length));
-  }
-  if (moduleName === "react-dom" || moduleName.startsWith("react-dom/")) {
-    return path.join(reactDomRoot, moduleName.slice("react-dom".length));
-  }
-  return null;
-};
-
+// React MUST be a single instance in the native bundle.
 const upstreamResolveRequest = finalConfig.resolver.resolveRequest;
-
 finalConfig.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (
+    moduleName === "react" ||
+    moduleName === "react-dom" ||
+    moduleName.startsWith("react/") ||
+    moduleName.startsWith("react-dom/")
+  ) {
+    try {
+      return { type: "sourceFile", filePath: appRequire.resolve(moduleName) };
+    } catch {
+      // Not installed at the app root — fall through to the default resolver.
+    }
+  }
+
   const resolve = upstreamResolveRequest ?? context.resolveRequest;
-  return resolve(context, pinReactModule(moduleName) ?? moduleName, platform);
+  return resolve(context, moduleName, platform);
 };
 
 module.exports = finalConfig;

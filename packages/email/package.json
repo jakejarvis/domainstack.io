@@ -28,6 +28,6 @@
     "typescript": "catalog:"
   },
   "peerDependencies": {
-    "react": "catalog:"
+    "react": "^19.2.0"
   }
 }
