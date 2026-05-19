@@ -3,12 +3,12 @@ packages:
   - packages/*
 
 catalog:
-  '@formatjs/intl-datetimeformat': ^7.4.5
-  '@formatjs/intl-getcanonicallocales': ^3.2.8
-  '@formatjs/intl-locale': ^5.3.7
-  '@formatjs/intl-numberformat': ^9.3.8
-  '@formatjs/intl-pluralrules': ^6.3.7
-  '@formatjs/intl-relativetimeformat': ^12.3.7
+  '@formatjs/intl-datetimeformat': ^7.4.6
+  '@formatjs/intl-getcanonicallocales': ^3.2.9
+  '@formatjs/intl-locale': ^5.3.8
+  '@formatjs/intl-numberformat': ^9.3.9
+  '@formatjs/intl-pluralrules': ^6.3.8
+  '@formatjs/intl-relativetimeformat': ^12.3.8
   '@lingui/babel-plugin-lingui-macro': 6.0.1
   '@lingui/cli': 6.0.1
   '@lingui/conf': 6.0.1
@@ -49,6 +49,7 @@ catalog:
 ignoredBuiltDependencies:
   - '@google/genai'
   - '@nestjs/core'
+  - sharp
 
 onlyBuiltDependencies:
   - '@posthog/cli'
@@ -61,7 +62,6 @@ onlyBuiltDependencies:
   - msw
   - protobufjs
   - puppeteer
-  - sharp
 
 overrides:
   '@types/react': 19.2.14
