@@ -99,6 +99,7 @@
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "babel-preset-expo": "~56.0.9",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
