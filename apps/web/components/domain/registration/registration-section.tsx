@@ -1,3 +1,6 @@
+"use client";
+
+import { useLingui } from "@lingui/react/macro";
 import {
   IconAlertCircle,
   IconRosetteDiscountCheck,
@@ -29,6 +32,8 @@ export function RegistrationSection({
   domain?: string;
   data?: RegistrationResponse | null;
 }) {
+  const { t } = useLingui();
+
   if (!data) return null;
 
   const registrant = extractRegistrantView(data);
@@ -68,22 +73,22 @@ export function RegistrationSection({
           />
           <div className="space-y-1">
             <p className="font-medium text-yellow-800 dark:text-yellow-200">
-              Registration Data Unavailable
+              {t`Registration Data Unavailable`}
             </p>
             <p className="text-yellow-800/90 dark:text-yellow-200/80">
               {data.unavailableReason === "timeout"
-                ? "WHOIS/RDAP lookup timed out. This may be a temporary issue with the registry's servers."
+                ? t`WHOIS/RDAP lookup timed out. This may be a temporary issue with the registry's servers.`
                 : data.unavailableReason === "unsupported_tld"
-                  ? `The .${data.tld} registry does not publish public WHOIS/RDAP data. Registration details cannot be verified for this domain.`
-                  : "Registration information could not be retrieved at this time."}
+                  ? t`The .${data.tld} registry does not publish public WHOIS/RDAP data. Registration details cannot be verified for this domain.`
+                  : t`Registration information could not be retrieved at this time.`}
             </p>
           </div>
         </div>
       ) : (
         <KeyValueGrid colsDesktop={2}>
           <KeyValue
-            label="Registrar"
-            value={data.registrarProvider?.name || "Unknown"}
+            label={t`Registrar`}
+            value={data.registrarProvider?.name || t`Unknown`}
             leading={
               data.registrarProvider?.id ? (
                 <ProviderLogo
@@ -106,7 +111,7 @@ export function RegistrationSection({
                 <ResponsiveTooltipContent>
                   <div className="flex items-center gap-[5px]">
                     <span>
-                      Verified by{" "}
+                      {t`Verified by`}{" "}
                       <span className="font-medium">
                         {serverUrl ? (
                           <a
@@ -126,7 +131,7 @@ export function RegistrationSection({
                       href={learnUrl}
                       target="_blank"
                       rel="noopener"
-                      title={`Learn about ${data.source === "rdap" ? "RDAP" : "WHOIS"}`}
+                      title={data.source === "rdap" ? t`Learn about RDAP` : t`Learn about WHOIS`}
                       className="text-muted/80"
                     >
                       <IconSchool className="size-3" />
@@ -138,8 +143,8 @@ export function RegistrationSection({
           />
 
           <KeyValue
-            label="Registrant"
-            value={data.privacyEnabled || !registrant ? "Hidden" : formatRegistrant(registrant)}
+            label={t`Registrant`}
+            value={data.privacyEnabled || !registrant ? t`Hidden` : formatRegistrant(registrant)}
             leading={
               data.privacyEnabled || !registrant ? (
                 <IconSpy className="text-muted-foreground" aria-hidden="true" />
@@ -148,8 +153,8 @@ export function RegistrationSection({
           />
 
           <KeyValue
-            label="Created"
-            value={formatDate(data.creationDate || "Unknown")}
+            label={t`Created`}
+            value={data.creationDate ? formatDate(data.creationDate) : t`Unknown`}
             valueTooltip={data.creationDate ? formatDateTimeUtc(data.creationDate) : undefined}
             suffix={
               data.creationDate ? (
@@ -161,8 +166,8 @@ export function RegistrationSection({
           />
 
           <KeyValue
-            label="Expires"
-            value={formatDate(data.expirationDate || "Unknown")}
+            label={t`Expires`}
+            value={data.expirationDate ? formatDate(data.expirationDate) : t`Unknown`}
             valueTooltip={data.expirationDate ? formatDateTimeUtc(data.expirationDate) : undefined}
             suffix={
               data.expirationDate ? (

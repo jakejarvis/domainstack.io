@@ -16,6 +16,9 @@ export default defineConfig({
   define: {
     "process.env.NEXT_PUBLIC_BASE_URL": JSON.stringify("https://test.domainstack.io"),
   },
+  optimizeDeps: {
+    include: ["@lingui/core/macro", "@lingui/react/macro"],
+  },
   test: {
     globals: true,
     silent: "passed-only",

@@ -1,5 +1,6 @@
 "use client";
 
+import { useLingui } from "@lingui/react/macro";
 import { IconDownload } from "@tabler/icons-react";
 import { notifyManager, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -13,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip
 import { cn } from "@domainstack/ui/utils";
 
 export function ExportButton({ domain, enabled = true }: { domain: string; enabled?: boolean }) {
+  const { t } = useLingui();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const [allDataLoaded, setAllDataLoaded] = useState(false);
@@ -68,12 +70,12 @@ export function ExportButton({ domain, enabled = true }: { domain: string; enabl
 
       exportDomainData(domain, exportData);
     } catch (err) {
-      toast.error(`Failed to export ${domain}`, {
-        description: err instanceof Error ? err.message : "An error occurred while exporting",
+      toast.error(t`Failed to export ${domain}`, {
+        description: err instanceof Error ? err.message : t`An error occurred while exporting`,
         position: "bottom-center",
       });
     }
-  }, [domain, queryClient, queryKeys]);
+  }, [domain, queryClient, queryKeys, t]);
 
   return (
     <Tooltip>
@@ -89,17 +91,15 @@ export function ExportButton({ domain, enabled = true }: { domain: string; enabl
               variant="outline"
               onClick={handleExport}
               disabled={!enabled || !allDataLoaded}
-              aria-label="Export report"
+              aria-label={t`Export report`}
             >
               <IconDownload className="sm:text-muted-foreground" aria-hidden="true" />
-              <span className="hidden sm:inline-block">Export</span>
+              <span className="hidden sm:inline-block">{t`Export`}</span>
             </Button>
           </div>
         }
       />
-      <TooltipContent>
-        Save this report as a <span className="font-mono">JSON</span> file
-      </TooltipContent>
+      <TooltipContent>{t`Save this report as a JSON file`}</TooltipContent>
     </Tooltip>
   );
 }

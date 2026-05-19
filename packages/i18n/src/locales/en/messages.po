@@ -192,6 +192,10 @@ msgstr "All caught up!"
 msgid "All set"
 msgstr "All set"
 
+#: ../../apps/web/components/domain/export-button.tsx
+msgid "An error occurred while exporting"
+msgstr "An error occurred while exporting"
+
 #: ../../apps/native/src/app/delete-account.tsx
 msgid "An unexpected error occurred."
 msgstr "An unexpected error occurred."
@@ -201,6 +205,7 @@ msgid "An unexpected error occurred. Please try again."
 msgstr "An unexpected error occurred. Please try again."
 
 #: ../../apps/native/src/components/domain/unregistered-card.tsx
+#: ../../apps/web/components/domain/unregistered-card.tsx
 msgid "appears to be unregistered…"
 msgstr "appears to be unregistered…"
 
@@ -357,6 +362,10 @@ msgstr "Close"
 msgid "Combine filters to narrow your portfolio."
 msgstr "Combine filters to narrow your portfolio."
 
+#: ../../apps/web/components/domain/track-domain-button.tsx
+msgid "Complete verification for this domain"
+msgstr "Complete verification for this domain"
+
 #: ../../apps/native/src/app/(tabs)/domains/add.tsx
 msgid "Contents"
 msgstr "Contents"
@@ -465,6 +474,7 @@ msgid "Couldn’t update notifications"
 msgstr "Couldn’t update notifications"
 
 #: ../../apps/native/src/components/domain/registration-section.tsx
+#: ../../apps/web/components/domain/registration/registration-section.tsx
 msgid "Created"
 msgstr "Created"
 
@@ -662,6 +672,7 @@ msgid "Expired"
 msgstr "Expired"
 
 #: ../../apps/native/src/components/domain/registration-section.tsx
+#: ../../apps/web/components/domain/registration/registration-section.tsx
 msgid "Expires"
 msgstr "Expires"
 
@@ -675,12 +686,29 @@ msgid "Expiry"
 msgstr "Expiry"
 
 #: ../../apps/native/src/components/domain/export-button.tsx
+#: ../../apps/web/components/domain/export-button.tsx
 msgid "Export"
 msgstr "Export"
 
 #: ../../apps/native/src/components/domain/export-button.tsx
 msgid "Export failed"
 msgstr "Export failed"
+
+#: ../../apps/web/components/domain/export-button.tsx
+msgid "Export report"
+msgstr "Export report"
+
+#: ../../apps/web/components/domain/export-button.tsx
+msgid "Failed to export {domain}"
+msgstr "Failed to export {domain}"
+
+#: ../../apps/web/components/domain/section-failed-alert.tsx
+msgid "Failed to fetch data. Please try again later."
+msgstr "Failed to fetch data. Please try again later."
+
+#: ../../apps/web/components/domain/section-failed-alert.tsx
+msgid "Failed to load data"
+msgstr "Failed to load data"
 
 #: ../../apps/native/src/app/delete-account.tsx
 msgid "Failed to request account deletion."
@@ -726,6 +754,10 @@ msgstr "Generate new URL?"
 msgid "Generates a private webcal URL to subscribe in Apple Calendar, Google Calendar, or any standards-compliant client."
 msgstr "Generates a private webcal URL to subscribe in Apple Calendar, Google Calendar, or any standards-compliant client."
 
+#: ../../apps/web/components/domain/track-domain-button.tsx
+msgid "Get alerts for this domain"
+msgstr "Get alerts for this domain"
+
 #: ../../apps/native/src/app/onboarding.tsx
 msgid "Get notified"
 msgstr "Get notified"
@@ -765,6 +797,7 @@ msgid "Help"
 msgstr "Help"
 
 #: ../../apps/native/src/components/domain/registration-section.tsx
+#: ../../apps/web/components/domain/registration/registration-section.tsx
 msgid "Hidden"
 msgstr "Hidden"
 
@@ -841,9 +874,21 @@ msgstr "Integrations"
 msgid "Invalid domain"
 msgstr "Invalid domain"
 
+#: ../../apps/web/components/domain/certificate-alert.tsx
+msgid "Invalid SSL certificate"
+msgstr "Invalid SSL certificate"
+
 #: ../../apps/native/src/components/domain/certificates-section.tsx
 msgid "Issuer: {issuer}"
 msgstr "Issuer: {issuer}"
+
+#: ../../apps/web/components/domain/registration/registration-section.tsx
+msgid "Learn about RDAP"
+msgstr "Learn about RDAP"
+
+#: ../../apps/web/components/domain/registration/registration-section.tsx
+msgid "Learn about WHOIS"
+msgstr "Learn about WHOIS"
 
 #: ../../apps/web/components/consent/cookie-prompt.tsx
 msgid "Learn more."
@@ -1086,6 +1131,10 @@ msgstr "Open filters"
 msgid "Open in…"
 msgstr "Open in…"
 
+#: ../../apps/web/components/domain/tools-dropdown.tsx
+msgid "Open menu"
+msgstr "Open menu"
+
 #: ../../apps/native/src/app/(tabs)/search/index.tsx
 msgid "Open report for {item}"
 msgstr "Open report for {item}"
@@ -1102,6 +1151,10 @@ msgstr "Open the iOS share sheet to send via Mail, Messages, and more."
 #: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
 msgid "Open this screen from your portfolio or a notification."
 msgstr "Open this screen from your portfolio or a notification."
+
+#: ../../apps/web/components/domain/tools-dropdown.tsx
+msgid "Open tools menu"
+msgstr "Open tools menu"
 
 #: ../../apps/native/src/components/domain/add-domain/share-instructions-sheet.tsx
 msgid "Paste the instructions wherever you need them."
@@ -1213,11 +1266,13 @@ msgid "Registering…"
 msgstr "Registering…"
 
 #: ../../apps/native/src/components/domain/registration-section.tsx
+#: ../../apps/web/components/domain/registration/registration-section.tsx
 msgid "Registrant"
 msgstr "Registrant"
 
 #: ../../apps/native/src/components/domain/registration-section.tsx
 #: ../../apps/native/src/components/portfolio/provider-chips.tsx
+#: ../../apps/web/components/domain/registration/registration-section.tsx
 msgid "Registrar"
 msgstr "Registrar"
 
@@ -1237,7 +1292,12 @@ msgstr "Registration data is unavailable for this domain."
 msgid "Registration data unavailable"
 msgstr "Registration data unavailable"
 
+#: ../../apps/web/components/domain/registration/registration-section.tsx
+msgid "Registration Data Unavailable"
+msgstr "Registration Data Unavailable"
+
 #: ../../apps/native/src/components/domain/registration-section.tsx
+#: ../../apps/web/components/domain/registration/registration-section.tsx
 msgid "Registration information could not be retrieved at this time."
 msgstr "Registration information could not be retrieved at this time."
 
@@ -1335,6 +1395,10 @@ msgstr "Rotate"
 #: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
 msgid "Rotate URL"
 msgstr "Rotate URL"
+
+#: ../../apps/web/components/domain/export-button.tsx
+msgid "Save this report as a JSON file"
+msgstr "Save this report as a JSON file"
 
 #: ../../apps/native/src/app/(tabs)/_layout.tsx
 msgid "Search"
@@ -1493,6 +1557,10 @@ msgstr "Subscribed calendars will stop receiving updates. You can re-enable late
 msgid "Subscription URL (advanced)"
 msgstr "Subscription URL (advanced)"
 
+#: ../../apps/web/components/domain/tools-dropdown.tsx
+msgid "Suggest a tool"
+msgstr "Suggest a tool"
+
 #: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
 msgid "Sync failed"
 msgstr "Sync failed"
@@ -1513,6 +1581,11 @@ msgstr "Tap the search bar above and enter a hostname to look up its registratio
 msgid "Terms"
 msgstr "Terms"
 
+#. placeholder {0}: data.tld
+#: ../../apps/web/components/domain/registration/registration-section.tsx
+msgid "The .{0} registry does not publish public WHOIS/RDAP data. Registration details cannot be verified for this domain."
+msgstr "The .{0} registry does not publish public WHOIS/RDAP data. Registration details cannot be verified for this domain."
+
 #: ../../apps/native/src/components/domain/registration-section.tsx
 msgid "The .{tld} registry does not publish public WHOIS/RDAP data."
 msgstr "The .{tld} registry does not publish public WHOIS/RDAP data."
@@ -1520,6 +1593,10 @@ msgstr "The .{tld} registry does not publish public WHOIS/RDAP data."
 #: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
 msgid "The current URL stops working immediately. Any subscribed calendar apps need to resubscribe."
 msgstr "The current URL stops working immediately. Any subscribed calendar apps need to resubscribe."
+
+#: ../../apps/web/components/domain/section-failed-alert.tsx
+msgid "The domain could not be resolved. It may not exist or DNS is misconfigured."
+msgstr "The domain could not be resolved. It may not exist or DNS is misconfigured."
 
 #: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx
 msgid "The file should contain only the verification token, with no extra content."
@@ -1532,6 +1609,18 @@ msgstr "The page must be publicly accessible (not behind authentication)."
 #: ../../apps/web/app/not-found.tsx
 msgid "The page you’re looking for doesn’t exist."
 msgstr "The page you’re looking for doesn’t exist."
+
+#: ../../apps/web/components/domain/certificate-alert.tsx
+msgid "The security certificate for this site is invalid or expired."
+msgstr "The security certificate for this site is invalid or expired."
+
+#: ../../apps/web/components/domain/section-failed-alert.tsx
+msgid "The SSL certificate is invalid or could not be verified."
+msgstr "The SSL certificate is invalid or could not be verified."
+
+#: ../../apps/web/components/domain/tools-dropdown.tsx
+msgid "Third-party tools"
+msgstr "Third-party tools"
 
 #: ../../apps/native/src/components/settings/delete-account.tsx
 msgid "This action cannot be undone. We’ll send a confirmation link to your email; clicking it will permanently delete your account, tracked domains, notification preferences, and any active subscription."
@@ -1565,6 +1654,10 @@ msgstr "This permanently removes tracking and notification settings."
 msgid "This removes all entries from your history."
 msgstr "This removes all entries from your history."
 
+#: ../../apps/web/components/domain/section-failed-alert.tsx
+msgid "This section couldn't be loaded. Please try refreshing the page."
+msgstr "This section couldn't be loaded. Please try refreshing the page."
+
 #: ../../apps/native/src/components/domain/seo-section.tsx
 msgid "Title"
 msgstr "Title"
@@ -1584,6 +1677,14 @@ msgstr "Too many selected"
 #: ../../apps/native/src/components/portfolio/filter-sheet.tsx
 msgid "Top-level domain"
 msgstr "Top-level domain"
+
+#: ../../apps/web/components/domain/track-domain-button.tsx
+msgid "Track"
+msgstr "Track"
+
+#: ../../apps/web/components/domain/track-domain-button.tsx
+msgid "Track domain"
+msgstr "Track domain"
 
 #: ../../apps/native/src/app/sign-in.tsx
 msgid "Track ownership, expiry, DNS, and certificate changes; get notified before anything breaks."
@@ -1643,6 +1744,7 @@ msgstr "Unarchive"
 #: ../../apps/native/src/components/domain/hosting-section.tsx
 #: ../../apps/native/src/components/domain/registration-section.tsx
 #: ../../apps/native/src/components/portfolio/domain-health-badge.tsx
+#: ../../apps/web/components/domain/registration/registration-section.tsx
 msgid "Unknown"
 msgstr "Unknown"
 
@@ -1736,13 +1838,22 @@ msgstr "Verified {domainName}"
 msgid "Verified {lastVerifiedDate}"
 msgstr "Verified {lastVerifiedDate}"
 
+#: ../../apps/web/components/domain/registration/registration-section.tsx
+msgid "Verified by"
+msgstr "Verified by"
+
 #: ../../apps/native/src/components/domain/add-domain/step-indicator.tsx
+#: ../../apps/web/components/domain/track-domain-button.tsx
 msgid "Verify"
 msgstr "Verify"
 
 #: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
 msgid "Verify {domainName} to unlock change notifications. Resume the flow to copy the DNS TXT, HTML file, or meta tag instructions, or re-check now if you’ve already added them."
 msgstr "Verify {domainName} to unlock change notifications. Resume the flow to copy the DNS TXT, HTML file, or meta tag instructions, or re-check now if you’ve already added them."
+
+#: ../../apps/web/components/domain/track-domain-button.tsx
+msgid "Verify domain"
+msgstr "Verify domain"
 
 #: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
 msgid "Verify now"
@@ -1763,6 +1874,10 @@ msgstr "Verify there are no permission issues blocking access to the file."
 #: ../../apps/native/src/components/settings/muted-domains.tsx
 msgid "View all {mutedCount} muted in Portfolio"
 msgstr "View all {mutedCount} muted in Portfolio"
+
+#: ../../apps/web/components/domain/track-domain-button.tsx
+msgid "View in dashboard"
+msgstr "View in dashboard"
 
 #: ../../apps/native/src/components/domain/registration-section.tsx
 msgid "View raw {label}"
@@ -1796,9 +1911,17 @@ msgstr "WHOIS, DNS, hosting, certs, headers, SEO — one tap."
 msgid "WHOIS/RDAP lookup timed out. This may be a temporary issue with the registry."
 msgstr "WHOIS/RDAP lookup timed out. This may be a temporary issue with the registry."
 
+#: ../../apps/web/components/domain/registration/registration-section.tsx
+msgid "WHOIS/RDAP lookup timed out. This may be a temporary issue with the registry's servers."
+msgstr "WHOIS/RDAP lookup timed out. This may be a temporary issue with the registry's servers."
+
 #: ../../apps/native/src/components/portfolio/bulk-actions-toolbar.tsx
 msgid "You can act on up to {BULK_LIMIT} domains at once. Deselect some to continue."
 msgstr "You can act on up to {BULK_LIMIT} domains at once. Deselect some to continue."
+
+#: ../../apps/web/components/domain/track-domain-button.tsx
+msgid "You own and track this domain"
+msgstr "You own and track this domain"
 
 #: ../../apps/native/src/components/settings/linked-accounts.tsx
 msgid "You won’t be able to sign in with {provider} again until you re-link it."

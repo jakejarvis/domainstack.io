@@ -1,5 +1,6 @@
 "use client";
 
+import { Trans } from "@lingui/react/macro";
 import { Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 
@@ -32,7 +33,7 @@ export function DomainUnregisteredCard({ domain }: DomainUnregisteredCardProps) 
           <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{domain}</h2>
 
           <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-            appears to be unregistered…
+            <Trans>appears to be unregistered…</Trans>
           </p>
         </div>
 

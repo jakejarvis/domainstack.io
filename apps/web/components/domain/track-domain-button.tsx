@@ -1,5 +1,6 @@
 "use client";
 
+import { useLingui } from "@lingui/react/macro";
 import { IconAlertCircle, IconBellPlus, IconRosetteDiscountCheck } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
@@ -18,6 +19,7 @@ type TrackDomainButtonProps = {
 };
 
 export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonProps) {
+  const { t } = useLingui();
   const { data: session, isPending: isSessionPending } = useSession();
   const { push } = useRouter();
   const trpc = useTRPC();
@@ -67,9 +69,9 @@ export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonP
   // This ensures consistent rendering between server and client
   if (isSessionPending || !enabled || (session?.user && isLoadingDomains)) {
     return (
-      <Button variant="outline" disabled aria-label="Track domain">
+      <Button variant="outline" disabled aria-label={t`Track domain`}>
         <IconBellPlus className="sm:text-muted-foreground" aria-hidden="true" />
-        <span className="hidden sm:inline">Track</span>
+        <span className="hidden sm:inline">{t`Track`}</span>
       </Button>
     );
   }
@@ -83,20 +85,20 @@ export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonP
             <Button
               variant="outline"
               nativeButton={false}
-              aria-label="View in dashboard"
+              aria-label={t`View in dashboard`}
               render={
                 <Link href="/dashboard">
                   <IconRosetteDiscountCheck
                     className="text-success-foreground"
                     aria-hidden="true"
                   />
-                  <span className="sr-only">View in dashboard</span>
+                  <span className="sr-only">{t`View in dashboard`}</span>
                 </Link>
               }
             />
           }
         />
-        <TooltipContent>You own and track this domain</TooltipContent>
+        <TooltipContent>{t`You own and track this domain`}</TooltipContent>
       </Tooltip>
     );
   }
@@ -105,20 +107,20 @@ export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonP
   const buttonContent = isPendingVerification ? (
     <>
       <IconAlertCircle className="text-accent-orange" aria-hidden="true" />
-      <span className="hidden sm:inline">Verify</span>
+      <span className="hidden sm:inline">{t`Verify`}</span>
     </>
   ) : (
     <>
       <IconBellPlus className="sm:text-muted-foreground" aria-hidden="true" />
-      <span className="hidden sm:inline">Track</span>
+      <span className="hidden sm:inline">{t`Track`}</span>
     </>
   );
 
   const tooltipText = isPendingVerification
-    ? "Complete verification for this domain"
-    : "Get alerts for this domain";
+    ? t`Complete verification for this domain`
+    : t`Get alerts for this domain`;
 
-  const ariaLabel = isPendingVerification ? "Verify domain" : "Track domain";
+  const ariaLabel = isPendingVerification ? t`Verify domain` : t`Track domain`;
 
   return (
     <Tooltip>

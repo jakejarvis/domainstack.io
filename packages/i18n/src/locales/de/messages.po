@@ -192,6 +192,10 @@ msgstr ""
 msgid "All set"
 msgstr ""
 
+#: ../../apps/web/components/domain/export-button.tsx
+msgid "An error occurred while exporting"
+msgstr ""
+
 #: ../../apps/native/src/app/delete-account.tsx
 msgid "An unexpected error occurred."
 msgstr ""
@@ -201,6 +205,7 @@ msgid "An unexpected error occurred. Please try again."
 msgstr ""
 
 #: ../../apps/native/src/components/domain/unregistered-card.tsx
+#: ../../apps/web/components/domain/unregistered-card.tsx
 msgid "appears to be unregistered…"
 msgstr ""
 
@@ -357,6 +362,10 @@ msgstr ""
 msgid "Combine filters to narrow your portfolio."
 msgstr ""
 
+#: ../../apps/web/components/domain/track-domain-button.tsx
+msgid "Complete verification for this domain"
+msgstr ""
+
 #: ../../apps/native/src/app/(tabs)/domains/add.tsx
 msgid "Contents"
 msgstr ""
@@ -465,6 +474,7 @@ msgid "Couldn’t update notifications"
 msgstr ""
 
 #: ../../apps/native/src/components/domain/registration-section.tsx
+#: ../../apps/web/components/domain/registration/registration-section.tsx
 msgid "Created"
 msgstr ""
 
@@ -662,6 +672,7 @@ msgid "Expired"
 msgstr ""
 
 #: ../../apps/native/src/components/domain/registration-section.tsx
+#: ../../apps/web/components/domain/registration/registration-section.tsx
 msgid "Expires"
 msgstr ""
 
@@ -675,11 +686,28 @@ msgid "Expiry"
 msgstr ""
 
 #: ../../apps/native/src/components/domain/export-button.tsx
+#: ../../apps/web/components/domain/export-button.tsx
 msgid "Export"
 msgstr ""
 
 #: ../../apps/native/src/components/domain/export-button.tsx
 msgid "Export failed"
+msgstr ""
+
+#: ../../apps/web/components/domain/export-button.tsx
+msgid "Export report"
+msgstr ""
+
+#: ../../apps/web/components/domain/export-button.tsx
+msgid "Failed to export {domain}"
+msgstr ""
+
+#: ../../apps/web/components/domain/section-failed-alert.tsx
+msgid "Failed to fetch data. Please try again later."
+msgstr ""
+
+#: ../../apps/web/components/domain/section-failed-alert.tsx
+msgid "Failed to load data"
 msgstr ""
 
 #: ../../apps/native/src/app/delete-account.tsx
@@ -726,6 +754,10 @@ msgstr ""
 msgid "Generates a private webcal URL to subscribe in Apple Calendar, Google Calendar, or any standards-compliant client."
 msgstr ""
 
+#: ../../apps/web/components/domain/track-domain-button.tsx
+msgid "Get alerts for this domain"
+msgstr ""
+
 #: ../../apps/native/src/app/onboarding.tsx
 msgid "Get notified"
 msgstr ""
@@ -765,6 +797,7 @@ msgid "Help"
 msgstr ""
 
 #: ../../apps/native/src/components/domain/registration-section.tsx
+#: ../../apps/web/components/domain/registration/registration-section.tsx
 msgid "Hidden"
 msgstr ""
 
@@ -841,8 +874,20 @@ msgstr ""
 msgid "Invalid domain"
 msgstr ""
 
+#: ../../apps/web/components/domain/certificate-alert.tsx
+msgid "Invalid SSL certificate"
+msgstr ""
+
 #: ../../apps/native/src/components/domain/certificates-section.tsx
 msgid "Issuer: {issuer}"
+msgstr ""
+
+#: ../../apps/web/components/domain/registration/registration-section.tsx
+msgid "Learn about RDAP"
+msgstr ""
+
+#: ../../apps/web/components/domain/registration/registration-section.tsx
+msgid "Learn about WHOIS"
 msgstr ""
 
 #: ../../apps/web/components/consent/cookie-prompt.tsx
@@ -1086,6 +1131,10 @@ msgstr ""
 msgid "Open in…"
 msgstr ""
 
+#: ../../apps/web/components/domain/tools-dropdown.tsx
+msgid "Open menu"
+msgstr ""
+
 #: ../../apps/native/src/app/(tabs)/search/index.tsx
 msgid "Open report for {item}"
 msgstr ""
@@ -1101,6 +1150,10 @@ msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
 msgid "Open this screen from your portfolio or a notification."
+msgstr ""
+
+#: ../../apps/web/components/domain/tools-dropdown.tsx
+msgid "Open tools menu"
 msgstr ""
 
 #: ../../apps/native/src/components/domain/add-domain/share-instructions-sheet.tsx
@@ -1213,11 +1266,13 @@ msgid "Registering…"
 msgstr ""
 
 #: ../../apps/native/src/components/domain/registration-section.tsx
+#: ../../apps/web/components/domain/registration/registration-section.tsx
 msgid "Registrant"
 msgstr ""
 
 #: ../../apps/native/src/components/domain/registration-section.tsx
 #: ../../apps/native/src/components/portfolio/provider-chips.tsx
+#: ../../apps/web/components/domain/registration/registration-section.tsx
 msgid "Registrar"
 msgstr ""
 
@@ -1237,7 +1292,12 @@ msgstr ""
 msgid "Registration data unavailable"
 msgstr ""
 
+#: ../../apps/web/components/domain/registration/registration-section.tsx
+msgid "Registration Data Unavailable"
+msgstr ""
+
 #: ../../apps/native/src/components/domain/registration-section.tsx
+#: ../../apps/web/components/domain/registration/registration-section.tsx
 msgid "Registration information could not be retrieved at this time."
 msgstr ""
 
@@ -1334,6 +1394,10 @@ msgstr ""
 
 #: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
 msgid "Rotate URL"
+msgstr ""
+
+#: ../../apps/web/components/domain/export-button.tsx
+msgid "Save this report as a JSON file"
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/_layout.tsx
@@ -1493,6 +1557,10 @@ msgstr ""
 msgid "Subscription URL (advanced)"
 msgstr ""
 
+#: ../../apps/web/components/domain/tools-dropdown.tsx
+msgid "Suggest a tool"
+msgstr ""
+
 #: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
 msgid "Sync failed"
 msgstr ""
@@ -1513,12 +1581,21 @@ msgstr ""
 msgid "Terms"
 msgstr ""
 
+#. placeholder {0}: data.tld
+#: ../../apps/web/components/domain/registration/registration-section.tsx
+msgid "The .{0} registry does not publish public WHOIS/RDAP data. Registration details cannot be verified for this domain."
+msgstr ""
+
 #: ../../apps/native/src/components/domain/registration-section.tsx
 msgid "The .{tld} registry does not publish public WHOIS/RDAP data."
 msgstr ""
 
 #: ../../apps/native/src/components/portfolio/calendar-feed-sheet.tsx
 msgid "The current URL stops working immediately. Any subscribed calendar apps need to resubscribe."
+msgstr ""
+
+#: ../../apps/web/components/domain/section-failed-alert.tsx
+msgid "The domain could not be resolved. It may not exist or DNS is misconfigured."
 msgstr ""
 
 #: ../../apps/native/src/components/domain/add-domain/verification-failed.tsx
@@ -1531,6 +1608,18 @@ msgstr ""
 
 #: ../../apps/web/app/not-found.tsx
 msgid "The page you’re looking for doesn’t exist."
+msgstr ""
+
+#: ../../apps/web/components/domain/certificate-alert.tsx
+msgid "The security certificate for this site is invalid or expired."
+msgstr ""
+
+#: ../../apps/web/components/domain/section-failed-alert.tsx
+msgid "The SSL certificate is invalid or could not be verified."
+msgstr ""
+
+#: ../../apps/web/components/domain/tools-dropdown.tsx
+msgid "Third-party tools"
 msgstr ""
 
 #: ../../apps/native/src/components/settings/delete-account.tsx
@@ -1565,6 +1654,10 @@ msgstr ""
 msgid "This removes all entries from your history."
 msgstr ""
 
+#: ../../apps/web/components/domain/section-failed-alert.tsx
+msgid "This section couldn't be loaded. Please try refreshing the page."
+msgstr ""
+
 #: ../../apps/native/src/components/domain/seo-section.tsx
 msgid "Title"
 msgstr ""
@@ -1583,6 +1676,14 @@ msgstr ""
 
 #: ../../apps/native/src/components/portfolio/filter-sheet.tsx
 msgid "Top-level domain"
+msgstr ""
+
+#: ../../apps/web/components/domain/track-domain-button.tsx
+msgid "Track"
+msgstr ""
+
+#: ../../apps/web/components/domain/track-domain-button.tsx
+msgid "Track domain"
 msgstr ""
 
 #: ../../apps/native/src/app/sign-in.tsx
@@ -1643,6 +1744,7 @@ msgstr ""
 #: ../../apps/native/src/components/domain/hosting-section.tsx
 #: ../../apps/native/src/components/domain/registration-section.tsx
 #: ../../apps/native/src/components/portfolio/domain-health-badge.tsx
+#: ../../apps/web/components/domain/registration/registration-section.tsx
 msgid "Unknown"
 msgstr ""
 
@@ -1736,12 +1838,21 @@ msgstr ""
 msgid "Verified {lastVerifiedDate}"
 msgstr ""
 
+#: ../../apps/web/components/domain/registration/registration-section.tsx
+msgid "Verified by"
+msgstr ""
+
 #: ../../apps/native/src/components/domain/add-domain/step-indicator.tsx
+#: ../../apps/web/components/domain/track-domain-button.tsx
 msgid "Verify"
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
 msgid "Verify {domainName} to unlock change notifications. Resume the flow to copy the DNS TXT, HTML file, or meta tag instructions, or re-check now if you’ve already added them."
+msgstr ""
+
+#: ../../apps/web/components/domain/track-domain-button.tsx
+msgid "Verify domain"
 msgstr ""
 
 #: ../../apps/native/src/app/(tabs)/domains/[domain].tsx
@@ -1762,6 +1873,10 @@ msgstr ""
 
 #: ../../apps/native/src/components/settings/muted-domains.tsx
 msgid "View all {mutedCount} muted in Portfolio"
+msgstr ""
+
+#: ../../apps/web/components/domain/track-domain-button.tsx
+msgid "View in dashboard"
 msgstr ""
 
 #: ../../apps/native/src/components/domain/registration-section.tsx
@@ -1796,8 +1911,16 @@ msgstr ""
 msgid "WHOIS/RDAP lookup timed out. This may be a temporary issue with the registry."
 msgstr ""
 
+#: ../../apps/web/components/domain/registration/registration-section.tsx
+msgid "WHOIS/RDAP lookup timed out. This may be a temporary issue with the registry's servers."
+msgstr ""
+
 #: ../../apps/native/src/components/portfolio/bulk-actions-toolbar.tsx
 msgid "You can act on up to {BULK_LIMIT} domains at once. Deselect some to continue."
+msgstr ""
+
+#: ../../apps/web/components/domain/track-domain-button.tsx
+msgid "You own and track this domain"
 msgstr ""
 
 #: ../../apps/native/src/components/settings/linked-accounts.tsx

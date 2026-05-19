@@ -1,3 +1,6 @@
+"use client";
+
+import { useLingui } from "@lingui/react/macro";
 import { IconDotsVertical, IconPlus } from "@tabler/icons-react";
 
 import { Favicon } from "@/components/icons/favicon";
@@ -31,6 +34,7 @@ const SUGGEST_TOOL_ISSUE_URL = (() => {
 })();
 
 export function ToolsDropdown({ domain, enabled = true }: ToolsDropdownProps) {
+  const { t } = useLingui();
   return (
     <DropdownMenu>
       <Tooltip>
@@ -40,16 +44,21 @@ export function ToolsDropdown({ domain, enabled = true }: ToolsDropdownProps) {
             <TooltipTrigger
               render={
                 <div className={cn("pointer-events-auto", !enabled && "cursor-not-allowed")}>
-                  <Button variant="outline" size="icon" aria-label="Open menu" disabled={!enabled}>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label={t`Open menu`}
+                    disabled={!enabled}
+                  >
                     <IconDotsVertical />
-                    <span className="sr-only">Open tools menu</span>
+                    <span className="sr-only">{t`Open tools menu`}</span>
                   </Button>
                 </div>
               }
             />
           }
         />
-        <TooltipContent>Third-party tools</TooltipContent>
+        <TooltipContent>{t`Third-party tools`}</TooltipContent>
       </Tooltip>
       <DropdownMenuContent align="end" className="flex min-w-52 flex-col overflow-hidden p-0">
         <ScrollArea className="max-h-[65vh] min-h-0 flex-1">
@@ -72,7 +81,7 @@ export function ToolsDropdown({ domain, enabled = true }: ToolsDropdownProps) {
               render={
                 <a href={SUGGEST_TOOL_ISSUE_URL} target="_blank" rel="noopener">
                   <IconPlus />
-                  Suggest a tool
+                  {t`Suggest a tool`}
                 </a>
               }
             />

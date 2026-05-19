@@ -47,3 +47,56 @@ vi.mock("@/lib/logger/client", () => ({
     createMockLogger(),
   ),
 }));
+
+// Lingui macros are compiled away by the SWC plugin in the real Next build,
+// but web vitest (`@vitejs/plugin-react`) does NOT run that transform — the
+// `/macro` entrypoints would throw `printError` at runtime. Replace them with
+// identity shims so component tests render the English source text (which is
+// what the existing assertions expect) without needing an I18nProvider.
+const cookMessage = (input: unknown, ...values: unknown[]): string => {
+  if (Array.isArray(input)) {
+    // Tagged-template form: t`Foo ${x} bar`
+    return (input as readonly string[]).reduce(
+      (acc, part, i) => acc + part + (i < values.length ? String(values[i]) : ""),
+      "",
+    );
+  }
+  if (input && typeof input === "object") {
+    const desc = input as { message?: string; id?: string };
+    return desc.message ?? desc.id ?? "";
+  }
+  return String(input ?? "");
+};
+
+type PluralProps = {
+  value: number;
+  one?: string;
+  other?: string;
+} & Record<string, unknown>;
+
+const renderPlural = ({ value, one, other, ...rest }: PluralProps): string => {
+  const exact = rest[`_${value}`] as string | undefined;
+  const template = exact ?? (value === 1 ? one : other) ?? other ?? "";
+  return String(template).replace(/#/g, String(value));
+};
+
+vi.mock("@lingui/react/macro", () => ({
+  Trans: ({ children }: { children?: React.ReactNode }) => children,
+  Plural: (props: PluralProps) => renderPlural(props),
+  useLingui: () => ({
+    t: cookMessage,
+    i18n: { _: cookMessage, locale: "en" },
+  }),
+}));
+
+vi.mock("@lingui/core/macro", () => ({
+  t: cookMessage,
+  msg: cookMessage,
+  defineMessage: cookMessage,
+  plural: (value: number, opts: Record<string, string>) =>
+    renderPlural({ value, ...opts } as PluralProps),
+  select: (_value: string, opts: Record<string, string>) => opts.other ?? "",
+  selectOrdinal: (value: number, opts: Record<string, string>) =>
+    renderPlural({ value, ...opts } as PluralProps),
+  ph: (value: unknown) => value,
+}));

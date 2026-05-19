@@ -1,5 +1,6 @@
 "use client";
 
+import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
@@ -23,11 +24,12 @@ export function RelativeExpiryString({
 }) {
   // Use shared hydrated time to avoid render cascades
   const now = useHydratedNow();
+  const { i18n } = useLingui();
 
   const state = useMemo(() => {
     if (!now) return null;
-    return getRelativeExpiry(to, { now, dangerDays, warnDays });
-  }, [to, now, dangerDays, warnDays]);
+    return getRelativeExpiry(to, { now, dangerDays, warnDays, locale: i18n.locale });
+  }, [to, now, dangerDays, warnDays, i18n.locale]);
 
   // SSR: render nothing until client hydrates
   if (!state) return null;
