@@ -28,7 +28,7 @@
     "@domainstack/logger": "workspace:*",
     "@domainstack/polar": "workspace:*",
     "@domainstack/redis": "workspace:*",
-    "better-auth": "1.6.9"
+    "better-auth": "1.6.11"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
