@@ -2,7 +2,6 @@
 
 import { IconArchive, IconArrowLeft, IconHeartHandshake } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
-import type { Table } from "@tanstack/react-table";
 import { useSearchParams } from "next/navigation";
 import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
@@ -25,6 +24,7 @@ import { useDashboardPagination } from "@/hooks/use-dashboard-pagination";
 import { useDashboardSelection, useSyncVisibleDomainIds } from "@/hooks/use-dashboard-selection";
 import { useRouter } from "@/hooks/use-router";
 import { useSubscription } from "@/hooks/use-subscription";
+import type { DashboardTable } from "@/lib/dashboard-table-features";
 import {
   type ConfirmAction,
   DEFAULT_SORT,
@@ -37,7 +37,6 @@ import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { useTRPC } from "@/lib/trpc/client";
 import { useSession } from "@domainstack/auth/client";
 import type { VerificationMethod } from "@domainstack/constants";
-import type { TrackedDomainWithDetails } from "@domainstack/types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -89,7 +88,7 @@ export function DashboardClient() {
     actions: { setPageIndex, setPageSize, resetPage },
   } = useDashboardPagination();
 
-  const [tableInstance, setTableInstance] = useState<Table<TrackedDomainWithDetails> | null>(null);
+  const [tableInstance, setTableInstance] = useState<DashboardTable | null>(null);
 
   // Tracked domains query
   const domainsQuery = useQuery(trpc.tracking.listDomains.queryOptions({ includeArchived: true }));

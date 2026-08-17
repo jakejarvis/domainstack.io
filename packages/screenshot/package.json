@@ -16,13 +16,13 @@
   },
   "dependencies": {
     "@domainstack/logger": "workspace:*",
-    "@ghostery/adblocker-puppeteer": "^2.14.1",
-    "@sparticuz/chromium": "143.0.4",
-    "puppeteer-core": "24.35.0"
+    "@ghostery/adblocker-puppeteer": "^2.18.2",
+    "@sparticuz/chromium": "149.0.0",
+    "puppeteer-core": "25.8.0"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@types/node": "catalog:",
-    "puppeteer": "24.35.0"
+    "puppeteer": "25.8.0"
   }
 }

@@ -6,6 +6,10 @@ import { checkRateLimit } from "@/lib/ratelimit/api";
 import { createCaller } from "@/server/routers/_app";
 import type { Context } from "@/trpc/init";
 
+// mcp-handler v2 no longer accepts `maxDuration`/`basePath` as handler options -
+// route timeout is now controlled via the standard Next.js route segment config.
+export const maxDuration = 800;
+
 /**
  * Domain input schema for MCP tools.
  * Uses simple string validation - normalization happens in tRPC layer.
@@ -290,11 +294,6 @@ function createMcpHandlerWithContext(request: Request) {
       capabilities: {
         tools: {},
       },
-    },
-    {
-      redisUrl: process.env.REDIS_URL,
-      basePath: "/api/transport",
-      maxDuration: 800,
       verboseLogs: process.env.NODE_ENV === "development",
     },
   );

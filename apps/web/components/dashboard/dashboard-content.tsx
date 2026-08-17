@@ -1,5 +1,4 @@
 import { IconFilterX, IconHourglass, IconPlus, IconWorld } from "@tabler/icons-react";
-import type { Table } from "@tanstack/react-table";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -8,6 +7,7 @@ import { BulkActionsToolbar } from "@/components/dashboard/bulk-actions-toolbar"
 import { DashboardGrid } from "@/components/dashboard/dashboard-grid";
 import { DashboardTable } from "@/components/dashboard/dashboard-table";
 import { useDashboardFiltersContext } from "@/context/dashboard-context";
+import type { DashboardTable as DashboardTableInstance } from "@/lib/dashboard-table-features";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
@@ -25,7 +25,7 @@ type DashboardContentProps = {
   totalDomains: number; // Total before filtering
   onAddDomain?: () => void;
   // Table instance callback (table view only)
-  onTableReady?: (table: Table<TrackedDomainWithDetails>) => void;
+  onTableReady?: (table: DashboardTableInstance) => void;
 };
 
 export function DashboardContent({

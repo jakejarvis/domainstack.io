@@ -1,8 +1,8 @@
 "use client";
 
-import type { Table } from "@tanstack/react-table";
 import { createContext, useContext, useMemo } from "react";
 
+import type { DashboardTable } from "@/lib/dashboard-table-features";
 import type {
   AvailableProvidersByCategory,
   DashboardPageSizeOptions,
@@ -11,7 +11,6 @@ import type {
   StatusFilter,
 } from "@/lib/dashboard-utils";
 import type { VerificationMethod } from "@domainstack/constants";
-import type { TrackedDomainWithDetails } from "@domainstack/types";
 
 // Re-export types so consumers can import from context
 export type { SortOption } from "@/lib/dashboard-utils";
@@ -50,7 +49,7 @@ export interface FilterState {
   // Sort (grid view only)
   sortOption: SortOption;
   // Table instance (for column visibility)
-  table: Table<TrackedDomainWithDetails> | null;
+  table: DashboardTable | null;
 }
 
 export interface FilterActions {
@@ -63,7 +62,7 @@ export interface FilterActions {
   applyHealthFilter: (filter: HealthFilter | "pending") => void;
   clearDomainId: () => void;
   setSortOption: (sort: SortOption) => void;
-  setTable: (table: Table<TrackedDomainWithDetails> | null) => void;
+  setTable: (table: DashboardTable | null) => void;
 }
 
 export interface PaginationState {
@@ -116,8 +115,8 @@ interface DashboardProviderProps {
   sortOption: SortOption;
   setSortOption: (sort: SortOption) => void;
   /** Table instance (table view only) */
-  table: Table<TrackedDomainWithDetails> | null;
-  setTable: (table: Table<TrackedDomainWithDetails> | null) => void;
+  table: DashboardTable | null;
+  setTable: (table: DashboardTable | null) => void;
   /** Pagination hook result - passed directly from useDashboardPagination */
   paginationHook: {
     state: PaginationState;

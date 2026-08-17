@@ -1,6 +1,6 @@
 import { IconEye, IconTableOptions } from "@tabler/icons-react";
-import type { Table } from "@tanstack/react-table";
 
+import type { DashboardTable } from "@/lib/dashboard-table-features";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { Button } from "@domainstack/ui/button";
 import {
@@ -14,11 +14,11 @@ import {
 import { ScrollArea } from "@domainstack/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 
-type DashboardTableColumnMenuProps<TData> = {
-  table: Table<TData>;
+type DashboardTableColumnMenuProps = {
+  table: DashboardTable;
 };
 
-export function DashboardTableColumnMenu<TData>({ table }: DashboardTableColumnMenuProps<TData>) {
+export function DashboardTableColumnMenu({ table }: DashboardTableColumnMenuProps) {
   // Read visibility state directly from store (not stale table API)
   const columnVisibility = usePreferencesStore((s) => s.columnVisibility);
   const setColumnVisibility = usePreferencesStore((s) => s.setColumnVisibility);

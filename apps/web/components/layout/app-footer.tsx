@@ -40,6 +40,13 @@ export function AppFooter() {
     if (!element) return;
     element.href = `javascript:(function(){var t=window.open("${process.env.NEXT_PUBLIC_BASE_URL}/"+location.hostname,"_blank");t.focus()})();`;
   };
+  const handleInspectDomainClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    toast.info("Drag the button to your bookmarks bar to use it.", {
+      icon: <IconCornerLeftUp className="size-4" />,
+      position: "top-center",
+    });
+  };
 
   return (
     <>
@@ -156,13 +163,7 @@ export function AppFooter() {
               size="lg"
               nativeButton={false}
               render={<a ref={hrefScript} href="#" />}
-              onClick={(e) => {
-                e.preventDefault();
-                toast.info("Drag the button to your bookmarks bar to use it.", {
-                  icon: <IconCornerLeftUp className="size-4" />,
-                  position: "top-center",
-                });
-              }}
+              onClick={handleInspectDomainClick}
             >
               <IconWorld />
               Inspect Domain

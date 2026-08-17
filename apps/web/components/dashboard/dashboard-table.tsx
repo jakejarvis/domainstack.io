@@ -2,13 +2,7 @@
 // See: https://github.com/TanStack/table/issues/5567
 
 import type { SortingState } from "@tanstack/react-table";
-import {
-  flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+import { flexRender, useTable } from "@tanstack/react-table";
 import { AnimatePresence } from "motion/react";
 import { parseAsString, useQueryState } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef } from "react";
@@ -24,6 +18,7 @@ import { UpgradeRow } from "@/components/dashboard/upgrade-row";
 import { VerifiedTableRow } from "@/components/dashboard/verified-table-row";
 import { useDashboardActions, useDashboardPaginationContext } from "@/context/dashboard-context";
 import { useDashboardSelection } from "@/hooks/use-dashboard-selection";
+import { dashboardTableFeatures, type DashboardTable } from "@/lib/dashboard-table-features";
 import { DEFAULT_SORT, parseSortParam, serializeSortState } from "@/lib/dashboard-utils";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
@@ -32,7 +27,7 @@ import { cn } from "@domainstack/ui/utils";
 
 type DashboardTableProps = {
   domains: TrackedDomainWithDetails[];
-  onTableReady?: (table: ReturnType<typeof useReactTable<TrackedDomainWithDetails>>) => void;
+  onTableReady?: (table: DashboardTable) => void;
 };
 
 export function DashboardTable({ domains, onTableReady }: DashboardTableProps) {
@@ -100,7 +95,8 @@ export function DashboardTable({ domains, onTableReady }: DashboardTableProps) {
     [toggle, onRemove, onArchive, onToggleMuted, onVerify, withUnverifiedLast],
   );
 
-  const table = useReactTable({
+  const table = useTable({
+    features: dashboardTableFeatures,
     data: domains,
     columns,
     state: { sorting, pagination, columnVisibility },
@@ -110,9 +106,6 @@ export function DashboardTable({ domains, onTableReady }: DashboardTableProps) {
       setPageIndex(newPagination.pageIndex);
     },
     onColumnVisibilityChange: setColumnVisibility,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
   });
 
   // Expose table instance to parent for column visibility menu in filters bar
@@ -238,7 +231,7 @@ export function DashboardTable({ domains, onTableReady }: DashboardTableProps) {
       {/* Pagination controls - only show if there are domains */}
       {domains.length > 0 && (
         <DashboardTablePagination
-          pageIndex={table.getState().pagination.pageIndex}
+          pageIndex={table.state.pagination.pageIndex}
           pageSize={pageSize}
           pageCount={table.getPageCount()}
           canPreviousPage={table.getCanPreviousPage()}

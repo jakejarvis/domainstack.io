@@ -8,7 +8,7 @@ import {
   IconExternalLink,
   IconTrash,
 } from "@tabler/icons-react";
-import type { ColumnDef, RowData } from "@tanstack/react-table";
+import type { ColumnDef, RowData, TableFeatures } from "@tanstack/react-table";
 import { format } from "date-fns";
 import Link from "next/link";
 
@@ -17,6 +17,7 @@ import { DomainStatusBadge } from "@/components/dashboard/domain-status-badge";
 import { ProviderCell } from "@/components/dashboard/provider-cell";
 import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Favicon } from "@/components/icons/favicon";
+import type { DashboardTableFeatures } from "@/lib/dashboard-table-features";
 import type { VerificationMethod } from "@domainstack/constants";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
@@ -38,7 +39,7 @@ import { formatDateTimeUtc } from "@domainstack/utils";
 
 // Define custom column meta for styling
 declare module "@tanstack/react-table" {
-  interface ColumnMeta<TData extends RowData, TValue> {
+  interface ColumnMeta<TFeatures extends TableFeatures, TData extends RowData, TValue> {
     className?: string;
   }
 }
@@ -90,7 +91,9 @@ export type ColumnCallbacks = {
   withUnverifiedLast: ReturnType<typeof createUnverifiedLastSorter>;
 };
 
-export function createColumns(callbacks: ColumnCallbacks): ColumnDef<TrackedDomainWithDetails>[] {
+export function createColumns(
+  callbacks: ColumnCallbacks,
+): ColumnDef<DashboardTableFeatures, TrackedDomainWithDetails>[] {
   const {
     selectedIdsRef,
     onToggleSelect,
@@ -174,7 +177,7 @@ export function createColumns(callbacks: ColumnCallbacks): ColumnDef<TrackedDoma
       },
       size: 100,
       // Sort verified domains first (verified = -1, unverified = 1)
-      sortingFn: (rowA, rowB) =>
+      sortFn: (rowA, rowB) =>
         rowA.original.verified === rowB.original.verified ? 0 : rowA.original.verified ? -1 : 1,
     },
     {
@@ -190,7 +193,7 @@ export function createColumns(callbacks: ColumnCallbacks): ColumnDef<TrackedDoma
       size: 100,
       // Sort by health status priority: critical (0) > warning (1) > healthy (2) > unknown (3)
       // Within the same status, sort by expiration date for more granular ordering
-      sortingFn: withUnverifiedLast((a, b) => {
+      sortFn: withUnverifiedLast((a, b) => {
         const now = new Date();
         const getHealthPriority = (exp: Date | null, verified: boolean): number => {
           if (!verified || !exp) return 3; // unknown
@@ -236,7 +239,7 @@ export function createColumns(callbacks: ColumnCallbacks): ColumnDef<TrackedDoma
         );
       },
       size: 110,
-      sortingFn: withUnverifiedLast((a, b) => {
+      sortFn: withUnverifiedLast((a, b) => {
         const aTime = a.expirationDate?.getTime() ?? 0;
         const bTime = b.expirationDate?.getTime() ?? 0;
         return aTime - bTime;
@@ -254,7 +257,7 @@ export function createColumns(callbacks: ColumnCallbacks): ColumnDef<TrackedDoma
         />
       ),
       size: 128,
-      sortingFn: withUnverifiedLast((a, b) => {
+      sortFn: withUnverifiedLast((a, b) => {
         const aName = a.registrar.name ?? "";
         const bName = b.registrar.name ?? "";
         return aName.localeCompare(bName);
@@ -272,7 +275,7 @@ export function createColumns(callbacks: ColumnCallbacks): ColumnDef<TrackedDoma
         />
       ),
       size: 128,
-      sortingFn: withUnverifiedLast((a, b) => {
+      sortFn: withUnverifiedLast((a, b) => {
         const aName = a.dns.name ?? "";
         const bName = b.dns.name ?? "";
         return aName.localeCompare(bName);
@@ -290,7 +293,7 @@ export function createColumns(callbacks: ColumnCallbacks): ColumnDef<TrackedDoma
         />
       ),
       size: 128,
-      sortingFn: withUnverifiedLast((a, b) => {
+      sortFn: withUnverifiedLast((a, b) => {
         const aName = a.hosting.name ?? "";
         const bName = b.hosting.name ?? "";
         return aName.localeCompare(bName);
@@ -308,7 +311,7 @@ export function createColumns(callbacks: ColumnCallbacks): ColumnDef<TrackedDoma
         />
       ),
       size: 128,
-      sortingFn: withUnverifiedLast((a, b) => {
+      sortFn: withUnverifiedLast((a, b) => {
         const aName = a.email.name ?? "";
         const bName = b.email.name ?? "";
         return aName.localeCompare(bName);
@@ -326,7 +329,7 @@ export function createColumns(callbacks: ColumnCallbacks): ColumnDef<TrackedDoma
         />
       ),
       size: 128,
-      sortingFn: withUnverifiedLast((a, b) => {
+      sortFn: withUnverifiedLast((a, b) => {
         const aName = a.ca.name ?? "";
         const bName = b.ca.name ?? "";
         return aName.localeCompare(bName);
@@ -355,7 +358,7 @@ export function createColumns(callbacks: ColumnCallbacks): ColumnDef<TrackedDoma
         );
       },
       size: 110,
-      sortingFn: withUnverifiedLast((a, b) => {
+      sortFn: withUnverifiedLast((a, b) => {
         const aTime = a.registrationDate?.getTime() ?? 0;
         const bTime = b.registrationDate?.getTime() ?? 0;
         return aTime - bTime;
@@ -381,8 +384,7 @@ export function createColumns(callbacks: ColumnCallbacks): ColumnDef<TrackedDoma
         );
       },
       size: 110,
-      sortingFn: (rowA, rowB) =>
-        rowA.original.createdAt.getTime() - rowB.original.createdAt.getTime(),
+      sortFn: (rowA, rowB) => rowA.original.createdAt.getTime() - rowB.original.createdAt.getTime(),
     },
     {
       id: "actions",

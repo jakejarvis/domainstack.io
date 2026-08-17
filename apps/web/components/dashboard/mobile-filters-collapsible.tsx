@@ -1,9 +1,9 @@
 import { IconChevronDown, IconFilter } from "@tabler/icons-react";
-import type { Table } from "@tanstack/react-table";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 
 import { DashboardTableColumnMenu } from "@/components/dashboard/dashboard-table-column-menu";
+import type { DashboardTable } from "@/lib/dashboard-table-features";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { Badge } from "@domainstack/ui/badge";
 import { Button } from "@domainstack/ui/button";
@@ -13,7 +13,7 @@ import { cn } from "@domainstack/ui/utils";
 type MobileFiltersCollapsibleProps = {
   hasActiveFilters: boolean;
   activeFilterCount: number;
-  table?: Table<any> | null;
+  table?: DashboardTable | null;
   children: React.ReactNode;
 };
 

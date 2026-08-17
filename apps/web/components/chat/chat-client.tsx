@@ -34,7 +34,11 @@ interface ChatClientProps {
   suggestions?: string[];
 }
 
-export function ChatClient({ suggestions = [] }: ChatClientProps) {
+// Stable reference so the default doesn't retrigger the suggestions-hydration
+// effect below on every render when the caller omits the prop.
+const EMPTY_SUGGESTIONS: string[] = [];
+
+export function ChatClient({ suggestions = EMPTY_SUGGESTIONS }: ChatClientProps) {
   const [open, setOpen] = useAtom(chatOpenAtom);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const params = useParams<{ domain?: string }>();

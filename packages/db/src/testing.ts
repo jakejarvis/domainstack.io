@@ -2,7 +2,7 @@ import { PGlite } from "@electric-sql/pglite";
 import type { PgliteDatabase } from "drizzle-orm/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 
-import { __setTestDb, type Database } from "./client";
+import { setTestDb, type Database } from "./client";
 import * as schema from "./schema";
 
 // Dynamic import via require pattern is recommended in community examples
@@ -44,7 +44,7 @@ export async function makePGliteDb(): Promise<DbBundle> {
   }
 
   // Set the test db as the singleton so repos use it
-  __setTestDb(cached.db as any as Database);
+  setTestDb(cached.db as any as Database);
 
   return cached;
 }

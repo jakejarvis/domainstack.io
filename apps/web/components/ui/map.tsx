@@ -8,7 +8,16 @@ import {
   IconPlus,
   IconX,
 } from "@tabler/icons-react";
-import MapLibreGL, { type MarkerOptions, type PopupOptions } from "maplibre-gl";
+import {
+  GeoJSONSource,
+  Map as MapLibreMap,
+  Marker,
+  Popup,
+  type MapOptions,
+  type MarkerOptions,
+  type PopupOptions,
+  type StyleSpecification,
+} from "maplibre-gl";
 import {
   createContext,
   useCallback,
@@ -30,7 +39,7 @@ import { cn } from "@domainstack/ui/utils";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 type MapContextValue = {
-  map: MapLibreGL.Map | null;
+  map: MapLibreMap | null;
   isLoaded: boolean;
 };
 
@@ -49,7 +58,7 @@ const defaultStyles = {
   light: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
 };
 
-type MapStyleOption = string | MapLibreGL.StyleSpecification;
+type MapStyleOption = string | StyleSpecification;
 
 type MapInstanceProps = {
   children?: React.ReactNode;
@@ -59,7 +68,7 @@ type MapInstanceProps = {
     dark?: MapStyleOption;
   };
   className?: string;
-} & Omit<MapLibreGL.MapOptions, "container" | "style">;
+} & Omit<MapOptions, "container" | "style">;
 
 const DefaultLoader = () => (
   <div className="absolute inset-0 flex h-full w-full items-center justify-center">
@@ -72,7 +81,7 @@ const DefaultLoader = () => (
 
 function MapInstance({ children, styles, className, ...props }: MapInstanceProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<MapLibreGL.Map | null>(null);
+  const mapRef = useRef<MapLibreMap | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isStyleLoaded, setIsStyleLoaded] = useState(false);
@@ -98,7 +107,7 @@ function MapInstance({ children, styles, className, ...props }: MapInstanceProps
   useEffect(() => {
     if (!isMounted || !containerRef.current) return;
 
-    const mapInstance = new MapLibreGL.Map({
+    const mapInstance = new MapLibreMap({
       container: containerRef.current,
       style: initialMapStyleRef.current ?? defaultStyles.light,
       renderWorldCopies: false,
@@ -153,9 +162,9 @@ function MapInstance({ children, styles, className, ...props }: MapInstanceProps
 }
 
 type MarkerContextValue = {
-  markerRef: React.RefObject<MapLibreGL.Marker | null>;
+  markerRef: React.RefObject<Marker | null>;
   markerElementRef: React.RefObject<HTMLDivElement | null>;
-  map: MapLibreGL.Map | null;
+  map: MapLibreMap | null;
   isReady: boolean;
 };
 
@@ -195,7 +204,7 @@ function MapMarker({
   ...markerOptions
 }: MapMarkerProps) {
   const { map, isLoaded } = useMap();
-  const markerRef = useRef<MapLibreGL.Marker | null>(null);
+  const markerRef = useRef<Marker | null>(null);
   const markerElementRef = useRef<HTMLDivElement | null>(null);
   const [isReady, setIsReady] = useState(false);
   const markerOptionsRef = useRef(markerOptions);
@@ -230,7 +239,7 @@ function MapMarker({
     markerElementRef.current = container;
     const currentState = markerStateRef.current;
 
-    const marker = new MapLibreGL.Marker({
+    const marker = new Marker({
       ...initialMarkerOptionsRef.current,
       element: container,
       draggable: currentState.draggable,
@@ -358,7 +367,7 @@ function MapMarkerPopup({
 }: MapMarkerPopupProps) {
   const { markerRef, isReady } = useMarkerContext();
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const popupRef = useRef<MapLibreGL.Popup | null>(null);
+  const popupRef = useRef<Popup | null>(null);
   const [mounted, setMounted] = useState(false);
   const popupOptionsRef = useRef(popupOptions);
   const initialPopupOptionsRef = useRef(popupOptions);
@@ -369,7 +378,7 @@ function MapMarkerPopup({
     const container = document.createElement("div");
     containerRef.current = container;
 
-    const popup = new MapLibreGL.Popup({
+    const popup = new Popup({
       offset: 16,
       ...initialPopupOptionsRef.current,
       closeButton: false,
@@ -439,7 +448,7 @@ type MapMarkerTooltipProps = {
 function MapMarkerTooltip({ children, className, ...popupOptions }: MapMarkerTooltipProps) {
   const { markerRef, markerElementRef, map, isReady } = useMarkerContext();
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const popupRef = useRef<MapLibreGL.Popup | null>(null);
+  const popupRef = useRef<Popup | null>(null);
   const [mounted, setMounted] = useState(false);
   const popupOptionsRef = useRef(popupOptions);
   const initialPopupOptionsRef = useRef(popupOptions);
@@ -450,7 +459,7 @@ function MapMarkerTooltip({ children, className, ...popupOptions }: MapMarkerToo
     const container = document.createElement("div");
     containerRef.current = container;
 
-    const popup = new MapLibreGL.Popup({
+    const popup = new Popup({
       offset: 16,
       ...initialPopupOptionsRef.current,
       closeOnClick: true,
@@ -773,7 +782,7 @@ function MapPopup({
   ...popupOptions
 }: MapPopupProps) {
   const { map } = useMap();
-  const popupRef = useRef<MapLibreGL.Popup | null>(null);
+  const popupRef = useRef<Popup | null>(null);
   const popupOptionsRef = useRef(popupOptions);
   const initialPopupOptionsRef = useRef(popupOptions);
   const popupStateRef = useRef({ longitude, latitude, onClose });
@@ -785,7 +794,7 @@ function MapPopup({
     if (!map) return;
     const currentState = popupStateRef.current;
 
-    const popup = new MapLibreGL.Popup({
+    const popup = new Popup({
       offset: 16,
       ...initialPopupOptionsRef.current,
       closeButton: false,
@@ -920,7 +929,7 @@ function MapRoute({
   useEffect(() => {
     if (!isLoaded || !map || coordinates.length < 2) return;
 
-    const source = map.getSource(sourceId) as MapLibreGL.GeoJSONSource;
+    const source = map.getSource(sourceId) as GeoJSONSource;
     if (source) {
       source.setData({
         type: "Feature",

@@ -2,12 +2,13 @@
 import { type Cell, flexRender } from "@tanstack/react-table";
 import { motion, useReducedMotion } from "motion/react";
 
+import type { DashboardTableFeatures } from "@/lib/dashboard-table-features";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { cn } from "@domainstack/ui/utils";
 
 type VerifiedTableRowProps = {
   rowId: string;
-  cells: Cell<TrackedDomainWithDetails, unknown>[];
+  cells: Cell<DashboardTableFeatures, TrackedDomainWithDetails, unknown>[];
   isSelected: boolean;
 };
 
