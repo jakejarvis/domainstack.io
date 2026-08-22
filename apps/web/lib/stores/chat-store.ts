@@ -60,6 +60,10 @@ const chatStore = create<ChatStore>()(
 
 export const useChatStore = chatStore;
 
+const subscribeChatHydration = chatStore.persist.onFinishHydration;
+const getChatHydrationSnapshot = () => chatStore.persist.hasHydrated();
+const getChatHydrationServerSnapshot = () => false;
+
 /**
  * Returns true once the chat store has hydrated from localStorage.
  * Use this to prevent restoring messages before the store has loaded persisted data.
@@ -68,7 +72,7 @@ export const useChatStore = chatStore;
  */
 export const useChatHydrated = () =>
   useSyncExternalStore(
-    (onStoreChange) => chatStore.persist.onFinishHydration(onStoreChange),
-    () => chatStore.persist.hasHydrated(),
-    () => false,
+    subscribeChatHydration,
+    getChatHydrationSnapshot,
+    getChatHydrationServerSnapshot,
   );

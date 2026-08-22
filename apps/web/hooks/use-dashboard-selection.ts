@@ -1,6 +1,5 @@
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
-import { atomFamily } from "jotai/utils";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 
 import {
   hasSelectionAtom,
@@ -10,10 +9,6 @@ import {
   selectedDomainIdsAtom,
   visibleDomainIdsAtom,
 } from "@/lib/atoms/dashboard-atoms";
-
-const isDomainSelectedFamily = atomFamily((id: string) =>
-  atom((get) => get(selectedDomainIdsAtom).has(id)),
-);
 
 // ---------------------------------------------------------------------------
 // Types
@@ -46,7 +41,10 @@ export type UseDashboardSelectionReturn = DashboardSelectionState & DashboardSel
  * the checkbox or selection highlight so the table owner does not have to.
  */
 export function useIsDomainSelected(id: string): boolean {
-  return useAtomValue(isDomainSelectedFamily(id));
+  // Per-hook derived atom so unused IDs are GC'd with the row. atomFamily
+  // would retain one atom per ID for the lifetime of the module.
+  const isSelectedAtom = useMemo(() => atom((get) => get(selectedDomainIdsAtom).has(id)), [id]);
+  return useAtomValue(isSelectedAtom);
 }
 
 /**
