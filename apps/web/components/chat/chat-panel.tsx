@@ -2,7 +2,6 @@
 
 import { IconAlertCircle, IconBrain, IconMessages, IconX } from "@tabler/icons-react";
 import type { ChatStatus, ToolUIPart, UIMessage } from "ai";
-import { useAtomValue } from "jotai";
 import { useCallback, useState } from "react";
 import { useStickToBottom } from "use-stick-to-bottom";
 
@@ -30,14 +29,16 @@ import {
   ToolInput,
   ToolOutput,
 } from "@/components/ai-elements/tool";
-import { chatSuggestionsAtom } from "@/lib/atoms/chat-atoms";
+import { type UseBrowserAIResult } from "@/hooks/use-browser-ai";
+import { getDomainToolStatus } from "@/lib/chat/domain-tools";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { MAX_MESSAGE_LENGTH } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
 import { cn } from "@domainstack/ui/utils";
 
 import { ChatModeSelector } from "./chat-mode-selector";
-import { getToolStatusMessage } from "./utils";
+
+const EMPTY_SUGGESTIONS: string[] = [];
 
 function getMessagePartItems(message: UIMessage) {
   const seen = new Map<string, number>();
@@ -56,6 +57,15 @@ function getMessagePartItems(message: UIMessage) {
   });
 }
 
+function getReportSuggestions(domain: string): string[] {
+  return [
+    `When does ${domain} expire?`,
+    `Is ${domain} missing any important security headers?`,
+    `Which email provider does ${domain} use?`,
+    `Is ${domain}'s SSL certificate valid?`,
+  ];
+}
+
 interface ChatPanelProps {
   messages: UIMessage[];
   sendMessage: (params: { text: string }) => void;
@@ -64,11 +74,9 @@ interface ChatPanelProps {
   domain?: string;
   error?: string | null;
   onClearError?: () => void;
-  /** Size variant for icon in empty state */
-  iconSize?: "sm" | "lg";
-  /** Additional class for the conversation container */
+  homeSuggestions?: string[];
+  browserAI: UseBrowserAIResult;
   conversationClassName?: string;
-  /** Additional class for the input container */
   inputClassName?: string;
 }
 
@@ -80,6 +88,8 @@ export function ChatPanel({
   domain,
   error,
   onClearError,
+  homeSuggestions = EMPTY_SUGGESTIONS,
+  browserAI,
   conversationClassName,
   inputClassName,
 }: ChatPanelProps) {
@@ -87,13 +97,10 @@ export function ChatPanel({
   const showToolCalls = usePreferencesStore((s) => s.showToolCalls);
   const showReasoning = usePreferencesStore((s) => s.showReasoning);
 
-  // Prepare to share scroll state between the different components
   const stickyInstance = useStickToBottom();
 
   const placeholder = domain ? `Ask about ${domain}\u2026` : "Ask about a domain\u2026";
-
-  // Get suggestions from atom (context-aware or server-generated fallback)
-  const suggestions = useAtomValue(chatSuggestionsAtom);
+  const suggestions = domain ? getReportSuggestions(domain) : homeSuggestions;
 
   const { scrollToBottom } = stickyInstance;
   const handleScrollToBottom = useCallback(() => {
@@ -174,7 +181,7 @@ export function ChatPanel({
                         return (
                           <Tool key={key}>
                             <ToolHeader
-                              title={getToolStatusMessage(toolPart.type)}
+                              title={getDomainToolStatus(toolPart.type)}
                               type={toolPart.type}
                               state={toolPart.state}
                             />
@@ -250,7 +257,10 @@ export function ChatPanel({
           <PromptInputFooter className="pr-1.5 pb-1.5 pl-3">
             <PromptInputCharacterCount current={inputLength} max={MAX_MESSAGE_LENGTH} />
             <div className="flex items-center gap-2">
-              <ChatModeSelector disabled={status === "submitted" || status === "streaming"} />
+              <ChatModeSelector
+                browserAI={browserAI}
+                disabled={status === "submitted" || status === "streaming"}
+              />
               <PromptInputSubmit disabled={inputLength === 0} status={error ? "error" : status} />
             </div>
           </PromptInputFooter>

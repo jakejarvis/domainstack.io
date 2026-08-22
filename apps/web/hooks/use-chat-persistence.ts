@@ -1,91 +1,52 @@
-import type { ChatRequestOptions, UIMessage } from "ai";
+import type { UIMessage } from "ai";
 import { useEffect, useRef } from "react";
 
 import { useChatHydrated, useChatStore } from "@/lib/stores/chat-store";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
 type ChatStatus = "submitted" | "streaming" | "ready" | "error";
 
 interface UseChatPersistenceOptions {
-  /** Current messages from useChat */
   messages: UIMessage[];
-  /** Current status from useChat */
   status: ChatStatus;
-  /** Function to set messages in useChat (for restoration) */
-  setMessages: (
-    messages: UIMessage[] | ((messages: UIMessage[]) => UIMessage[]),
-    chatRequestOptions?: ChatRequestOptions,
-  ) => void;
+  setMessages: (messages: UIMessage[]) => void;
 }
 
-// ---------------------------------------------------------------------------
-// Hook
-// ---------------------------------------------------------------------------
-
 /**
- * Manages chat message persistence between the useChat hook and Zustand store.
- *
- * Handles:
- * - Restoring messages from store on mount (once, after hydration)
- * - Persisting messages to store when they change
- * - Clearing runId when chat transitions from streaming to ready
- *
- * Uses refs internally to avoid effect dependency issues with callbacks.
+ * Restores cloud chat messages from the Zustand store after hydration,
+ * persists subsequent changes, and clears the in-memory runId when a
+ * stream finishes (backup for onChatEnd).
  */
 export function useChatPersistence({
   messages,
   status,
   setMessages,
 }: UseChatPersistenceOptions): void {
-  // Store access
   const hydrated = useChatHydrated();
   const runId = useChatStore((s) => s.runId);
   const storedMessages = useChatStore((s) => s.messages);
   const setRunId = useChatStore((s) => s.setRunId);
   const storeSetMessages = useChatStore((s) => s.setMessages);
 
-  // Ref to access setMessages without it being a dependency
   const setMessagesRef = useRef(setMessages);
   useEffect(() => {
     setMessagesRef.current = setMessages;
   });
 
-  // ---------------------------------------------------------------------------
-  // Restore messages from store once after hydration
-  // ---------------------------------------------------------------------------
-
   const hasRestored = useRef(false);
   useEffect(() => {
-    // Wait for store to hydrate from localStorage before restoring
-    if (!hydrated) return;
-    if (hasRestored.current) return;
+    if (!hydrated || hasRestored.current) return;
     hasRestored.current = true;
     if (storedMessages.length > 0) {
       setMessagesRef.current(storedMessages);
     }
-    // Clear any persisted runId - it's from a previous session and the workflow
-    // has likely completed. Trying to resume a completed workflow causes errors.
-    // In-session stream interruptions (network drops) still work since runId is in memory.
-    if (runId) {
-      setRunId(null);
-    }
-  }, [hydrated, storedMessages, runId, setRunId]);
-
-  // ---------------------------------------------------------------------------
-  // Persist messages to store
-  // ---------------------------------------------------------------------------
+  }, [hydrated, storedMessages]);
 
   const isInitialized = useRef(false);
   useEffect(() => {
     if (!isInitialized.current) {
       if (messages.length > 0) {
         isInitialized.current = true;
-        // Transport can fail before onChatSendMessage writes the store. Persist
-        // the first non-empty messages when we already have an error so they
-        // are not dropped; successful sends still skip this branch.
+        // Transport can fail before onChatSendMessage writes the store.
         if (status === "error") {
           storeSetMessages(messages);
         }
@@ -97,25 +58,13 @@ export function useChatPersistence({
     }
   }, [messages, status, storeSetMessages]);
 
-  // ---------------------------------------------------------------------------
-  // Clear runId when chat completes successfully
-  // ---------------------------------------------------------------------------
-
-  // The WorkflowChatTransport's onChatEnd callback should clear runId when a finish chunk
-  // is received, but sometimes the finish chunk is not received (e.g., during tool execution
-  // when the workflow suspends). This effect handles that case by detecting when the chat
-  // transitions from streaming to ready with assistant messages, indicating completion.
   const prevStatusRef = useRef(status);
   useEffect(() => {
     const wasStreaming = prevStatusRef.current === "streaming";
-    const isNowReady = status === "ready";
-    const hasAssistantMessage = messages.some((m) => m.role === "assistant");
+    prevStatusRef.current = status;
 
-    if (wasStreaming && isNowReady && hasAssistantMessage && runId) {
-      // Chat completed but onChatEnd wasn't called - clear runId to prevent stale reconnection attempts
+    if (wasStreaming && status === "ready" && runId) {
       setRunId(null);
     }
-
-    prevStatusRef.current = status;
-  }, [status, messages, runId, setRunId]);
+  }, [status, runId, setRunId]);
 }

@@ -19,16 +19,8 @@ import { getWorkflowMetadata, getWritable } from "workflow";
 import { MAX_OUTPUT_TOKENS, MAX_TOOL_STEPS } from "@domainstack/constants";
 
 import { getModelStep } from "./gateway";
-import {
-  getToolErrorDetails,
-  logChatStepFinishStep,
-  logChatStreamErrorStep,
-  serializeError,
-  summarizeToolCalls,
-  summarizeToolResults,
-} from "./logging";
 import { buildSystemPromptStep } from "./prompt";
-import { createDomainToolset } from "./tools";
+import { createDomainToolset, createDomainToolsContext } from "./tools";
 
 export interface ChatWorkflowInput {
   messages: UIMessage[];
@@ -48,19 +40,12 @@ export async function chatWorkflow(input: ChatWorkflowInput) {
 
   const { messages, domain, ip, userId } = input;
 
-  // Convert UI messages to model messages
   const modelMessages = await convertToModelMessages(messages);
-
-  // Compile system prompt
   const systemPrompt = await buildSystemPromptStep(domain);
-
   const model = await getModelStep();
   const domainTools = createDomainToolset();
-  const domainToolContext = { ip };
   const { workflowRunId } = getWorkflowMetadata();
 
-  // Create agent with domain tools
-  // Per AI SDK best practices: use temperature: 0 for deterministic tool calls
   const agent = new WorkflowAgent({
     model,
     tools: {
@@ -92,49 +77,15 @@ export async function chatWorkflow(input: ChatWorkflowInput) {
       },
     },
     runtimeContext: { userId, ip, domain, workflowRunId },
-    toolsContext: {
-      get_registration: domainToolContext,
-      get_dns_records: domainToolContext,
-      get_hosting: domainToolContext,
-      get_certificates: domainToolContext,
-      get_headers: domainToolContext,
-      get_seo: domainToolContext,
-    },
+    toolsContext: createDomainToolsContext({ ip }),
   });
 
-  // Stream response to workflow output
-  // Errors will propagate to the stream and trigger onError on the client
   const writable = getWritable<ModelCallStreamPart>();
   const result = await agent.stream({
     messages: modelMessages,
     writable,
     stopWhen: isStepCount(MAX_TOOL_STEPS),
     maxOutputTokens: MAX_OUTPUT_TOKENS,
-    onStepEnd: async (step) => {
-      const toolCalls = Array.isArray(step.toolCalls) ? step.toolCalls : [];
-      const toolResults = Array.isArray(step.toolResults) ? step.toolResults : [];
-
-      await logChatStepFinishStep({
-        event: "chat_step_finish",
-        domain,
-        userId,
-        finishReason: step.finishReason,
-        usage: step.usage,
-        toolCalls: summarizeToolCalls(toolCalls),
-        toolResults: summarizeToolResults(toolResults),
-      });
-    },
-    onError: async ({ error }) => {
-      const errorDetails = serializeError(error);
-      const toolDetails = getToolErrorDetails(error);
-      await logChatStreamErrorStep({
-        event: "chat_stream_error",
-        domain,
-        userId,
-        error: errorDetails,
-        tool: toolDetails,
-      });
-    },
   });
 
   return { messages: result.messages };

@@ -60,9 +60,6 @@ importers:
       '@ai-sdk/openai':
         specifier: ^4.0.45
         version: 4.0.45(zod@4.4.3)
-      '@ai-sdk/provider':
-        specifier: ^4.0.7
-        version: 4.0.7
       '@ai-sdk/react':
         specifier: ^4.0.79
         version: 4.0.79(react@19.2.8)(zod@4.4.3)
@@ -135,9 +132,6 @@ importers:
       '@opentelemetry/instrumentation-pino':
         specifier: ^0.67.0
         version: 0.67.0(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
-      '@posthog/ai':
-        specifier: ^8.8.0
-        version: 8.8.0(@ai-sdk/provider@4.0.7)(@opentelemetry/api@1.9.1)(@opentelemetry/sdk-trace-base@2.10.0(@opentelemetry/api@1.9.1))(posthog-node@5.50.0(rxjs@7.8.2))
       '@posthog/nextjs-config':
         specifier: ^1.9.70
         version: 1.9.70(next@16.3.2(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(webpack@5.109.2(@swc/core@1.15.3(@swc/helpers@0.5.23))(esbuild@0.28.2)(lightningcss@1.33.0)(postcss@8.5.26))
@@ -2507,40 +2501,6 @@ packages:
 
   '@polka/url@1.0.0-next.29':
     resolution: {integrity: sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww==}
-
-  '@posthog/ai@8.8.0':
-    resolution: {integrity: sha512-H+KibTtAxi8GvJMKwKmwf8VReXZDBRd/2YoQAhQ3lGkljf1BL9AImv5Q5VGHesIw1oAvhL4zn7qWMrMMO/xLiA==}
-    engines: {node: ^20.20.0 || >=22.22.0}
-    peerDependencies:
-      '@ai-sdk/provider': ^2.0.0 || ^3.0.0 || ^4.0.0
-      '@anthropic-ai/sdk': ^0.112.3
-      '@google/genai': ^1.52.0
-      '@langchain/core': ^1.2.3
-      '@openai/agents': ^0.8.0
-      '@opentelemetry/api': ^1.9.0
-      '@opentelemetry/exporter-trace-otlp-http': '>=0.200.0 <1.0.0'
-      '@opentelemetry/sdk-trace-base': ^2.0.0
-      openai: ^6.48.0
-      posthog-node: ^5.0.0
-    peerDependenciesMeta:
-      '@ai-sdk/provider':
-        optional: true
-      '@anthropic-ai/sdk':
-        optional: true
-      '@google/genai':
-        optional: true
-      '@langchain/core':
-        optional: true
-      '@openai/agents':
-        optional: true
-      '@opentelemetry/api':
-        optional: true
-      '@opentelemetry/exporter-trace-otlp-http':
-        optional: true
-      '@opentelemetry/sdk-trace-base':
-        optional: true
-      openai:
-        optional: true
 
   '@posthog/browser-common@0.5.0':
     resolution: {integrity: sha512-8DaxVZS1bQPbA514RePurLNbYjei3P4jhnC206DwVv5XThmZM3QdlsXenI2ujE3pLbgQ79hYn9o1Kda8I3WK/Q==}
@@ -7740,10 +7700,6 @@ packages:
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
-  uuid@11.1.1:
-    resolution: {integrity: sha512-vIYxrBCC/N/K+Js3qSN88go7kIfNPssr/hHCesKCQNAjmgvYS2oqr69kIufEG+O4+PfezOH4EbIeHCfFov8ZgQ==}
-    hasBin: true
-
   uuid@14.0.2:
     resolution: {integrity: sha512-xZe/16rV4aa+HGSOCiY2YeLT1OybRLrrkL/Rqaq7p7GMVXjFh+6wN4oMYgjFmnSnhY8t6Xpdl2l9qmnHYuMHwQ==}
     hasBin: true
@@ -9340,17 +9296,6 @@ snapshots:
       zod: 4.4.3
 
   '@polka/url@1.0.0-next.29': {}
-
-  '@posthog/ai@8.8.0(@ai-sdk/provider@4.0.7)(@opentelemetry/api@1.9.1)(@opentelemetry/sdk-trace-base@2.10.0(@opentelemetry/api@1.9.1))(posthog-node@5.50.0(rxjs@7.8.2))':
-    dependencies:
-      '@posthog/core': 1.48.8
-      posthog-node: 5.50.0(rxjs@7.8.2)
-      uuid: 11.1.1
-      zod: 4.4.3
-    optionalDependencies:
-      '@ai-sdk/provider': 4.0.7
-      '@opentelemetry/api': 1.9.1
-      '@opentelemetry/sdk-trace-base': 2.10.0(@opentelemetry/api@1.9.1)
 
   '@posthog/browser-common@0.5.0':
     dependencies:
@@ -14875,8 +14820,6 @@ snapshots:
       react: 19.2.8
 
   util-deprecate@1.0.2: {}
-
-  uuid@11.1.1: {}
 
   uuid@14.0.2: {}
 

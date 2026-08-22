@@ -5,9 +5,8 @@ import type { LanguageModel } from "ai";
  * Runs as a step to keep Node.js modules out of the workflow sandbox.
  *
  * WorkflowAgent serializes `model` across step boundaries, so this returns a
- * gateway LanguageModel instance (plain provider config) rather than a wrapped
- * tracer. Correlation IDs go on `runtimeContext` / telemetry and PostHog
- * `$ai_generation` events from the chat logging steps.
+ * gateway LanguageModel instance (plain provider config). Correlation IDs go
+ * on `runtimeContext` / telemetry.
  */
 export async function getModelStep(): Promise<LanguageModel> {
   "use step";
