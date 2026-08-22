@@ -22,7 +22,7 @@
     "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json"
   },
   "dependencies": {
-    "@better-auth/infra": "^0.4.1",
+    "@better-auth/infra": "^0.3.7",
     "@domainstack/db": "workspace:*",
     "@domainstack/email": "workspace:*",
     "@domainstack/logger": "workspace:*",
