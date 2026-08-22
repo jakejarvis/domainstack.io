@@ -6,7 +6,8 @@ import type { LanguageModel } from "ai";
  *
  * WorkflowAgent serializes `model` across step boundaries, so this returns a
  * gateway LanguageModel instance (plain provider config) rather than a wrapped
- * tracer. Correlation IDs belong on `telemetry.metadata`.
+ * tracer. Correlation IDs go on `runtimeContext` / telemetry and PostHog
+ * `$ai_generation` events from the chat logging steps.
  */
 export async function getModelStep(): Promise<LanguageModel> {
   "use step";

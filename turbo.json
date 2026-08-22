@@ -5,11 +5,7 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [
-        ".next/**",
-        "!.next/cache/**",
-        "app/.well-known/workflow/**"
-      ],
+      "outputs": [".next/**", "!.next/cache/**"],
       "env": [
         "BETTER_AUTH_API_KEY",
         "BETTER_AUTH_SECRET",
@@ -90,12 +86,5 @@
     }
   },
   "globalDependencies": ["**/.env*"],
-  "globalEnv": [
-    "CI",
-    "NODE_ENV",
-    "VERCEL",
-    "VERCEL_ENV",
-    "VERCEL_URL",
-    "npm_lifecycle_event"
-  ]
+  "globalEnv": ["CI", "NODE_ENV", "VERCEL", "VERCEL_ENV", "VERCEL_URL", "npm_lifecycle_event"]
 }

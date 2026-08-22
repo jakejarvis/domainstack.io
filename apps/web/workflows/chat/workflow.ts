@@ -14,7 +14,7 @@ import type { GatewayProviderOptions } from "@ai-sdk/gateway";
 import { type OpenAIResponsesProviderOptions, openai } from "@ai-sdk/openai";
 import { type ModelCallStreamPart, WorkflowAgent } from "@ai-sdk/workflow";
 import { convertToModelMessages, isStepCount, type Tool, type UIMessage } from "ai";
-import { getWritable } from "workflow";
+import { getWorkflowMetadata, getWritable } from "workflow";
 
 import { MAX_OUTPUT_TOKENS, MAX_TOOL_STEPS } from "@domainstack/constants";
 
@@ -57,6 +57,7 @@ export async function chatWorkflow(input: ChatWorkflowInput) {
   const model = await getModelStep();
   const domainTools = createDomainToolset();
   const domainToolContext = { ip };
+  const { workflowRunId } = getWorkflowMetadata();
 
   // Create agent with domain tools
   // Per AI SDK best practices: use temperature: 0 for deterministic tool calls
@@ -87,9 +88,10 @@ export async function chatWorkflow(input: ChatWorkflowInput) {
         userId: true,
         ip: true,
         domain: true,
+        workflowRunId: true,
       },
     },
-    runtimeContext: { userId, ip, domain },
+    runtimeContext: { userId, ip, domain, workflowRunId },
     toolsContext: {
       get_registration: domainToolContext,
       get_dns_records: domainToolContext,

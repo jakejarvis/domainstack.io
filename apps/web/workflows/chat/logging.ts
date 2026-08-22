@@ -182,6 +182,14 @@ export async function logChatStreamErrorStep(payload: {
   const { workflowRunId } = getWorkflowMetadata();
   const { stepId } = getStepMetadata();
   logger.error({ ...payload, workflowRunId, stepId }, "chat stream error");
+  await captureChatGeneration({
+    distinctId: payload.userId,
+    workflowRunId,
+    stepId,
+    domain: payload.domain,
+    error: payload.error,
+    input: payload.tool,
+  });
 }
 
 export async function logChatStepFinishStep(payload: {
@@ -202,4 +210,54 @@ export async function logChatStepFinishStep(payload: {
   const { workflowRunId } = getWorkflowMetadata();
   const { stepId } = getStepMetadata();
   logger.info({ ...payload, workflowRunId, stepId }, "chat step finished");
+  await captureChatGeneration({
+    distinctId: payload.userId,
+    workflowRunId,
+    stepId,
+    domain: payload.domain,
+    usage: payload.usage,
+    finishReason: payload.finishReason,
+    input: payload.toolCalls,
+    output: payload.toolResults,
+  });
+}
+
+async function captureChatGeneration(options: {
+  distinctId?: string | null;
+  workflowRunId: string;
+  stepId: string;
+  domain?: string;
+  usage?: {
+    inputTokens?: number;
+    outputTokens?: number;
+  };
+  finishReason?: string;
+  input?: unknown;
+  output?: unknown;
+  error?: unknown;
+}) {
+  const { getServerPosthog } = await import("@domainstack/analytics/server");
+  const phClient = getServerPosthog();
+  if (!phClient) {
+    return;
+  }
+
+  const { captureAiGeneration } = await import("@posthog/ai");
+  await captureAiGeneration(phClient, {
+    distinctId: options.distinctId ?? undefined,
+    traceId: options.workflowRunId,
+    provider: "ai-gateway",
+    input: options.input ?? null,
+    output: options.output ?? null,
+    usage: options.usage,
+    stopReason: options.finishReason,
+    error: options.error,
+    properties: {
+      workflow_run_id: options.workflowRunId,
+      step_id: options.stepId,
+      domain: options.domain,
+      functionId: "chatWorkflow",
+    },
+    captureImmediate: true,
+  });
 }
