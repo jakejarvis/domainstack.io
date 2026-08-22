@@ -1,8 +1,8 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import { WorkflowChatTransport } from "@ai-sdk/workflow";
 import { IconLayoutSidebarRightCollapse, IconLego } from "@tabler/icons-react";
-import { WorkflowChatTransport } from "@workflow/ai";
 import { useAtom, useSetAtom } from "jotai";
 import { AnimatePresence } from "motion/react";
 import { useParams } from "next/navigation";

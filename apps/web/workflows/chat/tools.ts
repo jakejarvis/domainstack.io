@@ -9,7 +9,6 @@
  */
 
 import { tool } from "ai";
-import { cache } from "react";
 import { z } from "zod";
 
 /**
@@ -108,6 +107,10 @@ export interface ToolContext {
   ip: string | null;
 }
 
+const toolContextSchema = z.object({
+  ip: z.string().nullable(),
+});
+
 // Step functions for each domain lookup
 // tRPC caller is created INSIDE each step to avoid workflow sandbox issues
 
@@ -194,53 +197,53 @@ async function getSeoStep(domain: string, ctx: ToolContext) {
  *
  * See: https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling#strict-mode
  */
-export const createDomainToolset = cache(() => ({
+export const createDomainToolset = () => ({
   get_registration: tool({
     description:
       "Get WHOIS/RDAP registration data for a domain including registrar, creation date, expiration date, nameservers, and registrant information. Use this tool when users ask about domain ownership, registration, expiry, or who owns a domain.",
     inputSchema: domainSchema,
+    contextSchema: toolContextSchema,
     strict: true,
-    execute: async ({ domain }, { experimental_context }) =>
-      getRegistrationStep(domain, experimental_context as ToolContext),
+    execute: async ({ domain }, { context }) => getRegistrationStep(domain, context),
   }),
   get_dns_records: tool({
     description:
       "Get DNS records for a domain including A, AAAA, CNAME, MX, TXT, NS, and SOA records. Use this tool when users ask about DNS configuration, IP addresses, mail servers, or nameservers.",
     inputSchema: domainSchema,
+    contextSchema: toolContextSchema,
     strict: true,
-    execute: async ({ domain }, { experimental_context }) =>
-      getDnsRecordsStep(domain, experimental_context as ToolContext),
+    execute: async ({ domain }, { context }) => getDnsRecordsStep(domain, context),
   }),
   get_hosting: tool({
     description:
       "Detect hosting, DNS, CDN, and email providers for a domain by analyzing DNS records and HTTP headers. Use this tool when users ask where a site is hosted, what CDN they use, or who provides their email.",
     inputSchema: domainSchema,
+    contextSchema: toolContextSchema,
     strict: true,
-    execute: async ({ domain }, { experimental_context }) =>
-      getHostingStep(domain, experimental_context as ToolContext),
+    execute: async ({ domain }, { context }) => getHostingStep(domain, context),
   }),
   get_certificates: tool({
     description:
       "Get SSL/TLS certificate information for a domain including issuer, validity dates, and certificate chain. Use this tool when users ask about HTTPS, SSL certificates, security, or certificate expiry.",
     inputSchema: domainSchema,
+    contextSchema: toolContextSchema,
     strict: true,
-    execute: async ({ domain }, { experimental_context }) =>
-      getCertificatesStep(domain, experimental_context as ToolContext),
+    execute: async ({ domain }, { context }) => getCertificatesStep(domain, context),
   }),
   get_headers: tool({
     description:
       "Get HTTP response headers for a domain including security headers, caching headers, and server information. Use this tool when users ask about security headers, server software, caching, or HTTP configuration.",
     inputSchema: domainSchema,
+    contextSchema: toolContextSchema,
     strict: true,
-    execute: async ({ domain }, { experimental_context }) =>
-      getHeadersStep(domain, experimental_context as ToolContext),
+    execute: async ({ domain }, { context }) => getHeadersStep(domain, context),
   }),
   get_seo: tool({
     description:
       "Get SEO metadata for a domain including title, description, Open Graph tags, Twitter cards, and robots.txt rules. Use this tool when users ask about SEO, meta tags, social sharing, or how a site appears in search.",
     inputSchema: domainSchema,
+    contextSchema: toolContextSchema,
     strict: true,
-    execute: async ({ domain }, { experimental_context }) =>
-      getSeoStep(domain, experimental_context as ToolContext),
+    execute: async ({ domain }, { context }) => getSeoStep(domain, context),
   }),
-}));
+});

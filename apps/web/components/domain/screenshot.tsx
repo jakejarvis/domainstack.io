@@ -233,6 +233,7 @@ export function useScreenshot({
     }
 
     if (data.status === "completed") {
+      // oxlint-disable-next-line react/set-state-in-effect
       setScreenshotData(data.data);
       queryClient.setQueryData(screenshotQueryKey, data.data);
       analytics.track("screenshot_loaded_from_api", { domain });

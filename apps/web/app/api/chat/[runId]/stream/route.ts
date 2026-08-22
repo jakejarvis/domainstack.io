@@ -8,6 +8,7 @@
  * network issues or Vercel Function timeouts.
  */
 
+import { createModelCallToUIChunkTransform } from "@ai-sdk/workflow";
 import { createUIMessageStreamResponse } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 import { getRun } from "workflow/api";
@@ -54,10 +55,15 @@ export async function GET(
   }
 
   const { runId } = await params;
-  const startIndexParam = request.nextUrl.searchParams.get("startIndex");
-  const parsedIndex = startIndexParam ? Number.parseInt(startIndexParam, 10) : 0;
-  // Validate startIndex is a non-negative integer, default to 0 if invalid
-  const startIndex = Number.isNaN(parsedIndex) || parsedIndex < 0 ? 0 : parsedIndex;
+  const startIndex = Number(request.nextUrl.searchParams.get("startIndex") ?? "0");
+  // UI chunk indexes are not 1:1 with raw ModelCallStreamPart indexes.
+  // Reject invalid cursors instead of coercing them to 0.
+  if (!Number.isSafeInteger(startIndex) || startIndex < 0) {
+    return NextResponse.json(
+      { error: "startIndex must be a non-negative safe integer" },
+      { status: 400, headers: { ...rateLimit.headers } },
+    );
+  }
 
   try {
     const run = getRun(runId);
@@ -75,14 +81,17 @@ export async function GET(
       );
     }
 
-    // Get readable stream from the specified index
-    const readable = run.getReadable({ startIndex });
+    // Replay raw model-call parts from the start, then skip already-seen UI chunks
+    const readable = run
+      .getReadable({ startIndex: 0 })
+      .pipeThrough(createModelCallToUIChunkTransform({ uiStartIndex: startIndex }));
 
-    // Return streaming response using AI SDK's createUIMessageStreamResponse
-    // This properly serializes UIMessageChunk objects for HTTP streaming
     return createUIMessageStreamResponse({
       stream: readable,
-      headers: { ...rateLimit.headers },
+      headers: {
+        "x-workflow-run-id": runId,
+        ...rateLimit.headers,
+      },
     });
   } catch (err) {
     // Provide more specific error messages based on error type

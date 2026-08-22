@@ -496,12 +496,12 @@ function MyComponent() {
 The AI chat assistant (`components/chat/`) provides natural language domain lookups using Vercel's Workflow SDK.
 
 ### Architecture
-- **Client**: `useDomainChat` hook with session persistence via localStorage
-- **API**: `POST /api/chat` starts workflow, returns streaming response
-- **Workflow**: `workflows/chat/workflow.ts` uses `DurableAgent` for durable tool execution
+- **Client**: `useChat` + `WorkflowChatTransport` (`@ai-sdk/workflow`) with Zustand session persistence
+- **API**: `POST /api/chat` starts workflow, returns streaming response; `GET /api/chat/:runId/stream` reconnects
+- **Workflow**: `workflows/chat/workflow.ts` uses `WorkflowAgent` from `@ai-sdk/workflow` for durable tool execution
 - **Tools**: `workflows/chat/tools.ts` defines domain lookup tools (WHOIS, DNS, SSL, etc.)
 
-### Constants (`lib/constants/ai.ts`)
+### Constants (`packages/constants/src/ai.ts`)
 All chat limits are centralized for client/server consistency.
 
 ### Rate Limits

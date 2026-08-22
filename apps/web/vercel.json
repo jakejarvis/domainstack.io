@@ -9,7 +9,10 @@
     "app/api/cron/**/*.ts": {
       "maxDuration": 800
     },
-    "app/.well-known/workflow/v1/step/route.js": {
+    "app/api/chat/**/*.ts": {
+      "supportsCancellation": true
+    },
+    "app/.well-known/workflow/v1/flow/route.js": {
       "maxDuration": 800
     }
   },

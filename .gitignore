@@ -49,5 +49,9 @@ next-env.d.ts
 # SWC
 .swc
 
+# Workflow SDK
+.workflow-data
+**/.well-known/workflow
+
 # next-agents-md
 .next-docs/

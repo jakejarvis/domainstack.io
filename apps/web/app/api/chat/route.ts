@@ -3,7 +3,7 @@
  *
  * POST /api/chat - Start a chat workflow and stream the response
  *
- * Uses the Workflow SDK's DurableAgent for:
+ * Uses WorkflowAgent for:
  * - Durable tool execution with automatic retries
  * - Streaming responses via getWritable()/getReadable()
  * - Resumable streams for client reconnection after timeouts
@@ -15,6 +15,7 @@
  * - Conversation history truncation
  */
 
+import { createModelCallToUIChunkTransform } from "@ai-sdk/workflow";
 import { ipAddress } from "@vercel/functions";
 import { createUIMessageStreamResponse, type UIMessage } from "ai";
 import { NextResponse } from "next/server";
@@ -139,9 +140,9 @@ export async function POST(request: Request) {
   try {
     const run = await start(chatWorkflow, [{ messages, domain, ip, userId }]);
 
-    // Return streaming response
+    // Convert raw ModelCallStreamPart chunks to UI message chunks for the client
     return createUIMessageStreamResponse({
-      stream: run.readable,
+      stream: run.readable.pipeThrough(createModelCallToUIChunkTransform()),
       headers: {
         "x-workflow-run-id": run.runId,
         ...rateLimit.headers,

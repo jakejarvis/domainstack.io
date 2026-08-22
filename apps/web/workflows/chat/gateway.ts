@@ -1,14 +1,16 @@
-import type { CompatibleLanguageModel } from "@workflow/ai/agent";
-import { getStepMetadata, getWorkflowMetadata } from "workflow";
+import type { LanguageModel } from "ai";
 
 /**
- * Create the AI model instance and wrap with PostHog tracing.
- * Runs as a step to keep Node.js modules out of workflow sandbox.
+ * Resolve the AI Gateway model ID from Edge Config.
+ * Runs as a step to keep Node.js modules out of the workflow sandbox.
+ *
+ * WorkflowAgent serializes `model` across step boundaries, so this returns a
+ * gateway LanguageModel instance (plain provider config) rather than a wrapped
+ * tracer. Correlation IDs belong on `telemetry.metadata`.
  */
-export async function getModelStep(): Promise<CompatibleLanguageModel> {
+export async function getModelStep(): Promise<LanguageModel> {
   "use step";
 
-  // Create the AI model instance
   const { createGateway } = await import("@ai-sdk/gateway");
   const gateway = createGateway({
     headers: {
@@ -18,31 +20,8 @@ export async function getModelStep(): Promise<CompatibleLanguageModel> {
     },
   });
 
-  // Get the AI model ID from Edge Config, fallback to constants string
   const { getAiChatModel } = await import("@domainstack/server/edge-config");
   const { DEFAULT_CHAT_MODEL } = await import("@domainstack/constants");
   const modelId = await getAiChatModel();
-  const model = gateway(modelId || DEFAULT_CHAT_MODEL);
-
-  // Wrap with PostHog tracing if client available
-  const { getServerPosthog } = await import("@domainstack/analytics/server");
-  const phClient = getServerPosthog();
-  if (phClient) {
-    // Get workflow run ID and step ID for PostHog trace correlation
-    const { workflowRunId } = getWorkflowMetadata();
-    const { stepId } = getStepMetadata();
-
-    const { withTracing } = await import("@posthog/ai");
-    return withTracing(model, phClient, {
-      // TODO: it seems we can't choose what arguments DurableAgent passes in (if any), will revisit this later
-      // posthogDistinctId: userId || ip || undefined,
-      posthogTraceId: workflowRunId,
-      posthogProperties: {
-        workflow_run_id: workflowRunId,
-        step_id: stepId,
-      },
-    }) as CompatibleLanguageModel;
-  }
-
-  return model as CompatibleLanguageModel;
+  return gateway(modelId || DEFAULT_CHAT_MODEL);
 }
