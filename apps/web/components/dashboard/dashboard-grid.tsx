@@ -1,5 +1,4 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useState } from "react";
 
 import { DashboardGridCard } from "@/components/dashboard/dashboard-grid-card";
 import { GridUpgradeCard } from "@/components/dashboard/grid-upgrade-card";
@@ -7,9 +6,10 @@ import type { TrackedDomainWithDetails } from "@domainstack/types";
 
 type DashboardGridProps = {
   domains: TrackedDomainWithDetails[];
+  delays: Map<string, number>;
 };
 
-function createInitialDelays(domains: TrackedDomainWithDetails[]) {
+export function createInitialDelays(domains: TrackedDomainWithDetails[]) {
   const delays = new Map<string, number>();
   domains.forEach((domain, index) => {
     delays.set(domain.id, Math.min(index * 0.05, 0.3));
@@ -18,7 +18,7 @@ function createInitialDelays(domains: TrackedDomainWithDetails[]) {
   return delays;
 }
 
-function pruneDelays(delays: Map<string, number>, domains: TrackedDomainWithDetails[]) {
+export function pruneDelays(delays: Map<string, number>, domains: TrackedDomainWithDetails[]) {
   const visible = new Set(domains.map((domain) => domain.id));
   visible.add("upgrade-cta");
 
@@ -34,16 +34,8 @@ function pruneDelays(delays: Map<string, number>, domains: TrackedDomainWithDeta
   return changed ? next : delays;
 }
 
-export function DashboardGrid({ domains }: DashboardGridProps) {
+export function DashboardGrid({ domains, delays }: DashboardGridProps) {
   const shouldReduceMotion = useReducedMotion();
-
-  // First-paint stagger only. Drop delays for ids that have left so a later
-  // remount (filter clear) enters instantly instead of replaying.
-  const [initialDelays, setInitialDelays] = useState(() => createInitialDelays(domains));
-  const delays = pruneDelays(initialDelays, domains);
-  if (delays !== initialDelays) {
-    setInitialDelays(delays);
-  }
 
   const ease = [0.22, 1, 0.36, 1] as const;
   const duration = shouldReduceMotion ? 0.1 : 0.18;
@@ -56,7 +48,14 @@ export function DashboardGrid({ domains }: DashboardGridProps) {
       layout: shouldReduceMotion ? false : ("position" as const),
       initial: { opacity: 0, y: shouldReduceMotion ? 0 : 10 },
       animate: { opacity: 1, y: 0 },
-      exit: { opacity: 0, y: shouldReduceMotion ? 0 : -10 },
+      exit: {
+        opacity: 0,
+        y: shouldReduceMotion ? 0 : -10,
+        transition: {
+          opacity: { duration, ease, delay: 0 },
+          y: { duration, ease, delay: 0 },
+        },
+      },
       transition: {
         // Stagger only the "enter" fade/slide; never delay layout reflow.
         opacity: { duration, ease, delay },

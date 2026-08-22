@@ -55,10 +55,13 @@ export async function GET(
   }
 
   const { runId } = await params;
-  const startIndex = Number(request.nextUrl.searchParams.get("startIndex") ?? "0");
+  const rawStartIndex = request.nextUrl.searchParams.get("startIndex") ?? "0";
+  // Only accept non-negative decimal integer text. Number() would coerce
+  // empty, whitespace, hex, and scientific values into a cursor.
+  const startIndex = /^\d+$/.test(rawStartIndex) ? Number(rawStartIndex) : Number.NaN;
   // UI chunk indexes are not 1:1 with raw ModelCallStreamPart indexes.
   // Reject invalid cursors instead of coercing them to 0.
-  if (!Number.isSafeInteger(startIndex) || startIndex < 0) {
+  if (!Number.isSafeInteger(startIndex)) {
     return NextResponse.json(
       { error: "startIndex must be a non-negative safe integer" },
       { status: 400, headers: { ...rateLimit.headers } },

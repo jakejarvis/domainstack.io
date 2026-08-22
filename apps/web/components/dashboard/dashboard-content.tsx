@@ -1,9 +1,14 @@
 import { IconFilterX, IconHourglass, IconPlus, IconWorld } from "@tabler/icons-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
+import { useState } from "react";
 
 import { BulkActionsToolbar } from "@/components/dashboard/bulk-actions-toolbar";
-import { DashboardGrid } from "@/components/dashboard/dashboard-grid";
+import {
+  createInitialDelays,
+  DashboardGrid,
+  pruneDelays,
+} from "@/components/dashboard/dashboard-grid";
 import { DashboardTable } from "@/components/dashboard/dashboard-table";
 import { useDashboardFiltersContext } from "@/context/dashboard-context";
 import { useIsClient } from "@/hooks/use-is-client";
@@ -39,6 +44,14 @@ export function DashboardContent({
   // Avoid animating the initial view swap during hydration when localStorage preferences reconcile.
   const hasHydrated = useIsClient();
   const shouldReduceMotion = useReducedMotion();
+
+  // Keep first-paint delays here so a zero-result filter (which unmounts the
+  // grid) does not recreate them via createInitialDelays on remount.
+  const [initialDelays, setInitialDelays] = useState(() => createInitialDelays(domains));
+  const delays = pruneDelays(initialDelays, domains);
+  if (delays !== initialDelays) {
+    setInitialDelays(delays);
+  }
 
   // Empty state: No domains match filters
   if (domains.length === 0 && hasActiveFilters) {
@@ -132,7 +145,7 @@ export function DashboardContent({
           {viewMode === "table" ? (
             <DashboardTable domains={domains} onTableReady={onTableReady} />
           ) : (
-            <DashboardGrid domains={domains} />
+            <DashboardGrid domains={domains} delays={delays} />
           )}
         </motion.div>
       </AnimatePresence>
