@@ -159,6 +159,9 @@ function CloudChatSession({
   useEffect(() => {
     runIdRef.current = runId;
   });
+  // Capture initial runId for resume — must stay stable so AI SDK does not
+  // restart resumption when onChatEnd later clears the live run ID.
+  const [initialRunId] = useState(runId);
   const setRunId = useChatStore((s) => s.setRunId);
   const setStoredMessages = useChatStore((s) => s.setMessages);
   const clearSession = useChatStore((s) => s.clearSession);
@@ -197,6 +200,7 @@ function CloudChatSession({
 
   const chat = useChat({
     transport,
+    resume: !!initialRunId,
     onError: (error) => {
       analytics.trackException(error, { context: "chat-send", domain });
     },

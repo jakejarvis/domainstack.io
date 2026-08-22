@@ -69,37 +69,36 @@ export function getDomainToolStatus(type: string): string {
   return DOMAIN_TOOL_STATUS[toolName as DomainToolName] ?? toolName;
 }
 
-export function getDomainToolErrorMessage(err: unknown, domain: string): string {
-  const rawMessage = err instanceof Error ? err.message : "Unknown error";
-  const lowerMessage = rawMessage.toLowerCase();
-
-  if (lowerMessage.includes("timeout") || lowerMessage.includes("timed out")) {
-    return "Request timed out. The domain may be slow to respond.";
+export function getTrpcErrorCode(err: unknown): string | undefined {
+  if (typeof err !== "object" || err === null) {
+    return undefined;
   }
-  if (lowerMessage.includes("rate limit") || lowerMessage.includes("429")) {
+
+  if ("code" in err && typeof err.code === "string") {
+    return err.code;
+  }
+
+  if (
+    "data" in err &&
+    typeof err.data === "object" &&
+    err.data !== null &&
+    "code" in err.data &&
+    typeof err.data.code === "string"
+  ) {
+    return err.data.code;
+  }
+
+  return undefined;
+}
+
+export function getDomainToolErrorMessage(err: unknown): string {
+  const code = getTrpcErrorCode(err);
+  if (code === "TOO_MANY_REQUESTS") {
     return "Rate limit exceeded. Please wait a moment and try again.";
   }
-  if (
-    lowerMessage.includes("not found") ||
-    lowerMessage.includes("enotfound") ||
-    lowerMessage.includes("dns")
-  ) {
-    return `Could not resolve ${domain}. The domain may not exist or DNS may be misconfigured.`;
+  if (code === "BAD_REQUEST") {
+    return "Please provide a valid root domain (e.g., example.com).";
   }
-  if (
-    lowerMessage.includes("certificate") ||
-    lowerMessage.includes("ssl") ||
-    lowerMessage.includes("tls")
-  ) {
-    return `Could not establish secure connection to ${domain}.`;
-  }
-  if (lowerMessage.includes("refused") || lowerMessage.includes("unreachable")) {
-    return `Could not connect to ${domain}. The server may be down.`;
-  }
-  if (lowerMessage.includes("unauthorized") || lowerMessage.includes("401")) {
-    return "Authentication required. Please sign in and try again.";
-  }
-
   return "Unable to fetch data. Please try again.";
 }
 

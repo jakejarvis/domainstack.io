@@ -29,7 +29,7 @@ export function createClientDomainTools(trpc: TRPCClientType) {
             }
             return result.data;
           } catch (err) {
-            return { error: getDomainToolErrorMessage(err, domain) };
+            return { error: getDomainToolErrorMessage(err) };
           }
         },
       }),

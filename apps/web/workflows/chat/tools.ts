@@ -14,6 +14,8 @@ import {
   DOMAIN_TOOL_DEFS,
   domainToolInputSchema,
   getDomainToolErrorMessage,
+  getTrpcErrorCode,
+  type DomainToolName,
   type DomainToolProcedure,
 } from "@/lib/chat/domain-tools";
 
@@ -38,8 +40,15 @@ async function domainLookupStep(procedure: DomainToolProcedure, domain: string, 
   } catch (err) {
     const { createLogger } = await import("@domainstack/logger");
     const logger = createLogger({ source: "chat/tools" });
-    logger.warn({ err, domain, procedure }, "tool step failed");
-    return { error: getDomainToolErrorMessage(err, domain) };
+    // Domain lookups return `{ success: false }` instead of throwing.
+    // Throws here are tRPC validation/rate-limit errors, or unexpected bugs.
+    const trpcCode = getTrpcErrorCode(err);
+    if (trpcCode && trpcCode !== "INTERNAL_SERVER_ERROR") {
+      logger.warn({ err, domain, procedure, code: trpcCode }, "tool step failed (expected)");
+    } else {
+      logger.error({ err, domain, procedure }, "tool step failed (unexpected)");
+    }
+    return { error: getDomainToolErrorMessage(err) };
   }
 }
 
@@ -58,22 +67,9 @@ function makeDomainTool(def: (typeof DOMAIN_TOOL_DEFS)[number]) {
 }
 
 export function createDomainToolset() {
-  return {
-    get_registration: makeDomainTool(lookupToolDef("get_registration")),
-    get_dns_records: makeDomainTool(lookupToolDef("get_dns_records")),
-    get_hosting: makeDomainTool(lookupToolDef("get_hosting")),
-    get_certificates: makeDomainTool(lookupToolDef("get_certificates")),
-    get_headers: makeDomainTool(lookupToolDef("get_headers")),
-    get_seo: makeDomainTool(lookupToolDef("get_seo")),
-  };
-}
-
-function lookupToolDef<N extends (typeof DOMAIN_TOOL_DEFS)[number]["name"]>(name: N) {
-  const def = DOMAIN_TOOL_DEFS.find((candidate) => candidate.name === name);
-  if (!def) {
-    throw new Error(`Unknown domain tool: ${name}`);
-  }
-  return def;
+  return Object.fromEntries(
+    DOMAIN_TOOL_DEFS.map((def) => [def.name, makeDomainTool(def)]),
+  ) as Record<DomainToolName, ReturnType<typeof makeDomainTool>>;
 }
 
 export { createDomainToolsContext };

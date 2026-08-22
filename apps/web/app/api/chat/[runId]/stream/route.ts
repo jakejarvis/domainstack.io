@@ -79,23 +79,21 @@ export async function GET(
     });
   } catch (err) {
     const error = err instanceof Error ? err : new Error(String(err));
-    const gone =
-      error.message.includes("400") ||
-      error.message.includes("Bad Request") ||
-      error.message.includes("not found") ||
-      error.message.includes("expired");
+    // getRun reports completed/expired runs as 400/Bad Request.
+    const completedOrExpired =
+      error.message.includes("400") || error.message.includes("Bad Request");
 
-    if (gone) {
-      logger.debug({ runId }, "chat stream no longer available");
+    if (completedOrExpired) {
+      logger.debug({ runId }, "chat stream reconnection to completed workflow");
       return NextResponse.json(
-        { error: "Chat session not found or expired" },
-        { status: 404, headers: { ...rateLimit.headers } },
+        { error: "Chat session completed or expired." },
+        { status: 410, headers: { ...rateLimit.headers } },
       );
     }
 
-    logger.error({ err, runId }, "failed to reconnect to chat stream");
+    logger.error({ err, runId }, "unexpected error reconnecting to chat stream");
     return NextResponse.json(
-      { error: "Failed to reconnect to chat. Please try again." },
+      { error: "An unexpected error occurred. Please try again." },
       { status: 500, headers: { ...rateLimit.headers } },
     );
   }
