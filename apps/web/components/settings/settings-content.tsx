@@ -9,6 +9,7 @@ import { AccountPanel } from "@/components/settings/account/account-panel";
 import { NotificationsPanel } from "@/components/settings/notifications/notifications-panel";
 import { SettingsErrorBoundary } from "@/components/settings/settings-error-boundary";
 import { SubscriptionPanel } from "@/components/settings/subscription/subscription-panel";
+import { useIsClient } from "@/hooks/use-is-client";
 import { useRouter } from "@/hooks/use-router";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@domainstack/ui/tabs";
 
@@ -105,16 +106,9 @@ export function SettingsTabsRouter({
 
   const activeTab = navigationMode === "page" ? pageTab : segmentTab;
 
-  const [tabsListPortalTarget, setTabsListPortalTarget] = useState<HTMLElement | null>(null);
-
-  useEffect(() => {
-    if (!tabsListPortalId) {
-      setTabsListPortalTarget(null);
-      return;
-    }
-
-    setTabsListPortalTarget(document.getElementById(tabsListPortalId));
-  }, [tabsListPortalId]);
+  const isClient = useIsClient();
+  const tabsListPortalTarget =
+    isClient && tabsListPortalId ? document.getElementById(tabsListPortalId) : null;
 
   const scrollPanelsToTop = useCallback((_tab: SettingsTabValue) => {
     // In the modal, settings content is rendered inside our Base UI `ScrollArea` viewport.

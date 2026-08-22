@@ -1,14 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
-export function StaticBackground() {
-  const [mounted, setMounted] = useState(false);
+import { useIsClient } from "@/hooks/use-is-client";
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+export function StaticBackground() {
+  const mounted = useIsClient();
 
   if (!mounted) return null;
 

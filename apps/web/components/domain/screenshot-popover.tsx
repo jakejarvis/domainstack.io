@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Screenshot, useScreenshot } from "@/components/domain/screenshot";
 import { usePointerCapability } from "@domainstack/ui/hooks";
@@ -30,13 +30,6 @@ export function ScreenshotPopover({
   // Hook lives here (not in PopoverContent) so it stays mounted and keeps polling
   const screenshot = useScreenshot({ domain, domainId, enabled: hasOpened });
 
-  // Reset tap count when popover closes
-  useEffect(() => {
-    if (!open) {
-      setTapCount(0);
-    }
-  }, [open]);
-
   const handleInteraction = (e: React.MouseEvent<HTMLElement>) => {
     // On touch devices, implement two-tap behavior
     if (isTouchDevice && tapCount === 0) {
@@ -55,6 +48,7 @@ export function ScreenshotPopover({
       onOpenChange={(v) => {
         setOpen(v);
         if (v) setHasOpened(true);
+        else setTapCount(0);
       }}
     >
       <PopoverTrigger

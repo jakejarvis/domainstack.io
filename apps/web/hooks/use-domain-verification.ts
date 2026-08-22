@@ -47,7 +47,9 @@ export function useDomainVerification({
 
   // Store callback in ref to avoid re-creating handleVerify when onSuccess changes
   const onSuccessRef = useRef(onSuccess);
-  onSuccessRef.current = onSuccess;
+  useEffect(() => {
+    onSuccessRef.current = onSuccess;
+  });
 
   // ============================================================================
   // Mutations & Queries

@@ -187,17 +187,19 @@ export function DashboardClient() {
 
   // Handle ?upgraded=true query param (after nuqs adapter)
   const searchParams = useSearchParams();
+  const upgradedParam = searchParams?.get("upgraded") === "true";
+  if (upgradedParam && !showUpgradedBanner) {
+    setShowUpgradedBanner(true);
+  }
   useEffect(() => {
-    if (searchParams?.get("upgraded") === "true") {
-      setShowUpgradedBanner(true);
-      // Clear only the `upgraded` param while preserving others (e.g., filters)
-      const params = new URLSearchParams(searchParams.toString());
-      params.delete("upgraded");
-      const newSearch = params.toString();
-      const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
-      router.replace(newUrl, { scroll: false });
-    }
-  }, [router, searchParams]);
+    if (!upgradedParam || !searchParams) return;
+    // Clear only the `upgraded` param while preserving others (e.g., filters)
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("upgraded");
+    const newSearch = params.toString();
+    const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
+    router.replace(newUrl, { scroll: false });
+  }, [upgradedParam, router, searchParams]);
 
   const handleAddDomain = useCallback(() => {
     router.push("/dashboard/add-domain", { scroll: false });

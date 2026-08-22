@@ -1,36 +1,31 @@
 packages:
   - apps/*
   - packages/*
-
 catalog:
   '@tabler/icons-react': ^3.46.0
-  '@types/node': 26.2.0
-  motion: ^13.1.0
+  '@types/node': ^24.13.3
+  motion: ^13.1.1
   sonner: ^2.0.8
-  vitest: ^4.1.10
+  vitest: ^4.1.11
   zod: ^4.4.3
-ignoredBuiltDependencies:
-  - '@nestjs/core'
-
-onlyBuiltDependencies:
-  - '@posthog/cli'
-  - '@swc/core'
-  - bufferutil
-  - cbor-extract
-  - core-js
-  - esbuild
-  - msw
-  - protobufjs
-  - puppeteer
-  - sharp
-
 overrides:
   '@types/react': 19.2.18
   '@types/react-dom': 19.2.4
-  next: 16.3.1
+  next: 16.3.2
   react: 19.2.8
   react-dom: 19.2.8
-
 publicHoistPattern:
   - '@sparticuz/chromium'
   - puppeteer-core
+allowBuilds:
+  '@posthog/cli': true
+  '@swc/core': true
+  bufferutil: true
+  cbor-extract: true
+  core-js: true
+  esbuild: true
+  msw: true
+  protobufjs: true
+  puppeteer: true
+  sharp: true
+  '@nestjs/core': false

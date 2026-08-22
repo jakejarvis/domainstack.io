@@ -41,10 +41,6 @@ export function useSectionTracking({
   const programmaticTargetIdRef = useRef<string | null>(null);
   const programmaticLockUntilRef = useRef<number>(0);
 
-  // Memoize scrollMarginPx in ref to allow updates without effect re-run
-  const scrollMarginRef = useRef(scrollMarginPx);
-  scrollMarginRef.current = scrollMarginPx;
-
   // Section tracking effect
   useEffect(() => {
     if (sectionIds.length === 0) return;
@@ -52,7 +48,7 @@ export function useSectionTracking({
     let rafId: number | null = null;
 
     const updateActiveSection = () => {
-      const scrollMargin = scrollMarginRef.current;
+      const scrollMargin = scrollMarginPx;
       const targetId = programmaticTargetIdRef.current;
 
       // Check if we're in a programmatic scroll
@@ -114,7 +110,7 @@ export function useSectionTracking({
         window.cancelAnimationFrame(rafId);
       }
     };
-  }, [sectionIds]);
+  }, [sectionIds, scrollMarginPx]);
 
   // Scroll to section with programmatic tracking
   const scrollToSection = useCallback((id: string) => {

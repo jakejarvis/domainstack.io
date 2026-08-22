@@ -2,7 +2,7 @@
 
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
-import { useMemo } from "react";
+import { createElement } from "react";
 
 import {
   getNotificationIcon,
@@ -20,7 +20,7 @@ interface NotificationCardProps {
 }
 
 export function NotificationCard({ notification, onClick }: NotificationCardProps) {
-  const IconComponent = useMemo(() => getNotificationIcon(notification.type), [notification.type]);
+  const IconComponent = getNotificationIcon(notification.type);
   const severity = getNotificationSeverity(notification.type);
   const iconColor = getSeverityIconColor(severity, !!notification.readAt);
   const isUnread = !notification.readAt;
@@ -43,7 +43,7 @@ export function NotificationCard({ notification, onClick }: NotificationCardProp
       <div className="flex gap-3">
         {/* Icon */}
         <Icon size="sm" variant={iconColor} className="rounded-full">
-          <IconComponent />
+          {createElement(IconComponent)}
         </Icon>
 
         {/* Content */}

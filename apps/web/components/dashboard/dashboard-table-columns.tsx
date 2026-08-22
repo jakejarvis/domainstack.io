@@ -1,4 +1,3 @@
-"use no memo"; // Disable React Compiler memoization - TanStack Table has issues with it
 import {
   IconArchive,
   IconBell,
@@ -17,6 +16,7 @@ import { DomainStatusBadge } from "@/components/dashboard/domain-status-badge";
 import { ProviderCell } from "@/components/dashboard/provider-cell";
 import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Favicon } from "@/components/icons/favicon";
+import { useIsDomainSelected, useToggleDomainSelection } from "@/hooks/use-dashboard-selection";
 import type { DashboardTableFeatures } from "@/lib/dashboard-table-features";
 import type { VerificationMethod } from "@domainstack/constants";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
@@ -81,9 +81,39 @@ export function createUnverifiedLastSorter(isDescFn: (columnId: string) => boole
   };
 }
 
+type DomainSelectCellProps = {
+  domainId: string;
+  domainName: string;
+};
+
+/**
+ * Subscribes to selection itself so the compiler can memoize the table/row
+ * while this checkbox still updates. Selection is app state (Jotai), not
+ * TanStack row-selection, so `table.Subscribe` does not apply here.
+ */
+function DomainSelectCell({ domainId, domainName }: DomainSelectCellProps) {
+  const isSelected = useIsDomainSelected(domainId);
+  const toggle = useToggleDomainSelection();
+
+  return (
+    <div className="relative size-4">
+      {/* Favicon - hidden on hover or when selected */}
+      <Favicon
+        domain={domainName}
+        className={cn("absolute inset-0", isSelected ? "hidden" : "group-hover:hidden")}
+      />
+      {/* Checkbox - shown on hover or when selected */}
+      <Checkbox
+        checked={isSelected}
+        onCheckedChange={() => toggle(domainId)}
+        aria-label={`Select ${domainName}`}
+        className={cn("absolute inset-0", isSelected ? "flex" : "hidden group-hover:flex")}
+      />
+    </div>
+  );
+}
+
 export type ColumnCallbacks = {
-  selectedIdsRef: React.RefObject<Set<string>>;
-  onToggleSelect?: (id: string) => void;
   onVerify: (id: string, verificationMethod: VerificationMethod | null) => void;
   onRemove: (id: string, domainName: string) => void;
   onArchive: (id: string, domainName: string) => void;
@@ -94,41 +124,16 @@ export type ColumnCallbacks = {
 export function createColumns(
   callbacks: ColumnCallbacks,
 ): ColumnDef<DashboardTableFeatures, TrackedDomainWithDetails>[] {
-  const {
-    selectedIdsRef,
-    onToggleSelect,
-    onVerify,
-    onRemove,
-    onArchive,
-    onToggleMuted,
-    withUnverifiedLast,
-  } = callbacks;
+  const { onVerify, onRemove, onArchive, onToggleMuted, withUnverifiedLast } = callbacks;
 
   return [
     // Selection checkbox column
     {
       id: "select",
       header: () => null, // No header checkbox here - it's in the bulk toolbar
-      cell: ({ row }) => {
-        // Read from ref to avoid columns recreation on selection change
-        const isSelected = selectedIdsRef.current?.has(row.original.id);
-        return (
-          <div className="relative size-4">
-            {/* Favicon - hidden on hover or when selected */}
-            <Favicon
-              domain={row.original.domainName}
-              className={cn("absolute inset-0", isSelected ? "hidden" : "group-hover:hidden")}
-            />
-            {/* Checkbox - shown on hover or when selected */}
-            <Checkbox
-              checked={isSelected}
-              onCheckedChange={() => onToggleSelect?.(row.original.id)}
-              aria-label={`Select ${row.original.domainName}`}
-              className={cn("absolute inset-0", isSelected ? "flex" : "hidden group-hover:flex")}
-            />
-          </div>
-        );
-      },
+      cell: ({ row }) => (
+        <DomainSelectCell domainId={row.original.id} domainName={row.original.domainName} />
+      ),
       size: 40,
       enableHiding: false, // Always show selection column
       meta: {

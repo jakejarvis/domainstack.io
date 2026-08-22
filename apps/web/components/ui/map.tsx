@@ -31,6 +31,7 @@ import {
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 
+import { useIsClient } from "@/hooks/use-is-client";
 import { useTheme } from "@/hooks/use-theme";
 import { analytics } from "@domainstack/analytics/client";
 import { Spinner } from "@domainstack/ui/spinner";
@@ -82,7 +83,7 @@ const DefaultLoader = () => (
 function MapInstance({ children, styles, className, ...props }: MapInstanceProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
-  const [isMounted, setIsMounted] = useState(false);
+  const isMounted = useIsClient();
   const [isLoaded, setIsLoaded] = useState(false);
   const [isStyleLoaded, setIsStyleLoaded] = useState(false);
   const { theme: resolvedTheme } = useTheme();
@@ -99,10 +100,6 @@ function MapInstance({ children, styles, className, ...props }: MapInstanceProps
   if (initialMapStyleRef.current === null) {
     initialMapStyleRef.current = resolvedTheme === "dark" ? mapStyles.dark : mapStyles.light;
   }
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   useEffect(() => {
     if (!isMounted || !containerRef.current) return;
@@ -144,6 +141,7 @@ function MapInstance({ children, styles, className, ...props }: MapInstanceProps
   const isLoading = !isMounted || !isLoaded || !isStyleLoaded;
   const contextValue = useMemo(
     () => ({
+      // oxlint-disable-next-line react/refs
       map: mapRef.current,
       isLoaded: isMounted && isLoaded && isStyleLoaded,
     }),
@@ -220,6 +218,7 @@ function MapMarker({
     onDrag,
     onDragEnd,
   });
+  // oxlint-disable-next-line react/refs
   markerStateRef.current = {
     longitude,
     latitude,
@@ -274,6 +273,7 @@ function MapMarker({
     marker.on("drag", handleDrag);
     marker.on("dragend", handleDragEnd);
 
+    // oxlint-disable-next-line react/set-state-in-effect
     setIsReady(true);
 
     return () => {
@@ -336,10 +336,12 @@ type MapMarkerContentProps = {
 function MapMarkerContent({ children, className }: MapMarkerContentProps) {
   const { markerElementRef, isReady } = useMarkerContext();
 
+  // oxlint-disable-next-line react/refs
   if (!isReady || !markerElementRef.current) return null;
 
   return createPortal(
     <div className={cn("relative", className)}>{children || <DefaultMarkerIcon />}</div>,
+    // oxlint-disable-next-line react/refs
     markerElementRef.current,
   );
 }
@@ -414,6 +416,7 @@ function MapMarkerPopup({
 
   const handleClose = () => popupRef.current?.remove();
 
+  // oxlint-disable-next-line react/refs
   if (!mounted || !containerRef.current) return null;
 
   return createPortal(
@@ -436,6 +439,7 @@ function MapMarkerPopup({
       )}
       {children}
     </div>,
+    // oxlint-disable-next-line react/refs
     containerRef.current,
   );
 }
@@ -506,6 +510,7 @@ function MapMarkerTooltip({ children, className, ...popupOptions }: MapMarkerToo
     popupOptionsRef.current = popupOptions;
   }, [popupOptions]);
 
+  // oxlint-disable-next-line react/refs
   if (!mounted || !containerRef.current) return null;
 
   return createPortal(
@@ -517,6 +522,7 @@ function MapMarkerTooltip({ children, className, ...popupOptions }: MapMarkerToo
     >
       {children}
     </div>,
+    // oxlint-disable-next-line react/refs
     containerRef.current,
   );
 }
@@ -786,6 +792,7 @@ function MapPopup({
   const popupOptionsRef = useRef(popupOptions);
   const initialPopupOptionsRef = useRef(popupOptions);
   const popupStateRef = useRef({ longitude, latitude, onClose });
+  // oxlint-disable-next-line react/refs
   popupStateRef.current = { longitude, latitude, onClose };
 
   const container = useMemo(() => document.createElement("div"), []);
@@ -886,6 +893,7 @@ function MapRoute({
   const sourceId = `route-source-${id}`;
   const layerId = `route-layer-${id}`;
   const paintRef = useRef({ color, width, opacity, dashArray });
+  // oxlint-disable-next-line react/refs
   paintRef.current = { color, width, opacity, dashArray };
 
   // Add source and layer on mount

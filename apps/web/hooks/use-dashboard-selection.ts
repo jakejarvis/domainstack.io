@@ -1,5 +1,5 @@
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect } from "react";
 
 import {
   hasSelectionAtom,
@@ -37,6 +37,39 @@ export type UseDashboardSelectionReturn = DashboardSelectionState & DashboardSel
 // ---------------------------------------------------------------------------
 
 /**
+ * Whether a single domain is selected. Subscribe in the cell/row that renders
+ * the checkbox or selection highlight so the table owner does not have to.
+ */
+export function useIsDomainSelected(id: string): boolean {
+  const selectedIds = useAtomValue(selectedDomainIdsAtom);
+  return selectedIds.has(id);
+}
+
+/**
+ * Toggle selection without subscribing to the selected-id set. Safe to call
+ * from memoized table cells; does not re-render the component on other
+ * selection changes.
+ */
+export function useToggleDomainSelection(): (id: string) => void {
+  const setSelectedIds = useSetAtom(selectedDomainIdsAtom);
+
+  return useCallback(
+    (id: string) => {
+      setSelectedIds((prev: Set<string>) => {
+        const next = new Set(prev);
+        if (next.has(id)) {
+          next.delete(id);
+        } else {
+          next.add(id);
+        }
+        return next;
+      });
+    },
+    [setSelectedIds],
+  );
+}
+
+/**
  * Manages dashboard domain selection state via Jotai atoms.
  *
  * Features:
@@ -52,6 +85,7 @@ export function useDashboardSelection(): UseDashboardSelectionReturn {
   const hasSelection = useAtomValue(hasSelectionAtom);
   const isAllSelected = useAtomValue(isAllSelectedAtom);
   const isPartiallySelected = useAtomValue(isPartiallySelectedAtom);
+  const toggle = useToggleDomainSelection();
 
   // ---------------------------------------------------------------------------
   // Clear stale selections when visible domain IDs change
@@ -74,41 +108,23 @@ export function useDashboardSelection(): UseDashboardSelectionReturn {
   // Escape key clears selection
   // ---------------------------------------------------------------------------
 
-  const selectedCountRef = useRef(selectedIds.size);
-  selectedCountRef.current = selectedIds.size;
-
   const clearSelection = useCallback(() => {
     setSelectedIds(new Set());
   }, [setSelectedIds]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && selectedCountRef.current > 0) {
+      if (e.key === "Escape" && selectedCount > 0) {
         clearSelection();
       }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [clearSelection]);
+  }, [selectedCount, clearSelection]);
 
   // ---------------------------------------------------------------------------
   // Selection Actions
   // ---------------------------------------------------------------------------
-
-  const toggle = useCallback(
-    (id: string) => {
-      setSelectedIds((prev: Set<string>) => {
-        const next = new Set(prev);
-        if (next.has(id)) {
-          next.delete(id);
-        } else {
-          next.add(id);
-        }
-        return next;
-      });
-    },
-    [setSelectedIds],
-  );
 
   const isSelected = useCallback((id: string) => selectedIds.has(id), [selectedIds]);
 

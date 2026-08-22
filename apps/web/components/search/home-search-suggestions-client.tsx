@@ -3,9 +3,10 @@
 import { IconX } from "@tabler/icons-react";
 import { useSetAtom } from "jotai";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef } from "react";
 
 import { Favicon } from "@/components/icons/favicon";
+import { useIsClient } from "@/hooks/use-is-client";
 import { pendingDomainAtom } from "@/lib/atoms/search-atoms";
 import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
 import { useAnalytics } from "@domainstack/analytics/client";
@@ -31,11 +32,8 @@ export function HomeSearchSuggestionsClient({
   const setPendingDomain = useSetAtom(pendingDomainAtom);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Track hydration state for consistent rendering
-  const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
-  useEffect(() => {
-    setIsHistoryLoaded(true);
-  }, []);
+  // Wait until after hydration so persisted search history does not mismatch SSR.
+  const isHistoryLoaded = useIsClient();
 
   const history = useSearchHistoryStore((s) => s.history);
   const clearHistory = useSearchHistoryStore((s) => s.clearHistory);

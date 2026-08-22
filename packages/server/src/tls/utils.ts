@@ -39,7 +39,7 @@ export function parseAltNames(subjectAltName: string | undefined): string[] {
       return [kind, value] as const;
     })
     .filter(([kind, value]) => !!value && (kind === "DNS" || kind === "IP ADDRESS"))
-    .map(([_, value]) => value);
+    .map(([, value]) => value);
 }
 
 /**

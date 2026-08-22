@@ -22,39 +22,27 @@ export function CookiePrompt({ consentRequired }: { consentRequired: boolean }) 
   const [consent, setConsent, { isPersistent }] = useLocalStorageState<ConsentStatus>(CONSENT_KEY, {
     defaultValue: "pending",
   });
-  const [show, setShow] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
+  if (isPersistent && consent === "pending" && !consentRequired) {
+    setConsent("accepted");
+  }
+
   useEffect(() => {
-    // Wait for localStorage to be available
     if (!isPersistent) return;
 
-    if (consent !== "pending") {
-      // User has already made a choice - re-apply PostHog state
-      // in case it was reset (cleared cookies, new session, etc.)
-      if (consent === "accepted") {
-        posthogClient.opt_in_capturing();
-      } else {
-        posthogClient.opt_out_capturing();
-      }
-      setShow(false);
-    } else if (!consentRequired) {
-      // Non-EU user with no stored consent - auto-accept silently
-      setConsent("accepted");
+    if (consent === "accepted") {
       posthogClient.opt_in_capturing();
-      setShow(false);
-    } else {
-      // EU user needs to make a choice - show banner
-      setShow(true);
+    } else if (consent === "declined") {
+      posthogClient.opt_out_capturing();
     }
-  }, [consent, consentRequired, isPersistent, setConsent]);
+  }, [consent, isPersistent]);
 
   const handleHide = (consentStatus: ConsentStatus) => {
     setIsExiting(true);
     // Wait for exit animation to complete before actually hiding
     setTimeout(() => {
       setConsent(consentStatus);
-      setShow(false);
       setIsExiting(false);
     }, 200); // Match animation duration
   };
@@ -69,7 +57,9 @@ export function CookiePrompt({ consentRequired }: { consentRequired: boolean }) 
     handleHide("declined");
   };
 
-  if (!show || consent !== "pending") {
+  const show = isPersistent && consent === "pending" && consentRequired;
+
+  if (!show) {
     return null;
   }
 

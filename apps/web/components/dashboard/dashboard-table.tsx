@@ -1,11 +1,8 @@
-"use no memo"; // Disable React Compiler memoization - TanStack Table has issues with it
-// See: https://github.com/TanStack/table/issues/5567
-
-import type { SortingState } from "@tanstack/react-table";
+import type { OnChangeFn, PaginationState, SortingState } from "@tanstack/react-table";
 import { flexRender, useTable } from "@tanstack/react-table";
 import { AnimatePresence } from "motion/react";
 import { parseAsString, useQueryState } from "nuqs";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 
 import {
   createColumns,
@@ -17,8 +14,11 @@ import { UnverifiedTableRow } from "@/components/dashboard/unverified-table-row"
 import { UpgradeRow } from "@/components/dashboard/upgrade-row";
 import { VerifiedTableRow } from "@/components/dashboard/verified-table-row";
 import { useDashboardActions, useDashboardPaginationContext } from "@/context/dashboard-context";
-import { useDashboardSelection } from "@/hooks/use-dashboard-selection";
-import { dashboardTableFeatures, type DashboardTable } from "@/lib/dashboard-table-features";
+import {
+  dashboardTableFeatures,
+  type DashboardTable,
+  type DashboardTableFeatures,
+} from "@/lib/dashboard-table-features";
 import { DEFAULT_SORT, parseSortParam, serializeSortState } from "@/lib/dashboard-utils";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
@@ -31,16 +31,15 @@ type DashboardTableProps = {
 };
 
 export function DashboardTable({ domains, onTableReady }: DashboardTableProps) {
-  // Get selection and actions from context
-  const { selectedIds, toggle } = useDashboardSelection();
   const { onVerify, onRemove, onArchive, onToggleMuted } = useDashboardActions();
   const { pageIndex, pageSize, setPageSize, setPageIndex, resetPage } =
     useDashboardPaginationContext();
-  const pagination = { pageIndex, pageSize };
+  const pagination = useMemo(
+    (): PaginationState => ({ pageIndex, pageSize }),
+    [pageIndex, pageSize],
+  );
 
   // Table sort state with URL persistence
-  const onSortChangeRef = useRef(resetPage);
-  onSortChangeRef.current = resetPage;
   const [sortParam, setSortParam] = useQueryState(
     "sort",
     parseAsString.withDefault(DEFAULT_SORT).withOptions({
@@ -53,60 +52,64 @@ export function DashboardTable({ domains, onTableReady }: DashboardTableProps) {
     (updater: SortingState | ((old: SortingState) => SortingState)) => {
       const newSorting = typeof updater === "function" ? updater(sorting) : updater;
       setSortParam(serializeSortState(newSorting));
-      onSortChangeRef.current?.();
+      resetPage();
     },
-    [sorting, setSortParam],
+    [sorting, setSortParam, resetPage],
   );
 
   const columnVisibility = usePreferencesStore((s) => s.columnVisibility);
   const setColumnVisibility = usePreferencesStore((s) => s.setColumnVisibility);
 
-  // Use refs to store current state so columns can be memoized
-  // without being recreated on every selection/sort change
-  const sortingRef = useRef(sorting);
-  sortingRef.current = sorting;
-  const selectedIdsRef = useRef(selectedIds);
-  selectedIdsRef.current = selectedIds;
-
-  // Create a stable sorting helper that reads from ref instead of closing over state
-  // This prevents columns from being recreated on every render
   const withUnverifiedLast = useMemo(
     () =>
       createUnverifiedLastSorter((columnId) => {
-        const columnSort = sortingRef.current.find((s) => s.id === columnId);
+        const columnSort = sorting.find((s) => s.id === columnId);
         return columnSort?.desc ?? false;
       }),
-    [], // Empty deps - reads from ref, not state
+    [sorting],
   );
 
   const columns = useMemo(
     () =>
       createColumns({
-        selectedIdsRef,
-        onToggleSelect: toggle,
         onVerify,
         onRemove,
         onArchive,
         onToggleMuted,
         withUnverifiedLast,
       }),
-    // Note: selectedIds is accessed via ref (selectedIdsRef) to avoid recreating
-    // columns on every selection change. The table re-renders cells independently.
-    [toggle, onRemove, onArchive, onToggleMuted, onVerify, withUnverifiedLast],
+    [onRemove, onArchive, onToggleMuted, onVerify, withUnverifiedLast],
   );
 
-  const table = useTable({
-    features: dashboardTableFeatures,
-    data: domains,
-    columns,
-    state: { sorting, pagination, columnVisibility },
-    onSortingChange: setSorting,
-    onPaginationChange: (updater) => {
+  const tableState = useMemo(
+    () => ({ sorting, pagination, columnVisibility }),
+    [sorting, pagination, columnVisibility],
+  );
+
+  const onPaginationChange = useCallback<OnChangeFn<PaginationState>>(
+    (updater) => {
       const newPagination = typeof updater === "function" ? updater(pagination) : updater;
       setPageIndex(newPagination.pageIndex);
     },
-    onColumnVisibilityChange: setColumnVisibility,
-  });
+    [pagination, setPageIndex],
+  );
+
+  // v9 `useTable` returns a new wrapper whenever `tableOptions` identity changes.
+  // Inline options would make `onTableReady={setTableInstance}` loop the parent.
+  const tableOptions = useMemo(
+    () => ({
+      features: dashboardTableFeatures,
+      data: domains,
+      columns,
+      state: tableState,
+      onSortingChange: setSorting,
+      onPaginationChange,
+      onColumnVisibilityChange: setColumnVisibility,
+    }),
+    [domains, columns, tableState, setSorting, onPaginationChange, setColumnVisibility],
+  );
+
+  const table = useTable<DashboardTableFeatures, TrackedDomainWithDetails>(tableOptions);
 
   // Expose table instance to parent for column visibility menu in filters bar
   useEffect(() => {
@@ -145,10 +148,7 @@ export function DashboardTable({ domains, onTableReady }: DashboardTableProps) {
                   }
 
                   const canSort = header.column.getCanSort();
-                  // Get sort state directly from our state instead of table API
-                  // (header.column.getIsSorted() can return stale values)
-                  const sortEntry = sorting.find((s) => s.id === header.column.id);
-                  const isSorted = sortEntry ? (sortEntry.desc ? "desc" : "asc") : false;
+                  const isSorted = header.column.getIsSorted();
 
                   const headerContent = header.isPlaceholder ? null : canSort ? (
                     <button
@@ -198,7 +198,6 @@ export function DashboardTable({ domains, onTableReady }: DashboardTableProps) {
               <AnimatePresence initial={false}>
                 {table.getRowModel().rows.map((row) => {
                   const isUnverified = !row.original.verified;
-                  const isSelected = selectedIds.has(row.original.id);
                   const cells = row.getVisibleCells();
 
                   if (isUnverified) {
@@ -208,7 +207,6 @@ export function DashboardTable({ domains, onTableReady }: DashboardTableProps) {
                         rowId={row.id}
                         cells={cells}
                         original={row.original}
-                        isSelected={isSelected}
                       />
                     );
                   }
@@ -218,7 +216,7 @@ export function DashboardTable({ domains, onTableReady }: DashboardTableProps) {
                       key={row.id}
                       rowId={row.id}
                       cells={cells}
-                      isSelected={isSelected}
+                      original={row.original}
                     />
                   );
                 })}

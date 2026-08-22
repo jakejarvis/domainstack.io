@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEffect, useRef } from "react";
+import { useState } from "react";
 
 import { DashboardGridCard } from "@/components/dashboard/dashboard-grid-card";
 import { GridUpgradeCard } from "@/components/dashboard/grid-upgrade-card";
@@ -12,18 +12,22 @@ type DashboardGridProps = {
 export function DashboardGrid({ domains }: DashboardGridProps) {
   const shouldReduceMotion = useReducedMotion();
 
-  // Stagger on first mount only (keeps later add/remove snappy and avoids re-staggering on sort/filter).
-  const isFirstMountRef = useRef(true);
-  useEffect(() => {
-    isFirstMountRef.current = false;
-  }, []);
+  // Capture first-paint stagger delays so later add/remove/sort stays snappy.
+  const [initialDelays] = useState(() => {
+    const delays = new Map<string, number>();
+    domains.forEach((domain, index) => {
+      delays.set(domain.id, Math.min(index * 0.05, 0.3));
+    });
+    delays.set("upgrade-cta", Math.min(domains.length * 0.05, 0.3));
+    return delays;
+  });
 
   const ease = [0.22, 1, 0.36, 1] as const;
   const duration = shouldReduceMotion ? 0.1 : 0.18;
   const layoutTransition = { duration, ease } as const;
 
-  const getItemMotionProps = (index: number) => {
-    const delay = isFirstMountRef.current && !shouldReduceMotion ? Math.min(index * 0.05, 0.3) : 0;
+  const getItemMotionProps = (id: string) => {
+    const delay = shouldReduceMotion ? 0 : (initialDelays.get(id) ?? 0);
 
     return {
       layout: shouldReduceMotion ? false : ("position" as const),
@@ -42,14 +46,14 @@ export function DashboardGrid({ domains }: DashboardGridProps) {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
       <AnimatePresence>
-        {domains.map((domain, index) => (
-          <motion.div key={domain.id} className="h-full" {...getItemMotionProps(index)}>
+        {domains.map((domain) => (
+          <motion.div key={domain.id} className="h-full" {...getItemMotionProps(domain.id)}>
             <DashboardGridCard domain={domain} />
           </motion.div>
         ))}
 
         {/* Free-tier CTA: treated as just another (last) grid item */}
-        <motion.div key="upgrade-cta" className="h-full" {...getItemMotionProps(domains.length)}>
+        <motion.div key="upgrade-cta" className="h-full" {...getItemMotionProps("upgrade-cta")}>
           <GridUpgradeCard />
         </motion.div>
       </AnimatePresence>

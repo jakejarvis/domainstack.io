@@ -87,7 +87,7 @@ function createPinoLogger(): pino.Logger {
  * causing "MaxListenersExceededWarning" from leaked socket listeners.
  */
 const globalForLogger = globalThis as unknown as {
-  __pino_logger?: pino.Logger;
+  pinoLogger?: pino.Logger;
 };
 
 /**
@@ -109,11 +109,11 @@ const globalForLogger = globalThis as unknown as {
  * logger.error({ err: error, table: "users" }, "Database connection failed");
  * ```
  */
-if (!globalForLogger.__pino_logger) {
-  globalForLogger.__pino_logger = createPinoLogger();
+if (!globalForLogger.pinoLogger) {
+  globalForLogger.pinoLogger = createPinoLogger();
 }
 
-export const logger: pino.Logger = globalForLogger.__pino_logger;
+export const logger: pino.Logger = globalForLogger.pinoLogger;
 
 /**
  * Create a child logger with a specific context prefix.

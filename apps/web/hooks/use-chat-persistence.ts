@@ -49,7 +49,9 @@ export function useChatPersistence({
 
   // Ref to access setMessages without it being a dependency
   const setMessagesRef = useRef(setMessages);
-  setMessagesRef.current = setMessages;
+  useEffect(() => {
+    setMessagesRef.current = setMessages;
+  });
 
   // ---------------------------------------------------------------------------
   // Restore messages from store once after hydration
@@ -87,7 +89,7 @@ export function useChatPersistence({
     if (messages.length > 0) {
       storeSetMessages(messages);
     }
-  }, [messages, status, storeSetMessages]);
+  }, [messages, storeSetMessages]);
 
   // ---------------------------------------------------------------------------
   // Clear runId when chat completes successfully

@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, type ReactNode, useCallback, useRef } from "react";
+import { type CSSProperties, type ReactNode, type RefObject, useCallback, useRef } from "react";
 
 import { cn } from "../utils";
 import { Card, CardContent, CardHeader, CardTitle } from "./card";
@@ -17,6 +17,37 @@ type CodeBlockProps = {
   title?: string;
 };
 
+function CodeBlockPre({
+  children,
+  className,
+  preRef,
+  style,
+  tabIndex,
+}: {
+  children: ReactNode;
+  className?: string;
+  preRef: RefObject<HTMLPreElement | null>;
+  style?: CSSProperties;
+  tabIndex?: number;
+}) {
+  return (
+    <ScrollArea className="w-full rounded-sm border bg-background" scrollFade={false}>
+      <pre
+        className={cn(
+          "not-prose p-3.5 text-[13px] leading-normal outline-none",
+          "[&>code]:grid",
+          className,
+        )}
+        ref={preRef}
+        style={style}
+        tabIndex={tabIndex}
+      >
+        {children}
+      </pre>
+    </ScrollArea>
+  );
+}
+
 export const CodeBlock = ({
   children,
   className,
@@ -30,31 +61,12 @@ export const CodeBlock = ({
   // Read the text content when copy is triggered, not at render time
   const getValue = useCallback(() => ref.current?.innerText ?? "", []);
 
-  const CodeBlockComponent = useCallback(
-    (props: { className?: string }) => (
-      <ScrollArea className="w-full rounded-sm border bg-background" scrollFade={false}>
-        <pre
-          className={cn(
-            "not-prose p-3.5 text-[13px] leading-normal outline-none",
-            "[&>code]:grid",
-            className,
-            props.className,
-          )}
-          ref={ref}
-          style={style}
-          tabIndex={tabIndex}
-        >
-          {children}
-        </pre>
-      </ScrollArea>
-    ),
-    [children, style, tabIndex, className],
-  );
-
   if (!title) {
     return (
       <div data-slot="code-block" className="group/code-block relative">
-        <CodeBlockComponent />
+        <CodeBlockPre className={className} preRef={ref} style={style} tabIndex={tabIndex}>
+          {children}
+        </CodeBlockPre>
         <CopyButton
           className="absolute top-[5px] right-[5px] !bg-background text-muted-foreground opacity-0 transition-opacity group-hover/code-block:opacity-100 hover:!bg-background hover:text-foreground"
           value={getValue}
@@ -76,7 +88,14 @@ export const CodeBlock = ({
         <CopyButton value={getValue} />
       </CardHeader>
       <CardContent className="p-0">
-        <CodeBlockComponent className="line-numbers rounded-none border-none" />
+        <CodeBlockPre
+          className={cn(className, "line-numbers rounded-none border-none")}
+          preRef={ref}
+          style={style}
+          tabIndex={tabIndex}
+        >
+          {children}
+        </CodeBlockPre>
       </CardContent>
     </Card>
   );

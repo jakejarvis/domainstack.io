@@ -16,9 +16,9 @@
     "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json"
   },
   "dependencies": {
-    "posthog-js": "^1.417.2",
-    "posthog-node": "^5.49.1",
-    "uuid": "^14.0.1"
+    "posthog-js": "^1.418.10",
+    "posthog-node": "^5.50.0",
+    "uuid": "^14.0.2"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
@@ -27,6 +27,6 @@
   },
   "peerDependencies": {
     "next": ">=16",
-    "react": ">=18"
+    "react": ">=19"
   }
 }

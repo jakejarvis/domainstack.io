@@ -49,7 +49,7 @@
     "zod": "catalog:"
   },
   "peerDependencies": {
-    "react": ">=18",
+    "react": ">=19",
     "zod": "^4"
   }
 }

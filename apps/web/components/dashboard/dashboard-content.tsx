@@ -1,12 +1,12 @@
 import { IconFilterX, IconHourglass, IconPlus, IconWorld } from "@tabler/icons-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
 import { BulkActionsToolbar } from "@/components/dashboard/bulk-actions-toolbar";
 import { DashboardGrid } from "@/components/dashboard/dashboard-grid";
 import { DashboardTable } from "@/components/dashboard/dashboard-table";
 import { useDashboardFiltersContext } from "@/context/dashboard-context";
+import { useIsClient } from "@/hooks/use-is-client";
 import type { DashboardTable as DashboardTableInstance } from "@/lib/dashboard-table-features";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
@@ -36,14 +36,9 @@ export function DashboardContent({
 }: DashboardContentProps) {
   const { hasActiveFilters, clearFilters } = useDashboardFiltersContext();
   const viewMode = usePreferencesStore((s) => s.viewMode);
-  const [hasHydrated, setHasHydrated] = useState(false);
-
   // Avoid animating the initial view swap during hydration when localStorage preferences reconcile.
+  const hasHydrated = useIsClient();
   const shouldReduceMotion = useReducedMotion();
-
-  useEffect(() => {
-    setHasHydrated(true);
-  }, []);
 
   // Empty state: No domains match filters
   if (domains.length === 0 && hasActiveFilters) {

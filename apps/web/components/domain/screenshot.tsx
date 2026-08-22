@@ -124,6 +124,14 @@ export function useScreenshot({
   const screenshotQueryKey = useMemo(() => ["screenshot", domain], [domain]);
   const cachedData = queryClient.getQueryData<ScreenshotData>(screenshotQueryKey);
 
+  const [trackedDomain, setTrackedDomain] = useState(domain);
+  if (domain !== trackedDomain) {
+    setTrackedDomain(domain);
+    setScreenshotData(null);
+    setRunId(null);
+    setRateLimitedUntil(null);
+  }
+
   const startScreenshot = useCallback(async (id: string) => {
     const response = await fetch("/api/screenshot", {
       method: "POST",
@@ -207,20 +215,26 @@ export function useScreenshot({
   });
 
   // Handle polling completion
+  const polledData = statusQuery.data?.status === "completed" ? statusQuery.data.data : undefined;
+  if (
+    runId &&
+    statusQuery.data &&
+    statusQuery.data.status !== "running" &&
+    statusQuery.data.status !== "rate_limited"
+  ) {
+    setRunId(null);
+  }
+
   useEffect(() => {
     if (!statusQuery.data || statusQuery.data.status === "running") return;
 
     if (statusQuery.data.status === "completed") {
-      setScreenshotData(statusQuery.data.data);
       queryClient.setQueryData(screenshotQueryKey, statusQuery.data.data);
       analytics.track("screenshot_loaded_from_api", { domain });
-      setRunId(null);
     } else if (statusQuery.data.status === "rate_limited") {
       toast.error("Too many requests", {
         description: `Polling paused. Retrying in ${statusQuery.data.retryAfter} seconds.`,
       });
-    } else {
-      setRunId(null);
     }
   }, [statusQuery.data, queryClient, screenshotQueryKey, domain]);
 
@@ -239,9 +253,6 @@ export function useScreenshot({
     if (startedForDomainRef.current !== domain) {
       hasStartedRef.current = false;
       startedForDomainRef.current = domain;
-      setScreenshotData(null);
-      setRunId(null);
-      setRateLimitedUntil(null);
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);
         retryTimeoutRef.current = null;
@@ -261,7 +272,7 @@ export function useScreenshot({
   }, [domain, enabled, domainId, cachedData, screenshotData, startMutation, rateLimitedUntil]);
 
   // Derive return values
-  const finalData = screenshotData ?? cachedData ?? null;
+  const finalData = screenshotData ?? polledData ?? cachedData ?? null;
   const error = startMutation.error ?? statusQuery.error ?? null;
   const hasFailed = statusQuery.data?.status === "failed";
   const isLoading =

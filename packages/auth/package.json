@@ -22,13 +22,13 @@
     "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json"
   },
   "dependencies": {
-    "@better-auth/infra": "^0.3.7",
+    "@better-auth/infra": "^0.4.1",
     "@domainstack/db": "workspace:*",
     "@domainstack/email": "workspace:*",
     "@domainstack/logger": "workspace:*",
     "@domainstack/polar": "workspace:*",
     "@domainstack/redis": "workspace:*",
-    "better-auth": "1.6.29"
+    "better-auth": "~1.6.30"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
@@ -36,6 +36,6 @@
   },
   "peerDependencies": {
     "next": ">=16",
-    "react": ">=18"
+    "react": ">=19"
   }
 }

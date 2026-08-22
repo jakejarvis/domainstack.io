@@ -33,9 +33,9 @@ export function ChatClientLazy({ suggestions }: { suggestions?: string[] }) {
 
   // Once loaded, stay loaded (keeps settings dialog working when user disables AI)
   const shouldLoad = hydrated && !hideAiFeatures;
-  useEffect(() => {
-    if (shouldLoad) setHasLoaded(true);
-  }, [shouldLoad]);
+  if (shouldLoad && !hasLoaded) {
+    setHasLoaded(true);
+  }
 
   if (!hasLoaded) return null;
   return <DynamicChatClient suggestions={suggestions} />;

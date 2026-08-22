@@ -1,7 +1,7 @@
 "use client";
 
 import type { UIMessage } from "ai";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -66,16 +66,9 @@ export const useChatStore = chatStore;
  *
  * @see https://zustand.docs.pmnd.rs/integrations/persisting-store-data#how-can-i-check-if-my-store-has-been-hydrated
  */
-export const useChatHydrated = () => {
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    const unsubscribe = chatStore.persist.onFinishHydration(() => setHydrated(true));
-
-    setHydrated(chatStore.persist.hasHydrated());
-
-    return () => unsubscribe();
-  }, []);
-
-  return hydrated;
-};
+export const useChatHydrated = () =>
+  useSyncExternalStore(
+    (onStoreChange) => chatStore.persist.onFinishHydration(onStoreChange),
+    () => chatStore.persist.hasHydrated(),
+    () => false,
+  );

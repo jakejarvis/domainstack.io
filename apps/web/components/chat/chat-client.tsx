@@ -71,13 +71,11 @@ export function ChatClient({ suggestions = EMPTY_SUGGESTIONS }: ChatClientProps)
 
   // Capture initial runId for resume prop - must be stable to avoid AI SDK errors
   // when runId changes mid-session (e.g., onChatEnd clearing it)
-  const initialRunIdRef = useRef<string | null | undefined>(undefined);
-  if (initialRunIdRef.current === undefined) {
-    initialRunIdRef.current = runId;
-  }
+  const [initialRunId] = useState(runId);
 
   const transport = useMemo(
     () =>
+      // oxlint-disable-next-line react/refs -- transport callbacks read latest domain/runId from refs after render
       new WorkflowChatTransport({
         api: "/api/chat",
         prepareSendMessagesRequest: ({ messages }) => ({
@@ -108,10 +106,10 @@ export function ChatClient({ suggestions = EMPTY_SUGGESTIONS }: ChatClientProps)
   );
 
   // Cloud chat (via Vercel Workflow)
-  // Use stable initialRunIdRef for resume to avoid AI SDK errors when runId changes
+  // Use stable initialRunId for resume to avoid AI SDK errors when runId changes
   const cloudChat = useChat({
     transport,
-    resume: !!initialRunIdRef.current,
+    resume: !!initialRunId,
     onError: (error) => {
       analytics.trackException(error, { context: "chat-send", domain });
     },
@@ -160,7 +158,9 @@ export function ChatClient({ suggestions = EMPTY_SUGGESTIONS }: ChatClientProps)
 
   // Ref for clearMessages callback to avoid dependency on chat.setMessages
   const chatSetMessagesRef = useRef(chat.setMessages);
-  chatSetMessagesRef.current = chat.setMessages;
+  useEffect(() => {
+    chatSetMessagesRef.current = chat.setMessages;
+  });
 
   const clearMessages = useCallback(() => {
     chatSetMessagesRef.current([]);

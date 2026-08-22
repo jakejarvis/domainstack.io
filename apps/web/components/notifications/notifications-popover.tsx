@@ -66,13 +66,6 @@ export function NotificationsPopover() {
   // since staleTime: 0 ensures fresh data on each mount/query key change.
   // The infinite query refetches when `filter` changes (via query key).
 
-  // Reset scroll position when switching tabs
-  useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = 0;
-    }
-  }, [view]);
-
   // Infinite scroll observer - uses scrollAreaRef as root to observe within the scroll container
   useEffect(() => {
     const scrollContainer = scrollAreaRef.current;
@@ -199,6 +192,11 @@ export function NotificationsPopover() {
                   }
 
                   startTransition(() => setView(nextView));
+
+                  // Reset scroll position when switching tabs
+                  if (scrollAreaRef.current) {
+                    scrollAreaRef.current.scrollTop = 0;
+                  }
                 }}
               >
                 <TabsList variant="line">
