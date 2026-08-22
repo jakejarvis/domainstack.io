@@ -11,6 +11,7 @@ import {
   useState,
 } from "react";
 
+import { useHaptics } from "@/components/providers/haptics-provider";
 import {
   InputGroup,
   InputGroupAddon,
@@ -36,12 +37,12 @@ export type PromptInputProps = Omit<HTMLAttributes<HTMLFormElement>, "onSubmit">
 };
 
 export const PromptInput = ({ className, onSubmit, children, ...props }: PromptInputProps) => {
+  const { trigger } = useHaptics();
+
   const handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault();
 
-    try {
-      navigator.vibrate([50]);
-    } catch {}
+    void trigger("medium");
 
     const form = event.currentTarget;
     const formData = new FormData(form);

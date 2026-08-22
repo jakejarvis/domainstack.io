@@ -10,6 +10,7 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BetaBadge } from "@/components/beta-badge";
+import { useHaptics } from "@/components/providers/haptics-provider";
 import { type UseBrowserAIResult, useBrowserAI } from "@/hooks/use-browser-ai";
 import { useChatPersistence } from "@/hooks/use-chat-persistence";
 import { useLocalChat } from "@/hooks/use-local-chat";
@@ -57,6 +58,7 @@ export function ChatClient({ suggestions = EMPTY_SUGGESTIONS }: ChatClientProps)
   const browserAI = useBrowserAI();
   const chatHydrated = useChatHydrated();
   const storedMessageCount = useChatStore((s) => s.messages.length);
+  const { trigger } = useHaptics();
 
   const domain = params.domain ? decodeURIComponent(params.domain) : undefined;
 
@@ -78,9 +80,7 @@ export function ChatClient({ suggestions = EMPTY_SUGGESTIONS }: ChatClientProps)
   );
 
   const handleChatClick = () => {
-    try {
-      navigator.vibrate([50]);
-    } catch {}
+    void trigger("medium");
     setOpen(!open);
   };
 
