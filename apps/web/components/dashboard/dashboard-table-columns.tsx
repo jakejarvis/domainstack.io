@@ -97,17 +97,25 @@ function DomainSelectCell({ domainId, domainName }: DomainSelectCellProps) {
 
   return (
     <div className="relative size-4">
-      {/* Favicon - hidden on hover or when selected */}
+      {/* Favicon - hidden on hover, keyboard focus, or when selected */}
       <Favicon
         domain={domainName}
-        className={cn("absolute inset-0", isSelected ? "hidden" : "group-hover:hidden")}
+        className={cn(
+          "absolute inset-0",
+          isSelected ? "hidden" : "group-focus-within:hidden group-hover:hidden",
+        )}
       />
-      {/* Checkbox - shown on hover or when selected */}
+      {/* Checkbox stays mounted so it remains focusable when unselected */}
       <Checkbox
         checked={isSelected}
         onCheckedChange={() => toggle(domainId)}
         aria-label={`Select ${domainName}`}
-        className={cn("absolute inset-0", isSelected ? "flex" : "hidden group-hover:flex")}
+        className={cn(
+          "absolute inset-0",
+          isSelected
+            ? "opacity-100"
+            : "opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
+        )}
       />
     </div>
   );

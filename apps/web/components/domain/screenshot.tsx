@@ -116,6 +116,8 @@ export function useScreenshot({
   const queryClient = useQueryClient();
   const [runId, setRunId] = useState<string | null>(null);
   const [screenshotData, setScreenshotData] = useState<ScreenshotData | null>(null);
+  const [pollFailed, setPollFailed] = useState(false);
+  const [pollError, setPollError] = useState<Error | null>(null);
   const hasStartedRef = useRef(false);
   const startedForDomainRef = useRef<string | null>(null);
   const [rateLimitedUntil, setRateLimitedUntil] = useState<number | null>(null);
@@ -130,6 +132,8 @@ export function useScreenshot({
     setScreenshotData(null);
     setRunId(null);
     setRateLimitedUntil(null);
+    setPollFailed(false);
+    setPollError(null);
   }
 
   const startScreenshot = useCallback(async (id: string) => {
@@ -214,28 +218,31 @@ export function useScreenshot({
     },
   });
 
-  // Handle polling completion
-  const polledData = statusQuery.data?.status === "completed" ? statusQuery.data.data : undefined;
-  if (
-    runId &&
-    statusQuery.data &&
-    statusQuery.data.status !== "running" &&
-    statusQuery.data.status !== "rate_limited"
-  ) {
-    setRunId(null);
-  }
-
+  // Handle polling completion after commit so we don't setState during render.
+  // Persist terminal results before clearing runId — disabling the status query
+  // would otherwise drop completed data and failed/error state.
   useEffect(() => {
-    if (!statusQuery.data || statusQuery.data.status === "running") return;
+    const data = statusQuery.data;
+    if (!data || data.status === "running") return;
 
-    if (statusQuery.data.status === "completed") {
-      queryClient.setQueryData(screenshotQueryKey, statusQuery.data.data);
-      analytics.track("screenshot_loaded_from_api", { domain });
-    } else if (statusQuery.data.status === "rate_limited") {
+    if (data.status === "rate_limited") {
       toast.error("Too many requests", {
-        description: `Polling paused. Retrying in ${statusQuery.data.retryAfter} seconds.`,
+        description: `Polling paused. Retrying in ${data.retryAfter} seconds.`,
       });
+      return;
     }
+
+    if (data.status === "completed") {
+      setScreenshotData(data.data);
+      queryClient.setQueryData(screenshotQueryKey, data.data);
+      analytics.track("screenshot_loaded_from_api", { domain });
+    } else if (data.status === "failed") {
+      setPollFailed(true);
+    } else if (data.status === "error") {
+      setPollError(new Error(data.error));
+    }
+
+    setRunId(null);
   }, [statusQuery.data, queryClient, screenshotQueryKey, domain]);
 
   // Cleanup retry timeout on unmount
@@ -272,9 +279,10 @@ export function useScreenshot({
   }, [domain, enabled, domainId, cachedData, screenshotData, startMutation, rateLimitedUntil]);
 
   // Derive return values
+  const polledData = statusQuery.data?.status === "completed" ? statusQuery.data.data : undefined;
   const finalData = screenshotData ?? polledData ?? cachedData ?? null;
-  const error = startMutation.error ?? statusQuery.error ?? null;
-  const hasFailed = statusQuery.data?.status === "failed";
+  const error = startMutation.error ?? statusQuery.error ?? pollError ?? null;
+  const hasFailed = pollFailed || statusQuery.data?.status === "failed";
   const isLoading =
     !finalData &&
     !error &&

@@ -24,9 +24,11 @@ export function CookiePrompt({ consentRequired }: { consentRequired: boolean }) 
   });
   const [isExiting, setIsExiting] = useState(false);
 
-  if (isPersistent && consent === "pending" && !consentRequired) {
-    setConsent("accepted");
-  }
+  useEffect(() => {
+    if (isPersistent && consent === "pending" && !consentRequired) {
+      setConsent("accepted");
+    }
+  }, [isPersistent, consent, consentRequired, setConsent]);
 
   useEffect(() => {
     if (!isPersistent) return;

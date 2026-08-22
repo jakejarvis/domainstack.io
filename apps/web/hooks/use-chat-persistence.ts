@@ -83,13 +83,19 @@ export function useChatPersistence({
     if (!isInitialized.current) {
       if (messages.length > 0) {
         isInitialized.current = true;
+        // Transport can fail before onChatSendMessage writes the store. Persist
+        // the first non-empty messages when we already have an error so they
+        // are not dropped; successful sends still skip this branch.
+        if (status === "error") {
+          storeSetMessages(messages);
+        }
       }
       return;
     }
     if (messages.length > 0) {
       storeSetMessages(messages);
     }
-  }, [messages, storeSetMessages]);
+  }, [messages, status, storeSetMessages]);
 
   // ---------------------------------------------------------------------------
   // Clear runId when chat completes successfully
