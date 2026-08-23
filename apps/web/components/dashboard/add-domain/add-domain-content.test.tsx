@@ -6,7 +6,7 @@ vi.mock("@/hooks/use-subscription", async () => {
   return { useSubscription };
 });
 vi.mock("@/lib/trpc/client", async () => {
-  const { useTRPC } = await import("../mocks/trpc");
+  const { useTRPC } = await import("@/mocks/trpc");
   return { useTRPC };
 });
 vi.mock("@/components/dashboard/add-domain/share-instructions-dialog", async () => {

@@ -5,7 +5,6 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { NotificationList } from "@/components/notifications/notification-list";
 import { useNotificationsData } from "@/hooks/use-notifications-data";
 import { useRouter } from "@/hooks/use-router";
-import type { NotificationData } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@domainstack/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@domainstack/ui/tabs";
@@ -32,7 +31,6 @@ export function NotificationsPopover() {
     hasNextPage,
     isFetchingNextPage,
     isError: isNotificationsError,
-    markRead,
     markAllRead,
     fetchNextPage,
     getLatestUnreadCount,
@@ -60,6 +58,11 @@ export function NotificationsPopover() {
         autoMarkedThisOpenRef.current = false;
       },
     });
+  };
+
+  const closePopover = () => {
+    maybeAutoMarkAllRead();
+    setOpen(false);
   };
 
   // Note: Refetch on popover open is handled automatically by TanStack Query
@@ -90,14 +93,6 @@ export function NotificationsPopover() {
 
     return () => observer.disconnect();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage, open]);
-
-  const handleNotificationClick = (notification: NotificationData) => {
-    setOpen(false);
-    // Only mark as read if not already read
-    if (!notification.readAt) {
-      markRead.mutate({ id: notification.id });
-    }
-  };
 
   return (
     <Popover
@@ -164,7 +159,7 @@ export function NotificationsPopover() {
                       onClick={(e) => {
                         e.preventDefault();
                         router.push("/settings/notifications");
-                        setOpen(false);
+                        closePopover();
                       }}
                       render={
                         <Link href="/settings/notifications">
@@ -255,8 +250,8 @@ export function NotificationsPopover() {
             isFetchingNextPage={isFetchingNextPage}
             loadMoreRef={loadMoreRef}
             scrollAreaRef={scrollAreaRef}
-            onNotificationClick={handleNotificationClick}
-            onClosePopover={() => setOpen(false)}
+            onNotificationClick={closePopover}
+            onClosePopover={closePopover}
           />
         </div>
       </PopoverContent>

@@ -30,6 +30,21 @@ interface MutationContext {
   previousSubscription: SubscriptionData | undefined;
 }
 
+function toastBulkResult(
+  verb: "Archived" | "Deleted",
+  result: BulkMutationResult,
+  requestedCount: number,
+) {
+  if (result.failedCount === 0) {
+    toast.success(`${verb} ${result.successCount} domain${result.successCount === 1 ? "" : "s"}`);
+    return;
+  }
+
+  toast.warning(
+    `${verb} ${result.successCount} of ${requestedCount} domains (${result.failedCount} failed)`,
+  );
+}
+
 interface UseDashboardMutationsReturn {
   // Single-item mutations
   remove: (trackedDomainId: string) => void;
@@ -393,14 +408,20 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
   );
 
   const bulkArchive = useCallback(
-    async (trackedDomainIds: string[]): Promise<BulkMutationResult> =>
-      bulkArchiveMutation.mutateAsync({ trackedDomainIds }),
+    async (trackedDomainIds: string[]): Promise<BulkMutationResult> => {
+      const result = await bulkArchiveMutation.mutateAsync({ trackedDomainIds });
+      toastBulkResult("Archived", result, trackedDomainIds.length);
+      return result;
+    },
     [bulkArchiveMutation],
   );
 
   const bulkDelete = useCallback(
-    async (trackedDomainIds: string[]): Promise<BulkMutationResult> =>
-      bulkDeleteMutation.mutateAsync({ trackedDomainIds }),
+    async (trackedDomainIds: string[]): Promise<BulkMutationResult> => {
+      const result = await bulkDeleteMutation.mutateAsync({ trackedDomainIds });
+      toastBulkResult("Deleted", result, trackedDomainIds.length);
+      return result;
+    },
     [bulkDeleteMutation],
   );
 

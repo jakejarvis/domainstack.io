@@ -9,7 +9,10 @@ import { DashboardContent } from "@/components/dashboard/dashboard-content";
 import { DashboardFilters } from "@/components/dashboard/dashboard-filters";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { HealthSummary } from "@/components/dashboard/health-summary";
-import { mockSubscription } from "@/components/dashboard/mocks/subscription";
+import {
+  mockSubscription,
+  resetSubscriptionActionSpies,
+} from "@/components/dashboard/mocks/subscription";
 import { DashboardProvider } from "@/context/dashboard-context";
 import { useDashboardFilters } from "@/hooks/use-dashboard-filters";
 import {
@@ -30,11 +33,15 @@ import {
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { render } from "@/mocks/react";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
+import { TooltipProvider } from "@domainstack/ui/tooltip";
 
 import { DASHBOARD_TEST_NOW, makeDashboardDomains } from "./test-fixtures";
 
 export { createInitialDelays, pruneDelays } from "@/components/dashboard/dashboard-grid";
-export { mockSubscription } from "@/components/dashboard/mocks/subscription";
+export {
+  mockSubscription,
+  subscriptionActionSpies,
+} from "@/components/dashboard/mocks/subscription";
 
 export const dashboardActionSpies = {
   onVerify: vi.fn<(id: string, method: string | null) => void>(),
@@ -116,6 +123,7 @@ export function resetDashboardTestState() {
   for (const spy of Object.values(dashboardActionSpies)) {
     spy.mockClear();
   }
+  resetSubscriptionActionSpies();
 }
 
 type DashboardTestShellProps = {
@@ -284,25 +292,27 @@ export function renderDashboardConfirmShell(options: RenderDashboardShellOptions
 export function renderArchivedList(domains: TrackedDomainWithDetails[]) {
   mockSubscription.activeCount = 0;
   return render(
-    <DashboardProvider
-      onVerify={dashboardActionSpies.onVerify}
-      onRemove={dashboardActionSpies.onRemove}
-      onArchive={dashboardActionSpies.onArchive}
-      onUnarchive={dashboardActionSpies.onUnarchive}
-      onToggleMuted={dashboardActionSpies.onToggleMuted}
-      onBulkArchive={dashboardActionSpies.onBulkArchive}
-      onBulkDelete={dashboardActionSpies.onBulkDelete}
-      isBulkArchiving={false}
-      isBulkDeleting={false}
-      filterHook={stubFilterHook()}
-      sortOption={DEFAULT_SORT}
-      setSortOption={vi.fn<(sort: SortOption) => void>()}
-      table={null}
-      setTable={vi.fn<(table: DashboardTable | null) => void>()}
-      paginationHook={stubPaginationHook()}
-    >
-      <ArchivedDomainsList domains={domains} />
-    </DashboardProvider>,
+    <TooltipProvider>
+      <DashboardProvider
+        onVerify={dashboardActionSpies.onVerify}
+        onRemove={dashboardActionSpies.onRemove}
+        onArchive={dashboardActionSpies.onArchive}
+        onUnarchive={dashboardActionSpies.onUnarchive}
+        onToggleMuted={dashboardActionSpies.onToggleMuted}
+        onBulkArchive={dashboardActionSpies.onBulkArchive}
+        onBulkDelete={dashboardActionSpies.onBulkDelete}
+        isBulkArchiving={false}
+        isBulkDeleting={false}
+        filterHook={stubFilterHook()}
+        sortOption={DEFAULT_SORT}
+        setSortOption={vi.fn<(sort: SortOption) => void>()}
+        table={null}
+        setTable={vi.fn<(table: DashboardTable | null) => void>()}
+        paginationHook={stubPaginationHook()}
+      >
+        <ArchivedDomainsList domains={domains} />
+      </DashboardProvider>
+    </TooltipProvider>,
   );
 }
 

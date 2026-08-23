@@ -5,7 +5,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
 
 import { ArchivedDomainsList } from "@/components/dashboard/archived-domains-list";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
@@ -128,17 +127,8 @@ export function DashboardClient() {
   const doBulkArchive = useCallback(
     async (domainIds: string[]) => {
       try {
-        const result = await mutations.bulkArchive(domainIds);
+        await mutations.bulkArchive(domainIds);
         clearSelection();
-        if (result.failedCount === 0) {
-          toast.success(
-            `Archived ${result.successCount} domain${result.successCount === 1 ? "" : "s"}`,
-          );
-        } else {
-          toast.warning(
-            `Archived ${result.successCount} of ${domainIds.length} domains (${result.failedCount} failed)`,
-          );
-        }
       } catch {
         // Error handled in mutation onError
       }
@@ -149,17 +139,8 @@ export function DashboardClient() {
   const doBulkDelete = useCallback(
     async (domainIds: string[]) => {
       try {
-        const result = await mutations.bulkDelete(domainIds);
+        await mutations.bulkDelete(domainIds);
         clearSelection();
-        if (result.failedCount === 0) {
-          toast.success(
-            `Deleted ${result.successCount} domain${result.successCount === 1 ? "" : "s"}`,
-          );
-        } else {
-          toast.warning(
-            `Deleted ${result.successCount} of ${domainIds.length} domains (${result.failedCount} failed)`,
-          );
-        }
       } catch {
         // Error handled in mutation onError
       }

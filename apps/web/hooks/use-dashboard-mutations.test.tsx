@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/trpc/client", async () => {
-  const { useTRPC } = await import("@/components/dashboard/mocks/trpc");
+  const { useTRPC } = await import("@/mocks/trpc");
   return { useTRPC };
 });
 vi.mock("sonner", () => ({
@@ -11,9 +11,16 @@ vi.mock("sonner", () => ({
     success: vi.fn<(message?: string) => void>(),
     error: vi.fn<(message?: string) => void>(),
     info: vi.fn<(message?: string) => void>(),
+    warning: vi.fn<(message?: string) => void>(),
   },
 }));
 
+import {
+  DASHBOARD_TEST_NOW,
+  makeDashboardDomains,
+  makeTrackedDomain,
+} from "@/components/dashboard/test-fixtures";
+import { createTestQueryClient, renderHook, waitFor } from "@/mocks/react";
 import {
   bulkArchiveDomainsMutation,
   bulkRemoveDomainsMutation,
@@ -21,13 +28,7 @@ import {
   removeDomainMutation,
   resetTrpcMocks,
   SUBSCRIPTION_QUERY_KEY,
-} from "@/components/dashboard/mocks/trpc";
-import {
-  DASHBOARD_TEST_NOW,
-  makeDashboardDomains,
-  makeTrackedDomain,
-} from "@/components/dashboard/test-fixtures";
-import { createTestQueryClient, renderHook, waitFor } from "@/mocks/react";
+} from "@/mocks/trpc";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 
 import { useDashboardMutations } from "./use-dashboard-mutations";
@@ -92,6 +93,7 @@ describe("useDashboardMutations", () => {
     resetTrpcMocks();
     vi.mocked(toast.success).mockClear();
     vi.mocked(toast.error).mockClear();
+    vi.mocked(toast.warning).mockClear();
   });
 
   afterEach(() => {
@@ -186,6 +188,25 @@ describe("useDashboardMutations", () => {
     expect(bulkArchiveDomainsMutation.mock.calls[0]?.[0]).toEqual({
       trackedDomainIds: ["domain-alpha", "domain-archived"],
     });
+    expect(toast.success).toHaveBeenCalledWith("Archived 2 domains");
+  });
+
+  it("toasts a warning when bulk archive only partially succeeds", async () => {
+    bulkArchiveDomainsMutation.mockResolvedValueOnce({ successCount: 1, failedCount: 1 });
+    const { result } = renderDashboardMutations();
+
+    await result.current.bulkArchive(["domain-alpha", "domain-beta"]);
+
+    expect(toast.warning).toHaveBeenCalledWith("Archived 1 of 2 domains (1 failed)");
+    expect(toast.success).not.toHaveBeenCalled();
+  });
+
+  it("toasts a singular success when one domain is archived", async () => {
+    const { result } = renderDashboardMutations();
+
+    await result.current.bulkArchive(["domain-alpha"]);
+
+    expect(toast.success).toHaveBeenCalledWith("Archived 1 domain");
   });
 
   it("bulk-deletes ids and decrements active count only for non-archived domains", async () => {
@@ -203,6 +224,17 @@ describe("useDashboardMutations", () => {
     expect(bulkRemoveDomainsMutation.mock.calls[0]?.[0]).toEqual({
       trackedDomainIds: ["domain-alpha", "domain-archived"],
     });
+    expect(toast.success).toHaveBeenCalledWith("Deleted 2 domains");
+  });
+
+  it("toasts a warning when bulk delete only partially succeeds", async () => {
+    bulkRemoveDomainsMutation.mockResolvedValueOnce({ successCount: 1, failedCount: 1 });
+    const { result } = renderDashboardMutations();
+
+    await result.current.bulkDelete(["domain-alpha", "domain-beta"]);
+
+    expect(toast.warning).toHaveBeenCalledWith("Deleted 1 of 2 domains (1 failed)");
+    expect(toast.success).not.toHaveBeenCalled();
   });
 
   it("rolls back domains and subscription when remove fails", async () => {

@@ -2,16 +2,12 @@ import { vi } from "vitest";
 
 import { AddDomainContent } from "@/components/dashboard/add-domain/add-domain-content";
 import { mockSubscription } from "@/components/dashboard/mocks/subscription";
-import { resetTrpcMocks } from "@/components/dashboard/mocks/trpc";
 import { render } from "@/mocks/react";
+import { resetTrpcMocks } from "@/mocks/trpc";
 import type { ResumeDomainData } from "@domainstack/types";
 
 export { mockSubscription } from "@/components/dashboard/mocks/subscription";
-export {
-  addDomainMutation,
-  getVerificationDataQuery,
-  verifyDomainMutation,
-} from "@/components/dashboard/mocks/trpc";
+export { addDomainMutation, getVerificationDataQuery, verifyDomainMutation } from "@/mocks/trpc";
 
 export const addDomainActionSpies = {
   onSuccess: vi.fn<() => void>(),

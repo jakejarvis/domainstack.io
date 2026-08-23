@@ -29,10 +29,18 @@ vi.mock("@/hooks/use-provider-tooltip-data", async () => {
 import { DASHBOARD_TEST_NOW, makeTrackedDomain } from "@/components/dashboard/test-fixtures";
 import {
   dashboardActionSpies,
+  mockSubscription,
   renderArchivedList,
   resetDashboardTestState,
 } from "@/components/dashboard/test-utils";
 import { screen } from "@/mocks/react";
+import { PLAN_QUOTAS } from "@domainstack/constants";
+
+const archived = makeTrackedDomain({
+  id: "domain-archived",
+  domainName: "archived.com",
+  archivedAt: DASHBOARD_TEST_NOW,
+});
 
 describe("ArchivedDomainsList", () => {
   beforeEach(() => {
@@ -50,12 +58,7 @@ describe("ArchivedDomainsList", () => {
   });
 
   it("reactivates and deletes an archived domain", async () => {
-    const user = userEvent.setup();
-    const archived = makeTrackedDomain({
-      id: "domain-archived",
-      domainName: "archived.com",
-      archivedAt: DASHBOARD_TEST_NOW,
-    });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderArchivedList([archived]);
 
     expect(screen.getByText("archived.com")).toBeInTheDocument();
@@ -65,5 +68,32 @@ describe("ArchivedDomainsList", () => {
 
     await user.click(screen.getByRole("button", { name: "Delete" }));
     expect(dashboardActionSpies.onRemove).toHaveBeenCalledWith("domain-archived", "archived.com");
+  });
+
+  it("blocks reactivate and shows an upgrade banner on Free at the limit", async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    mockSubscription.plan = "free";
+    mockSubscription.planQuota = PLAN_QUOTAS.free;
+    mockSubscription.canAddMore = false;
+    renderArchivedList([archived]);
+
+    expect(screen.getByText("Upgrade to Reactivate")).toBeInTheDocument();
+    expect(screen.getByText(/You've reached your domain tracking limit/)).toBeInTheDocument();
+
+    const reactivate = screen.getByRole("button", { name: /Reactivate/ });
+    expect(reactivate).toBeDisabled();
+    await user.click(reactivate);
+    expect(dashboardActionSpies.onUnarchive).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+    expect(dashboardActionSpies.onRemove).toHaveBeenCalledWith("domain-archived", "archived.com");
+  });
+
+  it("keeps reactivate disabled for Pro at the limit without the upgrade banner", async () => {
+    mockSubscription.canAddMore = false;
+    renderArchivedList([archived]);
+
+    expect(screen.queryByText("Upgrade to Reactivate")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Reactivate/ })).toBeDisabled();
   });
 });

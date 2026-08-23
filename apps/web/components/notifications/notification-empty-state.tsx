@@ -16,7 +16,9 @@ export function NotificationEmptyState({ variant, onClosePopover }: Notification
   return (
     <div className="flex flex-col items-center justify-center p-10 text-center">
       <Icon className="mb-4">{variant === "inbox" ? <IconConfetti /> : <IconArchive />}</Icon>
-      <p className="text-sm text-foreground/80">All caught up!</p>
+      <p className="text-sm text-foreground/80">
+        {variant === "inbox" ? "All caught up!" : "Nothing archived yet"}
+      </p>
       <p className="mt-1 text-[13px] text-muted-foreground/80">
         {variant === "inbox" ? "No unread notifications" : "Nothing to see here (yet…)"}
       </p>

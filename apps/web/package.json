@@ -14,8 +14,7 @@
     "fmt": "oxfmt --config ../../.oxfmtrc.json",
     "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "workflow": "workflow web"
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@ai-sdk/gateway": "^4.0.62",
