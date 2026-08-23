@@ -285,7 +285,8 @@ const faqSections = [
             </ul>
             <p>
               Pro is available for {PRO_TIER_INFO.monthly.label} or {PRO_TIER_INFO.yearly.label} (
-              {PRO_TIER_INFO.yearly.savings}).
+              {PRO_TIER_INFO.yearly.savings}). See the <Link href="/pricing">pricing</Link> page for
+              details.
             </p>
           </>
         ),
