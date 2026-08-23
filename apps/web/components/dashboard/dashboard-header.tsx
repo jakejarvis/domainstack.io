@@ -13,7 +13,7 @@ import { QuotaBar } from "@/components/dashboard/quota-bar";
 import { useSubscription } from "@/hooks/use-subscription";
 import type { DashboardViewModeOptions } from "@/lib/dashboard-utils";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
-import { Button } from "@domainstack/ui/button";
+import { Button, buttonVariants } from "@domainstack/ui/button";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
@@ -72,15 +72,10 @@ export function DashboardHeader({ userName }: DashboardHeaderProps) {
       {/* Add Domain button - top-right on mobile, far right on desktop */}
       <div className="lg:order-last">
         {subscription?.canAddMore ? (
-          <Button
-            nativeButton={false}
-            render={
-              <Link href="/dashboard/add-domain" scroll={false}>
-                <IconPlus />
-                Add Domain
-              </Link>
-            }
-          />
+          <Link href="/dashboard/add-domain" scroll={false} className={buttonVariants()}>
+            <IconPlus />
+            Add Domain
+          </Link>
         ) : (
           <ResponsiveTooltip>
             <ResponsiveTooltipTrigger

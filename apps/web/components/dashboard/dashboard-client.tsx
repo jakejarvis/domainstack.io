@@ -20,7 +20,11 @@ import { UpgradeBanner } from "@/components/dashboard/upgrade-banner";
 import { DashboardProvider } from "@/context/dashboard-context";
 import { useDashboardFilters } from "@/hooks/use-dashboard-filters";
 import { useDashboardMutations } from "@/hooks/use-dashboard-mutations";
-import { useDashboardPagination } from "@/hooks/use-dashboard-pagination";
+import {
+  getDashboardFilterSignature,
+  useDashboardPagination,
+  useSyncDashboardPage,
+} from "@/hooks/use-dashboard-pagination";
 import { useDashboardSelection, useSyncVisibleDomainIds } from "@/hooks/use-dashboard-selection";
 import { useRouter } from "@/hooks/use-router";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -119,6 +123,13 @@ export function DashboardClient() {
   // Filtered domain IDs for selection - sync to Jotai atom
   const filteredDomainIds = useMemo(() => filteredDomains.map((d) => d.id), [filteredDomains]);
   useSyncVisibleDomainIds(filteredDomainIds);
+  useSyncDashboardPage({
+    itemCount: filteredDomains.length,
+    pageIndex: pagination.pageIndex,
+    pageSize: pagination.pageSize,
+    filterSignature: getDashboardFilterSignature(filterHook.state),
+    resetPage,
+  });
 
   // Selection state from Jotai
   const { clearSelection } = useDashboardSelection();

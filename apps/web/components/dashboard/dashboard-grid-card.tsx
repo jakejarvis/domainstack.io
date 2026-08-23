@@ -243,6 +243,7 @@ export const DashboardGridCard = memo(function DashboardGridCard({
                 {expirationDate ? (
                   <ResponsiveTooltip>
                     <ResponsiveTooltipTrigger
+                      nativeButton={false}
                       render={
                         <span className="truncate">{format(expirationDate, "MMM d, yyyy")}</span>
                       }
@@ -305,6 +306,7 @@ export const DashboardGridCard = memo(function DashboardGridCard({
                     <>
                       <ResponsiveTooltip>
                         <ResponsiveTooltipTrigger
+                          nativeButton={false}
                           render={
                             <span className="truncate">
                               {format(expirationDate, "MMM d, yyyy")}
@@ -442,7 +444,7 @@ function InfoRow({
           (provider?.name ? (
             tooltipData.shouldShowTooltip ? (
               <ResponsiveTooltip open={tooltipData.isOpen} onOpenChange={tooltipData.setIsOpen}>
-                <ResponsiveTooltipTrigger render={providerContent} />
+                <ResponsiveTooltipTrigger nativeButton={false} render={providerContent} />
                 <ResponsiveTooltipContent>
                   <ProviderTooltipContent
                     providerId={tooltipData.providerId}
@@ -461,7 +463,7 @@ function InfoRow({
               </ResponsiveTooltip>
             ) : isTruncated ? (
               <ResponsiveTooltip>
-                <ResponsiveTooltipTrigger render={providerContent} />
+                <ResponsiveTooltipTrigger nativeButton={false} render={providerContent} />
                 <ResponsiveTooltipContent>{provider.name}</ResponsiveTooltipContent>
               </ResponsiveTooltip>
             ) : (

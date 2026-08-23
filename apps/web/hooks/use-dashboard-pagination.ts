@@ -1,7 +1,7 @@
 import { parseAsInteger, useQueryState } from "nuqs";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
-import type { DashboardPageSizeOptions } from "@/lib/dashboard-utils";
+import { type DashboardPageSizeOptions, isPagePastEnd } from "@/lib/dashboard-utils";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 
 // ---------------------------------------------------------------------------
@@ -92,4 +92,68 @@ export function useDashboardPagination(): UseDashboardPaginationReturn {
       resetPage,
     },
   };
+}
+
+export type DashboardFilterSignatureInput = {
+  search: string;
+  status: readonly string[];
+  health: readonly string[];
+  tlds: readonly string[];
+  providers: readonly string[];
+  domainId: string | null;
+};
+
+/** Stable key for filter URL state so pagination can reset after the user changes filters. */
+export function getDashboardFilterSignature(filters: DashboardFilterSignatureInput): string {
+  return JSON.stringify([
+    filters.search,
+    filters.status,
+    filters.health,
+    filters.tlds,
+    filters.providers,
+    filters.domainId,
+  ]);
+}
+
+type SyncDashboardPageOptions = {
+  itemCount: number;
+  pageIndex: number;
+  pageSize: number;
+  filterSignature: string;
+  resetPage: () => void;
+};
+
+/**
+ * Keep the page in sync with filters:
+ * - After the user changes filters, return to page 1 (skip the first paint so deep links stay).
+ * - If the current page is past the last result, clamp to page 1.
+ */
+export function useSyncDashboardPage({
+  itemCount,
+  pageIndex,
+  pageSize,
+  filterSignature,
+  resetPage,
+}: SyncDashboardPageOptions): void {
+  const previousSignature = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (previousSignature.current === null) {
+      previousSignature.current = filterSignature;
+      return;
+    }
+    if (previousSignature.current === filterSignature) {
+      return;
+    }
+    previousSignature.current = filterSignature;
+    if (pageIndex > 0) {
+      resetPage();
+    }
+  }, [filterSignature, pageIndex, resetPage]);
+
+  useEffect(() => {
+    if (isPagePastEnd(itemCount, pageIndex, pageSize)) {
+      resetPage();
+    }
+  }, [itemCount, pageIndex, pageSize, resetPage]);
 }

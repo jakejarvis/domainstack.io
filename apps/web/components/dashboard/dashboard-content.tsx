@@ -15,7 +15,7 @@ import { useIsClient } from "@/hooks/use-is-client";
 import type { DashboardTable as DashboardTableInstance } from "@/lib/dashboard-table-features";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
-import { Button } from "@domainstack/ui/button";
+import { Button, buttonVariants } from "@domainstack/ui/button";
 import {
   Empty,
   EmptyContent,
@@ -106,15 +106,14 @@ export function DashboardContent({
               Add Your First Domain
             </Button>
           ) : (
-            <Button
-              size="lg"
-              render={
-                <Link href="/dashboard/add-domain" scroll={false}>
-                  <IconPlus />
-                  Add Your First Domain
-                </Link>
-              }
-            />
+            <Link
+              href="/dashboard/add-domain"
+              scroll={false}
+              className={buttonVariants({ size: "lg" })}
+            >
+              <IconPlus />
+              Add Your First Domain
+            </Link>
           )}
           <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
             <IconHourglass className="size-4" />

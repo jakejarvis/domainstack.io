@@ -43,7 +43,10 @@ export function DashboardTablePagination({
           value={String(pageSize)}
           onValueChange={(value) => onPageSizeChange(Number(value) as DashboardPageSizeOptions)}
         >
-          <SelectTrigger className="!h-8 cursor-pointer gap-1.5 px-2 text-xs">
+          <SelectTrigger
+            aria-label="Domains per page"
+            className="!h-8 cursor-pointer gap-1.5 px-2 text-xs"
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
