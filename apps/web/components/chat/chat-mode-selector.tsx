@@ -110,7 +110,7 @@ export function ChatModeSelector({ className, disabled, browserAI }: ChatModeSel
                     <div className="flex flex-1 flex-col">
                       <span>Local</span>
                       <span className="text-xs text-muted-foreground">
-                        {browserAI.status === "unavailable" || browserAI.status === "ready"
+                        {browserAI.status === "ready"
                           ? "Fast & private, but dumber"
                           : getStatusLabel(browserAI.status, browserAI.downloadProgress)}
                       </span>
@@ -120,6 +120,7 @@ export function ChatModeSelector({ className, disabled, browserAI }: ChatModeSel
                         variant="ghost"
                         size="sm"
                         className="ml-auto h-6 px-2"
+                        aria-label="Download on-device model"
                         onClick={handleDownloadClick}
                       >
                         <IconDownload className="size-3.5" />
@@ -128,7 +129,9 @@ export function ChatModeSelector({ className, disabled, browserAI }: ChatModeSel
                   </DropdownMenuRadioItem>
                 }
               />
-              <ResponsiveTooltipContent className={cn(canUseLocal && "hidden")}>
+              <ResponsiveTooltipContent
+                className={cn(browserAI.status !== "unavailable" && "hidden")}
+              >
                 Requires latest{" "}
                 <a
                   href="https://developer.chrome.com/docs/ai/prompt-api"
