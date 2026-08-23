@@ -125,7 +125,9 @@ export function ChatModeSelector({ className, disabled, browserAI }: ChatModeSel
                   </DropdownMenuRadioItem>
                 }
               />
-              <ResponsiveTooltipContent className={cn((canUseLocal || isDownloading) && "hidden")}>
+              <ResponsiveTooltipContent
+                className={cn(browserAI.status !== "unavailable" && "hidden")}
+              >
                 Requires latest{" "}
                 <a
                   href="https://developer.chrome.com/docs/ai/prompt-api"

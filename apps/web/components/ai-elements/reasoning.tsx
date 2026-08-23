@@ -154,7 +154,7 @@ export type ReasoningTriggerProps = ComponentProps<typeof CollapsibleTrigger> & 
 
 const defaultGetThinkingMessage = (isStreaming: boolean, duration?: number) => {
   if (isStreaming || duration === 0) {
-    return <ShimmeringText text="Thinking…" />;
+    return <ShimmeringText text="Thinking…" startOnView={false} />;
   }
   if (duration === undefined) {
     return <p>Thought for a few seconds</p>;

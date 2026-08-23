@@ -20,59 +20,19 @@ import { ipAddress } from "@vercel/functions";
 import { createUIMessageStreamResponse, type UIMessage } from "ai";
 import { NextResponse } from "next/server";
 import { start } from "workflow/api";
-import { z } from "zod";
 
+import { chatRequestSchema } from "@/lib/chat/request-schema";
 import { checkRateLimit } from "@/lib/ratelimit/api";
 import { chatWorkflow } from "@/workflows/chat";
 import { auth } from "@domainstack/auth/server";
 import {
   MAX_CONVERSATION_MESSAGES,
-  MAX_MESSAGE_LENGTH,
   RATE_LIMIT_ANONYMOUS,
   RATE_LIMIT_AUTHENTICATED,
 } from "@domainstack/constants";
 import { createLogger } from "@domainstack/logger";
 
 const logger = createLogger({ source: "api/chat" });
-
-/**
- * Zod schema for chat request validation.
- *
- * Validates:
- * - Message array exists and isn't too long
- * - Each message has required fields
- * - Text content doesn't exceed max length
- * - Domain is a reasonable string if provided
- */
-const chatRequestSchema = z.object({
-  messages: z
-    .array(
-      z
-        .object({
-          id: z.string(),
-          role: z.enum(["user", "assistant"]),
-          parts: z.array(
-            z.union([
-              z.object({
-                type: z.literal("text"),
-                text: z.string().max(MAX_MESSAGE_LENGTH, {
-                  message: `Message text exceeds ${MAX_MESSAGE_LENGTH} characters`,
-                }),
-              }),
-              // Allow other part types (tool calls, etc.) to pass through
-              z.object({ type: z.string() }).passthrough(),
-            ]),
-          ),
-        })
-        // Allow additional fields from UIMessage (metadata, createdAt, etc.)
-        .passthrough(),
-    )
-    .min(1, { message: "At least one message is required" })
-    .max(MAX_CONVERSATION_MESSAGES * 2, {
-      message: `Too many messages (max ${MAX_CONVERSATION_MESSAGES * 2})`,
-    }),
-  domain: z.string().max(253, { message: "Domain name too long" }).optional(),
-});
 
 /**
  * POST /api/chat

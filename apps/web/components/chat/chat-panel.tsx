@@ -31,6 +31,12 @@ import {
 } from "@/components/ai-elements/tool";
 import { type UseBrowserAIResult } from "@/hooks/use-browser-ai";
 import { getDomainToolStatus } from "@/lib/chat/domain-tools";
+import {
+  getMessagePartItems,
+  hasVisibleAssistantParts,
+  isToolPart,
+  shouldShowThinkingStatus,
+} from "@/lib/chat/message-parts";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { MAX_MESSAGE_LENGTH } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
@@ -40,21 +46,17 @@ import { ChatModeSelector } from "./chat-mode-selector";
 
 const EMPTY_SUGGESTIONS: string[] = [];
 
-function getMessagePartItems(message: UIMessage) {
-  const seen = new Map<string, number>();
-
-  return message.parts.map((part, position) => {
-    const baseKey =
-      part.type === "text" || part.type === "reasoning" ? `${part.type}-${part.text}` : part.type;
-    const duplicateCount = seen.get(baseKey) ?? 0;
-    seen.set(baseKey, duplicateCount + 1);
-
-    return {
-      key: `${message.id}-${baseKey}-${duplicateCount}`,
-      part,
-      position,
-    };
-  });
+function ThinkingStatus() {
+  return (
+    <div
+      className="flex items-center gap-2 text-[13px] text-muted-foreground"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      <IconBrain className="size-3.5" aria-hidden />
+      <ShimmeringText text="Thinking…" startOnView={false} />
+    </div>
+  );
 }
 
 function getReportSuggestions(domain: string): string[] {
@@ -96,6 +98,8 @@ export function ChatPanel({
   const [inputLength, setInputLength] = useState(0);
   const showToolCalls = usePreferencesStore((s) => s.showToolCalls);
   const showReasoning = usePreferencesStore((s) => s.showReasoning);
+  const visibility = { showReasoning, showToolCalls };
+  const showThinking = shouldShowThinkingStatus(status, messages, visibility);
 
   const stickyInstance = useStickToBottom();
 
@@ -128,16 +132,20 @@ export function ChatPanel({
     <>
       <Conversation
         stickyInstance={stickyInstance}
+        aria-busy={status === "submitted" || status === "streaming"}
         className={cn(
           "min-h-0 flex-1 bg-popover/10 [&_[data-slot=scroll-area-content]]:flex [&_[data-slot=scroll-area-content]]:min-h-full [&_[data-slot=scroll-area-content]]:flex-col",
           conversationClassName,
         )}
       >
         <ConversationContent
-          className={cn(messages.length === 0 ? "items-center justify-center" : "gap-4 px-3 py-4")}
-          aria-live="polite"
+          className={cn(
+            messages.length === 0 && !showThinking
+              ? "items-center justify-center"
+              : "gap-4 px-3 py-4",
+          )}
         >
-          {messages.length === 0 ? (
+          {messages.length === 0 && !showThinking ? (
             <ConversationEmptyState
               icon={<IconMessages className="size-7" />}
               title={`Ask me anything about ${domain ?? "domains"}!`}
@@ -145,19 +153,29 @@ export function ChatPanel({
             />
           ) : (
             <>
-              {messages.map((message) => (
-                <Message key={message.id} from={message.role}>
-                  <MessageContent>
-                    {getMessagePartItems(message).map(({ key, part, position }) => {
-                      if (part.type === "text") {
-                        return <MessageResponse key={key}>{part.text}</MessageResponse>;
-                      }
-                      if (part.type === "reasoning") {
-                        const isStreaming =
-                          status === "streaming" &&
-                          position === message.parts.length - 1 &&
-                          message.id === messages.at(-1)?.id;
-                        if (showReasoning) {
+              {messages.map((message) => {
+                if (
+                  message.role === "assistant" &&
+                  !hasVisibleAssistantParts(message, visibility)
+                ) {
+                  return null;
+                }
+
+                return (
+                  <Message key={message.id} from={message.role}>
+                    <MessageContent>
+                      {getMessagePartItems(message).map(({ key, part, position }) => {
+                        if (part.type === "text") {
+                          return <MessageResponse key={key}>{part.text}</MessageResponse>;
+                        }
+                        if (part.type === "reasoning") {
+                          if (!showReasoning) {
+                            return null;
+                          }
+                          const isStreaming =
+                            status === "streaming" &&
+                            position === message.parts.length - 1 &&
+                            message.id === messages.at(-1)?.id;
                           return (
                             <Reasoning key={key} className="w-full" isStreaming={isStreaming}>
                               <ReasoningTrigger />
@@ -165,48 +183,37 @@ export function ChatPanel({
                             </Reasoning>
                           );
                         }
-
-                        return isStreaming ? (
-                          <div
-                            key={key}
-                            className="flex items-center gap-2 text-[13px] text-muted-foreground"
-                          >
-                            <IconBrain className="size-3.5" />
-                            <ShimmeringText text="Thinking…" />
-                          </div>
-                        ) : null;
-                      }
-                      if (part.type.startsWith("tool-") && showToolCalls) {
-                        const toolPart = part as ToolUIPart;
-                        return (
-                          <Tool key={key}>
-                            <ToolHeader
-                              title={getDomainToolStatus(toolPart.type)}
-                              type={toolPart.type}
-                              state={toolPart.state}
-                            />
-                            <ToolContent>
-                              <ToolInput input={toolPart.input} />
-                              {toolPart.state === "output-available" && (
-                                <ToolOutput
-                                  output={toolPart.output}
-                                  errorText={toolPart.errorText}
-                                />
-                              )}
-                            </ToolContent>
-                          </Tool>
-                        );
-                      }
-                      return null;
-                    })}
-                  </MessageContent>
-                </Message>
-              ))}
-              {/* Show loading indicator while waiting for response stream to begin */}
-              {status === "submitted" && (
-                <Message from="assistant">
+                        if (isToolPart(part) && showToolCalls) {
+                          const toolPart = part as ToolUIPart;
+                          return (
+                            <Tool key={key}>
+                              <ToolHeader
+                                title={getDomainToolStatus(toolPart.type)}
+                                type={toolPart.type}
+                                state={toolPart.state}
+                              />
+                              <ToolContent>
+                                <ToolInput input={toolPart.input} />
+                                {toolPart.state === "output-available" && (
+                                  <ToolOutput
+                                    output={toolPart.output}
+                                    errorText={toolPart.errorText}
+                                  />
+                                )}
+                              </ToolContent>
+                            </Tool>
+                          );
+                        }
+                        return null;
+                      })}
+                    </MessageContent>
+                  </Message>
+                );
+              })}
+              {showThinking && (
+                <Message key="thinking" from="assistant">
                   <MessageContent>
-                    <ShimmeringText text="Thinking…" />
+                    <ThinkingStatus />
                   </MessageContent>
                 </Message>
               )}
