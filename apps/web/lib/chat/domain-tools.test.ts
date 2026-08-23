@@ -1,7 +1,26 @@
 /* @vitest-environment node */
 import { describe, expect, it } from "vitest";
 
-import { getDomainToolErrorMessage, getDomainToolStatus, getTrpcErrorCode } from "./domain-tools";
+import type { RegistrationResponse } from "@domainstack/types";
+
+import {
+  getDomainToolErrorMessage,
+  getDomainToolStatus,
+  getTrpcErrorCode,
+  type DomainToolResult,
+} from "./domain-tools";
+
+type Equals<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
+type AssertTrue<T extends true> = T;
+
+type RegistrationSuccess = Exclude<DomainToolResult<"getRegistration">, { error: string }>;
+type DnsSuccess = Exclude<DomainToolResult<"getDnsRecords">, { error: string }>;
+
+// Fails if DomainToolResult collapses to `{ error: string }` or includes `data: null`.
+type _KeepsRegistrationData = AssertTrue<Equals<RegistrationSuccess, RegistrationResponse>>;
+type _ToolsKeepDistinctData = AssertTrue<
+  Equals<RegistrationSuccess, DnsSuccess> extends true ? false : true
+>;
 
 describe("getDomainToolStatus", () => {
   it("strips the tool- prefix and returns the domain tool label", () => {

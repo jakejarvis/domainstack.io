@@ -1,9 +1,10 @@
 "use client";
 
-import { browserAI, doesBrowserSupportBrowserAI } from "@browser-ai/core";
+import { browserAI } from "@browser-ai/core";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 const NOOP_SUBSCRIBE = () => () => {};
+const AVAILABILITY_TIMEOUT_MS = 2_000;
 
 type BrowserAIModel = ReturnType<typeof browserAI>;
 
@@ -11,17 +12,22 @@ type BrowserAIModel = ReturnType<typeof browserAI>;
 let sharedModel: BrowserAIModel | null = null;
 let sharedAvailability: Promise<string> | null = null;
 
+function getLanguageModelGlobal(): { availability?: unknown } | undefined {
+  try {
+    return (globalThis as { LanguageModel?: { availability?: unknown } }).LanguageModel;
+  } catch {
+    return undefined;
+  }
+}
+
+/** True only when the Prompt API is actually callable — not a bundler stub. */
+function browserSupportsBuiltInAI(): boolean {
+  return typeof getLanguageModelGlobal()?.availability === "function";
+}
+
 function getSharedModel(): BrowserAIModel {
   sharedModel ??= browserAI();
   return sharedModel;
-}
-
-function browserSupportsBuiltInAI(): boolean {
-  try {
-    return doesBrowserSupportBrowserAI();
-  } catch {
-    return false;
-  }
 }
 
 function getSharedAvailability(): Promise<string> {
@@ -135,33 +141,56 @@ export function useBrowserAI({ enabled = true }: UseBrowserAIOptions = {}): UseB
     const instance = getSharedModel();
     modelInstanceRef.current = instance;
 
+    const applyAvailability = (availability: string) => {
+      if (!isMountedRef.current) return;
+
+      switch (availability) {
+        case "unavailable":
+          setModelStatus("unavailable");
+          break;
+        case "downloadable":
+          setModelStatus("downloadable");
+          break;
+        case "downloading":
+          setModelStatus("downloading");
+          break;
+        case "available":
+          setModel(instance);
+          setModelStatus("ready");
+          break;
+        default:
+          setModelStatus("unavailable");
+      }
+    };
+
+    const applyProbeError = (err: unknown) => {
+      probeStartedRef.current = false;
+      if (!isMountedRef.current) return;
+      setError(err instanceof Error ? err.message : "Failed to check AI availability");
+      setModelStatus("error");
+    };
+
+    const probe = getSharedAvailability();
+
     void (async () => {
       try {
-        const availability = await getSharedAvailability();
-        if (!isMountedRef.current) return;
+        const result = await Promise.race([
+          probe.then((availability) => ({ timedOut: false as const, availability })),
+          new Promise<{ timedOut: true }>((resolve) => {
+            setTimeout(() => resolve({ timedOut: true }), AVAILABILITY_TIMEOUT_MS);
+          }),
+        ]);
 
-        switch (availability) {
-          case "unavailable":
-            setModelStatus("unavailable");
-            break;
-          case "downloadable":
-            setModelStatus("downloadable");
-            break;
-          case "downloading":
-            setModelStatus("downloading");
-            break;
-          case "available":
-            setModel(instance);
-            setModelStatus("ready");
-            break;
-          default:
-            setModelStatus("unavailable");
+        if (result.timedOut) {
+          // Don't sit on "Checking…" if the Prompt API never answers.
+          if (isMountedRef.current) setModelStatus("unavailable");
+          void probe.then(applyAvailability).catch(applyProbeError);
+          return;
         }
+
+        applyAvailability(result.availability);
       } catch (err) {
-        probeStartedRef.current = false;
-        if (!isMountedRef.current) return;
-        setError(err instanceof Error ? err.message : "Failed to check AI availability");
-        setModelStatus("error");
+        applyProbeError(err);
       }
     })();
   }, [enabled, supported]);

@@ -6,7 +6,6 @@
  * to keep them out of the workflow sandbox.
  */
 
-import type { inferRouterOutputs } from "@trpc/server";
 import { tool, type Tool } from "ai";
 import { z } from "zod";
 
@@ -18,8 +17,8 @@ import {
   getTrpcErrorCode,
   type DomainToolInput,
   type DomainToolProcedure,
+  type DomainToolResult,
 } from "@/lib/chat/domain-tools";
-import type { AppRouter } from "@/server/routers/_app";
 
 export interface ToolContext {
   ip: string | null;
@@ -28,15 +27,6 @@ export interface ToolContext {
 const toolContextSchema = z.object({
   ip: z.string().nullable(),
 });
-
-type DomainOutputs = inferRouterOutputs<AppRouter>["domain"];
-
-type DomainToolResult<P extends DomainToolProcedure> = DomainOutputs[P] extends {
-  success: true;
-  data: infer D;
-}
-  ? D | { error: string }
-  : { error: string };
 
 type DomainToolSet = {
   [Def in (typeof DOMAIN_TOOL_DEFS)[number] as Def["name"]]: Tool<

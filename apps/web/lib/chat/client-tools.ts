@@ -6,7 +6,6 @@
  */
 
 import type { TRPCClient } from "@trpc/client";
-import type { inferRouterOutputs } from "@trpc/server";
 import { tool, type Tool } from "ai";
 
 import type { AppRouter } from "@/server/routers/_app";
@@ -17,18 +16,10 @@ import {
   domainToolInputSchema,
   getDomainToolErrorMessage,
   type DomainToolInput,
-  type DomainToolProcedure,
+  type DomainToolResult,
 } from "./domain-tools";
 
 type TRPCClientType = TRPCClient<AppRouter>;
-type DomainOutputs = inferRouterOutputs<AppRouter>["domain"];
-
-type DomainToolResult<P extends DomainToolProcedure> = DomainOutputs[P] extends {
-  success: true;
-  data: infer D;
-}
-  ? D | { error: string }
-  : { error: string };
 
 type ClientDomainToolSet = {
   [Def in (typeof DOMAIN_TOOL_DEFS)[number] as Def["name"]]: Tool<
