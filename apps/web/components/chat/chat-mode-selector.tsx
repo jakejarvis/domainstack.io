@@ -35,16 +35,12 @@ interface ChatModeSelectorProps {
 
 function getStatusLabel(status: BrowserAIStatus, downloadProgress?: number): string {
   switch (status) {
-    case "unavailable":
-      return "Not supported";
     case "checking":
       return "Checking…";
     case "downloadable":
       return "Download required";
     case "downloading":
       return `Downloading… ${Math.round((downloadProgress ?? 0) * 100)}%`;
-    case "ready":
-      return "Ready";
     case "error":
       return "Error";
     default:
@@ -110,7 +106,7 @@ export function ChatModeSelector({ className, disabled, browserAI }: ChatModeSel
                     <div className="flex flex-1 flex-col">
                       <span>Local</span>
                       <span className="text-xs text-muted-foreground">
-                        {browserAI.status === "ready"
+                        {browserAI.status === "unavailable" || browserAI.status === "ready"
                           ? "Fast & private, but dumber"
                           : getStatusLabel(browserAI.status, browserAI.downloadProgress)}
                       </span>
@@ -135,6 +131,7 @@ export function ChatModeSelector({ className, disabled, browserAI }: ChatModeSel
                   href="https://developer.chrome.com/docs/ai/prompt-api"
                   target="_blank"
                   rel="noopener noreferrer"
+                  className="font-medium"
                 >
                   Google Chrome
                 </a>{" "}
@@ -143,6 +140,7 @@ export function ChatModeSelector({ className, disabled, browserAI }: ChatModeSel
                   href="https://learn.microsoft.com/en-us/microsoft-edge/web-platform/prompt-api"
                   target="_blank"
                   rel="noopener noreferrer"
+                  className="font-medium"
                 >
                   Microsoft Edge
                 </a>{" "}
