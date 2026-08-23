@@ -1,4 +1,3 @@
-import { sentinelClient } from "@better-auth/infra/client";
 import { createAuthClient } from "better-auth/react";
 
 import { polarClient } from "@domainstack/polar/better-auth/client";
@@ -9,7 +8,7 @@ import { polarClient } from "@domainstack/polar/better-auth/client";
  */
 const client = createAuthClient({
   baseURL: process.env.NEXT_PUBLIC_BASE_URL,
-  plugins: [polarClient(), sentinelClient()],
+  plugins: [polarClient()],
 });
 
 export const authClient: ReturnType<typeof createAuthClient> = client;
