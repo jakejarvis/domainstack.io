@@ -4,7 +4,7 @@ import type { MetadataRoute } from "next";
  * Public marketing pages that should be discovered by search engines.
  * Auth, dashboard, settings, and per-domain reports are intentionally omitted.
  */
-const MARKETING_PATHS = ["/", "/help", "/mcp", "/pricing", "/privacy", "/terms"] as const;
+const MARKETING_PATHS = ["/", "/help", "/mcp", "/privacy", "/terms"] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return MARKETING_PATHS.map((path) => ({
