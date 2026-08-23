@@ -55,7 +55,7 @@ export function ChatClient({ suggestions = EMPTY_SUGGESTIONS }: ChatClientProps)
   const isMobile = useIsMobile();
   const hideAiFeatures = usePreferencesStore((s) => s.hideAiFeatures);
   const aiMode = usePreferencesStore((s) => s.aiMode);
-  const browserAI = useBrowserAI({ enabled: open });
+  const browserAI = useBrowserAI();
   const chatHydrated = useChatHydrated();
   const storedMessageCount = useChatStore((s) => s.messages.length);
   const { trigger } = useHaptics();

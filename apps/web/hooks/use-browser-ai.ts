@@ -80,16 +80,13 @@ export interface UseBrowserAIOptions {
  * Hook to detect and manage browser AI availability.
  *
  * Browser support is detected synchronously. Model availability is probed once
- * the first time `enabled` is true (typically when the chat window opens) and
- * reused for later opens in the same tab. Closing the chat does not cancel or
- * restart the probe.
+ * when the hook is enabled (by default, on mount) and reused for the rest of
+ * the tab. Closing the chat does not cancel or restart the probe.
  * When the model is downloadable, call `initialize()` to start the download.
  *
  * @example
  * ```tsx
- * const { status, model, initialize, downloadProgress } = useBrowserAI({
- *   enabled: chatOpen,
- * });
+ * const { status, model, initialize, downloadProgress } = useBrowserAI();
  *
  * if (status === "unavailable") {
  *   return <p>Your browser doesn't support local AI</p>;
@@ -133,7 +130,8 @@ export function useBrowserAI({ enabled = true }: UseBrowserAIOptions = {}): UseB
     };
   }, []);
 
-  // First open starts the probe. Later opens reuse it; closing does not abort.
+  // Probe on mount so local/auto is resolved before the panel opens. Gating on
+  // the open state started a cloud session first, then swapped to local.
   useEffect(() => {
     if (!enabled || !supported || probeStartedRef.current) return;
     probeStartedRef.current = true;
