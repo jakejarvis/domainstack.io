@@ -32,6 +32,10 @@ export const SUBSCRIPTION_QUERY_KEY = ["user", "getSubscription"] as const;
 
 type ListDomainsInput = { includeArchived?: boolean } | undefined;
 
+function listDomainsQueryKey(input?: ListDomainsInput) {
+  return input === undefined ? DOMAINS_QUERY_KEY : ([...DOMAINS_QUERY_KEY, input] as const);
+}
+
 let domainsState: TrackedDomainWithDetails[] = [];
 
 export function setDomainsState(items: TrackedDomainWithDetails[]) {
@@ -423,9 +427,9 @@ export function useTRPC() {
         }),
       },
       listDomains: {
-        queryKey: () => DOMAINS_QUERY_KEY,
+        queryKey: listDomainsQueryKey,
         queryOptions: (input?: ListDomainsInput) => ({
-          queryKey: [...DOMAINS_QUERY_KEY, input] as const,
+          queryKey: listDomainsQueryKey(input),
           queryFn: () => listDomainsQuery(input),
         }),
       },
