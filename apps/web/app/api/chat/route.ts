@@ -26,6 +26,7 @@ import { checkRateLimit } from "@/lib/ratelimit/api";
 import { chatWorkflow } from "@/workflows/chat";
 import { auth } from "@domainstack/auth/server";
 import {
+  MAX_CHAT_REQUEST_BYTES,
   MAX_CONVERSATION_MESSAGES,
   RATE_LIMIT_ANONYMOUS,
   RATE_LIMIT_AUTHENTICATED,
@@ -63,10 +64,36 @@ export async function POST(request: Request) {
     return rateLimit.error;
   }
 
+  const contentLength = Number(request.headers.get("content-length"));
+  if (Number.isFinite(contentLength) && contentLength > MAX_CHAT_REQUEST_BYTES) {
+    return NextResponse.json(
+      { error: "Request body too large" },
+      { status: 413, headers: { ...rateLimit.headers } },
+    );
+  }
+
   // Parse and validate request body
+  let rawBody: string;
+  try {
+    rawBody = await request.text();
+  } catch (err) {
+    logger.warn({ err }, "failed to read chat request body");
+    return NextResponse.json(
+      { error: "Invalid request body" },
+      { status: 400, headers: { ...rateLimit.headers } },
+    );
+  }
+
+  if (rawBody.length > MAX_CHAT_REQUEST_BYTES) {
+    return NextResponse.json(
+      { error: "Request body too large" },
+      { status: 413, headers: { ...rateLimit.headers } },
+    );
+  }
+
   let body: unknown;
   try {
-    body = await request.json();
+    body = JSON.parse(rawBody);
   } catch (err) {
     logger.warn({ err }, "invalid JSON in chat request body");
     return NextResponse.json(

@@ -30,7 +30,7 @@ import {
   ToolOutput,
 } from "@/components/ai-elements/tool";
 import { type UseBrowserAIResult } from "@/hooks/use-browser-ai";
-import { getDomainToolStatus } from "@/lib/chat/domain-tools";
+import { getDomainToolStatus, getToolPartType } from "@/lib/chat/domain-tools";
 import {
   getMessagePartItems,
   hasVisibleAssistantParts,
@@ -185,11 +185,12 @@ export function ChatPanel({
                         }
                         if (isToolPart(part) && showToolCalls) {
                           const toolPart = part as ToolUIPart;
+                          const statusType = getToolPartType(part) as ToolUIPart["type"];
                           return (
                             <Tool key={key}>
                               <ToolHeader
-                                title={getDomainToolStatus(toolPart.type)}
-                                type={toolPart.type}
+                                title={getDomainToolStatus(statusType)}
+                                type={statusType}
                                 state={toolPart.state}
                               />
                               <ToolContent>

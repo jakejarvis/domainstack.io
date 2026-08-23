@@ -1,7 +1,13 @@
 /* @vitest-environment node */
 import { describe, expect, it } from "vitest";
 
-import { MAX_CONVERSATION_MESSAGES, MAX_MESSAGE_LENGTH } from "@domainstack/constants";
+import {
+  MAX_ASSISTANT_PART_CHARS,
+  MAX_ASSISTANT_PARTS,
+  MAX_ASSISTANT_TEXT_LENGTH,
+  MAX_CONVERSATION_MESSAGES,
+  MAX_MESSAGE_LENGTH,
+} from "@domainstack/constants";
 
 import { chatRequestSchema } from "./request-schema";
 
@@ -151,6 +157,91 @@ describe("chatRequestSchema", () => {
       toolCallId: "call-1",
       state: "output-available",
     });
+  });
+
+  it("rejects an oversized assistant part type", () => {
+    const result = chatRequestSchema.safeParse({
+      messages: [
+        userMessage("hello"),
+        {
+          id: "assistant-1",
+          role: "assistant",
+          parts: [{ type: "x".repeat(65) }],
+        },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects assistant text over the assistant character limit", () => {
+    const result = chatRequestSchema.safeParse({
+      messages: [
+        userMessage("what is the registrar?"),
+        {
+          id: "assistant-1",
+          role: "assistant",
+          parts: [{ type: "text", text: "x".repeat(MAX_ASSISTANT_TEXT_LENGTH + 1) }],
+        },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+    if (result.success) return;
+
+    expect(
+      result.error.issues.some((issue) =>
+        issue.message.includes(String(MAX_ASSISTANT_TEXT_LENGTH)),
+      ),
+    ).toBe(true);
+  });
+
+  it("rejects an assistant part whose serialized size exceeds the cap", () => {
+    const result = chatRequestSchema.safeParse({
+      messages: [
+        userMessage("look up example.com"),
+        {
+          id: "assistant-1",
+          role: "assistant",
+          parts: [
+            {
+              type: "tool-get_registration",
+              output: "x".repeat(MAX_ASSISTANT_PART_CHARS),
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+    if (result.success) return;
+
+    expect(
+      result.error.issues.some((issue) => issue.message.includes(String(MAX_ASSISTANT_PART_CHARS))),
+    ).toBe(true);
+  });
+
+  it("rejects too many assistant parts", () => {
+    const result = chatRequestSchema.safeParse({
+      messages: [
+        userMessage("hello"),
+        {
+          id: "assistant-1",
+          role: "assistant",
+          parts: Array.from({ length: MAX_ASSISTANT_PARTS + 1 }, (_, i) => ({
+            type: "text",
+            text: `part ${i}`,
+          })),
+        },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+    if (result.success) return;
+
+    expect(
+      result.error.issues.some((issue) => issue.message.includes(String(MAX_ASSISTANT_PARTS))),
+    ).toBe(true);
   });
 
   it("rejects a domain longer than 253 characters", () => {

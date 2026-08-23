@@ -6,6 +6,7 @@ import type { RegistrationResponse } from "@domainstack/types";
 import {
   getDomainToolErrorMessage,
   getDomainToolStatus,
+  getToolPartType,
   getTrpcErrorCode,
   type DomainToolResult,
 } from "./domain-tools";
@@ -22,6 +23,23 @@ type _ToolsKeepDistinctData = AssertTrue<
   Equals<RegistrationSuccess, DnsSuccess> extends true ? false : true
 >;
 
+describe("getToolPartType", () => {
+  it("keeps static tool types unchanged", () => {
+    expect(getToolPartType({ type: "tool-get_registration" })).toBe("tool-get_registration");
+  });
+
+  it("uses toolName for dynamic-tool parts", () => {
+    expect(getToolPartType({ type: "dynamic-tool", toolName: "web_search" })).toBe(
+      "tool-web_search",
+    );
+  });
+
+  it("falls back to the part type when dynamic-tool has no name", () => {
+    expect(getToolPartType({ type: "dynamic-tool" })).toBe("dynamic-tool");
+    expect(getToolPartType({ type: "dynamic-tool", toolName: "" })).toBe("dynamic-tool");
+  });
+});
+
 describe("getDomainToolStatus", () => {
   it("strips the tool- prefix and returns the domain tool label", () => {
     expect(getDomainToolStatus("tool-get_registration")).toBe("Looking up WHOIS data");
@@ -33,6 +51,12 @@ describe("getDomainToolStatus", () => {
 
   it("falls back to the stripped name for unknown tools", () => {
     expect(getDomainToolStatus("tool-unknown_lookup")).toBe("unknown_lookup");
+  });
+
+  it("labels a dynamic-tool part from its toolName", () => {
+    expect(
+      getDomainToolStatus(getToolPartType({ type: "dynamic-tool", toolName: "web_search" })),
+    ).toBe("Searching the web");
   });
 });
 

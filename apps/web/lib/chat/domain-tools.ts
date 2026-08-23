@@ -110,6 +110,22 @@ const TRPC_ERROR_CODES = new Set([
 
 export type DomainToolInput = z.infer<typeof domainToolInputSchema>;
 
+/**
+ * Normalize a UI tool part to the `tool-${name}` key used by status labels.
+ * Static tools already use that type; AI SDK dynamic-tool parts store the
+ * name on `toolName` instead.
+ */
+export function getToolPartType(part: { type: string; toolName?: unknown }): string {
+  if (
+    part.type === "dynamic-tool" &&
+    typeof part.toolName === "string" &&
+    part.toolName.length > 0
+  ) {
+    return `tool-${part.toolName}`;
+  }
+  return part.type;
+}
+
 export function getDomainToolStatus(type: string): string {
   const toolName = type.replace(/^tool-/, "");
   return DOMAIN_TOOL_STATUS[toolName as DomainToolName] ?? EXTRA_TOOL_STATUS[toolName] ?? toolName;
