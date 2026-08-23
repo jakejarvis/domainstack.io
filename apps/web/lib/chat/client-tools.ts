@@ -8,8 +8,8 @@
 import type { TRPCClient } from "@trpc/client";
 import { tool, type Tool } from "ai";
 
+import { analytics } from "@/lib/analytics/client";
 import type { AppRouter } from "@/server/routers/_app";
-import { analytics } from "@domainstack/analytics/client";
 
 import {
   DOMAIN_TOOL_DEFS,

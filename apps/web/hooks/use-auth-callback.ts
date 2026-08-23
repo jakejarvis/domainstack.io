@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 
 import { useRouter } from "@/hooks/use-router";
-import { analytics } from "@domainstack/analytics/client";
+import { analytics } from "@/lib/analytics/client";
 import { getAuthErrorMessage, isAccountLinkingError } from "@domainstack/auth";
 import { toast } from "@domainstack/ui/toast";
 

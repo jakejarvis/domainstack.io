@@ -2,11 +2,11 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
+import { analytics } from "@/lib/analytics/client";
 import { useTRPC } from "@/lib/trpc/client";
 import type { AppRouter } from "@/server/routers/_app";
-import { analytics } from "@domainstack/analytics/client";
 import { checkoutEmbed, customer } from "@domainstack/auth/client";
 import { PRO_TIER_INFO } from "@domainstack/polar/products";
 import { toast } from "@domainstack/ui/toast";
@@ -109,6 +109,12 @@ export function useSubscription(options: UseSubscriptionOptions = {}): UseSubscr
     ...trpc.user.getSubscription.queryOptions(),
     enabled,
   });
+
+  useEffect(() => {
+    if (query.data?.plan) {
+      analytics.setPersonProperties({ tier: query.data.plan });
+    }
+  }, [query.data?.plan]);
 
   const invalidate = useCallback(() => {
     void queryClient.invalidateQueries({

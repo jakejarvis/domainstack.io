@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 
+import { analytics } from "@/lib/analytics/client";
 import { useTRPC } from "@/lib/trpc/client";
 import { createInitialState, verificationReducer } from "@/lib/verification-state";
-import { analytics } from "@domainstack/analytics/client";
 import type { VerificationMethod } from "@domainstack/constants";
 import type { ResumeDomainData } from "@domainstack/types";
 import { toast } from "@domainstack/ui/toast";

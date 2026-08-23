@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-import { analytics } from "@domainstack/analytics/client";
+import { analytics } from "@/lib/analytics/client";
 import { useSession } from "@domainstack/auth/client";
 
 /**
@@ -20,25 +20,22 @@ export function PostHogIdentityProvider({ children }: { children: React.ReactNod
     const currentUserId = session?.user?.id ?? null;
     const previousUserId = previousUserIdRef.current;
 
-    // User logged in or session hydrated with user
+    // User logged in, session hydrated, or account switched
     if (currentUserId && currentUserId !== previousUserId) {
-      // Only identify if not already identified with this user
-      if (!analytics.isIdentified()) {
-        const user = session?.user;
-        if (user) {
-          analytics.identify(
-            user.id,
-            // $set properties (can change)
-            {
-              email: user.email,
-              name: user.name,
-            },
-            // $set_once properties (immutable)
-            {
-              createdAt: user.createdAt ? new Date(user.createdAt).toISOString() : undefined,
-            },
-          );
-        }
+      const user = session?.user;
+      if (user) {
+        analytics.identify(
+          user.id,
+          // $set properties (can change)
+          {
+            email: user.email,
+            name: user.name,
+          },
+          // $set_once properties (immutable)
+          {
+            createdAt: user.createdAt ? new Date(user.createdAt).toISOString() : undefined,
+          },
+        );
       }
     }
 

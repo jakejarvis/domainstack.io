@@ -30,6 +30,7 @@ import { SeoSectionSkeleton } from "@/components/domain/seo/seo-section-skeleton
 import { DomainUnregisteredCard } from "@/components/domain/unregistered-card";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSectionTracking } from "@/hooks/use-section-tracking";
+import { analytics } from "@/lib/analytics/client";
 import { HEADER_HEIGHT, SCROLL_PADDING, SECTION_NAV_HEIGHT } from "@/lib/constants/layout";
 import { sections } from "@/lib/constants/sections";
 import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
@@ -167,6 +168,15 @@ export function DomainReportClient({ domain }: { domain: string }) {
       addDomainToHistory(domain);
     }
   }, [isRegistered, domain, addDomainToHistory]);
+
+  const viewedDomainRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (viewedDomainRef.current === domain) {
+      return;
+    }
+    viewedDomainRef.current = domain;
+    analytics.track("report_viewed", { domain });
+  }, [domain]);
 
   const headerRef = useRef<HTMLDivElement>(null);
   const sectionIds = Object.keys(sections);

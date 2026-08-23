@@ -5,8 +5,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { analytics } from "@/lib/analytics/client";
 import { parseRetryAfterHeader } from "@/lib/ratelimit/client";
-import { analytics } from "@domainstack/analytics/client";
 import { Spinner } from "@domainstack/ui/spinner";
 import { toast } from "@domainstack/ui/toast";
 import { cn } from "@domainstack/ui/utils";

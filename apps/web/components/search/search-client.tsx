@@ -9,8 +9,8 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { useIsClient } from "@/hooks/use-is-client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useRouter } from "@/hooks/use-router";
+import { analytics } from "@/lib/analytics/client";
 import { pendingDomainAtom } from "@/lib/atoms/search-atoms";
-import { analytics } from "@domainstack/analytics/client";
 import { Field, FieldLabel } from "@domainstack/ui/field";
 import { Form } from "@domainstack/ui/form";
 import {

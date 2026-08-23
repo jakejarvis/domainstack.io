@@ -3,7 +3,6 @@ import { notFound, redirect } from "next/navigation";
 
 import { DomainReportClient } from "@/components/domain/report-client";
 import { toRegistrableDomain } from "@/lib/normalize-domain";
-import { analytics } from "@domainstack/analytics/server";
 
 export async function generateMetadata({
   params,
@@ -62,9 +61,6 @@ export default async function DomainPage({ params }: { params: Promise<{ domain:
   if (registrable !== decoded) {
     redirect(`/${encodeURIComponent(registrable)}`);
   }
-
-  // Track server-side page view
-  analytics.track("report_viewed", { domain: registrable });
 
   return <DomainReportClient domain={registrable} />;
 }

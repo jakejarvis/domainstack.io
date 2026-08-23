@@ -4,9 +4,9 @@ import { IconDownload } from "@tabler/icons-react";
 import { notifyManager, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { analytics } from "@/lib/analytics/client";
 import { exportDomainData } from "@/lib/json-export";
 import { useTRPC } from "@/lib/trpc/client";
-import { analytics } from "@domainstack/analytics/client";
 import { Button } from "@domainstack/ui/button";
 import { toast } from "@domainstack/ui/toast";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";

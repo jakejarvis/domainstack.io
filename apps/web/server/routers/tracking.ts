@@ -2,9 +2,9 @@ import { TRPCError } from "@trpc/server";
 import { start } from "workflow/api";
 import { z } from "zod";
 
+import { analytics } from "@/lib/analytics/server";
 import { autoVerifyWorkflow } from "@/workflows/auto-verify";
 import { initializeSnapshotWorkflow } from "@/workflows/initialize-snapshot";
-import { analytics } from "@domainstack/analytics/server";
 import { VERIFICATION_METHODS } from "@domainstack/constants";
 import {
   archiveTrackedDomain,
@@ -260,18 +260,6 @@ export const trackingRouter = createTRPCRouter({
               trigger: "manual_verification",
             },
             `workflow failed: ${errorMessage}`,
-          );
-          analytics.track(
-            "workflow_failed",
-            {
-              workflow: "initialize-snapshot-trigger",
-              classification: "fatal",
-              error: errorMessage,
-              trackedDomainId: updated.id,
-              domainId: updated.domainId,
-              trigger: "manual_verification",
-            },
-            "system",
           );
         });
 

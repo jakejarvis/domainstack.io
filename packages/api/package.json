@@ -16,7 +16,6 @@
     "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json"
   },
   "dependencies": {
-    "@domainstack/analytics": "workspace:*",
     "@domainstack/auth": "workspace:*",
     "@domainstack/db": "workspace:*",
     "@domainstack/logger": "workspace:*",

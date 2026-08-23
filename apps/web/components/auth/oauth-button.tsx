@@ -1,7 +1,7 @@
 "use client";
 
+import { useAnalytics } from "@/lib/analytics/client";
 import type { OAuthProvider } from "@/lib/oauth";
-import { useAnalytics } from "@domainstack/analytics/client";
 import { signIn } from "@domainstack/auth/client";
 import { Button } from "@domainstack/ui/button";
 import { Spinner } from "@domainstack/ui/spinner";

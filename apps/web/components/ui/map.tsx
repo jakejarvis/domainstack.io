@@ -35,7 +35,7 @@ import { createPortal } from "react-dom";
 
 import { useIsClient } from "@/hooks/use-is-client";
 import { useTheme } from "@/hooks/use-theme";
-import { analytics } from "@domainstack/analytics/client";
+import { analytics } from "@/lib/analytics/client";
 import { Spinner } from "@domainstack/ui/spinner";
 import { toast } from "@domainstack/ui/toast";
 import { cn } from "@domainstack/ui/utils";

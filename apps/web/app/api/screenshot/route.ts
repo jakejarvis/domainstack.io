@@ -4,7 +4,6 @@ import { getRun, start } from "workflow/api";
 
 import { checkRateLimit } from "@/lib/ratelimit/api";
 import { type ScreenshotWorkflowResult, screenshotWorkflow } from "@/workflows/screenshot";
-import { analytics } from "@domainstack/analytics/server";
 import { getDomainById, getScreenshotByDomainId, isDomainBlocked } from "@domainstack/db/queries";
 import { createLogger } from "@domainstack/logger";
 
@@ -110,10 +109,6 @@ export async function POST(
           }
         }
 
-        analytics.track("screenshot_api_cache_hit", {
-          domain: domain.name,
-        });
-
         return NextResponse.json(
           {
             status: "completed",
@@ -132,11 +127,6 @@ export async function POST(
       { domainId, domain: domain.name, runId: run.runId },
       "screenshot workflow started",
     );
-
-    analytics.track("screenshot_api_workflow_started", {
-      domain: domain.name,
-      runId: run.runId,
-    });
 
     return NextResponse.json(
       {
@@ -188,11 +178,6 @@ export async function GET(
     if (status === "completed") {
       const result = (await run.returnValue) as ScreenshotWorkflowResult;
 
-      analytics.track("screenshot_api_workflow_completed", {
-        runId,
-        success: result.success,
-      });
-
       return NextResponse.json(
         {
           status: "completed",
@@ -206,8 +191,6 @@ export async function GET(
     }
 
     if (status === "failed") {
-      analytics.track("screenshot_api_workflow_failed", { runId });
-
       return NextResponse.json(
         {
           status: "failed",

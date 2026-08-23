@@ -12,7 +12,7 @@ import Link from "next/link";
 
 import { useRouter } from "@/hooks/use-router";
 import { useTheme } from "@/hooks/use-theme";
-import { useAnalytics } from "@domainstack/analytics/client";
+import { useAnalytics } from "@/lib/analytics/client";
 import { signOut, useSession } from "@domainstack/auth/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@domainstack/ui/avatar";
 import { Button } from "@domainstack/ui/button";

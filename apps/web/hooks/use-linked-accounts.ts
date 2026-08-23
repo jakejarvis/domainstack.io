@@ -2,9 +2,9 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { analytics } from "@/lib/analytics/client";
 import { getEnabledProviders, type OAuthProvider } from "@/lib/oauth";
 import { useTRPC } from "@/lib/trpc/client";
-import { analytics } from "@domainstack/analytics/client";
 import { linkSocial, unlinkAccount } from "@domainstack/auth/client";
 import { toast } from "@domainstack/ui/toast";
 
