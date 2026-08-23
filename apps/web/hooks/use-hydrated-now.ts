@@ -9,6 +9,7 @@ import { useSyncExternalStore } from "react";
  */
 let hydratedNow: Date | null = null;
 const listeners = new Set<() => void>();
+let cancelPendingInitializer: (() => void) | null = null;
 
 function subscribe(callback: () => void): () => void {
   listeners.add(callback);
@@ -27,14 +28,20 @@ function getServerSnapshot(): Date | null {
 
 // Initialize on first client-side access
 if (typeof window !== "undefined" && hydratedNow === null) {
+  let cancelled = false;
+  cancelPendingInitializer = () => {
+    cancelled = true;
+  };
   // Use microtask to ensure this runs after initial render
   queueMicrotask(() => {
-    if (hydratedNow === null) {
-      hydratedNow = new Date();
-      // Notify all subscribers
-      for (const listener of listeners) {
-        listener();
-      }
+    cancelPendingInitializer = null;
+    if (cancelled || hydratedNow !== null) {
+      return;
+    }
+    hydratedNow = new Date();
+    // Notify all subscribers
+    for (const listener of listeners) {
+      listener();
     }
   });
 }
@@ -55,6 +62,8 @@ export function useHydratedNow(): Date | null {
 
 /** Test-only: pin or clear the shared clock so suites do not leak wall time. */
 export function resetHydratedNow(date: Date | null = new Date()): void {
+  cancelPendingInitializer?.();
+  cancelPendingInitializer = null;
   hydratedNow = date ? new Date(date.getTime()) : null;
   for (const listener of listeners) {
     listener();

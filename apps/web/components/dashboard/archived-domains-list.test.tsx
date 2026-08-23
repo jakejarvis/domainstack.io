@@ -90,6 +90,8 @@ describe("ArchivedDomainsList", () => {
   });
 
   it("keeps reactivate disabled for Pro at the limit without the upgrade banner", async () => {
+    mockSubscription.plan = "pro";
+    mockSubscription.planQuota = PLAN_QUOTAS.pro;
     mockSubscription.canAddMore = false;
     renderArchivedList([archived]);
 

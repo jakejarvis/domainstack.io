@@ -21,7 +21,20 @@ export function makeProvider(
 }
 
 function cloneProvider(provider: ProviderInfo): ProviderInfo {
-  return { id: provider.id, name: provider.name, domain: provider.domain };
+  return {
+    ...provider,
+    records: provider.records?.map((record) => ({ ...record })),
+    rdapServers: provider.rdapServers ? [...provider.rdapServers] : provider.rdapServers,
+    registrantInfo: provider.registrantInfo
+      ? {
+          ...provider.registrantInfo,
+          contacts: provider.registrantInfo.contacts?.map((c) => ({ ...c })) ?? null,
+        }
+      : provider.registrantInfo,
+    certificateExpiryDate: provider.certificateExpiryDate
+      ? new Date(provider.certificateExpiryDate.getTime())
+      : provider.certificateExpiryDate,
+  };
 }
 
 function cloneDate(date: Date | null | undefined): Date | null {

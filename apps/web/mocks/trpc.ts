@@ -1,7 +1,7 @@
 import { vi } from "vitest";
 
 import type { VerificationMethod } from "@domainstack/constants";
-import type { NotificationData } from "@domainstack/types";
+import type { NotificationData, TrackedDomainWithDetails } from "@domainstack/types";
 
 type AddDomainInput = { domain: string };
 type AddDomainResult = {
@@ -29,6 +29,61 @@ type SendVerificationInstructionsInput = { trackedDomainId: string; recipientEma
 
 export const DOMAINS_QUERY_KEY = ["tracking", "listDomains"] as const;
 export const SUBSCRIPTION_QUERY_KEY = ["user", "getSubscription"] as const;
+
+type ListDomainsInput = { includeArchived?: boolean } | undefined;
+
+let domainsState: TrackedDomainWithDetails[] = [];
+
+export function setDomainsState(items: TrackedDomainWithDetails[]) {
+  domainsState = items.map((item) => ({ ...item }));
+}
+
+export function getDomainsState() {
+  return domainsState;
+}
+
+function defaultListDomains(input?: ListDomainsInput): Promise<TrackedDomainWithDetails[]> {
+  const includeArchived = input?.includeArchived ?? false;
+  if (includeArchived) {
+    return Promise.resolve(domainsState);
+  }
+  return Promise.resolve(domainsState.filter((item) => item.archivedAt == null));
+}
+
+export const listDomainsQuery =
+  vi.fn<(input?: ListDomainsInput) => Promise<TrackedDomainWithDetails[]>>(defaultListDomains);
+
+export type SubscriptionData = {
+  plan: "free" | "pro";
+  planQuota: number;
+  endsAt: Date | null;
+  activeCount: number;
+  archivedCount: number;
+  canAddMore: boolean;
+};
+
+const DEFAULT_SUBSCRIPTION: SubscriptionData = {
+  plan: "pro",
+  planQuota: 100,
+  endsAt: null,
+  activeCount: 0,
+  archivedCount: 0,
+  canAddMore: true,
+};
+
+let subscriptionState: SubscriptionData = { ...DEFAULT_SUBSCRIPTION };
+
+export function setSubscriptionState(data: SubscriptionData) {
+  subscriptionState = { ...data };
+}
+
+export function getSubscriptionState() {
+  return subscriptionState;
+}
+
+export const getSubscriptionQuery = vi.fn<() => Promise<SubscriptionData>>(
+  async () => subscriptionState,
+);
 
 export const addDomainMutation = vi.fn<(input: AddDomainInput) => Promise<AddDomainResult>>(
   async ({ domain }) => ({
@@ -195,7 +250,7 @@ async function defaultListNotifications(
   let start = 0;
   if (input.cursor) {
     const cursorIndex = items.findIndex((item) => item.id === input.cursor);
-    start = cursorIndex >= 0 ? cursorIndex : 0;
+    start = cursorIndex >= 0 ? cursorIndex + 1 : 0;
   }
   const page = items.slice(start, start + limit + 1);
   let nextCursor: string | undefined;
@@ -232,6 +287,14 @@ export const markAllReadMutation = vi.fn<() => Promise<{ count: number }>>(async
 });
 
 export function resetTrpcMocks() {
+  domainsState = [];
+  listDomainsQuery.mockReset();
+  listDomainsQuery.mockImplementation(defaultListDomains);
+
+  subscriptionState = { ...DEFAULT_SUBSCRIPTION };
+  getSubscriptionQuery.mockReset();
+  getSubscriptionQuery.mockImplementation(async () => subscriptionState);
+
   addDomainMutation.mockReset();
   addDomainMutation.mockImplementation(async ({ domain }) => ({
     id: "domain-new",
@@ -361,6 +424,10 @@ export function useTRPC() {
       },
       listDomains: {
         queryKey: () => DOMAINS_QUERY_KEY,
+        queryOptions: (input?: ListDomainsInput) => ({
+          queryKey: DOMAINS_QUERY_KEY,
+          queryFn: () => listDomainsQuery(input),
+        }),
       },
       removeDomain: {
         mutationOptions: () => ({ mutationFn: removeDomainMutation }),
@@ -386,6 +453,10 @@ export function useTRPC() {
     user: {
       getSubscription: {
         queryKey: () => SUBSCRIPTION_QUERY_KEY,
+        queryOptions: () => ({
+          queryKey: SUBSCRIPTION_QUERY_KEY,
+          queryFn: () => getSubscriptionQuery(),
+        }),
       },
       setDomainMuted: {
         mutationOptions: () => ({ mutationFn: setDomainMutedMutation }),

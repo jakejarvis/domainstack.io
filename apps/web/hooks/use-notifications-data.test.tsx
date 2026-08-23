@@ -60,6 +60,7 @@ function renderNotificationsData(options?: {
   items?: NotificationData[];
   filter?: "unread" | "read";
   enabled?: boolean;
+  seedReadList?: boolean;
 }) {
   const items = options?.items ?? [unreadAlpha, unreadBeta, archivedGamma];
   const queryClient = createTestQueryClient();
@@ -73,10 +74,12 @@ function renderNotificationsData(options?: {
     notificationsListQueryKey("unread"),
     makeNotificationsInfiniteData(items.filter((item) => item.readAt === null)),
   );
-  queryClient.setQueryData(
-    notificationsListQueryKey("read"),
-    makeNotificationsInfiniteData(items.filter((item) => item.readAt !== null)),
-  );
+  if (options?.seedReadList !== false) {
+    queryClient.setQueryData(
+      notificationsListQueryKey("read"),
+      makeNotificationsInfiniteData(items.filter((item) => item.readAt !== null)),
+    );
+  }
 
   const view = renderHook(
     () =>
@@ -111,6 +114,20 @@ describe("useNotificationsData", () => {
       expect(result.current.count).toBe(1);
     });
     expect(listNotificationsQuery).not.toHaveBeenCalled();
+  });
+
+  it("fetches the read list via listNotificationsQuery", async () => {
+    const { result } = renderNotificationsData({
+      filter: "read",
+      seedReadList: false,
+    });
+
+    await waitFor(() => {
+      expect(result.current.notifications.map((item) => item.id)).toContain("notif-gamma");
+    });
+    expect(listNotificationsQuery).toHaveBeenCalledWith(
+      expect.objectContaining({ filter: "read" }),
+    );
   });
 
   it("markRead moves the item from inbox to archive and decrements the count", async () => {

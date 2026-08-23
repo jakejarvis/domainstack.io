@@ -176,7 +176,7 @@ describe("useDashboardMutations", () => {
 
     const domains = getDomains(queryClient);
     expect(domains.find((d) => d.id === "domain-alpha")?.archivedAt).toBeInstanceOf(Date);
-    expect(domains.find((d) => d.id === "domain-archived")?.archivedAt).toBeTruthy();
+    expect(domains.find((d) => d.id === "domain-archived")?.archivedAt).toEqual(DASHBOARD_TEST_NOW);
     expect(getSubscription(queryClient)).toMatchObject({
       activeCount: 3,
       archivedCount: 2,
@@ -184,6 +184,15 @@ describe("useDashboardMutations", () => {
     expect(bulkArchiveDomainsMutation.mock.calls[0]?.[0]).toEqual({
       trackedDomainIds: ["domain-alpha", "domain-archived"],
     });
+    expect(toast.add).toHaveBeenCalledWith({ title: "Archived 2 domains", type: "success" });
+  });
+
+  it("toasts requested count when some ids were already archived", async () => {
+    bulkArchiveDomainsMutation.mockResolvedValueOnce({ successCount: 1, failedCount: 0 });
+    const { result } = renderDashboardMutations();
+
+    await result.current.bulkArchive(["domain-alpha", "domain-archived"]);
+
     expect(toast.add).toHaveBeenCalledWith({ title: "Archived 2 domains", type: "success" });
   });
 

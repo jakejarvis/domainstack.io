@@ -9,7 +9,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "next/image": fileURLToPath(new URL("./mocks/next-image.ts", import.meta.url)),
-      "next/link": fileURLToPath(new URL("./mocks/next-link.tsx", import.meta.url)),
+      "next/link": fileURLToPath(new URL("./mocks/next-link.ts", import.meta.url)),
     },
     tsconfigPaths: true,
     dedupe: ["react", "react-dom", "nuqs"],

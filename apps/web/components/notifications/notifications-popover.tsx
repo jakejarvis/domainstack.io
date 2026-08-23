@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { NotificationList } from "@/components/notifications/notification-list";
 import { useNotificationsData } from "@/hooks/use-notifications-data";
 import { useRouter } from "@/hooks/use-router";
+import type { NotificationData } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@domainstack/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@domainstack/ui/tabs";
@@ -19,6 +20,7 @@ export function NotificationsPopover() {
   const [open, setOpen] = useState(false);
   const [, startTransition] = useTransition();
   const autoMarkedThisOpenRef = useRef(false);
+  const skipAutoMarkOnCloseRef = useRef(false);
 
   // Map view to filter parameter
   const filter = view === "inbox" ? "unread" : "read";
@@ -32,6 +34,7 @@ export function NotificationsPopover() {
     isFetchingNextPage,
     isError: isNotificationsError,
     markAllRead,
+    markRead,
     fetchNextPage,
     getLatestUnreadCount,
   } = useNotificationsData({ filter, enabled: open });
@@ -40,6 +43,7 @@ export function NotificationsPopover() {
   useEffect(() => {
     if (open) {
       autoMarkedThisOpenRef.current = false;
+      skipAutoMarkOnCloseRef.current = false;
     }
   }, [open]);
 
@@ -62,6 +66,14 @@ export function NotificationsPopover() {
 
   const closePopover = () => {
     maybeAutoMarkAllRead();
+    setOpen(false);
+  };
+
+  const handleNotificationClick = (notification: NotificationData) => {
+    if (!notification.readAt) {
+      markRead.mutate({ id: notification.id });
+    }
+    skipAutoMarkOnCloseRef.current = true;
     setOpen(false);
   };
 
@@ -98,9 +110,14 @@ export function NotificationsPopover() {
     <Popover
       open={open}
       onOpenChange={(nextOpen) => {
-        // When closing from Inbox with unread notifications, mark them all as read.
+        // When closing from Inbox with unread notifications, mark them all as read
+        // unless this close came from clicking a single notification.
         if (!nextOpen) {
-          maybeAutoMarkAllRead();
+          if (skipAutoMarkOnCloseRef.current) {
+            skipAutoMarkOnCloseRef.current = false;
+          } else {
+            maybeAutoMarkAllRead();
+          }
         }
         setOpen(nextOpen);
       }}
@@ -250,7 +267,7 @@ export function NotificationsPopover() {
             isFetchingNextPage={isFetchingNextPage}
             loadMoreRef={loadMoreRef}
             scrollAreaRef={scrollAreaRef}
-            onNotificationClick={closePopover}
+            onNotificationClick={handleNotificationClick}
             onClosePopover={closePopover}
           />
         </div>

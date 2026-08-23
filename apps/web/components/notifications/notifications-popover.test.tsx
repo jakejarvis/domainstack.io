@@ -27,6 +27,7 @@ import { createTestQueryClient, render, screen, waitFor, within } from "@/mocks/
 import {
   listNotificationsQuery,
   markAllReadMutation,
+  markReadMutation,
   NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY,
   notificationsListQueryKey,
   resetTrpcMocks,
@@ -72,6 +73,10 @@ function renderPopover(items: NotificationData[] = [unreadAlpha, unreadGeneric, 
   return render(<NotificationsPopover />, { queryClient });
 }
 
+function setupUser() {
+  return userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+}
+
 async function openInbox(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole("button", { name: /Notifications/ }));
   expect(await screen.findByRole("heading", { name: "Notifications" })).toBeInTheDocument();
@@ -79,12 +84,15 @@ async function openInbox(user: ReturnType<typeof userEvent.setup>) {
 
 describe("NotificationsPopover", () => {
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-08-24T12:00:00.000Z"));
     resetTrpcMocks();
     nav.push.mockClear();
   });
 
   afterEach(() => {
     resetTrpcMocks();
+    vi.useRealTimers();
   });
 
   it("shows a badge on the bell when there are unread notifications", async () => {
@@ -102,17 +110,17 @@ describe("NotificationsPopover", () => {
   });
 
   it("opens the inbox with unread copy and a relative timestamp", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     renderPopover([unreadAlpha]);
     await openInbox(user);
 
     expect(screen.getByText("alpha.com expires in 7 days")).toBeInTheDocument();
     expect(screen.getByRole("status", { name: "Unread" })).toBeInTheDocument();
-    expect(screen.getByText(/ago/)).toBeInTheDocument();
+    expect(screen.getByText("1 day ago")).toBeInTheDocument();
   });
 
   it("shows distinct empty copy for inbox and archive", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     renderPopover([]);
     await openInbox(user);
 
@@ -126,7 +134,7 @@ describe("NotificationsPopover", () => {
   });
 
   it("shows an error when the list fails to load", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     listNotificationsQuery.mockRejectedValue(new Error("nope"));
     const queryClient = createTestQueryClient();
     setNotificationsState([unreadAlpha]);
@@ -139,7 +147,7 @@ describe("NotificationsPopover", () => {
   });
 
   it("deep-links domain notifications and falls back to the dashboard", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     renderPopover([unreadAlpha, unreadGeneric]);
     await openInbox(user);
 
@@ -153,8 +161,23 @@ describe("NotificationsPopover", () => {
     );
   });
 
+  it("marks only the clicked notification as read", async () => {
+    const user = setupUser();
+    renderPopover([unreadAlpha, unreadGeneric]);
+    await openInbox(user);
+
+    const notificationLink = screen.getByRole("link", { name: /alpha.com expires in 7 days/ });
+    notificationLink.addEventListener("click", (event) => event.preventDefault(), true);
+    await user.click(notificationLink);
+
+    await waitFor(() => {
+      expect(markReadMutation.mock.calls[0]?.[0]).toEqual({ id: "notif-alpha" });
+    });
+    expect(markAllReadMutation).not.toHaveBeenCalled();
+  });
+
   it("clears all unread notifications from Inbox", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     renderPopover([unreadAlpha, unreadGeneric]);
     await openInbox(user);
 
@@ -168,7 +191,7 @@ describe("NotificationsPopover", () => {
   });
 
   it("marks remaining unread as read when switching to Archive", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     renderPopover([unreadAlpha, archivedGamma]);
     await openInbox(user);
 
@@ -182,7 +205,7 @@ describe("NotificationsPopover", () => {
   });
 
   it("marks remaining unread as read when closing Inbox", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     renderPopover([unreadAlpha]);
     await openInbox(user);
 
@@ -195,7 +218,7 @@ describe("NotificationsPopover", () => {
   });
 
   it("closes and navigates to settings", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     renderPopover([unreadAlpha]);
     await openInbox(user);
 
@@ -209,7 +232,7 @@ describe("NotificationsPopover", () => {
   });
 
   it("caps the inbox badge at 99+", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     unreadCountQuery.mockResolvedValue(100);
     const queryClient = createTestQueryClient();
     setNotificationsState([unreadAlpha]);

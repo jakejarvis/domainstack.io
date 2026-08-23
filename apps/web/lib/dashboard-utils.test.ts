@@ -308,7 +308,7 @@ describe("isPagePastEnd", () => {
   });
 });
 
-describe("makeTrackedDomain", () => {
+describe("makeDashboardDomains", () => {
   it("clones providers and dates so mutations stay isolated", () => {
     const [first] = makeDashboardDomains();
     first.registrar.id = "mutated";
@@ -322,6 +322,23 @@ describe("makeTrackedDomain", () => {
     expect(next.createdAt.getUTCFullYear()).toBe(2026);
     expect(next.expirationDate?.getUTCFullYear()).toBe(2027);
     expect(DASHBOARD_TEST_NOW.getUTCFullYear()).toBe(2026);
+  });
+
+  it("preserves extra provider fields and isolates them across clones", () => {
+    const source = makeProvider("cloudflare", "Cloudflare", "cloudflare.com");
+    source.whoisServer = "whois.cloudflare.com";
+    source.records = [{ type: "A", name: "alpha.com", value: "1.2.3.4" }];
+
+    const first = makeTrackedDomain({ registrar: source });
+    expect(first.registrar.whoisServer).toBe("whois.cloudflare.com");
+    expect(first.registrar.records).toEqual([{ type: "A", name: "alpha.com", value: "1.2.3.4" }]);
+
+    first.registrar.whoisServer = "mutated";
+    first.registrar.records![0].value = "9.9.9.9";
+
+    const next = makeTrackedDomain({ registrar: source });
+    expect(next.registrar.whoisServer).toBe("whois.cloudflare.com");
+    expect(next.registrar.records?.[0].value).toBe("1.2.3.4");
   });
 });
 

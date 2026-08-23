@@ -37,7 +37,7 @@ function toastBulkResult(
 ) {
   if (result.failedCount === 0) {
     toast.add({
-      title: `${verb} ${result.successCount} domain${result.successCount === 1 ? "" : "s"}`,
+      title: `${verb} ${requestedCount} domain${requestedCount === 1 ? "" : "s"}`,
       type: "success",
     });
     return;
@@ -299,7 +299,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
       }
 
       queryClient.setQueriesData({ queryKey: domainsQueryKey }, (old: DomainsData) =>
-        old?.map((d) => (idsSet.has(d.id) ? { ...d, archivedAt: new Date() } : d)),
+        old?.map((d) => (idsSet.has(d.id) && !d.archivedAt ? { ...d, archivedAt: new Date() } : d)),
       );
       queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) => {
         if (!old) return old;

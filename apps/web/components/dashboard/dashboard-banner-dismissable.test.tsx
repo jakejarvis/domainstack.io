@@ -19,6 +19,9 @@ describe("DashboardBannerDismissable", () => {
       />,
     );
 
+    const banner = screen.getByText("Welcome to Pro!").closest("[data-slot=card]");
+    expect(banner).toBeTruthy();
+    await user.hover(banner!);
     await user.click(screen.getByRole("button", { name: "Dismiss" }));
 
     await waitFor(() => {
