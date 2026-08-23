@@ -425,7 +425,7 @@ export function useTRPC() {
       listDomains: {
         queryKey: () => DOMAINS_QUERY_KEY,
         queryOptions: (input?: ListDomainsInput) => ({
-          queryKey: DOMAINS_QUERY_KEY,
+          queryKey: [...DOMAINS_QUERY_KEY, input] as const,
           queryFn: () => listDomainsQuery(input),
         }),
       },

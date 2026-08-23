@@ -323,7 +323,9 @@ describe("makeDashboardDomains", () => {
     expect(next.expirationDate?.getUTCFullYear()).toBe(2027);
     expect(DASHBOARD_TEST_NOW.getUTCFullYear()).toBe(2026);
   });
+});
 
+describe("makeTrackedDomain", () => {
   it("preserves extra provider fields and isolates them across clones", () => {
     const source = makeProvider("cloudflare", "Cloudflare", "cloudflare.com");
     source.whoisServer = "whois.cloudflare.com";
