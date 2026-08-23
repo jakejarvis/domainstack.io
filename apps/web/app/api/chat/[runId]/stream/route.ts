@@ -12,6 +12,7 @@ import { createModelCallToUIChunkTransform } from "@ai-sdk/workflow";
 import { createUIMessageStreamResponse } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 import { getRun } from "workflow/api";
+import { RunExpiredError, WorkflowRunNotFoundError, WorkflowWorldError } from "workflow/errors";
 
 import { checkRateLimit } from "@/lib/ratelimit/api";
 import { auth } from "@domainstack/auth/server";
@@ -78,16 +79,26 @@ export async function GET(
       },
     });
   } catch (err) {
-    const error = err instanceof Error ? err : new Error(String(err));
-    // getRun reports completed/expired runs as 400/Bad Request.
-    const completedOrExpired =
-      error.message.includes("400") || error.message.includes("Bad Request");
-
-    if (completedOrExpired) {
+    // Completed runs are reported as a 400 WorkflowWorldError.
+    if (WorkflowWorldError.is(err) && err.status === 400) {
       logger.debug({ runId }, "chat stream reconnection to completed workflow");
       return NextResponse.json(
         { error: "Chat session completed or expired." },
         { status: 410, headers: { ...rateLimit.headers } },
+      );
+    }
+
+    // Missing or expired runs should not be treated as unexpected 500s.
+    if (
+      WorkflowRunNotFoundError.is(err) ||
+      RunExpiredError.is(err) ||
+      (err instanceof Error && err.name === "StreamExpiredError") ||
+      (WorkflowWorldError.is(err) && (err.status === 404 || err.status === 410))
+    ) {
+      logger.debug({ runId }, "chat stream reconnection to unavailable workflow");
+      return NextResponse.json(
+        { error: "Chat session completed or expired." },
+        { status: 404, headers: { ...rateLimit.headers } },
       );
     }
 

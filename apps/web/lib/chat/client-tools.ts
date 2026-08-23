@@ -6,35 +6,61 @@
  */
 
 import type { TRPCClient } from "@trpc/client";
+import type { inferRouterOutputs } from "@trpc/server";
 import { tool, type Tool } from "ai";
 
 import type { AppRouter } from "@/server/routers/_app";
 
-import { DOMAIN_TOOL_DEFS, domainToolInputSchema, getDomainToolErrorMessage } from "./domain-tools";
+import {
+  DOMAIN_TOOL_DEFS,
+  domainToolInputSchema,
+  getDomainToolErrorMessage,
+  type DomainToolInput,
+  type DomainToolProcedure,
+} from "./domain-tools";
 
 type TRPCClientType = TRPCClient<AppRouter>;
+type DomainOutputs = inferRouterOutputs<AppRouter>["domain"];
 
-export function createClientDomainTools(trpc: TRPCClientType) {
+type DomainToolResult<P extends DomainToolProcedure> = DomainOutputs[P] extends {
+  success: true;
+  data: infer D;
+}
+  ? D | { error: string }
+  : { error: string };
+
+type ClientDomainToolSet = {
+  [Def in (typeof DOMAIN_TOOL_DEFS)[number] as Def["name"]]: Tool<
+    DomainToolInput,
+    DomainToolResult<Def["procedure"]>
+  >;
+};
+
+function makeClientDomainTool<TDef extends (typeof DOMAIN_TOOL_DEFS)[number]>(
+  trpc: TRPCClientType,
+  def: TDef,
+) {
+  return tool({
+    description: def.description,
+    inputSchema: domainToolInputSchema,
+    execute: async ({ domain }: DomainToolInput) => {
+      try {
+        const result = await trpc.domain[def.procedure].query({ domain });
+        if (!result.success) {
+          return { error: result.error };
+        }
+        return result.data;
+      } catch (err) {
+        return { error: getDomainToolErrorMessage(err) };
+      }
+    },
+  });
+}
+
+export function createClientDomainTools(trpc: TRPCClientType): ClientDomainToolSet {
   return Object.fromEntries(
-    DOMAIN_TOOL_DEFS.map((def) => [
-      def.name,
-      tool({
-        description: def.description,
-        inputSchema: domainToolInputSchema,
-        execute: async ({ domain }: { domain: string }) => {
-          try {
-            const result = await trpc.domain[def.procedure].query({ domain });
-            if (!result.success) {
-              return { error: result.error };
-            }
-            return result.data;
-          } catch (err) {
-            return { error: getDomainToolErrorMessage(err) };
-          }
-        },
-      }),
-    ]),
-  ) as Record<(typeof DOMAIN_TOOL_DEFS)[number]["name"], Tool>;
+    DOMAIN_TOOL_DEFS.map((def) => [def.name, makeClientDomainTool(trpc, def)]),
+  ) as ClientDomainToolSet;
 }
 
 export type ClientDomainTools = ReturnType<typeof createClientDomainTools>;

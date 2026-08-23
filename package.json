@@ -2,14 +2,14 @@
   "name": "domainstack",
   "version": "0.0.0-beta.1",
   "private": true,
-  "license": "MIT",
   "homepage": "https://domainstack.io",
-  "repository": "jakejarvis/domainstack.io",
+  "license": "MIT",
   "author": {
     "name": "Jake Jarvis",
     "email": "jake@jarv.is",
     "url": "https://github.com/jakejarvis"
   },
+  "repository": "jakejarvis/domainstack.io",
   "type": "module",
   "scripts": {
     "dev": "turbo run dev",
@@ -38,5 +38,5 @@
   "engines": {
     "node": ">=24.x"
   },
-  "packageManager": "pnpm@11.22.0"
+  "packageManager": "pnpm@11.23.0"
 }

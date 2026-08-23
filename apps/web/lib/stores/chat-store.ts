@@ -5,8 +5,10 @@ import { useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { MAX_CONVERSATION_MESSAGES } from "@domainstack/constants";
+
 interface ChatState {
-  /** In-memory only — used to reconnect a live stream, never restored. */
+  /** Live workflow run ID; persisted so a reload can resume an in-flight stream. */
   runId: string | null;
   messages: UIMessage[];
 }
@@ -20,7 +22,7 @@ interface ChatActions {
 type ChatStore = ChatState & ChatActions;
 
 /**
- * Chat store for session persistence (messages) and in-memory stream resume (runId).
+ * Chat store for session persistence (messages and in-flight stream resume).
  */
 const chatStore = create<ChatStore>()(
   persist(
@@ -36,7 +38,8 @@ const chatStore = create<ChatStore>()(
       name: "chat",
       version: 2,
       partialize: (state) => ({
-        messages: state.messages,
+        runId: state.runId,
+        messages: state.messages.slice(-MAX_CONVERSATION_MESSAGES),
       }),
       migrate: (persisted) => {
         const state = persisted as Partial<ChatState>;

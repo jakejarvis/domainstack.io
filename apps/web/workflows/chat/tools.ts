@@ -6,7 +6,8 @@
  * to keep them out of the workflow sandbox.
  */
 
-import { tool } from "ai";
+import type { inferRouterOutputs } from "@trpc/server";
+import { tool, type Tool } from "ai";
 import { z } from "zod";
 
 import {
@@ -15,9 +16,10 @@ import {
   domainToolInputSchema,
   getDomainToolErrorMessage,
   getTrpcErrorCode,
-  type DomainToolName,
+  type DomainToolInput,
   type DomainToolProcedure,
 } from "@/lib/chat/domain-tools";
+import type { AppRouter } from "@/server/routers/_app";
 
 export interface ToolContext {
   ip: string | null;
@@ -26,6 +28,23 @@ export interface ToolContext {
 const toolContextSchema = z.object({
   ip: z.string().nullable(),
 });
+
+type DomainOutputs = inferRouterOutputs<AppRouter>["domain"];
+
+type DomainToolResult<P extends DomainToolProcedure> = DomainOutputs[P] extends {
+  success: true;
+  data: infer D;
+}
+  ? D | { error: string }
+  : { error: string };
+
+type DomainToolSet = {
+  [Def in (typeof DOMAIN_TOOL_DEFS)[number] as Def["name"]]: Tool<
+    DomainToolInput,
+    DomainToolResult<Def["procedure"]>,
+    ToolContext
+  >;
+};
 
 async function domainLookupStep(procedure: DomainToolProcedure, domain: string, ctx: ToolContext) {
   "use step";
@@ -66,10 +85,10 @@ function makeDomainTool(def: (typeof DOMAIN_TOOL_DEFS)[number]) {
   });
 }
 
-export function createDomainToolset() {
+export function createDomainToolset(): DomainToolSet {
   return Object.fromEntries(
     DOMAIN_TOOL_DEFS.map((def) => [def.name, makeDomainTool(def)]),
-  ) as Record<DomainToolName, ReturnType<typeof makeDomainTool>>;
+  ) as DomainToolSet;
 }
 
 export { createDomainToolsContext };

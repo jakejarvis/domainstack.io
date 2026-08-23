@@ -7,28 +7,32 @@
 1. `pnpm lint` — Must pass with zero warnings
 2. `pnpm fmt:check` — Must pass with zero warnings
 3. `pnpm check-types` — Must pass with zero warnings
-3. `pnpm test` — Must pass with zero warnings
+4. `pnpm test` — Must pass with zero warnings
 
 Do not proceed with commits until all four checks are clean.
 
 ## Commands
 
 ### Development
+
 - `pnpm dev` — Start Next.js dev server at http://localhost:3000
 - `pnpm build` — Compile production bundle
 - `pnpm check-types` — Run `tsc --noEmit` for type diagnostics
 
 ### Linting & Formatting
+
 - `pnpm lint` — Run oxlint lint
 - `pnpm fmt` — Apply oxfmt formatting
 
 ### Testing
+
 - `pnpm test` — Run all tests once
 - `pnpm test path/to/file.test.ts` — Run a single test file
 - `pnpm test -t "test name"` — Run tests matching a pattern
 - `pnpm test:coverage` — Run tests with coverage report
 
 ### Database
+
 - `pnpm db:generate` — Generate Drizzle migrations
 - `pnpm db:push` — Push schema to database
 - `pnpm db:migrate` — Apply migrations
@@ -37,29 +41,34 @@ Do not proceed with commits until all four checks are clean.
 ## Code Style
 
 ### General
+
 - TypeScript only, `strict` enabled
 - 2-space indentation (oxfmt enforces)
 - Prefer small, pure modules
 - Node.js >= 24 required
 
 ### Naming Conventions
+
 - **Files/folders:** kebab-case (`user-settings.ts`)
 - **React components:** PascalCase exports (`UserSettings`)
 - **Helpers/hooks:** camelCase named exports (`useUserSettings`)
 
 ### Imports
+
 - Use `@/...` path aliases for app-specific imports
 - Import shared UI components from `@domainstack/ui/*` (e.g., `@domainstack/ui/button`)
 - oxfmt auto-organizes imports on save
 - Client components must start with `"use client"`
 
 ### Types
+
 - Shared domain types in `@domainstack/types` package
 - Enum const arrays (primitives) in `@domainstack/constants` (Drizzle pgEnums derive from these)
 - Do NOT use Zod for simple enums or internal database types
 - Import types from `@domainstack/types`
 
 ### Tailwind Classes
+
 - oxfmt enforces sorted Tailwind classes via `useSortedClasses` rule
 - Use `cn()` from `@domainstack/ui/utils` for conditional classes
 
@@ -218,25 +227,27 @@ Concise rules for building accessible, fast, delightful UIs. Use MUST/SHOULD/NEV
 ## Error Handling
 
 ### Workflow Steps
+
 Use `lib/workflow/errors.ts` utilities for proper error classification:
+
 ```typescript
 import { classifyFetchError, withFetchErrorHandling } from "@/lib/workflow";
 
 async function fetchDataStep(domain: string): Promise<Data> {
   "use step";
-  return await withFetchErrorHandling(
-    () => fetchData(domain),
-    { context: `fetching ${domain}` }
-  );
+  return await withFetchErrorHandling(() => fetchData(domain), { context: `fetching ${domain}` });
 }
 ```
 
 Error classification:
+
 - **FatalError** (don't retry): DNS errors, TLS errors, invalid URLs, blocked hosts
 - **RetryableError** (retry with backoff): Timeouts, network errors, server errors
 
 ### Custom Error Classes
+
 Create domain-specific errors with typed codes:
+
 ```typescript
 export class SafeFetchError extends Error {
   constructor(
@@ -250,14 +261,18 @@ export class SafeFetchError extends Error {
 ```
 
 ### tRPC Errors
+
 Use `TRPCError` with appropriate codes:
+
 ```typescript
 throw new TRPCError({ code: "UNAUTHORIZED", message: "Not authenticated" });
 throw new TRPCError({ code: "NOT_FOUND", message: "Domain not found" });
 ```
 
 ### Rate Limiting
+
 Use Upstash Redis for rate limiting via the `withRateLimit` middleware:
+
 ```typescript
 import { publicProcedure, withRateLimit } from "@/trpc/init";
 
@@ -280,6 +295,7 @@ export const myRouter = createTRPCRouter({
 ## Logging
 
 Server-side only using Pino (object-first API):
+
 ```typescript
 import { createLogger } from "@domainstack/logger";
 const logger = createLogger({ source: "dns" });
@@ -293,17 +309,20 @@ Client-side: Use `analytics.trackException(error, context)` for errors.
 ## Testing Patterns
 
 ### File Organization
+
 - Node tests: `**/*.test.ts` (run in Node environment)
 - Browser tests: `**/*.test.tsx` (run in Playwright browser)
 - Tests live next to the code they test
 
 ### Mocking
+
 - Analytics and logger are globally mocked in `vitest.setup.node.ts`
 - Use `vi.hoisted` for ESM module mocks
 - Use PGlite (`@/lib/db/pglite`) for isolated database testing
 - Mock `@vercel/blob` for storage tests
 
 ### Example Test
+
 ```typescript
 import { describe, expect, it, vi } from "vitest";
 
@@ -359,17 +378,20 @@ All commands run from the **monorepo root** via Turborepo.
 ### Package Imports
 
 **Constants** (`@domainstack/constants`):
+
 ```typescript
 // Pure constants - no runtime dependencies
 import { DNS_RECORD_TYPES, PLANS, REPOSITORY_SLUG } from "@domainstack/constants";
 ```
 
 **Types** (`@domainstack/types`):
+
 ```typescript
 import type { DnsRecord, RegistrationResponse, Certificate } from "@domainstack/types";
 ```
 
 **UI Components** (`@domainstack/ui`):
+
 ```typescript
 import { Button } from "@domainstack/ui/button";
 import { Card, CardHeader, CardContent } from "@domainstack/ui/card";
@@ -378,12 +400,15 @@ import { useMediaQuery } from "@domainstack/ui/hooks";
 ```
 
 **App-specific wrappers** (in `apps/web/components/ui/`):
+
 - `sonner.tsx` — Configures toast notifications with theme support
 
 ## Key Patterns
 
 ### SWR Caching
+
 Repository functions return `CacheResult<T>` with staleness metadata:
+
 ```typescript
 const { data, stale } = await getRegistration("example.com");
 if (stale) {
@@ -392,15 +417,16 @@ if (stale) {
 ```
 
 ### Workflow Concurrency
+
 Use deduplication for concurrent requests:
+
 ```typescript
 import { startWithDeduplication, getDeduplicationKey } from "@/lib/workflow";
 import { start } from "workflow/api";
 
 const key = getDeduplicationKey("registration", domain);
-const { result, deduplicated, source } = await startWithDeduplication(
-  key,
-  () => start(registrationWorkflow, [{ domain }]),
+const { result, deduplicated, source } = await startWithDeduplication(key, () =>
+  start(registrationWorkflow, [{ domain }]),
 );
 // result: T - the workflow return value
 // deduplicated: boolean - true if attached to existing run
@@ -408,6 +434,7 @@ const { result, deduplicated, source } = await startWithDeduplication(
 ```
 
 ### Protected tRPC Procedures
+
 ```typescript
 import { protectedProcedure } from "@/trpc/init";
 
@@ -419,6 +446,7 @@ export const myRouter = createTRPCRouter({
 ```
 
 ### Optimistic Updates (TanStack Query)
+
 ```typescript
 const mutation = useMutation({
   ...trpc.tracking.removeDomain.mutationOptions(),
@@ -441,53 +469,54 @@ Use `useSuspenseQuery` for declarative data fetching with React Suspense boundar
 Exemplar: `components/domain/report-client.tsx`
 
 **When to use Suspense:**
+
 - Simple read-only queries without `enabled` flag
 - Components that render data immediately (no conditional logic)
 - Parallel independent data sections that can load separately
 
 **When NOT to use Suspense:**
+
 - Queries with `enabled` option (conditional fetching)
 - Hooks with mutations and optimistic updates (e.g., `useTrackedDomains`)
 - Lazy-loaded data (hover triggers, infinite scroll)
 - Polling-based queries
 
 **Pattern:**
+
 ```tsx
 // Parent wraps with boundaries
 <ErrorBoundary fallback={<ErrorFallback />}>
   <Suspense fallback={<MySkeleton />}>
     <MyComponent />
   </Suspense>
-</ErrorBoundary>
+</ErrorBoundary>;
 
 // Component uses useSuspenseQuery - data is guaranteed non-null
 function MyComponent() {
-  const { data } = useSuspenseQuery(
-    trpc.myRouter.myQuery.queryOptions()
-  );
+  const { data } = useSuspenseQuery(trpc.myRouter.myQuery.queryOptions());
   return <div>{data.value}</div>;
 }
 ```
 
 **Parallel queries:**
+
 ```tsx
 function MyComponent() {
   const [query1, query2] = useSuspenseQueries({
-    queries: [
-      trpc.router1.query1.queryOptions(),
-      trpc.router2.query2.queryOptions(),
-    ],
+    queries: [trpc.router1.query1.queryOptions(), trpc.router2.query2.queryOptions()],
   });
   // Both are guaranteed to have data
 }
 ```
 
 **Error boundaries:**
+
 - Use `SectionErrorBoundary` for domain report sections
 - Use `SettingsErrorBoundary` for settings panels
 - Create context-specific boundaries with `CreateIssueButton` for error reporting
 
 **Skeleton requirements:**
+
 - MUST mirror final content layout to prevent CLS
 - Export skeleton components for reuse (e.g., `CalendarInstructionsSkeleton`)
 
@@ -496,24 +525,29 @@ function MyComponent() {
 The AI chat assistant (`components/chat/`) provides natural language domain lookups using Vercel's Workflow SDK.
 
 ### Architecture
+
 - **Client**: `useChat` + `WorkflowChatTransport` (`@ai-sdk/workflow`) with Zustand session persistence
 - **API**: `POST /api/chat` starts workflow, returns streaming response; `GET /api/chat/:runId/stream` reconnects
 - **Workflow**: `workflows/chat/workflow.ts` uses `WorkflowAgent` from `@ai-sdk/workflow` for durable tool execution
 - **Tools**: `workflows/chat/tools.ts` defines domain lookup tools (WHOIS, DNS, SSL, etc.)
 
 ### Constants (`packages/constants/src/ai.ts`)
+
 All chat limits are centralized for client/server consistency.
 
 ### Rate Limits
+
 Differentiated by auth status and endpoint.
 
 ### Security Layers
+
 1. **Rate limiting**: Per-user/IP via Upstash Redis
 2. **Input validation**: Zod schema validates message structure and length
 3. **Conversation truncation**: Only last N messages sent to model
 4. **System prompt defense**: Refuses off-topic questions, ignores override attempts
 
 ### Adding New Tools
+
 1. Define tool in `workflows/chat/tools.ts` using `createDomainToolset()`
 2. Add human-readable title in `components/chat/utils.ts` (`TOOL_TITLES`)
 3. Tools call tRPC procedures which have their own rate limits

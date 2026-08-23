@@ -1,9 +1,7 @@
-import type { UIMessage } from "ai";
+import type { ChatStatus, UIMessage } from "ai";
 import { useEffect, useRef } from "react";
 
 import { useChatHydrated, useChatStore } from "@/lib/stores/chat-store";
-
-type ChatStatus = "submitted" | "streaming" | "ready" | "error";
 
 interface UseChatPersistenceOptions {
   messages: UIMessage[];
@@ -13,8 +11,8 @@ interface UseChatPersistenceOptions {
 
 /**
  * Restores cloud chat messages from the Zustand store after hydration,
- * persists subsequent changes, and clears the in-memory runId when a
- * stream finishes (backup for onChatEnd).
+ * persists subsequent changes, and clears the runId when a stream
+ * finishes or errors (backup for onChatEnd).
  */
 export function useChatPersistence({
   messages,
@@ -63,7 +61,7 @@ export function useChatPersistence({
     const wasStreaming = prevStatusRef.current === "streaming";
     prevStatusRef.current = status;
 
-    if (wasStreaming && status === "ready" && runId) {
+    if (wasStreaming && (status === "ready" || status === "error") && runId) {
       setRunId(null);
     }
   }, [status, runId, setRunId]);

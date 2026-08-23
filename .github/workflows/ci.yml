@@ -20,16 +20,13 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: pnpm/setup@v2
         with:
-          node-version: "24"
-          cache: "pnpm"
+          runtime: node@22
+          cache: true
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -50,6 +47,6 @@ jobs:
         run: pnpm test:coverage
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

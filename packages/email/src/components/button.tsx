@@ -1,4 +1,4 @@
-import { Button, Section } from "@react-email/components";
+import { Button, Section } from "react-email";
 
 type EmailButtonProps = {
   href: string;

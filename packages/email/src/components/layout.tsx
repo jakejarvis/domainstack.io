@@ -1,4 +1,4 @@
-import { Body, Container, Head, Html, Img, Preview } from "@react-email/components";
+import { Body, Container, Head, Html, Img, Preview } from "react-email";
 
 import { RESEND_LOGO_CONTENT_ID } from "@domainstack/constants";
 

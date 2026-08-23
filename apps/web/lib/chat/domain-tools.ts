@@ -64,9 +64,43 @@ const DOMAIN_TOOL_STATUS = Object.fromEntries(
   DOMAIN_TOOL_DEFS.map((def) => [def.name, def.status]),
 ) as Record<DomainToolName, string>;
 
+const EXTRA_TOOL_STATUS: Record<string, string> = {
+  web_search: "Searching the web",
+};
+
+const TRPC_ERROR_CODES = new Set([
+  "PARSE_ERROR",
+  "BAD_REQUEST",
+  "INTERNAL_SERVER_ERROR",
+  "NOT_IMPLEMENTED",
+  "BAD_GATEWAY",
+  "SERVICE_UNAVAILABLE",
+  "GATEWAY_TIMEOUT",
+  "UNAUTHORIZED",
+  "PAYMENT_REQUIRED",
+  "FORBIDDEN",
+  "NOT_FOUND",
+  "METHOD_NOT_SUPPORTED",
+  "TIMEOUT",
+  "CONFLICT",
+  "PRECONDITION_FAILED",
+  "PAYLOAD_TOO_LARGE",
+  "UNSUPPORTED_MEDIA_TYPE",
+  "UNPROCESSABLE_CONTENT",
+  "PRECONDITION_REQUIRED",
+  "TOO_MANY_REQUESTS",
+  "CLIENT_CLOSED_REQUEST",
+]);
+
+export type DomainToolInput = z.infer<typeof domainToolInputSchema>;
+
 export function getDomainToolStatus(type: string): string {
   const toolName = type.replace(/^tool-/, "");
-  return DOMAIN_TOOL_STATUS[toolName as DomainToolName] ?? toolName;
+  return DOMAIN_TOOL_STATUS[toolName as DomainToolName] ?? EXTRA_TOOL_STATUS[toolName] ?? toolName;
+}
+
+function asTrpcErrorCode(code: unknown): string | undefined {
+  return typeof code === "string" && TRPC_ERROR_CODES.has(code) ? code : undefined;
 }
 
 export function getTrpcErrorCode(err: unknown): string | undefined {
@@ -74,18 +108,15 @@ export function getTrpcErrorCode(err: unknown): string | undefined {
     return undefined;
   }
 
-  if ("code" in err && typeof err.code === "string") {
-    return err.code;
+  if ("code" in err) {
+    const code = asTrpcErrorCode(err.code);
+    if (code) {
+      return code;
+    }
   }
 
-  if (
-    "data" in err &&
-    typeof err.data === "object" &&
-    err.data !== null &&
-    "code" in err.data &&
-    typeof err.data.code === "string"
-  ) {
-    return err.data.code;
+  if ("data" in err && typeof err.data === "object" && err.data !== null && "code" in err.data) {
+    return asTrpcErrorCode(err.data.code);
   }
 
   return undefined;
