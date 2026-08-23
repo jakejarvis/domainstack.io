@@ -303,6 +303,25 @@ describe("isPagePastEnd", () => {
     expect(isPagePastEnd(12, 1, 10)).toBe(false);
     expect(isPagePastEnd(2, 1, 10)).toBe(true);
     expect(isPagePastEnd(0, 0, 10)).toBe(false);
+    // Loading fallback (0 results) looks like page 2 is past the end — callers must wait for data.
+    expect(isPagePastEnd(0, 1, 10)).toBe(true);
+  });
+});
+
+describe("makeTrackedDomain", () => {
+  it("clones providers and dates so mutations stay isolated", () => {
+    const [first] = makeDashboardDomains();
+    first.registrar.id = "mutated";
+    first.registrar.name = "Mutated";
+    first.createdAt.setUTCFullYear(1999);
+    first.expirationDate?.setUTCFullYear(1999);
+
+    const [next] = makeDashboardDomains();
+    expect(next.registrar.id).toBe("cloudflare");
+    expect(next.registrar.name).toBe("Cloudflare");
+    expect(next.createdAt.getUTCFullYear()).toBe(2026);
+    expect(next.expirationDate?.getUTCFullYear()).toBe(2027);
+    expect(DASHBOARD_TEST_NOW.getUTCFullYear()).toBe(2026);
   });
 });
 

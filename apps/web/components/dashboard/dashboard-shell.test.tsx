@@ -72,6 +72,7 @@ describe("dashboard shell", () => {
 
   afterEach(() => {
     resetDashboardTestState();
+    vi.useRealTimers();
   });
 
   describe("view toggle and empty states", () => {

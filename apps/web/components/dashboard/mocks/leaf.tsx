@@ -4,8 +4,16 @@ export function Favicon({ domain }: { domain: string }) {
   return <span aria-hidden data-domain={domain} />;
 }
 
-export function ProviderLogo({ providerName }: { providerName: string | null | undefined }) {
-  return <span data-testid="provider-logo">{providerName}</span>;
+export function ProviderLogo({
+  providerId,
+}: {
+  providerId?: string | null;
+  providerName?: string | null;
+}) {
+  if (!providerId) {
+    return null;
+  }
+  return <span aria-hidden data-provider-logo={providerId} />;
 }
 
 export function ScreenshotPopover({ children }: { children: ReactNode }) {

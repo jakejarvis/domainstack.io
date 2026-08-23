@@ -52,3 +52,11 @@ if (typeof window !== "undefined" && hydratedNow === null) {
 export function useHydratedNow(): Date | null {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
+
+/** Test-only: pin or clear the shared clock so suites do not leak wall time. */
+export function resetHydratedNow(date: Date | null = new Date()): void {
+  hydratedNow = date ? new Date(date.getTime()) : null;
+  for (const listener of listeners) {
+    listener();
+  }
+}

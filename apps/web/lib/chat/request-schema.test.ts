@@ -244,6 +244,29 @@ describe("chatRequestSchema", () => {
     ).toBe(true);
   });
 
+  it("rejects an assistant part that cannot be serialized", () => {
+    const part: Record<string, unknown> = { type: "text" };
+    part.self = part;
+
+    const result = chatRequestSchema.safeParse({
+      messages: [
+        userMessage("hello"),
+        {
+          id: "assistant-1",
+          role: "assistant",
+          parts: [part],
+        },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+    if (result.success) return;
+
+    expect(
+      result.error.issues.some((issue) => issue.message.includes("could not be serialized")),
+    ).toBe(true);
+  });
+
   it("rejects a domain longer than 253 characters", () => {
     const result = chatRequestSchema.safeParse({
       messages: [userMessage("hello")],

@@ -34,10 +34,17 @@ const assistantPartSchema = z
       });
     }
 
-    if (JSON.stringify(part).length > MAX_ASSISTANT_PART_CHARS) {
+    try {
+      if (JSON.stringify(part).length > MAX_ASSISTANT_PART_CHARS) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Assistant part exceeds ${MAX_ASSISTANT_PART_CHARS} characters`,
+        });
+      }
+    } catch {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: `Assistant part exceeds ${MAX_ASSISTANT_PART_CHARS} characters`,
+        message: "Assistant part could not be serialized",
       });
     }
   });

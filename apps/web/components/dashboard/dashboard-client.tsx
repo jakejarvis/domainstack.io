@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 import { ArchivedDomainsList } from "@/components/dashboard/archived-domains-list";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
+import { DashboardConfirmDialog } from "@/components/dashboard/dashboard-confirm-dialog";
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
 import { DashboardError } from "@/components/dashboard/dashboard-error";
 import { DashboardFilters } from "@/components/dashboard/dashboard-filters";
@@ -32,7 +33,6 @@ import type { DashboardTable } from "@/lib/dashboard-table-features";
 import {
   type ConfirmAction,
   DEFAULT_SORT,
-  getConfirmDialogContent,
   SORT_OPTIONS,
   type SortOption,
   sortDomains,
@@ -41,16 +41,6 @@ import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { useTRPC } from "@/lib/trpc/client";
 import { useSession } from "@domainstack/auth/client";
 import type { VerificationMethod } from "@domainstack/constants";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@domainstack/ui/alert-dialog";
 import { Button } from "@domainstack/ui/button";
 
 export function DashboardClient() {
@@ -129,6 +119,7 @@ export function DashboardClient() {
     pageSize: pagination.pageSize,
     filterSignature: getDashboardFilterSignature(filterHook.state),
     resetPage,
+    enabled: allDomains !== undefined,
   });
 
   // Selection state from Jotai
@@ -400,33 +391,13 @@ export function DashboardClient() {
         )}
       </DashboardProvider>
 
-      {/* Confirmation dialog for destructive actions */}
-      <AlertDialog
-        open={pendingAction !== null}
+      <DashboardConfirmDialog
+        pendingAction={pendingAction}
         onOpenChange={(open) => {
           if (!open) setPendingAction(null);
         }}
-      >
-        {pendingAction && (
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{getConfirmDialogContent(pendingAction).title}</AlertDialogTitle>
-              <AlertDialogDescription>
-                {getConfirmDialogContent(pendingAction).description}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleConfirm}
-                variant={getConfirmDialogContent(pendingAction).variant}
-              >
-                {getConfirmDialogContent(pendingAction).confirmLabel}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        )}
-      </AlertDialog>
+        onConfirm={handleConfirm}
+      />
     </div>
   );
 }

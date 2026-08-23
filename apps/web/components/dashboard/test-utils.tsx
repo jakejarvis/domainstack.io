@@ -1,9 +1,10 @@
 import { parseAsString, useQueryState } from "nuqs";
 import { NuqsTestingAdapter } from "nuqs/adapters/testing";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { vi } from "vitest";
 
 import { ArchivedDomainsList } from "@/components/dashboard/archived-domains-list";
+import { DashboardConfirmDialog } from "@/components/dashboard/dashboard-confirm-dialog";
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
 import { DashboardFilters } from "@/components/dashboard/dashboard-filters";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
@@ -17,8 +18,15 @@ import {
   useSyncDashboardPage,
 } from "@/hooks/use-dashboard-pagination";
 import { useSyncVisibleDomainIds } from "@/hooks/use-dashboard-selection";
+import { resetHydratedNow } from "@/hooks/use-hydrated-now";
 import type { DashboardTable } from "@/lib/dashboard-table-features";
-import { DEFAULT_SORT, SORT_OPTIONS, type SortOption, sortDomains } from "@/lib/dashboard-utils";
+import {
+  type ConfirmAction,
+  DEFAULT_SORT,
+  SORT_OPTIONS,
+  type SortOption,
+  sortDomains,
+} from "@/lib/dashboard-utils";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { render } from "@/mocks/react";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
@@ -86,6 +94,9 @@ function stubPaginationHook() {
 }
 
 export function resetDashboardTestState() {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(DASHBOARD_TEST_NOW);
+  resetHydratedNow(DASHBOARD_TEST_NOW);
   localStorage.clear();
   usePreferencesStore.setState({
     viewMode: "grid",
@@ -111,12 +122,14 @@ type DashboardTestShellProps = {
   domains: TrackedDomainWithDetails[];
   totalDomains: number;
   userName?: string;
+  confirmActions?: boolean;
 };
 
 function DashboardTestShell({
   domains,
   totalDomains,
   userName = "Test User",
+  confirmActions = false,
 }: DashboardTestShellProps) {
   const viewMode = usePreferencesStore((s) => s.viewMode);
   const [sortParam, setSortParam] = useQueryState(
@@ -150,16 +163,49 @@ function DashboardTestShell({
   });
 
   const [tableInstance, setTableInstance] = useState<DashboardTable | null>(null);
+  const [pendingAction, setPendingAction] = useState<ConfirmAction | null>(null);
+
+  const requestRemove = useCallback((id: string, domainName: string) => {
+    setPendingAction({ type: "remove", domainId: id, domainName });
+  }, []);
+  const requestArchive = useCallback((id: string, domainName: string) => {
+    setPendingAction({ type: "archive", domainId: id, domainName });
+  }, []);
+  const requestBulkArchive = useCallback((domainIds: string[]) => {
+    setPendingAction({ type: "bulk-archive", domainIds, count: domainIds.length });
+  }, []);
+  const requestBulkDelete = useCallback((domainIds: string[]) => {
+    setPendingAction({ type: "bulk-delete", domainIds, count: domainIds.length });
+  }, []);
+
+  const onRemove = confirmActions ? requestRemove : dashboardActionSpies.onRemove;
+  const onArchive = confirmActions ? requestArchive : dashboardActionSpies.onArchive;
+  const onBulkArchive = confirmActions ? requestBulkArchive : dashboardActionSpies.onBulkArchive;
+  const onBulkDelete = confirmActions ? requestBulkDelete : dashboardActionSpies.onBulkDelete;
+
+  const handleConfirm = () => {
+    if (!pendingAction) return;
+    if (pendingAction.type === "remove") {
+      dashboardActionSpies.onRemove(pendingAction.domainId, pendingAction.domainName);
+    } else if (pendingAction.type === "archive") {
+      dashboardActionSpies.onArchive(pendingAction.domainId, pendingAction.domainName);
+    } else if (pendingAction.type === "bulk-archive") {
+      dashboardActionSpies.onBulkArchive(pendingAction.domainIds);
+    } else if (pendingAction.type === "bulk-delete") {
+      dashboardActionSpies.onBulkDelete(pendingAction.domainIds);
+    }
+    setPendingAction(null);
+  };
 
   return (
     <DashboardProvider
       onVerify={dashboardActionSpies.onVerify}
-      onRemove={dashboardActionSpies.onRemove}
-      onArchive={dashboardActionSpies.onArchive}
+      onRemove={onRemove}
+      onArchive={onArchive}
       onUnarchive={dashboardActionSpies.onUnarchive}
       onToggleMuted={dashboardActionSpies.onToggleMuted}
-      onBulkArchive={dashboardActionSpies.onBulkArchive}
-      onBulkDelete={dashboardActionSpies.onBulkDelete}
+      onBulkArchive={onBulkArchive}
+      onBulkDelete={onBulkDelete}
       isBulkArchiving={false}
       isBulkDeleting={false}
       filterHook={filterHook}
@@ -183,6 +229,15 @@ function DashboardTestShell({
           onTableReady={setTableInstance}
         />
       </div>
+      {confirmActions && pendingAction ? (
+        <DashboardConfirmDialog
+          pendingAction={pendingAction}
+          onOpenChange={(open) => {
+            if (!open) setPendingAction(null);
+          }}
+          onConfirm={handleConfirm}
+        />
+      ) : null}
     </DashboardProvider>
   );
 }
@@ -192,6 +247,7 @@ export type RenderDashboardShellOptions = {
   totalDomains?: number;
   searchParams?: string;
   userName?: string;
+  confirmActions?: boolean;
 };
 
 export function renderDashboardShell(options: RenderDashboardShellOptions = {}) {
@@ -213,11 +269,16 @@ export function renderDashboardShell(options: RenderDashboardShellOptions = {}) 
         domains={domains}
         totalDomains={totalDomains}
         userName={options.userName}
+        confirmActions={options.confirmActions}
       />
     </NuqsTestingAdapter>,
   );
 
   return { ...view, domains, urlUpdates };
+}
+
+export function renderDashboardConfirmShell(options: RenderDashboardShellOptions = {}) {
+  return renderDashboardShell({ ...options, confirmActions: true });
 }
 
 export function renderArchivedList(domains: TrackedDomainWithDetails[]) {
@@ -270,4 +331,6 @@ window.matchMedia = (query: string) => {
   return nativeMatchMedia(query);
 };
 
+vi.useFakeTimers({ toFake: ["Date"] });
 vi.setSystemTime(DASHBOARD_TEST_NOW);
+resetHydratedNow(DASHBOARD_TEST_NOW);

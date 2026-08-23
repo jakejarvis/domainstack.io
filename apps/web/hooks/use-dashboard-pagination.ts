@@ -121,6 +121,8 @@ type SyncDashboardPageOptions = {
   pageSize: number;
   filterSignature: string;
   resetPage: () => void;
+  /** When false, skip clamping (e.g. while listDomains is still loading). */
+  enabled?: boolean;
 };
 
 /**
@@ -134,10 +136,14 @@ export function useSyncDashboardPage({
   pageSize,
   filterSignature,
   resetPage,
+  enabled = true,
 }: SyncDashboardPageOptions): void {
   const previousSignature = useRef<string | null>(null);
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
     if (previousSignature.current === null) {
       previousSignature.current = filterSignature;
       return;
@@ -149,11 +155,14 @@ export function useSyncDashboardPage({
     if (pageIndex > 0) {
       resetPage();
     }
-  }, [filterSignature, pageIndex, resetPage]);
+  }, [enabled, filterSignature, pageIndex, resetPage]);
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
     if (isPagePastEnd(itemCount, pageIndex, pageSize)) {
       resetPage();
     }
-  }, [itemCount, pageIndex, pageSize, resetPage]);
+  }, [enabled, itemCount, pageIndex, pageSize, resetPage]);
 }

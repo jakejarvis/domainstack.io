@@ -1,5 +1,5 @@
 import { EXPIRING_SOON_DAYS } from "@domainstack/constants";
-import type { ProviderInfo, TrackedDomainWithDetails } from "@domainstack/types";
+import type { ProviderInfo, ResumeDomainData, TrackedDomainWithDetails } from "@domainstack/types";
 
 /** Stable clock for health/expiry fixtures. Keep in sync with `vi.setSystemTime` in tests. */
 export const DASHBOARD_TEST_NOW = new Date("2026-08-23T12:00:00.000Z");
@@ -20,6 +20,14 @@ export function makeProvider(
   return { id, name, domain };
 }
 
+function cloneProvider(provider: ProviderInfo): ProviderInfo {
+  return { id: provider.id, name: provider.name, domain: provider.domain };
+}
+
+function cloneDate(date: Date | null | undefined): Date | null {
+  return date ? new Date(date.getTime()) : null;
+}
+
 const CLOUDFLARE = makeProvider("cloudflare", "Cloudflare", "cloudflare.com");
 const NAMECHEAP = makeProvider("namecheap", "Namecheap", "namecheap.com");
 const VERCEL = makeProvider("vercel", "Vercel", "vercel.com");
@@ -31,30 +39,46 @@ export function makeTrackedDomain(
   const tld = overrides.tld ?? domainName.split(".").at(-1) ?? "com";
   const id = overrides.id ?? `domain-${domainName.replaceAll(".", "-")}`;
 
-  return {
+  const domain = {
     id,
     userId: "user-test",
     domainId: overrides.domainId ?? `dns-${id}`,
     domainName,
     tld,
     verified: true,
-    verificationMethod: "dns_txt",
+    verificationMethod: "dns_txt" as TrackedDomainWithDetails["verificationMethod"],
     verificationToken: "token",
-    verificationStatus: "verified",
-    verificationFailedAt: null,
-    lastVerifiedAt: DASHBOARD_TEST_NOW,
+    verificationStatus: "verified" as TrackedDomainWithDetails["verificationStatus"],
+    verificationFailedAt: null as Date | null,
+    lastVerifiedAt: cloneDate(DASHBOARD_TEST_NOW),
     muted: false,
-    createdAt: DASHBOARD_TEST_NOW,
-    verifiedAt: DASHBOARD_TEST_NOW,
-    archivedAt: null,
+    createdAt: cloneDate(DASHBOARD_TEST_NOW)!,
+    verifiedAt: cloneDate(DASHBOARD_TEST_NOW),
+    archivedAt: null as Date | null,
     expirationDate: daysFromTestNow(200),
     registrationDate: daysFromTestNow(-365),
-    registrar: CLOUDFLARE,
-    dns: EMPTY_PROVIDER,
-    hosting: EMPTY_PROVIDER,
-    email: EMPTY_PROVIDER,
-    ca: EMPTY_PROVIDER,
+    registrar: cloneProvider(CLOUDFLARE),
+    dns: cloneProvider(EMPTY_PROVIDER),
+    hosting: cloneProvider(EMPTY_PROVIDER),
+    email: cloneProvider(EMPTY_PROVIDER),
+    ca: cloneProvider(EMPTY_PROVIDER),
     ...overrides,
+  };
+
+  return {
+    ...domain,
+    verificationFailedAt: cloneDate(domain.verificationFailedAt),
+    lastVerifiedAt: cloneDate(domain.lastVerifiedAt),
+    createdAt: cloneDate(domain.createdAt)!,
+    verifiedAt: cloneDate(domain.verifiedAt),
+    archivedAt: cloneDate(domain.archivedAt),
+    expirationDate: cloneDate(domain.expirationDate),
+    registrationDate: cloneDate(domain.registrationDate),
+    registrar: cloneProvider(domain.registrar),
+    dns: cloneProvider(domain.dns),
+    hosting: cloneProvider(domain.hosting),
+    email: cloneProvider(domain.email),
+    ca: cloneProvider(domain.ca),
   };
 }
 
@@ -102,6 +126,15 @@ export function makeDashboardDomains(): TrackedDomainWithDetails[] {
       hosting: EMPTY_PROVIDER,
     }),
   ];
+}
+
+export function makeResumeDomain(overrides: Partial<ResumeDomainData> = {}): ResumeDomainData {
+  return {
+    id: overrides.id ?? "domain-pending",
+    domainName: overrides.domainName ?? "pending.dev",
+    verificationToken: overrides.verificationToken ?? "token-pending",
+    verificationMethod: overrides.verificationMethod ?? "dns_txt",
+  };
 }
 
 export function makePaginationDomains(count = 12): TrackedDomainWithDetails[] {

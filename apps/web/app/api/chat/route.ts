@@ -84,7 +84,7 @@ export async function POST(request: Request) {
     );
   }
 
-  if (rawBody.length > MAX_CHAT_REQUEST_BYTES) {
+  if (new TextEncoder().encode(rawBody).byteLength > MAX_CHAT_REQUEST_BYTES) {
     return NextResponse.json(
       { error: "Request body too large" },
       { status: 413, headers: { ...rateLimit.headers } },

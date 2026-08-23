@@ -41,6 +41,7 @@ describe("ArchivedDomainsList", () => {
 
   afterEach(() => {
     resetDashboardTestState();
+    vi.useRealTimers();
   });
 
   it("shows an empty state", () => {
