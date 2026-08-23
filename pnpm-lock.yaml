@@ -6,9 +6,21 @@ settings:
 
 catalogs:
   default:
+    '@tabler/icons-react':
+      specifier: ^3.46.0
+      version: 3.46.0
     '@types/node':
       specifier: ^24.13.3
       version: 24.13.3
+    motion:
+      specifier: ^13.1.1
+      version: 13.1.1
+    vitest:
+      specifier: ^4.1.11
+      version: 4.1.11
+    zod:
+      specifier: ^4.4.3
+      version: 4.4.3
 
 overrides:
   '@types/react': 19.2.18
@@ -207,9 +219,6 @@ importers:
       server-only:
         specifier: 0.0.1
         version: 0.0.1
-      sonner:
-        specifier: 'catalog:'
-        version: 2.0.8(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       streamdown:
         specifier: ^2.5.0
         version: 2.5.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)
@@ -771,9 +780,6 @@ importers:
       motion:
         specifier: 'catalog:'
         version: 13.1.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      sonner:
-        specifier: 'catalog:'
-        version: 2.0.8(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
 
   packages/utils:
     dependencies:
@@ -7136,16 +7142,6 @@ packages:
   sonic-boom@4.2.1:
     resolution: {integrity: sha512-w6AxtubXa2wTXAUsZMMWERrsIRAdrK0Sc+FUytWvYAhBJLyuI4llrMIC1DtlNSdI99EI86KZum2MMq3EAZlF9Q==}
 
-  sonner@2.0.8:
-    resolution: {integrity: sha512-UM/ByIoFra8yzV75n1o0Puu0bw5U/9UNnDacrJNspekBewIfsQ3D6ez1nvlWpt7aTsO6rujQtifBpycwIivqlg==}
-    peerDependencies:
-      '@types/react': 19.2.18
-      react: 19.2.8
-      react-dom: 19.2.8
-    peerDependenciesMeta:
-      '@types/react':
-        optional: true
-
   sort-keys-length@1.0.1:
     resolution: {integrity: sha512-GRbEOUqCxemTAk/b32F2xa8wDTs+Z1QHOkbhJDQTvv/6G3ZkbJ+frYWsTcc7cBB3Fu4wy4XlLCuNtJuMn7Gsvw==}
     engines: {node: '>=0.10.0'}
@@ -10244,9 +10240,9 @@ snapshots:
       obug: 2.1.4
       std-env: 4.2.0
       tinyrainbow: 3.1.1
-      vitest: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12))
+      vitest: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@24.13.3)(typescript@7.0.2))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12))
     optionalDependencies:
-      '@vitest/browser': 4.1.11(bufferutil@4.1.0)(msw@2.15.0(@types/node@26.2.0)(typescript@7.0.2))(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12))(vitest@4.1.11)
+      '@vitest/browser': 4.1.11(bufferutil@4.1.0)(msw@2.15.0(@types/node@24.13.3)(typescript@7.0.2))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12))(vitest@4.1.11)
 
   '@vitest/expect@4.1.11':
     dependencies:
@@ -14270,13 +14266,6 @@ snapshots:
   sonic-boom@4.2.1:
     dependencies:
       atomic-sleep: 1.0.0
-
-  sonner@2.0.8(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
-    dependencies:
-      react: 19.2.8
-      react-dom: 19.2.8(react@19.2.8)
-    optionalDependencies:
-      '@types/react': 19.2.18
 
   sort-keys-length@1.0.1:
     dependencies:

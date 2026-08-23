@@ -9,7 +9,7 @@ import { ChatServer } from "@/components/chat/chat-server";
 import { CookiePromptGeofenced } from "@/components/consent/cookie-prompt-geofenced";
 import { AppFooter } from "@/components/layout/app-footer";
 import { AppHeader } from "@/components/layout/app-header";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@domainstack/ui/toast";
 
 import "./globals.css";
 

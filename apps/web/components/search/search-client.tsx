@@ -1,11 +1,10 @@
 "use client";
 
-import { IconArrowRight, IconCircleX, IconSearch } from "@tabler/icons-react";
+import { IconArrowRight, IconSearch } from "@tabler/icons-react";
 import { useAtom } from "jotai";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
-import { toast } from "sonner";
 
 import { useIsClient } from "@/hooks/use-is-client";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -22,6 +21,7 @@ import {
 } from "@domainstack/ui/input-group";
 import { Kbd } from "@domainstack/ui/kbd";
 import { Spinner } from "@domainstack/ui/spinner";
+import { toast } from "@domainstack/ui/toast";
 import { cn } from "@domainstack/ui/utils";
 import { isValidDomain, normalizeDomainInput } from "@domainstack/utils/domain/client";
 
@@ -178,10 +178,7 @@ export function SearchClient({
 
     if (!isValidDomain(normalized)) {
       analytics.track("search_invalid_input", { input: value });
-      toast.error("Please enter a valid domain.", {
-        icon: <IconCircleX className="size-4" />,
-        position: "bottom-center",
-      });
+      toast.add({ title: "Please enter a valid domain.", type: "error" });
       inputRef.current?.focus();
       return;
     }

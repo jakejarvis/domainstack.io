@@ -4,11 +4,11 @@ import { IconCircleX, IconShieldExclamation } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
 
 import { parseRetryAfterHeader } from "@/lib/ratelimit/client";
 import { analytics } from "@domainstack/analytics/client";
 import { Spinner } from "@domainstack/ui/spinner";
+import { toast } from "@domainstack/ui/toast";
 import { cn } from "@domainstack/ui/utils";
 
 type ScreenshotStartResponse =
@@ -168,8 +168,10 @@ export function useScreenshot({
       } else if (data.status === "rate_limited") {
         const retryAt = Date.now() + data.retryAfter * 1000;
         setRateLimitedUntil(retryAt);
-        toast.error("Too many requests", {
+        toast.add({
+          title: "Too many requests",
           description: `Please wait ${data.retryAfter} second${data.retryAfter !== 1 ? "s" : ""} before trying again.`,
+          type: "error",
         });
         analytics.track("screenshot_rate_limited", {
           domain,
@@ -226,8 +228,10 @@ export function useScreenshot({
     if (!data || data.status === "running") return;
 
     if (data.status === "rate_limited") {
-      toast.error("Too many requests", {
+      toast.add({
+        title: "Too many requests",
         description: `Polling paused. Retrying in ${data.retryAfter} seconds.`,
+        type: "error",
       });
       return;
     }

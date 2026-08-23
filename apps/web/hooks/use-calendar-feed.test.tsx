@@ -1,16 +1,15 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { toast } from "@domainstack/ui/toast";
 
 vi.mock("@/lib/trpc/client", async () => {
   const { useTRPC } = await import("@/mocks/trpc");
   return { useTRPC };
 });
-vi.mock("sonner", () => ({
+vi.mock("@domainstack/ui/toast", () => ({
   toast: {
-    success: vi.fn<(message?: string) => void>(),
-    error: vi.fn<(message?: string) => void>(),
-    info: vi.fn<(message?: string) => void>(),
+    add: vi.fn<(options?: { title?: string; description?: string; type?: string }) => void>(),
   },
 }));
 
@@ -57,8 +56,7 @@ function renderCalendarFeed(feed: CalendarFeedData = { enabled: false }) {
 describe("useCalendarFeed", () => {
   beforeEach(() => {
     resetTrpcMocks();
-    vi.mocked(toast.success).mockClear();
-    vi.mocked(toast.error).mockClear();
+    vi.mocked(toast.add).mockClear();
   });
 
   afterEach(() => {
@@ -78,7 +76,7 @@ describe("useCalendarFeed", () => {
       });
     });
     expect(result.current.isEnabled).toBe(true);
-    expect(toast.success).toHaveBeenCalledWith("Calendar feed enabled");
+    expect(toast.add).toHaveBeenCalledWith({ title: "Calendar feed enabled", type: "success" });
     expect(enableCalendarFeedMutation).toHaveBeenCalledOnce();
   });
 
@@ -89,7 +87,10 @@ describe("useCalendarFeed", () => {
     result.current.enable();
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("Failed to enable calendar feed");
+      expect(toast.add).toHaveBeenCalledWith({
+        title: "Failed to enable calendar feed",
+        type: "error",
+      });
     });
     expect(result.current.isEnabled).toBe(false);
   });
@@ -103,7 +104,7 @@ describe("useCalendarFeed", () => {
       expect(getFeed(queryClient)?.enabled).toBe(false);
     });
     expect(result.current.isEnabled).toBe(false);
-    expect(toast.success).toHaveBeenCalledWith("Calendar feed disabled");
+    expect(toast.add).toHaveBeenCalledWith({ title: "Calendar feed disabled", type: "success" });
     expect(disableCalendarFeedMutation).toHaveBeenCalledOnce();
   });
 
@@ -114,7 +115,10 @@ describe("useCalendarFeed", () => {
     result.current.disable();
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("Failed to disable calendar feed");
+      expect(toast.add).toHaveBeenCalledWith({
+        title: "Failed to disable calendar feed",
+        type: "error",
+      });
     });
     expect(getFeed(queryClient)).toEqual(enabledFeed);
     expect(result.current.isEnabled).toBe(true);
@@ -132,7 +136,10 @@ describe("useCalendarFeed", () => {
         lastAccessedAt: null,
       });
     });
-    expect(toast.success).toHaveBeenCalledWith("Calendar feed URL regenerated");
+    expect(toast.add).toHaveBeenCalledWith({
+      title: "Calendar feed URL regenerated",
+      type: "success",
+    });
     expect(rotateCalendarFeedTokenMutation).toHaveBeenCalledOnce();
   });
 
@@ -143,7 +150,7 @@ describe("useCalendarFeed", () => {
     result.current.rotate.mutate();
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("Failed to regenerate URL");
+      expect(toast.add).toHaveBeenCalledWith({ title: "Failed to regenerate URL", type: "error" });
     });
     expect(getFeed(queryClient)).toEqual(enabledFeed);
   });
@@ -157,7 +164,7 @@ describe("useCalendarFeed", () => {
       expect(getFeed(queryClient)).toEqual({ enabled: false });
     });
     expect(result.current.isEnabled).toBe(false);
-    expect(toast.success).toHaveBeenCalledWith("Calendar feed disabled");
+    expect(toast.add).toHaveBeenCalledWith({ title: "Calendar feed disabled", type: "success" });
     expect(deleteCalendarFeedMutation).toHaveBeenCalledOnce();
   });
 
@@ -168,7 +175,10 @@ describe("useCalendarFeed", () => {
     result.current.deleteFeed.mutate();
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("Failed to disable calendar feed");
+      expect(toast.add).toHaveBeenCalledWith({
+        title: "Failed to disable calendar feed",
+        type: "error",
+      });
     });
     expect(getFeed(queryClient)).toEqual(enabledFeed);
     expect(result.current.isEnabled).toBe(true);

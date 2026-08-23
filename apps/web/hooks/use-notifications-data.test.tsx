@@ -1,16 +1,15 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { toast } from "@domainstack/ui/toast";
 
 vi.mock("@/lib/trpc/client", async () => {
   const { useTRPC } = await import("@/mocks/trpc");
   return { useTRPC };
 });
-vi.mock("sonner", () => ({
+vi.mock("@domainstack/ui/toast", () => ({
   toast: {
-    success: vi.fn<(message?: string) => void>(),
-    error: vi.fn<(message?: string) => void>(),
-    info: vi.fn<(message?: string) => void>(),
+    add: vi.fn<(options?: { title?: string; description?: string; type?: string }) => void>(),
   },
 }));
 
@@ -98,8 +97,7 @@ function renderNotificationsData(options?: {
 describe("useNotificationsData", () => {
   beforeEach(() => {
     resetTrpcMocks();
-    vi.mocked(toast.success).mockClear();
-    vi.mocked(toast.error).mockClear();
+    vi.mocked(toast.add).mockClear();
   });
 
   afterEach(() => {
@@ -137,7 +135,10 @@ describe("useNotificationsData", () => {
     result.current.markRead.mutate({ id: "notif-alpha" });
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("Failed to mark notification as read");
+      expect(toast.add).toHaveBeenCalledWith({
+        title: "Failed to mark notification as read",
+        type: "error",
+      });
     });
     expect(pageItems(queryClient, "unread").map((item) => item.id)).toEqual([
       "notif-alpha",
@@ -171,7 +172,10 @@ describe("useNotificationsData", () => {
     result.current.markAllRead.mutate();
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("Failed to mark notifications as read");
+      expect(toast.add).toHaveBeenCalledWith({
+        title: "Failed to mark notifications as read",
+        type: "error",
+      });
     });
     expect(pageItems(queryClient, "unread").map((item) => item.id)).toEqual([
       "notif-alpha",

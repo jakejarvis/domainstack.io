@@ -5,11 +5,9 @@ vi.mock("@/lib/trpc/client", async () => {
   const { useTRPC } = await import("@/mocks/trpc");
   return { useTRPC };
 });
-vi.mock("sonner", () => ({
+vi.mock("@domainstack/ui/toast", () => ({
   toast: {
-    success: vi.fn<(message?: string) => void>(),
-    error: vi.fn<(message?: string) => void>(),
-    info: vi.fn<(message?: string) => void>(),
+    add: vi.fn<(options?: { title?: string; description?: string; type?: string }) => void>(),
   },
 }));
 

@@ -3,13 +3,13 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
 import { useCallback, useState } from "react";
-import { toast } from "sonner";
 
 import { useTRPC } from "@/lib/trpc/client";
 import type { AppRouter } from "@/server/routers/_app";
 import { analytics } from "@domainstack/analytics/client";
 import { checkoutEmbed, customer } from "@domainstack/auth/client";
 import { PRO_TIER_INFO } from "@domainstack/polar/products";
+import { toast } from "@domainstack/ui/toast";
 
 /**
  * Subscription data shape inferred from user.getSubscription procedure.
@@ -129,7 +129,7 @@ export function useSubscription(options: UseSubscriptionOptions = {}): UseSubscr
       analytics.trackException(err instanceof Error ? err : new Error(String(err)), {
         action: "upgrade_checkout",
       });
-      toast.error("Failed to open checkout. Please try again.");
+      toast.add({ title: "Failed to open checkout. Please try again.", type: "error" });
     } finally {
       setCheckoutLoading(false);
     }
@@ -146,7 +146,7 @@ export function useSubscription(options: UseSubscriptionOptions = {}): UseSubscr
       analytics.trackException(err instanceof Error ? err : new Error(String(err)), {
         action: "open_customer_portal",
       });
-      toast.error("Failed to open customer portal. Please try again.");
+      toast.add({ title: "Failed to open customer portal. Please try again.", type: "error" });
     } finally {
       setCustomerPortalLoading(false);
     }

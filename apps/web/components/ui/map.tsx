@@ -32,12 +32,12 @@ import {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
-import { toast } from "sonner";
 
 import { useIsClient } from "@/hooks/use-is-client";
 import { useTheme } from "@/hooks/use-theme";
 import { analytics } from "@domainstack/analytics/client";
 import { Spinner } from "@domainstack/ui/spinner";
+import { toast } from "@domainstack/ui/toast";
 import { cn } from "@domainstack/ui/utils";
 
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -663,7 +663,7 @@ function MapControls({
             3: "Location request timed out. Please try again.",
           };
           const message = messages[error.code] ?? "Unable to get your location";
-          toast.error(message);
+          toast.add({ title: message, type: "error" });
 
           // Track non-permission errors (permission denied is expected user behavior)
           if (error.code !== 1) {

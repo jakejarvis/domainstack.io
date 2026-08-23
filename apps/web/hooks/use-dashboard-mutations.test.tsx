@@ -1,17 +1,15 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { toast } from "@domainstack/ui/toast";
 
 vi.mock("@/lib/trpc/client", async () => {
   const { useTRPC } = await import("@/mocks/trpc");
   return { useTRPC };
 });
-vi.mock("sonner", () => ({
+vi.mock("@domainstack/ui/toast", () => ({
   toast: {
-    success: vi.fn<(message?: string) => void>(),
-    error: vi.fn<(message?: string) => void>(),
-    info: vi.fn<(message?: string) => void>(),
-    warning: vi.fn<(message?: string) => void>(),
+    add: vi.fn<(options?: { title?: string; description?: string; type?: string }) => void>(),
   },
 }));
 
@@ -91,9 +89,7 @@ function renderDashboardMutations(options?: {
 describe("useDashboardMutations", () => {
   beforeEach(() => {
     resetTrpcMocks();
-    vi.mocked(toast.success).mockClear();
-    vi.mocked(toast.error).mockClear();
-    vi.mocked(toast.warning).mockClear();
+    vi.mocked(toast.add).mockClear();
   });
 
   afterEach(() => {
@@ -115,7 +111,7 @@ describe("useDashboardMutations", () => {
       archivedCount: 1,
       canAddMore: true,
     });
-    expect(toast.success).toHaveBeenCalledWith("Domain removed");
+    expect(toast.add).toHaveBeenCalledWith({ title: "Domain removed", type: "success" });
     expect(removeDomainMutation.mock.calls[0]?.[0]).toEqual({ trackedDomainId: "domain-alpha" });
   });
 
@@ -134,7 +130,7 @@ describe("useDashboardMutations", () => {
       archivedCount: 2,
       canAddMore: true,
     });
-    expect(toast.success).toHaveBeenCalledWith("Domain archived");
+    expect(toast.add).toHaveBeenCalledWith({ title: "Domain archived", type: "success" });
   });
 
   it("unarchives a domain and reverses the counts", async () => {
@@ -152,7 +148,7 @@ describe("useDashboardMutations", () => {
       archivedCount: 0,
       canAddMore: true,
     });
-    expect(toast.success).toHaveBeenCalledWith("Domain reactivated");
+    expect(toast.add).toHaveBeenCalledWith({ title: "Domain reactivated", type: "success" });
   });
 
   it("mutes a domain without touching subscription cache", async () => {
@@ -165,11 +161,11 @@ describe("useDashboardMutations", () => {
       expect(getDomains(queryClient).find((d) => d.id === "domain-alpha")?.muted).toBe(true);
     });
     expect(getSubscription(queryClient)).toEqual(subscriptionBefore);
-    expect(toast.success).toHaveBeenCalledWith("Domain muted");
+    expect(toast.add).toHaveBeenCalledWith({ title: "Domain muted", type: "success" });
 
     result.current.setMuted("domain-alpha", false);
     await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith("Domain unmuted");
+      expect(toast.add).toHaveBeenCalledWith({ title: "Domain unmuted", type: "success" });
     });
   });
 
@@ -188,7 +184,7 @@ describe("useDashboardMutations", () => {
     expect(bulkArchiveDomainsMutation.mock.calls[0]?.[0]).toEqual({
       trackedDomainIds: ["domain-alpha", "domain-archived"],
     });
-    expect(toast.success).toHaveBeenCalledWith("Archived 2 domains");
+    expect(toast.add).toHaveBeenCalledWith({ title: "Archived 2 domains", type: "success" });
   });
 
   it("toasts a warning when bulk archive only partially succeeds", async () => {
@@ -197,8 +193,11 @@ describe("useDashboardMutations", () => {
 
     await result.current.bulkArchive(["domain-alpha", "domain-beta"]);
 
-    expect(toast.warning).toHaveBeenCalledWith("Archived 1 of 2 domains (1 failed)");
-    expect(toast.success).not.toHaveBeenCalled();
+    expect(toast.add).toHaveBeenCalledWith({
+      title: "Archived 1 of 2 domains (1 failed)",
+      type: "warning",
+    });
+    expect(toast.add).not.toHaveBeenCalledWith(expect.objectContaining({ type: "success" }));
   });
 
   it("toasts a singular success when one domain is archived", async () => {
@@ -206,7 +205,7 @@ describe("useDashboardMutations", () => {
 
     await result.current.bulkArchive(["domain-alpha"]);
 
-    expect(toast.success).toHaveBeenCalledWith("Archived 1 domain");
+    expect(toast.add).toHaveBeenCalledWith({ title: "Archived 1 domain", type: "success" });
   });
 
   it("bulk-deletes ids and decrements active count only for non-archived domains", async () => {
@@ -224,7 +223,7 @@ describe("useDashboardMutations", () => {
     expect(bulkRemoveDomainsMutation.mock.calls[0]?.[0]).toEqual({
       trackedDomainIds: ["domain-alpha", "domain-archived"],
     });
-    expect(toast.success).toHaveBeenCalledWith("Deleted 2 domains");
+    expect(toast.add).toHaveBeenCalledWith({ title: "Deleted 2 domains", type: "success" });
   });
 
   it("toasts a warning when bulk delete only partially succeeds", async () => {
@@ -233,8 +232,11 @@ describe("useDashboardMutations", () => {
 
     await result.current.bulkDelete(["domain-alpha", "domain-beta"]);
 
-    expect(toast.warning).toHaveBeenCalledWith("Deleted 1 of 2 domains (1 failed)");
-    expect(toast.success).not.toHaveBeenCalled();
+    expect(toast.add).toHaveBeenCalledWith({
+      title: "Deleted 1 of 2 domains (1 failed)",
+      type: "warning",
+    });
+    expect(toast.add).not.toHaveBeenCalledWith(expect.objectContaining({ type: "success" }));
   });
 
   it("rolls back domains and subscription when remove fails", async () => {
@@ -246,7 +248,7 @@ describe("useDashboardMutations", () => {
     result.current.remove("domain-alpha");
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("Failed to remove domain");
+      expect(toast.add).toHaveBeenCalledWith({ title: "Failed to remove domain", type: "error" });
     });
     expect(getDomains(queryClient)).toEqual(domainsBefore);
     expect(getSubscription(queryClient)).toEqual(subscriptionBefore);
@@ -261,7 +263,7 @@ describe("useDashboardMutations", () => {
     await expect(result.current.bulkArchive(["domain-alpha"])).rejects.toThrow("nope");
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("Failed to archive domains");
+      expect(toast.add).toHaveBeenCalledWith({ title: "Failed to archive domains", type: "error" });
     });
     expect(getDomains(queryClient)).toEqual(domainsBefore);
     expect(getSubscription(queryClient)).toEqual(subscriptionBefore);

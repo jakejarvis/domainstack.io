@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
-import { toast } from "sonner";
 
 import { useTRPC } from "@/lib/trpc/client";
 import { createInitialState, verificationReducer } from "@/lib/verification-state";
 import { analytics } from "@domainstack/analytics/client";
 import type { VerificationMethod } from "@domainstack/constants";
 import type { ResumeDomainData } from "@domainstack/types";
+import { toast } from "@domainstack/ui/toast";
 import { isValidDomain, normalizeDomainInput } from "@domainstack/utils/domain/client";
 
 // ============================================================================
@@ -205,9 +205,11 @@ export function useDomainVerification({
       });
 
       if (result.resumed) {
-        toast.info("Resuming verification", {
+        toast.add({
+          title: "Resuming verification",
           description:
             "You previously started tracking this domain. Your verification token is unchanged.",
+          type: "info",
         });
       }
     } catch (err) {
@@ -230,7 +232,7 @@ export function useDomainVerification({
 
       if (result.verified) {
         dispatch({ type: "VERIFICATION_SUCCEEDED", method: result.method });
-        toast.success("Domain verified successfully!");
+        toast.add({ title: "Domain verified successfully!", type: "success" });
         analytics.track("domain_verification_succeeded", {
           domain: state.domain,
           method: result.method,
@@ -255,9 +257,11 @@ export function useDomainVerification({
   }, [state, verifyDomainMutation]);
 
   const handleReturnLater = useCallback(() => {
-    toast.info("Domain saved", {
+    toast.add({
+      title: "Domain saved",
       description:
         "We'll automatically verify your domain once the changes have propagated. Check back later!",
+      type: "info",
     });
     handleOpenChange(false);
   }, [handleOpenChange]);
