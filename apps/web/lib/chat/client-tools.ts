@@ -10,6 +10,7 @@ import type { inferRouterOutputs } from "@trpc/server";
 import { tool, type Tool } from "ai";
 
 import type { AppRouter } from "@/server/routers/_app";
+import { analytics } from "@domainstack/analytics/client";
 
 import {
   DOMAIN_TOOL_DEFS,
@@ -51,6 +52,11 @@ function makeClientDomainTool<TDef extends (typeof DOMAIN_TOOL_DEFS)[number]>(
         }
         return result.data;
       } catch (err) {
+        analytics.trackException(err instanceof Error ? err : new Error(String(err)), {
+          context: "client-domain-tool",
+          tool: def.name,
+          domain,
+        });
         return { error: getDomainToolErrorMessage(err) };
       }
     },

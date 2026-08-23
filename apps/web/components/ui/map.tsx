@@ -13,6 +13,9 @@ import {
   Map as MapLibreMap,
   Marker,
   Popup,
+  getVersion,
+  getWorkerUrl,
+  setWorkerUrl,
   type MapOptions,
   type MarkerOptions,
   type PopupOptions,
@@ -38,6 +41,10 @@ import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
 
 import "maplibre-gl/dist/maplibre-gl.css";
+
+if (typeof window !== "undefined" && !getWorkerUrl()) {
+  setWorkerUrl(`https://unpkg.com/maplibre-gl@${getVersion()}/dist/maplibre-gl-worker.mjs`);
+}
 
 type MapContextValue = {
   map: MapLibreMap | null;

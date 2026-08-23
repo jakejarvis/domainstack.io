@@ -25,11 +25,8 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/setup@v2
         with:
-          runtime: node@22
+          runtime: node@24
           cache: true
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
         run: pnpm --filter @domainstack/web exec playwright install chromium --with-deps
