@@ -171,12 +171,15 @@ export function DomainReportClient({ domain }: { domain: string }) {
 
   const viewedDomainRef = useRef<string | null>(null);
   useEffect(() => {
+    if (!isRegistered) {
+      return;
+    }
     if (viewedDomainRef.current === domain) {
       return;
     }
     viewedDomainRef.current = domain;
     analytics.track("report_viewed", { domain });
-  }, [domain]);
+  }, [domain, isRegistered]);
 
   const headerRef = useRef<HTMLDivElement>(null);
   const sectionIds = Object.keys(sections);
