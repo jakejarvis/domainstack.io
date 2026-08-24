@@ -1,4 +1,9 @@
 import pino from "pino";
+import pretty from "pino-pretty";
+
+import { emitToPostHog } from "./otel";
+
+export { type FlushScheduler, flushLogs, setFlushScheduler } from "./otel";
 
 const isDev = process.env.NODE_ENV === "development";
 const isTest = process.env.NODE_ENV === "test";
@@ -7,20 +12,32 @@ const isTest = process.env.NODE_ENV === "test";
 const levels = pino.levels.values;
 
 /**
- * Creates a destination stream that routes logs to the appropriate console method.
+ * Creates a destination stream that routes logs to the appropriate console
+ * method (or pino-pretty in development) and forwards each record to PostHog.
  *
- * This is safer than using process.stdout/stderr directly in serverless environments
- * like Vercel, as console methods are guaranteed to work and Vercel properly interprets
- * them for log level coloring.
+ * Parsing once serves both console routing and OTLP export. pino-pretty is a
+ * stream (not a worker transport) so HMR does not leak listener handles.
+ *
+ * Console methods are safer than process.stdout/stderr in serverless
+ * environments like Vercel, which interpret them for log level coloring.
  */
-function createConsoleDestination(): pino.DestinationStream {
+function createDestination(): pino.DestinationStream {
+  const prettyStream = isDev ? pretty({ colorize: true }) : null;
+
   return {
     write(msg: string): void {
       // Remove trailing newline for cleaner console output
       const trimmed = msg.trimEnd();
 
       try {
-        const parsed = JSON.parse(trimmed) as { level?: string | number };
+        const parsed = JSON.parse(trimmed) as Record<string, unknown>;
+        emitToPostHog(parsed);
+
+        if (prettyStream) {
+          prettyStream.write(msg);
+          return;
+        }
+
         const level =
           typeof parsed.level === "string"
             ? levels[parsed.level as keyof typeof levels]
@@ -63,34 +80,6 @@ const baseOptions: pino.LoggerOptions = {
 };
 
 /**
- * Creates the Pino logger instance.
- * Extracted to a function to support the global singleton pattern.
- */
-function createPinoLogger(): pino.Logger {
-  return isDev
-    ? // Development: pretty printing to stdout (sync to avoid worker issues)
-      pino({
-        ...baseOptions,
-        transport: {
-          target: "pino-pretty",
-          options: { colorize: true, sync: true },
-        },
-      })
-    : // Production: route logs to console methods for proper Vercel log coloring
-      // console.error -> red, console.warn -> yellow, console.log -> default
-      pino(baseOptions, createConsoleDestination());
-}
-
-/**
- * Global singleton to prevent multiple logger instances during Next.js HMR.
- * In development, module re-evaluation would create new pino-pretty transports,
- * causing "MaxListenersExceededWarning" from leaked socket listeners.
- */
-const globalForLogger = globalThis as unknown as {
-  pinoLogger?: pino.Logger;
-};
-
-/**
  * Server-side Pino logger.
  *
  * Features:
@@ -99,7 +88,7 @@ const globalForLogger = globalThis as unknown as {
  * - Standard error serialization
  * - Pretty printing in development only
  * - Uses console methods for safe Vercel log level translation
- * - Global singleton prevents HMR-related memory leaks
+ * - Forwards records to PostHog via OTLP when enabled
  *
  * @example
  * ```typescript
@@ -109,11 +98,7 @@ const globalForLogger = globalThis as unknown as {
  * logger.error({ err: error, table: "users" }, "Database connection failed");
  * ```
  */
-if (!globalForLogger.pinoLogger) {
-  globalForLogger.pinoLogger = createPinoLogger();
-}
-
-export const logger: pino.Logger = globalForLogger.pinoLogger;
+export const logger: pino.Logger = pino(baseOptions, createDestination());
 
 /**
  * Create a child logger with a specific context prefix.

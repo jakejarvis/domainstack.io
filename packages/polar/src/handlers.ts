@@ -5,7 +5,7 @@ import {
   setSubscriptionEndsAt,
   updateUserTier,
 } from "@domainstack/db/queries";
-import { logger } from "@domainstack/logger";
+import { createLogger } from "@domainstack/logger";
 
 import { handleDowngrade } from "./downgrade";
 import {
@@ -14,6 +14,8 @@ import {
   sendSubscriptionExpiredEmail,
 } from "./emails";
 import { getTierForProductId } from "./products";
+
+const logger = createLogger({ source: "polar/webhooks" });
 
 // Extract payload types from WebhooksOptions
 type SubscriptionCreatedPayload = Parameters<

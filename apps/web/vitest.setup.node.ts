@@ -38,6 +38,8 @@ vi.mock("@domainstack/logger", () => ({
   createLogger: vi.fn<(...args: unknown[]) => ReturnType<typeof createMockLogger>>(() =>
     createMockLogger(),
   ),
+  flushLogs: vi.fn<(...args: unknown[]) => Promise<void>>(async () => undefined),
+  setFlushScheduler: vi.fn<(...args: unknown[]) => void>(),
 }));
 
 // Mock Next.js after() to execute callbacks immediately in tests

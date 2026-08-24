@@ -13,6 +13,10 @@ let nextConfig: NextConfig = {
   },
   productionBrowserSourceMaps: true,
   serverExternalPackages: [
+    "@opentelemetry/api-logs",
+    "@opentelemetry/exporter-logs-otlp-http",
+    "@opentelemetry/resources",
+    "@opentelemetry/sdk-logs",
     // https://github.com/resend/react-email/issues/2426
     "prettier",
   ],

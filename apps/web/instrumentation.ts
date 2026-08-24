@@ -1,9 +1,16 @@
 import type { Instrumentation } from "next";
 
 export async function register() {
-  // Initialize Vercel Workflow world for durable backend operations
   // Only runs in Node.js runtime (not Edge)
   if (process.env.NEXT_RUNTIME !== "edge") {
+    // Flush buffered OTLP logs at request boundaries. Registering here means
+    // every request scope (route handlers, Server Components, Server Actions)
+    // is covered without each one opting in.
+    const { after } = await import("next/server");
+    const { setFlushScheduler } = await import("@domainstack/logger");
+    setFlushScheduler((task) => after(task));
+
+    // Initialize Vercel Workflow world for durable backend operations
     const { getWorld } = await import("workflow/runtime");
     const world = await getWorld();
     await world.start?.();
@@ -19,7 +26,7 @@ export const onRequestError: Instrumentation.onRequestError = async (error, requ
   }
 
   try {
-    const { logger } = await import("@domainstack/logger");
+    const { flushLogs, logger } = await import("@domainstack/logger");
     logger.error(
       {
         err: error,
@@ -29,6 +36,7 @@ export const onRequestError: Instrumentation.onRequestError = async (error, requ
       },
       "request error",
     );
+    await flushLogs();
   } catch {
     // Don't throw from instrumentation
   }

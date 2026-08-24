@@ -5,7 +5,7 @@ import { getProviderById, getProviderLogo } from "@domainstack/db/queries";
 import { createLogger } from "@domainstack/logger";
 import { fetchProviderLogo } from "@domainstack/server";
 
-const logger = createLogger({ source: "provider-router" });
+const logger = createLogger({ source: "routers/provider" });
 
 export const providerRouter = createTRPCRouter({
   /**
