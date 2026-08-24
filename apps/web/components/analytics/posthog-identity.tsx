@@ -17,14 +17,20 @@ import { useSession } from "@domainstack/auth/client";
 export function PostHogIdentityProvider({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   const previousUserIdRef = useRef<string | null>(null);
-  const dropStaleTierRef = useRef(false);
   const queryClient = useQueryClient();
   const trpc = useTRPC();
   const userId = session?.user?.id;
-  const subscriptionQueryKey = trpc.user.getSubscription.queryKey();
+  const subscriptionQuery = trpc.user.getSubscription.queryOptions();
+  const subscriptionQueryKey = subscriptionQuery.queryKey;
+  const scopedSubscriptionQueryKey = (
+    userId
+      ? [subscriptionQueryKey[0], { ...subscriptionQueryKey[1], userId }]
+      : subscriptionQueryKey
+  ) as typeof subscriptionQueryKey;
 
   const { data: subscription } = useQuery({
-    ...trpc.user.getSubscription.queryOptions(),
+    ...subscriptionQuery,
+    queryKey: scopedSubscriptionQueryKey,
     enabled: !!userId,
   });
 
@@ -35,7 +41,6 @@ export function PostHogIdentityProvider({ children }: { children: React.ReactNod
     // User logged in, session hydrated, or account switched
     if (currentUserId && currentUserId !== previousUserId) {
       if (previousUserId) {
-        dropStaleTierRef.current = true;
         queryClient.removeQueries({ queryKey: subscriptionQueryKey });
       }
       const user = session?.user;
@@ -65,10 +70,6 @@ export function PostHogIdentityProvider({ children }: { children: React.ReactNod
   }, [session?.user, userId, queryClient, subscriptionQueryKey]);
 
   useEffect(() => {
-    if (dropStaleTierRef.current) {
-      dropStaleTierRef.current = false;
-      return;
-    }
     if (!userId || !subscription?.plan) {
       return;
     }
