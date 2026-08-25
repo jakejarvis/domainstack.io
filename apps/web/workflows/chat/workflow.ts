@@ -58,6 +58,11 @@ export async function chatWorkflow(input: ChatWorkflowInput) {
     // Temperature 0 ensures consistent tool calling behavior across models
     // See: https://ai-sdk.dev/docs/ai-sdk-core/prompt-engineering#temperature-settings
     temperature: 0,
+    headers: {
+      // Opt into the Vercel leaderboard: https://vercel.com/docs/ai-gateway/app-attribution
+      "http-referer": "https://domainstack.io",
+      "x-title": "Domainstack",
+    },
     providerOptions: {
       gateway: {
         user: userId ?? ip ?? "",
