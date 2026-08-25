@@ -1,12 +1,21 @@
 import posthogClient from "posthog-js";
 
-// PostHog
-posthogClient.init(process.env.NEXT_PUBLIC_POSTHOG_KEY as string, {
-  api_host: "/_proxy/ingest",
-  ui_host: "https://us.posthog.com",
-  defaults: "2025-05-24",
-  capture_exceptions: true, // This enables capturing exceptions using Error Tracking, set to false if you don't want this
-  debug: process.env.NODE_ENV === "development",
-  // GDPR: Don't set cookies until user consents - switches to cookieless tracking mode on reject
-  cookieless_mode: "on_reject",
-});
+const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+
+if (!posthogKey) {
+  if (process.env.NODE_ENV === "development") {
+    console.warn(
+      "NEXT_PUBLIC_POSTHOG_KEY variable required by PostHog is missing or un-configured, this causes events to be silently missed. Configure NEXT_PUBLIC_POSTHOG_KEY to enable analytics.",
+    );
+  }
+} else {
+  posthogClient.init(posthogKey, {
+    api_host: "/_proxy/ingest",
+    tracing_headers: [window.location.hostname],
+    defaults: "2026-05-30",
+    capture_exceptions: true,
+    debug: process.env.NODE_ENV === "development",
+    // GDPR: don't set cookies until the user consents; cookieless until then
+    cookieless_mode: "on_reject",
+  });
+}

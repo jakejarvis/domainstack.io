@@ -5,7 +5,7 @@ import {
   convertToModelMessages,
   generateId,
   readUIMessageStream,
-  stepCountIs,
+  isStepCount,
   streamText,
   type ToolSet,
   type UIMessage,
@@ -124,14 +124,14 @@ export function useLocalChat({
         const modelMessages = await convertToModelMessages(updatedMessages);
 
         // Run the model with tool calling
-        // stopWhen: stepCountIs(3) enables multi-step tool execution - without it,
+        // stopWhen: isStepCount(3) enables multi-step tool execution - without it,
         // the model stops after generating a tool call without executing it
         const result = streamText({
           model,
-          system: systemPrompt,
+          instructions: systemPrompt,
           messages: modelMessages,
           tools,
-          stopWhen: stepCountIs(3),
+          stopWhen: isStepCount(3),
           abortSignal: abortControllerRef.current.signal,
         });
 

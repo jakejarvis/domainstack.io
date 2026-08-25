@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -151,16 +151,9 @@ export const usePreferencesStore = preferencesStore;
  *
  * @see https://zustand.docs.pmnd.rs/integrations/persisting-store-data#how-can-i-check-if-my-store-has-been-hydrated
  */
-export const usePreferencesHydrated = () => {
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    const unsubscribe = preferencesStore.persist.onFinishHydration(() => setHydrated(true));
-
-    setHydrated(preferencesStore.persist.hasHydrated());
-
-    return () => unsubscribe();
-  }, []);
-
-  return hydrated;
-};
+export const usePreferencesHydrated = () =>
+  useSyncExternalStore(
+    (onStoreChange) => preferencesStore.persist.onFinishHydration(onStoreChange),
+    () => preferencesStore.persist.hasHydrated(),
+    () => false,
+  );

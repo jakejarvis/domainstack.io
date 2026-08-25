@@ -8,7 +8,7 @@ import {
   IconDownload,
 } from "@tabler/icons-react";
 
-import { type BrowserAIStatus, useBrowserAI } from "@/hooks/use-browser-ai";
+import { type BrowserAIStatus, type UseBrowserAIResult } from "@/hooks/use-browser-ai";
 import { type AiModePreference, usePreferencesStore } from "@/lib/stores/preferences-store";
 import { Button } from "@domainstack/ui/button";
 import {
@@ -29,22 +29,18 @@ import { cn } from "@domainstack/ui/utils";
 
 interface ChatModeSelectorProps {
   className?: string;
-  /** Disable the selector (e.g., while chat is active) */
   disabled?: boolean;
+  browserAI: UseBrowserAIResult;
 }
 
 function getStatusLabel(status: BrowserAIStatus, downloadProgress?: number): string {
   switch (status) {
-    case "unavailable":
-      return "Not supported";
     case "checking":
       return "Checking…";
     case "downloadable":
       return "Download required";
     case "downloading":
       return `Downloading… ${Math.round((downloadProgress ?? 0) * 100)}%`;
-    case "ready":
-      return "Ready";
     case "error":
       return "Error";
     default:
@@ -52,10 +48,9 @@ function getStatusLabel(status: BrowserAIStatus, downloadProgress?: number): str
   }
 }
 
-export function ChatModeSelector({ className, disabled }: ChatModeSelectorProps) {
+export function ChatModeSelector({ className, disabled, browserAI }: ChatModeSelectorProps) {
   const aiMode = usePreferencesStore((s) => s.aiMode);
   const setAiMode = usePreferencesStore((s) => s.setAiMode);
-  const browserAI = useBrowserAI();
 
   const canUseLocal = browserAI.status === "ready" || browserAI.status === "downloadable";
   const isDownloading = browserAI.status === "downloading";
@@ -121,6 +116,7 @@ export function ChatModeSelector({ className, disabled }: ChatModeSelectorProps)
                         variant="ghost"
                         size="sm"
                         className="ml-auto h-6 px-2"
+                        aria-label="Download on-device model"
                         onClick={handleDownloadClick}
                       >
                         <IconDownload className="size-3.5" />
@@ -129,12 +125,15 @@ export function ChatModeSelector({ className, disabled }: ChatModeSelectorProps)
                   </DropdownMenuRadioItem>
                 }
               />
-              <ResponsiveTooltipContent className={cn(canUseLocal && "hidden")}>
+              <ResponsiveTooltipContent
+                className={cn(browserAI.status !== "unavailable" && "hidden")}
+              >
                 Requires latest{" "}
                 <a
                   href="https://developer.chrome.com/docs/ai/prompt-api"
                   target="_blank"
                   rel="noopener noreferrer"
+                  className="font-medium"
                 >
                   Google Chrome
                 </a>{" "}
@@ -143,6 +142,7 @@ export function ChatModeSelector({ className, disabled }: ChatModeSelectorProps)
                   href="https://learn.microsoft.com/en-us/microsoft-edge/web-platform/prompt-api"
                   target="_blank"
                   rel="noopener noreferrer"
+                  className="font-medium"
                 >
                   Microsoft Edge
                 </a>{" "}

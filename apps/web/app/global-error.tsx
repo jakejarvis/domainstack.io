@@ -3,7 +3,7 @@
 import NextError from "next/error";
 import { useEffect } from "react";
 
-import { analytics } from "@domainstack/analytics/client";
+import { analytics } from "@/lib/analytics/client";
 
 export default function GlobalError({
   error,

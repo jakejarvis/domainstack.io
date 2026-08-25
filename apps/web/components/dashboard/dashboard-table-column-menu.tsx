@@ -1,6 +1,6 @@
 import { IconEye, IconTableOptions } from "@tabler/icons-react";
-import type { Table } from "@tanstack/react-table";
 
+import type { DashboardTable } from "@/lib/dashboard-table-features";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { Button } from "@domainstack/ui/button";
 import {
@@ -14,18 +14,19 @@ import {
 import { ScrollArea } from "@domainstack/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 
-type DashboardTableColumnMenuProps<TData> = {
-  table: Table<TData>;
+type DashboardTableColumnMenuProps = {
+  table: DashboardTable;
 };
 
-export function DashboardTableColumnMenu<TData>({ table }: DashboardTableColumnMenuProps<TData>) {
-  // Read visibility state directly from store (not stale table API)
+export function DashboardTableColumnMenu({ table }: DashboardTableColumnMenuProps) {
+  // Controlled visibility lives in the preferences store. Reading it here
+  // (instead of `column.getIsVisible()`) keeps this nested menu correct under
+  // the compiler without a `table.Subscribe` boundary.
   const columnVisibility = usePreferencesStore((s) => s.columnVisibility);
   const setColumnVisibility = usePreferencesStore((s) => s.setColumnVisibility);
 
   const allColumns = table.getAllColumns().filter((column) => column.getCanHide());
 
-  // Check visibility from our state, not the table API
   const isColumnVisible = (columnId: string) => columnVisibility[columnId] !== false;
 
   const hiddenCount = allColumns.filter((column) => !isColumnVisible(column.id)).length;

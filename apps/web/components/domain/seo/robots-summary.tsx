@@ -13,7 +13,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 
 import { PillCount } from "@/components/domain/pill-count";
 import type { SeoResponse } from "@domainstack/types";
@@ -65,14 +65,15 @@ function useProgressiveReveal<T>(items: T[], initialVisible: number) {
   const [visible, setVisible] = useState(initialVisible);
   const total = items.length;
   const more = total - visible;
-  const prevVisibleRef = useRef(visible);
-  const prev = Math.min(prevVisibleRef.current, visible);
+  const [prevVisible, setPrevVisible] = useState(initialVisible);
+  const [seenVisible, setSeenVisible] = useState(initialVisible);
+  if (visible !== seenVisible) {
+    setPrevVisible(seenVisible);
+    setSeenVisible(visible);
+  }
+  const prev = Math.min(prevVisible, visible, total);
   const existing = items.slice(0, prev);
   const added = items.slice(prev, Math.min(visible, total));
-
-  useEffect(() => {
-    prevVisibleRef.current = Math.min(visible, items.length);
-  }, [visible, items]);
 
   return { existing, added, more, total, visible, setVisible } as const;
 }

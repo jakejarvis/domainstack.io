@@ -2,14 +2,13 @@
 
 import { IconArchive, IconArrowLeft, IconHeartHandshake } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
-import type { Table } from "@tanstack/react-table";
 import { useSearchParams } from "next/navigation";
 import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
 
 import { ArchivedDomainsList } from "@/components/dashboard/archived-domains-list";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
+import { DashboardConfirmDialog } from "@/components/dashboard/dashboard-confirm-dialog";
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
 import { DashboardError } from "@/components/dashboard/dashboard-error";
 import { DashboardFilters } from "@/components/dashboard/dashboard-filters";
@@ -21,14 +20,18 @@ import { UpgradeBanner } from "@/components/dashboard/upgrade-banner";
 import { DashboardProvider } from "@/context/dashboard-context";
 import { useDashboardFilters } from "@/hooks/use-dashboard-filters";
 import { useDashboardMutations } from "@/hooks/use-dashboard-mutations";
-import { useDashboardPagination } from "@/hooks/use-dashboard-pagination";
+import {
+  getDashboardFilterSignature,
+  useDashboardPagination,
+  useSyncDashboardPage,
+} from "@/hooks/use-dashboard-pagination";
 import { useDashboardSelection, useSyncVisibleDomainIds } from "@/hooks/use-dashboard-selection";
 import { useRouter } from "@/hooks/use-router";
 import { useSubscription } from "@/hooks/use-subscription";
+import type { DashboardTable } from "@/lib/dashboard-table-features";
 import {
   type ConfirmAction,
   DEFAULT_SORT,
-  getConfirmDialogContent,
   SORT_OPTIONS,
   type SortOption,
   sortDomains,
@@ -37,17 +40,6 @@ import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { useTRPC } from "@/lib/trpc/client";
 import { useSession } from "@domainstack/auth/client";
 import type { VerificationMethod } from "@domainstack/constants";
-import type { TrackedDomainWithDetails } from "@domainstack/types";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@domainstack/ui/alert-dialog";
 import { Button } from "@domainstack/ui/button";
 
 export function DashboardClient() {
@@ -89,7 +81,7 @@ export function DashboardClient() {
     actions: { setPageIndex, setPageSize, resetPage },
   } = useDashboardPagination();
 
-  const [tableInstance, setTableInstance] = useState<Table<TrackedDomainWithDetails> | null>(null);
+  const [tableInstance, setTableInstance] = useState<DashboardTable | null>(null);
 
   // Tracked domains query
   const domainsQuery = useQuery(trpc.tracking.listDomains.queryOptions({ includeArchived: true }));
@@ -120,6 +112,14 @@ export function DashboardClient() {
   // Filtered domain IDs for selection - sync to Jotai atom
   const filteredDomainIds = useMemo(() => filteredDomains.map((d) => d.id), [filteredDomains]);
   useSyncVisibleDomainIds(filteredDomainIds);
+  useSyncDashboardPage({
+    itemCount: filteredDomains.length,
+    pageIndex: pagination.pageIndex,
+    pageSize: pagination.pageSize,
+    filterSignature: getDashboardFilterSignature(filterHook.state),
+    resetPage,
+    enabled: allDomains !== undefined,
+  });
 
   // Selection state from Jotai
   const { clearSelection } = useDashboardSelection();
@@ -127,17 +127,8 @@ export function DashboardClient() {
   const doBulkArchive = useCallback(
     async (domainIds: string[]) => {
       try {
-        const result = await mutations.bulkArchive(domainIds);
+        await mutations.bulkArchive(domainIds);
         clearSelection();
-        if (result.failedCount === 0) {
-          toast.success(
-            `Archived ${result.successCount} domain${result.successCount === 1 ? "" : "s"}`,
-          );
-        } else {
-          toast.warning(
-            `Archived ${result.successCount} of ${domainIds.length} domains (${result.failedCount} failed)`,
-          );
-        }
       } catch {
         // Error handled in mutation onError
       }
@@ -148,17 +139,8 @@ export function DashboardClient() {
   const doBulkDelete = useCallback(
     async (domainIds: string[]) => {
       try {
-        const result = await mutations.bulkDelete(domainIds);
+        await mutations.bulkDelete(domainIds);
         clearSelection();
-        if (result.failedCount === 0) {
-          toast.success(
-            `Deleted ${result.successCount} domain${result.successCount === 1 ? "" : "s"}`,
-          );
-        } else {
-          toast.warning(
-            `Deleted ${result.successCount} of ${domainIds.length} domains (${result.failedCount} failed)`,
-          );
-        }
       } catch {
         // Error handled in mutation onError
       }
@@ -188,17 +170,19 @@ export function DashboardClient() {
 
   // Handle ?upgraded=true query param (after nuqs adapter)
   const searchParams = useSearchParams();
+  const upgradedParam = searchParams?.get("upgraded") === "true";
+  if (upgradedParam && !showUpgradedBanner) {
+    setShowUpgradedBanner(true);
+  }
   useEffect(() => {
-    if (searchParams?.get("upgraded") === "true") {
-      setShowUpgradedBanner(true);
-      // Clear only the `upgraded` param while preserving others (e.g., filters)
-      const params = new URLSearchParams(searchParams.toString());
-      params.delete("upgraded");
-      const newSearch = params.toString();
-      const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
-      router.replace(newUrl, { scroll: false });
-    }
-  }, [router, searchParams]);
+    if (!upgradedParam || !searchParams) return;
+    // Clear only the `upgraded` param while preserving others (e.g., filters)
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("upgraded");
+    const newSearch = params.toString();
+    const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
+    router.replace(newUrl, { scroll: false });
+  }, [upgradedParam, router, searchParams]);
 
   const handleAddDomain = useCallback(() => {
     router.push("/dashboard/add-domain", { scroll: false });
@@ -388,33 +372,13 @@ export function DashboardClient() {
         )}
       </DashboardProvider>
 
-      {/* Confirmation dialog for destructive actions */}
-      <AlertDialog
-        open={pendingAction !== null}
+      <DashboardConfirmDialog
+        pendingAction={pendingAction}
         onOpenChange={(open) => {
           if (!open) setPendingAction(null);
         }}
-      >
-        {pendingAction && (
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{getConfirmDialogContent(pendingAction).title}</AlertDialogTitle>
-              <AlertDialogDescription>
-                {getConfirmDialogContent(pendingAction).description}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleConfirm}
-                variant={getConfirmDialogContent(pendingAction).variant}
-              >
-                {getConfirmDialogContent(pendingAction).confirmLabel}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        )}
-      </AlertDialog>
+        onConfirm={handleConfirm}
+      />
     </div>
   );
 }

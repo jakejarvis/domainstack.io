@@ -105,15 +105,13 @@ export function SettingsTabsRouter({
 
   const activeTab = navigationMode === "page" ? pageTab : segmentTab;
 
+  // Look up after commit: a render-time getElementById sees the previous tree,
+  // so a same-commit mount (client navigation into the modal) would miss the
+  // target and stick with the inline fallback forever.
   const [tabsListPortalTarget, setTabsListPortalTarget] = useState<HTMLElement | null>(null);
-
-  useEffect(() => {
-    if (!tabsListPortalId) {
-      setTabsListPortalTarget(null);
-      return;
-    }
-
-    setTabsListPortalTarget(document.getElementById(tabsListPortalId));
+  useLayoutEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- sync portal target from committed DOM
+    setTabsListPortalTarget(tabsListPortalId ? document.getElementById(tabsListPortalId) : null);
   }, [tabsListPortalId]);
 
   const scrollPanelsToTop = useCallback((_tab: SettingsTabValue) => {

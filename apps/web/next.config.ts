@@ -13,11 +13,15 @@ let nextConfig: NextConfig = {
   },
   productionBrowserSourceMaps: true,
   serverExternalPackages: [
+    "@opentelemetry/api-logs",
+    "@opentelemetry/exporter-logs-otlp-http",
+    "@opentelemetry/resources",
+    "@opentelemetry/sdk-logs",
     // https://github.com/resend/react-email/issues/2426
     "prettier",
   ],
   outputFileTracingIncludes: {
-    "/.well-known/workflow/v1/step": ["../../node_modules/@sparticuz/chromium/bin/**"],
+    "/.well-known/workflow/v1/flow": ["../../node_modules/@sparticuz/chromium/bin/**"],
   },
   logging: {
     incomingRequests: {
@@ -44,6 +48,10 @@ let nextConfig: NextConfig = {
     {
       source: "/_proxy/ingest/static/:path*",
       destination: "https://us-assets.i.posthog.com/static/:path*",
+    },
+    {
+      source: "/_proxy/ingest/array/:path*",
+      destination: "https://us-assets.i.posthog.com/array/:path*",
     },
     {
       source: "/_proxy/ingest/:path*",

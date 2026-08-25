@@ -1,9 +1,9 @@
 "use client";
 
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 
 import { useTRPC } from "@/lib/trpc/client";
+import { toast } from "@domainstack/ui/toast";
 
 const PAGE_SIZE = 20;
 
@@ -55,9 +55,9 @@ export function useNotificationsData({ filter, enabled }: UseNotificationsDataOp
       const previousInbox = queryClient.getQueryData(inboxListQueryKey);
       const previousArchive = queryClient.getQueryData(archiveListQueryKey);
 
-      const wasInInbox = previousInbox?.pages?.some((page) => page.items.some((n) => n.id === id));
+      const moved = previousInbox?.pages?.flatMap((page) => page.items).find((n) => n.id === id);
 
-      if (wasInInbox) {
+      if (moved) {
         queryClient.setQueryData(countQueryKey, (old: number | undefined) =>
           typeof old === "number" ? Math.max(0, old - 1) : old,
         );
@@ -74,15 +74,24 @@ export function useNotificationsData({ filter, enabled }: UseNotificationsDataOp
         };
       });
 
+      const now = new Date();
+      const archivedItem = moved
+        ? moved.readAt
+          ? moved
+          : Object.assign({}, moved, { readAt: now })
+        : undefined;
       queryClient.setQueryData(archiveListQueryKey, (old) => {
-        if (!old?.pages) return old;
-        const now = new Date();
+        if (!archivedItem) return old;
+        if (!old?.pages?.length) {
+          return {
+            pages: [{ items: [archivedItem], nextCursor: undefined }],
+            pageParams: [null],
+          };
+        }
+        const [first, ...rest] = old.pages;
         return {
           ...old,
-          pages: old.pages.map((page) => ({
-            ...page,
-            items: page.items.map((n) => (n.id === id ? { ...n, readAt: n.readAt ?? now } : n)),
-          })),
+          pages: [{ ...first, items: [archivedItem, ...first.items] }, ...rest],
         };
       });
 
@@ -98,7 +107,7 @@ export function useNotificationsData({ filter, enabled }: UseNotificationsDataOp
       if (context?.previousArchive) {
         queryClient.setQueryData(archiveListQueryKey, context.previousArchive);
       }
-      toast.error("Failed to mark notification as read");
+      toast.add({ title: "Failed to mark notification as read", type: "error" });
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: inboxListQueryKey });
@@ -121,6 +130,12 @@ export function useNotificationsData({ filter, enabled }: UseNotificationsDataOp
 
       queryClient.setQueryData(countQueryKey, 0);
 
+      const now = new Date();
+      const inboxItems = previousInbox?.pages?.flatMap((page) => page.items) ?? [];
+      const moved = inboxItems.map((item) =>
+        item.readAt ? item : Object.assign({}, item, { readAt: now }),
+      );
+
       queryClient.setQueryData(inboxListQueryKey, (old) => {
         if (!old?.pages) return old;
         return {
@@ -133,18 +148,18 @@ export function useNotificationsData({ filter, enabled }: UseNotificationsDataOp
         };
       });
 
-      const now = new Date();
       queryClient.setQueryData(archiveListQueryKey, (old) => {
-        if (!old?.pages) return old;
+        if (moved.length === 0) return old;
+        if (!old?.pages?.length) {
+          return {
+            pages: [{ items: moved, nextCursor: undefined }],
+            pageParams: [null],
+          };
+        }
+        const [first, ...rest] = old.pages;
         return {
           ...old,
-          pages: old.pages.map((page) => ({
-            ...page,
-            items: page.items.map((n) => ({
-              ...n,
-              readAt: n.readAt ?? now,
-            })),
-          })),
+          pages: [{ ...first, items: [...moved, ...first.items] }, ...rest],
         };
       });
 
@@ -160,7 +175,7 @@ export function useNotificationsData({ filter, enabled }: UseNotificationsDataOp
       if (context?.previousArchive) {
         queryClient.setQueryData(archiveListQueryKey, context.previousArchive);
       }
-      toast.error("Failed to mark notifications as read");
+      toast.add({ title: "Failed to mark notifications as read", type: "error" });
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: inboxListQueryKey });

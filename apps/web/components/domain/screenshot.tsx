@@ -4,11 +4,11 @@ import { IconCircleX, IconShieldExclamation } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
 
+import { analytics } from "@/lib/analytics/client";
 import { parseRetryAfterHeader } from "@/lib/ratelimit/client";
-import { analytics } from "@domainstack/analytics/client";
 import { Spinner } from "@domainstack/ui/spinner";
+import { toast } from "@domainstack/ui/toast";
 import { cn } from "@domainstack/ui/utils";
 
 type ScreenshotStartResponse =
@@ -116,6 +116,8 @@ export function useScreenshot({
   const queryClient = useQueryClient();
   const [runId, setRunId] = useState<string | null>(null);
   const [screenshotData, setScreenshotData] = useState<ScreenshotData | null>(null);
+  const [pollFailed, setPollFailed] = useState(false);
+  const [pollError, setPollError] = useState<Error | null>(null);
   const hasStartedRef = useRef(false);
   const startedForDomainRef = useRef<string | null>(null);
   const [rateLimitedUntil, setRateLimitedUntil] = useState<number | null>(null);
@@ -123,6 +125,16 @@ export function useScreenshot({
 
   const screenshotQueryKey = useMemo(() => ["screenshot", domain], [domain]);
   const cachedData = queryClient.getQueryData<ScreenshotData>(screenshotQueryKey);
+
+  const [trackedDomain, setTrackedDomain] = useState(domain);
+  if (domain !== trackedDomain) {
+    setTrackedDomain(domain);
+    setScreenshotData(null);
+    setRunId(null);
+    setRateLimitedUntil(null);
+    setPollFailed(false);
+    setPollError(null);
+  }
 
   const startScreenshot = useCallback(async (id: string) => {
     const response = await fetch("/api/screenshot", {
@@ -156,8 +168,10 @@ export function useScreenshot({
       } else if (data.status === "rate_limited") {
         const retryAt = Date.now() + data.retryAfter * 1000;
         setRateLimitedUntil(retryAt);
-        toast.error("Too many requests", {
+        toast.add({
+          title: "Too many requests",
           description: `Please wait ${data.retryAfter} second${data.retryAfter !== 1 ? "s" : ""} before trying again.`,
+          type: "error",
         });
         analytics.track("screenshot_rate_limited", {
           domain,
@@ -206,22 +220,34 @@ export function useScreenshot({
     },
   });
 
-  // Handle polling completion
+  // Handle polling completion after commit so we don't setState during render.
+  // Persist terminal results before clearing runId — disabling the status query
+  // would otherwise drop completed data and failed/error state.
   useEffect(() => {
-    if (!statusQuery.data || statusQuery.data.status === "running") return;
+    const data = statusQuery.data;
+    if (!data || data.status === "running") return;
 
-    if (statusQuery.data.status === "completed") {
-      setScreenshotData(statusQuery.data.data);
-      queryClient.setQueryData(screenshotQueryKey, statusQuery.data.data);
-      analytics.track("screenshot_loaded_from_api", { domain });
-      setRunId(null);
-    } else if (statusQuery.data.status === "rate_limited") {
-      toast.error("Too many requests", {
-        description: `Polling paused. Retrying in ${statusQuery.data.retryAfter} seconds.`,
+    if (data.status === "rate_limited") {
+      toast.add({
+        title: "Too many requests",
+        description: `Polling paused. Retrying in ${data.retryAfter} seconds.`,
+        type: "error",
       });
-    } else {
-      setRunId(null);
+      return;
     }
+
+    if (data.status === "completed") {
+      // oxlint-disable-next-line react/set-state-in-effect
+      setScreenshotData(data.data);
+      queryClient.setQueryData(screenshotQueryKey, data.data);
+      analytics.track("screenshot_loaded_from_api", { domain });
+    } else if (data.status === "failed") {
+      setPollFailed(true);
+    } else if (data.status === "error") {
+      setPollError(new Error(data.error));
+    }
+
+    setRunId(null);
   }, [statusQuery.data, queryClient, screenshotQueryKey, domain]);
 
   // Cleanup retry timeout on unmount
@@ -239,9 +265,6 @@ export function useScreenshot({
     if (startedForDomainRef.current !== domain) {
       hasStartedRef.current = false;
       startedForDomainRef.current = domain;
-      setScreenshotData(null);
-      setRunId(null);
-      setRateLimitedUntil(null);
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);
         retryTimeoutRef.current = null;
@@ -261,9 +284,10 @@ export function useScreenshot({
   }, [domain, enabled, domainId, cachedData, screenshotData, startMutation, rateLimitedUntil]);
 
   // Derive return values
-  const finalData = screenshotData ?? cachedData ?? null;
-  const error = startMutation.error ?? statusQuery.error ?? null;
-  const hasFailed = statusQuery.data?.status === "failed";
+  const polledData = statusQuery.data?.status === "completed" ? statusQuery.data.data : undefined;
+  const finalData = screenshotData ?? polledData ?? cachedData ?? null;
+  const error = startMutation.error ?? statusQuery.error ?? pollError ?? null;
+  const hasFailed = pollFailed || statusQuery.data?.status === "failed";
   const isLoading =
     !finalData &&
     !error &&

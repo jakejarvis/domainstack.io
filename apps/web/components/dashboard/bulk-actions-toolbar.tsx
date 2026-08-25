@@ -57,6 +57,7 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
       {/* Left: Select all checkbox + count */}
       <ResponsiveTooltip>
         <ResponsiveTooltipTrigger
+          nativeButton={false}
           render={
             <Label className="flex cursor-pointer items-center gap-2.5">
               <Checkbox

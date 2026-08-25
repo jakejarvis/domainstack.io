@@ -1,8 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { analytics } from "@/lib/analytics/server";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
-import { analytics } from "@domainstack/analytics/server";
 import {
   countTrackedDomainsByStatus,
   deleteCalendarFeed,

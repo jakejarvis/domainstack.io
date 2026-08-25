@@ -7,26 +7,26 @@ import * as schema from "./schema";
 export type Database = NodePgDatabase<typeof schema>;
 
 // Lazy-initialized singleton to allow tests to mock before first access
-let _db: Database | null = null;
-let _pool: Pool | null = null;
+let dbInstance: Database | null = null;
+let poolInstance: Pool | null = null;
 
 function getDb(): Database {
-  if (_db) return _db;
+  if (dbInstance) return dbInstance;
 
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
     throw new Error("DATABASE_URL is not set");
   }
 
-  _pool = new Pool({ connectionString });
-  _db = drizzle(_pool, { schema });
+  poolInstance = new Pool({ connectionString });
+  dbInstance = drizzle(poolInstance, { schema });
 
   // Attach to Vercel's pool management if available
   // This ensures idle connections are properly released before fluid compute functions suspend
   // https://vercel.com/guides/connection-pooling-with-functions
-  void attachPoolIfVercel(_pool);
+  void attachPoolIfVercel(poolInstance);
 
-  return _db;
+  return dbInstance;
 }
 
 async function attachPoolIfVercel(pool: Pool) {
@@ -48,6 +48,6 @@ export const db: Database = new Proxy({} as Database, {
 /**
  * For testing: allows replacing the db singleton with a test database.
  */
-export function __setTestDb(testDb: Database | null): void {
-  _db = testDb;
+export function setTestDb(testDb: Database | null): void {
+  dbInstance = testDb;
 }

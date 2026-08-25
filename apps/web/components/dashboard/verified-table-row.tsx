@@ -1,18 +1,20 @@
-"use no memo"; // Disable React Compiler memoization - TanStack Table has issues with it
 import { type Cell, flexRender } from "@tanstack/react-table";
 import { motion, useReducedMotion } from "motion/react";
 
+import { useIsDomainSelected } from "@/hooks/use-dashboard-selection";
+import type { DashboardTableFeatures } from "@/lib/dashboard-table-features";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { cn } from "@domainstack/ui/utils";
 
 type VerifiedTableRowProps = {
   rowId: string;
-  cells: Cell<TrackedDomainWithDetails, unknown>[];
-  isSelected: boolean;
+  cells: Cell<DashboardTableFeatures, TrackedDomainWithDetails, unknown>[];
+  original: TrackedDomainWithDetails;
 };
 
-export function VerifiedTableRow({ rowId, cells, isSelected }: VerifiedTableRowProps) {
+export function VerifiedTableRow({ rowId, cells, original }: VerifiedTableRowProps) {
   const shouldReduceMotion = useReducedMotion();
+  const isSelected = useIsDomainSelected(original.id);
 
   return (
     <motion.tr

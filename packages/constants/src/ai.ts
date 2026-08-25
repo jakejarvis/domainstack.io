@@ -47,6 +47,32 @@ export const MAX_CONVERSATION_MESSAGES = 10;
 export const MAX_OUTPUT_TOKENS = 4096;
 
 /**
+ * Maximum characters in a single assistant text/reasoning part.
+ * Larger than MAX_MESSAGE_LENGTH because model output can reach
+ * MAX_OUTPUT_TOKENS tokens. 8 chars/token leaves headroom for
+ * punctuation-heavy or non-English replies.
+ */
+export const MAX_ASSISTANT_TEXT_LENGTH = MAX_OUTPUT_TOKENS * 8;
+
+/**
+ * Maximum JSON-serialized size of a single assistant part.
+ * Bounds tool input/output and extra fields on loose parts.
+ */
+export const MAX_ASSISTANT_PART_CHARS = 64_000;
+
+/**
+ * Maximum number of parts on a single assistant message.
+ */
+export const MAX_ASSISTANT_PARTS = 32;
+
+/**
+ * Maximum chat request body size in bytes.
+ * Enforced before JSON.parse so oversized payloads never reach
+ * the schema or the model.
+ */
+export const MAX_CHAT_REQUEST_BYTES = 512_000;
+
+/**
  * Maximum number of tool calls (steps) per request.
  * Prevents infinite loops and controls execution time.
  */

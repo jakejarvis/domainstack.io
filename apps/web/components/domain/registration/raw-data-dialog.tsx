@@ -153,16 +153,18 @@ function HighlightedLine({ line, isJson }: { line: string; isJson: boolean }): R
   }
 
   // Attempt tokenization with graceful fallback to plain text
-  let tokens: Token[];
+  let tokens: Token[] | null = null;
   try {
-    tokens = tokenizeLine(line);
-    // Sanity check: ensure tokens reconstruct the original line
-    const reconstructed = tokens.map((t) => t.value).join("");
-    if (reconstructed !== line) {
-      return <>{line}</>;
+    const result = tokenizeLine(line);
+    const reconstructed = result.map((t) => t.value).join("");
+    if (reconstructed === line) {
+      tokens = result;
     }
   } catch {
-    // Tokenization failed - fall back to plain text
+    tokens = null;
+  }
+
+  if (!tokens) {
     return <>{line}</>;
   }
 
@@ -214,17 +216,15 @@ export function RawDataDialog({ domain, format, data, serverName, serverUrl }: R
   const lines = useMemo(() => formattedData?.trim().split("\n") ?? [], [formattedData]);
   const lineItems = useMemo(() => {
     const seen = new Map<string, number>();
-    let lineNumber = 0;
 
-    return lines.map((line) => {
-      lineNumber += 1;
+    return lines.map((line, index) => {
       const duplicateCount = seen.get(line) ?? 0;
       seen.set(line, duplicateCount + 1);
 
       return {
         key: `${line || "empty-line"}-${duplicateCount}`,
         line,
-        lineNumber,
+        lineNumber: index + 1,
       };
     });
   }, [lines]);

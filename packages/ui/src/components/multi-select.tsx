@@ -166,9 +166,11 @@ export function MultiSelect<T extends string>({
       filter={searchable ? filterOption : null}
     >
       <ComboboxPrimitive.Trigger
+        aria-label={selected.length > 0 ? `${label}, ${selected.length} selected` : label}
         render={
           <Button
             variant="outline"
+            aria-label={selected.length > 0 ? `${label}, ${selected.length} selected` : label}
             className={cn(
               "h-9 gap-2 px-3",
               selected.length > 0 &&
@@ -176,14 +178,17 @@ export function MultiSelect<T extends string>({
               className,
             )}
           >
-            <Icon className="text-muted-foreground" />
+            <Icon className="text-muted-foreground" aria-hidden />
             {label}
             {selected.length > 0 && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-md bg-foreground/10 px-1.5 text-xs font-semibold tabular-nums dark:bg-foreground/20">
+              <span
+                className="flex h-5 min-w-5 items-center justify-center rounded-md bg-foreground/10 px-1.5 text-xs font-semibold tabular-nums dark:bg-foreground/20"
+                aria-hidden
+              >
                 {selected.length}
               </span>
             )}
-            <IconChevronDown className="size-3 opacity-50" />
+            <IconChevronDown className="size-3 opacity-50" aria-hidden />
           </Button>
         }
       />

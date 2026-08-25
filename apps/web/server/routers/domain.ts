@@ -19,7 +19,7 @@ import {
   fetchSeo,
 } from "@domainstack/server";
 
-const logger = createLogger({ source: "domain-router" });
+const logger = createLogger({ source: "routers/domain" });
 
 const DomainInputSchema = z.object({ domain: z.string().min(1) }).transform(({ domain }) => {
   const registrable = toRegistrableDomain(domain);

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-import { analytics } from "@domainstack/analytics/client";
+import { analytics } from "@/lib/analytics/client";
 import { useSession } from "@domainstack/auth/client";
 
 /**
@@ -15,30 +15,33 @@ import { useSession } from "@domainstack/auth/client";
 export function PostHogIdentityProvider({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   const previousUserIdRef = useRef<string | null>(null);
+  const userId = session?.user?.id;
 
   useEffect(() => {
-    const currentUserId = session?.user?.id ?? null;
+    const currentUserId = userId ?? null;
     const previousUserId = previousUserIdRef.current;
 
-    // User logged in or session hydrated with user
+    // User logged in, session hydrated, or account switched.
     if (currentUserId && currentUserId !== previousUserId) {
-      // Only identify if not already identified with this user
-      if (!analytics.isIdentified()) {
-        const user = session?.user;
-        if (user) {
-          analytics.identify(
-            user.id,
-            // $set properties (can change)
-            {
-              email: user.email,
-              name: user.name,
-            },
-            // $set_once properties (immutable)
-            {
-              createdAt: user.createdAt ? new Date(user.createdAt).toISOString() : undefined,
-            },
-          );
-        }
+      // A direct account switch must not retain the previous person's identity.
+      if (previousUserId) {
+        analytics.reset();
+      }
+
+      const user = session?.user;
+      if (user) {
+        analytics.identify(
+          user.id,
+          // $set properties (can change)
+          {
+            email: user.email,
+            name: user.name,
+          },
+          // $set_once properties (immutable)
+          {
+            createdAt: user.createdAt ? new Date(user.createdAt).toISOString() : undefined,
+          },
+        );
       }
     }
 
@@ -47,9 +50,8 @@ export function PostHogIdentityProvider({ children }: { children: React.ReactNod
       analytics.reset();
     }
 
-    // Update ref for next comparison
     previousUserIdRef.current = currentUserId;
-  }, [session]);
+  }, [session?.user, userId]);
 
   return <>{children}</>;
 }

@@ -1,16 +1,14 @@
 "use client";
 
 import type { UIMessage } from "ai";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+import { MAX_CONVERSATION_MESSAGES } from "@domainstack/constants";
 
 interface ChatState {
-  // Session state (persisted)
+  /** Live workflow run ID; persisted so a reload can resume an in-flight stream. */
   runId: string | null;
   messages: UIMessage[];
 }
@@ -23,19 +21,8 @@ interface ChatActions {
 
 type ChatStore = ChatState & ChatActions;
 
-// ---------------------------------------------------------------------------
-// Store
-// ---------------------------------------------------------------------------
-
 /**
- * Chat store for session persistence (runId, messages).
- * UI state (open/settings dialogs) is local useState in ChatTriggerClient.
- *
- * Usage:
- * ```tsx
- * const messages = useChatStore((s) => s.messages);
- * const setMessages = useChatStore((s) => s.setMessages);
- * ```
+ * Chat store for session persistence (messages and in-flight stream resume).
  */
 const chatStore = create<ChatStore>()(
   persist(
@@ -49,33 +36,34 @@ const chatStore = create<ChatStore>()(
     }),
     {
       name: "chat",
-      version: 1,
+      version: 2,
       partialize: (state) => ({
         runId: state.runId,
-        messages: state.messages,
+        messages: state.messages.slice(-MAX_CONVERSATION_MESSAGES),
       }),
+      migrate: (persisted) => {
+        const state = persisted as Partial<ChatState>;
+        return {
+          runId: null,
+          messages: state.messages ?? [],
+        };
+      },
     },
   ),
 );
 
 export const useChatStore = chatStore;
 
+const subscribeChatHydration = chatStore.persist.onFinishHydration;
+const getChatHydrationSnapshot = () => chatStore.persist.hasHydrated();
+const getChatHydrationServerSnapshot = () => false;
+
 /**
  * Returns true once the chat store has hydrated from localStorage.
- * Use this to prevent restoring messages before the store has loaded persisted data.
- *
- * @see https://zustand.docs.pmnd.rs/integrations/persisting-store-data#how-can-i-check-if-my-store-has-been-hydrated
  */
-export const useChatHydrated = () => {
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    const unsubscribe = chatStore.persist.onFinishHydration(() => setHydrated(true));
-
-    setHydrated(chatStore.persist.hasHydrated());
-
-    return () => unsubscribe();
-  }, []);
-
-  return hydrated;
-};
+export const useChatHydrated = () =>
+  useSyncExternalStore(
+    subscribeChatHydration,
+    getChatHydrationSnapshot,
+    getChatHydrationServerSnapshot,
+  );

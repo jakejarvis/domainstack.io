@@ -1,25 +1,27 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import { WorkflowChatTransport } from "@ai-sdk/workflow";
 import { IconLayoutSidebarRightCollapse, IconLego } from "@tabler/icons-react";
-import { WorkflowChatTransport } from "@workflow/ai";
-import { useAtom, useSetAtom } from "jotai";
+import type { UIMessage } from "ai";
+import { useAtom } from "jotai";
 import { AnimatePresence } from "motion/react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BetaBadge } from "@/components/beta-badge";
-import { useBrowserAI } from "@/hooks/use-browser-ai";
+import { useHaptics } from "@/components/providers/haptics-provider";
+import { type UseBrowserAIResult, useBrowserAI } from "@/hooks/use-browser-ai";
 import { useChatPersistence } from "@/hooks/use-chat-persistence";
 import { useLocalChat } from "@/hooks/use-local-chat";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { chatOpenAtom, serverSuggestionsAtom } from "@/lib/atoms/chat-atoms";
+import { analytics } from "@/lib/analytics/client";
+import { chatOpenAtom } from "@/lib/atoms/chat-atoms";
 import { buildClientSystemPrompt } from "@/lib/chat/client-prompt";
 import { createClientDomainTools } from "@/lib/chat/client-tools";
-import { useChatStore } from "@/lib/stores/chat-store";
+import { useChatHydrated, useChatStore } from "@/lib/stores/chat-store";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { useTRPCClient } from "@/lib/trpc/client";
-import { analytics } from "@domainstack/analytics/client";
 import { CHATBOT_NAME } from "@domainstack/constants";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@domainstack/ui/drawer";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@domainstack/ui/sheet";
@@ -34,46 +36,139 @@ interface ChatClientProps {
   suggestions?: string[];
 }
 
-export function ChatClient({ suggestions = [] }: ChatClientProps) {
+const EMPTY_SUGGESTIONS: string[] = [];
+
+type ChatMode = "cloud" | "local";
+
+interface ChatController {
+  messages: UIMessage[];
+  sendMessage: (params: { text: string }) => void;
+  clearMessages: () => void;
+  status: "submitted" | "streaming" | "ready" | "error";
+  error: string | null;
+}
+
+export function ChatClient({ suggestions = EMPTY_SUGGESTIONS }: ChatClientProps) {
   const [open, setOpen] = useAtom(chatOpenAtom);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const params = useParams<{ domain?: string }>();
   const isMobile = useIsMobile();
   const hideAiFeatures = usePreferencesStore((s) => s.hideAiFeatures);
   const aiMode = usePreferencesStore((s) => s.aiMode);
+  const browserAI = useBrowserAI();
+  const chatHydrated = useChatHydrated();
+  const storedMessageCount = useChatStore((s) => s.messages.length);
+  const { trigger } = useHaptics();
 
   const domain = params.domain ? decodeURIComponent(params.domain) : undefined;
+
+  const wantsLocal = (aiMode === "local" || aiMode === "auto") && browserAI.status === "ready";
+  const preferredMode: ChatMode =
+    chatHydrated && storedMessageCount > 0 ? "cloud" : wantsLocal ? "local" : "cloud";
+
+  const [lockedMode, setLockedMode] = useState<ChatMode | null>(null);
+  const mode = lockedMode ?? preferredMode;
+
+  const handleActiveChange = useCallback(
+    (active: boolean) => {
+      setLockedMode((prev) => {
+        if (active) return prev ?? preferredMode;
+        return null;
+      });
+    },
+    [preferredMode],
+  );
+
+  const handleChatClick = () => {
+    void trigger("medium");
+    setOpen(!open);
+  };
+
+  const handleSettingsClick = () => {
+    setOpen(false);
+    setSettingsOpen(true);
+  };
+
+  if (hideAiFeatures && !settingsOpen) {
+    return null;
+  }
+
+  return (
+    <>
+      <AnimatePresence>{!hideAiFeatures && <ChatFab onClick={handleChatClick} />}</AnimatePresence>
+
+      {chatHydrated &&
+        (mode === "local" ? (
+          <LocalChatSession
+            domain={domain}
+            suggestions={suggestions}
+            model={browserAI.model}
+            browserAI={browserAI}
+            isMobile={isMobile}
+            open={open}
+            onOpenChange={setOpen}
+            onSettingsClick={handleSettingsClick}
+            onActiveChange={handleActiveChange}
+          />
+        ) : (
+          <CloudChatSession
+            domain={domain}
+            suggestions={suggestions}
+            browserAI={browserAI}
+            isMobile={isMobile}
+            open={open}
+            onOpenChange={setOpen}
+            onSettingsClick={handleSettingsClick}
+            onActiveChange={handleActiveChange}
+          />
+        ))}
+
+      <ChatSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+    </>
+  );
+}
+
+interface ChatSessionProps {
+  domain?: string;
+  suggestions: string[];
+  browserAI: UseBrowserAIResult;
+  isMobile: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSettingsClick: () => void;
+  onActiveChange: (active: boolean) => void;
+}
+
+function CloudChatSession({
+  domain,
+  suggestions,
+  browserAI,
+  isMobile,
+  open,
+  onOpenChange,
+  onSettingsClick,
+  onActiveChange,
+}: ChatSessionProps) {
   const domainRef = useRef(domain);
   useEffect(() => {
     domainRef.current = domain;
   });
-
-  // Browser AI detection and local chat setup
-  const browserAI = useBrowserAI();
-  const trpcClient = useTRPCClient();
-
-  // Client-side tools and prompt for local chat
-  const clientTools = useMemo(() => createClientDomainTools(trpcClient), [trpcClient]);
-  const systemPrompt = useMemo(() => buildClientSystemPrompt(domain), [domain]);
 
   const runId = useChatStore((s) => s.runId);
   const runIdRef = useRef(runId);
   useEffect(() => {
     runIdRef.current = runId;
   });
+  // Capture initial runId for resume — must stay stable so AI SDK does not
+  // restart resumption when onChatEnd later clears the live run ID.
+  const [initialRunId] = useState(runId);
   const setRunId = useChatStore((s) => s.setRunId);
-  const setMessages = useChatStore((s) => s.setMessages);
+  const setStoredMessages = useChatStore((s) => s.setMessages);
   const clearSession = useChatStore((s) => s.clearSession);
-
-  // Capture initial runId for resume prop - must be stable to avoid AI SDK errors
-  // when runId changes mid-session (e.g., onChatEnd clearing it)
-  const initialRunIdRef = useRef<string | null | undefined>(undefined);
-  if (initialRunIdRef.current === undefined) {
-    initialRunIdRef.current = runId;
-  }
 
   const transport = useMemo(
     () =>
+      // oxlint-disable-next-line react/refs -- transport callbacks read latest domain/runId from refs after render
       new WorkflowChatTransport({
         api: "/api/chat",
         prepareSendMessagesRequest: ({ messages }) => ({
@@ -90,7 +185,7 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
           };
         },
         onChatSendMessage: (response, options) => {
-          setMessages(options.messages);
+          setStoredMessages(options.messages);
           const workflowRunId = response.headers.get("x-workflow-run-id");
           if (workflowRunId) {
             setRunId(workflowRunId);
@@ -100,68 +195,27 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
           setRunId(null);
         },
       }),
-    [setMessages, setRunId],
+    [setStoredMessages, setRunId],
   );
 
-  // Cloud chat (via Vercel Workflow)
-  // Use stable initialRunIdRef for resume to avoid AI SDK errors when runId changes
-  const cloudChat = useChat({
+  const chat = useChat({
     transport,
-    resume: !!initialRunIdRef.current,
+    resume: !!initialRunId,
     onError: (error) => {
       analytics.trackException(error, { context: "chat-send", domain });
     },
   });
 
-  // Local chat (browser-based AI) - declared before effectiveMode to check for active
-  // local messages and prevent race conditions with cloud history hydration.
-  // The hook handles null model gracefully (sendMessage becomes a no-op)
-  const localChat = useLocalChat({
-    model: browserAI.model,
-    tools: clientTools,
-    systemPrompt,
-    onError: (error) => {
-      analytics.trackException(error, { context: "local-chat-send", domain });
-    },
-  });
-
-  // Determine effective mode based on preference and browser AI availability.
-  // IMPORTANT: Once a conversation is in progress in either mode, we lock to that mode
-  // to prevent message loss when:
-  // 1. Browser AI becomes ready mid-cloud-conversation
-  // 2. Cloud history hydrates mid-local-conversation (the fix for the race condition)
-  const effectiveMode = useMemo((): "cloud" | "local" => {
-    // If there's an active local conversation, stay in local mode to avoid losing messages.
-    // This prevents the race condition where async cloud history hydration from localStorage
-    // would override an in-progress local chat session.
-    if (localChat.messages.length > 0) return "local";
-    // If there's an active cloud conversation, stay in cloud mode to avoid losing messages
-    if (cloudChat.messages.length > 0) return "cloud";
-    // No active conversation - use preference-based mode selection
-    if (aiMode === "local" && browserAI.status === "ready") return "local";
-    if (aiMode === "auto" && browserAI.status === "ready") return "local";
-    return "cloud";
-  }, [aiMode, browserAI.status, cloudChat.messages.length, localChat.messages.length]);
-
-  // Select the active chat based on effective mode
-  const chat = effectiveMode === "local" ? localChat : cloudChat;
-
-  // Handle message persistence (restore from store, persist to store, clear runId on completion)
-  // Only persist cloud chat messages (local chat doesn't have resumable workflows)
   useChatPersistence({
-    messages: cloudChat.messages,
-    status: cloudChat.status,
-    setMessages: cloudChat.setMessages,
+    messages: chat.messages,
+    status: chat.status,
+    setMessages: chat.setMessages,
   });
-
-  // Ref for clearMessages callback to avoid dependency on chat.setMessages
-  const chatSetMessagesRef = useRef(chat.setMessages);
-  chatSetMessagesRef.current = chat.setMessages;
 
   const clearMessages = useCallback(() => {
-    chatSetMessagesRef.current([]);
+    chat.setMessages([]);
     clearSession();
-  }, [clearSession]);
+  }, [chat, clearSession]);
 
   const sendMessage = useCallback(
     (msgParams: { text: string }) => {
@@ -172,103 +226,176 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
     [chat],
   );
 
-  const { messages, status } = chat;
-
-  // Don't show errors while streaming - if messages are coming through, the chat is working.
-  // The WorkflowChatTransport may report errors from reconnection attempts that don't affect
-  // the actual message stream (e.g., trying to reconnect after the workflow already completed).
   const error =
-    status === "streaming" ? null : chat.error ? getUserFriendlyError(chat.error) : null;
+    chat.status === "streaming" ? null : chat.error ? getUserFriendlyError(chat.error) : null;
 
-  // Hydrate server suggestions into atom
-  const setServerSuggestions = useSetAtom(serverSuggestionsAtom);
   useEffect(() => {
-    setServerSuggestions(suggestions);
-  }, [suggestions, setServerSuggestions]);
-
-  const chatClientProps = {
-    messages,
-    sendMessage,
-    clearMessages,
-    status,
-    domain,
-    error,
-  };
-
-  if (hideAiFeatures && !settingsOpen) {
-    return null;
-  }
-
-  const handleChatClick = () => {
-    try {
-      navigator.vibrate([50]);
-    } catch {}
-    setOpen(!open);
-  };
-
-  const handleSettingsClick = () => {
-    setOpen(false);
-    setSettingsOpen(true);
-  };
+    onActiveChange(chat.messages.length > 0);
+  }, [chat.messages.length, onActiveChange]);
 
   return (
-    <>
-      <AnimatePresence>{!hideAiFeatures && <ChatFab onClick={handleChatClick} />}</AnimatePresence>
+    <ChatShell
+      chat={{
+        messages: chat.messages,
+        sendMessage,
+        clearMessages,
+        status: chat.status,
+        error,
+      }}
+      domain={domain}
+      suggestions={suggestions}
+      browserAI={browserAI}
+      isMobile={isMobile}
+      open={open}
+      onOpenChange={onOpenChange}
+      onSettingsClick={onSettingsClick}
+    />
+  );
+}
 
-      {isMobile ? (
-        <Drawer open={open} onOpenChange={setOpen}>
-          <DrawerContent>
-            <DrawerHeader className="flex flex-row items-center justify-between">
-              <DrawerTitle className="flex items-center gap-2">
-                <IconLego className="size-4" />
-                <span className="text-[15px] leading-none font-semibold tracking-tight">
-                  {CHATBOT_NAME}
-                </span>
-                <BetaBadge />
-              </DrawerTitle>
-              <div className="flex items-center gap-2">
-                <ChatHeaderActions
-                  messages={messages}
-                  onClear={clearMessages}
-                  onSettingsClick={handleSettingsClick}
-                  onCloseClick={() => setOpen(false)}
-                />
-              </div>
-            </DrawerHeader>
-            <ChatPanel {...chatClientProps} conversationClassName="px-4" inputClassName="p-4" />
-          </DrawerContent>
-        </Drawer>
-      ) : (
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetContent
-            side="right"
-            className="flex w-[420px] flex-col gap-0 p-0"
-            showCloseButton={false}
-          >
-            <SheetHeader className="flex shrink-0 flex-row items-center justify-between border-b bg-card/60 px-3.5 py-2">
-              <SheetTitle className="flex items-center gap-2">
-                <IconLego className="size-4" />
-                <span className="text-[15px] leading-none font-semibold tracking-tight">
-                  {CHATBOT_NAME}
-                </span>
-                <BetaBadge />
-              </SheetTitle>
-              <div className="-mr-1.5 flex items-center gap-1.5">
-                <ChatHeaderActions
-                  messages={messages}
-                  onClear={clearMessages}
-                  onSettingsClick={handleSettingsClick}
-                  onCloseClick={() => setOpen(false)}
-                  closeIcon={IconLayoutSidebarRightCollapse}
-                />
-              </div>
-            </SheetHeader>
-            <ChatPanel {...chatClientProps} inputClassName="p-3" />
-          </SheetContent>
-        </Sheet>
-      )}
+function LocalChatSession({
+  domain,
+  suggestions,
+  model,
+  browserAI,
+  isMobile,
+  open,
+  onOpenChange,
+  onSettingsClick,
+  onActiveChange,
+}: ChatSessionProps & { model: UseBrowserAIResult["model"] }) {
+  const trpcClient = useTRPCClient();
+  const clientTools = useMemo(() => createClientDomainTools(trpcClient), [trpcClient]);
+  const systemPrompt = useMemo(() => buildClientSystemPrompt(domain), [domain]);
 
-      <ChatSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
-    </>
+  const chat = useLocalChat({
+    model,
+    tools: clientTools,
+    systemPrompt,
+    onError: (error) => {
+      analytics.trackException(error, { context: "local-chat-send", domain });
+    },
+  });
+
+  const clearMessages = useCallback(() => {
+    chat.setMessages([]);
+  }, [chat]);
+
+  const sendMessage = useCallback(
+    (msgParams: { text: string }) => {
+      const text = msgParams.text.trim();
+      if (!text) return;
+      chat.sendMessage({ text });
+    },
+    [chat],
+  );
+
+  const error =
+    chat.status === "streaming" ? null : chat.error ? getUserFriendlyError(chat.error) : null;
+
+  useEffect(() => {
+    onActiveChange(chat.messages.length > 0);
+  }, [chat.messages.length, onActiveChange]);
+
+  return (
+    <ChatShell
+      chat={{
+        messages: chat.messages,
+        sendMessage,
+        clearMessages,
+        status: chat.status,
+        error,
+      }}
+      domain={domain}
+      suggestions={suggestions}
+      browserAI={browserAI}
+      isMobile={isMobile}
+      open={open}
+      onOpenChange={onOpenChange}
+      onSettingsClick={onSettingsClick}
+    />
+  );
+}
+
+function ChatShell({
+  chat,
+  domain,
+  suggestions,
+  browserAI,
+  isMobile,
+  open,
+  onOpenChange,
+  onSettingsClick,
+}: {
+  chat: ChatController;
+  domain?: string;
+  suggestions: string[];
+  browserAI: UseBrowserAIResult;
+  isMobile: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSettingsClick: () => void;
+}) {
+  const headerActions = (
+    <ChatHeaderActions
+      messages={chat.messages}
+      onClear={chat.clearMessages}
+      onSettingsClick={onSettingsClick}
+      onCloseClick={() => onOpenChange(false)}
+      closeIcon={isMobile ? undefined : IconLayoutSidebarRightCollapse}
+    />
+  );
+
+  const panel = (
+    <ChatPanel
+      {...chat}
+      domain={domain}
+      homeSuggestions={suggestions}
+      browserAI={browserAI}
+      conversationClassName={isMobile ? "px-4" : undefined}
+      inputClassName={isMobile ? "p-4" : "p-3"}
+    />
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent>
+          <DrawerHeader className="flex flex-row items-center justify-between">
+            <DrawerTitle className="flex items-center gap-2">
+              <IconLego className="size-4" />
+              <span className="text-[15px] leading-none font-semibold tracking-tight">
+                {CHATBOT_NAME}
+              </span>
+              <BetaBadge />
+            </DrawerTitle>
+            <div className="flex items-center gap-2">{headerActions}</div>
+          </DrawerHeader>
+          {panel}
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="right"
+        className="flex w-[420px] flex-col gap-0 p-0"
+        showCloseButton={false}
+      >
+        <SheetHeader className="flex shrink-0 flex-row items-center justify-between border-b bg-card/60 px-3.5 py-2">
+          <SheetTitle className="flex items-center gap-2">
+            <IconLego className="size-4" />
+            <span className="text-[15px] leading-none font-semibold tracking-tight">
+              {CHATBOT_NAME}
+            </span>
+            <BetaBadge />
+          </SheetTitle>
+          <div className="-mr-1.5 flex items-center gap-1.5">{headerActions}</div>
+        </SheetHeader>
+        {panel}
+      </SheetContent>
+    </Sheet>
   );
 }

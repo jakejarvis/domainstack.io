@@ -5,7 +5,7 @@ import { MotionConfig } from "motion/react";
 import { ThemeProvider } from "next-themes";
 
 import { PostHogIdentityProvider } from "@/components/analytics/posthog-identity";
-import { VibrationProvider } from "@/components/providers/vibration-provider";
+import { HapticsProvider } from "@/components/providers/haptics-provider";
 import { TRPCProvider } from "@/trpc/client";
 import { TooltipProvider } from "@domainstack/ui/tooltip";
 
@@ -29,8 +29,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
                   ease: [0.22, 1, 0.36, 1] as const,
                 }}
               >
-                {children}
-                <VibrationProvider />
+                <HapticsProvider>{children}</HapticsProvider>
               </MotionConfig>
             </ProgressProvider>
           </TooltipProvider>

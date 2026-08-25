@@ -5,7 +5,9 @@ import { sendEmail } from "@domainstack/email";
 import ProUpgradeSuccessEmail from "@domainstack/email/templates/pro-upgrade-success";
 import SubscriptionCancelingEmail from "@domainstack/email/templates/subscription-canceling";
 import SubscriptionExpiredEmail from "@domainstack/email/templates/subscription-expired";
-import { logger } from "@domainstack/logger";
+import { createLogger } from "@domainstack/logger";
+
+const logger = createLogger({ source: "polar/emails" });
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://domainstack.io";
 

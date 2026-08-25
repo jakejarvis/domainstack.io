@@ -1,7 +1,7 @@
 import { IconAlertTriangle, IconCheck, IconHeartBroken } from "@tabler/icons-react";
 import { useCallback, useReducer } from "react";
 
-import { useAnalytics } from "@domainstack/analytics/client";
+import { useAnalytics } from "@/lib/analytics/client";
 import { deleteUser } from "@domainstack/auth/client";
 import {
   AlertDialog,

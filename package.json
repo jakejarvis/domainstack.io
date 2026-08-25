@@ -2,14 +2,14 @@
   "name": "domainstack",
   "version": "0.0.0-beta.1",
   "private": true,
-  "license": "MIT",
   "homepage": "https://domainstack.io",
-  "repository": "jakejarvis/domainstack.io",
+  "license": "MIT",
   "author": {
     "name": "Jake Jarvis",
     "email": "jake@jarv.is",
     "url": "https://github.com/jakejarvis"
   },
+  "repository": "jakejarvis/domainstack.io",
   "type": "module",
   "scripts": {
     "dev": "turbo run dev",
@@ -29,14 +29,14 @@
     "clean": "shx rm -rf .turbo \"apps/*/.turbo\" \"apps/*/node_modules\" \"apps/*/*.tsbuildinfo\" apps/web/.next \"packages/*/.turbo\" \"packages/*/node_modules\" \"packages/*/*.tsbuildinfo\" node_modules pnpm-lock.yaml"
   },
   "devDependencies": {
-    "oxfmt": "^0.46.0",
-    "oxlint": "^1.61.0",
+    "oxfmt": "^0.64.0",
+    "oxlint": "^1.79.0",
     "shx": "^0.4.0",
-    "turbo": "^2.9.6",
-    "typescript": "6.0.3"
+    "turbo": "^2.10.11",
+    "typescript": "7.0.2"
   },
   "engines": {
     "node": ">=24.x"
   },
-  "packageManager": "pnpm@10.33.2"
+  "packageManager": "pnpm@11.23.0"
 }

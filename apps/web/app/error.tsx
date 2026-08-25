@@ -4,7 +4,7 @@ import { IconRefresh } from "@tabler/icons-react";
 import { useEffect } from "react";
 
 import { CreateIssueButton } from "@/components/create-issue-button";
-import { analytics } from "@domainstack/analytics/client";
+import { analytics } from "@/lib/analytics/client";
 import { Button } from "@domainstack/ui/button";
 
 export default function RootError(props: {

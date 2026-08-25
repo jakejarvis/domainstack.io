@@ -1,4 +1,3 @@
-"use no memo"; // Disable React Compiler memoization - TanStack Table has issues with it
 import {
   IconArchive,
   IconBell,
@@ -8,7 +7,7 @@ import {
   IconExternalLink,
   IconTrash,
 } from "@tabler/icons-react";
-import type { ColumnDef, RowData } from "@tanstack/react-table";
+import type { ColumnDef, RowData, TableFeatures } from "@tanstack/react-table";
 import { format } from "date-fns";
 import Link from "next/link";
 
@@ -17,6 +16,8 @@ import { DomainStatusBadge } from "@/components/dashboard/domain-status-badge";
 import { ProviderCell } from "@/components/dashboard/provider-cell";
 import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Favicon } from "@/components/icons/favicon";
+import { useIsDomainSelected, useToggleDomainSelection } from "@/hooks/use-dashboard-selection";
+import type { DashboardTableFeatures } from "@/lib/dashboard-table-features";
 import type { VerificationMethod } from "@domainstack/constants";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
@@ -38,7 +39,7 @@ import { formatDateTimeUtc } from "@domainstack/utils";
 
 // Define custom column meta for styling
 declare module "@tanstack/react-table" {
-  interface ColumnMeta<TData extends RowData, TValue> {
+  interface ColumnMeta<TFeatures extends TableFeatures, TData extends RowData, TValue> {
     className?: string;
   }
 }
@@ -80,9 +81,47 @@ export function createUnverifiedLastSorter(isDescFn: (columnId: string) => boole
   };
 }
 
+type DomainSelectCellProps = {
+  domainId: string;
+  domainName: string;
+};
+
+/**
+ * Subscribes to selection itself so the compiler can memoize the table/row
+ * while this checkbox still updates. Selection is app state (Jotai), not
+ * TanStack row-selection, so `table.Subscribe` does not apply here.
+ */
+function DomainSelectCell({ domainId, domainName }: DomainSelectCellProps) {
+  const isSelected = useIsDomainSelected(domainId);
+  const toggle = useToggleDomainSelection();
+
+  return (
+    <div className="relative size-4">
+      {/* Favicon - hidden on hover, keyboard focus, or when selected */}
+      <Favicon
+        domain={domainName}
+        className={cn(
+          "absolute inset-0",
+          isSelected ? "hidden" : "group-focus-within:hidden group-hover:hidden",
+        )}
+      />
+      {/* Checkbox stays mounted so it remains focusable when unselected */}
+      <Checkbox
+        checked={isSelected}
+        onCheckedChange={() => toggle(domainId)}
+        aria-label={`Select ${domainName}`}
+        className={cn(
+          "absolute inset-0",
+          isSelected
+            ? "opacity-100"
+            : "opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
+        )}
+      />
+    </div>
+  );
+}
+
 export type ColumnCallbacks = {
-  selectedIdsRef: React.RefObject<Set<string>>;
-  onToggleSelect?: (id: string) => void;
   onVerify: (id: string, verificationMethod: VerificationMethod | null) => void;
   onRemove: (id: string, domainName: string) => void;
   onArchive: (id: string, domainName: string) => void;
@@ -90,42 +129,19 @@ export type ColumnCallbacks = {
   withUnverifiedLast: ReturnType<typeof createUnverifiedLastSorter>;
 };
 
-export function createColumns(callbacks: ColumnCallbacks): ColumnDef<TrackedDomainWithDetails>[] {
-  const {
-    selectedIdsRef,
-    onToggleSelect,
-    onVerify,
-    onRemove,
-    onArchive,
-    onToggleMuted,
-    withUnverifiedLast,
-  } = callbacks;
+export function createColumns(
+  callbacks: ColumnCallbacks,
+): ColumnDef<DashboardTableFeatures, TrackedDomainWithDetails>[] {
+  const { onVerify, onRemove, onArchive, onToggleMuted, withUnverifiedLast } = callbacks;
 
   return [
     // Selection checkbox column
     {
       id: "select",
       header: () => null, // No header checkbox here - it's in the bulk toolbar
-      cell: ({ row }) => {
-        // Read from ref to avoid columns recreation on selection change
-        const isSelected = selectedIdsRef.current?.has(row.original.id);
-        return (
-          <div className="relative size-4">
-            {/* Favicon - hidden on hover or when selected */}
-            <Favicon
-              domain={row.original.domainName}
-              className={cn("absolute inset-0", isSelected ? "hidden" : "group-hover:hidden")}
-            />
-            {/* Checkbox - shown on hover or when selected */}
-            <Checkbox
-              checked={isSelected}
-              onCheckedChange={() => onToggleSelect?.(row.original.id)}
-              aria-label={`Select ${row.original.domainName}`}
-              className={cn("absolute inset-0", isSelected ? "flex" : "hidden group-hover:flex")}
-            />
-          </div>
-        );
-      },
+      cell: ({ row }) => (
+        <DomainSelectCell domainId={row.original.id} domainName={row.original.domainName} />
+      ),
       size: 40,
       enableHiding: false, // Always show selection column
       meta: {
@@ -174,7 +190,7 @@ export function createColumns(callbacks: ColumnCallbacks): ColumnDef<TrackedDoma
       },
       size: 100,
       // Sort verified domains first (verified = -1, unverified = 1)
-      sortingFn: (rowA, rowB) =>
+      sortFn: (rowA, rowB) =>
         rowA.original.verified === rowB.original.verified ? 0 : rowA.original.verified ? -1 : 1,
     },
     {
@@ -190,7 +206,7 @@ export function createColumns(callbacks: ColumnCallbacks): ColumnDef<TrackedDoma
       size: 100,
       // Sort by health status priority: critical (0) > warning (1) > healthy (2) > unknown (3)
       // Within the same status, sort by expiration date for more granular ordering
-      sortingFn: withUnverifiedLast((a, b) => {
+      sortFn: withUnverifiedLast((a, b) => {
         const now = new Date();
         const getHealthPriority = (exp: Date | null, verified: boolean): number => {
           if (!verified || !exp) return 3; // unknown
@@ -236,7 +252,7 @@ export function createColumns(callbacks: ColumnCallbacks): ColumnDef<TrackedDoma
         );
       },
       size: 110,
-      sortingFn: withUnverifiedLast((a, b) => {
+      sortFn: withUnverifiedLast((a, b) => {
         const aTime = a.expirationDate?.getTime() ?? 0;
         const bTime = b.expirationDate?.getTime() ?? 0;
         return aTime - bTime;
@@ -254,7 +270,7 @@ export function createColumns(callbacks: ColumnCallbacks): ColumnDef<TrackedDoma
         />
       ),
       size: 128,
-      sortingFn: withUnverifiedLast((a, b) => {
+      sortFn: withUnverifiedLast((a, b) => {
         const aName = a.registrar.name ?? "";
         const bName = b.registrar.name ?? "";
         return aName.localeCompare(bName);
@@ -272,7 +288,7 @@ export function createColumns(callbacks: ColumnCallbacks): ColumnDef<TrackedDoma
         />
       ),
       size: 128,
-      sortingFn: withUnverifiedLast((a, b) => {
+      sortFn: withUnverifiedLast((a, b) => {
         const aName = a.dns.name ?? "";
         const bName = b.dns.name ?? "";
         return aName.localeCompare(bName);
@@ -290,7 +306,7 @@ export function createColumns(callbacks: ColumnCallbacks): ColumnDef<TrackedDoma
         />
       ),
       size: 128,
-      sortingFn: withUnverifiedLast((a, b) => {
+      sortFn: withUnverifiedLast((a, b) => {
         const aName = a.hosting.name ?? "";
         const bName = b.hosting.name ?? "";
         return aName.localeCompare(bName);
@@ -308,7 +324,7 @@ export function createColumns(callbacks: ColumnCallbacks): ColumnDef<TrackedDoma
         />
       ),
       size: 128,
-      sortingFn: withUnverifiedLast((a, b) => {
+      sortFn: withUnverifiedLast((a, b) => {
         const aName = a.email.name ?? "";
         const bName = b.email.name ?? "";
         return aName.localeCompare(bName);
@@ -326,7 +342,7 @@ export function createColumns(callbacks: ColumnCallbacks): ColumnDef<TrackedDoma
         />
       ),
       size: 128,
-      sortingFn: withUnverifiedLast((a, b) => {
+      sortFn: withUnverifiedLast((a, b) => {
         const aName = a.ca.name ?? "";
         const bName = b.ca.name ?? "";
         return aName.localeCompare(bName);
@@ -355,7 +371,7 @@ export function createColumns(callbacks: ColumnCallbacks): ColumnDef<TrackedDoma
         );
       },
       size: 110,
-      sortingFn: withUnverifiedLast((a, b) => {
+      sortFn: withUnverifiedLast((a, b) => {
         const aTime = a.registrationDate?.getTime() ?? 0;
         const bTime = b.registrationDate?.getTime() ?? 0;
         return aTime - bTime;
@@ -381,8 +397,7 @@ export function createColumns(callbacks: ColumnCallbacks): ColumnDef<TrackedDoma
         );
       },
       size: 110,
-      sortingFn: (rowA, rowB) =>
-        rowA.original.createdAt.getTime() - rowB.original.createdAt.getTime(),
+      sortFn: (rowA, rowB) => rowA.original.createdAt.getTime() - rowB.original.createdAt.getTime(),
     },
     {
       id: "actions",

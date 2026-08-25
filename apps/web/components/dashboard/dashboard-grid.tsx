@@ -1,5 +1,4 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEffect, useRef } from "react";
 
 import { DashboardGridCard } from "@/components/dashboard/dashboard-grid-card";
 import { GridUpgradeCard } from "@/components/dashboard/grid-upgrade-card";
@@ -7,29 +6,56 @@ import type { TrackedDomainWithDetails } from "@domainstack/types";
 
 type DashboardGridProps = {
   domains: TrackedDomainWithDetails[];
+  delays: Map<string, number>;
 };
 
-export function DashboardGrid({ domains }: DashboardGridProps) {
-  const shouldReduceMotion = useReducedMotion();
+export function createInitialDelays(domains: TrackedDomainWithDetails[]) {
+  const delays = new Map<string, number>();
+  domains.forEach((domain, index) => {
+    delays.set(domain.id, Math.min(index * 0.05, 0.3));
+  });
+  delays.set("upgrade-cta", Math.min(domains.length * 0.05, 0.3));
+  return delays;
+}
 
-  // Stagger on first mount only (keeps later add/remove snappy and avoids re-staggering on sort/filter).
-  const isFirstMountRef = useRef(true);
-  useEffect(() => {
-    isFirstMountRef.current = false;
-  }, []);
+export function pruneDelays(delays: Map<string, number>, domains: TrackedDomainWithDetails[]) {
+  const visible = new Set(domains.map((domain) => domain.id));
+  visible.add("upgrade-cta");
+
+  let changed = false;
+  const next = new Map<string, number>();
+  for (const [id, delay] of delays) {
+    if (visible.has(id)) {
+      next.set(id, delay);
+    } else {
+      changed = true;
+    }
+  }
+  return changed ? next : delays;
+}
+
+export function DashboardGrid({ domains, delays }: DashboardGridProps) {
+  const shouldReduceMotion = useReducedMotion();
 
   const ease = [0.22, 1, 0.36, 1] as const;
   const duration = shouldReduceMotion ? 0.1 : 0.18;
   const layoutTransition = { duration, ease } as const;
 
-  const getItemMotionProps = (index: number) => {
-    const delay = isFirstMountRef.current && !shouldReduceMotion ? Math.min(index * 0.05, 0.3) : 0;
+  const getItemMotionProps = (id: string) => {
+    const delay = shouldReduceMotion ? 0 : (delays.get(id) ?? 0);
 
     return {
       layout: shouldReduceMotion ? false : ("position" as const),
       initial: { opacity: 0, y: shouldReduceMotion ? 0 : 10 },
       animate: { opacity: 1, y: 0 },
-      exit: { opacity: 0, y: shouldReduceMotion ? 0 : -10 },
+      exit: {
+        opacity: 0,
+        y: shouldReduceMotion ? 0 : -10,
+        transition: {
+          opacity: { duration, ease, delay: 0 },
+          y: { duration, ease, delay: 0 },
+        },
+      },
       transition: {
         // Stagger only the "enter" fade/slide; never delay layout reflow.
         opacity: { duration, ease, delay },
@@ -42,14 +68,14 @@ export function DashboardGrid({ domains }: DashboardGridProps) {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
       <AnimatePresence>
-        {domains.map((domain, index) => (
-          <motion.div key={domain.id} className="h-full" {...getItemMotionProps(index)}>
+        {domains.map((domain) => (
+          <motion.div key={domain.id} className="h-full" {...getItemMotionProps(domain.id)}>
             <DashboardGridCard domain={domain} />
           </motion.div>
         ))}
 
         {/* Free-tier CTA: treated as just another (last) grid item */}
-        <motion.div key="upgrade-cta" className="h-full" {...getItemMotionProps(domains.length)}>
+        <motion.div key="upgrade-cta" className="h-full" {...getItemMotionProps("upgrade-cta")}>
           <GridUpgradeCard />
         </motion.div>
       </AnimatePresence>

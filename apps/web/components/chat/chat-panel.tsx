@@ -2,7 +2,6 @@
 
 import { IconAlertCircle, IconBrain, IconMessages, IconX } from "@tabler/icons-react";
 import type { ChatStatus, ToolUIPart, UIMessage } from "ai";
-import { useAtomValue } from "jotai";
 import { useCallback, useState } from "react";
 import { useStickToBottom } from "use-stick-to-bottom";
 
@@ -30,30 +29,43 @@ import {
   ToolInput,
   ToolOutput,
 } from "@/components/ai-elements/tool";
-import { chatSuggestionsAtom } from "@/lib/atoms/chat-atoms";
+import { type UseBrowserAIResult } from "@/hooks/use-browser-ai";
+import { getDomainToolStatus, getToolPartType } from "@/lib/chat/domain-tools";
+import {
+  getMessagePartItems,
+  hasVisibleAssistantParts,
+  isToolPart,
+  shouldShowThinkingStatus,
+} from "@/lib/chat/message-parts";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { MAX_MESSAGE_LENGTH } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
 import { cn } from "@domainstack/ui/utils";
 
 import { ChatModeSelector } from "./chat-mode-selector";
-import { getToolStatusMessage } from "./utils";
 
-function getMessagePartItems(message: UIMessage) {
-  const seen = new Map<string, number>();
+const EMPTY_SUGGESTIONS: string[] = [];
 
-  return message.parts.map((part, position) => {
-    const baseKey =
-      part.type === "text" || part.type === "reasoning" ? `${part.type}-${part.text}` : part.type;
-    const duplicateCount = seen.get(baseKey) ?? 0;
-    seen.set(baseKey, duplicateCount + 1);
+function ThinkingStatus() {
+  return (
+    <div
+      className="flex items-center gap-2 text-[13px] text-muted-foreground"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      <IconBrain className="size-3.5" aria-hidden />
+      <ShimmeringText text="Thinking…" startOnView={false} />
+    </div>
+  );
+}
 
-    return {
-      key: `${message.id}-${baseKey}-${duplicateCount}`,
-      part,
-      position,
-    };
-  });
+function getReportSuggestions(domain: string): string[] {
+  return [
+    `When does ${domain} expire?`,
+    `Is ${domain} missing any important security headers?`,
+    `Which email provider does ${domain} use?`,
+    `Is ${domain}'s SSL certificate valid?`,
+  ];
 }
 
 interface ChatPanelProps {
@@ -64,11 +76,9 @@ interface ChatPanelProps {
   domain?: string;
   error?: string | null;
   onClearError?: () => void;
-  /** Size variant for icon in empty state */
-  iconSize?: "sm" | "lg";
-  /** Additional class for the conversation container */
+  homeSuggestions?: string[];
+  browserAI: UseBrowserAIResult;
   conversationClassName?: string;
-  /** Additional class for the input container */
   inputClassName?: string;
 }
 
@@ -80,20 +90,21 @@ export function ChatPanel({
   domain,
   error,
   onClearError,
+  homeSuggestions = EMPTY_SUGGESTIONS,
+  browserAI,
   conversationClassName,
   inputClassName,
 }: ChatPanelProps) {
   const [inputLength, setInputLength] = useState(0);
   const showToolCalls = usePreferencesStore((s) => s.showToolCalls);
   const showReasoning = usePreferencesStore((s) => s.showReasoning);
+  const visibility = { showReasoning, showToolCalls };
+  const showThinking = shouldShowThinkingStatus(status, messages, visibility);
 
-  // Prepare to share scroll state between the different components
   const stickyInstance = useStickToBottom();
 
   const placeholder = domain ? `Ask about ${domain}\u2026` : "Ask about a domain\u2026";
-
-  // Get suggestions from atom (context-aware or server-generated fallback)
-  const suggestions = useAtomValue(chatSuggestionsAtom);
+  const suggestions = domain ? getReportSuggestions(domain) : homeSuggestions;
 
   const { scrollToBottom } = stickyInstance;
   const handleScrollToBottom = useCallback(() => {
@@ -121,16 +132,20 @@ export function ChatPanel({
     <>
       <Conversation
         stickyInstance={stickyInstance}
+        aria-busy={status === "submitted" || status === "streaming"}
         className={cn(
           "min-h-0 flex-1 bg-popover/10 [&_[data-slot=scroll-area-content]]:flex [&_[data-slot=scroll-area-content]]:min-h-full [&_[data-slot=scroll-area-content]]:flex-col",
           conversationClassName,
         )}
       >
         <ConversationContent
-          className={cn(messages.length === 0 ? "items-center justify-center" : "gap-4 px-3 py-4")}
-          aria-live="polite"
+          className={cn(
+            messages.length === 0 && !showThinking
+              ? "items-center justify-center"
+              : "gap-4 px-3 py-4",
+          )}
         >
-          {messages.length === 0 ? (
+          {messages.length === 0 && !showThinking ? (
             <ConversationEmptyState
               icon={<IconMessages className="size-7" />}
               title={`Ask me anything about ${domain ?? "domains"}!`}
@@ -138,19 +153,29 @@ export function ChatPanel({
             />
           ) : (
             <>
-              {messages.map((message) => (
-                <Message key={message.id} from={message.role}>
-                  <MessageContent>
-                    {getMessagePartItems(message).map(({ key, part, position }) => {
-                      if (part.type === "text") {
-                        return <MessageResponse key={key}>{part.text}</MessageResponse>;
-                      }
-                      if (part.type === "reasoning") {
-                        const isStreaming =
-                          status === "streaming" &&
-                          position === message.parts.length - 1 &&
-                          message.id === messages.at(-1)?.id;
-                        if (showReasoning) {
+              {messages.map((message) => {
+                if (
+                  message.role === "assistant" &&
+                  !hasVisibleAssistantParts(message, visibility)
+                ) {
+                  return null;
+                }
+
+                return (
+                  <Message key={message.id} from={message.role}>
+                    <MessageContent>
+                      {getMessagePartItems(message).map(({ key, part, position }) => {
+                        if (part.type === "text") {
+                          return <MessageResponse key={key}>{part.text}</MessageResponse>;
+                        }
+                        if (part.type === "reasoning") {
+                          if (!showReasoning) {
+                            return null;
+                          }
+                          const isStreaming =
+                            status === "streaming" &&
+                            position === message.parts.length - 1 &&
+                            message.id === messages.at(-1)?.id;
                           return (
                             <Reasoning key={key} className="w-full" isStreaming={isStreaming}>
                               <ReasoningTrigger />
@@ -158,48 +183,38 @@ export function ChatPanel({
                             </Reasoning>
                           );
                         }
-
-                        return isStreaming ? (
-                          <div
-                            key={key}
-                            className="flex items-center gap-2 text-[13px] text-muted-foreground"
-                          >
-                            <IconBrain className="size-3.5" />
-                            <ShimmeringText text="Thinking…" />
-                          </div>
-                        ) : null;
-                      }
-                      if (part.type.startsWith("tool-") && showToolCalls) {
-                        const toolPart = part as ToolUIPart;
-                        return (
-                          <Tool key={key}>
-                            <ToolHeader
-                              title={getToolStatusMessage(toolPart.type)}
-                              type={toolPart.type}
-                              state={toolPart.state}
-                            />
-                            <ToolContent>
-                              <ToolInput input={toolPart.input} />
-                              {toolPart.state === "output-available" && (
-                                <ToolOutput
-                                  output={toolPart.output}
-                                  errorText={toolPart.errorText}
-                                />
-                              )}
-                            </ToolContent>
-                          </Tool>
-                        );
-                      }
-                      return null;
-                    })}
-                  </MessageContent>
-                </Message>
-              ))}
-              {/* Show loading indicator while waiting for response stream to begin */}
-              {status === "submitted" && (
-                <Message from="assistant">
+                        if (isToolPart(part) && showToolCalls) {
+                          const toolPart = part as ToolUIPart;
+                          const statusType = getToolPartType(part) as ToolUIPart["type"];
+                          return (
+                            <Tool key={key}>
+                              <ToolHeader
+                                title={getDomainToolStatus(statusType)}
+                                type={statusType}
+                                state={toolPart.state}
+                              />
+                              <ToolContent>
+                                <ToolInput input={toolPart.input} />
+                                {toolPart.state === "output-available" && (
+                                  <ToolOutput
+                                    output={toolPart.output}
+                                    errorText={toolPart.errorText}
+                                  />
+                                )}
+                              </ToolContent>
+                            </Tool>
+                          );
+                        }
+                        return null;
+                      })}
+                    </MessageContent>
+                  </Message>
+                );
+              })}
+              {showThinking && (
+                <Message key="thinking" from="assistant">
                   <MessageContent>
-                    <ShimmeringText text="Thinking…" />
+                    <ThinkingStatus />
                   </MessageContent>
                 </Message>
               )}
@@ -250,7 +265,10 @@ export function ChatPanel({
           <PromptInputFooter className="pr-1.5 pb-1.5 pl-3">
             <PromptInputCharacterCount current={inputLength} max={MAX_MESSAGE_LENGTH} />
             <div className="flex items-center gap-2">
-              <ChatModeSelector disabled={status === "submitted" || status === "streaming"} />
+              <ChatModeSelector
+                browserAI={browserAI}
+                disabled={status === "submitted" || status === "streaming"}
+              />
               <PromptInputSubmit disabled={inputLength === 0} status={error ? "error" : status} />
             </div>
           </PromptInputFooter>

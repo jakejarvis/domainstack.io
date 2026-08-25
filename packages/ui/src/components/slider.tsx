@@ -11,7 +11,7 @@ function Slider({
   max = 100,
   ...props
 }: SliderPrimitive.Root.Props) {
-  const _values = useMemo(
+  const thumbValues = useMemo(
     () => (Array.isArray(value) ? value : Array.isArray(defaultValue) ? defaultValue : [min, max]),
     [value, defaultValue, min, max],
   );
@@ -41,12 +41,12 @@ function Slider({
             data-slot="slider-range"
             className="rounded-full bg-primary data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full"
           />
-          {Array.from({ length: _values.length }, (_, index) => (
+          {Array.from({ length: thumbValues.length }, (_, index) => (
             <SliderPrimitive.Thumb
               data-slot="slider-thumb"
               // Base UI needs explicit index when multiple thumbs are used.
               index={index}
-              key={`thumb-${_values.length}-${index}`}
+              key={`thumb-${thumbValues.length}-${index}`}
               className="size-4 rounded-full border border-primary bg-background shadow-sm ring-ring/50 transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
             />
           ))}

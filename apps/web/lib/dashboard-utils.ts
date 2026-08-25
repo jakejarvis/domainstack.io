@@ -55,6 +55,12 @@ export type DashboardViewModeOptions = (typeof DASHBOARD_VIEW_MODE_OPTIONS)[numb
 export const DASHBOARD_PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
 export type DashboardPageSizeOptions = (typeof DASHBOARD_PAGE_SIZE_OPTIONS)[number];
 
+/** True when the current page is past the last page of `itemCount` rows. */
+export function isPagePastEnd(itemCount: number, pageIndex: number, pageSize: number): boolean {
+  const pageCount = Math.max(1, Math.ceil(itemCount / pageSize));
+  return pageIndex >= pageCount;
+}
+
 export const DASHBOARD_PREFERENCES_DEFAULT: {
   viewMode: DashboardViewModeOptions;
   pageSize: DashboardPageSizeOptions;
@@ -313,7 +319,8 @@ export function getValidProviderIds(availableProviders: AvailableProvidersByCate
 }
 
 /**
- * Compute health stats for domains (expiring soon + pending verification counts)
+ * Compute health stats for the dashboard badges.
+ * `expiringSoon` matches the Expiring Soon filter (not expired).
  */
 export function computeHealthStats(domains: TrackedDomainWithDetails[], now: Date) {
   let expiringSoon = 0;
@@ -324,8 +331,7 @@ export function computeHealthStats(domains: TrackedDomainWithDetails[], now: Dat
       pendingVerification++;
       continue;
     }
-    const healthStatus = getHealthStatus(domain.expirationDate, domain.verified, now);
-    if (healthStatus === "expiring" || healthStatus === "expired") {
+    if (getHealthStatus(domain.expirationDate, domain.verified, now) === "expiring") {
       expiringSoon++;
     }
   }
@@ -446,14 +452,14 @@ export function getConfirmDialogContent(action: ConfirmAction) {
       };
     case "bulk-archive":
       return {
-        title: `Archive ${action.count} domains?`,
+        title: `Archive ${action.count} domain${action.count === 1 ? "" : "s"}?`,
         description: `Are you sure you want to archive ${action.count} domain${action.count === 1 ? "" : "s"}? You can reactivate them later from the Archived section.`,
         confirmLabel: "Archive All",
         variant: "default" as const,
       };
     case "bulk-delete":
       return {
-        title: `Delete ${action.count} domains?`,
+        title: `Delete ${action.count} domain${action.count === 1 ? "" : "s"}?`,
         description: `Are you sure you want to stop tracking ${action.count} domain${action.count === 1 ? "" : "s"}?`,
         confirmLabel: "Delete All",
         variant: "destructive" as const,

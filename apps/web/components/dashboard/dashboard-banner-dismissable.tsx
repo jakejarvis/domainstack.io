@@ -22,7 +22,13 @@ export function DashboardBannerDismissable(props: React.ComponentProps<typeof Da
             ease: "easeInOut",
           }}
         >
-          <DashboardBanner {...props} onDismiss={() => setIsDismissed(true)} />
+          <DashboardBanner
+            {...props}
+            onDismiss={() => {
+              setIsDismissed(true);
+              props.onDismiss?.();
+            }}
+          />
         </motion.div>
       )}
     </AnimatePresence>

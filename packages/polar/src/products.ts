@@ -74,12 +74,19 @@ export function getProductsForCheckout() {
 }
 
 /**
+ * Find Polar product config by Polar product ID.
+ * Used by webhooks for tier assignment and analytics properties.
+ */
+export function getProductByProductId(productId: string) {
+  return Object.values(POLAR_PRODUCTS).find((p) => p.productId === productId) ?? null;
+}
+
+/**
  * Find the tier associated with a Polar product ID.
  * Used by webhooks to determine which tier to assign.
  */
 export function getTierForProductId(productId: string): "pro" | null {
-  const product = Object.values(POLAR_PRODUCTS).find((p) => p.productId === productId);
-  return product?.tier ?? null;
+  return getProductByProductId(productId)?.tier ?? null;
 }
 
 /**

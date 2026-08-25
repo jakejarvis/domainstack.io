@@ -21,6 +21,7 @@ export const Conversation = ({ stickyInstance, className, ...props }: Conversati
       scrollRef={scrollRef}
       contentRef={contentRef}
       role="log"
+      aria-relevant="additions"
       {...props}
     />
   );

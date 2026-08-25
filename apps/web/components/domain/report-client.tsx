@@ -8,7 +8,6 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { useSetAtom } from "jotai";
 import { Suspense, useEffect, useRef, useState } from "react";
 
 import { CreateIssueButton } from "@/components/create-issue-button";
@@ -31,7 +30,7 @@ import { SeoSectionSkeleton } from "@/components/domain/seo/seo-section-skeleton
 import { DomainUnregisteredCard } from "@/components/domain/unregistered-card";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSectionTracking } from "@/hooks/use-section-tracking";
-import { chatContextAtom } from "@/lib/atoms/chat-atoms";
+import { analytics } from "@/lib/analytics/client";
 import { HEADER_HEIGHT, SCROLL_PADDING, SECTION_NAV_HEIGHT } from "@/lib/constants/layout";
 import { sections } from "@/lib/constants/sections";
 import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
@@ -170,12 +169,17 @@ export function DomainReportClient({ domain }: { domain: string }) {
     }
   }, [isRegistered, domain, addDomainToHistory]);
 
-  // Set chat context for domain-specific suggestions
-  const setChatContext = useSetAtom(chatContextAtom);
+  const viewedDomainRef = useRef<string | null>(null);
   useEffect(() => {
-    setChatContext({ type: "report", domain });
-    return () => setChatContext({ type: "home" });
-  }, [domain, setChatContext]);
+    if (!isRegistered) {
+      return;
+    }
+    if (viewedDomainRef.current === domain) {
+      return;
+    }
+    viewedDomainRef.current = domain;
+    analytics.track("report_viewed", { domain });
+  }, [domain, isRegistered]);
 
   const headerRef = useRef<HTMLDivElement>(null);
   const sectionIds = Object.keys(sections);

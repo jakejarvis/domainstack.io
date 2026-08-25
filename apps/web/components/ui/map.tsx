@@ -8,7 +8,19 @@ import {
   IconPlus,
   IconX,
 } from "@tabler/icons-react";
-import MapLibreGL, { type MarkerOptions, type PopupOptions } from "maplibre-gl";
+import {
+  GeoJSONSource,
+  Map as MapLibreMap,
+  Marker,
+  Popup,
+  getVersion,
+  getWorkerUrl,
+  setWorkerUrl,
+  type MapOptions,
+  type MarkerOptions,
+  type PopupOptions,
+  type StyleSpecification,
+} from "maplibre-gl";
 import {
   createContext,
   useCallback,
@@ -20,17 +32,22 @@ import {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
-import { toast } from "sonner";
 
+import { useIsClient } from "@/hooks/use-is-client";
 import { useTheme } from "@/hooks/use-theme";
-import { analytics } from "@domainstack/analytics/client";
+import { analytics } from "@/lib/analytics/client";
 import { Spinner } from "@domainstack/ui/spinner";
+import { toast } from "@domainstack/ui/toast";
 import { cn } from "@domainstack/ui/utils";
 
 import "maplibre-gl/dist/maplibre-gl.css";
 
+if (typeof window !== "undefined" && !getWorkerUrl()) {
+  setWorkerUrl(`https://unpkg.com/maplibre-gl@${getVersion()}/dist/maplibre-gl-worker.mjs`);
+}
+
 type MapContextValue = {
-  map: MapLibreGL.Map | null;
+  map: MapLibreMap | null;
   isLoaded: boolean;
 };
 
@@ -49,7 +66,7 @@ const defaultStyles = {
   light: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
 };
 
-type MapStyleOption = string | MapLibreGL.StyleSpecification;
+type MapStyleOption = string | StyleSpecification;
 
 type MapInstanceProps = {
   children?: React.ReactNode;
@@ -59,7 +76,7 @@ type MapInstanceProps = {
     dark?: MapStyleOption;
   };
   className?: string;
-} & Omit<MapLibreGL.MapOptions, "container" | "style">;
+} & Omit<MapOptions, "container" | "style">;
 
 const DefaultLoader = () => (
   <div className="absolute inset-0 flex h-full w-full items-center justify-center">
@@ -72,8 +89,8 @@ const DefaultLoader = () => (
 
 function MapInstance({ children, styles, className, ...props }: MapInstanceProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<MapLibreGL.Map | null>(null);
-  const [isMounted, setIsMounted] = useState(false);
+  const mapRef = useRef<MapLibreMap | null>(null);
+  const isMounted = useIsClient();
   const [isLoaded, setIsLoaded] = useState(false);
   const [isStyleLoaded, setIsStyleLoaded] = useState(false);
   const { theme: resolvedTheme } = useTheme();
@@ -92,13 +109,9 @@ function MapInstance({ children, styles, className, ...props }: MapInstanceProps
   }
 
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  useEffect(() => {
     if (!isMounted || !containerRef.current) return;
 
-    const mapInstance = new MapLibreGL.Map({
+    const mapInstance = new MapLibreMap({
       container: containerRef.current,
       style: initialMapStyleRef.current ?? defaultStyles.light,
       renderWorldCopies: false,
@@ -135,6 +148,7 @@ function MapInstance({ children, styles, className, ...props }: MapInstanceProps
   const isLoading = !isMounted || !isLoaded || !isStyleLoaded;
   const contextValue = useMemo(
     () => ({
+      // oxlint-disable-next-line react/refs
       map: mapRef.current,
       isLoaded: isMounted && isLoaded && isStyleLoaded,
     }),
@@ -153,9 +167,9 @@ function MapInstance({ children, styles, className, ...props }: MapInstanceProps
 }
 
 type MarkerContextValue = {
-  markerRef: React.RefObject<MapLibreGL.Marker | null>;
+  markerRef: React.RefObject<Marker | null>;
   markerElementRef: React.RefObject<HTMLDivElement | null>;
-  map: MapLibreGL.Map | null;
+  map: MapLibreMap | null;
   isReady: boolean;
 };
 
@@ -195,7 +209,7 @@ function MapMarker({
   ...markerOptions
 }: MapMarkerProps) {
   const { map, isLoaded } = useMap();
-  const markerRef = useRef<MapLibreGL.Marker | null>(null);
+  const markerRef = useRef<Marker | null>(null);
   const markerElementRef = useRef<HTMLDivElement | null>(null);
   const [isReady, setIsReady] = useState(false);
   const markerOptionsRef = useRef(markerOptions);
@@ -211,6 +225,7 @@ function MapMarker({
     onDrag,
     onDragEnd,
   });
+  // oxlint-disable-next-line react/refs
   markerStateRef.current = {
     longitude,
     latitude,
@@ -230,7 +245,7 @@ function MapMarker({
     markerElementRef.current = container;
     const currentState = markerStateRef.current;
 
-    const marker = new MapLibreGL.Marker({
+    const marker = new Marker({
       ...initialMarkerOptionsRef.current,
       element: container,
       draggable: currentState.draggable,
@@ -265,6 +280,7 @@ function MapMarker({
     marker.on("drag", handleDrag);
     marker.on("dragend", handleDragEnd);
 
+    // oxlint-disable-next-line react/set-state-in-effect
     setIsReady(true);
 
     return () => {
@@ -327,10 +343,12 @@ type MapMarkerContentProps = {
 function MapMarkerContent({ children, className }: MapMarkerContentProps) {
   const { markerElementRef, isReady } = useMarkerContext();
 
+  // oxlint-disable-next-line react/refs
   if (!isReady || !markerElementRef.current) return null;
 
   return createPortal(
     <div className={cn("relative", className)}>{children || <DefaultMarkerIcon />}</div>,
+    // oxlint-disable-next-line react/refs
     markerElementRef.current,
   );
 }
@@ -358,7 +376,7 @@ function MapMarkerPopup({
 }: MapMarkerPopupProps) {
   const { markerRef, isReady } = useMarkerContext();
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const popupRef = useRef<MapLibreGL.Popup | null>(null);
+  const popupRef = useRef<Popup | null>(null);
   const [mounted, setMounted] = useState(false);
   const popupOptionsRef = useRef(popupOptions);
   const initialPopupOptionsRef = useRef(popupOptions);
@@ -369,7 +387,7 @@ function MapMarkerPopup({
     const container = document.createElement("div");
     containerRef.current = container;
 
-    const popup = new MapLibreGL.Popup({
+    const popup = new Popup({
       offset: 16,
       ...initialPopupOptionsRef.current,
       closeButton: false,
@@ -405,6 +423,7 @@ function MapMarkerPopup({
 
   const handleClose = () => popupRef.current?.remove();
 
+  // oxlint-disable-next-line react/refs
   if (!mounted || !containerRef.current) return null;
 
   return createPortal(
@@ -427,6 +446,7 @@ function MapMarkerPopup({
       )}
       {children}
     </div>,
+    // oxlint-disable-next-line react/refs
     containerRef.current,
   );
 }
@@ -439,7 +459,7 @@ type MapMarkerTooltipProps = {
 function MapMarkerTooltip({ children, className, ...popupOptions }: MapMarkerTooltipProps) {
   const { markerRef, markerElementRef, map, isReady } = useMarkerContext();
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const popupRef = useRef<MapLibreGL.Popup | null>(null);
+  const popupRef = useRef<Popup | null>(null);
   const [mounted, setMounted] = useState(false);
   const popupOptionsRef = useRef(popupOptions);
   const initialPopupOptionsRef = useRef(popupOptions);
@@ -450,7 +470,7 @@ function MapMarkerTooltip({ children, className, ...popupOptions }: MapMarkerToo
     const container = document.createElement("div");
     containerRef.current = container;
 
-    const popup = new MapLibreGL.Popup({
+    const popup = new Popup({
       offset: 16,
       ...initialPopupOptionsRef.current,
       closeOnClick: true,
@@ -497,6 +517,7 @@ function MapMarkerTooltip({ children, className, ...popupOptions }: MapMarkerToo
     popupOptionsRef.current = popupOptions;
   }, [popupOptions]);
 
+  // oxlint-disable-next-line react/refs
   if (!mounted || !containerRef.current) return null;
 
   return createPortal(
@@ -508,6 +529,7 @@ function MapMarkerTooltip({ children, className, ...popupOptions }: MapMarkerToo
     >
       {children}
     </div>,
+    // oxlint-disable-next-line react/refs
     containerRef.current,
   );
 }
@@ -641,7 +663,7 @@ function MapControls({
             3: "Location request timed out. Please try again.",
           };
           const message = messages[error.code] ?? "Unable to get your location";
-          toast.error(message);
+          toast.add({ title: message, type: "error" });
 
           // Track non-permission errors (permission denied is expected user behavior)
           if (error.code !== 1) {
@@ -773,10 +795,11 @@ function MapPopup({
   ...popupOptions
 }: MapPopupProps) {
   const { map } = useMap();
-  const popupRef = useRef<MapLibreGL.Popup | null>(null);
+  const popupRef = useRef<Popup | null>(null);
   const popupOptionsRef = useRef(popupOptions);
   const initialPopupOptionsRef = useRef(popupOptions);
   const popupStateRef = useRef({ longitude, latitude, onClose });
+  // oxlint-disable-next-line react/refs
   popupStateRef.current = { longitude, latitude, onClose };
 
   const container = useMemo(() => document.createElement("div"), []);
@@ -785,7 +808,7 @@ function MapPopup({
     if (!map) return;
     const currentState = popupStateRef.current;
 
-    const popup = new MapLibreGL.Popup({
+    const popup = new Popup({
       offset: 16,
       ...initialPopupOptionsRef.current,
       closeButton: false,
@@ -877,6 +900,7 @@ function MapRoute({
   const sourceId = `route-source-${id}`;
   const layerId = `route-layer-${id}`;
   const paintRef = useRef({ color, width, opacity, dashArray });
+  // oxlint-disable-next-line react/refs
   paintRef.current = { color, width, opacity, dashArray };
 
   // Add source and layer on mount
@@ -920,7 +944,7 @@ function MapRoute({
   useEffect(() => {
     if (!isLoaded || !map || coordinates.length < 2) return;
 
-    const source = map.getSource(sourceId) as MapLibreGL.GeoJSONSource;
+    const source = map.getSource(sourceId) as GeoJSONSource;
     if (source) {
       source.setData({
         type: "Feature",

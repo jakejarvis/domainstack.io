@@ -1,9 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
-import { toast } from "sonner";
 
 import { useTRPC } from "@/lib/trpc/client";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
+import { toast } from "@domainstack/ui/toast";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -28,6 +28,25 @@ interface SubscriptionData {
 interface MutationContext {
   previousDomains: [unknown, unknown][];
   previousSubscription: SubscriptionData | undefined;
+}
+
+function toastBulkResult(
+  verb: "Archived" | "Deleted",
+  result: BulkMutationResult,
+  requestedCount: number,
+) {
+  if (result.failedCount === 0) {
+    toast.add({
+      title: `${verb} ${requestedCount} domain${requestedCount === 1 ? "" : "s"}`,
+      type: "success",
+    });
+    return;
+  }
+
+  toast.add({
+    title: `${verb} ${result.successCount} of ${requestedCount} domains (${result.failedCount} failed)`,
+    type: "warning",
+  });
 }
 
 interface UseDashboardMutationsReturn {
@@ -122,9 +141,9 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
       if (context?.previousSubscription) {
         queryClient.setQueryData(subscriptionQueryKey, context.previousSubscription);
       }
-      toast.error("Failed to remove domain");
+      toast.add({ title: "Failed to remove domain", type: "error" });
     },
-    onSuccess: () => toast.success("Domain removed"),
+    onSuccess: () => toast.add({ title: "Domain removed", type: "success" }),
     onSettled: invalidateDomainQueries,
   });
 
@@ -169,9 +188,9 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
       if (context?.previousSubscription) {
         queryClient.setQueryData(subscriptionQueryKey, context.previousSubscription);
       }
-      toast.error("Failed to archive domain");
+      toast.add({ title: "Failed to archive domain", type: "error" });
     },
-    onSuccess: () => toast.success("Domain archived"),
+    onSuccess: () => toast.add({ title: "Domain archived", type: "success" }),
     onSettled: invalidateDomainQueries,
   });
 
@@ -216,9 +235,12 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
       if (context?.previousSubscription) {
         queryClient.setQueryData(subscriptionQueryKey, context.previousSubscription);
       }
-      toast.error(err instanceof Error ? err.message : "Failed to reactivate domain");
+      toast.add({
+        title: err instanceof Error ? err.message : "Failed to reactivate domain",
+        type: "error",
+      });
     },
-    onSuccess: () => toast.success("Domain reactivated"),
+    onSuccess: () => toast.add({ title: "Domain reactivated", type: "success" }),
     onSettled: invalidateDomainQueries,
   });
 
@@ -245,9 +267,10 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
       if (context?.previousDomains) {
         rollbackDomains(context.previousDomains);
       }
-      toast.error("Failed to update notification settings");
+      toast.add({ title: "Failed to update notification settings", type: "error" });
     },
-    onSuccess: (_data, { muted }) => toast.success(muted ? "Domain muted" : "Domain unmuted"),
+    onSuccess: (_data, { muted }) =>
+      toast.add({ title: muted ? "Domain muted" : "Domain unmuted", type: "success" }),
     onSettled: () => void queryClient.invalidateQueries({ queryKey: domainsQueryKey }),
   });
 
@@ -276,7 +299,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
       }
 
       queryClient.setQueriesData({ queryKey: domainsQueryKey }, (old: DomainsData) =>
-        old?.map((d) => (idsSet.has(d.id) ? { ...d, archivedAt: new Date() } : d)),
+        old?.map((d) => (idsSet.has(d.id) && !d.archivedAt ? { ...d, archivedAt: new Date() } : d)),
       );
       queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) => {
         if (!old) return old;
@@ -301,7 +324,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
       if (context?.previousSubscription) {
         queryClient.setQueryData(subscriptionQueryKey, context.previousSubscription);
       }
-      toast.error("Failed to archive domains");
+      toast.add({ title: "Failed to archive domains", type: "error" });
     },
     onSettled: invalidateDomainQueries,
   });
@@ -355,7 +378,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
       if (context?.previousSubscription) {
         queryClient.setQueryData(subscriptionQueryKey, context.previousSubscription);
       }
-      toast.error("Failed to delete domains");
+      toast.add({ title: "Failed to delete domains", type: "error" });
     },
     onSettled: invalidateDomainQueries,
   });
@@ -393,14 +416,20 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
   );
 
   const bulkArchive = useCallback(
-    async (trackedDomainIds: string[]): Promise<BulkMutationResult> =>
-      bulkArchiveMutation.mutateAsync({ trackedDomainIds }),
+    async (trackedDomainIds: string[]): Promise<BulkMutationResult> => {
+      const result = await bulkArchiveMutation.mutateAsync({ trackedDomainIds });
+      toastBulkResult("Archived", result, trackedDomainIds.length);
+      return result;
+    },
     [bulkArchiveMutation],
   );
 
   const bulkDelete = useCallback(
-    async (trackedDomainIds: string[]): Promise<BulkMutationResult> =>
-      bulkDeleteMutation.mutateAsync({ trackedDomainIds }),
+    async (trackedDomainIds: string[]): Promise<BulkMutationResult> => {
+      const result = await bulkDeleteMutation.mutateAsync({ trackedDomainIds });
+      toastBulkResult("Deleted", result, trackedDomainIds.length);
+      return result;
+    },
     [bulkDeleteMutation],
   );
 

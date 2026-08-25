@@ -2,7 +2,16 @@
 
 import { IconBrain, IconChevronDown } from "@tabler/icons-react";
 import type { ComponentProps, ReactNode } from "react";
-import { createContext, memo, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  memo,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Streamdown } from "streamdown";
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@domainstack/ui/collapsible";
@@ -87,19 +96,21 @@ export const Reasoning = memo(
     });
 
     const [hasAutoClosed, setHasAutoClosed] = useState(false);
-    const [startTime, setStartTime] = useState<number | null>(null);
+    const startTimeRef = useRef<number | null>(null);
 
-    // Track duration when streaming starts and ends
+    // Track duration when streaming starts and ends. Wall-clock timing has to
+    // live in an effect; start time is stored in a ref so we only setState once
+    // streaming finishes.
     useEffect(() => {
       if (isStreaming) {
-        if (startTime === null) {
-          setStartTime(Date.now());
-        }
-      } else if (startTime !== null) {
-        setDuration(Math.ceil((Date.now() - startTime) / MS_IN_S));
-        setStartTime(null);
+        startTimeRef.current ??= Date.now();
+        return;
       }
-    }, [isStreaming, startTime, setDuration]);
+      if (startTimeRef.current !== null) {
+        setDuration(Math.ceil((Date.now() - startTimeRef.current) / MS_IN_S));
+        startTimeRef.current = null;
+      }
+    }, [isStreaming, setDuration]);
 
     // Auto-open when streaming starts, auto-close when streaming ends (once only)
     useEffect(() => {
@@ -143,7 +154,7 @@ export type ReasoningTriggerProps = ComponentProps<typeof CollapsibleTrigger> & 
 
 const defaultGetThinkingMessage = (isStreaming: boolean, duration?: number) => {
   if (isStreaming || duration === 0) {
-    return <ShimmeringText text="Thinking…" />;
+    return <ShimmeringText text="Thinking…" startOnView={false} />;
   }
   if (duration === undefined) {
     return <p>Thought for a few seconds</p>;

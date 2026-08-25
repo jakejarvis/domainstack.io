@@ -90,6 +90,7 @@ export function ArchivedDomainsList({ domains }: ArchivedDomainsListProps) {
                           size="sm"
                           onClick={() => onUnarchive(domain.id)}
                           disabled={!subscription?.canAddMore}
+                          className={!subscription?.canAddMore ? "pointer-events-none" : undefined}
                         >
                           <IconRefresh />
                           <span className="sr-only sm:not-sr-only sm:ml-2">Reactivate</span>

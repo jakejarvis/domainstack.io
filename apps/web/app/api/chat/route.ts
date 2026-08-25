@@ -3,7 +3,7 @@
  *
  * POST /api/chat - Start a chat workflow and stream the response
  *
- * Uses the Workflow SDK's DurableAgent for:
+ * Uses WorkflowAgent for:
  * - Durable tool execution with automatic retries
  * - Streaming responses via getWritable()/getReadable()
  * - Resumable streams for client reconnection after timeouts
@@ -15,63 +15,25 @@
  * - Conversation history truncation
  */
 
+import { createModelCallToUIChunkTransform } from "@ai-sdk/workflow";
 import { ipAddress } from "@vercel/functions";
 import { createUIMessageStreamResponse, type UIMessage } from "ai";
 import { NextResponse } from "next/server";
 import { start } from "workflow/api";
-import { z } from "zod";
 
+import { chatRequestSchema } from "@/lib/chat/request-schema";
 import { checkRateLimit } from "@/lib/ratelimit/api";
 import { chatWorkflow } from "@/workflows/chat";
 import { auth } from "@domainstack/auth/server";
 import {
+  MAX_CHAT_REQUEST_BYTES,
   MAX_CONVERSATION_MESSAGES,
-  MAX_MESSAGE_LENGTH,
   RATE_LIMIT_ANONYMOUS,
   RATE_LIMIT_AUTHENTICATED,
 } from "@domainstack/constants";
 import { createLogger } from "@domainstack/logger";
 
 const logger = createLogger({ source: "api/chat" });
-
-/**
- * Zod schema for chat request validation.
- *
- * Validates:
- * - Message array exists and isn't too long
- * - Each message has required fields
- * - Text content doesn't exceed max length
- * - Domain is a reasonable string if provided
- */
-const chatRequestSchema = z.object({
-  messages: z
-    .array(
-      z
-        .object({
-          id: z.string(),
-          role: z.enum(["user", "assistant"]),
-          parts: z.array(
-            z.union([
-              z.object({
-                type: z.literal("text"),
-                text: z.string().max(MAX_MESSAGE_LENGTH, {
-                  message: `Message text exceeds ${MAX_MESSAGE_LENGTH} characters`,
-                }),
-              }),
-              // Allow other part types (tool calls, etc.) to pass through
-              z.object({ type: z.string() }).passthrough(),
-            ]),
-          ),
-        })
-        // Allow additional fields from UIMessage (metadata, createdAt, etc.)
-        .passthrough(),
-    )
-    .min(1, { message: "At least one message is required" })
-    .max(MAX_CONVERSATION_MESSAGES * 2, {
-      message: `Too many messages (max ${MAX_CONVERSATION_MESSAGES * 2})`,
-    }),
-  domain: z.string().max(253, { message: "Domain name too long" }).optional(),
-});
 
 /**
  * POST /api/chat
@@ -102,10 +64,36 @@ export async function POST(request: Request) {
     return rateLimit.error;
   }
 
+  const contentLength = Number(request.headers.get("content-length"));
+  if (Number.isFinite(contentLength) && contentLength > MAX_CHAT_REQUEST_BYTES) {
+    return NextResponse.json(
+      { error: "Request body too large" },
+      { status: 413, headers: { ...rateLimit.headers } },
+    );
+  }
+
   // Parse and validate request body
+  let rawBody: string;
+  try {
+    rawBody = await request.text();
+  } catch (err) {
+    logger.warn({ err }, "failed to read chat request body");
+    return NextResponse.json(
+      { error: "Invalid request body" },
+      { status: 400, headers: { ...rateLimit.headers } },
+    );
+  }
+
+  if (new TextEncoder().encode(rawBody).byteLength > MAX_CHAT_REQUEST_BYTES) {
+    return NextResponse.json(
+      { error: "Request body too large" },
+      { status: 413, headers: { ...rateLimit.headers } },
+    );
+  }
+
   let body: unknown;
   try {
-    body = await request.json();
+    body = JSON.parse(rawBody);
   } catch (err) {
     logger.warn({ err }, "invalid JSON in chat request body");
     return NextResponse.json(
@@ -139,9 +127,9 @@ export async function POST(request: Request) {
   try {
     const run = await start(chatWorkflow, [{ messages, domain, ip, userId }]);
 
-    // Return streaming response
+    // Convert raw ModelCallStreamPart chunks to UI message chunks for the client
     return createUIMessageStreamResponse({
-      stream: run.readable,
+      stream: run.readable.pipeThrough(createModelCallToUIChunkTransform()),
       headers: {
         "x-workflow-run-id": run.runId,
         ...rateLimit.headers,

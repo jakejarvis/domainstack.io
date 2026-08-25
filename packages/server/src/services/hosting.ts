@@ -110,7 +110,7 @@ export async function fetchHosting(domain: string): Promise<HostingResult> {
 // Internal: GeoIP Lookup
 // ============================================================================
 
-const geoIpLogger = createLogger({ source: "hosting-geoip" });
+const logger = createLogger({ source: "geoip" });
 
 /** Raw iplocate.io API response - cached in Redis */
 interface IplocateApiResponse {
@@ -148,7 +148,6 @@ function transformApiResponse(data: IplocateApiResponse): GeoIpData {
  * This ensures cached data remains valid if transformation logic changes.
  */
 async function lookupGeoIp(ip: string): Promise<GeoIpData | null> {
-  const logger = geoIpLogger;
   const redis = getRedis();
   const cacheKey = `geoip:${ip}`;
 

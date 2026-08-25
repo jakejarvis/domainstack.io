@@ -1,4 +1,3 @@
-import { Analytics } from "@vercel/analytics/next";
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import type { Metadata, Viewport } from "next";
@@ -9,7 +8,7 @@ import { ChatServer } from "@/components/chat/chat-server";
 import { CookiePromptGeofenced } from "@/components/consent/cookie-prompt-geofenced";
 import { AppFooter } from "@/components/layout/app-footer";
 import { AppHeader } from "@/components/layout/app-header";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@domainstack/ui/toast";
 
 import "./globals.css";
 
@@ -87,7 +86,6 @@ export default function RootLayout({
 
           {modal}
         </Providers>
-        <Analytics />
       </body>
     </html>
   );

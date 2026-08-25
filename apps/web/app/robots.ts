@@ -5,8 +5,12 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: ["/api/og"],
+        allow: ["/", "/api/og"],
       },
     ],
+    sitemap: new URL(
+      "/sitemap.xml",
+      process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000",
+    ).toString(),
   };
 }

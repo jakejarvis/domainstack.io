@@ -5,15 +5,18 @@ import {
   setSubscriptionEndsAt,
   updateUserTier,
 } from "@domainstack/db/queries";
-import { logger } from "@domainstack/logger";
+import { createLogger } from "@domainstack/logger";
 
+import { analytics } from "./analytics";
 import { handleDowngrade } from "./downgrade";
 import {
   sendProUpgradeEmail,
   sendSubscriptionCancelingEmail,
   sendSubscriptionExpiredEmail,
 } from "./emails";
-import { getTierForProductId } from "./products";
+import { getProductByProductId, getTierForProductId } from "./products";
+
+const logger = createLogger({ source: "polar/webhooks" });
 
 // Extract payload types from WebhooksOptions
 type SubscriptionCreatedPayload = Parameters<
@@ -31,6 +34,7 @@ type SubscriptionRevokedPayload = Parameters<
 type SubscriptionUncanceledPayload = Parameters<
   NonNullable<WebhooksOptions["onSubscriptionUncanceled"]>
 >[0];
+type OrderPaidPayload = Parameters<NonNullable<WebhooksOptions["onOrderPaid"]>>[0];
 
 /**
  * Handle subscription.created webhook.
@@ -98,6 +102,21 @@ export async function handleSubscriptionActive(payload: SubscriptionActivePayloa
   } catch (err) {
     logger.error({ err, userId }, "Failed to send pro upgrade email");
   }
+
+  const product = getProductByProductId(data.product.id);
+  analytics.track(
+    "subscription_started",
+    {
+      subscription_id: data.id,
+      product_id: data.product.id,
+      product: data.product.name,
+      interval: product?.interval,
+      amount: data.amount,
+      currency: data.currency,
+      tier,
+    },
+    userId,
+  );
 }
 
 /**
@@ -205,4 +224,44 @@ export async function handleSubscriptionUncanceled(
 
   // Clear the subscription end date since they're no longer canceling
   await clearSubscriptionEndsAt(userId);
+}
+
+/**
+ * Handle order.paid webhook.
+ * Fires for the first payment and every renewal. Used as the customer analytics payment event.
+ */
+export async function handleOrderPaid(payload: OrderPaidPayload): Promise<void> {
+  const { data } = payload;
+  const userId = data.customer.externalId;
+
+  logger.info(
+    {
+      orderId: data.id,
+      userId,
+      productId: data.productId,
+      totalAmount: data.totalAmount,
+      currency: data.currency,
+      billingReason: data.billingReason,
+    },
+    "Order paid",
+  );
+
+  if (!userId) {
+    logger.warn({ orderId: data.id }, "No externalId on customer, skipping payment analytics");
+    return;
+  }
+
+  analytics.track(
+    "payment_succeeded",
+    {
+      revenue: data.totalAmount,
+      currency: data.currency.toUpperCase(),
+      product: data.product?.name,
+      product_id: data.productId,
+      subscription_id: data.subscriptionId,
+      order_id: data.id,
+      billing_reason: data.billingReason,
+    },
+    userId,
+  );
 }

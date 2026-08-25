@@ -8,9 +8,11 @@
  * network issues or Vercel Function timeouts.
  */
 
+import { createModelCallToUIChunkTransform } from "@ai-sdk/workflow";
 import { createUIMessageStreamResponse } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 import { getRun } from "workflow/api";
+import { RunExpiredError, WorkflowRunNotFoundError, WorkflowWorldError } from "workflow/errors";
 
 import { checkRateLimit } from "@/lib/ratelimit/api";
 import { auth } from "@domainstack/auth/server";
@@ -19,27 +21,18 @@ import { createLogger } from "@domainstack/logger";
 
 const logger = createLogger({ source: "api/chat/stream" });
 
-/**
- * GET /api/chat/:runId/stream
- *
- * Reconnect to an existing chat workflow stream.
- * Supports startIndex query param to resume from a specific chunk.
- */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ runId: string }> },
 ) {
-  // Check authentication status for differentiated rate limits
   let isAuthenticated = false;
   try {
     const session = await auth.api.getSession({ headers: request.headers });
     isAuthenticated = !!session?.user?.id;
   } catch (err) {
-    // Auth error - treat as anonymous, but log for debugging
     logger.debug({ err }, "auth session check failed, treating as anonymous");
   }
 
-  // Apply rate limits based on auth status
   const rateLimitConfig = isAuthenticated
     ? RATE_LIMIT_AUTHENTICATED.stream
     : RATE_LIMIT_ANONYMOUS.stream;
@@ -54,75 +47,65 @@ export async function GET(
   }
 
   const { runId } = await params;
-  const startIndexParam = request.nextUrl.searchParams.get("startIndex");
-  const parsedIndex = startIndexParam ? Number.parseInt(startIndexParam, 10) : 0;
-  // Validate startIndex is a non-negative integer, default to 0 if invalid
-  const startIndex = Number.isNaN(parsedIndex) || parsedIndex < 0 ? 0 : parsedIndex;
+  const rawStartIndex = request.nextUrl.searchParams.get("startIndex") ?? "0";
+  const startIndex = /^\d+$/.test(rawStartIndex) ? Number(rawStartIndex) : Number.NaN;
+  if (!Number.isSafeInteger(startIndex)) {
+    return NextResponse.json(
+      { error: "startIndex must be a non-negative safe integer" },
+      { status: 400, headers: { ...rateLimit.headers } },
+    );
+  }
 
   try {
     const run = getRun(runId);
-
-    // Check if run exists by checking status
     const status = await run.status;
     if (status === "failed") {
       logger.error({ runId }, "chat workflow failed");
       return NextResponse.json(
         { error: "Workflow failed" },
-        {
-          status: 500,
-          headers: { ...rateLimit.headers },
-        },
+        { status: 500, headers: { ...rateLimit.headers } },
       );
     }
 
-    // Get readable stream from the specified index
-    const readable = run.getReadable({ startIndex });
+    const readable = run
+      .getReadable({ startIndex: 0 })
+      .pipeThrough(createModelCallToUIChunkTransform({ uiStartIndex: startIndex }));
 
-    // Return streaming response using AI SDK's createUIMessageStreamResponse
-    // This properly serializes UIMessageChunk objects for HTTP streaming
     return createUIMessageStreamResponse({
       stream: readable,
-      headers: { ...rateLimit.headers },
+      headers: {
+        "x-workflow-run-id": runId,
+        ...rateLimit.headers,
+      },
     });
   } catch (err) {
-    // Provide more specific error messages based on error type
-    const error = err instanceof Error ? err : new Error(String(err));
-    let errorMessage = "Chat session not found or expired";
-    let statusCode = 404;
-
-    // Check for workflow run no longer available (400 means run completed/expired)
-    // This is expected when the client tries to reconnect after the workflow finished
-    if (error.message.includes("400") || error.message.includes("Bad Request")) {
-      errorMessage = "Chat session completed or expired.";
-      statusCode = 410; // Gone - resource no longer available
-    } else if (error.message.includes("timeout")) {
-      errorMessage = "Connection timed out. Please try again.";
-      statusCode = 408;
-    } else if (error.message.includes("network")) {
-      errorMessage = "Network error. Please check your connection.";
-      statusCode = 502;
-    } else if (!error.message.includes("not found") && !error.message.includes("expired")) {
-      // Unexpected error - use 500 instead of misleading 404
-      errorMessage = "An unexpected error occurred. Please try again.";
-      statusCode = 500;
+    // Completed runs are reported as a 400 WorkflowWorldError.
+    if (WorkflowWorldError.is(err) && err.status === 400) {
+      logger.debug({ runId }, "chat stream reconnection to completed workflow");
+      return NextResponse.json(
+        { error: "Chat session completed or expired." },
+        { status: 410, headers: { ...rateLimit.headers } },
+      );
     }
 
-    // Log at appropriate severity: error for 500s, warn/debug for expected errors
-    if (statusCode === 500) {
-      logger.error({ err, runId, statusCode }, "unexpected error reconnecting to chat stream");
-    } else if (statusCode === 410) {
-      // 410 Gone is expected when reconnecting to a completed workflow
-      logger.debug({ runId, statusCode }, "chat stream reconnection to completed workflow");
-    } else {
-      logger.warn({ err, runId, statusCode }, "failed to reconnect to chat stream");
+    // Missing or expired runs should not be treated as unexpected 500s.
+    if (
+      WorkflowRunNotFoundError.is(err) ||
+      RunExpiredError.is(err) ||
+      (err instanceof Error && err.name === "StreamExpiredError") ||
+      (WorkflowWorldError.is(err) && (err.status === 404 || err.status === 410))
+    ) {
+      logger.debug({ runId }, "chat stream reconnection to unavailable workflow");
+      return NextResponse.json(
+        { error: "Chat session completed or expired." },
+        { status: 404, headers: { ...rateLimit.headers } },
+      );
     }
 
+    logger.error({ err, runId }, "unexpected error reconnecting to chat stream");
     return NextResponse.json(
-      { error: errorMessage },
-      {
-        status: statusCode,
-        headers: { ...rateLimit.headers },
-      },
+      { error: "An unexpected error occurred. Please try again." },
+      { status: 500, headers: { ...rateLimit.headers } },
     );
   }
 }

@@ -6,7 +6,6 @@ import {
   IconBookmarks,
   IconBrandApple,
   IconCookie,
-  IconCornerLeftUp,
   IconExternalLink,
   IconGavel,
   IconHeart,
@@ -17,7 +16,6 @@ import {
 import * as motion from "motion/react-client";
 import Link from "next/link";
 import { useState } from "react";
-import { toast } from "sonner";
 
 import { BetaBadge } from "@/components/beta-badge";
 import { APPLE_SHORTCUT_ID } from "@domainstack/constants";
@@ -29,6 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@domainstack/ui/dropdown-menu";
+import { toast } from "@domainstack/ui/toast";
 
 export function AppFooter() {
   const [isBookmarkletsOpen, setIsBookmarkletsOpen] = useState(false);
@@ -39,6 +38,13 @@ export function AppFooter() {
   const hrefScript = (element: HTMLAnchorElement | null) => {
     if (!element) return;
     element.href = `javascript:(function(){var t=window.open("${process.env.NEXT_PUBLIC_BASE_URL}/"+location.hostname,"_blank");t.focus()})();`;
+  };
+  const handleInspectDomainClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    toast.add({
+      title: "Drag the button to your bookmarks bar to use it.",
+      type: "info",
+    });
   };
 
   return (
@@ -156,13 +162,7 @@ export function AppFooter() {
               size="lg"
               nativeButton={false}
               render={<a ref={hrefScript} href="#" />}
-              onClick={(e) => {
-                e.preventDefault();
-                toast.info("Drag the button to your bookmarks bar to use it.", {
-                  icon: <IconCornerLeftUp className="size-4" />,
-                  position: "top-center",
-                });
-              }}
+              onClick={handleInspectDomainClick}
             >
               <IconWorld />
               Inspect Domain

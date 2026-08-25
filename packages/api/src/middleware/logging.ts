@@ -2,38 +2,31 @@ import { createLogger } from "@domainstack/logger";
 
 import { t } from "../trpc";
 
+const logger = createLogger({ source: "trpc" });
+
 /**
- * Middleware to log the start, end, and duration of a procedure.
- * Logs are automatically structured in JSON format.
- * Errors are tracked in PostHog for centralized monitoring.
+ * One canonical log line per procedure: path, type, duration, outcome,
+ * and posthogDistinctId when the caller is authenticated.
  */
-export const withLogging = t.middleware(async ({ path, type, next }) => {
+export const withLogging = t.middleware(async ({ path, type, ctx, next }) => {
   const start = performance.now();
-
-  const procedureLogger = createLogger({ source: "trpc", path, type });
-
   const result = await next();
   const durationMs = Math.round(performance.now() - start);
+  const outcome = result.ok ? "ok" : "error";
+  const posthogDistinctId = ctx.session?.user.id;
 
-  // Log errors from the result (tRPC middleware pattern)
-  if (!result.ok) {
-    procedureLogger.error({ err: result.error, durationMs }, "procedure error");
-  }
+  const fields: Record<string, unknown> = {
+    path,
+    type,
+    durationMs,
+    outcome,
+    ...(posthogDistinctId ? { posthogDistinctId } : {}),
+  };
 
-  // Track slow requests (>5s threshold) in PostHog
-  if (durationMs > 5000) {
-    procedureLogger.info({ durationMs }, "slow request");
-
-    try {
-      const { analytics } = await import("@domainstack/analytics/server");
-      void analytics.track("trpc_slow_request", {
-        path,
-        type,
-        durationMs,
-      });
-    } catch {
-      // Analytics import failed - don't crash the request
-    }
+  if (result.ok) {
+    logger.info(fields, "procedure completed");
+  } else {
+    logger.error({ ...fields, err: result.error }, "procedure completed");
   }
 
   return result;

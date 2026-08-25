@@ -9,8 +9,13 @@ export default defineConfig({
   resolve: {
     alias: {
       "next/image": fileURLToPath(new URL("./mocks/next-image.ts", import.meta.url)),
+      "next/link": fileURLToPath(new URL("./mocks/next-link.ts", import.meta.url)),
     },
     tsconfigPaths: true,
+    dedupe: ["react", "react-dom", "nuqs"],
+  },
+  optimizeDeps: {
+    include: ["nuqs", "nuqs/adapters/testing"],
   },
   define: {
     "process.env.NEXT_PUBLIC_BASE_URL": JSON.stringify("https://test.domainstack.io"),
@@ -57,6 +62,11 @@ export default defineConfig({
             },
           },
           setupFiles: ["./vitest.setup.browser.ts"],
+          server: {
+            deps: {
+              inline: ["nuqs"],
+            },
+          },
         },
       },
     ],

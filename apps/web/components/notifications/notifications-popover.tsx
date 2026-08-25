@@ -20,6 +20,7 @@ export function NotificationsPopover() {
   const [open, setOpen] = useState(false);
   const [, startTransition] = useTransition();
   const autoMarkedThisOpenRef = useRef(false);
+  const skipAutoMarkOnCloseRef = useRef(false);
 
   // Map view to filter parameter
   const filter = view === "inbox" ? "unread" : "read";
@@ -32,8 +33,8 @@ export function NotificationsPopover() {
     hasNextPage,
     isFetchingNextPage,
     isError: isNotificationsError,
-    markRead,
     markAllRead,
+    markRead,
     fetchNextPage,
     getLatestUnreadCount,
   } = useNotificationsData({ filter, enabled: open });
@@ -42,6 +43,7 @@ export function NotificationsPopover() {
   useEffect(() => {
     if (open) {
       autoMarkedThisOpenRef.current = false;
+      skipAutoMarkOnCloseRef.current = false;
     }
   }, [open]);
 
@@ -62,16 +64,22 @@ export function NotificationsPopover() {
     });
   };
 
+  const closePopover = () => {
+    maybeAutoMarkAllRead();
+    setOpen(false);
+  };
+
+  const handleNotificationClick = (notification: NotificationData) => {
+    if (!notification.readAt) {
+      markRead.mutate({ id: notification.id });
+    }
+    skipAutoMarkOnCloseRef.current = true;
+    setOpen(false);
+  };
+
   // Note: Refetch on popover open is handled automatically by TanStack Query
   // since staleTime: 0 ensures fresh data on each mount/query key change.
   // The infinite query refetches when `filter` changes (via query key).
-
-  // Reset scroll position when switching tabs
-  useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = 0;
-    }
-  }, [view]);
 
   // Infinite scroll observer - uses scrollAreaRef as root to observe within the scroll container
   useEffect(() => {
@@ -98,21 +106,18 @@ export function NotificationsPopover() {
     return () => observer.disconnect();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage, open]);
 
-  const handleNotificationClick = (notification: NotificationData) => {
-    setOpen(false);
-    // Only mark as read if not already read
-    if (!notification.readAt) {
-      markRead.mutate({ id: notification.id });
-    }
-  };
-
   return (
     <Popover
       open={open}
       onOpenChange={(nextOpen) => {
-        // When closing from Inbox with unread notifications, mark them all as read.
+        // When closing from Inbox with unread notifications, mark them all as read
+        // unless this close came from clicking a single notification.
         if (!nextOpen) {
-          maybeAutoMarkAllRead();
+          if (skipAutoMarkOnCloseRef.current) {
+            skipAutoMarkOnCloseRef.current = false;
+          } else {
+            maybeAutoMarkAllRead();
+          }
         }
         setOpen(nextOpen);
       }}
@@ -171,7 +176,7 @@ export function NotificationsPopover() {
                       onClick={(e) => {
                         e.preventDefault();
                         router.push("/settings/notifications");
-                        setOpen(false);
+                        closePopover();
                       }}
                       render={
                         <Link href="/settings/notifications">
@@ -199,6 +204,11 @@ export function NotificationsPopover() {
                   }
 
                   startTransition(() => setView(nextView));
+
+                  // Reset scroll position when switching tabs
+                  if (scrollAreaRef.current) {
+                    scrollAreaRef.current.scrollTop = 0;
+                  }
                 }}
               >
                 <TabsList variant="line">
@@ -258,7 +268,7 @@ export function NotificationsPopover() {
             loadMoreRef={loadMoreRef}
             scrollAreaRef={scrollAreaRef}
             onNotificationClick={handleNotificationClick}
-            onClosePopover={() => setOpen(false)}
+            onClosePopover={closePopover}
           />
         </div>
       </PopoverContent>

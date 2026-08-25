@@ -2,11 +2,11 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { toast } from "sonner";
 
 import { useRouter } from "@/hooks/use-router";
-import { analytics } from "@domainstack/analytics/client";
+import { analytics } from "@/lib/analytics/client";
 import { getAuthErrorMessage, isAccountLinkingError } from "@domainstack/auth";
+import { toast } from "@domainstack/ui/toast";
 
 /**
  * Hook to handle auth callback error query parameters.
@@ -53,8 +53,10 @@ export function useAuthCallback() {
     // Title based on error type
     const title = isLinkError ? "Failed to link account" : "Sign in failed";
 
-    toast.error(title, {
+    toast.add({
+      title,
       description: errorMessage,
+      type: "error",
     });
 
     // Clear error param from URL while preserving others

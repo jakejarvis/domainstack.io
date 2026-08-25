@@ -1,7 +1,45 @@
 "use client";
 
-import { browserAI, doesBrowserSupportBrowserAI } from "@browser-ai/core";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { browserAI } from "@browser-ai/core";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+
+const NOOP_SUBSCRIBE = () => () => {};
+const AVAILABILITY_TIMEOUT_MS = 2_000;
+
+type BrowserAIModel = ReturnType<typeof browserAI>;
+
+/** One Prompt API instance + availability probe per tab, shared across open/close. */
+let sharedModel: BrowserAIModel | null = null;
+let sharedAvailability: Promise<string> | null = null;
+
+function getLanguageModelGlobal(): { availability?: unknown } | undefined {
+  try {
+    return (globalThis as { LanguageModel?: { availability?: unknown } }).LanguageModel;
+  } catch {
+    return undefined;
+  }
+}
+
+/** True only when the Prompt API is actually callable — not a bundler stub. */
+function browserSupportsBuiltInAI(): boolean {
+  return typeof getLanguageModelGlobal()?.availability === "function";
+}
+
+function getSharedModel(): BrowserAIModel {
+  sharedModel ??= browserAI();
+  return sharedModel;
+}
+
+function getSharedAvailability(): Promise<string> {
+  sharedAvailability ??= getSharedModel()
+    .availability()
+    .catch((err: unknown) => {
+      // Allow a later open to retry after a failed probe
+      sharedAvailability = null;
+      throw err;
+    });
+  return sharedAvailability;
+}
 
 /**
  * Browser AI availability status.
@@ -28,15 +66,22 @@ export interface UseBrowserAIResult {
   /** Error message if status is "error" */
   error: string | null;
   /** The browser AI model instance (only available when status is "ready") */
-  model: ReturnType<typeof browserAI> | null;
+  model: BrowserAIModel | null;
   /** Manually trigger model download/initialization */
   initialize: () => Promise<void>;
+}
+
+export interface UseBrowserAIOptions {
+  /** When false, skip the Prompt API availability probe. */
+  enabled?: boolean;
 }
 
 /**
  * Hook to detect and manage browser AI availability.
  *
- * Automatically checks browser support and model availability on mount.
+ * Browser support is detected synchronously. Model availability is probed once
+ * when the hook is enabled (by default, on mount) and reused for the rest of
+ * the tab. Closing the chat does not cancel or restart the probe.
  * When the model is downloadable, call `initialize()` to start the download.
  *
  * @example
@@ -60,69 +105,93 @@ export interface UseBrowserAIResult {
  * }
  * ```
  */
-export function useBrowserAI(): UseBrowserAIResult {
-  const [status, setStatus] = useState<BrowserAIStatus>("checking");
+export function useBrowserAI({ enabled = true }: UseBrowserAIOptions = {}): UseBrowserAIResult {
+  // Synchronous client snapshot so unsupported browsers never sit on "checking"
+  // waiting for an effect. Server snapshot is false to avoid hydration mismatch.
+  const supported = useSyncExternalStore(NOOP_SUBSCRIBE, browserSupportsBuiltInAI, () => false);
+  const [modelStatus, setModelStatus] = useState<BrowserAIStatus>("checking");
+  const status: BrowserAIStatus = supported ? modelStatus : "unavailable";
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [model, setModel] = useState<ReturnType<typeof browserAI> | null>(null);
+  const [model, setModel] = useState<BrowserAIModel | null>(null);
 
   // Track if we've already initialized to prevent double-init
   const initializingRef = useRef(false);
-  const modelInstanceRef = useRef<ReturnType<typeof browserAI> | null>(null);
+  const modelInstanceRef = useRef<BrowserAIModel | null>(null);
   // Track mounted state to prevent state updates after unmount
   const isMountedRef = useRef(true);
+  // Start at most one waiter per hook instance; the underlying probe is shared
+  const probeStartedRef = useRef(false);
 
-  // Check browser support and model availability on mount
   useEffect(() => {
     isMountedRef.current = true;
-
-    async function checkAvailability() {
-      // First check if browser supports the API at all
-      if (!doesBrowserSupportBrowserAI()) {
-        if (isMountedRef.current) setStatus("unavailable");
-        return;
-      }
-
-      try {
-        // Create the model instance to check availability
-        const instance = browserAI();
-        modelInstanceRef.current = instance;
-
-        const availability = await instance.availability();
-
-        if (!isMountedRef.current) return;
-
-        switch (availability) {
-          case "unavailable":
-            setStatus("unavailable");
-            break;
-          case "downloadable":
-            setStatus("downloadable");
-            break;
-          case "downloading":
-            setStatus("downloading");
-            break;
-          case "available":
-            setModel(instance);
-            setStatus("ready");
-            break;
-          default:
-            // Handle any future states gracefully
-            setStatus("unavailable");
-        }
-      } catch (err) {
-        if (!isMountedRef.current) return;
-        setError(err instanceof Error ? err.message : "Failed to check AI availability");
-        setStatus("error");
-      }
-    }
-
-    void checkAvailability();
-
     return () => {
       isMountedRef.current = false;
     };
   }, []);
+
+  // Probe on mount so local/auto is resolved before the panel opens. Gating on
+  // the open state started a cloud session first, then swapped to local.
+  useEffect(() => {
+    if (!enabled || !supported || probeStartedRef.current) return;
+    probeStartedRef.current = true;
+
+    const instance = getSharedModel();
+    modelInstanceRef.current = instance;
+
+    const applyAvailability = (availability: string) => {
+      if (!isMountedRef.current) return;
+
+      switch (availability) {
+        case "unavailable":
+          setModelStatus("unavailable");
+          break;
+        case "downloadable":
+          setModelStatus("downloadable");
+          break;
+        case "downloading":
+          setModelStatus("downloading");
+          break;
+        case "available":
+          setModel(instance);
+          setModelStatus("ready");
+          break;
+        default:
+          setModelStatus("unavailable");
+      }
+    };
+
+    const applyProbeError = (err: unknown) => {
+      probeStartedRef.current = false;
+      if (!isMountedRef.current) return;
+      setError(err instanceof Error ? err.message : "Failed to check AI availability");
+      setModelStatus("error");
+    };
+
+    const probe = getSharedAvailability();
+
+    void (async () => {
+      try {
+        const result = await Promise.race([
+          probe.then((availability) => ({ timedOut: false as const, availability })),
+          new Promise<{ timedOut: true }>((resolve) => {
+            setTimeout(() => resolve({ timedOut: true }), AVAILABILITY_TIMEOUT_MS);
+          }),
+        ]);
+
+        if (result.timedOut) {
+          // Don't sit on "Checking…" if the Prompt API never answers.
+          if (isMountedRef.current) setModelStatus("unavailable");
+          void probe.then(applyAvailability).catch(applyProbeError);
+          return;
+        }
+
+        applyAvailability(result.availability);
+      } catch (err) {
+        applyProbeError(err);
+      }
+    })();
+  }, [enabled, supported]);
 
   // Initialize (download) the model
   const initialize = useCallback(async () => {
@@ -130,12 +199,12 @@ export function useBrowserAI(): UseBrowserAIResult {
     if (status !== "downloadable" && status !== "error") return;
 
     initializingRef.current = true;
-    setStatus("downloading");
+    setModelStatus("downloading");
     setDownloadProgress(0);
     setError(null);
 
     try {
-      const instance = modelInstanceRef.current ?? browserAI();
+      const instance = modelInstanceRef.current ?? getSharedModel();
       modelInstanceRef.current = instance;
 
       // Create session with progress tracking
@@ -145,12 +214,12 @@ export function useBrowserAI(): UseBrowserAIResult {
 
       if (isMountedRef.current) {
         setModel(instance);
-        setStatus("ready");
+        setModelStatus("ready");
       }
     } catch (err) {
       if (isMountedRef.current) {
         setError(err instanceof Error ? err.message : "Failed to initialize AI model");
-        setStatus("error");
+        setModelStatus("error");
       }
     } finally {
       initializingRef.current = false;

@@ -49,6 +49,26 @@ interface StepItemContextValue {
 
 const StepperContext = createContext<StepperContextValue | undefined>(undefined);
 const StepItemContext = createContext<StepItemContextValue | undefined>(undefined);
+const EMPTY_INDICATORS: StepIndicators = {};
+
+function countStepperItems(node: React.ReactNode): number {
+  let count = 0;
+  Children.forEach(node, (child) => {
+    if (isValidElement(child)) {
+      if ((child.type as { displayName?: string }).displayName === "StepperItem") {
+        count++;
+      }
+      // Recurse into children (e.g., StepperNav contains StepperItems)
+      if (child.props && typeof child.props === "object") {
+        const childProps = child.props as { children?: React.ReactNode };
+        if (childProps.children) {
+          count += countStepperItems(childProps.children);
+        }
+      }
+    }
+  });
+  return count;
+}
 
 function useStepper() {
   const ctx = useContext(StepperContext);
@@ -77,7 +97,7 @@ function Stepper({
   orientation = "horizontal",
   className,
   children,
-  indicators = {},
+  indicators = EMPTY_INDICATORS,
   ...rootProps
 }: StepperProps) {
   const [activeStep, setActiveStep] = useState(defaultValue);
@@ -130,26 +150,6 @@ function Stepper({
     [focusTrigger, triggerNodes.length],
   );
 
-  // Recursively count StepperItem components in the tree
-  const countStepperItems = useCallback((node: React.ReactNode): number => {
-    let count = 0;
-    Children.forEach(node, (child) => {
-      if (isValidElement(child)) {
-        if ((child.type as { displayName?: string }).displayName === "StepperItem") {
-          count++;
-        }
-        // Recurse into children (e.g., StepperNav contains StepperItems)
-        if (child.props && typeof child.props === "object") {
-          const childProps = child.props as { children?: React.ReactNode };
-          if (childProps.children) {
-            count += countStepperItems(childProps.children);
-          }
-        }
-      }
-    });
-    return count;
-  }, []);
-
   const contextValue = useMemo<StepperContextValue>(
     () => ({
       activeStep: currentStep,
@@ -176,7 +176,6 @@ function Stepper({
       focusFirst,
       focusLast,
       triggerNodes,
-      countStepperItems,
       indicators,
     ],
   );
@@ -292,9 +291,9 @@ function StepperTrigger({ render, className, children, tabIndex, ...props }: Ste
     };
   }, [registerTrigger]);
 
-  const myIdx = triggerNodes.findIndex((n: HTMLButtonElement) => n === btnRef.current);
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    const myIdx = triggerNodes.findIndex((n: HTMLButtonElement) => n === e.currentTarget);
+
     switch (e.key) {
       case "ArrowRight":
       case "ArrowDown":

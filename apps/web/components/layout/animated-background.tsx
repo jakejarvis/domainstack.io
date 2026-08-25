@@ -7,10 +7,11 @@ import {
   type Transition,
   useReducedMotion,
 } from "motion/react";
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { StaticBackground } from "@/components/layout/static-background";
+import { useIsClient } from "@/hooks/use-is-client";
 
 /**
  * Animated gradient background with organic, drifting motion.
@@ -21,15 +22,12 @@ export function AnimatedBackground() {
   const shouldReduceMotion = useReducedMotion();
   const baseId = useId();
 
+  const mounted = useIsClient();
   const [blobParams, setBlobParams] = useState<BlobParams[] | null>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    // Generate randomness only after hydration to keep SSR/prerender deterministic.
-    // This avoids Next.js' prerender hydration safeguards around Math.random().
+  // Generate randomness only after hydration to keep SSR/prerender deterministic.
+  if (mounted && blobParams === null) {
     setBlobParams(generateBlobParams(createClientRand(), baseId));
-    setMounted(true);
-  }, [baseId]);
+  }
 
   if (!mounted) return null;
 

@@ -9,7 +9,6 @@ import {
 } from "@tabler/icons-react";
 import { useMutation } from "@tanstack/react-query";
 import { useCallback, useEffect, useReducer, useRef } from "react";
-import { toast } from "sonner";
 
 import { useTRPC } from "@/lib/trpc/client";
 import { buildVerificationInstructions } from "@/lib/verification-instructions";
@@ -42,6 +41,7 @@ import {
   ItemTitle,
 } from "@domainstack/ui/item";
 import { Spinner } from "@domainstack/ui/spinner";
+import { toast } from "@domainstack/ui/toast";
 
 // ============================================================================
 // Types
@@ -80,6 +80,7 @@ type ShareDialogAction =
   | { type: "COPY_RESET" }
   | { type: "EMAIL_SENDING" }
   | { type: "EMAIL_SENT" }
+  | { type: "EMAIL_ERROR" }
   | { type: "EMAIL_RESET" };
 
 const initialState: ShareDialogState = {
@@ -112,6 +113,9 @@ function shareDialogReducer(state: ShareDialogState, action: ShareDialogAction):
 
     case "EMAIL_SENT":
       return { ...state, emailStatus: "sent" };
+
+    case "EMAIL_ERROR":
+      return { ...state, emailStatus: "idle" };
 
     case "EMAIL_RESET":
       return { ...state, emailStatus: "idle", email: "" };
@@ -233,8 +237,10 @@ export function ShareInstructionsDialog({
     },
     onSuccess: () => {
       dispatch({ type: "EMAIL_SENT" });
-      toast.success("Instructions sent!", {
-        description: `Email sent to ${state.email}`,
+      toast.add({
+        title: "Instructions sent!",
+        description: `Email sent to ${state.email.trim()}`,
+        type: "success",
       });
       // Reset after a delay
       if (timeoutRef.current) {
@@ -245,10 +251,12 @@ export function ShareInstructionsDialog({
       }, 3000);
     },
     onError: () => {
-      // Reset to idle on error so user can retry
-      dispatch({ type: "EMAIL_RESET" });
-      toast.error("Failed to send email", {
+      // Keep the typed email so the user can retry without re-entering it
+      dispatch({ type: "EMAIL_ERROR" });
+      toast.add({
+        title: "Failed to send email",
         description: "Please try again or use another method.",
+        type: "error",
       });
     },
   });
@@ -256,11 +264,13 @@ export function ShareInstructionsDialog({
   const handleDownload = useCallback(() => {
     const result = downloadInstructionsFile(domain, verificationToken);
     if (result.success) {
-      toast.success("Instructions downloaded!", {
+      toast.add({
+        title: "Instructions downloaded!",
         description: "Send this file to your domain admin.",
+        type: "success",
       });
     } else {
-      toast.error("Failed to download file");
+      toast.add({ title: "Failed to download file", type: "error" });
     }
   }, [domain, verificationToken]);
 

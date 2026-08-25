@@ -76,13 +76,11 @@ export function ShimmeringText({
       }
       initial={{
         backgroundPosition: "100% center",
-        opacity: 0,
       }}
       animate={
         shouldAnimate
           ? {
               backgroundPosition: "0% center",
-              opacity: 1,
             }
           : {}
       }
@@ -93,10 +91,6 @@ export function ShimmeringText({
           delay,
           repeatDelay,
           ease: "linear",
-        },
-        opacity: {
-          duration: 0.3,
-          delay,
         },
       }}
     >

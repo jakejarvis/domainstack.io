@@ -5,7 +5,7 @@ import { useQueryErrorResetBoundary } from "@tanstack/react-query";
 import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
 
 import { CreateIssueButton } from "@/components/create-issue-button";
-import { analytics } from "@domainstack/analytics/client";
+import { analytics } from "@/lib/analytics/client";
 import { Button } from "@domainstack/ui/button";
 import {
   Empty,

@@ -1,16 +1,16 @@
 "use client";
 
-import { IconArrowRight, IconCircleX, IconSearch } from "@tabler/icons-react";
+import { IconArrowRight, IconSearch } from "@tabler/icons-react";
 import { useAtom } from "jotai";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
-import { toast } from "sonner";
 
+import { useIsClient } from "@/hooks/use-is-client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useRouter } from "@/hooks/use-router";
+import { analytics } from "@/lib/analytics/client";
 import { pendingDomainAtom } from "@/lib/atoms/search-atoms";
-import { analytics } from "@domainstack/analytics/client";
 import { Field, FieldLabel } from "@domainstack/ui/field";
 import { Form } from "@domainstack/ui/form";
 import {
@@ -21,6 +21,7 @@ import {
 } from "@domainstack/ui/input-group";
 import { Kbd } from "@domainstack/ui/kbd";
 import { Spinner } from "@domainstack/ui/spinner";
+import { toast } from "@domainstack/ui/toast";
 import { cn } from "@domainstack/ui/utils";
 import { isValidDomain, normalizeDomainInput } from "@domainstack/utils/domain/client";
 
@@ -63,19 +64,17 @@ export function SearchClient({
 
   // Input state
   const [value, setValue] = useState(derivedInitial);
+  const [prevDerivedInitial, setPrevDerivedInitial] = useState(derivedInitial);
   const [loading, setLoading] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsClient();
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Sync value when route/initial changes
-  useEffect(() => {
+  if (derivedInitial !== prevDerivedInitial) {
+    setPrevDerivedInitial(derivedInitial);
     setValue(derivedInitial);
     setLoading(false);
-  }, [derivedInitial]);
-
-  // Mount effect for hydration
-  useEffect(() => setMounted(true), []);
+  }
 
   // Keyboard shortcut (⌘/Ctrl+K)
   useHotkeys("mod+k", (e) => {
@@ -107,9 +106,11 @@ export function SearchClient({
   });
 
   // Handle pending domain from suggestion clicks (variant="lg" only)
+  if (variant === "lg" && pendingDomain && value !== pendingDomain) {
+    setValue(pendingDomain);
+  }
   useEffect(() => {
     if (variant === "lg" && pendingDomain) {
-      setValue(pendingDomain);
       navigateRef.current(pendingDomain);
       setPendingDomain(null);
     }
@@ -177,10 +178,7 @@ export function SearchClient({
 
     if (!isValidDomain(normalized)) {
       analytics.track("search_invalid_input", { input: value });
-      toast.error("Please enter a valid domain.", {
-        icon: <IconCircleX className="size-4" />,
-        position: "bottom-center",
-      });
+      toast.add({ title: "Please enter a valid domain.", type: "error" });
       inputRef.current?.focus();
       return;
     }

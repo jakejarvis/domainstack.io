@@ -1,4 +1,4 @@
-import sharp from "sharp";
+import sharp, { type ResizeOptions, type SharpOptions } from "sharp";
 
 import { createLogger } from "@domainstack/logger";
 
@@ -33,13 +33,13 @@ export interface OptimizeImageOptions {
    * @default "cover"
    * @see https://sharp.pixelplumbing.com/api-resize/#resize
    */
-  fit?: sharp.ResizeOptions["fit"];
+  fit?: ResizeOptions["fit"];
   /**
    * Sharp instance options
    *
    * @see https://sharp.pixelplumbing.com/api-constructor/#new
    */
-  sharpOptions?: sharp.SharpOptions;
+  sharpOptions?: SharpOptions;
 }
 
 /**

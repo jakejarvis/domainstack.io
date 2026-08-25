@@ -6,9 +6,8 @@ import { useMemo } from "react";
 
 import { AddDomainContent } from "@/components/dashboard/add-domain/add-domain-content";
 import { useRouter } from "@/hooks/use-router";
+import { parseResumeDomain } from "@/lib/add-domain-resume";
 import { useTRPC } from "@/lib/trpc/client";
-import { isValidVerificationMethod } from "@/lib/verification-instructions";
-import type { ResumeDomainData } from "@domainstack/types";
 import { Card } from "@domainstack/ui/card";
 
 export function AddDomainPageClient({ prefillDomain }: { prefillDomain?: string }) {
@@ -28,29 +27,7 @@ export function AddDomainPageClient({ prefillDomain }: { prefillDomain?: string 
     router.push("/dashboard", { scroll: false });
   };
 
-  const resumeDomain = useMemo<ResumeDomainData | null>(() => {
-    const isResume = searchParams.get("resume") === "true";
-    const id = searchParams.get("id");
-    const domain = searchParams.get("domain");
-    const methodParam = searchParams.get("method");
-
-    // Validate verification method at runtime without Zod
-    const method = isValidVerificationMethod(methodParam) ? methodParam : null;
-
-    if (isResume && id) {
-      return {
-        id,
-        // Optional: fallback to empty string if not in params,
-        // will be populated by useDomainVerification fetching verification data
-        domainName: domain ?? "",
-        // Token is not needed here as it will be fetched from the server
-        verificationToken: "",
-        verificationMethod: method,
-      };
-    }
-
-    return null;
-  }, [searchParams]);
+  const resumeDomain = useMemo(() => parseResumeDomain(searchParams), [searchParams]);
 
   return (
     <Card className="w-full px-6">

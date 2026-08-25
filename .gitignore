@@ -10,6 +10,7 @@ node_modules
 coverage
 __screenshots__
 test-results
+.vitest-attachments
 
 # Turbo
 .turbo
@@ -48,6 +49,10 @@ next-env.d.ts
 
 # SWC
 .swc
+
+# Workflow SDK
+.workflow-data
+**/.well-known/workflow
 
 # next-agents-md
 .next-docs/

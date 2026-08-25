@@ -1,11 +1,11 @@
 "use client";
 
 import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 
 import { useTRPC } from "@/lib/trpc/client";
 import type { NotificationCategory } from "@domainstack/constants";
 import type { TrackedDomainWithDetails, UserNotificationPreferences } from "@domainstack/types";
+import { toast } from "@domainstack/ui/toast";
 
 const DEFAULT_PREFERENCES: UserNotificationPreferences = {
   domainExpiry: { inApp: true, email: true },
@@ -78,10 +78,10 @@ export function useNotificationPreferences(): UseNotificationPreferencesReturn {
           context.previousPrefs,
         );
       }
-      toast.error("Failed to update settings");
+      toast.add({ title: "Failed to update settings", type: "error" });
     },
     onSuccess: () => {
-      toast.success("Global settings updated");
+      toast.add({ title: "Global settings updated", type: "success" });
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: globalPrefsQueryKey });
@@ -111,10 +111,10 @@ export function useNotificationPreferences(): UseNotificationPreferencesReturn {
           queryClient.setQueryData(key, data);
         }
       }
-      toast.error("Failed to update settings");
+      toast.add({ title: "Failed to update settings", type: "error" });
     },
     onSuccess: (_data, variables) => {
-      toast.success(variables.muted ? "Domain muted" : "Domain unmuted");
+      toast.add({ title: variables.muted ? "Domain muted" : "Domain unmuted", type: "success" });
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
