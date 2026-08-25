@@ -113,7 +113,8 @@ export async function detectChangesWorkflow(
   // Persist DNS (always succeeds or throws)
   await persistDnsRecordsStep(domainName, dnsResult.data);
 
-  // Persist headers (if succeeded)
+  // Headers/certs are optional: missing or unresolvable A/AAAA records are
+  // permanent dns_error results, not workflow failures.
   if (headersResult.success) {
     await persistHeadersStep(domainName, headersResult.data);
   }
@@ -126,29 +127,23 @@ export async function detectChangesWorkflow(
     certificatesData = { certificates: processed.certificates };
   }
 
-  // Compute and persist hosting using DNS + headers data
-  let hostingData: HostingResponse | null = null;
-  if (headersResult.success) {
-    const a = dnsResult.data.records.find((d) => d.type === "A");
-    const aaaa = dnsResult.data.records.find((d) => d.type === "AAAA");
-    const ip = (a?.value || aaaa?.value) ?? null;
-    const geoResult = ip ? await lookupGeoIpStep(ip) : null;
+  // Hosting detection uses DNS even when headers fail (no A/AAAA, etc.)
+  const a = dnsResult.data.records.find((d) => d.type === "A");
+  const aaaa = dnsResult.data.records.find((d) => d.type === "AAAA");
+  const ip = (a?.value || aaaa?.value) ?? null;
+  const geoResult = ip ? await lookupGeoIpStep(ip) : null;
+  const headers = headersResult.success ? headersResult.data.headers : [];
 
-    const providers = await detectAndResolveProvidersStep(
-      dnsResult.data.records,
-      headersResult.data.headers,
-      geoResult,
-    );
+  const providers = await detectAndResolveProvidersStep(dnsResult.data.records, headers, geoResult);
 
-    await persistHostingStep(domainName, providers, geoResult?.geo ?? null);
+  await persistHostingStep(domainName, providers, geoResult?.geo ?? null);
 
-    hostingData = {
-      hostingProvider: providers.hostingProvider,
-      emailProvider: providers.emailProvider,
-      dnsProvider: providers.dnsProvider,
-      geo: geoResult?.geo ?? null,
-    };
-  }
+  const hostingData: HostingResponse = {
+    hostingProvider: providers.hostingProvider,
+    emailProvider: providers.emailProvider,
+    dnsProvider: providers.dnsProvider,
+    geo: geoResult?.geo ?? null,
+  };
 
   const results = {
     registrationChanges: false,

@@ -189,4 +189,29 @@ describe("detectAndResolveProvidersStep", () => {
 
     expect(result.hostingProvider.name).toBeNull();
   });
+
+  it("detects DNS and email providers when A records are missing", async () => {
+    const dnsRecords: DnsRecord[] = [
+      {
+        type: "NS",
+        name: "test.invalid",
+        value: "ns1.cloudflare.com",
+        ttl: 86_400,
+      },
+      {
+        type: "MX",
+        name: "test.invalid",
+        value: "aspmx.l.google.com",
+        ttl: 3600,
+        priority: 1,
+      },
+    ];
+
+    const { detectAndResolveProvidersStep } = await import("./detect");
+    const result = await detectAndResolveProvidersStep(dnsRecords, [], null);
+
+    expect(result.hostingProvider.name).toBeNull();
+    expect(result.dnsProvider.name).toBe("Cloudflare");
+    expect(result.emailProvider.name).toBe("Google Workspace");
+  });
 });

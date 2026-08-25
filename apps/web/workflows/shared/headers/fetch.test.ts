@@ -1,4 +1,6 @@
 /* @vitest-environment node */
+import { lookup } from "node:dns/promises";
+
 import { HttpResponse, http } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -16,6 +18,8 @@ vi.mock("node:dns/promises", () => ({
     });
   }),
 }));
+
+const mockLookup = vi.mocked(lookup);
 
 // Mock DNS for domain resolution.
 function mockDns(domain: string) {
@@ -82,6 +86,26 @@ describe("fetchHeadersStep", () => {
     }
     expect(result.data.status).toBe(403);
     expect(result.data.statusMessage).toBe("Forbidden");
+  });
+
+  it("returns dns_error when DNS lookup returns no A/AAAA records", async () => {
+    mockLookup.mockResolvedValueOnce([] as unknown as Awaited<ReturnType<typeof lookup>>);
+
+    const { fetchHeadersStep } = await import("./fetch");
+    const result = await fetchHeadersStep("empty-a.test");
+
+    expect(result).toEqual({ success: false, error: "dns_error" });
+  });
+
+  it("returns dns_error when A records are missing (ENODATA)", async () => {
+    mockLookup.mockRejectedValueOnce(
+      Object.assign(new Error("queryA ENODATA missing-a.test"), { code: "ENODATA" }),
+    );
+
+    const { fetchHeadersStep } = await import("./fetch");
+    const result = await fetchHeadersStep("missing-a.test");
+
+    expect(result).toEqual({ success: false, error: "dns_error" });
   });
 
   it("throws RetryableError on network error", async () => {

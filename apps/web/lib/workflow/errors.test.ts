@@ -24,12 +24,12 @@ describe("classifyFetchError", () => {
       expect(result.message).toContain("DNS resolution failed");
     });
 
-    it("returns RetryableError for ENODATA (not recognized as DNS error)", () => {
-      // ENODATA is not in our DNS error detection, so it's treated as unknown/retryable
+    it("returns FatalError for ENODATA when A/AAAA records are missing", () => {
       const err = new Error("queryA ENODATA test.invalid");
       (err as NodeJS.ErrnoException).code = "ENODATA";
       const result = classifyFetchError(err);
-      expect(RetryableError.is(result)).toBe(true);
+      expect(FatalError.is(result)).toBe(true);
+      expect(result.message).toContain("DNS resolution failed");
     });
   });
 

@@ -105,6 +105,12 @@ describe("isExpectedDnsError", () => {
     expect(isExpectedDnsError(err)).toBe(true);
   });
 
+  it("detects ENODATA when A/AAAA records are missing", () => {
+    const err = new Error("queryA ENODATA example.com");
+    (err as unknown as { code: string }).code = "ENODATA";
+    expect(isExpectedDnsError(err)).toBe(true);
+  });
+
   it("detects getaddrinfo errors by message", () => {
     const err = new Error("getaddrinfo ENOTFOUND example.com");
     expect(isExpectedDnsError(err)).toBe(true);

@@ -178,6 +178,21 @@ describe("fetchCertificateChain", () => {
     expect(result).toEqual({ success: false, error: "dns_error" });
   });
 
+  it("returns dns_error for ENODATA when A records are missing", async () => {
+    const socket = createMockSocket({});
+    const error = new Error("queryA ENODATA example.com");
+    (error as NodeJS.ErrnoException).code = "ENODATA";
+
+    mockConnect.mockImplementation(() => {
+      setImmediate(() => socket.emit("error", error));
+      return socket;
+    });
+
+    const result = await fetchCertificateChain("example.com");
+
+    expect(result).toEqual({ success: false, error: "dns_error" });
+  });
+
   it("returns dns_error for EAI_AGAIN", async () => {
     const socket = createMockSocket({});
     const error = new Error("getaddrinfo EAI_AGAIN example.com");

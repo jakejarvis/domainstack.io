@@ -1,6 +1,7 @@
 import { DNS_TYPE_NUMBERS, DOH_PROVIDERS, type DohProvider } from "@domainstack/constants";
 import { simpleHash } from "@domainstack/utils";
 
+import { SafeFetchError } from "./errors";
 import { withRetry, withTimeout } from "./utils";
 
 /**
@@ -157,25 +158,38 @@ export async function resolveHostIps(
   throw lastError instanceof Error ? lastError : new Error("DNS lookup failed");
 }
 
+const PERMANENT_DNS_CODES = new Set(["ENOTFOUND", "ENODATA", "ENOENT", "EAI_AGAIN"]);
+
 /**
- * Check if an error is an expected DNS failure (NXDOMAIN, etc).
+ * Check if an error is an expected DNS failure (NXDOMAIN, missing A/AAAA, etc).
+ *
+ * These are permanent: retrying will not make the name resolve. DNS lookup
+ * timeouts are excluded so callers can retry transient resolver issues.
  */
 export function isExpectedDnsError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
 
-  // Check for ENOTFOUND code on error or its cause
+  // SafeFetchError uses code "dns_error" for NXDOMAIN, empty answers, and
+  // wrapped resolver failures. Timeouts stay retryable.
+  if (err instanceof SafeFetchError && err.code === "dns_error") {
+    return !err.message.toLowerCase().includes("timed out");
+  }
+
   const errorWithCode = err as Error & {
     code?: string;
-    cause?: { code?: string };
+    cause?: { code?: string; message?: string };
   };
-  if (errorWithCode.code === "ENOTFOUND") return true;
-  if (errorWithCode.cause?.code === "ENOTFOUND") return true;
+  const code = errorWithCode.code ?? errorWithCode.cause?.code;
+  if (code && PERMANENT_DNS_CODES.has(code)) {
+    return true;
+  }
 
-  const message = err.message.toLowerCase();
+  const message = `${err.message} ${errorWithCode.cause?.message ?? ""}`.toLowerCase();
   return (
     message.includes("enotfound") ||
     message.includes("getaddrinfo") ||
     message.includes("dns lookup failed") ||
-    message.includes("no dns records found")
+    message.includes("no dns records found") ||
+    message.includes("dns lookup returned no records")
   );
 }
