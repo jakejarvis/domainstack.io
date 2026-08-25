@@ -12,6 +12,7 @@ import DeleteAccountVerifyEmail from "@domainstack/email/templates/delete-accoun
 import { createLogger } from "@domainstack/logger";
 import {
   getProductsForCheckout,
+  handleOrderPaid,
   handleSubscriptionActive,
   handleSubscriptionCanceled,
   handleSubscriptionCreated,
@@ -22,6 +23,7 @@ import { checkout, polar, portal, webhooks } from "@domainstack/polar/better-aut
 import { Polar } from "@domainstack/polar/sdk";
 import { getRedis } from "@domainstack/redis";
 
+import { analytics } from "./analytics";
 import { buildOAuthProviders, validateOAuthCredentialPair } from "./providers";
 import { createRedisStorage } from "./storage";
 
@@ -134,6 +136,17 @@ export const auth = betterAuth({
 
           // Create Resend contact for marketing communications
           void addContact(user.email, user.name);
+
+          analytics.track(
+            "signed_up",
+            {
+              $set: { email: user.email, name: user.name },
+              $set_once: {
+                createdAt: user.createdAt ? new Date(user.createdAt).toISOString() : undefined,
+              },
+            },
+            user.id,
+          );
         },
       },
     },
@@ -229,6 +242,7 @@ export const auth = betterAuth({
                 onSubscriptionCanceled: handleSubscriptionCanceled,
                 onSubscriptionRevoked: handleSubscriptionRevoked,
                 onSubscriptionUncanceled: handleSubscriptionUncanceled,
+                onOrderPaid: handleOrderPaid,
               }),
             ],
           }),

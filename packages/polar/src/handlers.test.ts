@@ -20,31 +20,38 @@ type SubscriptionUncanceledPayload = Parameters<
 >[0];
 
 // Hoist mock functions so they're available to vi.mock factory
-const { updateUserTier, setSubscriptionEndsAt, clearSubscriptionEndsAt, createMockLogger } =
-  vi.hoisted(() => {
-    type MockLogger = Record<
-      "log" | "trace" | "debug" | "info" | "warn" | "error" | "fatal" | "child",
-      ReturnType<typeof vi.fn>
-    >;
+const {
+  updateUserTier,
+  setSubscriptionEndsAt,
+  clearSubscriptionEndsAt,
+  createMockLogger,
+  analyticsTrack,
+} = vi.hoisted(() => {
+  type MockLogger = Record<
+    "log" | "trace" | "debug" | "info" | "warn" | "error" | "fatal" | "child",
+    ReturnType<typeof vi.fn>
+  >;
 
-    const buildMockLogger = (): MockLogger => ({
-      log: vi.fn<(...args: unknown[]) => void>(),
-      trace: vi.fn<(...args: unknown[]) => void>(),
-      debug: vi.fn<(...args: unknown[]) => void>(),
-      info: vi.fn<(...args: unknown[]) => void>(),
-      warn: vi.fn<(...args: unknown[]) => void>(),
-      error: vi.fn<(...args: unknown[]) => void>(),
-      fatal: vi.fn<(...args: unknown[]) => void>(),
-      child: vi.fn<(...args: unknown[]) => MockLogger>(() => buildMockLogger()),
-    });
-
-    return {
-      updateUserTier: vi.fn<(userId: string, tier: "free" | "pro") => Promise<void>>(),
-      setSubscriptionEndsAt: vi.fn<(userId: string, endsAt: Date) => Promise<void>>(),
-      clearSubscriptionEndsAt: vi.fn<(userId: string) => Promise<void>>(),
-      createMockLogger: buildMockLogger,
-    };
+  const buildMockLogger = (): MockLogger => ({
+    log: vi.fn<(...args: unknown[]) => void>(),
+    trace: vi.fn<(...args: unknown[]) => void>(),
+    debug: vi.fn<(...args: unknown[]) => void>(),
+    info: vi.fn<(...args: unknown[]) => void>(),
+    warn: vi.fn<(...args: unknown[]) => void>(),
+    error: vi.fn<(...args: unknown[]) => void>(),
+    fatal: vi.fn<(...args: unknown[]) => void>(),
+    child: vi.fn<(...args: unknown[]) => MockLogger>(() => buildMockLogger()),
   });
+
+  return {
+    updateUserTier: vi.fn<(userId: string, tier: "free" | "pro") => Promise<void>>(),
+    setSubscriptionEndsAt: vi.fn<(userId: string, endsAt: Date) => Promise<void>>(),
+    clearSubscriptionEndsAt: vi.fn<(userId: string) => Promise<void>>(),
+    createMockLogger: buildMockLogger,
+    analyticsTrack:
+      vi.fn<(event: string, properties: Record<string, unknown>, userId: string) => void>(),
+  };
+});
 
 // Mock the dependencies - export functions directly (not via repo objects)
 vi.mock("@domainstack/db/queries", () => ({
@@ -66,6 +73,14 @@ vi.mock("./downgrade", () => ({
 
 vi.mock("./products", () => ({
   getTierForProductId: vi.fn<(productId: string) => "pro" | null>(),
+  getProductByProductId:
+    vi.fn<(productId: string) => { interval: "month" | "year"; amount: number } | null>(),
+}));
+
+vi.mock("./analytics", () => ({
+  analytics: {
+    track: analyticsTrack,
+  },
 }));
 
 vi.mock("./emails", () => ({
@@ -119,6 +134,8 @@ function createSubscriptionData(overrides: {
     cancelAtPeriodEnd: overrides.cancelAtPeriodEnd ?? false,
     currentPeriodEnd: overrides.currentPeriodEnd ?? null,
     canceledAt: overrides.canceledAt ?? null,
+    amount: 200,
+    currency: "usd",
   };
 }
 

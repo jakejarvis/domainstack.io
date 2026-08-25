@@ -4,8 +4,8 @@ const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 
 if (!posthogKey) {
   if (process.env.NODE_ENV === "development") {
-    throw new Error(
-      "NEXT_PUBLIC_POSTHOG_KEY variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once NEXT_PUBLIC_POSTHOG_KEY is configured",
+    console.warn(
+      "NEXT_PUBLIC_POSTHOG_KEY variable required by PostHog is missing or un-configured, this causes events to be silently missed. Configure NEXT_PUBLIC_POSTHOG_KEY to enable analytics.",
     );
   }
 } else {
