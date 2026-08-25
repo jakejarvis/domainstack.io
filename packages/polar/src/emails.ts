@@ -1,3 +1,4 @@
+import { waitUntil } from "@vercel/functions";
 import { format } from "date-fns";
 
 import { getUserById } from "@domainstack/db/queries";
@@ -21,16 +22,18 @@ export async function sendProUpgradeEmail(userId: string): Promise<void> {
     return;
   }
 
-  await sendEmail(
-    {
-      to: user.email,
-      subject: "Welcome to Domainstack Pro!",
-      react: ProUpgradeSuccessEmail({
-        userName: user.name || "there",
-        baseUrl,
-      }),
-    },
-    { baseUrl },
+  waitUntil(
+    sendEmail(
+      {
+        to: user.email,
+        subject: "Welcome to Domainstack Pro!",
+        react: ProUpgradeSuccessEmail({
+          userName: user.name || "there",
+          baseUrl,
+        }),
+      },
+      { baseUrl },
+    ),
   );
 }
 
@@ -47,17 +50,19 @@ export async function sendSubscriptionCancelingEmail(
     return;
   }
 
-  await sendEmail(
-    {
-      to: user.email,
-      subject: "Your Pro subscription is ending",
-      react: SubscriptionCancelingEmail({
-        userName: user.name || "there",
-        endDate: format(periodEnd, "MMMM d, yyyy"),
-        baseUrl,
-      }),
-    },
-    { baseUrl },
+  waitUntil(
+    sendEmail(
+      {
+        to: user.email,
+        subject: "Your Pro subscription is ending",
+        react: SubscriptionCancelingEmail({
+          userName: user.name || "there",
+          endDate: format(periodEnd, "MMMM d, yyyy"),
+          baseUrl,
+        }),
+      },
+      { baseUrl },
+    ),
   );
 }
 
@@ -74,16 +79,18 @@ export async function sendSubscriptionExpiredEmail(
     return;
   }
 
-  await sendEmail(
-    {
-      to: user.email,
-      subject: "Your Pro subscription has ended",
-      react: SubscriptionExpiredEmail({
-        userName: user.name || "there",
-        archivedCount,
-        baseUrl,
-      }),
-    },
-    { baseUrl },
+  waitUntil(
+    sendEmail(
+      {
+        to: user.email,
+        subject: "Your Pro subscription has ended",
+        react: SubscriptionExpiredEmail({
+          userName: user.name || "there",
+          archivedCount,
+          baseUrl,
+        }),
+      },
+      { baseUrl },
+    ),
   );
 }

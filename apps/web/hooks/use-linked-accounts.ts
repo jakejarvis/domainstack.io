@@ -10,7 +10,7 @@ import { toast } from "@domainstack/ui/toast";
 
 export interface UseLinkedAccountsReturn {
   /** List of linked accounts */
-  linkedAccounts: { providerId: string }[] | undefined;
+  linkedAccounts: { id: string; providerId: string }[] | undefined;
   /** Set of linked provider IDs for quick lookup */
   linkedProviderIds: Set<string>;
   /** All enabled OAuth providers */
@@ -50,32 +50,29 @@ export function useLinkedAccounts(): UseLinkedAccountsReturn {
     isError,
   } = useQuery(trpc.user.getLinkedAccounts.queryOptions());
 
-  // Unlink mutation with optimistic updates
+  // Unlink mutation with optimistic updates.
+  // Better Auth 1.7 selects the local account row by `accountId` (`accounts.id`).
   const unlinkMutation = useMutation({
-    mutationFn: async (providerId: string) => {
-      const result = await unlinkAccount({ providerId });
+    mutationFn: async ({ accountId }: { accountId: string; providerId: string }) => {
+      const result = await unlinkAccount({ accountId });
       if (result.error) {
         throw new Error(result.error.message || "Failed to unlink account");
       }
       return result;
     },
-    onMutate: async (providerId) => {
-      // Cancel any outgoing refetches
+    onMutate: async ({ accountId }) => {
       await queryClient.cancelQueries({ queryKey: linkedAccountsQueryKey });
 
-      // Snapshot the previous value
       const previousAccounts =
         queryClient.getQueryData<typeof linkedAccounts>(linkedAccountsQueryKey);
 
-      // Optimistically update to remove the account
       queryClient.setQueryData(linkedAccountsQueryKey, (old: typeof linkedAccounts | undefined) =>
-        old?.filter((a) => a.providerId !== providerId),
+        old?.filter((a) => a.id !== accountId),
       );
 
       return { previousAccounts };
     },
-    onError: (err, providerId, context) => {
-      // Rollback on error
+    onError: (err, { providerId }, context) => {
       if (context?.previousAccounts) {
         queryClient.setQueryData(linkedAccountsQueryKey, context.previousAccounts);
       }
@@ -85,7 +82,7 @@ export function useLinkedAccounts(): UseLinkedAccountsReturn {
       });
       toast.add({ title: "Failed to unlink account. Please try again.", type: "error" });
     },
-    onSuccess: (_data, providerId) => {
+    onSuccess: (_data, { providerId }) => {
       const provider = enabledProviders.find((p) => p.id === providerId);
       toast.add({
         title: `${provider?.name ?? "Account"} unlinked successfully`,
@@ -127,9 +124,13 @@ export function useLinkedAccounts(): UseLinkedAccountsReturn {
     isError,
     canUnlink,
     linkProvider,
-    unlinkProvider: (providerId: string) => unlinkMutation.mutate(providerId),
+    unlinkProvider: (providerId: string) => {
+      const account = linkedAccounts?.find((a) => a.providerId === providerId);
+      if (!account) return;
+      unlinkMutation.mutate({ accountId: account.id, providerId });
+    },
     isUnlinking: (providerId: string) =>
-      unlinkMutation.isPending && unlinkMutation.variables === providerId,
+      unlinkMutation.isPending && unlinkMutation.variables?.providerId === providerId,
     isUnlinkPending: unlinkMutation.isPending,
   };
 }

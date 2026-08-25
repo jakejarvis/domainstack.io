@@ -11,7 +11,7 @@
  */
 const AUTH_CALLBACK_ERROR_CODES = {
   // Account linking errors
-  EMAIL_DOESNT_MATCH: "email_doesn't_match",
+  EMAIL_DOESNT_MATCH: "email_does_not_match",
   ACCOUNT_ALREADY_LINKED: "account_already_linked_to_different_user",
   UNABLE_TO_LINK: "unable_to_link_account",
 

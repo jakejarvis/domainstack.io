@@ -35,3 +35,4 @@ minimumReleaseAgeExclude:
   - '@ai-sdk/react@4.0.79'
   - '@ai-sdk/workflow@2.0.7'
   - ai@7.0.76 || 7.0.77
+  - '@better-auth/infra@0.4.3'
