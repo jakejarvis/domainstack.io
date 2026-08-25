@@ -232,8 +232,8 @@ export function useDashboardFilters(
   // Return
   // ---------------------------------------------------------------------------
 
-  return {
-    state: {
+  const state = useMemo(
+    () => ({
       search: filters.search,
       status: validatedStatus,
       health: validatedHealth,
@@ -246,8 +246,25 @@ export function useDashboardFilters(
       hasActiveFilters,
       stats,
       filteredDomains,
-    },
-    actions: {
+    }),
+    [
+      filters.search,
+      filters.tlds,
+      filters.providers,
+      filters.domainId,
+      validatedStatus,
+      validatedHealth,
+      filteredDomainName,
+      availableTlds,
+      availableProviders,
+      hasActiveFilters,
+      stats,
+      filteredDomains,
+    ],
+  );
+
+  const actions = useMemo(
+    () => ({
       setSearch,
       setStatus,
       setHealth,
@@ -256,6 +273,18 @@ export function useDashboardFilters(
       clearFilters,
       applyHealthFilter,
       clearDomainId,
-    },
-  };
+    }),
+    [
+      setSearch,
+      setStatus,
+      setHealth,
+      setTlds,
+      setProviders,
+      clearFilters,
+      applyHealthFilter,
+      clearDomainId,
+    ],
+  );
+
+  return useMemo(() => ({ state, actions }), [state, actions]);
 }

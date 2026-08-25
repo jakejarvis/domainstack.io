@@ -12,7 +12,6 @@ import {
 import { DashboardTable } from "@/components/dashboard/dashboard-table";
 import { useDashboardFiltersContext } from "@/context/dashboard-context";
 import { useIsClient } from "@/hooks/use-is-client";
-import type { DashboardTable as DashboardTableInstance } from "@/lib/dashboard-table-features";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Button, buttonVariants } from "@domainstack/ui/button";
@@ -29,16 +28,9 @@ type DashboardContentProps = {
   domains: TrackedDomainWithDetails[];
   totalDomains: number; // Total before filtering
   onAddDomain?: () => void;
-  // Table instance callback (table view only)
-  onTableReady?: (table: DashboardTableInstance) => void;
 };
 
-export function DashboardContent({
-  domains,
-  totalDomains,
-  onAddDomain,
-  onTableReady,
-}: DashboardContentProps) {
+export function DashboardContent({ domains, totalDomains, onAddDomain }: DashboardContentProps) {
   const { hasActiveFilters, clearFilters } = useDashboardFiltersContext();
   const viewMode = usePreferencesStore((s) => s.viewMode);
   // Avoid animating the initial view swap during hydration when localStorage preferences reconcile.
@@ -46,7 +38,9 @@ export function DashboardContent({
   const shouldReduceMotion = useReducedMotion();
 
   // Keep first-paint delays here so a zero-result filter (which unmounts the
-  // grid) does not recreate them via createInitialDelays on remount.
+  // grid) does not recreate them via createInitialDelays on remount. pruneDelays
+  // returns the same Map when it drops nothing, and each prune strictly shrinks
+  // the map, so this settles after one extra render.
   const [initialDelays, setInitialDelays] = useState(() => createInitialDelays(domains));
   const delays = pruneDelays(initialDelays, domains);
   if (delays !== initialDelays) {
@@ -142,7 +136,7 @@ export function DashboardContent({
           }
         >
           {viewMode === "table" ? (
-            <DashboardTable domains={domains} onTableReady={onTableReady} />
+            <DashboardTable domains={domains} />
           ) : (
             <DashboardGrid domains={domains} delays={delays} />
           )}

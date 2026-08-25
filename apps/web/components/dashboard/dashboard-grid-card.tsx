@@ -22,7 +22,7 @@ import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Favicon } from "@/components/icons/favicon";
 import { ProviderLogo } from "@/components/icons/provider-logo";
 import { useDashboardActions } from "@/context/dashboard-context";
-import { useDashboardSelection } from "@/hooks/use-dashboard-selection";
+import { useIsDomainSelected, useToggleDomainSelection } from "@/hooks/use-dashboard-selection";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
 import { useTruncation } from "@/hooks/use-truncation";
@@ -73,13 +73,10 @@ export const DashboardGridCard = memo(function DashboardGridCard({
     ca,
     muted,
   } = domain;
-  // Selection state and actions from context
-  const { isSelected, toggle } = useDashboardSelection();
+  const selected = useIsDomainSelected(trackedDomainId);
+  const toggle = useToggleDomainSelection();
   const { onVerify, onRemove, onArchive, onToggleMuted } = useDashboardActions();
 
-  const selected = isSelected(trackedDomainId);
-
-  // Create stable callbacks
   const handleToggleSelect = useCallback(() => {
     toggle(trackedDomainId);
   }, [toggle, trackedDomainId]);

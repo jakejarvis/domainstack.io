@@ -182,6 +182,11 @@ export function useSyncVisibleDomainIds(domainIds: string[]): void {
   const setVisibleDomainIds = useSetAtom(visibleDomainIdsAtom);
 
   useEffect(() => {
-    setVisibleDomainIds(domainIds);
+    setVisibleDomainIds((prev) => {
+      if (prev.length === domainIds.length && prev.every((id, index) => id === domainIds[index])) {
+        return prev;
+      }
+      return domainIds;
+    });
   }, [domainIds, setVisibleDomainIds]);
 }

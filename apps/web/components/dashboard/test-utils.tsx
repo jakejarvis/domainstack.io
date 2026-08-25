@@ -22,7 +22,6 @@ import {
 } from "@/hooks/use-dashboard-pagination";
 import { useSyncVisibleDomainIds } from "@/hooks/use-dashboard-selection";
 import { resetHydratedNow } from "@/hooks/use-hydrated-now";
-import type { DashboardTable } from "@/lib/dashboard-table-features";
 import {
   type ConfirmAction,
   DEFAULT_SORT,
@@ -170,7 +169,6 @@ function DashboardTestShell({
     resetPage: paginationHook.actions.resetPage,
   });
 
-  const [tableInstance, setTableInstance] = useState<DashboardTable | null>(null);
   const [pendingAction, setPendingAction] = useState<ConfirmAction | null>(null);
 
   const requestRemove = useCallback((id: string, domainName: string) => {
@@ -219,8 +217,6 @@ function DashboardTestShell({
       filterHook={filterHook}
       sortOption={sortOption}
       setSortOption={setSortParam}
-      table={viewMode === "table" ? tableInstance : null}
-      setTable={setTableInstance}
       paginationHook={paginationHook}
     >
       <div className="space-y-6">
@@ -231,11 +227,7 @@ function DashboardTestShell({
             <DashboardFilters />
           </div>
         )}
-        <DashboardContent
-          domains={filteredDomains}
-          totalDomains={totalDomains}
-          onTableReady={setTableInstance}
-        />
+        <DashboardContent domains={filteredDomains} totalDomains={totalDomains} />
       </div>
       {confirmActions && pendingAction ? (
         <DashboardConfirmDialog
@@ -306,8 +298,6 @@ export function renderArchivedList(domains: TrackedDomainWithDetails[]) {
         filterHook={stubFilterHook()}
         sortOption={DEFAULT_SORT}
         setSortOption={vi.fn<(sort: SortOption) => void>()}
-        table={null}
-        setTable={vi.fn<(table: DashboardTable | null) => void>()}
         paginationHook={stubPaginationHook()}
       >
         <ArchivedDomainsList domains={domains} />

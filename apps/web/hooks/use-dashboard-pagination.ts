@@ -1,5 +1,5 @@
 import { parseAsInteger, useQueryState } from "nuqs";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { type DashboardPageSizeOptions, isPagePastEnd } from "@/lib/dashboard-utils";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
@@ -81,17 +81,24 @@ export function useDashboardPagination(): UseDashboardPaginationReturn {
   // Return
   // ---------------------------------------------------------------------------
 
-  return {
-    state: {
+  const state = useMemo(
+    () => ({
       pageIndex,
       pageSize,
-    },
-    actions: {
+    }),
+    [pageIndex, pageSize],
+  );
+
+  const actions = useMemo(
+    () => ({
       setPageIndex,
       setPageSize,
       resetPage,
-    },
-  };
+    }),
+    [setPageIndex, setPageSize, resetPage],
+  );
+
+  return useMemo(() => ({ state, actions }), [state, actions]);
 }
 
 export type DashboardFilterSignatureInput = {

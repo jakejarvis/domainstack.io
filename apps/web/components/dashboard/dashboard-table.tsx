@@ -1,8 +1,8 @@
 import type { OnChangeFn, PaginationState, SortingState } from "@tanstack/react-table";
-import { flexRender, useTable } from "@tanstack/react-table";
+import { useTable } from "@tanstack/react-table";
 import { AnimatePresence } from "motion/react";
 import { parseAsString, useQueryState } from "nuqs";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
 import {
   createColumns,
@@ -16,7 +16,6 @@ import { VerifiedTableRow } from "@/components/dashboard/verified-table-row";
 import { useDashboardActions, useDashboardPaginationContext } from "@/context/dashboard-context";
 import {
   dashboardTableFeatures,
-  type DashboardTable,
   type DashboardTableFeatures,
 } from "@/lib/dashboard-table-features";
 import { DEFAULT_SORT, parseSortParam, serializeSortState } from "@/lib/dashboard-utils";
@@ -27,10 +26,9 @@ import { cn } from "@domainstack/ui/utils";
 
 type DashboardTableProps = {
   domains: TrackedDomainWithDetails[];
-  onTableReady?: (table: DashboardTable) => void;
 };
 
-export function DashboardTable({ domains, onTableReady }: DashboardTableProps) {
+export function DashboardTable({ domains }: DashboardTableProps) {
   const { onVerify, onRemove, onArchive, onToggleMuted } = useDashboardActions();
   const { pageIndex, pageSize, setPageSize, setPageIndex, resetPage } =
     useDashboardPaginationContext();
@@ -94,8 +92,11 @@ export function DashboardTable({ domains, onTableReady }: DashboardTableProps) {
     [pagination, setPageIndex],
   );
 
-  // v9 `useTable` returns a new wrapper whenever `tableOptions` identity changes.
-  // Inline options would make `onTableReady={setTableInstance}` loop the parent.
+  // Keep options identity stable: `useTable` returns a new React-facing wrapper
+  // whenever `tableOptions` identity changes, and tests run without the React
+  // Compiler. That wrapper is intentionally unstable, so it stays local to this
+  // component and is never lifted into parent state or context.
+  // @see https://tanstack.com/table/latest/docs/framework/react/guide/table-context
   const tableOptions = useMemo(
     () => ({
       features: dashboardTableFeatures,
@@ -110,11 +111,6 @@ export function DashboardTable({ domains, onTableReady }: DashboardTableProps) {
   );
 
   const table = useTable<DashboardTableFeatures, TrackedDomainWithDetails>(tableOptions);
-
-  // Expose table instance to parent for column visibility menu in filters bar
-  useEffect(() => {
-    onTableReady?.(table);
-  }, [table, onTableReady]);
 
   return (
     <div className="overflow-hidden rounded-xl border border-black/15 bg-background/60 shadow-2xl shadow-black/10 dark:border-white/15">
@@ -159,11 +155,11 @@ export function DashboardTable({ domains, onTableReady }: DashboardTableProps) {
                       )}
                       onClick={header.column.getToggleSortingHandler()}
                     >
-                      {flexRender(header.column.columnDef.header, header.getContext())}
+                      <table.FlexRender header={header} />
                       <SortIndicator isSorted={isSorted} />
                     </button>
                   ) : (
-                    flexRender(header.column.columnDef.header, header.getContext())
+                    <table.FlexRender header={header} />
                   );
 
                   return (

@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useMemo } from "react";
 
-import type { DashboardTable } from "@/lib/dashboard-table-features";
 import type {
   AvailableProvidersByCategory,
   DashboardPageSizeOptions,
@@ -48,8 +47,6 @@ export interface FilterState {
   stats: { expiringSoon: number; pendingVerification: number };
   // Sort (grid view only)
   sortOption: SortOption;
-  // Table instance (for column visibility)
-  table: DashboardTable | null;
 }
 
 export interface FilterActions {
@@ -62,7 +59,6 @@ export interface FilterActions {
   applyHealthFilter: (filter: HealthFilter | "pending") => void;
   clearDomainId: () => void;
   setSortOption: (sort: SortOption) => void;
-  setTable: (table: DashboardTable | null) => void;
 }
 
 export interface PaginationState {
@@ -108,15 +104,12 @@ interface DashboardProviderProps {
   isBulkDeleting: boolean;
   /** Filter hook result - passed directly from useDashboardFilters */
   filterHook: {
-    state: Omit<FilterState, "sortOption" | "table">;
-    actions: Omit<FilterActions, "setSortOption" | "setTable">;
+    state: Omit<FilterState, "sortOption">;
+    actions: Omit<FilterActions, "setSortOption">;
   };
   /** Sort state (grid view only) */
   sortOption: SortOption;
   setSortOption: (sort: SortOption) => void;
-  /** Table instance (table view only) */
-  table: DashboardTable | null;
-  setTable: (table: DashboardTable | null) => void;
   /** Pagination hook result - passed directly from useDashboardPagination */
   paginationHook: {
     state: PaginationState;
@@ -138,8 +131,6 @@ export function DashboardProvider({
   filterHook,
   sortOption,
   setSortOption,
-  table,
-  setTable,
   paginationHook,
 }: DashboardProviderProps) {
   const value = useMemo<DashboardContextValue>(
@@ -162,8 +153,6 @@ export function DashboardProvider({
         ...filterHook.actions,
         sortOption,
         setSortOption,
-        table,
-        setTable,
       },
       pagination: {
         ...paginationHook.state,
@@ -183,8 +172,6 @@ export function DashboardProvider({
       filterHook,
       sortOption,
       setSortOption,
-      table,
-      setTable,
       paginationHook,
     ],
   );

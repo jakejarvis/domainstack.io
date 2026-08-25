@@ -1,4 +1,4 @@
-import { type Cell, flexRender } from "@tanstack/react-table";
+import { type Cell, FlexRender } from "@tanstack/react-table";
 import { motion, useReducedMotion } from "motion/react";
 
 import { useIsDomainSelected } from "@/hooks/use-dashboard-selection";
@@ -41,7 +41,7 @@ export function VerifiedTableRow({ rowId, cells, original }: VerifiedTableRowPro
           }}
           className={cell.column.columnDef.meta?.className}
         >
-          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          <FlexRender cell={cell} />
         </td>
       ))}
     </motion.tr>

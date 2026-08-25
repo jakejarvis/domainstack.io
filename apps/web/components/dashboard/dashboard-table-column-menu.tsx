@@ -1,6 +1,6 @@
 import { IconEye, IconTableOptions } from "@tabler/icons-react";
 
-import type { DashboardTable } from "@/lib/dashboard-table-features";
+import { HIDEABLE_COLUMNS } from "@/components/dashboard/dashboard-table-columns";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { Button } from "@domainstack/ui/button";
 import {
@@ -14,22 +14,15 @@ import {
 import { ScrollArea } from "@domainstack/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 
-type DashboardTableColumnMenuProps = {
-  table: DashboardTable;
-};
-
-export function DashboardTableColumnMenu({ table }: DashboardTableColumnMenuProps) {
-  // Controlled visibility lives in the preferences store. Reading it here
-  // (instead of `column.getIsVisible()`) keeps this nested menu correct under
-  // the compiler without a `table.Subscribe` boundary.
+export function DashboardTableColumnMenu() {
+  // Visibility is controlled by the preferences store, so this menu writes
+  // there rather than calling `column.toggleVisibility()` on a table instance.
   const columnVisibility = usePreferencesStore((s) => s.columnVisibility);
   const setColumnVisibility = usePreferencesStore((s) => s.setColumnVisibility);
 
-  const allColumns = table.getAllColumns().filter((column) => column.getCanHide());
-
   const isColumnVisible = (columnId: string) => columnVisibility[columnId] !== false;
 
-  const hiddenCount = allColumns.filter((column) => !isColumnVisible(column.id)).length;
+  const hiddenCount = HIDEABLE_COLUMNS.filter((column) => !isColumnVisible(column.id)).length;
 
   const toggleColumn = (columnId: string) => {
     const currentlyVisible = isColumnVisible(columnId);
@@ -73,9 +66,7 @@ export function DashboardTableColumnMenu({ table }: DashboardTableColumnMenuProp
       <DropdownMenuContent align="end" className="flex min-w-44 flex-col overflow-hidden p-0">
         <ScrollArea className="min-h-0 flex-1">
           <div className="p-1">
-            {allColumns.map((column) => {
-              const { columnDef } = column;
-              const header = typeof columnDef.header === "string" ? columnDef.header : column.id;
+            {HIDEABLE_COLUMNS.map((column) => {
               const isVisible = isColumnVisible(column.id);
 
               return (
@@ -85,7 +76,7 @@ export function DashboardTableColumnMenu({ table }: DashboardTableColumnMenuProp
                   closeOnClick={false}
                   onClick={() => toggleColumn(column.id)}
                 >
-                  <span className="capitalize">{header}</span>
+                  <span className="capitalize">{column.header}</span>
                 </DropdownMenuCheckboxItem>
               );
             })}

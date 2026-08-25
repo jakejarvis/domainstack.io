@@ -1,4 +1,4 @@
-import { type Cell, flexRender } from "@tanstack/react-table";
+import { type Cell, FlexRender } from "@tanstack/react-table";
 import { motion, useReducedMotion } from "motion/react";
 
 import { useDashboardActions } from "@/context/dashboard-context";
@@ -55,7 +55,7 @@ export function UnverifiedTableRow({ rowId, cells, original }: UnverifiedTableRo
           }}
           className={selectCell.column.columnDef.meta?.className}
         >
-          {flexRender(selectCell.column.columnDef.cell, selectCell.getContext())}
+          <FlexRender cell={selectCell} />
         </td>
       )}
       {/* Domain column */}
@@ -66,7 +66,7 @@ export function UnverifiedTableRow({ rowId, cells, original }: UnverifiedTableRo
           }}
           className={domainCell.column.columnDef.meta?.className}
         >
-          {flexRender(domainCell.column.columnDef.cell, domainCell.getContext())}
+          <FlexRender cell={domainCell} />
         </td>
       )}
       {/* Status column */}
@@ -77,7 +77,7 @@ export function UnverifiedTableRow({ rowId, cells, original }: UnverifiedTableRo
           }}
           className={statusCell.column.columnDef.meta?.className}
         >
-          {flexRender(statusCell.column.columnDef.cell, statusCell.getContext())}
+          <FlexRender cell={statusCell} />
         </td>
       )}
       {/* Span remaining detail columns with verify message */}
@@ -111,7 +111,7 @@ export function UnverifiedTableRow({ rowId, cells, original }: UnverifiedTableRo
           }}
           className={actionsCell.column.columnDef.meta?.className}
         >
-          {flexRender(actionsCell.column.columnDef.cell, actionsCell.getContext())}
+          <FlexRender cell={actionsCell} />
         </td>
       )}
     </motion.tr>

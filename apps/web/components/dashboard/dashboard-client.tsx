@@ -28,7 +28,6 @@ import {
 import { useDashboardSelection, useSyncVisibleDomainIds } from "@/hooks/use-dashboard-selection";
 import { useRouter } from "@/hooks/use-router";
 import { useSubscription } from "@/hooks/use-subscription";
-import type { DashboardTable } from "@/lib/dashboard-table-features";
 import {
   type ConfirmAction,
   DEFAULT_SORT,
@@ -76,12 +75,11 @@ export function DashboardClient() {
   const setSortOption = setSortParam;
 
   // Pagination state
+  const paginationHook = useDashboardPagination();
   const {
     state: pagination,
-    actions: { setPageIndex, setPageSize, resetPage },
-  } = useDashboardPagination();
-
-  const [tableInstance, setTableInstance] = useState<DashboardTable | null>(null);
+    actions: { resetPage },
+  } = paginationHook;
 
   // Tracked domains query
   const domainsQuery = useQuery(trpc.tracking.listDomains.queryOptions({ includeArchived: true }));
@@ -314,12 +312,7 @@ export function DashboardClient() {
         filterHook={filterHook}
         sortOption={sortOption}
         setSortOption={setSortOption}
-        table={viewMode === "table" ? tableInstance : null}
-        setTable={setTableInstance}
-        paginationHook={{
-          state: pagination,
-          actions: { setPageIndex, setPageSize, resetPage },
-        }}
+        paginationHook={paginationHook}
       >
         {/* Active domains view */}
         {activeTab === "active" && (
@@ -334,7 +327,6 @@ export function DashboardClient() {
               domains={filteredDomains}
               totalDomains={domains.length}
               onAddDomain={handleAddDomain}
-              onTableReady={setTableInstance}
             />
 
             {/* Link to archived domains - only show when there are archived domains */}

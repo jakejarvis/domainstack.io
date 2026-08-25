@@ -26,7 +26,11 @@ vi.mock("@/hooks/use-provider-tooltip-data", async () => {
   return { useProviderTooltipData };
 });
 
-import { makeDashboardDomains, makePaginationDomains } from "@/components/dashboard/test-fixtures";
+import {
+  makeDashboardDomains,
+  makePaginationDomains,
+  makeTrackedDomain,
+} from "@/components/dashboard/test-fixtures";
 import {
   createInitialDelays,
   dashboardActionSpies,
@@ -247,6 +251,30 @@ describe("dashboard shell", () => {
           .getAllByRole("link")
           .map((el) => el.textContent?.trim());
         expect(names.at(-1)).toBe("pending.dev");
+      });
+    });
+
+    it("sorts the domain column case-insensitively", async () => {
+      const user = userEvent.setup();
+      renderDashboardShell({
+        domains: [
+          makeTrackedDomain({ id: "domain-zeta", domainName: "Zeta.com" }),
+          makeTrackedDomain({ id: "domain-alpha", domainName: "alpha.com" }),
+          makeTrackedDomain({ id: "domain-beta", domainName: "Beta.io" }),
+        ],
+      });
+      await waitForCatalog();
+      await openTable(user);
+
+      // The domain column has no explicit `sortFn`, so it resolves `"auto"` ->
+      // `text` from the registry on `dashboardTableFeatures`. Without that
+      // registration it silently falls back to `basic`, which sorts by code
+      // point and puts every capitalized domain ahead of the lowercase ones.
+      await waitFor(() => {
+        const names = within(screen.getByRole("table"))
+          .getAllByRole("link")
+          .map((el) => el.textContent?.trim());
+        expect(names).toEqual(["alpha.com", "Beta.io", "Zeta.com"]);
       });
     });
 
@@ -579,6 +607,7 @@ describe("dashboard shell", () => {
       expect(pruned.has("domain-alpha")).toBe(true);
       expect(pruned.has("domain-beta")).toBe(false);
       expect(pruned.has("upgrade-cta")).toBe(true);
+      expect(pruneDelays(delays, catalog)).toBe(delays);
     });
   });
 
@@ -588,6 +617,10 @@ describe("dashboard shell", () => {
       renderDashboardShell();
       await waitFor(() => {
         expect(screen.getByRole("table")).toBeInTheDocument();
+      });
+      // Stay mounted long enough that a table-wrapper setState loop would throw.
+      await waitFor(() => {
+        expect(screen.getByRole("link", { name: "alpha.com" })).toBeInTheDocument();
       });
     });
   });

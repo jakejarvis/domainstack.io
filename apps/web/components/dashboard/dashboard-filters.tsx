@@ -42,7 +42,6 @@ export function DashboardFilters() {
     clearDomainId,
     sortOption,
     setSortOption,
-    table,
   } = useDashboardFiltersContext();
   const viewMode = usePreferencesStore((s) => s.viewMode);
   const shouldReduceMotion = useReducedMotion();
@@ -224,9 +223,9 @@ export function DashboardFilters() {
         )}
 
         {/* Column visibility - only for table view, hidden when collapsed (shown outside collapsible) */}
-        {viewMode === "table" && table && (
+        {viewMode === "table" && (
           <div className="hidden lg:block">
-            <DashboardTableColumnMenu table={table} />
+            <DashboardTableColumnMenu />
           </div>
         )}
       </div>
@@ -243,7 +242,6 @@ export function DashboardFilters() {
         <MobileFiltersCollapsible
           hasActiveFilters={hasActiveFilters}
           activeFilterCount={activeFilterChips.length}
-          table={table}
         >
           {filterContent}
         </MobileFiltersCollapsible>

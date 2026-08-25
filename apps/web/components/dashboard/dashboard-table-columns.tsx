@@ -7,7 +7,7 @@ import {
   IconExternalLink,
   IconTrash,
 } from "@tabler/icons-react";
-import type { ColumnDef, RowData, TableFeatures } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import Link from "next/link";
 
@@ -37,18 +37,58 @@ import {
 import { cn } from "@domainstack/ui/utils";
 import { formatDateTimeUtc } from "@domainstack/utils";
 
-// Define custom column meta for styling
-declare module "@tanstack/react-table" {
-  interface ColumnMeta<TFeatures extends TableFeatures, TData extends RowData, TValue> {
-    className?: string;
-  }
-}
+/**
+ * Header labels for every column that renders a plain text header. Shared with
+ * the column visibility menu so labels never drift between the table and the
+ * menu that toggles it.
+ */
+const COLUMN_HEADERS = {
+  domainName: "Domain",
+  verified: "Status",
+  health: "Health",
+  expirationDate: "Expires",
+  registrar: "Registrar",
+  dns: "DNS",
+  hosting: "Hosting",
+  email: "Email",
+  ca: "CA",
+  registrationDate: "Registered",
+  createdAt: "Added",
+} as const;
+
+/**
+ * Columns the visibility menu can toggle, in table order. Mirrors the columns
+ * that leave `enableHiding` at its default in {@link createColumns}; `select`,
+ * `domainName`, and `actions` opt out.
+ *
+ * Column visibility is controlled by the preferences store rather than the
+ * table, so the menu reads this list instead of `table.getAllColumns()`. v9's
+ * `useTable` return value is deliberately not a stable reference and must not
+ * be shared through context or parent state.
+ *
+ * @see https://tanstack.com/table/latest/docs/framework/react/guide/table-context
+ */
+export const HIDEABLE_COLUMNS = (
+  [
+    "verified",
+    "health",
+    "expirationDate",
+    "registrar",
+    "dns",
+    "hosting",
+    "email",
+    "ca",
+    "registrationDate",
+    "createdAt",
+  ] as const satisfies readonly (keyof typeof COLUMN_HEADERS)[]
+).map((id) => ({ id, header: COLUMN_HEADERS[id] }));
 
 /**
  * Creates a sorting function factory that pushes unverified domains to the end.
- * Returns a function that creates sortingFn functions with access to the current sort state.
+ * Returns a function that creates `sortFn` functions with access to the current
+ * sort state.
  *
- * TanStack Table multiplies the sortingFn result by -1 for descending sorts,
+ * TanStack Table multiplies the `sortFn` result by -1 for descending sorts,
  * so we need to counteract this to keep unverified domains at the end.
  *
  * @param isDescFn - Function that returns whether the current column is sorted descending
@@ -150,7 +190,7 @@ export function createColumns(
     },
     {
       accessorKey: "domainName",
-      header: "Domain",
+      header: COLUMN_HEADERS.domainName,
       cell: ({ row }) => (
         <ScreenshotPopover domain={row.original.domainName} domainId={row.original.domainId}>
           <Link
@@ -169,7 +209,7 @@ export function createColumns(
     },
     {
       accessorKey: "verified",
-      header: "Status",
+      header: COLUMN_HEADERS.verified,
       cell: ({ row }) => {
         const isFailing = row.original.verified && row.original.verificationStatus === "failing";
         const isPending = !row.original.verified;
@@ -196,7 +236,7 @@ export function createColumns(
     {
       id: "health",
       accessorFn: (row) => row.expirationDate?.getTime() ?? 0,
-      header: "Health",
+      header: COLUMN_HEADERS.health,
       cell: ({ row }) => (
         <DomainHealthBadge
           expirationDate={row.original.expirationDate}
@@ -231,7 +271,7 @@ export function createColumns(
     },
     {
       accessorKey: "expirationDate",
-      header: "Expires",
+      header: COLUMN_HEADERS.expirationDate,
       cell: ({ row }) => {
         const date = row.original.expirationDate;
         if (!date) {
@@ -261,7 +301,7 @@ export function createColumns(
     {
       id: "registrar",
       accessorFn: (row) => row.registrar.name ?? "",
-      header: "Registrar",
+      header: COLUMN_HEADERS.registrar,
       cell: ({ row }) => (
         <ProviderCell
           provider={row.original.registrar}
@@ -279,7 +319,7 @@ export function createColumns(
     {
       id: "dns",
       accessorFn: (row) => row.dns.name ?? "",
-      header: "DNS",
+      header: COLUMN_HEADERS.dns,
       cell: ({ row }) => (
         <ProviderCell
           provider={row.original.dns}
@@ -297,7 +337,7 @@ export function createColumns(
     {
       id: "hosting",
       accessorFn: (row) => row.hosting.name ?? "",
-      header: "Hosting",
+      header: COLUMN_HEADERS.hosting,
       cell: ({ row }) => (
         <ProviderCell
           provider={row.original.hosting}
@@ -315,7 +355,7 @@ export function createColumns(
     {
       id: "email",
       accessorFn: (row) => row.email.name ?? "",
-      header: "Email",
+      header: COLUMN_HEADERS.email,
       cell: ({ row }) => (
         <ProviderCell
           provider={row.original.email}
@@ -333,7 +373,7 @@ export function createColumns(
     {
       id: "ca",
       accessorFn: (row) => row.ca.name ?? "",
-      header: "CA",
+      header: COLUMN_HEADERS.ca,
       cell: ({ row }) => (
         <ProviderCell
           provider={row.original.ca}
@@ -350,7 +390,7 @@ export function createColumns(
     },
     {
       accessorKey: "registrationDate",
-      header: "Registered",
+      header: COLUMN_HEADERS.registrationDate,
       cell: ({ row }) => {
         const date = row.original.registrationDate;
         if (!date) {
@@ -379,7 +419,7 @@ export function createColumns(
     },
     {
       accessorKey: "createdAt",
-      header: "Added",
+      header: COLUMN_HEADERS.createdAt,
       cell: ({ row }) => {
         const date = row.original.createdAt;
         return (

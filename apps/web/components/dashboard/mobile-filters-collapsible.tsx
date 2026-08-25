@@ -3,7 +3,6 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 
 import { DashboardTableColumnMenu } from "@/components/dashboard/dashboard-table-column-menu";
-import type { DashboardTable } from "@/lib/dashboard-table-features";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { Badge } from "@domainstack/ui/badge";
 import { Button } from "@domainstack/ui/button";
@@ -13,14 +12,12 @@ import { cn } from "@domainstack/ui/utils";
 type MobileFiltersCollapsibleProps = {
   hasActiveFilters: boolean;
   activeFilterCount: number;
-  table?: DashboardTable | null;
   children: React.ReactNode;
 };
 
 export function MobileFiltersCollapsible({
   hasActiveFilters,
   activeFilterCount,
-  table,
   children,
 }: MobileFiltersCollapsibleProps) {
   const viewMode = usePreferencesStore((s) => s.viewMode);
@@ -62,7 +59,7 @@ export function MobileFiltersCollapsible({
         />
 
         {/* Column visibility - always visible in collapsed mode for table view */}
-        {viewMode === "table" && table && <DashboardTableColumnMenu table={table} />}
+        {viewMode === "table" && <DashboardTableColumnMenu />}
       </div>
 
       <CollapsibleContent
