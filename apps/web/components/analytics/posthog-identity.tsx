@@ -21,8 +21,13 @@ export function PostHogIdentityProvider({ children }: { children: React.ReactNod
     const currentUserId = userId ?? null;
     const previousUserId = previousUserIdRef.current;
 
-    // User logged in, session hydrated, or account switched
+    // User logged in, session hydrated, or account switched.
     if (currentUserId && currentUserId !== previousUserId) {
+      // A direct account switch must not retain the previous person's identity.
+      if (previousUserId) {
+        analytics.reset();
+      }
+
       const user = session?.user;
       if (user) {
         analytics.identify(

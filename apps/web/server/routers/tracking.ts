@@ -121,6 +121,8 @@ export const trackingRouter = createTRPCRouter({
         });
       }
 
+      analytics.track("domain_added", { resumed: true }, ctx.user.id);
+
       // If unverified, return the existing record so user can resume verification
       return {
         id: existing.id,
@@ -156,6 +158,8 @@ export const trackingRouter = createTRPCRouter({
       // "already_exists" - race condition where another request created it first
       const raceExisting = await findTrackedDomain(ctx.user.id, domainRecord.id);
       if (raceExisting) {
+        analytics.track("domain_added", { resumed: true }, ctx.user.id);
+
         return {
           id: raceExisting.id,
           domain,
@@ -180,7 +184,7 @@ export const trackingRouter = createTRPCRouter({
       logger.error({ err, trackedDomainId: tracked.id }, "failed to start auto-verify workflow");
     });
 
-    analytics.track("domain_added", { domain, resumed: false }, ctx.user.id);
+    analytics.track("domain_added", { resumed: false }, ctx.user.id);
 
     return {
       id: tracked.id,
@@ -263,8 +267,16 @@ export const trackingRouter = createTRPCRouter({
           );
         });
 
+        analytics.track(
+          "domain_verification_succeeded",
+          { method: result.data.method },
+          ctx.user.id,
+        );
+
         return { verified: true, method: result.data.method };
       }
+
+      analytics.track("domain_verification_failed", { reason: "not_verified" }, ctx.user.id);
 
       return {
         verified: false,

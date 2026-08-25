@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 
-import { analytics } from "@/lib/analytics/client";
 import { useTRPC } from "@/lib/trpc/client";
 import { createInitialState, verificationReducer } from "@/lib/verification-state";
 import type { VerificationMethod } from "@domainstack/constants";
@@ -233,25 +232,14 @@ export function useDomainVerification({
       if (result.verified) {
         dispatch({ type: "VERIFICATION_SUCCEEDED", method: result.method });
         toast.add({ title: "Domain verified successfully!", type: "success" });
-        analytics.track("domain_verification_succeeded", {
-          domain: state.domain,
-          method: result.method,
-        });
         onSuccessRef.current();
       } else {
         dispatch({ type: "VERIFICATION_FAILED" });
-        analytics.track("domain_verification_failed", {
-          domain: state.domain,
-        });
       }
     } catch {
       dispatch({
         type: "VERIFICATION_FAILED",
         error: "Something went wrong. Please try again.",
-      });
-      analytics.track("domain_verification_failed", {
-        domain: state.domain,
-        error: "exception",
       });
     }
   }, [state, verifyDomainMutation]);

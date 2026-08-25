@@ -26,22 +26,6 @@ export const onRequestError: Instrumentation.onRequestError = async (error, requ
   }
 
   try {
-    const { flushLogs, logger } = await import("@domainstack/logger");
-    logger.error(
-      {
-        err: error,
-        source: "instrumentation",
-        path: request.path,
-        method: request.method,
-      },
-      "request error",
-    );
-    await flushLogs();
-  } catch {
-    // Don't throw from instrumentation
-  }
-
-  try {
     const { captureException } = await import("@/lib/analytics/server");
     const captured =
       error instanceof Error
