@@ -1,10 +1,8 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 
 import { analytics } from "@/lib/analytics/client";
-import { useTRPC } from "@/lib/trpc/client";
 import { useSession } from "@domainstack/auth/client";
 
 /**
@@ -17,22 +15,7 @@ import { useSession } from "@domainstack/auth/client";
 export function PostHogIdentityProvider({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   const previousUserIdRef = useRef<string | null>(null);
-  const queryClient = useQueryClient();
-  const trpc = useTRPC();
   const userId = session?.user?.id;
-  const subscriptionQuery = trpc.user.getSubscription.queryOptions();
-  const subscriptionQueryKey = subscriptionQuery.queryKey;
-  const scopedSubscriptionQueryKey = (
-    userId
-      ? [subscriptionQueryKey[0], { ...subscriptionQueryKey[1], userId }]
-      : subscriptionQueryKey
-  ) as typeof subscriptionQueryKey;
-
-  const { data: subscription } = useQuery({
-    ...subscriptionQuery,
-    queryKey: scopedSubscriptionQueryKey,
-    enabled: !!userId,
-  });
 
   useEffect(() => {
     const currentUserId = userId ?? null;
@@ -40,9 +23,6 @@ export function PostHogIdentityProvider({ children }: { children: React.ReactNod
 
     // User logged in, session hydrated, or account switched
     if (currentUserId && currentUserId !== previousUserId) {
-      if (previousUserId) {
-        queryClient.removeQueries({ queryKey: subscriptionQueryKey });
-      }
       const user = session?.user;
       if (user) {
         analytics.identify(
@@ -63,18 +43,10 @@ export function PostHogIdentityProvider({ children }: { children: React.ReactNod
     // User logged out
     if (!currentUserId && previousUserId) {
       analytics.reset();
-      queryClient.removeQueries({ queryKey: subscriptionQueryKey });
     }
 
     previousUserIdRef.current = currentUserId;
-  }, [session?.user, userId, queryClient, subscriptionQueryKey]);
-
-  useEffect(() => {
-    if (!userId || !subscription?.plan) {
-      return;
-    }
-    analytics.setPersonProperties({ tier: subscription.plan });
-  }, [userId, subscription?.plan]);
+  }, [session?.user, userId]);
 
   return <>{children}</>;
 }
