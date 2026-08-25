@@ -1,17 +1,15 @@
+import type { SecondaryStorage } from "better-auth";
+
 import type { Redis } from "@domainstack/redis";
 
-/**
- * Secondary storage interface expected by Better Auth.
- */
-export type SecondaryStorage = {
-  get: (key: string) => Promise<string | null>;
-  set: (key: string, value: string, ttl?: number) => Promise<void>;
-  delete: (key: string) => Promise<void>;
-};
+export type { SecondaryStorage };
 
 /**
  * Creates a Redis-based secondary storage adapter for Better Auth.
  * Used for session caching and rate limiting.
+ *
+ * `increment` is required for atomic rate-limit `consume`. `getAndDelete` is
+ * required for atomic single-use verification tokens.
  *
  * @param redis - Upstash Redis client instance, or null to disable
  * @returns SecondaryStorage adapter or undefined if redis is null
@@ -29,19 +27,32 @@ export function createRedisStorage(redis: Redis | null): SecondaryStorage | unde
   if (!redis) return undefined;
 
   return {
-    get: async (key: string) => {
-      const value = await redis.get<string>(key);
-      // JSON.stringify needed for Redis compatibility
-      return value ? JSON.stringify(value) : null;
+    get(key) {
+      return redis.get(key);
     },
-    set: async (key: string, value: string, ttl?: number) => {
+    getAndDelete(key) {
+      return redis.getdel(key);
+    },
+    async increment(key, ttl) {
+      if (!Number.isInteger(ttl) || ttl <= 0) {
+        throw new TypeError("Redis increment TTL must be a positive integer");
+      }
+
+      // INCR then EXPIRE NX so the window is fixed from first creation and
+      // never extended by later traffic. See:
+      // https://www.better-auth.com/docs/concepts/database#redis-storage
+      const [value] = await redis.multi().incr(key).expire(key, ttl, "NX").exec();
+
+      return value;
+    },
+    async set(key, value, ttl) {
       if (ttl) {
-        await redis.set<string>(key, value, { ex: ttl });
+        await redis.set(key, value, { ex: ttl });
       } else {
-        await redis.set<string>(key, value);
+        await redis.set(key, value);
       }
     },
-    delete: async (key: string) => {
+    async delete(key) {
       await redis.del(key);
     },
   };
