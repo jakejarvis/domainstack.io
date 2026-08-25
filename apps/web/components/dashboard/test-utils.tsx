@@ -36,7 +36,6 @@ import { TooltipProvider } from "@domainstack/ui/tooltip";
 
 import { DASHBOARD_TEST_NOW, makeDashboardDomains } from "./test-fixtures";
 
-export { createInitialDelays, pruneDelays } from "@/components/dashboard/dashboard-grid";
 export {
   mockSubscription,
   subscriptionActionSpies,

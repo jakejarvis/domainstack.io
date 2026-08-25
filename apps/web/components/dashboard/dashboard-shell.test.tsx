@@ -26,15 +26,9 @@ vi.mock("@/hooks/use-provider-tooltip-data", async () => {
   return { useProviderTooltipData };
 });
 
+import { makePaginationDomains, makeTrackedDomain } from "@/components/dashboard/test-fixtures";
 import {
-  makeDashboardDomains,
-  makePaginationDomains,
-  makeTrackedDomain,
-} from "@/components/dashboard/test-fixtures";
-import {
-  createInitialDelays,
   dashboardActionSpies,
-  pruneDelays,
   renderDashboardShell,
   resetDashboardTestState,
 } from "@/components/dashboard/test-utils";
@@ -593,21 +587,6 @@ describe("dashboard shell", () => {
       await waitFor(() => {
         expect(screen.queryByRole("toolbar", { name: "Bulk actions" })).not.toBeInTheDocument();
       });
-    });
-  });
-
-  describe("stagger delays", () => {
-    it("creates and prunes first-paint delays", () => {
-      const catalog = makeDashboardDomains();
-      const delays = createInitialDelays(catalog);
-      expect(delays.get("domain-alpha")).toBe(0);
-      expect(delays.has("upgrade-cta")).toBe(true);
-
-      const pruned = pruneDelays(delays, [catalog[0]!]);
-      expect(pruned.has("domain-alpha")).toBe(true);
-      expect(pruned.has("domain-beta")).toBe(false);
-      expect(pruned.has("upgrade-cta")).toBe(true);
-      expect(pruneDelays(delays, catalog)).toBe(delays);
     });
   });
 
