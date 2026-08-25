@@ -87,6 +87,13 @@ const DefaultLoader = () => (
   </div>
 );
 
+function styleForTheme(
+  theme: string | undefined,
+  mapStyles: { dark: MapStyleOption; light: MapStyleOption },
+): MapStyleOption {
+  return theme === "dark" ? mapStyles.dark : mapStyles.light;
+}
+
 function MapInstance({ children, styles, className, ...props }: MapInstanceProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -103,17 +110,24 @@ function MapInstance({ children, styles, className, ...props }: MapInstanceProps
     }),
     [styles],
   );
-  const initialMapStyleRef = useRef<MapStyleOption | null>(null);
-  if (initialMapStyleRef.current === null) {
-    initialMapStyleRef.current = resolvedTheme === "dark" ? mapStyles.dark : mapStyles.light;
-  }
+
+  const nextStyle = styleForTheme(resolvedTheme, mapStyles);
+  const nextStyleRef = useRef(nextStyle);
+  // oxlint-disable-next-line react/refs
+  nextStyleRef.current = nextStyle;
+
+  const appliedStyleRef = useRef<MapStyleOption | null>(null);
+  const stylesheetReadyRef = useRef(false);
 
   useEffect(() => {
     if (!isMounted || !containerRef.current) return;
 
+    const initialStyle = nextStyleRef.current;
+    appliedStyleRef.current = initialStyle;
+
     const mapInstance = new MapLibreMap({
       container: containerRef.current,
-      style: initialMapStyleRef.current ?? defaultStyles.light,
+      style: initialStyle,
       renderWorldCopies: false,
       attributionControl: {
         compact: true,
@@ -121,29 +135,51 @@ function MapInstance({ children, styles, className, ...props }: MapInstanceProps
       ...initialMapOptionsRef.current,
     });
 
-    const styleDataHandler = () => setIsStyleLoaded(true);
-    const loadHandler = () => setIsLoaded(true);
+    const onLoad = () => setIsLoaded(true);
+    const onStyleLoad = () => {
+      stylesheetReadyRef.current = true;
+      setIsStyleLoaded(true);
+    };
 
-    mapInstance.on("load", loadHandler);
-    mapInstance.on("styledata", styleDataHandler);
+    mapInstance.on("load", onLoad);
+    mapInstance.on("style.load", onStyleLoad);
     mapRef.current = mapInstance;
 
     return () => {
-      mapInstance.off("load", loadHandler);
-      mapInstance.off("styledata", styleDataHandler);
+      mapInstance.off("load", onLoad);
+      mapInstance.off("style.load", onStyleLoad);
       mapInstance.remove();
       mapRef.current = null;
+      appliedStyleRef.current = null;
+      stylesheetReadyRef.current = false;
     };
   }, [isMounted]);
 
   useEffect(() => {
-    if (mapRef.current) {
+    const map = mapRef.current;
+    if (!map) return;
+    if (nextStyle === appliedStyleRef.current) return;
+
+    const applyStyle = () => {
+      if (mapRef.current !== map) return;
+      appliedStyleRef.current = nextStyle;
+      stylesheetReadyRef.current = false;
       setIsStyleLoaded(false);
-      mapRef.current.setStyle(resolvedTheme === "dark" ? mapStyles.dark : mapStyles.light, {
-        diff: true,
-      });
+      map.setStyle(nextStyle, { diff: true });
+    };
+
+    // MapLibre cannot diff until the current stylesheet has loaded; calling
+    // setStyle earlier logs "Unable to perform style diff: Style is not done loading."
+    if (stylesheetReadyRef.current) {
+      applyStyle();
+      return;
     }
-  }, [resolvedTheme, mapStyles]);
+
+    map.once("style.load", applyStyle);
+    return () => {
+      map.off("style.load", applyStyle);
+    };
+  }, [nextStyle]);
 
   const isLoading = !isMounted || !isLoaded || !isStyleLoaded;
   const contextValue = useMemo(
