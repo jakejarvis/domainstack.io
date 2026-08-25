@@ -1,7 +1,7 @@
+import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { dash } from "@better-auth/infra";
-import { type BetterAuthOptions, betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { getSessionCookie } from "better-auth/cookies";
+import { type BetterAuthOptions, betterAuth } from "better-auth/minimal";
 import { nextCookies, toNextJsHandler } from "better-auth/next-js";
 
 import { db } from "@domainstack/db/client";

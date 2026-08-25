@@ -29,11 +29,11 @@
     "clean": "shx rm -rf .turbo \"apps/*/.turbo\" \"apps/*/node_modules\" \"apps/*/*.tsbuildinfo\" apps/web/.next \"packages/*/.turbo\" \"packages/*/node_modules\" \"packages/*/*.tsbuildinfo\" node_modules pnpm-lock.yaml"
   },
   "devDependencies": {
-    "oxfmt": "^0.64.0",
-    "oxlint": "^1.79.0",
+    "oxfmt": "^0.65.0",
+    "oxlint": "^1.80.0",
     "shx": "^0.4.0",
     "turbo": "^2.10.11",
-    "typescript": "7.0.2"
+    "typescript": "^7.0.2"
   },
   "engines": {
     "node": ">=24.x"
