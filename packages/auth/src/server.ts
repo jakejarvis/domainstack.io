@@ -1,5 +1,6 @@
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { dash } from "@better-auth/infra";
+import { waitUntil } from "@vercel/functions";
 import { getSessionCookie } from "better-auth/cookies";
 import { type BetterAuthOptions, betterAuth } from "better-auth/minimal";
 import { nextCookies, toNextJsHandler } from "better-auth/next-js";
@@ -131,11 +132,11 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (user) => {
-          // Create free tier subscription for new users
+          // Create free tier subscription for new users (do not defer)
           await createSubscription(user.id);
 
           // Create Resend contact for marketing communications
-          void addContact(user.email, user.name);
+          waitUntil(addContact(user.email, user.name));
 
           analytics.track(
             "signed_up",
@@ -158,33 +159,32 @@ export const auth = betterAuth({
         // Cancel Polar subscription if user has one
         // This deletes the Polar customer, which automatically cancels any active
         // subscriptions and revokes benefits
-        if (polarClient) {
-          try {
-            await polarClient.customers.deleteExternal({
-              externalId: user.id,
-            });
-          } catch (err) {
-            // Don't block account deletion if Polar cleanup fails
-            logger.error({ err, userId: user.id }, "failed to delete Polar customer");
-          }
+        try {
+          await polarClient?.customers.deleteExternal({
+            externalId: user.id,
+          });
+        } catch (err) {
+          // Don't block account deletion if Polar cleanup fails
+          logger.error({ err, userId: user.id }, "failed to delete Polar customer");
         }
 
         // Delete Resend contact
-        void removeContact(user.email);
+        waitUntil(removeContact(user.email));
       },
       sendDeleteAccountVerification: async ({ user, url }) => {
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
-        void sendEmail(
-          {
-            to: user.email,
-            subject: "Confirm your account deletion",
-            react: DeleteAccountVerifyEmail({
-              userName: user.name,
-              confirmUrl: url,
-              baseUrl,
-            }),
-          },
-          { baseUrl },
+        waitUntil(
+          sendEmail(
+            {
+              to: user.email,
+              subject: "Confirm your account deletion",
+              react: DeleteAccountVerifyEmail({
+                userName: user.name,
+                confirmUrl: url,
+                baseUrl: process.env.NEXT_PUBLIC_BASE_URL as string,
+              }),
+            },
+            { baseUrl: process.env.NEXT_PUBLIC_BASE_URL as string },
+          ),
         );
       },
     },
@@ -213,10 +213,13 @@ export const auth = betterAuth({
       trustedProviders: enabledProviders,
     },
   },
-  experimental: {
-    joins: true,
-  },
   advanced: {
+    database: {
+      joins: true,
+    },
+    backgroundTasks: {
+      handler: waitUntil,
+    },
     ipAddress: {
       ipAddressHeaders: ["x-vercel-forwarded-for"],
     },
@@ -248,7 +251,9 @@ export const auth = betterAuth({
           }),
         ]
       : []),
-    dash(),
+    dash({
+      apiKey: process.env.BETTER_AUTH_API_KEY,
+    }),
     // must be last: https://www.better-auth.com/docs/integrations/next#server-action-cookies
     nextCookies(),
   ],

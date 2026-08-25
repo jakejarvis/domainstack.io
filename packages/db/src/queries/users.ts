@@ -6,6 +6,7 @@ import { accounts, users } from "../schema";
 export type UserData = Pick<InferSelectModel<typeof users>, "id" | "name" | "email">;
 
 export interface LinkedAccount {
+  id: string;
   providerId: string;
   createdAt: Date;
 }
@@ -59,6 +60,7 @@ export async function getUserAvatarUrl(userId: string): Promise<string | null> {
 export async function getLinkedAccounts(userId: string): Promise<LinkedAccount[]> {
   const linkedAccounts = await db
     .select({
+      id: accounts.id,
       providerId: accounts.providerId,
       createdAt: accounts.createdAt,
     })
