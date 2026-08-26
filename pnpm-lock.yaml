@@ -728,8 +728,8 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       cva:
-        specifier: 1.0.0-beta.4
-        version: 1.0.0-beta.4(typescript@7.0.2)
+        specifier: 1.0.0-beta.8
+        version: 1.0.0-beta.8(typescript@7.0.2)
       media-chrome:
         specifier: ^4.19.2
         version: 4.19.2(react@19.2.8)
@@ -4283,8 +4283,8 @@ packages:
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
 
-  cva@1.0.0-beta.4:
-    resolution: {integrity: sha512-F/JS9hScapq4DBVQXcK85l9U91M6ePeXoBMSp7vypzShoefUBxjQTo3g3935PUHgQd+IW77DjbPRIxugy4/GCQ==}
+  cva@1.0.0-beta.8:
+    resolution: {integrity: sha512-d77ya4Ga/0Mzam9X99EVpbg9V+sfyEni7cM8Hu42GFAe0GtchBO1CUA803XPLRAYtg1VvVyUHt8z4kQycp2yug==}
     peerDependencies:
       typescript: '>= 4.5.5'
     peerDependenciesMeta:
@@ -10707,7 +10707,7 @@ snapshots:
 
   csstype@3.2.3: {}
 
-  cva@1.0.0-beta.4(typescript@7.0.2):
+  cva@1.0.0-beta.8(typescript@7.0.2):
     dependencies:
       clsx: 2.1.1
     optionalDependencies:
