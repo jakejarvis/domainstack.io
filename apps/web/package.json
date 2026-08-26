@@ -75,7 +75,7 @@
     "use-local-storage-state": "^20.0.0",
     "use-stick-to-bottom": "^1.1.6",
     "web-haptics": "^0.0.6",
-    "workflow": "5.0.0-beta.43",
+    "workflow": "5.0.0-beta.44",
     "ws": "^8.21.3",
     "zod": "catalog:",
     "zustand": "^5.0.15"
