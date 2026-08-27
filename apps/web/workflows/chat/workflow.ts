@@ -11,9 +11,9 @@
  */
 
 import type { GatewayProviderOptions } from "@ai-sdk/gateway";
-import { type OpenAIResponsesProviderOptions, openai } from "@ai-sdk/openai";
+import type { OpenAIResponsesProviderOptions } from "@ai-sdk/openai";
 import { type ModelCallStreamPart, WorkflowAgent } from "@ai-sdk/workflow";
-import { convertToModelMessages, isStepCount, type Tool, type UIMessage } from "ai";
+import { convertToModelMessages, isStepCount, type UIMessage } from "ai";
 import { getWorkflowMetadata, getWritable } from "workflow";
 
 import { MAX_OUTPUT_TOKENS, MAX_TOOL_STEPS } from "@domainstack/constants";
@@ -48,12 +48,7 @@ export async function chatWorkflow(input: ChatWorkflowInput) {
 
   const agent = new WorkflowAgent({
     model,
-    tools: {
-      ...domainTools,
-      web_search: openai.tools.webSearch({
-        searchContextSize: "low",
-      }) as Tool,
-    },
+    tools: { ...domainTools },
     instructions: systemPrompt,
     // Temperature 0 ensures consistent tool calling behavior across models
     // See: https://ai-sdk.dev/docs/ai-sdk-core/prompt-engineering#temperature-settings

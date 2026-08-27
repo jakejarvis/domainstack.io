@@ -17,8 +17,8 @@ import { useLocalChat } from "@/hooks/use-local-chat";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { analytics } from "@/lib/analytics/client";
 import { chatOpenAtom } from "@/lib/atoms/chat-atoms";
-import { buildClientSystemPrompt } from "@/lib/chat/client-prompt";
 import { createClientDomainTools } from "@/lib/chat/client-tools";
+import { buildSystemPrompt } from "@/lib/chat/system-prompt";
 import { useChatHydrated, useChatStore } from "@/lib/stores/chat-store";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { useTRPCClient } from "@/lib/trpc/client";
@@ -44,6 +44,8 @@ interface ChatController {
   messages: UIMessage[];
   sendMessage: (params: { text: string }) => void;
   clearMessages: () => void;
+  retry: () => void;
+  clearError: () => void;
   status: "submitted" | "streaming" | "ready" | "error";
   error: string | null;
 }
@@ -84,11 +86,6 @@ export function ChatClient({ suggestions = EMPTY_SUGGESTIONS }: ChatClientProps)
     setOpen(!open);
   };
 
-  const handleSettingsClick = () => {
-    setOpen(false);
-    setSettingsOpen(true);
-  };
-
   if (hideAiFeatures && !settingsOpen) {
     return null;
   }
@@ -107,7 +104,8 @@ export function ChatClient({ suggestions = EMPTY_SUGGESTIONS }: ChatClientProps)
             isMobile={isMobile}
             open={open}
             onOpenChange={setOpen}
-            onSettingsClick={handleSettingsClick}
+            settingsOpen={settingsOpen}
+            onSettingsOpenChange={setSettingsOpen}
             onActiveChange={handleActiveChange}
           />
         ) : (
@@ -118,12 +116,11 @@ export function ChatClient({ suggestions = EMPTY_SUGGESTIONS }: ChatClientProps)
             isMobile={isMobile}
             open={open}
             onOpenChange={setOpen}
-            onSettingsClick={handleSettingsClick}
+            settingsOpen={settingsOpen}
+            onSettingsOpenChange={setSettingsOpen}
             onActiveChange={handleActiveChange}
           />
         ))}
-
-      <ChatSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </>
   );
 }
@@ -135,7 +132,8 @@ interface ChatSessionProps {
   isMobile: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSettingsClick: () => void;
+  settingsOpen: boolean;
+  onSettingsOpenChange: (open: boolean) => void;
   onActiveChange: (active: boolean) => void;
 }
 
@@ -146,7 +144,8 @@ function CloudChatSession({
   isMobile,
   open,
   onOpenChange,
-  onSettingsClick,
+  settingsOpen,
+  onSettingsOpenChange,
   onActiveChange,
 }: ChatSessionProps) {
   const domainRef = useRef(domain);
@@ -226,8 +225,16 @@ function CloudChatSession({
     [chat],
   );
 
+  const retry = useCallback(() => {
+    void chat.regenerate();
+  }, [chat]);
+
   const error =
-    chat.status === "streaming" ? null : chat.error ? getUserFriendlyError(chat.error) : null;
+    chat.status === "submitted" || chat.status === "streaming"
+      ? null
+      : chat.error
+        ? getUserFriendlyError(chat.error)
+        : null;
 
   useEffect(() => {
     onActiveChange(chat.messages.length > 0);
@@ -239,6 +246,8 @@ function CloudChatSession({
         messages: chat.messages,
         sendMessage,
         clearMessages,
+        retry,
+        clearError: chat.clearError,
         status: chat.status,
         error,
       }}
@@ -248,7 +257,8 @@ function CloudChatSession({
       isMobile={isMobile}
       open={open}
       onOpenChange={onOpenChange}
-      onSettingsClick={onSettingsClick}
+      settingsOpen={settingsOpen}
+      onSettingsOpenChange={onSettingsOpenChange}
     />
   );
 }
@@ -261,12 +271,13 @@ function LocalChatSession({
   isMobile,
   open,
   onOpenChange,
-  onSettingsClick,
+  settingsOpen,
+  onSettingsOpenChange,
   onActiveChange,
 }: ChatSessionProps & { model: UseBrowserAIResult["model"] }) {
   const trpcClient = useTRPCClient();
   const clientTools = useMemo(() => createClientDomainTools(trpcClient), [trpcClient]);
-  const systemPrompt = useMemo(() => buildClientSystemPrompt(domain), [domain]);
+  const systemPrompt = useMemo(() => buildSystemPrompt({ variant: "client", domain }), [domain]);
 
   const chat = useLocalChat({
     model,
@@ -290,8 +301,16 @@ function LocalChatSession({
     [chat],
   );
 
+  const retry = useCallback(() => {
+    chat.regenerate();
+  }, [chat]);
+
   const error =
-    chat.status === "streaming" ? null : chat.error ? getUserFriendlyError(chat.error) : null;
+    chat.status === "submitted" || chat.status === "streaming"
+      ? null
+      : chat.error
+        ? getUserFriendlyError(chat.error)
+        : null;
 
   useEffect(() => {
     onActiveChange(chat.messages.length > 0);
@@ -303,6 +322,8 @@ function LocalChatSession({
         messages: chat.messages,
         sendMessage,
         clearMessages,
+        retry,
+        clearError: chat.clearError,
         status: chat.status,
         error,
       }}
@@ -312,7 +333,8 @@ function LocalChatSession({
       isMobile={isMobile}
       open={open}
       onOpenChange={onOpenChange}
-      onSettingsClick={onSettingsClick}
+      settingsOpen={settingsOpen}
+      onSettingsOpenChange={onSettingsOpenChange}
     />
   );
 }
@@ -325,7 +347,8 @@ function ChatShell({
   isMobile,
   open,
   onOpenChange,
-  onSettingsClick,
+  settingsOpen,
+  onSettingsOpenChange,
 }: {
   chat: ChatController;
   domain?: string;
@@ -334,21 +357,35 @@ function ChatShell({
   isMobile: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSettingsClick: () => void;
+  settingsOpen: boolean;
+  onSettingsOpenChange: (open: boolean) => void;
 }) {
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      onSettingsOpenChange(false);
+    }
+    onOpenChange(nextOpen);
+  };
+
   const headerActions = (
     <ChatHeaderActions
       messages={chat.messages}
       onClear={chat.clearMessages}
-      onSettingsClick={onSettingsClick}
-      onCloseClick={() => onOpenChange(false)}
+      onSettingsClick={() => onSettingsOpenChange(true)}
+      onCloseClick={() => handleOpenChange(false)}
       closeIcon={isMobile ? undefined : IconLayoutSidebarRightCollapse}
     />
   );
 
   const panel = (
     <ChatPanel
-      {...chat}
+      messages={chat.messages}
+      sendMessage={chat.sendMessage}
+      clearMessages={chat.clearMessages}
+      status={chat.status}
+      error={chat.error}
+      onRetry={chat.retry}
+      onClearError={chat.clearError}
       domain={domain}
       homeSuggestions={suggestions}
       browserAI={browserAI}
@@ -357,9 +394,11 @@ function ChatShell({
     />
   );
 
+  const settings = <ChatSettingsDialog open={settingsOpen} onOpenChange={onSettingsOpenChange} />;
+
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
+      <Drawer open={open} onOpenChange={handleOpenChange}>
         <DrawerContent>
           <DrawerHeader className="flex flex-row items-center justify-between">
             <DrawerTitle className="flex items-center gap-2">
@@ -373,12 +412,13 @@ function ChatShell({
           </DrawerHeader>
           {panel}
         </DrawerContent>
+        {settings}
       </Drawer>
     );
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent
         side="right"
         className="flex w-[420px] flex-col gap-0 p-0"
@@ -396,6 +436,7 @@ function ChatShell({
         </SheetHeader>
         {panel}
       </SheetContent>
+      {settings}
     </Sheet>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import { IconAlertCircle, IconBrain, IconMessages, IconX } from "@tabler/icons-react";
-import type { ChatStatus, ToolUIPart, UIMessage } from "ai";
+import { IconAlertCircle, IconBrain, IconMessages, IconRefresh, IconX } from "@tabler/icons-react";
+import { type ChatStatus, isTextUIPart, isToolUIPart, type ToolUIPart, type UIMessage } from "ai";
 import { useCallback, useState } from "react";
 import { useStickToBottom } from "use-stick-to-bottom";
 
@@ -29,32 +29,38 @@ import {
   ToolInput,
   ToolOutput,
 } from "@/components/ai-elements/tool";
+import { ChatModeSelector } from "@/components/chat/chat-mode-selector";
 import { type UseBrowserAIResult } from "@/hooks/use-browser-ai";
 import { getDomainToolStatus, getToolPartType } from "@/lib/chat/domain-tools";
 import {
-  getMessagePartItems,
+  type AssistantWaitKind,
+  getAssistantRenderItems,
+  getAssistantWaitStatus,
   hasVisibleAssistantParts,
-  isToolPart,
-  shouldShowThinkingStatus,
 } from "@/lib/chat/message-parts";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { MAX_MESSAGE_LENGTH } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
+import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
-
-import { ChatModeSelector } from "./chat-mode-selector";
 
 const EMPTY_SUGGESTIONS: string[] = [];
 
-function ThinkingStatus() {
+function AssistantWaitIndicator({ kind }: { kind: AssistantWaitKind }) {
+  const isThinking = kind === "thinking";
+
   return (
     <div
       className="flex items-center gap-2 text-[13px] text-muted-foreground"
       aria-live="polite"
       aria-atomic="true"
     >
-      <IconBrain className="size-3.5" aria-hidden />
-      <ShimmeringText text="Thinking…" startOnView={false} />
+      {isThinking ? (
+        <IconBrain className="size-3.5" aria-hidden />
+      ) : (
+        <Spinner className="size-3.5" />
+      )}
+      <ShimmeringText text={isThinking ? "Thinking…" : "Generating…"} startOnView={false} />
     </div>
   );
 }
@@ -75,6 +81,7 @@ interface ChatPanelProps {
   status: ChatStatus;
   domain?: string;
   error?: string | null;
+  onRetry?: () => void;
   onClearError?: () => void;
   homeSuggestions?: string[];
   browserAI: UseBrowserAIResult;
@@ -89,6 +96,7 @@ export function ChatPanel({
   status,
   domain,
   error,
+  onRetry,
   onClearError,
   homeSuggestions = EMPTY_SUGGESTIONS,
   browserAI,
@@ -99,7 +107,9 @@ export function ChatPanel({
   const showToolCalls = usePreferencesStore((s) => s.showToolCalls);
   const showReasoning = usePreferencesStore((s) => s.showReasoning);
   const visibility = { showReasoning, showToolCalls };
-  const showThinking = shouldShowThinkingStatus(status, messages, visibility);
+  const waitStatus = getAssistantWaitStatus(status, messages, visibility);
+  const showWait = waitStatus.placement !== "none";
+  const lastMessageId = messages.at(-1)?.id;
 
   const stickyInstance = useStickToBottom();
 
@@ -123,6 +133,11 @@ export function ChatPanel({
     sendMessage({ text: suggestion });
   };
 
+  const handleRetry = () => {
+    onRetry?.();
+    handleScrollToBottom();
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputLength(e.target.value.length);
     onClearError?.();
@@ -140,12 +155,10 @@ export function ChatPanel({
       >
         <ConversationContent
           className={cn(
-            messages.length === 0 && !showThinking
-              ? "items-center justify-center"
-              : "gap-4 px-3 py-4",
+            messages.length === 0 && !showWait ? "items-center justify-center" : "gap-4 px-3 py-4",
           )}
         >
-          {messages.length === 0 && !showThinking ? (
+          {messages.length === 0 && !showWait ? (
             <ConversationEmptyState
               icon={<IconMessages className="size-7" aria-hidden />}
               title={`Ask me anything about ${domain ?? "domains"}!`}
@@ -161,37 +174,57 @@ export function ChatPanel({
                   return null;
                 }
 
+                const isLiveMessage =
+                  message.id === lastMessageId &&
+                  (status === "submitted" || status === "streaming");
+
                 return (
                   <Message
                     key={message.id}
                     from={message.role}
-                    className="[contain-intrinsic-size:auto_5rem] [content-visibility:auto]"
+                    className={
+                      isLiveMessage
+                        ? undefined
+                        : "[contain-intrinsic-size:auto_5rem] [content-visibility:auto]"
+                    }
                   >
                     <MessageContent>
-                      {getMessagePartItems(message).map(({ key, part, position }) => {
-                        if (part.type === "text") {
-                          return <MessageResponse key={key}>{part.text}</MessageResponse>;
-                        }
-                        if (part.type === "reasoning") {
+                      {getAssistantRenderItems(message).map((item) => {
+                        if (item.kind === "reasoning") {
                           if (!showReasoning) {
                             return null;
                           }
-                          const isStreaming =
-                            status === "streaming" &&
-                            position === message.parts.length - 1 &&
-                            message.id === messages.at(-1)?.id;
                           return (
-                            <Reasoning key={key} className="w-full" isStreaming={isStreaming}>
+                            <Reasoning
+                              key={item.key}
+                              className="w-full"
+                              isStreaming={item.isStreaming}
+                            >
                               <ReasoningTrigger />
-                              <ReasoningContent>{part.text}</ReasoningContent>
+                              <ReasoningContent>{item.text}</ReasoningContent>
                             </Reasoning>
                           );
                         }
-                        if (isToolPart(part) && showToolCalls) {
+
+                        const { key, part } = item;
+                        if (isTextUIPart(part)) {
+                          if (!part.text.trim()) {
+                            return null;
+                          }
+                          return (
+                            <MessageResponse
+                              key={key}
+                              caret={part.state === "streaming" ? "block" : undefined}
+                            >
+                              {part.text}
+                            </MessageResponse>
+                          );
+                        }
+                        if (isToolUIPart(part) && showToolCalls) {
                           const toolPart = part as ToolUIPart;
                           const statusType = getToolPartType(part) as ToolUIPart["type"];
                           return (
-                            <Tool key={key}>
+                            <Tool key={key} defaultOpen={toolPart.state === "output-error"}>
                               <ToolHeader
                                 title={getDomainToolStatus(statusType)}
                                 type={statusType}
@@ -199,7 +232,8 @@ export function ChatPanel({
                               />
                               <ToolContent>
                                 <ToolInput input={toolPart.input} />
-                                {toolPart.state === "output-available" && (
+                                {(toolPart.state === "output-available" ||
+                                  toolPart.state === "output-error") && (
                                   <ToolOutput
                                     output={toolPart.output}
                                     errorText={toolPart.errorText}
@@ -211,17 +245,22 @@ export function ChatPanel({
                         }
                         return null;
                       })}
+                      {waitStatus.placement === "inline" &&
+                      waitStatus.kind &&
+                      message.id === lastMessageId ? (
+                        <AssistantWaitIndicator kind={waitStatus.kind} />
+                      ) : null}
                     </MessageContent>
                   </Message>
                 );
               })}
-              {showThinking && (
-                <Message key="thinking" from="assistant">
+              {waitStatus.placement === "standalone" && waitStatus.kind ? (
+                <Message key="wait" from="assistant">
                   <MessageContent>
-                    <ThinkingStatus />
+                    <AssistantWaitIndicator kind={waitStatus.kind} />
                   </MessageContent>
                 </Message>
-              )}
+              ) : null}
             </>
           )}
         </ConversationContent>
@@ -233,11 +272,17 @@ export function ChatPanel({
       <div
         className={cn("shrink-0 space-y-3 border-t border-border bg-card/60 !pt-3", inputClassName)}
       >
-        <Suggestions className="justify-center">
-          {suggestions.map((suggestion) => (
-            <Suggestion key={suggestion} suggestion={suggestion} onClick={handleSuggestionClick} />
-          ))}
-        </Suggestions>
+        {messages.length === 0 && suggestions.length > 0 && (
+          <Suggestions className="justify-center">
+            {suggestions.map((suggestion) => (
+              <Suggestion
+                key={suggestion}
+                suggestion={suggestion}
+                onClick={handleSuggestionClick}
+              />
+            ))}
+          </Suggestions>
+        )}
 
         {error && (
           <div
@@ -246,17 +291,30 @@ export function ChatPanel({
           >
             <IconAlertCircle className="size-4 shrink-0" aria-hidden />
             <span className="min-w-0 flex-1 break-words">{error}</span>
-            {onClearError && (
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                onClick={onClearError}
-                aria-label="Dismiss error"
-                className="shrink-0 text-destructive hover:!bg-destructive/20 hover:!text-destructive"
-              >
-                <IconX className="size-3" aria-hidden />
-              </Button>
-            )}
+            <div className="flex shrink-0 items-center gap-1">
+              {onRetry && (
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  onClick={handleRetry}
+                  className="text-destructive hover:!bg-destructive/20 hover:!text-destructive"
+                >
+                  <IconRefresh />
+                  Retry
+                </Button>
+              )}
+              {onClearError && (
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  onClick={onClearError}
+                  aria-label="Dismiss error"
+                  className="text-destructive hover:!bg-destructive/20 hover:!text-destructive"
+                >
+                  <IconX className="size-3" aria-hidden />
+                </Button>
+              )}
+            </div>
           </div>
         )}
 

@@ -37,6 +37,10 @@ export interface UseLocalChatReturn {
   error: Error | null;
   /** Send a message to the chat */
   sendMessage: (params: { text: string }) => void;
+  /** Retry the last assistant turn without adding a new user message */
+  regenerate: () => void;
+  /** Clear the error state and return to ready */
+  clearError: () => void;
   /** Set messages directly (for persistence restore) */
   setMessages: (messages: UIMessage[]) => void;
 }
@@ -85,28 +89,19 @@ export function useLocalChat({
     [],
   );
 
-  const sendMessage = useCallback(
-    async (params: { text: string }) => {
-      const text = params.text.trim();
-      // Guard: don't send if no text, already processing, or model not ready
-      if (!text || processingRef.current || !model) return;
+  const runAssistantTurn = useCallback(
+    async (conversation: UIMessage[]) => {
+      if (processingRef.current || !model || conversation.at(-1)?.role !== "user") {
+        return;
+      }
 
       processingRef.current = true;
       setStatus("submitted");
       setError(null);
 
-      // Cancel any previous request
       abortControllerRef.current?.abort();
       abortControllerRef.current = new AbortController();
 
-      // Add user message
-      const userMessage: UIMessage = {
-        id: generateId(),
-        role: "user",
-        parts: [{ type: "text", text }],
-      };
-
-      // Add placeholder assistant message for streaming
       const assistantMessageId = generateId();
       const assistantMessage: UIMessage = {
         id: assistantMessageId,
@@ -114,18 +109,14 @@ export function useLocalChat({
         parts: [],
       };
 
-      const updatedMessages = [...messages, userMessage];
-      setMessages([...updatedMessages, assistantMessage]);
+      setMessages([...conversation, assistantMessage]);
 
       try {
         setStatus("streaming");
 
-        // Convert to model messages using AI SDK's converter
-        const modelMessages = await convertToModelMessages(updatedMessages);
-
-        // Run the model with tool calling
-        // stopWhen: isStepCount(3) enables multi-step tool execution - without it,
-        // the model stops after generating a tool call without executing it
+        const modelMessages = await convertToModelMessages(conversation);
+        // stopWhen: isStepCount(3) enables multi-step tool execution — without
+        // it the model stops after generating a tool call without executing it
         const result = streamText({
           model,
           instructions: systemPrompt,
@@ -135,27 +126,18 @@ export function useLocalChat({
           abortSignal: abortControllerRef.current.signal,
         });
 
-        // Stream the response using readUIMessageStream to capture all parts
-        // (text, tool-call, tool-result) - textStream only emits text deltas
         for await (const uiMessage of readUIMessageStream({
           stream: result.toUIMessageStream(),
         })) {
-          // Update the assistant message with all accumulated parts
           setMessages((prev) =>
             prev.map((msg) =>
-              msg.id === assistantMessageId
-                ? {
-                    ...msg,
-                    parts: uiMessage.parts,
-                  }
-                : msg,
+              msg.id === assistantMessageId ? { ...msg, parts: uiMessage.parts } : msg,
             ),
           );
         }
 
         setStatus("ready");
       } catch (err) {
-        // Ignore abort errors
         if (err instanceof Error && err.name === "AbortError") {
           setStatus("ready");
           return;
@@ -165,21 +147,48 @@ export function useLocalChat({
         setError(nextError);
         setStatus("error");
         onError?.(nextError);
-
-        // Remove the empty assistant message on error
         setMessages((prev) => prev.filter((msg) => msg.id !== assistantMessageId));
       } finally {
         processingRef.current = false;
       }
     },
-    [model, tools, systemPrompt, messages, onError],
+    [model, tools, systemPrompt, onError],
   );
+
+  const sendMessage = useCallback(
+    (params: { text: string }) => {
+      const text = params.text.trim();
+      if (!text || processingRef.current || !model) return;
+
+      const userMessage: UIMessage = {
+        id: generateId(),
+        role: "user",
+        parts: [{ type: "text", text }],
+      };
+
+      void runAssistantTurn([...messages, userMessage]);
+    },
+    [messages, model, runAssistantTurn],
+  );
+
+  const regenerate = useCallback(() => {
+    const last = messages.at(-1);
+    const conversation = last?.role === "assistant" ? messages.slice(0, -1) : messages;
+    void runAssistantTurn(conversation);
+  }, [messages, runAssistantTurn]);
+
+  const clearError = useCallback(() => {
+    setError(null);
+    setStatus((prev) => (prev === "error" ? "ready" : prev));
+  }, []);
 
   return {
     messages,
     status,
     error,
     sendMessage,
+    regenerate,
+    clearError,
     setMessages,
   };
 }

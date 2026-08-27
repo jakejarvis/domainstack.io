@@ -1,12 +1,7 @@
 "use client";
 
-import {
-  IconArrowsMinimize,
-  IconExternalLink,
-  IconRosetteDiscountCheck,
-  IconZoomCode,
-} from "@tabler/icons-react";
-import { type ReactNode, useMemo, useState } from "react";
+import { IconExternalLink, IconRosetteDiscountCheck, IconZoomCode } from "@tabler/icons-react";
+import { useMemo, useState } from "react";
 
 import { Favicon } from "@/components/icons/favicon";
 import { Button } from "@domainstack/ui/button";
@@ -141,7 +136,7 @@ function tokenizeLine(line: string): Token[] {
  * Renders a tokenized line with syntax highlighting using CSS classes.
  * Falls back to plain text if tokenization fails for any reason.
  */
-function HighlightedLine({ line, isJson }: { line: string; isJson: boolean }): ReactNode {
+function HighlightedLine({ line, isJson }: { line: string; isJson: boolean }): React.ReactNode {
   // For non-JSON (WHOIS), render plain text
   if (!isJson) {
     return <>{line || "\u00A0"}</>;
@@ -345,7 +340,6 @@ export function RawDataDialog({ domain, format, data, serverName, serverUrl }: R
               onClick={() => setOpen(false)}
               className="gap-2 !px-3 text-[13px]"
             >
-              <IconArrowsMinimize />
               Close
             </Button>
           </div>

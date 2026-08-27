@@ -12,6 +12,17 @@ import type { UIMessage } from "ai";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from "@domainstack/ui/alert-dialog";
 import { Button } from "@domainstack/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 
@@ -54,11 +65,13 @@ function ClearChatButton({ onClick }: { onClick: () => void }) {
   return (
     <Tooltip>
       <TooltipTrigger
-        render={<Button variant="ghost" size="icon-sm" onClick={onClick} aria-label="Clear chat" />}
+        render={
+          <Button variant="ghost" size="icon-sm" onClick={onClick} aria-label="Clear chat…" />
+        }
       >
         <IconTrash className="size-4" />
       </TooltipTrigger>
-      <TooltipContent>Clear chat</TooltipContent>
+      <TooltipContent>Clear chat…</TooltipContent>
     </Tooltip>
   );
 }
@@ -110,16 +123,44 @@ export function ChatHeaderActions({
   onCloseClick,
   closeIcon,
 }: ChatHeaderActionsProps) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
   return (
     <>
       {messages.length > 0 && (
         <>
           <CopyConversationButton messages={messages} />
-          <ClearChatButton onClick={onClear} />
+          <ClearChatButton onClick={() => setConfirmOpen(true)} />
         </>
       )}
       <ChatSettingsButton onClick={onSettingsClick} />
       <CloseChatButton onClick={onCloseClick} icon={closeIcon} />
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogMedia>
+              <IconTrash />
+            </AlertDialogMedia>
+            <AlertDialogTitle>Clear this conversation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the current chat from this browser. You can&apos;t undo it.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                setConfirmOpen(false);
+                onClear();
+              }}
+            >
+              Clear
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

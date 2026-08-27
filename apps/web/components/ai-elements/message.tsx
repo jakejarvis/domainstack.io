@@ -40,7 +40,7 @@ export const MessageContent = ({ children, className, ...props }: MessageContent
 export type MessageResponseProps = ComponentProps<typeof Streamdown>;
 
 export const MessageResponse = memo(
-  ({ className, ...props }: MessageResponseProps) => (
+  ({ className, caret, ...props }: MessageResponseProps) => (
     <Streamdown
       className={cn(
         "size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
@@ -48,11 +48,12 @@ export const MessageResponse = memo(
         "[&_[data-streamdown=link-safety-modal]]:[&_button]:my-0 [&_[data-streamdown=link-safety-modal]]:[&_button]:cursor-pointer",
         className,
       )}
-      caret="block"
+      caret={caret}
       {...props}
     />
   ),
-  (prevProps, nextProps) => prevProps.children === nextProps.children,
+  (prevProps, nextProps) =>
+    prevProps.children === nextProps.children && prevProps.caret === nextProps.caret,
 );
 
 MessageResponse.displayName = "MessageResponse";

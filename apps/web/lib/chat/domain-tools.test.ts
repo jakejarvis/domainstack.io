@@ -29,8 +29,8 @@ describe("getToolPartType", () => {
   });
 
   it("uses toolName for dynamic-tool parts", () => {
-    expect(getToolPartType({ type: "dynamic-tool", toolName: "web_search" })).toBe(
-      "tool-web_search",
+    expect(getToolPartType({ type: "dynamic-tool", toolName: "custom_lookup" })).toBe(
+      "tool-custom_lookup",
     );
   });
 
@@ -45,18 +45,14 @@ describe("getDomainToolStatus", () => {
     expect(getDomainToolStatus("tool-get_registration")).toBe("Looking up WHOIS data");
   });
 
-  it("returns a readable label for web_search", () => {
-    expect(getDomainToolStatus("tool-web_search")).toBe("Searching the web");
-  });
-
   it("falls back to the stripped name for unknown tools", () => {
     expect(getDomainToolStatus("tool-unknown_lookup")).toBe("unknown_lookup");
   });
 
   it("labels a dynamic-tool part from its toolName", () => {
     expect(
-      getDomainToolStatus(getToolPartType({ type: "dynamic-tool", toolName: "web_search" })),
-    ).toBe("Searching the web");
+      getDomainToolStatus(getToolPartType({ type: "dynamic-tool", toolName: "custom_lookup" })),
+    ).toBe("custom_lookup");
   });
 });
 

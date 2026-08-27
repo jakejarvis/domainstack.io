@@ -80,10 +80,6 @@ const DOMAIN_TOOL_STATUS = Object.fromEntries(
   DOMAIN_TOOL_DEFS.map((def) => [def.name, def.status]),
 ) as Record<DomainToolName, string>;
 
-const EXTRA_TOOL_STATUS: Record<string, string> = {
-  web_search: "Searching the web",
-};
-
 const TRPC_ERROR_CODES = new Set([
   "PARSE_ERROR",
   "BAD_REQUEST",
@@ -128,7 +124,7 @@ export function getToolPartType(part: { type: string; toolName?: unknown }): str
 
 export function getDomainToolStatus(type: string): string {
   const toolName = type.replace(/^tool-/, "");
-  return DOMAIN_TOOL_STATUS[toolName as DomainToolName] ?? EXTRA_TOOL_STATUS[toolName] ?? toolName;
+  return DOMAIN_TOOL_STATUS[toolName as DomainToolName] ?? toolName;
 }
 
 function asTrpcErrorCode(code: unknown): string | undefined {

@@ -1,16 +1,24 @@
 import type { UIMessage } from "@ai-sdk/react";
+import { isTextUIPart } from "ai";
 
 /** Format messages as markdown for clipboard copy */
 export function formatMessagesAsMarkdown(messages: UIMessage[]): string {
   return messages
     .map((message) => {
       const role = message.role === "user" ? "User" : "Assistant";
-      const textParts = message.parts
-        .filter((part) => part.type === "text")
+      const text = message.parts
+        .filter(isTextUIPart)
         .map((part) => part.text)
+        .filter((value) => value.trim().length > 0)
         .join("\n\n");
-      return `**${role}:** ${textParts}`;
+
+      if (!text) {
+        return null;
+      }
+
+      return `**${role}:** ${text}`;
     })
+    .filter((block): block is string => block !== null)
     .join("\n\n---\n\n");
 }
 
