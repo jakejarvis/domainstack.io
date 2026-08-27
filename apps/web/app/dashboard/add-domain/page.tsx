@@ -1,9 +1,21 @@
 import { IconArrowLeft } from "@tabler/icons-react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
 import { AddDomainPageClient } from "@/components/dashboard/add-domain/add-domain-page-client";
 import { AddDomainSkeleton } from "@/components/dashboard/add-domain/add-domain-skeleton";
+import { createMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = createMetadata({
+  path: "/dashboard/add-domain",
+  title: "Add Domain",
+  description: "Add a domain to track registration, DNS, SSL, and hosting changes.",
+  robots: {
+    index: false,
+    follow: false,
+  },
+});
 
 export default async function AddDomainPage({
   searchParams,

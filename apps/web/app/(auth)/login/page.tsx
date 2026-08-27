@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 
 import { LoginContent } from "@/components/auth/login-content";
+import { createMetadata } from "@/lib/seo";
 import { Card } from "@domainstack/ui/card";
 import { cn } from "@domainstack/ui/utils";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createMetadata({
+  path: "/login",
   title: "Sign In",
   description: "Sign in to track your domains and receive health alerts.",
-};
+});
 
 export default function LoginPage() {
   return (

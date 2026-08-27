@@ -5,16 +5,18 @@ import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Suspense } from "react";
 
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
+import { createMetadata } from "@/lib/seo";
 import { auth } from "@domainstack/auth/server";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createMetadata({
+  path: "/dashboard",
   title: "Dashboard",
   description: "Manage your tracked domains and notification settings.",
   robots: {
     index: false,
     follow: false,
   },
-};
+});
 
 async function ProtectedDashboardLayout({ children }: { children: React.ReactNode }) {
   // Server-side auth check - requires runtime data (headers)

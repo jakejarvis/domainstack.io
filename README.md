@@ -34,38 +34,24 @@
 
 - **Next.js 16** (App Router), **React 19**, **TypeScript**
 - **Tailwind CSS v4** + [**Base UI**](https://base-ui.com/)
-- **tRPC** + **TanStack Query** & **TanStack Table**
-- **Postgres** (PlanetScale) + **Drizzle ORM** + **Upstash Redis** (rate limiting)
-- **Better Auth** (OAuth)
-- **Polar** (subscriptions)
-- [**Workflow DevKit**](https://useworkflow.dev/) (background jobs)
-- [**AI SDK**](https://ai-sdk.dev/) + [**AI Gateway**](https://vercel.com/ai-gateway)
-- **Resend** + **React Email**
+- [**tRPC**](https://trpc.io/) + [**TanStack Query**](https://tanstack.com/query/latest) & [**TanStack Table**](https://tanstack.com/table/latest)
+- [**PlanetScale Postgres**](https://planetscale.com/postgres) + [**Drizzle**](https://orm.drizzle.team/) + [**Upstash Redis**](https://upstash.com/) (rate limiting)
+- [**Better Auth**](https://www.better-auth.com) (OAuth)
+- [**Polar**](https://polar.sh/) (subscriptions)
+- [**Workflow SDK**](https://workflow-sdk.dev/) (background jobs)
+- [**AI SDK**](https://ai-sdk.dev/) + [**Vercel AI Gateway**](https://vercel.com/ai-gateway) (Stacky bot)
+- [**Resend**](https://resend.com/) (email notifications)
+- [**mapcn**](https://mapcn.vercel.app/) + [**CARTO Basemaps**](https://docs.carto.com/faqs/carto-basemaps) (web maps)
+- [**Logo.dev**](https://www.logo.dev) (provider icons)
+- [**IPLocate.io**](https://www.iplocate.io/) (geolocation)
+- [**PostHog**](https://posthog.com/) (telemetry)
 - **Vercel** (Edge Config, Blob Storage)
-- [**mapcn**](https://mapcn.vercel.app/) + [**CARTO Basemaps**](https://docs.carto.com/faqs/carto-basemaps)
-- [**Logo.dev**](https://www.logo.dev)
-- [**IPLocate.io**](https://www.iplocate.io/)
-- **PostHog** (analytics)
 - **Turborepo** (monorepo)
 - **Vitest** + **Playwright** (testing), **oxlint/oxfmt** (linting)
 
-## Project Structure
-
-This is a **[Turborepo](https://turborepo.dev/docs) monorepo**:
-
-```
-domainstack.io/
-├── apps/
-│   └── web/                 # Next.js application
-├── packages/
-│   ├── constants/           # Shared constants (enums, TTLs, validation)
-│   ├── types/               # Shared TypeScript types
-│   ├── typescript-config/   # Shared TypeScript configs
-│   └── ui/                  # Shared UI primitives
-└── turbo.json               # Turborepo task configuration
-```
-
 ## Development
+
+This is a **[Turborepo](https://turborepo.dev/docs) monorepo**.
 
 ### 1. Clone & install
 

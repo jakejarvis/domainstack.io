@@ -5,13 +5,13 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { Logo } from "@/components/logo";
 import { toRegistrableDomain } from "@/lib/normalize-domain";
-import { hexToRGBA, loadGoogleFont } from "@/lib/og-utils";
+import { hexToRGBA, loadGoogleFont, OG_BACKGROUND_IMAGE, OG_IMAGE_SIZE } from "@/lib/og-utils";
 import { createCaller } from "@/server/routers/_app";
 import { createLogger } from "@domainstack/logger";
 import type { ProviderRef } from "@domainstack/types";
 import { normalizeDomainInput } from "@domainstack/utils/domain";
 
-const SIZE = { width: 1200, height: 630 };
+const SIZE = OG_IMAGE_SIZE;
 
 const logger = createLogger({ source: "api/og" });
 
@@ -154,8 +154,7 @@ export async function GET(request: NextRequest) {
         height: "100%",
         display: "flex",
         position: "relative",
-        backgroundImage:
-          "linear-gradient(346deg, rgba(55, 55, 55,0.04) 0%, rgba(55, 55, 55,0.04) 22%,rgba(140, 140, 140,0.04) 22%, rgba(140, 140, 140,0.04) 69%,rgba(225, 225, 225,0.04) 69%, rgba(225, 225, 225,0.04) 100%),linear-gradient(31deg, rgba(55, 55, 55,0.04) 0%, rgba(55, 55, 55,0.04) 42%,rgba(140, 140, 140,0.04) 42%, rgba(140, 140, 140,0.04) 85%,rgba(225, 225, 225,0.04) 85%, rgba(225, 225, 225,0.04) 100%),linear-gradient(55deg, rgba(55, 55, 55,0.04) 0%, rgba(55, 55, 55,0.04) 13%,rgba(140, 140, 140,0.04) 13%, rgba(140, 140, 140,0.04) 72%,rgba(225, 225, 225,0.04) 72%, rgba(225, 225, 225,0.04) 100%),linear-gradient(90deg, rgb(0,0,0),rgb(0,0,0))",
+        backgroundImage: OG_BACKGROUND_IMAGE,
         fontFamily: "Geist", // must match fonts[].name
       }}
     >

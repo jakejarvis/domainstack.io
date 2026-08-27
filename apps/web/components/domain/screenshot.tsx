@@ -350,7 +350,7 @@ export function Screenshot({
             {isLoading ? (
               <>
                 <Spinner />
-                Taking screenshot...
+                Taking screenshot…
               </>
             ) : blocked ? (
               <>

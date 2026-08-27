@@ -9,6 +9,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 
 import { BetaBadge } from "@/components/beta-badge";
+import { createMetadata } from "@/lib/seo";
 import {
   Accordion,
   AccordionContent,
@@ -18,10 +19,11 @@ import {
 import { Badge } from "@domainstack/ui/badge";
 import { CodeBlock } from "@domainstack/ui/code-block";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createMetadata({
+  path: "/mcp",
   title: "MCP (Beta)",
   description: "Connect AI assistants like Claude to Domainstack for domain intelligence lookups.",
-};
+});
 
 const MCP_URL = `${process.env.NEXT_PUBLIC_BASE_URL}/api/transport/mcp`;
 

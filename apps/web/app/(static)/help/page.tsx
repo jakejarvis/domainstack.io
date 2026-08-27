@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { createMetadata } from "@/lib/seo";
 import { PLAN_QUOTAS } from "@domainstack/constants";
 import { PRO_TIER_INFO } from "@domainstack/polar/products";
 import {
@@ -10,11 +11,12 @@ import {
   AccordionTrigger,
 } from "@domainstack/ui/accordion";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createMetadata({
+  path: "/help",
   title: "Help & FAQ",
   description:
     "Get answers to common questions about Domainstack, domain tracking, notifications, and more.",
-};
+});
 
 const faqSections = [
   {

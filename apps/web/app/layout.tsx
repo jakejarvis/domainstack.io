@@ -9,21 +9,11 @@ import { CookiePromptGeofenced } from "@/components/consent/cookie-prompt-geofen
 import { AppFooter } from "@/components/layout/app-footer";
 import { AppHeader } from "@/components/layout/app-header";
 import { Toaster } from "@/components/ui/sonner";
+import { rootMetadata } from "@/lib/seo";
 
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: {
-    default: "Domainstack — Domain Intelligence Made Easy",
-    template: "%s — Domainstack",
-  },
-  description:
-    "Instant lookups for WHOIS, DNS, hosting, certificates, SEO and more, plus free domain tracking and change alerts.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"),
-  alternates: {
-    canonical: "/",
-  },
-};
+export const metadata: Metadata = rootMetadata;
 
 export const viewport: Viewport = {
   width: "device-width",

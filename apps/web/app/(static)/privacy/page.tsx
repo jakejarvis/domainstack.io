@@ -1,10 +1,13 @@
 import { IconExternalLink } from "@tabler/icons-react";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
+import { createMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = createMetadata({
+  path: "/privacy",
   title: "Privacy Policy",
   description: "Learn how Domainstack collects, uses, and protects your personal information.",
-};
+});
 
 export default function PrivacyPage() {
   return (

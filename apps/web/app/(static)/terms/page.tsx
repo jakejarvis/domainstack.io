@@ -1,10 +1,13 @@
 import { IconExternalLink } from "@tabler/icons-react";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
+import { createMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = createMetadata({
+  path: "/terms",
   title: "Terms of Service",
   description: "Terms and conditions for using Domainstack's domain intelligence platform.",
-};
+});
 
 export default function TermsPage() {
   return (

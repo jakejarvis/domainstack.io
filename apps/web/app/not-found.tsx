@@ -2,6 +2,7 @@ import { IconFileX } from "@tabler/icons-react";
 import type { Metadata } from "next";
 
 import { SearchClient } from "@/components/search/search-client";
+import { notFoundMetadata } from "@/lib/seo";
 import {
   Empty,
   EmptyContent,
@@ -11,10 +12,7 @@ import {
   EmptyTitle,
 } from "@domainstack/ui/empty";
 
-export const metadata: Metadata = {
-  title: "Not Found",
-  description: "The page you're looking for doesn't exist.",
-};
+export const metadata: Metadata = notFoundMetadata;
 
 export default function NotFound() {
   return (

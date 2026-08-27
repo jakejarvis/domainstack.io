@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { AnnouncementPill } from "@/components/landing/announcement-pill";
@@ -5,6 +6,11 @@ import { HomeHero } from "@/components/landing/home-hero";
 import { HomeSearchClient } from "@/components/search/home-search-client";
 import { DomainSuggestions } from "@/components/search/home-search-suggestions";
 import { HomeSearchSuggestionsSkeleton } from "@/components/search/home-search-suggestions-skeleton";
+import { createMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = createMetadata({
+  path: "/",
+});
 
 export default function LandingPage() {
   return (

@@ -8,18 +8,20 @@ import {
   SettingsSkeletonPanels,
   SettingsSkeletonTabsList,
 } from "@/components/settings/settings-skeleton";
+import { createMetadata } from "@/lib/seo";
 import { auth } from "@domainstack/auth/server";
 import { Card } from "@domainstack/ui/card";
 import { Skeleton } from "@domainstack/ui/skeleton";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createMetadata({
+  path: "/settings",
   title: "Settings",
   description: "Manage your subscription and notification preferences.",
   robots: {
     index: false,
     follow: false,
   },
-};
+});
 
 async function ProtectedSettingsLayout({ children }: { children: React.ReactNode }) {
   // Server-side auth check - requires runtime data (headers)
