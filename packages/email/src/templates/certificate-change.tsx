@@ -94,6 +94,7 @@ function CertificateChangeEmail({
               year: "numeric",
               month: "long",
               day: "numeric",
+              timeZone: "UTC",
             })}
           </EmailBoxText>
         </EmailBox>

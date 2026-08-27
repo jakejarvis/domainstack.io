@@ -7,14 +7,10 @@
 
 import type { DetailedPeerCertificate } from "node:tls";
 
+import { normalizeCertificateHex } from "@domainstack/utils";
+
 import type { RawCertificate, TlsFetchOptions, TlsFetchResult } from "./types";
-import {
-  isExpectedDnsError,
-  isExpectedTlsError,
-  normalizeFingerprint,
-  parseAltNames,
-  toName,
-} from "./utils";
+import { isExpectedDnsError, isExpectedTlsError, parseAltNames, toName } from "./utils";
 
 /**
  * Fetch TLS certificate chain from a domain via TLS handshake.
@@ -63,8 +59,11 @@ export async function fetchCertificateChain(
               ),
               validFrom: new Date(current.valid_from).toISOString(),
               validTo: new Date(current.valid_to).toISOString(),
-              fingerprint256: normalizeFingerprint(current.fingerprint256),
-              serialNumber: typeof current.serialNumber === "string" ? current.serialNumber : "",
+              fingerprint256: normalizeCertificateHex(current.fingerprint256) ?? "",
+              serialNumber:
+                normalizeCertificateHex(
+                  typeof current.serialNumber === "string" ? current.serialNumber : null,
+                ) ?? "",
             });
 
             const next = (current as unknown as { issuerCertificate?: unknown })

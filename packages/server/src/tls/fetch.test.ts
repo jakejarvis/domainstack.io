@@ -119,7 +119,7 @@ describe("fetchCertificateChain", () => {
     expect(result.chain[0]?.fingerprint256).toBe(
       "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
     );
-    expect(result.chain[0]?.serialNumber).toBe("03A4B5C6");
+    expect(result.chain[0]?.serialNumber).toBe("03a4b5c6");
   });
 
   it("traverses issuer chain correctly", async () => {

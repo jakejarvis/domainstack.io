@@ -441,10 +441,11 @@ export async function detectChangesWorkflow(
 
     const evaluation = evaluateCertificateChange(snapshot.certificate, currentCertificate);
 
-    // Commit independently of notification delivery (disabled channels, mute, flaps).
-    if (evaluation.snapshotToWrite) {
-      await updateCertificateSnapshot(trackedDomainId, evaluation.snapshotToWrite);
-    }
+    const persistCertificateSnapshot = async () => {
+      if (evaluation.snapshotToWrite) {
+        await updateCertificateSnapshot(trackedDomainId, evaluation.snapshotToWrite);
+      }
+    };
 
     if (evaluation.shouldNotify) {
       const channels = await determineNotificationChannelsStep(
@@ -530,8 +531,13 @@ export async function detectChangesWorkflow(
 
         if (sent) {
           results.certificateChanges = true;
+          await persistCertificateSnapshot();
         }
+      } else {
+        await persistCertificateSnapshot();
       }
+    } else {
+      await persistCertificateSnapshot();
     }
   }
 
@@ -545,6 +551,7 @@ function formatCertificateValidUntil(iso: string): string {
     year: "numeric",
     month: "long",
     day: "numeric",
+    timeZone: "UTC",
   }).format(date);
 }
 

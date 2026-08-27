@@ -54,6 +54,7 @@ export interface CertificateRecentIdentity {
   fingerprint: string | null;
   caProviderId: string | null;
   serialNumber?: string | null;
+  validTo?: string;
   seenAt: string;
 }
 

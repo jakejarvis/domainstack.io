@@ -327,6 +327,24 @@ describe("detectCertificateChange", () => {
     const result = detectCertificateChange(empty, empty);
     expect(result.kind).toBe("none");
   });
+
+  it("returns none when the first certificate appears after an empty baseline", () => {
+    const empty: CertificateSnapshotData = {
+      caProviderId: null,
+      issuer: "",
+      validTo: "2026-01-01T00:00:00.000Z",
+      fingerprint: null,
+      serialNumber: null,
+    };
+    const current: CertificateSnapshotData = {
+      caProviderId: letsEncrypt,
+      issuer: "R10",
+      validTo: laterValidTo,
+      fingerprint: fingerprintA,
+      serialNumber: "01",
+    };
+    expect(detectCertificateChange(empty, current).kind).toBe("none");
+  });
 });
 
 describe("applyCertificateDampening", () => {
@@ -500,6 +518,66 @@ describe("applyCertificateDampening", () => {
     expect(result.shouldNotify).toBe(false);
     expect(result.snapshot?.fingerprint).toBe("aaa111");
     expect(result.snapshot?.serialNumber).toBe("01");
+  });
+
+  it("backfills a newly recognized CA onto a matching fingerprint without notifying", () => {
+    const previous: CertificateSnapshotData = {
+      ...certA,
+      caProviderId: null,
+    };
+    const current: CertificateSnapshotData = { ...certA };
+    const result = applyCertificateDampening(previous, current, "none", t0);
+
+    expect(detectCertificateChange(previous, current).kind).toBe("none");
+    expect(result.shouldNotify).toBe(false);
+    expect(result.snapshot?.caProviderId).toBe("letsencrypt");
+    expect(result.snapshot?.fingerprint).toBe("aaa111");
+  });
+
+  it("commits the first certificate from an empty baseline without notifying", () => {
+    const empty: CertificateSnapshotData = {
+      caProviderId: null,
+      issuer: "",
+      validTo: t0.toISOString(),
+      fingerprint: null,
+      serialNumber: null,
+    };
+    const result = applyCertificateDampening(empty, certB, "none", t0);
+
+    expect(result.shouldNotify).toBe(false);
+    expect(result.snapshot?.fingerprint).toBe("bbb222");
+    expect(result.snapshot?.issuer).toBe("R11");
+    expect(result.snapshot?.caProviderId).toBe("letsencrypt");
+    expect(result.snapshot?.pending).toBeNull();
+  });
+
+  it("does not suppress a later fingerprint-less renewal from the same CA", () => {
+    const noFpA: CertificateSnapshotData = {
+      caProviderId: "letsencrypt",
+      issuer: "R10",
+      validTo: "2026-03-01T00:00:00.000Z",
+      fingerprint: null,
+      serialNumber: null,
+    };
+    const noFpB: CertificateSnapshotData = {
+      ...noFpA,
+      issuer: "R11",
+      validTo: "2026-05-01T00:00:00.000Z",
+    };
+    const noFpC: CertificateSnapshotData = {
+      ...noFpA,
+      issuer: "R12",
+      validTo: "2026-07-01T00:00:00.000Z",
+    };
+
+    const firstB = applyCertificateDampening(noFpA, noFpB, "renewal", t0);
+    const confirmedB = applyCertificateDampening(firstB.snapshot!, noFpB, "renewal", t1);
+    expect(confirmedB.shouldNotify).toBe(true);
+
+    const firstC = applyCertificateDampening(confirmedB.snapshot!, noFpC, "renewal", t2);
+    const confirmedC = applyCertificateDampening(firstC.snapshot!, noFpC, "renewal", t3);
+    expect(confirmedC.shouldNotify).toBe(true);
+    expect(confirmedC.snapshot?.validTo).toBe(noFpC.validTo);
   });
 });
 

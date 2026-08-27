@@ -18,6 +18,7 @@ import type {
   CertificateSnapshotData,
 } from "@domainstack/types";
 
+import { normalizeCertificateHex } from "../certificate-hex";
 import { statusesAreEqual } from "./status";
 import type {
   CertificateChange,
@@ -136,12 +137,14 @@ export function detectProviderChange(
  * Classify the difference between two certificate snapshots.
  *
  * Decision order:
- * 1. Both CA provider IDs non-null and different → `authority`
+ * 1. Previous snapshot has no certificate identity (initialize placeholder)
+ *    → `none`. First observation is committed silently by dampening.
+ * 2. Both CA provider IDs non-null and different → `authority`
  *    (`null → X` / `X → null` is not an authority change — catalog miss).
- * 2. Both fingerprints known and equal → `none` (ignore issuer CN rotation).
- * 3. Both fingerprints known and different → `renewal` if `validTo` moved
+ * 3. Both fingerprints known and equal → `none` (ignore issuer CN rotation).
+ * 4. Both fingerprints known and different → `renewal` if `validTo` moved
  *    forward, else `reissue`.
- * 4. Fingerprint missing on either side (legacy) → degrade:
+ * 5. Fingerprint missing on either side (legacy) → degrade:
  *    `validTo` forward → `renewal`; serial changed → `reissue`;
  *    issuer changed → `intermediate`; else `none`.
  */
@@ -167,11 +170,13 @@ export function detectCertificateChange(
 
   let kind: CertificateChangeKind;
 
-  if (caProviderChanged) {
+  if (isUninitializedCertificate(previous)) {
+    kind = "none";
+  } else if (caProviderChanged) {
     kind = "authority";
   } else {
-    const prevFp = normalizeFingerprint(previous.fingerprint);
-    const currFp = normalizeFingerprint(current.fingerprint);
+    const prevFp = normalizeCertificateHex(previous.fingerprint);
+    const currFp = normalizeCertificateHex(current.fingerprint);
 
     if (prevFp && currFp) {
       if (prevFp === currFp) {
@@ -199,8 +204,9 @@ export function detectCertificateChange(
  * Confirm notifiable certificate changes across observations and suppress
  * roll-forward/roll-back flaps using recent-identity memory.
  *
- * Callers must persist `snapshot` whenever it is non-null, independently of
- * whether a notification is actually delivered.
+ * Persist `snapshot` whenever it is non-null. If a notification is attempted
+ * and delivery fails, skip that write so the next tick can retry. Still persist
+ * when channels are disabled or the change is not notifiable.
  */
 export function applyCertificateDampening(
   previous: CertificateSnapshotData,
@@ -208,6 +214,13 @@ export function applyCertificateDampening(
   kind: CertificateChangeKind,
   now: Date = new Date(),
 ): CertificateDampeningResult {
+  if (isUninitializedCertificate(previous)) {
+    if (isUninitializedCertificate(current)) {
+      return { snapshot: null, shouldNotify: false };
+    }
+    return { snapshot: commitSnapshot(previous, current, now), shouldNotify: false };
+  }
+
   if (kind === "none") {
     return { snapshot: snapshotAfterNone(previous, current), shouldNotify: false };
   }
@@ -262,26 +275,21 @@ export function evaluateCertificateChange(
   };
 }
 
-function normalizeHex(value: string | null | undefined): string | null {
-  if (!value) return null;
-  const normalized = value.replace(/:/g, "").toLowerCase();
-  return normalized.length > 0 ? normalized : null;
-}
-
-function normalizeFingerprint(value: string | null | undefined): string | null {
-  return normalizeHex(value);
-}
-
-function normalizeSerial(value: string | null | undefined): string | null {
-  return normalizeHex(value);
+function isUninitializedCertificate(data: CertificateSnapshotData): boolean {
+  return (
+    normalizeCertificateHex(data.fingerprint) === null &&
+    normalizeCertificateHex(data.serialNumber) === null &&
+    !(data.issuer ?? "") &&
+    data.caProviderId == null
+  );
 }
 
 function serialChanged(
   previous: string | null | undefined,
   current: string | null | undefined,
 ): boolean {
-  const prev = normalizeSerial(previous);
-  const curr = normalizeSerial(current);
+  const prev = normalizeCertificateHex(previous);
+  const curr = normalizeCertificateHex(current);
   return prev !== null && curr !== null && prev !== curr;
 }
 
@@ -310,11 +318,14 @@ function snapshotAfterNone(
   previous: CertificateSnapshotData,
   current: CertificateSnapshotData,
 ): CertificateSnapshotData | null {
-  const prevFp = normalizeFingerprint(previous.fingerprint);
-  const healedFp = prevFp ?? normalizeFingerprint(current.fingerprint);
-  const healedSerial = previous.serialNumber ?? current.serialNumber ?? null;
+  const prevFp = normalizeCertificateHex(previous.fingerprint);
+  const healedFp = prevFp ?? normalizeCertificateHex(current.fingerprint);
+  const prevSerial = normalizeCertificateHex(previous.serialNumber);
+  const healedSerial = prevSerial ?? normalizeCertificateHex(current.serialNumber);
+  const healedCa = previous.caProviderId ?? current.caProviderId;
   const pendingCleared = previous.pending != null;
-  const identityHealed = healedFp !== prevFp || healedSerial !== (previous.serialNumber ?? null);
+  const identityHealed =
+    healedFp !== prevFp || healedSerial !== prevSerial || healedCa !== previous.caProviderId;
 
   if (!pendingCleared && !identityHealed) {
     return null;
@@ -322,6 +333,7 @@ function snapshotAfterNone(
 
   return {
     ...previous,
+    caProviderId: healedCa,
     fingerprint: healedFp,
     serialNumber: healedSerial,
     pending: null,
@@ -332,13 +344,13 @@ function pendingMatches(
   pending: CertificatePendingObservation,
   current: CertificateSnapshotData,
 ): boolean {
-  const pendingFp = normalizeFingerprint(pending.fingerprint);
-  const currentFp = normalizeFingerprint(current.fingerprint);
+  const pendingFp = normalizeCertificateHex(pending.fingerprint);
+  const currentFp = normalizeCertificateHex(current.fingerprint);
   if (pendingFp && currentFp) {
     return pendingFp === currentFp;
   }
-  const pendingSerial = normalizeSerial(pending.serialNumber);
-  const currentSerial = normalizeSerial(current.serialNumber);
+  const pendingSerial = normalizeCertificateHex(pending.serialNumber);
+  const currentSerial = normalizeCertificateHex(current.serialNumber);
   if (pendingSerial && currentSerial) {
     return pendingSerial === currentSerial;
   }
@@ -359,11 +371,11 @@ function withPending(
   return {
     ...previous,
     pending: {
-      fingerprint: normalizeFingerprint(current.fingerprint),
+      fingerprint: normalizeCertificateHex(current.fingerprint),
       caProviderId: current.caProviderId,
       issuer: current.issuer ?? "",
       validTo: current.validTo,
-      serialNumber: normalizeSerial(current.serialNumber),
+      serialNumber: normalizeCertificateHex(current.serialNumber),
       firstSeenAt: firstSeenAt ?? now.toISOString(),
       observations,
     },
@@ -374,13 +386,14 @@ function identityEntry(
   data: CertificateSnapshotData,
   seenAt: string,
 ): CertificateRecentIdentity | null {
-  const fingerprint = normalizeFingerprint(data.fingerprint);
-  const serialNumber = normalizeSerial(data.serialNumber);
+  const fingerprint = normalizeCertificateHex(data.fingerprint);
+  const serialNumber = normalizeCertificateHex(data.serialNumber);
   if (!fingerprint && !data.caProviderId && !serialNumber) return null;
   return {
     fingerprint,
     caProviderId: data.caProviderId,
     serialNumber,
+    validTo: data.validTo,
     seenAt,
   };
 }
@@ -392,20 +405,22 @@ function identityInRecent(
 ): boolean {
   const windowMs = CERT_FLAP_MEMORY_WINDOW_DAYS * DAY_MS;
   const nowMs = now.getTime();
-  const currentFp = normalizeFingerprint(current.fingerprint);
-  const currentSerial = normalizeSerial(current.serialNumber);
+  const currentFp = normalizeCertificateHex(current.fingerprint);
+  const currentSerial = normalizeCertificateHex(current.serialNumber);
   return recent.some((entry) => {
     if (!isWithinFlapWindow(entry.seenAt, nowMs, windowMs)) return false;
-    const entryFp = normalizeFingerprint(entry.fingerprint);
+    const entryFp = normalizeCertificateHex(entry.fingerprint);
     if (currentFp && entryFp) return currentFp === entryFp;
     if (currentFp || entryFp) return false;
-    const entrySerial = normalizeSerial(entry.serialNumber);
+    const entrySerial = normalizeCertificateHex(entry.serialNumber);
     if (currentSerial && entrySerial) return currentSerial === entrySerial;
     if (currentSerial || entrySerial) return false;
     return (
       current.caProviderId !== null &&
       entry.caProviderId !== null &&
-      current.caProviderId === entry.caProviderId
+      current.caProviderId === entry.caProviderId &&
+      Boolean(current.validTo) &&
+      current.validTo === (entry.validTo ?? "")
     );
   });
 }
@@ -433,8 +448,8 @@ function commitSnapshot(
     caProviderId: current.caProviderId,
     issuer: current.issuer ?? "",
     validTo: current.validTo,
-    fingerprint: normalizeFingerprint(current.fingerprint),
-    serialNumber: normalizeSerial(current.serialNumber),
+    fingerprint: normalizeCertificateHex(current.fingerprint),
+    serialNumber: normalizeCertificateHex(current.serialNumber),
     pending: null,
     recent,
   };

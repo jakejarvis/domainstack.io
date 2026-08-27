@@ -3,13 +3,7 @@ import type { Certificate } from "node:tls";
 
 import { describe, expect, it } from "vitest";
 
-import {
-  isExpectedDnsError,
-  isExpectedTlsError,
-  normalizeFingerprint,
-  parseAltNames,
-  toName,
-} from "./utils";
+import { isExpectedDnsError, isExpectedTlsError, parseAltNames, toName } from "./utils";
 
 // Helper to cast partial objects as Certificate for testing
 const asCert = (obj: Partial<Certificate>) => obj as Certificate;
@@ -30,22 +24,6 @@ describe("toName", () => {
   it("stringifies when neither CN nor O is available", () => {
     const cert = asCert({ OU: "Unit" });
     expect(toName(cert)).toBe(JSON.stringify(cert));
-  });
-});
-
-describe("normalizeFingerprint", () => {
-  it("strips colons and lowercases", () => {
-    expect(normalizeFingerprint("A1:B2:C3:D4")).toBe("a1b2c3d4");
-  });
-
-  it("returns empty string for missing values", () => {
-    expect(normalizeFingerprint(undefined)).toBe("");
-    expect(normalizeFingerprint(null)).toBe("");
-    expect(normalizeFingerprint("")).toBe("");
-  });
-
-  it("is a no-op for already-normalized fingerprints", () => {
-    expect(normalizeFingerprint("a1b2c3d4")).toBe("a1b2c3d4");
   });
 });
 

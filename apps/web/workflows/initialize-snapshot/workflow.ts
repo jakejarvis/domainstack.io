@@ -134,7 +134,7 @@ export async function initializeSnapshotWorkflow(
   let certificateSnapshot: CertificateSnapshotData = {
     caProviderId: null,
     issuer: "",
-    validTo: new Date().toISOString(),
+    validTo: "",
     fingerprint: null,
     serialNumber: null,
   };
