@@ -28,7 +28,7 @@
     "@domainstack/email": "workspace:*",
     "@domainstack/logger": "workspace:*",
     "@polar-sh/better-auth": "^1.8.4",
-    "@polar-sh/sdk": "^0.47.1",
+    "@polar-sh/sdk": "^0.49.0",
     "@vercel/functions": "^3.9.5",
     "date-fns": "^4.4.0"
   },
