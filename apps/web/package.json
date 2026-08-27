@@ -69,6 +69,7 @@
     "react-error-boundary": "^6.1.3",
     "react-hotkeys-hook": "^5.3.3",
     "server-only": "0.0.1",
+    "sonner": "catalog:",
     "streamdown": "^2.6.0",
     "superjson": "^2.2.6",
     "ts-ics": "^2.4.6",

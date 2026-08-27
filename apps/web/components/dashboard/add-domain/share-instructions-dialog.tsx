@@ -9,6 +9,7 @@ import {
 } from "@tabler/icons-react";
 import { useMutation } from "@tanstack/react-query";
 import { useCallback, useEffect, useReducer, useRef } from "react";
+import { toast } from "sonner";
 
 import { useTRPC } from "@/lib/trpc/client";
 import { buildVerificationInstructions } from "@/lib/verification-instructions";
@@ -41,7 +42,6 @@ import {
   ItemTitle,
 } from "@domainstack/ui/item";
 import { Spinner } from "@domainstack/ui/spinner";
-import { toast } from "@domainstack/ui/toast";
 
 // ============================================================================
 // Types
@@ -237,10 +237,8 @@ export function ShareInstructionsDialog({
     },
     onSuccess: () => {
       dispatch({ type: "EMAIL_SENT" });
-      toast.add({
-        title: "Instructions sent!",
+      toast.success("Instructions sent!", {
         description: `Email sent to ${state.email.trim()}`,
-        type: "success",
       });
       // Reset after a delay
       if (timeoutRef.current) {
@@ -253,10 +251,8 @@ export function ShareInstructionsDialog({
     onError: () => {
       // Keep the typed email so the user can retry without re-entering it
       dispatch({ type: "EMAIL_ERROR" });
-      toast.add({
-        title: "Failed to send email",
+      toast.error("Failed to send email", {
         description: "Please try again or use another method.",
-        type: "error",
       });
     },
   });
@@ -264,13 +260,11 @@ export function ShareInstructionsDialog({
   const handleDownload = useCallback(() => {
     const result = downloadInstructionsFile(domain, verificationToken);
     if (result.success) {
-      toast.add({
-        title: "Instructions downloaded!",
+      toast.success("Instructions downloaded!", {
         description: "Send this file to your domain admin.",
-        type: "success",
       });
     } else {
-      toast.add({ title: "Failed to download file", type: "error" });
+      toast.error("Failed to download file");
     }
   }, [domain, verificationToken]);
 

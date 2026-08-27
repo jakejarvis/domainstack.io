@@ -30,12 +30,14 @@
     "@tabler/icons-react": "catalog:",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
-    "motion": "catalog:"
+    "motion": "catalog:",
+    "sonner": "catalog:"
   },
   "peerDependencies": {
     "@tabler/icons-react": "^3",
     "motion": "^13",
     "react": ">=19",
-    "react-dom": ">=19"
+    "react-dom": ">=19",
+    "sonner": "^2"
   }
 }

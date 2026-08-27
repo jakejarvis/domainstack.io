@@ -1,11 +1,12 @@
 "use client";
 
+import { toast } from "sonner";
+
 import { useAnalytics } from "@/lib/analytics/client";
 import type { OAuthProvider } from "@/lib/oauth";
 import { signIn } from "@domainstack/auth/client";
 import { Button } from "@domainstack/ui/button";
 import { Spinner } from "@domainstack/ui/spinner";
-import { toast } from "@domainstack/ui/toast";
 import { cn } from "@domainstack/ui/utils";
 
 interface OAuthButtonProps {
@@ -77,10 +78,8 @@ export function OAuthButton({
         provider: provider.id,
         action: "sign_in",
       });
-      toast.add({
-        title: `Failed to sign in with ${provider.name}.`,
+      toast.error(`Failed to sign in with ${provider.name}.`, {
         description: "Please try again or choose a different provider.",
-        type: "error",
       });
     }
   };

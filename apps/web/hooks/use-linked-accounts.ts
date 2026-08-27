@@ -1,12 +1,12 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 import { analytics } from "@/lib/analytics/client";
 import { getEnabledProviders, type OAuthProvider } from "@/lib/oauth";
 import { useTRPC } from "@/lib/trpc/client";
 import { linkSocial, unlinkAccount } from "@domainstack/auth/client";
-import { toast } from "@domainstack/ui/toast";
 
 export interface UseLinkedAccountsReturn {
   /** List of linked accounts */
@@ -80,14 +80,11 @@ export function useLinkedAccounts(): UseLinkedAccountsReturn {
         provider: providerId,
         action: "unlink_account",
       });
-      toast.add({ title: "Failed to unlink account. Please try again.", type: "error" });
+      toast.error("Failed to unlink account. Please try again.");
     },
     onSuccess: (_data, { providerId }) => {
       const provider = enabledProviders.find((p) => p.id === providerId);
-      toast.add({
-        title: `${provider?.name ?? "Account"} unlinked successfully`,
-        type: "success",
-      });
+      toast.success(`${provider?.name ?? "Account"} unlinked successfully`);
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: linkedAccountsQueryKey });
@@ -107,7 +104,7 @@ export function useLinkedAccounts(): UseLinkedAccountsReturn {
         provider: provider.id,
         action: "link_account",
       });
-      toast.add({ title: `Failed to link ${provider.name}. Please try again.`, type: "error" });
+      toast.error(`Failed to link ${provider.name}. Please try again.`);
       throw err; // Re-throw so caller can handle loading state
     }
   };

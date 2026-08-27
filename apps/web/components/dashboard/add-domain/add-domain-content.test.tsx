@@ -13,9 +13,11 @@ vi.mock("@/components/dashboard/add-domain/share-instructions-dialog", async () 
   const { ShareInstructionsDialog } = await import("../mocks/share-instructions");
   return { ShareInstructionsDialog };
 });
-vi.mock("@domainstack/ui/toast", () => ({
+vi.mock("sonner", () => ({
   toast: {
-    add: vi.fn<(options?: { title?: string; description?: string; type?: string }) => void>(),
+    success: vi.fn<(message?: string) => void>(),
+    error: vi.fn<(message?: string) => void>(),
+    info: vi.fn<(message?: string) => void>(),
   },
 }));
 

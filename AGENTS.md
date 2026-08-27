@@ -399,13 +399,9 @@ import { cn } from "@domainstack/ui/utils";
 import { useMediaQuery } from "@domainstack/ui/hooks";
 ```
 
-**Toasts** (`@domainstack/ui/toast`):
+**App-specific wrappers** (in `apps/web/components/ui/`):
 
-```typescript
-import { toast, Toaster } from "@domainstack/ui/toast";
-
-toast.add({ title: "Domain archived", type: "success" });
-```
+- `sonner.tsx` — Configures toast notifications with theme support and custom icons
 
 ## Key Patterns
 

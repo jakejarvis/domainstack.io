@@ -1,13 +1,13 @@
 "use client";
 
-import { IconCheck, IconCopy } from "@tabler/icons-react";
+import { IconCheck, IconCircleX, IconClipboardCheck, IconCopy } from "@tabler/icons-react";
 import clipboardCopy from "clipboard-copy";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import { cn, type VariantProps } from "../utils";
 import { Button, type buttonVariants } from "./button";
-import { toast } from "./toast";
 
 type CopyButtonProps = {
   value: string | (() => string);
@@ -50,7 +50,10 @@ export function CopyButton({
       const textToCopy = typeof value === "function" ? value() : value;
       await clipboardCopy(textToCopy);
 
-      toast.add({ title: "Copied!", type: "success" });
+      toast.success("Copied!", {
+        icon: <IconClipboardCheck className="size-4" />,
+        position: "bottom-center",
+      });
 
       // Start reset timer after successful copy
       timeoutRef.current = setTimeout(() => {
@@ -60,7 +63,10 @@ export function CopyButton({
     } catch {
       // Revert optimistic update on failure
       setCopied(false);
-      toast.add({ title: "Failed to copy", type: "error" });
+      toast.error("Failed to copy", {
+        icon: <IconCircleX className="size-4" />,
+        position: "bottom-center",
+      });
     }
   }, [copied, value]);
 

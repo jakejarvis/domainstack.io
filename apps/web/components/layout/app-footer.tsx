@@ -6,6 +6,7 @@ import {
   IconBookmarks,
   IconBrandApple,
   IconCookie,
+  IconCornerLeftUp,
   IconExternalLink,
   IconGavel,
   IconHeart,
@@ -16,6 +17,7 @@ import {
 import * as motion from "motion/react-client";
 import Link from "next/link";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { BetaBadge } from "@/components/beta-badge";
 import { APPLE_SHORTCUT_ID } from "@domainstack/constants";
@@ -27,7 +29,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@domainstack/ui/dropdown-menu";
-import { toast } from "@domainstack/ui/toast";
 
 export function AppFooter() {
   const [isBookmarkletsOpen, setIsBookmarkletsOpen] = useState(false);
@@ -41,9 +42,9 @@ export function AppFooter() {
   };
   const handleInspectDomainClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    toast.add({
-      title: "Drag the button to your bookmarks bar to use it.",
-      type: "info",
+    toast.info("Drag the button to your bookmarks bar to use it.", {
+      icon: <IconCornerLeftUp className="size-4" />,
+      position: "top-center",
     });
   };
 
