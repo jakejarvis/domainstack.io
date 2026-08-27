@@ -17,6 +17,7 @@ import {
   fetchHosting,
   fetchRegistration,
   fetchSeo,
+  getHttpStatusMessage,
 } from "@domainstack/server";
 
 const logger = createLogger({ source: "routers/domain" });
@@ -196,7 +197,14 @@ export const domainRouter = createTRPCRouter({
       // Check cache first
       const cached = await getCachedHeaders(input.domain);
       if (cached.data && !cached.stale) {
-        return { success: true, cached: true, data: cached.data };
+        return {
+          success: true,
+          cached: true,
+          data: {
+            ...cached.data,
+            statusMessage: getHttpStatusMessage(cached.data.status),
+          },
+        };
       }
 
       // Fetch fresh data
