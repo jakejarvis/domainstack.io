@@ -1,8 +1,9 @@
 "use client";
 
-import { formatDistanceToNowStrict } from "date-fns";
+import { formatDistanceStrict } from "date-fns";
 import { useMemo } from "react";
 
+import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { cn } from "@domainstack/ui/utils";
 
 export function RelativeAgeString({
@@ -14,15 +15,20 @@ export function RelativeAgeString({
   /** className applied to the wrapper span */
   className?: string;
 }) {
+  // Use shared hydrated time so the server and client render the same string
+  const now = useHydratedNow();
+
   const text = useMemo(() => {
+    if (!now) return null;
     try {
-      return formatDistanceToNowStrict(new Date(from), { addSuffix: true });
+      return formatDistanceStrict(new Date(from), now, { addSuffix: true });
     } catch {
+      // Invalid date
       return null;
     }
-  }, [from]);
+  }, [from, now]);
 
-  // Render invisible placeholder during SSR to prevent layout shift
+  // Render invisible placeholder before hydration to prevent layout shift
   if (!text) {
     return (
       <span className={cn("invisible", className)} aria-hidden>
