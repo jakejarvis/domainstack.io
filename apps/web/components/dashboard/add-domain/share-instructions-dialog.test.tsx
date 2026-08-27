@@ -1,15 +1,16 @@
 import userEvent from "@testing-library/user-event";
+import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-import { toast } from "@domainstack/ui/toast";
 
 vi.mock("@/lib/trpc/client", async () => {
   const { useTRPC } = await import("@/mocks/trpc");
   return { useTRPC };
 });
-vi.mock("@domainstack/ui/toast", () => ({
+vi.mock("sonner", () => ({
   toast: {
-    add: vi.fn<(options?: { title?: string; description?: string; type?: string }) => void>(),
+    success: vi.fn<(message?: string, opts?: { description?: string }) => void>(),
+    error: vi.fn<(message?: string, opts?: { description?: string }) => void>(),
+    info: vi.fn<(message?: string) => void>(),
   },
 }));
 
@@ -38,7 +39,8 @@ async function openShareDialog(user: ReturnType<typeof userEvent.setup>) {
 describe("ShareInstructionsDialog", () => {
   beforeEach(() => {
     resetTrpcMocks();
-    vi.mocked(toast.add).mockClear();
+    vi.mocked(toast.success).mockClear();
+    vi.mocked(toast.error).mockClear();
   });
 
   afterEach(() => {
@@ -69,10 +71,8 @@ describe("ShareInstructionsDialog", () => {
 
     expect(createObjectURL).toHaveBeenCalledOnce();
     expect(click).toHaveBeenCalledOnce();
-    expect(toast.add).toHaveBeenCalledWith({
-      title: "Instructions downloaded!",
+    expect(toast.success).toHaveBeenCalledWith("Instructions downloaded!", {
       description: "Send this file to your domain admin.",
-      type: "success",
     });
 
     createObjectURL.mockRestore();
@@ -108,10 +108,8 @@ describe("ShareInstructionsDialog", () => {
         recipientEmail: "admin@pending.dev",
       });
     });
-    expect(toast.add).toHaveBeenCalledWith({
-      title: "Instructions sent!",
+    expect(toast.success).toHaveBeenCalledWith("Instructions sent!", {
       description: "Email sent to admin@pending.dev",
-      type: "success",
     });
   });
 
@@ -124,10 +122,8 @@ describe("ShareInstructionsDialog", () => {
     await user.click(screen.getByRole("button", { name: "Send email" }));
 
     await waitFor(() => {
-      expect(toast.add).toHaveBeenCalledWith({
-        title: "Failed to send email",
+      expect(toast.error).toHaveBeenCalledWith("Failed to send email", {
         description: "Please try again or use another method.",
-        type: "error",
       });
     });
 

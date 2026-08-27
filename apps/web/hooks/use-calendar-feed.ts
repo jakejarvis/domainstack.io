@@ -1,9 +1,9 @@
 "use client";
 
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 import { useTRPC } from "@/lib/trpc/client";
-import { toast } from "@domainstack/ui/toast";
 
 type CalendarFeedData =
   | { enabled: false }
@@ -65,10 +65,10 @@ export function useCalendarFeed(): UseCalendarFeedReturn {
         feedUrl: data.feedUrl,
         lastAccessedAt: null,
       });
-      toast.add({ title: "Calendar feed enabled", type: "success" });
+      toast.success("Calendar feed enabled");
     },
     onError: () => {
-      toast.add({ title: "Failed to enable calendar feed", type: "error" });
+      toast.error("Failed to enable calendar feed");
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: feedQueryKey });
@@ -88,10 +88,10 @@ export function useCalendarFeed(): UseCalendarFeedReturn {
       if (context?.previous) {
         queryClient.setQueryData(feedQueryKey, context.previous);
       }
-      toast.add({ title: "Failed to disable calendar feed", type: "error" });
+      toast.error("Failed to disable calendar feed");
     },
     onSuccess: () => {
-      toast.add({ title: "Calendar feed disabled", type: "success" });
+      toast.success("Calendar feed disabled");
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: feedQueryKey });
@@ -102,10 +102,10 @@ export function useCalendarFeed(): UseCalendarFeedReturn {
   const rotateMutation = useMutation({
     ...trpc.user.rotateCalendarFeedToken.mutationOptions(),
     onSuccess: () => {
-      toast.add({ title: "Calendar feed URL regenerated", type: "success" });
+      toast.success("Calendar feed URL regenerated");
     },
     onError: () => {
-      toast.add({ title: "Failed to regenerate URL", type: "error" });
+      toast.error("Failed to regenerate URL");
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: feedQueryKey });
@@ -125,10 +125,10 @@ export function useCalendarFeed(): UseCalendarFeedReturn {
       if (context?.previous) {
         queryClient.setQueryData(feedQueryKey, context.previous);
       }
-      toast.add({ title: "Failed to disable calendar feed", type: "error" });
+      toast.error("Failed to disable calendar feed");
     },
     onSuccess: () => {
-      toast.add({ title: "Calendar feed disabled", type: "success" });
+      toast.success("Calendar feed disabled");
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: feedQueryKey });

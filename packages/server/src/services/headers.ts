@@ -12,6 +12,8 @@ import type { HeadersResponse } from "@domainstack/types";
 import { fetchHttpHeaders, type HeadersError, type HeadersFetchData } from "../headers";
 import { ttlForHeaders } from "../ttl";
 
+export { getHttpStatusMessage } from "../headers";
+
 // ============================================================================
 // Types
 // ============================================================================

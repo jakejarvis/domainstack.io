@@ -1,9 +1,9 @@
 "use client";
 
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 import { useTRPC } from "@/lib/trpc/client";
-import { toast } from "@domainstack/ui/toast";
 
 const PAGE_SIZE = 20;
 
@@ -107,7 +107,7 @@ export function useNotificationsData({ filter, enabled }: UseNotificationsDataOp
       if (context?.previousArchive) {
         queryClient.setQueryData(archiveListQueryKey, context.previousArchive);
       }
-      toast.add({ title: "Failed to mark notification as read", type: "error" });
+      toast.error("Failed to mark notification as read");
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: inboxListQueryKey });
@@ -175,7 +175,7 @@ export function useNotificationsData({ filter, enabled }: UseNotificationsDataOp
       if (context?.previousArchive) {
         queryClient.setQueryData(archiveListQueryKey, context.previousArchive);
       }
-      toast.add({ title: "Failed to mark notifications as read", type: "error" });
+      toast.error("Failed to mark notifications as read");
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: inboxListQueryKey });

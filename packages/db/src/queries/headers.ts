@@ -46,7 +46,8 @@ export async function replaceHeaders(params: ReplaceHeadersParams) {
 
 /**
  * Get cached headers for a domain with staleness metadata.
- * Returns raw data - consumers should enrich with status messages.
+ * Returns raw data — callers should attach a status reason phrase
+ * (e.g. 400 → "Bad Request") when returning this to clients.
  *
  * Note: This queries the database cache. For fetching fresh data,
  * use `fetchHeadersStep` from workflows/shared/headers.
@@ -77,7 +78,7 @@ export async function getCachedHeaders(domain: string): Promise<CacheResult<Head
   const { fetchedAt, expiresAt } = row;
   const stale = (expiresAt?.getTime?.() ?? 0) <= now;
 
-  // Return raw data - consumers should normalize headers and get status messages
+  // Status messages are derived from the numeric code at the call site.
   return {
     data: {
       headers: row.headers as Header[],

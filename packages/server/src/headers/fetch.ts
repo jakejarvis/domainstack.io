@@ -5,12 +5,11 @@
  * Does not handle persistence - that's done by callers (workflows, services).
  */
 
-import { getStatusCode } from "@readme/http-status-codes";
-
 import { isExpectedDnsError, safeFetch } from "@domainstack/safe-fetch";
 import type { Header } from "@domainstack/types";
 
 import { isExpectedTlsError } from "../tls";
+import { getHttpStatusMessage } from "./status-message";
 import type { HeadersFetchResult } from "./types";
 
 const REQUEST_TIMEOUT_MS = 5000;
@@ -59,21 +58,12 @@ export async function fetchHttpHeaders(domain: string): Promise<HeadersFetchResu
       value,
     }));
 
-    // Get status message
-    let statusMessage: string | undefined;
-    try {
-      const statusInfo = getStatusCode(final.status);
-      statusMessage = statusInfo.message;
-    } catch {
-      statusMessage = undefined;
-    }
-
     return {
       success: true,
       data: {
         headers,
         status: final.status,
-        statusMessage,
+        statusMessage: getHttpStatusMessage(final.status),
       },
     };
   } catch (err) {

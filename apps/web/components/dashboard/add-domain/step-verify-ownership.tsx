@@ -1,4 +1,5 @@
 import { IconDownload, IconInfoCircle } from "@tabler/icons-react";
+import { toast } from "sonner";
 
 import { VerificationFailed } from "@/components/dashboard/add-domain/verification-failed";
 import { buildVerificationInstructions } from "@/lib/verification-instructions";
@@ -13,7 +14,6 @@ import {
 } from "@domainstack/ui/responsive-tooltip";
 import { Separator } from "@domainstack/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@domainstack/ui/tabs";
-import { toast } from "@domainstack/ui/toast";
 
 type StepVerifyOwnershipProps = {
   domain: string;
@@ -175,13 +175,11 @@ export function StepVerifyOwnership({
                         instructions.html_file.fileContent,
                       );
                       if (result.success) {
-                        toast.add({
-                          title: "File downloaded!",
+                        toast.success("File downloaded!", {
                           description: "Upload the file to your website at the path shown.",
-                          type: "success",
                         });
                       } else {
-                        toast.add({ title: "Failed to download file", type: "error" });
+                        toast.error("Failed to download file");
                       }
                     }}
                   >

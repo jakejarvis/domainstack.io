@@ -5,4 +5,5 @@
  */
 
 export { fetchHttpHeaders, HeadersFetchError } from "./fetch";
+export { getHttpStatusMessage } from "./status-message";
 export type { HeadersError, HeadersFetchData, HeadersFetchResult } from "./types";

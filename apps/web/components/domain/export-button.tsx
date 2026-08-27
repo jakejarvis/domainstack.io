@@ -3,12 +3,12 @@
 import { IconDownload } from "@tabler/icons-react";
 import { notifyManager, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import { analytics } from "@/lib/analytics/client";
 import { exportDomainData } from "@/lib/json-export";
 import { useTRPC } from "@/lib/trpc/client";
 import { Button } from "@domainstack/ui/button";
-import { toast } from "@domainstack/ui/toast";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 import { cn } from "@domainstack/ui/utils";
 
@@ -68,10 +68,9 @@ export function ExportButton({ domain, enabled = true }: { domain: string; enabl
 
       exportDomainData(domain, exportData);
     } catch (err) {
-      toast.add({
-        title: `Failed to export ${domain}`,
+      toast.error(`Failed to export ${domain}`, {
         description: err instanceof Error ? err.message : "An error occurred while exporting",
-        type: "error",
+        position: "bottom-center",
       });
     }
   }, [domain, queryClient, queryKeys]);

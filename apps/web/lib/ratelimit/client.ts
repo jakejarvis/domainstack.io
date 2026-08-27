@@ -1,4 +1,6 @@
-import { toast } from "@domainstack/ui/toast";
+import { IconGauge } from "@tabler/icons-react";
+import { createElement } from "react";
+import { toast } from "sonner";
 
 /**
  * Rate limit error details extracted from tRPC or API errors.
@@ -101,7 +103,7 @@ function extractRateLimitError(error: unknown): RateLimitError | null {
  * ```ts
  * onError: (error) => {
  *   if (!showRateLimitToast(error)) {
- *     toast.add({ title: "Something went wrong", type: "error" });
+ *     toast.error("Something went wrong");
  *   }
  * }
  * ```
@@ -112,13 +114,12 @@ export function showRateLimitError(error: unknown): boolean {
 
   const { retryAfter } = rateLimitError;
 
-  toast.add({
-    title: "Too many requests",
+  toast.error("Too many requests", {
     description:
       retryAfter > 0
         ? `Please wait ${retryAfter} second${retryAfter !== 1 ? "s" : ""} before trying again.`
         : "Please wait a moment before trying again.",
-    type: "error",
+    icon: createElement(IconGauge, { className: "size-4" }),
   });
 
   return true;

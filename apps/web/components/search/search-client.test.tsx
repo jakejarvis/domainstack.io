@@ -56,9 +56,7 @@ vi.mock("next/navigation", () => ({
   useParams: () => ({}),
 }));
 
-vi.mock("@domainstack/ui/toast", () => ({
-  toast: { add: vi.fn<(options?: { title?: string; type?: string }) => void>() },
-}));
+vi.mock("sonner", () => ({ toast: { error: vi.fn<(message?: string) => void>() } }));
 
 describe("DomainSearch (form variant)", () => {
   beforeEach(() => {
@@ -80,11 +78,13 @@ describe("DomainSearch (form variant)", () => {
   });
 
   it("shows error toast for invalid domain", async () => {
-    const { toast } = await import("@domainstack/ui/toast");
+    const { toast } = (await import("sonner")) as unknown as {
+      toast: { error: (msg: string) => void };
+    };
     render(<SearchClient variant="lg" />);
     const input = screen.getByLabelText(/Search any domain/i);
     await userEvent.type(input, "not a domain{Enter}");
-    expect(toast.add).toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalled();
   });
 
   it("handles pending domain from store (suggestion click)", async () => {

@@ -35,6 +35,14 @@ vi.mock("@domainstack/server", async (importOriginal) => {
         resolver: "cloudflare",
       },
     }),
+    fetchHeaders: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue({
+      success: true,
+      data: {
+        headers: [],
+        status: 200,
+        statusMessage: "OK",
+      },
+    }),
   };
 });
 
@@ -54,9 +62,10 @@ vi.mock("next/server", () => ({
 }));
 
 // Now import modules that depend on the db
-const { dnsRecords, domains, providers, registrations } = await import("@domainstack/db/schema");
+const { dnsRecords, domains, httpHeaders, providers, registrations } =
+  await import("@domainstack/db/schema");
 const { start } = await import("workflow/api");
-const { fetchDns, fetchRegistration } = await import("@domainstack/server");
+const { fetchDns, fetchHeaders, fetchRegistration } = await import("@domainstack/server");
 const { createCaller } = await import("@/server/routers/_app");
 
 import type { Context } from "@/trpc/init";
@@ -341,6 +350,45 @@ describe("domain router", () => {
 
       expect(result.success).toBe(true);
       expect(fetchDns).toHaveBeenCalled();
+    });
+  });
+
+  describe("getHeaders", () => {
+    it("attaches a status reason phrase to cached headers", async () => {
+      const caller = createTestCaller();
+
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + 60 * 60 * 1000);
+
+      await db
+        .insert(httpHeaders)
+        .values({
+          domainId: TEST_DOMAIN_ID,
+          headers: [{ name: "server", value: "nginx" }],
+          status: 400,
+          fetchedAt: now,
+          expiresAt,
+        })
+        .onConflictDoUpdate({
+          target: httpHeaders.domainId,
+          set: {
+            headers: [{ name: "server", value: "nginx" }],
+            status: 400,
+            fetchedAt: now,
+            expiresAt,
+          },
+        });
+
+      const result = await caller.domain.getHeaders({ domain: TEST_DOMAIN });
+
+      expect(result.success).toBe(true);
+      if (!result.success) {
+        throw new Error("Expected getHeaders to succeed");
+      }
+      expect(result.cached).toBe(true);
+      expect(result.data?.status).toBe(400);
+      expect(result.data?.statusMessage).toBe("Bad Request");
+      expect(fetchHeaders).not.toHaveBeenCalled();
     });
   });
 

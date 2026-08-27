@@ -10,9 +10,9 @@ import {
 } from "@tabler/icons-react";
 import type { UIMessage } from "ai";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@domainstack/ui/button";
-import { toast } from "@domainstack/ui/toast";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 
 import { formatMessagesAsMarkdown } from "./utils";
@@ -31,7 +31,7 @@ function CopyConversationButton({ messages }: { messages: UIMessage[] }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.add({ title: "Failed to copy conversation", type: "error" });
+      toast.error("Failed to copy conversation");
     }
   };
 

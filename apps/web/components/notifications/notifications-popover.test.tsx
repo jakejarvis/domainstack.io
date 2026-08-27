@@ -12,9 +12,11 @@ vi.mock("@/lib/trpc/client", async () => {
 vi.mock("@/hooks/use-router", () => ({
   useRouter: () => ({ push: nav.push }),
 }));
-vi.mock("@domainstack/ui/toast", () => ({
+vi.mock("sonner", () => ({
   toast: {
-    add: vi.fn<(options?: { title?: string; description?: string; type?: string }) => void>(),
+    success: vi.fn<(message?: string) => void>(),
+    error: vi.fn<(message?: string) => void>(),
+    info: vi.fn<(message?: string) => void>(),
   },
 }));
 
