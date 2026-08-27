@@ -23,29 +23,18 @@ import {
   persistRegistrationStep,
 } from "@/workflows/shared/registration";
 import type {
-  CertificateSnapshotData as DbCertificateSnapshotData,
-  RegistrationSnapshotData as DbRegistrationSnapshotData,
-} from "@domainstack/db/schema";
-import type {
+  CertificateSnapshotData,
   CertificatesResponse,
   HostingResponse,
   RegistrationResponse,
+  RegistrationSnapshotData,
 } from "@domainstack/types";
 import {
   type CertificateChangeWithNames,
-  detectCertificateChange,
   detectProviderChange,
   detectRegistrationChange,
+  evaluateCertificateChange,
   type ProviderChangeWithNames,
-} from "@domainstack/utils/change-detection";
-
-// Re-export change types for consumers
-export type {
-  CertificateChange,
-  CertificateChangeWithNames,
-  ProviderChange,
-  ProviderChangeWithNames,
-  RegistrationChange,
 } from "@domainstack/utils/change-detection";
 
 // =============================================================================
@@ -442,17 +431,23 @@ export async function detectChangesWorkflow(
   if (certificatesData && certificatesData.certificates.length > 0) {
     const [leafCert] = certificatesData.certificates;
 
-    const currentCertificate = {
+    const currentCertificate: CertificateSnapshotData = {
       caProviderId: leafCert.caProvider?.id ?? null,
       issuer: leafCert.issuer,
       validTo: new Date(leafCert.validTo).toISOString(),
-      fingerprint: null,
+      fingerprint: leafCert.fingerprint256,
+      serialNumber: leafCert.serialNumber,
     };
 
-    const certificateChange = detectCertificateChange(snapshot.certificate, currentCertificate);
+    const evaluation = evaluateCertificateChange(snapshot.certificate, currentCertificate);
 
-    if (certificateChange) {
-      // Step 5a: Check notification preferences
+    const persistCertificateSnapshot = async () => {
+      if (evaluation.snapshotToWrite) {
+        await updateCertificateSnapshot(trackedDomainId, evaluation.snapshotToWrite);
+      }
+    };
+
+    if (evaluation.shouldNotify) {
       const channels = await determineNotificationChannelsStep(
         userId,
         trackedDomainId,
@@ -460,7 +455,7 @@ export async function detectChangesWorkflow(
       );
 
       if (channels.shouldSendEmail || channels.shouldSendInApp) {
-        // Step 5b: Resolve CA provider names
+        const certificateChange = evaluation.change;
         const caIds = [
           certificateChange.previousCaProviderId,
           certificateChange.newCaProviderId,
@@ -478,67 +473,90 @@ export async function detectChangesWorkflow(
             : null,
         };
 
-        // Step 5c: Build notification content - inlined
+        const validUntil = formatCertificateValidUntil(currentCertificate.validTo);
         const certChangeDetails: string[] = [];
 
-        if (enrichedChange.caProviderChanged) {
-          const prev = enrichedChange.previousCaProvider;
-          const next = enrichedChange.newCaProvider;
-          if (prev && next) {
-            certChangeDetails.push(`Certificate authority changed from ${prev} to ${next}`);
-          } else if (next) {
-            certChangeDetails.push(`Certificate authority set to ${next}`);
+        if (evaluation.kind === "renewal") {
+          certChangeDetails.push(`Valid until ${validUntil}`);
+        } else {
+          if (enrichedChange.caProviderChanged) {
+            const prev = enrichedChange.previousCaProvider;
+            const next = enrichedChange.newCaProvider;
+            if (prev && next) {
+              certChangeDetails.push(`Certificate authority changed from ${prev} to ${next}`);
+            } else if (next) {
+              certChangeDetails.push(`Certificate authority set to ${next}`);
+            }
           }
+
+          if (enrichedChange.issuerChanged) {
+            const prev = enrichedChange.previousIssuer;
+            const next = enrichedChange.newIssuer;
+            if (prev && next) {
+              certChangeDetails.push(`Issuer changed from ${prev} to ${next}`);
+            } else if (next) {
+              certChangeDetails.push(`Issuer set to ${next}`);
+            }
+          }
+
+          certChangeDetails.push(`Valid until ${validUntil}`);
         }
 
-        if (enrichedChange.issuerChanged) {
-          const prev = enrichedChange.previousIssuer;
-          const next = enrichedChange.newIssuer;
-          if (prev && next) {
-            certChangeDetails.push(`Issuer changed from ${prev} to ${next}`);
-          } else if (next) {
-            certChangeDetails.push(`Issuer set to ${next}`);
-          }
-        }
-
-        // Add validity info
-        certChangeDetails.push(`Valid until ${currentCertificate.validTo}`);
-
-        // Determine primary change type for title
-        const certPrimaryChange = enrichedChange.caProviderChanged
-          ? "Certificate authority"
-          : "Certificate";
-
-        const title = `${certPrimaryChange} changed for ${domainName}`;
+        const title =
+          evaluation.kind === "renewal"
+            ? `Certificate renewed for ${domainName}`
+            : evaluation.kind === "authority"
+              ? `Certificate authority changed for ${domainName}`
+              : `Certificate changed for ${domainName}`;
         const emailSubject = `🔒 ${title}`;
         const message = `${certChangeDetails.join(". ")}.`;
 
-        const sent = await sendCertificateChangeNotificationStep(
-          {
-            userId,
-            userEmail,
-            trackedDomainId,
-            domainName,
-            userName,
-            title,
-            message,
-            emailSubject,
-            newValidTo: currentCertificate.validTo,
-            changes: enrichedChange,
-          },
-          channels.shouldSendEmail,
-          channels.shouldSendInApp,
-        );
+        let sent = false;
+        try {
+          sent = await sendCertificateChangeNotificationStep(
+            {
+              userId,
+              userEmail,
+              trackedDomainId,
+              domainName,
+              userName,
+              title,
+              message,
+              emailSubject,
+              newValidTo: currentCertificate.validTo,
+              kind: evaluation.kind,
+              changes: enrichedChange,
+            },
+            channels.shouldSendEmail,
+            channels.shouldSendInApp,
+          );
+        } finally {
+          await persistCertificateSnapshot();
+        }
 
         if (sent) {
           results.certificateChanges = true;
-          await updateCertificateSnapshot(trackedDomainId, currentCertificate);
         }
+      } else {
+        await persistCertificateSnapshot();
       }
+    } else {
+      await persistCertificateSnapshot();
     }
   }
 
   return results;
+}
+
+function formatCertificateValidUntil(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(date);
 }
 
 // --- Step Functions ---
@@ -555,7 +573,7 @@ async function fetchSnapshot(trackedDomainId: string): Promise<SnapshotData> {
 
 async function updateRegistrationSnapshot(
   trackedDomainId: string,
-  registration: DbRegistrationSnapshotData,
+  registration: RegistrationSnapshotData,
 ): Promise<void> {
   "use step";
 
@@ -583,7 +601,7 @@ async function updateProviderSnapshot(
 
 async function updateCertificateSnapshot(
   trackedDomainId: string,
-  certificate: DbCertificateSnapshotData,
+  certificate: CertificateSnapshotData,
 ): Promise<void> {
   "use step";
 

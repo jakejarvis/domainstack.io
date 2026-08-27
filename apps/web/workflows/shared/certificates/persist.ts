@@ -44,6 +44,8 @@ export async function persistCertificatesStep(
       altNames: c.altNames,
       validFrom: new Date(c.validFrom),
       validTo: new Date(c.validTo),
+      fingerprint256: c.fingerprint256,
+      serialNumber: c.serialNumber,
       caProviderId: processedData.providerIds[i],
     }));
 

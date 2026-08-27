@@ -61,6 +61,8 @@ describe("CertificatesSection", () => {
           altNames: ["*.test.invalid", "test.invalid"],
           validFrom: "2024-01-01T00:00:00.000Z",
           validTo: "2025-01-01T00:00:00.000Z",
+          fingerprint256: null,
+          serialNumber: null,
           caProvider: {
             id: "ca-letsencrypt",
             name: "Let's Encrypt",

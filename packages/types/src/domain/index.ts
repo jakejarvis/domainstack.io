@@ -2,7 +2,15 @@
  * Domain response types.
  */
 
-export type { Certificate, CertificatesResponse } from "./certificates";
+export type {
+  Certificate,
+  CertificateChangeKind,
+  CertificatePendingObservation,
+  CertificateRecentIdentity,
+  CertificateSnapshotData,
+  CertificatesResponse,
+  NotifiableCertificateChangeKind,
+} from "./certificates";
 
 export type { DnsRecord, DnsRecordsResponse } from "./dns";
 export type { DomainResponse } from "./domain-response";
@@ -15,6 +23,7 @@ export type {
   RegistrationContactType,
   RegistrationNameserver,
   RegistrationResponse,
+  RegistrationSnapshotData,
   RegistrationStatus,
 } from "./registration";
 export type {

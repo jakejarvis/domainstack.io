@@ -111,6 +111,8 @@ async function processChain(chain: RawCertificate[]): Promise<CertificatesProces
         altNames: c.altNames,
         validFrom: c.validFrom,
         validTo: c.validTo,
+        fingerprint256: c.fingerprint256 || null,
+        serialNumber: c.serialNumber || null,
         caProvider: {
           id: null,
           name: matched?.name ?? null,
@@ -139,6 +141,8 @@ async function processChain(chain: RawCertificate[]): Promise<CertificatesProces
     altNames: cert.altNames,
     validFrom: cert.validFrom,
     validTo: cert.validTo,
+    fingerprint256: cert.fingerprint256,
+    serialNumber: cert.serialNumber,
     caProvider: {
       id: providerIds[i],
       name: cert.caProvider.name,
@@ -173,6 +177,8 @@ async function persistCertificates(
     altNames: c.altNames,
     validFrom: new Date(c.validFrom),
     validTo: new Date(c.validTo),
+    fingerprint256: c.fingerprint256,
+    serialNumber: c.serialNumber,
     caProviderId: processedData.providerIds[i],
   }));
 

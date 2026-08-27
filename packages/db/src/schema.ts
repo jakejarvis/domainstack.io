@@ -26,11 +26,13 @@ import {
   VERIFICATION_STATUSES,
 } from "@domainstack/constants";
 import type {
+  CertificateSnapshotData,
   GeneralMeta,
   Header,
   OpenGraphMeta,
   RegistrationContact,
   RegistrationNameserver,
+  RegistrationSnapshotData,
   RegistrationStatus,
   RobotsTxt,
   TwitterMeta,
@@ -421,6 +423,8 @@ export const certificates = pgTable(
       .default(sql`'[]'::jsonb`),
     validFrom: timestamp("valid_from", { withTimezone: true }).notNull(),
     validTo: timestamp("valid_to", { withTimezone: true }).notNull(),
+    fingerprint256: text("fingerprint_256"),
+    serialNumber: text("serial_number"),
     caProviderId: uuid("ca_provider_id").references(() => providers.id),
     fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
@@ -579,21 +583,6 @@ export const screenshots = pgTable(
   },
   (t) => [index("i_screenshots_expires").on(t.expiresAt)],
 );
-
-// Snapshot JSONB types - single source of truth for snapshot data shapes
-export interface RegistrationSnapshotData {
-  registrarProviderId: string | null;
-  nameservers: { host: string }[];
-  transferLock: boolean | null;
-  statuses: string[];
-}
-
-export interface CertificateSnapshotData {
-  caProviderId: string | null;
-  issuer: string;
-  validTo: string;
-  fingerprint: string | null;
-}
 
 // Domain snapshots (for change detection)
 export const domainSnapshots = pgTable("domain_snapshots", {

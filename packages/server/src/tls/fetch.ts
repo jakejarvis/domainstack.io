@@ -7,6 +7,8 @@
 
 import type { DetailedPeerCertificate } from "node:tls";
 
+import { normalizeCertificateHex } from "@domainstack/utils";
+
 import type { RawCertificate, TlsFetchOptions, TlsFetchResult } from "./types";
 import { isExpectedDnsError, isExpectedTlsError, parseAltNames, toName } from "./utils";
 
@@ -57,6 +59,11 @@ export async function fetchCertificateChain(
               ),
               validFrom: new Date(current.valid_from).toISOString(),
               validTo: new Date(current.valid_to).toISOString(),
+              fingerprint256: normalizeCertificateHex(current.fingerprint256) ?? "",
+              serialNumber:
+                normalizeCertificateHex(
+                  typeof current.serialNumber === "string" ? current.serialNumber : null,
+                ) ?? "",
             });
 
             const next = (current as unknown as { issuerCertificate?: unknown })

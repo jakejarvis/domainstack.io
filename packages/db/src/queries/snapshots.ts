@@ -1,14 +1,9 @@
 import { and, eq, isNull } from "drizzle-orm";
 
+import type { CertificateSnapshotData, RegistrationSnapshotData } from "@domainstack/types";
+
 import { db } from "../client";
-import {
-  type CertificateSnapshotData,
-  domainSnapshots,
-  domains,
-  type RegistrationSnapshotData,
-  users,
-  userTrackedDomains,
-} from "../schema";
+import { domainSnapshots, domains, users, userTrackedDomains } from "../schema";
 
 /**
  * Parameters for creating a new snapshot.
@@ -64,6 +59,7 @@ const EMPTY_CERTIFICATE: CertificateSnapshotData = {
   issuer: "",
   validTo: "",
   fingerprint: null,
+  serialNumber: null,
 };
 
 /**

@@ -6,7 +6,7 @@
  */
 
 import type { NotificationType } from "@domainstack/constants";
-import type { UserNotificationPreferences } from "@domainstack/types";
+import type { CertificateChangeKind, UserNotificationPreferences } from "@domainstack/types";
 
 // Re-export expiry utilities from utils
 export { getThresholdNotificationType } from "@domainstack/utils/expiry";
@@ -399,6 +399,7 @@ export async function sendCertificateChangeNotificationStep(
     message: string;
     emailSubject: string;
     newValidTo: string;
+    kind: CertificateChangeKind;
     changes: {
       caProviderChanged: boolean;
       issuerChanged: boolean;
@@ -425,6 +426,7 @@ export async function sendCertificateChangeNotificationStep(
   const emailComponent = CertificateChangeEmail({
     userName: params.userName.split(" ")[0] || "there",
     domainName: params.domainName,
+    kind: params.kind,
     changes: params.changes,
     newValidTo: params.newValidTo,
     baseUrl,

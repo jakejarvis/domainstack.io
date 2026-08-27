@@ -464,6 +464,9 @@ importers:
       '@domainstack/constants':
         specifier: workspace:*
         version: link:../constants
+      '@domainstack/types':
+        specifier: workspace:*
+        version: link:../types
       react:
         specifier: 19.2.8
         version: 19.2.8

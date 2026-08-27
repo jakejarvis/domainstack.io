@@ -5,6 +5,8 @@
  * domain snapshots over time.
  */
 
+import type { CertificateChangeKind, CertificateSnapshotData } from "@domainstack/types";
+
 /**
  * Registration change details.
  */
@@ -51,9 +53,10 @@ export interface ProviderChangeWithNames extends ProviderChange {
 }
 
 /**
- * Certificate change details.
+ * Certificate change details, including the classified kind.
  */
 export interface CertificateChange {
+  kind: CertificateChangeKind;
   caProviderChanged: boolean;
   issuerChanged: boolean;
   previousCaProviderId: string | null;
@@ -71,16 +74,6 @@ export interface CertificateChangeWithNames extends CertificateChange {
 }
 
 /**
- * Registration snapshot data for comparison.
- */
-export interface RegistrationSnapshotData {
-  registrarProviderId: string | null;
-  nameservers: { host: string }[];
-  transferLock: boolean | null;
-  statuses: string[];
-}
-
-/**
  * Provider snapshot data for comparison.
  */
 export interface ProviderSnapshotData {
@@ -90,9 +83,23 @@ export interface ProviderSnapshotData {
 }
 
 /**
- * Certificate snapshot data for comparison.
+ * Result of applying confirmation + flap-memory dampening.
+ *
+ * `snapshot` is null when the stored snapshot should be left untouched.
+ * Callers must persist `snapshot` whenever it is non-null, even if they
+ * skip sending a notification (disabled channels, muted domain, etc.).
  */
-export interface CertificateSnapshotData {
-  caProviderId: string | null;
-  issuer: string | null;
+export interface CertificateDampeningResult {
+  snapshot: CertificateSnapshotData | null;
+  shouldNotify: boolean;
+}
+
+/**
+ * Combined classification + dampening decision for one monitor tick.
+ */
+export interface CertificateChangeEvaluation {
+  kind: CertificateChangeKind;
+  change: CertificateChange;
+  snapshotToWrite: CertificateSnapshotData | null;
+  shouldNotify: boolean;
 }

@@ -76,6 +76,8 @@ export async function processChainStep(chainJson: string): Promise<CertificatesP
         altNames: c.altNames,
         validFrom: c.validFrom,
         validTo: c.validTo,
+        fingerprint256: c.fingerprint256 || null,
+        serialNumber: c.serialNumber || null,
         caProvider: {
           id: null,
           name: matched?.name ?? null,
@@ -104,6 +106,8 @@ export async function processChainStep(chainJson: string): Promise<CertificatesP
     altNames: cert.altNames,
     validFrom: cert.validFrom,
     validTo: cert.validTo,
+    fingerprint256: cert.fingerprint256,
+    serialNumber: cert.serialNumber,
     caProvider: {
       id: providerIds[i],
       name: cert.caProvider.name,

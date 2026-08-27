@@ -116,3 +116,13 @@ export interface RegistrationResponse {
    */
   rawResponse?: Record<string, unknown> | string;
 }
+
+/**
+ * Registration snapshot data stored on `domain_snapshots.registration`.
+ */
+export interface RegistrationSnapshotData {
+  registrarProviderId: string | null;
+  nameservers: { host: string }[];
+  transferLock: boolean | null;
+  statuses: string[];
+}
