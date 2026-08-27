@@ -10,8 +10,8 @@ catalog:
   zod: ^4.4.3
 overrides:
   '@types/react': 19.2.18
-  '@types/react-dom': 19.2.4
-  next: 16.3.2
+  '@types/react-dom': 19.2.5
+  next: 16.3.3
   react: 19.2.8
   react-dom: 19.2.8
 publicHoistPattern:
@@ -37,3 +37,19 @@ minimumReleaseAgeExclude:
   - '@ai-sdk/workflow@2.0.7'
   - ai@7.0.76 || 7.0.77
   - '@better-auth/infra@0.4.3'
+  - '@workflow/astro@5.0.0-beta.46'
+  - '@workflow/builders@5.0.0-beta.46'
+  - '@workflow/cli@5.0.0-beta.46'
+  - '@workflow/core@5.0.0-beta.46'
+  - '@workflow/nest@5.0.0-beta.46'
+  - '@workflow/next@5.0.0-beta.46'
+  - '@workflow/nitro@5.0.0-beta.46'
+  - '@workflow/nuxt@5.0.0-beta.46'
+  - '@workflow/rollup@5.0.0-beta.46'
+  - '@workflow/sveltekit@5.0.0-beta.46'
+  - '@workflow/vite@5.0.0-beta.46'
+  - '@workflow/web@5.0.0-beta.46'
+  - '@workflow/world-local@5.0.0-beta.40'
+  - '@workflow/world-vercel@5.0.0-beta.42'
+  - '@workflow/world@5.0.0-beta.31'
+  - workflow@5.0.0-beta.46

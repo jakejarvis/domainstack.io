@@ -18,7 +18,7 @@
     "@domainstack/blob": "workspace:*",
     "@domainstack/logger": "workspace:*",
     "decode-ico": "^0.4.1",
-    "sharp": "^0.35.3"
+    "sharp": "^0.35.4"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
