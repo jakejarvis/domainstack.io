@@ -5,8 +5,8 @@
  * and notification sending for monitoring and expiry workflows.
  */
 
-import type { CertificateChangeKind, NotificationType } from "@domainstack/constants";
-import type { UserNotificationPreferences } from "@domainstack/types";
+import type { NotificationType } from "@domainstack/constants";
+import type { CertificateChangeKind, UserNotificationPreferences } from "@domainstack/types";
 
 // Re-export expiry utilities from utils
 export { getThresholdNotificationType } from "@domainstack/utils/expiry";

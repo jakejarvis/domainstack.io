@@ -15,8 +15,8 @@ import {
   normalizeAndBuildResponseStep,
   persistRegistrationStep,
 } from "@/workflows/shared/registration";
-import type { CertificateSnapshotData } from "@domainstack/db/schema";
 import type {
+  CertificateSnapshotData,
   CertificatesResponse,
   HostingResponse,
   RegistrationResponse,

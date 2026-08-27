@@ -1,8 +1,9 @@
 import { and, eq, isNull } from "drizzle-orm";
 
+import type { CertificateSnapshotData } from "@domainstack/types";
+
 import { db } from "../client";
 import {
-  type CertificateSnapshotData,
   domainSnapshots,
   domains,
   type RegistrationSnapshotData,

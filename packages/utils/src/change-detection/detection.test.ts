@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import type { CertificateSnapshotData } from "@domainstack/types";
+
 import {
   applyCertificateDampening,
   detectCertificateChange,
@@ -7,7 +9,6 @@ import {
   detectRegistrationChange,
   evaluateCertificateChange,
 } from "./detection";
-import type { CertificateSnapshotData } from "./types";
 
 describe("detectRegistrationChange", () => {
   const baseSnapshot = {
@@ -284,6 +285,22 @@ describe("detectCertificateChange", () => {
     expect(result.kind).toBe("none");
   });
 
+  it("returns reissue when fingerprints are missing and the serial number changed", () => {
+    const previous: CertificateSnapshotData = {
+      caProviderId: letsEncrypt,
+      issuer: "R10",
+      validTo,
+      fingerprint: null,
+      serialNumber: "01",
+    };
+    const current: CertificateSnapshotData = {
+      ...previous,
+      serialNumber: "02",
+    };
+    const result = detectCertificateChange(previous, current);
+    expect(result.kind).toBe("reissue");
+  });
+
   it("degrades to renewal when fingerprints are missing and validTo moved forward", () => {
     const previous: CertificateSnapshotData = {
       caProviderId: letsEncrypt,
@@ -383,6 +400,72 @@ describe("applyCertificateDampening", () => {
     const confirmedSecondB = applyCertificateDampening(secondB.snapshot!, certB, "renewal", t5);
     expect(confirmedSecondB.shouldNotify).toBe(false);
     expect(confirmedSecondB.snapshot?.fingerprint).toBe("bbb222");
+  });
+
+  it("notifies for a never-seen identity after a confirmed change", () => {
+    const certC: CertificateSnapshotData = {
+      caProviderId: "letsencrypt",
+      issuer: "R12",
+      validTo: "2026-07-01T00:00:00.000Z",
+      fingerprint: "ccc333",
+      serialNumber: "03",
+    };
+
+    const firstB = applyCertificateDampening(certA, certB, "renewal", t0);
+    const confirmedB = applyCertificateDampening(firstB.snapshot!, certB, "renewal", t1);
+    expect(confirmedB.shouldNotify).toBe(true);
+
+    const firstC = applyCertificateDampening(confirmedB.snapshot!, certC, "renewal", t2);
+    expect(firstC.shouldNotify).toBe(false);
+
+    const confirmedC = applyCertificateDampening(firstC.snapshot!, certC, "renewal", t3);
+    expect(confirmedC.shouldNotify).toBe(true);
+    expect(confirmedC.snapshot?.fingerprint).toBe("ccc333");
+  });
+
+  it("classifies a serial-only change as reissue and commits the new serial", () => {
+    const previous: CertificateSnapshotData = {
+      caProviderId: "letsencrypt",
+      issuer: "R10",
+      validTo: certA.validTo,
+      fingerprint: null,
+      serialNumber: "01",
+    };
+    const current: CertificateSnapshotData = {
+      ...previous,
+      serialNumber: "02",
+    };
+
+    expect(detectCertificateChange(previous, current).kind).toBe("reissue");
+
+    const first = applyCertificateDampening(previous, current, "reissue", t0);
+    expect(first.shouldNotify).toBe(false);
+    expect(first.snapshot?.pending?.serialNumber).toBe("02");
+
+    const second = applyCertificateDampening(first.snapshot!, current, "reissue", t1);
+    expect(second.shouldNotify).toBe(true);
+    expect(second.snapshot?.serialNumber).toBe("02");
+    expect(second.snapshot?.pending).toBeNull();
+  });
+
+  it("discards recent entries with invalid timestamps from flap memory", () => {
+    const previous: CertificateSnapshotData = {
+      ...certA,
+      recent: [
+        {
+          fingerprint: "bbb222",
+          caProviderId: "letsencrypt",
+          serialNumber: "02",
+          seenAt: "not-a-date",
+        },
+      ],
+    };
+
+    const first = applyCertificateDampening(previous, certB, "renewal", t0);
+    const second = applyCertificateDampening(first.snapshot!, certB, "renewal", t1);
+
+    expect(second.shouldNotify).toBe(true);
+    expect(second.snapshot?.recent?.some((entry) => entry.seenAt === "not-a-date")).toBe(false);
   });
 
   it("commits intermediate issuer rotation silently", () => {

@@ -22,11 +22,9 @@ import {
   normalizeAndBuildResponseStep,
   persistRegistrationStep,
 } from "@/workflows/shared/registration";
+import type { RegistrationSnapshotData as DbRegistrationSnapshotData } from "@domainstack/db/schema";
 import type {
-  CertificateSnapshotData as DbCertificateSnapshotData,
-  RegistrationSnapshotData as DbRegistrationSnapshotData,
-} from "@domainstack/db/schema";
-import type {
+  CertificateSnapshotData,
   CertificatesResponse,
   HostingResponse,
   RegistrationResponse,
@@ -37,15 +35,6 @@ import {
   detectRegistrationChange,
   evaluateCertificateChange,
   type ProviderChangeWithNames,
-} from "@domainstack/utils/change-detection";
-
-// Re-export change types for consumers
-export type {
-  CertificateChange,
-  CertificateChangeWithNames,
-  ProviderChange,
-  ProviderChangeWithNames,
-  RegistrationChange,
 } from "@domainstack/utils/change-detection";
 
 // =============================================================================
@@ -442,7 +431,7 @@ export async function detectChangesWorkflow(
   if (certificatesData && certificatesData.certificates.length > 0) {
     const [leafCert] = certificatesData.certificates;
 
-    const currentCertificate: DbCertificateSnapshotData = {
+    const currentCertificate: CertificateSnapshotData = {
       caProviderId: leafCert.caProvider?.id ?? null,
       issuer: leafCert.issuer,
       validTo: new Date(leafCert.validTo).toISOString(),
@@ -601,7 +590,7 @@ async function updateProviderSnapshot(
 
 async function updateCertificateSnapshot(
   trackedDomainId: string,
-  certificate: DbCertificateSnapshotData,
+  certificate: CertificateSnapshotData,
 ): Promise<void> {
   "use step";
 

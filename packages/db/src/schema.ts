@@ -26,6 +26,7 @@ import {
   VERIFICATION_STATUSES,
 } from "@domainstack/constants";
 import type {
+  CertificateSnapshotData,
   GeneralMeta,
   Header,
   OpenGraphMeta,
@@ -582,37 +583,11 @@ export const screenshots = pgTable(
   (t) => [index("i_screenshots_expires").on(t.expiresAt)],
 );
 
-// Snapshot JSONB types - single source of truth for snapshot data shapes
 export interface RegistrationSnapshotData {
   registrarProviderId: string | null;
   nameservers: { host: string }[];
   transferLock: boolean | null;
   statuses: string[];
-}
-
-export interface CertificatePendingObservation {
-  fingerprint: string | null;
-  caProviderId: string | null;
-  issuer: string;
-  validTo: string;
-  firstSeenAt: string;
-  observations: number;
-}
-
-export interface CertificateRecentIdentity {
-  fingerprint: string | null;
-  caProviderId: string | null;
-  seenAt: string;
-}
-
-export interface CertificateSnapshotData {
-  caProviderId: string | null;
-  issuer: string;
-  validTo: string;
-  fingerprint: string | null;
-  serialNumber?: string | null;
-  pending?: CertificatePendingObservation | null;
-  recent?: CertificateRecentIdentity[];
 }
 
 // Domain snapshots (for change detection)

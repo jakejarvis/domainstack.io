@@ -20,12 +20,8 @@ export { normalizeStatus, statusesAreEqual } from "./status";
 export type {
   CertificateChange,
   CertificateChangeEvaluation,
-  CertificateChangeKind,
   CertificateChangeWithNames,
   CertificateDampeningResult,
-  CertificatePendingObservation,
-  CertificateRecentIdentity,
-  CertificateSnapshotData,
   ProviderChange,
   ProviderChangeWithNames,
   ProviderSnapshotData,

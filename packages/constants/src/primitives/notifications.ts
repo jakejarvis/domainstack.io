@@ -62,11 +62,7 @@ export const CERTIFICATE_CHANGE_KINDS = [
   "authority",
 ] as const;
 
-export type CertificateChangeKind = (typeof CERTIFICATE_CHANGE_KINDS)[number];
-
 export const NOTIFIABLE_CERTIFICATE_CHANGE_KINDS = ["renewal", "reissue", "authority"] as const;
-
-export type NotifiableCertificateChangeKind = (typeof NOTIFIABLE_CERTIFICATE_CHANGE_KINDS)[number];
 
 // Dampening for certificate-change notifications (hourly monitor cron)
 export const CERT_CHANGE_CONFIRMATIONS = 2;

@@ -1,4 +1,4 @@
-import type { CertificateChangeKind } from "@domainstack/constants";
+import type { CertificateChangeKind } from "@domainstack/types";
 
 import {
   EmailBox,

@@ -9,18 +9,20 @@ import {
   CERT_CHANGE_CONFIRMATIONS,
   CERT_FLAP_MEMORY_SIZE,
   CERT_FLAP_MEMORY_WINDOW_DAYS,
-  type CertificateChangeKind,
   NOTIFIABLE_CERTIFICATE_CHANGE_KINDS,
 } from "@domainstack/constants";
+import type {
+  CertificateChangeKind,
+  CertificatePendingObservation,
+  CertificateRecentIdentity,
+  CertificateSnapshotData,
+} from "@domainstack/types";
 
 import { statusesAreEqual } from "./status";
 import type {
   CertificateChange,
   CertificateChangeEvaluation,
   CertificateDampeningResult,
-  CertificatePendingObservation,
-  CertificateRecentIdentity,
-  CertificateSnapshotData,
   ProviderChange,
   ProviderSnapshotData,
   RegistrationChange,
@@ -140,7 +142,8 @@ export function detectProviderChange(
  * 3. Both fingerprints known and different → `renewal` if `validTo` moved
  *    forward, else `reissue`.
  * 4. Fingerprint missing on either side (legacy) → degrade:
- *    `validTo` forward → `renewal`; issuer changed → `intermediate`; else `none`.
+ *    `validTo` forward → `renewal`; serial changed → `reissue`;
+ *    issuer changed → `intermediate`; else `none`.
  */
 export function detectCertificateChange(
   previous: CertificateSnapshotData,
@@ -180,6 +183,8 @@ export function detectCertificateChange(
       }
     } else if (validToMovedForward(previous, current)) {
       kind = "renewal";
+    } else if (serialChanged(previous.serialNumber, current.serialNumber)) {
+      kind = "reissue";
     } else if (issuerChanged) {
       kind = "intermediate";
     } else {
@@ -257,10 +262,38 @@ export function evaluateCertificateChange(
   };
 }
 
-function normalizeFingerprint(value: string | null | undefined): string | null {
+function normalizeHex(value: string | null | undefined): string | null {
   if (!value) return null;
   const normalized = value.replace(/:/g, "").toLowerCase();
   return normalized.length > 0 ? normalized : null;
+}
+
+function normalizeFingerprint(value: string | null | undefined): string | null {
+  return normalizeHex(value);
+}
+
+function normalizeSerial(value: string | null | undefined): string | null {
+  return normalizeHex(value);
+}
+
+function serialChanged(
+  previous: string | null | undefined,
+  current: string | null | undefined,
+): boolean {
+  const prev = normalizeSerial(previous);
+  const curr = normalizeSerial(current);
+  return prev !== null && curr !== null && prev !== curr;
+}
+
+function parseSeenAt(seenAt: string): number | null {
+  const ms = Date.parse(seenAt);
+  return Number.isFinite(ms) ? ms : null;
+}
+
+function isWithinFlapWindow(seenAt: string, nowMs: number, windowMs: number): boolean {
+  const ms = parseSeenAt(seenAt);
+  if (ms === null) return false;
+  return nowMs - ms <= windowMs;
 }
 
 function validToMovedForward(
@@ -304,6 +337,11 @@ function pendingMatches(
   if (pendingFp && currentFp) {
     return pendingFp === currentFp;
   }
+  const pendingSerial = normalizeSerial(pending.serialNumber);
+  const currentSerial = normalizeSerial(current.serialNumber);
+  if (pendingSerial && currentSerial) {
+    return pendingSerial === currentSerial;
+  }
   return (
     pending.issuer === (current.issuer ?? "") &&
     pending.caProviderId === current.caProviderId &&
@@ -325,6 +363,7 @@ function withPending(
       caProviderId: current.caProviderId,
       issuer: current.issuer ?? "",
       validTo: current.validTo,
+      serialNumber: normalizeSerial(current.serialNumber),
       firstSeenAt: firstSeenAt ?? now.toISOString(),
       observations,
     },
@@ -336,10 +375,12 @@ function identityEntry(
   seenAt: string,
 ): CertificateRecentIdentity | null {
   const fingerprint = normalizeFingerprint(data.fingerprint);
-  if (!fingerprint && !data.caProviderId) return null;
+  const serialNumber = normalizeSerial(data.serialNumber);
+  if (!fingerprint && !data.caProviderId && !serialNumber) return null;
   return {
     fingerprint,
     caProviderId: data.caProviderId,
+    serialNumber,
     seenAt,
   };
 }
@@ -350,12 +391,17 @@ function identityInRecent(
   now: Date,
 ): boolean {
   const windowMs = CERT_FLAP_MEMORY_WINDOW_DAYS * DAY_MS;
+  const nowMs = now.getTime();
   const currentFp = normalizeFingerprint(current.fingerprint);
+  const currentSerial = normalizeSerial(current.serialNumber);
   return recent.some((entry) => {
-    if (now.getTime() - Date.parse(entry.seenAt) > windowMs) return false;
+    if (!isWithinFlapWindow(entry.seenAt, nowMs, windowMs)) return false;
     const entryFp = normalizeFingerprint(entry.fingerprint);
     if (currentFp && entryFp) return currentFp === entryFp;
     if (currentFp || entryFp) return false;
+    const entrySerial = normalizeSerial(entry.serialNumber);
+    if (currentSerial && entrySerial) return currentSerial === entrySerial;
+    if (currentSerial || entrySerial) return false;
     return (
       current.caProviderId !== null &&
       entry.caProviderId !== null &&
@@ -380,7 +426,7 @@ function commitSnapshot(
   ].filter((entry): entry is CertificateRecentIdentity => entry !== null);
 
   const recent = incoming
-    .filter((entry) => nowMs - Date.parse(entry.seenAt) <= windowMs)
+    .filter((entry) => isWithinFlapWindow(entry.seenAt, nowMs, windowMs))
     .slice(-CERT_FLAP_MEMORY_SIZE);
 
   return {
@@ -388,7 +434,7 @@ function commitSnapshot(
     issuer: current.issuer ?? "",
     validTo: current.validTo,
     fingerprint: normalizeFingerprint(current.fingerprint),
-    serialNumber: current.serialNumber ?? null,
+    serialNumber: normalizeSerial(current.serialNumber),
     pending: null,
     recent,
   };

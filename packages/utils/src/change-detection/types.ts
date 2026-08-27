@@ -5,9 +5,7 @@
  * domain snapshots over time.
  */
 
-import type { CertificateChangeKind } from "@domainstack/constants";
-
-export type { CertificateChangeKind };
+import type { CertificateChangeKind, CertificateSnapshotData } from "@domainstack/types";
 
 /**
  * Registration change details.
@@ -92,43 +90,6 @@ export interface ProviderSnapshotData {
   dnsProviderId: string | null;
   hostingProviderId: string | null;
   emailProviderId: string | null;
-}
-
-/**
- * In-flight certificate observation awaiting confirmation.
- */
-export interface CertificatePendingObservation {
-  fingerprint: string | null;
-  caProviderId: string | null;
-  issuer: string;
-  validTo: string;
-  firstSeenAt: string;
-  observations: number;
-}
-
-/**
- * Previously committed certificate identity (flap memory).
- */
-export interface CertificateRecentIdentity {
-  fingerprint: string | null;
-  caProviderId: string | null;
-  seenAt: string;
-}
-
-/**
- * Certificate snapshot data for comparison.
- *
- * Matches the DB jsonb shape (`packages/db/src/schema.ts`) plus `serialNumber`.
- * `pending` / `recent` are optional; absence is treated as empty.
- */
-export interface CertificateSnapshotData {
-  caProviderId: string | null;
-  issuer: string;
-  validTo: string;
-  fingerprint: string | null;
-  serialNumber?: string | null;
-  pending?: CertificatePendingObservation | null;
-  recent?: CertificateRecentIdentity[];
 }
 
 /**
