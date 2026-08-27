@@ -13,6 +13,8 @@ export interface Certificate {
   altNames: string[];
   validFrom: string;
   validTo: string;
+  fingerprint256: string | null;
+  serialNumber: string | null;
   caProvider: ProviderRef;
 }
 

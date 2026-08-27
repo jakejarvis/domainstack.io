@@ -11,6 +11,8 @@ export interface RawCertificate {
   altNames: string[];
   validFrom: string;
   validTo: string;
+  fingerprint256: string;
+  serialNumber: string;
 }
 
 /**

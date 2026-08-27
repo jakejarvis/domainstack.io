@@ -64,6 +64,7 @@ const EMPTY_CERTIFICATE: CertificateSnapshotData = {
   issuer: "",
   validTo: "",
   fingerprint: null,
+  serialNumber: null,
 };
 
 /**

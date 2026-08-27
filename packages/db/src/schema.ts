@@ -421,6 +421,8 @@ export const certificates = pgTable(
       .default(sql`'[]'::jsonb`),
     validFrom: timestamp("valid_from", { withTimezone: true }).notNull(),
     validTo: timestamp("valid_to", { withTimezone: true }).notNull(),
+    fingerprint256: text("fingerprint_256"),
+    serialNumber: text("serial_number"),
     caProviderId: uuid("ca_provider_id").references(() => providers.id),
     fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
@@ -588,11 +590,29 @@ export interface RegistrationSnapshotData {
   statuses: string[];
 }
 
+export interface CertificatePendingObservation {
+  fingerprint: string | null;
+  caProviderId: string | null;
+  issuer: string;
+  validTo: string;
+  firstSeenAt: string;
+  observations: number;
+}
+
+export interface CertificateRecentIdentity {
+  fingerprint: string | null;
+  caProviderId: string | null;
+  seenAt: string;
+}
+
 export interface CertificateSnapshotData {
   caProviderId: string | null;
   issuer: string;
   validTo: string;
   fingerprint: string | null;
+  serialNumber?: string | null;
+  pending?: CertificatePendingObservation | null;
+  recent?: CertificateRecentIdentity[];
 }
 
 // Domain snapshots (for change detection)

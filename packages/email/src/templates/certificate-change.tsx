@@ -1,3 +1,5 @@
+import type { CertificateChangeKind } from "@domainstack/constants";
+
 import {
   EmailBox,
   EmailBoxText,
@@ -14,6 +16,7 @@ import {
 export type CertificateChangeEmailProps = {
   userName: string;
   domainName: string;
+  kind: CertificateChangeKind;
   changes: {
     caProviderChanged: boolean;
     issuerChanged: boolean;
@@ -29,23 +32,24 @@ export type CertificateChangeEmailProps = {
 function CertificateChangeEmail({
   userName,
   domainName,
+  kind,
   changes,
   newValidTo,
   baseUrl,
 }: CertificateChangeEmailProps) {
-  const previewText = `Certificate changes detected for ${domainName}`;
-
-  // Determine if this is likely a renewal based on issuer staying the same
-  const likelyRenewal = !changes.caProviderChanged && !changes.issuerChanged;
+  const isRenewal = kind === "renewal";
+  const previewText = isRenewal
+    ? `Certificate renewed for ${domainName}`
+    : `Certificate changes detected for ${domainName}`;
 
   return (
     <EmailLayout previewText={previewText}>
-      <EmailHeading>🔒 Certificate {likelyRenewal ? "Renewed" : "Changed"}</EmailHeading>
+      <EmailHeading>🔒 Certificate {isRenewal ? "Renewed" : "Changed"}</EmailHeading>
 
       <EmailText>Hi {userName},</EmailText>
 
       <EmailText>
-        {likelyRenewal ? (
+        {isRenewal ? (
           <>
             The SSL certificate for <strong>{domainName}</strong> has been renewed.
           </>
@@ -56,7 +60,7 @@ function CertificateChangeEmail({
         )}
       </EmailText>
 
-      {changes.caProviderChanged && (
+      {!isRenewal && changes.caProviderChanged && (
         <>
           <EmailSubheading>Certificate Authority Changed</EmailSubheading>
           <EmailBox variant="info">
@@ -69,7 +73,7 @@ function CertificateChangeEmail({
         </>
       )}
 
-      {changes.issuerChanged && (
+      {!isRenewal && changes.issuerChanged && (
         <>
           <EmailSubheading>Issuer Changed</EmailSubheading>
           <EmailBox variant="info">
@@ -95,7 +99,7 @@ function CertificateChangeEmail({
         </EmailBox>
       )}
 
-      {!likelyRenewal && (
+      {!isRenewal && (
         <EmailBox variant="warning">
           <EmailBoxText variant="warning">
             <strong>Verify this change:</strong> Certificate changes should only occur during
@@ -122,6 +126,7 @@ function CertificateChangeEmail({
 CertificateChangeEmail.PreviewProps = {
   userName: "Jake",
   domainName: "example.com",
+  kind: "authority",
   changes: {
     caProviderChanged: true,
     issuerChanged: true,

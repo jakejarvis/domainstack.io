@@ -89,6 +89,39 @@ describe("fetchCertificateChain", () => {
     expect(result.chain[0]?.altNames).toContain("www.example.com");
   });
 
+  it("extracts and normalizes fingerprint256 and serialNumber", async () => {
+    const mockCert = {
+      issuer: { CN: "Test CA" },
+      subject: { CN: "example.com" },
+      subjectaltname: "DNS:example.com",
+      valid_from: "2024-01-01T00:00:00Z",
+      valid_to: "2025-01-01T00:00:00Z",
+      fingerprint256:
+        "AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89",
+      serialNumber: "03A4B5C6",
+      issuerCertificate: null,
+    };
+
+    const socket = createMockSocket({ peerCertificate: mockCert });
+
+    mockConnect.mockImplementation((...args: unknown[]) => {
+      const callback = args[1] as (() => void) | undefined;
+      setImmediate(() => callback?.());
+      return socket;
+    });
+
+    const result = await fetchCertificateChain("example.com");
+
+    expect(result.success).toBe(true);
+    if (!result.success) {
+      throw new Error("Expected fetchCertificateChain to succeed");
+    }
+    expect(result.chain[0]?.fingerprint256).toBe(
+      "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+    );
+    expect(result.chain[0]?.serialNumber).toBe("03A4B5C6");
+  });
+
   it("traverses issuer chain correctly", async () => {
     const rootCert = {
       issuer: { CN: "Root CA" },

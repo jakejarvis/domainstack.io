@@ -20,6 +20,16 @@ export function toName(subject: TlsCertificate | undefined): string {
 }
 
 /**
+ * Normalize a certificate fingerprint for stable comparison.
+ *
+ * Strips colons and lowercases so `A1:B2:C3` and `a1b2c3` compare equal.
+ */
+export function normalizeFingerprint(value: string | undefined | null): string {
+  if (!value) return "";
+  return value.replace(/:/g, "").toLowerCase();
+}
+
+/**
  * Parse subject alternative names from a certificate.
  *
  * Extracts DNS and IP Address entries, filters out other types (like URI).

@@ -8,16 +8,23 @@
 
 // Detection functions
 export {
+  applyCertificateDampening,
   detectCertificateChange,
   detectProviderChange,
   detectRegistrationChange,
+  evaluateCertificateChange,
 } from "./detection";
 // Status utilities
 export { normalizeStatus, statusesAreEqual } from "./status";
 // Types
 export type {
   CertificateChange,
+  CertificateChangeEvaluation,
+  CertificateChangeKind,
   CertificateChangeWithNames,
+  CertificateDampeningResult,
+  CertificatePendingObservation,
+  CertificateRecentIdentity,
   CertificateSnapshotData,
   ProviderChange,
   ProviderChangeWithNames,

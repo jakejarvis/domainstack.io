@@ -15,6 +15,7 @@ import {
   normalizeAndBuildResponseStep,
   persistRegistrationStep,
 } from "@/workflows/shared/registration";
+import type { CertificateSnapshotData } from "@domainstack/db/schema";
 import type {
   CertificatesResponse,
   HostingResponse,
@@ -130,16 +131,12 @@ export async function initializeSnapshotWorkflow(
   }
 
   // Build certificate snapshot
-  let certificateSnapshot: {
-    caProviderId: string | null;
-    issuer: string;
-    validTo: string;
-    fingerprint: string | null;
-  } = {
+  let certificateSnapshot: CertificateSnapshotData = {
     caProviderId: null,
     issuer: "",
     validTo: new Date().toISOString(),
     fingerprint: null,
+    serialNumber: null,
   };
 
   if (certificatesData && certificatesData.certificates.length > 0) {
@@ -149,7 +146,8 @@ export async function initializeSnapshotWorkflow(
       caProviderId: leafCert.caProvider.id ?? null,
       issuer: leafCert.issuer,
       validTo: new Date(leafCert.validTo).toISOString(),
-      fingerprint: null,
+      fingerprint: leafCert.fingerprint256,
+      serialNumber: leafCert.serialNumber,
     };
   }
 
@@ -188,12 +186,7 @@ async function createSnapshotStep(params: {
     transferLock: boolean | null;
     statuses: string[];
   };
-  certificate: {
-    caProviderId: string | null;
-    issuer: string;
-    validTo: string;
-    fingerprint: string | null;
-  };
+  certificate: CertificateSnapshotData;
   dnsProviderId: string | null;
   hostingProviderId: string | null;
   emailProviderId: string | null;

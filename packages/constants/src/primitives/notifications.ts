@@ -52,3 +52,23 @@ export const CERTIFICATE_THRESHOLD_TO_TYPE: Record<CertificateExpiryThreshold, N
   3: "certificate_expiry_3d",
   1: "certificate_expiry_1d",
 };
+
+// Certificate change classification (used by monitoring workflows and email)
+export const CERTIFICATE_CHANGE_KINDS = [
+  "none",
+  "intermediate",
+  "renewal",
+  "reissue",
+  "authority",
+] as const;
+
+export type CertificateChangeKind = (typeof CERTIFICATE_CHANGE_KINDS)[number];
+
+export const NOTIFIABLE_CERTIFICATE_CHANGE_KINDS = ["renewal", "reissue", "authority"] as const;
+
+export type NotifiableCertificateChangeKind = (typeof NOTIFIABLE_CERTIFICATE_CHANGE_KINDS)[number];
+
+// Dampening for certificate-change notifications (hourly monitor cron)
+export const CERT_CHANGE_CONFIRMATIONS = 2;
+export const CERT_FLAP_MEMORY_SIZE = 8;
+export const CERT_FLAP_MEMORY_WINDOW_DAYS = 7;
