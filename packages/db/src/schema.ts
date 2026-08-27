@@ -32,6 +32,7 @@ import type {
   OpenGraphMeta,
   RegistrationContact,
   RegistrationNameserver,
+  RegistrationSnapshotData,
   RegistrationStatus,
   RobotsTxt,
   TwitterMeta,
@@ -582,13 +583,6 @@ export const screenshots = pgTable(
   },
   (t) => [index("i_screenshots_expires").on(t.expiresAt)],
 );
-
-export interface RegistrationSnapshotData {
-  registrarProviderId: string | null;
-  nameservers: { host: string }[];
-  transferLock: boolean | null;
-  statuses: string[];
-}
 
 // Domain snapshots (for change detection)
 export const domainSnapshots = pgTable("domain_snapshots", {

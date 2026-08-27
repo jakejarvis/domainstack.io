@@ -23,6 +23,7 @@ export type {
   RegistrationContactType,
   RegistrationNameserver,
   RegistrationResponse,
+  RegistrationSnapshotData,
   RegistrationStatus,
 } from "./registration";
 export type {

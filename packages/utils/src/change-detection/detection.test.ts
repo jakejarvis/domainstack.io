@@ -579,6 +579,37 @@ describe("applyCertificateDampening", () => {
     expect(confirmedC.shouldNotify).toBe(true);
     expect(confirmedC.snapshot?.validTo).toBe(noFpC.validTo);
   });
+
+  it("does not treat the same serial from a different CA as a flap", () => {
+    const noFpLetsEncrypt: CertificateSnapshotData = {
+      caProviderId: "letsencrypt",
+      issuer: "R10",
+      validTo: "2026-03-01T00:00:00.000Z",
+      fingerprint: null,
+      serialNumber: "01",
+    };
+    const noFpGoogle: CertificateSnapshotData = {
+      caProviderId: "google-trust-services",
+      issuer: "WE1",
+      validTo: "2026-05-01T00:00:00.000Z",
+      fingerprint: null,
+      serialNumber: "01",
+    };
+
+    const firstLe = applyCertificateDampening(certA, noFpLetsEncrypt, "reissue", t0);
+    const confirmedLe = applyCertificateDampening(
+      firstLe.snapshot!,
+      noFpLetsEncrypt,
+      "reissue",
+      t1,
+    );
+    expect(confirmedLe.shouldNotify).toBe(true);
+
+    const firstGts = applyCertificateDampening(confirmedLe.snapshot!, noFpGoogle, "authority", t2);
+    const confirmedGts = applyCertificateDampening(firstGts.snapshot!, noFpGoogle, "authority", t3);
+    expect(confirmedGts.shouldNotify).toBe(true);
+    expect(confirmedGts.snapshot?.caProviderId).toBe("google-trust-services");
+  });
 });
 
 describe("evaluateCertificateChange", () => {

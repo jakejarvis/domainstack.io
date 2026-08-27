@@ -16,6 +16,7 @@ import type {
   CertificatePendingObservation,
   CertificateRecentIdentity,
   CertificateSnapshotData,
+  RegistrationSnapshotData,
 } from "@domainstack/types";
 
 import { normalizeCertificateHex } from "../certificate-hex";
@@ -27,7 +28,6 @@ import type {
   ProviderChange,
   ProviderSnapshotData,
   RegistrationChange,
-  RegistrationSnapshotData,
 } from "./types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -204,9 +204,9 @@ export function detectCertificateChange(
  * Confirm notifiable certificate changes across observations and suppress
  * roll-forward/roll-back flaps using recent-identity memory.
  *
- * Persist `snapshot` whenever it is non-null. If a notification is attempted
- * and delivery fails, skip that write so the next tick can retry. Still persist
- * when channels are disabled or the change is not notifiable.
+ * Persist `snapshot` whenever it is non-null, including when a notification
+ * send is skipped or fails. Callers should still record delivery success
+ * separately from this write.
  */
 export function applyCertificateDampening(
   previous: CertificateSnapshotData,
@@ -413,7 +413,14 @@ function identityInRecent(
     if (currentFp && entryFp) return currentFp === entryFp;
     if (currentFp || entryFp) return false;
     const entrySerial = normalizeCertificateHex(entry.serialNumber);
-    if (currentSerial && entrySerial) return currentSerial === entrySerial;
+    if (currentSerial && entrySerial) {
+      return (
+        currentSerial === entrySerial &&
+        current.caProviderId !== null &&
+        entry.caProviderId !== null &&
+        current.caProviderId === entry.caProviderId
+      );
+    }
     if (currentSerial || entrySerial) return false;
     return (
       current.caProviderId !== null &&

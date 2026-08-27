@@ -1,15 +1,9 @@
 import { and, eq, isNull } from "drizzle-orm";
 
-import type { CertificateSnapshotData } from "@domainstack/types";
+import type { CertificateSnapshotData, RegistrationSnapshotData } from "@domainstack/types";
 
 import { db } from "../client";
-import {
-  domainSnapshots,
-  domains,
-  type RegistrationSnapshotData,
-  users,
-  userTrackedDomains,
-} from "../schema";
+import { domainSnapshots, domains, users, userTrackedDomains } from "../schema";
 
 /**
  * Parameters for creating a new snapshot.

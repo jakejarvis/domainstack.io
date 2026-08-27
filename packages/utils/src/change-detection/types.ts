@@ -74,16 +74,6 @@ export interface CertificateChangeWithNames extends CertificateChange {
 }
 
 /**
- * Registration snapshot data for comparison.
- */
-export interface RegistrationSnapshotData {
-  registrarProviderId: string | null;
-  nameservers: { host: string }[];
-  transferLock: boolean | null;
-  statuses: string[];
-}
-
-/**
  * Provider snapshot data for comparison.
  */
 export interface ProviderSnapshotData {

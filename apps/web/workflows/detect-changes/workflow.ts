@@ -22,12 +22,12 @@ import {
   normalizeAndBuildResponseStep,
   persistRegistrationStep,
 } from "@/workflows/shared/registration";
-import type { RegistrationSnapshotData as DbRegistrationSnapshotData } from "@domainstack/db/schema";
 import type {
   CertificateSnapshotData,
   CertificatesResponse,
   HostingResponse,
   RegistrationResponse,
+  RegistrationSnapshotData,
 } from "@domainstack/types";
 import {
   type CertificateChangeWithNames,
@@ -511,27 +511,31 @@ export async function detectChangesWorkflow(
         const emailSubject = `🔒 ${title}`;
         const message = `${certChangeDetails.join(". ")}.`;
 
-        const sent = await sendCertificateChangeNotificationStep(
-          {
-            userId,
-            userEmail,
-            trackedDomainId,
-            domainName,
-            userName,
-            title,
-            message,
-            emailSubject,
-            newValidTo: currentCertificate.validTo,
-            kind: evaluation.kind,
-            changes: enrichedChange,
-          },
-          channels.shouldSendEmail,
-          channels.shouldSendInApp,
-        );
+        let sent = false;
+        try {
+          sent = await sendCertificateChangeNotificationStep(
+            {
+              userId,
+              userEmail,
+              trackedDomainId,
+              domainName,
+              userName,
+              title,
+              message,
+              emailSubject,
+              newValidTo: currentCertificate.validTo,
+              kind: evaluation.kind,
+              changes: enrichedChange,
+            },
+            channels.shouldSendEmail,
+            channels.shouldSendInApp,
+          );
+        } finally {
+          await persistCertificateSnapshot();
+        }
 
         if (sent) {
           results.certificateChanges = true;
-          await persistCertificateSnapshot();
         }
       } else {
         await persistCertificateSnapshot();
@@ -569,7 +573,7 @@ async function fetchSnapshot(trackedDomainId: string): Promise<SnapshotData> {
 
 async function updateRegistrationSnapshot(
   trackedDomainId: string,
-  registration: DbRegistrationSnapshotData,
+  registration: RegistrationSnapshotData,
 ): Promise<void> {
   "use step";
 

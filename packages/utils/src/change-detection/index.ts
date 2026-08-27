@@ -26,5 +26,4 @@ export type {
   ProviderChangeWithNames,
   ProviderSnapshotData,
   RegistrationChange,
-  RegistrationSnapshotData,
 } from "./types";
