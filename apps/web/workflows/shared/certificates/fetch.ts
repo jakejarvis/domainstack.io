@@ -2,10 +2,9 @@
  * Certificates fetch step.
  *
  * Fetches TLS certificate chain from a domain via TLS handshake.
- * This step is shared between the dedicated certificatesWorkflow and internal workflows.
+ * Unreachable hosts and handshake failures are returned as typed results
+ * so tracking workflows can continue without certificate data.
  */
-
-import { RetryableError } from "workflow";
 
 import type { RawCertificate } from "@domainstack/server/tls";
 import type { Certificate } from "@domainstack/types";
@@ -15,8 +14,8 @@ import type { CertificatesProcessedData, FetchCertificatesResult } from "./types
 /**
  * Step: Fetch certificate chain via TLS handshake.
  *
- * DNS and TLS errors are permanent failures.
- * fetch_error and timeout are thrown as RetryableError for automatic retry.
+ * DNS, TLS, timeout, and unreachable-host errors are returned as typed
+ * results so tracking workflows can continue without certificate data.
  *
  * @param domain - The domain to connect to
  * @returns FetchCertificatesResult with typed error on failure
@@ -30,14 +29,6 @@ export async function fetchCertificateChainStep(domain: string): Promise<FetchCe
   const result = await fetchCertificateChain(domain);
 
   if (!result.success) {
-    // fetch_error and timeout trigger workflow retries
-    if (result.error === "fetch_error" || result.error === "timeout") {
-      throw new RetryableError("Certificate fetch failed", {
-        retryAfter: "5s",
-      });
-    }
-
-    // Permanent failures (dns_error, tls_error) - return to caller
     return { success: false, error: result.error };
   }
 

@@ -11,10 +11,10 @@ import type { Certificate } from "@domainstack/types";
  * Typed error for certificates operations.
  * - dns_error: Domain does not resolve
  * - tls_error: SSL certificate is invalid
- *
- * Note: fetch_error and timeout are thrown as RetryableError and never returned.
+ * - timeout: TLS handshake timed out
+ * - fetch_error: Host unreachable or connection failed
  */
-export type CertificatesError = "dns_error" | "tls_error";
+export type CertificatesError = "dns_error" | "tls_error" | "timeout" | "fetch_error";
 
 /**
  * Internal data structure for step-to-step transfer after fetching.

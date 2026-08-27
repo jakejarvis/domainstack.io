@@ -5,15 +5,14 @@
  * This step is shared between the dedicated headersWorkflow and internal workflows.
  */
 
-import { RetryableError } from "workflow";
-
 import type { FetchHeadersResult } from "./types";
 
 /**
  * Step: Fetch HTTP headers from the domain.
  *
- * DNS and TLS errors are permanent failures.
- * Transient errors are thrown as RetryableError for automatic retry.
+ * DNS, TLS, and unreachable-host errors are returned as typed results so
+ * tracking workflows can continue without HTTP data. Unexpected errors still
+ * throw and are retried by the workflow SDK.
  *
  * @param domain - The domain to probe
  * @returns FetchHeadersResult with typed error on failure
@@ -36,7 +35,8 @@ export async function fetchHeadersStep(domain: string): Promise<FetchHeadersResu
     };
   } catch (err) {
     if (err instanceof HeadersFetchError) {
-      throw new RetryableError("Headers fetch failed", { retryAfter: "5s" });
+      // Unreachable host, timeout, connection error: not a tracking failure.
+      return { success: false, error: "fetch_error" };
     }
     throw err;
   }

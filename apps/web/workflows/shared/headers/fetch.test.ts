@@ -108,7 +108,7 @@ describe("fetchHeadersStep", () => {
     expect(result).toEqual({ success: false, error: "dns_error" });
   });
 
-  it("throws RetryableError on network error", async () => {
+  it("returns fetch_error on network error", async () => {
     mockDns("error.test");
     server.use(
       http.head("https://error.test/", () => HttpResponse.error()),
@@ -116,8 +116,9 @@ describe("fetchHeadersStep", () => {
     );
 
     const { fetchHeadersStep } = await import("./fetch");
+    const result = await fetchHeadersStep("error.test");
 
-    await expect(fetchHeadersStep("error.test")).rejects.toThrow("Headers fetch failed");
+    expect(result).toEqual({ success: false, error: "fetch_error" });
   });
 
   it("normalizes headers correctly", async () => {

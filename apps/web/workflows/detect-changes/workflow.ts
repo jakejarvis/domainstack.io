@@ -22,6 +22,7 @@ import {
   normalizeAndBuildResponseStep,
   persistRegistrationStep,
 } from "@/workflows/shared/registration";
+import { optionalCall, optionalSettled, requireSettled } from "@/workflows/shared/settled";
 import type {
   CertificateSnapshotData,
   CertificatesResponse,
@@ -82,50 +83,59 @@ export async function detectChangesWorkflow(
 
   const { domainName, userId, userName, userEmail } = snapshot;
 
-  // Step 2: Fetch fresh data for this domain (parallel where possible)
-  const [registrationResult, dnsResult, headersResult, certificatesResult] = await Promise.all([
-    lookupWhoisStep(domainName),
-    fetchDnsRecordsStep(domainName),
-    fetchHeadersStep(domainName),
-    fetchCertificateChainStep(domainName),
-  ]);
+  // Step 2: Fetch fresh data. Headers/certs are enrichment — a domain with no
+  // A/AAAA (or an unreachable host) must still be monitored.
+  const [registrationSettled, dnsSettled, headersSettled, certificatesSettled] =
+    await Promise.allSettled([
+      lookupWhoisStep(domainName),
+      fetchDnsRecordsStep(domainName),
+      fetchHeadersStep(domainName),
+      fetchCertificateChainStep(domainName),
+    ]);
+
+  // WHOIS/headers/certs are enrichment. RDAP timeouts and unreachable
+  // HTTP/TLS hosts must not prevent monitoring. DNS is required.
+  const registrationResult = optionalSettled(registrationSettled);
+  const dnsResult = requireSettled(dnsSettled);
+  const headersResult = optionalSettled(headersSettled);
+  const certificatesResult = optionalSettled(certificatesSettled);
 
   // Process and persist registration
   let registrationData: RegistrationResponse | null = null;
-  if (registrationResult.success) {
+  if (registrationResult?.success) {
     registrationData = await normalizeAndBuildResponseStep(registrationResult.data.recordJson);
     if (registrationData.isRegistered) {
-      await persistRegistrationStep(domainName, registrationData);
+      await optionalCall(persistRegistrationStep(domainName, registrationData));
     }
   }
 
   // Persist DNS (always succeeds or throws)
   await persistDnsRecordsStep(domainName, dnsResult.data);
 
-  // Headers/certs are optional: missing or unresolvable A/AAAA records are
-  // permanent dns_error results, not workflow failures.
-  if (headersResult.success) {
-    await persistHeadersStep(domainName, headersResult.data);
+  if (headersResult?.success) {
+    await optionalCall(persistHeadersStep(domainName, headersResult.data));
   }
 
   // Process and persist certificates
   let certificatesData: CertificatesResponse | null = null;
-  if (certificatesResult.success) {
-    const processed = await processChainStep(certificatesResult.data.chainJson);
-    await persistCertificatesStep(domainName, processed);
-    certificatesData = { certificates: processed.certificates };
+  if (certificatesResult?.success) {
+    const processed = await optionalCall(processChainStep(certificatesResult.data.chainJson));
+    if (processed) {
+      await optionalCall(persistCertificatesStep(domainName, processed));
+      certificatesData = { certificates: processed.certificates };
+    }
   }
 
   // Hosting detection uses DNS even when headers fail (no A/AAAA, etc.)
   const a = dnsResult.data.records.find((d) => d.type === "A");
   const aaaa = dnsResult.data.records.find((d) => d.type === "AAAA");
   const ip = (a?.value || aaaa?.value) ?? null;
-  const geoResult = ip ? await lookupGeoIpStep(ip) : null;
-  const headers = headersResult.success ? headersResult.data.headers : [];
+  const geoResult = ip ? await optionalCall(lookupGeoIpStep(ip)) : null;
+  const headers = headersResult?.success ? headersResult.data.headers : [];
 
   const providers = await detectAndResolveProvidersStep(dnsResult.data.records, headers, geoResult);
 
-  await persistHostingStep(domainName, providers, geoResult?.geo ?? null);
+  await optionalCall(persistHostingStep(domainName, providers, geoResult?.geo ?? null));
 
   const hostingData: HostingResponse = {
     hostingProvider: providers.hostingProvider,
