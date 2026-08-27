@@ -5,7 +5,7 @@ import { useDashboardSelection } from "@/hooks/use-dashboard-selection";
 import { Button } from "@domainstack/ui/button";
 import { ButtonGroup } from "@domainstack/ui/button-group";
 import { Checkbox } from "@domainstack/ui/checkbox";
-import { Label } from "@domainstack/ui/label";
+import { Field, FieldLabel } from "@domainstack/ui/field";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
@@ -55,27 +55,29 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
       aria-label="Bulk actions"
     >
       {/* Left: Select all checkbox + count */}
-      <ResponsiveTooltip>
-        <ResponsiveTooltipTrigger
-          nativeButton={false}
-          render={
-            <Label className="flex cursor-pointer items-center gap-2.5">
-              <Checkbox
-                checked={isAllSelected}
-                indeterminate={isPartiallySelected}
-                onCheckedChange={toggleAll}
-                disabled={isLoading}
-              />
-              <span className="text-[13px] font-medium tabular-nums" aria-live="polite">
-                {selectedCount} selected
-              </span>
-            </Label>
-          }
-        />
-        <ResponsiveTooltipContent>
-          {isAllSelected ? "Deselect all" : `Select all ${totalCount} domains`}
-        </ResponsiveTooltipContent>
-      </ResponsiveTooltip>
+      <Field className="w-auto">
+        <ResponsiveTooltip>
+          <ResponsiveTooltipTrigger
+            nativeButton={false}
+            render={
+              <FieldLabel className="flex cursor-pointer items-center gap-2.5 select-none">
+                <Checkbox
+                  checked={isAllSelected}
+                  indeterminate={isPartiallySelected}
+                  onCheckedChange={toggleAll}
+                  disabled={isLoading}
+                />
+                <span className="text-[13px] font-medium tabular-nums" aria-live="polite">
+                  {selectedCount} selected
+                </span>
+              </FieldLabel>
+            }
+          />
+          <ResponsiveTooltipContent>
+            {isAllSelected ? "Deselect all" : `Select all ${totalCount} domains`}
+          </ResponsiveTooltipContent>
+        </ResponsiveTooltip>
+      </Field>
 
       {/* Right: Actions */}
       <div className="flex items-center gap-2">

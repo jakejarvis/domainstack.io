@@ -374,13 +374,10 @@ export function ShareInstructionsDialog({
             </ItemContent>
             <ItemFooter>
               <Field>
-                <FieldLabel htmlFor="email" className="sr-only">
-                  Email address
-                </FieldLabel>
+                <FieldLabel className="sr-only">Email address</FieldLabel>
                 <div className="flex gap-2">
                   <InputGroup className="min-w-0 flex-1">
                     <InputGroupInput
-                      id="email"
                       name="email"
                       type="email"
                       autoComplete="email"

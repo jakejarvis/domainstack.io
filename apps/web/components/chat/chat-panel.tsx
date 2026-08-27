@@ -259,6 +259,7 @@ export function ChatPanel({
         <PromptInput onSubmit={handleSubmit}>
           <PromptInputTextarea
             placeholder={placeholder}
+            aria-label={domain ? `Ask about ${domain}` : "Ask about a domain"}
             onChange={handleInputChange}
             maxLength={MAX_MESSAGE_LENGTH}
           />

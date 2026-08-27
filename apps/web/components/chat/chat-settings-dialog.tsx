@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@domainstack/ui/dialog";
+import { Field, FieldLabel } from "@domainstack/ui/field";
 import { Icon } from "@domainstack/ui/icon";
 import {
   Item,
@@ -24,12 +25,46 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@domainstack/ui/item";
-import { Label } from "@domainstack/ui/label";
 import { Switch } from "@domainstack/ui/switch";
 
 export interface ChatSettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+}
+
+function SettingsSwitchRow({
+  icon,
+  title,
+  description,
+  checked,
+  onCheckedChange,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: React.ReactNode;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+}) {
+  return (
+    <Item size="xs" variant="outline">
+      <Field className="w-full min-w-0">
+        <FieldLabel className="flex w-full min-w-0 cursor-pointer items-center font-normal select-none">
+          <ItemMedia variant="icon">
+            <Icon variant="muted" size="sm">
+              {icon}
+            </Icon>
+          </ItemMedia>
+          <ItemContent>
+            <ItemTitle>{title}</ItemTitle>
+            <ItemDescription>{description}</ItemDescription>
+          </ItemContent>
+          <ItemActions>
+            <Switch checked={checked} onCheckedChange={onCheckedChange} />
+          </ItemActions>
+        </FieldLabel>
+      </Field>
+    </Item>
+  );
 }
 
 export function ChatSettingsDialog({ open, onOpenChange }: ChatSettingsDialogProps) {
@@ -51,71 +86,36 @@ export function ChatSettingsDialog({ open, onOpenChange }: ChatSettingsDialogPro
           <DialogDescription>Personalize your AI experience.</DialogDescription>
         </DialogHeader>
         <ItemGroup className="space-y-1 pb-1">
-          <Item size="xs" variant="outline">
-            <Label htmlFor="show-tool-calls" className="flex-1 cursor-pointer">
-              <ItemMedia variant="icon">
-                <Icon variant="muted" size="sm">
-                  <IconTool />
-                </Icon>
-              </ItemMedia>
-              <ItemContent>
-                <ItemTitle>Show tool calls</ItemTitle>
-                <ItemDescription>Display the underlying API requests & responses</ItemDescription>
-              </ItemContent>
-            </Label>
-            <ItemActions>
-              <Switch
-                id="show-tool-calls"
-                checked={showToolCalls}
-                onCheckedChange={setShowToolCalls}
-              />
-            </ItemActions>
-          </Item>
-          <Item size="xs" variant="outline">
-            <Label htmlFor="show-reasoning" className="flex-1 cursor-pointer">
-              <ItemMedia variant="icon">
-                <Icon variant="muted" size="sm">
-                  <IconBrain />
-                </Icon>
-              </ItemMedia>
-              <ItemContent>
-                <ItemTitle>Show reasoning</ItemTitle>
-                <ItemDescription>Reveals {CHATBOT_NAME}&rsquo;s thought process</ItemDescription>
-              </ItemContent>
-            </Label>
-            <ItemActions>
-              <Switch
-                id="show-reasoning"
-                checked={showReasoning}
-                onCheckedChange={setShowReasoning}
-              />
-            </ItemActions>
-          </Item>
-          <Item size="xs" variant="outline">
-            <Label htmlFor="hide-ai" className="flex-1 cursor-pointer">
-              <ItemMedia variant="icon">
-                <Icon variant="muted" size="sm">
-                  <IconBiohazard />
-                </Icon>
-              </ItemMedia>
-              <ItemContent>
-                <ItemTitle>Disable AI</ItemTitle>
-                <ItemDescription>
-                  {hideAiFeatures ? (
-                    <>
-                      To restore, visit any page with{" "}
-                      <code className="rounded bg-muted px-1 text-[11px]">?show_ai=1</code>
-                    </>
-                  ) : (
-                    <>Removes all AI-powered features from all pages</>
-                  )}
-                </ItemDescription>
-              </ItemContent>
-            </Label>
-            <ItemActions>
-              <Switch id="hide-ai" checked={hideAiFeatures} onCheckedChange={setHideAiFeatures} />
-            </ItemActions>
-          </Item>
+          <SettingsSwitchRow
+            icon={<IconTool />}
+            title="Show tool calls"
+            description="Display the underlying API requests & responses"
+            checked={showToolCalls}
+            onCheckedChange={setShowToolCalls}
+          />
+          <SettingsSwitchRow
+            icon={<IconBrain />}
+            title="Show reasoning"
+            description={`Reveals ${CHATBOT_NAME}\u2019s thought process`}
+            checked={showReasoning}
+            onCheckedChange={setShowReasoning}
+          />
+          <SettingsSwitchRow
+            icon={<IconBiohazard />}
+            title="Disable AI"
+            description={
+              hideAiFeatures ? (
+                <>
+                  To restore, visit any page with{" "}
+                  <code className="rounded bg-muted px-1 text-[11px]">?show_ai=1</code>
+                </>
+              ) : (
+                <>Removes all AI-powered features from all pages</>
+              )
+            }
+            checked={hideAiFeatures}
+            onCheckedChange={setHideAiFeatures}
+          />
         </ItemGroup>
         <DialogFooter className="gap-2.5 sm:items-center sm:justify-between sm:gap-5">
           <div className="mx-auto flex items-start gap-1.5 pl-2 sm:mx-0 sm:gap-2 sm:pl-1">

@@ -42,16 +42,13 @@ export function StepEnterDomain({
 
   return (
     <Field data-invalid={!!displayError || undefined}>
-      <FieldLabel htmlFor="add-domain-input" className="sr-only">
-        Domain name
-      </FieldLabel>
+      <FieldLabel className="sr-only">Domain name</FieldLabel>
       <FieldDescription>
         {readOnly
           ? "This domain will be added to your tracking list. Continue to verify ownership."
           : "Enter the domain you want to track. You'll need to verify ownership in the next step."}
       </FieldDescription>
       <Input
-        id="add-domain-input"
         placeholder="example.com"
         value={domain}
         onChange={(e) => setDomain(e.target.value)}

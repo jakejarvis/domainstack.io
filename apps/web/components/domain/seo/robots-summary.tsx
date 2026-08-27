@@ -218,7 +218,12 @@ export function RobotsSummary({
                 </InputGroupAddon>
                 {query ? (
                   <InputGroupAddon align="inline-end">
-                    <InputGroupButton size="sm" variant="ghost" onClick={() => setQuery("")}>
+                    <InputGroupButton
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setQuery("")}
+                      aria-label="Clear filter"
+                    >
                       <IconX />
                     </InputGroupButton>
                   </InputGroupAddon>

@@ -4,7 +4,7 @@ import { useRef } from "react";
 
 import { cn } from "../utils";
 import { CopyButton } from "./copy-button";
-import { Field, FieldLabel } from "./field";
+import { Field, FieldTitle } from "./field";
 import { InputGroup, InputGroupAddon } from "./input-group";
 import { ScrollArea } from "./scroll-area";
 
@@ -40,19 +40,21 @@ export function CopyableField({
 
   return (
     <Field className={cn("min-w-0", className)}>
-      <FieldLabel
+      <FieldTitle
         className={cn(
-          showLabel ? "text-xs tracking-wide text-muted-foreground uppercase" : "sr-only",
+          showLabel
+            ? "text-xs font-normal tracking-wide text-muted-foreground uppercase"
+            : "sr-only",
         )}
       >
         {label}
-      </FieldLabel>
+      </FieldTitle>
       <InputGroup className="h-10 min-w-0">
         <ScrollArea className="w-full min-w-0 flex-1" hideScrollbar>
           <button
             type="button"
             onClick={handleSelect}
-            aria-label="Select text"
+            aria-label={`Select ${label}`}
             className="h-full w-full min-w-0 cursor-text bg-transparent pr-2 pl-3 text-left font-mono text-[13px] outline-none"
           >
             <span ref={contentRef} className="inline-block whitespace-nowrap">

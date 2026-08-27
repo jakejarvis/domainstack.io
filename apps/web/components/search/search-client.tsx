@@ -193,13 +193,10 @@ export function SearchClient({
     <div className="flex w-full flex-col gap-5">
       <Form aria-label="Domain search" onFormSubmit={handleSubmit}>
         <Field>
-          <FieldLabel htmlFor="domain-search" className="sr-only">
-            Domain
-          </FieldLabel>
+          <FieldLabel className="sr-only">Domain</FieldLabel>
           <div className="relative w-full flex-1">
             <InputGroup className={cn(variant === "lg" ? "h-12" : "h-10")}>
               <InputGroupInput
-                id="domain-search"
                 ref={inputRef}
                 autoFocus={variant === "lg"}
                 inputMode="url"
