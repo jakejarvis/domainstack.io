@@ -51,11 +51,11 @@ describe("ShareInstructionsDialog", () => {
     const user = userEvent.setup();
     await openShareDialog(user);
 
-    expect(screen.getByText("Copy to clipboard")).toBeInTheDocument();
-    expect(screen.getByText("Download as file")).toBeInTheDocument();
-    expect(screen.getByText("Send via email")).toBeInTheDocument();
+    expect(screen.getByText("Copy to Clipboard")).toBeInTheDocument();
+    expect(screen.getByText("Download as File")).toBeInTheDocument();
+    expect(screen.getByText("Send via Email")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Copy to clipboard" })).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(`admin@${DOMAIN}`)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(`admin@${DOMAIN}\u2026`)).toBeInTheDocument();
   });
 
   it("downloads instructions as a text file", async () => {
@@ -80,15 +80,20 @@ describe("ShareInstructionsDialog", () => {
     click.mockRestore();
   });
 
-  it("keeps Send disabled until the email is valid", async () => {
+  it("keeps Send enabled and shows an inline error for invalid email", async () => {
     const user = userEvent.setup();
     await openShareDialog(user);
 
     const send = screen.getByRole("button", { name: "Send email" });
-    expect(send).toBeDisabled();
+    expect(send).toBeEnabled();
+
+    await user.click(send);
+    expect(screen.getByText(/Enter an email address/)).toBeInTheDocument();
 
     await user.type(screen.getByLabelText("Email address"), "not-an-email");
-    expect(send).toBeDisabled();
+    await user.click(send);
+    expect(screen.getByText(/Enter a valid email address/)).toBeInTheDocument();
+    expect(sendVerificationInstructionsMutation).not.toHaveBeenCalled();
 
     await user.clear(screen.getByLabelText("Email address"));
     await user.type(screen.getByLabelText("Email address"), "admin@pending.dev");

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useRef } from "react";
 
 import { Field, FieldDescription, FieldError, FieldLabel } from "@domainstack/ui/field";
 import { Input } from "@domainstack/ui/input";
@@ -30,7 +30,7 @@ export function StepEnterDomain({
     if (!domain.trim()) return "";
     const normalized = normalizeDomainInput(domain);
     if (!isValidDomain(normalized)) {
-      return "Please enter a valid domain name";
+      return "Enter a valid domain, like example.com (no https://).";
     }
     return "";
   }, [domain]);
@@ -39,6 +39,15 @@ export function StepEnterDomain({
   // Always show server errors immediately
   const displayError = error || (hasAttemptedSubmit ? clientError : "");
   const canSubmit = domain.trim().length > 0 && !isLoading && !clientError;
+  const inputRef = useRef<HTMLInputElement>(null);
+  const hadErrorRef = useRef(false);
+
+  useEffect(() => {
+    if (displayError && !hadErrorRef.current) {
+      inputRef.current?.focus();
+    }
+    hadErrorRef.current = Boolean(displayError);
+  }, [displayError]);
 
   return (
     <Field data-invalid={!!displayError || undefined}>
@@ -46,13 +55,16 @@ export function StepEnterDomain({
       <FieldDescription>
         {readOnly
           ? "This domain will be added to your tracking list. Continue to verify ownership."
-          : "Enter the domain you want to track. You'll need to verify ownership in the next step."}
+          : "Enter the domain you want to track. You\u2019ll need to verify ownership in the next step."}
       </FieldDescription>
       <Input
-        placeholder="example.com"
+        ref={inputRef}
+        name="domain"
+        placeholder="example.com\u2026"
         value={domain}
         onChange={(e) => setDomain(e.target.value)}
-        disabled={isLoading || readOnly}
+        disabled={isLoading}
+        readOnly={readOnly}
         inputMode="url"
         autoComplete="off"
         autoCorrect="off"

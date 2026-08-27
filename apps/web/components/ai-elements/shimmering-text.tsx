@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, type UseInViewOptions, useInView } from "motion/react";
+import { motion, type UseInViewOptions, useInView, useReducedMotion } from "motion/react";
 import { useMemo, useRef } from "react";
 
 import { cn } from "@domainstack/ui/utils";
@@ -48,12 +48,13 @@ export function ShimmeringText({
 }: ShimmeringTextProps) {
   const ref = useRef<HTMLSpanElement>(null);
   const isInView = useInView(ref, { once, margin: inViewMargin });
+  const shouldReduceMotion = useReducedMotion();
 
   // Calculate dynamic spread based on text length
   const dynamicSpread = useMemo(() => text.length * spread, [text, spread]);
 
   // Determine if we should start animation
-  const shouldAnimate = !startOnView || isInView;
+  const shouldAnimate = !shouldReduceMotion && (!startOnView || isInView);
 
   return (
     <motion.span

@@ -120,7 +120,7 @@ describe("DomainSearch (header variant)", () => {
     render(<SearchClient variant="sm" />);
 
     const input = screen.getByLabelText(/Search any domain/i) as HTMLInputElement;
-    expect(input.placeholder).toBe("Search any domain");
+    expect(input.placeholder).toBe("Search any domain\u2026");
   });
 
   it("shows short placeholder on mobile screens", async () => {
@@ -129,7 +129,7 @@ describe("DomainSearch (header variant)", () => {
     render(<SearchClient variant="sm" />);
 
     const input = screen.getByLabelText(/Search any domain/i) as HTMLInputElement;
-    expect(input.placeholder).toBe("Search");
+    expect(input.placeholder).toBe("Search\u2026");
   });
 
   it("updates placeholder when window is resized", async () => {
@@ -139,7 +139,7 @@ describe("DomainSearch (header variant)", () => {
 
     // Verify desktop placeholder
     let input = screen.getByLabelText(/Search any domain/i) as HTMLInputElement;
-    expect(input.placeholder).toBe("Search any domain");
+    expect(input.placeholder).toBe("Search any domain\u2026");
 
     // Simulate resize to mobile
     useIsMobile.mockReturnValue(true);
@@ -147,6 +147,6 @@ describe("DomainSearch (header variant)", () => {
 
     // Verify mobile placeholder
     input = screen.getByLabelText(/Search any domain/i) as HTMLInputElement;
-    expect(input.placeholder).toBe("Search");
+    expect(input.placeholder).toBe("Search\u2026");
   });
 });

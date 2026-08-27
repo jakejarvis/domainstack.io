@@ -214,7 +214,7 @@ export function RobotsSummary({
                   spellCheck={false}
                 />
                 <InputGroupAddon>
-                  <IconFilter />
+                  <IconFilter aria-hidden />
                 </InputGroupAddon>
                 {query ? (
                   <InputGroupAddon align="inline-end">
@@ -224,7 +224,7 @@ export function RobotsSummary({
                       onClick={() => setQuery("")}
                       aria-label="Clear filter"
                     >
-                      <IconX />
+                      <IconX aria-hidden />
                     </InputGroupButton>
                   </InputGroupAddon>
                 ) : null}
@@ -290,11 +290,12 @@ export function RobotsSummary({
           <Empty className="border border-dashed">
             <EmptyHeader>
               <EmptyMedia variant="icon">
-                <IconHelp />
+                <IconHelp aria-hidden />
               </EmptyMedia>
-              <EmptyTitle>No crawl rules detected</EmptyTitle>
+              <EmptyTitle>No Crawl Rules Detected</EmptyTitle>
               <EmptyDescription>
-                This website&apos;s robots.txt only declares sitemaps; no crawl rules are specified.
+                This website&rsquo;s robots.txt only declares sitemaps; no crawl rules are
+                specified.
               </EmptyDescription>
             </EmptyHeader>
           </Empty>
@@ -322,7 +323,10 @@ function RobotsGroupHeader({
   return (
     <div className="flex w-full items-center justify-between">
       <div className="flex flex-wrap items-center gap-1.5">
-        <IconChevronRight className="size-3 text-muted-foreground transition-transform group-data-[panel-open]/accordion:rotate-90" />
+        <IconChevronRight
+          className="size-3 text-muted-foreground transition-transform group-data-[panel-open]/accordion:rotate-90 motion-reduce:transition-none"
+          aria-hidden
+        />
         {userAgents.map((ua) => (
           <span
             key={ua}
@@ -333,7 +337,7 @@ function RobotsGroupHeader({
           >
             {ua === "*" ? (
               <>
-                <IconAsterisk className="size-3" />
+                <IconAsterisk className="size-3" aria-hidden />
                 All bots
               </>
             ) : (
@@ -392,17 +396,13 @@ function GroupsAccordion({
         return (
           <motion.div
             key={stableKey}
-            initial={{
-              opacity: 0,
-              height: shouldReduceMotion ? "auto" : 0,
-            }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: shouldReduceMotion ? "auto" : 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{
-              duration: shouldReduceMotion ? 0.1 : 0.2,
+              duration: shouldReduceMotion ? 0 : 0.2,
               ease: "easeOut",
             }}
-            style={{ overflow: shouldReduceMotion ? undefined : "hidden" }}
           >
             <AccordionItem value={`g-${idx}`}>
               <AccordionTrigger className="group/accordion px-2 py-2 hover:bg-accent/35 hover:no-underline data-[panel-open]:pr-2 [&>svg]:hidden">
@@ -464,6 +464,7 @@ function GroupContent({
   hasEmptyDisallow: boolean;
 }) {
   const isSearching = query.trim().length > 0;
+  const shouldReduceMotion = useReducedMotion();
   const { existing, added, more, total, visible, setVisible } = useProgressiveReveal(rules, 6);
   if (isSearching) {
     const ruleItems = getRuleItems(rules, "all");
@@ -512,10 +513,9 @@ function GroupContent({
       {added.length > 0 ? (
         <motion.div
           key={`added-${visible}`}
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: "auto", opacity: 1 }}
-          transition={{ duration: 0.25, ease: "easeOut" }}
-          style={{ overflow: "hidden" }}
+          initial={shouldReduceMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: shouldReduceMotion ? 0 : 0.2, ease: "easeOut" }}
           className="flex flex-col"
         >
           {addedItems.map(({ key, rule }) => (
@@ -557,7 +557,7 @@ function RuleRow({
   return (
     <div
       className={cn(
-        "group flex items-center gap-2 border-t border-muted px-2 py-2.5 font-mono text-xs",
+        "group flex items-center gap-2 border-t border-muted px-2 py-2.5 font-mono text-xs [contain-intrinsic-size:auto_2.5rem] [content-visibility:auto]",
         isFirst && "border-t-0",
       )}
     >
@@ -597,9 +597,13 @@ function RuleTypeDot({ type }: { type: "allow" | "disallow" | "crawlDelay" | "co
     <Tooltip>
       <TooltipTrigger
         render={
-          <div className="flex size-4 items-center justify-center">
+          <button
+            type="button"
+            className="flex size-4 items-center justify-center"
+            aria-label={label}
+          >
             <Icon className={cn("size-3.5", colorClass)} aria-hidden />
-          </div>
+          </button>
         }
       />
       <TooltipContent side="left" sideOffset={8}>
@@ -619,13 +623,14 @@ function SitemapLink({ url }: { url: string }) {
         rel="noopener"
       >
         {url}
-        <IconExternalLink className="size-3" />
+        <IconExternalLink className="size-3" aria-hidden />
       </a>
     </div>
   );
 }
 
 function SitemapsList({ items }: { items: string[] }) {
+  const shouldReduceMotion = useReducedMotion();
   const { existing, added, more, total, visible, setVisible } = useProgressiveReveal(items, 2);
 
   return (
@@ -641,10 +646,9 @@ function SitemapsList({ items }: { items: string[] }) {
         {added.length > 0 ? (
           <motion.div
             key={`sitemaps-added-${visible}`}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-            style={{ overflow: "hidden" }}
+            initial={shouldReduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: shouldReduceMotion ? 0 : 0.2, ease: "easeOut" }}
             className="flex flex-col gap-2.5"
           >
             {added.map((u) => (

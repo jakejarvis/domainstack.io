@@ -198,7 +198,8 @@ export function SearchClient({
             <InputGroup className={cn(variant === "lg" ? "h-12" : "h-10")}>
               <InputGroupInput
                 ref={inputRef}
-                autoFocus={variant === "lg"}
+                name="domain"
+                autoFocus={variant === "lg" && mounted && !isMobile}
                 inputMode="url"
                 autoComplete="off"
                 autoCorrect="off"
@@ -206,7 +207,11 @@ export function SearchClient({
                 spellCheck={false}
                 disabled={loading}
                 placeholder={
-                  variant === "lg" ? "domainstack.io" : isMobile ? "Search" : "Search any domain"
+                  variant === "lg"
+                    ? "domainstack.io\u2026"
+                    : isMobile
+                      ? "Search\u2026"
+                      : "Search any domain\u2026"
                 }
                 aria-label="Search any domain"
                 value={value}
@@ -220,7 +225,7 @@ export function SearchClient({
               />
 
               <InputGroupAddon>
-                <IconSearch />
+                <IconSearch aria-hidden />
               </InputGroupAddon>
 
               {variant === "sm" && (loading || mounted) && (
@@ -247,7 +252,7 @@ export function SearchClient({
                     <div className="flex items-center gap-2">
                       <span className="text-[13px]">Inspect</span>
                       <Kbd className="hidden text-[13px] sm:inline-flex">⏎</Kbd>
-                      <IconArrowRight className="inline-flex sm:hidden" />
+                      <IconArrowRight className="inline-flex sm:hidden" aria-hidden />
                     </div>
                   </InputGroupButton>
                 </InputGroupAddon>

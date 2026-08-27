@@ -103,6 +103,7 @@ export const PromptInputTextarea = ({
     <InputGroupTextarea
       className={cn("field-sizing-content max-h-48 min-h-12", className)}
       name="message"
+      autoComplete="off"
       aria-label="Message"
       onCompositionEnd={() => setIsComposing(false)}
       onCompositionStart={() => setIsComposing(true)}
@@ -159,7 +160,7 @@ export const PromptInputSubmit = ({
   ...props
 }: PromptInputSubmitProps) => {
   // Determine icon and aria-label based on status
-  let Icon = <IconSend className="size-4" />;
+  let Icon = <IconSend className="size-4" aria-hidden />;
   let ariaLabel = "Send message";
 
   if (status === "submitted" || status === "streaming") {

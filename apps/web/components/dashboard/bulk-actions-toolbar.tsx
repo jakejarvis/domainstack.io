@@ -11,6 +11,7 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
+import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
 
 type BulkActionsToolbarProps = {
@@ -48,7 +49,8 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
   return (
     <div
       className={cn(
-        "fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-lg animate-in items-center justify-between gap-4 rounded-xl border border-black/15 bg-background/60 px-4 py-3 shadow-2xl shadow-black/10 backdrop-blur-xl duration-200 fade-in-0 slide-in-from-bottom-4 motion-reduce:slide-in-from-bottom-0 sm:inset-x-auto dark:border-white/15",
+        "fixed inset-x-4 z-50 mx-auto flex max-w-lg animate-in items-center justify-between gap-4 rounded-xl border border-black/15 bg-background/60 px-4 py-3 shadow-2xl shadow-black/10 backdrop-blur-xl duration-200 fade-in-0 slide-in-from-bottom-4 motion-reduce:animate-none sm:inset-x-auto dark:border-white/15",
+        "bottom-[max(1rem,env(safe-area-inset-bottom))]",
         className,
       )}
       role="toolbar"
@@ -66,6 +68,7 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
                   indeterminate={isPartiallySelected}
                   onCheckedChange={toggleAll}
                   disabled={isLoading}
+                  aria-label={isAllSelected ? "Deselect all" : `Select all ${totalCount} domains`}
                 />
                 <span className="text-[13px] font-medium tabular-nums" aria-live="polite">
                   {selectedCount} selected
@@ -89,7 +92,7 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
             disabled={isLoading}
             className="text-[13px]"
           >
-            <IconArchive />
+            {isBulkArchiving ? <Spinner /> : <IconArchive aria-hidden />}
             Archive
           </Button>
           <Button
@@ -99,7 +102,7 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
             disabled={isLoading}
             className="text-[13px]"
           >
-            <IconTrash />
+            {isBulkDeleting ? <Spinner /> : <IconTrash aria-hidden />}
             Delete
           </Button>
         </ButtonGroup>
@@ -111,7 +114,7 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
           disabled={isLoading}
           aria-label="Cancel selection"
         >
-          <IconX />
+          <IconX aria-hidden />
         </Button>
       </div>
     </div>

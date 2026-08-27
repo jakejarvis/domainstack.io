@@ -8,7 +8,7 @@ import {
   IconShare,
 } from "@tabler/icons-react";
 import { useMutation } from "@tanstack/react-query";
-import { useCallback, useEffect, useReducer, useRef } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useTRPC } from "@/lib/trpc/client";
@@ -23,7 +23,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@domainstack/ui/dialog";
-import { Field, FieldLabel } from "@domainstack/ui/field";
+import { Field, FieldError, FieldLabel } from "@domainstack/ui/field";
 import { Icon } from "@domainstack/ui/icon";
 import {
   InputGroup,
@@ -216,7 +216,9 @@ export function ShareInstructionsDialog({
   trackedDomainId,
 }: ShareInstructionsDialogProps) {
   const [state, dispatch] = useReducer(shareDialogReducer, initialState);
+  const [emailError, setEmailError] = useState("");
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const emailInputRef = useRef<HTMLInputElement>(null);
 
   const trpc = useTRPC();
 
@@ -264,15 +266,28 @@ export function ShareInstructionsDialog({
         description: "Send this file to your domain admin.",
       });
     } else {
-      toast.error("Failed to download file");
+      toast.error("Failed to download file", {
+        description: "Try again or copy the instructions instead.",
+      });
     }
   }, [domain, verificationToken]);
 
   const handleSendEmail = useCallback(() => {
-    if (!state.email.trim()) return;
+    const trimmed = state.email.trim();
+    if (!trimmed) {
+      setEmailError("Enter an email address, like admin@example.com.");
+      emailInputRef.current?.focus();
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setEmailError("Enter a valid email address, like admin@example.com.");
+      emailInputRef.current?.focus();
+      return;
+    }
+    setEmailError("");
     sendEmailMutation.mutate({
       trackedDomainId,
-      recipientEmail: state.email.trim(),
+      recipientEmail: trimmed,
     });
   }, [state.email, trackedDomainId, sendEmailMutation]);
 
@@ -280,26 +295,27 @@ export function ShareInstructionsDialog({
     if (isOpen) {
       dispatch({ type: "OPEN" });
     } else {
+      setEmailError("");
       dispatch({ type: "CLOSE" });
     }
   }, []);
 
   const handleEmailChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmailError("");
     dispatch({ type: "SET_EMAIL", email: e.target.value });
   }, []);
 
   // Derived state
-  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.email.trim());
   const isEmailSending = state.emailStatus === "sending";
   const isEmailSent = state.emailStatus === "sent";
-  const isEmailDisabled = !isValidEmail || isEmailSending || isEmailSent;
+  const isEmailDisabled = isEmailSending || isEmailSent;
 
   return (
     <Dialog open={state.open} onOpenChange={handleOpenChange}>
       <DialogTrigger
         render={
           <Button variant="outline">
-            <IconShare />
+            <IconShare aria-hidden />
             Share
           </Button>
         }
@@ -318,11 +334,11 @@ export function ShareInstructionsDialog({
           <Item size="xs" variant="outline">
             <ItemMedia variant="icon">
               <Icon variant="muted" size="sm">
-                <IconCopy />
+                <IconCopy aria-hidden />
               </Icon>
             </ItemMedia>
             <ItemContent>
-              <ItemTitle>Copy to clipboard</ItemTitle>
+              <ItemTitle>Copy to Clipboard</ItemTitle>
               <ItemDescription>Copy all instructions as text</ItemDescription>
             </ItemContent>
             <ItemActions>
@@ -340,11 +356,11 @@ export function ShareInstructionsDialog({
           <Item size="xs" variant="outline">
             <ItemMedia variant="icon">
               <Icon variant="muted" size="sm">
-                <IconFileText />
+                <IconFileText aria-hidden />
               </Icon>
             </ItemMedia>
             <ItemContent>
-              <ItemTitle>Download as file</ItemTitle>
+              <ItemTitle>Download as File</ItemTitle>
               <ItemDescription>Save as a text file for later</ItemDescription>
             </ItemContent>
             <ItemActions>
@@ -365,55 +381,57 @@ export function ShareInstructionsDialog({
           <Item size="xs" variant="outline">
             <ItemMedia variant="icon">
               <Icon variant="muted" size="sm">
-                <IconAt />
+                <IconAt aria-hidden />
               </Icon>
             </ItemMedia>
             <ItemContent>
-              <ItemTitle>Send via email</ItemTitle>
-              <ItemDescription>We&apos;ll send instructions on your behalf</ItemDescription>
+              <ItemTitle>Send via Email</ItemTitle>
+              <ItemDescription>We&rsquo;ll send instructions on your behalf</ItemDescription>
             </ItemContent>
             <ItemFooter>
-              <Field>
+              <Field data-invalid={emailError ? true : undefined}>
                 <FieldLabel className="sr-only">Email address</FieldLabel>
-                <div className="flex gap-2">
-                  <InputGroup className="min-w-0 flex-1">
-                    <InputGroupInput
-                      name="email"
-                      type="email"
-                      autoComplete="email"
-                      spellCheck={false}
-                      placeholder={`admin@${domain}`}
-                      value={state.email}
-                      onChange={handleEmailChange}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && isValidEmail && !isEmailSending) {
-                          handleSendEmail();
-                        }
-                      }}
-                      disabled={isEmailSending || isEmailSent}
-                      data-1p-ignore
-                    />
-                    <InputGroupAddon align="inline-end">
-                      <InputGroupButton
-                        variant="ghost"
-                        size="xs"
-                        onClick={handleSendEmail}
-                        disabled={isEmailDisabled}
-                        aria-label="Send email"
-                        className="gap-1.5 text-[13px]"
-                      >
-                        {isEmailSending ? (
-                          <Spinner />
-                        ) : isEmailSent ? (
-                          <IconCheck aria-hidden="true" />
-                        ) : (
-                          <IconSend aria-hidden="true" />
-                        )}
-                        Send
-                      </InputGroupButton>
-                    </InputGroupAddon>
-                  </InputGroup>
-                </div>
+                <InputGroup className="min-w-0 flex-1">
+                  <InputGroupInput
+                    ref={emailInputRef}
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    spellCheck={false}
+                    placeholder={`admin@${domain}\u2026`}
+                    value={state.email}
+                    onChange={handleEmailChange}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !isEmailSending && !isEmailSent) {
+                        e.preventDefault();
+                        handleSendEmail();
+                      }
+                    }}
+                    disabled={isEmailSending || isEmailSent}
+                    aria-invalid={emailError ? true : undefined}
+                    data-1p-ignore
+                  />
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupButton
+                      variant="ghost"
+                      size="xs"
+                      onClick={handleSendEmail}
+                      disabled={isEmailDisabled}
+                      aria-label="Send email"
+                      className="gap-1.5 text-[13px]"
+                    >
+                      {isEmailSending ? (
+                        <Spinner />
+                      ) : isEmailSent ? (
+                        <IconCheck aria-hidden="true" />
+                      ) : (
+                        <IconSend aria-hidden="true" />
+                      )}
+                      Send
+                    </InputGroupButton>
+                  </InputGroupAddon>
+                </InputGroup>
+                <FieldError>{emailError}</FieldError>
               </Field>
             </ItemFooter>
           </Item>

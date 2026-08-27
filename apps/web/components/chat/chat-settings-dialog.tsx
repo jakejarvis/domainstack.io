@@ -47,21 +47,21 @@ function SettingsSwitchRow({
 }) {
   return (
     <Item size="xs" variant="outline">
-      <Field className="w-full min-w-0">
-        <FieldLabel className="flex w-full min-w-0 cursor-pointer items-center font-normal select-none">
+      <Field orientation="horizontal" className="w-full min-w-0 items-center">
+        <FieldLabel className="flex min-w-0 flex-1 cursor-pointer items-center font-normal select-none">
           <ItemMedia variant="icon">
             <Icon variant="muted" size="sm">
               {icon}
             </Icon>
           </ItemMedia>
-          <ItemContent>
+          <ItemContent className="min-w-0">
             <ItemTitle>{title}</ItemTitle>
             <ItemDescription>{description}</ItemDescription>
           </ItemContent>
-          <ItemActions>
-            <Switch checked={checked} onCheckedChange={onCheckedChange} />
-          </ItemActions>
         </FieldLabel>
+        <ItemActions>
+          <Switch checked={checked} onCheckedChange={onCheckedChange} />
+        </ItemActions>
       </Field>
     </Item>
   );
@@ -87,27 +87,29 @@ export function ChatSettingsDialog({ open, onOpenChange }: ChatSettingsDialogPro
         </DialogHeader>
         <ItemGroup className="space-y-1 pb-1">
           <SettingsSwitchRow
-            icon={<IconTool />}
-            title="Show tool calls"
+            icon={<IconTool aria-hidden />}
+            title="Show Tool Calls"
             description="Display the underlying API requests & responses"
             checked={showToolCalls}
             onCheckedChange={setShowToolCalls}
           />
           <SettingsSwitchRow
-            icon={<IconBrain />}
-            title="Show reasoning"
+            icon={<IconBrain aria-hidden />}
+            title="Show Reasoning"
             description={`Reveals ${CHATBOT_NAME}\u2019s thought process`}
             checked={showReasoning}
             onCheckedChange={setShowReasoning}
           />
           <SettingsSwitchRow
-            icon={<IconBiohazard />}
+            icon={<IconBiohazard aria-hidden />}
             title="Disable AI"
             description={
               hideAiFeatures ? (
                 <>
                   To restore, visit any page with{" "}
-                  <code className="rounded bg-muted px-1 text-[11px]">?show_ai=1</code>
+                  <code translate="no" className="rounded bg-muted px-1 text-[11px]">
+                    ?show_ai=1
+                  </code>
                 </>
               ) : (
                 <>Removes all AI-powered features from all pages</>
@@ -119,7 +121,10 @@ export function ChatSettingsDialog({ open, onOpenChange }: ChatSettingsDialogPro
         </ItemGroup>
         <DialogFooter className="gap-2.5 sm:items-center sm:justify-between sm:gap-5">
           <div className="mx-auto flex items-start gap-1.5 pl-2 sm:mx-0 sm:gap-2 sm:pl-1">
-            <IconInfoCircle className="size-3.5 translate-y-[3px] text-muted-foreground" />
+            <IconInfoCircle
+              className="size-3.5 translate-y-[3px] text-muted-foreground"
+              aria-hidden
+            />
             <p className="text-[13px] leading-normal text-muted-foreground">
               These preferences only apply to the current browser.
             </p>

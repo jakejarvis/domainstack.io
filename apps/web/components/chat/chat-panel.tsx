@@ -147,7 +147,7 @@ export function ChatPanel({
         >
           {messages.length === 0 && !showThinking ? (
             <ConversationEmptyState
-              icon={<IconMessages className="size-7" />}
+              icon={<IconMessages className="size-7" aria-hidden />}
               title={`Ask me anything about ${domain ?? "domains"}!`}
               description="I can look up DNS records, WHOIS data, SSL certificates, and more — just say the word."
             />
@@ -162,7 +162,11 @@ export function ChatPanel({
                 }
 
                 return (
-                  <Message key={message.id} from={message.role}>
+                  <Message
+                    key={message.id}
+                    from={message.role}
+                    className="[contain-intrinsic-size:auto_5rem] [content-visibility:auto]"
+                  >
                     <MessageContent>
                       {getMessagePartItems(message).map(({ key, part, position }) => {
                         if (part.type === "text") {
@@ -240,8 +244,8 @@ export function ChatPanel({
             role="alert"
             className="flex items-center gap-2 rounded-md border border-destructive/15 bg-destructive/10 px-2 py-1.5 text-[13px] leading-tight text-destructive"
           >
-            <IconAlertCircle className="size-4 shrink-0" />
-            <span className="flex-1">{error}</span>
+            <IconAlertCircle className="size-4 shrink-0" aria-hidden />
+            <span className="min-w-0 flex-1 break-words">{error}</span>
             {onClearError && (
               <Button
                 variant="ghost"
@@ -250,7 +254,7 @@ export function ChatPanel({
                 aria-label="Dismiss error"
                 className="shrink-0 text-destructive hover:!bg-destructive/20 hover:!text-destructive"
               >
-                <IconX className="size-3" />
+                <IconX className="size-3" aria-hidden />
               </Button>
             )}
           </div>
