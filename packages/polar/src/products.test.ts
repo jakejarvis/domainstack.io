@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import {
   getProduct,
@@ -53,14 +53,16 @@ describe("getProductsForCheckout", () => {
 describe("getTierForProductId", () => {
   it("returns pro tier for pro-monthly product ID", () => {
     const { productId } = POLAR_PRODUCTS["pro-monthly"];
-    const tier = getTierForProductId(productId);
-    expect(tier).toBe("pro");
+    expect(productId).toBeTruthy();
+    if (!productId) return;
+    expect(getTierForProductId(productId)).toBe("pro");
   });
 
   it("returns pro tier for pro-yearly product ID", () => {
     const { productId } = POLAR_PRODUCTS["pro-yearly"];
-    const tier = getTierForProductId(productId);
-    expect(tier).toBe("pro");
+    expect(productId).toBeTruthy();
+    if (!productId) return;
+    expect(getTierForProductId(productId)).toBe("pro");
   });
 
   it("returns null for unknown product ID", () => {
@@ -71,6 +73,20 @@ describe("getTierForProductId", () => {
   it("returns null for empty string", () => {
     const tier = getTierForProductId("");
     expect(tier).toBeNull();
+  });
+});
+
+describe("missing Polar product IDs", () => {
+  afterEach(() => {
+    vi.stubEnv("NEXT_PUBLIC_POLAR_MONTHLY_PRODUCT_ID", "test-monthly-id");
+    vi.stubEnv("NEXT_PUBLIC_POLAR_YEARLY_PRODUCT_ID", "test-yearly-id");
+  });
+
+  it("getProductsForCheckout returns an empty array instead of throwing", () => {
+    vi.stubEnv("NEXT_PUBLIC_POLAR_MONTHLY_PRODUCT_ID", "");
+    vi.stubEnv("NEXT_PUBLIC_POLAR_YEARLY_PRODUCT_ID", "");
+
+    expect(getProductsForCheckout()).toEqual([]);
   });
 });
 

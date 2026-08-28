@@ -6,3 +6,5 @@ export * from "./emails";
 export * from "./handlers";
 // Products
 export * from "./products";
+// Subscription-state reconciliation
+export * from "./reconcile";

@@ -7,6 +7,7 @@ const { db } = await makePGliteDb();
 
 // Now import modules that depend on the db (they'll use the test db via lazy init)
 const { handleDowngrade } = await import("./downgrade");
+const { getUserIdsPastDue, getUserSubscription } = await import("@domainstack/db/queries");
 const { domains, userSubscriptions, users, userTrackedDomains } =
   await import("@domainstack/db/schema");
 const { asc, eq } = await import("@domainstack/db/drizzle");
@@ -204,5 +205,72 @@ describe("handleDowngrade", () => {
       .where(eq(userSubscriptions.userId, newUser.id));
     expect(subscription).toBeDefined();
     expect(subscription.tier).toBe("free");
+  });
+});
+
+describe("getUserSubscription", () => {
+  it("self-heals a missing row by inserting a free-tier subscription", async () => {
+    const orphanUserId = "self-heal-sub-user";
+    await db.insert(users).values({
+      id: orphanUserId,
+      name: "Self Heal User",
+      email: "self-heal-sub@example.test",
+      emailVerified: true,
+    });
+
+    const result = await getUserSubscription(orphanUserId);
+
+    expect(result).toEqual({
+      userId: orphanUserId,
+      plan: "free",
+      planQuota: 5,
+      endsAt: null,
+    });
+
+    const [row] = await db
+      .select()
+      .from(userSubscriptions)
+      .where(eq(userSubscriptions.userId, orphanUserId));
+    expect(row?.tier).toBe("free");
+  });
+});
+
+describe("getUserIdsPastDue", () => {
+  it("returns pro users whose endsAt is in the past and excludes others", async () => {
+    const pastDueId = "past-due-pro-user";
+    const futureId = "future-end-pro-user";
+    const noEndId = "no-end-pro-user";
+
+    await db.insert(users).values([
+      {
+        id: pastDueId,
+        name: "Past Due",
+        email: "past-due-pro@example.test",
+        emailVerified: true,
+      },
+      {
+        id: futureId,
+        name: "Future End",
+        email: "future-end-pro@example.test",
+        emailVerified: true,
+      },
+      {
+        id: noEndId,
+        name: "No End",
+        email: "no-end-pro@example.test",
+        emailVerified: true,
+      },
+    ]);
+
+    await db.insert(userSubscriptions).values([
+      { userId: pastDueId, tier: "pro", endsAt: new Date("2020-01-01T00:00:00Z") },
+      { userId: futureId, tier: "pro", endsAt: new Date(Date.now() + 86_400_000) },
+      { userId: noEndId, tier: "pro", endsAt: null },
+    ]);
+
+    const ids = await getUserIdsPastDue();
+    expect(ids).toContain(pastDueId);
+    expect(ids).not.toContain(futureId);
+    expect(ids).not.toContain(noEndId);
   });
 });

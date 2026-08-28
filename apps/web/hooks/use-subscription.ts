@@ -122,8 +122,14 @@ export function useSubscription(options: UseSubscriptionOptions = {}): UseSubscr
     analytics.track("upgrade_clicked");
 
     try {
+      const monthlyProductId = PRO_TIER_INFO.monthly.productId;
+      const yearlyProductId = PRO_TIER_INFO.yearly.productId;
+      if (!monthlyProductId || !yearlyProductId) {
+        toast.error("Billing is not available right now.");
+        return;
+      }
       await checkoutEmbed({
-        products: [PRO_TIER_INFO.monthly.productId, PRO_TIER_INFO.yearly.productId],
+        products: [monthlyProductId, yearlyProductId],
       });
     } catch (err) {
       analytics.trackException(err instanceof Error ? err : new Error(String(err)), {

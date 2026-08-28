@@ -218,7 +218,7 @@ describe("useDashboardMutations", () => {
     expect(toast.success).toHaveBeenCalledWith("Archived 1 domain");
   });
 
-  it("bulk-deletes ids and decrements active count only for non-archived domains", async () => {
+  it("bulk-deletes ids and decrements active and archived counts by lifecycle state", async () => {
     const { result, queryClient } = renderDashboardMutations();
 
     await result.current.bulkDelete(["domain-alpha", "domain-archived"]);
@@ -228,7 +228,7 @@ describe("useDashboardMutations", () => {
     expect(ids).not.toContain("domain-archived");
     expect(getSubscription(queryClient)).toMatchObject({
       activeCount: 3,
-      archivedCount: 1,
+      archivedCount: 0,
     });
     expect(bulkRemoveDomainsMutation.mock.calls[0]?.[0]).toEqual({
       trackedDomainIds: ["domain-alpha", "domain-archived"],

@@ -72,6 +72,7 @@ export async function detectChangesWorkflow(
   const snapshot = await fetchSnapshot(trackedDomainId);
 
   if (!snapshot) {
+    await releaseMonitorLockStep(trackedDomainId);
     return {
       skipped: true,
       reason: "snapshot_not_found",
@@ -171,7 +172,13 @@ export async function detectChangesWorkflow(
         "registrationChanges",
       );
 
-      if (channels.shouldSendEmail || channels.shouldSendInApp) {
+      if (!channels.shouldSendEmail && !channels.shouldSendInApp) {
+        // Muted domain / disabled category: nothing to deliver. Advance the
+        // snapshot now so we don't infinitely re-detect this change (and
+        // don't replay a stale change as "fresh" when the user later unmutes
+        // / re-enables the category).
+        await updateRegistrationSnapshot(trackedDomainId, currentRegistration);
+      } else {
         // Step 3b: Resolve registrar provider names
         const registrarIds = [
           registrationChange.previousRegistrar,
@@ -287,8 +294,12 @@ export async function detectChangesWorkflow(
 
         if (sent) {
           results.registrationChanges = true;
-          await updateRegistrationSnapshot(trackedDomainId, currentRegistration);
         }
+
+        // Advance only after the email/in-app step succeeds. If a step above
+        // threw, the snapshot stays stale and the next hourly cron retries
+        // the full alert rather than silently swallowing it.
+        await updateRegistrationSnapshot(trackedDomainId, currentRegistration);
       }
     }
   }
@@ -322,7 +333,11 @@ export async function detectChangesWorkflow(
         "providerChanges",
       );
 
-      if (channels.shouldSendEmail || channels.shouldSendInApp) {
+      if (!channels.shouldSendEmail && !channels.shouldSendInApp) {
+        // Muted / disabled: advance on detection so we don't infinitely
+        // re-detect (see registration branch rationale).
+        await updateProviderSnapshot(trackedDomainId, currentProviderIds);
+      } else {
         // Step 4b: Fetch provider names for notification
         const providerIds = [
           snapshot.dnsProviderId,
@@ -431,8 +446,10 @@ export async function detectChangesWorkflow(
 
         if (sent) {
           results.providerChanges = true;
-          await updateProviderSnapshot(trackedDomainId, currentProviderIds);
         }
+
+        // Advance only after delivery (see registration branch rationale).
+        await updateProviderSnapshot(trackedDomainId, currentProviderIds);
       }
     }
   }
@@ -521,39 +538,45 @@ export async function detectChangesWorkflow(
         const emailSubject = `🔒 ${title}`;
         const message = `${certChangeDetails.join(". ")}.`;
 
-        let sent = false;
-        try {
-          sent = await sendCertificateChangeNotificationStep(
-            {
-              userId,
-              userEmail,
-              trackedDomainId,
-              domainName,
-              userName,
-              title,
-              message,
-              emailSubject,
-              newValidTo: currentCertificate.validTo,
-              kind: evaluation.kind,
-              changes: enrichedChange,
-            },
-            channels.shouldSendEmail,
-            channels.shouldSendInApp,
-          );
-        } finally {
-          await persistCertificateSnapshot();
-        }
+        const sent = await sendCertificateChangeNotificationStep(
+          {
+            userId,
+            userEmail,
+            trackedDomainId,
+            domainName,
+            userName,
+            title,
+            message,
+            emailSubject,
+            newValidTo: currentCertificate.validTo,
+            kind: evaluation.kind,
+            changes: enrichedChange,
+          },
+          channels.shouldSendEmail,
+          channels.shouldSendInApp,
+        );
 
         if (sent) {
           results.certificateChanges = true;
         }
+
+        // Advance only after delivery (see registration branch rationale).
+        await persistCertificateSnapshot();
       } else {
+        // Muted / disabled: advance on detection so we don't infinitely
+        // re-detect (see registration branch rationale).
         await persistCertificateSnapshot();
       }
     } else {
       await persistCertificateSnapshot();
     }
   }
+
+  // Release the per-domain monitor lock so the next hourly cron can re-run.
+  // Only runs on successful completion — if a step above threw, the SDK
+  // retries this same run and the lock is intentionally held (TTL safety net)
+  // so the cron doesn't start a duplicate.
+  await releaseMonitorLockStep(trackedDomainId);
 
   return results;
 }
@@ -570,6 +593,13 @@ function formatCertificateValidUntil(iso: string): string {
 }
 
 // --- Step Functions ---
+
+async function releaseMonitorLockStep(trackedDomainId: string): Promise<void> {
+  "use step";
+
+  const { releaseMonitorLock } = await import("@/lib/workflow/monitor-dedup");
+  await releaseMonitorLock(trackedDomainId);
+}
 
 // Import SnapshotForMonitoring type for proper typing
 type SnapshotData = Awaited<ReturnType<typeof import("@domainstack/db/queries").getSnapshot>>;

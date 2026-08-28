@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 
+import { subscriptionDowngradeWorkflow } from "@/workflows/subscription-downgrade";
 import { subscriptionExpiryWorkflow } from "@/workflows/subscription-expiry";
-import { getUserIdsWithEndingSubscriptions } from "@domainstack/db/queries";
+import { getUserIdsPastDue, getUserIdsWithEndingSubscriptions } from "@domainstack/db/queries";
 import { createLogger } from "@domainstack/logger";
 
 const logger = createLogger({ source: "cron/check-subscription-expiry" });
@@ -17,14 +18,32 @@ export async function GET(request: Request) {
   }
 
   try {
-    const ids = await getUserIdsWithEndingSubscriptions();
-    const results = await Promise.allSettled(
-      ids.map((id) => start(subscriptionExpiryWorkflow, [{ userId: id }])),
+    // Upcoming-expiry reminder emails (7/3/1 days before endsAt).
+    const endingIds = await getUserIdsWithEndingSubscriptions();
+    const reminderResults = await Promise.allSettled(
+      endingIds.map((id) => start(subscriptionExpiryWorkflow, [{ userId: id }])),
     );
-    const started = results.filter((r) => r.status === "fulfilled").length;
+    const remindersStarted = reminderResults.filter((r) => r.status === "fulfilled").length;
 
-    logger.info({ started, total: ids.length }, "Check subscription expiry completed");
-    return NextResponse.json({ started });
+    // Server-side downgrade safety net: users whose paid period has elapsed
+    // but who are still on `pro` (Polar `subscription.revoked` webhook missed
+    // or delayed). The workflow re-checks Polar before downgrading.
+    const pastDueIds = await getUserIdsPastDue();
+    const downgradeResults = await Promise.allSettled(
+      pastDueIds.map((id) => start(subscriptionDowngradeWorkflow, [{ userId: id }])),
+    );
+    const downgradesStarted = downgradeResults.filter((r) => r.status === "fulfilled").length;
+
+    logger.info(
+      {
+        remindersStarted,
+        endingTotal: endingIds.length,
+        downgradesStarted,
+        pastDueTotal: pastDueIds.length,
+      },
+      "Check subscription expiry completed",
+    );
+    return NextResponse.json({ remindersStarted, downgradesStarted });
   } catch (err) {
     logger.error({ err }, "Check subscription expiry failed");
     return NextResponse.json({ error: "Failed to check subscription expiry" }, { status: 500 });

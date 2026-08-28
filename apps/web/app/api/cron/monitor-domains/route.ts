@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 
+import { acquireMonitorLock } from "@/lib/workflow/monitor-dedup";
 import { detectChangesWorkflow } from "@/workflows/detect-changes";
 import { initializeSnapshotWorkflow } from "@/workflows/initialize-snapshot";
 import {
@@ -32,16 +33,28 @@ export async function GET(request: Request) {
     );
     const baselinesStarted = baselineResults.filter((r) => r.status === "fulfilled").length;
 
-    // Phase 2: Detect changes for domains with existing snapshots
+    // Phase 2: Detect changes for domains with existing snapshots.
+    // A per-domain lock prevents starting a duplicate run while a prior run
+    // (e.g. stuck in retry backoff) for the same domain is still in-flight.
     const ids = await getMonitoredSnapshotIds();
+    const lockResults = await Promise.allSettled(
+      ids.map(async (id) => ({ id, acquired: await acquireMonitorLock(id) })),
+    );
+    const idsToMonitor = lockResults.flatMap((r) =>
+      r.status === "fulfilled" && r.value.acquired ? [r.value.id] : [],
+    );
     const monitorResults = await Promise.allSettled(
-      ids.map((id) => start(detectChangesWorkflow, [{ trackedDomainId: id }])),
+      idsToMonitor.map((id) => start(detectChangesWorkflow, [{ trackedDomainId: id }])),
     );
     const monitoringStarted = monitorResults.filter((r) => r.status === "fulfilled").length;
 
     const result = {
       baselines: { started: baselinesStarted, total: domains.length },
-      monitoring: { started: monitoringStarted, total: ids.length },
+      monitoring: {
+        started: monitoringStarted,
+        total: ids.length,
+        skippedInFlight: ids.length - idsToMonitor.length,
+      },
     };
 
     logger.info(result, "Monitor domains completed");
