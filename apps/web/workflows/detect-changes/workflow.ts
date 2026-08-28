@@ -44,6 +44,7 @@ import {
 
 export interface DetectChangesWorkflowInput {
   trackedDomainId: string;
+  monitorLockOwnerToken: string;
 }
 
 export interface DetectChangesWorkflowResult {
@@ -66,13 +67,13 @@ export async function detectChangesWorkflow(
 ): Promise<DetectChangesWorkflowResult> {
   "use workflow";
 
-  const { trackedDomainId } = input;
+  const { trackedDomainId, monitorLockOwnerToken } = input;
 
   // Step 1: Fetch snapshot data
   const snapshot = await fetchSnapshot(trackedDomainId);
 
   if (!snapshot) {
-    await releaseMonitorLockStep(trackedDomainId);
+    await releaseMonitorLockStep(trackedDomainId, monitorLockOwnerToken);
     return {
       skipped: true,
       reason: "snapshot_not_found",
@@ -576,7 +577,7 @@ export async function detectChangesWorkflow(
   // Only runs on successful completion — if a step above threw, the SDK
   // retries this same run and the lock is intentionally held (TTL safety net)
   // so the cron doesn't start a duplicate.
-  await releaseMonitorLockStep(trackedDomainId);
+  await releaseMonitorLockStep(trackedDomainId, monitorLockOwnerToken);
 
   return results;
 }
@@ -594,11 +595,14 @@ function formatCertificateValidUntil(iso: string): string {
 
 // --- Step Functions ---
 
-async function releaseMonitorLockStep(trackedDomainId: string): Promise<void> {
+async function releaseMonitorLockStep(
+  trackedDomainId: string,
+  monitorLockOwnerToken: string,
+): Promise<void> {
   "use step";
 
   const { releaseMonitorLock } = await import("@/lib/workflow/monitor-dedup");
-  await releaseMonitorLock(trackedDomainId);
+  await releaseMonitorLock(trackedDomainId, monitorLockOwnerToken);
 }
 
 // Import SnapshotForMonitoring type for proper typing

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 
-import { acquireMonitorLock } from "@/lib/workflow/monitor-dedup";
+import { acquireMonitorLock, releaseMonitorLock } from "@/lib/workflow/monitor-dedup";
 import { detectChangesWorkflow } from "@/workflows/detect-changes";
 import { initializeSnapshotWorkflow } from "@/workflows/initialize-snapshot";
 import {
@@ -38,13 +38,23 @@ export async function GET(request: Request) {
     // (e.g. stuck in retry backoff) for the same domain is still in-flight.
     const ids = await getMonitoredSnapshotIds();
     const lockResults = await Promise.allSettled(
-      ids.map(async (id) => ({ id, acquired: await acquireMonitorLock(id) })),
+      ids.map(async (id) => ({ id, ownerToken: await acquireMonitorLock(id) })),
     );
-    const idsToMonitor = lockResults.flatMap((r) =>
-      r.status === "fulfilled" && r.value.acquired ? [r.value.id] : [],
-    );
+    const monitorsToStart = lockResults.flatMap((result) => {
+      if (result.status === "rejected" || !result.value.ownerToken) return [];
+      return [{ id: result.value.id, ownerToken: result.value.ownerToken }];
+    });
     const monitorResults = await Promise.allSettled(
-      idsToMonitor.map((id) => start(detectChangesWorkflow, [{ trackedDomainId: id }])),
+      monitorsToStart.map(async ({ id, ownerToken }) => {
+        try {
+          return await start(detectChangesWorkflow, [
+            { trackedDomainId: id, monitorLockOwnerToken: ownerToken },
+          ]);
+        } catch (err) {
+          await releaseMonitorLock(id, ownerToken);
+          throw err;
+        }
+      }),
     );
     const monitoringStarted = monitorResults.filter((r) => r.status === "fulfilled").length;
 
@@ -53,7 +63,7 @@ export async function GET(request: Request) {
       monitoring: {
         started: monitoringStarted,
         total: ids.length,
-        skippedInFlight: ids.length - idsToMonitor.length,
+        skippedInFlight: ids.length - monitorsToStart.length,
       },
     };
 

@@ -18,32 +18,42 @@ import { getRedis } from "@domainstack/redis";
  * (matching the prior no-dedup behavior) rather than halting monitoring.
  */
 const LOCK_TTL_SECONDS = 90 * 60;
+const RELEASE_LOCK_SCRIPT = `
+if redis.call("get", KEYS[1]) == ARGV[1] then
+  return redis.call("del", KEYS[1])
+end
+return 0
+`;
 
 function lockKey(trackedDomainId: string): string {
   return `monitor:detect-changes:${trackedDomainId}`;
 }
 
-export async function acquireMonitorLock(trackedDomainId: string): Promise<boolean> {
+export async function acquireMonitorLock(trackedDomainId: string): Promise<string | null> {
+  const ownerToken = crypto.randomUUID();
   const redis = getRedis();
-  if (!redis) return true; // fail open — don't block monitoring
+  if (!redis) return ownerToken; // fail open — don't block monitoring
 
   try {
-    const result = await redis.set(lockKey(trackedDomainId), "1", {
+    const result = await redis.set(lockKey(trackedDomainId), ownerToken, {
       nx: true,
       ex: LOCK_TTL_SECONDS,
     });
-    return result === "OK";
+    return result === "OK" ? ownerToken : null;
   } catch {
-    return true; // fail open on Redis error
+    return ownerToken; // fail open on Redis error
   }
 }
 
-export async function releaseMonitorLock(trackedDomainId: string): Promise<void> {
+export async function releaseMonitorLock(
+  trackedDomainId: string,
+  ownerToken: string,
+): Promise<void> {
   const redis = getRedis();
   if (!redis) return;
 
   try {
-    await redis.del(lockKey(trackedDomainId));
+    await redis.eval(RELEASE_LOCK_SCRIPT, [lockKey(trackedDomainId)], [ownerToken]);
   } catch {
     // Best-effort: the TTL will free the lock if the delete fails.
   }

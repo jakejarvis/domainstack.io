@@ -1,6 +1,11 @@
 "use client";
 
-import { IconExternalLink, IconRosetteDiscountCheck, IconZoomCode } from "@tabler/icons-react";
+import {
+  IconExternalLink,
+  IconRosetteDiscountCheck,
+  IconX,
+  IconZoomCode,
+} from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 
 import { Favicon } from "@/components/icons/favicon";
@@ -340,6 +345,7 @@ export function RawDataDialog({ domain, format, data, serverName, serverUrl }: R
               onClick={() => setOpen(false)}
               className="gap-2 !px-3 text-[13px]"
             >
+              <IconX />
               Close
             </Button>
           </div>
