@@ -29,7 +29,7 @@ type DashboardTableProps = {
 };
 
 export function DashboardTable({ domains }: DashboardTableProps) {
-  const { onVerify, onRemove, onArchive, onToggleMuted } = useDashboardActions();
+  const { onVerify, onRemove, onArchive, onMute } = useDashboardActions();
   const { pageIndex, pageSize, setPageSize, setPageIndex, resetPage } =
     useDashboardPaginationContext();
   const pagination = useMemo(
@@ -73,10 +73,10 @@ export function DashboardTable({ domains }: DashboardTableProps) {
         onVerify,
         onRemove,
         onArchive,
-        onToggleMuted,
+        onMute,
         withUnverifiedLast,
       }),
-    [onRemove, onArchive, onToggleMuted, onVerify, withUnverifiedLast],
+    [onRemove, onArchive, onMute, onVerify, withUnverifiedLast],
   );
 
   const tableState = useMemo(

@@ -10,6 +10,7 @@ import {
   archiveTrackedDomain,
   bulkArchiveTrackedDomains,
   bulkRemoveTrackedDomains,
+  bulkSetTrackedDomainsMuted,
   createTrackedDomainWithLimitCheck,
   deleteTrackedDomain,
   ensureDomainRecord,
@@ -29,9 +30,9 @@ import { createLogger } from "@domainstack/logger";
 const logger = createLogger({ source: "routers/tracking" });
 
 import { toRegistrableDomain } from "@/lib/normalize-domain";
-import { buildVerificationInstructions } from "@/lib/verification-instructions";
 import { createTRPCRouter, protectedProcedure, withRateLimit } from "@/trpc/init";
 import { generateVerificationToken, verificationWorkflow } from "@/workflows/verification";
+import { buildVerificationInstructions } from "@domainstack/utils/verification";
 
 const DomainInputSchema = z.object({ domain: z.string().min(1) }).transform(({ domain }) => {
   const registrable = toRegistrableDomain(domain);
@@ -498,6 +499,35 @@ export const trackingRouter = createTRPCRouter({
 
       if (successCount > 0) {
         analytics.track("domains_bulk_removed", { count: successCount }, ctx.user.id);
+      }
+
+      return { successCount, failedCount };
+    }),
+
+  /**
+   * Bulk mute or unmute multiple tracked domains.
+   */
+  bulkSetMuted: protectedProcedure
+    .input(
+      z.object({
+        trackedDomainIds: z.array(z.string().uuid()).min(1).max(100),
+        muted: z.boolean(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { trackedDomainIds, muted } = input;
+
+      const result = await bulkSetTrackedDomainsMuted(ctx.user.id, trackedDomainIds, muted);
+
+      const successCount = result.succeeded.length;
+      const failedCount = result.notFound.length + result.notOwned.length;
+
+      if (successCount > 0) {
+        analytics.track(
+          muted ? "domains_bulk_muted" : "domains_bulk_unmuted",
+          { count: successCount },
+          ctx.user.id,
+        );
       }
 
       return { successCount, failedCount };

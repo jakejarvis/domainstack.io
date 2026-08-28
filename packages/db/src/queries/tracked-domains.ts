@@ -1084,6 +1084,59 @@ export async function bulkArchiveTrackedDomains(
 }
 
 /**
+ * Bulk set muted on domains for a user with ownership verification.
+ */
+export async function bulkSetTrackedDomainsMuted(
+  userId: string,
+  trackedDomainIds: string[],
+  muted: boolean,
+): Promise<BulkOperationResult> {
+  if (trackedDomainIds.length === 0) {
+    return { succeeded: [], alreadyProcessed: [], notFound: [], notOwned: [] };
+  }
+
+  const foundDomains = await db
+    .select({
+      id: userTrackedDomains.id,
+      userId: userTrackedDomains.userId,
+      muted: userTrackedDomains.muted,
+    })
+    .from(userTrackedDomains)
+    .where(inArray(userTrackedDomains.id, trackedDomainIds));
+
+  const foundIds = new Set(foundDomains.map((d) => d.id));
+  const notFound = trackedDomainIds.filter((id) => !foundIds.has(id));
+
+  const notOwned: string[] = [];
+  const alreadyProcessed: string[] = [];
+  const toUpdate: string[] = [];
+
+  for (const domain of foundDomains) {
+    if (domain.userId !== userId) {
+      notOwned.push(domain.id);
+    } else if (domain.muted === muted) {
+      alreadyProcessed.push(domain.id);
+    } else {
+      toUpdate.push(domain.id);
+    }
+  }
+
+  if (toUpdate.length === 0) {
+    return { succeeded: [], alreadyProcessed, notFound, notOwned };
+  }
+
+  const updated = await db
+    .update(userTrackedDomains)
+    .set({ muted })
+    .where(inArray(userTrackedDomains.id, toUpdate))
+    .returning({ id: userTrackedDomains.id });
+
+  const succeeded = updated.map((d) => d.id);
+
+  return { succeeded, alreadyProcessed, notFound, notOwned };
+}
+
+/**
  * Bulk remove (delete) domains for a user with ownership verification.
  */
 export async function bulkRemoveTrackedDomains(

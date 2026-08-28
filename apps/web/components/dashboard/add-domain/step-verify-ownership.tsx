@@ -2,7 +2,6 @@ import { IconDownload, IconInfoCircle } from "@tabler/icons-react";
 import { toast } from "sonner";
 
 import { VerificationFailed } from "@/components/dashboard/add-domain/verification-failed";
-import { buildVerificationInstructions } from "@/lib/verification-instructions";
 import type { VerificationMethod } from "@domainstack/constants";
 import type { VerificationState } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
@@ -14,6 +13,7 @@ import {
 } from "@domainstack/ui/responsive-tooltip";
 import { Separator } from "@domainstack/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@domainstack/ui/tabs";
+import { buildVerificationInstructions } from "@domainstack/utils/verification";
 
 type StepVerifyOwnershipProps = {
   domain: string;

@@ -96,7 +96,7 @@ export function UnverifiedTableRow({ rowId, cells, original }: UnverifiedTableRo
           <Button
             size="xs"
             variant="destructive"
-            onClick={() => onRemove(original.id, original.domainName)}
+            onClick={() => onRemove(original.id)}
             className="text-[13px]"
           >
             Remove

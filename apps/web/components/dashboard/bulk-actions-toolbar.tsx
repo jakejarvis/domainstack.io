@@ -1,4 +1,4 @@
-import { IconArchive, IconTrash, IconX } from "@tabler/icons-react";
+import { IconArchive, IconBell, IconBellOff, IconTrash, IconX } from "@tabler/icons-react";
 
 import { useDashboardBulkActions } from "@/context/dashboard-context";
 import { useDashboardSelection } from "@/hooks/use-dashboard-selection";
@@ -29,7 +29,7 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
     toggleAll,
     clearSelection,
   } = useDashboardSelection();
-  const { onBulkArchive, onBulkDelete, isBulkArchiving, isBulkDeleting } =
+  const { onBulkArchive, onBulkDelete, onBulkMute, isBulkArchiving, isBulkDeleting, isBulkMuting } =
     useDashboardBulkActions();
 
   const handleBulkArchive = () => {
@@ -42,14 +42,19 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
     if (ids.length > 0) onBulkDelete(ids);
   };
 
+  const handleBulkMute = (muted: boolean) => {
+    const ids = Array.from(selectedIds);
+    if (ids.length > 0) onBulkMute(ids, muted);
+  };
+
   if (selectedCount === 0) return null;
 
-  const isLoading = isBulkArchiving || isBulkDeleting;
+  const isLoading = isBulkArchiving || isBulkDeleting || isBulkMuting;
 
   return (
     <div
       className={cn(
-        "fixed inset-x-4 z-50 mx-auto flex max-w-lg animate-in items-center justify-between gap-4 rounded-xl border border-black/15 bg-background/60 px-4 py-3 shadow-2xl shadow-black/10 backdrop-blur-xl duration-200 fade-in-0 slide-in-from-bottom-4 motion-reduce:animate-none sm:inset-x-auto dark:border-white/15",
+        "fixed inset-x-4 z-50 mx-auto flex max-w-2xl animate-in items-center justify-between gap-4 rounded-xl border border-black/15 bg-background/60 px-4 py-3 shadow-2xl shadow-black/10 backdrop-blur-xl duration-200 fade-in-0 slide-in-from-bottom-4 motion-reduce:animate-none sm:inset-x-auto dark:border-white/15",
         "bottom-[max(1rem,env(safe-area-inset-bottom))]",
         className,
       )}
@@ -84,6 +89,28 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
 
       {/* Right: Actions */}
       <div className="flex items-center gap-2">
+        <ButtonGroup>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleBulkMute(true)}
+            disabled={isLoading}
+            className="text-[13px]"
+          >
+            {isBulkMuting ? <Spinner /> : <IconBellOff aria-hidden />}
+            Mute
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleBulkMute(false)}
+            disabled={isLoading}
+            className="text-[13px]"
+          >
+            {isBulkMuting ? <Spinner /> : <IconBell aria-hidden />}
+            Unmute
+          </Button>
+        </ButtonGroup>
         <ButtonGroup>
           <Button
             variant="outline"

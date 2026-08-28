@@ -12,6 +12,7 @@ import {
   upsertDomain,
   upsertRegistration,
 } from "@domainstack/db/queries";
+import { getProviderCatalog } from "@domainstack/edge-config";
 import type { RegistrationContact, RegistrationResponse } from "@domainstack/types";
 import { getDomainTld } from "@domainstack/utils/domain";
 import {
@@ -21,7 +22,6 @@ import {
   type ProviderCatalog,
 } from "@domainstack/utils/providers";
 
-import { getProviderCatalog } from "../edge-config";
 import { ttlForRegistration } from "../ttl";
 import { lookupWhois as lookup } from "../whois";
 

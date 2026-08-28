@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { syncBlockedDomains } from "@domainstack/db/queries";
+import { getBlocklistSources } from "@domainstack/edge-config";
 import { createLogger } from "@domainstack/logger";
-import { getBlocklistSources } from "@domainstack/server/edge-config";
 
 const logger = createLogger({ source: "cron/sync-blocklist" });
 
@@ -37,7 +37,7 @@ export async function GET(request: Request) {
     // Fetch and parse all blocklists in parallel
     const fetchResults = await Promise.allSettled(
       sources.map(async (sourceUrl) => {
-        const response = await fetch(sourceUrl);
+        const response = await fetch(sourceUrl, { cache: "no-store" });
 
         if (!response.ok) {
           logger.warn({ sourceUrl, status: response.status }, "Failed to fetch blocklist");

@@ -146,6 +146,18 @@ export function DashboardClient() {
     [mutations, clearSelection],
   );
 
+  const doBulkMute = useCallback(
+    async (domainIds: string[], muted: boolean) => {
+      try {
+        await mutations.bulkSetMuted(domainIds, muted);
+        clearSelection();
+      } catch {
+        // Error handled in mutation onError
+      }
+    },
+    [mutations, clearSelection],
+  );
+
   // Confirmation dialog - local state
   const [pendingAction, setPendingAction] = useState<ConfirmAction | null>(null);
 
@@ -204,13 +216,28 @@ export function DashboardClient() {
     [router],
   );
 
-  const handleRemove = useCallback((id: string, domainName: string) => {
-    setPendingAction({ type: "remove", domainId: id, domainName });
-  }, []);
+  const domainNameById = useCallback(
+    (id: string) => allDomains?.find((d) => d.id === id)?.domainName,
+    [allDomains],
+  );
 
-  const handleArchive = useCallback((id: string, domainName: string) => {
-    setPendingAction({ type: "archive", domainId: id, domainName });
-  }, []);
+  const handleRemove = useCallback(
+    (id: string) => {
+      const domainName = domainNameById(id);
+      if (!domainName) return;
+      setPendingAction({ type: "remove", domainId: id, domainName });
+    },
+    [domainNameById],
+  );
+
+  const handleArchive = useCallback(
+    (id: string) => {
+      const domainName = domainNameById(id);
+      if (!domainName) return;
+      setPendingAction({ type: "archive", domainId: id, domainName });
+    },
+    [domainNameById],
+  );
 
   // Bulk action handlers - receive domainIds from context
   const handleBulkArchive = useCallback((domainIds: string[]) => {
@@ -231,6 +258,14 @@ export function DashboardClient() {
     });
   }, []);
 
+  const handleBulkMute = useCallback(
+    (domainIds: string[], muted: boolean) => {
+      if (domainIds.length === 0) return;
+      void doBulkMute(domainIds, muted);
+    },
+    [doBulkMute],
+  );
+
   const handleUnarchive = useCallback(
     (id: string) => {
       mutations.unarchive(id);
@@ -238,7 +273,7 @@ export function DashboardClient() {
     [mutations],
   );
 
-  const handleToggleMuted = useCallback(
+  const handleMute = useCallback(
     (id: string, muted: boolean) => {
       mutations.setMuted(id, muted);
     },
@@ -304,11 +339,13 @@ export function DashboardClient() {
         onRemove={handleRemove}
         onArchive={handleArchive}
         onUnarchive={handleUnarchive}
-        onToggleMuted={handleToggleMuted}
+        onMute={handleMute}
         onBulkArchive={handleBulkArchive}
         onBulkDelete={handleBulkDelete}
+        onBulkMute={handleBulkMute}
         isBulkArchiving={mutations.isBulkArchiving}
         isBulkDeleting={mutations.isBulkDeleting}
+        isBulkMuting={mutations.isBulkMuting}
         filterHook={filterHook}
         sortOption={sortOption}
         setSortOption={setSortOption}

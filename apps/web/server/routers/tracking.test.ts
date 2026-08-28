@@ -690,6 +690,89 @@ describe("tracking router", () => {
     });
   });
 
+  describe("bulkSetMuted", () => {
+    it("mutes multiple domains", async () => {
+      const caller = createAuthenticatedCaller();
+
+      await db.insert(userTrackedDomains).values([
+        {
+          id: TEST_TRACKED_ID,
+          userId: TEST_USER_ID,
+          domainId: TEST_DOMAIN_ID,
+          verificationToken: "token1",
+          verified: true,
+        },
+        {
+          id: TEST_TRACKED_2_ID,
+          userId: TEST_USER_ID,
+          domainId: TEST_DOMAIN_2_ID,
+          verificationToken: "token2",
+          verified: true,
+        },
+      ]);
+
+      const result = await caller.tracking.bulkSetMuted({
+        trackedDomainIds: [TEST_TRACKED_ID, TEST_TRACKED_2_ID],
+        muted: true,
+      });
+
+      expect(result.successCount).toBe(2);
+      expect(result.failedCount).toBe(0);
+
+      const listed = await caller.tracking.listDomains();
+      expect(listed.every((d) => d.muted)).toBe(true);
+    });
+
+    it("treats already-muted domains as no-ops", async () => {
+      const caller = createAuthenticatedCaller();
+
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "token1",
+        verified: true,
+        muted: true,
+      });
+
+      const result = await caller.tracking.bulkSetMuted({
+        trackedDomainIds: [TEST_TRACKED_ID],
+        muted: true,
+      });
+
+      expect(result.successCount).toBe(0);
+      expect(result.failedCount).toBe(0);
+    });
+
+    it("handles mixed owned and not-owned domains", async () => {
+      const caller = createAuthenticatedCaller(TEST_USER_ID);
+
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "token1",
+        verified: true,
+      });
+
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_2_ID,
+        userId: TEST_USER_2_ID,
+        domainId: TEST_DOMAIN_2_ID,
+        verificationToken: "token2",
+        verified: true,
+      });
+
+      const result = await caller.tracking.bulkSetMuted({
+        trackedDomainIds: [TEST_TRACKED_ID, TEST_TRACKED_2_ID],
+        muted: true,
+      });
+
+      expect(result.successCount).toBe(1);
+      expect(result.failedCount).toBe(1);
+    });
+  });
+
   describe("sendVerificationInstructions", () => {
     it("sends verification email", async () => {
       const caller = createAuthenticatedCaller();

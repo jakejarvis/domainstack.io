@@ -104,11 +104,7 @@ export function ArchivedDomainsList({ domains }: ArchivedDomainsListProps) {
                       : "Upgrade or remove active domains first"}
                   </TooltipContent>
                 </Tooltip>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onRemove(domain.id, domain.domainName)}
-                >
+                <Button variant="ghost" size="sm" onClick={() => onRemove(domain.id)}>
                   <IconTrash className="text-danger-foreground" />
                   <span className="sr-only">Delete</span>
                 </Button>

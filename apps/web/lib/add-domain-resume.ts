@@ -1,5 +1,5 @@
-import { isValidVerificationMethod } from "@/lib/verification-instructions";
 import type { ResumeDomainData } from "@domainstack/types";
+import { isValidVerificationMethod } from "@domainstack/utils/verification";
 
 /**
  * Parse `?resume=true&id=…` search params into resume data for the add-domain flow.

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -5,8 +6,19 @@ import { Suspense } from "react";
 import { Modal, ModalContent, ModalHeader, ModalTitle } from "@/components/modal";
 import { SettingsTabsRouter } from "@/components/settings/settings-content";
 import { SettingsSkeletonPanels } from "@/components/settings/settings-skeleton";
+import { createMetadata } from "@/lib/seo";
 import { auth } from "@domainstack/auth/server";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
+
+export const metadata: Metadata = createMetadata({
+  path: "/settings",
+  title: "Settings",
+  description: "Manage your subscription and notification preferences.",
+  robots: {
+    index: false,
+    follow: false,
+  },
+});
 
 function SettingsSkeleton() {
   return (

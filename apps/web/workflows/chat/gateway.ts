@@ -9,7 +9,7 @@
 export async function getModelStep(): Promise<string> {
   "use step";
 
-  const { getAiChatModel } = await import("@domainstack/server/edge-config");
+  const { getAiChatModel } = await import("@domainstack/edge-config");
   const { DEFAULT_CHAT_MODEL } = await import("@domainstack/constants");
   const modelId = await getAiChatModel();
   return modelId || DEFAULT_CHAT_MODEL;

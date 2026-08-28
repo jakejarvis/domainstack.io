@@ -199,7 +199,11 @@ export async function markAllAsRead(userId: string): Promise<number> {
 }
 
 /**
- * Check if a notification of this type has been FULLY sent recently.
+ * Check if a notification of this type has been sent recently.
+ *
+ * Row existence is the dedup signal. A missing `resendId` must not re-open the
+ * window — a failed Resend ID write would otherwise make the hourly cron
+ * re-notify forever.
  */
 export async function hasRecentNotification(
   trackedDomainId: string,
@@ -210,10 +214,7 @@ export async function hasRecentNotification(
   cutoff.setDate(cutoff.getDate() - days);
 
   const rows = await db
-    .select({
-      channels: notifications.channels,
-      resendId: notifications.resendId,
-    })
+    .select({ id: notifications.id })
     .from(notifications)
     .where(
       and(
@@ -224,18 +225,7 @@ export async function hasRecentNotification(
     )
     .limit(1);
 
-  if (rows.length === 0) {
-    return false;
-  }
-
-  const [notification] = rows;
-  const channels = (notification.channels as string[]) ?? [];
-
-  if (channels.includes("email") && !notification.resendId) {
-    return false;
-  }
-
-  return true;
+  return rows.length > 0;
 }
 
 /**

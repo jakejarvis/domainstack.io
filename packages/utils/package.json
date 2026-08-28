@@ -11,7 +11,9 @@
     "./domain": "./src/domain/index.ts",
     "./domain/client": "./src/domain/client.ts",
     "./expiry": "./src/expiry/index.ts",
-    "./providers": "./src/providers/index.ts"
+    "./providers": "./src/providers/index.ts",
+    "./calendar": "./src/calendar/index.ts",
+    "./verification": "./src/verification.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit",

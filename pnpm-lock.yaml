@@ -84,6 +84,9 @@ importers:
       '@domainstack/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@domainstack/edge-config':
+        specifier: workspace:*
+        version: link:../../packages/edge-config
       '@domainstack/email':
         specifier: workspace:*
         version: link:../../packages/email
@@ -456,6 +459,31 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
 
+  packages/edge-config:
+    dependencies:
+      '@domainstack/logger':
+        specifier: workspace:*
+        version: link:../logger
+      '@domainstack/utils':
+        specifier: workspace:*
+        version: link:../utils
+      '@vercel/edge-config':
+        specifier: ^1.5.1
+        version: 1.5.1(@opentelemetry/api@1.9.1)(next@16.3.3(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))
+      react:
+        specifier: 19.2.8
+        version: 19.2.8
+    devDependencies:
+      '@domainstack/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      '@types/react':
+        specifier: 19.2.18
+        version: 19.2.18
+
   packages/email:
     dependencies:
       '@domainstack/constants':
@@ -648,6 +676,9 @@ importers:
       '@domainstack/db':
         specifier: workspace:*
         version: link:../db
+      '@domainstack/edge-config':
+        specifier: workspace:*
+        version: link:../edge-config
       '@domainstack/image':
         specifier: workspace:*
         version: link:../image
@@ -669,9 +700,6 @@ importers:
       '@readme/http-status-codes':
         specifier: ^9.0.6
         version: 9.0.6
-      '@vercel/edge-config':
-        specifier: ^1.5.1
-        version: 1.5.1(@opentelemetry/api@1.9.1)(next@16.3.3(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))
       cheerio:
         specifier: ^1.2.0
         version: 1.2.0
@@ -9393,7 +9421,7 @@ snapshots:
 
   '@types/cors@2.8.19':
     dependencies:
-      '@types/node': 24.13.3
+      '@types/node': 26.3.0
 
   '@types/debug@4.1.13':
     dependencies:
@@ -9447,7 +9475,7 @@ snapshots:
 
   '@types/set-cookie-parser@2.4.10':
     dependencies:
-      '@types/node': 24.13.3
+      '@types/node': 26.3.0
 
   '@types/statuses@2.0.6': {}
 
@@ -10920,7 +10948,7 @@ snapshots:
   engine.io@6.6.9(bufferutil@4.1.0)(supports-color@10.2.2):
     dependencies:
       '@types/cors': 2.8.19
-      '@types/node': 24.13.3
+      '@types/node': 26.3.0
       '@types/ws': 8.18.1
       accepts: 1.3.8
       base64id: 2.0.0

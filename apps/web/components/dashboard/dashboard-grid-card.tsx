@@ -75,7 +75,7 @@ export const DashboardGridCard = memo(function DashboardGridCard({
   } = domain;
   const selected = useIsDomainSelected(trackedDomainId);
   const toggle = useToggleDomainSelection();
-  const { onVerify, onRemove, onArchive, onToggleMuted } = useDashboardActions();
+  const { onVerify, onRemove, onArchive, onMute } = useDashboardActions();
 
   const handleToggleSelect = useCallback(() => {
     toggle(trackedDomainId);
@@ -86,16 +86,16 @@ export const DashboardGridCard = memo(function DashboardGridCard({
   }, [onVerify, trackedDomainId, verificationMethod]);
 
   const handleRemove = useCallback(() => {
-    onRemove(trackedDomainId, domainName);
-  }, [onRemove, trackedDomainId, domainName]);
+    onRemove(trackedDomainId);
+  }, [onRemove, trackedDomainId]);
 
   const handleArchive = useCallback(() => {
-    onArchive(trackedDomainId, domainName);
-  }, [onArchive, trackedDomainId, domainName]);
+    onArchive(trackedDomainId);
+  }, [onArchive, trackedDomainId]);
 
-  const handleToggleMuted = useCallback(() => {
-    onToggleMuted(trackedDomainId, !muted);
-  }, [onToggleMuted, trackedDomainId, muted]);
+  const handleMute = useCallback(() => {
+    onMute(trackedDomainId, !muted);
+  }, [onMute, trackedDomainId, muted]);
 
   // Use shared hydrated time to avoid N separate useEffect calls for N cards
   const now = useHydratedNow();
@@ -205,7 +205,7 @@ export const DashboardGridCard = memo(function DashboardGridCard({
                 />
                 <DropdownMenuSeparator />
                 {verified && (
-                  <DropdownMenuItem onClick={handleToggleMuted}>
+                  <DropdownMenuItem onClick={handleMute}>
                     {muted ? (
                       <>
                         <IconBell />

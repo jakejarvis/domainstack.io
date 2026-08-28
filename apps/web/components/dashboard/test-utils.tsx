@@ -43,12 +43,13 @@ export {
 
 export const dashboardActionSpies = {
   onVerify: vi.fn<(id: string, method: string | null) => void>(),
-  onRemove: vi.fn<(id: string, domainName: string) => void>(),
-  onArchive: vi.fn<(id: string, domainName: string) => void>(),
+  onRemove: vi.fn<(id: string) => void>(),
+  onArchive: vi.fn<(id: string) => void>(),
   onUnarchive: vi.fn<(id: string) => void>(),
-  onToggleMuted: vi.fn<(id: string, muted: boolean) => void>(),
+  onMute: vi.fn<(id: string, muted: boolean) => void>(),
   onBulkArchive: vi.fn<(domainIds: string[]) => void>(),
   onBulkDelete: vi.fn<(domainIds: string[]) => void>(),
+  onBulkMute: vi.fn<(domainIds: string[], muted: boolean) => void>(),
 };
 
 const emptyProviders = {
@@ -170,12 +171,22 @@ function DashboardTestShell({
 
   const [pendingAction, setPendingAction] = useState<ConfirmAction | null>(null);
 
-  const requestRemove = useCallback((id: string, domainName: string) => {
-    setPendingAction({ type: "remove", domainId: id, domainName });
-  }, []);
-  const requestArchive = useCallback((id: string, domainName: string) => {
-    setPendingAction({ type: "archive", domainId: id, domainName });
-  }, []);
+  const requestRemove = useCallback(
+    (id: string) => {
+      const domainName = domains.find((d) => d.id === id)?.domainName;
+      if (!domainName) return;
+      setPendingAction({ type: "remove", domainId: id, domainName });
+    },
+    [domains],
+  );
+  const requestArchive = useCallback(
+    (id: string) => {
+      const domainName = domains.find((d) => d.id === id)?.domainName;
+      if (!domainName) return;
+      setPendingAction({ type: "archive", domainId: id, domainName });
+    },
+    [domains],
+  );
   const requestBulkArchive = useCallback((domainIds: string[]) => {
     setPendingAction({ type: "bulk-archive", domainIds, count: domainIds.length });
   }, []);
@@ -191,9 +202,9 @@ function DashboardTestShell({
   const handleConfirm = () => {
     if (!pendingAction) return;
     if (pendingAction.type === "remove") {
-      dashboardActionSpies.onRemove(pendingAction.domainId, pendingAction.domainName);
+      dashboardActionSpies.onRemove(pendingAction.domainId);
     } else if (pendingAction.type === "archive") {
-      dashboardActionSpies.onArchive(pendingAction.domainId, pendingAction.domainName);
+      dashboardActionSpies.onArchive(pendingAction.domainId);
     } else if (pendingAction.type === "bulk-archive") {
       dashboardActionSpies.onBulkArchive(pendingAction.domainIds);
     } else if (pendingAction.type === "bulk-delete") {
@@ -208,11 +219,13 @@ function DashboardTestShell({
       onRemove={onRemove}
       onArchive={onArchive}
       onUnarchive={dashboardActionSpies.onUnarchive}
-      onToggleMuted={dashboardActionSpies.onToggleMuted}
+      onMute={dashboardActionSpies.onMute}
       onBulkArchive={onBulkArchive}
       onBulkDelete={onBulkDelete}
+      onBulkMute={dashboardActionSpies.onBulkMute}
       isBulkArchiving={false}
       isBulkDeleting={false}
+      isBulkMuting={false}
       filterHook={filterHook}
       sortOption={sortOption}
       setSortOption={setSortParam}
@@ -289,11 +302,13 @@ export function renderArchivedList(domains: TrackedDomainWithDetails[]) {
         onRemove={dashboardActionSpies.onRemove}
         onArchive={dashboardActionSpies.onArchive}
         onUnarchive={dashboardActionSpies.onUnarchive}
-        onToggleMuted={dashboardActionSpies.onToggleMuted}
+        onMute={dashboardActionSpies.onMute}
         onBulkArchive={dashboardActionSpies.onBulkArchive}
         onBulkDelete={dashboardActionSpies.onBulkDelete}
+        onBulkMute={dashboardActionSpies.onBulkMute}
         isBulkArchiving={false}
         isBulkDeleting={false}
+        isBulkMuting={false}
         filterHook={stubFilterHook()}
         sortOption={DEFAULT_SORT}
         setSortOption={vi.fn<(sort: SortOption) => void>()}

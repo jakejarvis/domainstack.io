@@ -23,6 +23,7 @@ type GetVerificationDataResult = {
 
 type TrackedDomainIdInput = { trackedDomainId: string };
 type BulkDomainIdsInput = { trackedDomainIds: string[] };
+type BulkSetMutedInput = { trackedDomainIds: string[]; muted: boolean };
 type BulkMutationResult = { successCount: number; failedCount: number };
 type SetMutedInput = { trackedDomainId: string; muted: boolean };
 type SendVerificationInstructionsInput = { trackedDomainId: string; recipientEmail: string };
@@ -134,6 +135,13 @@ export const bulkArchiveDomainsMutation = vi.fn<
 
 export const bulkRemoveDomainsMutation = vi.fn<
   (input: BulkDomainIdsInput) => Promise<BulkMutationResult>
+>(async ({ trackedDomainIds }) => ({
+  successCount: trackedDomainIds.length,
+  failedCount: 0,
+}));
+
+export const bulkSetMutedMutation = vi.fn<
+  (input: BulkSetMutedInput) => Promise<BulkMutationResult>
 >(async ({ trackedDomainIds }) => ({
   successCount: trackedDomainIds.length,
   failedCount: 0,
@@ -341,6 +349,12 @@ export function resetTrpcMocks() {
     failedCount: 0,
   }));
 
+  bulkSetMutedMutation.mockReset();
+  bulkSetMutedMutation.mockImplementation(async ({ trackedDomainIds }) => ({
+    successCount: trackedDomainIds.length,
+    failedCount: 0,
+  }));
+
   setDomainMutedMutation.mockReset();
   setDomainMutedMutation.mockImplementation(async () => ({ ok: true }));
 
@@ -447,6 +461,9 @@ export function useTRPC() {
       },
       bulkRemoveDomains: {
         mutationOptions: () => ({ mutationFn: bulkRemoveDomainsMutation }),
+      },
+      bulkSetMuted: {
+        mutationOptions: () => ({ mutationFn: bulkSetMutedMutation }),
       },
       sendVerificationInstructions: {
         mutationOptions: () => ({

@@ -75,7 +75,7 @@ describe("dashboard confirm dialog", () => {
     expect(dashboardActionSpies.onArchive).not.toHaveBeenCalled();
 
     await user.click(within(dialog).getByRole("button", { name: "Archive" }));
-    expect(dashboardActionSpies.onArchive).toHaveBeenCalledWith("domain-alpha", "alpha.com");
+    expect(dashboardActionSpies.onArchive).toHaveBeenCalledWith("domain-alpha");
   });
 
   it("does not archive when the dialog is cancelled", async () => {

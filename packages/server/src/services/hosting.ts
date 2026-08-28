@@ -13,6 +13,7 @@ import {
   upsertCatalogProvider,
   upsertHosting,
 } from "@domainstack/db/queries";
+import { getProviderCatalog } from "@domainstack/edge-config";
 import { createLogger } from "@domainstack/logger";
 import { getRedis } from "@domainstack/redis";
 import type {
@@ -30,7 +31,6 @@ import {
   getProvidersFromCatalog,
 } from "@domainstack/utils/providers";
 
-import { getProviderCatalog } from "../edge-config";
 import { ttlForHosting } from "../ttl";
 import { fetchDns } from "./dns";
 import { fetchHeaders } from "./headers";

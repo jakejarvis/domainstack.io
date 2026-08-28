@@ -47,7 +47,7 @@ vi.mock("@domainstack/server", async (importOriginal) => {
 });
 
 // Mock edge-config
-vi.mock("@domainstack/server/edge-config", () => ({
+vi.mock("@domainstack/edge-config", () => ({
   getProviderCatalog: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue(null),
 }));
 

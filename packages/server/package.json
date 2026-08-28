@@ -12,7 +12,6 @@
     "./tls": "./src/tls/index.ts",
     "./verification": "./src/verification/index.ts",
     "./whois": "./src/whois/index.ts",
-    "./edge-config": "./src/edge-config.ts",
     "./ttl": "./src/ttl.ts",
     "./cloudflare": "./src/cloudflare.ts"
   },
@@ -27,6 +26,7 @@
   "dependencies": {
     "@domainstack/constants": "workspace:*",
     "@domainstack/db": "workspace:*",
+    "@domainstack/edge-config": "workspace:*",
     "@domainstack/image": "workspace:*",
     "@domainstack/logger": "workspace:*",
     "@domainstack/redis": "workspace:*",
@@ -34,7 +34,6 @@
     "@domainstack/types": "workspace:*",
     "@domainstack/utils": "workspace:*",
     "@readme/http-status-codes": "^9.0.6",
-    "@vercel/edge-config": "^1.5.1",
     "cheerio": "^1.2.0",
     "ipaddr.js": "^2.5.0",
     "lru-cache": "^11.5.2",

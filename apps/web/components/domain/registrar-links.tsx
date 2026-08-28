@@ -4,61 +4,41 @@ import Link from "next/link";
 
 import { useAnalytics } from "@/lib/analytics/client";
 import { useTRPC } from "@/lib/trpc/client";
+import { REGISTRAR_PROVIDERS, type RegistrarKey } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
 import { Skeleton } from "@domainstack/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 import { cn } from "@domainstack/ui/utils";
+import { formatPrice } from "@domainstack/utils";
 
-/**
- * Registry of all supported pricing providers.
- * Add new providers here and they'll automatically appear in the CTA.
- */
-const REGISTRAR_PROVIDERS: Record<
-  string,
-  {
-    /** Provider display name */
-    name: string;
-    /** Generate registration URL for a domain */
-    searchUrl: (domain: string) => string;
-    /** Provider icon component */
-    icon: React.ReactNode;
-  }
-> = {
-  porkbun: {
-    name: "Porkbun",
-    searchUrl: (domain) => `https://porkbun.com/checkout/search?q=${domain}`,
-    icon: (
-      <svg viewBox="0 0 24 24" fill="currentColor">
-        <circle fill="white" cx="12" cy="12" r="12" />
-        <path
-          fill="#EF7878"
-          d="M12 0A11.97 11.97 0 0 0 .018 11.982C.018 18.612 5.37 24 12 24s11.982-5.353 11.982-11.982C23.982 5.388 18.63 0 12 0M5.832 5.885c1.064.248 2.092.638 3.014 1.135-1.1.531-1.987 1.382-2.66 2.375a3.4 3.4 0 0 1-.674-2.057c0-.532.107-.992.32-1.453m12.336 0c.213.425.32.921.32 1.453 0 .78-.248 1.49-.674 2.057-.673-.993-1.596-1.844-2.66-2.375a10 10 0 0 1 3.014-1.135m-6.072.81a6.39 6.39 0 0 1 6.32 6.457v3.829a1.18 1.18 0 0 1-1.17 1.17 1.18 1.18 0 0 1-1.17-1.17v-.958H7.852v.957a1.18 1.18 0 0 1-1.17 1.17 1.18 1.18 0 0 1-1.17-1.17v-3.65c0-3.51 2.73-6.489 6.24-6.63q.173-.007.344-.005m1.5 3.8a.94.94 0 0 0-.922.921c0 .248.07.424.213.602.141.212.353.354.566.46-.142.071-.319.143-.496.143-.213 0-.39.176-.39.389s.177.39.39.39h.178a1.56 1.56 0 0 0 1.383-.851c.39-.142.709-.39.921-.744.071-.107.034-.249-.037-.213-.106-.036-.212-.034-.283.072a1.04 1.04 0 0 1-.426.354v-.143c0-.39-.14-.709-.353-.992a.88.88 0 0 0-.744-.389m0 .53c.212 0 .353.141.388.354v.178c0 .177-.034.354-.105.496a1.06 1.06 0 0 1-.604-.426c-.035-.071-.07-.14-.07-.211 0-.24.206-.39.39-.39"
-        />
-      </svg>
-    ),
-  },
-  cloudflare: {
-    name: "Cloudflare Registrar",
-    searchUrl: (domain) => `https://domains.cloudflare.com/?domain=${domain}`,
-    icon: <SiCloudflare fill="#F38020" />,
-  },
-  dynadot: {
-    name: "Dynadot",
-    searchUrl: (domain) => `https://www.dynadot.com/domain/search?domain=${domain}`,
-    icon: (
-      <svg viewBox="0 0 24 24" fill="#1FA7FF">
-        <path d="M19.688 5.66c-1.218-2.439-4.29-3.355-6.708-2.098L5.82 7.286l1.605 3.081-1.618.84c-2.395 1.245-3.412 4.262-2.15 6.649a4.88 4.88 0 0 0 6.552 2.044l7.258-3.776-1.6-3.078 1.71-.89a4.877 4.877 0 0 0 2.111-6.494zM9.376 18.293a3.07 3.07 0 0 1-4.419-2.107 2.7 2.7 0 0 1-.059-.757c.073-1.13.697-2.076 1.653-2.57l1.708-.89.707 1.36a2.936 2.936 0 0 0 3.955 1.25l1.343-.698.767 1.475-5.653 2.938zm2.542-7.961c.551.105.995.548 1.101 1.098a1.403 1.403 0 0 1-1.648 1.65 1.4 1.4 0 0 1-1.101-1.102 1.403 1.403 0 0 1 1.648-1.648zm4.75.256-1.635.852-.707-1.358a2.934 2.934 0 0 0-3.955-1.25l-1.344.699-.768-1.476 5.654-2.938a3.07 3.07 0 0 1 4.107 1.258c.814 1.506.167 3.424-1.353 4.215z" />
-      </svg>
-    ),
-  },
-} as const;
+const REGISTRAR_ICONS: Record<RegistrarKey, React.ReactNode> = {
+  porkbun: (
+    <svg viewBox="0 0 24 24" fill="currentColor">
+      <circle fill="white" cx="12" cy="12" r="12" />
+      <path
+        fill="#EF7878"
+        d="M12 0A11.97 11.97 0 0 0 .018 11.982C.018 18.612 5.37 24 12 24s11.982-5.353 11.982-11.982C23.982 5.388 18.63 0 12 0M5.832 5.885c1.064.248 2.092.638 3.014 1.135-1.1.531-1.987 1.382-2.66 2.375a3.4 3.4 0 0 1-.674-2.057c0-.532.107-.992.32-1.453m12.336 0c.213.425.32.921.32 1.453 0 .78-.248 1.49-.674 2.057-.673-.993-1.596-1.844-2.66-2.375a10 10 0 0 1 3.014-1.135m-6.072.81a6.39 6.39 0 0 1 6.32 6.457v3.829a1.18 1.18 0 0 1-1.17 1.17 1.18 1.18 0 0 1-1.17-1.17v-.958H7.852v.957a1.18 1.18 0 0 1-1.17 1.17 1.18 1.18 0 0 1-1.17-1.17v-3.65c0-3.51 2.73-6.489 6.24-6.63q.173-.007.344-.005m1.5 3.8a.94.94 0 0 0-.922.921c0 .248.07.424.213.602.141.212.353.354.566.46-.142.071-.319.143-.496.143-.213 0-.39.176-.39.389s.177.39.39.39h.178a1.56 1.56 0 0 0 1.383-.851c.39-.142.709-.39.921-.744.071-.107.034-.249-.037-.213-.106-.036-.212-.034-.283.072a1.04 1.04 0 0 1-.426.354v-.143c0-.39-.14-.709-.353-.992a.88.88 0 0 0-.744-.389m0 .53c.212 0 .353.141.388.354v.178c0 .177-.034.354-.105.496a1.06 1.06 0 0 1-.604-.426c-.035-.071-.07-.14-.07-.211 0-.24.206-.39.39-.39"
+      />
+    </svg>
+  ),
+  cloudflare: <SiCloudflare fill="#F38020" />,
+  dynadot: (
+    <svg viewBox="0 0 24 24" fill="#1FA7FF">
+      <path d="M19.688 5.66c-1.218-2.439-4.29-3.355-6.708-2.098L5.82 7.286l1.605 3.081-1.618.84c-2.395 1.245-3.412 4.262-2.15 6.649a4.88 4.88 0 0 0 6.552 2.044l7.258-3.776-1.6-3.078 1.71-.89a4.877 4.877 0 0 0 2.111-6.494zM9.376 18.293a3.07 3.07 0 0 1-4.419-2.107 2.7 2.7 0 0 1-.059-.757c.073-1.13.697-2.076 1.653-2.57l1.708-.89.707 1.36a2.936 2.936 0 0 0 3.955 1.25l1.343-.698.767 1.475-5.653 2.938zm2.542-7.961c.551.105.995.548 1.101 1.098a1.403 1.403 0 0 1-1.648 1.65 1.4 1.4 0 0 1-1.101-1.102 1.403 1.403 0 0 1 1.648-1.648zm4.75.256-1.635.852-.707-1.358a2.934 2.934 0 0 0-3.955-1.25l-1.344.699-.768-1.476 5.654-2.938a3.07 3.07 0 0 1 4.107 1.258c.814 1.506.167 3.424-1.353 4.215z" />
+    </svg>
+  ),
+};
+
+function isRegistrarKey(value: string): value is RegistrarKey {
+  return Object.hasOwn(REGISTRAR_PROVIDERS, value);
+}
 
 /**
  * Skeleton for RegistrarLinks.
  * Exported for use as Suspense fallback in parent components.
  */
 export function RegistrarLinksSkeleton({ className }: { className?: string }) {
-  const providerCount = Object.keys(REGISTRAR_PROVIDERS ?? {}).length;
+  const providerCount = Object.keys(REGISTRAR_PROVIDERS).length;
 
   return (
     <div className={cn("flex flex-col items-center justify-center", className)}>
@@ -69,20 +49,6 @@ export function RegistrarLinksSkeleton({ className }: { className?: string }) {
       <Skeleton className="mt-7 mb-1 h-3 w-64" aria-hidden />
     </div>
   );
-}
-
-function formatPrice(value: string): string | null {
-  const amount = Number.parseFloat(value);
-  if (!Number.isFinite(amount)) return null;
-  try {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 2,
-    }).format(amount);
-  } catch {
-    return `$${amount.toFixed(2)}`;
-  }
 }
 
 /**
@@ -125,9 +91,8 @@ export function RegistrarLinks({
 
       <div className="flex flex-col gap-2">
         {sortedProviders.map((providerPricing) => {
+          if (!isRegistrarKey(providerPricing.provider)) return null;
           const config = REGISTRAR_PROVIDERS[providerPricing.provider];
-          if (!config) return null;
-
           const price = formatPrice(providerPricing.price);
           if (!price) return null;
 
@@ -151,7 +116,13 @@ export function RegistrarLinks({
                   }
                 >
                   <Tooltip>
-                    <TooltipTrigger render={<span className="rounded-full">{config.icon}</span>} />
+                    <TooltipTrigger
+                      render={
+                        <span className="rounded-full">
+                          {REGISTRAR_ICONS[providerPricing.provider]}
+                        </span>
+                      }
+                    />
                     <TooltipContent>{config.name}</TooltipContent>
                   </Tooltip>
                   <span>

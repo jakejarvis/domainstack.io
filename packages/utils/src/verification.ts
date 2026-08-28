@@ -93,3 +93,51 @@ export function buildVerificationInstructions(
 export function isValidVerificationMethod(value: unknown): value is VerificationMethod {
   return typeof value === "string" && VERIFICATION_METHODS.includes(value as VerificationMethod);
 }
+
+/**
+ * Formats all verification instructions into a plain text format
+ * suitable for sharing with IT or via email.
+ */
+export function formatInstructionsForSharing(domain: string, verificationToken: string): string {
+  const { dns_txt, html_file, meta_tag } = buildVerificationInstructions(domain, verificationToken);
+
+  return `Domain Verification Instructions for ${domain}
+${"=".repeat(50)}
+
+Please complete ONE of the following verification methods to verify ownership of ${domain}.
+
+${"─".repeat(50)}
+OPTION 1: DNS TXT Record (Recommended)
+${"─".repeat(50)}
+Add a TXT record to your domain's DNS settings:
+
+  Host/Name:  @ (${dns_txt.hostname})
+  Type:       ${dns_txt.recordType}
+  Value:      ${dns_txt.value}
+  TTL:        ${dns_txt.suggestedTTL} (${dns_txt.suggestedTTLLabel})
+
+Note: DNS changes may take up to 48\u00A0hours to propagate.
+
+${"─".repeat(50)}
+OPTION 2: HTML File Upload
+${"─".repeat(50)}
+Upload a file to your website:
+
+  File Path:     ${html_file.fullPath}
+  File Name:     ${html_file.filename}
+  File Contents: ${html_file.fileContent}
+
+The file must be accessible at: https://${domain}${html_file.fullPath}
+
+${"─".repeat(50)}
+OPTION 3: Meta Tag
+${"─".repeat(50)}
+Add this meta tag to your homepage's <head> section:
+
+  ${meta_tag.metaTag}
+
+${"─".repeat(50)}
+
+Once completed, return to Domainstack to verify ownership.
+`;
+}

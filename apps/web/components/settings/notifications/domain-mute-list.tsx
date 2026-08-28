@@ -21,7 +21,7 @@ interface MutableDomain {
 
 interface DomainMuteListProps {
   domains: MutableDomain[];
-  onToggleMuted: (domainId: string, muted: boolean) => void;
+  onMute: (domainId: string, muted: boolean) => void;
   disabled?: boolean;
 }
 
@@ -30,7 +30,7 @@ interface DomainMuteListProps {
  * Shows muted domains as chips with X to unmute.
  * Plus button opens dropdown to mute additional domains.
  */
-export function DomainMuteList({ domains, onToggleMuted, disabled = false }: DomainMuteListProps) {
+export function DomainMuteList({ domains, onMute, disabled = false }: DomainMuteListProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const mutedDomains = domains.filter((d) => d.muted);
@@ -55,7 +55,7 @@ export function DomainMuteList({ domains, onToggleMuted, disabled = false }: Dom
         <MutedDomainChip
           key={domain.id}
           domain={domain}
-          onUnmute={() => onToggleMuted(domain.id, false)}
+          onUnmute={() => onMute(domain.id, false)}
           disabled={disabled}
         />
       ))}
@@ -86,7 +86,7 @@ export function DomainMuteList({ domains, onToggleMuted, disabled = false }: Dom
             <DropdownMenuItem
               key={domain.id}
               onClick={() => {
-                onToggleMuted(domain.id, true);
+                onMute(domain.id, true);
                 setIsOpen(false);
               }}
             >

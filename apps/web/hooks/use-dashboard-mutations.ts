@@ -31,7 +31,7 @@ interface MutationContext {
 }
 
 function toastBulkResult(
-  verb: "Archived" | "Deleted",
+  verb: "Archived" | "Deleted" | "Muted" | "Unmuted",
   result: BulkMutationResult,
   requestedCount: number,
 ) {
@@ -55,6 +55,7 @@ interface UseDashboardMutationsReturn {
   // Bulk mutations (return promises for confirmation dialog flow)
   bulkArchive: (trackedDomainIds: string[]) => Promise<BulkMutationResult>;
   bulkDelete: (trackedDomainIds: string[]) => Promise<BulkMutationResult>;
+  bulkSetMuted: (trackedDomainIds: string[], muted: boolean) => Promise<BulkMutationResult>;
 
   // Loading states
   isRemoving: boolean;
@@ -63,6 +64,7 @@ interface UseDashboardMutationsReturn {
   isMuting: boolean;
   isBulkArchiving: boolean;
   isBulkDeleting: boolean;
+  isBulkMuting: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -407,6 +409,41 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
   });
 
   // ---------------------------------------------------------------------------
+  // Bulk Mute Mutation
+  // ---------------------------------------------------------------------------
+
+  const bulkSetMutedMutation = useMutation({
+    mutationFn: trpc.tracking.bulkSetMuted.mutationOptions().mutationFn,
+    onMutate: async ({
+      trackedDomainIds,
+      muted,
+    }: {
+      trackedDomainIds: string[];
+      muted: boolean;
+    }) => {
+      await queryClient.cancelQueries({ queryKey: domainsQueryKey });
+
+      const previousDomains = queryClient.getQueriesData({
+        queryKey: domainsQueryKey,
+      });
+
+      const idsSet = new Set(trackedDomainIds);
+      queryClient.setQueriesData({ queryKey: domainsQueryKey }, (old: DomainsData) =>
+        old?.map((d) => (idsSet.has(d.id) ? { ...d, muted } : d)),
+      );
+
+      return { previousDomains: previousDomains as [unknown, unknown][] };
+    },
+    onError: (_err, { muted }, context: { previousDomains: [unknown, unknown][] } | undefined) => {
+      if (context?.previousDomains) {
+        rollbackDomains(context.previousDomains);
+      }
+      toast.error(muted ? "Failed to mute domains" : "Failed to unmute domains");
+    },
+    onSettled: () => void queryClient.invalidateQueries({ queryKey: domainsQueryKey }),
+  });
+
+  // ---------------------------------------------------------------------------
   // Wrapped Handlers
   // ---------------------------------------------------------------------------
 
@@ -456,6 +493,15 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
     [bulkDeleteMutation],
   );
 
+  const bulkSetMuted = useCallback(
+    async (trackedDomainIds: string[], muted: boolean): Promise<BulkMutationResult> => {
+      const result = await bulkSetMutedMutation.mutateAsync({ trackedDomainIds, muted });
+      toastBulkResult(muted ? "Muted" : "Unmuted", result, trackedDomainIds.length);
+      return result;
+    },
+    [bulkSetMutedMutation],
+  );
+
   return {
     remove,
     archive,
@@ -463,11 +509,13 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
     setMuted,
     bulkArchive,
     bulkDelete,
+    bulkSetMuted,
     isRemoving: removeMutation.isPending,
     isArchiving: archiveMutation.isPending,
     isUnarchiving: unarchiveMutation.isPending,
     isMuting: muteMutation.isPending,
     isBulkArchiving: bulkArchiveMutation.isPending,
     isBulkDeleting: bulkDeleteMutation.isPending,
+    isBulkMuting: bulkSetMutedMutation.isPending,
   };
 }

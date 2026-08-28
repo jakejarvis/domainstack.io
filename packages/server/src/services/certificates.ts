@@ -11,10 +11,10 @@ import {
   replaceCertificates,
   upsertCatalogProvider,
 } from "@domainstack/db/queries";
+import { getProviderCatalog } from "@domainstack/edge-config";
 import type { Certificate, CertificatesResponse } from "@domainstack/types";
 import { detectCertificateAuthority, getProvidersFromCatalog } from "@domainstack/utils/providers";
 
-import { getProviderCatalog } from "../edge-config";
 import { fetchCertificateChain, type RawCertificate } from "../tls";
 import { ttlForCertificates } from "../ttl";
 

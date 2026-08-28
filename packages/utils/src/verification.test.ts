@@ -9,10 +9,7 @@ import {
   META_TAG_NAME,
 } from "@domainstack/constants";
 
-import {
-  buildVerificationInstructions,
-  isValidVerificationMethod,
-} from "./verification-instructions";
+import { buildVerificationInstructions, isValidVerificationMethod } from "./verification";
 
 const domain = "example.com";
 const token = "abc123";

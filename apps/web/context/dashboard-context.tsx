@@ -20,17 +20,19 @@ export type { SortOption } from "@/lib/dashboard-utils";
 
 interface DomainActions {
   onVerify: (id: string, verificationMethod: VerificationMethod | null) => void;
-  onRemove: (id: string, domainName: string) => void;
-  onArchive: (id: string, domainName: string) => void;
+  onRemove: (id: string) => void;
+  onArchive: (id: string) => void;
   onUnarchive: (id: string) => void;
-  onToggleMuted: (id: string, muted: boolean) => void;
+  onMute: (id: string, muted: boolean) => void;
 }
 
 interface BulkState {
   onBulkArchive: (domainIds: string[]) => void;
   onBulkDelete: (domainIds: string[]) => void;
+  onBulkMute: (domainIds: string[], muted: boolean) => void;
   isBulkArchiving: boolean;
   isBulkDeleting: boolean;
+  isBulkMuting: boolean;
 }
 
 export interface FilterState {
@@ -93,15 +95,17 @@ interface DashboardProviderProps {
   children: React.ReactNode;
   /** Domain action handlers */
   onVerify: (id: string, verificationMethod: VerificationMethod | null) => void;
-  onRemove: (id: string, domainName: string) => void;
-  onArchive: (id: string, domainName: string) => void;
+  onRemove: (id: string) => void;
+  onArchive: (id: string) => void;
   onUnarchive: (id: string) => void;
-  onToggleMuted: (id: string, muted: boolean) => void;
+  onMute: (id: string, muted: boolean) => void;
   /** Bulk action handlers */
   onBulkArchive: (domainIds: string[]) => void;
   onBulkDelete: (domainIds: string[]) => void;
+  onBulkMute: (domainIds: string[], muted: boolean) => void;
   isBulkArchiving: boolean;
   isBulkDeleting: boolean;
+  isBulkMuting: boolean;
   /** Filter hook result - passed directly from useDashboardFilters */
   filterHook: {
     state: Omit<FilterState, "sortOption">;
@@ -123,11 +127,13 @@ export function DashboardProvider({
   onRemove,
   onArchive,
   onUnarchive,
-  onToggleMuted,
+  onMute,
   onBulkArchive,
   onBulkDelete,
+  onBulkMute,
   isBulkArchiving,
   isBulkDeleting,
+  isBulkMuting,
   filterHook,
   sortOption,
   setSortOption,
@@ -140,13 +146,15 @@ export function DashboardProvider({
         onRemove,
         onArchive,
         onUnarchive,
-        onToggleMuted,
+        onMute,
       },
       bulk: {
         onBulkArchive,
         onBulkDelete,
+        onBulkMute,
         isBulkArchiving,
         isBulkDeleting,
+        isBulkMuting,
       },
       filters: {
         ...filterHook.state,
@@ -164,11 +172,13 @@ export function DashboardProvider({
       onRemove,
       onArchive,
       onUnarchive,
-      onToggleMuted,
+      onMute,
       onBulkArchive,
       onBulkDelete,
+      onBulkMute,
       isBulkArchiving,
       isBulkDeleting,
+      isBulkMuting,
       filterHook,
       sortOption,
       setSortOption,

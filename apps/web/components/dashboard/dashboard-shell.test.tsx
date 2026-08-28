@@ -151,15 +151,15 @@ describe("dashboard shell", () => {
 
       await user.click(within(domainCard("alpha.com")).getByRole("button", { name: "Actions" }));
       await user.click(screen.getByRole("menuitem", { name: "Archive" }));
-      expect(dashboardActionSpies.onArchive).toHaveBeenCalledWith("domain-alpha", "alpha.com");
+      expect(dashboardActionSpies.onArchive).toHaveBeenCalledWith("domain-alpha");
 
       await user.click(within(domainCard("alpha.com")).getByRole("button", { name: "Actions" }));
       await user.click(screen.getByRole("menuitem", { name: "Mute" }));
-      expect(dashboardActionSpies.onToggleMuted).toHaveBeenCalledWith("domain-alpha", true);
+      expect(dashboardActionSpies.onMute).toHaveBeenCalledWith("domain-alpha", true);
 
       await user.click(within(domainCard("alpha.com")).getByRole("button", { name: "Actions" }));
       await user.click(screen.getByRole("menuitem", { name: "Remove" }));
-      expect(dashboardActionSpies.onRemove).toHaveBeenCalledWith("domain-alpha", "alpha.com");
+      expect(dashboardActionSpies.onRemove).toHaveBeenCalledWith("domain-alpha");
     });
 
     it("reorders cards from the sort dropdown", async () => {
@@ -225,7 +225,7 @@ describe("dashboard shell", () => {
       expect(dashboardActionSpies.onVerify).toHaveBeenCalledWith("domain-pending", null);
 
       await user.click(within(table).getByRole("button", { name: "Remove" }));
-      expect(dashboardActionSpies.onRemove).toHaveBeenCalledWith("domain-pending", "pending.dev");
+      expect(dashboardActionSpies.onRemove).toHaveBeenCalledWith("domain-pending");
     });
 
     it("toggles sort from the domain header and keeps unverified last on expiry", async () => {
@@ -509,7 +509,7 @@ describe("dashboard shell", () => {
   });
 
   describe("bulk toolbar", () => {
-    it("archives, deletes, cancels, and select-alls visible ids", async () => {
+    it("archives, deletes, mutes, unmutes, cancels, and select-alls visible ids", async () => {
       const user = userEvent.setup();
       renderDashboardShell();
       await waitForCatalog();
@@ -519,6 +519,18 @@ describe("dashboard shell", () => {
 
       const toolbar = await screen.findByRole("toolbar", { name: "Bulk actions" });
       expect(within(toolbar).getByText("2 selected")).toBeInTheDocument();
+
+      await user.click(within(toolbar).getByRole("button", { name: "Mute" }));
+      expect(dashboardActionSpies.onBulkMute).toHaveBeenCalledWith(
+        ["domain-alpha", "domain-beta"],
+        true,
+      );
+
+      await user.click(within(toolbar).getByRole("button", { name: "Unmute" }));
+      expect(dashboardActionSpies.onBulkMute).toHaveBeenCalledWith(
+        ["domain-alpha", "domain-beta"],
+        false,
+      );
 
       await user.click(within(toolbar).getByRole("button", { name: "Archive" }));
       expect(dashboardActionSpies.onBulkArchive).toHaveBeenCalledWith([

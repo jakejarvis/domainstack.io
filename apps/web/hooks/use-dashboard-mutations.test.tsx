@@ -24,6 +24,7 @@ import { createTestQueryClient, renderHook, waitFor } from "@/mocks/react";
 import {
   bulkArchiveDomainsMutation,
   bulkRemoveDomainsMutation,
+  bulkSetMutedMutation,
   DOMAINS_QUERY_KEY,
   removeDomainMutation,
   resetTrpcMocks,
@@ -234,6 +235,53 @@ describe("useDashboardMutations", () => {
       trackedDomainIds: ["domain-alpha", "domain-archived"],
     });
     expect(toast.success).toHaveBeenCalledWith("Deleted 2 domains");
+  });
+
+  it("bulk-mutes ids across listDomains cache variants without touching subscription", async () => {
+    const { result, queryClient } = renderDashboardMutations();
+    const archivedListKey = [...DOMAINS_QUERY_KEY, { includeArchived: true }] as const;
+    queryClient.setQueryData(archivedListKey, getDomains(queryClient));
+    const subscriptionBefore = getSubscription(queryClient);
+
+    await result.current.bulkSetMuted(["domain-alpha", "domain-archived"], true);
+
+    expect(getDomains(queryClient).find((d) => d.id === "domain-alpha")?.muted).toBe(true);
+    expect(
+      queryClient
+        .getQueryData<TrackedDomainWithDetails[]>(archivedListKey)
+        ?.find((d) => d.id === "domain-archived")?.muted,
+    ).toBe(true);
+    expect(getSubscription(queryClient)).toEqual(subscriptionBefore);
+    expect(bulkSetMutedMutation.mock.calls[0]?.[0]).toEqual({
+      trackedDomainIds: ["domain-alpha", "domain-archived"],
+      muted: true,
+    });
+    expect(toast.success).toHaveBeenCalledWith("Muted 2 domains");
+  });
+
+  it("toasts unmute success and a warning when bulk mute only partially succeeds", async () => {
+    const { result, queryClient } = renderDashboardMutations();
+
+    await result.current.bulkSetMuted(["domain-alpha"], false);
+    expect(getDomains(queryClient).find((d) => d.id === "domain-alpha")?.muted).toBe(false);
+    expect(toast.success).toHaveBeenCalledWith("Unmuted 1 domain");
+
+    bulkSetMutedMutation.mockResolvedValueOnce({ successCount: 1, failedCount: 1 });
+    await result.current.bulkSetMuted(["domain-alpha", "domain-beta"], true);
+    expect(toast.warning).toHaveBeenCalledWith("Muted 1 of 2 domains (1 failed)");
+  });
+
+  it("rolls back muted flags when bulk mute fails", async () => {
+    bulkSetMutedMutation.mockRejectedValueOnce(new Error("nope"));
+    const { result, queryClient } = renderDashboardMutations();
+    const domainsBefore = getDomains(queryClient);
+
+    await expect(result.current.bulkSetMuted(["domain-alpha"], true)).rejects.toThrow("nope");
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Failed to mute domains");
+    });
+    expect(getDomains(queryClient)).toEqual(domainsBefore);
   });
 
   it("toasts a warning when bulk delete only partially succeeds", async () => {

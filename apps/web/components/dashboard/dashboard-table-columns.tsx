@@ -163,16 +163,16 @@ function DomainSelectCell({ domainId, domainName }: DomainSelectCellProps) {
 
 export type ColumnCallbacks = {
   onVerify: (id: string, verificationMethod: VerificationMethod | null) => void;
-  onRemove: (id: string, domainName: string) => void;
-  onArchive: (id: string, domainName: string) => void;
-  onToggleMuted: (id: string, muted: boolean) => void;
+  onRemove: (id: string) => void;
+  onArchive: (id: string) => void;
+  onMute: (id: string, muted: boolean) => void;
   withUnverifiedLast: ReturnType<typeof createUnverifiedLastSorter>;
 };
 
 export function createColumns(
   callbacks: ColumnCallbacks,
 ): ColumnDef<DashboardTableFeatures, TrackedDomainWithDetails>[] {
-  const { onVerify, onRemove, onArchive, onToggleMuted, withUnverifiedLast } = callbacks;
+  const { onVerify, onRemove, onArchive, onMute, withUnverifiedLast } = callbacks;
 
   return [
     // Selection checkbox column
@@ -477,7 +477,7 @@ export function createColumns(
             />
             <DropdownMenuSeparator />
             {row.original.verified && (
-              <DropdownMenuItem onClick={() => onToggleMuted(row.original.id, !row.original.muted)}>
+              <DropdownMenuItem onClick={() => onMute(row.original.id, !row.original.muted)}>
                 {row.original.muted ? (
                   <>
                     <IconBell />
@@ -491,11 +491,11 @@ export function createColumns(
                 )}
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem onClick={() => onArchive(row.original.id, row.original.domainName)}>
+            <DropdownMenuItem onClick={() => onArchive(row.original.id)}>
               <IconArchive />
               Archive
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onRemove(row.original.id, row.original.domainName)}>
+            <DropdownMenuItem onClick={() => onRemove(row.original.id)}>
               <IconTrash className="text-danger-foreground" />
               Remove
             </DropdownMenuItem>

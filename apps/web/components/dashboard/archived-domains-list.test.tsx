@@ -67,7 +67,7 @@ describe("ArchivedDomainsList", () => {
     expect(dashboardActionSpies.onUnarchive).toHaveBeenCalledWith("domain-archived");
 
     await user.click(screen.getByRole("button", { name: "Delete" }));
-    expect(dashboardActionSpies.onRemove).toHaveBeenCalledWith("domain-archived", "archived.com");
+    expect(dashboardActionSpies.onRemove).toHaveBeenCalledWith("domain-archived");
   });
 
   it("blocks reactivate and shows an upgrade banner on Free at the limit", async () => {
@@ -86,7 +86,7 @@ describe("ArchivedDomainsList", () => {
     expect(dashboardActionSpies.onUnarchive).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole("button", { name: "Delete" }));
-    expect(dashboardActionSpies.onRemove).toHaveBeenCalledWith("domain-archived", "archived.com");
+    expect(dashboardActionSpies.onRemove).toHaveBeenCalledWith("domain-archived");
   });
 
   it("keeps reactivate disabled for Pro at the limit without the upgrade banner", async () => {

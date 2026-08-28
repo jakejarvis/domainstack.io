@@ -99,7 +99,7 @@ export function NotificationsPanel() {
             domainName: d.domainName,
             muted: d.muted,
           }))}
-          onToggleMuted={setDomainMuted}
+          onMute={setDomainMuted}
           disabled={isPending}
         />
       </SettingsCard>
