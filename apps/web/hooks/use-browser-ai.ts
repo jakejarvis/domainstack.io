@@ -71,18 +71,13 @@ export interface UseBrowserAIResult {
   initialize: () => Promise<void>;
 }
 
-export interface UseBrowserAIOptions {
-  /** When false, skip the Prompt API availability probe. */
-  enabled?: boolean;
-}
-
 /**
  * Hook to detect and manage browser AI availability.
  *
  * Browser support is detected synchronously. Model availability is probed once
- * when the hook is enabled (by default, on mount) and reused for the rest of
- * the tab. Closing the chat does not cancel or restart the probe.
- * When the model is downloadable, call `initialize()` to start the download.
+ * on mount and reused for the rest of the tab. Closing the chat does not cancel
+ * or restart the probe. When the model is downloadable, call `initialize()` to
+ * start the download.
  *
  * @example
  * ```tsx
@@ -105,7 +100,7 @@ export interface UseBrowserAIOptions {
  * }
  * ```
  */
-export function useBrowserAI({ enabled = true }: UseBrowserAIOptions = {}): UseBrowserAIResult {
+export function useBrowserAI(): UseBrowserAIResult {
   // Synchronous client snapshot so unsupported browsers never sit on "checking"
   // waiting for an effect. Server snapshot is false to avoid hydration mismatch.
   const supported = useSyncExternalStore(NOOP_SUBSCRIBE, browserSupportsBuiltInAI, () => false);
@@ -133,7 +128,7 @@ export function useBrowserAI({ enabled = true }: UseBrowserAIOptions = {}): UseB
   // Probe on mount so local/auto is resolved before the panel opens. Gating on
   // the open state started a cloud session first, then swapped to local.
   useEffect(() => {
-    if (!enabled || !supported || probeStartedRef.current) return;
+    if (!supported || probeStartedRef.current) return;
     probeStartedRef.current = true;
 
     let cancelled = false;
@@ -198,10 +193,10 @@ export function useBrowserAI({ enabled = true }: UseBrowserAIOptions = {}): UseB
 
     return () => {
       cancelled = true;
-      // Allow a later enable/remount to wait on the shared probe
+      // Allow a later remount to wait on the shared probe
       probeStartedRef.current = false;
     };
-  }, [enabled, supported]);
+  }, [supported]);
 
   // Initialize (download) the model
   const initialize = useCallback(async () => {

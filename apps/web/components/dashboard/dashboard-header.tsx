@@ -94,7 +94,7 @@ export function DashboardHeader({ userName }: DashboardHeaderProps) {
                 <Button
                   variant="link"
                   onClick={handleCheckout}
-                  className="gap-1 text-xs font-normal text-background"
+                  className="h-auto gap-1 !p-0 text-xs font-normal text-background"
                 >
                   Upgrade to add more domains
                   <IconExternalLink className="size-3 -translate-y-[1px]" />
