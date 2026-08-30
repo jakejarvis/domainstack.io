@@ -18,6 +18,9 @@ export async function loadGoogleFont(font: string, weight: number): Promise<Arra
       revalidate: 31_536_000, // 1 year
     },
   });
+  if (!cssResponse.ok) {
+    throw new Error(`Failed to load font: ${font} ${weight}`);
+  }
   const css = await cssResponse.text();
   const resource = css.match(/src: url\((.+)\) format\('(opentype|truetype)'\)/);
 

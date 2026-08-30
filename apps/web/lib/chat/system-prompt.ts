@@ -14,14 +14,16 @@ const OVERVIEW_TOOLS = "get_registration, get_dns_records, get_certificates, get
 const DOMAIN_TOOLS =
   "get_registration, get_dns_records, get_certificates, get_hosting, get_headers, get_seo";
 
+const PROMPT_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  weekday: "long",
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  timeZone: "UTC",
+});
+
 export function formatPromptDate(now: Date = new Date()): string {
-  return new Intl.DateTimeFormat("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    timeZone: "UTC",
-  }).format(now);
+  return PROMPT_DATE_FORMATTER.format(now);
 }
 
 function domainContext(domain?: string): string {

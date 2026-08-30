@@ -4,7 +4,7 @@ import { IconArchive, IconArrowLeft, IconHeartHandshake } from "@tabler/icons-re
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { ArchivedDomainsList } from "@/components/dashboard/archived-domains-list";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
@@ -290,21 +290,12 @@ export function DashboardClient() {
     domainsQuery.refetch();
   }, [refetchSubscription, domainsQuery]);
 
-  // Redirect to login if not authenticated (must be before conditional returns)
-  // useLayoutEffect prevents flash of unauthorized content by redirecting before paint
-  const shouldRedirect = !isLoading && !session;
-  useLayoutEffect(() => {
-    if (shouldRedirect) {
-      router.replace("/login");
-    }
-  }, [shouldRedirect, router]);
-
   if (isLoading) {
     return <DashboardSkeleton />;
   }
 
   if (!session) {
-    // Render skeleton while redirect is in progress
+    // Server layout already redirects unauthenticated users
     return <DashboardSkeleton />;
   }
 

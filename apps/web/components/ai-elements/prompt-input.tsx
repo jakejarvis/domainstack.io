@@ -8,7 +8,7 @@ import {
   type FormEventHandler,
   type HTMLAttributes,
   type KeyboardEventHandler,
-  useState,
+  useRef,
 } from "react";
 
 import { useHaptics } from "@/components/providers/haptics-provider";
@@ -76,11 +76,11 @@ export const PromptInputTextarea = ({
   placeholder = "What would you like to know\u2026",
   ...props
 }: PromptInputTextareaProps) => {
-  const [isComposing, setIsComposing] = useState(false);
+  const isComposing = useRef(false);
 
   const handleKeyDown: KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
     if (e.key === "Enter") {
-      if (isComposing || e.nativeEvent.isComposing) {
+      if (isComposing.current || e.nativeEvent.isComposing) {
         return;
       }
       if (e.shiftKey) {
@@ -105,8 +105,12 @@ export const PromptInputTextarea = ({
       name="message"
       autoComplete="off"
       aria-label="Message"
-      onCompositionEnd={() => setIsComposing(false)}
-      onCompositionStart={() => setIsComposing(true)}
+      onCompositionEnd={() => {
+        isComposing.current = false;
+      }}
+      onCompositionStart={() => {
+        isComposing.current = true;
+      }}
       onKeyDown={handleKeyDown}
       placeholder={placeholder}
       onChange={onChange}

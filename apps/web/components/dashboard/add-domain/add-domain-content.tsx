@@ -95,19 +95,19 @@ export function AddDomainContent({
 
   // Show loading spinner while checking subscription
   if (isSubscriptionLoading) {
-    const loadingContent = (
-      <div className="flex min-h-[200px] items-center justify-center">
-        <Spinner className="size-6" />
+    return (
+      <div className={className}>
+        <div className="flex min-h-[200px] items-center justify-center">
+          <Spinner className="size-6" />
+        </div>
       </div>
     );
-
-    return <div className={className}>{loadingContent}</div>;
   }
 
   // Show error state if subscription check failed
   if (isSubscriptionError) {
-    const errorContent = (
-      <>
+    return (
+      <div className={className}>
         <div className="mb-4 flex flex-col items-center text-center">
           <Icon size="lg" variant="destructive" className="mb-2">
             <IconAlertCircle />
@@ -134,17 +134,15 @@ export function AddDomainContent({
             </Button>
           )}
         </div>
-      </>
+      </div>
     );
-
-    return <div className={className}>{errorContent}</div>;
   }
 
   // If at quota (and not resuming verification for an existing domain), show quota message
   // Exception: If we just finished adding a domain (step 3), don't show the limit message yet
   if (!subscription?.canAddMore && !resumeDomain && step !== 3) {
-    const quotaContent = (
-      <>
+    return (
+      <div className={className}>
         <div className="mb-4 flex flex-col items-center gap-1 text-center">
           <Icon size="lg" variant="destructive" className="mb-2">
             <IconGauge />
@@ -182,10 +180,8 @@ export function AddDomainContent({
             <UpgradeCard />
           )}
         </div>
-      </>
+      </div>
     );
-
-    return <div className={className}>{quotaContent}</div>;
   }
 
   return (

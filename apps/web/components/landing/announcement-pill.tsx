@@ -1,7 +1,8 @@
 "use client";
 
 import { IconArrowUpRight, IconMeteor, IconX } from "@tabler/icons-react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, useReducedMotion } from "motion/react";
+import * as m from "motion/react-m";
 import Link from "next/link";
 import useLocalStorageState from "use-local-storage-state";
 
@@ -22,7 +23,7 @@ export function AnnouncementPill() {
   return (
     <AnimatePresence>
       {!dismissed && (
-        <motion.div
+        <m.div
           initial={{
             opacity: 0,
             y: shouldReduceMotion ? 0 : -10,
@@ -39,7 +40,7 @@ export function AnnouncementPill() {
           }}
           className="absolute right-0 bottom-full left-0 z-10 mb-8 flex items-center justify-center"
         >
-          <div className="relative inline-flex items-center rounded-full border border-black/10 bg-gradient-to-r from-black/[0.02] to-black/[0.04] text-sm backdrop-blur-sm transition-all hover:border-black/20 hover:from-black/[0.04] hover:to-black/[0.06] dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04] dark:hover:border-white/20 dark:hover:from-white/[0.04] dark:hover:to-white/[0.06]">
+          <div className="relative inline-flex items-center rounded-full border border-black/10 bg-gradient-to-r from-black/[0.02] to-black/[0.04] text-sm backdrop-blur-sm transition-colors hover:border-black/20 hover:from-black/[0.04] hover:to-black/[0.06] dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04] dark:hover:border-white/20 dark:hover:from-white/[0.04] dark:hover:to-white/[0.06]">
             {/* Shimmer effect */}
             <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-full">
               <div className="absolute inset-0 animate-shimmer bg-gradient-to-r from-transparent via-white/5 to-transparent" />
@@ -68,7 +69,7 @@ export function AnnouncementPill() {
               <IconX className="size-3.5" />
             </button>
           </div>
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

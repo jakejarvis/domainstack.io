@@ -1,7 +1,8 @@
 "use client";
 
 import { useAtomValue } from "jotai";
-import { motion, useReducedMotion } from "motion/react";
+import { useReducedMotion } from "motion/react";
+import * as m from "motion/react-m";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { isSearchFocusedAtom } from "@/lib/atoms/search-atoms";
@@ -12,7 +13,7 @@ export function AppHeaderSlideOver({ children }: { children: React.ReactNode }) 
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <motion.div
+    <m.div
       className="flex h-full items-center gap-1.5 justify-self-end"
       animate={{
         // Only animate on mobile; on desktop keep fully visible
@@ -32,6 +33,6 @@ export function AppHeaderSlideOver({ children }: { children: React.ReactNode }) 
       style={{ pointerEvents: isSearchFocused && isMobile ? "none" : "auto" }}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }

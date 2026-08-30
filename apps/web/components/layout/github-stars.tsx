@@ -3,6 +3,11 @@ import { SiGithub } from "@icons-pack/react-simple-icons";
 import { REPOSITORY_SLUG } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
 
+const STAR_COUNT_FORMATTER = new Intl.NumberFormat("en-US", {
+  notation: "compact",
+  compactDisplay: "short",
+});
+
 async function fetchRepoStars(): Promise<number | null> {
   try {
     const res = await fetch(`https://api.github.com/repos/${REPOSITORY_SLUG}`, {
@@ -33,13 +38,7 @@ async function fetchRepoStars(): Promise<number | null> {
 
 export async function GithubStars() {
   const stars = await fetchRepoStars();
-  const label =
-    stars === null
-      ? "0"
-      : new Intl.NumberFormat("en-US", {
-          notation: "compact",
-          compactDisplay: "short",
-        }).format(stars);
+  const label = stars === null ? "0" : STAR_COUNT_FORMATTER.format(stars);
 
   return (
     <Button

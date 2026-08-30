@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { safeUrl } from "@/lib/safe-parse";
+
 export const SITE_NAME = "Domainstack";
 export const SITE_TAGLINE = "Domain Intelligence Made Easy";
 export const SITE_TITLE = `${SITE_NAME} — ${SITE_TAGLINE}`;
@@ -96,7 +98,9 @@ export const rootMetadata: Metadata = {
     template: `%s — ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"),
+  metadataBase:
+    safeUrl(process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000") ??
+    new URL("http://localhost:3000"),
   openGraph: openGraphDefaults,
   twitter: twitterDefaults,
 };

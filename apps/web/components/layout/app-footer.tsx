@@ -14,7 +14,7 @@ import {
   IconPuzzle,
   IconWorld,
 } from "@tabler/icons-react";
-import * as motion from "motion/react-client";
+import * as m from "motion/react-m";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -30,22 +30,24 @@ import {
   DropdownMenuTrigger,
 } from "@domainstack/ui/dropdown-menu";
 
+// a little hack to "unsafely" use raw javascript as a link
+function hrefScript(element: HTMLAnchorElement | null) {
+  if (!element) return;
+  element.href = `javascript:(function(){var t=window.open("${process.env.NEXT_PUBLIC_BASE_URL}/"+location.hostname,"_blank");t.focus()})();`;
+}
+
+function handleInspectDomainClick(e: React.MouseEvent) {
+  e.preventDefault();
+  toast.info("Drag the button to your bookmarks bar to use it.", {
+    icon: <IconCornerLeftUp className="size-4" />,
+    position: "top-center",
+  });
+}
+
 export function AppFooter() {
   const [isBookmarkletsOpen, setIsBookmarkletsOpen] = useState(false);
   const handleBookmarkletsOpenChange = (open: boolean) => {
     setIsBookmarkletsOpen(open);
-  };
-  // a little hack to "unsafely" use raw javascript as a link
-  const hrefScript = (element: HTMLAnchorElement | null) => {
-    if (!element) return;
-    element.href = `javascript:(function(){var t=window.open("${process.env.NEXT_PUBLIC_BASE_URL}/"+location.hostname,"_blank");t.focus()})();`;
-  };
-  const handleInspectDomainClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    toast.info("Drag the button to your bookmarks bar to use it.", {
-      icon: <IconCornerLeftUp className="size-4" />,
-      position: "top-center",
-    });
   };
 
   return (
@@ -128,8 +130,8 @@ export function AppFooter() {
         </div>
         <div>
           Made with{" "}
-          <motion.div
-            className={"inline-flex translate-y-[3px] will-change-transform"}
+          <m.div
+            className="inline-flex translate-y-[3px]"
             animate={{ scale: [1, 1.15, 1, 1.15, 1, 1] }}
             transition={{
               duration: 1.2,
@@ -138,7 +140,7 @@ export function AppFooter() {
             }}
           >
             <IconHeart className="fill-destructive stroke-destructive" />
-          </motion.div>{" "}
+          </m.div>{" "}
           by{" "}
           <a href="https://jarv.is/" target="_blank" rel="noopener">
             @jakejarvis
@@ -162,12 +164,14 @@ export function AppFooter() {
             <Button
               size="lg"
               nativeButton={false}
-              render={<a ref={hrefScript} href="#" />}
+              render={
+                <a ref={hrefScript} href="#">
+                  <IconWorld />
+                  Inspect Domain
+                </a>
+              }
               onClick={handleInspectDomainClick}
-            >
-              <IconWorld />
-              Inspect Domain
-            </Button>
+            />
           </div>
         </DialogContent>
       </Dialog>

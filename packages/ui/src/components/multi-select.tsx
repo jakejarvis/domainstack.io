@@ -43,6 +43,10 @@ export type MultiSelectProps<T extends string> = {
   popoverWidth?: string;
 };
 
+function defaultRenderOption<T extends string>(option: MultiSelectOption<T>) {
+  return option.label;
+}
+
 /**
  * A multi-select dropdown component using Base UI ComboboxPrimitive.
  * Supports optional search, sections, custom rendering, and displays a selection count badge.
@@ -93,12 +97,11 @@ export function MultiSelect<T extends string>({
     [flatOptions],
   );
 
-  const selectedItems = selected.map((v) => optionByValue.get(v)).filter(Boolean) as Array<
-    MultiSelectOption<T>
-  >;
+  const selectedItems = selected.flatMap((v) => {
+    const option = optionByValue.get(v);
+    return option ? [option] : [];
+  });
 
-  // Default option renderer
-  const defaultRenderOption = (option: MultiSelectOption<T>) => option.label;
   const optionRenderer = renderOption ?? defaultRenderOption;
 
   const filterOption = (option: MultiSelectOption<T>, query: string) => {

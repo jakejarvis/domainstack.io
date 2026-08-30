@@ -1,4 +1,5 @@
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, useReducedMotion } from "motion/react";
+import * as m from "motion/react-m";
 import { useState } from "react";
 
 import { DashboardGridCard } from "@/components/dashboard/dashboard-grid-card";
@@ -54,14 +55,14 @@ export function DashboardGrid({ domains }: DashboardGridProps) {
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
       <AnimatePresence mode="popLayout">
         {domains.map((domain) => (
-          <motion.div key={domain.id} className="h-full" {...getItemMotionProps(domain.id)}>
+          <m.div key={domain.id} className="h-full" {...getItemMotionProps(domain.id)}>
             <DashboardGridCard domain={domain} />
-          </motion.div>
+          </m.div>
         ))}
 
-        <motion.div key="upgrade-cta" className="h-full" {...getItemMotionProps("upgrade-cta")}>
+        <m.div key="upgrade-cta" className="h-full" {...getItemMotionProps("upgrade-cta")}>
           <GridUpgradeCard />
-        </motion.div>
+        </m.div>
       </AnimatePresence>
     </div>
   );

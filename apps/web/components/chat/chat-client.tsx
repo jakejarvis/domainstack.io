@@ -19,6 +19,7 @@ import { analytics } from "@/lib/analytics/client";
 import { chatOpenAtom } from "@/lib/atoms/chat-atoms";
 import { createClientDomainTools } from "@/lib/chat/client-tools";
 import { buildSystemPrompt } from "@/lib/chat/system-prompt";
+import { safeDecodeURIComponent } from "@/lib/safe-parse";
 import { useChatHydrated, useChatStore } from "@/lib/stores/chat-store";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { useTRPCClient } from "@/lib/trpc/client";
@@ -62,7 +63,7 @@ export function ChatClient({ suggestions = EMPTY_SUGGESTIONS }: ChatClientProps)
   const storedMessageCount = useChatStore((s) => s.messages.length);
   const { trigger } = useHaptics();
 
-  const domain = params.domain ? decodeURIComponent(params.domain) : undefined;
+  const domain = params.domain ? safeDecodeURIComponent(params.domain) : undefined;
 
   const wantsLocal = (aiMode === "local" || aiMode === "auto") && browserAI.status === "ready";
   const preferredMode: ChatMode =
@@ -214,15 +215,17 @@ function CloudChatSession({
   const clearMessages = useCallback(() => {
     chat.setMessages([]);
     clearSession();
-  }, [chat, clearSession]);
+    onActiveChange(false);
+  }, [chat, clearSession, onActiveChange]);
 
   const sendMessage = useCallback(
     (msgParams: { text: string }) => {
       const text = msgParams.text.trim();
       if (!text) return;
       chat.sendMessage({ text });
+      onActiveChange(true);
     },
-    [chat],
+    [chat, onActiveChange],
   );
 
   const retry = useCallback(() => {
@@ -235,10 +238,6 @@ function CloudChatSession({
       : chat.error
         ? getUserFriendlyError(chat.error)
         : null;
-
-  useEffect(() => {
-    onActiveChange(chat.messages.length > 0);
-  }, [chat.messages.length, onActiveChange]);
 
   return (
     <ChatShell
@@ -290,15 +289,17 @@ function LocalChatSession({
 
   const clearMessages = useCallback(() => {
     chat.setMessages([]);
-  }, [chat]);
+    onActiveChange(false);
+  }, [chat, onActiveChange]);
 
   const sendMessage = useCallback(
     (msgParams: { text: string }) => {
       const text = msgParams.text.trim();
       if (!text) return;
       chat.sendMessage({ text });
+      onActiveChange(true);
     },
-    [chat],
+    [chat, onActiveChange],
   );
 
   const retry = useCallback(() => {
@@ -311,10 +312,6 @@ function LocalChatSession({
       : chat.error
         ? getUserFriendlyError(chat.error)
         : null;
-
-  useEffect(() => {
-    onActiveChange(chat.messages.length > 0);
-  }, [chat.messages.length, onActiveChange]);
 
   return (
     <ChatShell

@@ -5,6 +5,19 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@domainstack/ui/ca
 import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
 
+const GLOW_COLORS = {
+  info: { primary: "bg-accent-blue/10", secondary: "bg-accent-blue/8" },
+  warning: {
+    primary: "bg-accent-orange/10",
+    secondary: "bg-accent-orange/8",
+  },
+  success: {
+    primary: "bg-accent-green/10",
+    secondary: "bg-accent-green/8",
+  },
+  danger: { primary: "bg-accent-red/10", secondary: "bg-accent-red/8" },
+};
+
 type DashboardBannerProps = {
   icon?: TablerIcon;
   title: string;
@@ -70,20 +83,6 @@ export function DashboardBanner({
   const isButtonSecondaryAction =
     secondaryAction && typeof secondaryAction === "object" && "onClick" in secondaryAction;
 
-  // Map variant to glow colors (using vibrant accent colors with soft opacity)
-  const glowColors = {
-    info: { primary: "bg-accent-blue/10", secondary: "bg-accent-blue/8" },
-    warning: {
-      primary: "bg-accent-orange/10",
-      secondary: "bg-accent-orange/8",
-    },
-    success: {
-      primary: "bg-accent-green/10",
-      secondary: "bg-accent-green/8",
-    },
-    danger: { primary: "bg-accent-red/10", secondary: "bg-accent-red/8" },
-  };
-
   return (
     <Card
       className={cn(
@@ -110,14 +109,14 @@ export function DashboardBanner({
         aria-hidden
         className={cn(
           "pointer-events-none absolute -top-24 -right-20 size-48 rounded-full blur-[80px]",
-          glowColors[variant].primary,
+          GLOW_COLORS[variant].primary,
         )}
       />
       <div
         aria-hidden
         className={cn(
           "pointer-events-none absolute -bottom-20 left-8 size-40 rounded-full blur-[80px]",
-          glowColors[variant].secondary,
+          GLOW_COLORS[variant].secondary,
         )}
       />
 

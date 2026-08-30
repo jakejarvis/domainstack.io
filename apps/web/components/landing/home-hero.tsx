@@ -1,6 +1,7 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, useReducedMotion } from "motion/react";
+import * as m from "motion/react-m";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { cn } from "@domainstack/ui/utils";
@@ -48,8 +49,6 @@ export function HomeHero({ className }: { className?: string }) {
     return () => ro.disconnect();
   }, []);
 
-  // Width updates are driven by ResizeObserver measuring the hidden mirror node
-
   return (
     <h1
       className={cn(
@@ -58,22 +57,25 @@ export function HomeHero({ className }: { className?: string }) {
       )}
     >
       <span className="whitespace-nowrap text-foreground/90">Inspect any domain&rsquo;s</span>
-      <motion.span
-        className="ml-2.5 inline-flex items-center rounded-lg bg-muted/40 px-2 py-0.5 text-foreground shadow-sm ring-1 ring-ring/20 will-change-[width,transform] sm:rounded-md sm:px-3 sm:py-1"
+      <m.span
+        className="ml-2.5 inline-flex items-center rounded-lg bg-muted/40 px-2 py-0.5 text-foreground shadow-sm ring-1 ring-ring/20 sm:rounded-md sm:px-3 sm:py-1"
         aria-live="polite"
         aria-atomic="true"
         initial={false}
-        animate={{ width: measuredWidth ?? undefined }}
+        layout={!shouldReduceMotion}
         transition={{
           duration: shouldReduceMotion ? 0.1 : 0.85,
           ease: [0.22, 1, 0.36, 1],
         }}
         style={{ width: measuredWidth ?? undefined }}
       >
-        <span className="relative flex h-[1.15em] w-full items-center overflow-hidden whitespace-nowrap">
+        <m.span
+          layout={!shouldReduceMotion ? "position" : false}
+          className="relative flex h-[1.15em] w-full items-center overflow-hidden whitespace-nowrap"
+        >
           <span className="absolute left-1/2 -translate-x-1/2">
             <AnimatePresence mode="wait" initial={false}>
-              <motion.span
+              <m.span
                 key={ROTATING_WORDS[index]}
                 initial={shouldReduceMotion ? { opacity: 0 } : { y: "100%", opacity: 0, x: 0 }}
                 animate={shouldReduceMotion ? { opacity: 1 } : { y: 0, opacity: 1, x: 0 }}
@@ -83,16 +85,16 @@ export function HomeHero({ className }: { className?: string }) {
                   ease: [0.22, 1, 0.36, 1],
                   duration: shouldReduceMotion ? 0.15 : 0.5,
                 }}
-                className="inline-block will-change-[transform,opacity]"
+                className="inline-block"
               >
                 {ROTATING_WORDS[index]}
-              </motion.span>
+              </m.span>
             </AnimatePresence>
           </span>
           {/* in-flow baseline shim so the pill aligns with surrounding text baseline */}
           <span className="invisible select-none">{ROTATING_WORDS[index]}</span>
-        </span>
-      </motion.span>
+        </m.span>
+      </m.span>
       {/* measurement element for smooth width animation (inherits h1 font sizing) */}
       <span
         ref={measureRef}

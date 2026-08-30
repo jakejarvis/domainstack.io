@@ -108,8 +108,8 @@ export function AppHeaderClientButtons() {
         <TooltipTrigger
           render={
             <Button aria-label="Toggle theme" variant="ghost" size="sm" onClick={toggleTheme}>
-              <IconSun className="scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
-              <IconMoon className="absolute scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
+              <IconSun className="scale-100 rotate-0 transition-[transform,opacity] dark:scale-95 dark:-rotate-90 dark:opacity-0" />
+              <IconMoon className="absolute scale-95 rotate-90 opacity-0 transition-[transform,opacity] dark:scale-100 dark:rotate-0 dark:opacity-100" />
               <span className="sr-only">Toggle theme</span>
             </Button>
           }

@@ -6,7 +6,8 @@ import {
   IconWorld,
   IconX,
 } from "@tabler/icons-react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, useReducedMotion } from "motion/react";
+import * as m from "motion/react-m";
 import { useCallback, useMemo } from "react";
 
 import { DashboardTableColumnMenu } from "@/components/dashboard/dashboard-table-column-menu";
@@ -200,7 +201,7 @@ export function DashboardFilters() {
         {/* Clear all button */}
         <AnimatePresence initial={false}>
           {hasActiveFilters && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: shouldReduceMotion ? 0 : 6 }}
@@ -213,7 +214,7 @@ export function DashboardFilters() {
                 <IconX />
                 Clear all
               </Button>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
 

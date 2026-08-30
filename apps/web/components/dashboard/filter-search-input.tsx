@@ -1,5 +1,6 @@
 import { IconSearch, IconX } from "@tabler/icons-react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, useReducedMotion } from "motion/react";
+import * as m from "motion/react-m";
 
 import {
   InputGroup,
@@ -36,7 +37,7 @@ export function FilterSearchInput({ value, onChange }: FilterSearchInputProps) {
         <AnimatePresence initial={false}>
           {value && (
             <InputGroupAddon align="inline-end">
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.98 }}
@@ -52,7 +53,7 @@ export function FilterSearchInput({ value, onChange }: FilterSearchInputProps) {
                 >
                   <IconX />
                 </InputGroupButton>
-              </motion.div>
+              </m.div>
             </InputGroupAddon>
           )}
         </AnimatePresence>

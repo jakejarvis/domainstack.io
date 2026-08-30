@@ -14,10 +14,11 @@ export const registrarRouter = createTRPCRouter({
       const normalizedTld = (input.tld ?? "").trim().toLowerCase().replace(/^\./, "");
       if (!normalizedTld) return { success: false, data: { tld: null, providers: [] } };
 
-      const results = await Promise.all(
-        providers
-          .filter((p) => p.enabled)
-          .map(async (provider) => {
+      const fetches: Array<Promise<{ provider: string; price: string } | null>> = [];
+      for (const provider of providers) {
+        if (!provider.enabled) continue;
+        fetches.push(
+          (async () => {
             try {
               const payload = await provider.fetchPricing();
               const price = payload[normalizedTld]?.registration;
@@ -25,8 +26,10 @@ export const registrarRouter = createTRPCRouter({
             } catch {
               return null;
             }
-          }),
-      );
+          })(),
+        );
+      }
+      const results = await Promise.all(fetches);
 
       return {
         success: true,

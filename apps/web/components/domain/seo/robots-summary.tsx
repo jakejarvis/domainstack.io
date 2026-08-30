@@ -12,7 +12,8 @@ import {
   IconWaveSquare,
   IconX,
 } from "@tabler/icons-react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, useReducedMotion } from "motion/react";
+import * as m from "motion/react-m";
 import { useCallback, useMemo, useState, useTransition } from "react";
 
 import { PillCount } from "@/components/domain/pill-count";
@@ -59,6 +60,22 @@ function getRuleItems(rules: RobotsRule[], scope: string) {
       rule,
     };
   });
+}
+
+function highlight(text: string, q: string) {
+  if (!q) return text;
+  const idx = text.toLowerCase().indexOf(q.toLowerCase());
+  if (idx === -1) return text;
+  const before = text.slice(0, idx);
+  const match = text.slice(idx, idx + q.length);
+  const after = text.slice(idx + q.length);
+  return (
+    <>
+      {before}
+      <span className="bg-yellow-500/30 dark:bg-yellow-400/30">{match}</span>
+      {after}
+    </>
+  );
 }
 
 function useProgressiveReveal<T>(items: T[], initialVisible: number) {
@@ -135,22 +152,6 @@ export function RobotsSummary({
     if (/googlebot/.test(joined)) return 1;
     return 2;
   }, []);
-
-  function highlight(text: string, q: string) {
-    if (!q) return text;
-    const idx = text.toLowerCase().indexOf(q.toLowerCase());
-    if (idx === -1) return text;
-    const before = text.slice(0, idx);
-    const match = text.slice(idx, idx + q.length);
-    const after = text.slice(idx + q.length);
-    return (
-      <>
-        {before}
-        <span className="bg-yellow-500/30 dark:bg-yellow-400/30">{match}</span>
-        {after}
-      </>
-    );
-  }
 
   const filteredGroups = useMemo(() => {
     const base = robots?.groups?.slice() ?? [];
@@ -276,16 +277,11 @@ export function RobotsSummary({
               </div>
             ) : null}
 
-            <GroupsAccordion
-              groups={displayGroups}
-              query={query}
-              highlight={highlight}
-              only={only}
-            />
+            <GroupsAccordion groups={displayGroups} query={query} only={only} />
           </>
         ) : hasEmptyRulesGroups ? (
           // Show groups with empty rules (e.g., "Disallow:" means allow all)
-          <GroupsAccordion groups={displayGroups} query={query} highlight={highlight} only={only} />
+          <GroupsAccordion groups={displayGroups} query={query} only={only} />
         ) : robots?.sitemaps?.length ? (
           <Empty className="border border-dashed">
             <EmptyHeader>
@@ -358,7 +354,6 @@ function RobotsGroupHeader({
 function GroupsAccordion({
   groups,
   query,
-  highlight,
   only,
 }: {
   groups: {
@@ -371,7 +366,6 @@ function GroupsAccordion({
     hasEmptyDisallow: boolean;
   }[];
   query: string;
-  highlight: (text: string, q: string) => React.ReactNode;
   only?: "all" | "allow" | "disallow";
 }) {
   const shouldReduceMotion = useReducedMotion();
@@ -394,7 +388,7 @@ function GroupsAccordion({
         const stableKey = g.userAgents.join(",");
 
         return (
-          <motion.div
+          <m.div
             key={stableKey}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -418,14 +412,13 @@ function GroupsAccordion({
                 <GroupContent
                   rules={g.rules}
                   query={query}
-                  highlight={highlight}
                   only={only}
                   hasEmptyAllow={g.hasEmptyAllow}
                   hasEmptyDisallow={g.hasEmptyDisallow}
                 />
               </AccordionContent>
             </AccordionItem>
-          </motion.div>
+          </m.div>
         );
       })}
     </AnimatePresence>
@@ -448,7 +441,6 @@ function GroupsAccordion({
 function GroupContent({
   rules,
   query,
-  highlight,
   only,
   hasEmptyAllow,
   hasEmptyDisallow,
@@ -458,7 +450,6 @@ function GroupContent({
     value: string;
   }[];
   query: string;
-  highlight: (text: string, q: string) => React.ReactNode;
   only?: "all" | "allow" | "disallow";
   hasEmptyAllow: boolean;
   hasEmptyDisallow: boolean;
@@ -477,7 +468,6 @@ function GroupContent({
             key={key}
             rule={rule}
             query={query}
-            highlight={highlight}
             isFirst={key === firstRuleKey}
           />
         ))}
@@ -506,12 +496,11 @@ function GroupContent({
           key={key}
           rule={rule}
           query={query}
-          highlight={highlight}
           isFirst={key === firstExistingKey}
         />
       ))}
       {added.length > 0 ? (
-        <motion.div
+        <m.div
           key={`added-${visible}`}
           initial={shouldReduceMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -519,9 +508,9 @@ function GroupContent({
           className="flex flex-col"
         >
           {addedItems.map(({ key, rule }) => (
-            <RuleRow key={key} rule={rule} query={query} highlight={highlight} />
+            <RuleRow key={key} rule={rule} query={query} />
           ))}
-        </motion.div>
+        </m.div>
       ) : null}
       {more > 0 ? (
         <div className="mt-1 flex justify-start">
@@ -543,7 +532,6 @@ function GroupContent({
 function RuleRow({
   rule,
   query,
-  highlight,
   isFirst = false,
 }: {
   rule: {
@@ -551,7 +539,6 @@ function RuleRow({
     value: string;
   };
   query: string;
-  highlight: (text: string, q: string) => React.ReactNode;
   isFirst?: boolean;
 }) {
   return (
@@ -644,7 +631,7 @@ function SitemapsList({ items }: { items: string[] }) {
           <SitemapLink key={`sm-ex-${u}`} url={u} />
         ))}
         {added.length > 0 ? (
-          <motion.div
+          <m.div
             key={`sitemaps-added-${visible}`}
             initial={shouldReduceMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -654,7 +641,7 @@ function SitemapsList({ items }: { items: string[] }) {
             {added.map((u) => (
               <SitemapLink key={`sm-add-${u}`} url={u} />
             ))}
-          </motion.div>
+          </m.div>
         ) : null}
         {more > 0 ? (
           <div className="mt-1 flex justify-start">

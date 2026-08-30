@@ -3,23 +3,25 @@ import { isTextUIPart } from "ai";
 
 /** Format messages as markdown for clipboard copy */
 export function formatMessagesAsMarkdown(messages: UIMessage[]): string {
-  return messages
-    .map((message) => {
-      const role = message.role === "user" ? "User" : "Assistant";
-      const text = message.parts
-        .filter(isTextUIPart)
-        .map((part) => part.text)
-        .filter((value) => value.trim().length > 0)
-        .join("\n\n");
+  const blocks: string[] = [];
 
-      if (!text) {
-        return null;
-      }
+  for (const message of messages) {
+    const role = message.role === "user" ? "User" : "Assistant";
+    const texts: string[] = [];
 
-      return `**${role}:** ${text}`;
-    })
-    .filter((block): block is string => block !== null)
-    .join("\n\n---\n\n");
+    for (const part of message.parts) {
+      if (!isTextUIPart(part)) continue;
+      if (part.text.trim().length === 0) continue;
+      texts.push(part.text);
+    }
+
+    const text = texts.join("\n\n");
+    if (!text) continue;
+
+    blocks.push(`**${role}:** ${text}`);
+  }
+
+  return blocks.join("\n\n---\n\n");
 }
 
 export function getUserFriendlyError(error: Error): string {

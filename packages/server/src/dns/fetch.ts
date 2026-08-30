@@ -51,51 +51,50 @@ export async function fetchDnsRecords(
         types.map(async (type) => {
           const answers = await queryDohProvider(provider, domain, type);
 
-          const records: DnsRecord[] = [];
-          for (const a of answers) {
-            // Filter out records that don't match requested type
-            const expectedTypeNumber = DNS_TYPE_NUMBERS[type];
-            if (a.type !== expectedTypeNumber) continue;
+          const records = (
+            await Promise.all(
+              answers.map(async (a): Promise<DnsRecord | null> => {
+                // Filter out records that don't match requested type
+                const expectedTypeNumber = DNS_TYPE_NUMBERS[type];
+                if (a.type !== expectedTypeNumber) return null;
 
-            const name = a.name.endsWith(".") ? a.name.slice(0, -1) : a.name;
-            const ttl = a.TTL;
+                const name = a.name.endsWith(".") ? a.name.slice(0, -1) : a.name;
+                const ttl = a.TTL;
 
-            switch (type) {
-              case "A":
-              case "AAAA": {
-                const value = a.data.endsWith(".") ? a.data.slice(0, -1) : a.data;
-                const isCloudflare = await isCloudflareIp(value);
-                records.push({ type, name, value, ttl, isCloudflare });
-                break;
-              }
-              case "NS": {
-                const value = a.data.endsWith(".") ? a.data.slice(0, -1) : a.data;
-                records.push({ type, name, value, ttl });
-                break;
-              }
-              case "TXT": {
-                // Handle multi-string TXT records: "part1" "part2" -> part1part2
-                const value = a.data.replace(/^"|"$/g, "").replace(/" "/g, "");
-                records.push({ type, name, value, ttl });
-                break;
-              }
-              case "MX": {
-                const [prioStr, ...hostParts] = a.data.split(" ");
-                const priority = Number(prioStr);
-                let host = hostParts.join(" ");
-                host = host.endsWith(".") ? host.slice(0, -1) : host;
-                if (!host) continue;
-                records.push({
-                  type,
-                  name,
-                  value: host,
-                  ttl,
-                  priority: Number.isFinite(priority) ? priority : 0,
-                });
-                break;
-              }
-            }
-          }
+                switch (type) {
+                  case "A":
+                  case "AAAA": {
+                    const value = a.data.endsWith(".") ? a.data.slice(0, -1) : a.data;
+                    const isCloudflare = await isCloudflareIp(value);
+                    return { type, name, value, ttl, isCloudflare };
+                  }
+                  case "NS": {
+                    const value = a.data.endsWith(".") ? a.data.slice(0, -1) : a.data;
+                    return { type, name, value, ttl };
+                  }
+                  case "TXT": {
+                    // Handle multi-string TXT records: "part1" "part2" -> part1part2
+                    const value = a.data.replace(/^"|"$/g, "").replace(/" "/g, "");
+                    return { type, name, value, ttl };
+                  }
+                  case "MX": {
+                    const [prioStr, ...hostParts] = a.data.split(" ");
+                    const priority = Number(prioStr);
+                    let host = hostParts.join(" ");
+                    host = host.endsWith(".") ? host.slice(0, -1) : host;
+                    if (!host) return null;
+                    return {
+                      type,
+                      name,
+                      value: host,
+                      ttl,
+                      priority: Number.isFinite(priority) ? priority : 0,
+                    };
+                  }
+                }
+              }),
+            )
+          ).filter((record): record is DnsRecord => record !== null);
           return records;
         }),
       );

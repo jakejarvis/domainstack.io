@@ -1,5 +1,6 @@
 import { type Cell, FlexRender } from "@tanstack/react-table";
-import { motion, useReducedMotion } from "motion/react";
+import { useReducedMotion } from "motion/react";
+import * as m from "motion/react-m";
 
 import { useDashboardActions } from "@/context/dashboard-context";
 import { useIsDomainSelected } from "@/hooks/use-dashboard-selection";
@@ -7,6 +8,8 @@ import type { DashboardTableFeatures } from "@/lib/dashboard-table-features";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { cn } from "@domainstack/ui/utils";
+
+const EXPLICIT_COLUMNS = ["select", "domainName", "verified", "actions"];
 
 type UnverifiedTableRowProps = {
   rowId: string;
@@ -27,11 +30,10 @@ export function UnverifiedTableRow({ rowId, cells, original }: UnverifiedTableRo
   const actionsCell = cellMap.get("actions");
 
   // Calculate colspan: total cells minus the 4 we render explicitly
-  const explicitColumns = ["select", "domainName", "verified", "actions"];
-  const collapseCount = cells.length - explicitColumns.length;
+  const collapseCount = cells.length - EXPLICIT_COLUMNS.length;
 
   return (
-    <motion.tr
+    <m.tr
       key={rowId}
       layout={shouldReduceMotion ? false : "position"}
       initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 6 }}
@@ -114,6 +116,6 @@ export function UnverifiedTableRow({ rowId, cells, original }: UnverifiedTableRo
           <FlexRender cell={actionsCell} />
         </td>
       )}
-    </motion.tr>
+    </m.tr>
   );
 }

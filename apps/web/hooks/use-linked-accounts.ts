@@ -31,6 +31,23 @@ export interface UseLinkedAccountsReturn {
   isUnlinkPending: boolean;
 }
 
+async function linkProvider(provider: OAuthProvider) {
+  try {
+    await linkSocial({
+      provider: provider.id,
+      // On error, better-auth appends ?error=... to the callback URL
+      callbackURL: "/settings",
+    });
+  } catch (err) {
+    analytics.trackException(err instanceof Error ? err : new Error(String(err)), {
+      provider: provider.id,
+      action: "link_account",
+    });
+    toast.error(`Failed to link ${provider.name}. Please try again.`);
+    throw err; // Re-throw so caller can handle loading state
+  }
+}
+
 /**
  * Hook for managing linked OAuth accounts.
  * Encapsulates query and mutation logic for the account settings panel.
@@ -90,24 +107,6 @@ export function useLinkedAccounts(): UseLinkedAccountsReturn {
       void queryClient.invalidateQueries({ queryKey: linkedAccountsQueryKey });
     },
   });
-
-  // Link provider (navigates to OAuth flow)
-  const linkProvider = async (provider: OAuthProvider) => {
-    try {
-      await linkSocial({
-        provider: provider.id,
-        // On error, better-auth appends ?error=... to the callback URL
-        callbackURL: "/settings",
-      });
-    } catch (err) {
-      analytics.trackException(err instanceof Error ? err : new Error(String(err)), {
-        provider: provider.id,
-        action: "link_account",
-      });
-      toast.error(`Failed to link ${provider.name}. Please try again.`);
-      throw err; // Re-throw so caller can handle loading state
-    }
-  };
 
   // Derived state
   const linkedProviderIds = new Set(linkedAccounts?.map((a) => a.providerId) ?? []);

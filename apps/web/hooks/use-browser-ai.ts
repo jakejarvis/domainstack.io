@@ -136,11 +136,13 @@ export function useBrowserAI({ enabled = true }: UseBrowserAIOptions = {}): UseB
     if (!enabled || !supported || probeStartedRef.current) return;
     probeStartedRef.current = true;
 
+    let cancelled = false;
+
     const instance = getSharedModel();
     modelInstanceRef.current = instance;
 
     const applyAvailability = (availability: string) => {
-      if (!isMountedRef.current) return;
+      if (cancelled || !isMountedRef.current) return;
 
       switch (availability) {
         case "unavailable":
@@ -163,7 +165,7 @@ export function useBrowserAI({ enabled = true }: UseBrowserAIOptions = {}): UseB
 
     const applyProbeError = (err: unknown) => {
       probeStartedRef.current = false;
-      if (!isMountedRef.current) return;
+      if (cancelled || !isMountedRef.current) return;
       setError(err instanceof Error ? err.message : "Failed to check AI availability");
       setModelStatus("error");
     };
@@ -179,6 +181,8 @@ export function useBrowserAI({ enabled = true }: UseBrowserAIOptions = {}): UseB
           }),
         ]);
 
+        if (cancelled) return;
+
         if (result.timedOut) {
           // Don't sit on "Checking…" if the Prompt API never answers.
           if (isMountedRef.current) setModelStatus("unavailable");
@@ -191,6 +195,12 @@ export function useBrowserAI({ enabled = true }: UseBrowserAIOptions = {}): UseB
         applyProbeError(err);
       }
     })();
+
+    return () => {
+      cancelled = true;
+      // Allow a later enable/remount to wait on the shared probe
+      probeStartedRef.current = false;
+    };
   }, [enabled, supported]);
 
   // Initialize (download) the model

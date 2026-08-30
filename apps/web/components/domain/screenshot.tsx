@@ -116,8 +116,6 @@ export function useScreenshot({
   const queryClient = useQueryClient();
   const [runId, setRunId] = useState<string | null>(null);
   const [screenshotData, setScreenshotData] = useState<ScreenshotData | null>(null);
-  const [pollFailed, setPollFailed] = useState(false);
-  const [pollError, setPollError] = useState<Error | null>(null);
   const hasStartedRef = useRef(false);
   const startedForDomainRef = useRef<string | null>(null);
   const [rateLimitedUntil, setRateLimitedUntil] = useState<number | null>(null);
@@ -132,8 +130,6 @@ export function useScreenshot({
     setScreenshotData(null);
     setRunId(null);
     setRateLimitedUntil(null);
-    setPollFailed(false);
-    setPollError(null);
   }
 
   const startScreenshot = useCallback(async (id: string) => {
@@ -206,6 +202,7 @@ export function useScreenshot({
       return parseStatusResponse(await response.json());
     },
     enabled: !!runId,
+    staleTime: Infinity,
     refetchInterval: (query) => {
       const { data } = query.state;
       if (data?.status !== "running") {
@@ -218,9 +215,9 @@ export function useScreenshot({
     },
   });
 
-  // Handle polling completion after commit so we don't setState during render.
-  // Persist terminal results before clearing runId — disabling the status query
-  // would otherwise drop completed data and failed/error state.
+  // Side effects only: cache the completed screenshot and notify. Terminal
+  // poll status is derived from the query during render so we don't copy it
+  // into state or clear runId (that would change the query key and drop data).
   useEffect(() => {
     const data = statusQuery.data;
     if (!data || data.status === "running") return;
@@ -233,17 +230,9 @@ export function useScreenshot({
     }
 
     if (data.status === "completed") {
-      // oxlint-disable-next-line react/set-state-in-effect
-      setScreenshotData(data.data);
       queryClient.setQueryData(screenshotQueryKey, data.data);
       analytics.track("screenshot_loaded_from_api", { domain });
-    } else if (data.status === "failed") {
-      setPollFailed(true);
-    } else if (data.status === "error") {
-      setPollError(new Error(data.error));
     }
-
-    setRunId(null);
   }, [statusQuery.data, queryClient, screenshotQueryKey, domain]);
 
   // Cleanup retry timeout on unmount
@@ -282,8 +271,9 @@ export function useScreenshot({
   // Derive return values
   const polledData = statusQuery.data?.status === "completed" ? statusQuery.data.data : undefined;
   const finalData = screenshotData ?? polledData ?? cachedData ?? null;
-  const error = startMutation.error ?? statusQuery.error ?? pollError ?? null;
-  const hasFailed = pollFailed || statusQuery.data?.status === "failed";
+  const pollError = statusQuery.data?.status === "error" ? new Error(statusQuery.data.error) : null;
+  const error = startMutation.error ?? statusQuery.error ?? pollError;
+  const hasFailed = statusQuery.data?.status === "failed";
   const isLoading =
     !finalData &&
     !error &&

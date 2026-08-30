@@ -10,8 +10,7 @@ import { ScrollArea } from "./scroll-area";
 type CodeBlockProps = {
   children: ReactNode;
   className?: string;
-  /** Raw SVG/HTML string for the icon */
-  icon?: string;
+  icon?: ReactNode;
   style?: CSSProperties;
   tabIndex?: number;
   title?: string;
@@ -81,7 +80,7 @@ export const CodeBlock = ({
       className="not-prose gap-0 overflow-hidden rounded-sm p-0 shadow-none"
     >
       <CardHeader className="bg-sidebar flex items-center gap-2 border-b py-1.5! pr-1.5 pl-4 text-muted-foreground">
-        {icon && <div className="size-3.5 shrink-0" dangerouslySetInnerHTML={{ __html: icon }} />}
+        {icon && <div className="size-3.5 shrink-0">{icon}</div>}
         <CardTitle className="flex-1 font-mono text-sm font-normal tracking-tight">
           {title}
         </CardTitle>

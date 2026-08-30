@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { Screenshot, useScreenshot } from "@/components/domain/screenshot";
 import { usePointerCapability } from "@domainstack/ui/hooks";
@@ -24,7 +24,7 @@ export function ScreenshotPopover({
 >) {
   const [open, setOpen] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
-  const [tapCount, setTapCount] = useState(0);
+  const tapCount = useRef(0);
   const { isTouchDevice } = usePointerCapability();
 
   // Hook lives here (not in PopoverContent) so it stays mounted and keeps polling
@@ -32,9 +32,9 @@ export function ScreenshotPopover({
 
   const handleInteraction = (e: React.MouseEvent<HTMLElement>) => {
     // On touch devices, implement two-tap behavior
-    if (isTouchDevice && tapCount === 0) {
+    if (isTouchDevice && tapCount.current === 0) {
       e.preventDefault();
-      setTapCount(1);
+      tapCount.current = 1;
       setOpen(true);
       setHasOpened(true);
     }
@@ -48,7 +48,7 @@ export function ScreenshotPopover({
       onOpenChange={(v) => {
         setOpen(v);
         if (v) setHasOpened(true);
-        else setTapCount(0);
+        else tapCount.current = 0;
       }}
     >
       <PopoverTrigger
@@ -83,9 +83,7 @@ export function ScreenshotPopover({
               {/* Address Bar */}
               <div className="flex h-3.5 flex-1 items-center rounded-sm bg-zinc-200 px-2 dark:bg-zinc-800">
                 <span className="inline-block w-full truncate text-center text-[8px] text-zinc-500 dark:text-zinc-400">
-                  <a href={`https://${domain}`} target="_blank" rel="noopener">
-                    {domain}
-                  </a>
+                  {domain}
                 </span>
               </div>
             </div>

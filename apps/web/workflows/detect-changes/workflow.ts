@@ -232,11 +232,13 @@ export async function detectChangesWorkflow(
         }
 
         if (registrationChange.statusesChanged) {
+          const previousStatusSet = new Set(registrationChange.previousStatuses);
+          const newStatusSet = new Set(registrationChange.newStatuses);
           const addedStatuses = registrationChange.newStatuses.filter(
-            (s) => !registrationChange.previousStatuses.includes(s),
+            (s) => !previousStatusSet.has(s),
           );
           const removedStatuses = registrationChange.previousStatuses.filter(
-            (s) => !registrationChange.newStatuses.includes(s),
+            (s) => !newStatusSet.has(s),
           );
           if (addedStatuses.length > 0) {
             changeDetails.push(`Status added: ${addedStatuses.join(", ")}`);
@@ -582,15 +584,17 @@ export async function detectChangesWorkflow(
   return results;
 }
 
+const CERTIFICATE_VALID_UNTIL_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  timeZone: "UTC",
+});
+
 function formatCertificateValidUntil(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
-  return new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    timeZone: "UTC",
-  }).format(date);
+  return CERTIFICATE_VALID_UNTIL_FORMATTER.format(date);
 }
 
 // --- Step Functions ---

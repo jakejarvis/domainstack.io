@@ -129,7 +129,7 @@ export function AccountPanel() {
           render={
             <button
               type="button"
-              className="group flex w-full cursor-pointer items-center justify-between rounded-md bg-destructive/5 px-4 py-3 text-left transition-all hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2 focus-visible:outline-none data-[panel-open]:rounded-b-none"
+              className="group flex w-full cursor-pointer items-center justify-between rounded-md bg-destructive/5 px-4 py-3 text-left transition-colors hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2 focus-visible:outline-none data-[panel-open]:rounded-b-none"
             >
               <div className="flex items-center gap-3">
                 <IconAlertTriangle className="size-5 text-destructive" />

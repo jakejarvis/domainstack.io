@@ -30,24 +30,29 @@ export async function verifyByDns(domain: string, token: string): Promise<Verifi
   ];
 
   const providers = providerOrderForLookup(domain);
+  const lookups = hostsToCheck.flatMap((hostname) =>
+    providers.map((provider) => ({ hostname, provider })),
+  );
 
-  for (const hostname of hostsToCheck) {
-    for (const provider of providers) {
+  const matches = await Promise.all(
+    lookups.map(async ({ hostname, provider }) => {
       try {
         const answers = await queryDohProvider(provider, hostname, "TXT", {
           cacheBust: true, // Bypass caches to check freshly added records
         });
 
-        for (const answer of answers) {
+        return answers.some((answer) => {
           const value = answer.data.replace(/^"|"$/g, "").trim();
-          if (value === expectedValue) {
-            return { verified: true, method: "dns_txt" };
-          }
-        }
+          return value === expectedValue;
+        });
       } catch {
-        // Continue to next provider on failure
+        return false;
       }
-    }
+    }),
+  );
+
+  if (matches.some(Boolean)) {
+    return { verified: true, method: "dns_txt" };
   }
 
   return { verified: false, method: null };

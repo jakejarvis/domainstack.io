@@ -113,8 +113,9 @@ function MapInstance({ children, styles, className, ...props }: MapInstanceProps
 
   const nextStyle = styleForTheme(resolvedTheme, mapStyles);
   const nextStyleRef = useRef(nextStyle);
-  // oxlint-disable-next-line react/refs
-  nextStyleRef.current = nextStyle;
+  useEffect(() => {
+    nextStyleRef.current = nextStyle;
+  }, [nextStyle]);
 
   const appliedStyleRef = useRef<MapStyleOption | null>(null);
   const stylesheetReadyRef = useRef(false);
@@ -261,8 +262,19 @@ function MapMarker({
     onDrag,
     onDragEnd,
   });
-  // oxlint-disable-next-line react/refs
-  markerStateRef.current = {
+  useEffect(() => {
+    markerStateRef.current = {
+      longitude,
+      latitude,
+      draggable,
+      onClick,
+      onMouseEnter,
+      onMouseLeave,
+      onDragStart,
+      onDrag,
+      onDragEnd,
+    };
+  }, [
     longitude,
     latitude,
     draggable,
@@ -272,7 +284,7 @@ function MapMarker({
     onDragStart,
     onDrag,
     onDragEnd,
-  };
+  ]);
 
   useEffect(() => {
     if (!isLoaded || !map) return;
@@ -576,18 +588,18 @@ type MapMarkerLabelProps = {
   position?: "top" | "bottom";
 };
 
-function MapMarkerLabel({ children, className, position = "top" }: MapMarkerLabelProps) {
-  const positionClasses = {
-    top: "bottom-full mb-1",
-    bottom: "top-full mt-1",
-  };
+const MARKER_LABEL_POSITION_CLASSES = {
+  top: "bottom-full mb-1",
+  bottom: "top-full mt-1",
+};
 
+function MapMarkerLabel({ children, className, position = "top" }: MapMarkerLabelProps) {
   return (
     <div
       className={cn(
         "absolute left-1/2 -translate-x-1/2 whitespace-nowrap",
         "text-[10px] font-medium text-foreground",
-        positionClasses[position],
+        MARKER_LABEL_POSITION_CLASSES[position],
         className,
       )}
     >
@@ -832,17 +844,21 @@ function MapPopup({
 }: MapPopupProps) {
   const { map } = useMap();
   const popupRef = useRef<Popup | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [mounted, setMounted] = useState(false);
   const popupOptionsRef = useRef(popupOptions);
   const initialPopupOptionsRef = useRef(popupOptions);
   const popupStateRef = useRef({ longitude, latitude, onClose });
-  // oxlint-disable-next-line react/refs
-  popupStateRef.current = { longitude, latitude, onClose };
-
-  const container = useMemo(() => document.createElement("div"), []);
+  useEffect(() => {
+    popupStateRef.current = { longitude, latitude, onClose };
+  }, [longitude, latitude, onClose]);
 
   useEffect(() => {
     if (!map) return;
     const currentState = popupStateRef.current;
+
+    const container = document.createElement("div");
+    containerRef.current = container;
 
     const popup = new Popup({
       offset: 16,
@@ -859,6 +875,8 @@ function MapPopup({
     popup.on("close", onCloseProp);
 
     popupRef.current = popup;
+    // oxlint-disable-next-line react/set-state-in-effect
+    setMounted(true);
 
     return () => {
       popup.off("close", onCloseProp);
@@ -866,8 +884,10 @@ function MapPopup({
         popup.remove();
       }
       popupRef.current = null;
+      containerRef.current = null;
+      setMounted(false);
     };
-  }, [map, container]);
+  }, [map]);
 
   useEffect(() => {
     popupRef.current?.setLngLat([longitude, latitude]);
@@ -892,6 +912,9 @@ function MapPopup({
     onClose?.();
   };
 
+  // oxlint-disable-next-line react/refs
+  if (!mounted || !containerRef.current) return null;
+
   return createPortal(
     <div
       className={cn(
@@ -912,7 +935,8 @@ function MapPopup({
       )}
       {children}
     </div>,
-    container,
+    // oxlint-disable-next-line react/refs
+    containerRef.current,
   );
 }
 
@@ -936,8 +960,9 @@ function MapRoute({
   const sourceId = `route-source-${id}`;
   const layerId = `route-layer-${id}`;
   const paintRef = useRef({ color, width, opacity, dashArray });
-  // oxlint-disable-next-line react/refs
-  paintRef.current = { color, width, opacity, dashArray };
+  useEffect(() => {
+    paintRef.current = { color, width, opacity, dashArray };
+  }, [color, width, opacity, dashArray]);
 
   // Add source and layer on mount
   useEffect(() => {

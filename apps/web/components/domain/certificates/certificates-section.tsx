@@ -4,7 +4,8 @@ import {
   IconChevronDown,
   IconChevronUp,
 } from "@tabler/icons-react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useReducedMotion } from "motion/react";
+import * as m from "motion/react-m";
 import { Fragment, useState } from "react";
 
 import { CertificateAlert } from "@/components/domain/certificate-alert";
@@ -145,56 +146,48 @@ export function CertificatesSection({
           )}
 
           {remainingCerts.length > 0 && (
-            <AnimatePresence initial={false}>
-              {showAll && (
-                <motion.div
-                  key="cert-chain"
-                  initial={{
-                    height: shouldReduceMotion ? "auto" : 0,
-                    opacity: 0,
-                  }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{
-                    height: shouldReduceMotion ? "auto" : 0,
-                    opacity: 0,
-                  }}
-                  transition={{
-                    duration: shouldReduceMotion ? 0.1 : 0.25,
-                    ease: "easeOut",
-                  }}
-                  style={{
-                    overflow: shouldReduceMotion ? undefined : "hidden",
-                  }}
-                >
-                  <div className="my-3 flex justify-center">
-                    <IconArrowUp className="size-4 text-muted-foreground/60" aria-hidden />
-                  </div>
-                  {remainingCerts.map((cert, index) => (
-                    <Fragment key={`cert-${cert.subject}-${cert.validFrom}-${cert.validTo}`}>
-                      <CertificateCard cert={cert} />
+            <m.div
+              layout={!shouldReduceMotion}
+              initial={false}
+              animate={{ opacity: showAll ? 1 : 0 }}
+              transition={{
+                duration: shouldReduceMotion ? 0.1 : 0.25,
+                ease: "easeOut",
+              }}
+              style={{
+                height: showAll ? "auto" : 0,
+                overflow: "hidden",
+              }}
+              inert={!showAll}
+              aria-hidden={!showAll}
+            >
+              <div className="my-3 flex justify-center">
+                <IconArrowUp className="size-4 text-muted-foreground/60" aria-hidden />
+              </div>
+              {remainingCerts.map((cert, index) => (
+                <Fragment key={`cert-${cert.subject}-${cert.validFrom}-${cert.validTo}`}>
+                  <CertificateCard cert={cert} />
 
-                      {index < remainingCerts.length - 1 && (
-                        <div className="my-3 flex justify-center">
-                          <IconArrowUp className="size-4 text-muted-foreground/60" aria-hidden />
-                        </div>
-                      )}
-                    </Fragment>
-                  ))}
-                  <div className="mt-4 flex justify-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowAll(false)}
-                      className="text-[13px]"
-                      aria-expanded
-                    >
-                      <IconChevronUp className="size-4" aria-hidden />
-                      <span>Hide Chain</span>
-                    </Button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  {index < remainingCerts.length - 1 && (
+                    <div className="my-3 flex justify-center">
+                      <IconArrowUp className="size-4 text-muted-foreground/60" aria-hidden />
+                    </div>
+                  )}
+                </Fragment>
+              ))}
+              <div className="mt-4 flex justify-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAll(false)}
+                  className="text-[13px]"
+                  aria-expanded
+                >
+                  <IconChevronUp className="size-4" aria-hidden />
+                  <span>Hide Chain</span>
+                </Button>
+              </div>
+            </m.div>
           )}
         </>
       ) : (

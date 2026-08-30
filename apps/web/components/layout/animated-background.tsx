@@ -2,11 +2,11 @@
 
 import {
   type MotionProps,
-  motion,
   type TargetAndTransition,
   type Transition,
   useReducedMotion,
 } from "motion/react";
+import * as m from "motion/react-m";
 import { useId, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -43,7 +43,7 @@ export function AnimatedBackground() {
 
       {/* Lava-lamp blobs: randomized paths + irregular timing (stable within a mount). */}
       {blobParams?.map((b) => (
-        <motion.div
+        <m.div
           key={b.key}
           className={b.className}
           initial={b.initial}

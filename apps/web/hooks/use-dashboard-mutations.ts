@@ -45,6 +45,27 @@ function toastBulkResult(
   );
 }
 
+// Count affected domains by their current lifecycle state, deduped across
+// every cached listDomains variant so a domain present in multiple entries
+// (e.g. includeArchived true/false) is counted once. The subscription delta
+// must reflect actual state transitions, not a blind ±1.
+function affectedCounts(previousDomains: [unknown, unknown][], ids: Iterable<string>) {
+  const idSet = new Set(ids);
+  const seen = new Set<string>();
+  let active = 0;
+  let archived = 0;
+  for (const [, domains] of previousDomains) {
+    if (!domains) continue;
+    for (const d of domains as TrackedDomainWithDetails[]) {
+      if (!idSet.has(d.id) || seen.has(d.id)) continue;
+      seen.add(d.id);
+      if (d.archivedAt) archived += 1;
+      else active += 1;
+    }
+  }
+  return { active, archived };
+}
+
 interface UseDashboardMutationsReturn {
   // Single-item mutations
   remove: (trackedDomainId: string) => void;
@@ -97,27 +118,6 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
     for (const [key, data] of previousDomains) {
       queryClient.setQueryData(key as string[], data);
     }
-  };
-
-  // Count affected domains by their current lifecycle state, deduped across
-  // every cached listDomains variant so a domain present in multiple entries
-  // (e.g. includeArchived true/false) is counted once. The subscription delta
-  // must reflect actual state transitions, not a blind ±1.
-  const affectedCounts = (previousDomains: [unknown, unknown][], ids: Iterable<string>) => {
-    const idSet = new Set(ids);
-    const seen = new Set<string>();
-    let active = 0;
-    let archived = 0;
-    for (const [, domains] of previousDomains) {
-      if (!domains) continue;
-      for (const d of domains as TrackedDomainWithDetails[]) {
-        if (!idSet.has(d.id) || seen.has(d.id)) continue;
-        seen.add(d.id);
-        if (d.archivedAt) archived += 1;
-        else active += 1;
-      }
-    }
-    return { active, archived };
   };
 
   // ---------------------------------------------------------------------------

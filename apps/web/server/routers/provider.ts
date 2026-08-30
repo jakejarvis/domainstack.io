@@ -13,7 +13,7 @@ export const providerRouter = createTRPCRouter({
    * Returns cached data if fresh, otherwise fetches fresh data.
    */
   getProviderIcon: publicProcedure
-    .input(z.object({ providerId: z.string().uuid() }))
+    .input(z.object({ providerId: z.uuid() }))
     .query(async ({ input }) => {
       const provider = await getProviderById(input.providerId);
       const providerDomain = provider?.domain;

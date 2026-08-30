@@ -3,7 +3,7 @@
 import { IconArrowRight, IconCircleX, IconSearch } from "@tabler/icons-react";
 import { useAtom } from "jotai";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
 
@@ -12,6 +12,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useRouter } from "@/hooks/use-router";
 import { analytics } from "@/lib/analytics/client";
 import { pendingDomainAtom } from "@/lib/atoms/search-atoms";
+import { safeDecodeURIComponent } from "@/lib/safe-parse";
 import { Field, FieldLabel } from "@domainstack/ui/field";
 import { Form } from "@domainstack/ui/form";
 import {
@@ -52,15 +53,14 @@ export function SearchClient({
 
   // Derive initial value from route (header) or prop (homepage)
   const prefillFromRoute = variant === "sm";
-  const derivedInitial = useMemo(() => {
-    if (prefillFromRoute) {
-      const raw = params?.domain ? decodeURIComponent(params.domain) : "";
-      const normalized = normalizeDomainInput(raw);
-      return isValidDomain(normalized) ? normalized : "";
-    }
-    const normalized = normalizeDomainInput(initialValue);
-    return isValidDomain(normalized) ? normalized : "";
-  }, [prefillFromRoute, params?.domain, initialValue]);
+  const routeDomain = params.domain;
+  const rawInitial = prefillFromRoute
+    ? routeDomain
+      ? (safeDecodeURIComponent(routeDomain) ?? "")
+      : ""
+    : initialValue;
+  const normalizedInitial = normalizeDomainInput(rawInitial);
+  const derivedInitial = isValidDomain(normalizedInitial) ? normalizedInitial : "";
 
   // Input state
   const [value, setValue] = useState(derivedInitial);
@@ -87,7 +87,8 @@ export function SearchClient({
     const target = normalizeDomainInput(domain);
     analytics.track("search_submitted", { domain: target });
 
-    const current = params?.domain ? normalizeDomainInput(decodeURIComponent(params.domain)) : null;
+    const decoded = routeDomain ? safeDecodeURIComponent(routeDomain) : undefined;
+    const current = decoded ? normalizeDomainInput(decoded) : null;
 
     setLoading(true);
     router.push(`/${encodeURIComponent(target)}`);

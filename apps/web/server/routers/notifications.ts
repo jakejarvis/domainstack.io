@@ -54,7 +54,7 @@ export const notificationsRouter = createTRPCRouter({
   markRead: protectedProcedure
     .input(
       z.object({
-        id: z.string().uuid(),
+        id: z.uuid(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

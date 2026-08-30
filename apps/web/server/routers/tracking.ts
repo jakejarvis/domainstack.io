@@ -79,7 +79,7 @@ export const trackingRouter = createTRPCRouter({
   getDomainDetails: protectedProcedure
     .input(
       z.object({
-        trackedDomainId: z.string().uuid(),
+        trackedDomainId: z.uuid(),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -204,7 +204,7 @@ export const trackingRouter = createTRPCRouter({
     .meta({ rateLimit: { requests: 10, window: "1 m" } })
     .input(
       z.object({
-        trackedDomainId: z.string().uuid(),
+        trackedDomainId: z.uuid(),
         method: z.enum(VERIFICATION_METHODS).optional(),
       }),
     )
@@ -292,7 +292,7 @@ export const trackingRouter = createTRPCRouter({
   getVerificationData: protectedProcedure
     .input(
       z.object({
-        trackedDomainId: z.string().uuid(),
+        trackedDomainId: z.uuid(),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -323,7 +323,7 @@ export const trackingRouter = createTRPCRouter({
   removeDomain: protectedProcedure
     .input(
       z.object({
-        trackedDomainId: z.string().uuid(),
+        trackedDomainId: z.uuid(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -362,7 +362,7 @@ export const trackingRouter = createTRPCRouter({
   archiveDomain: protectedProcedure
     .input(
       z.object({
-        trackedDomainId: z.string().uuid(),
+        trackedDomainId: z.uuid(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -409,7 +409,7 @@ export const trackingRouter = createTRPCRouter({
   unarchiveDomain: protectedProcedure
     .input(
       z.object({
-        trackedDomainId: z.string().uuid(),
+        trackedDomainId: z.uuid(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -461,7 +461,7 @@ export const trackingRouter = createTRPCRouter({
   bulkArchiveDomains: protectedProcedure
     .input(
       z.object({
-        trackedDomainIds: z.array(z.string().uuid()).min(1).max(100),
+        trackedDomainIds: z.array(z.uuid()).min(1).max(100),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -486,7 +486,7 @@ export const trackingRouter = createTRPCRouter({
   bulkRemoveDomains: protectedProcedure
     .input(
       z.object({
-        trackedDomainIds: z.array(z.string().uuid()).min(1).max(100),
+        trackedDomainIds: z.array(z.uuid()).min(1).max(100),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -510,7 +510,7 @@ export const trackingRouter = createTRPCRouter({
   bulkSetMuted: protectedProcedure
     .input(
       z.object({
-        trackedDomainIds: z.array(z.string().uuid()).min(1).max(100),
+        trackedDomainIds: z.array(z.uuid()).min(1).max(100),
         muted: z.boolean(),
       }),
     )
@@ -542,8 +542,8 @@ export const trackingRouter = createTRPCRouter({
     .meta({ rateLimit: { requests: 5, window: "1 m" } })
     .input(
       z.object({
-        trackedDomainId: z.string().uuid(),
-        recipientEmail: z.string().email(),
+        trackedDomainId: z.uuid(),
+        recipientEmail: z.email(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

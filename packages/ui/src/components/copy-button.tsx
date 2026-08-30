@@ -2,7 +2,8 @@
 
 import { IconCheck, IconCircleX, IconClipboardCheck, IconCopy } from "@tabler/icons-react";
 import clipboardCopy from "clipboard-copy";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, useReducedMotion } from "motion/react";
+import * as m from "motion/react-m";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -80,7 +81,7 @@ export function CopyButton({
     >
       <AnimatePresence mode="wait" initial={false}>
         {copied ? (
-          <motion.span
+          <m.span
             key="check"
             initial={shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }}
             animate={shouldReduceMotion ? { opacity: 1 } : { scale: 1, opacity: 1 }}
@@ -89,9 +90,9 @@ export function CopyButton({
             className="flex items-center justify-center"
           >
             <IconCheck className="text-accent-green" />
-          </motion.span>
+          </m.span>
         ) : (
-          <motion.span
+          <m.span
             key="clipboard"
             initial={shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }}
             animate={shouldReduceMotion ? { opacity: 1 } : { scale: 1, opacity: 1 }}
@@ -100,7 +101,7 @@ export function CopyButton({
             className="flex items-center justify-center"
           >
             <IconCopy />
-          </motion.span>
+          </m.span>
         )}
       </AnimatePresence>
       {showLabel && "Copy"}

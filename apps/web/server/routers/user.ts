@@ -99,7 +99,7 @@ export const userRouter = createTRPCRouter({
   setDomainMuted: protectedProcedure
     .input(
       z.object({
-        trackedDomainId: z.string().uuid(),
+        trackedDomainId: z.uuid(),
         muted: z.boolean(),
       }),
     )
