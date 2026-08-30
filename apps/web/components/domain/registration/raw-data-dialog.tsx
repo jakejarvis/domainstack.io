@@ -8,6 +8,7 @@ import {
 } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 
+import { tokenizeJson, type JsonToken } from "@/components/domain/registration/json-highlight";
 import { Favicon } from "@/components/icons/favicon";
 import { Button } from "@domainstack/ui/button";
 import { Checkbox } from "@domainstack/ui/checkbox";
@@ -24,158 +25,38 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
-import { ScrollArea } from "@domainstack/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 import { cn } from "@domainstack/ui/utils";
 
-// Token types for JSON syntax highlighting
-type TokenType = "key" | "string" | "number" | "boolean" | "null" | "punctuation";
-
-interface Token {
-  type: TokenType;
-  value: string;
-}
-
-function getTokenItems(tokens: Token[]) {
+function withTokenKeys(tokens: JsonToken[]) {
   const seen = new Map<string, number>();
 
   return tokens.map((token) => {
-    const baseKey = `${token.type}-${token.value}`;
+    const baseKey = `${token.type}:${token.value}`;
     const duplicateCount = seen.get(baseKey) ?? 0;
     seen.set(baseKey, duplicateCount + 1);
 
-    return {
-      key: `${baseKey}-${duplicateCount}`,
-      token,
-    };
+    return { key: `${baseKey}:${duplicateCount}`, token };
   });
 }
 
-/**
- * Simple JSON tokenizer that produces tokens for syntax highlighting.
- * Only used for RDAP (JSON) data, not for WHOIS (plain text).
- */
-function tokenizeLine(line: string): Token[] {
-  const tokens: Token[] = [];
-  let i = 0;
-
-  while (i < line.length) {
-    // Whitespace - preserve as punctuation
-    if (/\s/.test(line[i])) {
-      let ws = "";
-      while (i < line.length && /\s/.test(line[i])) {
-        ws += line[i++];
-      }
-      tokens.push({ type: "punctuation", value: ws });
-      continue;
-    }
-
-    // Punctuation: { } [ ] , :
-    if (/[{}[\],:]/u.test(line[i])) {
-      tokens.push({ type: "punctuation", value: line[i++] });
-      continue;
-    }
-
-    // String (could be key or value)
-    if (line[i] === '"') {
-      let str = '"';
-      i++;
-      while (i < line.length && line[i] !== '"') {
-        if (line[i] === "\\") {
-          str += line[i++];
-          if (i < line.length) str += line[i++];
-        } else {
-          str += line[i++];
-        }
-      }
-      if (i < line.length) str += line[i++]; // closing quote
-
-      // Check if followed by colon (making it a key)
-      let lookahead = i;
-      while (lookahead < line.length && /\s/.test(line[lookahead])) {
-        lookahead++;
-      }
-      const isKey = lookahead < line.length && line[lookahead] === ":";
-
-      tokens.push({ type: isKey ? "key" : "string", value: str });
-      continue;
-    }
-
-    // Number
-    if (/[-\d]/.test(line[i])) {
-      let num = "";
-      if (line[i] === "-") num += line[i++];
-      while (i < line.length && /[\d.eE+-]/.test(line[i])) {
-        num += line[i++];
-      }
-      tokens.push({ type: "number", value: num });
-      continue;
-    }
-
-    // Keywords: true, false, null
-    const remaining = line.slice(i);
-    if (remaining.startsWith("true")) {
-      tokens.push({ type: "boolean", value: "true" });
-      i += 4;
-      continue;
-    }
-    if (remaining.startsWith("false")) {
-      tokens.push({ type: "boolean", value: "false" });
-      i += 5;
-      continue;
-    }
-    if (remaining.startsWith("null")) {
-      tokens.push({ type: "null", value: "null" });
-      i += 4;
-      continue;
-    }
-
-    // Fallback: consume single character
-    tokens.push({ type: "punctuation", value: line[i++] });
-  }
-
-  return tokens;
-}
-
-/**
- * Renders a tokenized line with syntax highlighting using CSS classes.
- * Falls back to plain text if tokenization fails for any reason.
- */
-function HighlightedLine({ line, isJson }: { line: string; isJson: boolean }): React.ReactNode {
-  // For non-JSON (WHOIS), render plain text
-  if (!isJson) {
+function HighlightedLine({
+  line,
+  tokens,
+}: {
+  line: string;
+  tokens: ReturnType<typeof withTokenKeys> | null;
+}): React.ReactNode {
+  if (!tokens || tokens.length === 0) {
     return <>{line || "\u00A0"}</>;
-  }
-
-  // Empty line
-  if (!line.trim()) {
-    return <>{"\u00A0"}</>;
-  }
-
-  // Attempt tokenization with graceful fallback to plain text
-  let tokens: Token[] | null = null;
-  try {
-    const result = tokenizeLine(line);
-    const reconstructed = result.map((t) => t.value).join("");
-    if (reconstructed === line) {
-      tokens = result;
-    }
-  } catch {
-    tokens = null;
-  }
-
-  if (!tokens) {
-    return <>{line}</>;
   }
 
   return (
     <>
-      {getTokenItems(tokens).map(({ key, token }) => (
+      {tokens.map(({ key, token }) => (
         <span
           key={key}
           className={cn(
-            // Carefully chosen Tailwind colors for good contrast in both light/dark modes
-            // Light: ~99.5% lightness bg, Dark: ~16.5% lightness bg (card)
             token.type === "key" && "text-blue-700 dark:text-blue-400",
             token.type === "string" && "text-emerald-700 dark:text-emerald-400",
             token.type === "number" && "text-amber-700 dark:text-amber-400",
@@ -203,9 +84,6 @@ export function RawDataDialog({ domain, format, data, serverName, serverUrl }: R
   const [open, setOpen] = useState(false);
   const [wrapLines, setWrapLines] = useState(true);
 
-  const isJson = typeof data !== "string";
-
-  // Prettify JSON objects on the client side, keep strings as-is (WHOIS)
   const formattedData = useMemo(() => {
     if (typeof data === "string") {
       return data;
@@ -213,21 +91,23 @@ export function RawDataDialog({ domain, format, data, serverName, serverUrl }: R
     return JSON.stringify(data, null, 2);
   }, [data]);
 
-  const lines = useMemo(() => formattedData?.trim().split("\n") ?? [], [formattedData]);
   const lineItems = useMemo(() => {
-    const seen = new Map<string, number>();
+    const source = formattedData.trim();
 
-    return lines.map((line, index) => {
-      const duplicateCount = seen.get(line) ?? 0;
-      seen.set(line, duplicateCount + 1);
-
-      return {
-        key: `${line || "empty-line"}-${duplicateCount}`,
-        line,
+    if (typeof data === "string") {
+      return source.split("\n").map((line, index) => ({
         lineNumber: index + 1,
-      };
-    });
-  }, [lines]);
+        line,
+        tokens: null,
+      }));
+    }
+
+    return tokenizeJson(source).map((tokens, index) => ({
+      lineNumber: index + 1,
+      line: tokens.map((token) => token.value).join(""),
+      tokens: withTokenKeys(tokens),
+    }));
+  }, [data, formattedData]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -290,7 +170,11 @@ export function RawDataDialog({ domain, format, data, serverName, serverUrl }: R
             </ResponsiveTooltip>
           </DialogTitle>
         </DialogHeader>
-        <ScrollArea className="min-h-0 flex-1 bg-popover/10" scrollFade={false}>
+        <div
+          tabIndex={0}
+          className="min-h-0 flex-1 overflow-auto overscroll-contain bg-popover/10 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1"
+          aria-label={`Raw ${format} data`}
+        >
           <div className="p-3">
             <pre className="font-mono text-xs leading-5 text-foreground/90">
               <code
@@ -301,7 +185,7 @@ export function RawDataDialog({ domain, format, data, serverName, serverUrl }: R
               >
                 {lineItems.map((item) => (
                   <div
-                    key={item.key}
+                    key={item.lineNumber}
                     className="col-span-2 grid grid-cols-subgrid rounded px-1 py-0.5 hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none active:bg-muted/50"
                   >
                     <span className="justify-self-end px-1 text-muted-foreground/70 select-none">
@@ -313,14 +197,14 @@ export function RawDataDialog({ domain, format, data, serverName, serverUrl }: R
                         wrapLines ? "break-all whitespace-pre-wrap" : "whitespace-pre",
                       )}
                     >
-                      <HighlightedLine line={item.line} isJson={isJson} />
+                      <HighlightedLine line={item.line} tokens={item.tokens} />
                     </span>
                   </div>
                 ))}
               </code>
             </pre>
           </div>
-        </ScrollArea>
+        </div>
         <div className="flex w-full items-center justify-between gap-2 border-t border-border bg-card/60 p-3">
           <Button
             variant="outline"
