@@ -2,7 +2,7 @@ import type { OnChangeFn, PaginationState, SortingState } from "@tanstack/react-
 import { useTable } from "@tanstack/react-table";
 import { AnimatePresence } from "motion/react";
 import { parseAsString, useQueryState } from "nuqs";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useTransition } from "react";
 
 import {
   createColumns,
@@ -46,11 +46,14 @@ export function DashboardTable({ domains }: DashboardTableProps) {
     }),
   );
   const sorting = useMemo(() => parseSortParam(sortParam), [sortParam]);
+  const [, startSortTransition] = useTransition();
   const setSorting = useCallback(
     (updater: SortingState | ((old: SortingState) => SortingState)) => {
-      const newSorting = typeof updater === "function" ? updater(sorting) : updater;
-      setSortParam(serializeSortState(newSorting));
-      resetPage();
+      startSortTransition(() => {
+        const newSorting = typeof updater === "function" ? updater(sorting) : updater;
+        setSortParam(serializeSortState(newSorting));
+        resetPage();
+      });
     },
     [sorting, setSortParam, resetPage],
   );

@@ -47,6 +47,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Request body too large" }, { status: 413 });
   }
 
+  // Body parse is independent of session/rate-limit — start it now.
+  const bodyPromise = request.text();
+
   // Check authentication status for differentiated rate limits
   let userId: string | null = null;
   try {
@@ -67,13 +70,14 @@ export async function POST(request: Request) {
   });
 
   if (!rateLimit.success) {
+    void bodyPromise.catch(() => undefined);
     return rateLimit.error;
   }
 
   // Parse and validate request body
   let rawBody: string;
   try {
-    rawBody = await request.text();
+    rawBody = await bodyPromise;
   } catch (err) {
     logger.warn({ err }, "failed to read chat request body");
     return NextResponse.json(

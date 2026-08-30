@@ -29,7 +29,12 @@ let nextConfig: NextConfig = {
     },
   },
   experimental: {
-    optimizePackageImports: ["@icons-pack/react-simple-icons", "motion/react"],
+    optimizePackageImports: [
+      "@icons-pack/react-simple-icons",
+      "@tabler/icons-react",
+      "date-fns",
+      "motion/react",
+    ],
   },
   rewrites: async () => [
     // Rewrite /settings to default tab without a client-side navigation flash.

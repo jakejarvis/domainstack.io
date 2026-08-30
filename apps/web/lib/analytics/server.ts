@@ -22,7 +22,7 @@ export async function captureException(
   }
 
   client.captureException(error, userId, properties);
-  await client.flush();
+  after(() => client.flush());
 }
 
 export const analytics = {

@@ -49,13 +49,16 @@ type ScreenshotStatusResponse =
 export async function POST(
   request: NextRequest,
 ): Promise<NextResponse<ScreenshotStartResponse | { error: string }>> {
-  // Rate limit: 10 requests/minute for expensive screenshot workflow
-  const rateLimit = await checkRateLimit(request, {
+  const rateLimitPromise = checkRateLimit(request, {
     name: "api:screenshot:post",
     requests: 10,
     window: "1 m",
   });
+  const bodyPromise = request.json();
+
+  const rateLimit = await rateLimitPromise;
   if (!rateLimit.success) {
+    void bodyPromise.catch(() => undefined);
     return new NextResponse(rateLimit.error.body, {
       status: 429,
       headers: rateLimit.error.headers,
@@ -63,7 +66,7 @@ export async function POST(
   }
 
   try {
-    const body = await request.json();
+    const body = await bodyPromise;
     const { domainId } = body as { domainId?: string };
 
     if (!domainId || typeof domainId !== "string") {

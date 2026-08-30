@@ -55,7 +55,11 @@ export function DashboardGrid({ domains }: DashboardGridProps) {
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
       <AnimatePresence mode="popLayout">
         {domains.map((domain) => (
-          <m.div key={domain.id} className="h-full" {...getItemMotionProps(domain.id)}>
+          <m.div
+            key={domain.id}
+            className="h-full [contain-intrinsic-size:auto_14rem] [content-visibility:auto]"
+            {...getItemMotionProps(domain.id)}
+          >
             <DashboardGridCard domain={domain} />
           </m.div>
         ))}

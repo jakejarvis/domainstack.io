@@ -25,33 +25,37 @@ export const onRequestError: Instrumentation.onRequestError = async (error, requ
     return;
   }
 
-  try {
-    const { flushLogs, logger } = await import("@domainstack/logger");
-    logger.error(
-      {
-        err: error,
-        source: "instrumentation",
+  const { after } = await import("next/server");
+
+  after(async () => {
+    try {
+      const { flushLogs, logger } = await import("@domainstack/logger");
+      logger.error(
+        {
+          err: error,
+          source: "instrumentation",
+          path: request.path,
+          method: request.method,
+        },
+        "request error",
+      );
+      await flushLogs();
+    } catch {
+      // Don't throw from instrumentation
+    }
+
+    try {
+      const { captureException } = await import("@/lib/analytics/server");
+      const captured =
+        error instanceof Error
+          ? error
+          : new Error(typeof error === "string" ? error : "Request error");
+      await captureException(captured, undefined, {
         path: request.path,
         method: request.method,
-      },
-      "request error",
-    );
-    await flushLogs();
-  } catch {
-    // Don't throw from instrumentation
-  }
-
-  try {
-    const { captureException } = await import("@/lib/analytics/server");
-    const captured =
-      error instanceof Error
-        ? error
-        : new Error(typeof error === "string" ? error : "Request error");
-    await captureException(captured, undefined, {
-      path: request.path,
-      method: request.method,
-    });
-  } catch {
-    // Analytics must never break the request
-  }
+      });
+    } catch {
+      // Analytics must never break the request
+    }
+  });
 };
