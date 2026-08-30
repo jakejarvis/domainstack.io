@@ -7,7 +7,7 @@ catalog:
   motion: ^13.1.1
   sonner: ^2.0.8
   vitest: ^4.1.11
-  zod: ^4.4.3
+  zod: ^4.5.4
 overrides:
   '@types/react': 19.2.18
   '@types/react-dom': 19.2.5
