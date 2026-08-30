@@ -6,7 +6,7 @@ import { render, screen, waitFor } from "@/mocks/react";
 import { HeaderSearchClient } from "./header-search-client";
 
 const nav = vi.hoisted(() => ({
-  push: vi.fn<(href: string) => void>(),
+  push: vi.fn<(href: string) => void | Promise<void>>(),
   params: { domain: "Test.INVALID" as string | undefined },
 }));
 
@@ -61,6 +61,14 @@ describe("HeaderSearch", () => {
   });
 
   it("re-enables the input after navigating to a new route", async () => {
+    let finishNavigation: (() => void) | undefined;
+    nav.push.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finishNavigation = resolve;
+        }),
+    );
+
     nav.params = { domain: "foo.invalid" };
     const { rerender } = render(<HeaderSearchClient />);
     const input = screen.getByLabelText(/Search any domain/i);
@@ -70,6 +78,7 @@ describe("HeaderSearch", () => {
     // Simulate navigation by changing route params and re-rendering
     nav.params = { domain: "bar.invalid" };
     rerender(<HeaderSearchClient />);
+    finishNavigation?.();
     await waitFor(() => expect(screen.getByLabelText(/Search any domain/i)).not.toBeDisabled());
   });
 });

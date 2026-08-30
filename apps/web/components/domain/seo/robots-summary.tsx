@@ -464,12 +464,7 @@ function GroupContent({
     return (
       <div className="flex flex-col">
         {ruleItems.map(({ key, rule }) => (
-          <RuleRow
-            key={key}
-            rule={rule}
-            query={query}
-            isFirst={key === firstRuleKey}
-          />
+          <RuleRow key={key} rule={rule} query={query} isFirst={key === firstRuleKey} />
         ))}
       </div>
     );
@@ -492,12 +487,7 @@ function GroupContent({
         </div>
       ) : null}
       {existingItems.map(({ key, rule }) => (
-        <RuleRow
-          key={key}
-          rule={rule}
-          query={query}
-          isFirst={key === firstExistingKey}
-        />
+        <RuleRow key={key} rule={rule} query={query} isFirst={key === firstExistingKey} />
       ))}
       {added.length > 0 ? (
         <m.div

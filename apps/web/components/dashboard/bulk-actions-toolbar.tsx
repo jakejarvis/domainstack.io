@@ -60,7 +60,7 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
   return (
     <div
       className={cn(
-        "fixed inset-x-4 z-50 mx-auto flex max-w-2xl animate-in items-center justify-between gap-2 rounded-xl border border-black/15 bg-background/60 px-4 py-3 shadow-2xl shadow-black/10 backdrop-blur-xl duration-200 fade-in-0 slide-in-from-bottom-4 motion-reduce:animate-none sm:inset-x-auto sm:gap-4 dark:border-white/15",
+        "fixed inset-x-0 z-50 mx-auto flex w-max max-w-[calc(100%-2rem)] animate-in items-center gap-3 rounded-lg border border-black/15 bg-background/60 px-2.5 py-1.5 shadow-lg shadow-black/10 backdrop-blur-xl duration-200 fade-in-0 slide-in-from-bottom-4 motion-reduce:animate-none dark:border-white/15",
         "bottom-[max(1rem,env(safe-area-inset-bottom))]",
         className,
       )}
@@ -68,12 +68,12 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
       aria-label="Bulk actions"
     >
       {/* Left: Select all checkbox + count */}
-      <Field className="w-auto min-w-0">
+      <Field orientation="horizontal" className="w-auto min-w-0 gap-0">
         <ResponsiveTooltip>
           <ResponsiveTooltipTrigger
             nativeButton={false}
             render={
-              <FieldLabel className="flex min-w-0 cursor-pointer items-center gap-2.5 select-none">
+              <FieldLabel className="extend-touch-target flex min-h-8 min-w-0 cursor-pointer items-center gap-2 select-none">
                 <Checkbox
                   checked={isAllSelected}
                   indeterminate={isPartiallySelected}
@@ -94,39 +94,27 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
       </Field>
 
       {/* Right: Actions */}
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex shrink-0 items-center gap-1">
         <div className="sm:hidden">
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
-                <Button variant="outline" size="sm" className="h-11 text-[13px]">
+                <Button variant="outline" size="sm" className="extend-touch-target text-[13px]">
                   {isLoading ? <Spinner /> : null}
                   Actions…
                 </Button>
               }
             />
             <DropdownMenuContent align="end" side="top" className="min-w-40">
-              <DropdownMenuItem
-                onClick={() => handleBulkMute(true)}
-                disabled={isLoading}
-                className="min-h-11"
-              >
+              <DropdownMenuItem onClick={() => handleBulkMute(true)} disabled={isLoading}>
                 <IconBellOff aria-hidden />
                 Mute
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleBulkMute(false)}
-                disabled={isLoading}
-                className="min-h-11"
-              >
+              <DropdownMenuItem onClick={() => handleBulkMute(false)} disabled={isLoading}>
                 <IconBell aria-hidden />
                 Unmute
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={handleBulkArchive}
-                disabled={isLoading}
-                className="min-h-11"
-              >
+              <DropdownMenuItem onClick={handleBulkArchive} disabled={isLoading}>
                 <IconArchive aria-hidden />
                 Archive
               </DropdownMenuItem>
@@ -134,7 +122,6 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
                 onClick={handleBulkDelete}
                 disabled={isLoading}
                 variant="destructive"
-                className="min-h-11"
               >
                 <IconTrash aria-hidden />
                 Delete
@@ -143,7 +130,7 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
           </DropdownMenu>
         </div>
 
-        <div className="hidden items-center gap-2 sm:flex">
+        <div className="hidden items-center gap-1.5 sm:flex">
           <ButtonGroup>
             <Button
               variant="outline"
@@ -195,7 +182,7 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
           size="icon-sm"
           onClick={clearSelection}
           disabled={isLoading}
-          className="size-11 sm:size-8"
+          className="extend-touch-target"
           aria-label="Cancel selection"
         >
           <IconX aria-hidden />

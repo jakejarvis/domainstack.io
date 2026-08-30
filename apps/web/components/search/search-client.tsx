@@ -3,7 +3,7 @@
 import { IconArrowRight, IconCircleX, IconSearch } from "@tabler/icons-react";
 import { useAtom } from "jotai";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
 
@@ -65,7 +65,7 @@ export function SearchClient({
   // Input state
   const [value, setValue] = useState(derivedInitial);
   const [prevDerivedInitial, setPrevDerivedInitial] = useState(derivedInitial);
-  const [loading, setLoading] = useState(false);
+  const [loading, startNavigation] = useTransition();
   const mounted = useIsClient();
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -73,7 +73,6 @@ export function SearchClient({
   if (derivedInitial !== prevDerivedInitial) {
     setPrevDerivedInitial(derivedInitial);
     setValue(derivedInitial);
-    setLoading(false);
   }
 
   // Keyboard shortcut (⌘/Ctrl+K)
@@ -87,17 +86,7 @@ export function SearchClient({
     const target = normalizeDomainInput(domain);
     analytics.track("search_submitted", { domain: target });
 
-    const decoded = routeDomain ? safeDecodeURIComponent(routeDomain) : undefined;
-    const current = decoded ? normalizeDomainInput(decoded) : null;
-
-    setLoading(true);
-    router.push(`/${encodeURIComponent(target)}`);
-
-    // If pushing to the same route, Next won't navigate. Clear loading shortly
-    // to avoid an infinite spinner when the path doesn't actually change.
-    if (current && current === target) {
-      setTimeout(() => setLoading(false), 300);
-    }
+    startNavigation(() => router.push(`/${encodeURIComponent(target)}`));
   };
 
   // Store function ref to avoid unnecessary effect re-runs

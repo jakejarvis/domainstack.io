@@ -1,4 +1,5 @@
 import userEvent from "@testing-library/user-event";
+import { Activity, useEffect, useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { render, screen, waitFor } from "@/mocks/react";
@@ -25,8 +26,9 @@ vi.mock("@/components/ui/form", () => ({
 }));
 
 const nav = vi.hoisted(() => ({
-  push: vi.fn<(href: string) => void>(),
+  push: vi.fn<(href: string) => void | Promise<void>>(),
 }));
+const TEST_NAVIGATE_EVENT = "search-test-navigate";
 
 const useIsMobile = vi.hoisted(() => vi.fn<() => boolean>(() => false));
 
@@ -61,12 +63,23 @@ vi.mock("sonner", () => ({ toast: { error: vi.fn<(message?: string) => void>() }
 describe("DomainSearch (form variant)", () => {
   beforeEach(() => {
     nav.push.mockClear();
+    nav.push.mockImplementation(() => {
+      window.dispatchEvent(new Event(TEST_NAVIGATE_EVENT));
+    });
     mockSetPendingDomain.mockClear();
     mockPendingDomain.value = null;
     useIsMobile.mockReturnValue(false);
   });
 
   it("submits valid domain and navigates", async () => {
+    let finishNavigation: (() => void) | undefined;
+    nav.push.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finishNavigation = resolve;
+        }),
+    );
+
     render(<SearchClient variant="lg" />);
     const input = screen.getByLabelText(/Search any domain/i);
     await userEvent.type(input, "test.invalid{Enter}");
@@ -75,6 +88,42 @@ describe("DomainSearch (form variant)", () => {
     expect((screen.getByLabelText(/Search any domain/i) as HTMLInputElement).disabled).toBe(true);
     // Submit button shows a loading spinner with accessible name "Loading"
     expect(screen.getByRole("button", { name: /loading/i })).toBeDisabled();
+
+    finishNavigation?.();
+    await waitFor(() => expect(input).toBeEnabled());
+  });
+
+  it("clears the loading state when a preserved homepage is restored", async () => {
+    function PreservedNavigationHarness() {
+      const [route, setRoute] = useState<"home" | "report">("home");
+      useEffect(() => {
+        const showReport = () => setRoute("report");
+        window.addEventListener(TEST_NAVIGATE_EVENT, showReport);
+        return () => window.removeEventListener(TEST_NAVIGATE_EVENT, showReport);
+      }, []);
+
+      return (
+        <>
+          <Activity mode={route === "home" ? "visible" : "hidden"}>
+            <SearchClient variant="lg" />
+          </Activity>
+          {route === "report" && (
+            <button type="button" onClick={() => setRoute("home")}>
+              Return home
+            </button>
+          )}
+        </>
+      );
+    }
+
+    render(<PreservedNavigationHarness />);
+    const input = screen.getByLabelText(/Search any domain/i);
+
+    await userEvent.type(input, "test.invalid{Enter}");
+    await userEvent.click(screen.getByRole("button", { name: "Return home" }));
+
+    expect(screen.getByLabelText(/Search any domain/i)).toBeEnabled();
+    expect(screen.queryByRole("status", { name: /loading/i })).not.toBeInTheDocument();
   });
 
   it("shows error toast for invalid domain", async () => {
