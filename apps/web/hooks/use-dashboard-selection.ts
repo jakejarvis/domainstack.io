@@ -48,6 +48,18 @@ export function useIsDomainSelected(id: string): boolean {
 }
 
 /**
+ * Clear selection without subscribing to the selected-id set. Safe to call
+ * from shells that only need the action, not selection state.
+ */
+export function useClearDashboardSelection(): () => void {
+  const setSelectedIds = useSetAtom(selectedDomainIdsAtom);
+
+  return useCallback(() => {
+    setSelectedIds(new Set());
+  }, [setSelectedIds]);
+}
+
+/**
  * Toggle selection without subscribing to the selected-id set. Safe to call
  * from memoized table cells; does not re-render the component on other
  * selection changes.
@@ -88,6 +100,7 @@ export function useDashboardSelection(): UseDashboardSelectionReturn {
   const isAllSelected = useAtomValue(isAllSelectedAtom);
   const isPartiallySelected = useAtomValue(isPartiallySelectedAtom);
   const toggle = useToggleDomainSelection();
+  const clearSelection = useClearDashboardSelection();
 
   // ---------------------------------------------------------------------------
   // Clear stale selections when visible domain IDs change
@@ -109,10 +122,6 @@ export function useDashboardSelection(): UseDashboardSelectionReturn {
   // ---------------------------------------------------------------------------
   // Escape key clears selection
   // ---------------------------------------------------------------------------
-
-  const clearSelection = useCallback(() => {
-    setSelectedIds(new Set());
-  }, [setSelectedIds]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

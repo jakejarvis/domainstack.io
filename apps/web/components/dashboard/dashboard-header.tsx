@@ -89,12 +89,12 @@ export function DashboardHeader({ userName }: DashboardHeaderProps) {
                 </div>
               }
             />
-            <ResponsiveTooltipContent className="!p-0">
+            <ResponsiveTooltipContent>
               {subscription?.plan === "free" ? (
                 <Button
                   variant="link"
                   onClick={handleCheckout}
-                  className="!h-auto gap-1 !px-2.5 !py-1.5 text-xs font-normal text-background"
+                  className="gap-1 text-xs font-normal text-background"
                 >
                   Upgrade to add more domains
                   <IconExternalLink className="size-3 -translate-y-[1px]" />

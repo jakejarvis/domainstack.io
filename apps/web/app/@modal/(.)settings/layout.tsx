@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { Modal, ModalContent, ModalHeader, ModalTitle } from "@/components/modal";
 import { SettingsTabsRouter } from "@/components/settings/settings-content";
 import { SettingsSkeletonPanels } from "@/components/settings/settings-skeleton";
+import { getServerSession } from "@/lib/auth/session";
 import { createMetadata } from "@/lib/seo";
-import { auth } from "@domainstack/auth/server";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
 
 export const metadata: Metadata = createMetadata({
@@ -49,9 +48,7 @@ export default function SettingsModalLayout() {
 }
 
 async function AuthorizedSettingsModalLayout() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getServerSession();
 
   if (!session?.user) {
     redirect("/login");

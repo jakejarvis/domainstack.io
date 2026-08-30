@@ -4,8 +4,6 @@ import {
   IconChevronDown,
   IconChevronUp,
 } from "@tabler/icons-react";
-import { useReducedMotion } from "motion/react";
-import * as m from "motion/react-m";
 import { Fragment, useState } from "react";
 
 import { CertificateAlert } from "@/components/domain/certificate-alert";
@@ -31,6 +29,7 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
+import { cn } from "@domainstack/ui/utils";
 import { formatDate, formatDateTimeUtc } from "@domainstack/utils";
 
 function CertificateCard({ cert }: { cert: Certificate }) {
@@ -114,7 +113,6 @@ export function CertificatesSection({
   domain?: string;
   data?: CertificatesResponse | null;
 }) {
-  const shouldReduceMotion = useReducedMotion();
   const [showAll, setShowAll] = useState(false);
   const certificates = data?.certificates ?? [];
   const error = data?.error;
@@ -146,48 +144,43 @@ export function CertificatesSection({
           )}
 
           {remainingCerts.length > 0 && (
-            <m.div
-              layout={!shouldReduceMotion}
-              initial={false}
-              animate={{ opacity: showAll ? 1 : 0 }}
-              transition={{
-                duration: shouldReduceMotion ? 0.1 : 0.25,
-                ease: "easeOut",
-              }}
-              style={{
-                height: showAll ? "auto" : 0,
-                overflow: "hidden",
-              }}
+            <div
+              className={cn(
+                "grid overflow-hidden transition-[grid-template-rows,opacity] duration-200 ease-out motion-reduce:transition-none",
+                showAll ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+              )}
               inert={!showAll}
               aria-hidden={!showAll}
             >
-              <div className="my-3 flex justify-center">
-                <IconArrowUp className="size-4 text-muted-foreground/60" aria-hidden />
-              </div>
-              {remainingCerts.map((cert, index) => (
-                <Fragment key={`cert-${cert.subject}-${cert.validFrom}-${cert.validTo}`}>
-                  <CertificateCard cert={cert} />
+              <div className="min-h-0 overflow-hidden">
+                <div className="my-3 flex justify-center">
+                  <IconArrowUp className="size-4 text-muted-foreground/60" aria-hidden />
+                </div>
+                {remainingCerts.map((cert, index) => (
+                  <Fragment key={`cert-${cert.subject}-${cert.validFrom}-${cert.validTo}`}>
+                    <CertificateCard cert={cert} />
 
-                  {index < remainingCerts.length - 1 && (
-                    <div className="my-3 flex justify-center">
-                      <IconArrowUp className="size-4 text-muted-foreground/60" aria-hidden />
-                    </div>
-                  )}
-                </Fragment>
-              ))}
-              <div className="mt-4 flex justify-center">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowAll(false)}
-                  className="text-[13px]"
-                  aria-expanded
-                >
-                  <IconChevronUp className="size-4" aria-hidden />
-                  <span>Hide Chain</span>
-                </Button>
+                    {index < remainingCerts.length - 1 && (
+                      <div className="my-3 flex justify-center">
+                        <IconArrowUp className="size-4 text-muted-foreground/60" aria-hidden />
+                      </div>
+                    )}
+                  </Fragment>
+                ))}
+                <div className="mt-4 flex justify-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAll(false)}
+                    className="text-[13px]"
+                    aria-expanded
+                  >
+                    <IconChevronUp className="size-4" aria-hidden />
+                    <span>Hide Chain</span>
+                  </Button>
+                </div>
               </div>
-            </m.div>
+            </div>
           )}
         </>
       ) : (

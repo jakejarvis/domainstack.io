@@ -110,21 +110,36 @@ async function resolveIdentifier(request: Request): Promise<string | null> {
  * }
  * ```
  */
+type CheckRateLimitConfig = RateLimitConfig & {
+  /**
+   * Pre-resolved identifier (user ID). Skips the session lookup.
+   * Pass `null` when the caller already knows the request is anonymous.
+   */
+  identifier?: string | null;
+};
+
 export async function checkRateLimit(
   request: Request,
-  config: RateLimitConfig = DEFAULT_RATE_LIMIT,
+  config: CheckRateLimitConfig = DEFAULT_RATE_LIMIT,
 ): Promise<RateLimitSuccess | RateLimitFailure> {
-  // Resolve identifier: user ID (preferred) or IP address (fallback)
-  const baseIdentifier = await resolveIdentifier(request);
+  const { identifier: providedIdentifier, ...rateLimitConfig } = config;
+
+  // Resolve identifier: caller-provided, user ID (preferred), or IP (fallback)
+  const baseIdentifier =
+    providedIdentifier !== undefined
+      ? (providedIdentifier ?? ipAddress(request) ?? null)
+      : await resolveIdentifier(request);
 
   // Fail open: no Redis or no identifier = allow request without rate limiting
-  const limiter = getRateLimiter(config);
+  const limiter = getRateLimiter(rateLimitConfig);
   if (!limiter || !baseIdentifier) {
     return { success: true };
   }
 
   // Include endpoint name in identifier for per-endpoint isolation
-  const identifier = config.name ? `${config.name}:${baseIdentifier}` : baseIdentifier;
+  const identifier = rateLimitConfig.name
+    ? `${rateLimitConfig.name}:${baseIdentifier}`
+    : baseIdentifier;
 
   // Fail open: if Redis errors, allow the request through
   try {

@@ -26,17 +26,19 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Phase 1: Create baseline snapshots for verified domains without snapshots
-    const domains = await getVerifiedDomainsWithoutSnapshots();
-    const baselineResults = await Promise.allSettled(
+    // Phase 1 (baselines) and Phase 2 (change detection) operate on disjoint
+    // domain sets, so the lookups and workflow starts can run together.
+    const [domains, ids] = await Promise.all([
+      getVerifiedDomainsWithoutSnapshots(),
+      getMonitoredSnapshotIds(),
+    ]);
+
+    const baselineResultsPromise = Promise.allSettled(
       domains.map((input) => start(initializeSnapshotWorkflow, [input])),
     );
-    const baselinesStarted = baselineResults.filter((r) => r.status === "fulfilled").length;
 
-    // Phase 2: Detect changes for domains with existing snapshots.
     // A per-domain lock prevents starting a duplicate run while a prior run
     // (e.g. stuck in retry backoff) for the same domain is still in-flight.
-    const ids = await getMonitoredSnapshotIds();
     const lockResults = await Promise.allSettled(
       ids.map(async (id) => ({ id, ownerToken: await acquireMonitorLock(id) })),
     );
@@ -44,18 +46,22 @@ export async function GET(request: Request) {
       if (result.status === "rejected" || !result.value.ownerToken) return [];
       return [{ id: result.value.id, ownerToken: result.value.ownerToken }];
     });
-    const monitorResults = await Promise.allSettled(
-      monitorsToStart.map(async ({ id, ownerToken }) => {
-        try {
-          return await start(detectChangesWorkflow, [
-            { trackedDomainId: id, monitorLockOwnerToken: ownerToken },
-          ]);
-        } catch (err) {
-          await releaseMonitorLock(id, ownerToken);
-          throw err;
-        }
-      }),
-    );
+    const [baselineResults, monitorResults] = await Promise.all([
+      baselineResultsPromise,
+      Promise.allSettled(
+        monitorsToStart.map(async ({ id, ownerToken }) => {
+          try {
+            return await start(detectChangesWorkflow, [
+              { trackedDomainId: id, monitorLockOwnerToken: ownerToken },
+            ]);
+          } catch (err) {
+            await releaseMonitorLock(id, ownerToken);
+            throw err;
+          }
+        }),
+      ),
+    ]);
+    const baselinesStarted = baselineResults.filter((r) => r.status === "fulfilled").length;
     const monitoringStarted = monitorResults.filter((r) => r.status === "fulfilled").length;
 
     const result = {

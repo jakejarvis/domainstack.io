@@ -25,7 +25,10 @@ import {
   useDashboardPagination,
   useSyncDashboardPage,
 } from "@/hooks/use-dashboard-pagination";
-import { useDashboardSelection, useSyncVisibleDomainIds } from "@/hooks/use-dashboard-selection";
+import {
+  useClearDashboardSelection,
+  useSyncVisibleDomainIds,
+} from "@/hooks/use-dashboard-selection";
 import { useRouter } from "@/hooks/use-router";
 import { useSubscription } from "@/hooks/use-subscription";
 import {
@@ -122,7 +125,7 @@ export function DashboardClient() {
   });
 
   // Selection state from Jotai
-  const { clearSelection } = useDashboardSelection();
+  const clearSelection = useClearDashboardSelection();
 
   const doBulkArchive = useCallback(
     async (domainIds: string[]) => {

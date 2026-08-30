@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
@@ -8,8 +7,8 @@ import {
   SettingsSkeletonPanels,
   SettingsSkeletonTabsList,
 } from "@/components/settings/settings-skeleton";
+import { getServerSession } from "@/lib/auth/session";
 import { createMetadata } from "@/lib/seo";
-import { auth } from "@domainstack/auth/server";
 import { Card } from "@domainstack/ui/card";
 import { Skeleton } from "@domainstack/ui/skeleton";
 
@@ -24,10 +23,7 @@ export const metadata: Metadata = createMetadata({
 });
 
 async function ProtectedSettingsLayout({ children }: { children: React.ReactNode }) {
-  // Server-side auth check - requires runtime data (headers)
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getServerSession();
 
   if (!session?.user) {
     redirect("/login");

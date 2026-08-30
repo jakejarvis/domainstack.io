@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Suspense } from "react";
 
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
+import { getServerSession } from "@/lib/auth/session";
 import { createMetadata } from "@/lib/seo";
-import { auth } from "@domainstack/auth/server";
 
 export const metadata: Metadata = createMetadata({
   path: "/dashboard",
@@ -19,10 +18,7 @@ export const metadata: Metadata = createMetadata({
 });
 
 async function ProtectedDashboardLayout({ children }: { children: React.ReactNode }) {
-  // Server-side auth check - requires runtime data (headers)
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getServerSession();
 
   if (!session?.user) {
     redirect("/login");

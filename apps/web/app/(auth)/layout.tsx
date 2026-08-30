@@ -1,16 +1,12 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { LoginSkeletonWithCard } from "@/components/auth/login-skeleton";
 import { AnimatedBackground } from "@/components/layout/animated-background";
-import { auth } from "@domainstack/auth/server";
+import { getServerSession } from "@/lib/auth/session";
 
 async function RedirectAuthenticatedLayout({ children }: { children: React.ReactNode }) {
-  // Server-side auth check - requires runtime data (headers)
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getServerSession();
 
   if (session?.user) {
     redirect("/dashboard");

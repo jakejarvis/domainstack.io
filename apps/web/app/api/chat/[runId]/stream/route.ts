@@ -25,21 +25,20 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ runId: string }> },
 ) {
-  let isAuthenticated = false;
+  let userId: string | null = null;
   try {
     const session = await auth.api.getSession({ headers: request.headers });
-    isAuthenticated = !!session?.user?.id;
+    userId = session?.user?.id ?? null;
   } catch (err) {
     logger.debug({ err }, "auth session check failed, treating as anonymous");
   }
 
-  const rateLimitConfig = isAuthenticated
-    ? RATE_LIMIT_AUTHENTICATED.stream
-    : RATE_LIMIT_ANONYMOUS.stream;
+  const rateLimitConfig = userId ? RATE_LIMIT_AUTHENTICATED.stream : RATE_LIMIT_ANONYMOUS.stream;
 
   const rateLimit = await checkRateLimit(request, {
     name: "api:chat-stream",
     ...rateLimitConfig,
+    identifier: userId,
   });
 
   if (!rateLimit.success) {

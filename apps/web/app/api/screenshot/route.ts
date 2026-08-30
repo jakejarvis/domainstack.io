@@ -70,16 +70,15 @@ export async function POST(
       return NextResponse.json({ error: "Missing or invalid domainId" }, { status: 400 });
     }
 
-    // Look up domain by ID (security check - domain must exist)
-    const domain = await getDomainById(domainId);
+    const [domain, cachedScreenshot] = await Promise.all([
+      getDomainById(domainId),
+      getScreenshotByDomainId(domainId),
+    ]);
 
     if (!domain) {
       logger.warn({ domainId }, "screenshot requested for unknown domain");
       return NextResponse.json({ error: "Domain not found" }, { status: 404 });
     }
-
-    // Check cache first
-    const cachedScreenshot = await getScreenshotByDomainId(domainId);
 
     if (cachedScreenshot) {
       // Only treat as cache hit if we have a definitive result:

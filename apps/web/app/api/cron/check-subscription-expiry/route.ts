@@ -18,20 +18,23 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Upcoming-expiry reminder emails (7/3/1 days before endsAt).
-    const endingIds = await getUserIdsWithEndingSubscriptions();
-    const reminderResults = await Promise.allSettled(
-      endingIds.map((id) => start(subscriptionExpiryWorkflow, [{ userId: id }])),
-    );
-    const remindersStarted = reminderResults.filter((r) => r.status === "fulfilled").length;
+    const [endingIds, pastDueIds] = await Promise.all([
+      getUserIdsWithEndingSubscriptions(),
+      getUserIdsPastDue(),
+    ]);
 
-    // Server-side downgrade safety net: users whose paid period has elapsed
-    // but who are still on `pro` (Polar `subscription.revoked` webhook missed
-    // or delayed). The workflow re-checks Polar before downgrading.
-    const pastDueIds = await getUserIdsPastDue();
-    const downgradeResults = await Promise.allSettled(
-      pastDueIds.map((id) => start(subscriptionDowngradeWorkflow, [{ userId: id }])),
-    );
+    // Upcoming-expiry reminder emails (7/3/1 days before endsAt) plus a
+    // server-side downgrade safety net for users whose paid period elapsed
+    // but who are still on `pro` (Polar `subscription.revoked` missed/delayed).
+    const [reminderResults, downgradeResults] = await Promise.all([
+      Promise.allSettled(
+        endingIds.map((id) => start(subscriptionExpiryWorkflow, [{ userId: id }])),
+      ),
+      Promise.allSettled(
+        pastDueIds.map((id) => start(subscriptionDowngradeWorkflow, [{ userId: id }])),
+      ),
+    ]);
+    const remindersStarted = reminderResults.filter((r) => r.status === "fulfilled").length;
     const downgradesStarted = downgradeResults.filter((r) => r.status === "fulfilled").length;
 
     logger.info(

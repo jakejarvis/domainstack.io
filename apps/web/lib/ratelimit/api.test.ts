@@ -131,6 +131,48 @@ describe("lib/ratelimit/api", () => {
         expect(mockLimit).toHaveBeenCalledWith("10.0.0.1");
       });
 
+      it("uses a provided identifier and skips the session lookup", async () => {
+        mockIpAddress.mockReturnValue("192.168.1.1");
+        mockLimit.mockResolvedValueOnce({
+          success: true,
+          limit: 60,
+          remaining: 55,
+          reset: Date.now() + 60000,
+          pending: Promise.resolve(),
+        });
+
+        const request = createMockRequest();
+        await checkRateLimit(request, {
+          requests: 60,
+          window: "1 m",
+          identifier: "user-456",
+        });
+
+        expect(mockGetSession).not.toHaveBeenCalled();
+        expect(mockLimit).toHaveBeenCalledWith("user-456");
+      });
+
+      it("falls back to IP when a provided identifier is null", async () => {
+        mockIpAddress.mockReturnValue("10.0.0.1");
+        mockLimit.mockResolvedValueOnce({
+          success: true,
+          limit: 60,
+          remaining: 55,
+          reset: Date.now() + 60000,
+          pending: Promise.resolve(),
+        });
+
+        const request = createMockRequest();
+        await checkRateLimit(request, {
+          requests: 60,
+          window: "1 m",
+          identifier: null,
+        });
+
+        expect(mockGetSession).not.toHaveBeenCalled();
+        expect(mockLimit).toHaveBeenCalledWith("10.0.0.1");
+      });
+
       it("allows request without rate limiting when no identifier available (fail-open)", async () => {
         mockGetSession.mockResolvedValueOnce(null);
         mockIpAddress.mockReturnValue(null);

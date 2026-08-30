@@ -1,8 +1,8 @@
 "use client";
 
 import { IconDownload } from "@tabler/icons-react";
-import { notifyManager, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 
 import { analytics } from "@/lib/analytics/client";
@@ -15,7 +15,6 @@ import { cn } from "@domainstack/ui/utils";
 export function ExportButton({ domain, enabled = true }: { domain: string; enabled?: boolean }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const [allDataLoaded, setAllDataLoaded] = useState(false);
 
   const queryKeys = useMemo(
     () => ({
@@ -29,27 +28,20 @@ export function ExportButton({ domain, enabled = true }: { domain: string; enabl
     [trpc, domain],
   );
 
-  const queryKeysRef = useRef(queryKeys);
-  useEffect(() => {
-    queryKeysRef.current = queryKeys;
-  }, [queryKeys]);
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => queryClient.getQueryCache().subscribe(onStoreChange),
+    [queryClient],
+  );
 
-  useEffect(() => {
-    const checkAndUpdateDataStatus = () => {
-      const hasAllData = Object.values(queryKeysRef.current).every((key) => {
+  const allDataLoaded = useSyncExternalStore(
+    subscribe,
+    () =>
+      Object.values(queryKeys).every((key) => {
         const query = queryClient.getQueryCache().find({ queryKey: key });
         return query?.state.data !== undefined || query?.state.status === "error";
-      });
-      notifyManager.schedule(() => {
-        setAllDataLoaded(hasAllData);
-      });
-    };
-
-    const unsubscribe = queryClient.getQueryCache().subscribe(checkAndUpdateDataStatus);
-    checkAndUpdateDataStatus();
-
-    return unsubscribe;
-  }, [queryClient]);
+      }),
+    () => false,
+  );
 
   const handleExport = useCallback(() => {
     analytics.track("export_json_clicked", { domain });
@@ -57,9 +49,9 @@ export function ExportButton({ domain, enabled = true }: { domain: string; enabl
     try {
       const exportData: Record<string, unknown> = {};
       for (const key of Object.keys(queryKeys)) {
-        const response = queryClient.getQueryData(
-          queryKeysRef.current[key as keyof typeof queryKeys],
-        ) as { success?: boolean; data?: unknown } | undefined;
+        const response = queryClient.getQueryData(queryKeys[key as keyof typeof queryKeys]) as
+          | { success?: boolean; data?: unknown }
+          | undefined;
 
         if (response?.data) {
           exportData[key] = response.data;

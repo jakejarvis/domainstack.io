@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { AddDomainModalClient } from "@/components/dashboard/add-domain/add-domain-modal-client";
 import { AddDomainSkeleton } from "@/components/dashboard/add-domain/add-domain-skeleton";
 import { Modal, ModalContent } from "@/components/modal";
+import { getServerSession } from "@/lib/auth/session";
 import { createMetadata } from "@/lib/seo";
-import { auth } from "@domainstack/auth/server";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
 
 export const metadata: Metadata = createMetadata({
@@ -45,15 +44,11 @@ async function AuthorizedAddDomainContent({
 }: {
   searchParams: Promise<{ domain?: string }>;
 }) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const [session, { domain }] = await Promise.all([getServerSession(), searchParams]);
 
   if (!session?.user) {
     redirect("/login");
   }
-
-  const { domain } = await searchParams;
 
   return <AddDomainModalClient prefillDomain={domain} />;
 }

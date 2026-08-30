@@ -103,6 +103,62 @@ describe("CertificatesSection", () => {
     render(<CertificatesSection data={null} />);
     expect(screen.getByText(/No certificates found/i)).toBeInTheDocument();
   });
+
+  it("expands and collapses the rest of the certificate chain", async () => {
+    const data = {
+      certificates: [
+        {
+          issuer: "Let's Encrypt",
+          subject: "test.invalid",
+          altNames: ["test.invalid"],
+          validFrom: "2024-01-01T00:00:00.000Z",
+          validTo: "2025-01-01T00:00:00.000Z",
+          fingerprint256: null,
+          serialNumber: null,
+          caProvider: {
+            id: "ca-letsencrypt",
+            name: "Let's Encrypt",
+            domain: "letsencrypt.org",
+          },
+        },
+        {
+          issuer: "ISRG Root X1",
+          subject: "R3",
+          altNames: [],
+          validFrom: "2020-01-01T00:00:00.000Z",
+          validTo: "2025-09-01T00:00:00.000Z",
+          fingerprint256: null,
+          serialNumber: null,
+          caProvider: {
+            id: "ca-isrg",
+            name: "ISRG",
+            domain: "letsencrypt.org",
+          },
+        },
+      ],
+    };
+    const user = userEvent.setup();
+    render(<CertificatesSection data={data} />);
+
+    expect(screen.getByRole("button", { name: "Show Chain" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+    expect(screen.queryByText("R3")).not.toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "Show Chain" }));
+
+    expect(screen.getByText("R3")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Hide Chain" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Hide Chain" }));
+
+    expect(screen.getByRole("button", { name: "Show Chain" })).toBeInTheDocument();
+    expect(screen.queryByText("R3")).not.toBeVisible();
+  });
 });
 
 describe("equalHostname", () => {

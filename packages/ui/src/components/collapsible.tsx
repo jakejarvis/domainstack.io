@@ -16,17 +16,19 @@ function CollapsibleTrigger({ className, ...props }: CollapsiblePrimitive.Trigge
   );
 }
 
-function CollapsibleContent({ className, ...props }: CollapsiblePrimitive.Panel.Props) {
+function CollapsibleContent({ className, children, ...props }: CollapsiblePrimitive.Panel.Props) {
   return (
     <CollapsiblePrimitive.Panel
       data-slot="collapsible-content"
       className={cn(
-        "h-[var(--collapsible-panel-height)] overflow-hidden transition-[height] duration-200 ease-out will-change-[height]",
-        "data-[ending-style]:h-0 data-[starting-style]:h-0",
+        "grid grid-rows-[1fr] overflow-hidden transition-[grid-template-rows,opacity] duration-200 ease-out motion-reduce:transition-none",
+        "data-[ending-style]:grid-rows-[0fr] data-[ending-style]:opacity-0 data-[starting-style]:grid-rows-[0fr] data-[starting-style]:opacity-0 data-closed:grid-rows-[0fr] data-closed:opacity-0",
         className,
       )}
       {...props}
-    />
+    >
+      <div className="min-h-0 overflow-hidden">{children}</div>
+    </CollapsiblePrimitive.Panel>
   );
 }
 

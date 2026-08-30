@@ -28,6 +28,9 @@ let nextConfig: NextConfig = {
       ignore: [/\/api\/trpc/, /\/.well-known\/workflow/],
     },
   },
+  experimental: {
+    optimizePackageImports: ["@icons-pack/react-simple-icons", "motion/react"],
+  },
   rewrites: async () => [
     // Rewrite /settings to default tab without a client-side navigation flash.
     // IMPORTANT: If the first tab ever changes, we also need to change this rewrite.

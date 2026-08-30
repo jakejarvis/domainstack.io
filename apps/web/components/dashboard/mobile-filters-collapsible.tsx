@@ -63,31 +63,7 @@ export function MobileFiltersCollapsible({
         {viewMode === "table" && <DashboardTableColumnMenu />}
       </div>
 
-      <CollapsibleContent
-        keepMounted
-        render={(contentProps) => {
-          const { children: contentChildren, ...rest } = contentProps;
-          return (
-            <div {...rest}>
-              <m.div
-                initial={false}
-                animate={
-                  mobileOpen
-                    ? { height: "auto", opacity: 1 }
-                    : { height: shouldReduceMotion ? "auto" : 0, opacity: 0 }
-                }
-                transition={{
-                  duration: shouldReduceMotion ? 0.1 : 0.22,
-                  ease: [0.22, 1, 0.36, 1] as const,
-                }}
-                style={{ overflow: shouldReduceMotion ? undefined : "hidden" }}
-              >
-                {contentChildren}
-              </m.div>
-            </div>
-          );
-        }}
-      >
+      <CollapsibleContent keepMounted>
         <div className="pt-3">{children}</div>
       </CollapsibleContent>
     </Collapsible>

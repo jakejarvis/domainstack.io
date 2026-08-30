@@ -42,6 +42,11 @@ const logger = createLogger({ source: "api/chat" });
  * Returns the streaming response with x-workflow-run-id header for reconnection.
  */
 export async function POST(request: Request) {
+  const contentLength = Number(request.headers.get("content-length"));
+  if (Number.isFinite(contentLength) && contentLength > MAX_CHAT_REQUEST_BYTES) {
+    return NextResponse.json({ error: "Request body too large" }, { status: 413 });
+  }
+
   // Check authentication status for differentiated rate limits
   let userId: string | null = null;
   try {
@@ -58,18 +63,11 @@ export async function POST(request: Request) {
   const rateLimit = await checkRateLimit(request, {
     name: "api:chat",
     ...rateLimitConfig,
+    identifier: userId,
   });
 
   if (!rateLimit.success) {
     return rateLimit.error;
-  }
-
-  const contentLength = Number(request.headers.get("content-length"));
-  if (Number.isFinite(contentLength) && contentLength > MAX_CHAT_REQUEST_BYTES) {
-    return NextResponse.json(
-      { error: "Request body too large" },
-      { status: 413, headers: { ...rateLimit.headers } },
-    );
   }
 
   // Parse and validate request body

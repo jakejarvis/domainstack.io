@@ -15,15 +15,15 @@ export const providerRouter = createTRPCRouter({
   getProviderIcon: publicProcedure
     .input(z.object({ providerId: z.uuid() }))
     .query(async ({ input }) => {
-      const provider = await getProviderById(input.providerId);
+      const [provider, cached] = await Promise.all([
+        getProviderById(input.providerId),
+        getProviderLogo(input.providerId),
+      ]);
       const providerDomain = provider?.domain;
       if (!providerDomain) {
         // Return null instead of throwing to avoid logging errors for missing icons
         return { success: false, cached: false, data: null };
       }
-
-      // Check cache first
-      const cached = await getProviderLogo(input.providerId);
       if (cached.data && !cached.stale) {
         return { success: true, cached: true, data: cached.data };
       }
