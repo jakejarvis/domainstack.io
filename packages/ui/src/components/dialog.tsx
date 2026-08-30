@@ -37,7 +37,7 @@ function DialogOverlay({ className, ...props }: DialogPrimitive.Backdrop.Props) 
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 isolate bg-black/10 backdrop-blur-xs dark:bg-black/50",
+        "fixed inset-0 isolate z-50 bg-black/10 backdrop-blur-xs dark:bg-black/50",
         "data-open:animate-in data-open:duration-200 data-open:fade-in-0",
         "data-closed:animate-out data-closed:duration-200 data-closed:fade-out-0",
         // iOS 26+: ensure backdrops cover the visual viewport
@@ -60,7 +60,7 @@ function DialogContent({
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay forceRender />
-      <DialogPrimitive.Viewport className="fixed inset-0 flex items-center justify-center overflow-hidden py-12">
+      <DialogPrimitive.Viewport className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden py-12">
         <DialogPrimitive.Popup
           data-slot="dialog-content"
           className={cn(
