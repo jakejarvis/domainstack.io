@@ -43,6 +43,7 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
+import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
 import { formatDateTimeUtc } from "@domainstack/utils";
 
@@ -75,7 +76,9 @@ export const DashboardGridCard = memo(function DashboardGridCard({
   } = domain;
   const selected = useIsDomainSelected(trackedDomainId);
   const toggle = useToggleDomainSelection();
-  const { onVerify, onRemove, onArchive, onMute } = useDashboardActions();
+  const { onVerify, onRemove, onArchive, onMute, verifyingDomainId } = useDashboardActions();
+  const isVerifyPending = verifyingDomainId !== null;
+  const isVerifyingThis = verifyingDomainId === trackedDomainId;
 
   const handleToggleSelect = useCallback(() => {
     toggle(trackedDomainId);
@@ -365,8 +368,8 @@ export const DashboardGridCard = memo(function DashboardGridCard({
               </div>
               {/* Spacer to ensure minimum gap above button */}
               <div className="min-h-4 flex-1" />
-              <Button onClick={handleVerify} className="mt-3 w-full">
-                <IconTool />
+              <Button onClick={handleVerify} disabled={isVerifyPending} className="mt-3 w-full">
+                {isVerifyingThis ? <Spinner /> : <IconTool />}
                 Fix Verification
               </Button>
             </>
@@ -377,8 +380,8 @@ export const DashboardGridCard = memo(function DashboardGridCard({
               </p>
               {/* Spacer to ensure minimum gap above button */}
               <div className="min-h-4 flex-1" />
-              <Button onClick={handleVerify} className="w-full">
-                <IconAlertCircle />
+              <Button onClick={handleVerify} disabled={isVerifyPending} className="w-full">
+                {isVerifyingThis ? <Spinner /> : <IconAlertCircle />}
                 Complete Verification
               </Button>
             </div>

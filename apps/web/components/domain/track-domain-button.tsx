@@ -3,12 +3,13 @@
 import { IconAlertCircle, IconBellPlus, IconRosetteDiscountCheck } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useCallback } from "react";
+import { useCallback, useTransition } from "react";
 
 import { useRouter } from "@/hooks/use-router";
 import { useTRPC } from "@/lib/trpc/client";
 import { useSession } from "@domainstack/auth/client";
 import { Button } from "@domainstack/ui/button";
+import { Spinner } from "@domainstack/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 
 type TrackDomainButtonProps = {
@@ -21,6 +22,7 @@ export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonP
   const { data: session, isPending: isSessionPending } = useSession();
   const router = useRouter();
   const trpc = useTRPC();
+  const [isNavigating, startNavigation] = useTransition();
 
   // Only query tracked domains when user is authenticated (read-only, no mutations needed)
   const isAuthenticated = !!session?.user;
@@ -50,17 +52,21 @@ export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonP
           params.set("method", trackedDomain.verificationMethod);
         }
 
-        router.push(`/dashboard/add-domain?${params.toString()}`, {
-          scroll: false,
-        });
+        startNavigation(() =>
+          router.push(`/dashboard/add-domain?${params.toString()}`, {
+            scroll: false,
+          }),
+        );
       } else {
         // Add new domain flow
-        router.push(`/dashboard/add-domain?domain=${encodeURIComponent(domain)}`, {
-          scroll: false,
-        });
+        startNavigation(() =>
+          router.push(`/dashboard/add-domain?domain=${encodeURIComponent(domain)}`, {
+            scroll: false,
+          }),
+        );
       }
     }
-  }, [session?.user, isPendingVerification, trackedDomain, domain, router]);
+  }, [session?.user, isPendingVerification, trackedDomain, domain, router, startNavigation]);
 
   // Show loading state during SSR, initial hydration, while data is loading,
   // or while the button is disabled (e.g., waiting for registration confirmation)
@@ -125,7 +131,13 @@ export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonP
       <TooltipTrigger
         render={
           session?.user ? (
-            <Button variant="outline" onClick={handleButtonClick} aria-label={ariaLabel}>
+            <Button
+              variant="outline"
+              onClick={handleButtonClick}
+              disabled={isNavigating}
+              aria-label={ariaLabel}
+            >
+              {isNavigating ? <Spinner /> : null}
               {buttonContent}
             </Button>
           ) : (

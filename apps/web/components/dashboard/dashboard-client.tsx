@@ -4,7 +4,7 @@ import { IconArchive, IconArrowLeft, IconHeartHandshake } from "@tabler/icons-re
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 
 import { ArchivedDomainsList } from "@/components/dashboard/archived-domains-list";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
@@ -45,6 +45,8 @@ export function DashboardClient() {
   const { data: session, isPending: isSessionPending } = useSession();
   const router = useRouter();
   const trpc = useTRPC();
+  const [isVerifyPending, startVerifyNavigation] = useTransition();
+  const [verifyingDomainId, setVerifyingDomainId] = useState<string | null>(null);
   const {
     subscription,
     isSubscriptionLoading: subscriptionLoading,
@@ -194,10 +196,6 @@ export function DashboardClient() {
     router.replace(newUrl, { scroll: false });
   }, [upgradedParam, router, searchParams]);
 
-  const handleAddDomain = useCallback(() => {
-    router.push("/dashboard/add-domain", { scroll: false });
-  }, [router]);
-
   const handleVerify = useCallback(
     (id: string, verificationMethod: VerificationMethod | null) => {
       const params = new URLSearchParams({
@@ -209,11 +207,14 @@ export function DashboardClient() {
         params.set("method", verificationMethod);
       }
 
-      router.push(`/dashboard/add-domain?${params.toString()}`, {
-        scroll: false,
-      });
+      setVerifyingDomainId(id);
+      startVerifyNavigation(() =>
+        router.push(`/dashboard/add-domain?${params.toString()}`, {
+          scroll: false,
+        }),
+      );
     },
-    [router],
+    [router, startVerifyNavigation],
   );
 
   const domainNameById = useCallback(
@@ -331,6 +332,7 @@ export function DashboardClient() {
         onArchive={handleArchive}
         onUnarchive={handleUnarchive}
         onMute={handleMute}
+        verifyingDomainId={isVerifyPending ? verifyingDomainId : null}
         onBulkArchive={handleBulkArchive}
         onBulkDelete={handleBulkDelete}
         onBulkMute={handleBulkMute}
@@ -351,11 +353,7 @@ export function DashboardClient() {
             {/* Filters - only show when there are domains */}
             {domains.length > 0 && <DashboardFilters />}
 
-            <DashboardContent
-              domains={filteredDomains}
-              totalDomains={domains.length}
-              onAddDomain={handleAddDomain}
-            />
+            <DashboardContent domains={filteredDomains} totalDomains={domains.length} />
 
             {/* Link to archived domains - only show when there are archived domains */}
             {subscription?.archivedCount && subscription.archivedCount > 0 ? (

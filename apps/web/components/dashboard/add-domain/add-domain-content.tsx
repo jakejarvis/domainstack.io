@@ -32,6 +32,8 @@ export type AddDomainContentProps = {
   onClose?: () => void;
   /** Handler when domain is successfully added and verified */
   onSuccess: () => void;
+  /** True while navigating away after success (page variant). */
+  isNavigating?: boolean;
   /** If provided, skips step 1 and goes directly to verification */
   resumeDomain?: ResumeDomainData | null;
   /** Pre-fill the domain input (e.g., from domain report "Track" button) */
@@ -42,6 +44,7 @@ export function AddDomainContent({
   className,
   onClose,
   onSuccess,
+  isNavigating = false,
   resumeDomain,
   prefillDomain,
 }: AddDomainContentProps) {
@@ -233,7 +236,7 @@ export function AddDomainContent({
             </Tooltip>
             <StepperSeparator />
           </StepperItem>
-          <StepperItem step={3}>
+          <StepperItem step={3} loading={isNavigating}>
             <Tooltip>
               <TooltipTrigger
                 render={
@@ -339,7 +342,10 @@ export function AddDomainContent({
           <StepperContent value={3}>
             <StepConfirmation domain={domain} />
             <div className="mt-6 flex w-full items-center justify-end">
-              <Button onClick={handleNext}>Done</Button>
+              <Button onClick={handleNext} disabled={isNavigating}>
+                {isNavigating ? <Spinner /> : null}
+                Done
+              </Button>
             </div>
           </StepperContent>
         </StepperPanel>

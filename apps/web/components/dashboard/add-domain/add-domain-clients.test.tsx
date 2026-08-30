@@ -2,7 +2,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const nav = vi.hoisted(() => ({
-  push: vi.fn<(href: string, opts?: { scroll?: boolean }) => void>(),
+  push: vi.fn<(href: string, opts?: { scroll?: boolean }) => void | Promise<void>>(),
   back: vi.fn<() => void>(),
 }));
 
@@ -26,18 +26,21 @@ vi.mock("@/components/dashboard/add-domain/add-domain-content", () => ({
   AddDomainContent: ({
     onSuccess,
     onClose,
+    isNavigating,
     resumeDomain,
     prefillDomain,
   }: {
     onSuccess: () => void;
     onClose?: () => void;
+    isNavigating?: boolean;
     resumeDomain?: { id: string; domainName: string; verificationMethod: string | null } | null;
     prefillDomain?: string;
   }) => (
     <div>
       <span data-testid="resume">{JSON.stringify(resumeDomain ?? null)}</span>
       <span data-testid="prefill">{prefillDomain ?? ""}</span>
-      <button type="button" onClick={onSuccess}>
+      <button type="button" onClick={onSuccess} disabled={isNavigating}>
+        {isNavigating ? <span role="status" aria-label="Loading" /> : null}
         Finish
       </button>
       {onClose ? (
@@ -51,7 +54,7 @@ vi.mock("@/components/dashboard/add-domain/add-domain-content", () => ({
 
 import { AddDomainModalClient } from "@/components/dashboard/add-domain/add-domain-modal-client";
 import { AddDomainPageClient } from "@/components/dashboard/add-domain/add-domain-page-client";
-import { render, screen } from "@/mocks/react";
+import { render, screen, waitFor } from "@/mocks/react";
 import { DOMAINS_QUERY_KEY, SUBSCRIPTION_QUERY_KEY } from "@/mocks/trpc";
 
 describe("AddDomainPageClient", () => {
@@ -91,6 +94,29 @@ describe("AddDomainPageClient", () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: SUBSCRIPTION_QUERY_KEY });
     expect(nav.push).toHaveBeenCalledWith("/dashboard", { scroll: false });
     expect(nav.back).not.toHaveBeenCalled();
+  });
+
+  it("keeps the success action pending until dashboard navigation completes", async () => {
+    const user = userEvent.setup();
+    let finishNavigation: (() => void) | undefined;
+    nav.push.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finishNavigation = resolve;
+        }),
+    );
+
+    render(<AddDomainPageClient />);
+
+    await user.click(screen.getByRole("button", { name: "Finish" }));
+
+    expect(nav.push).toHaveBeenCalledWith("/dashboard", { scroll: false });
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /loading/i })).toBeDisabled();
+    });
+
+    finishNavigation?.();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Finish" })).toBeEnabled());
   });
 
   it("starts a fresh add when resume params are incomplete", () => {

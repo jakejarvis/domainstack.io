@@ -7,6 +7,7 @@ import { useIsDomainSelected } from "@/hooks/use-dashboard-selection";
 import type { DashboardTableFeatures } from "@/lib/dashboard-table-features";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
+import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
 
 const EXPLICIT_COLUMNS = ["select", "domainName", "verified", "actions"];
@@ -18,7 +19,9 @@ type UnverifiedTableRowProps = {
 };
 
 export function UnverifiedTableRow({ rowId, cells, original }: UnverifiedTableRowProps) {
-  const { onVerify, onRemove } = useDashboardActions();
+  const { onVerify, onRemove, verifyingDomainId } = useDashboardActions();
+  const isVerifyPending = verifyingDomainId !== null;
+  const isVerifyingThis = verifyingDomainId === original.id;
   const shouldReduceMotion = useReducedMotion();
   const isSelected = useIsDomainSelected(original.id);
 
@@ -91,8 +94,10 @@ export function UnverifiedTableRow({ rowId, cells, original }: UnverifiedTableRo
           <Button
             size="xs"
             onClick={() => onVerify(original.id, original.verificationMethod)}
+            disabled={isVerifyPending}
             className="text-[13px]"
           >
+            {isVerifyingThis ? <Spinner /> : null}
             Continue
           </Button>
           <Button

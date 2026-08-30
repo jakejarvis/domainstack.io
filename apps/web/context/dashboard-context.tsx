@@ -24,6 +24,8 @@ interface DomainActions {
   onArchive: (id: string) => void;
   onUnarchive: (id: string) => void;
   onMute: (id: string, muted: boolean) => void;
+  /** Domain ID currently navigating to the verify flow, if any. */
+  verifyingDomainId: string | null;
 }
 
 interface BulkState {
@@ -99,6 +101,8 @@ interface DashboardProviderProps {
   onArchive: (id: string) => void;
   onUnarchive: (id: string) => void;
   onMute: (id: string, muted: boolean) => void;
+  /** Domain ID currently navigating to the verify flow, if any. */
+  verifyingDomainId?: string | null;
   /** Bulk action handlers */
   onBulkArchive: (domainIds: string[]) => void;
   onBulkDelete: (domainIds: string[]) => void;
@@ -128,6 +132,7 @@ export function DashboardProvider({
   onArchive,
   onUnarchive,
   onMute,
+  verifyingDomainId = null,
   onBulkArchive,
   onBulkDelete,
   onBulkMute,
@@ -147,6 +152,7 @@ export function DashboardProvider({
         onArchive,
         onUnarchive,
         onMute,
+        verifyingDomainId,
       },
       bulk: {
         onBulkArchive,
@@ -173,6 +179,7 @@ export function DashboardProvider({
       onArchive,
       onUnarchive,
       onMute,
+      verifyingDomainId,
       onBulkArchive,
       onBulkDelete,
       onBulkMute,

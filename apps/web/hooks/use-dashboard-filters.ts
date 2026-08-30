@@ -203,29 +203,35 @@ export function useDashboardFilters(
   );
 
   const clearFilters = useCallback(() => {
-    setFilters({
-      search: null,
-      status: null,
-      health: null,
-      tlds: null,
-      providers: null,
-      domainId: null,
+    startTransition(() => {
+      setFilters({
+        search: null,
+        status: null,
+        health: null,
+        tlds: null,
+        providers: null,
+        domainId: null,
+      });
     });
   }, [setFilters]);
 
   const applyHealthFilter = useCallback(
     (filter: HealthFilter | "pending") => {
-      if (filter === "pending") {
-        setFilters({ status: ["pending"], health: null, domainId: null });
-      } else {
-        setFilters({ status: null, health: [filter], domainId: null });
-      }
+      startTransition(() => {
+        if (filter === "pending") {
+          setFilters({ status: ["pending"], health: null, domainId: null });
+        } else {
+          setFilters({ status: null, health: [filter], domainId: null });
+        }
+      });
     },
     [setFilters],
   );
 
   const clearDomainId = useCallback(() => {
-    setFilters({ domainId: null });
+    startTransition(() => {
+      setFilters({ domainId: null });
+    });
   }, [setFilters]);
 
   // ---------------------------------------------------------------------------

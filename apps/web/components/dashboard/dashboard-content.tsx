@@ -23,10 +23,9 @@ import {
 type DashboardContentProps = {
   domains: TrackedDomainWithDetails[];
   totalDomains: number; // Total before filtering
-  onAddDomain?: () => void;
 };
 
-export function DashboardContent({ domains, totalDomains, onAddDomain }: DashboardContentProps) {
+export function DashboardContent({ domains, totalDomains }: DashboardContentProps) {
   const { hasActiveFilters, clearFilters } = useDashboardFiltersContext();
   const viewMode = usePreferencesStore((s) => s.viewMode);
   // Avoid animating the initial view swap during hydration when localStorage preferences reconcile.
@@ -80,21 +79,14 @@ export function DashboardContent({ domains, totalDomains, onAddDomain }: Dashboa
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent className="relative">
-          {onAddDomain ? (
-            <Button size="lg" onClick={onAddDomain}>
-              <IconPlus />
-              Add Your First Domain
-            </Button>
-          ) : (
-            <Link
-              href="/dashboard/add-domain"
-              scroll={false}
-              className={buttonVariants({ size: "lg" })}
-            >
-              <IconPlus />
-              Add Your First Domain
-            </Link>
-          )}
+          <Link
+            href="/dashboard/add-domain"
+            scroll={false}
+            className={buttonVariants({ size: "lg" })}
+          >
+            <IconPlus />
+            Add Your First Domain
+          </Link>
           <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
             <IconHourglass className="size-4" />
             <span>Verification takes less than 2&nbsp;minutes</span>
