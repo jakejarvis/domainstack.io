@@ -140,15 +140,21 @@ describe("CertificatesSection", () => {
     const user = userEvent.setup();
     render(<CertificatesSection data={data} />);
 
+    // Subject appears as both the truncated label and tooltip content
+    const chainSubject = () =>
+      screen.getAllByText("R3").find((node) => node.tagName.toLowerCase() === "span");
+
     expect(screen.getByRole("button", { name: "Show Chain" })).toHaveAttribute(
       "aria-expanded",
       "false",
     );
-    expect(screen.queryByText("R3")).not.toBeVisible();
+    expect(chainSubject()?.closest("[inert]")).not.toBeNull();
+    expect(chainSubject()?.closest('[aria-hidden="true"]')).not.toBeNull();
 
     await user.click(screen.getByRole("button", { name: "Show Chain" }));
 
-    expect(screen.getByText("R3")).toBeVisible();
+    expect(chainSubject()?.closest("[inert]")).toBeNull();
+    expect(chainSubject()?.closest('[aria-hidden="true"]')).toBeNull();
     expect(screen.getByRole("button", { name: "Hide Chain" })).toHaveAttribute(
       "aria-expanded",
       "true",
@@ -157,7 +163,8 @@ describe("CertificatesSection", () => {
     await user.click(screen.getByRole("button", { name: "Hide Chain" }));
 
     expect(screen.getByRole("button", { name: "Show Chain" })).toBeInTheDocument();
-    expect(screen.queryByText("R3")).not.toBeVisible();
+    expect(chainSubject()?.closest("[inert]")).not.toBeNull();
+    expect(chainSubject()?.closest('[aria-hidden="true"]')).not.toBeNull();
   });
 });
 

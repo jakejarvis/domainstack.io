@@ -4,6 +4,7 @@ import { IconAlertTriangle, IconRefresh } from "@tabler/icons-react";
 import {
   dehydrate,
   HydrationBoundary,
+  noop,
   useQuery,
   useQueryClient,
   useSuspenseQuery,
@@ -154,11 +155,11 @@ export function DomainReportClient({ domain }: { domain: string }) {
   const isRegistered = registration?.data?.isRegistered === true;
 
   void Promise.all([
-    queryClient.prefetchQuery(trpc.domain.getHosting.queryOptions({ domain })),
-    queryClient.prefetchQuery(trpc.domain.getDnsRecords.queryOptions({ domain })),
-    queryClient.prefetchQuery(trpc.domain.getCertificates.queryOptions({ domain })),
-    queryClient.prefetchQuery(trpc.domain.getHeaders.queryOptions({ domain })),
-    queryClient.prefetchQuery(trpc.domain.getSeo.queryOptions({ domain })),
+    queryClient.query(trpc.domain.getHosting.queryOptions({ domain })).catch(noop),
+    queryClient.query(trpc.domain.getDnsRecords.queryOptions({ domain })).catch(noop),
+    queryClient.query(trpc.domain.getCertificates.queryOptions({ domain })).catch(noop),
+    queryClient.query(trpc.domain.getHeaders.queryOptions({ domain })).catch(noop),
+    queryClient.query(trpc.domain.getSeo.queryOptions({ domain })).catch(noop),
   ]);
 
   // Add to search history for registered domains

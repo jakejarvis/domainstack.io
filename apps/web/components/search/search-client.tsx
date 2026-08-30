@@ -1,10 +1,10 @@
 "use client";
 
 import { IconArrowRight, IconCircleX, IconSearch } from "@tabler/icons-react";
+import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
 import { useAtom } from "jotai";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
 
 import { useIsClient } from "@/hooks/use-is-client";
@@ -26,10 +26,7 @@ import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
 import { isValidDomain, normalizeDomainInput } from "@domainstack/utils/domain/client";
 
-const isMac = () =>
-  typeof navigator !== "undefined" &&
-  // @ts-expect-error userAgentData not yet in all TS libs
-  (navigator.userAgentData?.platform === "macOS" || navigator.userAgent.includes("Mac"));
+const SEARCH_HOTKEY = "Mod+K";
 
 export type SearchClientVariant = "sm" | "lg";
 
@@ -76,10 +73,13 @@ export function SearchClient({
   }
 
   // Keyboard shortcut (⌘/Ctrl+K)
-  useHotkeys("mod+k", (e) => {
-    e.preventDefault();
-    inputRef.current?.focus();
-  });
+  useHotkey(
+    SEARCH_HOTKEY,
+    () => {
+      inputRef.current?.focus();
+    },
+    { conflictBehavior: "allow" },
+  );
 
   // Navigation helper
   const navigateToDomain = (domain: string) => {
@@ -224,7 +224,9 @@ export function SearchClient({
                     <Spinner />
                   ) : (
                     <Kbd className="hidden border bg-muted/80 px-1.5 py-0.5 sm:inline-flex">
-                      {isFocused ? "Esc" : `${isMac() ? "⌘" : "Ctrl"}\u00A0K`}
+                      {isFocused
+                        ? "Esc"
+                        : formatForDisplay(SEARCH_HOTKEY, { separatorToken: "\u00A0" })}
                     </Kbd>
                   )}
                 </InputGroupAddon>

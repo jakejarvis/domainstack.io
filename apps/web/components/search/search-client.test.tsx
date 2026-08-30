@@ -163,6 +163,19 @@ describe("DomainSearch (header variant)", () => {
     useIsMobile.mockReturnValue(false);
   });
 
+  it("focuses the input on Mod+K", async () => {
+    render(<SearchClient variant="sm" />);
+
+    const input = screen.getByLabelText(/Search any domain/i);
+    input.blur();
+    expect(input).not.toHaveFocus();
+
+    const isMac = /mac/i.test(navigator.userAgent);
+    await userEvent.keyboard(isMac ? "{Meta>}k{/Meta}" : "{Control>}k{/Control}");
+
+    expect(input).toHaveFocus();
+  });
+
   it("shows full placeholder on desktop screens", async () => {
     useIsMobile.mockReturnValue(false);
 
