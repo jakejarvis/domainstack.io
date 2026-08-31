@@ -275,27 +275,31 @@ export const domainRouter = createTRPCRouter({
    * Get a favicon for a domain.
    * Fetches from multiple sources (Google, DuckDuckGo, direct).
    */
-  getFavicon: publicProcedure.input(DomainInputSchema).query(async ({ input }) => {
-    const { getFavicon: getCachedFavicon } = await import("@domainstack/db/queries");
+  getFavicon: publicProcedure
+    .use(withRateLimit)
+    .meta({ rateLimit: { requests: 100, window: "1 m" } })
+    .input(DomainInputSchema)
+    .query(async ({ input }) => {
+      const { getFavicon: getCachedFavicon } = await import("@domainstack/db/queries");
 
-    // Check cache first
-    const cached = await getCachedFavicon(input.domain);
-    if (cached.data && !cached.stale) {
-      return { success: true, cached: true, data: cached.data };
-    }
+      // Check cache first
+      const cached = await getCachedFavicon(input.domain);
+      if (cached.data && !cached.stale) {
+        return { success: true, cached: true, data: cached.data };
+      }
 
-    // Fetch fresh data
-    try {
-      const result = await fetchFavicon(input.domain);
-      return { success: true, cached: false, data: result.data };
-    } catch (err) {
-      logger.error({ domain: input.domain, err }, "favicon fetch failed");
-      return {
-        success: false,
-        cached: false,
-        data: null,
-        error: "fetch_failed",
-      };
-    }
-  }),
+      // Fetch fresh data
+      try {
+        const result = await fetchFavicon(input.domain);
+        return { success: true, cached: false, data: result.data };
+      } catch (err) {
+        logger.error({ domain: input.domain, err }, "favicon fetch failed");
+        return {
+          success: false,
+          cached: false,
+          data: null,
+          error: "fetch_failed",
+        };
+      }
+    }),
 });

@@ -71,7 +71,7 @@ export function useCalendarFeed(): UseCalendarFeedReturn {
       toast.error("Failed to enable calendar feed");
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: feedQueryKey });
+      void queryClient.invalidateQueries(trpc.user.getCalendarFeed.queryFilter());
     },
   });
 
@@ -94,7 +94,7 @@ export function useCalendarFeed(): UseCalendarFeedReturn {
       toast.success("Calendar feed disabled");
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: feedQueryKey });
+      void queryClient.invalidateQueries(trpc.user.getCalendarFeed.queryFilter());
     },
   });
 
@@ -108,7 +108,7 @@ export function useCalendarFeed(): UseCalendarFeedReturn {
       toast.error("Failed to regenerate URL");
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: feedQueryKey });
+      void queryClient.invalidateQueries(trpc.user.getCalendarFeed.queryFilter());
     },
   });
 
@@ -131,7 +131,7 @@ export function useCalendarFeed(): UseCalendarFeedReturn {
       toast.success("Calendar feed disabled");
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: feedQueryKey });
+      void queryClient.invalidateQueries(trpc.user.getCalendarFeed.queryFilter());
     },
   });
 

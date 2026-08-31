@@ -104,7 +104,7 @@ export function useLinkedAccounts(): UseLinkedAccountsReturn {
       toast.success(`${provider?.name ?? "Account"} unlinked successfully`);
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: linkedAccountsQueryKey });
+      void queryClient.invalidateQueries(trpc.user.getLinkedAccounts.queryFilter());
     },
   });
 

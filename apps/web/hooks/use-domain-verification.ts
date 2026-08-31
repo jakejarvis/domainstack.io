@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { skipToken, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { toast } from "sonner";
 
@@ -55,12 +55,8 @@ export function useDomainVerification({
   // ============================================================================
 
   const invalidateQueries = useCallback(() => {
-    void queryClient.invalidateQueries({
-      queryKey: trpc.tracking.listDomains.queryKey(),
-    });
-    void queryClient.invalidateQueries({
-      queryKey: trpc.user.getSubscription.queryKey(),
-    });
+    void queryClient.invalidateQueries(trpc.tracking.listDomains.queryFilter());
+    void queryClient.invalidateQueries(trpc.user.getSubscription.queryFilter());
   }, [queryClient, trpc]);
 
   const addDomainMutation = useMutation({
@@ -78,16 +74,14 @@ export function useDomainVerification({
   const verificationToken = state.step === 2 ? state.verificationToken : "";
   const isResuming = !!resumeDomain;
 
-  const verificationDataQuery = useQuery({
-    ...trpc.tracking.getVerificationData.queryOptions({
-      trackedDomainId: trackedDomainId ?? "",
-    }),
-    enabled:
-      !!trackedDomainId &&
-      open &&
-      isResuming &&
-      (!verificationToken || !state.domain.trim().length),
-  });
+  const shouldFetchVerificationData =
+    !!trackedDomainId && open && isResuming && (!verificationToken || !state.domain.trim().length);
+
+  const verificationDataQuery = useQuery(
+    trpc.tracking.getVerificationData.queryOptions(
+      shouldFetchVerificationData && trackedDomainId ? { trackedDomainId } : skipToken,
+    ),
+  );
 
   // ============================================================================
   // Effects for External State Sync

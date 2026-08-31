@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { after } from "next/server";
+import { waitUntil } from "@vercel/functions";
 
 import { getRateLimiter, type RateLimitInfo } from "@domainstack/redis/ratelimit";
 
@@ -19,11 +19,10 @@ import { t } from "../trpc";
  * - No identifier available: Skip rate limiting, allow request
  * - Redis timeout/error: Allow request (handled by library with 2s timeout)
  *
- * Response augmentation:
- * - Success: Adds `rateLimit` field to response data with { limit, remaining, reset }
- * - Failure: Throws TOO_MANY_REQUESTS with retry timing in message and cause
+ * On limit exceeded: throws TOO_MANY_REQUESTS with retry timing in message and cause.
+ * Does not mutate procedure output — remaining/limit live on the error cause only.
  *
- * Client-side utilities in `@/lib/ratelimit/client` can parse both cases.
+ * Client-side utilities in `@/lib/ratelimit/client` parse TOO_MANY_REQUESTS.
  */
 export const withRateLimit = t.middleware(async ({ ctx, meta, path, next }) => {
   // Allow procedures to opt-out via meta
@@ -60,8 +59,8 @@ export const withRateLimit = t.middleware(async ({ ctx, meta, path, next }) => {
 
   const { success, limit, remaining, reset, pending } = rateLimitResult;
 
-  // Handle analytics write in background (non-blocking)
-  after(() => pending);
+  // Handle analytics write after the response (or immediately outside a request)
+  waitUntil(pending);
 
   const rateLimitInfo = { limit, remaining, reset } satisfies RateLimitInfo;
 
@@ -75,25 +74,10 @@ export const withRateLimit = t.middleware(async ({ ctx, meta, path, next }) => {
     });
   }
 
-  // Execute the procedure and wrap response with rate limit info
-  const result = await next({
+  return next({
     ctx: {
       ...ctx,
       rateLimit: rateLimitInfo,
     },
   });
-
-  // Augment successful responses with rate limit metadata
-  // Only augment plain objects, not arrays or primitives
-  if (result.ok && result.data && typeof result.data === "object" && !Array.isArray(result.data)) {
-    return {
-      ...result,
-      data: {
-        ...result.data,
-        rateLimit: rateLimitInfo,
-      },
-    };
-  }
-
-  return result;
 });

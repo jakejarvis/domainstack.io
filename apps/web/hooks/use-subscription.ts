@@ -111,9 +111,7 @@ export function useSubscription(options: UseSubscriptionOptions = {}): UseSubscr
   });
 
   const invalidate = useCallback(() => {
-    void queryClient.invalidateQueries({
-      queryKey: trpc.user.getSubscription.queryKey(),
-    });
+    void queryClient.invalidateQueries(trpc.user.getSubscription.queryFilter());
   }, [queryClient, trpc]);
 
   const handleCheckout = async () => {

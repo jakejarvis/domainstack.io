@@ -22,13 +22,11 @@
     "@domainstack/redis": "workspace:*",
     "@trpc/server": "^11.18.0",
     "@vercel/functions": "^3.9.5",
-    "superjson": "^2.2.6"
+    "superjson": "^2.2.6",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@types/node": "catalog:"
-  },
-  "peerDependencies": {
-    "next": ">=16"
   }
 }

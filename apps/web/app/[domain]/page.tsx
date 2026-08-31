@@ -5,6 +5,7 @@ import { DomainReportClient } from "@/components/domain/report-client";
 import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { OG_IMAGE_SIZE } from "@/lib/og-utils";
 import { createMetadata, notFoundMetadata } from "@/lib/seo";
+import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export async function generateMetadata({
   params,
@@ -55,5 +56,11 @@ export default async function DomainPage({ params }: { params: Promise<{ domain:
     redirect(`/${encodeURIComponent(registrable)}`);
   }
 
-  return <DomainReportClient domain={registrable} />;
+  prefetch(trpc.domain.getRegistration.queryOptions({ domain: registrable }));
+
+  return (
+    <HydrateClient>
+      <DomainReportClient domain={registrable} />
+    </HydrateClient>
+  );
 }

@@ -44,14 +44,14 @@ export function useNotificationPreferences(): UseNotificationPreferencesReturn {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  // Query keys for cache manipulation
-  const domainsQueryKey = trpc.tracking.listDomains.queryKey();
+  // Prefix filter covers every listDomains input variant (includeArchived true/false).
+  const domainsFilter = trpc.tracking.listDomains.queryFilter();
   const globalPrefsQueryKey = trpc.user.getNotificationPreferences.queryKey();
 
   // Queries - both run in parallel
   const [domainsResult, globalPrefsResult] = useQueries({
     queries: [
-      trpc.tracking.listDomains.queryOptions(),
+      trpc.tracking.listDomains.queryOptions({ includeArchived: false }),
       trpc.user.getNotificationPreferences.queryOptions(),
     ],
   });
@@ -84,7 +84,7 @@ export function useNotificationPreferences(): UseNotificationPreferencesReturn {
       toast.success("Global settings updated");
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: globalPrefsQueryKey });
+      void queryClient.invalidateQueries(trpc.user.getNotificationPreferences.queryFilter());
     },
   });
 
@@ -92,14 +92,12 @@ export function useNotificationPreferences(): UseNotificationPreferencesReturn {
   const setDomainMutedMutation = useMutation({
     ...trpc.user.setDomainMuted.mutationOptions(),
     onMutate: async ({ trackedDomainId, muted }) => {
-      await queryClient.cancelQueries({ queryKey: domainsQueryKey });
+      await queryClient.cancelQueries(domainsFilter);
       // Snapshot all domain query variants for rollback
-      const previousDomains = queryClient.getQueriesData<typeof domainsResult.data>({
-        queryKey: domainsQueryKey,
-      });
+      const previousDomains = queryClient.getQueriesData<typeof domainsResult.data>(domainsFilter);
 
       // Optimistically update the domain's muted state in all query variants
-      queryClient.setQueriesData<typeof domainsResult.data>({ queryKey: domainsQueryKey }, (old) =>
+      queryClient.setQueriesData<typeof domainsResult.data>(domainsFilter, (old) =>
         old ? old.map((d) => (d.id === trackedDomainId ? { ...d, muted } : d)) : old,
       );
 
@@ -117,7 +115,7 @@ export function useNotificationPreferences(): UseNotificationPreferencesReturn {
       toast.success(variables.muted ? "Domain muted" : "Domain unmuted");
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
+      void queryClient.invalidateQueries(trpc.tracking.listDomains.queryFilter());
     },
   });
 

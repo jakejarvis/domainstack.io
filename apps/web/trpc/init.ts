@@ -29,6 +29,5 @@ export {
   withAuth,
   withDomainAccessUpdate,
   withLogging,
-  withProTier,
   withRateLimit,
 } from "@domainstack/api";

@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { skipToken, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { useTRPC } from "@/lib/trpc/client";
@@ -74,13 +74,8 @@ export function useProviderTooltipData({
   // Lazy load domain details when tooltip opens (only if needed)
   const { data: domainDetails, isLoading } = useQuery(
     trpc.tracking.getDomainDetails.queryOptions(
-      {
-        trackedDomainId: trackedDomainId ?? "",
-      },
-      {
-        enabled: shouldLazyLoad && isOpen,
-        staleTime: 60_000, // Cache for 1 minute
-      },
+      shouldLazyLoad && isOpen && trackedDomainId ? { trackedDomainId } : skipToken,
+      { staleTime: 60_000 },
     ),
   );
 

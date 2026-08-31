@@ -21,7 +21,7 @@ export const notificationsRouter = createTRPCRouter({
     .input(
       z.object({
         limit: z.number().min(1).max(100).default(50),
-        cursor: z.string().optional(), // notification ID to start from
+        cursor: z.string().nullish(), // React Query sends null on infinite invalidation
         filter: notificationFilterSchema,
       }),
     )
@@ -29,7 +29,7 @@ export const notificationsRouter = createTRPCRouter({
       const { limit, cursor, filter } = input;
 
       // Fetch one extra to determine if there's a next page
-      const items = await getUserNotifications(ctx.user.id, limit + 1, cursor, filter);
+      const items = await getUserNotifications(ctx.user.id, limit + 1, cursor ?? undefined, filter);
 
       let nextCursor: string | undefined;
       if (items.length > limit) {

@@ -1,4 +1,4 @@
-import { after } from "next/server";
+import { waitUntil } from "@vercel/functions";
 
 import { updateLastAccessed } from "@domainstack/db/queries";
 
@@ -7,7 +7,7 @@ import { t } from "../trpc";
 /**
  * Middleware to record that a domain was accessed by a user (for decay calculation).
  * Expects input to have a `domain` field.
- * Schedules the write to happen after the response is sent using Next.js after().
+ * Schedules the write after the response is sent (or immediately outside a request).
  */
 export const withDomainAccessUpdate = t.middleware(async ({ input, next }) => {
   const result = await next();
@@ -22,7 +22,7 @@ export const withDomainAccessUpdate = t.middleware(async ({ input, next }) => {
   ) {
     // Extract to local const - closures don't preserve narrowed types
     const domain = input.domain;
-    after(() => updateLastAccessed(domain));
+    waitUntil(updateLastAccessed(domain));
   }
 
   return result;

@@ -1,6 +1,6 @@
 "use client";
 
-import { isServer, QueryClientProvider } from "@tanstack/react-query";
+import { environmentManager, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ReactQueryStreamedHydration } from "@tanstack/react-query-next-experimental";
 import { createTRPCClient, httpBatchStreamLink, loggerLink } from "@trpc/client";
@@ -16,7 +16,7 @@ let browserQueryClient: ReturnType<typeof makeQueryClient> | undefined;
 
 function getQueryClient() {
   // Server: always make a new query client
-  if (isServer) return makeQueryClient();
+  if (environmentManager.isServer()) return makeQueryClient();
   // Browser: make a new query client if we don't already have one
   // This is very important, so we don't re-make a new client if React
   // suspends during the initial render. This may not be needed if we
@@ -55,13 +55,14 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
         httpBatchStreamLink({
           url: `${getBaseUrl()}/api/trpc`,
           transformer: superjson,
+          maxItems: 10,
           headers: () => {
             const headers = new Headers();
             headers.set("x-trpc-source", "nextjs-react");
 
             // For SSR on Vercel with deployment protection:
             // Add bypass token to allow server-to-server calls
-            if (isServer && process.env.VERCEL_AUTOMATION_BYPASS_SECRET) {
+            if (environmentManager.isServer() && process.env.VERCEL_AUTOMATION_BYPASS_SECRET) {
               headers.set(
                 "x-vercel-protection-bypass",
                 process.env.VERCEL_AUTOMATION_BYPASS_SECRET,
