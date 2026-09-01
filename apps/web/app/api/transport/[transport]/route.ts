@@ -1,14 +1,23 @@
+import { instrument } from "@posthog/mcp";
 import { ipAddress } from "@vercel/functions";
 import { createMcpHandler } from "mcp-handler";
+import { PostHog } from "posthog-node";
 import { z } from "zod";
 
 import { checkRateLimit } from "@/lib/ratelimit/api";
 import { createCaller } from "@/server/routers/_app";
 import type { Context } from "@/trpc/init";
 
-// mcp-handler v2 no longer accepts `maxDuration`/`basePath` as handler options -
-// route timeout is now controlled via the standard Next.js route segment config.
 export const maxDuration = 800;
+
+const posthog = process.env.POSTHOG_PROJECT_TOKEN
+  ? new PostHog(process.env.POSTHOG_PROJECT_TOKEN, {
+      host: process.env.POSTHOG_HOST,
+      flushAt: 1,
+      flushInterval: 0,
+      enableExceptionAutocapture: true,
+    })
+  : null;
 
 /**
  * Domain input schema for MCP tools.
@@ -72,6 +81,8 @@ function createMcpHandlerWithContext(request: Request) {
 
   return createMcpHandler(
     (server) => {
+      if (posthog) instrument(server, posthog);
+
       // ─────────────────────────────────────────────────────────────────────
       // Domain Registration Tool
       // ─────────────────────────────────────────────────────────────────────
@@ -318,6 +329,9 @@ async function handler(request: Request): Promise<Response> {
   // Create handler with request context and process
   const mcpHandler = createMcpHandlerWithContext(request);
   const response = await mcpHandler(request);
+
+  // Flush PostHog events captured during this invocation (serverless — SIGTERM unreliable)
+  if (posthog) await posthog.flush();
 
   // Add rate limit headers to successful responses
   if (rateLimit.headers) {

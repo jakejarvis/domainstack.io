@@ -41,7 +41,8 @@ CONTEXT:
 
 TOOLS:
 - Domain tools (${DOMAIN_TOOLS}) are the source of truth for a domain's current state. Call them; never guess or substitute training data.
-- Strip protocol, paths, ports, and a leading www. Pass the registrable root domain (e.g. \`example.com\`), not a subdomain (\`api.example.com\`). Most lookups fail on subdomains.
+- Strip protocol, paths, ports, and a leading www. Pass the registrable root domain (e.g. \`example.com\`), not a subdomain (\`api.example.com\`).
+- Results are for the queried hostname only. Do not infer www or other subdomains.
 - Open-ended requests ("tell me about this domain", "look this up"): in one parallel round, call ${OVERVIEW_TOOLS}. Skip get_headers and get_seo unless asked or the first round warrants them.
 - Specific questions: call only the relevant tool(s). Independent lookups must be issued together, not sequentially.
 - If a tool returns an error, tell the user and stop. Do not invent a substitute from memory.

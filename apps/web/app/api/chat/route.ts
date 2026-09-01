@@ -116,7 +116,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { messages: rawMessages, domain } = parseResult.data;
+  const { messages: rawMessages, domain, sessionId } = parseResult.data;
 
   // Truncate conversation history to prevent abuse
   // Keep the most recent messages within limit
@@ -127,7 +127,9 @@ export async function POST(request: Request) {
 
   // Start the chat workflow with serializable inputs only
   try {
-    const run = await start(chatWorkflow, [{ messages, domain, ip, userId }]);
+    const run = await start(chatWorkflow, [
+      { messages, domain, ip, userId, sessionId: sessionId ?? null },
+    ]);
 
     // Convert raw ModelCallStreamPart chunks to UI message chunks for the client
     return createUIMessageStreamResponse({

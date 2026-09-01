@@ -60,7 +60,7 @@ function AssistantWaitIndicator({ kind }: { kind: AssistantWaitKind }) {
       ) : (
         <Spinner className="size-3.5" />
       )}
-      <ShimmeringText text={isThinking ? "Thinking…" : "Generating…"} startOnView={false} />
+      <ShimmeringText text={isThinking ? "Thinking…" : "Working…"} startOnView={false} />
     </div>
   );
 }

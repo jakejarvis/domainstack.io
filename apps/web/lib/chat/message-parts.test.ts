@@ -124,10 +124,10 @@ describe("hasVisibleAssistantParts", () => {
 describe("getAssistantWaitStatus", () => {
   const options = { showReasoning: false, showToolCalls: true };
 
-  it("is generating while waiting for the first assistant output", () => {
+  it("is working while waiting for the first assistant output", () => {
     expect(getAssistantWaitStatus("submitted", [userMessage("hi")], options)).toEqual({
       placement: "standalone",
-      kind: "generating",
+      kind: "working",
     });
   });
 
@@ -170,7 +170,7 @@ describe("getAssistantWaitStatus", () => {
     ).toEqual({ placement: "none", kind: null });
   });
 
-  it("is generating after a tool result before the next text starts", () => {
+  it("is working after a tool result before the next text starts", () => {
     expect(
       getAssistantWaitStatus(
         "streaming",
@@ -183,10 +183,10 @@ describe("getAssistantWaitStatus", () => {
         ],
         options,
       ),
-    ).toEqual({ placement: "inline", kind: "generating" });
+    ).toEqual({ placement: "inline", kind: "working" });
   });
 
-  it("is generating when the next text part is still empty after a tool result", () => {
+  it("is working when the next text part is still empty after a tool result", () => {
     expect(
       getAssistantWaitStatus(
         "streaming",
@@ -200,10 +200,10 @@ describe("getAssistantWaitStatus", () => {
         ],
         options,
       ),
-    ).toEqual({ placement: "inline", kind: "generating" });
+    ).toEqual({ placement: "inline", kind: "working" });
   });
 
-  it("is generating after a tool result when the next step has started", () => {
+  it("is working after a tool result when the next step has started", () => {
     expect(
       getAssistantWaitStatus(
         "streaming",
@@ -213,7 +213,7 @@ describe("getAssistantWaitStatus", () => {
         ],
         options,
       ),
-    ).toEqual({ placement: "inline", kind: "generating" });
+    ).toEqual({ placement: "inline", kind: "working" });
   });
 
   it("hides for an empty text part that has already finished", () => {
@@ -243,24 +243,24 @@ describe("getAssistantWaitStatus", () => {
     ).toEqual({ placement: "none", kind: null });
   });
 
-  it("is generating after a tool error while composing the follow-up", () => {
+  it("is working after a tool error while composing the follow-up", () => {
     expect(
       getAssistantWaitStatus(
         "streaming",
         [userMessage("hi"), assistantMessage([registrationTool("output-error")])],
         options,
       ),
-    ).toEqual({ placement: "inline", kind: "generating" });
+    ).toEqual({ placement: "inline", kind: "working" });
   });
 
-  it("is generating while a hidden tool is running", () => {
+  it("is working while a hidden tool is running", () => {
     expect(
       getAssistantWaitStatus(
         "streaming",
         [userMessage("hi"), assistantMessage([registrationTool("input-available")])],
         { showReasoning: false, showToolCalls: false },
       ),
-    ).toEqual({ placement: "standalone", kind: "generating" });
+    ).toEqual({ placement: "standalone", kind: "working" });
   });
 
   it("stays hidden when idle even if the last part is a completed tool", () => {

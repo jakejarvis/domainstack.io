@@ -275,4 +275,22 @@ describe("chatRequestSchema", () => {
 
     expect(result.success).toBe(false);
   });
+
+  it("accepts a session id at the character limit", () => {
+    const result = chatRequestSchema.safeParse({
+      messages: [userMessage("hello")],
+      sessionId: "s".repeat(100),
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects a session id longer than 100 characters", () => {
+    const result = chatRequestSchema.safeParse({
+      messages: [userMessage("hello")],
+      sessionId: "s".repeat(101),
+    });
+
+    expect(result.success).toBe(false);
+  });
 });

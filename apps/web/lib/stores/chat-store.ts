@@ -11,12 +11,16 @@ interface ChatState {
   /** Live workflow run ID; persisted so a reload can resume an in-flight stream. */
   runId: string | null;
   messages: UIMessage[];
+  /** Groups turns of one conversation for AI observability; reset on clearSession. */
+  sessionId: string | null;
 }
 
 interface ChatActions {
   setRunId: (id: string | null) => void;
   setMessages: (messages: UIMessage[]) => void;
   clearSession: () => void;
+  /** Returns the current session ID, minting one on first use. */
+  ensureSessionId: () => string;
 }
 
 type ChatStore = ChatState & ChatActions;
@@ -26,13 +30,21 @@ type ChatStore = ChatState & ChatActions;
  */
 const chatStore = create<ChatStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       runId: null,
       messages: [],
+      sessionId: null,
 
       setRunId: (runId) => set({ runId }),
       setMessages: (messages) => set({ messages }),
-      clearSession: () => set({ runId: null, messages: [] }),
+      clearSession: () => set({ runId: null, messages: [], sessionId: null }),
+      ensureSessionId: () => {
+        const existing = get().sessionId;
+        if (existing) return existing;
+        const sessionId = crypto.randomUUID();
+        set({ sessionId });
+        return sessionId;
+      },
     }),
     {
       name: "chat",
@@ -40,12 +52,14 @@ const chatStore = create<ChatStore>()(
       partialize: (state) => ({
         runId: state.runId,
         messages: state.messages.slice(-MAX_CONVERSATION_MESSAGES),
+        sessionId: state.sessionId,
       }),
       migrate: (persisted) => {
         const state = persisted as Partial<ChatState>;
         return {
           runId: null,
           messages: state.messages ?? [],
+          sessionId: state.sessionId ?? null,
         };
       },
     },

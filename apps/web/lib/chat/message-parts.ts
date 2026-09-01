@@ -11,7 +11,7 @@ type MessagePart = UIMessage["parts"][number];
 
 const RUNNING_TOOL_STATES = new Set(["input-streaming", "input-available", "approval-requested"]);
 
-export type AssistantWaitKind = "thinking" | "generating";
+export type AssistantWaitKind = "thinking" | "working";
 export type AssistantWaitPlacement = "none" | "standalone" | "inline";
 
 export type AssistantWaitStatus = {
@@ -123,7 +123,7 @@ function isWaitingOnHiddenReasoning(
  * seeing in-progress output (streaming text, visible reasoning, or a running tool).
  *
  * "Thinking" is reserved for a reasoning part. Everything else in this gap
- * (first token, post-tool `step-start`, empty streaming text) is "Generating".
+ * (first token, post-tool `step-start`, empty streaming text) is "Working".
  */
 export function getAssistantWaitStatus(
   status: ChatStatus,
@@ -136,13 +136,13 @@ export function getAssistantWaitStatus(
 
   const lastMessage = messages.at(-1);
   if (!lastMessage || lastMessage.role !== "assistant") {
-    return { placement: "standalone", kind: "generating" };
+    return { placement: "standalone", kind: "working" };
   }
 
   const lastPart = lastMessage.parts.at(-1);
   if (!lastPart) {
     const placement = hasVisibleAssistantParts(lastMessage, options) ? "inline" : "standalone";
-    return { placement, kind: "generating" };
+    return { placement, kind: "working" };
   }
 
   if (options.showToolCalls && lastMessage.parts.some(isRunningToolPart)) {
@@ -160,7 +160,7 @@ export function getAssistantWaitStatus(
 
   const kind: AssistantWaitKind = isWaitingOnHiddenReasoning(lastPart, options)
     ? "thinking"
-    : "generating";
+    : "working";
   const placement = hasVisibleAssistantParts(lastMessage, options) ? "inline" : "standalone";
   return { placement, kind };
 }

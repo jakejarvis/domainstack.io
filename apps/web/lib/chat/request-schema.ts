@@ -73,4 +73,5 @@ export const chatRequestSchema = z.object({
       message: `Too many messages (max ${MAX_CONVERSATION_MESSAGES * 2})`,
     }),
   domain: z.string().max(253, { message: "Domain name too long" }).optional(),
+  sessionId: z.string().max(100, { message: "Session ID too long" }).optional(),
 });

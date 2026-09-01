@@ -169,7 +169,7 @@ export const PromptInputSubmit = ({
 
   if (status === "submitted" || status === "streaming") {
     Icon = <Spinner className="size-4" />;
-    ariaLabel = status === "submitted" ? "Sending\u2026" : "Generating\u2026";
+    ariaLabel = status === "submitted" ? "Sending\u2026" : "Working\u2026";
   }
   // For "ready" and "error", use the default arrow icon (allows retry)
 

@@ -165,6 +165,7 @@ function CloudChatSession({
   const setRunId = useChatStore((s) => s.setRunId);
   const setStoredMessages = useChatStore((s) => s.setMessages);
   const clearSession = useChatStore((s) => s.clearSession);
+  const ensureSessionId = useChatStore((s) => s.ensureSessionId);
 
   const transport = useMemo(
     () =>
@@ -172,7 +173,7 @@ function CloudChatSession({
       new WorkflowChatTransport({
         api: "/api/chat",
         prepareSendMessagesRequest: ({ messages }) => ({
-          body: { messages, domain: domainRef.current },
+          body: { messages, domain: domainRef.current, sessionId: ensureSessionId() },
         }),
         prepareReconnectToStreamRequest: ({ api: _api, ...rest }) => {
           const currentRunId = runIdRef.current;
@@ -195,7 +196,7 @@ function CloudChatSession({
           setRunId(null);
         },
       }),
-    [setStoredMessages, setRunId],
+    [setStoredMessages, setRunId, ensureSessionId],
   );
 
   const chat = useChat({

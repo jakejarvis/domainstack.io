@@ -11,7 +11,6 @@
  */
 
 import type { GatewayProviderOptions } from "@ai-sdk/gateway";
-import type { OpenAIResponsesProviderOptions } from "@ai-sdk/openai";
 import { type ModelCallStreamPart, WorkflowAgent } from "@ai-sdk/workflow";
 import { convertToModelMessages, isStepCount, type UIMessage } from "ai";
 import { getWorkflowMetadata, getWritable } from "workflow";
@@ -20,6 +19,7 @@ import { MAX_OUTPUT_TOKENS, MAX_TOOL_STEPS } from "@domainstack/constants";
 
 import { getModelStep } from "./gateway";
 import { buildSystemPromptStep } from "./prompt";
+import { captureChatTelemetryStep, toChatTelemetryPayload } from "./telemetry";
 import { createDomainToolset, createDomainToolsContext } from "./tools";
 
 export interface ChatWorkflowInput {
@@ -29,6 +29,8 @@ export interface ChatWorkflowInput {
   ip: string | null;
   /** User ID for telemetry - must be serializable */
   userId: string | null;
+  /** Groups turns of one conversation for AI observability - must be serializable */
+  sessionId: string | null;
 }
 
 /**
@@ -38,7 +40,7 @@ export interface ChatWorkflowInput {
 export async function chatWorkflow(input: ChatWorkflowInput) {
   "use workflow";
 
-  const { messages, domain, ip, userId } = input;
+  const { messages, domain, ip, userId, sessionId } = input;
 
   const modelMessages = await convertToModelMessages(messages);
   const systemPrompt = await buildSystemPromptStep(domain);
@@ -62,21 +64,7 @@ export async function chatWorkflow(input: ChatWorkflowInput) {
       gateway: {
         user: userId ?? ip ?? "",
       } satisfies GatewayProviderOptions,
-      openai: {
-        reasoningEffort: "low",
-        reasoningSummary: "auto",
-      } satisfies OpenAIResponsesProviderOptions,
     },
-    telemetry: {
-      functionId: "chatWorkflow",
-      includeRuntimeContext: {
-        userId: true,
-        ip: true,
-        domain: true,
-        workflowRunId: true,
-      },
-    },
-    runtimeContext: { userId, ip, domain, workflowRunId },
     toolsContext: createDomainToolsContext({ ip }),
   });
 
@@ -87,6 +75,20 @@ export async function chatWorkflow(input: ChatWorkflowInput) {
     stopWhen: isStepCount(MAX_TOOL_STEPS),
     maxOutputTokens: MAX_OUTPUT_TOKENS,
   });
+
+  await captureChatTelemetryStep(
+    toChatTelemetryPayload({
+      sessionId,
+      userId,
+      workflowRunId,
+      domain,
+      modelId: model,
+      tools: Object.keys(domainTools),
+      messages: modelMessages,
+      systemPrompt,
+      steps: result.steps,
+    }),
+  );
 
   return { messages: result.messages };
 }
