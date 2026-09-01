@@ -27,6 +27,7 @@ import { screen, waitFor } from "@/mocks/react";
 import {
   addDomainActionSpies,
   addDomainMutation,
+  getVerificationDataQuery,
   mockSubscription,
   renderAddDomainContent,
   resetAddDomainTestState,
@@ -53,6 +54,7 @@ describe("AddDomainContent", () => {
     renderAddDomainContent();
 
     expect(screen.getByRole("heading", { name: "Add Domain" })).toBeInTheDocument();
+    expect(getVerificationDataQuery).not.toHaveBeenCalled();
 
     await user.type(screen.getByLabelText("Domain name"), "newdomain.com");
     await user.click(screen.getByRole("button", { name: "Continue" }));
@@ -90,6 +92,18 @@ describe("AddDomainContent", () => {
     expect(screen.getByRole("heading", { name: "Complete Verification" })).toBeInTheDocument();
     expect(screen.getByText("Verify ownership of pending.dev")).toBeInTheDocument();
     expect(screen.getByText("Recommended: Add a DNS record")).toBeInTheDocument();
+    expect(screen.getByText("domainstack-verify=token-pending")).toBeInTheDocument();
+    expect(addDomainMutation).not.toHaveBeenCalled();
+    expect(getVerificationDataQuery).not.toHaveBeenCalled();
+  });
+
+  it("fetches verification data when resuming without a token", async () => {
+    renderAddDomainContent({ resumeDomain: makeResumeDomain({ verificationToken: "" }) });
+
+    await waitForStep2();
+    await waitFor(() => {
+      expect(getVerificationDataQuery).toHaveBeenCalledWith({ trackedDomainId: "domain-pending" });
+    });
     expect(screen.getByText("domainstack-verify=token-pending")).toBeInTheDocument();
     expect(addDomainMutation).not.toHaveBeenCalled();
   });

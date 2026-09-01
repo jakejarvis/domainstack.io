@@ -26,6 +26,7 @@ export {
   publicProcedure,
   TRPCError,
   t,
+  enforceRateLimit,
   withAuth,
   withDomainAccessUpdate,
   withLogging,

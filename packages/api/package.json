@@ -13,7 +13,8 @@
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt --config ../../.oxfmtrc.json",
-    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json"
+    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json",
+    "test": "vitest run"
   },
   "dependencies": {
     "@domainstack/auth": "workspace:*",
@@ -27,6 +28,7 @@
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
-    "@types/node": "catalog:"
+    "@types/node": "catalog:",
+    "vitest": "catalog:"
   }
 }

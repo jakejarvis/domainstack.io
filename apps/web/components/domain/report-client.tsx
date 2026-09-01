@@ -147,10 +147,11 @@ export function DomainReportClient({ domain }: { domain: string }) {
   const domainId = registration?.data?.domainId;
   const isRegistered = registration?.data?.isRegistered === true;
 
-  // Start section fetches in parallel with registration (not during render).
-  // Skip once we know the domain is unregistered to avoid wasted lookups.
+  // Wait until registration resolves so unregistered domains do not trigger
+  // DNS/hosting/certificate/header/SEO lookups. Server already prefetches
+  // registration, so registered domains that hydrate with data start immediately.
   useEffect(() => {
-    if (!isRegistered && !isRegistrationLoading) return;
+    if (!isRegistered) return;
     void Promise.all([
       queryClient.query(trpc.domain.getHosting.queryOptions({ domain })).catch(noop),
       queryClient.query(trpc.domain.getDnsRecords.queryOptions({ domain })).catch(noop),
@@ -158,7 +159,7 @@ export function DomainReportClient({ domain }: { domain: string }) {
       queryClient.query(trpc.domain.getHeaders.queryOptions({ domain })).catch(noop),
       queryClient.query(trpc.domain.getSeo.queryOptions({ domain })).catch(noop),
     ]);
-  }, [domain, isRegistered, isRegistrationLoading, queryClient, trpc]);
+  }, [domain, isRegistered, queryClient, trpc]);
 
   // Add to search history for registered domains
   const addDomainToHistory = useSearchHistoryStore((s) => s.addDomain);

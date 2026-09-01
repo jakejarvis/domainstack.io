@@ -1,3 +1,4 @@
+import { skipToken } from "@tanstack/react-query";
 import { vi } from "vitest";
 
 import type { VerificationMethod } from "@domainstack/constants";
@@ -443,10 +444,18 @@ export function useTRPC() {
         mutationOptions: mutationOptionsFor(verifyDomainMutation),
       },
       getVerificationData: {
-        queryOptions: (input: GetVerificationDataInput) => ({
-          queryKey: ["tracking", "getVerificationData", input] as const,
-          queryFn: () => getVerificationDataQuery(input),
-        }),
+        queryOptions: (input: GetVerificationDataInput | typeof skipToken) => {
+          if (input === skipToken) {
+            return {
+              queryKey: ["tracking", "getVerificationData"] as const,
+              queryFn: skipToken,
+            };
+          }
+          return {
+            queryKey: ["tracking", "getVerificationData", input] as const,
+            queryFn: () => getVerificationDataQuery(input),
+          };
+        },
         queryFilter: (input?: GetVerificationDataInput) =>
           queryFilterFor(
             input
