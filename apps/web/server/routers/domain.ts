@@ -4,6 +4,7 @@ import { z } from "zod";
 import { toRegistrableDomain } from "@/lib/normalize-domain";
 import {
   createTRPCRouter,
+  enforceRateLimit,
   publicProcedure,
   withDomainAccessUpdate,
   withRateLimit,
@@ -40,9 +41,9 @@ export const domainRouter = createTRPCRouter({
    */
   getRegistration: publicProcedure
     .use(withRateLimit)
-    .use(withDomainAccessUpdate)
     .meta({ rateLimit: { requests: 30, window: "1 m" } })
     .input(DomainInputSchema)
+    .use(withDomainAccessUpdate)
     .query(async ({ input }) => {
       const { getCachedRegistration } = await import("@domainstack/db/queries");
 
@@ -81,9 +82,9 @@ export const domainRouter = createTRPCRouter({
    */
   getDnsRecords: publicProcedure
     .use(withRateLimit)
-    .use(withDomainAccessUpdate)
     .meta({ rateLimit: { requests: 60, window: "1 m" } })
     .input(DomainInputSchema)
+    .use(withDomainAccessUpdate)
     .query(async ({ input }) => {
       const { getCachedDns } = await import("@domainstack/db/queries");
 
@@ -114,9 +115,9 @@ export const domainRouter = createTRPCRouter({
    */
   getHosting: publicProcedure
     .use(withRateLimit)
-    .use(withDomainAccessUpdate)
     .meta({ rateLimit: { requests: 30, window: "1 m" } })
     .input(DomainInputSchema)
+    .use(withDomainAccessUpdate)
     .query(async ({ input }) => {
       const { getCachedHosting } = await import("@domainstack/db/queries");
 
@@ -147,9 +148,9 @@ export const domainRouter = createTRPCRouter({
    */
   getCertificates: publicProcedure
     .use(withRateLimit)
-    .use(withDomainAccessUpdate)
     .meta({ rateLimit: { requests: 30, window: "1 m" } })
     .input(DomainInputSchema)
+    .use(withDomainAccessUpdate)
     .query(async ({ input }) => {
       const { getCachedCertificates } = await import("@domainstack/db/queries");
 
@@ -188,9 +189,9 @@ export const domainRouter = createTRPCRouter({
    */
   getHeaders: publicProcedure
     .use(withRateLimit)
-    .use(withDomainAccessUpdate)
     .meta({ rateLimit: { requests: 60, window: "1 m" } })
     .input(DomainInputSchema)
+    .use(withDomainAccessUpdate)
     .query(async ({ input }) => {
       const { getCachedHeaders } = await import("@domainstack/db/queries");
 
@@ -236,9 +237,9 @@ export const domainRouter = createTRPCRouter({
    */
   getSeo: publicProcedure
     .use(withRateLimit)
-    .use(withDomainAccessUpdate)
     .meta({ rateLimit: { requests: 30, window: "1 m" } })
     .input(DomainInputSchema)
+    .use(withDomainAccessUpdate)
     .query(async ({ input }) => {
       const { getCachedSeo } = await import("@domainstack/db/queries");
 
@@ -274,28 +275,39 @@ export const domainRouter = createTRPCRouter({
   /**
    * Get a favicon for a domain.
    * Fetches from multiple sources (Google, DuckDuckGo, direct).
+   * Fresh cache hits skip rate limiting so archived lists over the cap still load icons.
    */
-  getFavicon: publicProcedure.input(DomainInputSchema).query(async ({ input }) => {
-    const { getFavicon: getCachedFavicon } = await import("@domainstack/db/queries");
+  getFavicon: publicProcedure
+    .meta({ rateLimit: { requests: 100, window: "1 m" } })
+    .input(DomainInputSchema)
+    .query(async ({ ctx, input, path }) => {
+      const { getFavicon: getCachedFavicon } = await import("@domainstack/db/queries");
 
-    // Check cache first
-    const cached = await getCachedFavicon(input.domain);
-    if (cached.data && !cached.stale) {
-      return { success: true, cached: true, data: cached.data };
-    }
+      // Check cache first — cached reads must not consume the rate-limit budget
+      const cached = await getCachedFavicon(input.domain);
+      if (cached.data && !cached.stale) {
+        return { success: true, cached: true, data: cached.data };
+      }
 
-    // Fetch fresh data
-    try {
-      const result = await fetchFavicon(input.domain);
-      return { success: true, cached: false, data: result.data };
-    } catch (err) {
-      logger.error({ domain: input.domain, err }, "favicon fetch failed");
-      return {
-        success: false,
-        cached: false,
-        data: null,
-        error: "fetch_failed",
-      };
-    }
-  }),
+      // tRPC resolvers do not receive procedure meta; pass the same config explicitly
+      await enforceRateLimit({
+        ctx,
+        path,
+        meta: { rateLimit: { requests: 100, window: "1 m" } },
+      });
+
+      // Fetch fresh data
+      try {
+        const result = await fetchFavicon(input.domain);
+        return { success: true, cached: false, data: result.data };
+      } catch (err) {
+        logger.error({ domain: input.domain, err }, "favicon fetch failed");
+        return {
+          success: false,
+          cached: false,
+          data: null,
+          error: "fetch_failed",
+        };
+      }
+    }),
 });

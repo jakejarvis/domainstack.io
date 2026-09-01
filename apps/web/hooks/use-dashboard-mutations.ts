@@ -105,13 +105,14 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  const domainsQueryKey = trpc.tracking.listDomains.queryKey();
+  const domainsFilter = trpc.tracking.listDomains.queryFilter();
+  const subscriptionFilter = trpc.user.getSubscription.queryFilter();
   const subscriptionQueryKey = trpc.user.getSubscription.queryKey();
 
   const invalidateDomainQueries = useCallback(() => {
-    void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
-    void queryClient.invalidateQueries({ queryKey: subscriptionQueryKey });
-  }, [queryClient, domainsQueryKey, subscriptionQueryKey]);
+    void queryClient.invalidateQueries(domainsFilter);
+    void queryClient.invalidateQueries(subscriptionFilter);
+  }, [queryClient, domainsFilter, subscriptionFilter]);
 
   // Helper to rollback domain queries
   const rollbackDomains = (previousDomains: [unknown, unknown][]) => {
@@ -124,324 +125,328 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
   // Remove Mutation
   // ---------------------------------------------------------------------------
 
-  const removeMutation = useMutation({
-    mutationFn: trpc.tracking.removeDomain.mutationOptions().mutationFn,
-    onMutate: async ({ trackedDomainId }: { trackedDomainId: string }) => {
-      await queryClient.cancelQueries({ queryKey: domainsQueryKey });
-      await queryClient.cancelQueries({ queryKey: subscriptionQueryKey });
+  const removeMutation = useMutation(
+    trpc.tracking.removeDomain.mutationOptions({
+      onMutate: async ({ trackedDomainId }: { trackedDomainId: string }) => {
+        await queryClient.cancelQueries(domainsFilter);
+        await queryClient.cancelQueries(subscriptionFilter);
 
-      const previousDomains = queryClient.getQueriesData({
-        queryKey: domainsQueryKey,
-      });
-      const previousSubscription = queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
+        const previousDomains = queryClient.getQueriesData(domainsFilter);
+        const previousSubscription =
+          queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
 
-      const { active, archived } = affectedCounts(previousDomains as [unknown, unknown][], [
-        trackedDomainId,
-      ]);
+        const { active, archived } = affectedCounts(previousDomains as [unknown, unknown][], [
+          trackedDomainId,
+        ]);
 
-      queryClient.setQueriesData({ queryKey: domainsQueryKey }, (old: DomainsData) =>
-        old?.filter((d) => d.id !== trackedDomainId),
-      );
-      queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) => {
-        if (!old) return old;
-        const activeCount = Math.max(0, old.activeCount - active);
-        const archivedCount = Math.max(0, old.archivedCount - archived);
+        queryClient.setQueriesData(domainsFilter, (old: DomainsData) =>
+          old?.filter((d) => d.id !== trackedDomainId),
+        );
+        queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) => {
+          if (!old) return old;
+          const activeCount = Math.max(0, old.activeCount - active);
+          const archivedCount = Math.max(0, old.archivedCount - archived);
+          return {
+            ...old,
+            activeCount,
+            archivedCount,
+            canAddMore: activeCount < old.planQuota,
+          };
+        });
+
         return {
-          ...old,
-          activeCount,
-          archivedCount,
-          canAddMore: activeCount < old.planQuota,
+          previousDomains: previousDomains as [unknown, unknown][],
+          previousSubscription,
         };
-      });
-
-      return {
-        previousDomains: previousDomains as [unknown, unknown][],
-        previousSubscription,
-      };
-    },
-    onError: (_err, _vars, context: MutationContext | undefined) => {
-      if (context?.previousDomains) {
-        rollbackDomains(context.previousDomains);
-      }
-      if (context?.previousSubscription) {
-        queryClient.setQueryData(subscriptionQueryKey, context.previousSubscription);
-      }
-      toast.error("Failed to remove domain");
-    },
-    onSuccess: () => toast.success("Domain removed"),
-    onSettled: invalidateDomainQueries,
-  });
+      },
+      onError: (_err, _vars, context: MutationContext | undefined) => {
+        if (context?.previousDomains) {
+          rollbackDomains(context.previousDomains);
+        }
+        if (context?.previousSubscription) {
+          queryClient.setQueryData(subscriptionQueryKey, context.previousSubscription);
+        }
+        toast.error("Failed to remove domain");
+      },
+      onSuccess: () => toast.success("Domain removed"),
+      onSettled: invalidateDomainQueries,
+    }),
+  );
 
   // ---------------------------------------------------------------------------
   // Archive Mutation
   // ---------------------------------------------------------------------------
 
-  const archiveMutation = useMutation({
-    mutationFn: trpc.tracking.archiveDomain.mutationOptions().mutationFn,
-    onMutate: async ({ trackedDomainId }: { trackedDomainId: string }) => {
-      await queryClient.cancelQueries({ queryKey: domainsQueryKey });
-      await queryClient.cancelQueries({ queryKey: subscriptionQueryKey });
+  const archiveMutation = useMutation(
+    trpc.tracking.archiveDomain.mutationOptions({
+      onMutate: async ({ trackedDomainId }: { trackedDomainId: string }) => {
+        await queryClient.cancelQueries(domainsFilter);
+        await queryClient.cancelQueries(subscriptionFilter);
 
-      const previousDomains = queryClient.getQueriesData({
-        queryKey: domainsQueryKey,
-      });
-      const previousSubscription = queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
+        const previousDomains = queryClient.getQueriesData(domainsFilter);
+        const previousSubscription =
+          queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
 
-      const { active: toArchive } = affectedCounts(previousDomains as [unknown, unknown][], [
-        trackedDomainId,
-      ]);
+        const { active: toArchive } = affectedCounts(previousDomains as [unknown, unknown][], [
+          trackedDomainId,
+        ]);
 
-      queryClient.setQueriesData({ queryKey: domainsQueryKey }, (old: DomainsData) =>
-        old?.map((d) => (d.id === trackedDomainId ? { ...d, archivedAt: new Date() } : d)),
-      );
-      queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) => {
-        if (!old) return old;
-        const activeCount = Math.max(0, old.activeCount - toArchive);
+        queryClient.setQueriesData(domainsFilter, (old: DomainsData) =>
+          old?.map((d) => (d.id === trackedDomainId ? { ...d, archivedAt: new Date() } : d)),
+        );
+        queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) => {
+          if (!old) return old;
+          const activeCount = Math.max(0, old.activeCount - toArchive);
+          return {
+            ...old,
+            activeCount,
+            archivedCount: old.archivedCount + toArchive,
+            canAddMore: activeCount < old.planQuota,
+          };
+        });
+
         return {
-          ...old,
-          activeCount,
-          archivedCount: old.archivedCount + toArchive,
-          canAddMore: activeCount < old.planQuota,
+          previousDomains: previousDomains as [unknown, unknown][],
+          previousSubscription,
         };
-      });
-
-      return {
-        previousDomains: previousDomains as [unknown, unknown][],
-        previousSubscription,
-      };
-    },
-    onError: (_err, _vars, context: MutationContext | undefined) => {
-      if (context?.previousDomains) {
-        rollbackDomains(context.previousDomains);
-      }
-      if (context?.previousSubscription) {
-        queryClient.setQueryData(subscriptionQueryKey, context.previousSubscription);
-      }
-      toast.error("Failed to archive domain");
-    },
-    onSuccess: () => toast.success("Domain archived"),
-    onSettled: invalidateDomainQueries,
-  });
+      },
+      onError: (_err, _vars, context: MutationContext | undefined) => {
+        if (context?.previousDomains) {
+          rollbackDomains(context.previousDomains);
+        }
+        if (context?.previousSubscription) {
+          queryClient.setQueryData(subscriptionQueryKey, context.previousSubscription);
+        }
+        toast.error("Failed to archive domain");
+      },
+      onSuccess: () => toast.success("Domain archived"),
+      onSettled: invalidateDomainQueries,
+    }),
+  );
 
   // ---------------------------------------------------------------------------
   // Unarchive Mutation
   // ---------------------------------------------------------------------------
 
-  const unarchiveMutation = useMutation({
-    mutationFn: trpc.tracking.unarchiveDomain.mutationOptions().mutationFn,
-    onMutate: async ({ trackedDomainId }: { trackedDomainId: string }) => {
-      await queryClient.cancelQueries({ queryKey: domainsQueryKey });
-      await queryClient.cancelQueries({ queryKey: subscriptionQueryKey });
+  const unarchiveMutation = useMutation(
+    trpc.tracking.unarchiveDomain.mutationOptions({
+      onMutate: async ({ trackedDomainId }: { trackedDomainId: string }) => {
+        await queryClient.cancelQueries(domainsFilter);
+        await queryClient.cancelQueries(subscriptionFilter);
 
-      const previousDomains = queryClient.getQueriesData({
-        queryKey: domainsQueryKey,
-      });
-      const previousSubscription = queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
+        const previousDomains = queryClient.getQueriesData(domainsFilter);
+        const previousSubscription =
+          queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
 
-      const { archived: toActivate } = affectedCounts(previousDomains as [unknown, unknown][], [
-        trackedDomainId,
-      ]);
+        const { archived: toActivate } = affectedCounts(previousDomains as [unknown, unknown][], [
+          trackedDomainId,
+        ]);
 
-      queryClient.setQueriesData({ queryKey: domainsQueryKey }, (old: DomainsData) =>
-        old?.map((d) => (d.id === trackedDomainId ? { ...d, archivedAt: null } : d)),
-      );
-      queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) => {
-        if (!old) return old;
-        const activeCount = old.activeCount + toActivate;
+        queryClient.setQueriesData(domainsFilter, (old: DomainsData) =>
+          old?.map((d) => (d.id === trackedDomainId ? { ...d, archivedAt: null } : d)),
+        );
+        queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) => {
+          if (!old) return old;
+          const activeCount = old.activeCount + toActivate;
+          return {
+            ...old,
+            activeCount,
+            archivedCount: Math.max(0, old.archivedCount - toActivate),
+            canAddMore: activeCount < old.planQuota,
+          };
+        });
+
         return {
-          ...old,
-          activeCount,
-          archivedCount: Math.max(0, old.archivedCount - toActivate),
-          canAddMore: activeCount < old.planQuota,
+          previousDomains: previousDomains as [unknown, unknown][],
+          previousSubscription,
         };
-      });
-
-      return {
-        previousDomains: previousDomains as [unknown, unknown][],
-        previousSubscription,
-      };
-    },
-    onError: (err, _vars, context: MutationContext | undefined) => {
-      if (context?.previousDomains) {
-        rollbackDomains(context.previousDomains);
-      }
-      if (context?.previousSubscription) {
-        queryClient.setQueryData(subscriptionQueryKey, context.previousSubscription);
-      }
-      toast.error(err instanceof Error ? err.message : "Failed to reactivate domain");
-    },
-    onSuccess: () => toast.success("Domain reactivated"),
-    onSettled: invalidateDomainQueries,
-  });
+      },
+      onError: (err, _vars, context: MutationContext | undefined) => {
+        if (context?.previousDomains) {
+          rollbackDomains(context.previousDomains);
+        }
+        if (context?.previousSubscription) {
+          queryClient.setQueryData(subscriptionQueryKey, context.previousSubscription);
+        }
+        toast.error(err instanceof Error ? err.message : "Failed to reactivate domain");
+      },
+      onSuccess: () => toast.success("Domain reactivated"),
+      onSettled: invalidateDomainQueries,
+    }),
+  );
 
   // ---------------------------------------------------------------------------
   // Mute Mutation
   // ---------------------------------------------------------------------------
 
-  const muteMutation = useMutation({
-    mutationFn: trpc.user.setDomainMuted.mutationOptions().mutationFn,
-    onMutate: async ({ trackedDomainId, muted }: { trackedDomainId: string; muted: boolean }) => {
-      await queryClient.cancelQueries({ queryKey: domainsQueryKey });
+  const muteMutation = useMutation(
+    trpc.user.setDomainMuted.mutationOptions({
+      onMutate: async ({ trackedDomainId, muted }: { trackedDomainId: string; muted: boolean }) => {
+        await queryClient.cancelQueries(domainsFilter);
 
-      const previousDomains = queryClient.getQueriesData({
-        queryKey: domainsQueryKey,
-      });
+        const previousDomains = queryClient.getQueriesData(domainsFilter);
 
-      queryClient.setQueriesData({ queryKey: domainsQueryKey }, (old: DomainsData) =>
-        old?.map((d) => (d.id === trackedDomainId ? { ...d, muted } : d)),
-      );
+        queryClient.setQueriesData(domainsFilter, (old: DomainsData) =>
+          old?.map((d) => (d.id === trackedDomainId ? { ...d, muted } : d)),
+        );
 
-      return { previousDomains: previousDomains as [unknown, unknown][] };
-    },
-    onError: (_err, _vars, context: { previousDomains: [unknown, unknown][] } | undefined) => {
-      if (context?.previousDomains) {
-        rollbackDomains(context.previousDomains);
-      }
-      toast.error("Failed to update notification settings");
-    },
-    onSuccess: (_data, { muted }) => toast.success(muted ? "Domain muted" : "Domain unmuted"),
-    onSettled: () => void queryClient.invalidateQueries({ queryKey: domainsQueryKey }),
-  });
+        return { previousDomains: previousDomains as [unknown, unknown][] };
+      },
+      onError: (_err, _vars, context: { previousDomains: [unknown, unknown][] } | undefined) => {
+        if (context?.previousDomains) {
+          rollbackDomains(context.previousDomains);
+        }
+        toast.error("Failed to update notification settings");
+      },
+      onSuccess: (_data, { muted }) => toast.success(muted ? "Domain muted" : "Domain unmuted"),
+      onSettled: () => void queryClient.invalidateQueries(domainsFilter),
+    }),
+  );
 
   // ---------------------------------------------------------------------------
   // Bulk Archive Mutation
   // ---------------------------------------------------------------------------
 
-  const bulkArchiveMutation = useMutation({
-    mutationFn: trpc.tracking.bulkArchiveDomains.mutationOptions().mutationFn,
-    onMutate: async ({ trackedDomainIds }: { trackedDomainIds: string[] }) => {
-      await queryClient.cancelQueries({ queryKey: domainsQueryKey });
-      await queryClient.cancelQueries({ queryKey: subscriptionQueryKey });
+  const bulkArchiveMutation = useMutation(
+    trpc.tracking.bulkArchiveDomains.mutationOptions({
+      onMutate: async ({ trackedDomainIds }: { trackedDomainIds: string[] }) => {
+        await queryClient.cancelQueries(domainsFilter);
+        await queryClient.cancelQueries(subscriptionFilter);
 
-      const previousDomains = queryClient.getQueriesData({
-        queryKey: domainsQueryKey,
-      });
-      const previousSubscription = queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
+        const previousDomains = queryClient.getQueriesData(domainsFilter);
+        const previousSubscription =
+          queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
 
-      const idsSet = new Set(trackedDomainIds);
-      const { active: archiveCount } = affectedCounts(
-        previousDomains as [unknown, unknown][],
-        idsSet,
-      );
+        const idsSet = new Set(trackedDomainIds);
+        const { active: archiveCount } = affectedCounts(
+          previousDomains as [unknown, unknown][],
+          idsSet,
+        );
 
-      queryClient.setQueriesData({ queryKey: domainsQueryKey }, (old: DomainsData) =>
-        old?.map((d) => (idsSet.has(d.id) && !d.archivedAt ? { ...d, archivedAt: new Date() } : d)),
-      );
-      queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) => {
-        if (!old) return old;
-        const activeCount = Math.max(0, old.activeCount - archiveCount);
+        queryClient.setQueriesData(domainsFilter, (old: DomainsData) =>
+          old?.map((d) =>
+            idsSet.has(d.id) && !d.archivedAt ? { ...d, archivedAt: new Date() } : d,
+          ),
+        );
+        queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) => {
+          if (!old) return old;
+          const activeCount = Math.max(0, old.activeCount - archiveCount);
+          return {
+            ...old,
+            activeCount,
+            archivedCount: old.archivedCount + archiveCount,
+            canAddMore: activeCount < old.planQuota,
+          };
+        });
+
         return {
-          ...old,
-          activeCount,
-          archivedCount: old.archivedCount + archiveCount,
-          canAddMore: activeCount < old.planQuota,
+          previousDomains: previousDomains as [unknown, unknown][],
+          previousSubscription,
         };
-      });
-
-      return {
-        previousDomains: previousDomains as [unknown, unknown][],
-        previousSubscription,
-      };
-    },
-    onError: (_err, _vars, context: MutationContext | undefined) => {
-      if (context?.previousDomains) {
-        rollbackDomains(context.previousDomains);
-      }
-      if (context?.previousSubscription) {
-        queryClient.setQueryData(subscriptionQueryKey, context.previousSubscription);
-      }
-      toast.error("Failed to archive domains");
-    },
-    onSettled: invalidateDomainQueries,
-  });
+      },
+      onError: (_err, _vars, context: MutationContext | undefined) => {
+        if (context?.previousDomains) {
+          rollbackDomains(context.previousDomains);
+        }
+        if (context?.previousSubscription) {
+          queryClient.setQueryData(subscriptionQueryKey, context.previousSubscription);
+        }
+        toast.error("Failed to archive domains");
+      },
+      onSettled: invalidateDomainQueries,
+    }),
+  );
 
   // ---------------------------------------------------------------------------
   // Bulk Delete Mutation
   // ---------------------------------------------------------------------------
 
-  const bulkDeleteMutation = useMutation({
-    mutationFn: trpc.tracking.bulkRemoveDomains.mutationOptions().mutationFn,
-    onMutate: async ({ trackedDomainIds }: { trackedDomainIds: string[] }) => {
-      await queryClient.cancelQueries({ queryKey: domainsQueryKey });
-      await queryClient.cancelQueries({ queryKey: subscriptionQueryKey });
+  const bulkDeleteMutation = useMutation(
+    trpc.tracking.bulkRemoveDomains.mutationOptions({
+      onMutate: async ({ trackedDomainIds }: { trackedDomainIds: string[] }) => {
+        await queryClient.cancelQueries(domainsFilter);
+        await queryClient.cancelQueries(subscriptionFilter);
 
-      const previousDomains = queryClient.getQueriesData({
-        queryKey: domainsQueryKey,
-      });
-      const previousSubscription = queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
+        const previousDomains = queryClient.getQueriesData(domainsFilter);
+        const previousSubscription =
+          queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
 
-      const idsSet = new Set(trackedDomainIds);
-      const { active: activeDeleted, archived: archivedDeleted } = affectedCounts(
-        previousDomains as [unknown, unknown][],
-        idsSet,
-      );
+        const idsSet = new Set(trackedDomainIds);
+        const { active: activeDeleted, archived: archivedDeleted } = affectedCounts(
+          previousDomains as [unknown, unknown][],
+          idsSet,
+        );
 
-      queryClient.setQueriesData({ queryKey: domainsQueryKey }, (old: DomainsData) =>
-        old?.filter((d) => !idsSet.has(d.id)),
-      );
-      queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) => {
-        if (!old) return old;
-        const activeCount = Math.max(0, old.activeCount - activeDeleted);
-        const archivedCount = Math.max(0, old.archivedCount - archivedDeleted);
+        queryClient.setQueriesData(domainsFilter, (old: DomainsData) =>
+          old?.filter((d) => !idsSet.has(d.id)),
+        );
+        queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) => {
+          if (!old) return old;
+          const activeCount = Math.max(0, old.activeCount - activeDeleted);
+          const archivedCount = Math.max(0, old.archivedCount - archivedDeleted);
+          return {
+            ...old,
+            activeCount,
+            archivedCount,
+            canAddMore: activeCount < old.planQuota,
+          };
+        });
+
         return {
-          ...old,
-          activeCount,
-          archivedCount,
-          canAddMore: activeCount < old.planQuota,
+          previousDomains: previousDomains as [unknown, unknown][],
+          previousSubscription,
         };
-      });
-
-      return {
-        previousDomains: previousDomains as [unknown, unknown][],
-        previousSubscription,
-      };
-    },
-    onError: (_err, _vars, context: MutationContext | undefined) => {
-      if (context?.previousDomains) {
-        rollbackDomains(context.previousDomains);
-      }
-      if (context?.previousSubscription) {
-        queryClient.setQueryData(subscriptionQueryKey, context.previousSubscription);
-      }
-      toast.error("Failed to delete domains");
-    },
-    onSettled: invalidateDomainQueries,
-  });
+      },
+      onError: (_err, _vars, context: MutationContext | undefined) => {
+        if (context?.previousDomains) {
+          rollbackDomains(context.previousDomains);
+        }
+        if (context?.previousSubscription) {
+          queryClient.setQueryData(subscriptionQueryKey, context.previousSubscription);
+        }
+        toast.error("Failed to delete domains");
+      },
+      onSettled: invalidateDomainQueries,
+    }),
+  );
 
   // ---------------------------------------------------------------------------
   // Bulk Mute Mutation
   // ---------------------------------------------------------------------------
 
-  const bulkSetMutedMutation = useMutation({
-    mutationFn: trpc.tracking.bulkSetMuted.mutationOptions().mutationFn,
-    onMutate: async ({
-      trackedDomainIds,
-      muted,
-    }: {
-      trackedDomainIds: string[];
-      muted: boolean;
-    }) => {
-      await queryClient.cancelQueries({ queryKey: domainsQueryKey });
+  const bulkSetMutedMutation = useMutation(
+    trpc.tracking.bulkSetMuted.mutationOptions({
+      onMutate: async ({
+        trackedDomainIds,
+        muted,
+      }: {
+        trackedDomainIds: string[];
+        muted: boolean;
+      }) => {
+        await queryClient.cancelQueries(domainsFilter);
 
-      const previousDomains = queryClient.getQueriesData({
-        queryKey: domainsQueryKey,
-      });
+        const previousDomains = queryClient.getQueriesData(domainsFilter);
 
-      const idsSet = new Set(trackedDomainIds);
-      queryClient.setQueriesData({ queryKey: domainsQueryKey }, (old: DomainsData) =>
-        old?.map((d) => (idsSet.has(d.id) ? { ...d, muted } : d)),
-      );
+        const idsSet = new Set(trackedDomainIds);
+        queryClient.setQueriesData(domainsFilter, (old: DomainsData) =>
+          old?.map((d) => (idsSet.has(d.id) ? { ...d, muted } : d)),
+        );
 
-      return { previousDomains: previousDomains as [unknown, unknown][] };
-    },
-    onError: (_err, { muted }, context: { previousDomains: [unknown, unknown][] } | undefined) => {
-      if (context?.previousDomains) {
-        rollbackDomains(context.previousDomains);
-      }
-      toast.error(muted ? "Failed to mute domains" : "Failed to unmute domains");
-    },
-    onSettled: () => void queryClient.invalidateQueries({ queryKey: domainsQueryKey }),
-  });
+        return { previousDomains: previousDomains as [unknown, unknown][] };
+      },
+      onError: (
+        _err,
+        { muted },
+        context: { previousDomains: [unknown, unknown][] } | undefined,
+      ) => {
+        if (context?.previousDomains) {
+          rollbackDomains(context.previousDomains);
+        }
+        toast.error(muted ? "Failed to mute domains" : "Failed to unmute domains");
+      },
+      onSettled: () => void queryClient.invalidateQueries(domainsFilter),
+    }),
+  );
 
   // ---------------------------------------------------------------------------
   // Wrapped Handlers

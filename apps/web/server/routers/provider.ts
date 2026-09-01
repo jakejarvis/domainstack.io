@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { createTRPCRouter, publicProcedure } from "@/trpc/init";
+import { createTRPCRouter, publicProcedure, withRateLimit } from "@/trpc/init";
 import { getProviderById, getProviderLogo } from "@domainstack/db/queries";
 import { createLogger } from "@domainstack/logger";
 import { fetchProviderLogo } from "@domainstack/server";
@@ -13,6 +13,8 @@ export const providerRouter = createTRPCRouter({
    * Returns cached data if fresh, otherwise fetches fresh data.
    */
   getProviderIcon: publicProcedure
+    .use(withRateLimit)
+    .meta({ rateLimit: { requests: 60, window: "1 m" } })
     .input(z.object({ providerId: z.uuid() }))
     .query(async ({ input }) => {
       const [provider, cached] = await Promise.all([

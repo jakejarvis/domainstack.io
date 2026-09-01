@@ -121,6 +121,15 @@ describe("notifications router", () => {
       expect(result.nextCursor).toBeUndefined();
     });
 
+    it("accepts a null cursor from infinite-query invalidation", async () => {
+      const caller = createAuthenticatedCaller();
+
+      const result = await caller.notifications.list({ filter: "all", cursor: null });
+
+      expect(result.items).toEqual([]);
+      expect(result.nextCursor).toBeUndefined();
+    });
+
     it("returns user notifications", async () => {
       const caller = createAuthenticatedCaller();
 

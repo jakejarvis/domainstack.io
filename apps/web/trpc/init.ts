@@ -26,9 +26,9 @@ export {
   publicProcedure,
   TRPCError,
   t,
+  enforceRateLimit,
   withAuth,
   withDomainAccessUpdate,
   withLogging,
-  withProTier,
   withRateLimit,
 } from "@domainstack/api";

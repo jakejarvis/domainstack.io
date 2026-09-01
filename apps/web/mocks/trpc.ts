@@ -1,3 +1,4 @@
+import { skipToken } from "@tanstack/react-query";
 import { vi } from "vitest";
 
 import type { VerificationMethod } from "@domainstack/constants";
@@ -35,6 +36,14 @@ type ListDomainsInput = { includeArchived?: boolean } | undefined;
 
 function listDomainsQueryKey(input?: ListDomainsInput) {
   return input === undefined ? DOMAINS_QUERY_KEY : ([...DOMAINS_QUERY_KEY, input] as const);
+}
+
+function queryFilterFor(queryKey: readonly unknown[]) {
+  return { queryKey };
+}
+
+function mutationOptionsFor<TArgs, TResult>(mutationFn: (args: TArgs) => Promise<TResult>) {
+  return (opts?: object) => ({ ...opts, mutationFn });
 }
 
 let domainsState: TrackedDomainWithDetails[] = [];
@@ -429,16 +438,30 @@ export function useTRPC() {
   return {
     tracking: {
       addDomain: {
-        mutationOptions: () => ({ mutationFn: addDomainMutation }),
+        mutationOptions: mutationOptionsFor(addDomainMutation),
       },
       verifyDomain: {
-        mutationOptions: () => ({ mutationFn: verifyDomainMutation }),
+        mutationOptions: mutationOptionsFor(verifyDomainMutation),
       },
       getVerificationData: {
-        queryOptions: (input: GetVerificationDataInput) => ({
-          queryKey: ["tracking", "getVerificationData", input] as const,
-          queryFn: () => getVerificationDataQuery(input),
-        }),
+        queryOptions: (input: GetVerificationDataInput | typeof skipToken) => {
+          if (input === skipToken) {
+            return {
+              queryKey: ["tracking", "getVerificationData"] as const,
+              queryFn: skipToken,
+            };
+          }
+          return {
+            queryKey: ["tracking", "getVerificationData", input] as const,
+            queryFn: () => getVerificationDataQuery(input),
+          };
+        },
+        queryFilter: (input?: GetVerificationDataInput) =>
+          queryFilterFor(
+            input
+              ? (["tracking", "getVerificationData", input] as const)
+              : (["tracking", "getVerificationData"] as const),
+          ),
       },
       listDomains: {
         queryKey: listDomainsQueryKey,
@@ -446,29 +469,28 @@ export function useTRPC() {
           queryKey: listDomainsQueryKey(input),
           queryFn: () => listDomainsQuery(input),
         }),
+        queryFilter: (input?: ListDomainsInput) => queryFilterFor(listDomainsQueryKey(input)),
       },
       removeDomain: {
-        mutationOptions: () => ({ mutationFn: removeDomainMutation }),
+        mutationOptions: mutationOptionsFor(removeDomainMutation),
       },
       archiveDomain: {
-        mutationOptions: () => ({ mutationFn: archiveDomainMutation }),
+        mutationOptions: mutationOptionsFor(archiveDomainMutation),
       },
       unarchiveDomain: {
-        mutationOptions: () => ({ mutationFn: unarchiveDomainMutation }),
+        mutationOptions: mutationOptionsFor(unarchiveDomainMutation),
       },
       bulkArchiveDomains: {
-        mutationOptions: () => ({ mutationFn: bulkArchiveDomainsMutation }),
+        mutationOptions: mutationOptionsFor(bulkArchiveDomainsMutation),
       },
       bulkRemoveDomains: {
-        mutationOptions: () => ({ mutationFn: bulkRemoveDomainsMutation }),
+        mutationOptions: mutationOptionsFor(bulkRemoveDomainsMutation),
       },
       bulkSetMuted: {
-        mutationOptions: () => ({ mutationFn: bulkSetMutedMutation }),
+        mutationOptions: mutationOptionsFor(bulkSetMutedMutation),
       },
       sendVerificationInstructions: {
-        mutationOptions: () => ({
-          mutationFn: sendVerificationInstructionsMutation,
-        }),
+        mutationOptions: mutationOptionsFor(sendVerificationInstructionsMutation),
       },
     },
     user: {
@@ -478,9 +500,10 @@ export function useTRPC() {
           queryKey: SUBSCRIPTION_QUERY_KEY,
           queryFn: () => getSubscriptionQuery(),
         }),
+        queryFilter: () => queryFilterFor(SUBSCRIPTION_QUERY_KEY),
       },
       setDomainMuted: {
-        mutationOptions: () => ({ mutationFn: setDomainMutedMutation }),
+        mutationOptions: mutationOptionsFor(setDomainMutedMutation),
       },
       getCalendarFeed: {
         queryKey: () => CALENDAR_FEED_QUERY_KEY,
@@ -488,18 +511,19 @@ export function useTRPC() {
           queryKey: CALENDAR_FEED_QUERY_KEY,
           queryFn: () => getCalendarFeedQuery(),
         }),
+        queryFilter: () => queryFilterFor(CALENDAR_FEED_QUERY_KEY),
       },
       enableCalendarFeed: {
-        mutationOptions: () => ({ mutationFn: enableCalendarFeedMutation }),
+        mutationOptions: mutationOptionsFor(enableCalendarFeedMutation),
       },
       disableCalendarFeed: {
-        mutationOptions: () => ({ mutationFn: disableCalendarFeedMutation }),
+        mutationOptions: mutationOptionsFor(disableCalendarFeedMutation),
       },
       rotateCalendarFeedToken: {
-        mutationOptions: () => ({ mutationFn: rotateCalendarFeedTokenMutation }),
+        mutationOptions: mutationOptionsFor(rotateCalendarFeedTokenMutation),
       },
       deleteCalendarFeed: {
-        mutationOptions: () => ({ mutationFn: deleteCalendarFeedMutation }),
+        mutationOptions: mutationOptionsFor(deleteCalendarFeedMutation),
       },
     },
     notifications: {
@@ -526,6 +550,7 @@ export function useTRPC() {
           staleTime: opts?.staleTime,
           enabled: opts?.enabled,
         }),
+        queryFilter: () => queryFilterFor(["notifications", "list"] as const),
       },
       unreadCount: {
         queryKey: () => NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY,
@@ -533,12 +558,13 @@ export function useTRPC() {
           queryKey: NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY,
           queryFn: () => unreadCountQuery(),
         }),
+        queryFilter: () => queryFilterFor(NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY),
       },
       markRead: {
-        mutationOptions: () => ({ mutationFn: markReadMutation }),
+        mutationOptions: mutationOptionsFor(markReadMutation),
       },
       markAllRead: {
-        mutationOptions: () => ({ mutationFn: markAllReadMutation }),
+        mutationOptions: mutationOptionsFor(markAllReadMutation),
       },
     },
   };

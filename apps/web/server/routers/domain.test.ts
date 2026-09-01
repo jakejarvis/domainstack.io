@@ -43,6 +43,10 @@ vi.mock("@domainstack/server", async (importOriginal) => {
         statusMessage: "OK",
       },
     }),
+    fetchFavicon: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue({
+      success: true,
+      data: { url: "https://example.com/favicon.ico" },
+    }),
   };
 });
 
@@ -62,10 +66,12 @@ vi.mock("next/server", () => ({
 }));
 
 // Now import modules that depend on the db
-const { dnsRecords, domains, httpHeaders, providers, registrations } =
+const { dnsRecords, domains, favicons, httpHeaders, providers, registrations } =
   await import("@domainstack/db/schema");
 const { start } = await import("workflow/api");
-const { fetchDns, fetchHeaders, fetchRegistration } = await import("@domainstack/server");
+const { fetchDns, fetchFavicon, fetchHeaders, fetchRegistration } =
+  await import("@domainstack/server");
+const { getRateLimiter } = await import("@domainstack/redis/ratelimit");
 const { createCaller } = await import("@/server/routers/_app");
 
 import type { Context } from "@/trpc/init";
@@ -393,19 +399,129 @@ describe("domain router", () => {
   });
 
   describe("getFavicon", () => {
+    function mockFaviconLimiter() {
+      const limit = vi.fn<
+        (identifier: string) => Promise<{
+          success: true;
+          limit: number;
+          remaining: number;
+          reset: number;
+          pending: Promise<void>;
+        }>
+      >();
+      limit.mockResolvedValue({
+        success: true,
+        limit: 100,
+        remaining: 99,
+        reset: Date.now() + 60_000,
+        pending: Promise.resolve(),
+      });
+      vi.mocked(getRateLimiter).mockReturnValue({ limit } as never);
+      return limit;
+    }
+
     it("is accessible without authentication (public procedure)", async () => {
       const caller = createTestCaller({ session: null });
-
-      vi.mocked(start).mockResolvedValue({
-        returnValue: Promise.resolve({
-          success: true,
-          data: { url: "https://example.com/favicon.ico" },
-        }),
-      } as never);
 
       // Should not throw unauthorized error
       const result = await caller.domain.getFavicon({ domain: TEST_DOMAIN });
       expect(result).toBeDefined();
+    });
+
+    it("does not call limiter.limit on a fresh cache hit", async () => {
+      const caller = createTestCaller();
+      const limit = mockFaviconLimiter();
+
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + 60 * 60 * 1000);
+
+      await db
+        .insert(favicons)
+        .values({
+          domainId: TEST_DOMAIN_ID,
+          url: "https://example.com/favicon.ico",
+          pathname: null,
+          size: 32,
+          source: "google",
+          notFound: false,
+          fetchedAt: now,
+          expiresAt,
+        })
+        .onConflictDoUpdate({
+          target: favicons.domainId,
+          set: {
+            url: "https://example.com/favicon.ico",
+            fetchedAt: now,
+            expiresAt,
+            notFound: false,
+          },
+        });
+
+      const result = await caller.domain.getFavicon({ domain: TEST_DOMAIN });
+
+      expect(result).toMatchObject({
+        success: true,
+        cached: true,
+        data: { url: "https://example.com/favicon.ico" },
+      });
+      expect(limit).not.toHaveBeenCalled();
+      expect(fetchFavicon).not.toHaveBeenCalled();
+    });
+
+    it("calls limiter.limit on a cache miss", async () => {
+      const caller = createTestCaller();
+      const limit = mockFaviconLimiter();
+      const uncachedDomain = "uncached-favicon.com";
+
+      const result = await caller.domain.getFavicon({ domain: uncachedDomain });
+
+      expect(result).toMatchObject({
+        success: true,
+        cached: false,
+        data: { url: "https://example.com/favicon.ico" },
+      });
+      expect(limit).toHaveBeenCalled();
+      expect(fetchFavicon).toHaveBeenCalled();
+    });
+
+    it("calls limiter.limit on a stale cache entry", async () => {
+      const caller = createTestCaller();
+      const limit = mockFaviconLimiter();
+
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() - 60 * 1000);
+
+      await db
+        .insert(favicons)
+        .values({
+          domainId: TEST_DOMAIN_ID,
+          url: "https://example.com/old-favicon.ico",
+          pathname: null,
+          size: 32,
+          source: "google",
+          notFound: false,
+          fetchedAt: new Date(now.getTime() - 2 * 60 * 60 * 1000),
+          expiresAt,
+        })
+        .onConflictDoUpdate({
+          target: favicons.domainId,
+          set: {
+            url: "https://example.com/old-favicon.ico",
+            fetchedAt: new Date(now.getTime() - 2 * 60 * 60 * 1000),
+            expiresAt,
+            notFound: false,
+          },
+        });
+
+      const result = await caller.domain.getFavicon({ domain: TEST_DOMAIN });
+
+      expect(result).toMatchObject({
+        success: true,
+        cached: false,
+        data: { url: "https://example.com/favicon.ico" },
+      });
+      expect(limit).toHaveBeenCalled();
+      expect(fetchFavicon).toHaveBeenCalled();
     });
   });
 

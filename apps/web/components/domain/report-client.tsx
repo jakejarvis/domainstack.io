@@ -1,14 +1,7 @@
 "use client";
 
 import { IconAlertTriangle, IconRefresh } from "@tabler/icons-react";
-import {
-  dehydrate,
-  HydrationBoundary,
-  noop,
-  useQuery,
-  useQueryClient,
-  useSuspenseQuery,
-} from "@tanstack/react-query";
+import { noop, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense, useEffect, useRef, useState } from "react";
 
 import { CreateIssueButton } from "@/components/create-issue-button";
@@ -154,13 +147,19 @@ export function DomainReportClient({ domain }: { domain: string }) {
   const domainId = registration?.data?.domainId;
   const isRegistered = registration?.data?.isRegistered === true;
 
-  void Promise.all([
-    queryClient.query(trpc.domain.getHosting.queryOptions({ domain })).catch(noop),
-    queryClient.query(trpc.domain.getDnsRecords.queryOptions({ domain })).catch(noop),
-    queryClient.query(trpc.domain.getCertificates.queryOptions({ domain })).catch(noop),
-    queryClient.query(trpc.domain.getHeaders.queryOptions({ domain })).catch(noop),
-    queryClient.query(trpc.domain.getSeo.queryOptions({ domain })).catch(noop),
-  ]);
+  // Wait until registration resolves so unregistered domains do not trigger
+  // DNS/hosting/certificate/header/SEO lookups. Server already prefetches
+  // registration, so registered domains that hydrate with data start immediately.
+  useEffect(() => {
+    if (!isRegistered) return;
+    void Promise.all([
+      queryClient.query(trpc.domain.getHosting.queryOptions({ domain })).catch(noop),
+      queryClient.query(trpc.domain.getDnsRecords.queryOptions({ domain })).catch(noop),
+      queryClient.query(trpc.domain.getCertificates.queryOptions({ domain })).catch(noop),
+      queryClient.query(trpc.domain.getHeaders.queryOptions({ domain })).catch(noop),
+      queryClient.query(trpc.domain.getSeo.queryOptions({ domain })).catch(noop),
+    ]);
+  }, [domain, isRegistered, queryClient, trpc]);
 
   // Add to search history for registered domains
   const addDomainToHistory = useSearchHistoryStore((s) => s.addDomain);
@@ -232,9 +231,7 @@ export function DomainReportClient({ domain }: { domain: string }) {
             <Button
               size="sm"
               onClick={() =>
-                queryClient.invalidateQueries({
-                  queryKey: registrationQueryOptions.queryKey,
-                })
+                queryClient.invalidateQueries(trpc.domain.getRegistration.queryFilter({ domain }))
               }
             >
               <IconRefresh />
@@ -256,7 +253,7 @@ export function DomainReportClient({ domain }: { domain: string }) {
   }
 
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
+    <>
       <DomainReportHeader
         domain={domain}
         domainId={domainId}
@@ -315,6 +312,6 @@ export function DomainReportClient({ domain }: { domain: string }) {
           </>
         )}
       </div>
-    </HydrationBoundary>
+    </>
   );
 }

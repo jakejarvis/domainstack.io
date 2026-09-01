@@ -19,12 +19,8 @@ export function AddDomainPageClient({ prefillDomain }: { prefillDomain?: string 
 
   const handleSuccess = () => {
     // Invalidate queries to refresh the list and subscription status
-    void queryClient.invalidateQueries({
-      queryKey: trpc.tracking.listDomains.queryKey(),
-    });
-    void queryClient.invalidateQueries({
-      queryKey: trpc.user.getSubscription.queryKey(),
-    });
+    void queryClient.invalidateQueries(trpc.tracking.listDomains.queryFilter());
+    void queryClient.invalidateQueries(trpc.user.getSubscription.queryFilter());
     startNavigation(() => router.push("/dashboard", { scroll: false }));
   };
 
