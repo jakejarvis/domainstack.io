@@ -3,7 +3,7 @@ packages:
   - packages/*
 catalog:
   '@tabler/icons-react': ^3.46.0
-  '@types/node': ^24.13.3
+  '@types/node': ^25.9.5
   motion: ^13.1.1
   sonner: ^2.0.8
   vitest: ^4.1.11
