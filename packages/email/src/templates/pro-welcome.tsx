@@ -82,6 +82,6 @@ function ProWelcomeEmail({ userName, baseUrl }: ProWelcomeEmailProps) {
 ProWelcomeEmail.PreviewProps = {
   userName: "Jake",
   baseUrl: "https://domainstack.io",
-} as ProWelcomeEmailProps;
+};
 
 export default ProWelcomeEmail;

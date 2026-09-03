@@ -45,7 +45,7 @@ export async function fetchCertificateChain(
         },
         () => {
           socket.setTimeout(0);
-          const peer = socket.getPeerCertificate(true) as DetailedPeerCertificate;
+          const peer = socket.getPeerCertificate(true);
 
           const rawChain: RawCertificate[] = [];
           let current: DetailedPeerCertificate | null = peer;

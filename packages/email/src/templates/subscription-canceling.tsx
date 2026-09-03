@@ -72,6 +72,6 @@ SubscriptionCancelingEmail.PreviewProps = {
   userName: "Jake",
   endDate: "January 15, 2025",
   baseUrl: "https://domainstack.io",
-} as SubscriptionCancelingEmailProps;
+};
 
 export default SubscriptionCancelingEmail;

@@ -149,8 +149,7 @@ function toAttributes(record: Record<string, unknown>): Record<string, string | 
  */
 export function toLogRecord(record: Record<string, unknown>): LogRecord {
   const timestamp = toTimestamp(record.time);
-  const body =
-    typeof record.msg === "string" ? record.msg : record.msg != null ? String(record.msg) : "";
+  const body = typeof record.msg === "string" ? record.msg : "";
 
   return {
     body,

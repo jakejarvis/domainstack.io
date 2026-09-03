@@ -2,7 +2,7 @@ import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { dash } from "@better-auth/infra";
 import { waitUntil } from "@vercel/functions";
 import { getSessionCookie } from "better-auth/cookies";
-import { type BetterAuthOptions, betterAuth } from "better-auth/minimal";
+import { betterAuth } from "better-auth/minimal";
 import { nextCookies, toNextJsHandler } from "better-auth/next-js";
 
 import { db } from "@domainstack/db/client";
@@ -116,7 +116,7 @@ export const auth = betterAuth({
   logger: {
     log: (level, message, ...args) => {
       const logFn = logger[level].bind(logger);
-      logFn({ ...args }, message);
+      logFn({ extra: args }, message);
     },
   },
   databaseHooks: {
@@ -249,7 +249,7 @@ export const auth = betterAuth({
     // must be last: https://www.better-auth.com/docs/integrations/next#server-action-cookies
     nextCookies(),
   ],
-} as BetterAuthOptions);
+});
 
 export type Session = typeof auth.$Infer.Session;
 

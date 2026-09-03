@@ -125,7 +125,7 @@ export function AddDomainContent({
 
         <div className="flex flex-col gap-2">
           <Button
-            onClick={() => void refetchSubscription()}
+            onClick={() => refetchSubscription()}
             disabled={isSubscriptionLoading}
             className="w-full"
           >

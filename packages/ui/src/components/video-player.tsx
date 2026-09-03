@@ -104,6 +104,8 @@ function VideoPlayerMuteButton({
 }
 
 function VideoPlayerContent({ className, ...props }: React.ComponentProps<"video">) {
+  // Captions are supplied by the consumer via `children` / `<track>`.
+  // oxlint-disable-next-line jsx-a11y/media-has-caption
   return <video className={cn("mt-0 mb-0", className)} {...props} />;
 }
 

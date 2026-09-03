@@ -61,7 +61,7 @@ export const domainRouter = createTRPCRouter({
       // Fetch fresh data
       try {
         const result = await fetchRegistration(input.domain);
-        if (result.success === false) {
+        if (!result.success) {
           return {
             success: false,
             cached: false,
@@ -168,7 +168,7 @@ export const domainRouter = createTRPCRouter({
       // Fetch fresh data
       try {
         const result = await fetchCertificates(input.domain);
-        if (result.success === false) {
+        if (!result.success) {
           return {
             success: false,
             cached: false,
@@ -216,7 +216,7 @@ export const domainRouter = createTRPCRouter({
       // Fetch fresh data
       try {
         const result = await fetchHeaders(input.domain);
-        if (result.success === false) {
+        if (!result.success) {
           return {
             success: false,
             cached: false,

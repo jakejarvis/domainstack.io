@@ -347,7 +347,7 @@ function StepperTrigger({ render, className, children, tabIndex, ...props }: Ste
 
   return useRender({
     defaultTagName: "button",
-    render: render as useRender.RenderProp<Record<string, unknown>> | undefined,
+    render: render as useRender.RenderProp | undefined,
     ref: btnRef,
     state: triggerState as unknown as Record<string, unknown>,
     props: mergeProps(defaultProps, props),

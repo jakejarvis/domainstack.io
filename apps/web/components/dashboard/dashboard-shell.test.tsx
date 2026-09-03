@@ -43,7 +43,7 @@ function domainNames() {
 }
 
 function getFilterTrigger(name: RegExp) {
-  return screen.getAllByRole("combobox", { name })[0]!;
+  return screen.getAllByRole("combobox", { name })[0];
 }
 
 async function waitForCatalog() {
@@ -320,7 +320,7 @@ describe("dashboard shell", () => {
 
       await user.click(screen.getByRole("button", { name: "Grid view" }));
       // "s" still matches all 12 sites, so clamp alone would leave page 2 empty of site00.
-      await user.type(screen.getAllByRole("textbox", { name: "Search domains" })[0]!, "s");
+      await user.type(screen.getAllByRole("textbox", { name: "Search domains" })[0], "s");
       await waitFor(() => {
         expect(domainNames()).toEqual(expect.arrayContaining(["site00.com", "site11.com"]));
       });
@@ -383,7 +383,7 @@ describe("dashboard shell", () => {
 
       expect(screen.getByRole("button", { name: /^Registrar$/ })).toBeInTheDocument();
 
-      await user.click(screen.getAllByRole("button", { name: "Toggle columns" })[0]!);
+      await user.click(screen.getAllByRole("button", { name: "Toggle columns" })[0]);
       await user.click(await screen.findByRole("menuitemcheckbox", { name: /Registrar/ }));
 
       await waitFor(() => {

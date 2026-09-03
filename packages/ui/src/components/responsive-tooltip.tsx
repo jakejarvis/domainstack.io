@@ -35,11 +35,8 @@ function ResponsiveTooltipTrigger({
   nativeButton,
   closeDelay,
   ...props
-}: Omit<
-  TooltipPrimitive.Trigger.Props<unknown> & PopoverPrimitive.Trigger.Props<unknown>,
-  "handle"
-> &
-  Pick<PopoverPrimitive.Trigger.Props<unknown>, "nativeButton">) {
+}: Omit<TooltipPrimitive.Trigger.Props & PopoverPrimitive.Trigger.Props, "handle"> &
+  Pick<PopoverPrimitive.Trigger.Props, "nativeButton">) {
   const ctx = useContext(ResponsiveTooltipContext);
   if (!ctx) {
     throw new Error("ResponsiveTooltipTrigger must be used within <ResponsiveTooltip>.");

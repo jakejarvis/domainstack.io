@@ -165,6 +165,8 @@ export function AppFooter() {
               size="lg"
               nativeButton={false}
               render={
+                // Bookmarklet drag target; href is filled in on mount.
+                // oxlint-disable-next-line jsx-a11y/anchor-is-valid
                 <a ref={hrefScript} href="#">
                   <IconWorld />
                   Inspect Domain

@@ -1,13 +1,7 @@
 import type { InferInsertModel } from "drizzle-orm";
 import { eq } from "drizzle-orm";
 
-import type {
-  GeneralMeta,
-  OpenGraphMeta,
-  RobotsTxt,
-  SeoResponse,
-  TwitterMeta,
-} from "@domainstack/types";
+import type { RobotsTxt, SeoResponse } from "@domainstack/types";
 
 import { db } from "../client";
 import { blockedDomains, domains, seo as seoTable } from "../schema";
@@ -82,7 +76,7 @@ export async function getCachedSeo(domain: string): Promise<CacheResult<SeoRespo
     : null;
 
   // Normalize robots
-  const robotsData = row.robots as RobotsTxt;
+  const robotsData = row.robots;
   const normalizedRobots: RobotsTxt =
     robotsData && "fetched" in robotsData
       ? robotsData
@@ -90,9 +84,9 @@ export async function getCachedSeo(domain: string): Promise<CacheResult<SeoRespo
 
   const response: SeoResponse = {
     meta: {
-      openGraph: row.metaOpenGraph as OpenGraphMeta,
-      twitter: row.metaTwitter as TwitterMeta,
-      general: row.metaGeneral as GeneralMeta,
+      openGraph: row.metaOpenGraph,
+      twitter: row.metaTwitter,
+      general: row.metaGeneral,
     },
     robots: normalizedRobots,
     preview,
@@ -100,7 +94,7 @@ export async function getCachedSeo(domain: string): Promise<CacheResult<SeoRespo
       finalUrl: row.sourceFinalUrl ?? null,
       status: row.sourceStatus ?? null,
     },
-    errors: row.errors as { html?: string; robots?: string },
+    errors: row.errors,
   };
 
   return { data: response, stale, fetchedAt, expiresAt };

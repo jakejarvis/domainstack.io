@@ -44,7 +44,7 @@ export async function getProviderLogo(
     return { data: null, stale: false, fetchedAt: null, expiresAt: null };
   }
 
-  const isDefinitiveResult = row.url !== null || row.notFound === true;
+  const isDefinitiveResult = row.url !== null || row.notFound;
 
   if (!isDefinitiveResult) {
     return { data: null, stale: false, fetchedAt: null, expiresAt: null };

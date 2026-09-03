@@ -43,7 +43,8 @@ function getStatusLabel(status: BrowserAIStatus, downloadProgress?: number): str
       return `Downloading… ${Math.round((downloadProgress ?? 0) * 100)}%`;
     case "error":
       return "Error";
-    default:
+    case "ready":
+    case "unavailable":
       return "";
   }
 }

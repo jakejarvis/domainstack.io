@@ -301,7 +301,7 @@ async function readBodyWithLimit(
         if (partial.length > 0) chunks.push(partial);
 
         try {
-          reader.cancel();
+          void reader.cancel();
         } catch {
           // Ignore cancel errors
         }

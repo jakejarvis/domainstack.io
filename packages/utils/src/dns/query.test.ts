@@ -155,7 +155,8 @@ describe("queryDohProvider", () => {
   it("adds cacheBust parameter when option is true", async () => {
     let capturedUrl = "";
     mockFetchImplementation((input) => {
-      capturedUrl = input.toString();
+      capturedUrl =
+        typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
       return Promise.resolve({
         ok: true,
         json: () => Promise.resolve({ Status: 0 }),
@@ -172,7 +173,8 @@ describe("queryDohProvider", () => {
   it("does not add cacheBust parameter by default", async () => {
     let capturedUrl = "";
     mockFetchImplementation((input) => {
-      capturedUrl = input.toString();
+      capturedUrl =
+        typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
       return Promise.resolve({
         ok: true,
         json: () => Promise.resolve({ Status: 0 }),

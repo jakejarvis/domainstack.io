@@ -143,6 +143,6 @@ VerificationInstructionsEmail.PreviewProps = {
   htmlFileContent: "domainstack-verify=abc123xyz",
   metaTag: '<meta name="domainstack-verify" content="abc123xyz">',
   baseUrl: "https://domainstack.io",
-} as VerificationInstructionsEmailProps;
+};
 
 export default VerificationInstructionsEmail;

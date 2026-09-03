@@ -11,10 +11,11 @@ const handler = async (req: Request) => {
     req,
     router: appRouter,
     createContext: () => ctx,
-    onError: async ({ path, error }) => {
-      // Use logger for unhandled errors
-      const { logger } = await import("@domainstack/logger");
-      logger.error({ err: error, source: "trpc", path });
+    onError: ({ path, error }) => {
+      void (async () => {
+        const { logger } = await import("@domainstack/logger");
+        logger.error({ err: error, source: "trpc", path });
+      })();
     },
   });
 };

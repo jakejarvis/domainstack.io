@@ -16,7 +16,6 @@
     "./verification": "./src/verification.ts"
   },
   "scripts": {
-    "check-types": "tsc --noEmit",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt --config ../../.oxfmtrc.json",

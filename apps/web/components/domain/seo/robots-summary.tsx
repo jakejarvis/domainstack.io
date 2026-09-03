@@ -195,7 +195,7 @@ export function RobotsSummary({
           <span>robots.txt</span>
           <IconExternalLink className="relative bottom-px inline-flex size-3" aria-hidden />
         </a>
-        <PillCount count={(counts.allows + counts.disallows) as number} color="blue" />
+        <PillCount count={counts.allows + counts.disallows} color="blue" />
       </div>
 
       <div className="space-y-4">
@@ -244,7 +244,7 @@ export function RobotsSummary({
                 <ToggleGroupItem value="all" className="h-full">
                   <IconCircleHalf2 className="size-3.5 text-accent-blue" aria-hidden />
                   <span className="text-[13px]">All</span>
-                  <PillCount count={(counts.allows + counts.disallows) as number} color="slate" />
+                  <PillCount count={counts.allows + counts.disallows} color="slate" />
                 </ToggleGroupItem>
                 <ToggleGroupItem value="allow" className="h-full">
                   <IconCircleCheck className="size-3.5 text-accent-green" aria-hidden />

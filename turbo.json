@@ -42,10 +42,6 @@
       "persistent": true,
       "cache": false
     },
-    "check-types": {
-      "dependsOn": ["^check-types"],
-      "outputs": []
-    },
     "lint": {
       "dependsOn": ["^lint"],
       "outputs": []

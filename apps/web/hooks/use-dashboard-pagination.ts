@@ -59,7 +59,7 @@ export function useDashboardPagination(): UseDashboardPaginationReturn {
 
   const setPageIndex = useCallback(
     (newIndex: number) => {
-      setPageParam(newIndex + 1);
+      void setPageParam(newIndex + 1);
     },
     [setPageParam],
   );
@@ -68,13 +68,13 @@ export function useDashboardPagination(): UseDashboardPaginationReturn {
     (newSize: DashboardPageSizeOptions) => {
       setPageSizePreference(newSize);
       // Reset to first page when changing page size
-      setPageParam(1);
+      void setPageParam(1);
     },
     [setPageSizePreference, setPageParam],
   );
 
   const resetPage = useCallback(() => {
-    setPageParam(1);
+    void setPageParam(1);
   }, [setPageParam]);
 
   // ---------------------------------------------------------------------------

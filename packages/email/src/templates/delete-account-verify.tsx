@@ -70,6 +70,6 @@ DeleteAccountVerifyEmail.PreviewProps = {
   userName: "Jake",
   confirmUrl: "https://domainstack.io/api/auth/delete-user?token=abc123",
   baseUrl: "https://domainstack.io",
-} as DeleteAccountVerifyEmailProps;
+};
 
 export default DeleteAccountVerifyEmail;

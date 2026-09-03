@@ -39,7 +39,10 @@ function parseStartResponse(raw: unknown): ScreenshotStartResponse {
   const obj = raw as Record<string, unknown>;
 
   if ("error" in obj && !("status" in obj)) {
-    return { status: "error", error: String(obj.error) };
+    return {
+      status: "error",
+      error: typeof obj.error === "string" ? obj.error : "Invalid response",
+    };
   }
 
   if (obj.status === "running" && typeof obj.runId === "string") {
@@ -68,7 +71,10 @@ function parseStatusResponse(raw: unknown): ScreenshotStatusResponse {
   const obj = raw as Record<string, unknown>;
 
   if ("error" in obj && !("status" in obj)) {
-    return { status: "error", error: String(obj.error) };
+    return {
+      status: "error",
+      error: typeof obj.error === "string" ? obj.error : "Invalid response",
+    };
   }
 
   if (obj.status === "running") {
@@ -76,7 +82,10 @@ function parseStatusResponse(raw: unknown): ScreenshotStatusResponse {
   }
 
   if (obj.status === "failed") {
-    return { status: "failed", error: String(obj.error ?? "Workflow failed") };
+    return {
+      status: "failed",
+      error: typeof obj.error === "string" ? obj.error : "Workflow failed",
+    };
   }
 
   if (obj.status === "completed" && obj.data) {

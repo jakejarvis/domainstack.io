@@ -87,7 +87,7 @@ function getStatusConfig(status: HealthStatus): {
         colorClass: "border-danger-border bg-danger/20 text-danger-foreground",
         icon: IconAlertOctagon,
       };
-    default:
+    case "unknown":
       return {
         label: "Unknown",
         colorClass: "border-muted-border bg-muted/20 text-muted-foreground",
@@ -118,7 +118,7 @@ export function getHealthAccent(
       return "orange";
     case "critical":
       return "red";
-    default:
+    case "unknown":
       return "slate";
   }
 }

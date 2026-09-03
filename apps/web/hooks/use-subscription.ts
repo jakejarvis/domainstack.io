@@ -162,11 +162,17 @@ export function useSubscription(options: UseSubscriptionOptions = {}): UseSubscr
     isPro: query.data?.plan === "pro",
     isSubscriptionLoading: query.isLoading,
     isSubscriptionError: query.isError,
-    refetchSubscription: query.refetch,
+    refetchSubscription: () => {
+      void query.refetch();
+    },
     invalidateSubscription: invalidate,
-    handleCheckout,
+    handleCheckout: () => {
+      void handleCheckout();
+    },
     isCheckoutLoading,
-    handleCustomerPortal,
+    handleCustomerPortal: () => {
+      void handleCustomerPortal();
+    },
     isCustomerPortalLoading,
   };
 }

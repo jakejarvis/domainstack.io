@@ -86,6 +86,6 @@ SubscriptionExpiredEmail.PreviewProps = {
   userName: "Jake",
   archivedCount: 12,
   baseUrl: "https://domainstack.io",
-} as SubscriptionExpiredEmailProps;
+};
 
 export default SubscriptionExpiredEmail;

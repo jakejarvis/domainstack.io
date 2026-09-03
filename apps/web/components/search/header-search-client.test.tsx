@@ -7,7 +7,7 @@ import { HeaderSearchClient } from "./header-search-client";
 
 const nav = vi.hoisted(() => ({
   push: vi.fn<(href: string) => void | Promise<void>>(),
-  params: { domain: "Test.INVALID" as string | undefined },
+  params: { domain: "Test.INVALID" },
 }));
 
 vi.mock("@/hooks/use-router", () => ({
@@ -53,7 +53,7 @@ describe("HeaderSearch", () => {
   });
 
   it("does nothing on invalid domain", async () => {
-    nav.params = { domain: "invalid domain" } as { domain: string };
+    nav.params = { domain: "invalid domain" };
     render(<HeaderSearchClient />);
     const input = screen.getByLabelText(/Search any domain/i);
     await userEvent.type(input, "{Enter}");

@@ -1,4 +1,9 @@
 {
   "$schema": "../../node_modules/oxlint/configuration_schema.json",
-  "extends": ["../../.oxlintrc.json"]
+  "extends": ["../../.oxlintrc.json"],
+  "settings": {
+    "react": {
+      "version": "19.2.8"
+    }
+  }
 }

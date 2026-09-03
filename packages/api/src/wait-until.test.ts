@@ -41,9 +41,10 @@ describe("scheduleBackground", () => {
     const work = deferred<boolean>();
 
     let settled = false;
-    const pending = scheduleBackground(work.promise).then(() => {
+    const pending = (async () => {
+      await scheduleBackground(work.promise);
       settled = true;
-    });
+    })();
 
     expect(waitUntil).not.toHaveBeenCalled();
     expect(settled).toBe(false);

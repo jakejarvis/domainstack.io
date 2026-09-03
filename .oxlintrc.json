@@ -1,10 +1,47 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["oxc", "eslint", "typescript", "react", "nextjs", "import", "unicorn", "vitest"],
+  "plugins": [
+    "oxc",
+    "eslint",
+    "typescript",
+    "unicorn",
+    "import",
+    "node",
+    "promise",
+    "jsdoc",
+    "vitest",
+    "react",
+    "jsx-a11y",
+    "nextjs"
+  ],
   "categories": {
     "correctness": "error",
     "suspicious": "warn",
     "perf": "warn"
+  },
+  "options": {
+    "typeAware": true,
+    "typeCheck": true,
+    "reportUnusedDisableDirectives": "error"
+  },
+  "env": {
+    "builtin": true,
+    "node": true
+  },
+  "settings": {
+    "next": {
+      "rootDir": "apps/web"
+    },
+    "react": {
+      "version": "19.2.8",
+      "linkComponents": [{ "name": "Link", "attribute": "href" }]
+    },
+    "jsx-a11y": {
+      "components": {
+        "Link": "a",
+        "Button": "button"
+      }
+    }
   },
   "rules": {
     "import/no-named-as-default-member": "off",
@@ -21,7 +58,28 @@
     "unicorn/consistent-function-scoping": "off",
     "unicorn/filename-case": "off",
     "unicorn/no-array-sort": "off",
-    "unicorn/no-null": "off"
+    "unicorn/no-null": "off",
+    "typescript/no-unsafe-type-assertion": "off",
+    "typescript/consistent-return": "off",
+    "typescript/no-unnecessary-type-conversion": "off",
+    "typescript/no-unnecessary-type-parameters": "off",
+    "jsdoc/check-tag-names": "off",
+    "jsx-a11y/prefer-tag-over-role": "off",
+    "jsx-a11y/control-has-associated-label": "off",
+    "jsx-a11y/no-autofocus": "off",
+    "react/jsx-no-target-blank": "off",
+    "import/no-amd": "error",
+    "import/no-cycle": "error",
+    "import/no-duplicates": "error",
+    "node/no-new-require": "error",
+    "node/no-path-concat": "error",
+    "react/button-has-type": "error",
+    "react/rules-of-hooks": "error",
+    "typescript/no-misused-promises": ["error", { "checksVoidReturn": { "attributes": false } }],
+    "typescript/only-throw-error": "error",
+    "typescript/switch-exhaustiveness-check": "error",
+    "unicorn/no-abusive-eslint-disable": "error",
+    "unicorn/prefer-node-protocol": "error"
   },
   "overrides": [
     {

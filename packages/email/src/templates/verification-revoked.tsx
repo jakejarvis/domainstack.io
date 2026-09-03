@@ -64,6 +64,6 @@ VerificationRevokedEmail.PreviewProps = {
   userName: "Jake",
   domainName: "example.com",
   baseUrl: "https://domainstack.io",
-} as VerificationRevokedEmailProps;
+};
 
 export default VerificationRevokedEmail;

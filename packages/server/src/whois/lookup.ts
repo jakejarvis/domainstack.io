@@ -7,13 +7,19 @@ import { type BootstrapData, lookup } from "rdapper";
 import type { RdapLookupResult, WhoisLookupOptions } from "./types";
 import { RDAP_BOOTSTRAP_URL } from "./types";
 
+function errorText(error: unknown): string {
+  if (typeof error === "string") return error;
+  if (error instanceof Error) return error.message;
+  return "";
+}
+
 /**
  * Check if error indicates an unsupported TLD.
  */
 function isExpectedRegistrationError(error: unknown): boolean {
   if (!error) return false;
 
-  const errorStr = String(error).toLowerCase();
+  const errorStr = errorText(error).toLowerCase();
 
   return (
     errorStr.includes("no whois server discovered") ||
@@ -30,7 +36,7 @@ function isExpectedRegistrationError(error: unknown): boolean {
 function isTimeoutError(error: unknown): boolean {
   if (!error) return false;
 
-  const errorStr = String(error).toLowerCase();
+  const errorStr = errorText(error).toLowerCase();
   return (
     errorStr.includes("whois socket timeout") ||
     errorStr.includes("whois timeout") ||

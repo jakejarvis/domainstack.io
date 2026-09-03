@@ -2,14 +2,13 @@
 
 ## Pre-Commit Checklist
 
-**CRITICAL:** Before declaring victory on any task and before committing to git, the following four commands must pass with NO WARNINGS:
+**CRITICAL:** Before declaring victory on any task and before committing to git, the following three commands must pass with NO WARNINGS:
 
 1. `pnpm lint` — Must pass with zero warnings
 2. `pnpm fmt:check` — Must pass with zero warnings
-3. `pnpm check-types` — Must pass with zero warnings
-4. `pnpm test` — Must pass with zero warnings
+3. `pnpm test` — Must pass with zero warnings
 
-Do not proceed with commits until all four checks are clean.
+Do not proceed with commits until all three checks are clean.
 
 <!-- intent-skills:start -->
 ## Skill Loading
@@ -28,11 +27,10 @@ Before editing files for a substantial task:
 
 - `pnpm dev` — Start Next.js dev server at http://localhost:3000
 - `pnpm build` — Compile production bundle
-- `pnpm check-types` — Run `tsc --noEmit` for type diagnostics
 
 ### Linting & Formatting
 
-- `pnpm lint` — Run oxlint lint
+- `pnpm lint` — Run oxlint (includes type-aware linting and type checking)
 - `pnpm fmt` — Apply oxfmt formatting
 
 ### Testing

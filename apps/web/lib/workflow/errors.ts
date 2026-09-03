@@ -102,7 +102,7 @@ export function classifyFetchError(
       const retryAfterMatch = message.match(/retry[- ]after[:\s]+(\d+)/i);
       const retrySeconds = retryAfterMatch ? Number.parseInt(retryAfterMatch[1], 10) : 60; // Default to 1 minute for rate limits
       return new RetryableError(`${context}: rate limited`, {
-        retryAfter: `${retrySeconds}s` as `${number}s`,
+        retryAfter: `${retrySeconds}s`,
       });
     }
 

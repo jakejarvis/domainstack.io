@@ -23,10 +23,10 @@ export function LoginModalClient() {
 
 function AuthorizedLoginContent({ onNavigate }: { onNavigate: () => void }) {
   const { data: session } = useSession();
-  const { replace } = useRouter();
+  const router = useRouter();
 
   if (session?.user) {
-    replace("/dashboard");
+    router.replace("/dashboard");
   }
 
   return <LoginContent onNavigate={onNavigate} />;

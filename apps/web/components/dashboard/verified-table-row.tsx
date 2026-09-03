@@ -9,7 +9,7 @@ import { cn } from "@domainstack/ui/utils";
 
 type VerifiedTableRowProps = {
   rowId: string;
-  cells: Cell<DashboardTableFeatures, TrackedDomainWithDetails, unknown>[];
+  cells: Cell<DashboardTableFeatures, TrackedDomainWithDetails>[];
   original: TrackedDomainWithDetails;
 };
 

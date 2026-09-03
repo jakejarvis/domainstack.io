@@ -57,7 +57,7 @@ export function getAssistantRenderItems(message: UIMessage): AssistantRenderItem
       const texts: string[] = [];
       let last: ReasoningUIPart = part;
 
-      while (i < parts.length && isReasoningUIPart(parts[i]!)) {
+      while (i < parts.length && isReasoningUIPart(parts[i])) {
         last = parts[i] as ReasoningUIPart;
         texts.push(last.text);
         i += 1;

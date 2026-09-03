@@ -49,9 +49,7 @@ export function ExportButton({ domain, enabled = true }: { domain: string; enabl
     try {
       const exportData: Record<string, unknown> = {};
       for (const key of Object.keys(queryKeys)) {
-        const response = queryClient.getQueryData(queryKeys[key as keyof typeof queryKeys]) as
-          | { success?: boolean; data?: unknown }
-          | undefined;
+        const response = queryClient.getQueryData(queryKeys[key as keyof typeof queryKeys]);
 
         if (response?.data) {
           exportData[key] = response.data;

@@ -135,9 +135,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
         const previousSubscription =
           queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
 
-        const { active, archived } = affectedCounts(previousDomains as [unknown, unknown][], [
-          trackedDomainId,
-        ]);
+        const { active, archived } = affectedCounts(previousDomains, [trackedDomainId]);
 
         queryClient.setQueriesData(domainsFilter, (old: DomainsData) =>
           old?.filter((d) => d.id !== trackedDomainId),
@@ -155,7 +153,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
         });
 
         return {
-          previousDomains: previousDomains as [unknown, unknown][],
+          previousDomains,
           previousSubscription,
         };
       },
@@ -187,9 +185,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
         const previousSubscription =
           queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
 
-        const { active: toArchive } = affectedCounts(previousDomains as [unknown, unknown][], [
-          trackedDomainId,
-        ]);
+        const { active: toArchive } = affectedCounts(previousDomains, [trackedDomainId]);
 
         queryClient.setQueriesData(domainsFilter, (old: DomainsData) =>
           old?.map((d) => (d.id === trackedDomainId ? { ...d, archivedAt: new Date() } : d)),
@@ -206,7 +202,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
         });
 
         return {
-          previousDomains: previousDomains as [unknown, unknown][],
+          previousDomains,
           previousSubscription,
         };
       },
@@ -238,9 +234,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
         const previousSubscription =
           queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
 
-        const { archived: toActivate } = affectedCounts(previousDomains as [unknown, unknown][], [
-          trackedDomainId,
-        ]);
+        const { archived: toActivate } = affectedCounts(previousDomains, [trackedDomainId]);
 
         queryClient.setQueriesData(domainsFilter, (old: DomainsData) =>
           old?.map((d) => (d.id === trackedDomainId ? { ...d, archivedAt: null } : d)),
@@ -257,7 +251,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
         });
 
         return {
-          previousDomains: previousDomains as [unknown, unknown][],
+          previousDomains,
           previousSubscription,
         };
       },
@@ -290,7 +284,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
           old?.map((d) => (d.id === trackedDomainId ? { ...d, muted } : d)),
         );
 
-        return { previousDomains: previousDomains as [unknown, unknown][] };
+        return { previousDomains };
       },
       onError: (_err, _vars, context: { previousDomains: [unknown, unknown][] } | undefined) => {
         if (context?.previousDomains) {
@@ -318,10 +312,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
           queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
 
         const idsSet = new Set(trackedDomainIds);
-        const { active: archiveCount } = affectedCounts(
-          previousDomains as [unknown, unknown][],
-          idsSet,
-        );
+        const { active: archiveCount } = affectedCounts(previousDomains, idsSet);
 
         queryClient.setQueriesData(domainsFilter, (old: DomainsData) =>
           old?.map((d) =>
@@ -340,7 +331,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
         });
 
         return {
-          previousDomains: previousDomains as [unknown, unknown][],
+          previousDomains,
           previousSubscription,
         };
       },
@@ -373,7 +364,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
 
         const idsSet = new Set(trackedDomainIds);
         const { active: activeDeleted, archived: archivedDeleted } = affectedCounts(
-          previousDomains as [unknown, unknown][],
+          previousDomains,
           idsSet,
         );
 
@@ -393,7 +384,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
         });
 
         return {
-          previousDomains: previousDomains as [unknown, unknown][],
+          previousDomains,
           previousSubscription,
         };
       },
@@ -432,7 +423,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
           old?.map((d) => (idsSet.has(d.id) ? { ...d, muted } : d)),
         );
 
-        return { previousDomains: previousDomains as [unknown, unknown][] };
+        return { previousDomains };
       },
       onError: (
         _err,

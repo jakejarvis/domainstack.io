@@ -42,7 +42,7 @@ export async function getFaviconById(domainId: string): Promise<CacheResult<Favi
     return { data: null, stale: false, fetchedAt: null, expiresAt: null };
   }
 
-  const isDefinitiveResult = row.url !== null || row.notFound === true;
+  const isDefinitiveResult = row.url !== null || row.notFound;
 
   if (!isDefinitiveResult) {
     return { data: null, stale: false, fetchedAt: null, expiresAt: null };
@@ -80,7 +80,7 @@ export async function getFavicon(domainName: string): Promise<CacheResult<Favico
     return { data: null, stale: false, fetchedAt: null, expiresAt: null };
   }
 
-  const isDefinitiveResult = row.url !== null || row.notFound === true;
+  const isDefinitiveResult = row.url !== null || row.notFound;
 
   if (!isDefinitiveResult) {
     return { data: null, stale: false, fetchedAt: null, expiresAt: null };

@@ -49,7 +49,7 @@ type DashboardBannerProps = {
 };
 
 export function DashboardBanner({
-  variant = "info",
+  variant,
   icon: Icon,
   title,
   description,

@@ -148,7 +148,7 @@ export function DomainReportClient({ domain }: { domain: string }) {
     error: registrationError,
   } = useQuery(trpc.domain.getRegistration.queryOptions({ domain }, staticQueryOptions));
   const domainId = registration?.data?.domainId;
-  const lookupFailed = Boolean(registration && registration.success === false);
+  const lookupFailed = Boolean(registration && !registration.success);
   const isRegistered = registration?.success === true && registration.data?.isRegistered === true;
   const isUnregistered =
     registration?.success === true && registration.data?.isRegistered === false;

@@ -75,7 +75,7 @@ export function getSeverityIconColor(
       return "destructive";
     case "warning":
       return "warning";
-    default:
+    case "info":
       return "default";
   }
 }
@@ -136,7 +136,7 @@ export function getUnreadIndicatorColor(severity: NotificationSeverity) {
       return "bg-destructive";
     case "warning":
       return "bg-amber-500";
-    default:
+    case "info":
       return "bg-blue-500";
   }
 }

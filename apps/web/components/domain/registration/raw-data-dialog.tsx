@@ -171,6 +171,8 @@ export function RawDataDialog({ domain, format, data, serverName, serverUrl }: R
           </DialogTitle>
         </DialogHeader>
         <div
+          // Scrollable region needs a tab stop so keyboard users can pan the raw dump.
+          // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex
           tabIndex={0}
           className="min-h-0 flex-1 overflow-auto overscroll-contain bg-popover/10 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1"
           aria-label={`Raw ${format} data`}

@@ -78,7 +78,7 @@ export function NotificationMatrix({
                 <div className="flex w-14 items-center justify-center py-1">
                   <Checkbox
                     checked={pref.inApp}
-                    onCheckedChange={(checked) => onToggle(category, "inApp", checked === true)}
+                    onCheckedChange={(checked) => onToggle(category, "inApp", checked)}
                     disabled={disabled}
                     aria-label={`Web notifications for ${info.label}`}
                   />
@@ -86,7 +86,7 @@ export function NotificationMatrix({
                 <div className="flex w-14 items-center justify-center py-1">
                   <Checkbox
                     checked={pref.email}
-                    onCheckedChange={(checked) => onToggle(category, "email", checked === true)}
+                    onCheckedChange={(checked) => onToggle(category, "email", checked)}
                     disabled={disabled}
                     aria-label={`Email notifications for ${info.label}`}
                   />

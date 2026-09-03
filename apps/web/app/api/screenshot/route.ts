@@ -87,8 +87,7 @@ export async function POST(
       // Only treat as cache hit if we have a definitive result:
       // - url is present (string), OR
       // - url is null but marked as permanently not found
-      const isDefinitiveResult =
-        cachedScreenshot.url !== null || cachedScreenshot.notFound === true;
+      const isDefinitiveResult = cachedScreenshot.url !== null || cachedScreenshot.notFound;
 
       if (isDefinitiveResult) {
         // Check current block status dynamically
@@ -186,7 +185,7 @@ export async function GET(
           cached: false,
           success: result.success,
           data: result.data,
-          ...(result.success === false && { error: result.error }),
+          ...(!result.success && { error: result.error }),
         } as ScreenshotStatusResponse,
         { headers: rateLimit.headers },
       );

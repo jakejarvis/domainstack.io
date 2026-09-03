@@ -291,7 +291,7 @@ export function DashboardClient() {
 
   const handleRetry = useCallback(() => {
     refetchSubscription();
-    domainsQuery.refetch();
+    void domainsQuery.refetch();
   }, [refetchSubscription, domainsQuery]);
 
   if (isLoading) {

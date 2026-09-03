@@ -37,7 +37,7 @@ export function UserMenu() {
   const { user } = session;
   const avatarUrl = `/api/avatar/${user.id}`;
   const { props: imageProps } = getImageProps({
-    src: avatarUrl as string,
+    src: avatarUrl,
     alt: user.name ?? "User avatar",
     width: 32,
     height: 32,

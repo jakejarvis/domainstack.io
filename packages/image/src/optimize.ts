@@ -99,7 +99,7 @@ export async function optimizeImage(input: Buffer, options: OptimizeImageOptions
       return pipeline.png({ quality, compressionLevel: 9 }).toBuffer();
     case "jpeg":
       return pipeline.jpeg({ quality, mozjpeg: true }).toBuffer();
-    default:
+    case "webp":
       return pipeline.webp({ quality }).toBuffer();
   }
 }

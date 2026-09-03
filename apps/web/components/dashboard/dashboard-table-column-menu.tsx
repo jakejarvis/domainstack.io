@@ -20,7 +20,8 @@ export function DashboardTableColumnMenu() {
   const columnVisibility = useDashboardColumnVisibility();
   const setColumnVisibility = usePreferencesStore((s) => s.setColumnVisibility);
 
-  const isColumnVisible = (columnId: string) => columnVisibility[columnId] !== false;
+  // Missing keys default to visible — `{}` means show every column.
+  const isColumnVisible = (columnId: string) => columnVisibility[columnId] ?? true;
 
   const hiddenCount = HIDEABLE_COLUMNS.filter((column) => !isColumnVisible(column.id)).length;
 

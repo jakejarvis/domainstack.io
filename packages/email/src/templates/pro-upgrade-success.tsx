@@ -64,6 +64,6 @@ function ProUpgradeSuccessEmail({ userName, baseUrl }: ProUpgradeSuccessEmailPro
 ProUpgradeSuccessEmail.PreviewProps = {
   userName: "Jake",
   baseUrl: "https://domainstack.io",
-} as ProUpgradeSuccessEmailProps;
+};
 
 export default ProUpgradeSuccessEmail;

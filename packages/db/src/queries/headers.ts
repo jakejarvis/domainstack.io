@@ -81,7 +81,7 @@ export async function getCachedHeaders(domain: string): Promise<CacheResult<Head
   // Status messages are derived from the numeric code at the call site.
   return {
     data: {
-      headers: row.headers as Header[],
+      headers: row.headers,
       status: row.status,
       statusMessage: undefined,
     },

@@ -51,7 +51,7 @@ export const PromptInput = ({ className, onSubmit, children, ...props }: PromptI
     form.reset();
 
     try {
-      onSubmit({ text }, event);
+      void onSubmit({ text }, event);
     } catch (error) {
       console.warn("Message submission failed:", error);
     }

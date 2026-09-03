@@ -85,7 +85,7 @@ describe("DomainSearch (form variant)", () => {
     await userEvent.type(input, "test.invalid{Enter}");
     expect(nav.push).toHaveBeenCalledWith("/test.invalid");
     // Input and button should be disabled while loading/submitting
-    expect((screen.getByLabelText(/Search any domain/i) as HTMLInputElement).disabled).toBe(true);
+    expect(screen.getByLabelText(/Search any domain/i)).toBeDisabled();
     // Submit button shows a loading spinner with accessible name "Loading"
     expect(screen.getByRole("button", { name: /loading/i })).toBeDisabled();
 
@@ -146,8 +146,8 @@ describe("DomainSearch (form variant)", () => {
     rerender(<SearchClient variant="lg" />);
 
     // Wait for input to reflect the triggered domain (async due to useEffect)
-    const input = (await screen.findByLabelText(/Search any domain/i)) as HTMLInputElement;
-    expect(input.value).toBe("test.invalid");
+    const input = await screen.findByLabelText(/Search any domain/i);
+    expect(input).toHaveValue("test.invalid");
 
     // Wait for navigation and store clear to be triggered
     await waitFor(() => {
@@ -181,8 +181,8 @@ describe("DomainSearch (header variant)", () => {
 
     render(<SearchClient variant="sm" />);
 
-    const input = screen.getByLabelText(/Search any domain/i) as HTMLInputElement;
-    expect(input.placeholder).toBe("Search any domain\u2026");
+    const input = screen.getByLabelText(/Search any domain/i);
+    expect(input).toHaveAttribute("placeholder", "Search any domain\u2026");
   });
 
   it("shows short placeholder on mobile screens", async () => {
@@ -190,8 +190,8 @@ describe("DomainSearch (header variant)", () => {
 
     render(<SearchClient variant="sm" />);
 
-    const input = screen.getByLabelText(/Search any domain/i) as HTMLInputElement;
-    expect(input.placeholder).toBe("Search\u2026");
+    const input = screen.getByLabelText(/Search any domain/i);
+    expect(input).toHaveAttribute("placeholder", "Search\u2026");
   });
 
   it("updates placeholder when window is resized", async () => {
@@ -200,15 +200,15 @@ describe("DomainSearch (header variant)", () => {
     const { rerender } = render(<SearchClient variant="sm" />);
 
     // Verify desktop placeholder
-    let input = screen.getByLabelText(/Search any domain/i) as HTMLInputElement;
-    expect(input.placeholder).toBe("Search any domain\u2026");
+    let input = screen.getByLabelText(/Search any domain/i);
+    expect(input).toHaveAttribute("placeholder", "Search any domain\u2026");
 
     // Simulate resize to mobile
     useIsMobile.mockReturnValue(true);
     rerender(<SearchClient variant="sm" />);
 
     // Verify mobile placeholder
-    input = screen.getByLabelText(/Search any domain/i) as HTMLInputElement;
-    expect(input.placeholder).toBe("Search\u2026");
+    input = screen.getByLabelText(/Search any domain/i);
+    expect(input).toHaveAttribute("placeholder", "Search\u2026");
   });
 });

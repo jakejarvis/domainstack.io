@@ -86,7 +86,13 @@ export async function GET(
           return new NextResponse("Avatar host not allowed", { status: 403 });
         case "size_exceeded":
           return new NextResponse("Avatar too large", { status: 413 });
-        default:
+        case "connection_error":
+        case "dns_error":
+        case "invalid_response":
+        case "invalid_url":
+        case "protocol_not_allowed":
+        case "redirect_limit":
+        case "timeout":
           return new NextResponse("Failed to fetch avatar", { status: 502 });
       }
     }

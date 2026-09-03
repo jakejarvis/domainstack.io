@@ -625,7 +625,7 @@ describe("safeFetch", () => {
 
     it("times out DNS lookup before fetch starts", async () => {
       vi.useFakeTimers();
-      mockLookup.mockReturnValue(new Promise(() => {}) as ReturnType<typeof lookup>);
+      mockLookup.mockReturnValue(new Promise(() => {}));
       const mockFetch = createMockFetch(mockResponse("OK", { status: 200 }));
 
       const errorPromise = safeFetch({

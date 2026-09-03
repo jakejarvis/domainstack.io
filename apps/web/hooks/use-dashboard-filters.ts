@@ -151,7 +151,7 @@ export function useDashboardFilters(
   const setSearch = useCallback(
     (value: string) => {
       startTransition(() => {
-        setFilters({ search: value || null, domainId: null });
+        void setFilters({ search: value || null, domainId: null });
       });
     },
     [setFilters],
@@ -160,7 +160,7 @@ export function useDashboardFilters(
   const setStatus = useCallback(
     (values: StatusFilter[]) => {
       startTransition(() => {
-        setFilters({
+        void setFilters({
           status: values.length > 0 ? values : null,
           domainId: null,
         });
@@ -172,7 +172,7 @@ export function useDashboardFilters(
   const setHealth = useCallback(
     (values: HealthFilter[]) => {
       startTransition(() => {
-        setFilters({
+        void setFilters({
           health: values.length > 0 ? values : null,
           domainId: null,
         });
@@ -184,7 +184,7 @@ export function useDashboardFilters(
   const setTlds = useCallback(
     (values: string[]) => {
       startTransition(() => {
-        setFilters({ tlds: values.length > 0 ? values : null, domainId: null });
+        void setFilters({ tlds: values.length > 0 ? values : null, domainId: null });
       });
     },
     [setFilters],
@@ -193,7 +193,7 @@ export function useDashboardFilters(
   const setProviders = useCallback(
     (values: string[]) => {
       startTransition(() => {
-        setFilters({
+        void setFilters({
           providers: values.length > 0 ? values : null,
           domainId: null,
         });
@@ -204,7 +204,7 @@ export function useDashboardFilters(
 
   const clearFilters = useCallback(() => {
     startTransition(() => {
-      setFilters({
+      void setFilters({
         search: null,
         status: null,
         health: null,
@@ -219,9 +219,9 @@ export function useDashboardFilters(
     (filter: HealthFilter | "pending") => {
       startTransition(() => {
         if (filter === "pending") {
-          setFilters({ status: ["pending"], health: null, domainId: null });
+          void setFilters({ status: ["pending"], health: null, domainId: null });
         } else {
-          setFilters({ status: null, health: [filter], domainId: null });
+          void setFilters({ status: null, health: [filter], domainId: null });
         }
       });
     },
@@ -230,7 +230,7 @@ export function useDashboardFilters(
 
   const clearDomainId = useCallback(() => {
     startTransition(() => {
-      setFilters({ domainId: null });
+      void setFilters({ domainId: null });
     });
   }, [setFilters]);
 

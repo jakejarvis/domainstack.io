@@ -32,9 +32,9 @@ export async function makePGliteDb(): Promise<DbBundle> {
     const origLog = consoleObj.log;
     try {
       consoleObj.log = (...args: unknown[]) => {
-        const s = String(args[0] ?? "");
+        const s = typeof args[0] === "string" ? args[0] : "";
         if (s.includes("Pulling schema from database")) return;
-        origLog.apply(consoleObj, args as unknown[]);
+        origLog.apply(consoleObj, args);
       };
       await apply();
     } finally {

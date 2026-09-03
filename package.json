@@ -15,7 +15,6 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "start": "turbo run start",
-    "check-types": "turbo run check-types",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
     "fmt": "turbo run fmt",
@@ -31,6 +30,7 @@
   "devDependencies": {
     "oxfmt": "^0.66.0",
     "oxlint": "^1.81.0",
+    "oxlint-tsgolint": "^7.0.2001",
     "shx": "^0.4.0",
     "turbo": "^2.10.12",
     "typescript": "^7.0.2"

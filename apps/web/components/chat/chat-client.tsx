@@ -223,7 +223,7 @@ function CloudChatSession({
     (msgParams: { text: string }) => {
       const text = msgParams.text.trim();
       if (!text) return;
-      chat.sendMessage({ text });
+      void chat.sendMessage({ text });
       onActiveChange(true);
     },
     [chat, onActiveChange],

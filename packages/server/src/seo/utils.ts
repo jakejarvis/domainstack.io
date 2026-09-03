@@ -7,7 +7,7 @@
  * and stripping invisible formatting characters.
  */
 export function sanitizeText(input: unknown): string {
-  let out = String(input ?? "");
+  let out = typeof input === "string" ? input : "";
   out = out.trim().replace(/\s+/g, " ");
   let res = "";
   for (let i = 0; i < out.length; i++) {
@@ -20,7 +20,7 @@ export function sanitizeText(input: unknown): string {
     ) {
       continue;
     }
-    res += out[i] as string;
+    res += out[i];
   }
   // Strip invisible formatting chars (ZWSP, bidi marks, BOM)
   return res.replace(/[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g, "");

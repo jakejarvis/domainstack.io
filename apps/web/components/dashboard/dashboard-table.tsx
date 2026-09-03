@@ -51,7 +51,7 @@ export function DashboardTable({ domains }: DashboardTableProps) {
     (updater: SortingState | ((old: SortingState) => SortingState)) => {
       startSortTransition(() => {
         const newSorting = typeof updater === "function" ? updater(sorting) : updater;
-        setSortParam(serializeSortState(newSorting));
+        void setSortParam(serializeSortState(newSorting));
         resetPage();
       });
     },

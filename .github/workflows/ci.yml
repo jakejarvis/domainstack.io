@@ -37,10 +37,6 @@ jobs:
         continue-on-error: true
         run: pnpm lint
 
-      - name: Run typecheck
-        continue-on-error: true
-        run: pnpm check-types
-
       - name: Run tests with coverage report
         continue-on-error: true
         run: pnpm test:coverage

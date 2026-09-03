@@ -98,7 +98,7 @@ CertificateExpiryEmail.PreviewProps = {
   daysRemaining: 7,
   issuer: "Let's Encrypt",
   baseUrl: "https://domainstack.io",
-} as CertificateExpiryEmailProps;
+};
 
 export default CertificateExpiryEmail;
 

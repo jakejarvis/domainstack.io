@@ -25,7 +25,7 @@ const SORTED_THRESHOLDS = [...SUBSCRIPTION_EXPIRY_THRESHOLDS].sort((a, b) => a -
 function getSubscriptionExpiryThreshold(daysRemaining: number): SubscriptionExpiryThreshold | null {
   for (const threshold of SORTED_THRESHOLDS) {
     if (daysRemaining <= threshold) {
-      return threshold as SubscriptionExpiryThreshold;
+      return threshold;
     }
   }
   return null;
