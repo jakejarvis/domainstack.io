@@ -21,6 +21,34 @@ export type CreateContextOptions = {
 };
 
 /**
+ * Resolve the client IP from a Request (Vercel `ipAddress`) or forwarded headers.
+ * RSC prefetch has headers but no Request; API routes have both.
+ */
+export function resolveClientIp(req?: Request, headers?: Headers): string | null {
+  if (req) {
+    const fromRequest = ipAddress(req);
+    if (fromRequest) {
+      return fromRequest;
+    }
+  }
+
+  const hdrs = req?.headers ?? headers;
+  if (!hdrs) {
+    return null;
+  }
+
+  const forwarded = hdrs.get("x-forwarded-for");
+  if (forwarded) {
+    const first = forwarded.split(",")[0]?.trim();
+    if (first) {
+      return first;
+    }
+  }
+
+  return hdrs.get("x-real-ip") ?? hdrs.get("x-vercel-forwarded-for") ?? null;
+}
+
+/**
  * Creates tRPC context with session and IP information.
  *
  * The context accepts headers as a parameter, making it portable
@@ -28,11 +56,11 @@ export type CreateContextOptions = {
  * headers from either the request or `headers()`.
  */
 export async function createContext(opts: CreateContextOptions = {}): Promise<Context> {
-  const { req } = opts;
-  const ip = req ? (ipAddress(req) ?? null) : null;
+  const { req, headers } = opts;
+  const ip = resolveClientIp(req, headers);
 
   // Use request headers if available, otherwise use provided headers
-  const hdrs = req?.headers ?? opts.headers;
+  const hdrs = req?.headers ?? headers;
 
   let session: Session | null = null;
   if (hdrs) {

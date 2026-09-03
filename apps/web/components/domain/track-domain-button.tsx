@@ -1,7 +1,7 @@
 "use client";
 
 import { IconAlertCircle, IconBellPlus, IconRosetteDiscountCheck } from "@tabler/icons-react";
-import { useQuery } from "@tanstack/react-query";
+import { skipToken, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useCallback, useTransition } from "react";
 
@@ -26,10 +26,11 @@ export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonP
 
   // Only query tracked domains when user is authenticated (read-only, no mutations needed)
   const isAuthenticated = !!session?.user;
-  const { data: trackedDomains, isLoading: isLoadingDomains } = useQuery({
-    ...trpc.tracking.listDomains.queryOptions({ includeArchived: false }),
-    enabled: isAuthenticated,
-  });
+  const { data: trackedDomains, isLoading: isLoadingDomains } = useQuery(
+    trpc.tracking.listDomains.queryOptions(
+      isAuthenticated ? { includeArchived: false } : skipToken,
+    ),
+  );
 
   // Find if this domain is already tracked
   const trackedDomain = trackedDomains?.find(

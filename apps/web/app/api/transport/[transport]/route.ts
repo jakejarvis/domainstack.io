@@ -48,7 +48,7 @@ const sectionsSchema = z
 
 /**
  * Helper to format SwrResult for MCP tool response.
- * Strips internal metadata (rateLimit, cached, stale) and returns clean JSON.
+ * Strips internal metadata (cached, stale) and returns clean JSON.
  */
 function formatToolResponse(result: { success: boolean; data?: unknown; error?: string }) {
   if (!result.success) {
@@ -60,7 +60,6 @@ function formatToolResponse(result: { success: boolean; data?: unknown; error?: 
 
   // Strip internal metadata that's not useful for MCP consumers
   const { ...data } = result.data as Record<string, unknown>;
-  delete data.rateLimit;
   delete data.cached;
   delete data.stale;
 
@@ -252,7 +251,6 @@ function createMcpHandlerWithContext(request: Request) {
                 if (result.success) {
                   // Strip internal metadata
                   const { ...data } = result.data as Record<string, unknown>;
-                  delete data.rateLimit;
                   delete data.cached;
                   delete data.stale;
                   return { section, success: true, data };

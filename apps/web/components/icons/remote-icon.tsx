@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, type QueryFunction, type QueryKey } from "@tanstack/react-query";
 import Image from "next/image";
 import { useState } from "react";
 
@@ -8,10 +8,11 @@ import { Skeleton } from "@domainstack/ui/skeleton";
 import { cn } from "@domainstack/ui/utils";
 import { simpleHash } from "@domainstack/utils";
 
-/**
- * Result shape for icon queries (favicons, provider logos).
- * Both the tRPC queries and provider-logo workflow return this shape.
- */
+type IconQueryOptions = {
+  queryKey: QueryKey;
+  queryFn?: (...args: never[]) => unknown;
+};
+
 type IconQueryResult = {
   success: boolean;
   data: { url: string | null } | null;
@@ -21,13 +22,8 @@ export type RemoteIconProps = {
   /**
    * TanStack Query options from tRPC's queryOptions() method.
    * Expected to resolve to a result with { data: { url: string | null } }.
-   *
-   * Note: Using `any` because tRPC generates complex internal types
-   * (UnusedSkipTokenTRPCQueryOptionsOut) that don't conform to standard
-   * UseQueryOptions interfaces. Type safety is maintained through the
-   * useQuery<IconQueryResult> generic parameter.
    */
-  queryOptions: any;
+  queryOptions: IconQueryOptions;
   /** Identifier for fallback avatar (e.g., domain name, provider name) */
   fallbackIdentifier: string;
   /** Size in pixels (default: 16) */
@@ -121,8 +117,9 @@ export function RemoteIcon({
     data: result,
     isLoading,
     isError,
-  } = useQuery<IconQueryResult>({
-    ...queryOptions,
+  } = useQuery({
+    queryKey: queryOptions.queryKey,
+    queryFn: queryOptions.queryFn as QueryFunction<IconQueryResult>,
     // Disable retries - icons should fail fast to fallback
     retry: false,
     retryOnMount: false,

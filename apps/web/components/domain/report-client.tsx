@@ -1,7 +1,7 @@
 "use client";
 
 import { IconAlertTriangle, IconRefresh } from "@tabler/icons-react";
-import { noop, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense, useEffect, useRef, useState } from "react";
 
 import { CreateIssueButton } from "@/components/create-issue-button";
@@ -64,12 +64,25 @@ const staticQueryOptions = {
   refetchOnReconnect: false,
 } as const;
 
+const REGISTRATION_LOOKUP_MESSAGES: Record<string, string> = {
+  unsupported_tld: "This TLD is not supported for registration lookups.",
+  timeout: "The registration lookup timed out. Please try again.",
+  retry: "The registration lookup timed out. Please try again.",
+  lookup_failed: "We couldn't fetch registration data for this domain. Please try again.",
+};
+
+function registrationLookupMessage(error?: string): string {
+  if (error && error in REGISTRATION_LOOKUP_MESSAGES) {
+    return REGISTRATION_LOOKUP_MESSAGES[error];
+  }
+  return "We couldn't fetch registration data for this domain. Please try again.";
+}
+
 function SuspendedHostingSection({ domain }: { domain: string }) {
   const trpc = useTRPC();
-  const { data } = useSuspenseQuery({
-    ...trpc.domain.getHosting.queryOptions({ domain }),
-    ...staticQueryOptions,
-  });
+  const { data } = useSuspenseQuery(
+    trpc.domain.getHosting.queryOptions({ domain }, staticQueryOptions),
+  );
 
   if (!data.success) {
     return <SectionFailedAlert section={sections.hosting} error={data.error} />;
@@ -79,10 +92,9 @@ function SuspendedHostingSection({ domain }: { domain: string }) {
 
 function SuspendedDnsSection({ domain }: { domain: string }) {
   const trpc = useTRPC();
-  const { data } = useSuspenseQuery({
-    ...trpc.domain.getDnsRecords.queryOptions({ domain }),
-    ...staticQueryOptions,
-  });
+  const { data } = useSuspenseQuery(
+    trpc.domain.getDnsRecords.queryOptions({ domain }, staticQueryOptions),
+  );
 
   if (!data.success) {
     return <SectionFailedAlert section={sections.dns} error={data.error} />;
@@ -92,10 +104,9 @@ function SuspendedDnsSection({ domain }: { domain: string }) {
 
 function SuspendedCertificatesSection({ domain }: { domain: string }) {
   const trpc = useTRPC();
-  const { data } = useSuspenseQuery({
-    ...trpc.domain.getCertificates.queryOptions({ domain }),
-    ...staticQueryOptions,
-  });
+  const { data } = useSuspenseQuery(
+    trpc.domain.getCertificates.queryOptions({ domain }, staticQueryOptions),
+  );
 
   if (!data.success) {
     return <SectionFailedAlert section={sections.certificates} error={data.error} />;
@@ -105,10 +116,9 @@ function SuspendedCertificatesSection({ domain }: { domain: string }) {
 
 function SuspendedHeadersSection({ domain }: { domain: string }) {
   const trpc = useTRPC();
-  const { data } = useSuspenseQuery({
-    ...trpc.domain.getHeaders.queryOptions({ domain }),
-    ...staticQueryOptions,
-  });
+  const { data } = useSuspenseQuery(
+    trpc.domain.getHeaders.queryOptions({ domain }, staticQueryOptions),
+  );
 
   if (!data.success) {
     return <SectionFailedAlert section={sections.headers} error={data.error} />;
@@ -118,10 +128,9 @@ function SuspendedHeadersSection({ domain }: { domain: string }) {
 
 function SuspendedSeoSection({ domain }: { domain: string }) {
   const trpc = useTRPC();
-  const { data } = useSuspenseQuery({
-    ...trpc.domain.getSeo.queryOptions({ domain }),
-    ...staticQueryOptions,
-  });
+  const { data } = useSuspenseQuery(
+    trpc.domain.getSeo.queryOptions({ domain }, staticQueryOptions),
+  );
 
   if (!data.success) {
     return <SectionFailedAlert section={sections.seo} error={data.error} />;
@@ -132,34 +141,17 @@ function SuspendedSeoSection({ domain }: { domain: string }) {
 export function DomainReportClient({ domain }: { domain: string }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const registrationQueryOptions = trpc.domain.getRegistration.queryOptions({
-    domain,
-  });
   const {
     data: registration,
     isLoading: isRegistrationLoading,
     isError: isRegistrationError,
     error: registrationError,
-  } = useQuery({
-    ...registrationQueryOptions,
-    ...staticQueryOptions,
-  });
+  } = useQuery(trpc.domain.getRegistration.queryOptions({ domain }, staticQueryOptions));
   const domainId = registration?.data?.domainId;
-  const isRegistered = registration?.data?.isRegistered === true;
-
-  // Wait until registration resolves so unregistered domains do not trigger
-  // DNS/hosting/certificate/header/SEO lookups. Server already prefetches
-  // registration, so registered domains that hydrate with data start immediately.
-  useEffect(() => {
-    if (!isRegistered) return;
-    void Promise.all([
-      queryClient.query(trpc.domain.getHosting.queryOptions({ domain })).catch(noop),
-      queryClient.query(trpc.domain.getDnsRecords.queryOptions({ domain })).catch(noop),
-      queryClient.query(trpc.domain.getCertificates.queryOptions({ domain })).catch(noop),
-      queryClient.query(trpc.domain.getHeaders.queryOptions({ domain })).catch(noop),
-      queryClient.query(trpc.domain.getSeo.queryOptions({ domain })).catch(noop),
-    ]);
-  }, [domain, isRegistered, queryClient, trpc]);
+  const lookupFailed = Boolean(registration && registration.success === false);
+  const isRegistered = registration?.success === true && registration.data?.isRegistered === true;
+  const isUnregistered =
+    registration?.success === true && registration.data?.isRegistered === false;
 
   // Add to search history for registered domains
   const addDomainToHistory = useSearchHistoryStore((s) => s.addDomain);
@@ -211,8 +203,15 @@ export function DomainReportClient({ domain }: { domain: string }) {
     return () => observer.disconnect();
   }, []);
 
-  if (isRegistrationError) {
+  if (isRegistrationError || lookupFailed) {
     const isDev = process.env.NODE_ENV === "development";
+    const description =
+      isDev && isRegistrationError && registrationError
+        ? registrationError.message
+        : lookupFailed && registration && !registration.success
+          ? registrationLookupMessage(registration.error)
+          : "We couldn't fetch registration data for this domain. Please try again.";
+
     return (
       <Empty className="border border-dashed">
         <EmptyHeader>
@@ -220,11 +219,7 @@ export function DomainReportClient({ domain }: { domain: string }) {
             <IconAlertTriangle />
           </EmptyMedia>
           <EmptyTitle>Failed to load domain report</EmptyTitle>
-          <EmptyDescription>
-            {isDev && registrationError
-              ? registrationError.message
-              : "We couldn't fetch registration data for this domain. Please try again."}
-          </EmptyDescription>
+          <EmptyDescription>{description}</EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
           <div className="flex flex-wrap items-center justify-center gap-2">
@@ -248,7 +243,7 @@ export function DomainReportClient({ domain }: { domain: string }) {
     );
   }
 
-  if (!isRegistrationLoading && !isRegistered) {
+  if (!isRegistrationLoading && isUnregistered) {
     return <DomainUnregisteredCard domain={domain} />;
   }
 

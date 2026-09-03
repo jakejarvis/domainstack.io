@@ -465,10 +465,18 @@ export function useTRPC() {
       },
       listDomains: {
         queryKey: listDomainsQueryKey,
-        queryOptions: (input?: ListDomainsInput) => ({
-          queryKey: listDomainsQueryKey(input),
-          queryFn: () => listDomainsQuery(input),
-        }),
+        queryOptions: (input?: ListDomainsInput | typeof skipToken) => {
+          if (input === skipToken) {
+            return {
+              queryKey: DOMAINS_QUERY_KEY,
+              queryFn: skipToken,
+            };
+          }
+          return {
+            queryKey: listDomainsQueryKey(input),
+            queryFn: () => listDomainsQuery(input),
+          };
+        },
         queryFilter: (input?: ListDomainsInput) => queryFilterFor(listDomainsQueryKey(input)),
       },
       removeDomain: {
@@ -496,10 +504,18 @@ export function useTRPC() {
     user: {
       getSubscription: {
         queryKey: () => SUBSCRIPTION_QUERY_KEY,
-        queryOptions: () => ({
-          queryKey: SUBSCRIPTION_QUERY_KEY,
-          queryFn: () => getSubscriptionQuery(),
-        }),
+        queryOptions: (input?: typeof skipToken) => {
+          if (input === skipToken) {
+            return {
+              queryKey: SUBSCRIPTION_QUERY_KEY,
+              queryFn: skipToken,
+            };
+          }
+          return {
+            queryKey: SUBSCRIPTION_QUERY_KEY,
+            queryFn: () => getSubscriptionQuery(),
+          };
+        },
         queryFilter: () => queryFilterFor(SUBSCRIPTION_QUERY_KEY),
       },
       setDomainMuted: {

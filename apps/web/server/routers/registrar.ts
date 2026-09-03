@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { providers } from "@/lib/pricing";
-import { createTRPCRouter, publicProcedure, withRateLimit } from "@/trpc/init";
+import { createTRPCRouter, rateLimit, publicProcedure } from "@/trpc/init";
 
 export const registrarRouter = createTRPCRouter({
   /**
@@ -9,12 +9,12 @@ export const registrarRouter = createTRPCRouter({
    * Returns pricing from all providers that have data for this TLD.
    */
   getPricing: publicProcedure
-    .use(withRateLimit)
-    .meta({ rateLimit: { requests: 20, window: "1 m" } })
     .input(z.object({ tld: z.string().min(1) }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input, path }) => {
       const normalizedTld = (input.tld ?? "").trim().toLowerCase().replace(/^\./, "");
       if (!normalizedTld) return { success: false, data: { tld: null, providers: [] } };
+
+      await rateLimit({ ctx, path, config: { requests: 20, window: "1 m" } });
 
       const fetches: Array<Promise<{ provider: string; price: string } | null>> = [];
       for (const provider of providers) {

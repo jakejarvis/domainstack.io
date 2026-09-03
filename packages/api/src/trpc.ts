@@ -11,21 +11,17 @@ import type { Context } from "./context";
  */
 export type ProcedureMeta = {
   /**
-   * Rate limit configuration for this procedure.
-   * Defaults to 60 requests/minute if not specified.
+   * Rate limit for this procedure. Defaults to 60 requests/minute.
+   * Pass `false` to skip (protected procedures only; public resolvers
+   * should omit the `rateLimit()` call instead).
    *
    * @example
    * ```ts
    * .meta({ rateLimit: { requests: 10, window: "1 m" } })
+   * .meta({ rateLimit: false })
    * ```
    */
-  rateLimit?: RateLimitConfig;
-
-  /**
-   * Skip rate limiting for this procedure.
-   * Use for lightweight/cached endpoints that don't need throttling.
-   */
-  skipRateLimit?: boolean;
+  rateLimit?: RateLimitConfig | false;
 };
 
 export const t = initTRPC

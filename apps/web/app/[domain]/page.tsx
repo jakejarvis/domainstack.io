@@ -1,4 +1,4 @@
-import { dehydrate, HydrationBoundary, noop } from "@tanstack/react-query";
+import { noop } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
@@ -6,7 +6,7 @@ import { DomainReportClient } from "@/components/domain/report-client";
 import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { OG_IMAGE_SIZE } from "@/lib/og-utils";
 import { createMetadata, notFoundMetadata } from "@/lib/seo";
-import { getQueryClient, trpc } from "@/trpc/server";
+import { getQueryClient, HydrateClient, trpc } from "@/trpc/server";
 
 export async function generateMetadata({
   params,
@@ -58,13 +58,13 @@ export default async function DomainPage({ params }: { params: Promise<{ domain:
   }
 
   const queryClient = getQueryClient();
-  void queryClient
+  await queryClient
     .query(trpc.domain.getRegistration.queryOptions({ domain: registrable }))
     .catch(noop);
 
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
+    <HydrateClient>
       <DomainReportClient domain={registrable} />
-    </HydrationBoundary>
+    </HydrateClient>
   );
 }

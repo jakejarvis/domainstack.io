@@ -22,13 +22,12 @@ export type { Context, ProcedureMeta, Session } from "@domainstack/api";
 export {
   createCallerFactory,
   createTRPCRouter,
+  rateLimit,
   protectedProcedure,
   publicProcedure,
-  TRPCError,
   t,
-  enforceRateLimit,
+  TRPCError,
   withAuth,
   withDomainAccessUpdate,
   withLogging,
-  withRateLimit,
 } from "@domainstack/api";

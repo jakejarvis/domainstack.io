@@ -2,8 +2,7 @@
 
 import { environmentManager, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { ReactQueryStreamedHydration } from "@tanstack/react-query-next-experimental";
-import { createTRPCClient, httpBatchStreamLink, loggerLink } from "@trpc/client";
+import { createTRPCClient, httpBatchLink, httpLink, loggerLink, splitLink } from "@trpc/client";
 import { useState } from "react";
 import superjson from "superjson";
 
@@ -31,10 +30,30 @@ const getBaseUrl = () => {
   return `http://localhost:${process.env.PORT ?? 3000}`; // dev SSR should use localhost
 };
 
+function trpcHeaders() {
+  const headers = new Headers();
+  headers.set("x-trpc-source", "nextjs-react");
+
+  // For SSR on Vercel with deployment protection:
+  // Add bypass token to allow server-to-server calls
+  if (environmentManager.isServer() && process.env.VERCEL_AUTOMATION_BYPASS_SECRET) {
+    headers.set("x-vercel-protection-bypass", process.env.VERCEL_AUTOMATION_BYPASS_SECRET);
+  }
+
+  return headers;
+}
+
 export function TRPCProvider({ children }: { children: React.ReactNode }) {
   const queryClient = getQueryClient();
-  const [trpcClient] = useState(() =>
-    createTRPCClient<AppRouter>({
+  const [trpcClient] = useState(() => {
+    const url = `${getBaseUrl()}/api/trpc`;
+    const jsonLinkOptions = {
+      url,
+      transformer: superjson,
+      headers: trpcHeaders,
+    };
+
+    return createTRPCClient<AppRouter>({
       links: [
         loggerLink({
           enabled: (opts) => {
@@ -52,44 +71,31 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
           },
         }),
         rateLimitLink,
-        httpBatchStreamLink({
-          url: `${getBaseUrl()}/api/trpc`,
-          transformer: superjson,
-          maxItems: 10,
-          headers: () => {
-            const headers = new Headers();
-            headers.set("x-trpc-source", "nextjs-react");
-
-            // For SSR on Vercel with deployment protection:
-            // Add bypass token to allow server-to-server calls
-            if (environmentManager.isServer() && process.env.VERCEL_AUTOMATION_BYPASS_SECRET) {
-              headers.set(
-                "x-vercel-protection-bypass",
-                process.env.VERCEL_AUTOMATION_BYPASS_SECRET,
-              );
-            }
-
-            return headers;
-          },
+        splitLink({
+          condition: (op) => op.type === "mutation",
+          true: httpLink(jsonLinkOptions),
+          false: httpBatchLink({
+            ...jsonLinkOptions,
+            maxItems: 10,
+            maxURLLength: 2083,
+          }),
         }),
       ],
-    }),
-  );
+    });
+  });
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ReactQueryStreamedHydration>
-        <Provider trpcClient={trpcClient} queryClient={queryClient}>
-          {children}
-          {process.env.NODE_ENV === "development" && (
-            <ReactQueryDevtools
-              initialIsOpen={false}
-              // don't cover chat fab
-              buttonPosition="bottom-left"
-            />
-          )}
-        </Provider>
-      </ReactQueryStreamedHydration>
+      <Provider trpcClient={trpcClient} queryClient={queryClient}>
+        {children}
+        {process.env.NODE_ENV === "development" && (
+          <ReactQueryDevtools
+            initialIsOpen={false}
+            // don't cover chat fab
+            buttonPosition="bottom-left"
+          />
+        )}
+      </Provider>
     </QueryClientProvider>
   );
 }

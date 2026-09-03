@@ -30,7 +30,7 @@ import { createLogger } from "@domainstack/logger";
 const logger = createLogger({ source: "routers/tracking" });
 
 import { toRegistrableDomain } from "@/lib/normalize-domain";
-import { createTRPCRouter, protectedProcedure, withRateLimit } from "@/trpc/init";
+import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { generateVerificationToken, verificationWorkflow } from "@/workflows/verification";
 import { buildVerificationInstructions } from "@domainstack/utils/verification";
 
@@ -200,7 +200,6 @@ export const trackingRouter = createTRPCRouter({
    * Can specify a method or try all methods.
    */
   verifyDomain: protectedProcedure
-    .use(withRateLimit)
     .meta({ rateLimit: { requests: 10, window: "1 m" } })
     .input(
       z.object({
@@ -538,7 +537,6 @@ export const trackingRouter = createTRPCRouter({
    * Allows users to share verification instructions with someone who manages their domain.
    */
   sendVerificationInstructions: protectedProcedure
-    .use(withRateLimit)
     .meta({ rateLimit: { requests: 5, window: "1 m" } })
     .input(
       z.object({

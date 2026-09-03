@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
@@ -105,10 +105,11 @@ export function useSubscription(options: UseSubscriptionOptions = {}): UseSubscr
   const [isCheckoutLoading, setCheckoutLoading] = useState(false);
   const [isCustomerPortalLoading, setCustomerPortalLoading] = useState(false);
 
-  const query = useQuery({
-    ...trpc.user.getSubscription.queryOptions(),
-    enabled,
-  });
+  const query = useQuery(
+    enabled
+      ? trpc.user.getSubscription.queryOptions()
+      : trpc.user.getSubscription.queryOptions(skipToken),
+  );
 
   const invalidate = useCallback(() => {
     void queryClient.invalidateQueries(trpc.user.getSubscription.queryFilter());

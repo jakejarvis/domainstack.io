@@ -141,9 +141,6 @@ importers:
       '@tanstack/react-query-devtools':
         specifier: ^5.102.8
         version: 5.102.8(@tanstack/react-query@5.102.8(react@19.2.8))(react@19.2.8)
-      '@tanstack/react-query-next-experimental':
-        specifier: ^5.102.8
-        version: 5.102.8(@tanstack/react-query@5.102.8(react@19.2.8))(next@16.3.3(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
       '@tanstack/react-table':
         specifier: ^9.2.4
         version: 9.2.4(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -3099,13 +3096,6 @@ packages:
     resolution: {integrity: sha512-QKb7A44BZOU7nxsGA4gFN1fofjYovar5O0T83Ff4Y+2eRq09RGFrAzzutVdF/6/emfSaMDohp6e759BjB3fxEw==}
     peerDependencies:
       '@tanstack/react-query': ^5.102.8
-      react: 19.2.8
-
-  '@tanstack/react-query-next-experimental@5.102.8':
-    resolution: {integrity: sha512-8+B9NbLVcl5ATGuPvr/86JgnTe3fbEdtwnBCXZ/GtZeYJ/ebeQ47v1ikPFnHBZ4dWWy3ugW4XzZncUEf4YLUEA==}
-    peerDependencies:
-      '@tanstack/react-query': ^5.102.8
-      next: 16.3.3
       react: 19.2.8
 
   '@tanstack/react-query@5.102.8':
@@ -9300,12 +9290,6 @@ snapshots:
     dependencies:
       '@tanstack/query-devtools': 5.102.8
       '@tanstack/react-query': 5.102.8(react@19.2.8)
-      react: 19.2.8
-
-  '@tanstack/react-query-next-experimental@5.102.8(@tanstack/react-query@5.102.8(react@19.2.8))(next@16.3.3(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)':
-    dependencies:
-      '@tanstack/react-query': 5.102.8(react@19.2.8)
-      next: 16.3.3(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react: 19.2.8
 
   '@tanstack/react-query@5.102.8(react@19.2.8)':

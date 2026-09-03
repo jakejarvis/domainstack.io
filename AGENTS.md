@@ -282,22 +282,28 @@ throw new TRPCError({ code: "NOT_FOUND", message: "Domain not found" });
 
 ### Rate Limiting
 
-Use Upstash Redis for rate limiting via the `withRateLimit` middleware:
+`protectedProcedure` runs `withRateLimit` before the resolver (override with `.meta({ rateLimit })`). Public procedures call `rateLimit` in the resolver so cache hits and cheap bail-outs do not consume the budget.
 
 ```typescript
-import { publicProcedure, withRateLimit } from "@/trpc/init";
+import { rateLimit, publicProcedure } from "@/trpc/init";
 
-export const myRouter = createTRPCRouter({
-  expensiveOperation: publicProcedure
-    .use(withRateLimit)
-    .meta({ rateLimit: { requests: 10, window: "1 m" } })
-    .mutation(async ({ input }) => {
-      // Rate limited to 10 requests per minute per user/IP
-    }),
-});
+expensiveOperation: publicProcedure.mutation(async ({ ctx, input, path }) => {
+  await rateLimit({ ctx, path, config: { requests: 10, window: "1 m" } });
+  return doWork(input);
+}),
+
+getThing: publicProcedure.query(async ({ ctx, input, path }) => {
+  const cached = await getCachedThing(input.id);
+  if (cached.data && !cached.stale) {
+    return { success: true, cached: true, data: cached.data };
+  }
+  await rateLimit({ ctx, path, config: { requests: 30, window: "1 m" } });
+  return fetchThing(input.id);
+}),
 ```
 
-- Middleware uses user ID for authenticated requests, IP for anonymous
+- Override the default 60/min on protected procedures with `.meta({ rateLimit })`, or skip with `.meta({ rateLimit: false })`
+- Identifier is user ID when authenticated, otherwise IP
 - Each procedure gets its own bucket (keyed by procedure path)
 - On limit exceeded: throws `TOO_MANY_REQUESTS` with retry timing
 - Client-side: `rateLimitLink` in tRPC client shows toasts automatically

@@ -230,6 +230,7 @@ describe("domain router", () => {
       }
       expect(result.cached).toBe(true);
       expect(fetchRegistration).not.toHaveBeenCalled();
+      expect(getRateLimiter).not.toHaveBeenCalled();
     });
 
     it("fetches fresh data when cache is stale", async () => {
@@ -269,6 +270,7 @@ describe("domain router", () => {
       }
       expect(result.cached).toBe(false);
       expect(fetchRegistration).toHaveBeenCalled();
+      expect(getRateLimiter).toHaveBeenCalled();
     });
 
     it("fetches fresh data when no cached data exists", async () => {

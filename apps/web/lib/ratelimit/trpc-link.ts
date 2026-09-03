@@ -14,7 +14,7 @@ import { showRateLimitError } from "./client";
  * ```ts
  * links: [
  *   rateLimitLink,
- *   httpBatchStreamLink({ ... }),
+ *   httpBatchLink({ ... }),
  * ]
  * ```
  *
