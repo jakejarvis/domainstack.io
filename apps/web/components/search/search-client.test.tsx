@@ -191,7 +191,9 @@ describe("DomainSearch (header variant)", () => {
     render(<SearchClient variant="sm" />);
 
     const input = screen.getByLabelText(/Search any domain/i);
-    expect(input).toHaveAttribute("placeholder", "Search\u2026");
+    await waitFor(() => {
+      expect(input).toHaveAttribute("placeholder", "Search\u2026");
+    });
   });
 
   it("updates placeholder when window is resized", async () => {

@@ -15,7 +15,10 @@ interface PointerCapability {
  * - isTouchDevice: convenience property, true when device is primarily touch-based
  */
 export function usePointerCapability(): PointerCapability {
-  const supportsHover = useMediaQuery("(hover: hover)");
+  // Default hover to true so SSR matches desktop (the common case).
+  // `(hover: hover)` defaulting to false made every consumer treat the
+  // server render as a touch device and swap Popover ↔ Tooltip on hydrate.
+  const supportsHover = useMediaQuery("(hover: hover)", true);
   const isCoarsePointer = useMediaQuery("(pointer: coarse)");
 
   return {

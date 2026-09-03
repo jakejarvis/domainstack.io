@@ -6,6 +6,7 @@ import Link from "next/link";
 import { AppHeaderSeparator } from "@/components/layout/app-header-separator";
 import { UserMenu } from "@/components/layout/user-menu";
 import { NotificationsPopover } from "@/components/notifications/notifications-popover";
+import { useIsClient } from "@/hooks/use-is-client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/hooks/use-theme";
 import { useSession } from "@domainstack/auth/client";
@@ -28,9 +29,11 @@ export function AppHeaderClientButtons() {
   const { data: session, isPending } = useSession();
   const isMobile = useIsMobile();
   const { theme, toggleTheme } = useTheme();
+  const mounted = useIsClient();
 
-  // While loading, show skeleton matching signed-out state (most common on initial load)
-  if (isPending) {
+  // Session can be resolved during SSR and still pending on the first client paint.
+  // Keep the skeleton until both sides agree.
+  if (!mounted || isPending) {
     return (
       <>
         <Skeleton className="size-7 max-md:ml-1" />

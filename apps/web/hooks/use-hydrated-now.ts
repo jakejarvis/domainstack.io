@@ -13,6 +13,28 @@ let cancelPendingInitializer: (() => void) | null = null;
 
 function subscribe(callback: () => void): () => void {
   listeners.add(callback);
+
+  // Start the clock after the first paint, not at module evaluation.
+  // A module-level microtask can run before hydrateRoot, so getSnapshot()
+  // would return a Date while the server HTML still has the placeholder.
+  if (typeof window !== "undefined" && hydratedNow === null && cancelPendingInitializer === null) {
+    let cancelled = false;
+    const frame = window.requestAnimationFrame(() => {
+      cancelPendingInitializer = null;
+      if (cancelled || hydratedNow !== null) {
+        return;
+      }
+      hydratedNow = new Date();
+      for (const listener of listeners) {
+        listener();
+      }
+    });
+    cancelPendingInitializer = () => {
+      cancelled = true;
+      window.cancelAnimationFrame(frame);
+    };
+  }
+
   return () => {
     listeners.delete(callback);
   };
@@ -26,26 +48,6 @@ function getServerSnapshot(): Date | null {
   return null;
 }
 
-// Initialize on first client-side access
-if (typeof window !== "undefined" && hydratedNow === null) {
-  let cancelled = false;
-  cancelPendingInitializer = () => {
-    cancelled = true;
-  };
-  // Use microtask to ensure this runs after initial render
-  queueMicrotask(() => {
-    cancelPendingInitializer = null;
-    if (cancelled || hydratedNow !== null) {
-      return;
-    }
-    hydratedNow = new Date();
-    // Notify all subscribers
-    for (const listener of listeners) {
-      listener();
-    }
-  });
-}
-
 /**
  * Hook that returns the current time after hydration.
  * Returns null during SSR and before hydration completes.
@@ -57,6 +59,7 @@ if (typeof window !== "undefined" && hydratedNow === null) {
  * @returns Date object after hydration, null before
  */
 export function useHydratedNow(): Date | null {
+  "use no memo";
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 

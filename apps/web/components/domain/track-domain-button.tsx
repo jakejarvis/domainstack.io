@@ -5,6 +5,7 @@ import { skipToken, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useCallback, useTransition } from "react";
 
+import { useIsClient } from "@/hooks/use-is-client";
 import { useRouter } from "@/hooks/use-router";
 import { useTRPC } from "@/lib/trpc/client";
 import { useSession } from "@domainstack/auth/client";
@@ -23,6 +24,7 @@ export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonP
   const router = useRouter();
   const trpc = useTRPC();
   const [isNavigating, startNavigation] = useTransition();
+  const mounted = useIsClient();
 
   // Only query tracked domains when user is authenticated (read-only, no mutations needed)
   const isAuthenticated = !!session?.user;
@@ -69,10 +71,9 @@ export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonP
     }
   }, [session?.user, isPendingVerification, trackedDomain, domain, router, startNavigation]);
 
-  // Show loading state during SSR, initial hydration, while data is loading,
-  // or while the button is disabled (e.g., waiting for registration confirmation)
-  // This ensures consistent rendering between server and client
-  if (isSessionPending || !enabled || (session?.user && isLoadingDomains)) {
+  // Stay on the loading button until after mount. useSession() can resolve on
+  // the server (cookie cache) and still be pending on the first client paint.
+  if (!mounted || isSessionPending || !enabled || (session?.user && isLoadingDomains)) {
     return (
       <Button variant="outline" disabled aria-label="Track domain">
         <IconBellPlus className="sm:text-muted-foreground" aria-hidden="true" />

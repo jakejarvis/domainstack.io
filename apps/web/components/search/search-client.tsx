@@ -199,7 +199,7 @@ export function SearchClient({
                 placeholder={
                   variant === "lg"
                     ? "domainstack.io\u2026"
-                    : isMobile
+                    : mounted && isMobile
                       ? "Search\u2026"
                       : "Search any domain\u2026"
                 }

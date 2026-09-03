@@ -1,7 +1,6 @@
 import { IconHelp } from "@tabler/icons-react";
-import dynamic from "next/dynamic";
 
-import { HostingMapSkeleton } from "@/components/domain/hosting/hosting-map-skeleton";
+import { HostingMap } from "@/components/domain/hosting/hosting-map";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { ReportSection } from "@/components/domain/report-section";
@@ -16,14 +15,6 @@ import {
   EmptyTitle,
 } from "@domainstack/ui/empty";
 import { countryCodeToEmoji } from "@domainstack/utils";
-
-const HostingMapClient = dynamic(
-  () => import("@/components/domain/hosting/hosting-map-client").then((m) => m.HostingMapClient),
-  {
-    ssr: false,
-    loading: () => <HostingMapSkeleton />,
-  },
-);
 
 function formatLocation(geo: HostingGeo): string {
   const parts = [geo.city, geo.region, geo.country].filter(Boolean);
@@ -99,7 +90,7 @@ export function HostingSection({
 
               {geolocation.lat && geolocation.lon ? (
                 <div className="relative h-[280px] w-full">
-                  <HostingMapClient lat={geolocation.lat} lon={geolocation.lon} domain={domain} />
+                  <HostingMap lat={geolocation.lat} lon={geolocation.lon} domain={domain} />
                 </div>
               ) : null}
             </>

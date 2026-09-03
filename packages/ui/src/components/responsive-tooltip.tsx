@@ -4,6 +4,7 @@ import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import { createContext, useContext, useMemo } from "react";
 
+import { useIsClient } from "../hooks/use-is-client";
 import { usePointerCapability } from "../hooks/use-pointer-capability";
 import { cn } from "../utils";
 
@@ -15,12 +16,20 @@ function ResponsiveTooltip({
   ...props
 }: PopoverPrimitive.Root.Props & TooltipPrimitive.Root.Props) {
   const { isTouchDevice } = usePointerCapability();
+  const mounted = useIsClient();
 
-  const contextValue = useMemo(() => ({ isTouchDevice }), [isTouchDevice]);
+  // Tooltip on the server and first client paint; Popover only after mount.
+  // Switching primitives during hydrate mismatches every KeyValue on reports.
+  const isConfirmedTouchDevice = mounted && isTouchDevice;
+
+  const contextValue = useMemo(
+    () => ({ isTouchDevice: isConfirmedTouchDevice }),
+    [isConfirmedTouchDevice],
+  );
 
   return (
     <ResponsiveTooltipContext.Provider value={contextValue}>
-      {isTouchDevice ? (
+      {isConfirmedTouchDevice ? (
         <PopoverPrimitive.Root data-slot="responsive-tooltip" {...props} />
       ) : (
         <TooltipPrimitive.Provider delay={0}>

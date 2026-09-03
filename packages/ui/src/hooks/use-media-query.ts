@@ -1,62 +1,44 @@
-import { useSyncExternalStore } from "react";
+import { useCallback, useSyncExternalStore } from "react";
+
+import { getClientReadySnapshot, subscribeClientReady } from "./client-ready";
 
 /**
- * Custom hook that subscribes to a media query and returns whether it matches.
- *
- * Uses `useSyncExternalStore` for optimal React 18+ compatibility, including:
- * - Proper concurrent rendering support
- * - Automatic SSR/hydration handling
- * - Efficient subscriptions and cleanup
- *
- * @param query - The media query string to match (e.g., "(min-width: 768px)")
- * @param defaultValue - The default value to return during SSR (default: false)
- *
- * @returns Boolean indicating whether the media query matches
- *
- * @example
- * ```tsx
- * // Check if screen is mobile
- * const isMobile = useMediaQuery("(max-width: 767px)");
- *
- * // Check for dark mode preference
- * const prefersDark = useMediaQuery("(prefers-color-scheme: dark)");
- *
- * // Check for hover capability
- * const canHover = useMediaQuery("(hover: hover)");
- *
- * // With custom default for SSR
- * const isDesktop = useMediaQuery("(min-width: 1024px)", true);
- * ```
+ * Subscribes to a media query. Returns `defaultValue` until after the first
+ * client paint so the hydrate tree matches SSR.
  */
 export function useMediaQuery(query: string, defaultValue = false): boolean {
-  return useSyncExternalStore(
-    (callback) => {
-      // Return early if matchMedia is not available (old browsers)
+  "use no memo";
+
+  const subscribe = useCallback(
+    (callback: () => void) => {
+      const unsubscribeReady = subscribeClientReady(callback);
+
       if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
-        return () => {};
+        return unsubscribeReady;
       }
 
       const mediaQueryList = window.matchMedia(query);
-
-      // Subscribe to changes
       mediaQueryList.addEventListener("change", callback);
 
-      // Return cleanup function
       return () => {
+        unsubscribeReady();
         mediaQueryList.removeEventListener("change", callback);
       };
     },
-    () => {
-      // Get current client-side value
-      if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
-        return defaultValue;
-      }
-
-      return window.matchMedia(query).matches;
-    },
-    () => {
-      // Get server-side snapshot (always returns defaultValue to avoid hydration mismatch)
-      return defaultValue;
-    },
+    [query],
   );
+
+  const getSnapshot = useCallback(() => {
+    if (!getClientReadySnapshot()) {
+      return defaultValue;
+    }
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return defaultValue;
+    }
+    return window.matchMedia(query).matches;
+  }, [defaultValue, query]);
+
+  const getServerSnapshot = useCallback(() => defaultValue, [defaultValue]);
+
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
