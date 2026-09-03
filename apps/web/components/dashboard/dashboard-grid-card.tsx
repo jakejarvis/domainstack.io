@@ -9,7 +9,6 @@ import {
   IconTool,
   IconTrash,
 } from "@tabler/icons-react";
-import { format } from "date-fns";
 import * as m from "motion/react-m";
 import Link from "next/link";
 import { memo, useCallback } from "react";
@@ -45,7 +44,7 @@ import {
 } from "@domainstack/ui/responsive-tooltip";
 import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
-import { formatDateTimeUtc } from "@domainstack/utils";
+import { formatDate, formatDateTimeUtc } from "@domainstack/utils";
 
 type DashboardGridCardProps = {
   domain: TrackedDomainWithDetails;
@@ -244,12 +243,10 @@ export const DashboardGridCard = memo(function DashboardGridCard({
                   <ResponsiveTooltip>
                     <ResponsiveTooltipTrigger
                       nativeButton={false}
-                      render={
-                        <span className="truncate">{format(expirationDate, "MMM d, yyyy")}</span>
-                      }
+                      render={<span className="truncate">{formatDate(expirationDate)}</span>}
                     />
                     <ResponsiveTooltipContent>
-                      {formatDateTimeUtc(expirationDate.toISOString())}
+                      {formatDateTimeUtc(expirationDate)}
                     </ResponsiveTooltipContent>
                   </ResponsiveTooltip>
                 ) : (
@@ -307,14 +304,10 @@ export const DashboardGridCard = memo(function DashboardGridCard({
                       <ResponsiveTooltip>
                         <ResponsiveTooltipTrigger
                           nativeButton={false}
-                          render={
-                            <span className="truncate">
-                              {format(expirationDate, "MMM d, yyyy")}
-                            </span>
-                          }
+                          render={<span className="truncate">{formatDate(expirationDate)}</span>}
                         />
                         <ResponsiveTooltipContent>
-                          {formatDateTimeUtc(expirationDate.toISOString())}
+                          {formatDateTimeUtc(expirationDate)}
                         </ResponsiveTooltipContent>
                       </ResponsiveTooltip>
                       <span className="shrink-0 text-[11px] leading-none text-muted-foreground">

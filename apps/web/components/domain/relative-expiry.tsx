@@ -1,6 +1,6 @@
 "use client";
 
-import { differenceInDays, formatDistanceToNowStrict } from "date-fns";
+import { differenceInDays, formatDistanceStrict } from "date-fns";
 import { useMemo } from "react";
 
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
@@ -21,16 +21,15 @@ export function RelativeExpiryString({
   /** className applied to the wrapper span */
   className?: string;
 }) {
-  // Use shared hydrated time to avoid render cascades
+  // Use shared hydrated time so the server and client render the same string
   const now = useHydratedNow();
 
-  // Calculate state synchronously using memoization
   const state = useMemo(() => {
     if (!now) return null;
     try {
       const targetDate = new Date(to);
       return {
-        text: formatDistanceToNowStrict(targetDate, { addSuffix: true }),
+        text: formatDistanceStrict(targetDate, now, { addSuffix: true }),
         daysUntil: differenceInDays(targetDate, now),
       };
     } catch {
@@ -39,8 +38,14 @@ export function RelativeExpiryString({
     }
   }, [to, now]);
 
-  // SSR: render nothing until client hydrates
-  if (!state) return null;
+  // Render invisible placeholder before hydration to prevent layout shift
+  if (!state) {
+    return (
+      <span className={cn("invisible", className)} aria-hidden>
+        (loading)
+      </span>
+    );
+  }
 
   const { text, daysUntil } = state;
 

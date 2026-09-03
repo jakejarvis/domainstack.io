@@ -1,5 +1,4 @@
 import { IconCreditCard } from "@tabler/icons-react";
-import { format } from "date-fns";
 
 import { PlanStatusCard } from "@/components/plan-status-card";
 import { SettingsCard } from "@/components/settings/settings-card";
@@ -8,6 +7,7 @@ import { UpgradeCard } from "@/components/upgrade-card";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Button } from "@domainstack/ui/button";
 import { Spinner } from "@domainstack/ui/spinner";
+import { formatDate } from "@domainstack/utils";
 
 export function SubscriptionPanel() {
   // Subscription query and hooks
@@ -62,7 +62,7 @@ export function SubscriptionPanel() {
             </Button>
             {subscription?.endsAt && (
               <p className="text-center text-xs text-muted-foreground">
-                Your Pro access continues until {format(subscription.endsAt, "MMMM d, yyyy")}
+                Your Pro access continues until {formatDate(subscription.endsAt)}
               </p>
             )}
           </div>

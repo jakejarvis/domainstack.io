@@ -1,9 +1,10 @@
 "use client";
 
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceStrict } from "date-fns";
 import Link from "next/link";
 import { createElement } from "react";
 
+import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import {
   getNotificationIcon,
   getNotificationSeverity,
@@ -24,6 +25,7 @@ export function NotificationCard({ notification, onClick }: NotificationCardProp
   const severity = getNotificationSeverity(notification.type);
   const iconColor = getSeverityIconColor(severity, !!notification.readAt);
   const isUnread = !notification.readAt;
+  const now = useHydratedNow();
 
   // Build href with domainId filter when notification is domain-specific
   const href = notification.trackedDomainId
@@ -63,9 +65,11 @@ export function NotificationCard({ notification, onClick }: NotificationCardProp
           </div>
           <p className="line-clamp-3 text-[13px] text-muted-foreground">{notification.message}</p>
           <p className="mt-1 text-xs text-muted-foreground/75">
-            {formatDistanceToNow(notification.sentAt, {
-              addSuffix: true,
-            })}
+            {now
+              ? formatDistanceStrict(notification.sentAt, now, {
+                  addSuffix: true,
+                })
+              : "…"}
           </p>
         </div>
       </div>

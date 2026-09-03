@@ -1,9 +1,9 @@
 import { IconGift, IconRocket } from "@tabler/icons-react";
-import { format } from "date-fns";
 
 import { QuotaBar } from "@/components/dashboard/quota-bar";
 import { Badge } from "@domainstack/ui/badge";
 import { cn } from "@domainstack/ui/utils";
+import { formatDate } from "@domainstack/utils";
 
 interface PlanStatusCardProps {
   activeCount: number;
@@ -46,7 +46,7 @@ export function PlanStatusCard({
                   : "border-accent-blue/30 bg-accent-blue/10 text-accent-blue",
             )}
           >
-            {endsAt ? `Ends ${format(endsAt, "MMM d")}` : "Active"}
+            {endsAt ? `Ends ${formatDate(endsAt)}` : "Active"}
           </Badge>
         </div>
         <p className="text-[13px] text-muted-foreground">

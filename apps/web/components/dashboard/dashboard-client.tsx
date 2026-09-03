@@ -38,7 +38,7 @@ import {
   type SortOption,
   sortDomains,
 } from "@/lib/dashboard-utils";
-import { usePreferencesStore } from "@/lib/stores/preferences-store";
+import { useDashboardViewMode } from "@/lib/stores/preferences-store";
 import { useTRPC } from "@/lib/trpc/client";
 import { useSession } from "@domainstack/auth/client";
 import type { VerificationMethod } from "@domainstack/constants";
@@ -64,7 +64,7 @@ export function DashboardClient() {
       .withDefault("active")
       .withOptions({ shallow: true, clearOnDefault: true }),
   );
-  const viewMode = usePreferencesStore((s) => s.viewMode);
+  const viewMode = useDashboardViewMode();
 
   // Grid sort state with URL persistence
   const [sortParam, setSortParam] = useQueryState(

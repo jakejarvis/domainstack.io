@@ -157,3 +157,25 @@ export const usePreferencesHydrated = () =>
     () => preferencesStore.persist.hasHydrated(),
     () => false,
   );
+
+/**
+ * Read a persisted preference, falling back to `ssrValue` until localStorage
+ * rehydration finishes so the first client render matches SSR.
+ */
+function useHydratedPreference<T>(selector: (state: PreferencesStore) => T, ssrValue: T): T {
+  const value = usePreferencesStore(selector);
+  const hydrated = usePreferencesHydrated();
+  return hydrated ? value : ssrValue;
+}
+
+export function useDashboardViewMode(): DashboardViewModeOptions {
+  return useHydratedPreference((s) => s.viewMode, DEFAULT_PREFERENCES.viewMode);
+}
+
+export function useDashboardPageSize(): DashboardPageSizeOptions {
+  return useHydratedPreference((s) => s.pageSize, DEFAULT_PREFERENCES.pageSize);
+}
+
+export function useDashboardColumnVisibility(): Record<string, boolean> {
+  return useHydratedPreference((s) => s.columnVisibility, DEFAULT_PREFERENCES.columnVisibility);
+}

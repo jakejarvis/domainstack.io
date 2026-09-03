@@ -25,6 +25,7 @@ import {
   makeNotification,
   makeNotificationsInfiniteData,
 } from "@/components/notifications/test-fixtures";
+import { resetHydratedNow } from "@/hooks/use-hydrated-now";
 import { createTestQueryClient, render, screen, waitFor, within } from "@/mocks/react";
 import {
   listNotificationsQuery,
@@ -87,7 +88,9 @@ async function openInbox(user: ReturnType<typeof userEvent.setup>) {
 describe("NotificationsPopover", () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date("2026-08-24T12:00:00.000Z"));
+    const now = new Date("2026-08-24T12:00:00.000Z");
+    vi.setSystemTime(now);
+    resetHydratedNow(now);
     resetTrpcMocks();
     nav.push.mockClear();
   });

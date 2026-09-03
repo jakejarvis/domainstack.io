@@ -19,7 +19,7 @@ import { MobileFiltersCollapsible } from "@/components/dashboard/mobile-filters-
 import { ProviderLogo } from "@/components/icons/provider-logo";
 import { useDashboardFiltersContext } from "@/context/dashboard-context";
 import { HEALTH_OPTIONS } from "@/lib/constants/domain-filters";
-import { usePreferencesStore } from "@/lib/stores/preferences-store";
+import { useDashboardViewMode } from "@/lib/stores/preferences-store";
 import { Button } from "@domainstack/ui/button";
 
 export function DashboardFilters() {
@@ -44,7 +44,7 @@ export function DashboardFilters() {
     sortOption,
     setSortOption,
   } = useDashboardFiltersContext();
-  const viewMode = usePreferencesStore((s) => s.viewMode);
+  const viewMode = useDashboardViewMode();
   const shouldReduceMotion = useReducedMotion();
 
   // Flat map of all providers for chip rendering

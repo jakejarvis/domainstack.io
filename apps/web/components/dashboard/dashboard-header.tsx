@@ -5,14 +5,13 @@ import {
   IconRocket,
   IconTable,
 } from "@tabler/icons-react";
-import { format } from "date-fns";
 import Link from "next/link";
 
 import { CalendarFeedPopover } from "@/components/dashboard/calendar-feed-popover";
 import { QuotaBar } from "@/components/dashboard/quota-bar";
 import { useSubscription } from "@/hooks/use-subscription";
 import type { DashboardViewModeOptions } from "@/lib/dashboard-utils";
-import { usePreferencesStore } from "@/lib/stores/preferences-store";
+import { useDashboardViewMode, usePreferencesStore } from "@/lib/stores/preferences-store";
 import { Button, buttonVariants } from "@domainstack/ui/button";
 import {
   ResponsiveTooltip,
@@ -22,13 +21,14 @@ import {
 import { Separator } from "@domainstack/ui/separator";
 import { ToggleGroup, ToggleGroupItem } from "@domainstack/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
+import { formatDate } from "@domainstack/utils";
 
 type DashboardHeaderProps = {
   userName: string;
 };
 
 export function DashboardHeader({ userName }: DashboardHeaderProps) {
-  const viewMode = usePreferencesStore((s) => s.viewMode);
+  const viewMode = useDashboardViewMode();
   const setViewMode = usePreferencesStore((s) => s.setViewMode);
   const { subscription, handleCheckout } = useSubscription();
 
@@ -53,7 +53,7 @@ export function DashboardHeader({ userName }: DashboardHeaderProps) {
                 }
               />
               <ResponsiveTooltipContent>
-                Access until {format(subscription.endsAt, "MMM d, yyyy")}
+                Access until {formatDate(subscription.endsAt)}
               </ResponsiveTooltipContent>
             </ResponsiveTooltip>
           ) : (

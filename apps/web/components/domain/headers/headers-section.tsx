@@ -46,7 +46,7 @@ export function HeadersSection({ data }: { domain?: string; data?: HeadersRespon
       (a, b) =>
         Number(IMPORTANT_HEADERS.has(b.name?.toLowerCase() ?? "")) -
           Number(IMPORTANT_HEADERS.has(a.name?.toLowerCase() ?? "")) ||
-        (a.name?.toLowerCase() ?? "").localeCompare(b.name?.toLowerCase() ?? ""),
+        (a.name?.toLowerCase() ?? "").localeCompare(b.name?.toLowerCase() ?? "", "en"),
     );
   }, [data?.headers]);
 

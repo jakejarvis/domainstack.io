@@ -4,7 +4,7 @@ import * as m from "motion/react-m";
 import { useState } from "react";
 
 import { DashboardTableColumnMenu } from "@/components/dashboard/dashboard-table-column-menu";
-import { usePreferencesStore } from "@/lib/stores/preferences-store";
+import { useDashboardViewMode } from "@/lib/stores/preferences-store";
 import { Badge } from "@domainstack/ui/badge";
 import { Button } from "@domainstack/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@domainstack/ui/collapsible";
@@ -21,7 +21,7 @@ export function MobileFiltersCollapsible({
   activeFilterCount,
   children,
 }: MobileFiltersCollapsibleProps) {
-  const viewMode = usePreferencesStore((s) => s.viewMode);
+  const viewMode = useDashboardViewMode();
   const shouldReduceMotion = useReducedMotion();
   const [mobileOpen, setMobileOpen] = useState(false);
 

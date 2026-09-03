@@ -8,7 +8,6 @@ import {
   IconTrash,
 } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
 import Link from "next/link";
 
 import { DomainHealthBadge } from "@/components/dashboard/domain-health-badge";
@@ -35,7 +34,7 @@ import {
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
 import { cn } from "@domainstack/ui/utils";
-import { formatDateTimeUtc } from "@domainstack/utils";
+import { formatDate, formatDateTimeUtc } from "@domainstack/utils";
 
 /**
  * Header labels for every column that renders a plain text header. Shared with
@@ -282,11 +281,9 @@ export function createColumns(
             <ResponsiveTooltip>
               <ResponsiveTooltipTrigger
                 nativeButton={false}
-                render={<span>{format(date, "MMM d, yyyy")}</span>}
+                render={<span>{formatDate(date)}</span>}
               />
-              <ResponsiveTooltipContent>
-                {formatDateTimeUtc(date.toISOString())}
-              </ResponsiveTooltipContent>
+              <ResponsiveTooltipContent>{formatDateTimeUtc(date)}</ResponsiveTooltipContent>
             </ResponsiveTooltip>
           </div>
         );
@@ -401,11 +398,9 @@ export function createColumns(
             <ResponsiveTooltip>
               <ResponsiveTooltipTrigger
                 nativeButton={false}
-                render={<span>{format(date, "MMM d, yyyy")}</span>}
+                render={<span>{formatDate(date)}</span>}
               />
-              <ResponsiveTooltipContent>
-                {formatDateTimeUtc(date.toISOString())}
-              </ResponsiveTooltipContent>
+              <ResponsiveTooltipContent>{formatDateTimeUtc(date)}</ResponsiveTooltipContent>
             </ResponsiveTooltip>
           </div>
         );
@@ -427,11 +422,9 @@ export function createColumns(
             <ResponsiveTooltip>
               <ResponsiveTooltipTrigger
                 nativeButton={false}
-                render={<span>{format(date, "MMM d, yyyy")}</span>}
+                render={<span>{formatDate(date)}</span>}
               />
-              <ResponsiveTooltipContent>
-                {formatDateTimeUtc(date.toISOString())}
-              </ResponsiveTooltipContent>
+              <ResponsiveTooltipContent>{formatDateTimeUtc(date)}</ResponsiveTooltipContent>
             </ResponsiveTooltip>
           </div>
         );

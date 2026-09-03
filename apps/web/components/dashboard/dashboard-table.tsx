@@ -19,7 +19,7 @@ import {
   type DashboardTableFeatures,
 } from "@/lib/dashboard-table-features";
 import { DEFAULT_SORT, parseSortParam, serializeSortState } from "@/lib/dashboard-utils";
-import { usePreferencesStore } from "@/lib/stores/preferences-store";
+import { useDashboardColumnVisibility, usePreferencesStore } from "@/lib/stores/preferences-store";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
 import { cn } from "@domainstack/ui/utils";
@@ -58,7 +58,7 @@ export function DashboardTable({ domains }: DashboardTableProps) {
     [sorting, setSortParam, resetPage],
   );
 
-  const columnVisibility = usePreferencesStore((s) => s.columnVisibility);
+  const columnVisibility = useDashboardColumnVisibility();
   const setColumnVisibility = usePreferencesStore((s) => s.setColumnVisibility);
 
   const withUnverifiedLast = useMemo(

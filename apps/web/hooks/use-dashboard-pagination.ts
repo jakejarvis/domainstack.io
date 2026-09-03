@@ -2,7 +2,7 @@ import { parseAsInteger, useQueryState } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { type DashboardPageSizeOptions, isPagePastEnd } from "@/lib/dashboard-utils";
-import { usePreferencesStore } from "@/lib/stores/preferences-store";
+import { useDashboardPageSize, usePreferencesStore } from "@/lib/stores/preferences-store";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -47,7 +47,7 @@ export function useDashboardPagination(): UseDashboardPaginationReturn {
   );
 
   // Page size from localStorage preferences
-  const pageSize = usePreferencesStore((s) => s.pageSize);
+  const pageSize = useDashboardPageSize();
   const setPageSizePreference = usePreferencesStore((s) => s.setPageSize);
 
   // Convert to 0-based index for TanStack Table

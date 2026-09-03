@@ -1,9 +1,10 @@
 import { IconArchive, IconCircleArrowUp, IconRefresh, IconTrash } from "@tabler/icons-react";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceStrict } from "date-fns";
 
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
 import { Favicon } from "@/components/icons/favicon";
 import { useDashboardActions } from "@/context/dashboard-context";
+import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { useSubscription } from "@/hooks/use-subscription";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
@@ -65,13 +66,7 @@ export function ArchivedDomainsList({ domains }: ArchivedDomainsListProps) {
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-medium">{domain.domainName}</div>
                   <div className="text-sm text-muted-foreground">
-                    Archived{" "}
-                    {domain.archivedAt
-                      ? formatDistanceToNow(new Date(domain.archivedAt), {
-                          addSuffix: true,
-                          includeSeconds: false,
-                        })
-                      : "recently"}
+                    Archived <ArchivedRelativeTime archivedAt={domain.archivedAt} />
                   </div>
                 </div>
               </div>
@@ -114,5 +109,21 @@ export function ArchivedDomainsList({ domains }: ArchivedDomainsListProps) {
         ))}
       </div>
     </div>
+  );
+}
+
+function ArchivedRelativeTime({ archivedAt }: { archivedAt: Date | string | null | undefined }) {
+  const now = useHydratedNow();
+
+  if (!archivedAt || !now) {
+    return <span>recently</span>;
+  }
+
+  return (
+    <span>
+      {formatDistanceStrict(new Date(archivedAt), now, {
+        addSuffix: true,
+      })}
+    </span>
   );
 }

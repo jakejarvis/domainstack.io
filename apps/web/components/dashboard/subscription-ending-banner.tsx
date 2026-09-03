@@ -1,10 +1,11 @@
 import { IconCalendarDot } from "@tabler/icons-react";
-import { differenceInDays, format, formatDistanceToNow } from "date-fns";
+import { differenceInDays, formatDistanceStrict } from "date-fns";
 
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { useSubscription } from "@/hooks/use-subscription";
 import { PLAN_QUOTAS } from "@domainstack/constants";
+import { formatDate } from "@domainstack/utils";
 
 export function SubscriptionEndingBanner() {
   const { handleCheckout, isCheckoutLoading, handleCustomerPortal, isCustomerPortalLoading } =
@@ -25,8 +26,8 @@ export function SubscriptionEndingBanner() {
   if (isExpired) return null;
 
   const daysRemaining = differenceInDays(subscription.endsAt, now);
-  const formattedDate = format(subscription.endsAt, "MMMM d, yyyy");
-  const relativeTime = formatDistanceToNow(subscription.endsAt, {
+  const formattedDate = formatDate(subscription.endsAt);
+  const relativeTime = formatDistanceStrict(subscription.endsAt, now, {
     addSuffix: true,
   });
 

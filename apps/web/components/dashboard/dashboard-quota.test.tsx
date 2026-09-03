@@ -186,7 +186,7 @@ describe("dashboard quota and banners", () => {
       render(<SubscriptionEndingBanner />);
 
       expect(screen.getByText("Your Pro subscription is ending")).toBeInTheDocument();
-      expect(screen.getByText("September 2, 2026")).toBeInTheDocument();
+      expect(screen.getByText("Sep 2, 2026")).toBeInTheDocument();
       expect(
         screen.getByText(new RegExp(`free quota of ${PLAN_QUOTAS.free} domains`)),
       ).toBeInTheDocument();

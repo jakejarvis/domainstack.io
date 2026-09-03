@@ -8,7 +8,7 @@ import { DashboardGrid } from "@/components/dashboard/dashboard-grid";
 import { DashboardTable } from "@/components/dashboard/dashboard-table";
 import { useDashboardFiltersContext } from "@/context/dashboard-context";
 import { useIsClient } from "@/hooks/use-is-client";
-import { usePreferencesStore } from "@/lib/stores/preferences-store";
+import { useDashboardViewMode } from "@/lib/stores/preferences-store";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Button, buttonVariants } from "@domainstack/ui/button";
 import {
@@ -27,7 +27,7 @@ type DashboardContentProps = {
 
 export function DashboardContent({ domains, totalDomains }: DashboardContentProps) {
   const { hasActiveFilters, clearFilters } = useDashboardFiltersContext();
-  const viewMode = usePreferencesStore((s) => s.viewMode);
+  const viewMode = useDashboardViewMode();
   // Avoid animating the initial view swap during hydration when localStorage preferences reconcile.
   const hasHydrated = useIsClient();
   const shouldReduceMotion = useReducedMotion();

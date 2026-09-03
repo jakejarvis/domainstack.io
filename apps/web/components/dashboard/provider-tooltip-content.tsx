@@ -1,11 +1,11 @@
 import { IconLock, IconLockOpen, IconRosetteDiscountCheck, IconSpy } from "@tabler/icons-react";
-import { format } from "date-fns";
 
 import { formatRegistrant } from "@/components/domain/registration/registration-section";
 import { ProviderLogo } from "@/components/icons/provider-logo";
 import type { ProviderCategory } from "@domainstack/constants";
 import type { DnsRecord, RegistrationContact } from "@domainstack/types";
 import { Spinner } from "@domainstack/ui/spinner";
+import { formatDate } from "@domainstack/utils";
 
 type ProviderTooltipContentProps = {
   providerId?: string | null;
@@ -178,7 +178,7 @@ export function ProviderTooltipContent({
       ) : providerType === "ca" ? (
         // Certificate expiry for CA providers
         hasCertificateExpiry ? (
-          <div className="text-xs">Expires on {format(certificateExpiryDate, "MMM d, yyyy")}</div>
+          <div className="text-xs">Expires on {formatDate(certificateExpiryDate)}</div>
         ) : (
           <div className="text-xs text-muted/80">No certificate data available</div>
         )

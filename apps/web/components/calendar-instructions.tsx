@@ -8,10 +8,11 @@ import {
   IconRefresh,
   IconShieldLock,
 } from "@tabler/icons-react";
-import { formatDistanceToNowStrict } from "date-fns";
+import { formatDistanceStrict } from "date-fns";
 import { useCallback, useState } from "react";
 
 import { useCalendarFeed } from "@/hooks/use-calendar-feed";
+import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -77,6 +78,7 @@ export function CalendarInstructionsSkeleton({ className }: { className?: string
 export function CalendarInstructions({ className }: { className?: string }) {
   const [showRotateDialog, setShowRotateDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const now = useHydratedNow();
 
   const { feed, isPending, enable, rotate, deleteFeed } = useCalendarFeed();
 
@@ -146,9 +148,11 @@ export function CalendarInstructions({ className }: { className?: string }) {
               {feed.lastAccessedAt ? (
                 <span>
                   Last accessed{" "}
-                  {formatDistanceToNowStrict(new Date(feed.lastAccessedAt), {
-                    addSuffix: true,
-                  })}
+                  {now
+                    ? formatDistanceStrict(new Date(feed.lastAccessedAt), now, {
+                        addSuffix: true,
+                      })
+                    : "…"}
                 </span>
               ) : (
                 <span>Not accessed yet.</span>

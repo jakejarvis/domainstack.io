@@ -1,7 +1,7 @@
 import { IconEye, IconTableOptions } from "@tabler/icons-react";
 
 import { HIDEABLE_COLUMNS } from "@/components/dashboard/dashboard-table-columns";
-import { usePreferencesStore } from "@/lib/stores/preferences-store";
+import { useDashboardColumnVisibility, usePreferencesStore } from "@/lib/stores/preferences-store";
 import { Button } from "@domainstack/ui/button";
 import {
   DropdownMenu,
@@ -17,7 +17,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip
 export function DashboardTableColumnMenu() {
   // Visibility is controlled by the preferences store, so this menu writes
   // there rather than calling `column.toggleVisibility()` on a table instance.
-  const columnVisibility = usePreferencesStore((s) => s.columnVisibility);
+  const columnVisibility = useDashboardColumnVisibility();
   const setColumnVisibility = usePreferencesStore((s) => s.setColumnVisibility);
 
   const isColumnVisible = (columnId: string) => columnVisibility[columnId] !== false;

@@ -5,7 +5,7 @@ import {
   IconQuestionMark,
   type TablerIcon,
 } from "@tabler/icons-react";
-import { differenceInDays, formatDistanceToNowStrict } from "date-fns";
+import { differenceInDays, formatDistanceStrict } from "date-fns";
 import { useMemo } from "react";
 
 import { BadgeWithTooltip } from "@/components/dashboard/badge-with-tooltip";
@@ -31,7 +31,7 @@ export function DomainHealthBadge({ expirationDate, verified, className }: Domai
   const tooltipText = useMemo(() => {
     if (!expirationDate || !now) return null;
     const isExpired = expirationDate <= now;
-    const relativeTime = formatDistanceToNowStrict(expirationDate, {
+    const relativeTime = formatDistanceStrict(expirationDate, now, {
       addSuffix: true,
     });
     return `${isExpired ? "Expired" : "Expires"} ${relativeTime}`;
