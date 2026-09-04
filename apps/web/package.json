@@ -74,7 +74,7 @@
     "ts-ics": "^2.4.6",
     "use-stick-to-bottom": "^1.1.6",
     "web-haptics": "^0.0.6",
-    "workflow": "5.0.0-beta.46",
+    "workflow": "5.0.0-beta.47",
     "ws": "^8.21.3",
     "zod": "catalog:",
     "zustand": "^5.0.15"
