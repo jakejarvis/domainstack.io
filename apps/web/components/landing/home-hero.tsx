@@ -103,10 +103,12 @@ export function HomeHero({ className }: { className?: string }) {
           <span className="invisible select-none">{ROTATING_WORDS[index]}</span>
         </span>
       </span>
-      {/* mirrors the pill's padding at the h1's font sizing so each word's target width is exact */}
+      {/* mirrors the pill's padding at the h1's font sizing so each word's target width is exact.
+          h-0 overflow-hidden keeps the stacked mirrors from expanding page scroll —
+          visibility:hidden still contributes to an ancestor's scrollable overflow */}
       <span
         ref={measureRef}
-        className="pointer-events-none invisible absolute top-0 left-0 flex flex-col items-start"
+        className="pointer-events-none invisible absolute top-0 left-0 flex h-0 flex-col items-start overflow-hidden"
         aria-hidden
       >
         {ROTATING_WORDS.map((word) => (
