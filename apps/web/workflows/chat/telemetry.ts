@@ -262,13 +262,16 @@ export async function captureChatTelemetry(payload: ChatTelemetryPayload): Promi
 
     try {
       const distinctId = payload.userId ?? "anonymous";
-      for (const event of buildAiObservabilityEvents(payload, generations)) {
-        await posthog.captureImmediate({
-          event: event.event,
-          distinctId,
-          properties: event.properties,
-        });
-      }
+      const events = buildAiObservabilityEvents(payload, generations);
+      await Promise.all(
+        events.map((event) =>
+          posthog.captureImmediate({
+            event: event.event,
+            distinctId,
+            properties: event.properties,
+          }),
+        ),
+      );
       await posthog.flush();
     } finally {
       await posthog.shutdown();
