@@ -199,6 +199,26 @@ describe("RobotsSummary", () => {
       expect(screen.getByRole("link", { name: /robots\.txt/i })).toBeInTheDocument();
     });
 
+    it("lists All bots first when grouped with other user agents", () => {
+      const robots: SeoResponse["robots"] = {
+        fetched: true,
+        groups: [
+          {
+            userAgents: ["AI2Bot", "GPTBot", "*"],
+            rules: [{ type: "disallow", value: "/admin" }],
+          },
+        ],
+        sitemaps: [],
+      };
+      render(<RobotsSummary domain="test.invalid" robots={robots} />);
+
+      const allBots = screen.getByText("All bots");
+      const firstNamed = screen.getByText("AI2Bot");
+      expect(allBots.compareDocumentPosition(firstNamed) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      );
+    });
+
     it("renders allow and disallow filter buttons", () => {
       const robots: SeoResponse["robots"] = {
         fetched: true,

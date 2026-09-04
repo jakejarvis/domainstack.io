@@ -303,6 +303,11 @@ export function RobotsSummary({
   );
 }
 
+function displayUserAgents(agents: string[]): string[] {
+  if (!agents.includes("*")) return agents;
+  return ["*", ...agents.filter((ua) => ua !== "*")];
+}
+
 function RobotsGroupHeader({
   userAgents,
   allowN,
@@ -316,14 +321,16 @@ function RobotsGroupHeader({
   showAllow?: boolean;
   showDisallow?: boolean;
 }) {
+  const agents = displayUserAgents(userAgents);
+
   return (
-    <div className="flex w-full items-center justify-between">
-      <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex w-full items-start justify-between gap-3">
+      <div className="flex min-w-0 flex-wrap items-center gap-1.5">
         <IconChevronRight
           className="size-3 text-muted-foreground transition-transform group-data-[panel-open]/accordion:rotate-90 motion-reduce:transition-none"
           aria-hidden
         />
-        {userAgents.map((ua) => (
+        {agents.map((ua) => (
           <span
             key={ua}
             className={cn(
@@ -342,7 +349,7 @@ function RobotsGroupHeader({
           </span>
         ))}
       </div>
-      <div className="shrink-0 text-xs text-muted-foreground">
+      <div className="shrink-0 pt-1 text-xs leading-none whitespace-nowrap text-muted-foreground">
         {showAllow ? `${allowN} allow` : null}
         {showAllow && showDisallow ? " · " : null}
         {showDisallow ? `${disallowN} disallow` : null}
@@ -399,7 +406,7 @@ function GroupsAccordion({
             }}
           >
             <AccordionItem value={`g-${idx}`}>
-              <AccordionTrigger className="group/accordion px-2 py-2 hover:bg-accent/35 hover:no-underline data-[panel-open]:pr-2 [&>svg]:hidden">
+              <AccordionTrigger className="group/accordion items-start px-2 py-2 hover:bg-accent/35 hover:no-underline data-[panel-open]:pr-2 [&>svg]:hidden">
                 <RobotsGroupHeader
                   userAgents={g.userAgents}
                   allowN={allowN}

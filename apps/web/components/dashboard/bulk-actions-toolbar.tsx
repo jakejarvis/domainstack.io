@@ -11,7 +11,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@domainstack/ui/dropdown-menu";
-import { Field, FieldLabel } from "@domainstack/ui/field";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
@@ -19,6 +18,9 @@ import {
 } from "@domainstack/ui/responsive-tooltip";
 import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
+
+/** Outline controls inherit the toolbar surface instead of painting their own fill. */
+const toolbarOutlineClassName = "bg-transparent shadow-none dark:bg-transparent";
 
 type BulkActionsToolbarProps = {
   /** Total number of domains (for "Select all X" tooltip) */
@@ -60,7 +62,7 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
   return (
     <div
       className={cn(
-        "fixed inset-x-0 z-50 mx-auto flex w-max max-w-[calc(100%-2rem)] animate-in items-center gap-3 rounded-lg border border-black/15 bg-background/60 px-2.5 py-1.5 shadow-lg shadow-black/10 backdrop-blur-xl duration-200 fade-in-0 slide-in-from-bottom-4 motion-reduce:animate-none dark:border-white/15",
+        "fixed inset-x-0 z-50 mx-auto flex w-max max-w-[calc(100%-2rem)] animate-in items-center gap-3 rounded-lg border border-black/15 bg-popover px-2.5 py-1.5 shadow-lg shadow-black/20 duration-200 fade-in-0 slide-in-from-bottom-4 motion-reduce:animate-none dark:border-white/15",
         "bottom-[max(1rem,env(safe-area-inset-bottom))]",
         className,
       )}
@@ -68,30 +70,29 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
       aria-label="Bulk actions"
     >
       {/* Left: Select all checkbox + count */}
-      <Field orientation="horizontal" className="w-auto min-w-0 gap-0">
-        <ResponsiveTooltip>
-          <ResponsiveTooltipTrigger
-            nativeButton={false}
-            render={
-              <FieldLabel className="extend-touch-target flex min-h-8 min-w-0 cursor-pointer items-center gap-2 select-none">
-                <Checkbox
-                  checked={isAllSelected}
-                  indeterminate={isPartiallySelected}
-                  onCheckedChange={toggleAll}
-                  disabled={isLoading}
-                  aria-label={isAllSelected ? "Deselect all" : `Select all ${totalCount} domains`}
-                />
-                <span className="truncate text-[13px] font-medium tabular-nums" aria-live="polite">
-                  {selectedCount} selected
-                </span>
-              </FieldLabel>
-            }
-          />
-          <ResponsiveTooltipContent>
-            {isAllSelected ? "Deselect all" : `Select all ${totalCount} domains`}
-          </ResponsiveTooltipContent>
-        </ResponsiveTooltip>
-      </Field>
+      <ResponsiveTooltip>
+        <ResponsiveTooltipTrigger
+          nativeButton={false}
+          render={
+            <label className="extend-touch-target flex min-h-8 min-w-0 cursor-pointer items-center gap-2 select-none">
+              <Checkbox
+                checked={isAllSelected}
+                indeterminate={isPartiallySelected}
+                onCheckedChange={toggleAll}
+                disabled={isLoading}
+                className="bg-transparent dark:bg-transparent"
+                aria-label={isAllSelected ? "Deselect all" : `Select all ${totalCount} domains`}
+              />
+              <span className="truncate text-[13px] font-medium tabular-nums" aria-live="polite">
+                {selectedCount} selected
+              </span>
+            </label>
+          }
+        />
+        <ResponsiveTooltipContent>
+          {isAllSelected ? "Deselect all" : `Select all ${totalCount} domains`}
+        </ResponsiveTooltipContent>
+      </ResponsiveTooltip>
 
       {/* Right: Actions */}
       <div className="flex shrink-0 items-center gap-1">
@@ -99,7 +100,11 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
-                <Button variant="outline" size="sm" className="extend-touch-target text-[13px]">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn("extend-touch-target text-[13px]", toolbarOutlineClassName)}
+                >
                   {isLoading ? <Spinner /> : null}
                   Actions…
                 </Button>
@@ -137,7 +142,7 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
               size="sm"
               onClick={() => handleBulkMute(true)}
               disabled={isLoading}
-              className="text-[13px]"
+              className={cn("text-[13px]", toolbarOutlineClassName)}
             >
               {isBulkMuting ? <Spinner /> : <IconBellOff aria-hidden />}
               Mute
@@ -147,7 +152,7 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
               size="sm"
               onClick={() => handleBulkMute(false)}
               disabled={isLoading}
-              className="text-[13px]"
+              className={cn("text-[13px]", toolbarOutlineClassName)}
             >
               {isBulkMuting ? <Spinner /> : <IconBell aria-hidden />}
               Unmute
@@ -159,7 +164,7 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
               size="sm"
               onClick={handleBulkArchive}
               disabled={isLoading}
-              className="text-[13px]"
+              className={cn("text-[13px]", toolbarOutlineClassName)}
             >
               {isBulkArchiving ? <Spinner /> : <IconArchive aria-hidden />}
               Archive
