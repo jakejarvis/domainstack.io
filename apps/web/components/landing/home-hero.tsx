@@ -42,14 +42,26 @@ export function HomeHero({ className }: { className?: string }) {
   useLayoutEffect(() => {
     if (!measureRef.current) return;
     const mirrors = Array.from(measureRef.current.children);
+    let raf = 0;
     const measure = () => {
-      // subpixel widths, otherwise integer rounding jitters the transition by a pixel
-      setWidths(mirrors.map((mirror) => mirror.getBoundingClientRect().width));
+      const next = mirrors.map((mirror) => mirror.getBoundingClientRect().width);
+      setWidths((prev) => {
+        if (prev && prev.length === next.length && prev.every((width, i) => width === next[i])) {
+          return prev;
+        }
+        return next;
+      });
     };
     measure();
-    const ro = new ResizeObserver(measure);
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(measure);
+    });
     for (const mirror of mirrors) ro.observe(mirror);
-    return () => ro.disconnect();
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
   }, []);
 
   return (

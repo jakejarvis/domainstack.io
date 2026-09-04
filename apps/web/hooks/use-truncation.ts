@@ -16,20 +16,25 @@ export function useTruncation() {
     const element = valueRef.current;
     if (!element) return;
 
-    // Initial check after layout
-    const raf = requestAnimationFrame(recalcTruncation);
+    // Defer measurement to the next frame so ResizeObserver callbacks do not
+    // mutate layout in the same delivery loop (Firefox reports that as an error).
+    let raf = 0;
+    const scheduleRecalc = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(recalcTruncation);
+    };
 
-    // Observe size changes
+    scheduleRecalc();
+
     let resizeObserver: ResizeObserver | null = null;
     if (typeof ResizeObserver !== "undefined") {
-      resizeObserver = new ResizeObserver(() => recalcTruncation());
+      resizeObserver = new ResizeObserver(scheduleRecalc);
       resizeObserver.observe(element);
     }
 
-    // Observe text/content changes
     let mutationObserver: MutationObserver | null = null;
     if (typeof MutationObserver !== "undefined") {
-      mutationObserver = new MutationObserver(() => recalcTruncation());
+      mutationObserver = new MutationObserver(scheduleRecalc);
       mutationObserver.observe(element, {
         subtree: true,
         characterData: true,
@@ -37,12 +42,11 @@ export function useTruncation() {
       });
     }
 
-    // Also listen for window resizes
-    window.addEventListener("resize", recalcTruncation);
+    window.addEventListener("resize", scheduleRecalc);
 
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener("resize", recalcTruncation);
+      window.removeEventListener("resize", scheduleRecalc);
       if (resizeObserver) resizeObserver.disconnect();
       if (mutationObserver) mutationObserver.disconnect();
     };
