@@ -1,6 +1,5 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -11,17 +10,9 @@ import {
   type DashboardPageSizeOptions,
   type DashboardViewModeOptions,
 } from "@/lib/dashboard-utils";
+import { usePersistHydration } from "@/lib/stores/persist-hydration";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-/**
- * AI mode preference for chat.
- * - cloud: Always use server-side AI (Gemini 2.5 Flash)
- * - local: Use browser-based AI (Gemini Nano/Phi Mini) when available
- * - auto: Prefer local AI when available, fall back to cloud
- */
+/** cloud = Vercel AI Gateway; local = browser model; auto = local with cloud fallback. */
 export type AiModePreference = "cloud" | "local" | "auto";
 
 const AI_MODE_OPTIONS = ["cloud", "local", "auto"] as const;
@@ -54,10 +45,6 @@ interface PreferencesActions {
 
 type PreferencesStore = PreferencesState & PreferencesActions;
 
-// ---------------------------------------------------------------------------
-// Defaults & validation
-// ---------------------------------------------------------------------------
-
 const DEFAULT_PREFERENCES: PreferencesState = {
   viewMode: DASHBOARD_PREFERENCES_DEFAULT.viewMode,
   pageSize: DASHBOARD_PREFERENCES_DEFAULT.pageSize,
@@ -75,19 +62,17 @@ function validateOption<T>(value: T | undefined, validOptions: readonly T[], def
   return defaultValue;
 }
 
-// ---------------------------------------------------------------------------
-// Store
-// ---------------------------------------------------------------------------
+function parseColumnVisibility(value: unknown): Record<string, boolean> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return { ...DEFAULT_PREFERENCES.columnVisibility };
+  }
+  const entries = Object.entries(value).filter(([, flag]) => typeof flag === "boolean");
+  return {
+    ...DEFAULT_PREFERENCES.columnVisibility,
+    ...Object.fromEntries(entries),
+  };
+}
 
-/**
- * Unified store for preferences local to the current browser, not the account.
- *
- * Usage:
- * ```tsx
- * const viewMode = usePreferencesStore((s) => s.viewMode);
- * const setViewMode = usePreferencesStore((s) => s.setViewMode);
- * ```
- */
 const preferencesStore = create<PreferencesStore>()(
   persist(
     (set, get) => ({
@@ -132,7 +117,7 @@ const preferencesStore = create<PreferencesStore>()(
             DASHBOARD_PAGE_SIZE_OPTIONS,
             DEFAULT_PREFERENCES.pageSize,
           ),
-          columnVisibility: persisted?.columnVisibility ?? DEFAULT_PREFERENCES.columnVisibility,
+          columnVisibility: parseColumnVisibility(persisted?.columnVisibility),
           showToolCalls: persisted?.showToolCalls ?? DEFAULT_PREFERENCES.showToolCalls,
           showReasoning: persisted?.showReasoning ?? DEFAULT_PREFERENCES.showReasoning,
           hideAiFeatures: persisted?.hideAiFeatures ?? DEFAULT_PREFERENCES.hideAiFeatures,
@@ -145,23 +130,8 @@ const preferencesStore = create<PreferencesStore>()(
 
 export const usePreferencesStore = preferencesStore;
 
-/**
- * Returns true once the preferences store has hydrated from localStorage.
- * Use this to prevent hydration mismatches when rendering based on persisted state.
- *
- * @see https://zustand.docs.pmnd.rs/integrations/persisting-store-data#how-can-i-check-if-my-store-has-been-hydrated
- */
-export const usePreferencesHydrated = () =>
-  useSyncExternalStore(
-    (onStoreChange) => preferencesStore.persist.onFinishHydration(onStoreChange),
-    () => preferencesStore.persist.hasHydrated(),
-    () => false,
-  );
+export const usePreferencesHydrated = () => usePersistHydration(preferencesStore);
 
-/**
- * Read a persisted preference, falling back to `ssrValue` until localStorage
- * rehydration finishes so the first client render matches SSR.
- */
 function useHydratedPreference<T>(selector: (state: PreferencesStore) => T, ssrValue: T): T {
   const value = usePreferencesStore(selector);
   const hydrated = usePreferencesHydrated();

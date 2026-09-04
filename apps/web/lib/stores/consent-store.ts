@@ -1,10 +1,9 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-import { useIsClient } from "@/hooks/use-is-client";
+import { usePersistHydration } from "@/lib/stores/persist-hydration";
 
 const CONSENT_KEY = "cookie-consent";
 const CONSENT_STATUSES = ["pending", "accepted", "declined"] as const;
@@ -30,10 +29,7 @@ function isConsentStatus(value: unknown): value is ConsentStatus {
 /** True when the last localStorage read/write succeeded. */
 let storagePersistent = false;
 
-/**
- * Reads the current `cookie-consent` key and lifts the raw
- * `use-local-storage-state` string (`"accepted"`) into Zustand persist shape.
- */
+/** Lifts a legacy raw `"accepted"` / `"declined"` string into persist shape. */
 const consentLocalStorage = {
   getItem: (name: string): string | null => {
     try {
@@ -100,23 +96,12 @@ const consentStore = create<ConsentStore>()(
 
 export const useConsentStore = consentStore;
 
-const subscribeConsentHydration = consentStore.persist.onFinishHydration;
-const getConsentHydrationSnapshot = () => consentStore.persist.hasHydrated();
-const getConsentHydrationServerSnapshot = () => false;
-
-export const useConsentHydrated = () =>
-  useSyncExternalStore(
-    subscribeConsentHydration,
-    getConsentHydrationSnapshot,
-    getConsentHydrationServerSnapshot,
-  );
-
-/**
- * True after the first client paint, persist rehydration, and a successful
- * localStorage access. Mirrors `isPersistent` from `use-local-storage-state`.
- */
-export function useConsentPersistent(): boolean {
-  const isClient = useIsClient();
-  const hydrated = useConsentHydrated();
-  return isClient && hydrated && storagePersistent;
+export function useConsent() {
+  const consent = useConsentStore((s) => s.consent);
+  const setConsent = useConsentStore((s) => s.setConsent);
+  return {
+    consent,
+    setConsent,
+    persistent: usePersistHydration(consentStore) && storagePersistent,
+  };
 }

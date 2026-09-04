@@ -5,22 +5,21 @@ import { AnimatePresence, useReducedMotion } from "motion/react";
 import * as m from "motion/react-m";
 import Link from "next/link";
 
-import { useAnnouncementDismissed, useUiStore } from "@/lib/stores/ui-store";
+import { useAnnouncement } from "@/lib/stores/ui-store";
 
 export function AnnouncementPill() {
   const shouldReduceMotion = useReducedMotion();
-  const dismissed = useAnnouncementDismissed();
-  const dismissAnnouncement = useUiStore((s) => s.dismissAnnouncement);
+  const { visible, dismiss } = useAnnouncement();
 
   const handleDismiss = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    dismissAnnouncement();
+    dismiss();
   };
 
   return (
     <AnimatePresence>
-      {!dismissed && (
+      {visible && (
         <m.div
           initial={{
             opacity: 0,

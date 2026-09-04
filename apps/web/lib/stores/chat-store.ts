@@ -1,17 +1,15 @@
 "use client";
 
 import type { UIMessage } from "ai";
-import { useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { usePersistHydration } from "@/lib/stores/persist-hydration";
 import { MAX_CONVERSATION_MESSAGES } from "@domainstack/constants";
 
 interface ChatState {
-  /** Live workflow run ID; persisted so a reload can resume an in-flight stream. */
   runId: string | null;
   messages: UIMessage[];
-  /** Groups turns of one conversation for AI observability; reset on clearSession. */
   sessionId: string | null;
 }
 
@@ -19,15 +17,30 @@ interface ChatActions {
   setRunId: (id: string | null) => void;
   setMessages: (messages: UIMessage[]) => void;
   clearSession: () => void;
-  /** Returns the current session ID, minting one on first use. */
   ensureSessionId: () => string;
 }
 
 type ChatStore = ChatState & ChatActions;
 
-/**
- * Chat store for session persistence (messages and in-flight stream resume).
- */
+function isPersistedMessage(value: unknown): value is UIMessage {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const message = value as Record<string, unknown>;
+  return (
+    typeof message.id === "string" &&
+    (message.role === "user" || message.role === "assistant") &&
+    Array.isArray(message.parts)
+  );
+}
+
+function parseMessages(value: unknown): UIMessage[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter(isPersistedMessage).slice(-MAX_CONVERSATION_MESSAGES);
+}
+
 const chatStore = create<ChatStore>()(
   persist(
     (set, get) => ({
@@ -58,8 +71,20 @@ const chatStore = create<ChatStore>()(
         const state = persisted as Partial<ChatState>;
         return {
           runId: null,
-          messages: state.messages ?? [],
-          sessionId: state.sessionId ?? null,
+          messages: parseMessages(state.messages),
+          sessionId: typeof state.sessionId === "string" ? state.sessionId : null,
+        };
+      },
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as Partial<ChatState> | null;
+        return {
+          ...currentState,
+          runId: typeof persisted?.runId === "string" ? persisted.runId : currentState.runId,
+          messages: Array.isArray(persisted?.messages)
+            ? parseMessages(persisted.messages)
+            : currentState.messages,
+          sessionId:
+            typeof persisted?.sessionId === "string" ? persisted.sessionId : currentState.sessionId,
         };
       },
     },
@@ -68,16 +93,4 @@ const chatStore = create<ChatStore>()(
 
 export const useChatStore = chatStore;
 
-const subscribeChatHydration = chatStore.persist.onFinishHydration;
-const getChatHydrationSnapshot = () => chatStore.persist.hasHydrated();
-const getChatHydrationServerSnapshot = () => false;
-
-/**
- * Returns true once the chat store has hydrated from localStorage.
- */
-export const useChatHydrated = () =>
-  useSyncExternalStore(
-    subscribeChatHydration,
-    getChatHydrationSnapshot,
-    getChatHydrationServerSnapshot,
-  );
+export const useChatHydrated = () => usePersistHydration(chatStore);

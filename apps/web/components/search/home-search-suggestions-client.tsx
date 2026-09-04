@@ -6,10 +6,9 @@ import Link from "next/link";
 import { useCallback, useMemo, useRef } from "react";
 
 import { Favicon } from "@/components/icons/favicon";
-import { useIsClient } from "@/hooks/use-is-client";
 import { useAnalytics } from "@/lib/analytics/client";
 import { pendingDomainAtom } from "@/lib/atoms/search-atoms";
-import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
+import { useSearchHistory } from "@/lib/stores/search-history-store";
 import { MAX_HISTORY_ITEMS } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
@@ -32,11 +31,7 @@ export function HomeSearchSuggestionsClient({
   const setPendingDomain = useSetAtom(pendingDomainAtom);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Wait until after hydration so persisted search history does not mismatch SSR.
-  const isHistoryLoaded = useIsClient();
-
-  const history = useSearchHistoryStore((s) => s.history);
-  const clearHistory = useSearchHistoryStore((s) => s.clearHistory);
+  const { history, clearHistory, hydrated } = useSearchHistory();
 
   const displayedSuggestions = useMemo(() => {
     const historySet = new Set(history);
@@ -72,14 +67,14 @@ export function HomeSearchSuggestionsClient({
   return (
     <ScrollArea className={cn("w-full", className)} scrollRef={scrollContainerRef} hideScrollbar>
       <div className="flex gap-2 p-0.5">
-        {(isHistoryLoaded ? displayedSuggestions : defaultSuggestions).map((domain) => (
+        {displayedSuggestions.map((domain) => (
           <Button
             key={domain}
             variant="secondary"
             size="sm"
             className={cn(
               "shrink-0 gap-2 border-none bg-muted/40 px-2.5 leading-none ring-1 ring-ring/20 hover:bg-muted/60",
-              isHistoryLoaded ? "visible" : "invisible",
+              hydrated ? "visible" : "invisible",
             )}
             onClick={(e) => {
               e.preventDefault();
@@ -94,7 +89,7 @@ export function HomeSearchSuggestionsClient({
             }
           />
         ))}
-        {isHistoryLoaded && history.length > 0 ? (
+        {history.length > 0 ? (
           <Tooltip>
             <TooltipTrigger
               render={

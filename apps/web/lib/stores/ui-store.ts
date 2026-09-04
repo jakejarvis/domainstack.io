@@ -1,10 +1,9 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import { useIsClient } from "@/hooks/use-is-client";
+import { usePersistHydration } from "@/lib/stores/persist-hydration";
 
 interface UiState {
   announcementDismissed: boolean;
@@ -32,20 +31,12 @@ const uiStore = create<UiStore>()(
 
 export const useUiStore = uiStore;
 
-const subscribeUiHydration = uiStore.persist.onFinishHydration;
-const getUiHydrationSnapshot = () => uiStore.persist.hasHydrated();
-const getUiHydrationServerSnapshot = () => false;
-
-export const useUiHydrated = () =>
-  useSyncExternalStore(subscribeUiHydration, getUiHydrationSnapshot, getUiHydrationServerSnapshot);
-
-/**
- * Dismissed only after hydration so SSR and the first client paint match
- * (pill visible). Previously dismissed users hide it on the next frame.
- */
-export function useAnnouncementDismissed(): boolean {
+/** Hidden until persist hydrates so dismissed users never see a flash. */
+export function useAnnouncement() {
   const dismissed = useUiStore((s) => s.announcementDismissed);
-  const hydrated = useUiHydrated();
-  const isClient = useIsClient();
-  return isClient && hydrated && dismissed;
+  const dismiss = useUiStore((s) => s.dismissAnnouncement);
+  return {
+    visible: usePersistHydration(uiStore) && !dismissed,
+    dismiss,
+  };
 }

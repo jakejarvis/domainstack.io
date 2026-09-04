@@ -4,11 +4,7 @@ import Link from "next/link";
 import posthogClient from "posthog-js";
 import { useEffect, useState } from "react";
 
-import {
-  type ConsentStatus,
-  useConsentPersistent,
-  useConsentStore,
-} from "@/lib/stores/consent-store";
+import { type ConsentStatus, useConsent } from "@/lib/stores/consent-store";
 import { Button } from "@domainstack/ui/button";
 
 /**
@@ -19,9 +15,7 @@ import { Button } from "@domainstack/ui/button";
  * - Syncs with PostHog opt-in/opt-out
  */
 export function CookiePrompt({ consentRequired }: { consentRequired: boolean }) {
-  const consent = useConsentStore((s) => s.consent);
-  const setConsent = useConsentStore((s) => s.setConsent);
-  const isPersistent = useConsentPersistent();
+  const { consent, setConsent, persistent: isPersistent } = useConsent();
   const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {

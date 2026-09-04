@@ -21,13 +21,11 @@ const mockHistoryState = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/stores/search-history-store", () => ({
-  useSearchHistoryStore: (
-    selector: (state: { history: string[]; clearHistory: () => void }) => unknown,
-  ) =>
-    selector({
-      history: mockHistoryState.history,
-      clearHistory: mockClearHistory,
-    }),
+  useSearchHistory: () => ({
+    history: mockHistoryState.history,
+    clearHistory: mockClearHistory,
+    hydrated: true,
+  }),
 }));
 
 // Mock pending domain atom (Jotai)
