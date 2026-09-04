@@ -72,7 +72,6 @@
     "streamdown": "^2.6.0",
     "superjson": "^2.2.6",
     "ts-ics": "^2.4.6",
-    "use-local-storage-state": "^20.0.0",
     "use-stick-to-bottom": "^1.1.6",
     "web-haptics": "^0.0.6",
     "workflow": "5.0.0-beta.46",

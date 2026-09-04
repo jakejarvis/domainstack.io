@@ -3,13 +3,13 @@
 import Link from "next/link";
 import posthogClient from "posthog-js";
 import { useEffect, useState } from "react";
-import useLocalStorageState from "use-local-storage-state";
 
+import {
+  type ConsentStatus,
+  useConsentPersistent,
+  useConsentStore,
+} from "@/lib/stores/consent-store";
 import { Button } from "@domainstack/ui/button";
-
-const CONSENT_KEY = "cookie-consent";
-
-type ConsentStatus = "pending" | "accepted" | "declined";
 
 /**
  * Minimal cookie consent banner for GDPR compliance.
@@ -19,9 +19,9 @@ type ConsentStatus = "pending" | "accepted" | "declined";
  * - Syncs with PostHog opt-in/opt-out
  */
 export function CookiePrompt({ consentRequired }: { consentRequired: boolean }) {
-  const [consent, setConsent, { isPersistent }] = useLocalStorageState<ConsentStatus>(CONSENT_KEY, {
-    defaultValue: "pending",
-  });
+  const consent = useConsentStore((s) => s.consent);
+  const setConsent = useConsentStore((s) => s.setConsent);
+  const isPersistent = useConsentPersistent();
   const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {

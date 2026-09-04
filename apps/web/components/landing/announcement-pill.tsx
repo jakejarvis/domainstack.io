@@ -4,20 +4,18 @@ import { IconArrowUpRight, IconMeteor, IconX } from "@tabler/icons-react";
 import { AnimatePresence, useReducedMotion } from "motion/react";
 import * as m from "motion/react-m";
 import Link from "next/link";
-import useLocalStorageState from "use-local-storage-state";
 
-const STORAGE_KEY = "announcement-dismissed-accounts-launch";
+import { useAnnouncementDismissed, useUiStore } from "@/lib/stores/ui-store";
 
 export function AnnouncementPill() {
   const shouldReduceMotion = useReducedMotion();
-  const [dismissed, setDismissed] = useLocalStorageState(STORAGE_KEY, {
-    defaultValue: false,
-  });
+  const dismissed = useAnnouncementDismissed();
+  const dismissAnnouncement = useUiStore((s) => s.dismissAnnouncement);
 
   const handleDismiss = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setDismissed(true);
+    dismissAnnouncement();
   };
 
   return (
