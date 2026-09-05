@@ -1,5 +1,7 @@
 import type { Instrumentation } from "next";
 
+import { isFrameworkRequestError } from "@/lib/analytics/ignored-request-errors";
+
 export async function register() {
   // Only runs in Node.js runtime (not Edge)
   if (process.env.NEXT_RUNTIME !== "edge") {
@@ -42,6 +44,13 @@ export const onRequestError: Instrumentation.onRequestError = async (error, requ
       await flushLogs();
     } catch {
       // Don't throw from instrumentation
+    }
+
+    // Framework-level rejections (for example the Server Actions CSRF guard) are
+    // not application bugs. Log them for context, but keep them out of error
+    // tracking so scanner probes do not open issues.
+    if (isFrameworkRequestError(error)) {
+      return;
     }
 
     try {

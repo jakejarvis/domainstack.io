@@ -21,7 +21,18 @@ export async function captureException(
     return;
   }
 
-  client.captureException(error, userId, properties);
+  // posthog-node invents a new anonymous person for every capture that has no
+  // distinct id, which inflates the user count on each server-side issue. Fall
+  // back to a shared anonymous id so one burst counts as one user.
+  const distinctId = userId ?? "anonymous";
+
+  // Group by the error type and message, not the stack. Node adds or drops async
+  // tick frames between otherwise identical throws, so a stack-based fingerprint
+  // splits one burst across several issues.
+  client.captureException(error, distinctId, {
+    ...properties,
+    $exception_fingerprint: `${error.name}: ${error.message}`,
+  });
   after(() => client.flush());
 }
 
