@@ -7,7 +7,7 @@ import { render, screen, waitFor } from "@/mocks/react";
 import { SearchClient } from "./search-client";
 
 // Mock base-ui Form to avoid React instance mismatch in browser tests
-vi.mock("@/components/ui/form", () => ({
+vi.mock("@domainstack/ui/form", () => ({
   Form: ({
     children,
     onFormSubmit,
@@ -69,6 +69,20 @@ describe("DomainSearch (form variant)", () => {
     mockSetPendingDomain.mockClear();
     mockPendingDomain.value = null;
     useIsMobile.mockReturnValue(false);
+  });
+
+  it("exposes WebMCP tool attributes for domain search", () => {
+    render(<SearchClient variant="lg" />);
+
+    const form = screen.getByRole("form", { name: "Domain search" });
+    expect(form).toHaveAttribute("tool-name", "domain-search");
+    expect(form).toHaveAttribute(
+      "tool-description",
+      "Look up WHOIS, DNS, SSL, hosting, HTTP headers, and SEO for any domain",
+    );
+    expect(form).toHaveAttribute("action", "/");
+    expect(form).toHaveAttribute("method", "GET");
+    expect(screen.getByLabelText(/Search any domain/i)).toHaveAttribute("name", "q");
   });
 
   it("submits valid domain and navigates", async () => {

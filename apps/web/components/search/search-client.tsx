@@ -275,14 +275,25 @@ export function SearchClient({
 
   return (
     <div className="flex w-full flex-col gap-5">
-      <Form aria-label="Domain search" onFormSubmit={handleSubmit}>
+      <Form
+        aria-label="Domain search"
+        action="/"
+        method="GET"
+        {...{
+          "tool-name": "domain-search",
+          "tool-description":
+            "Look up WHOIS, DNS, SSL, hosting, HTTP headers, and SEO for any domain",
+        }}
+        onFormSubmit={handleSubmit}
+      >
         <Field>
           <FieldLabel className="sr-only">Domain</FieldLabel>
           <div className="relative w-full flex-1">
             <InputGroup className={cn(variant === "lg" ? "h-12" : "h-10")}>
               <InputGroupInput
                 ref={inputRef}
-                name="domain"
+                name="q"
+                {...{ "tool-param-description": "Domain name to look up, e.g. example.com" }}
                 autoFocus={variant === "lg" && mounted && !isMobile}
                 inputMode="url"
                 autoComplete="off"
