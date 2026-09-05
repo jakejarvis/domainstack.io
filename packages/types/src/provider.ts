@@ -4,6 +4,7 @@
 
 import type { DnsRecord } from "./domain/dns";
 import type { RegistrationContact } from "./domain/registration";
+import type { RegistrationSource } from "./primitives";
 
 /**
  * Provider info with detailed verification data.
@@ -17,7 +18,7 @@ export interface ProviderInfo {
   // Registrar-specific verification data (WHOIS/RDAP)
   whoisServer?: string | null;
   rdapServers?: string[] | null;
-  registrationSource?: "rdap" | "whois" | null;
+  registrationSource?: RegistrationSource | null;
   transferLock?: boolean | null;
   registrantInfo?: {
     privacyEnabled: boolean | null;

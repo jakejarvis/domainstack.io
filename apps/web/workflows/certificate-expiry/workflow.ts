@@ -7,7 +7,8 @@ import {
   getThresholdNotificationType,
   updateNotificationEmailIdStep,
 } from "@/workflows/shared/notifications";
-import { CERTIFICATE_EXPIRY_THRESHOLDS, type NotificationType } from "@domainstack/constants";
+import { CERTIFICATE_EXPIRY_THRESHOLDS } from "@domainstack/constants";
+import type { NotificationChannel, NotificationType } from "@domainstack/types";
 
 export interface CertificateExpiryWorkflowInput {
   trackedDomainId: string;
@@ -67,7 +68,7 @@ export async function certificateExpiryWorkflow(
     daysRemaining,
     CERTIFICATE_EXPIRY_THRESHOLDS,
     "certificate_expiry",
-  ) as NotificationType | null;
+  );
   if (!notificationType) {
     return { skipped: true, reason: "no_threshold_met" };
   }
@@ -174,7 +175,7 @@ async function createNotificationRecord(params: {
   const subject = `${daysRemaining <= 3 ? "🔒⚠️ " : "🔒 "}${title}`;
   const message = `The SSL certificate for ${domainName} (issued by ${issuer}) will expire on ${format(validTo, "MMMM d, yyyy")}.`;
 
-  const channels: string[] = [];
+  const channels: NotificationChannel[] = [];
   if (shouldSendEmail) channels.push("email");
   if (shouldSendInApp) channels.push("in-app");
 

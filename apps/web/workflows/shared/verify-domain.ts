@@ -1,9 +1,4 @@
-import type { VerificationMethod } from "@domainstack/constants";
-
-export interface VerificationResult {
-  verified: boolean;
-  method: VerificationMethod | null;
-}
+import type { VerificationMethod, VerificationResult } from "@domainstack/types";
 
 /**
  * Step: Verify domain ownership via DNS TXT record.

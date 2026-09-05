@@ -5,8 +5,15 @@
  * and notification sending for monitoring and expiry workflows.
  */
 
-import type { NotificationType } from "@domainstack/constants";
-import type { CertificateChangeKind, UserNotificationPreferences } from "@domainstack/types";
+import type {
+  CertificateChangeKind,
+  CertificateChangeWithNames,
+  NotificationChannel,
+  NotificationType,
+  ProviderChangeWithNames,
+  RegistrationChange,
+  UserNotificationPreferences,
+} from "@domainstack/types";
 
 // Re-export expiry utilities from utils
 export { getThresholdNotificationType } from "@domainstack/utils/expiry";
@@ -200,7 +207,7 @@ async function sendNotificationInternal(
 
   if (!shouldSendEmail && !shouldSendInApp) return false;
 
-  const channels: string[] = [];
+  const channels: NotificationChannel[] = [];
   if (shouldSendEmail && emailComponent && emailSubject) channels.push("email");
   if (shouldSendInApp) channels.push("in-app");
 
@@ -261,20 +268,7 @@ export async function sendRegistrationChangeNotificationStep(
     title: string;
     message: string;
     emailSubject: string;
-    changes: {
-      registrarChanged: boolean;
-      nameserversChanged: boolean;
-      transferLockChanged: boolean;
-      statusesChanged: boolean;
-      previousRegistrar?: string;
-      newRegistrar?: string;
-      previousNameservers: { host: string }[];
-      newNameservers: { host: string }[];
-      previousTransferLock?: boolean;
-      newTransferLock?: boolean;
-      previousStatuses: string[];
-      newStatuses: string[];
-    };
+    changes: RegistrationChange;
   },
   shouldSendEmail: boolean,
   shouldSendInApp: boolean,
@@ -328,23 +322,7 @@ export async function sendProviderChangeNotificationStep(
     title: string;
     message: string;
     emailSubject: string;
-    changes: {
-      dnsProviderChanged: boolean;
-      hostingProviderChanged: boolean;
-      emailProviderChanged: boolean;
-      previousDnsProviderId: string | null;
-      newDnsProviderId: string | null;
-      previousHostingProviderId: string | null;
-      newHostingProviderId: string | null;
-      previousEmailProviderId: string | null;
-      newEmailProviderId: string | null;
-      previousDnsProvider: string | null;
-      newDnsProvider: string | null;
-      previousHostingProvider: string | null;
-      newHostingProvider: string | null;
-      previousEmailProvider: string | null;
-      newEmailProvider: string | null;
-    };
+    changes: ProviderChangeWithNames;
   },
   shouldSendEmail: boolean,
   shouldSendInApp: boolean,
@@ -400,16 +378,7 @@ export async function sendCertificateChangeNotificationStep(
     emailSubject: string;
     newValidTo: string;
     kind: CertificateChangeKind;
-    changes: {
-      caProviderChanged: boolean;
-      issuerChanged: boolean;
-      previousCaProviderId: string | null;
-      newCaProviderId: string | null;
-      previousIssuer: string | null;
-      newIssuer: string | null;
-      previousCaProvider: string | null;
-      newCaProvider: string | null;
-    };
+    changes: CertificateChangeWithNames;
   },
   shouldSendEmail: boolean,
   shouldSendInApp: boolean,

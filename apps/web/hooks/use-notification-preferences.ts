@@ -4,8 +4,11 @@ import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { useTRPC } from "@/lib/trpc/client";
-import type { NotificationCategory } from "@domainstack/constants";
-import type { TrackedDomainWithDetails, UserNotificationPreferences } from "@domainstack/types";
+import type {
+  NotificationCategory,
+  TrackedDomainWithDetails,
+  UserNotificationPreferences,
+} from "@domainstack/types";
 
 const DEFAULT_PREFERENCES: UserNotificationPreferences = {
   domainExpiry: { inApp: true, email: true },

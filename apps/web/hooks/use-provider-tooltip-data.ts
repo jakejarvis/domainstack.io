@@ -2,8 +2,13 @@ import { skipToken, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { useTRPC } from "@/lib/trpc/client";
-import type { ProviderCategory } from "@domainstack/constants";
-import type { DnsRecord, ProviderInfo, RegistrationContact } from "@domainstack/types";
+import type {
+  DnsRecord,
+  ProviderCategory,
+  ProviderInfo,
+  RegistrationContact,
+  RegistrationSource,
+} from "@domainstack/types";
 
 interface UseProviderTooltipDataParams {
   provider: ProviderInfo;
@@ -21,7 +26,7 @@ interface ProviderTooltipData {
   certificateExpiryDate?: Date | null;
   whoisServer?: string | null;
   rdapServers?: string[] | null;
-  registrationSource?: "rdap" | "whois" | null;
+  registrationSource?: RegistrationSource | null;
   transferLock?: boolean | null;
   registrantInfo?: {
     privacyEnabled: boolean | null;
@@ -34,7 +39,7 @@ type LazyLoadedProviderDetails = {
   certificateExpiryDate?: Date | null;
   whoisServer?: string | null;
   rdapServers?: string[] | null;
-  registrationSource?: "rdap" | "whois" | null;
+  registrationSource?: RegistrationSource | null;
   transferLock?: boolean | null;
   registrantInfo?: {
     privacyEnabled: boolean | null;

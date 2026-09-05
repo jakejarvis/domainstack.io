@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { analytics } from "@/lib/analytics/client";
-import { getEnabledProviders, type OAuthProvider } from "@/lib/oauth";
+import { getEnabledProviders, type OAuthProviderConfig } from "@/lib/oauth";
 import { useTRPC } from "@/lib/trpc/client";
 import { linkSocial, unlinkAccount } from "@domainstack/auth/client";
 
@@ -14,7 +14,7 @@ export interface UseLinkedAccountsReturn {
   /** Set of linked provider IDs for quick lookup */
   linkedProviderIds: Set<string>;
   /** All enabled OAuth providers */
-  enabledProviders: OAuthProvider[];
+  enabledProviders: OAuthProviderConfig[];
   /** Whether the query is loading */
   isLoading: boolean;
   /** Whether the query failed */
@@ -22,7 +22,7 @@ export interface UseLinkedAccountsReturn {
   /** Whether user can unlink (must have at least 2 linked accounts) */
   canUnlink: boolean;
   /** Link a provider (navigates to OAuth flow) */
-  linkProvider: (provider: OAuthProvider) => Promise<void>;
+  linkProvider: (provider: OAuthProviderConfig) => Promise<void>;
   /** Unlink a provider */
   unlinkProvider: (providerId: string) => void;
   /** Whether a specific provider is currently being unlinked */
@@ -31,7 +31,7 @@ export interface UseLinkedAccountsReturn {
   isUnlinkPending: boolean;
 }
 
-async function linkProvider(provider: OAuthProvider) {
+async function linkProvider(provider: OAuthProviderConfig) {
   try {
     await linkSocial({
       provider: provider.id,

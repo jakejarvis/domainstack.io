@@ -7,20 +7,17 @@
  * - Meta tags
  */
 
-import type { VerificationMethod } from "@domainstack/constants";
+import type { VerificationMethod, VerificationResult } from "@domainstack/types";
 
 import { verifyByDns } from "./dns";
 import { verifyByHtmlFile } from "./html";
 import { verifyByMetaTag } from "./meta";
-import type { VerificationHttpOptions, VerificationResult } from "./types";
+import type { VerificationHttpOptions } from "./types";
 
-// Re-export individual verification methods
 export { verifyByDns } from "./dns";
 export { verifyByHtmlFile } from "./html";
 export { verifyByMetaTag } from "./meta";
-
-// Re-export types
-export type { VerificationHttpOptions, VerificationResult } from "./types";
+export type { VerificationHttpOptions } from "./types";
 
 /**
  * Verify domain ownership by trying all methods in order.

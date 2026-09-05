@@ -29,6 +29,8 @@ import type {
   CertificateSnapshotData,
   GeneralMeta,
   Header,
+  NotificationChannel,
+  NotificationType,
   OpenGraphMeta,
   RegistrationContact,
   RegistrationNameserver,
@@ -221,7 +223,7 @@ export const notifications = pgTable(
     trackedDomainId: uuid("tracked_domain_id").references(() => userTrackedDomains.id, {
       onDelete: "cascade",
     }),
-    type: text("type").notNull(),
+    type: text("type").$type<NotificationType>().notNull(),
     // UI display fields
     title: text("title").notNull(),
     message: text("message").notNull(),
@@ -229,7 +231,7 @@ export const notifications = pgTable(
     data: jsonb("data"),
     // Channels (e.g. ["in-app", "email"]) - moved to top level for querying
     channels: jsonb("channels")
-      .$type<string[]>()
+      .$type<NotificationChannel[]>()
       .notNull()
       .default(sql`'["in-app", "email"]'::jsonb`),
     // Status

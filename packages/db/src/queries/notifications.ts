@@ -1,6 +1,6 @@
 import { and, count, desc, eq, gt, isNotNull, isNull, like, lt, or, sql } from "drizzle-orm";
 
-import type { NotificationType } from "@domainstack/constants";
+import type { NotificationChannel, NotificationType } from "@domainstack/types";
 
 import { db } from "../client";
 import { notifications } from "../schema";
@@ -12,7 +12,7 @@ export interface CreateNotificationParams {
   title: string;
   message: string;
   data?: Record<string, unknown>;
-  channels?: string[];
+  channels?: NotificationChannel[];
 }
 
 /** Filter type for notification queries */

@@ -2,7 +2,7 @@
  * Certificates shared step types.
  *
  * Internal types for step-to-step data transfer and typed errors.
- * Response types (CertificatesResponse) remain in lib/types/domain/certificates.ts.
+ * Response types live in `@domainstack/types`.
  */
 
 import type { Certificate } from "@domainstack/types";

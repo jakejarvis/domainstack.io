@@ -1,5 +1,7 @@
 import { SiGithub, SiGitlab, SiGoogle, SiVercel } from "@icons-pack/react-simple-icons";
 
+import type { OAuthProvider } from "@domainstack/auth/types";
+
 /**
  * OAuth provider constants for better-auth social providers.
  *
@@ -10,9 +12,9 @@ import { SiGithub, SiGitlab, SiGoogle, SiVercel } from "@icons-pack/react-simple
  * 4. Update env var validation in lib/auth.ts
  */
 
-export interface OAuthProvider {
+export interface OAuthProviderConfig {
   /** Provider ID used by better-auth (e.g., "github", "google") */
-  id: string;
+  id: OAuthProvider;
   /** Display name shown in UI */
   name: string;
   /** Icon component for the provider */
@@ -29,7 +31,7 @@ export interface OAuthProvider {
  * is imported in client components. The actual OAuth secrets are kept
  * server-side in lib/auth.ts.
  */
-const OAUTH_PROVIDERS: OAuthProvider[] = [
+const OAUTH_PROVIDERS: OAuthProviderConfig[] = [
   {
     id: "github",
     name: "GitHub",
@@ -59,6 +61,6 @@ const OAUTH_PROVIDERS: OAuthProvider[] = [
 /**
  * Get all enabled OAuth providers.
  */
-export function getEnabledProviders(): OAuthProvider[] {
+export function getEnabledProviders(): OAuthProviderConfig[] {
   return OAUTH_PROVIDERS.filter((p) => p.enabled);
 }

@@ -4,8 +4,8 @@ import {
   verifyDomainByMetaTag,
   verifyDomainOwnershipByMethod,
 } from "@/workflows/shared/verify-domain";
-import type { VerificationMethod } from "@domainstack/constants";
 import { VERIFICATION_METHODS } from "@domainstack/constants";
+import type { VerificationMethod } from "@domainstack/types";
 
 export interface VerificationWorkflowInput {
   domain: string;

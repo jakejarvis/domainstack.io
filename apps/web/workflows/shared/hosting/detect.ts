@@ -5,9 +5,7 @@
  * These steps are shared between the dedicated hostingWorkflow and internal workflows.
  */
 
-import type { DnsRecord, GeoIpData, Header } from "@domainstack/types";
-
-import type { ProviderDetectionData } from "./types";
+import type { DnsRecord, GeoIpData, Header, ProviderDetectionData } from "@domainstack/types";
 
 /**
  * Step: Lookup GeoIP data for an IP address.

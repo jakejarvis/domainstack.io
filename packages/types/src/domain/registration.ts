@@ -2,22 +2,13 @@
  * Registration types - Plain TypeScript interfaces.
  */
 
-import type { RegistrationSource } from "@domainstack/constants";
-
+import type {
+  RegistrationAvailability,
+  RegistrationContactType,
+  RegistrationSource,
+  RegistrationUnavailableReason,
+} from "../primitives";
 import type { ProviderRef } from "./provider-ref";
-
-/**
- * Type of registration contact.
- */
-export type RegistrationContactType =
-  | "registrant"
-  | "admin"
-  | "tech"
-  | "billing"
-  | "abuse"
-  | "registrar"
-  | "reseller"
-  | "unknown";
 
 /**
  * Registration contact information from WHOIS/RDAP.
@@ -70,11 +61,11 @@ export interface RegistrationResponse {
   /**
    * Registration availability status.
    */
-  status: "registered" | "unregistered" | "unknown";
+  status: RegistrationAvailability;
   /**
    * Reason why registration status is unknown.
    */
-  unavailableReason?: "unsupported_tld" | "timeout";
+  unavailableReason?: RegistrationUnavailableReason;
   unicodeName?: string;
   punycodeName?: string;
   registry?: string;

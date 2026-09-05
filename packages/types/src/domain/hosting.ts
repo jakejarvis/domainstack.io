@@ -27,6 +27,14 @@ export interface HostingResponse {
 }
 
 /**
+ * Resolved provider set before geo is attached.
+ */
+export type ProviderDetectionData = Pick<
+  HostingResponse,
+  "hostingProvider" | "emailProvider" | "dnsProvider"
+>;
+
+/**
  * Internal data structure for GeoIP lookup result.
  */
 export interface GeoIpData {

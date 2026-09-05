@@ -2,8 +2,7 @@
  * DNS record utilities for deduplication and sorting.
  */
 
-import type { DnsRecordType } from "@domainstack/constants";
-import type { DnsRecord } from "@domainstack/types";
+import type { DnsRecord, DnsRecordType } from "@domainstack/types";
 
 /**
  * Generate a unique key for a DNS record.

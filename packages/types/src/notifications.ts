@@ -2,15 +2,15 @@
  * Notification types - Plain TypeScript interfaces.
  */
 
+import type { NotificationType } from "./primitives";
+
 /**
  * Data for a single notification item displayed in the UI.
- * Note: `type` is string to match database storage (text column).
- * Use NotificationType for type-safe comparisons in helper functions.
  */
 export interface NotificationData {
   id: string;
   trackedDomainId: string | null;
-  type: string;
+  type: NotificationType;
   title: string;
   message: string;
   sentAt: Date;

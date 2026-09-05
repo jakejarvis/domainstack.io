@@ -4,8 +4,7 @@ import { toast } from "sonner";
 
 import { useTRPC } from "@/lib/trpc/client";
 import { createInitialState, toStep1, toStep2, toStep3 } from "@/lib/verification-state";
-import type { VerificationMethod } from "@domainstack/constants";
-import type { ResumeDomainData, VerificationState } from "@domainstack/types";
+import type { ResumeDomainData, VerificationMethod, VerificationState } from "@domainstack/types";
 import { isValidDomain, normalizeDomainInput } from "@domainstack/utils/domain/client";
 
 interface UseDomainVerificationOptions {

@@ -6,7 +6,6 @@
  * registration, provider, or certificate details have changed.
  */
 
-// Detection functions
 export {
   applyCertificateDampening,
   detectCertificateChange,
@@ -14,16 +13,4 @@ export {
   detectRegistrationChange,
   evaluateCertificateChange,
 } from "./detection";
-// Status utilities
 export { normalizeStatus, statusesAreEqual } from "./status";
-// Types
-export type {
-  CertificateChange,
-  CertificateChangeEvaluation,
-  CertificateChangeWithNames,
-  CertificateDampeningResult,
-  ProviderChange,
-  ProviderChangeWithNames,
-  ProviderSnapshotData,
-  RegistrationChange,
-} from "./types";

@@ -2,8 +2,7 @@ import { ProviderTooltipContent } from "@/components/dashboard/provider-tooltip-
 import { ProviderLogo } from "@/components/icons/provider-logo";
 import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
 import { useTruncation } from "@/hooks/use-truncation";
-import type { ProviderCategory } from "@domainstack/constants";
-import type { ProviderInfo } from "@domainstack/types";
+import type { ProviderCategory, ProviderInfo } from "@domainstack/types";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,

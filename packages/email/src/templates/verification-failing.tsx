@@ -1,4 +1,4 @@
-import type { VerificationMethod } from "@domainstack/constants";
+import type { VerificationMethod } from "@domainstack/types";
 
 import {
   EmailBox,

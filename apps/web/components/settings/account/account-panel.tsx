@@ -6,7 +6,7 @@ import { SettingsCard, SettingsCardSeparator } from "@/components/settings/setti
 import { LinkedAccountsSkeleton } from "@/components/settings/settings-skeleton";
 import { useAuthCallback } from "@/hooks/use-auth-callback";
 import { useLinkedAccounts } from "@/hooks/use-linked-accounts";
-import type { OAuthProvider } from "@/lib/oauth";
+import type { OAuthProviderConfig } from "@/lib/oauth";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,7 +44,7 @@ export function AccountPanel() {
   } = useLinkedAccounts();
 
   // Handle linking a provider with local loading state
-  const handleLink = async (provider: OAuthProvider) => {
+  const handleLink = async (provider: OAuthProviderConfig) => {
     setLinkingProvider(provider.id);
 
     // Reset loading state if user returns to page (e.g., via back button)

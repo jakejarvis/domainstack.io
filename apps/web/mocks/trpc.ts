@@ -1,8 +1,12 @@
 import { skipToken } from "@tanstack/react-query";
 import { vi } from "vitest";
 
-import type { VerificationMethod } from "@domainstack/constants";
-import type { NotificationData, TrackedDomainWithDetails } from "@domainstack/types";
+import type {
+  NotificationData,
+  SubscriptionQuota,
+  TrackedDomainWithDetails,
+  VerificationMethod,
+} from "@domainstack/types";
 
 type AddDomainInput = { domain: string };
 type AddDomainResult = {
@@ -67,16 +71,7 @@ function defaultListDomains(input?: ListDomainsInput): Promise<TrackedDomainWith
 export const listDomainsQuery =
   vi.fn<(input?: ListDomainsInput) => Promise<TrackedDomainWithDetails[]>>(defaultListDomains);
 
-export type SubscriptionData = {
-  plan: "free" | "pro";
-  planQuota: number;
-  endsAt: Date | null;
-  activeCount: number;
-  archivedCount: number;
-  canAddMore: boolean;
-};
-
-const DEFAULT_SUBSCRIPTION: SubscriptionData = {
+const DEFAULT_SUBSCRIPTION: SubscriptionQuota = {
   plan: "pro",
   planQuota: 100,
   endsAt: null,
@@ -85,9 +80,9 @@ const DEFAULT_SUBSCRIPTION: SubscriptionData = {
   canAddMore: true,
 };
 
-let subscriptionState: SubscriptionData = { ...DEFAULT_SUBSCRIPTION };
+let subscriptionState: SubscriptionQuota = { ...DEFAULT_SUBSCRIPTION };
 
-export function setSubscriptionState(data: SubscriptionData) {
+export function setSubscriptionState(data: SubscriptionQuota) {
   subscriptionState = { ...data };
 }
 
@@ -95,7 +90,7 @@ export function getSubscriptionState() {
   return subscriptionState;
 }
 
-export const getSubscriptionQuery = vi.fn<() => Promise<SubscriptionData>>(
+export const getSubscriptionQuery = vi.fn<() => Promise<SubscriptionQuota>>(
   async () => subscriptionState,
 );
 

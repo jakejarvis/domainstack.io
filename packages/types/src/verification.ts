@@ -2,7 +2,7 @@
  * Verification types - Plain TypeScript interfaces.
  */
 
-import type { VerificationMethod } from "@domainstack/constants";
+import type { VerificationMethod } from "./primitives";
 
 /**
  * Base verification instructions.
@@ -58,3 +58,11 @@ export interface ResumeDomainData {
 
 /** Verification status for the current step (exposed for UI components) */
 export type VerificationState = { status: "idle" } | { status: "verifying" } | { status: "failed" };
+
+/**
+ * Result of a domain ownership verification attempt.
+ */
+export interface VerificationResult {
+  verified: boolean;
+  method: VerificationMethod | null;
+}

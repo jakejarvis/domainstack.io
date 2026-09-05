@@ -1,6 +1,6 @@
 import { IconAlertTriangle, IconClock, IconRefresh } from "@tabler/icons-react";
 
-import type { VerificationMethod } from "@domainstack/constants";
+import type { VerificationMethod } from "@domainstack/types";
 import { Alert, AlertDescription, AlertTitle } from "@domainstack/ui/alert";
 import { Button } from "@domainstack/ui/button";
 

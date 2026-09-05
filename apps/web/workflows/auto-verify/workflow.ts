@@ -5,7 +5,7 @@ import {
   verifyDomainByHtmlFile,
   verifyDomainByMetaTag,
 } from "@/workflows/shared/verify-domain";
-import type { VerificationMethod } from "@domainstack/constants";
+import type { VerificationMethod } from "@domainstack/types";
 
 export interface AutoVerifyWorkflowInput {
   trackedDomainId: string;

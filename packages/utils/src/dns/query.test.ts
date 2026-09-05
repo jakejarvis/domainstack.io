@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /* @vitest-environment node */
-import type { DohProvider } from "@domainstack/constants";
+import type { DohProvider } from "@domainstack/types";
 
 import { filterAnswersByType, providerOrderForLookup, queryDohProvider } from "./query";
 

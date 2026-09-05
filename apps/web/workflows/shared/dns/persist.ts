@@ -9,9 +9,8 @@
  */
 
 import type { PersistResult } from "@/lib/workflow/types";
-import type { DnsRecordType } from "@domainstack/constants";
-
-import type { DnsFetchData } from "./types";
+import type { DnsFetchData } from "@domainstack/server/dns";
+import type { DnsRecordType } from "@domainstack/types";
 
 /**
  * Step: Persist DNS records to database.

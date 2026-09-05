@@ -9,8 +9,12 @@ import { PlanStatusCard } from "@/components/plan-status-card";
 import { UpgradeCard } from "@/components/upgrade-card";
 import { useDomainVerification } from "@/hooks/use-domain-verification";
 import { useSubscription } from "@/hooks/use-subscription";
-import type { VerificationMethod } from "@domainstack/constants";
-import type { ResumeDomainData, VerificationState } from "@domainstack/types";
+import type {
+  ResumeDomainData,
+  SubscriptionQuota,
+  VerificationMethod,
+  VerificationState,
+} from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { Icon } from "@domainstack/ui/icon";
 import { Spinner } from "@domainstack/ui/spinner";
@@ -98,11 +102,7 @@ function AddDomainQuotaReached({
 }: {
   className?: string;
   onClose?: () => void;
-  subscription?: {
-    activeCount: number;
-    planQuota: number;
-    endsAt: Date | null;
-  };
+  subscription?: Pick<SubscriptionQuota, "activeCount" | "planQuota" | "endsAt">;
   isPro: boolean;
 }) {
   return (

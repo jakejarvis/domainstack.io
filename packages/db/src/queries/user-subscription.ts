@@ -1,12 +1,10 @@
 import { and, asc, count, eq, gt, inArray, isNotNull, isNull, lt } from "drizzle-orm";
 
-import { PLAN_QUOTAS, type PLANS } from "@domainstack/constants";
+import { PLAN_QUOTAS } from "@domainstack/constants";
+import type { Plan } from "@domainstack/types";
 
 import { db } from "../client";
 import { userSubscriptions, users, userTrackedDomains } from "../schema";
-
-/** Plan type derived from PLANS constant (single source of truth). */
-type Plan = (typeof PLANS)[number];
 
 export interface UserSubscriptionData {
   userId: string;
@@ -199,11 +197,17 @@ export async function getUserWithEndingSubscription(
     )
     .limit(1);
 
-  if (!row || row.endsAt === null) {
+  if (!row?.endsAt) {
     return null;
   }
 
-  return row as UserWithEndingSubscription;
+  return {
+    userId: row.userId,
+    userName: row.userName,
+    userEmail: row.userEmail,
+    endsAt: row.endsAt,
+    lastExpiryNotification: row.lastExpiryNotification,
+  };
 }
 
 /**

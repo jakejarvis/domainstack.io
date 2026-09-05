@@ -9,7 +9,7 @@ import type {
   SortOption,
   StatusFilter,
 } from "@/lib/dashboard-utils";
-import type { VerificationMethod } from "@domainstack/constants";
+import type { VerificationMethod } from "@domainstack/types";
 
 // Re-export types so consumers can import from context
 export type { SortOption } from "@/lib/dashboard-utils";

@@ -10,8 +10,6 @@ import type {
   HeadersFetchData,
 } from "@domainstack/server/headers";
 
-export type { HeadersFetchData };
-
 export type HeadersError = ServerHeadersError | "fetch_error";
 
 export type FetchHeadersResult =

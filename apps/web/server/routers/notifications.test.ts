@@ -167,7 +167,7 @@ describe("notifications router", () => {
         {
           id: TEST_NOTIFICATION_2_ID,
           userId: TEST_USER_ID,
-          type: "certificate_expiry_30d",
+          type: "certificate_expiry_14d",
           title: "Read Notification",
           message: "This is read",
           sentAt: new Date(),
@@ -198,7 +198,7 @@ describe("notifications router", () => {
         {
           id: TEST_NOTIFICATION_2_ID,
           userId: TEST_USER_ID,
-          type: "certificate_expiry_30d",
+          type: "certificate_expiry_14d",
           title: "Read Notification",
           message: "This is read",
           sentAt: new Date(),

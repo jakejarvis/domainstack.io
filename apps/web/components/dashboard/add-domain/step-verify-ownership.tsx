@@ -2,8 +2,7 @@ import { IconDownload, IconInfoCircle } from "@tabler/icons-react";
 import { toast } from "sonner";
 
 import { VerificationFailed } from "@/components/dashboard/add-domain/verification-failed";
-import type { VerificationMethod } from "@domainstack/constants";
-import type { VerificationState } from "@domainstack/types";
+import type { VerificationMethod, VerificationState } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { CopyableField } from "@domainstack/ui/copyable-field";
 import {

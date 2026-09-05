@@ -21,7 +21,7 @@ import type {
   GeoIpData,
   Header,
   HostingResponse,
-  ProviderRef,
+  ProviderDetectionData,
 } from "@domainstack/types";
 import { toRegistrableDomain } from "@domainstack/utils/domain";
 import {
@@ -40,12 +40,6 @@ import { fetchHeaders } from "./headers";
 // ============================================================================
 
 export type HostingResult = { success: true; data: HostingResponse };
-
-interface ProviderDetectionData {
-  hostingProvider: ProviderRef;
-  emailProvider: ProviderRef;
-  dnsProvider: ProviderRef;
-}
 
 // ============================================================================
 // Main Service Function

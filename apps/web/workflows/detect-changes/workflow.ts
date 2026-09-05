@@ -24,18 +24,18 @@ import {
 } from "@/workflows/shared/registration";
 import { optionalCall, optionalSettled, requireSettled } from "@/workflows/shared/settled";
 import type {
+  CertificateChangeWithNames,
   CertificateSnapshotData,
   CertificatesResponse,
   HostingResponse,
+  ProviderChangeWithNames,
   RegistrationResponse,
   RegistrationSnapshotData,
 } from "@domainstack/types";
 import {
-  type CertificateChangeWithNames,
   detectProviderChange,
   detectRegistrationChange,
   evaluateCertificateChange,
-  type ProviderChangeWithNames,
 } from "@domainstack/utils/change-detection";
 
 // =============================================================================
@@ -276,20 +276,7 @@ export async function detectChangesWorkflow(
             title,
             message,
             emailSubject,
-            changes: {
-              registrarChanged: registrationChange.registrarChanged,
-              nameserversChanged: registrationChange.nameserversChanged,
-              transferLockChanged: registrationChange.transferLockChanged,
-              statusesChanged: registrationChange.statusesChanged,
-              previousRegistrar: previousRegistrar || undefined,
-              newRegistrar: newRegistrar || undefined,
-              previousNameservers: registrationChange.previousNameservers,
-              newNameservers: registrationChange.newNameservers,
-              previousTransferLock: registrationChange.previousTransferLock ?? undefined,
-              newTransferLock: registrationChange.newTransferLock ?? undefined,
-              previousStatuses: registrationChange.previousStatuses,
-              newStatuses: registrationChange.newStatuses,
-            },
+            changes: registrationChange,
           },
           channels.shouldSendEmail,
           channels.shouldSendInApp,

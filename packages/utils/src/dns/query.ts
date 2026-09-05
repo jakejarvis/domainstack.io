@@ -4,7 +4,8 @@
  * Uses plain Node.js fetch with AbortController for timeout.
  */
 
-import { DOH_PROVIDERS, type DohProvider } from "@domainstack/constants";
+import { DOH_PROVIDERS } from "@domainstack/constants";
+import type { DohProvider } from "@domainstack/types";
 import { simpleHash } from "@domainstack/utils";
 
 import type { DnsAnswer, DnsJson, DohQueryOptions } from "./types";

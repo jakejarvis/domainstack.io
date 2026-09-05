@@ -4,7 +4,8 @@ import Link from "next/link";
 
 import { useAnalytics } from "@/lib/analytics/client";
 import { useTRPC } from "@/lib/trpc/client";
-import { REGISTRAR_PROVIDERS, type RegistrarKey } from "@domainstack/constants";
+import { REGISTRAR_PROVIDERS } from "@domainstack/constants";
+import type { RegistrarKey } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { Skeleton } from "@domainstack/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";

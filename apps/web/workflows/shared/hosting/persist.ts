@@ -9,9 +9,7 @@
  */
 
 import type { PersistResult } from "@/lib/workflow/types";
-import type { GeoIpData } from "@domainstack/types";
-
-import type { ProviderDetectionData } from "./types";
+import type { GeoIpData, ProviderDetectionData } from "@domainstack/types";
 
 /**
  * Step: Persist hosting data to database.

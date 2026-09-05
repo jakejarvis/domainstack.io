@@ -2,15 +2,7 @@
  * Certificate types - Plain TypeScript interfaces.
  */
 
-import type {
-  CERTIFICATE_CHANGE_KINDS,
-  NOTIFIABLE_CERTIFICATE_CHANGE_KINDS,
-} from "@domainstack/constants";
-
 import type { ProviderRef } from "./provider-ref";
-
-export type CertificateChangeKind = (typeof CERTIFICATE_CHANGE_KINDS)[number];
-export type NotifiableCertificateChangeKind = (typeof NOTIFIABLE_CERTIFICATE_CHANGE_KINDS)[number];
 
 /**
  * A single SSL/TLS certificate.

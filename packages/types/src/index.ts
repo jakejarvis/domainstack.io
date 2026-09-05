@@ -2,19 +2,44 @@
  * @domainstack/types
  *
  * Shared TypeScript interfaces for the Domainstack platform.
- *
- * Exports:
- * - domain: Domain scan response types (registration, DNS, hosting, certificates, etc.)
- * - notifications: Notification data and preference types
- * - provider: Provider information types
- * - tracked-domain: Tracked domain with provider details
- * - verification: Verification instruction and state types
  */
 
-// Domain types
 export * from "./domain";
 
-// Other types
+export type {
+  CertificateChangeKind,
+  CertificateExpiryThreshold,
+  DnsRecordType,
+  DohProvider,
+  DomainExpiryThreshold,
+  ExpiryNotificationPrefix,
+  NotifiableCertificateChangeKind,
+  NotificationCategory,
+  NotificationChannel,
+  NotificationType,
+  Plan,
+  ProviderCategory,
+  ProviderSource,
+  RegistrarKey,
+  RegistrationAvailability,
+  RegistrationContactType,
+  RegistrationSource,
+  RegistrationUnavailableReason,
+  VerificationMethod,
+  VerificationStatus,
+} from "./primitives";
+
+export type {
+  CertificateChange,
+  CertificateChangeEvaluation,
+  CertificateChangeWithNames,
+  CertificateDampeningResult,
+  ProviderChange,
+  ProviderChangeWithNames,
+  ProviderSnapshotData,
+  RegistrationChange,
+} from "./monitoring";
+
 export type {
   ChannelToggles,
   NotificationData,
@@ -22,6 +47,10 @@ export type {
 } from "./notifications";
 
 export type { ProviderInfo } from "./provider";
+
+export type { ScreenshotData } from "./screenshot";
+
+export type { SubscriptionQuota } from "./subscription";
 
 export type { TrackedDomainWithDetails } from "./tracked-domain";
 
@@ -31,5 +60,6 @@ export type {
   MetaTagInstructions,
   ResumeDomainData,
   VerificationInstructions,
+  VerificationResult,
   VerificationState,
 } from "./verification";

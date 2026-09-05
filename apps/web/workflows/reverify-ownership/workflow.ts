@@ -1,7 +1,7 @@
 import { FatalError } from "workflow";
 
 import { verifyDomainOwnershipByMethod } from "@/workflows/shared/verify-domain";
-import type { VerificationMethod } from "@domainstack/constants";
+import type { VerificationMethod } from "@domainstack/types";
 
 export interface ReverifyOwnershipWorkflowInput {
   trackedDomainId: string;

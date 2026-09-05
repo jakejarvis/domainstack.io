@@ -3,7 +3,7 @@ import { useCallback } from "react";
 import { toast } from "sonner";
 
 import { useTRPC } from "@/lib/trpc/client";
-import type { TrackedDomainWithDetails } from "@domainstack/types";
+import type { SubscriptionQuota, TrackedDomainWithDetails } from "@domainstack/types";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -16,18 +16,9 @@ interface BulkMutationResult {
 
 type DomainsData = TrackedDomainWithDetails[] | undefined;
 
-interface SubscriptionData {
-  plan: "free" | "pro";
-  planQuota: number;
-  endsAt: Date | null;
-  activeCount: number;
-  archivedCount: number;
-  canAddMore: boolean;
-}
-
 interface MutationContext {
   previousDomains: [unknown, unknown][];
-  previousSubscription: SubscriptionData | undefined;
+  previousSubscription: SubscriptionQuota | undefined;
 }
 
 function toastBulkResult(
@@ -133,14 +124,14 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
 
         const previousDomains = queryClient.getQueriesData(domainsFilter);
         const previousSubscription =
-          queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
+          queryClient.getQueryData<SubscriptionQuota>(subscriptionQueryKey);
 
         const { active, archived } = affectedCounts(previousDomains, [trackedDomainId]);
 
         queryClient.setQueriesData(domainsFilter, (old: DomainsData) =>
           old?.filter((d) => d.id !== trackedDomainId),
         );
-        queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) => {
+        queryClient.setQueryData<SubscriptionQuota | undefined>(subscriptionQueryKey, (old) => {
           if (!old) return old;
           const activeCount = Math.max(0, old.activeCount - active);
           const archivedCount = Math.max(0, old.archivedCount - archived);
@@ -183,14 +174,14 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
 
         const previousDomains = queryClient.getQueriesData(domainsFilter);
         const previousSubscription =
-          queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
+          queryClient.getQueryData<SubscriptionQuota>(subscriptionQueryKey);
 
         const { active: toArchive } = affectedCounts(previousDomains, [trackedDomainId]);
 
         queryClient.setQueriesData(domainsFilter, (old: DomainsData) =>
           old?.map((d) => (d.id === trackedDomainId ? { ...d, archivedAt: new Date() } : d)),
         );
-        queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) => {
+        queryClient.setQueryData<SubscriptionQuota | undefined>(subscriptionQueryKey, (old) => {
           if (!old) return old;
           const activeCount = Math.max(0, old.activeCount - toArchive);
           return {
@@ -232,14 +223,14 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
 
         const previousDomains = queryClient.getQueriesData(domainsFilter);
         const previousSubscription =
-          queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
+          queryClient.getQueryData<SubscriptionQuota>(subscriptionQueryKey);
 
         const { archived: toActivate } = affectedCounts(previousDomains, [trackedDomainId]);
 
         queryClient.setQueriesData(domainsFilter, (old: DomainsData) =>
           old?.map((d) => (d.id === trackedDomainId ? { ...d, archivedAt: null } : d)),
         );
-        queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) => {
+        queryClient.setQueryData<SubscriptionQuota | undefined>(subscriptionQueryKey, (old) => {
           if (!old) return old;
           const activeCount = old.activeCount + toActivate;
           return {
@@ -309,7 +300,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
 
         const previousDomains = queryClient.getQueriesData(domainsFilter);
         const previousSubscription =
-          queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
+          queryClient.getQueryData<SubscriptionQuota>(subscriptionQueryKey);
 
         const idsSet = new Set(trackedDomainIds);
         const { active: archiveCount } = affectedCounts(previousDomains, idsSet);
@@ -319,7 +310,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
             idsSet.has(d.id) && !d.archivedAt ? { ...d, archivedAt: new Date() } : d,
           ),
         );
-        queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) => {
+        queryClient.setQueryData<SubscriptionQuota | undefined>(subscriptionQueryKey, (old) => {
           if (!old) return old;
           const activeCount = Math.max(0, old.activeCount - archiveCount);
           return {
@@ -360,7 +351,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
 
         const previousDomains = queryClient.getQueriesData(domainsFilter);
         const previousSubscription =
-          queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
+          queryClient.getQueryData<SubscriptionQuota>(subscriptionQueryKey);
 
         const idsSet = new Set(trackedDomainIds);
         const { active: activeDeleted, archived: archivedDeleted } = affectedCounts(
@@ -371,7 +362,7 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
         queryClient.setQueriesData(domainsFilter, (old: DomainsData) =>
           old?.filter((d) => !idsSet.has(d.id)),
         );
-        queryClient.setQueryData<SubscriptionData | undefined>(subscriptionQueryKey, (old) => {
+        queryClient.setQueryData<SubscriptionQuota | undefined>(subscriptionQueryKey, (old) => {
           if (!old) return old;
           const activeCount = Math.max(0, old.activeCount - activeDeleted);
           const archivedCount = Math.max(0, old.archivedCount - archivedDeleted);

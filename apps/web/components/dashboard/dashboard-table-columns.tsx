@@ -17,8 +17,7 @@ import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Favicon } from "@/components/icons/favicon";
 import { useIsDomainSelected, useToggleDomainSelection } from "@/hooks/use-dashboard-selection";
 import type { DashboardTableFeatures } from "@/lib/dashboard-table-features";
-import type { VerificationMethod } from "@domainstack/constants";
-import type { TrackedDomainWithDetails } from "@domainstack/types";
+import type { TrackedDomainWithDetails, VerificationMethod } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { Checkbox } from "@domainstack/ui/checkbox";
 import {

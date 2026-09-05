@@ -6,13 +6,13 @@ import {
   HTML_FILE_DIR,
   META_TAG_NAME,
   VERIFICATION_METHODS,
-  type VerificationMethod,
 } from "@domainstack/constants";
 import type {
   DnsInstructions,
   HtmlFileInstructions,
   MetaTagInstructions,
   VerificationInstructions,
+  VerificationMethod,
 } from "@domainstack/types";
 
 /**

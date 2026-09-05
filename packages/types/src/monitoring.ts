@@ -1,11 +1,9 @@
 /**
- * Change detection types for domain monitoring.
- *
- * These types represent the changes detected when comparing
- * domain snapshots over time.
+ * Change-detection payloads shared by monitoring, email, and workflows.
  */
 
-import type { CertificateChangeKind, CertificateSnapshotData } from "@domainstack/types";
+import type { CertificateSnapshotData } from "./domain/certificates";
+import type { CertificateChangeKind } from "./primitives";
 
 /**
  * Registration change details.

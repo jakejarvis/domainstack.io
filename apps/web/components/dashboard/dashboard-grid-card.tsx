@@ -25,8 +25,7 @@ import { useIsDomainSelected, useToggleDomainSelection } from "@/hooks/use-dashb
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
 import { useTruncation } from "@/hooks/use-truncation";
-import type { ProviderCategory } from "@domainstack/constants";
-import type { ProviderInfo, TrackedDomainWithDetails } from "@domainstack/types";
+import type { ProviderCategory, ProviderInfo, TrackedDomainWithDetails } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@domainstack/ui/card";
 import { Checkbox } from "@domainstack/ui/checkbox";

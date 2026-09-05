@@ -8,30 +8,26 @@ import { toast } from "sonner";
 
 import { analytics } from "@/lib/analytics/client";
 import { parseRetryAfterHeader } from "@/lib/ratelimit/client";
+import type { ScreenshotData } from "@domainstack/types";
 import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
 
-type ScreenshotStartResponse =
-  | { status: "completed"; data: ScreenshotData }
+const POLL_INTERVAL_MS = 2000;
+
+type StartParseResult =
+  | { status: "completed"; cached: true; data: ScreenshotData }
   | { status: "running"; runId: string }
   | { status: "error"; error: string }
   | { status: "rate_limited"; retryAfter: number };
 
-type ScreenshotStatusResponse =
+type StatusParseResult =
   | { status: "running" }
   | { status: "completed"; data: ScreenshotData }
   | { status: "failed"; error: string }
   | { status: "error"; error: string }
   | { status: "rate_limited"; retryAfter: number };
 
-export interface ScreenshotData {
-  url: string | null;
-  blocked: boolean;
-}
-
-const POLL_INTERVAL_MS = 2000;
-
-function parseStartResponse(raw: unknown): ScreenshotStartResponse {
+function parseStartResponse(raw: unknown): StartParseResult {
   if (!raw || typeof raw !== "object") {
     return { status: "error", error: "Invalid response" };
   }
@@ -53,6 +49,7 @@ function parseStartResponse(raw: unknown): ScreenshotStartResponse {
     const data = obj.data as Record<string, unknown>;
     return {
       status: "completed",
+      cached: true,
       data: {
         url: typeof data.url === "string" ? data.url : null,
         blocked: data.blocked === true,
@@ -63,7 +60,7 @@ function parseStartResponse(raw: unknown): ScreenshotStartResponse {
   return { status: "error", error: "Unknown response format" };
 }
 
-function parseStatusResponse(raw: unknown): ScreenshotStatusResponse {
+function parseStatusResponse(raw: unknown): StatusParseResult {
   if (!raw || typeof raw !== "object") {
     return { status: "error", error: "Invalid response" };
   }
@@ -197,7 +194,7 @@ export function useScreenshot({
 
   const statusQuery = useQuery({
     queryKey: ["screenshot-status", runId],
-    queryFn: async (): Promise<ScreenshotStatusResponse> => {
+    queryFn: async (): Promise<StatusParseResult> => {
       const response = await fetch(`/api/screenshot?runId=${runId}`);
 
       if (response.status === 429) {

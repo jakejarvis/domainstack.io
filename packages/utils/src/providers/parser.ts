@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { ProviderCategory } from "@domainstack/constants";
+import type { ProviderCategory } from "@domainstack/types";
 
 import type { Rule } from "./rules";
 import { RuleSchema } from "./rules";

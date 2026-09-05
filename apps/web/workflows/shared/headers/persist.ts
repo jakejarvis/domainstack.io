@@ -9,8 +9,7 @@
  */
 
 import type { PersistResult } from "@/lib/workflow/types";
-
-import type { HeadersFetchData } from "./types";
+import type { HeadersFetchData } from "@domainstack/server/headers";
 
 /**
  * Step: Persist headers to database.

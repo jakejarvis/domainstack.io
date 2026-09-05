@@ -2,8 +2,12 @@ import { IconLock, IconLockOpen, IconRosetteDiscountCheck, IconSpy } from "@tabl
 
 import { formatRegistrant } from "@/components/domain/registration/registration-section";
 import { ProviderLogo } from "@/components/icons/provider-logo";
-import type { ProviderCategory } from "@domainstack/constants";
-import type { DnsRecord, RegistrationContact } from "@domainstack/types";
+import type {
+  DnsRecord,
+  ProviderCategory,
+  RegistrationContact,
+  RegistrationSource,
+} from "@domainstack/types";
 import { Spinner } from "@domainstack/ui/spinner";
 import { formatDate } from "@domainstack/utils";
 
@@ -16,7 +20,7 @@ type ProviderTooltipContentProps = {
   certificateExpiryDate?: Date | null;
   whoisServer?: string | null;
   rdapServers?: string[] | null;
-  registrationSource?: "rdap" | "whois" | null;
+  registrationSource?: RegistrationSource | null;
   transferLock?: boolean | null;
   registrantInfo?: {
     privacyEnabled: boolean | null;
@@ -55,7 +59,7 @@ function getRegistrantDisplay(
 function getRegistrarSource(
   whoisServer?: string | null,
   rdapServers?: string[] | null,
-  registrationSource?: "rdap" | "whois" | null,
+  registrationSource?: RegistrationSource | null,
 ) {
   const serverUrl =
     rdapServers && rdapServers.length > 0 ? rdapServers[rdapServers.length - 1] : undefined;

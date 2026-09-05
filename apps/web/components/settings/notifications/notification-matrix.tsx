@@ -1,8 +1,8 @@
 import { IconInfoCircle } from "@tabler/icons-react";
 
 import { NOTIFICATION_CATEGORY_INFO } from "@/lib/constants/notification-ui";
-import { NOTIFICATION_CATEGORIES, type NotificationCategory } from "@domainstack/constants";
-import type { UserNotificationPreferences } from "@domainstack/types";
+import { NOTIFICATION_CATEGORIES } from "@domainstack/constants";
+import type { NotificationCategory, UserNotificationPreferences } from "@domainstack/types";
 import { Checkbox } from "@domainstack/ui/checkbox";
 import {
   ResponsiveTooltip,

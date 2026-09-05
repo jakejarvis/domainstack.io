@@ -4,9 +4,10 @@
 
 import { META_TAG_NAME } from "@domainstack/constants";
 import { safeFetch } from "@domainstack/safe-fetch";
+import type { VerificationResult } from "@domainstack/types";
 
 import { extractMetaTagValues } from "../seo";
-import type { VerificationHttpOptions, VerificationResult } from "./types";
+import type { VerificationHttpOptions } from "./types";
 
 /** Maximum HTML size to fetch for meta tag verification */
 const MAX_HTML_BYTES = 512 * 1024; // 512KB

@@ -1,21 +1,14 @@
 "use client";
 
 import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { inferRouterOutputs } from "@trpc/server";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 import { analytics } from "@/lib/analytics/client";
 import { useTRPC } from "@/lib/trpc/client";
-import type { AppRouter } from "@/server/routers/_app";
 import { checkoutEmbed, customer } from "@domainstack/auth/client";
 import { PRO_TIER_INFO } from "@domainstack/polar/products";
-
-/**
- * Subscription data shape inferred from user.getSubscription procedure.
- * Using inference ensures client types stay in sync with server.
- */
-type SubscriptionData = inferRouterOutputs<AppRouter>["user"]["getSubscription"];
+import type { SubscriptionQuota } from "@domainstack/types";
 
 interface UseSubscriptionOptions {
   /** Whether to enable the query (defaults to true) */
@@ -24,7 +17,7 @@ interface UseSubscriptionOptions {
 
 interface UseSubscriptionResult {
   /** Subscription data (undefined while loading) */
-  subscription: SubscriptionData | undefined;
+  subscription: SubscriptionQuota | undefined;
   /** True if user has Pro subscription */
   isPro: boolean;
   /** True if actively loading */

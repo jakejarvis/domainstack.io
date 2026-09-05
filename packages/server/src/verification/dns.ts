@@ -3,9 +3,8 @@
  */
 
 import { DNS_VERIFICATION_HOST_LEGACY, DNS_VERIFICATION_PREFIX } from "@domainstack/constants";
+import type { VerificationResult } from "@domainstack/types";
 import { providerOrderForLookup, queryDohProvider } from "@domainstack/utils/dns";
-
-import type { VerificationResult } from "./types";
 
 /**
  * Verify domain ownership via DNS TXT record.

@@ -1,7 +1,13 @@
-import type { inferRouterOutputs } from "@trpc/server";
 import { z } from "zod";
 
-import type { AppRouter } from "@/server/routers/_app";
+import type {
+  CertificatesResponse,
+  DnsRecordsResponse,
+  HeadersResponse,
+  HostingResponse,
+  RegistrationResponse,
+  SeoResponse,
+} from "@domainstack/types";
 
 /**
  * Shared domain-tool definitions used by the cloud workflow and browser chat.
@@ -54,17 +60,17 @@ export const DOMAIN_TOOL_DEFS = [
 export type DomainToolName = (typeof DOMAIN_TOOL_DEFS)[number]["name"];
 export type DomainToolProcedure = (typeof DOMAIN_TOOL_DEFS)[number]["procedure"];
 
-type DomainOutputs = inferRouterOutputs<AppRouter>["domain"];
-
-/**
- * inferRouterOutputs widens `success: true | false` to `boolean`, so a
- * `success: true` check cannot pick the success branch. Infer from the
- * shared `data` property and drop the failure branch's `null`.
- */
-type ExtractSuccessData<T> = T extends { data: infer D } ? NonNullable<D> : never;
+type DomainToolSuccess = {
+  getRegistration: RegistrationResponse;
+  getDnsRecords: DnsRecordsResponse;
+  getHosting: HostingResponse;
+  getCertificates: CertificatesResponse;
+  getHeaders: HeadersResponse;
+  getSeo: SeoResponse;
+};
 
 export type DomainToolResult<P extends DomainToolProcedure> =
-  | ExtractSuccessData<DomainOutputs[P]>
+  | DomainToolSuccess[P]
   | { error: string };
 
 export const domainToolInputSchema = z.object({

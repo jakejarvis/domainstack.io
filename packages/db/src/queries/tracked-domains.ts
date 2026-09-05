@@ -2,12 +2,14 @@ import type { SQL } from "drizzle-orm";
 import { and, asc, count, eq, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
-import type { VerificationMethod, VerificationStatus } from "@domainstack/constants";
 import type {
   DnsRecord,
   ProviderInfo,
   RegistrationContact,
+  RegistrationSource,
   TrackedDomainWithDetails,
+  VerificationMethod,
+  VerificationStatus,
 } from "@domainstack/types";
 import { deduplicateDnsRecordsByValue } from "@domainstack/utils/dns";
 
@@ -77,7 +79,7 @@ interface TrackedDomainRow {
   emailDomain: string | null;
   registrationWhoisServer: string | null;
   registrationRdapServers: string[] | null;
-  registrationSource: "rdap" | "whois" | null;
+  registrationSource: RegistrationSource | null;
   registrationTransferLock: boolean | null;
   registrationPrivacyEnabled: boolean | null;
   registrationContacts: RegistrationContact[] | null;

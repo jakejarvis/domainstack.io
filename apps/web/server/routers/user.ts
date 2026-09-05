@@ -17,6 +17,7 @@ import {
   setDomainMuted,
   updateUserNotificationPreferences,
 } from "@domainstack/db/queries";
+import type { SubscriptionQuota } from "@domainstack/types";
 
 const NotificationChannelsSchema = z.object({
   inApp: z.boolean(),
@@ -58,7 +59,7 @@ export const userRouter = createTRPCRouter({
       countTrackedDomainsByStatus(ctx.user.id),
     ]);
 
-    return {
+    const quota: SubscriptionQuota = {
       plan: subscription.plan,
       planQuota: subscription.planQuota,
       // When a canceled subscription expires (null = no pending cancellation)
@@ -68,6 +69,7 @@ export const userRouter = createTRPCRouter({
       // Only active domains count against limit
       canAddMore: counts.active < subscription.planQuota,
     };
+    return quota;
   }),
 
   /**

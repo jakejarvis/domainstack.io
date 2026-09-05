@@ -5,9 +5,9 @@
  * All errors throw (for TanStack Query to retry) - there are no permanent failures.
  */
 
-import { DNS_RECORD_TYPES, type DnsRecordType } from "@domainstack/constants";
+import { DNS_RECORD_TYPES } from "@domainstack/constants";
 import { ensureDomainRecord, replaceDns } from "@domainstack/db/queries";
-import type { DnsRecordsResponse } from "@domainstack/types";
+import type { DnsRecordType, DnsRecordsResponse } from "@domainstack/types";
 
 import { type DnsFetchData, fetchDnsRecords } from "../dns";
 

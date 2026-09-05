@@ -12,23 +12,21 @@ import {
   NOTIFIABLE_CERTIFICATE_CHANGE_KINDS,
 } from "@domainstack/constants";
 import type {
+  CertificateChange,
+  CertificateChangeEvaluation,
   CertificateChangeKind,
+  CertificateDampeningResult,
   CertificatePendingObservation,
   CertificateRecentIdentity,
   CertificateSnapshotData,
+  ProviderChange,
+  ProviderSnapshotData,
+  RegistrationChange,
   RegistrationSnapshotData,
 } from "@domainstack/types";
 
 import { normalizeCertificateHex } from "../certificate-hex";
 import { statusesAreEqual } from "./status";
-import type {
-  CertificateChange,
-  CertificateChangeEvaluation,
-  CertificateDampeningResult,
-  ProviderChange,
-  ProviderSnapshotData,
-  RegistrationChange,
-} from "./types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

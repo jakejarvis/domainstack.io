@@ -7,7 +7,7 @@ import {
   type TablerIcon,
 } from "@tabler/icons-react";
 
-import type { NotificationCategory } from "@domainstack/constants";
+import type { NotificationCategory } from "@domainstack/types";
 
 /**
  * Notification category UI metadata (icons, labels, descriptions).

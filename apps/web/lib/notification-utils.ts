@@ -8,13 +8,13 @@ import {
   IconShieldExclamation,
 } from "@tabler/icons-react";
 
-import type { NotificationType } from "@domainstack/constants";
 import {
   CERTIFICATE_EXPIRY_THRESHOLDS,
   CERTIFICATE_THRESHOLD_TO_TYPE,
   DOMAIN_EXPIRY_THRESHOLDS,
   DOMAIN_THRESHOLD_TO_TYPE,
 } from "@domainstack/constants";
+import type { NotificationType } from "@domainstack/types";
 
 // Pre-sorted thresholds (ascending) for efficient lookup - sort once at module load
 const SORTED_DOMAIN_THRESHOLDS = [...DOMAIN_EXPIRY_THRESHOLDS].sort((a, b) => a - b);
@@ -81,7 +81,7 @@ export function getSeverityIconColor(
 }
 
 /** Map notification types to icons */
-export function getNotificationIcon(type: string) {
+export function getNotificationIcon(type: NotificationType) {
   if (type.startsWith("domain_expiry")) {
     return IconCalendarDot;
   }
@@ -105,7 +105,7 @@ export function getNotificationIcon(type: string) {
 }
 
 /** Map notification types to severity for color coding */
-export function getNotificationSeverity(type: string): NotificationSeverity {
+export function getNotificationSeverity(type: NotificationType): NotificationSeverity {
   // Critical: Expires in 1 day, verification revoked
   if (
     type === "domain_expiry_1d" ||

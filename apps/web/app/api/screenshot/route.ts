@@ -6,35 +6,18 @@ import { checkRateLimit } from "@/lib/ratelimit/api";
 import { type ScreenshotWorkflowResult, screenshotWorkflow } from "@/workflows/screenshot";
 import { getDomainById, getScreenshotByDomainId, isDomainBlocked } from "@domainstack/db/queries";
 import { createLogger } from "@domainstack/logger";
+import type { ScreenshotData } from "@domainstack/types";
 
 const logger = createLogger({ source: "api/screenshot" });
 
-/**
- * Response types for the screenshot API
- */
 type ScreenshotStartResponse =
-  | {
-      status: "completed";
-      cached: true;
-      data: { url: string | null; blocked: boolean };
-    }
+  | { status: "completed"; cached: true; data: ScreenshotData }
   | { status: "running"; runId: string };
 
 type ScreenshotStatusResponse =
   | { status: "running" }
-  | {
-      status: "completed";
-      cached: false;
-      success: true;
-      data: { url: string | null; blocked?: boolean };
-    }
-  | {
-      status: "completed";
-      cached: false;
-      success: false;
-      error: string;
-      data: { url: null };
-    }
+  | { status: "completed"; cached: false; success: true; data: ScreenshotData }
+  | { status: "completed"; cached: false; success: false; error: string; data: { url: null } }
   | { status: "failed"; error: string };
 
 /**

@@ -7,7 +7,8 @@ import {
   getThresholdNotificationType,
   updateNotificationEmailIdStep,
 } from "@/workflows/shared/notifications";
-import { DOMAIN_EXPIRY_THRESHOLDS, type NotificationType } from "@domainstack/constants";
+import { DOMAIN_EXPIRY_THRESHOLDS } from "@domainstack/constants";
+import type { NotificationChannel, NotificationType } from "@domainstack/types";
 
 export interface DomainExpiryWorkflowInput {
   trackedDomainId: string;
@@ -62,7 +63,7 @@ export async function domainExpiryWorkflow(
     daysRemaining,
     DOMAIN_EXPIRY_THRESHOLDS,
     "domain_expiry",
-  ) as NotificationType | null;
+  );
   if (!notificationType) {
     return { skipped: true, reason: "no_threshold_met" };
   }
@@ -170,7 +171,7 @@ async function createNotificationRecord(params: {
   const subject = `${daysRemaining <= 7 ? "⚠️ " : ""}${title}`;
   const message = `Your domain ${domainName} will expire on ${format(expirationDate, "MMMM d, yyyy")}${registrar ? ` (registered with ${registrar})` : ""}.`;
 
-  const channels: string[] = [];
+  const channels: NotificationChannel[] = [];
   if (shouldSendEmail) channels.push("email");
   if (shouldSendInApp) channels.push("in-app");
 

@@ -3,7 +3,7 @@
 import { toast } from "sonner";
 
 import { useAnalytics } from "@/lib/analytics/client";
-import type { OAuthProvider } from "@/lib/oauth";
+import type { OAuthProviderConfig } from "@/lib/oauth";
 import { signIn } from "@domainstack/auth/client";
 import { Button } from "@domainstack/ui/button";
 import { Spinner } from "@domainstack/ui/spinner";
@@ -11,7 +11,7 @@ import { cn } from "@domainstack/ui/utils";
 
 interface OAuthButtonProps {
   /** Provider configuration */
-  provider: OAuthProvider;
+  provider: OAuthProviderConfig;
   /** URL to redirect to after successful sign-in */
   callbackURL?: string;
   /** Additional class names */

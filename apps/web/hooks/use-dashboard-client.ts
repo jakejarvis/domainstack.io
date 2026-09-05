@@ -28,7 +28,7 @@ import {
 import { useDashboardViewMode } from "@/lib/stores/preferences-store";
 import { useTRPC } from "@/lib/trpc/client";
 import { useSession } from "@domainstack/auth/client";
-import type { VerificationMethod } from "@domainstack/constants";
+import type { VerificationMethod } from "@domainstack/types";
 
 export function useDashboardClient() {
   const { data: session, isPending: isSessionPending } = useSession();

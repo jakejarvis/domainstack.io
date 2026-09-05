@@ -1,3 +1,5 @@
+import type { RegistrationChange } from "@domainstack/types";
+
 import {
   EmailBox,
   EmailBoxText,
@@ -14,24 +16,9 @@ import {
 export type RegistrationChangeEmailProps = {
   userName: string;
   domainName: string;
-  changes: {
-    registrarChanged: boolean;
-    nameserversChanged: boolean;
-    transferLockChanged: boolean;
-    statusesChanged: boolean;
-    previousRegistrar?: string;
-    newRegistrar?: string;
-    previousNameservers?: Array<{ host: string }>;
-    newNameservers?: Array<{ host: string }>;
-    previousTransferLock?: boolean | null;
-    newTransferLock?: boolean | null;
-    previousStatuses?: string[];
-    newStatuses?: string[];
-  };
+  changes: RegistrationChange;
   baseUrl: string;
 };
-
-type RegistrationChanges = RegistrationChangeEmailProps["changes"];
 
 function formatTransferLock(value: boolean | null | undefined): string {
   if (value === null) return "Unknown";
@@ -44,7 +31,7 @@ function NameserverList({
   keyPrefix,
 }: {
   label: string;
-  nameservers?: Array<{ host: string }>;
+  nameservers: Array<{ host: string }>;
   keyPrefix: string;
 }) {
   if (!nameservers || nameservers.length === 0) return null;
@@ -64,7 +51,7 @@ function NameserverList({
   );
 }
 
-function RegistrarChangeBlock({ changes }: { changes: RegistrationChanges }) {
+function RegistrarChangeBlock({ changes }: { changes: RegistrationChange }) {
   return (
     <>
       <EmailSubheading>Registrar Changed</EmailSubheading>
@@ -79,7 +66,7 @@ function RegistrarChangeBlock({ changes }: { changes: RegistrationChanges }) {
   );
 }
 
-function NameserverChangeBlock({ changes }: { changes: RegistrationChanges }) {
+function NameserverChangeBlock({ changes }: { changes: RegistrationChange }) {
   return (
     <>
       <EmailSubheading>Nameservers Changed</EmailSubheading>
@@ -97,7 +84,7 @@ function NameserverChangeBlock({ changes }: { changes: RegistrationChanges }) {
   );
 }
 
-function TransferLockChangeBlock({ changes }: { changes: RegistrationChanges }) {
+function TransferLockChangeBlock({ changes }: { changes: RegistrationChange }) {
   return (
     <>
       <EmailSubheading>Transfer Lock Changed</EmailSubheading>
@@ -112,9 +99,7 @@ function TransferLockChangeBlock({ changes }: { changes: RegistrationChanges }) 
   );
 }
 
-function StatusesChangeBlock({ changes }: { changes: RegistrationChanges }) {
-  if (!changes.previousStatuses || !changes.newStatuses) return null;
-
+function StatusesChangeBlock({ changes }: { changes: RegistrationChange }) {
   return (
     <>
       <EmailSubheading>Domain Statuses Changed</EmailSubheading>
@@ -129,7 +114,7 @@ function StatusesChangeBlock({ changes }: { changes: RegistrationChanges }) {
   );
 }
 
-function RegistrationChangeRiskBanner({ changes }: { changes: RegistrationChanges }) {
+function RegistrationChangeRiskBanner({ changes }: { changes: RegistrationChange }) {
   if (changes.registrarChanged || changes.transferLockChanged) {
     return (
       <EmailBox variant="danger">
@@ -212,8 +197,12 @@ RegistrationChangeEmail.PreviewProps = {
     newRegistrar: "Cloudflare",
     previousNameservers: [{ host: "ns1.godaddy.com" }, { host: "ns2.godaddy.com" }],
     newNameservers: [{ host: "ns1.cloudflare.com" }, { host: "ns2.cloudflare.com" }],
+    previousTransferLock: null,
+    newTransferLock: null,
+    previousStatuses: [],
+    newStatuses: [],
   },
   baseUrl: "https://domainstack.io",
-} as RegistrationChangeEmailProps;
+} satisfies RegistrationChangeEmailProps;
 
 export default RegistrationChangeEmail;

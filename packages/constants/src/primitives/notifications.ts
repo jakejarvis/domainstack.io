@@ -6,8 +6,6 @@
 // Valid notification channels
 export const NOTIFICATION_CHANNELS = ["in-app", "email"] as const;
 
-export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];
-
 // Notification categories for user preferences
 export const NOTIFICATION_CATEGORIES = [
   "providerChanges",
@@ -17,8 +15,6 @@ export const NOTIFICATION_CATEGORIES = [
   "certificateChanges",
 ] as const;
 
-export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
-
 // Notification thresholds (days before expiration)
 export const DOMAIN_EXPIRY_THRESHOLDS = [30, 14, 7, 1] as const;
 export const CERTIFICATE_EXPIRY_THRESHOLDS = [14, 7, 3, 1] as const;
@@ -26,7 +22,7 @@ export const CERTIFICATE_EXPIRY_THRESHOLDS = [14, 7, 3, 1] as const;
 type DomainExpiryThreshold = (typeof DOMAIN_EXPIRY_THRESHOLDS)[number];
 type CertificateExpiryThreshold = (typeof CERTIFICATE_EXPIRY_THRESHOLDS)[number];
 
-export type NotificationType =
+type NotificationType =
   | `domain_expiry_${DomainExpiryThreshold}d`
   | `certificate_expiry_${CertificateExpiryThreshold}d`
   | "verification_failing"

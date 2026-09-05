@@ -1,4 +1,6 @@
-import { DNS_TYPE_NUMBERS, DOH_PROVIDERS, type DohProvider } from "@domainstack/constants";
+import { DNS_TYPE_NUMBERS, DOH_PROVIDERS } from "@domainstack/constants";
+
+type DohProvider = (typeof DOH_PROVIDERS)[number];
 import { simpleHash } from "@domainstack/utils";
 
 import { SafeFetchError } from "./errors";

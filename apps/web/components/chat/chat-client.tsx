@@ -21,7 +21,7 @@ import { createClientDomainTools } from "@/lib/chat/client-tools";
 import { buildSystemPrompt } from "@/lib/chat/system-prompt";
 import { safeDecodeURIComponent } from "@/lib/safe-parse";
 import { useChatHydrated, useChatStore } from "@/lib/stores/chat-store";
-import { usePreferencesStore } from "@/lib/stores/preferences-store";
+import { type ChatMode, usePreferencesStore } from "@/lib/stores/preferences-store";
 import { useTRPCClient } from "@/lib/trpc/client";
 import { CHATBOT_NAME } from "@domainstack/constants";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@domainstack/ui/drawer";
@@ -38,8 +38,6 @@ interface ChatClientProps {
 }
 
 const EMPTY_SUGGESTIONS: string[] = [];
-
-type ChatMode = "cloud" | "local";
 
 interface ChatController {
   messages: UIMessage[];

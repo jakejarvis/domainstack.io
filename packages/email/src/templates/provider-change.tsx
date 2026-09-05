@@ -1,3 +1,5 @@
+import type { ProviderChangeWithNames } from "@domainstack/types";
+
 import {
   EmailBox,
   EmailBoxText,
@@ -14,17 +16,7 @@ import {
 export type ProviderChangeEmailProps = {
   userName: string;
   domainName: string;
-  changes: {
-    dnsProviderChanged: boolean;
-    hostingProviderChanged: boolean;
-    emailProviderChanged: boolean;
-    previousDnsProvider?: string | null;
-    newDnsProvider?: string | null;
-    previousHostingProvider?: string | null;
-    newHostingProvider?: string | null;
-    previousEmailProvider?: string | null;
-    newEmailProvider?: string | null;
-  };
+  changes: ProviderChangeWithNames;
   baseUrl: string;
 };
 
@@ -114,12 +106,20 @@ ProviderChangeEmail.PreviewProps = {
     dnsProviderChanged: true,
     hostingProviderChanged: false,
     emailProviderChanged: true,
+    previousDnsProviderId: "cf",
+    newDnsProviderId: "r53",
+    previousHostingProviderId: null,
+    newHostingProviderId: null,
+    previousEmailProviderId: "google",
+    newEmailProviderId: "ms",
     previousDnsProvider: "Cloudflare",
     newDnsProvider: "Amazon Route 53",
+    previousHostingProvider: null,
+    newHostingProvider: null,
     previousEmailProvider: "Google Workspace",
     newEmailProvider: "Microsoft 365",
   },
   baseUrl: "https://domainstack.io",
-} as ProviderChangeEmailProps;
+} satisfies ProviderChangeEmailProps;
 
 export default ProviderChangeEmail;

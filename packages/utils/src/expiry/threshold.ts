@@ -5,10 +5,7 @@
  * and mapping to notification types based on configurable thresholds.
  */
 
-/**
- * Notification type prefix for domain/certificate expiry notifications.
- */
-export type ExpiryNotificationPrefix = "domain_expiry" | "certificate_expiry";
+import type { ExpiryNotificationPrefix, NotificationType } from "@domainstack/types";
 
 /**
  * Get the notification type for a given days remaining value and thresholds.
@@ -19,7 +16,7 @@ export type ExpiryNotificationPrefix = "domain_expiry" | "certificate_expiry";
  * @param daysRemaining - Number of days until expiration
  * @param thresholds - Array of threshold values (e.g., [30, 14, 7, 1])
  * @param prefix - Notification type prefix
- * @returns Notification type string or null
+ * @returns Notification type or null
  *
  * @example
  * ```ts
@@ -36,11 +33,11 @@ export function getThresholdNotificationType(
   daysRemaining: number,
   thresholds: readonly number[],
   prefix: ExpiryNotificationPrefix,
-): string | null {
+): NotificationType | null {
   const sorted = [...thresholds].sort((a, b) => a - b);
   for (const threshold of sorted) {
     if (daysRemaining <= threshold) {
-      return `${prefix}_${threshold}d`;
+      return `${prefix}_${threshold}d` as NotificationType;
     }
   }
   return null;

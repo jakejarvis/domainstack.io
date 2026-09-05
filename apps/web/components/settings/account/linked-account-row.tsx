@@ -1,4 +1,4 @@
-import type { OAuthProvider } from "@/lib/oauth";
+import type { OAuthProviderConfig } from "@/lib/oauth";
 import { Button } from "@domainstack/ui/button";
 import { Item, ItemActions, ItemContent, ItemMedia, ItemTitle } from "@domainstack/ui/item";
 import {
@@ -9,7 +9,7 @@ import {
 import { Spinner } from "@domainstack/ui/spinner";
 
 interface LinkedAccountRowProps {
-  provider: OAuthProvider;
+  provider: OAuthProviderConfig;
   isLinked: boolean;
   canUnlink: boolean;
   isLinking: boolean;

@@ -1,4 +1,4 @@
-import type { CertificateChangeKind } from "@domainstack/types";
+import type { CertificateChangeKind, CertificateChangeWithNames } from "@domainstack/types";
 
 import {
   EmailBox,
@@ -17,14 +17,7 @@ export type CertificateChangeEmailProps = {
   userName: string;
   domainName: string;
   kind: CertificateChangeKind;
-  changes: {
-    caProviderChanged: boolean;
-    issuerChanged: boolean;
-    previousCaProvider?: string | null;
-    newCaProvider?: string | null;
-    previousIssuer?: string | null;
-    newIssuer?: string | null;
-  };
+  changes: CertificateChangeWithNames;
   newValidTo?: string; // ISO date string
   baseUrl: string;
 };
@@ -129,15 +122,18 @@ CertificateChangeEmail.PreviewProps = {
   domainName: "example.com",
   kind: "authority",
   changes: {
+    kind: "authority",
     caProviderChanged: true,
     issuerChanged: true,
-    previousCaProvider: "Let's Encrypt",
-    newCaProvider: "DigiCert",
+    previousCaProviderId: "le",
+    newCaProviderId: "digicert",
     previousIssuer: "R3",
     newIssuer: "DigiCert TLS RSA SHA256 2020 CA1",
+    previousCaProvider: "Let's Encrypt",
+    newCaProvider: "DigiCert",
   },
   newValidTo: "2025-12-15T00:00:00Z",
   baseUrl: "https://domainstack.io",
-} as CertificateChangeEmailProps;
+} satisfies CertificateChangeEmailProps;
 
 export default CertificateChangeEmail;

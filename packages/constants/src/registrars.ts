@@ -2,7 +2,9 @@
  * Supported pricing registrars shown on the unregistered-domain card.
  * Icons stay app-local — they're presentation, not data.
  */
-export type RegistrarKey = "porkbun" | "cloudflare" | "dynadot";
+export const REGISTRAR_KEYS = ["porkbun", "cloudflare", "dynadot"] as const;
+
+type RegistrarKey = (typeof REGISTRAR_KEYS)[number];
 
 export interface RegistrarProvider {
   name: string;
