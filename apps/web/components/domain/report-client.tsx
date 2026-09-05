@@ -2,7 +2,7 @@
 
 import { IconAlertTriangle, IconRefresh } from "@tabler/icons-react";
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { CreateIssueButton } from "@/components/create-issue-button";
 import { CertificatesSection } from "@/components/domain/certificates/certificates-section";
@@ -138,22 +138,7 @@ function SuspendedSeoSection({ domain }: { domain: string }) {
   return <SeoSection domain={domain} data={data.data} />;
 }
 
-export function DomainReportClient({ domain }: { domain: string }) {
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-  const {
-    data: registration,
-    isLoading: isRegistrationLoading,
-    isError: isRegistrationError,
-    error: registrationError,
-  } = useQuery(trpc.domain.getRegistration.queryOptions({ domain }, staticQueryOptions));
-  const domainId = registration?.data?.domainId;
-  const lookupFailed = Boolean(registration && !registration.success);
-  const isRegistered = registration?.success === true && registration.data?.isRegistered === true;
-  const isUnregistered =
-    registration?.success === true && registration.data?.isRegistered === false;
-
-  // Add to search history for registered domains
+function useDomainReportTracking(domain: string, isRegistered: boolean) {
   const addDomainToHistory = useSearchHistoryStore((s) => s.addDomain);
   useEffect(() => {
     if (isRegistered) {
@@ -163,10 +148,7 @@ export function DomainReportClient({ domain }: { domain: string }) {
 
   const viewedDomainRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!isRegistered) {
-      return;
-    }
-    if (viewedDomainRef.current === domain) {
+    if (!isRegistered || viewedDomainRef.current === domain) {
       return;
     }
     viewedDomainRef.current = domain;
@@ -174,17 +156,13 @@ export function DomainReportClient({ domain }: { domain: string }) {
   }, [domain, isRegistered]);
 
   const headerRef = useRef<HTMLDivElement>(null);
-  const sectionIds = Object.keys(sections);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const isMobile = useIsMobile();
-
-  // Section tracking with scroll detection
   const { activeSection, scrollToSection } = useSectionTracking({
-    sectionIds,
+    sectionIds: Object.keys(sections),
     scrollMarginPx: resolveScrollMargin(isMobile),
   });
 
-  // Header observer
   useEffect(() => {
     const headerElement = headerRef.current;
     if (!headerElement) return;
@@ -203,43 +181,145 @@ export function DomainReportClient({ domain }: { domain: string }) {
     return () => observer.disconnect();
   }, []);
 
-  if (isRegistrationError || lookupFailed) {
-    const isDev = process.env.NODE_ENV === "development";
-    const description =
-      isDev && isRegistrationError && registrationError
-        ? registrationError.message
-        : lookupFailed && registration && !registration.success
-          ? registrationLookupMessage(registration.error)
-          : "We couldn't fetch registration data for this domain. Please try again.";
+  return { headerRef, isHeaderVisible, activeSection, scrollToSection };
+}
 
+function getReportErrorDescription({
+  isRegistrationError,
+  registrationError,
+  lookupFailed,
+  registration,
+}: {
+  isRegistrationError: boolean;
+  registrationError: unknown;
+  lookupFailed: boolean;
+  registration: { success: false; error?: string } | { success: true } | null | undefined;
+}) {
+  if (
+    process.env.NODE_ENV === "development" &&
+    isRegistrationError &&
+    registrationError instanceof Error
+  ) {
+    return registrationError.message;
+  }
+  if (lookupFailed && registration && !registration.success) {
+    return registrationLookupMessage(registration.error);
+  }
+  return "We couldn't fetch registration data for this domain. Please try again.";
+}
+
+function DomainReportLoadError({
+  domain,
+  registrationError,
+  description,
+}: {
+  domain: string;
+  registrationError: unknown;
+  description: string;
+}) {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  return (
+    <Empty className="border border-dashed">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <IconAlertTriangle />
+        </EmptyMedia>
+        <EmptyTitle>Failed to load domain report</EmptyTitle>
+        <EmptyDescription>{description}</EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Button
+            size="sm"
+            onClick={() =>
+              queryClient.invalidateQueries(trpc.domain.getRegistration.queryFilter({ domain }))
+            }
+          >
+            <IconRefresh />
+            Retry
+          </Button>
+          <CreateIssueButton
+            error={registrationError instanceof Error ? registrationError : undefined}
+            variant="outline"
+            size="sm"
+          />
+        </div>
+      </EmptyContent>
+    </Empty>
+  );
+}
+
+function RegisteredReportSections({ domain }: { domain: string }) {
+  return (
+    <>
+      <SectionErrorBoundary sectionName="Hosting">
+        <Suspense fallback={<HostingSectionSkeleton />}>
+          <SuspendedHostingSection domain={domain} />
+        </Suspense>
+      </SectionErrorBoundary>
+
+      <SectionErrorBoundary sectionName="DNS">
+        <Suspense fallback={<DnsSectionSkeleton />}>
+          <SuspendedDnsSection domain={domain} />
+        </Suspense>
+      </SectionErrorBoundary>
+
+      <SectionErrorBoundary sectionName="Certificates">
+        <Suspense fallback={<CertificatesSectionSkeleton />}>
+          <SuspendedCertificatesSection domain={domain} />
+        </Suspense>
+      </SectionErrorBoundary>
+
+      <SectionErrorBoundary sectionName="Headers">
+        <Suspense fallback={<HeadersSectionSkeleton />}>
+          <SuspendedHeadersSection domain={domain} />
+        </Suspense>
+      </SectionErrorBoundary>
+
+      <SectionErrorBoundary sectionName="SEO">
+        <Suspense fallback={<SeoSectionSkeleton />}>
+          <SuspendedSeoSection domain={domain} />
+        </Suspense>
+      </SectionErrorBoundary>
+    </>
+  );
+}
+
+function DomainReportSections({ children }: { children: ReactNode }) {
+  return <div className="space-y-4">{children}</div>;
+}
+
+export function DomainReportClient({ domain }: { domain: string }) {
+  const trpc = useTRPC();
+  const {
+    data: registration,
+    isLoading: isRegistrationLoading,
+    isError: isRegistrationError,
+    error: registrationError,
+  } = useQuery(trpc.domain.getRegistration.queryOptions({ domain }, staticQueryOptions));
+  const lookupFailed = Boolean(registration && !registration.success);
+  const isRegistered = registration?.success === true && registration.data?.isRegistered === true;
+  const isUnregistered =
+    registration?.success === true && registration.data?.isRegistered === false;
+  const { headerRef, isHeaderVisible, activeSection, scrollToSection } = useDomainReportTracking(
+    domain,
+    isRegistered,
+  );
+
+  if (isRegistrationError || lookupFailed) {
     return (
-      <Empty className="border border-dashed">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <IconAlertTriangle />
-          </EmptyMedia>
-          <EmptyTitle>Failed to load domain report</EmptyTitle>
-          <EmptyDescription>{description}</EmptyDescription>
-        </EmptyHeader>
-        <EmptyContent>
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <Button
-              size="sm"
-              onClick={() =>
-                queryClient.invalidateQueries(trpc.domain.getRegistration.queryFilter({ domain }))
-              }
-            >
-              <IconRefresh />
-              Retry
-            </Button>
-            <CreateIssueButton
-              error={registrationError instanceof Error ? registrationError : undefined}
-              variant="outline"
-              size="sm"
-            />
-          </div>
-        </EmptyContent>
-      </Empty>
+      <DomainReportLoadError
+        domain={domain}
+        registrationError={registrationError}
+        description={getReportErrorDescription({
+          isRegistrationError,
+          registrationError,
+          lookupFailed,
+          registration,
+        })}
+      />
     );
   }
 
@@ -251,7 +331,7 @@ export function DomainReportClient({ domain }: { domain: string }) {
     <>
       <DomainReportHeader
         domain={domain}
-        domainId={domainId}
+        domainId={registration?.data?.domainId}
         isRegistered={isRegistered}
         ref={headerRef}
       />
@@ -264,49 +344,18 @@ export function DomainReportClient({ domain }: { domain: string }) {
         onSectionClick={scrollToSection}
       />
 
-      <div className="space-y-4">
+      <DomainReportSections>
         {isRegistrationLoading ? (
           <RegistrationSectionSkeleton />
         ) : (
           <RegistrationSection domain={domain} data={registration?.data} />
         )}
-
-        {!isRegistered ? (
-          <AllSkeletonsExceptRegistration />
+        {isRegistered ? (
+          <RegisteredReportSections domain={domain} />
         ) : (
-          <>
-            <SectionErrorBoundary sectionName="Hosting">
-              <Suspense fallback={<HostingSectionSkeleton />}>
-                <SuspendedHostingSection domain={domain} />
-              </Suspense>
-            </SectionErrorBoundary>
-
-            <SectionErrorBoundary sectionName="DNS">
-              <Suspense fallback={<DnsSectionSkeleton />}>
-                <SuspendedDnsSection domain={domain} />
-              </Suspense>
-            </SectionErrorBoundary>
-
-            <SectionErrorBoundary sectionName="Certificates">
-              <Suspense fallback={<CertificatesSectionSkeleton />}>
-                <SuspendedCertificatesSection domain={domain} />
-              </Suspense>
-            </SectionErrorBoundary>
-
-            <SectionErrorBoundary sectionName="Headers">
-              <Suspense fallback={<HeadersSectionSkeleton />}>
-                <SuspendedHeadersSection domain={domain} />
-              </Suspense>
-            </SectionErrorBoundary>
-
-            <SectionErrorBoundary sectionName="SEO">
-              <Suspense fallback={<SeoSectionSkeleton />}>
-                <SuspendedSeoSection domain={domain} />
-              </Suspense>
-            </SectionErrorBoundary>
-          </>
+          <AllSkeletonsExceptRegistration />
         )}
-      </div>
+      </DomainReportSections>
     </>
   );
 }

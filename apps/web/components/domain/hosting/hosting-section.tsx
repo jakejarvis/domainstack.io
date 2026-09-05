@@ -21,6 +21,68 @@ function formatLocation(geo: HostingGeo): string {
   return parts.join(", ");
 }
 
+function ProviderKeyValue({
+  label,
+  provider,
+}: {
+  label: string;
+  provider: { id?: string | null; name?: string | null } | null;
+}) {
+  return (
+    <KeyValue
+      label={label}
+      value={provider?.name ?? "Not configured"}
+      leading={
+        provider?.id ? (
+          <ProviderLogo providerId={provider.id} providerName={provider.name} />
+        ) : undefined
+      }
+    />
+  );
+}
+
+function HostingLocation({ geo, domain }: { geo: HostingGeo; domain?: string }) {
+  const { lat, lon } = geo;
+
+  return (
+    <>
+      <KeyValue
+        label="Location"
+        value={formatLocation(geo)}
+        leading={
+          geo.country_code ? (
+            <span title={geo.country || geo.country_code} className="text-lg leading-none">
+              {countryCodeToEmoji(geo.country_code)}
+            </span>
+          ) : undefined
+        }
+      />
+      {lat && lon ? (
+        <div className="relative h-[280px] w-full">
+          <HostingMap lat={lat} lon={lon} domain={domain} />
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function EmptyHosting() {
+  return (
+    <Empty className="border border-dashed">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <IconHelp />
+        </EmptyMedia>
+        <EmptyTitle>No hosting details available</EmptyTitle>
+        <EmptyDescription>
+          We couldn&apos;t detect hosting, email, or DNS provider info. If the domain has no A/AAAA
+          records or blocked headers, details may be unavailable.
+        </EmptyDescription>
+      </EmptyHeader>
+    </Empty>
+  );
+}
+
 export function HostingSection({
   domain,
   data,
@@ -31,7 +93,7 @@ export function HostingSection({
   const dnsProvider = data?.dnsProvider ?? null;
   const hostingProvider = data?.hostingProvider ?? null;
   const emailProvider = data?.emailProvider ?? null;
-  const hasAnyProvider = dnsProvider?.name || hostingProvider?.name || emailProvider?.name;
+  const hasAnyProvider = Boolean(dnsProvider?.name || hostingProvider?.name || emailProvider?.name);
   const geolocation = data?.geo ?? null;
 
   return (
@@ -39,76 +101,14 @@ export function HostingSection({
       {hasAnyProvider ? (
         <>
           <KeyValueGrid colsDesktop={3}>
-            <KeyValue
-              label="DNS"
-              value={dnsProvider?.name ?? "Not configured"}
-              leading={
-                dnsProvider?.id ? (
-                  <ProviderLogo providerId={dnsProvider.id} providerName={dnsProvider.name} />
-                ) : undefined
-              }
-            />
-            <KeyValue
-              label="Hosting"
-              value={hostingProvider?.name ?? "Not configured"}
-              leading={
-                hostingProvider?.id ? (
-                  <ProviderLogo
-                    providerId={hostingProvider.id}
-                    providerName={hostingProvider.name}
-                  />
-                ) : undefined
-              }
-            />
-            <KeyValue
-              label="Email"
-              value={emailProvider?.name ?? "Not configured"}
-              leading={
-                emailProvider?.id ? (
-                  <ProviderLogo providerId={emailProvider.id} providerName={emailProvider.name} />
-                ) : undefined
-              }
-            />
+            <ProviderKeyValue label="DNS" provider={dnsProvider} />
+            <ProviderKeyValue label="Hosting" provider={hostingProvider} />
+            <ProviderKeyValue label="Email" provider={emailProvider} />
           </KeyValueGrid>
-
-          {geolocation ? (
-            <>
-              <KeyValue
-                label="Location"
-                value={formatLocation(geolocation)}
-                leading={
-                  geolocation.country_code ? (
-                    <span
-                      title={geolocation.country || geolocation.country_code}
-                      className="text-lg leading-none"
-                    >
-                      {countryCodeToEmoji(geolocation.country_code)}
-                    </span>
-                  ) : undefined
-                }
-              />
-
-              {geolocation.lat && geolocation.lon ? (
-                <div className="relative h-[280px] w-full">
-                  <HostingMap lat={geolocation.lat} lon={geolocation.lon} domain={domain} />
-                </div>
-              ) : null}
-            </>
-          ) : null}
+          {geolocation ? <HostingLocation geo={geolocation} domain={domain} /> : null}
         </>
       ) : (
-        <Empty className="border border-dashed">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <IconHelp />
-            </EmptyMedia>
-            <EmptyTitle>No hosting details available</EmptyTitle>
-            <EmptyDescription>
-              We couldn&apos;t detect hosting, email, or DNS provider info. If the domain has no
-              A/AAAA records or blocked headers, details may be unavailable.
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
+        <EmptyHosting />
       )}
     </ReportSection>
   );

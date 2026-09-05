@@ -19,97 +19,40 @@ type TrackDomainButtonProps = {
   enabled?: boolean;
 };
 
-export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonProps) {
-  const { data: session, isPending: isSessionPending } = useSession();
-  const router = useRouter();
-  const trpc = useTRPC();
-  const [isNavigating, startNavigation] = useTransition();
-  const mounted = useIsClient();
-
-  // Only query tracked domains when user is authenticated (read-only, no mutations needed)
-  const isAuthenticated = !!session?.user;
-  const { data: trackedDomains, isLoading: isLoadingDomains } = useQuery(
-    trpc.tracking.listDomains.queryOptions(
-      isAuthenticated ? { includeArchived: false } : skipToken,
-    ),
-  );
-
-  // Find if this domain is already tracked
-  const trackedDomain = trackedDomains?.find(
-    (d) => d.domainName.toLowerCase() === domain.toLowerCase(),
-  );
-  const isTracked = !!trackedDomain;
-  const isVerified = trackedDomain?.verified ?? false;
-  const isPendingVerification = isTracked && !isVerified;
-
-  const handleButtonClick = useCallback(() => {
-    if (session?.user) {
-      if (isPendingVerification && trackedDomain) {
-        // Navigate to add-domain with resume params (only ID is required)
-        const params = new URLSearchParams({
-          resume: "true",
-          id: trackedDomain.id,
-        });
-
-        if (trackedDomain.verificationMethod) {
-          params.set("method", trackedDomain.verificationMethod);
+function TrackedVerifiedButton() {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Button
+            variant="outline"
+            nativeButton={false}
+            aria-label="View in dashboard"
+            render={
+              <Link href="/dashboard">
+                <IconRosetteDiscountCheck className="text-success-foreground" aria-hidden="true" />
+                <span className="sr-only">View in dashboard</span>
+              </Link>
+            }
+          />
         }
+      />
+      <TooltipContent>You own and track this domain</TooltipContent>
+    </Tooltip>
+  );
+}
 
-        startNavigation(() =>
-          router.push(`/dashboard/add-domain?${params.toString()}`, {
-            scroll: false,
-          }),
-        );
-      } else {
-        // Add new domain flow
-        startNavigation(() =>
-          router.push(`/dashboard/add-domain?domain=${encodeURIComponent(domain)}`, {
-            scroll: false,
-          }),
-        );
-      }
-    }
-  }, [session?.user, isPendingVerification, trackedDomain, domain, router, startNavigation]);
-
-  // Stay on the loading button until after mount. useSession() can resolve on
-  // the server (cookie cache) and still be pending on the first client paint.
-  if (!mounted || isSessionPending || !enabled || (session?.user && isLoadingDomains)) {
-    return (
-      <Button variant="outline" disabled aria-label="Track domain">
-        <IconBellPlus className="sm:text-muted-foreground" aria-hidden="true" />
-        <span className="hidden sm:inline">Track</span>
-      </Button>
-    );
-  }
-
-  // Already tracked and verified - show success state
-  if (isTracked && isVerified) {
-    return (
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Button
-              variant="outline"
-              nativeButton={false}
-              aria-label="View in dashboard"
-              render={
-                <Link href="/dashboard">
-                  <IconRosetteDiscountCheck
-                    className="text-success-foreground"
-                    aria-hidden="true"
-                  />
-                  <span className="sr-only">View in dashboard</span>
-                </Link>
-              }
-            />
-          }
-        />
-        <TooltipContent>You own and track this domain</TooltipContent>
-      </Tooltip>
-    );
-  }
-
-  // Determine button content based on tracking status
+function TrackOrVerifyButton({
+  isPendingVerification,
+  isAuthenticated,
+  isNavigating,
+  onClick,
+}: {
+  isPendingVerification: boolean;
+  isAuthenticated: boolean;
+  isNavigating: boolean;
+  onClick: () => void;
+}) {
   const buttonContent = isPendingVerification ? (
     <>
       <IconAlertCircle className="text-accent-orange" aria-hidden="true" />
@@ -121,44 +64,107 @@ export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonP
       <span className="hidden sm:inline">Track</span>
     </>
   );
-
   const tooltipText = isPendingVerification
     ? "Complete verification for this domain"
     : "Get alerts for this domain";
-
   const ariaLabel = isPendingVerification ? "Verify domain" : "Track domain";
+
+  const trigger = isAuthenticated ? (
+    <Button variant="outline" onClick={onClick} disabled={isNavigating} aria-label={ariaLabel}>
+      {isNavigating ? <Spinner /> : null}
+      {buttonContent}
+    </Button>
+  ) : (
+    <Button
+      variant="outline"
+      nativeButton={false}
+      aria-label={ariaLabel}
+      render={
+        <Link href="/login" scroll={false}>
+          {buttonContent}
+        </Link>
+      }
+    />
+  );
 
   return (
     <Tooltip>
-      <TooltipTrigger
-        render={
-          session?.user ? (
-            <Button
-              variant="outline"
-              onClick={handleButtonClick}
-              disabled={isNavigating}
-              aria-label={ariaLabel}
-            >
-              {isNavigating ? <Spinner /> : null}
-              {buttonContent}
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              nativeButton={false}
-              aria-label={ariaLabel}
-              render={
-                <Link href="/login" scroll={false}>
-                  {buttonContent}
-                </Link>
-              }
-            />
-          )
-        }
-      />
+      <TooltipTrigger render={trigger} />
       <TooltipContent>
         <p>{tooltipText}</p>
       </TooltipContent>
     </Tooltip>
+  );
+}
+
+export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonProps) {
+  const { data: session, isPending: isSessionPending } = useSession();
+  const router = useRouter();
+  const trpc = useTRPC();
+  const [isNavigating, startNavigation] = useTransition();
+  const mounted = useIsClient();
+
+  const isAuthenticated = !!session?.user;
+  const { data: trackedDomains, isLoading: isLoadingDomains } = useQuery(
+    trpc.tracking.listDomains.queryOptions(
+      isAuthenticated ? { includeArchived: false } : skipToken,
+    ),
+  );
+
+  const trackedDomain = trackedDomains?.find(
+    (d) => d.domainName.toLowerCase() === domain.toLowerCase(),
+  );
+  const isTracked = !!trackedDomain;
+  const isVerified = trackedDomain?.verified ?? false;
+  const isPendingVerification = isTracked && !isVerified;
+
+  const handleButtonClick = useCallback(() => {
+    if (!session?.user) return;
+
+    if (isPendingVerification && trackedDomain) {
+      const params = new URLSearchParams({
+        resume: "true",
+        id: trackedDomain.id,
+      });
+
+      if (trackedDomain.verificationMethod) {
+        params.set("method", trackedDomain.verificationMethod);
+      }
+
+      startNavigation(() =>
+        router.push(`/dashboard/add-domain?${params.toString()}`, {
+          scroll: false,
+        }),
+      );
+      return;
+    }
+
+    startNavigation(() =>
+      router.push(`/dashboard/add-domain?domain=${encodeURIComponent(domain)}`, {
+        scroll: false,
+      }),
+    );
+  }, [session?.user, isPendingVerification, trackedDomain, domain, router, startNavigation]);
+
+  if (!mounted || isSessionPending || !enabled || (session?.user && isLoadingDomains)) {
+    return (
+      <Button variant="outline" disabled aria-label="Track domain">
+        <IconBellPlus className="sm:text-muted-foreground" aria-hidden="true" />
+        <span className="hidden sm:inline">Track</span>
+      </Button>
+    );
+  }
+
+  if (isTracked && isVerified) {
+    return <TrackedVerifiedButton />;
+  }
+
+  return (
+    <TrackOrVerifyButton
+      isPendingVerification={isPendingVerification}
+      isAuthenticated={isAuthenticated}
+      isNavigating={isNavigating}
+      onClick={handleButtonClick}
+    />
   );
 }

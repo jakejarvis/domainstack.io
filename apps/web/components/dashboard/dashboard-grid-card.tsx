@@ -50,6 +50,247 @@ type DashboardGridCardProps = {
   domain: TrackedDomainWithDetails;
 };
 
+function ProviderInfoRows({
+  domain,
+}: {
+  domain: Pick<TrackedDomainWithDetails, "id" | "registrar" | "dns" | "hosting" | "email" | "ca">;
+}) {
+  return (
+    <>
+      <InfoRow
+        label="Registrar"
+        provider={domain.registrar}
+        trackedDomainId={domain.id}
+        providerType="registrar"
+      />
+      <InfoRow label="DNS" provider={domain.dns} trackedDomainId={domain.id} providerType="dns" />
+      <InfoRow
+        label="Hosting"
+        provider={domain.hosting}
+        trackedDomainId={domain.id}
+        providerType="hosting"
+      />
+      <InfoRow
+        label="Email"
+        provider={domain.email}
+        trackedDomainId={domain.id}
+        providerType="email"
+      />
+      <InfoRow label="CA" provider={domain.ca} trackedDomainId={domain.id} providerType="ca" />
+    </>
+  );
+}
+
+function ExpiresInfoRow({
+  expirationDate,
+  showRelative,
+}: {
+  expirationDate: Date | null;
+  showRelative: boolean;
+}) {
+  if (!expirationDate) {
+    return (
+      <InfoRow label="Expires">
+        <span className="text-muted-foreground">Unknown</span>
+      </InfoRow>
+    );
+  }
+
+  return (
+    <InfoRow label="Expires">
+      <ResponsiveTooltip>
+        <ResponsiveTooltipTrigger
+          nativeButton={false}
+          render={<span className="truncate">{formatDate(expirationDate)}</span>}
+        />
+        <ResponsiveTooltipContent>{formatDateTimeUtc(expirationDate)}</ResponsiveTooltipContent>
+      </ResponsiveTooltip>
+      {showRelative ? (
+        <span className="shrink-0 text-[11px] leading-none text-muted-foreground">
+          <RelativeExpiryString to={expirationDate} dangerDays={30} warnDays={45} />
+        </span>
+      ) : null}
+    </InfoRow>
+  );
+}
+
+function DashboardGridCardBody({
+  domain,
+  isFailing,
+  isVerifyPending,
+  isVerifyingThis,
+  onVerify,
+}: {
+  domain: TrackedDomainWithDetails;
+  isFailing: boolean;
+  isVerifyPending: boolean;
+  isVerifyingThis: boolean;
+  onVerify: () => void;
+}) {
+  if (domain.verified && !isFailing) {
+    return (
+      <div className="space-y-2">
+        <ExpiresInfoRow expirationDate={domain.expirationDate} showRelative={false} />
+        <ProviderInfoRows domain={domain} />
+      </div>
+    );
+  }
+
+  if (domain.verified && isFailing) {
+    return (
+      <>
+        <div className="space-y-2">
+          <ExpiresInfoRow expirationDate={domain.expirationDate} showRelative />
+          <ProviderInfoRows domain={domain} />
+        </div>
+        <div className="min-h-4 flex-1" />
+        <Button onClick={onVerify} disabled={isVerifyPending} className="mt-3 w-full">
+          {isVerifyingThis ? <Spinner /> : <IconTool />}
+          Fix Verification
+        </Button>
+      </>
+    );
+  }
+
+  return (
+    <div className="flex flex-1 flex-col pt-2">
+      <p className="text-sm text-muted-foreground">
+        Complete verification to start receiving health alerts.
+      </p>
+      <div className="min-h-4 flex-1" />
+      <Button onClick={onVerify} disabled={isVerifyPending} className="w-full">
+        {isVerifyingThis ? <Spinner /> : <IconAlertCircle />}
+        Complete Verification
+      </Button>
+    </div>
+  );
+}
+
+function DashboardGridCardHeader({
+  domain,
+  selected,
+  isFailing,
+  isPending,
+  onToggleSelect,
+  onVerify,
+  onMute,
+  onArchive,
+  onRemove,
+}: {
+  domain: TrackedDomainWithDetails;
+  selected: boolean;
+  isFailing: boolean;
+  isPending: boolean;
+  onToggleSelect: () => void;
+  onVerify: () => void;
+  onMute: () => void;
+  onArchive: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <CardHeader className="relative pt-6 pb-2">
+      <div className="flex items-center gap-3">
+        <div className="relative size-8 shrink-0">
+          <Favicon
+            domain={domain.domainName}
+            className={cn("size-8 rounded-md", selected ? "hidden" : "group-hover:hidden")}
+          />
+          <Checkbox
+            checked={selected}
+            onCheckedChange={onToggleSelect}
+            aria-label={`Select ${domain.domainName}`}
+            className={cn(
+              "absolute top-1/2 left-1/2 size-5 -translate-x-1/2 -translate-y-1/2",
+              selected ? "flex" : "hidden group-hover:flex",
+            )}
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <ScreenshotPopover domain={domain.domainName} domainId={domain.domainId}>
+            <Link
+              href={`/${encodeURIComponent(domain.domainName)}`}
+              prefetch={false}
+              className="block min-w-0 hover:underline"
+              data-disable-progress
+            >
+              <CardTitle className="truncate text-base">{domain.domainName}</CardTitle>
+            </Link>
+          </ScreenshotPopover>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            {domain.verified ? (
+              <DomainHealthBadge
+                expirationDate={domain.expirationDate}
+                verified={domain.verified}
+              />
+            ) : null}
+            <DomainStatusBadge
+              verified={domain.verified}
+              verificationStatus={domain.verificationStatus}
+              verificationMethod={domain.verificationMethod}
+              verificationFailedAt={domain.verificationFailedAt}
+              onClick={isFailing || isPending ? onVerify : undefined}
+            />
+          </div>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button variant="ghost" size="icon-sm">
+                <IconDotsVertical />
+                <span className="sr-only">Actions</span>
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="end" className="min-w-36">
+            <DropdownMenuItem
+              nativeButton={false}
+              render={
+                <a href={`https://${domain.domainName}`} target="_blank" rel="noopener noreferrer">
+                  <IconExternalLink />
+                  Open
+                </a>
+              }
+            />
+            <DropdownMenuItem
+              nativeButton={false}
+              render={
+                <Link href={`/${encodeURIComponent(domain.domainName)}`} prefetch={false}>
+                  <IconBookmark />
+                  View Report
+                </Link>
+              }
+            />
+            <DropdownMenuSeparator />
+            {domain.verified ? (
+              <DropdownMenuItem onClick={onMute}>
+                {domain.muted ? (
+                  <>
+                    <IconBell />
+                    Unmute
+                  </>
+                ) : (
+                  <>
+                    <IconBellOff />
+                    Mute
+                  </>
+                )}
+              </DropdownMenuItem>
+            ) : null}
+            <DropdownMenuItem onClick={onArchive}>
+              <IconArchive />
+              Archive
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onRemove}>
+              <IconTrash className="text-danger-foreground" />
+              Remove
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </CardHeader>
+  );
+}
+
 /**
  * Memoized grid card that handles its own selection state, actions, and selection visuals.
  * Includes scale animation and selection ring. Parent handles enter/exit animations.
@@ -57,22 +298,7 @@ type DashboardGridCardProps = {
 export const DashboardGridCard = memo(function DashboardGridCard({
   domain,
 }: DashboardGridCardProps) {
-  const {
-    id: trackedDomainId,
-    domainId,
-    domainName,
-    verified,
-    verificationStatus,
-    verificationMethod,
-    verificationFailedAt,
-    expirationDate,
-    registrar,
-    dns,
-    hosting,
-    email,
-    ca,
-    muted,
-  } = domain;
+  const { id: trackedDomainId, verificationMethod, muted } = domain;
   const selected = useIsDomainSelected(trackedDomainId);
   const toggle = useToggleDomainSelection();
   const { onVerify, onRemove, onArchive, onMute, verifyingDomainId } = useDashboardActions();
@@ -99,12 +325,10 @@ export const DashboardGridCard = memo(function DashboardGridCard({
     onMute(trackedDomainId, !muted);
   }, [onMute, trackedDomainId, muted]);
 
-  // Use shared hydrated time to avoid N separate useEffect calls for N cards
   const now = useHydratedNow();
-
-  const accent = getHealthAccent(expirationDate, verified, now || undefined);
-  const isFailing = verified && verificationStatus === "failing";
-  const isPending = !verified;
+  const accent = getHealthAccent(domain.expirationDate, domain.verified, now || undefined);
+  const isFailing = domain.verified && domain.verificationStatus === "failing";
+  const isPending = !domain.verified;
 
   return (
     <m.div
@@ -112,7 +336,6 @@ export const DashboardGridCard = memo(function DashboardGridCard({
       animate={{ scale: selected ? 1.01 : 1 }}
       transition={{ duration: 0.1 }}
     >
-      {/* Selection ring overlay */}
       <div
         className={cn(
           "pointer-events-none absolute inset-0 rounded-xl transition-all duration-150",
@@ -127,258 +350,32 @@ export const DashboardGridCard = memo(function DashboardGridCard({
           selected && "bg-primary/10",
         )}
       >
-        {/* Accent glow */}
         <div
           aria-hidden
           className="pointer-events-none absolute -inset-x-8 -top-8 h-24 accent-glow opacity-30 blur-2xl"
           style={{ "--glow-color": `var(--accent-${accent})` } as React.CSSProperties}
         />
 
-        <CardHeader className="relative pt-6 pb-2">
-          <div className="flex items-center gap-3">
-            <div className="relative size-8 shrink-0">
-              {/* Favicon - hidden on hover or when selected */}
-              <Favicon
-                domain={domainName}
-                className={cn("size-8 rounded-md", selected ? "hidden" : "group-hover:hidden")}
-              />
-              {/* Checkbox - shown on hover or when selected */}
-              <Checkbox
-                checked={selected}
-                onCheckedChange={handleToggleSelect}
-                aria-label={`Select ${domainName}`}
-                className={cn(
-                  "absolute top-1/2 left-1/2 size-5 -translate-x-1/2 -translate-y-1/2",
-                  selected ? "flex" : "hidden group-hover:flex",
-                )}
-              />
-            </div>
-            <div className="min-w-0 flex-1">
-              <ScreenshotPopover domain={domainName} domainId={domainId}>
-                <Link
-                  href={`/${encodeURIComponent(domainName)}`}
-                  prefetch={false}
-                  className="block min-w-0 hover:underline"
-                  data-disable-progress
-                >
-                  <CardTitle className="truncate text-base">{domainName}</CardTitle>
-                </Link>
-              </ScreenshotPopover>
-              <div className="mt-1 flex flex-wrap items-center gap-2">
-                {verified && (
-                  <DomainHealthBadge expirationDate={expirationDate} verified={verified} />
-                )}
-                <DomainStatusBadge
-                  verified={verified}
-                  verificationStatus={verificationStatus}
-                  verificationMethod={verificationMethod}
-                  verificationFailedAt={verificationFailedAt}
-                  onClick={isFailing || isPending ? handleVerify : undefined}
-                />
-              </div>
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button variant="ghost" size="icon-sm">
-                    <IconDotsVertical />
-                    <span className="sr-only">Actions</span>
-                  </Button>
-                }
-              />
-              <DropdownMenuContent align="end" className="min-w-36">
-                <DropdownMenuItem
-                  nativeButton={false}
-                  render={
-                    <a href={`https://${domainName}`} target="_blank" rel="noopener noreferrer">
-                      <IconExternalLink />
-                      Open
-                    </a>
-                  }
-                />
-                <DropdownMenuItem
-                  nativeButton={false}
-                  render={
-                    <Link href={`/${encodeURIComponent(domainName)}`} prefetch={false}>
-                      <IconBookmark />
-                      View Report
-                    </Link>
-                  }
-                />
-                <DropdownMenuSeparator />
-                {verified && (
-                  <DropdownMenuItem onClick={handleMute}>
-                    {muted ? (
-                      <>
-                        <IconBell />
-                        Unmute
-                      </>
-                    ) : (
-                      <>
-                        <IconBellOff />
-                        Mute
-                      </>
-                    )}
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onClick={handleArchive}>
-                  <IconArchive />
-                  Archive
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleRemove}>
-                  <IconTrash className="text-danger-foreground" />
-                  Remove
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </CardHeader>
+        <DashboardGridCardHeader
+          domain={domain}
+          selected={selected}
+          isFailing={isFailing}
+          isPending={isPending}
+          onToggleSelect={handleToggleSelect}
+          onVerify={handleVerify}
+          onMute={handleMute}
+          onArchive={handleArchive}
+          onRemove={handleRemove}
+        />
 
         <CardContent className="relative flex flex-1 flex-col pt-2 pb-6">
-          {verified && !isFailing ? (
-            <div className="space-y-2">
-              {/* Expires */}
-              <InfoRow label="Expires">
-                {expirationDate ? (
-                  <ResponsiveTooltip>
-                    <ResponsiveTooltipTrigger
-                      nativeButton={false}
-                      render={<span className="truncate">{formatDate(expirationDate)}</span>}
-                    />
-                    <ResponsiveTooltipContent>
-                      {formatDateTimeUtc(expirationDate)}
-                    </ResponsiveTooltipContent>
-                  </ResponsiveTooltip>
-                ) : (
-                  <span className="text-muted-foreground">Unknown</span>
-                )}
-              </InfoRow>
-
-              {/* Registrar */}
-              <InfoRow
-                label="Registrar"
-                provider={registrar}
-                trackedDomainId={trackedDomainId}
-                providerType="registrar"
-              />
-
-              {/* DNS */}
-              <InfoRow
-                label="DNS"
-                provider={dns}
-                trackedDomainId={trackedDomainId}
-                providerType="dns"
-              />
-
-              {/* Hosting */}
-              <InfoRow
-                label="Hosting"
-                provider={hosting}
-                trackedDomainId={trackedDomainId}
-                providerType="hosting"
-              />
-
-              {/* Email */}
-              <InfoRow
-                label="Email"
-                provider={email}
-                trackedDomainId={trackedDomainId}
-                providerType="email"
-              />
-
-              {/* CA */}
-              <InfoRow
-                label="CA"
-                provider={ca}
-                trackedDomainId={trackedDomainId}
-                providerType="ca"
-              />
-            </div>
-          ) : verified && isFailing ? (
-            <>
-              <div className="space-y-2">
-                {/* Expires */}
-                <InfoRow label="Expires">
-                  {expirationDate ? (
-                    <>
-                      <ResponsiveTooltip>
-                        <ResponsiveTooltipTrigger
-                          nativeButton={false}
-                          render={<span className="truncate">{formatDate(expirationDate)}</span>}
-                        />
-                        <ResponsiveTooltipContent>
-                          {formatDateTimeUtc(expirationDate)}
-                        </ResponsiveTooltipContent>
-                      </ResponsiveTooltip>
-                      <span className="shrink-0 text-[11px] leading-none text-muted-foreground">
-                        <RelativeExpiryString to={expirationDate} dangerDays={30} warnDays={45} />
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-muted-foreground">Unknown</span>
-                  )}
-                </InfoRow>
-
-                {/* Registrar */}
-                <InfoRow
-                  label="Registrar"
-                  provider={registrar}
-                  trackedDomainId={trackedDomainId}
-                  providerType="registrar"
-                />
-
-                {/* DNS */}
-                <InfoRow
-                  label="DNS"
-                  provider={dns}
-                  trackedDomainId={trackedDomainId}
-                  providerType="dns"
-                />
-
-                {/* Hosting */}
-                <InfoRow
-                  label="Hosting"
-                  provider={hosting}
-                  trackedDomainId={trackedDomainId}
-                  providerType="hosting"
-                />
-
-                {/* Email */}
-                <InfoRow
-                  label="Email"
-                  provider={email}
-                  trackedDomainId={trackedDomainId}
-                  providerType="email"
-                />
-
-                {/* CA */}
-                <InfoRow
-                  label="CA"
-                  provider={ca}
-                  trackedDomainId={trackedDomainId}
-                  providerType="ca"
-                />
-              </div>
-              {/* Spacer to ensure minimum gap above button */}
-              <div className="min-h-4 flex-1" />
-              <Button onClick={handleVerify} disabled={isVerifyPending} className="mt-3 w-full">
-                {isVerifyingThis ? <Spinner /> : <IconTool />}
-                Fix Verification
-              </Button>
-            </>
-          ) : (
-            <div className="flex flex-1 flex-col pt-2">
-              <p className="text-sm text-muted-foreground">
-                Complete verification to start receiving health alerts.
-              </p>
-              {/* Spacer to ensure minimum gap above button */}
-              <div className="min-h-4 flex-1" />
-              <Button onClick={handleVerify} disabled={isVerifyPending} className="w-full">
-                {isVerifyingThis ? <Spinner /> : <IconAlertCircle />}
-                Complete Verification
-              </Button>
-            </div>
-          )}
+          <DashboardGridCardBody
+            domain={domain}
+            isFailing={isFailing}
+            isVerifyPending={isVerifyPending}
+            isVerifyingThis={isVerifyingThis}
+            onVerify={handleVerify}
+          />
         </CardContent>
       </Card>
     </m.div>

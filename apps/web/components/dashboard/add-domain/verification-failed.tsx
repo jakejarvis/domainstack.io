@@ -6,7 +6,6 @@ import { Button } from "@domainstack/ui/button";
 
 type VerificationFailedProps = {
   method: VerificationMethod;
-  error?: string;
   onCheckAgain: () => void;
   onReturnLater: () => void;
 };

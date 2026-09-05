@@ -45,13 +45,13 @@ export async function GithubStars() {
       variant="ghost"
       size="sm"
       nativeButton={false}
+      aria-label="Open GitHub repository"
       render={
         <a
           href={`https://github.com/${REPOSITORY_SLUG}`}
           target="_blank"
           rel="noopener"
           className="group inline-flex shrink-0 items-center gap-2"
-          aria-label="Open GitHub repository"
         >
           <SiGithub className="flex size-3.5 shrink-0 transition-colors group-hover:text-foreground" />
           <span className="relative inline-block font-mono text-[13px] leading-none text-muted-foreground transition-colors group-hover:text-foreground">

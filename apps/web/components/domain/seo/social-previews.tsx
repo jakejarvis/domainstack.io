@@ -134,6 +134,191 @@ function PreviewImage({
   );
 }
 
+type PreviewCardProps = {
+  hostname: string;
+  title: string | null;
+  description: string | null;
+  image: string | null;
+};
+
+function TwitterPreview({
+  hostname,
+  title,
+  description,
+  image,
+  variant,
+}: PreviewCardProps & { variant: "compact" | "large" }) {
+  if (variant === "compact") {
+    return (
+      <div className="mx-auto w-full max-w-[520px] overflow-hidden rounded-2xl border border-[#eff3f4] bg-white text-black dark:border-[#2f3336] dark:bg-black dark:text-white">
+        <div className="flex">
+          <div className="relative min-h-[96px] w-24 shrink-0 self-stretch bg-[#f1f5f9] dark:bg-[#0f1419]">
+            <PreviewImage
+              src={image}
+              width={240}
+              height={240}
+              placeholderClassName="text-[#64748b] text-[11px] dark:text-[#8b98a5]"
+            />
+          </div>
+
+          <div className="min-w-0 flex-1 p-3">
+            <div className="truncate text-[11px] leading-4 text-[#536471] dark:text-[#8b98a5]">
+              {hostname}
+            </div>
+            <div className="mt-0.5 line-clamp-1 text-[15px] font-semibold">{title || hostname}</div>
+            {description ? (
+              <div className="mt-0.5 line-clamp-2 text-[13px] text-[#536471] dark:text-[#8b98a5]">
+                {description}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-[#eff3f4] bg-white text-black dark:border-[#2f3336] dark:bg-black dark:text-white">
+      <div className="relative w-full overflow-hidden bg-[#f1f5f9] dark:bg-[#0f1419]">
+        <div className="aspect-[16/9] min-h-[160px] w-full">
+          <PreviewImage
+            src={image}
+            width={1200}
+            height={675}
+            placeholderClassName="text-[#64748b] text-[12px] dark:text-[#8b98a5]"
+          />
+        </div>
+      </div>
+      <div className="p-3">
+        <div className="truncate text-[11px] text-[#536471] dark:text-[#8b98a5]">{hostname}</div>
+        <div className="mt-0.5 line-clamp-2 text-[15px] font-semibold">{title || hostname}</div>
+        {description ? (
+          <div className="mt-0.5 line-clamp-2 text-[13px] text-[#536471] dark:text-[#8b98a5]">
+            {description}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function FacebookPreview({ hostname, title, description, image }: PreviewCardProps) {
+  return (
+    <div className="overflow-hidden rounded-md border border-[#e4e6eb] bg-white text-black dark:border-[#3a3b3c] dark:bg-[#18191a] dark:text-white">
+      <div className="relative w-full bg-[#f0f2f5] dark:bg-[#242526]">
+        <div className="aspect-[1.91/1] min-h-[150px] w-full">
+          <PreviewImage
+            src={image}
+            width={1200}
+            height={628}
+            placeholderClassName="text-[#606770] text-[12px] dark:text-[#b0b3b8]"
+          />
+        </div>
+      </div>
+      <div className="bg-[#f0f2f5] px-4 py-3 dark:bg-[#3a3b3c]">
+        <div className="truncate text-[11px] font-medium tracking-wide text-[#606770] uppercase dark:text-[#b0b3b8]">
+          {hostname}
+        </div>
+        <div className="mt-1 line-clamp-2 text-[17px] font-semibold text-[#050505] dark:text-[#e4e6eb]">
+          {title || hostname}
+        </div>
+        {description ? (
+          <div className="mt-1 line-clamp-2 text-[13px] text-[#606770] dark:text-[#b0b3b8]">
+            {description}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function LinkedInPreview({ hostname, title, image }: PreviewCardProps) {
+  return (
+    <div className="overflow-hidden border border-[#dde6f2] bg-white text-black dark:border-[#2e3a44] dark:bg-[#1d2226] dark:text-white">
+      <div className="relative w-full bg-[#eef3f8] dark:bg-[#0b0f12]">
+        <div className="aspect-[1200/627] min-h-[150px] w-full">
+          <PreviewImage
+            src={image}
+            width={1200}
+            height={627}
+            placeholderClassName="text-[#6e7781] text-[12px] dark:text-[#9aa6b2]"
+          />
+        </div>
+      </div>
+      <div className="space-y-1 px-4 py-3">
+        <div className="line-clamp-2 text-[13px] font-semibold text-[#0a66c2] dark:text-[#70b5f9]">
+          {title || hostname}
+        </div>
+        <div className="truncate text-[13px] text-[#6e7781] dark:text-[#9aa6b2]">{hostname}</div>
+      </div>
+    </div>
+  );
+}
+
+function SlackPreview({ hostname, title, description, image }: PreviewCardProps) {
+  return (
+    <div className="relative overflow-hidden rounded-md border border-[#e1e3e6] bg-white p-3 pl-6 text-black dark:border-[#2b2e33] dark:bg-[#1f2329] dark:text-white">
+      <div className="absolute top-3 bottom-3 left-3 w-[3px] rounded bg-[#c9ced6] dark:bg-[#3a3f45]" />
+      <div className="truncate text-[12px] leading-4 text-[#4a4e52] dark:text-[#b7bfc6]">
+        {hostname}
+      </div>
+      <div className="mt-1 text-[15px] font-semibold text-[#1d9bd1] dark:text-[#36c5f0]">
+        {title || hostname}
+      </div>
+      {description ? (
+        <div className="mt-1 text-[13px] text-[#4a4e52] dark:text-[#b7bfc6]">{description}</div>
+      ) : null}
+      <div className="mt-3 overflow-hidden rounded-[6px] bg-[#ecebeb] dark:bg-[#393d42]">
+        <div className="aspect-[16/9] min-h-[150px] w-full">
+          <PreviewImage
+            src={image}
+            width={1200}
+            height={675}
+            placeholderClassName="text-[#6b7075] text-[12px] dark:text-[#9aa6b2]"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DiscordPreview({ hostname, title, description, image }: PreviewCardProps) {
+  return (
+    <div className="rounded-lg border border-[#1f2124] bg-[#2b2d31] p-3 text-white">
+      <div className="truncate text-[12px] leading-4 text-[#b5bac1]">{hostname}</div>
+      <div className="mt-1 line-clamp-2 text-[16px] font-semibold text-[#58a6ff]">
+        {title || hostname}
+      </div>
+      {description ? (
+        <div className="mt-1 line-clamp-3 text-[13px] text-[#dbdee1]">{description}</div>
+      ) : null}
+      <div className="mt-3 overflow-hidden rounded-md bg-[#1f2124]">
+        <div className="aspect-[1200/628] min-h-[150px] w-full">
+          <PreviewImage
+            src={image}
+            width={1200}
+            height={628}
+            placeholderClassName="text-[#99a1ab] text-[12px]"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function getSocialPreviewCard(
+  provider: SocialPreviewProvider,
+  props: PreviewCardProps,
+  variant: "compact" | "large",
+): React.ReactNode {
+  if (provider === "twitter") return <TwitterPreview {...props} variant={variant} />;
+  if (provider === "facebook") return <FacebookPreview {...props} />;
+  if (provider === "linkedin") return <LinkedInPreview {...props} />;
+  if (provider === "slack") return <SlackPreview {...props} />;
+  if (provider === "discord") return <DiscordPreview {...props} />;
+  return null;
+}
+
 function SocialPreview({
   provider,
   title,
@@ -150,172 +335,22 @@ function SocialPreview({
   variant?: "compact" | "large";
 }) {
   const hostname = getHostname(url);
-  let card: React.ReactNode | null = null;
+  const card = getSocialPreviewCard(provider, { hostname, title, description, image }, variant);
 
-  if (provider === "twitter") {
-    if (variant === "compact") {
-      card = (
-        <div className="mx-auto w-full max-w-[520px] overflow-hidden rounded-2xl border border-[#eff3f4] bg-white text-black dark:border-[#2f3336] dark:bg-black dark:text-white">
-          <div className="flex">
-            <div className="relative min-h-[96px] w-24 shrink-0 self-stretch bg-[#f1f5f9] dark:bg-[#0f1419]">
-              <PreviewImage
-                src={image}
-                width={240}
-                height={240}
-                placeholderClassName="text-[#64748b] text-[11px] dark:text-[#8b98a5]"
-              />
-            </div>
-
-            <div className="min-w-0 flex-1 p-3">
-              <div className="truncate text-[11px] leading-4 text-[#536471] dark:text-[#8b98a5]">
-                {hostname}
-              </div>
-              <div className="mt-0.5 line-clamp-1 text-[15px] font-semibold">
-                {title || hostname}
-              </div>
-              {description && (
-                <div className="mt-0.5 line-clamp-2 text-[13px] text-[#536471] dark:text-[#8b98a5]">
-                  {description}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      );
-    } else {
-      card = (
-        <div className="overflow-hidden rounded-2xl border border-[#eff3f4] bg-white text-black dark:border-[#2f3336] dark:bg-black dark:text-white">
-          <div className="relative w-full overflow-hidden bg-[#f1f5f9] dark:bg-[#0f1419]">
-            <div className="aspect-[16/9] min-h-[160px] w-full">
-              <PreviewImage
-                src={image}
-                width={1200}
-                height={675}
-                placeholderClassName="text-[#64748b] text-[12px] dark:text-[#8b98a5]"
-              />
-            </div>
-          </div>
-          <div className="p-3">
-            <div className="truncate text-[11px] text-[#536471] dark:text-[#8b98a5]">
-              {hostname}
-            </div>
-            <div className="mt-0.5 line-clamp-2 text-[15px] font-semibold">{title || hostname}</div>
-            {description && (
-              <div className="mt-0.5 line-clamp-2 text-[13px] text-[#536471] dark:text-[#8b98a5]">
-                {description}
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
-  }
-
-  if (provider === "facebook") {
-    card = (
-      <div className="overflow-hidden rounded-md border border-[#e4e6eb] bg-white text-black dark:border-[#3a3b3c] dark:bg-[#18191a] dark:text-white">
-        <div className="relative w-full bg-[#f0f2f5] dark:bg-[#242526]">
-          <div className="aspect-[1.91/1] min-h-[150px] w-full">
-            <PreviewImage
-              src={image}
-              width={1200}
-              height={628}
-              placeholderClassName="text-[#606770] text-[12px] dark:text-[#b0b3b8]"
-            />
-          </div>
-        </div>
-        <div className="bg-[#f0f2f5] px-4 py-3 dark:bg-[#3a3b3c]">
-          <div className="truncate text-[11px] font-medium tracking-wide text-[#606770] uppercase dark:text-[#b0b3b8]">
-            {hostname}
-          </div>
-          <div className="mt-1 line-clamp-2 text-[17px] font-semibold text-[#050505] dark:text-[#e4e6eb]">
-            {title || hostname}
-          </div>
-          {description && (
-            <div className="mt-1 line-clamp-2 text-[13px] text-[#606770] dark:text-[#b0b3b8]">
-              {description}
-            </div>
-          )}
-        </div>
+  if (!card) {
+    return (
+      <div
+        className="flex h-48 w-full items-center justify-center rounded-md border text-[12px] text-[#64748b] dark:text-[#8b98a5]"
+        data-slot="social-preview"
+        data-provider={provider}
+        data-variant={variant}
+      >
+        No preview available.
       </div>
     );
   }
 
-  if (provider === "linkedin") {
-    card = (
-      <div className="overflow-hidden border border-[#dde6f2] bg-white text-black dark:border-[#2e3a44] dark:bg-[#1d2226] dark:text-white">
-        <div className="relative w-full bg-[#eef3f8] dark:bg-[#0b0f12]">
-          <div className="aspect-[1200/627] min-h-[150px] w-full">
-            <PreviewImage
-              src={image}
-              width={1200}
-              height={627}
-              placeholderClassName="text-[#6e7781] text-[12px] dark:text-[#9aa6b2]"
-            />
-          </div>
-        </div>
-        <div className="space-y-1 px-4 py-3">
-          <div className="line-clamp-2 text-[13px] font-semibold text-[#0a66c2] dark:text-[#70b5f9]">
-            {title || hostname}
-          </div>
-          <div className="truncate text-[13px] text-[#6e7781] dark:text-[#9aa6b2]">{hostname}</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (provider === "slack") {
-    card = (
-      <div className="relative overflow-hidden rounded-md border border-[#e1e3e6] bg-white p-3 pl-6 text-black dark:border-[#2b2e33] dark:bg-[#1f2329] dark:text-white">
-        <div className="absolute top-3 bottom-3 left-3 w-[3px] rounded bg-[#c9ced6] dark:bg-[#3a3f45]" />
-        <div className="truncate text-[12px] leading-4 text-[#4a4e52] dark:text-[#b7bfc6]">
-          {hostname}
-        </div>
-        <div className="mt-1 text-[15px] font-semibold text-[#1d9bd1] dark:text-[#36c5f0]">
-          {title || hostname}
-        </div>
-        {description && (
-          <div className="mt-1 text-[13px] text-[#4a4e52] dark:text-[#b7bfc6]">{description}</div>
-        )}
-        <div className="mt-3 overflow-hidden rounded-[6px] bg-[#ecebeb] dark:bg-[#393d42]">
-          <div className="aspect-[16/9] min-h-[150px] w-full">
-            <PreviewImage
-              src={image}
-              width={1200}
-              height={675}
-              placeholderClassName="text-[#6b7075] text-[12px] dark:text-[#9aa6b2]"
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (provider === "discord") {
-    card = (
-      <div className="rounded-lg border border-[#1f2124] bg-[#2b2d31] p-3 text-white">
-        <div className="truncate text-[12px] leading-4 text-[#b5bac1]">{hostname}</div>
-        <div className="mt-1 line-clamp-2 text-[16px] font-semibold text-[#58a6ff]">
-          {title || hostname}
-        </div>
-        {description && (
-          <div className="mt-1 line-clamp-3 text-[13px] text-[#dbdee1]">{description}</div>
-        )}
-        <div className="mt-3 overflow-hidden rounded-md bg-[#1f2124]">
-          <div className="aspect-[1200/628] min-h-[150px] w-full">
-            <PreviewImage
-              src={image}
-              width={1200}
-              height={628}
-              placeholderClassName="text-[#99a1ab] text-[12px]"
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return card ? (
+  return (
     <a
       href={url}
       target="_blank"
@@ -328,14 +363,5 @@ function SocialPreview({
     >
       {card}
     </a>
-  ) : (
-    <div
-      className="flex h-48 w-full items-center justify-center rounded-md border text-[12px] text-[#64748b] dark:text-[#8b98a5]"
-      data-slot="social-preview"
-      data-provider={provider}
-      data-variant={variant}
-    >
-      No preview available.
-    </div>
   );
 }

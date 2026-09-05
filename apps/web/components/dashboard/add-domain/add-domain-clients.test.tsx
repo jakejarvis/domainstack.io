@@ -18,10 +18,6 @@ vi.mock("next/navigation", () => ({
     get: (key: string) => search.params[key] ?? null,
   }),
 }));
-vi.mock("@/lib/trpc/client", async () => {
-  const { useTRPC } = await import("@/mocks/trpc");
-  return { useTRPC };
-});
 vi.mock("@/components/dashboard/add-domain/add-domain-content", () => ({
   AddDomainContent: ({
     onSuccess,
@@ -55,7 +51,6 @@ vi.mock("@/components/dashboard/add-domain/add-domain-content", () => ({
 import { AddDomainModalClient } from "@/components/dashboard/add-domain/add-domain-modal-client";
 import { AddDomainPageClient } from "@/components/dashboard/add-domain/add-domain-page-client";
 import { render, screen, waitFor } from "@/mocks/react";
-import { DOMAINS_QUERY_KEY, SUBSCRIPTION_QUERY_KEY } from "@/mocks/trpc";
 
 describe("AddDomainPageClient", () => {
   beforeEach(() => {
@@ -76,8 +71,7 @@ describe("AddDomainPageClient", () => {
       domain: "pending.dev",
       method: "dns_txt",
     };
-    const { queryClient } = render(<AddDomainPageClient prefillDomain="from-report.com" />);
-    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+    render(<AddDomainPageClient prefillDomain="from-report.com" />);
 
     expect(JSON.parse(screen.getByTestId("resume").textContent ?? "null")).toEqual({
       id: "domain-pending",
@@ -90,8 +84,6 @@ describe("AddDomainPageClient", () => {
 
     await user.click(screen.getByRole("button", { name: "Finish" }));
 
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: DOMAINS_QUERY_KEY });
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: SUBSCRIPTION_QUERY_KEY });
     expect(nav.push).toHaveBeenCalledWith("/dashboard", { scroll: false });
     expect(nav.back).not.toHaveBeenCalled();
   });
@@ -137,15 +129,12 @@ describe("AddDomainModalClient", () => {
     search.params = {};
   });
 
-  it("goes back after success and invalidates lists", async () => {
+  it("goes back after success", async () => {
     const user = userEvent.setup();
-    const { queryClient } = render(<AddDomainModalClient />);
-    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+    render(<AddDomainModalClient />);
 
     await user.click(screen.getByRole("button", { name: "Finish" }));
 
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: DOMAINS_QUERY_KEY });
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: SUBSCRIPTION_QUERY_KEY });
     expect(nav.back).toHaveBeenCalledOnce();
     expect(nav.push).not.toHaveBeenCalled();
   });

@@ -31,6 +31,130 @@ export type RegistrationChangeEmailProps = {
   baseUrl: string;
 };
 
+type RegistrationChanges = RegistrationChangeEmailProps["changes"];
+
+function formatTransferLock(value: boolean | null | undefined): string {
+  if (value === null) return "Unknown";
+  return value ? "Enabled" : "Disabled";
+}
+
+function NameserverList({
+  label,
+  nameservers,
+  keyPrefix,
+}: {
+  label: string;
+  nameservers?: Array<{ host: string }>;
+  keyPrefix: string;
+}) {
+  if (!nameservers || nameservers.length === 0) return null;
+
+  return (
+    <>
+      <strong>{label}:</strong>
+      <br />
+      {nameservers.map((ns) => (
+        <span key={`${keyPrefix}-${ns.host}`}>
+          • {ns.host}
+          <br />
+        </span>
+      ))}
+      <br />
+    </>
+  );
+}
+
+function RegistrarChangeBlock({ changes }: { changes: RegistrationChanges }) {
+  return (
+    <>
+      <EmailSubheading>Registrar Changed</EmailSubheading>
+      <EmailBox variant="warning">
+        <EmailBoxText variant="warning">
+          <strong>Previous:</strong> {changes.previousRegistrar || "Unknown"}
+          <br />
+          <strong>New:</strong> {changes.newRegistrar || "Unknown"}
+        </EmailBoxText>
+      </EmailBox>
+    </>
+  );
+}
+
+function NameserverChangeBlock({ changes }: { changes: RegistrationChanges }) {
+  return (
+    <>
+      <EmailSubheading>Nameservers Changed</EmailSubheading>
+      <EmailBox variant="warning">
+        <EmailBoxText variant="warning">
+          <NameserverList
+            label="Previous"
+            nameservers={changes.previousNameservers}
+            keyPrefix="prev"
+          />
+          <NameserverList label="New" nameservers={changes.newNameservers} keyPrefix="new" />
+        </EmailBoxText>
+      </EmailBox>
+    </>
+  );
+}
+
+function TransferLockChangeBlock({ changes }: { changes: RegistrationChanges }) {
+  return (
+    <>
+      <EmailSubheading>Transfer Lock Changed</EmailSubheading>
+      <EmailBox variant="warning">
+        <EmailBoxText variant="warning">
+          <strong>Previous:</strong> {formatTransferLock(changes.previousTransferLock)}
+          <br />
+          <strong>New:</strong> {formatTransferLock(changes.newTransferLock)}
+        </EmailBoxText>
+      </EmailBox>
+    </>
+  );
+}
+
+function StatusesChangeBlock({ changes }: { changes: RegistrationChanges }) {
+  if (!changes.previousStatuses || !changes.newStatuses) return null;
+
+  return (
+    <>
+      <EmailSubheading>Domain Statuses Changed</EmailSubheading>
+      <EmailBox variant="warning">
+        <EmailBoxText variant="warning">
+          <strong>Previous:</strong> {changes.previousStatuses.join(", ") || "None"}
+          <br />
+          <strong>New:</strong> {changes.newStatuses.join(", ") || "None"}
+        </EmailBoxText>
+      </EmailBox>
+    </>
+  );
+}
+
+function RegistrationChangeRiskBanner({ changes }: { changes: RegistrationChanges }) {
+  if (changes.registrarChanged || changes.transferLockChanged) {
+    return (
+      <EmailBox variant="danger">
+        <EmailBoxText variant="danger">
+          <strong>Action Required:</strong> If you didn&apos;t make these changes, your domain may
+          have been compromised. Contact your registrar immediately.
+        </EmailBoxText>
+      </EmailBox>
+    );
+  }
+
+  if (changes.nameserversChanged || changes.statusesChanged) {
+    return (
+      <EmailBox variant="info">
+        <EmailBoxText variant="info">
+          <strong>Note:</strong> If you didn&apos;t authorize these changes, contact your registrar
+          to investigate.
+        </EmailBoxText>
+      </EmailBox>
+    );
+  }
+
+  return null;
+}
+
 function RegistrationChangeEmail({
   userName,
   domainName,
@@ -38,12 +162,11 @@ function RegistrationChangeEmail({
   baseUrl,
 }: RegistrationChangeEmailProps) {
   const previewText = `Registration changes detected for ${domainName}`;
-
   const changeCount =
-    (changes.registrarChanged ? 1 : 0) +
-    (changes.nameserversChanged ? 1 : 0) +
-    (changes.transferLockChanged ? 1 : 0) +
-    (changes.statusesChanged ? 1 : 0);
+    Number(changes.registrarChanged) +
+    Number(changes.nameserversChanged) +
+    Number(changes.transferLockChanged) +
+    Number(changes.statusesChanged);
 
   return (
     <EmailLayout previewText={previewText}>
@@ -56,111 +179,12 @@ function RegistrationChangeEmail({
         details for <strong>{domainName}</strong>.
       </EmailText>
 
-      {changes.registrarChanged && (
-        <>
-          <EmailSubheading>Registrar Changed</EmailSubheading>
-          <EmailBox variant="warning">
-            <EmailBoxText variant="warning">
-              <strong>Previous:</strong> {changes.previousRegistrar || "Unknown"}
-              <br />
-              <strong>New:</strong> {changes.newRegistrar || "Unknown"}
-            </EmailBoxText>
-          </EmailBox>
-        </>
-      )}
+      {changes.registrarChanged ? <RegistrarChangeBlock changes={changes} /> : null}
+      {changes.nameserversChanged ? <NameserverChangeBlock changes={changes} /> : null}
+      {changes.transferLockChanged ? <TransferLockChangeBlock changes={changes} /> : null}
+      {changes.statusesChanged ? <StatusesChangeBlock changes={changes} /> : null}
 
-      {changes.nameserversChanged && (
-        <>
-          <EmailSubheading>Nameservers Changed</EmailSubheading>
-          <EmailBox variant="warning">
-            <EmailBoxText variant="warning">
-              {changes.previousNameservers && changes.previousNameservers.length > 0 && (
-                <>
-                  <strong>Previous:</strong>
-                  <br />
-                  {changes.previousNameservers.map((ns) => (
-                    <span key={`prev-${ns.host}`}>
-                      • {ns.host}
-                      <br />
-                    </span>
-                  ))}
-                  <br />
-                </>
-              )}
-              {changes.newNameservers && changes.newNameservers.length > 0 && (
-                <>
-                  <strong>New:</strong>
-                  <br />
-                  {changes.newNameservers.map((ns) => (
-                    <span key={`new-${ns.host}`}>
-                      • {ns.host}
-                      <br />
-                    </span>
-                  ))}
-                </>
-              )}
-            </EmailBoxText>
-          </EmailBox>
-        </>
-      )}
-
-      {changes.transferLockChanged && (
-        <>
-          <EmailSubheading>Transfer Lock Changed</EmailSubheading>
-          <EmailBox variant="warning">
-            <EmailBoxText variant="warning">
-              <strong>Previous:</strong>{" "}
-              {changes.previousTransferLock === null
-                ? "Unknown"
-                : changes.previousTransferLock
-                  ? "Enabled"
-                  : "Disabled"}
-              <br />
-              <strong>New:</strong>{" "}
-              {changes.newTransferLock === null
-                ? "Unknown"
-                : changes.newTransferLock
-                  ? "Enabled"
-                  : "Disabled"}
-            </EmailBoxText>
-          </EmailBox>
-        </>
-      )}
-
-      {changes.statusesChanged && changes.previousStatuses && changes.newStatuses && (
-        <>
-          <EmailSubheading>Domain Statuses Changed</EmailSubheading>
-          <EmailBox variant="warning">
-            <EmailBoxText variant="warning">
-              <strong>Previous:</strong> {changes.previousStatuses.join(", ") || "None"}
-              <br />
-              <strong>New:</strong> {changes.newStatuses.join(", ") || "None"}
-            </EmailBoxText>
-          </EmailBox>
-        </>
-      )}
-
-      {/* Show danger warning for high-risk changes (registrar or transfer lock) */}
-      {(changes.registrarChanged || changes.transferLockChanged) && (
-        <EmailBox variant="danger">
-          <EmailBoxText variant="danger">
-            <strong>Action Required:</strong> If you didn&apos;t make these changes, your domain may
-            have been compromised. Contact your registrar immediately.
-          </EmailBoxText>
-        </EmailBox>
-      )}
-
-      {/* Show info notice for lower-risk changes (nameservers or statuses only) */}
-      {!changes.registrarChanged &&
-        !changes.transferLockChanged &&
-        (changes.nameserversChanged || changes.statusesChanged) && (
-          <EmailBox variant="info">
-            <EmailBoxText variant="info">
-              <strong>Note:</strong> If you didn&apos;t authorize these changes, contact your
-              registrar to investigate.
-            </EmailBoxText>
-          </EmailBox>
-        )}
+      <RegistrationChangeRiskBanner changes={changes} />
 
       <EmailButton href={`${baseUrl}/${domainName}`}>View Domain Details</EmailButton>
 

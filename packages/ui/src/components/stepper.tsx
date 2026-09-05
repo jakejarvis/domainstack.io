@@ -356,6 +356,18 @@ function StepperTrigger({ render, className, children, tabIndex, ...props }: Ste
 
 StepperTrigger.displayName = "StepperTrigger";
 
+function getStepperIndicator(
+  indicators: StepIndicators | undefined,
+  isLoading: boolean,
+  state: StepState,
+): React.ReactNode {
+  if (!indicators) return;
+  if (isLoading && indicators.loading) return indicators.loading;
+  if (state === "completed" && indicators.completed) return indicators.completed;
+  if (state === "active" && indicators.active) return indicators.active;
+  if (state === "inactive" && indicators.inactive) return indicators.inactive;
+}
+
 function StepperIndicator({ children, className }: React.ComponentProps<"div">) {
   const { state, isLoading } = useStepItem();
   const { indicators } = useStepper();
@@ -372,16 +384,7 @@ function StepperIndicator({ children, className }: React.ComponentProps<"div">) 
       )}
     >
       <div className="absolute">
-        {indicators &&
-        ((isLoading && indicators.loading) ||
-          (state === "completed" && indicators.completed) ||
-          (state === "active" && indicators.active) ||
-          (state === "inactive" && indicators.inactive))
-          ? (isLoading && indicators.loading) ||
-            (state === "completed" && indicators.completed) ||
-            (state === "active" && indicators.active) ||
-            (state === "inactive" && indicators.inactive)
-          : children}
+        {getStepperIndicator(indicators, isLoading, state) ?? children}
       </div>
     </div>
   );

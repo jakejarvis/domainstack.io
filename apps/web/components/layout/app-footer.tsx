@@ -164,6 +164,7 @@ export function AppFooter() {
             <Button
               size="lg"
               nativeButton={false}
+              aria-label="Inspect Domain"
               render={
                 // Bookmarklet drag target; href is filled in on mount.
                 // oxlint-disable-next-line jsx-a11y/anchor-is-valid

@@ -36,30 +36,91 @@ export type SearchClientProps = {
   onFocusChangeAction?: (isFocused: boolean) => void;
 };
 
-export function SearchClient({
-  variant = "lg",
-  initialValue = "",
+function getRoutePrefill(routeDomain: string | undefined): string {
+  if (!routeDomain) return "";
+  return safeDecodeURIComponent(routeDomain) ?? "";
+}
+
+function getDerivedInitialValue(
+  variant: SearchClientVariant,
+  routeDomain: string | undefined,
+  initialValue: string,
+): string {
+  const rawInitial = variant === "sm" ? getRoutePrefill(routeDomain) : initialValue;
+  const normalizedInitial = normalizeDomainInput(rawInitial);
+  return isValidDomain(normalizedInitial) ? normalizedInitial : "";
+}
+
+function getSearchPlaceholder(
+  variant: SearchClientVariant,
+  mounted: boolean,
+  isMobile: boolean,
+): string {
+  if (variant === "lg") return "domainstack.io\u2026";
+  if (mounted && isMobile) return "Search\u2026";
+  return "Search any domain\u2026";
+}
+
+function SearchInputAddons({
+  variant,
+  loading,
+  mounted,
+  isFocused,
+}: {
+  variant: SearchClientVariant;
+  loading: boolean;
+  mounted: boolean;
+  isFocused: boolean;
+}) {
+  if (variant === "sm" && (loading || mounted)) {
+    return (
+      <InputGroupAddon align="inline-end">
+        {loading ? (
+          <Spinner />
+        ) : (
+          <Kbd className="hidden border bg-muted/80 px-1.5 py-0.5 sm:inline-flex">
+            {isFocused ? "Esc" : formatForDisplay(SEARCH_HOTKEY, { separatorToken: "\u00A0" })}
+          </Kbd>
+        )}
+      </InputGroupAddon>
+    );
+  }
+
+  if (variant === "lg") {
+    return (
+      <InputGroupAddon align="inline-end">
+        <InputGroupButton
+          type="submit"
+          disabled={loading}
+          className="mx-1 h-8 disabled:pointer-events-none"
+          variant="ghost"
+        >
+          {loading ? <Spinner /> : null}
+          <div className="flex items-center gap-2">
+            <span className="text-[13px]">Inspect</span>
+            <Kbd className="hidden text-[13px] sm:inline-flex">⏎</Kbd>
+            <IconArrowRight className="inline-flex sm:hidden" aria-hidden />
+          </div>
+        </InputGroupButton>
+      </InputGroupAddon>
+    );
+  }
+
+  return null;
+}
+
+function useSearchClient({
+  variant,
+  initialValue,
   onFocusChangeAction,
-}: SearchClientProps) {
+}: Required<Pick<SearchClientProps, "variant" | "initialValue">> &
+  Pick<SearchClientProps, "onFocusChangeAction">) {
   const router = useRouter();
   const params = useParams<{ domain?: string }>();
   const isMobile = useIsMobile();
-
-  // Home search atom for suggestion click coordination
   const [pendingDomain, setPendingDomain] = useAtom(pendingDomainAtom);
+  const derivedInitial = getDerivedInitialValue(variant, params.domain, initialValue);
 
-  // Derive initial value from route (header) or prop (homepage)
-  const prefillFromRoute = variant === "sm";
-  const routeDomain = params.domain;
-  const rawInitial = prefillFromRoute
-    ? routeDomain
-      ? (safeDecodeURIComponent(routeDomain) ?? "")
-      : ""
-    : initialValue;
-  const normalizedInitial = normalizeDomainInput(rawInitial);
-  const derivedInitial = isValidDomain(normalizedInitial) ? normalizedInitial : "";
-
-  // Input state
   const [value, setValue] = useState(derivedInitial);
   const [prevDerivedInitial, setPrevDerivedInitial] = useState(derivedInitial);
   const [loading, startNavigation] = useTransition();
@@ -72,7 +133,6 @@ export function SearchClient({
     setValue(derivedInitial);
   }
 
-  // Keyboard shortcut (⌘/Ctrl+K)
   useHotkey(
     SEARCH_HOTKEY,
     () => {
@@ -81,21 +141,17 @@ export function SearchClient({
     { conflictBehavior: "allow" },
   );
 
-  // Navigation helper
   const navigateToDomain = (domain: string) => {
     const target = normalizeDomainInput(domain);
     analytics.track("search_submitted", { domain: target });
-
     startNavigation(() => router.push(`/${encodeURIComponent(target)}`));
   };
 
-  // Store function ref to avoid unnecessary effect re-runs
   const navigateRef = useRef(navigateToDomain);
   useEffect(() => {
     navigateRef.current = navigateToDomain;
   });
 
-  // Handle pending domain from suggestion clicks (variant="lg" only)
   if (variant === "lg" && pendingDomain && value !== pendingDomain) {
     setValue(pendingDomain);
   }
@@ -106,7 +162,6 @@ export function SearchClient({
     }
   }, [variant, pendingDomain, setPendingDomain]);
 
-  // Select all on first focus from keyboard or first click; allow precise cursor on next click.
   const pointerDownRef = useRef(false);
   const justFocusedRef = useRef(false);
 
@@ -179,6 +234,45 @@ export function SearchClient({
     navigateRef.current(normalized);
   }, [value]);
 
+  return {
+    variant,
+    value,
+    setValue,
+    loading,
+    mounted,
+    isMobile,
+    isFocused,
+    inputRef,
+    handlePointerDown,
+    handleFocus,
+    handleBlur,
+    handleClick,
+    handleKeyDown,
+    handleSubmit,
+  };
+}
+
+export function SearchClient({
+  variant = "lg",
+  initialValue = "",
+  onFocusChangeAction,
+}: SearchClientProps) {
+  const {
+    value,
+    setValue,
+    loading,
+    mounted,
+    isMobile,
+    isFocused,
+    inputRef,
+    handlePointerDown,
+    handleFocus,
+    handleBlur,
+    handleClick,
+    handleKeyDown,
+    handleSubmit,
+  } = useSearchClient({ variant, initialValue, onFocusChangeAction });
+
   return (
     <div className="flex w-full flex-col gap-5">
       <Form aria-label="Domain search" onFormSubmit={handleSubmit}>
@@ -196,13 +290,7 @@ export function SearchClient({
                 autoCapitalize="none"
                 spellCheck={false}
                 disabled={loading}
-                placeholder={
-                  variant === "lg"
-                    ? "domainstack.io\u2026"
-                    : mounted && isMobile
-                      ? "Search\u2026"
-                      : "Search any domain\u2026"
-                }
+                placeholder={getSearchPlaceholder(variant, mounted, isMobile)}
                 aria-label="Search any domain"
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
@@ -218,37 +306,12 @@ export function SearchClient({
                 <IconSearch aria-hidden />
               </InputGroupAddon>
 
-              {variant === "sm" && (loading || mounted) && (
-                <InputGroupAddon align="inline-end">
-                  {loading ? (
-                    <Spinner />
-                  ) : (
-                    <Kbd className="hidden border bg-muted/80 px-1.5 py-0.5 sm:inline-flex">
-                      {isFocused
-                        ? "Esc"
-                        : formatForDisplay(SEARCH_HOTKEY, { separatorToken: "\u00A0" })}
-                    </Kbd>
-                  )}
-                </InputGroupAddon>
-              )}
-
-              {variant === "lg" && (
-                <InputGroupAddon align="inline-end">
-                  <InputGroupButton
-                    type="submit"
-                    disabled={loading}
-                    className="mx-1 h-8 disabled:pointer-events-none"
-                    variant="ghost"
-                  >
-                    {loading && <Spinner />}
-                    <div className="flex items-center gap-2">
-                      <span className="text-[13px]">Inspect</span>
-                      <Kbd className="hidden text-[13px] sm:inline-flex">⏎</Kbd>
-                      <IconArrowRight className="inline-flex sm:hidden" aria-hidden />
-                    </div>
-                  </InputGroupButton>
-                </InputGroupAddon>
-              )}
+              <SearchInputAddons
+                variant={variant}
+                loading={loading}
+                mounted={mounted}
+                isFocused={isFocused}
+              />
             </InputGroup>
           </div>
         </Field>

@@ -21,7 +21,9 @@ vi.mock("sonner", () => ({
   },
 }));
 
+import { AddDomainContent } from "@/components/dashboard/add-domain/add-domain-content";
 import { makeResumeDomain } from "@/components/dashboard/test-fixtures";
+import { DOMAIN_VALIDATION_ERROR } from "@/hooks/use-domain-verification";
 import { screen, waitFor } from "@/mocks/react";
 
 import {
@@ -124,5 +126,57 @@ describe("AddDomainContent", () => {
     expect(screen.getByRole("heading", { name: "Complete Verification" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Domain verified!" })).not.toBeInTheDocument();
     expect(addDomainActionSpies.onSuccess).not.toHaveBeenCalled();
+  });
+
+  it("normalizes the domain before adding it", async () => {
+    const user = userEvent.setup();
+    renderAddDomainContent();
+
+    await user.type(screen.getByLabelText("Domain name"), "HTTPS://www.Example.COM/path");
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+
+    await waitForStep2();
+    expect(addDomainMutation.mock.calls[0]?.[0]).toEqual({ domain: "example.com" });
+    expect(screen.getByText("domainstack-verify=token-new")).toBeInTheDocument();
+  });
+
+  it("shows an inline error for an invalid domain", async () => {
+    const user = userEvent.setup();
+    renderAddDomainContent();
+
+    await user.type(screen.getByLabelText("Domain name"), "not a domain");
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+
+    expect(screen.getByText(DOMAIN_VALIDATION_ERROR)).toBeInTheDocument();
+    expect(addDomainMutation).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: "Check Now" })).not.toBeInTheDocument();
+  });
+
+  it("shows the same inline error when Enter is pressed on an invalid domain", async () => {
+    const user = userEvent.setup();
+    renderAddDomainContent();
+
+    const input = screen.getByLabelText("Domain name");
+    await user.type(input, "not a domain{Enter}");
+
+    expect(screen.getByText(DOMAIN_VALIDATION_ERROR)).toBeInTheDocument();
+    expect(addDomainMutation).not.toHaveBeenCalled();
+  });
+
+  it("remounts to step 1 when resume identity is replaced by a prefill", async () => {
+    const { rerender } = renderAddDomainContent({ resumeDomain: makeResumeDomain() });
+    await waitForStep2();
+
+    rerender(
+      <AddDomainContent
+        onSuccess={addDomainActionSpies.onSuccess}
+        onClose={addDomainActionSpies.onClose}
+        prefillDomain="fresh.com"
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: "Add Domain" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Domain name")).toHaveValue("fresh.com");
+    expect(screen.queryByRole("button", { name: "Check Now" })).not.toBeInTheDocument();
   });
 });

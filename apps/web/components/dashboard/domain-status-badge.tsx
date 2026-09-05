@@ -2,6 +2,7 @@ import {
   IconAlertTriangle,
   IconProgressAlert,
   IconRosetteDiscountCheck,
+  type TablerIcon,
 } from "@tabler/icons-react";
 import { differenceInDays } from "date-fns";
 
@@ -20,64 +21,75 @@ type DomainStatusBadgeProps = {
   className?: string;
 };
 
-export function DomainStatusBadge({
+type DomainStatusBadgeConfig = {
+  icon: TablerIcon;
+  label: string;
+  className: string;
+  tooltipContent?: string;
+  onClick?: () => void;
+};
+
+function getVerificationMethodLabel(method: VerificationMethod): string {
+  if (method === "dns_txt") return "TXT record";
+  if (method === "html_file") return "file";
+  return "meta tag";
+}
+
+function getFailingTooltip(
+  verificationFailedAt: Date | null | undefined,
+  now: Date | null,
+): string {
+  const daysRemaining =
+    verificationFailedAt && now
+      ? Math.max(0, VERIFICATION_GRACE_PERIOD_DAYS - differenceInDays(now, verificationFailedAt))
+      : VERIFICATION_GRACE_PERIOD_DAYS;
+
+  if (daysRemaining > 0) {
+    return `${daysRemaining} ${daysRemaining === 1 ? "day" : "days"} to fix verification`;
+  }
+  return "Verification will be revoked soon";
+}
+
+function getDomainStatusBadge({
   verified,
   verificationStatus,
   verificationMethod,
   verificationFailedAt,
   onClick,
   className,
-}: DomainStatusBadgeProps) {
-  // Use shared hydrated timestamp to avoid per-component state updates
-  const now = useHydratedNow();
-
-  // Failing state: verified but verification is failing
+  now,
+}: DomainStatusBadgeProps & { now: Date | null }): DomainStatusBadgeConfig {
   if (verified && verificationStatus === "failing") {
-    const daysRemaining =
-      verificationFailedAt && now
-        ? Math.max(0, VERIFICATION_GRACE_PERIOD_DAYS - differenceInDays(now, verificationFailedAt))
-        : VERIFICATION_GRACE_PERIOD_DAYS;
-
-    const tooltipText =
-      daysRemaining > 0
-        ? `${daysRemaining} ${daysRemaining === 1 ? "day" : "days"} to fix verification`
-        : "Verification will be revoked soon";
-
-    return (
-      <BadgeWithTooltip
-        icon={IconAlertTriangle}
-        label="Failing"
-        className={cn("border-danger-border bg-danger/20 text-danger-foreground", className)}
-        tooltipContent={tooltipText}
-        onClick={onClick}
-      />
-    );
+    return {
+      icon: IconAlertTriangle,
+      label: "Failing",
+      className: cn("border-danger-border bg-danger/20 text-danger-foreground", className),
+      tooltipContent: getFailingTooltip(verificationFailedAt, now),
+      onClick,
+    };
   }
 
-  // Verified state
   if (verified) {
-    return (
-      <BadgeWithTooltip
-        icon={IconRosetteDiscountCheck}
-        label="Verified"
-        className={cn("border-success-border bg-success/20 text-success-foreground", className)}
-        tooltipContent={
-          verificationMethod
-            ? `Using ${verificationMethod === "dns_txt" ? "TXT record" : verificationMethod === "html_file" ? "file" : "meta tag"}`
-            : undefined
-        }
-      />
-    );
+    return {
+      icon: IconRosetteDiscountCheck,
+      label: "Verified",
+      className: cn("border-success-border bg-success/20 text-success-foreground", className),
+      tooltipContent: verificationMethod
+        ? `Using ${getVerificationMethodLabel(verificationMethod)}`
+        : undefined,
+    };
   }
 
-  // Pending state
-  return (
-    <BadgeWithTooltip
-      icon={IconProgressAlert}
-      label="Pending"
-      className={cn("border-warning-border bg-warning/20 text-warning-foreground", className)}
-      tooltipContent={onClick ? "Complete verification" : undefined}
-      onClick={onClick}
-    />
-  );
+  return {
+    icon: IconProgressAlert,
+    label: "Pending",
+    className: cn("border-warning-border bg-warning/20 text-warning-foreground", className),
+    tooltipContent: onClick ? "Complete verification" : undefined,
+    onClick,
+  };
+}
+
+export function DomainStatusBadge(props: DomainStatusBadgeProps) {
+  const now = useHydratedNow();
+  return <BadgeWithTooltip {...getDomainStatusBadge({ ...props, now })} />;
 }

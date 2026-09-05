@@ -39,6 +39,192 @@ function extractDomain(input: string | undefined | null): string | undefined {
   }
 }
 
+function getRegistrantDisplay(
+  registrantInfo: ProviderTooltipContentProps["registrantInfo"],
+): { organization: string; country: string; state?: string } | null {
+  if (!registrantInfo?.contacts || registrantInfo.privacyEnabled) return null;
+  const registrantContact = registrantInfo.contacts.find((c) => c.type === "registrant");
+  if (!registrantContact) return null;
+  const organization =
+    (registrantContact.organization || registrantContact.name || "").trim() || "Unknown";
+  const country = registrantContact.country || registrantContact.countryCode || "";
+  const state = registrantContact.state || undefined;
+  return { organization, country, state };
+}
+
+function getRegistrarSource(
+  whoisServer?: string | null,
+  rdapServers?: string[] | null,
+  registrationSource?: "rdap" | "whois" | null,
+) {
+  const serverUrl =
+    rdapServers && rdapServers.length > 0 ? rdapServers[rdapServers.length - 1] : undefined;
+  return {
+    serverUrl,
+    serverName: serverUrl ? (extractDomain(serverUrl) ?? "RDAP") : (whoisServer ?? "WHOIS"),
+    learnUrl:
+      registrationSource === "rdap"
+        ? "https://about.rdap.org/"
+        : "https://en.wikipedia.org/wiki/WHOIS",
+    sourceLabel: registrationSource === "rdap" ? "RDAP" : "WHOIS",
+  };
+}
+
+function RegistrantRow({
+  registrantInfo,
+}: {
+  registrantInfo: ProviderTooltipContentProps["registrantInfo"];
+}) {
+  if (!registrantInfo) return null;
+  const registrant = getRegistrantDisplay(registrantInfo);
+  const isPrivate = registrantInfo.privacyEnabled || !registrant;
+
+  return (
+    <div className="flex items-center gap-1.5">
+      {isPrivate ? (
+        <>
+          <IconSpy className="size-3.5 text-muted" />
+          <span className="text-background/90">Privacy enabled</span>
+        </>
+      ) : (
+        <span className="text-background/90">{formatRegistrant(registrant)}</span>
+      )}
+    </div>
+  );
+}
+
+function TransferLockRow({ transferLock }: { transferLock?: boolean | null }) {
+  if (transferLock === null || transferLock === undefined) return null;
+
+  return (
+    <div className="flex items-center gap-1.5">
+      {transferLock ? (
+        <>
+          <IconLock className="size-3.5 text-muted" />
+          <span className="text-background/90">Transfer lock is on</span>
+        </>
+      ) : (
+        <>
+          <IconLockOpen className="size-3.5 text-amber-300 dark:text-amber-500" />
+          <span className="text-background/90">Transfer lock is off</span>
+        </>
+      )}
+    </div>
+  );
+}
+
+function VerifiedByRow({
+  whoisServer,
+  rdapServers,
+  registrationSource,
+}: Pick<ProviderTooltipContentProps, "whoisServer" | "rdapServers" | "registrationSource">) {
+  const { serverUrl, serverName, learnUrl, sourceLabel } = getRegistrarSource(
+    whoisServer,
+    rdapServers,
+    registrationSource,
+  );
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <IconRosetteDiscountCheck className="size-3.5 text-green-300 dark:text-green-600" />
+      <span>
+        Verified by{" "}
+        <span className="font-medium">
+          {serverUrl ? (
+            <a
+              href={serverUrl}
+              target="_blank"
+              rel="noopener"
+              className="underline underline-offset-2"
+            >
+              {serverName}
+            </a>
+          ) : (
+            serverName
+          )}
+        </span>{" "}
+        <a href={learnUrl} target="_blank" rel="noopener" title={`Learn about ${sourceLabel}`}>
+          <span className="text-muted/75">(</span>
+          <span className="text-muted/90 underline decoration-dotted underline-offset-2">
+            {sourceLabel}
+          </span>
+          <span className="text-muted/75">)</span>
+        </a>
+      </span>
+    </div>
+  );
+}
+
+function RegistrarTooltipBody({
+  whoisServer,
+  rdapServers,
+  registrationSource,
+  transferLock,
+  registrantInfo,
+}: Pick<
+  ProviderTooltipContentProps,
+  "whoisServer" | "rdapServers" | "registrationSource" | "transferLock" | "registrantInfo"
+>) {
+  if (whoisServer == null && rdapServers == null) {
+    return <div className="text-xs text-muted/80">No registration data available</div>;
+  }
+
+  return (
+    <div className="space-y-1.5 text-xs">
+      <RegistrantRow registrantInfo={registrantInfo} />
+      <TransferLockRow transferLock={transferLock} />
+      <VerifiedByRow
+        whoisServer={whoisServer}
+        rdapServers={rdapServers}
+        registrationSource={registrationSource}
+      />
+    </div>
+  );
+}
+
+function CaTooltipBody({ certificateExpiryDate }: { certificateExpiryDate?: Date | null }) {
+  if (certificateExpiryDate != null) {
+    return <div className="text-xs">Expires on {formatDate(certificateExpiryDate)}</div>;
+  }
+  return <div className="text-xs text-muted/80">No certificate data available</div>;
+}
+
+function DnsRecordsTooltipBody({ records }: { records?: DnsRecord[] }) {
+  if (records && records.length > 0) {
+    return (
+      <div className="space-y-1">
+        {records.map((record) => (
+          <div key={record.value} className="font-mono text-xs">
+            {record.priority != null ? `${record.priority} ${record.value}` : record.value}
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return <div className="text-xs text-muted/80">No DNS records available</div>;
+}
+
+function ProviderTooltipBody(props: ProviderTooltipContentProps) {
+  if (props.isLoading) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-1 text-xs text-muted/90">
+        <Spinner className="size-3" />
+        <span>Loading…</span>
+      </div>
+    );
+  }
+
+  if (props.providerType === "registrar") {
+    return <RegistrarTooltipBody {...props} />;
+  }
+
+  if (props.providerType === "ca") {
+    return <CaTooltipBody certificateExpiryDate={props.certificateExpiryDate} />;
+  }
+
+  return <DnsRecordsTooltipBody records={props.records} />;
+}
+
 /**
  * Renders the content inside a provider tooltip.
  * Shows DNS records for DNS/hosting/email providers,
@@ -46,154 +232,20 @@ function extractDomain(input: string | undefined | null): string | undefined {
  * registrar verification info for registrars,
  * or loading/empty states.
  */
-export function ProviderTooltipContent({
-  providerId,
-  providerName,
-  providerType,
-  isLoading,
-  records,
-  certificateExpiryDate,
-  whoisServer,
-  rdapServers,
-  registrationSource,
-  transferLock,
-  registrantInfo,
-}: ProviderTooltipContentProps) {
-  const hasRecords = records && records.length > 0;
-  const hasCertificateExpiry = certificateExpiryDate != null;
-  const hasRegistrationInfo = whoisServer != null || rdapServers != null;
-
-  // Extract registrant details for display
-  const registrant =
-    registrantInfo?.contacts && !registrantInfo.privacyEnabled
-      ? (() => {
-          const { contacts } = registrantInfo;
-          const registrantContact = contacts.find((c) => c.type === "registrant");
-          if (!registrantContact) return null;
-          const organization =
-            (registrantContact.organization || registrantContact.name || "").trim() || "Unknown";
-          const country = registrantContact.country || registrantContact.countryCode || "";
-          const state = registrantContact.state || undefined;
-          return { organization, country, state };
-        })()
-      : null;
-
-  // Extract registration verification details
-  const serverUrl =
-    rdapServers && rdapServers.length > 0 ? rdapServers[rdapServers.length - 1] : undefined;
-  const serverName = serverUrl ? (extractDomain(serverUrl) ?? "RDAP") : (whoisServer ?? "WHOIS");
-  const learnUrl =
-    registrationSource === "rdap"
-      ? "https://about.rdap.org/"
-      : "https://en.wikipedia.org/wiki/WHOIS";
-
+export function ProviderTooltipContent(props: ProviderTooltipContentProps) {
   return (
     <div className="space-y-2 py-1">
-      {/* Provider info */}
       <div className="flex items-center gap-1.5 border-b border-muted/30 pb-2">
-        {providerId && (
-          <ProviderLogo providerId={providerId} providerName={providerName} className="shrink-0" />
-        )}
-        <span className="font-medium">{providerName}</span>
+        {props.providerId ? (
+          <ProviderLogo
+            providerId={props.providerId}
+            providerName={props.providerName}
+            className="shrink-0"
+          />
+        ) : null}
+        <span className="font-medium">{props.providerName}</span>
       </div>
-
-      {/* Loading state */}
-      {isLoading ? (
-        <div className="flex items-center justify-center gap-2 py-1 text-xs text-muted/90">
-          <Spinner className="size-3" />
-          <span>Loading…</span>
-        </div>
-      ) : providerType === "registrar" ? (
-        // Registrar verification info (WHOIS/RDAP) and registrant details
-        hasRegistrationInfo ? (
-          <div className="space-y-1.5 text-xs">
-            {/* Registrant info */}
-            {registrantInfo && (
-              <div className="flex items-center gap-1.5">
-                {registrantInfo.privacyEnabled || !registrant ? (
-                  <>
-                    <IconSpy className="size-3.5 text-muted" />
-                    <span className="text-background/90">Privacy enabled</span>
-                  </>
-                ) : (
-                  <span className="text-background/90">{formatRegistrant(registrant)}</span>
-                )}
-              </div>
-            )}
-
-            {/* Transfer Lock */}
-            {transferLock !== null && transferLock !== undefined && (
-              <div className="flex items-center gap-1.5">
-                {transferLock ? (
-                  <>
-                    <IconLock className="size-3.5 text-muted" />
-                    <span className="text-background/90">Transfer lock is on</span>
-                  </>
-                ) : (
-                  <>
-                    <IconLockOpen className="size-3.5 text-amber-300 dark:text-amber-500" />
-                    <span className="text-background/90">Transfer lock is off</span>
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* Verification source */}
-            <div className="flex items-center gap-1.5">
-              <IconRosetteDiscountCheck className="size-3.5 text-green-300 dark:text-green-600" />
-              <span>
-                Verified by{" "}
-                <span className="font-medium">
-                  {serverUrl ? (
-                    <a
-                      href={serverUrl}
-                      target="_blank"
-                      rel="noopener"
-                      className="underline underline-offset-2"
-                    >
-                      {serverName}
-                    </a>
-                  ) : (
-                    serverName
-                  )}
-                </span>{" "}
-                <a
-                  href={learnUrl}
-                  target="_blank"
-                  rel="noopener"
-                  title={`Learn about ${registrationSource === "rdap" ? "RDAP" : "WHOIS"}`}
-                >
-                  <span className="text-muted/75">(</span>
-                  <span className="text-muted/90 underline decoration-dotted underline-offset-2">
-                    {registrationSource === "rdap" ? "RDAP" : "WHOIS"}
-                  </span>
-                  <span className="text-muted/75">)</span>
-                </a>
-              </span>
-            </div>
-          </div>
-        ) : (
-          <div className="text-xs text-muted/80">No registration data available</div>
-        )
-      ) : providerType === "ca" ? (
-        // Certificate expiry for CA providers
-        hasCertificateExpiry ? (
-          <div className="text-xs">Expires on {formatDate(certificateExpiryDate)}</div>
-        ) : (
-          <div className="text-xs text-muted/80">No certificate data available</div>
-        )
-      ) : // DNS records for other providers
-      hasRecords ? (
-        <div className="space-y-1">
-          {records.map((record) => (
-            <div key={record.value} className="font-mono text-xs">
-              {record.priority != null ? `${record.priority} ${record.value}` : record.value}
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-xs text-muted/80">No DNS records available</div>
-      )}
+      <ProviderTooltipBody {...props} />
     </div>
   );
 }

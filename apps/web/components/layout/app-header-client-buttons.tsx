@@ -124,6 +124,7 @@ export function AppHeaderClientButtons() {
         variant="ghost"
         size="sm"
         nativeButton={false}
+        aria-label="Sign In"
         render={
           <Link href="/login" scroll={false}>
             Sign In

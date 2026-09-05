@@ -29,6 +29,106 @@ interface ProviderTooltipData {
   };
 }
 
+type LazyLoadedProviderDetails = {
+  records?: DnsRecord[];
+  certificateExpiryDate?: Date | null;
+  whoisServer?: string | null;
+  rdapServers?: string[] | null;
+  registrationSource?: "rdap" | "whois" | null;
+  transferLock?: boolean | null;
+  registrantInfo?: {
+    privacyEnabled: boolean | null;
+    contacts: RegistrationContact[] | null;
+  };
+};
+
+type DomainDetailsForTooltip = {
+  ca?: { certificateExpiryDate?: Date | null } | null;
+  registrar?: LazyLoadedProviderDetails | null;
+  dns?: { records?: DnsRecord[] } | null;
+  hosting?: { records?: DnsRecord[] } | null;
+  email?: { records?: DnsRecord[] } | null;
+};
+
+function isProviderMissingData({
+  providerType,
+  hasRecords,
+  hasCertificateExpiry,
+  hasRegistrationInfo,
+}: {
+  providerType?: ProviderCategory;
+  hasRecords: boolean | undefined;
+  hasCertificateExpiry: boolean;
+  hasRegistrationInfo: boolean;
+}): boolean {
+  if (!providerType) return false;
+
+  switch (providerType) {
+    case "ca":
+      return !hasCertificateExpiry;
+    case "registrar":
+      return !hasRegistrationInfo;
+    case "dns":
+    case "hosting":
+    case "email":
+      return !hasRecords;
+    default:
+      return false;
+  }
+}
+
+function extractLazyLoadedProviderDetails(
+  domainDetails: DomainDetailsForTooltip | undefined,
+  providerType?: ProviderCategory,
+): LazyLoadedProviderDetails {
+  if (!domainDetails || !providerType) return {};
+
+  if (providerType === "ca") {
+    return { certificateExpiryDate: domainDetails.ca?.certificateExpiryDate };
+  }
+
+  if (providerType === "registrar") {
+    const registrar = domainDetails.registrar;
+    return {
+      whoisServer: registrar?.whoisServer,
+      rdapServers: registrar?.rdapServers,
+      registrationSource: registrar?.registrationSource,
+      transferLock: registrar?.transferLock,
+      registrantInfo: registrar?.registrantInfo,
+    };
+  }
+
+  return { records: domainDetails[providerType]?.records };
+}
+
+function mergeProviderTooltipData(
+  provider: ProviderInfo,
+  lazyLoaded: LazyLoadedProviderDetails,
+  shouldLazyLoad: boolean,
+) {
+  const records = provider.records ?? lazyLoaded.records;
+  const certificateExpiryDate = provider.certificateExpiryDate ?? lazyLoaded.certificateExpiryDate;
+  const whoisServer = provider.whoisServer ?? lazyLoaded.whoisServer;
+  const rdapServers = provider.rdapServers ?? lazyLoaded.rdapServers;
+  const registrationSource = provider.registrationSource ?? lazyLoaded.registrationSource;
+  const transferLock = provider.transferLock ?? lazyLoaded.transferLock;
+  const registrantInfo = provider.registrantInfo ?? lazyLoaded.registrantInfo;
+  const hasDisplayData = Boolean(
+    records?.length || certificateExpiryDate != null || whoisServer != null || rdapServers != null,
+  );
+
+  return {
+    records,
+    certificateExpiryDate,
+    whoisServer,
+    rdapServers,
+    registrationSource,
+    transferLock,
+    registrantInfo,
+    shouldShowTooltip: hasDisplayData || shouldLazyLoad,
+  };
+}
+
 /**
  * Hook to manage provider tooltip data including lazy loading DNS records
  * and certificate expiry dates.
@@ -46,32 +146,15 @@ export function useProviderTooltipData({
   const trpc = useTRPC();
   const [isOpen, setIsOpen] = useState(false);
 
-  const hasRecords = provider.records && provider.records.length > 0;
-  const hasCertificateExpiry = provider.certificateExpiryDate != null;
-  const hasRegistrationInfo = provider.whoisServer != null || provider.rdapServers != null;
+  const shouldLazyLoad =
+    !!trackedDomainId &&
+    isProviderMissingData({
+      providerType,
+      hasRecords: Boolean(provider.records && provider.records.length > 0),
+      hasCertificateExpiry: provider.certificateExpiryDate != null,
+      hasRegistrationInfo: provider.whoisServer != null || provider.rdapServers != null,
+    });
 
-  // Helper to check if provider is missing expected data
-  const isMissingData = (): boolean => {
-    if (!providerType) return false;
-
-    switch (providerType) {
-      case "ca":
-        return !hasCertificateExpiry;
-      case "registrar":
-        return !hasRegistrationInfo;
-      case "dns":
-      case "hosting":
-      case "email":
-        return !hasRecords;
-      default:
-        return false;
-    }
-  };
-
-  // Determine if we should lazy-load based on provider type
-  const shouldLazyLoad = !!trackedDomainId && isMissingData();
-
-  // Lazy load domain details when tooltip opens (only if needed)
   const { data: domainDetails, isLoading } = useQuery(
     trpc.tracking.getDomainDetails.queryOptions(
       shouldLazyLoad && isOpen && trackedDomainId ? { trackedDomainId } : skipToken,
@@ -79,61 +162,24 @@ export function useProviderTooltipData({
     ),
   );
 
-  // Extract records/certificate/registration data from lazy-loaded details
-  let lazyLoadedRecords: DnsRecord[] | undefined;
-  let lazyLoadedCertificateExpiry: Date | null | undefined;
-  let lazyLoadedWhoisServer: string | null | undefined;
-  let lazyLoadedRdapServers: string[] | null | undefined;
-  let lazyLoadedRegistrationSource: "rdap" | "whois" | null | undefined;
-  let lazyLoadedTransferLock: boolean | null | undefined;
-  let lazyLoadedRegistrantInfo:
-    | { privacyEnabled: boolean | null; contacts: RegistrationContact[] | null }
-    | undefined;
-
-  if (domainDetails && providerType) {
-    if (providerType === "ca") {
-      lazyLoadedCertificateExpiry = domainDetails.ca?.certificateExpiryDate;
-    } else if (providerType === "registrar") {
-      lazyLoadedWhoisServer = domainDetails.registrar?.whoisServer;
-      lazyLoadedRdapServers = domainDetails.registrar?.rdapServers;
-      lazyLoadedRegistrationSource = domainDetails.registrar?.registrationSource;
-      lazyLoadedTransferLock = domainDetails.registrar?.transferLock;
-      lazyLoadedRegistrantInfo = domainDetails.registrar?.registrantInfo;
-    } else {
-      lazyLoadedRecords = domainDetails[providerType]?.records;
-    }
-  }
-
-  const displayRecords = provider.records ?? lazyLoadedRecords;
-  const displayCertificateExpiry = provider.certificateExpiryDate ?? lazyLoadedCertificateExpiry;
-  const displayWhoisServer = provider.whoisServer ?? lazyLoadedWhoisServer;
-  const displayRdapServers = provider.rdapServers ?? lazyLoadedRdapServers;
-  const displayRegistrationSource = provider.registrationSource ?? lazyLoadedRegistrationSource;
-  const displayTransferLock = provider.transferLock ?? lazyLoadedTransferLock;
-  const displayRegistrantInfo = provider.registrantInfo ?? lazyLoadedRegistrantInfo;
-
-  const hasDisplayRecords = displayRecords && displayRecords.length > 0;
-  const hasDisplayCertificateExpiry = displayCertificateExpiry != null;
-  const hasDisplayRegistrationInfo = displayWhoisServer != null || displayRdapServers != null;
-
-  const shouldShowTooltip =
-    hasDisplayRecords ||
-    hasDisplayCertificateExpiry ||
-    hasDisplayRegistrationInfo ||
-    shouldLazyLoad;
+  const merged = mergeProviderTooltipData(
+    provider,
+    extractLazyLoadedProviderDetails(domainDetails, providerType),
+    shouldLazyLoad,
+  );
 
   return {
     isOpen,
     setIsOpen,
-    shouldShowTooltip,
+    shouldShowTooltip: merged.shouldShowTooltip,
     isLoading,
     providerId: provider.id,
-    records: displayRecords,
-    certificateExpiryDate: displayCertificateExpiry,
-    whoisServer: displayWhoisServer,
-    rdapServers: displayRdapServers,
-    registrationSource: displayRegistrationSource,
-    transferLock: displayTransferLock,
-    registrantInfo: displayRegistrantInfo,
+    records: merged.records,
+    certificateExpiryDate: merged.certificateExpiryDate,
+    whoisServer: merged.whoisServer,
+    rdapServers: merged.rdapServers,
+    registrationSource: merged.registrationSource,
+    transferLock: merged.transferLock,
+    registrantInfo: merged.registrantInfo,
   };
 }

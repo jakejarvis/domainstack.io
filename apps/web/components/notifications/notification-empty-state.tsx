@@ -31,6 +31,7 @@ export function NotificationEmptyState({ variant, onClosePopover }: Notification
           onClosePopover?.();
         }}
         nativeButton={false}
+        aria-label="Go to dashboard"
         render={
           <Link href="/dashboard">
             Go to dashboard

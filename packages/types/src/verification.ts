@@ -57,7 +57,4 @@ export interface ResumeDomainData {
 }
 
 /** Verification status for the current step (exposed for UI components) */
-export type VerificationState =
-  | { status: "idle" }
-  | { status: "verifying" }
-  | { status: "failed"; error?: string };
+export type VerificationState = { status: "idle" } | { status: "verifying" } | { status: "failed" };

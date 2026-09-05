@@ -1,8 +1,7 @@
-import { useMemo, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 import { Field, FieldDescription, FieldError, FieldLabel } from "@domainstack/ui/field";
 import { Input } from "@domainstack/ui/input";
-import { isValidDomain, normalizeDomainInput } from "@domainstack/utils/domain/client";
 
 type StepEnterDomainProps = {
   domain: string;
@@ -10,8 +9,6 @@ type StepEnterDomainProps = {
   error: string;
   isLoading: boolean;
   onSubmit: () => void;
-  /** Whether the user has attempted to submit (controlled by parent) */
-  hasAttemptedSubmit: boolean;
   /** Whether the domain input is read-only (e.g., when prefilled from domain report) */
   readOnly?: boolean;
 };
@@ -22,35 +19,20 @@ export function StepEnterDomain({
   error,
   isLoading,
   onSubmit,
-  hasAttemptedSubmit,
   readOnly = false,
 }: StepEnterDomainProps) {
-  // Client-side validation
-  const clientError = useMemo(() => {
-    if (!domain.trim()) return "";
-    const normalized = normalizeDomainInput(domain);
-    if (!isValidDomain(normalized)) {
-      return "Enter a valid domain, like example.com (no https://).";
-    }
-    return "";
-  }, [domain]);
-
-  // Only show client error after user has attempted to submit
-  // Always show server errors immediately
-  const displayError = error || (hasAttemptedSubmit ? clientError : "");
-  const canSubmit = domain.trim().length > 0 && !isLoading && !clientError;
   const inputRef = useRef<HTMLInputElement>(null);
   const hadErrorRef = useRef(false);
 
   useEffect(() => {
-    if (displayError && !hadErrorRef.current) {
+    if (error && !hadErrorRef.current) {
       inputRef.current?.focus();
     }
-    hadErrorRef.current = Boolean(displayError);
-  }, [displayError]);
+    hadErrorRef.current = Boolean(error);
+  }, [error]);
 
   return (
-    <Field data-invalid={!!displayError || undefined}>
+    <Field data-invalid={error ? true : undefined}>
       <FieldLabel className="sr-only">Domain name</FieldLabel>
       <FieldDescription>
         {readOnly
@@ -70,17 +52,17 @@ export function StepEnterDomain({
         autoCorrect="off"
         autoCapitalize="none"
         spellCheck={false}
-        aria-invalid={!!displayError}
+        aria-invalid={error ? true : undefined}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             e.preventDefault();
-            if (canSubmit) {
+            if (!isLoading) {
               onSubmit();
             }
           }
         }}
       />
-      <FieldError>{displayError}</FieldError>
+      <FieldError>{error}</FieldError>
     </Field>
   );
 }

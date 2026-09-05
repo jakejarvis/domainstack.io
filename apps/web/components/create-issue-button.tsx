@@ -71,6 +71,7 @@ export function CreateIssueButton(props: CreateIssueButtonProps) {
       size={size}
       className={className}
       nativeButton={false}
+      aria-label="File a bug report"
       render={
         <a href={issueUrl} target="_blank" rel="noopener">
           <SiGithub />

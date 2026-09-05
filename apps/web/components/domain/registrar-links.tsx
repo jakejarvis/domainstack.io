@@ -102,12 +102,12 @@ export function RegistrarLinks({
               variant="outline"
               className="flex w-full min-w-[250px] items-center gap-2.5 [&_svg]:!size-5 [&_svg]:!shrink-0"
               nativeButton={false}
+              aria-label={`Register this domain with ${config.name}`}
               render={
                 <a
                   href={config.searchUrl(domain)}
                   target="_blank"
                   rel="noopener"
-                  aria-label={`Register this domain with ${config.name}`}
                   onClick={() =>
                     analytics.track("registrar_referral_clicked", {
                       domain,
