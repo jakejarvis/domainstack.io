@@ -29,3 +29,6 @@ allowBuilds:
   puppeteer: true
   sharp: true
   '@nestjs/core': false
+minimumReleaseAgeExclude:
+  - cn@0.2.6
+  - cva@1.0.0-beta.9
