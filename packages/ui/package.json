@@ -16,7 +16,7 @@
     "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json"
   },
   "dependencies": {
-    "@base-ui/react": "^1.7.0",
+    "@base-ui/react": "^1.8.0",
     "clipboard-copy": "^4.0.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -28,7 +28,7 @@
     "@domainstack/typescript-config": "workspace:*",
     "@tabler/icons-react": "catalog:",
     "@types/react": "19.2.18",
-    "@types/react-dom": "19.2.5",
+    "@types/react-dom": "19.2.7",
     "motion": "catalog:",
     "sonner": "catalog:"
   },
