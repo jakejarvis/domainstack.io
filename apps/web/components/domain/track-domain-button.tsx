@@ -53,15 +53,16 @@ function TrackOrVerifyButton({
   isNavigating: boolean;
   onClick: () => void;
 }) {
-  const buttonContent = isPendingVerification ? (
-    <>
-      <IconAlertCircle className="text-accent-orange" aria-hidden="true" />
-      <span className="hidden sm:inline">Verify</span>
-    </>
+  const label = isPendingVerification ? "Verify" : "Track";
+  const icon = isPendingVerification ? (
+    <IconAlertCircle className="text-accent-orange" aria-hidden="true" />
   ) : (
+    <IconBellPlus className="sm:text-muted-foreground" aria-hidden="true" />
+  );
+  const buttonContent = (
     <>
-      <IconBellPlus className="sm:text-muted-foreground" aria-hidden="true" />
-      <span className="hidden sm:inline">Track</span>
+      {isNavigating ? <Spinner /> : icon}
+      <span className="hidden sm:inline">{label}</span>
     </>
   );
   const tooltipText = isPendingVerification
@@ -71,7 +72,6 @@ function TrackOrVerifyButton({
 
   const trigger = isAuthenticated ? (
     <Button variant="outline" onClick={onClick} disabled={isNavigating} aria-label={ariaLabel}>
-      {isNavigating ? <Spinner /> : null}
       {buttonContent}
     </Button>
   ) : (

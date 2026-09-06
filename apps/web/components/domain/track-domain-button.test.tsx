@@ -68,8 +68,10 @@ describe("TrackDomainButton", () => {
       scroll: false,
     });
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Track domain" })).toBeDisabled();
+      const button = screen.getByRole("button", { name: "Track domain" });
+      expect(button).toBeDisabled();
       expect(screen.getByRole("status", { name: /loading/i })).toBeInTheDocument();
+      expect(button.querySelectorAll("svg")).toHaveLength(1);
     });
 
     finishNavigation?.();
@@ -105,8 +107,10 @@ describe("TrackDomainButton", () => {
       { scroll: false },
     );
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Verify domain" })).toBeDisabled();
+      const pendingButton = screen.getByRole("button", { name: "Verify domain" });
+      expect(pendingButton).toBeDisabled();
       expect(screen.getByRole("status", { name: /loading/i })).toBeInTheDocument();
+      expect(pendingButton.querySelectorAll("svg")).toHaveLength(1);
     });
 
     finishNavigation?.();

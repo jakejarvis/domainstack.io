@@ -100,8 +100,10 @@ describe("DomainSearch (form variant)", () => {
     expect(nav.push).toHaveBeenCalledWith("/test.invalid");
     // Input and button should be disabled while loading/submitting
     expect(screen.getByLabelText(/Search any domain/i)).toBeDisabled();
-    // Submit button shows a loading spinner with accessible name "Loading"
-    expect(screen.getByRole("button", { name: /loading/i })).toBeDisabled();
+    // Submit button shows a loading spinner that replaces the submit icon
+    const submitButton = screen.getByRole("button", { name: /loading/i });
+    expect(submitButton).toBeDisabled();
+    expect(submitButton.querySelectorAll("svg")).toHaveLength(1);
 
     finishNavigation?.();
     await waitFor(() => expect(input).toBeEnabled());
