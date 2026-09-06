@@ -16,13 +16,25 @@ export interface Certificate {
   fingerprint256: string | null;
   serialNumber: string | null;
   caProvider: ProviderRef;
+  /** Zero-based position in the presented chain. The leaf is always `0`. */
+  chainPosition: number;
 }
 
 /**
  * Response from certificate chain fetch.
+ *
+ * Retrieval and validation are separate: an expired or otherwise untrusted
+ * certificate still includes `certificates` with `valid: false`.
  */
 export interface CertificatesResponse {
   certificates: Certificate[];
+  valid: boolean;
+  validationError: string | null;
+  protocol: string | null;
+  cipher: string | null;
+  publicKeyBits: number | null;
+  chainComplete: boolean;
+  /** @deprecated Use `validationError`. Kept for older serialized payloads. */
   error?: string;
 }
 

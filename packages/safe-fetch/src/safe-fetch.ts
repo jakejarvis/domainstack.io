@@ -1,19 +1,11 @@
-import { lookup } from "node:dns/promises";
-
-import * as ipaddr from "ipaddr.js";
-
 import { createLogger } from "@domainstack/logger";
 
 import { SafeFetchError } from "./errors";
-import { isPrivateIp } from "./ip";
+import { resolvePublicHost } from "./resolve";
 import type { SafeFetchLogger, SafeFetchOptions, SafeFetchResult } from "./types";
 import { withTimeout } from "./utils";
 
 const defaultLogger = createLogger({ source: "safe-fetch" });
-
-// Hostnames that should never be fetched
-const BLOCKED_HOSTNAMES = new Set(["localhost"]);
-const BLOCKED_SUFFIXES = [".local", ".internal", ".localhost"];
 
 // Defaults
 const DEFAULT_MAX_BYTES = 15 * 1024 * 1024; // 15MB
@@ -167,69 +159,13 @@ async function ensureUrlAllowed(
     throw new SafeFetchError("invalid_url", "URL missing hostname");
   }
 
-  // Blocked hostnames
-  if (BLOCKED_HOSTNAMES.has(hostname) || BLOCKED_SUFFIXES.some((s) => hostname.endsWith(s))) {
-    throw new SafeFetchError("host_blocked", `Host ${hostname} is blocked`);
-  }
-
   // Allowlist check
   if (opts.allowedHosts.length > 0 && !opts.allowedHosts.includes(hostname)) {
     throw new SafeFetchError("host_not_allowed", `Host ${hostname} is not in allow list`);
   }
 
-  // If hostname is already an IP, check it directly
-  if (ipaddr.isValid(hostname)) {
-    if (isPrivateIp(hostname)) {
-      throw new SafeFetchError("private_ip", `IP ${hostname} is not reachable`);
-    }
-    return;
-  }
-
-  // DNS lookup to check resolved IPs.
-  // Use the system resolver so validation matches the resolver used by fetch().
-  let records: Array<{ address: string }>;
-  try {
-    records = await lookupWithTimeout(hostname, opts.timeoutMs);
-  } catch (err) {
-    logger.warn({ hostname, err }, "DNS lookup failed");
-    const message = err instanceof Error ? err.message : "DNS lookup failed";
-    throw new SafeFetchError("dns_error", message);
-  }
-
-  if (records.length === 0) {
-    throw new SafeFetchError("dns_error", "DNS lookup returned no records");
-  }
-
-  // Check if any resolved IP is private
-  if (records.some((r) => isPrivateIp(r.address))) {
-    throw new SafeFetchError("private_ip", `DNS for ${hostname} resolved to private address`);
-  }
-}
-
-async function lookupWithTimeout(
-  hostname: string,
-  timeoutMs: number,
-): Promise<Array<{ address: string }>> {
-  let timeoutId: ReturnType<typeof setTimeout> | undefined;
-  try {
-    const result = await Promise.race([
-      lookup(hostname, {
-        all: true,
-        verbatim: true,
-      }),
-      new Promise<never>((_, reject) => {
-        timeoutId = setTimeout(() => {
-          reject(new Error(`DNS lookup timed out after ${timeoutMs}ms`));
-        }, timeoutMs);
-      }),
-    ]);
-
-    return Array.isArray(result) ? result : [result];
-  } finally {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-  }
+  // Resolve and reject blocked, private, reserved, and mixed public/private answers.
+  await resolvePublicHost(hostname, { timeoutMs: opts.timeoutMs, logger });
 }
 
 function isRedirect(response: Response): boolean {

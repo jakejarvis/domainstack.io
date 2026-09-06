@@ -47,6 +47,18 @@ vi.mock("@domainstack/server", async (importOriginal) => {
       success: true,
       data: { url: "https://example.com/favicon.ico" },
     }),
+    fetchCertificates: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue({
+      success: true,
+      data: {
+        certificates: [],
+        valid: true,
+        validationError: null,
+        protocol: "TLSv1.3",
+        cipher: "TLS_AES_256_GCM_SHA384",
+        publicKeyBits: 256,
+        chainComplete: true,
+      },
+    }),
   };
 });
 
@@ -66,13 +78,22 @@ vi.mock("next/server", () => ({
 }));
 
 // Now import modules that depend on the db
-const { dnsRecords, domains, favicons, httpHeaders, providers, registrations } =
-  await import("@domainstack/db/schema");
+const {
+  certificateChecks,
+  certificates,
+  dnsRecords,
+  domains,
+  favicons,
+  httpHeaders,
+  providers,
+  registrations,
+} = await import("@domainstack/db/schema");
 const { start } = await import("workflow/api");
-const { fetchDns, fetchFavicon, fetchHeaders, fetchRegistration } =
+const { fetchCertificates, fetchDns, fetchFavicon, fetchHeaders, fetchRegistration } =
   await import("@domainstack/server");
 const { getRateLimiter } = await import("@domainstack/redis/ratelimit");
 const { createCaller } = await import("@/server/routers/_app");
+const { eq } = await import("@domainstack/db/drizzle");
 
 import type { Context } from "@/trpc/init";
 
@@ -543,6 +564,134 @@ describe("domain router", () => {
       });
 
       expect(result).toMatchObject({ success: false, error: "unsupported_tld" });
+    });
+  });
+
+  describe("getCertificates", () => {
+    const observation = {
+      valid: true,
+      validationError: null,
+      protocol: "TLSv1.3",
+      cipher: "TLS_AES_256_GCM_SHA384",
+      publicKeyBits: 256,
+      chainComplete: true,
+    } as const;
+
+    const leaf = {
+      issuer: "Test Intermediate CA",
+      subject: "example.com",
+      altNames: ["example.com"],
+      validFrom: "2024-01-01T00:00:00.000Z",
+      validTo: "2027-01-01T00:00:00.000Z",
+      fingerprint256: "aa".repeat(32),
+      serialNumber: "03",
+      chainPosition: 0,
+      caProvider: { id: null, name: null, domain: null },
+    };
+
+    const intermediate = {
+      issuer: "Test Root CA",
+      subject: "Test Intermediate CA",
+      altNames: [] as string[],
+      validFrom: "2024-01-01T00:00:00.000Z",
+      validTo: "2025-06-01T00:00:00.000Z",
+      fingerprint256: "bb".repeat(32),
+      serialNumber: "02",
+      chainPosition: 1,
+      caProvider: { id: null, name: null, domain: null },
+    };
+
+    const freshData = {
+      certificates: [leaf, intermediate],
+      ...observation,
+    };
+
+    async function clearCertificateCache() {
+      await db.delete(certificates).where(eq(certificates.domainId, TEST_DOMAIN_ID));
+      await db.delete(certificateChecks).where(eq(certificateChecks.domainId, TEST_DOMAIN_ID));
+    }
+
+    async function insertCachedObservation() {
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + 60 * 60 * 1000);
+      await db.insert(certificateChecks).values({
+        domainId: TEST_DOMAIN_ID,
+        ...observation,
+        fetchedAt: now,
+        expiresAt,
+      });
+      await db.insert(certificates).values(
+        [leaf, intermediate].map((c) => ({
+          domainId: TEST_DOMAIN_ID,
+          issuer: c.issuer,
+          subject: c.subject,
+          altNames: c.altNames,
+          validFrom: new Date(c.validFrom),
+          validTo: new Date(c.validTo),
+          fingerprint256: c.fingerprint256,
+          serialNumber: c.serialNumber,
+          chainPosition: c.chainPosition,
+          fetchedAt: now,
+          expiresAt,
+        })),
+      );
+    }
+
+    beforeEach(async () => {
+      await clearCertificateCache();
+      vi.mocked(fetchCertificates).mockResolvedValue({
+        success: true,
+        data: freshData,
+      });
+    });
+
+    it("returns cached and fresh responses with the same observation shape", async () => {
+      const caller = createTestCaller();
+      await insertCachedObservation();
+
+      const cached = await caller.domain.getCertificates({ domain: TEST_DOMAIN });
+      expect(cached).toMatchObject({
+        success: true,
+        cached: true,
+        data: freshData,
+      });
+      expect(fetchCertificates).not.toHaveBeenCalled();
+
+      await clearCertificateCache();
+      const fresh = await caller.domain.getCertificates({ domain: TEST_DOMAIN });
+      expect(fresh).toMatchObject({
+        success: true,
+        cached: false,
+        data: freshData,
+      });
+      expect(fetchCertificates).toHaveBeenCalledWith(TEST_DOMAIN);
+      expect(fresh.data).toEqual(cached.data);
+    });
+
+    it("treats legacy certificate rows without a check as a cache miss", async () => {
+      const caller = createTestCaller();
+      const now = new Date();
+      await db.insert(certificates).values({
+        domainId: TEST_DOMAIN_ID,
+        issuer: leaf.issuer,
+        subject: leaf.subject,
+        altNames: leaf.altNames,
+        validFrom: new Date(leaf.validFrom),
+        validTo: new Date(leaf.validTo),
+        fingerprint256: leaf.fingerprint256,
+        serialNumber: leaf.serialNumber,
+        fetchedAt: now,
+        expiresAt: new Date(now.getTime() + 60 * 60 * 1000),
+      });
+
+      const result = await caller.domain.getCertificates({ domain: TEST_DOMAIN });
+
+      expect(result).toMatchObject({
+        success: true,
+        cached: false,
+        data: freshData,
+      });
+      expect(fetchCertificates).toHaveBeenCalledWith(TEST_DOMAIN);
     });
   });
 });

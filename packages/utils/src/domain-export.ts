@@ -43,10 +43,14 @@ export function serializeDomainExport(domain: string, data: Partial<DomainRespon
 
   let certificates = null;
   if (data.certificates?.certificates) {
-    certificates = data.certificates.certificates.map((c) => {
-      const { caProvider: _cp, ...rest } = c;
-      return rest;
-    });
+    const { certificates: chain, error: _error, ...observation } = data.certificates;
+    certificates = {
+      ...observation,
+      certificates: chain.map((c) => {
+        const { caProvider: _cp, ...rest } = c;
+        return rest;
+      }),
+    };
   }
 
   const headers = data.headers ? data.headers.headers : null;

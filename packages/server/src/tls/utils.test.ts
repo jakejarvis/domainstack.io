@@ -3,7 +3,22 @@ import type { Certificate } from "node:tls";
 
 import { describe, expect, it } from "vitest";
 
-import { isExpectedDnsError, isExpectedTlsError, parseAltNames, toName } from "./utils";
+import {
+  cyclicChain,
+  incompleteChain,
+  noCertificate,
+  selfSignedCertificate,
+  validChain,
+} from "./fixtures";
+import {
+  isEmptyPeerCertificate,
+  isExpectedDnsError,
+  isExpectedTlsError,
+  parseAltNames,
+  parseCertificateDate,
+  toName,
+  walkCertificateChain,
+} from "./utils";
 
 // Helper to cast partial objects as Certificate for testing
 const asCert = (obj: Partial<Certificate>) => obj as Certificate;
@@ -114,5 +129,54 @@ describe("isExpectedDnsError", () => {
   it("detects getaddrinfo errors by message", () => {
     const err = new Error("getaddrinfo ENOTFOUND example.com");
     expect(isExpectedDnsError(err)).toBe(true);
+  });
+});
+
+describe("parseCertificateDate", () => {
+  it("returns null for invalid dates", () => {
+    expect(parseCertificateDate("not-a-date")).toBeNull();
+    expect(parseCertificateDate("")).toBeNull();
+    expect(parseCertificateDate(undefined)).toBeNull();
+  });
+
+  it("parses OpenSSL-style certificate dates", () => {
+    const date = parseCertificateDate("Jan  1 00:00:00 2024 GMT");
+    expect(date?.toISOString()).toBe("2024-01-01T00:00:00.000Z");
+  });
+});
+
+describe("isEmptyPeerCertificate", () => {
+  it("treats an empty object as no certificate", () => {
+    expect(isEmptyPeerCertificate(noCertificate())).toBe(true);
+  });
+
+  it("accepts a presented certificate", () => {
+    expect(isEmptyPeerCertificate(validChain())).toBe(false);
+  });
+});
+
+describe("walkCertificateChain", () => {
+  it("assigns leaf-first chain positions", () => {
+    const { chain, chainComplete } = walkCertificateChain(validChain() as never);
+    expect(chain.map((c) => c.chainPosition)).toEqual([0, 1, 2]);
+    expect(chainComplete).toBe(true);
+  });
+
+  it("marks a self-signed leaf as a complete chain", () => {
+    const { chain, chainComplete } = walkCertificateChain(selfSignedCertificate() as never);
+    expect(chain).toHaveLength(1);
+    expect(chainComplete).toBe(true);
+  });
+
+  it("marks a missing root as incomplete", () => {
+    const { chain, chainComplete } = walkCertificateChain(incompleteChain() as never);
+    expect(chain).toHaveLength(2);
+    expect(chainComplete).toBe(false);
+  });
+
+  it("stops multi-node fingerprint cycles", () => {
+    const { chain, chainComplete } = walkCertificateChain(cyclicChain() as never);
+    expect(chain).toHaveLength(2);
+    expect(chainComplete).toBe(false);
   });
 });

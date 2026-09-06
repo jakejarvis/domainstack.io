@@ -2,8 +2,40 @@ import { describe, expect, it, vi } from "vitest";
 import { page } from "vitest/browser";
 
 import { render } from "@/mocks/react";
+import type { Certificate, CertificatesResponse } from "@domainstack/types";
 
 import { CertificatesSection, equalHostname } from "./certificates-section";
+
+function cert(
+  overrides: Partial<Certificate> & Pick<Certificate, "issuer" | "subject">,
+): Certificate {
+  return {
+    altNames: [],
+    validFrom: "2024-01-01T00:00:00.000Z",
+    validTo: "2025-01-01T00:00:00.000Z",
+    fingerprint256: null,
+    serialNumber: null,
+    chainPosition: 0,
+    caProvider: { id: null, name: null, domain: null },
+    ...overrides,
+  };
+}
+
+function response(
+  certificates: Certificate[],
+  overrides: Partial<CertificatesResponse> = {},
+): CertificatesResponse {
+  return {
+    certificates,
+    valid: true,
+    validationError: null,
+    protocol: "TLSv1.3",
+    cipher: "TLS_AES_256_GCM_SHA384",
+    publicKeyBits: 256,
+    chainComplete: true,
+    ...overrides,
+  };
+}
 
 vi.mock("@/components/icons/provider-logo", () => ({
   ProviderLogo: ({ providerId }: { providerId: string }) => (
@@ -53,24 +85,18 @@ vi.mock("@domainstack/ui/responsive-tooltip", () => ({
 
 describe("CertificatesSection", () => {
   it("renders certificate fields and SAN count", async () => {
-    const data = {
-      certificates: [
-        {
-          issuer: "Let's Encrypt",
-          subject: "test.invalid",
-          altNames: ["*.test.invalid", "test.invalid"],
-          validFrom: "2024-01-01T00:00:00.000Z",
-          validTo: "2025-01-01T00:00:00.000Z",
-          fingerprint256: null,
-          serialNumber: null,
-          caProvider: {
-            id: "ca-letsencrypt",
-            name: "Let's Encrypt",
-            domain: "letsencrypt.org",
-          },
+    const data = response([
+      cert({
+        issuer: "Let's Encrypt",
+        subject: "test.invalid",
+        altNames: ["*.test.invalid", "test.invalid"],
+        caProvider: {
+          id: "ca-letsencrypt",
+          name: "Let's Encrypt",
+          domain: "letsencrypt.org",
         },
-      ],
-    };
+      }),
+    ]);
     await render(<CertificatesSection data={data} />);
     await expect.element(page.getByText("Issuer", { exact: true })).toBeInTheDocument();
     expect(
@@ -103,44 +129,88 @@ describe("CertificatesSection", () => {
     expect(caProviderName).toBeDefined();
   });
 
+  it("does not show a valid-certificate banner when the chain is trusted", async () => {
+    await render(
+      <CertificatesSection
+        data={response([cert({ issuer: "Let's Encrypt", subject: "test.invalid" })])}
+      />,
+    );
+    await expect
+      .element(page.getByText("Valid certificate", { exact: true }))
+      .not.toBeInTheDocument();
+    await expect.element(page.getByText("TLS connection", { exact: true })).not.toBeInTheDocument();
+  });
+
   it("shows empty state when no certificates", async () => {
     await render(<CertificatesSection data={null} />);
     await expect.element(page.getByText(/No certificates found/i)).toBeInTheDocument();
   });
 
+  it("keeps invalid certificates inspectable and explains the failure", async () => {
+    await render(
+      <CertificatesSection
+        data={response([cert({ issuer: "Let's Encrypt", subject: "test.invalid" })], {
+          valid: false,
+          validationError: "CERT_HAS_EXPIRED",
+        })}
+      />,
+    );
+
+    await expect
+      .element(page.getByText("Certificate expired", { exact: true }))
+      .toBeInTheDocument();
+    await expect.element(page.getByText("CERT_HAS_EXPIRED", { exact: true })).toBeInTheDocument();
+    expect(
+      page
+        .getByText("test.invalid", { exact: true })
+        .elements()
+        .some((n) => n.tagName.toLowerCase() === "span"),
+    ).toBe(true);
+    await expect.element(page.getByText("Issuer", { exact: true })).toBeInTheDocument();
+  });
+
+  it("explains hostname mismatches distinctly", async () => {
+    await render(
+      <CertificatesSection
+        data={response([cert({ issuer: "Let's Encrypt", subject: "other.example" })], {
+          valid: false,
+          validationError: "ERR_TLS_CERT_ALTNAME_INVALID",
+        })}
+      />,
+    );
+
+    await expect.element(page.getByText("Hostname mismatch", { exact: true })).toBeInTheDocument();
+    expect(
+      page
+        .getByText("other.example", { exact: true })
+        .elements()
+        .some((n) => n.tagName.toLowerCase() === "span"),
+    ).toBe(true);
+  });
+
   it("expands and collapses the rest of the certificate chain", async () => {
-    const data = {
-      certificates: [
-        {
-          issuer: "Let's Encrypt",
-          subject: "test.invalid",
-          altNames: ["test.invalid"],
-          validFrom: "2024-01-01T00:00:00.000Z",
-          validTo: "2025-01-01T00:00:00.000Z",
-          fingerprint256: null,
-          serialNumber: null,
-          caProvider: {
-            id: "ca-letsencrypt",
-            name: "Let's Encrypt",
-            domain: "letsencrypt.org",
-          },
+    const data = response([
+      cert({
+        issuer: "Let's Encrypt",
+        subject: "test.invalid",
+        altNames: ["test.invalid"],
+        caProvider: {
+          id: "ca-letsencrypt",
+          name: "Let's Encrypt",
+          domain: "letsencrypt.org",
         },
-        {
-          issuer: "ISRG Root X1",
-          subject: "R3",
-          altNames: [],
-          validFrom: "2020-01-01T00:00:00.000Z",
-          validTo: "2025-09-01T00:00:00.000Z",
-          fingerprint256: null,
-          serialNumber: null,
-          caProvider: {
-            id: "ca-isrg",
-            name: "ISRG",
-            domain: "letsencrypt.org",
-          },
+      }),
+      cert({
+        issuer: "ISRG Root X1",
+        subject: "R3",
+        chainPosition: 1,
+        caProvider: {
+          id: "ca-isrg",
+          name: "ISRG",
+          domain: "letsencrypt.org",
         },
-      ],
-    };
+      }),
+    ]);
     await render(<CertificatesSection data={data} />);
 
     // Subject appears as both the truncated label and tooltip content

@@ -116,16 +116,21 @@ export function CertificatesSection({
   const [showAll, setShowAll] = useState(false);
   const certificates = data?.certificates ?? [];
   const error = data?.error;
+  const isInvalid = Boolean(data && (!data.valid || error || data.validationError));
 
   const firstCert = certificates.length > 0 ? certificates[0] : null;
   const remainingCerts = certificates.length > 1 ? certificates.slice(1) : [];
 
   return (
     <ReportSection {...sections.certificates}>
-      {error ? (
-        <CertificateAlert error={error} />
-      ) : firstCert ? (
+      {firstCert ? (
         <>
+          {isInvalid ? (
+            <div className="mb-4">
+              <CertificateAlert validationError={data?.validationError} error={error} />
+            </div>
+          ) : null}
+
           <CertificateCard cert={firstCert} />
 
           {remainingCerts.length > 0 && !showAll && (

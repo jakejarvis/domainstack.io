@@ -357,8 +357,8 @@ async function fetchEarliestCertificatesForDomains(domainIds: string[]): Promise
     })
     .from(certificates)
     .leftJoin(providers, eq(certificates.caProviderId, providers.id))
-    .where(inArray(certificates.domainId, domainIds))
-    .orderBy(certificates.domainId, asc(certificates.validTo));
+    .where(and(inArray(certificates.domainId, domainIds), eq(certificates.chainPosition, 0)))
+    .orderBy(certificates.domainId, asc(certificates.chainPosition));
 
   const result = new Map<
     string,

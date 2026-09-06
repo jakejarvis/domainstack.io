@@ -47,6 +47,7 @@ export async function persistCertificatesStep(
       fingerprint256: c.fingerprint256,
       serialNumber: c.serialNumber,
       caProviderId: processedData.providerIds[i],
+      chainPosition: c.chainPosition,
     }));
 
     const expiresAt = ttlForCertificates(now, processedData.earliestValidTo);
@@ -54,6 +55,14 @@ export async function persistCertificatesStep(
     await replaceCertificates({
       domainId: domainRecord.id,
       chain: chainWithIds,
+      check: {
+        valid: processedData.valid,
+        validationError: processedData.validationError,
+        protocol: processedData.protocol,
+        cipher: processedData.cipher,
+        publicKeyBits: processedData.publicKeyBits,
+        chainComplete: processedData.chainComplete,
+      },
       fetchedAt: now,
       expiresAt,
     });

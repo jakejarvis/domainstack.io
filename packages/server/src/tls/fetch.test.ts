@@ -1,11 +1,14 @@
 /* @vitest-environment node */
+import type { lookup as dnsLookup } from "node:dns/promises";
 import { EventEmitter } from "node:events";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const mockConnect = vi.fn<(...args: unknown[]) => unknown>();
+const { mockConnect, mockLookup } = vi.hoisted(() => ({
+  mockConnect: vi.fn<(...args: unknown[]) => unknown>(),
+  mockLookup: vi.fn<typeof dnsLookup>(),
+}));
 
-// Mock node:tls before importing the module under test
 vi.mock("node:tls", () => ({
   default: {
     connect: mockConnect,
@@ -13,12 +16,32 @@ vi.mock("node:tls", () => ({
   connect: mockConnect,
 }));
 
-// Import after mocking
+vi.mock("node:dns/promises", () => ({
+  lookup: mockLookup,
+}));
+
 import { fetchCertificateChain } from "./fetch";
+import {
+  cyclicChain,
+  expiredChain,
+  incompleteChain,
+  malformedDateCertificate,
+  noCertificate,
+  selfSignedCertificate,
+  validChain,
+  wrongHostChain,
+} from "./fixtures";
+
+type LookupResult = Awaited<ReturnType<typeof dnsLookup>>;
+
+const PUBLIC_LOOKUP: LookupResult = [
+  { address: "93.184.216.34", family: 4 },
+] as unknown as LookupResult;
 
 describe("fetchCertificateChain", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    mockLookup.mockResolvedValue(PUBLIC_LOOKUP);
   });
 
   afterEach(() => {
@@ -26,29 +49,39 @@ describe("fetchCertificateChain", () => {
   });
 
   function createMockSocket(options: {
-    peerCertificate?: Record<string, unknown>;
+    peerCertificate?: object;
     errorOnConnect?: Error;
     shouldTimeout?: boolean;
+    authorized?: boolean;
+    authorizationError?: string | Error;
+    protocol?: string | null;
+    cipher?: { name: string } | null;
   }) {
     const socket = new EventEmitter() as EventEmitter & {
       setTimeout: (ms: number, callback?: () => void) => void;
-      getPeerCertificate: () => Record<string, unknown>;
+      getPeerCertificate: () => object;
+      getProtocol: () => string | null;
+      getCipher: () => { name: string } | undefined;
+      authorized: boolean;
+      authorizationError?: string | Error;
       end: () => void;
       destroy: (err?: Error) => void;
     };
 
     socket.setTimeout = vi.fn<(ms: number, callback?: () => void) => void>((_ms, callback) => {
       if (options.shouldTimeout && callback) {
-        // Simulate timeout by calling the callback which will call destroy
         setImmediate(callback);
       }
     });
 
-    socket.getPeerCertificate = vi.fn<() => Record<string, unknown>>(
-      () => options.peerCertificate ?? {},
+    socket.getPeerCertificate = vi.fn<() => object>(() => options.peerCertificate ?? {});
+    socket.getProtocol = vi.fn<() => string | null>(() => options.protocol ?? "TLSv1.3");
+    socket.getCipher = vi.fn<() => { name: string } | undefined>(
+      () => options.cipher ?? { name: "TLS_AES_256_GCM_SHA384" },
     );
+    socket.authorized = options.authorized ?? true;
+    socket.authorizationError = options.authorizationError;
     socket.end = vi.fn<() => void>();
-    // When destroy is called with an error, emit the error event
     socket.destroy = vi.fn<(err?: Error) => void>((err) => {
       if (err) {
         setImmediate(() => socket.emit("error", err));
@@ -58,23 +91,17 @@ describe("fetchCertificateChain", () => {
     return socket;
   }
 
-  it("returns success with certificate chain", async () => {
-    const mockCert = {
-      issuer: { CN: "Test CA" },
-      subject: { CN: "example.com" },
-      subjectaltname: "DNS:example.com, DNS:www.example.com",
-      valid_from: "2024-01-01T00:00:00Z",
-      valid_to: "2025-01-01T00:00:00Z",
-      issuerCertificate: null,
-    };
-
-    const socket = createMockSocket({ peerCertificate: mockCert });
-
+  function mockSuccessfulConnect(socket: ReturnType<typeof createMockSocket>) {
     mockConnect.mockImplementation((...args: unknown[]) => {
       const callback = args[1] as (() => void) | undefined;
       setImmediate(() => callback?.());
       return socket;
     });
+  }
+
+  it("returns success with a valid certificate chain and TLS observation", async () => {
+    const socket = createMockSocket({ peerCertificate: validChain() });
+    mockSuccessfulConnect(socket);
 
     const result = await fetchCertificateChain("example.com");
 
@@ -82,33 +109,151 @@ describe("fetchCertificateChain", () => {
     if (!result.success) {
       throw new Error("Expected fetchCertificateChain to succeed");
     }
-    expect(result.chain).toHaveLength(1);
+    expect(result.valid).toBe(true);
+    expect(result.validationError).toBeNull();
+    expect(result.protocol).toBe("TLSv1.3");
+    expect(result.cipher).toBe("TLS_AES_256_GCM_SHA384");
+    expect(result.publicKeyBits).toBe(256);
+    expect(result.chainComplete).toBe(true);
+    expect(result.chain).toHaveLength(3);
     expect(result.chain[0]?.subject).toBe("example.com");
-    expect(result.chain[0]?.issuer).toBe("Test CA");
+    expect(result.chain[0]?.chainPosition).toBe(0);
+    expect(result.chain[1]?.chainPosition).toBe(1);
+    expect(result.chain[2]?.chainPosition).toBe(2);
     expect(result.chain[0]?.altNames).toContain("example.com");
-    expect(result.chain[0]?.altNames).toContain("www.example.com");
+  });
+
+  it("returns an expired chain with valid: false instead of tls_error", async () => {
+    const socket = createMockSocket({
+      peerCertificate: expiredChain(),
+      authorized: false,
+      authorizationError: "CERT_HAS_EXPIRED",
+    });
+    mockSuccessfulConnect(socket);
+
+    const result = await fetchCertificateChain("example.com");
+
+    expect(result.success).toBe(true);
+    if (!result.success) {
+      throw new Error("Expected fetchCertificateChain to succeed");
+    }
+    expect(result.valid).toBe(false);
+    expect(result.validationError).toBe("CERT_HAS_EXPIRED");
+    expect(result.chain[0]?.subject).toBe("example.com");
+  });
+
+  it("returns hostname-mismatch chains with the original error code", async () => {
+    const socket = createMockSocket({
+      peerCertificate: wrongHostChain(),
+      authorized: false,
+      authorizationError: "ERR_TLS_CERT_ALTNAME_INVALID",
+    });
+    mockSuccessfulConnect(socket);
+
+    const result = await fetchCertificateChain("example.com");
+
+    expect(result.success).toBe(true);
+    if (!result.success) {
+      throw new Error("Expected fetchCertificateChain to succeed");
+    }
+    expect(result.valid).toBe(false);
+    expect(result.validationError).toBe("ERR_TLS_CERT_ALTNAME_INVALID");
+  });
+
+  it("returns self-signed chains with valid: false and chainComplete true", async () => {
+    const socket = createMockSocket({
+      peerCertificate: selfSignedCertificate(),
+      authorized: false,
+      authorizationError: "DEPTH_ZERO_SELF_SIGNED_CERT",
+    });
+    mockSuccessfulConnect(socket);
+
+    const result = await fetchCertificateChain("example.com");
+
+    expect(result.success).toBe(true);
+    if (!result.success) {
+      throw new Error("Expected fetchCertificateChain to succeed");
+    }
+    expect(result.valid).toBe(false);
+    expect(result.validationError).toBe("DEPTH_ZERO_SELF_SIGNED_CERT");
+    expect(result.chain).toHaveLength(1);
+    expect(result.chainComplete).toBe(true);
+  });
+
+  it("marks incomplete chains as chainComplete false", async () => {
+    const socket = createMockSocket({
+      peerCertificate: incompleteChain(),
+      authorized: false,
+      authorizationError: "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+    });
+    mockSuccessfulConnect(socket);
+
+    const result = await fetchCertificateChain("example.com");
+
+    expect(result.success).toBe(true);
+    if (!result.success) {
+      throw new Error("Expected fetchCertificateChain to succeed");
+    }
+    expect(result.valid).toBe(false);
+    expect(result.validationError).toBe("UNABLE_TO_VERIFY_LEAF_SIGNATURE");
+    expect(result.chainComplete).toBe(false);
+    expect(result.chain).toHaveLength(2);
+  });
+
+  it("stops multi-node traversal cycles by fingerprint", async () => {
+    const socket = createMockSocket({ peerCertificate: cyclicChain() });
+    mockSuccessfulConnect(socket);
+
+    const result = await fetchCertificateChain("example.com");
+
+    expect(result.success).toBe(true);
+    if (!result.success) {
+      throw new Error("Expected fetchCertificateChain to succeed");
+    }
+    expect(result.chain).toHaveLength(2);
+    expect(result.chainComplete).toBe(false);
+  });
+
+  it("rejects an empty peer certificate as tls_error", async () => {
+    const socket = createMockSocket({ peerCertificate: noCertificate() });
+    mockSuccessfulConnect(socket);
+
+    const result = await fetchCertificateChain("example.com");
+
+    expect(result).toEqual({ success: false, error: "tls_error" });
+  });
+
+  it("rejects malformed certificate dates as tls_error", async () => {
+    const socket = createMockSocket({ peerCertificate: malformedDateCertificate() });
+    mockSuccessfulConnect(socket);
+
+    const result = await fetchCertificateChain("example.com");
+
+    expect(result).toEqual({ success: false, error: "tls_error" });
+  });
+
+  it("reads protocol, cipher, and public key size from the socket", async () => {
+    const socket = createMockSocket({
+      peerCertificate: validChain(),
+      protocol: "TLSv1.2",
+      cipher: { name: "ECDHE-RSA-AES128-GCM-SHA256" },
+    });
+    mockSuccessfulConnect(socket);
+
+    const result = await fetchCertificateChain("example.com");
+
+    expect(result.success).toBe(true);
+    if (!result.success) {
+      throw new Error("Expected fetchCertificateChain to succeed");
+    }
+    expect(result.protocol).toBe("TLSv1.2");
+    expect(result.cipher).toBe("ECDHE-RSA-AES128-GCM-SHA256");
+    expect(result.publicKeyBits).toBe(256);
   });
 
   it("extracts and normalizes fingerprint256 and serialNumber", async () => {
-    const mockCert = {
-      issuer: { CN: "Test CA" },
-      subject: { CN: "example.com" },
-      subjectaltname: "DNS:example.com",
-      valid_from: "2024-01-01T00:00:00Z",
-      valid_to: "2025-01-01T00:00:00Z",
-      fingerprint256:
-        "AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89",
-      serialNumber: "03A4B5C6",
-      issuerCertificate: null,
-    };
-
-    const socket = createMockSocket({ peerCertificate: mockCert });
-
-    mockConnect.mockImplementation((...args: unknown[]) => {
-      const callback = args[1] as (() => void) | undefined;
-      setImmediate(() => callback?.());
-      return socket;
-    });
+    const socket = createMockSocket({ peerCertificate: validChain() });
+    mockSuccessfulConnect(socket);
 
     const result = await fetchCertificateChain("example.com");
 
@@ -116,99 +261,66 @@ describe("fetchCertificateChain", () => {
     if (!result.success) {
       throw new Error("Expected fetchCertificateChain to succeed");
     }
-    expect(result.chain[0]?.fingerprint256).toBe(
-      "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
-    );
-    expect(result.chain[0]?.serialNumber).toBe("03a4b5c6");
+    expect(result.chain[0]?.fingerprint256).toBe("aa".repeat(32));
+    expect(result.chain[0]?.serialNumber).toBe("03");
   });
 
-  it("traverses issuer chain correctly", async () => {
-    const rootCert = {
-      issuer: { CN: "Root CA" },
-      subject: { CN: "Root CA" },
-      valid_from: "2020-01-01T00:00:00Z",
-      valid_to: "2030-01-01T00:00:00Z",
-      issuerCertificate: null,
-    };
+  it("does not call tls.connect when DNS resolves to a private address", async () => {
+    mockLookup.mockResolvedValue([{ address: "10.0.0.1", family: 4 }] as unknown as LookupResult);
 
-    const intermediateCert = {
-      issuer: { CN: "Root CA" },
-      subject: { CN: "Intermediate CA" },
-      valid_from: "2022-01-01T00:00:00Z",
-      valid_to: "2027-01-01T00:00:00Z",
-      issuerCertificate: rootCert,
-    };
+    const result = await fetchCertificateChain("internal.example.com");
 
-    const leafCert = {
-      issuer: { CN: "Intermediate CA" },
-      subject: { CN: "example.com" },
-      valid_from: "2024-01-01T00:00:00Z",
-      valid_to: "2025-01-01T00:00:00Z",
-      issuerCertificate: intermediateCert,
-    };
-
-    const socket = createMockSocket({ peerCertificate: leafCert });
-
-    mockConnect.mockImplementation((...args: unknown[]) => {
-      const callback = args[1] as (() => void) | undefined;
-      setImmediate(() => callback?.());
-      return socket;
-    });
-
-    const result = await fetchCertificateChain("example.com");
-
-    expect(result.success).toBe(true);
-    if (!result.success) {
-      throw new Error("Expected fetchCertificateChain to succeed");
-    }
-    expect(result.chain).toHaveLength(3);
-    expect(result.chain[0]?.subject).toBe("example.com");
-    expect(result.chain[1]?.subject).toBe("Intermediate CA");
-    expect(result.chain[2]?.subject).toBe("Root CA");
+    expect(result).toEqual({ success: false, error: "fetch_error" });
+    expect(mockConnect).not.toHaveBeenCalled();
   });
 
-  it("stops traversal on self-signed certificate (issuer === current)", async () => {
-    const selfSignedCert: Record<string, unknown> = {
-      issuer: { CN: "Self Signed" },
-      subject: { CN: "Self Signed" },
-      valid_from: "2024-01-01T00:00:00Z",
-      valid_to: "2025-01-01T00:00:00Z",
-    };
-    // Self-referencing
-    selfSignedCert.issuerCertificate = selfSignedCert;
+  it("does not call tls.connect when DNS returns mixed public and private addresses", async () => {
+    mockLookup.mockResolvedValue([
+      { address: "93.184.216.34", family: 4 },
+      { address: "192.168.1.10", family: 4 },
+    ] as unknown as LookupResult);
 
-    const socket = createMockSocket({ peerCertificate: selfSignedCert });
+    const result = await fetchCertificateChain("mixed.example.com");
+
+    expect(result).toEqual({ success: false, error: "fetch_error" });
+    expect(mockConnect).not.toHaveBeenCalled();
+  });
+
+  it("does not call tls.connect for blocked hostnames", async () => {
+    const result = await fetchCertificateChain("localhost");
+
+    expect(result).toEqual({ success: false, error: "fetch_error" });
+    expect(mockConnect).not.toHaveBeenCalled();
+    expect(mockLookup).not.toHaveBeenCalled();
+  });
+
+  it("pins resolved public addresses on tls.connect while keeping SNI as the domain", async () => {
+    const socket = createMockSocket({ peerCertificate: validChain() });
+    let captured: { host?: string; servername?: string; lookup?: unknown } = {};
 
     mockConnect.mockImplementation((...args: unknown[]) => {
+      captured = args[0] as typeof captured;
       const callback = args[1] as (() => void) | undefined;
       setImmediate(() => callback?.());
       return socket;
     });
 
-    const result = await fetchCertificateChain("example.com");
+    await fetchCertificateChain("example.com");
 
-    expect(result.success).toBe(true);
-    if (!result.success) {
-      throw new Error("Expected fetchCertificateChain to succeed");
-    }
-    // Should only have one cert, not infinite loop
-    expect(result.chain).toHaveLength(1);
-    expect(result.chain[0]?.subject).toBe("Self Signed");
+    expect(captured.host).toBe("example.com");
+    expect(captured.servername).toBe("example.com");
+    expect(typeof captured.lookup).toBe("function");
   });
 
   it("returns dns_error for ENOTFOUND", async () => {
-    const socket = createMockSocket({});
-    const error = new Error("getaddrinfo ENOTFOUND example.invalid");
-    (error as NodeJS.ErrnoException).code = "ENOTFOUND";
-
-    mockConnect.mockImplementation(() => {
-      setImmediate(() => socket.emit("error", error));
-      return socket;
-    });
+    mockLookup.mockRejectedValue(
+      Object.assign(new Error("getaddrinfo ENOTFOUND example.invalid"), { code: "ENOTFOUND" }),
+    );
 
     const result = await fetchCertificateChain("example.invalid");
 
     expect(result).toEqual({ success: false, error: "dns_error" });
+    expect(mockConnect).not.toHaveBeenCalled();
   });
 
   it("returns dns_error for ENODATA when A records are missing", async () => {
@@ -227,39 +339,19 @@ describe("fetchCertificateChain", () => {
   });
 
   it("returns dns_error for EAI_AGAIN", async () => {
-    const socket = createMockSocket({});
-    const error = new Error("getaddrinfo EAI_AGAIN example.com");
-    (error as NodeJS.ErrnoException).code = "EAI_AGAIN";
-
-    mockConnect.mockImplementation(() => {
-      setImmediate(() => socket.emit("error", error));
-      return socket;
-    });
+    mockLookup.mockRejectedValue(
+      Object.assign(new Error("getaddrinfo EAI_AGAIN example.com"), { code: "EAI_AGAIN" }),
+    );
 
     const result = await fetchCertificateChain("example.com");
 
     expect(result).toEqual({ success: false, error: "dns_error" });
   });
 
-  it("returns tls_error for certificate errors", async () => {
+  it("returns tls_error for handshake certificate errors", async () => {
     const socket = createMockSocket({});
     const error = new Error("unable to verify the first certificate");
     (error as NodeJS.ErrnoException).code = "UNABLE_TO_VERIFY_LEAF_SIGNATURE";
-
-    mockConnect.mockImplementation(() => {
-      setImmediate(() => socket.emit("error", error));
-      return socket;
-    });
-
-    const result = await fetchCertificateChain("example.com");
-
-    expect(result).toEqual({ success: false, error: "tls_error" });
-  });
-
-  it("returns tls_error for CERT_HAS_EXPIRED", async () => {
-    const socket = createMockSocket({});
-    const error = new Error("certificate has expired");
-    (error as NodeJS.ErrnoException).code = "CERT_HAS_EXPIRED";
 
     mockConnect.mockImplementation(() => {
       setImmediate(() => socket.emit("error", error));
@@ -311,15 +403,7 @@ describe("fetchCertificateChain", () => {
   });
 
   it("respects custom port option", async () => {
-    const mockCert = {
-      issuer: { CN: "Test CA" },
-      subject: { CN: "example.com" },
-      valid_from: "2024-01-01T00:00:00Z",
-      valid_to: "2025-01-01T00:00:00Z",
-      issuerCertificate: null,
-    };
-
-    const socket = createMockSocket({ peerCertificate: mockCert });
+    const socket = createMockSocket({ peerCertificate: validChain() });
     let capturedPort = 0;
 
     mockConnect.mockImplementation((...args: unknown[]) => {
@@ -336,15 +420,7 @@ describe("fetchCertificateChain", () => {
   });
 
   it("uses default port 443", async () => {
-    const mockCert = {
-      issuer: { CN: "Test CA" },
-      subject: { CN: "example.com" },
-      valid_from: "2024-01-01T00:00:00Z",
-      valid_to: "2025-01-01T00:00:00Z",
-      issuerCertificate: null,
-    };
-
-    const socket = createMockSocket({ peerCertificate: mockCert });
+    const socket = createMockSocket({ peerCertificate: validChain() });
     let capturedPort = 0;
 
     mockConnect.mockImplementation((...args: unknown[]) => {

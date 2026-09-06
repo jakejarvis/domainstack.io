@@ -22,6 +22,12 @@ export type CertificatesError = "dns_error" | "tls_error" | "timeout" | "fetch_e
  */
 export interface CertificatesFetchData {
   chainJson: string;
+  valid: boolean;
+  validationError: string | null;
+  protocol: string | null;
+  cipher: string | null;
+  publicKeyBits: number | null;
+  chainComplete: boolean;
 }
 
 /**
@@ -32,6 +38,12 @@ export interface CertificatesProcessedData {
   certificates: Certificate[];
   providerIds: (string | null)[];
   earliestValidTo: Date;
+  valid: boolean;
+  validationError: string | null;
+  protocol: string | null;
+  cipher: string | null;
+  publicKeyBits: number | null;
+  chainComplete: boolean;
 }
 
 /**

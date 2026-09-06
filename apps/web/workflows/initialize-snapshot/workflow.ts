@@ -22,6 +22,7 @@ import type {
   HostingResponse,
   RegistrationResponse,
 } from "@domainstack/types";
+import { findLeafCertificate } from "@domainstack/utils";
 
 export interface InitializeSnapshotWorkflowInput {
   trackedDomainId: string;
@@ -90,10 +91,18 @@ export async function initializeSnapshotWorkflow(
   // Process and persist certificates
   let certificatesData: CertificatesResponse | null = null;
   if (certificatesResult?.success) {
-    const processed = await optionalCall(processChainStep(certificatesResult.data.chainJson));
+    const processed = await optionalCall(processChainStep(certificatesResult.data));
     if (processed) {
       await optionalCall(persistCertificatesStep(domainName, processed));
-      certificatesData = { certificates: processed.certificates };
+      certificatesData = {
+        certificates: processed.certificates,
+        valid: processed.valid,
+        validationError: processed.validationError,
+        protocol: processed.protocol,
+        cipher: processed.cipher,
+        publicKeyBits: processed.publicKeyBits,
+        chainComplete: processed.chainComplete,
+      };
     }
   }
 
@@ -149,15 +158,17 @@ export async function initializeSnapshotWorkflow(
   };
 
   if (certificatesData && certificatesData.certificates.length > 0) {
-    const [leafCert] = certificatesData.certificates;
+    const leafCert = findLeafCertificate(certificatesData.certificates);
 
-    certificateSnapshot = {
-      caProviderId: leafCert.caProvider.id ?? null,
-      issuer: leafCert.issuer,
-      validTo: new Date(leafCert.validTo).toISOString(),
-      fingerprint: leafCert.fingerprint256,
-      serialNumber: leafCert.serialNumber,
-    };
+    if (leafCert) {
+      certificateSnapshot = {
+        caProviderId: leafCert.caProvider.id ?? null,
+        issuer: leafCert.issuer,
+        validTo: new Date(leafCert.validTo).toISOString(),
+        fingerprint: leafCert.fingerprint256,
+        serialNumber: leafCert.serialNumber,
+      };
+    }
   }
 
   // Resolve provider IDs from hosting data

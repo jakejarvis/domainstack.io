@@ -430,15 +430,36 @@ export const certificates = pgTable(
     caProviderId: uuid("ca_provider_id").references(() => providers.id),
     fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    chainPosition: integer("chain_position"),
   },
   (t) => [
     index("i_certs_domain").on(t.domainId),
     index("i_certs_ca_provider").on(t.caProviderId),
     index("i_certs_expires").on(t.expiresAt),
+    index("i_certs_chain_position").on(t.domainId, t.chainPosition),
     // Ensure validTo >= validFrom
     check("ck_cert_valid_window", sql`${t.validTo} >= ${t.validFrom}`),
     // GIN on alt_names via raw migration
   ],
+);
+
+// TLS observation (one current row per domain)
+export const certificateChecks = pgTable(
+  "certificate_checks",
+  {
+    domainId: uuid("domain_id")
+      .primaryKey()
+      .references(() => domains.id, { onDelete: "cascade" }),
+    valid: boolean("valid").notNull(),
+    validationError: text("validation_error"),
+    protocol: text("protocol"),
+    cipher: text("cipher"),
+    publicKeyBits: integer("public_key_bits"),
+    chainComplete: boolean("chain_complete").notNull(),
+    fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [index("i_certificate_checks_expires").on(t.expiresAt)],
 );
 
 // HTTP headers (latest set)

@@ -7,6 +7,7 @@
 export * from "./dns";
 export * from "./errors";
 export * from "./ip";
+export * from "./resolve";
 export * from "./safe-fetch";
 export * from "./types";
 
