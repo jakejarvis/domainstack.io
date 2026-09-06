@@ -157,8 +157,12 @@ function RegistrationDetailsGrid({ data }: { data: RegistrationResponse }) {
 
       <KeyValue
         label="Created"
-        value={formatDate(data.creationDate || "Unknown")}
-        valueTooltip={data.creationDate ? formatDateTimeUtc(data.creationDate) : undefined}
+        value={<span suppressHydrationWarning>{formatDate(data.creationDate || "Unknown")}</span>}
+        valueTooltip={
+          data.creationDate ? (
+            <span suppressHydrationWarning>{formatDateTimeUtc(data.creationDate)}</span>
+          ) : undefined
+        }
         suffix={
           data.creationDate ? (
             <span className="text-[11px] leading-none text-muted-foreground">
@@ -170,8 +174,12 @@ function RegistrationDetailsGrid({ data }: { data: RegistrationResponse }) {
 
       <KeyValue
         label="Expires"
-        value={formatDate(data.expirationDate || "Unknown")}
-        valueTooltip={data.expirationDate ? formatDateTimeUtc(data.expirationDate) : undefined}
+        value={<span suppressHydrationWarning>{formatDate(data.expirationDate || "Unknown")}</span>}
+        valueTooltip={
+          data.expirationDate ? (
+            <span suppressHydrationWarning>{formatDateTimeUtc(data.expirationDate)}</span>
+          ) : undefined
+        }
         suffix={
           data.expirationDate ? (
             <span className="text-[11px] leading-none text-muted-foreground">

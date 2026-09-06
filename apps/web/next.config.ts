@@ -35,6 +35,9 @@ let nextConfig: NextConfig = {
       "date-fns",
       "motion/react",
     ],
+    staleTimes: {
+      dynamic: 0,
+    },
   },
   rewrites: async () => [
     // Rewrite /settings to default tab without a client-side navigation flash.
@@ -81,6 +84,7 @@ if (process.env.POSTHOG_API_KEY && process.env.POSTHOG_ENV_ID) {
     logLevel: "error",
     sourcemaps: {
       enabled: true,
+      deleteAfterUpload: false,
     },
   });
 }

@@ -83,8 +83,8 @@ function CertificateCard({ cert }: { cert: Certificate }) {
 
         <KeyValue
           label="Valid from"
-          value={formatDate(cert.validFrom)}
-          valueTooltip={formatDateTimeUtc(cert.validFrom)}
+          value={<span suppressHydrationWarning>{formatDate(cert.validFrom)}</span>}
+          valueTooltip={<span suppressHydrationWarning>{formatDateTimeUtc(cert.validFrom)}</span>}
           suffix={
             <span className="text-[11px] leading-none text-muted-foreground">
               <RelativeAgeString from={cert.validFrom} />
@@ -94,8 +94,8 @@ function CertificateCard({ cert }: { cert: Certificate }) {
 
         <KeyValue
           label="Valid to"
-          value={formatDate(cert.validTo)}
-          valueTooltip={formatDateTimeUtc(cert.validTo)}
+          value={<span suppressHydrationWarning>{formatDate(cert.validTo)}</span>}
+          valueTooltip={<span suppressHydrationWarning>{formatDateTimeUtc(cert.validTo)}</span>}
           suffix={
             <span className="text-[11px] leading-none text-muted-foreground">
               <RelativeExpiryString to={cert.validTo} dangerDays={7} warnDays={21} />

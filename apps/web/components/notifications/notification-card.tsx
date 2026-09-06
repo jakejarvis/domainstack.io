@@ -64,7 +64,7 @@ export function NotificationCard({ notification, onClick }: NotificationCardProp
             )}
           </div>
           <p className="line-clamp-3 text-[13px] text-muted-foreground">{notification.message}</p>
-          <p className="mt-1 text-xs text-muted-foreground/75">
+          <p className="mt-1 text-xs text-muted-foreground/75" suppressHydrationWarning>
             {now
               ? formatDistanceStrict(notification.sentAt, now, {
                   addSuffix: true,

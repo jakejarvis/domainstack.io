@@ -3,7 +3,7 @@ import { Collapsible as CollapsiblePrimitive } from "@base-ui/react/collapsible"
 import { cn } from "../utils";
 
 function Collapsible({ ...props }: CollapsiblePrimitive.Root.Props) {
-  return <CollapsiblePrimitive.Root data-slot="collapsible" {...props} />;
+  return <CollapsiblePrimitive.Root data-slot="collapsible" suppressHydrationWarning {...props} />;
 }
 
 function CollapsibleTrigger({ className, ...props }: CollapsiblePrimitive.Trigger.Props) {

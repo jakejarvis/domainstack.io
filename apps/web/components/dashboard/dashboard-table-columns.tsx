@@ -280,9 +280,11 @@ export function createColumns(
             <ResponsiveTooltip>
               <ResponsiveTooltipTrigger
                 nativeButton={false}
-                render={<span>{formatDate(date)}</span>}
+                render={<span suppressHydrationWarning>{formatDate(date)}</span>}
               />
-              <ResponsiveTooltipContent>{formatDateTimeUtc(date)}</ResponsiveTooltipContent>
+              <ResponsiveTooltipContent>
+                <span suppressHydrationWarning>{formatDateTimeUtc(date)}</span>
+              </ResponsiveTooltipContent>
             </ResponsiveTooltip>
           </div>
         );
@@ -397,9 +399,11 @@ export function createColumns(
             <ResponsiveTooltip>
               <ResponsiveTooltipTrigger
                 nativeButton={false}
-                render={<span>{formatDate(date)}</span>}
+                render={<span suppressHydrationWarning>{formatDate(date)}</span>}
               />
-              <ResponsiveTooltipContent>{formatDateTimeUtc(date)}</ResponsiveTooltipContent>
+              <ResponsiveTooltipContent>
+                <span suppressHydrationWarning>{formatDateTimeUtc(date)}</span>
+              </ResponsiveTooltipContent>
             </ResponsiveTooltip>
           </div>
         );
@@ -421,9 +425,11 @@ export function createColumns(
             <ResponsiveTooltip>
               <ResponsiveTooltipTrigger
                 nativeButton={false}
-                render={<span>{formatDate(date)}</span>}
+                render={<span suppressHydrationWarning>{formatDate(date)}</span>}
               />
-              <ResponsiveTooltipContent>{formatDateTimeUtc(date)}</ResponsiveTooltipContent>
+              <ResponsiveTooltipContent>
+                <span suppressHydrationWarning>{formatDateTimeUtc(date)}</span>
+              </ResponsiveTooltipContent>
             </ResponsiveTooltip>
           </div>
         );

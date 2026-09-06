@@ -100,9 +100,15 @@ function ExpiresInfoRow({
       <ResponsiveTooltip>
         <ResponsiveTooltipTrigger
           nativeButton={false}
-          render={<span className="truncate">{formatDate(expirationDate)}</span>}
+          render={
+            <span className="truncate" suppressHydrationWarning>
+              {formatDate(expirationDate)}
+            </span>
+          }
         />
-        <ResponsiveTooltipContent>{formatDateTimeUtc(expirationDate)}</ResponsiveTooltipContent>
+        <ResponsiveTooltipContent>
+          <span suppressHydrationWarning>{formatDateTimeUtc(expirationDate)}</span>
+        </ResponsiveTooltipContent>
       </ResponsiveTooltip>
       {showRelative ? (
         <span className="shrink-0 text-[11px] leading-none text-muted-foreground">
@@ -353,6 +359,7 @@ export const DashboardGridCard = memo(function DashboardGridCard({
           aria-hidden
           className="pointer-events-none absolute -inset-x-8 -top-8 h-24 accent-glow opacity-30 blur-2xl"
           style={{ "--glow-color": `var(--accent-${accent})` } as React.CSSProperties}
+          suppressHydrationWarning
         />
 
         <DashboardGridCardHeader

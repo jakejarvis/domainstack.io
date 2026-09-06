@@ -188,7 +188,11 @@ function RegistrarTooltipBody({
 
 function CaTooltipBody({ certificateExpiryDate }: { certificateExpiryDate?: Date | null }) {
   if (certificateExpiryDate != null) {
-    return <div className="text-xs">Expires on {formatDate(certificateExpiryDate)}</div>;
+    return (
+      <div className="text-xs">
+        Expires on <span suppressHydrationWarning>{formatDate(certificateExpiryDate)}</span>
+      </div>
+    );
   }
   return <div className="text-xs text-muted/80">No certificate data available</div>;
 }

@@ -146,7 +146,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
             <div className="flex items-center gap-[5px] text-xs leading-none text-muted-foreground">
               <IconInfoCircle className="size-3 shrink-0" />
               {feed.lastAccessedAt ? (
-                <span>
+                <span suppressHydrationWarning>
                   Last accessed{" "}
                   {now
                     ? formatDistanceStrict(new Date(feed.lastAccessedAt), now, {

@@ -53,7 +53,7 @@ export function DashboardHeader({ userName }: DashboardHeaderProps) {
                 }
               />
               <ResponsiveTooltipContent>
-                Access until {formatDate(subscription.endsAt)}
+                Access until <span suppressHydrationWarning>{formatDate(subscription.endsAt)}</span>
               </ResponsiveTooltipContent>
             </ResponsiveTooltip>
           ) : (

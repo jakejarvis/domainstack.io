@@ -128,7 +128,9 @@ export function RegistrarLinks({
                   </Tooltip>
                   <span>
                     <span className="text-foreground/85">.{tld} from</span>{" "}
-                    <span className="font-semibold">{price}</span>
+                    <span className="font-semibold" suppressHydrationWarning>
+                      {price}
+                    </span>
                     <span className="text-xs text-muted-foreground">/year</span>
                   </span>
                 </a>

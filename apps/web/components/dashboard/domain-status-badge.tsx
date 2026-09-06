@@ -25,7 +25,7 @@ type DomainStatusBadgeConfig = {
   icon: TablerIcon;
   label: string;
   className: string;
-  tooltipContent?: string;
+  tooltipContent?: React.ReactNode;
   onClick?: () => void;
 };
 
@@ -64,7 +64,9 @@ function getDomainStatusBadge({
       icon: IconAlertTriangle,
       label: "Failing",
       className: cn("border-danger-border bg-danger/20 text-danger-foreground", className),
-      tooltipContent: getFailingTooltip(verificationFailedAt, now),
+      tooltipContent: (
+        <span suppressHydrationWarning>{getFailingTooltip(verificationFailedAt, now)}</span>
+      ),
       onClick,
     };
   }

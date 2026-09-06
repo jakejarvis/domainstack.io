@@ -7,6 +7,17 @@ import {
 } from "@domainstack/ui/responsive-tooltip";
 import { cn } from "@domainstack/ui/utils";
 
+type KeyValueProps = {
+  label?: string;
+  value: React.ReactNode;
+  copyable?: boolean;
+  leading?: React.ReactNode;
+  highlight?: boolean;
+  trailing?: React.ReactNode;
+  suffix?: React.ReactNode;
+  valueTooltip?: React.ReactNode;
+};
+
 export function KeyValue({
   label,
   value,
@@ -16,17 +27,9 @@ export function KeyValue({
   trailing,
   suffix,
   valueTooltip,
-}: {
-  label?: string;
-  value: string;
-  copyable?: boolean;
-  leading?: React.ReactNode;
-  highlight?: boolean;
-  trailing?: React.ReactNode;
-  suffix?: React.ReactNode;
-  valueTooltip?: React.ReactNode;
-}) {
+}: KeyValueProps) {
   const { valueRef, isTruncated } = useTruncation();
+  const copyText = typeof value === "string" ? value : undefined;
 
   return (
     <div
@@ -84,8 +87,8 @@ export function KeyValue({
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {trailing}
-        {copyable && (
-          <CopyButton value={value} variant="ghost" className="-mr-1 text-muted-foreground" />
+        {copyable && copyText != null && (
+          <CopyButton value={copyText} variant="ghost" className="-mr-1 text-muted-foreground" />
         )}
       </div>
     </div>

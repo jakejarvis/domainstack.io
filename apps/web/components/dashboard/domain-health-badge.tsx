@@ -21,7 +21,6 @@ type DomainHealthBadgeProps = {
 };
 
 export function DomainHealthBadge({ expirationDate, verified, className }: DomainHealthBadgeProps) {
-  // Use shared hydrated time to avoid N separate useEffect calls for N badges
   const now = useHydratedNow();
 
   // During SSR (when now is null), show "Unknown" status without calculating
@@ -42,7 +41,7 @@ export function DomainHealthBadge({ expirationDate, verified, className }: Domai
       icon={icon}
       label={label}
       className={cn(colorClass, className)}
-      tooltipContent={tooltipText ?? undefined}
+      tooltipContent={tooltipText ? <span suppressHydrationWarning>{tooltipText}</span> : undefined}
     />
   );
 }

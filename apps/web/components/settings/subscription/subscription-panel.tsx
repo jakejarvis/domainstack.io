@@ -62,7 +62,8 @@ export function SubscriptionPanel() {
             </Button>
             {subscription?.endsAt && (
               <p className="text-center text-xs text-muted-foreground">
-                Your Pro access continues until {formatDate(subscription.endsAt)}
+                Your Pro access continues until{" "}
+                <span suppressHydrationWarning>{formatDate(subscription.endsAt)}</span>
               </p>
             )}
           </div>

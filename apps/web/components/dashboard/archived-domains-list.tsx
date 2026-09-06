@@ -115,15 +115,11 @@ export function ArchivedDomainsList({ domains }: ArchivedDomainsListProps) {
 function ArchivedRelativeTime({ archivedAt }: { archivedAt: Date | string | null | undefined }) {
   const now = useHydratedNow();
 
-  if (!archivedAt || !now) {
-    return <span>recently</span>;
-  }
-
   return (
-    <span>
-      {formatDistanceStrict(new Date(archivedAt), now, {
-        addSuffix: true,
-      })}
+    <span suppressHydrationWarning>
+      {!archivedAt || !now
+        ? "recently"
+        : formatDistanceStrict(new Date(archivedAt), now, { addSuffix: true })}
     </span>
   );
 }

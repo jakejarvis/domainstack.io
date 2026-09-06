@@ -21,7 +21,6 @@ export function RelativeExpiryString({
   /** className applied to the wrapper span */
   className?: string;
 }) {
-  // Use shared hydrated time so the server and client render the same string
   const now = useHydratedNow();
 
   const state = useMemo(() => {
@@ -33,31 +32,25 @@ export function RelativeExpiryString({
         daysUntil: differenceInDays(targetDate, now),
       };
     } catch {
-      // Invalid date
       return null;
     }
   }, [to, now]);
 
-  // Render invisible placeholder before hydration to prevent layout shift
-  if (!state) {
-    return (
-      <span className={cn("invisible", className)} aria-hidden>
-        (loading)
-      </span>
-    );
-  }
-
-  const { text, daysUntil } = state;
-
   return (
     <span
       className={cn(
-        daysUntil <= dangerDays && "text-red-600 dark:text-red-400",
-        daysUntil > dangerDays && daysUntil <= warnDays && "text-amber-600 dark:text-amber-400",
+        !state && "invisible",
+        state && state.daysUntil <= dangerDays && "text-red-600 dark:text-red-400",
+        state &&
+          state.daysUntil > dangerDays &&
+          state.daysUntil <= warnDays &&
+          "text-amber-600 dark:text-amber-400",
         className,
       )}
+      aria-hidden={!state || undefined}
+      suppressHydrationWarning
     >
-      ({text})
+      ({state?.text ?? "loading"})
     </span>
   );
 }

@@ -43,8 +43,12 @@ export function SubscriptionEndingBanner() {
       }
       description={
         <>
-          Your access continues until <span className="font-medium">{formattedDate}</span>. After
-          that, domains beyond the free quota of {PLAN_QUOTAS.free} domains will be archived.
+          Your access continues until{" "}
+          <span className="font-medium" suppressHydrationWarning>
+            {formattedDate}
+          </span>
+          . After that, domains beyond the free quota of {PLAN_QUOTAS.free} domains will be
+          archived.
         </>
       }
       action={{

@@ -46,7 +46,13 @@ export function PlanStatusCard({
                   : "border-accent-blue/30 bg-accent-blue/10 text-accent-blue",
             )}
           >
-            {endsAt ? `Ends ${formatDate(endsAt)}` : "Active"}
+            {endsAt ? (
+              <>
+                Ends <span suppressHydrationWarning>{formatDate(endsAt)}</span>
+              </>
+            ) : (
+              "Active"
+            )}
           </Badge>
         </div>
         <p className="text-[13px] text-muted-foreground">
