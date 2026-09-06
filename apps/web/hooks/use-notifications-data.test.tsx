@@ -18,7 +18,7 @@ import {
   makeNotification,
   makeNotificationsInfiniteData,
 } from "@/components/notifications/test-fixtures";
-import { createTestQueryClient, renderHook, waitFor } from "@/mocks/react";
+import { createTestQueryClient, renderHook } from "@/mocks/react";
 import {
   listNotificationsQuery,
   markAllReadMutation,
@@ -57,7 +57,7 @@ function pageItems(
   return data?.pages.flatMap((page) => page.items) ?? [];
 }
 
-function renderNotificationsData(options?: {
+async function renderNotificationsData(options?: {
   items?: NotificationData[];
   filter?: "unread" | "read";
   enabled?: boolean;
@@ -82,7 +82,7 @@ function renderNotificationsData(options?: {
     );
   }
 
-  const view = renderHook(
+  const view = await renderHook(
     () =>
       useNotificationsData({
         filter: options?.filter ?? "unread",
@@ -110,21 +110,21 @@ describe("useNotificationsData", () => {
   });
 
   it("does not fetch the list when the popover is closed", async () => {
-    const { result } = renderNotificationsData({ enabled: false, items: [unreadAlpha] });
+    const { result } = await renderNotificationsData({ enabled: false, items: [unreadAlpha] });
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(result.current.count).toBe(1);
     });
     expect(listNotificationsQuery).not.toHaveBeenCalled();
   });
 
   it("fetches the read list via listNotificationsQuery", async () => {
-    const { result } = renderNotificationsData({
+    const { result } = await renderNotificationsData({
       filter: "read",
       seedReadList: false,
     });
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(result.current.notifications.map((item) => item.id)).toContain("notif-gamma");
     });
     expect(listNotificationsQuery).toHaveBeenCalledWith(
@@ -133,11 +133,11 @@ describe("useNotificationsData", () => {
   });
 
   it("markRead moves the item from inbox to archive and decrements the count", async () => {
-    const { result, queryClient } = renderNotificationsData();
+    const { result, queryClient } = await renderNotificationsData();
 
     result.current.markRead.mutate({ id: "notif-alpha" });
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(pageItems(queryClient, "unread").map((item) => item.id)).toEqual(["notif-beta"]);
     });
     const archived = pageItems(queryClient, "read");
@@ -149,11 +149,11 @@ describe("useNotificationsData", () => {
 
   it("rolls back and toasts when markRead fails", async () => {
     markReadMutation.mockRejectedValueOnce(new Error("nope"));
-    const { result, queryClient } = renderNotificationsData();
+    const { result, queryClient } = await renderNotificationsData();
 
     result.current.markRead.mutate({ id: "notif-alpha" });
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Failed to mark notification as read");
     });
     expect(pageItems(queryClient, "unread").map((item) => item.id)).toEqual([
@@ -165,11 +165,11 @@ describe("useNotificationsData", () => {
   });
 
   it("markAllRead clears inbox and prepends those items onto archive", async () => {
-    const { result, queryClient } = renderNotificationsData();
+    const { result, queryClient } = await renderNotificationsData();
 
     result.current.markAllRead.mutate();
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(pageItems(queryClient, "unread")).toEqual([]);
     });
     expect(pageItems(queryClient, "read").map((item) => item.id)).toEqual([
@@ -183,11 +183,11 @@ describe("useNotificationsData", () => {
 
   it("rolls back and toasts when markAllRead fails", async () => {
     markAllReadMutation.mockRejectedValueOnce(new Error("nope"));
-    const { result, queryClient } = renderNotificationsData();
+    const { result, queryClient } = await renderNotificationsData();
 
     result.current.markAllRead.mutate();
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Failed to mark notifications as read");
     });
     expect(pageItems(queryClient, "unread").map((item) => item.id)).toEqual([

@@ -62,7 +62,7 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
   return (
     <div
       className={cn(
-        "fixed inset-x-0 z-50 mx-auto flex w-max max-w-[calc(100%-2rem)] animate-in items-center gap-3 rounded-lg border border-black/15 bg-popover px-2.5 py-1.5 shadow-lg shadow-black/20 duration-200 fade-in-0 slide-in-from-bottom-4 motion-reduce:animate-none dark:border-white/15",
+        "fixed inset-x-0 z-50 mx-auto flex w-max max-w-[calc(100%-2rem)] animate-in items-center gap-3 rounded-lg border border-black/15 bg-popover px-2.5 py-1.5 shadow-lg shadow-black/20 duration-200 fade-in-0 slide-in-from-bottom-4 motion-reduce:animate-none motion-reduce:transition-none dark:border-white/15",
         "bottom-[max(1rem,env(safe-area-inset-bottom))]",
         className,
       )}

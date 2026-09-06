@@ -1,5 +1,5 @@
-import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { page } from "vitest/browser";
 
 const nav = vi.hoisted(() => ({
   push: vi.fn<(href: string, opts?: { scroll?: boolean }) => void | Promise<void>>(),
@@ -50,7 +50,7 @@ vi.mock("@/components/dashboard/add-domain/add-domain-content", () => ({
 
 import { AddDomainModalClient } from "@/components/dashboard/add-domain/add-domain-modal-client";
 import { AddDomainPageClient } from "@/components/dashboard/add-domain/add-domain-page-client";
-import { render, screen, waitFor } from "@/mocks/react";
+import { render } from "@/mocks/react";
 
 describe("AddDomainPageClient", () => {
   beforeEach(() => {
@@ -64,32 +64,30 @@ describe("AddDomainPageClient", () => {
   });
 
   it("parses resume params and returns to the dashboard after success", async () => {
-    const user = userEvent.setup();
     search.params = {
       resume: "true",
       id: "domain-pending",
       domain: "pending.dev",
       method: "dns_txt",
     };
-    render(<AddDomainPageClient prefillDomain="from-report.com" />);
+    await render(<AddDomainPageClient prefillDomain="from-report.com" />);
 
-    expect(JSON.parse(screen.getByTestId("resume").textContent ?? "null")).toEqual({
+    expect(JSON.parse(page.getByTestId("resume").element().textContent ?? "null")).toEqual({
       id: "domain-pending",
       domainName: "pending.dev",
       verificationToken: "",
       verificationMethod: "dns_txt",
     });
-    expect(screen.getByTestId("prefill")).toHaveTextContent("from-report.com");
-    expect(screen.queryByRole("button", { name: "Close" })).not.toBeInTheDocument();
+    await expect.element(page.getByTestId("prefill")).toHaveTextContent("from-report.com");
+    await expect.element(page.getByRole("button", { name: "Close" })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Finish" }));
+    await page.getByRole("button", { name: "Finish" }).click();
 
     expect(nav.push).toHaveBeenCalledWith("/dashboard", { scroll: false });
     expect(nav.back).not.toHaveBeenCalled();
   });
 
   it("keeps the success action pending until dashboard navigation completes", async () => {
-    const user = userEvent.setup();
     let finishNavigation: (() => void) | undefined;
     nav.push.mockImplementation(
       () =>
@@ -98,23 +96,21 @@ describe("AddDomainPageClient", () => {
         }),
     );
 
-    render(<AddDomainPageClient />);
+    await render(<AddDomainPageClient />);
 
-    await user.click(screen.getByRole("button", { name: "Finish" }));
+    await page.getByRole("button", { name: "Finish" }).click();
 
     expect(nav.push).toHaveBeenCalledWith("/dashboard", { scroll: false });
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: /loading/i })).toBeDisabled();
-    });
+    await expect.element(page.getByRole("button", { name: /loading/i })).toBeDisabled();
 
     finishNavigation?.();
-    await waitFor(() => expect(screen.getByRole("button", { name: "Finish" })).toBeEnabled());
+    await expect.element(page.getByRole("button", { name: "Finish" })).toBeEnabled();
   });
 
-  it("starts a fresh add when resume params are incomplete", () => {
+  it("starts a fresh add when resume params are incomplete", async () => {
     search.params = { resume: "true", domain: "pending.dev" };
-    render(<AddDomainPageClient />);
-    expect(screen.getByTestId("resume")).toHaveTextContent("null");
+    await render(<AddDomainPageClient />);
+    await expect.element(page.getByTestId("resume")).toHaveTextContent("null");
   });
 });
 
@@ -130,20 +126,18 @@ describe("AddDomainModalClient", () => {
   });
 
   it("goes back after success", async () => {
-    const user = userEvent.setup();
-    render(<AddDomainModalClient />);
+    await render(<AddDomainModalClient />);
 
-    await user.click(screen.getByRole("button", { name: "Finish" }));
+    await page.getByRole("button", { name: "Finish" }).click();
 
     expect(nav.back).toHaveBeenCalledOnce();
     expect(nav.push).not.toHaveBeenCalled();
   });
 
   it("goes back when the modal is closed", async () => {
-    const user = userEvent.setup();
-    render(<AddDomainModalClient />);
+    await render(<AddDomainModalClient />);
 
-    await user.click(screen.getByRole("button", { name: "Close" }));
+    await page.getByRole("button", { name: "Close" }).click();
 
     expect(nav.back).toHaveBeenCalledOnce();
     expect(nav.push).not.toHaveBeenCalled();

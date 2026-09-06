@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
+import { page } from "vitest/browser";
 
 import { DnsRecordList } from "@/components/domain/dns/dns-record-list";
-import { render, screen } from "@/mocks/react";
+import { render } from "@/mocks/react";
 
 vi.mock("@/components/icons/favicon", () => ({
   Favicon: ({ domain }: { domain: string }) => <div>icon:{domain}</div>,
@@ -28,7 +29,7 @@ vi.mock("@/components/ui/tooltip", () => ({
 }));
 
 describe("DnsRecordList", () => {
-  it("renders MX with TTL badges (sorting handled server-side)", () => {
+  it("renders MX with TTL badges (sorting handled server-side)", async () => {
     const records = [
       {
         type: "MX",
@@ -53,7 +54,7 @@ describe("DnsRecordList", () => {
       },
     ] as unknown as import("@domainstack/types").DnsRecord[];
 
-    render(<DnsRecordList records={records} type="MX" />);
+    await render(<DnsRecordList records={records} type="MX" />);
 
     // KeyValue now renders the value span with classes: "min-w-0 flex-1 truncate"
     const items = Array.from(document.querySelectorAll("span.min-w-0.flex-1.truncate")).map(
@@ -68,12 +69,12 @@ describe("DnsRecordList", () => {
     expect(document.querySelectorAll('[data-slot="badge"]')).toBeTruthy();
   });
 
-  it("shows Cloudflare favicon suffix when isCloudflare", () => {
+  it("shows Cloudflare favicon suffix when isCloudflare", async () => {
     const records = [
       { type: "A", name: "", value: "1.2.3.4", ttl: 60, isCloudflare: true },
     ] as unknown as import("@domainstack/types").DnsRecord[];
 
-    render(<DnsRecordList records={records} type="A" />);
-    expect(screen.getByText(/icon:cloudflare.com/i)).toBeInTheDocument();
+    await render(<DnsRecordList records={records} type="A" />);
+    await expect.element(page.getByText(/icon:cloudflare.com/i)).toBeInTheDocument();
   });
 });

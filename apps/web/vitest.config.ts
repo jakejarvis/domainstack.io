@@ -12,10 +12,10 @@ export default defineConfig({
       "next/link": fileURLToPath(new URL("./mocks/next-link.ts", import.meta.url)),
     },
     tsconfigPaths: true,
-    dedupe: ["react", "react-dom", "nuqs"],
+    dedupe: ["react", "react-dom", "nuqs", "@base-ui/react"],
   },
   optimizeDeps: {
-    include: ["nuqs", "nuqs/adapters/testing"],
+    include: ["nuqs", "nuqs/adapters/testing", "react", "react-dom", "react/jsx-runtime"],
   },
   define: {
     "process.env.NEXT_PUBLIC_BASE_URL": JSON.stringify("https://test.domainstack.io"),
@@ -49,7 +49,11 @@ export default defineConfig({
           include: ["**/*.test.tsx"],
           browser: {
             enabled: true,
-            provider: playwright(),
+            provider: playwright({
+              contextOptions: {
+                reducedMotion: "reduce",
+              },
+            }),
             headless: true,
             instances: [
               {

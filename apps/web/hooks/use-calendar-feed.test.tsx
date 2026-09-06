@@ -14,7 +14,7 @@ vi.mock("sonner", () => ({
   },
 }));
 
-import { createTestQueryClient, renderHook, waitFor } from "@/mocks/react";
+import { createTestQueryClient, renderHook } from "@/mocks/react";
 import {
   CALENDAR_FEED_QUERY_KEY,
   CALENDAR_FEED_ROTATED_URL,
@@ -40,12 +40,12 @@ function getFeed(queryClient: ReturnType<typeof createTestQueryClient>) {
   return queryClient.getQueryData<CalendarFeedData>(CALENDAR_FEED_QUERY_KEY);
 }
 
-function renderCalendarFeed(feed: CalendarFeedData = { enabled: false }) {
+async function renderCalendarFeed(feed: CalendarFeedData = { enabled: false }) {
   const queryClient = createTestQueryClient();
   setCalendarFeedState(feed);
   queryClient.setQueryData(CALENDAR_FEED_QUERY_KEY, feed);
 
-  const view = renderHook(() => useCalendarFeed(), {
+  const view = await renderHook(() => useCalendarFeed(), {
     wrapper: ({ children }) => (
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     ),
@@ -66,11 +66,11 @@ describe("useCalendarFeed", () => {
   });
 
   it("enables the feed and writes the new URL into cache", async () => {
-    const { result, queryClient } = renderCalendarFeed();
+    const { result, queryClient } = await renderCalendarFeed();
 
     result.current.enable();
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(getFeed(queryClient)).toEqual({
         enabled: true,
         feedUrl: CALENDAR_FEED_URL,
@@ -84,22 +84,22 @@ describe("useCalendarFeed", () => {
 
   it("toasts when enable fails", async () => {
     enableCalendarFeedMutation.mockRejectedValueOnce(new Error("nope"));
-    const { result } = renderCalendarFeed();
+    const { result } = await renderCalendarFeed();
 
     result.current.enable();
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Failed to enable calendar feed");
     });
     expect(result.current.isEnabled).toBe(false);
   });
 
   it("disables the feed optimistically", async () => {
-    const { result, queryClient } = renderCalendarFeed(enabledFeed);
+    const { result, queryClient } = await renderCalendarFeed(enabledFeed);
 
     result.current.disable();
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(getFeed(queryClient)?.enabled).toBe(false);
     });
     expect(result.current.isEnabled).toBe(false);
@@ -109,11 +109,11 @@ describe("useCalendarFeed", () => {
 
   it("rolls back and toasts when disable fails", async () => {
     disableCalendarFeedMutation.mockRejectedValueOnce(new Error("nope"));
-    const { result, queryClient } = renderCalendarFeed(enabledFeed);
+    const { result, queryClient } = await renderCalendarFeed(enabledFeed);
 
     result.current.disable();
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Failed to disable calendar feed");
     });
     expect(getFeed(queryClient)).toEqual(enabledFeed);
@@ -121,11 +121,11 @@ describe("useCalendarFeed", () => {
   });
 
   it("rotates the token and invalidates to the new URL", async () => {
-    const { result, queryClient } = renderCalendarFeed(enabledFeed);
+    const { result, queryClient } = await renderCalendarFeed(enabledFeed);
 
     result.current.rotate.mutate();
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(getFeed(queryClient)).toEqual({
         enabled: true,
         feedUrl: CALENDAR_FEED_ROTATED_URL,
@@ -138,22 +138,22 @@ describe("useCalendarFeed", () => {
 
   it("toasts when rotate fails", async () => {
     rotateCalendarFeedTokenMutation.mockRejectedValueOnce(new Error("nope"));
-    const { result, queryClient } = renderCalendarFeed(enabledFeed);
+    const { result, queryClient } = await renderCalendarFeed(enabledFeed);
 
     result.current.rotate.mutate();
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Failed to regenerate URL");
     });
     expect(getFeed(queryClient)).toEqual(enabledFeed);
   });
 
   it("deletes the feed optimistically", async () => {
-    const { result, queryClient } = renderCalendarFeed(enabledFeed);
+    const { result, queryClient } = await renderCalendarFeed(enabledFeed);
 
     result.current.deleteFeed.mutate();
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(getFeed(queryClient)).toEqual({ enabled: false });
     });
     expect(result.current.isEnabled).toBe(false);
@@ -163,11 +163,11 @@ describe("useCalendarFeed", () => {
 
   it("rolls back and toasts when delete fails", async () => {
     deleteCalendarFeedMutation.mockRejectedValueOnce(new Error("nope"));
-    const { result, queryClient } = renderCalendarFeed(enabledFeed);
+    const { result, queryClient } = await renderCalendarFeed(enabledFeed);
 
     result.current.deleteFeed.mutate();
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Failed to disable calendar feed");
     });
     expect(getFeed(queryClient)).toEqual(enabledFeed);

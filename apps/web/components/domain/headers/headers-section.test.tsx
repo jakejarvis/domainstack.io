@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
+import { page } from "vitest/browser";
 
-import { render, screen } from "@/mocks/react";
+import { render } from "@/mocks/react";
 
 import { HeadersSection } from "./headers-section";
 
@@ -24,7 +25,7 @@ vi.mock("@/components/ui/tooltip", () => ({
 }));
 
 describe("HeadersSection", () => {
-  it("highlights important headers and renders values", () => {
+  it("highlights important headers and renders values", async () => {
     const data = {
       headers: [
         { name: "strict-transport-security", value: "max-age=63072000" },
@@ -33,13 +34,19 @@ describe("HeadersSection", () => {
       ],
       status: 200,
     };
-    render(<HeadersSection data={data} />);
-    expect(screen.getByText("strict-transport-security")).toBeInTheDocument();
-    const values = screen.getAllByText("max-age=63072000");
-    expect(values.some((n) => n.tagName.toLowerCase() === "span")).toBe(true);
+    await render(<HeadersSection data={data} />);
+    await expect
+      .element(page.getByText("strict-transport-security", { exact: true }))
+      .toBeInTheDocument();
+    expect(
+      page
+        .getByText("max-age=63072000", { exact: true })
+        .elements()
+        .some((n) => n.tagName.toLowerCase() === "span"),
+    ).toBe(true);
   });
 
-  it("sorts headers with important ones first, then alphabetically", () => {
+  it("sorts headers with important ones first, then alphabetically", async () => {
     const data = {
       headers: [
         { name: "x-custom", value: "value1" },
@@ -50,7 +57,7 @@ describe("HeadersSection", () => {
       ],
       status: 200,
     };
-    const { container } = render(<HeadersSection data={data} />);
+    const { container } = await render(<HeadersSection data={data} />);
 
     // Get all header label elements (they have uppercase styling via CSS)
     const allText = (container.textContent || "").toUpperCase();
@@ -80,53 +87,56 @@ describe("HeadersSection", () => {
     expect(xCustomPos).toBeLessThan(zebraPos);
   });
 
-  it("shows empty state when no headers", () => {
-    render(<HeadersSection data={null} />);
-    expect(screen.getByText(/No HTTP headers detected/i)).toBeInTheDocument();
+  it("shows empty state when no headers", async () => {
+    await render(<HeadersSection data={null} />);
+    await expect.element(page.getByText(/No HTTP headers detected/i)).toBeInTheDocument();
   });
 
-  it("renders location header with link to destination domain", () => {
+  it("renders location header with link to destination domain", async () => {
     const data = {
       headers: [{ name: "location", value: "https://www.test.invalid/path" }],
       status: 301,
     };
-    render(<HeadersSection data={data} />);
-    expect(screen.getByText("location")).toBeInTheDocument();
-    expect(screen.getByText("https://www.test.invalid/path")).toBeInTheDocument();
+    await render(<HeadersSection data={data} />);
+    await expect.element(page.getByText("location", { exact: true })).toBeInTheDocument();
+    await expect
+      .element(page.getByText("https://www.test.invalid/path", { exact: true }))
+      .toBeInTheDocument();
 
     // Check that the link is rendered with correct href
-    const link = screen.getByTitle("View report for test.invalid");
-    expect(link).toHaveAttribute("href", "/test.invalid");
+    await expect
+      .element(page.getByTitle("View report for test.invalid"))
+      .toHaveAttribute("href", "/test.invalid");
   });
 
-  it("renders location header without link for relative URLs", () => {
+  it("renders location header without link for relative URLs", async () => {
     const data = {
       headers: [{ name: "location", value: "/relative/path" }],
       status: 302,
     };
-    render(<HeadersSection data={data} />);
-    expect(screen.getByText("location")).toBeInTheDocument();
-    expect(screen.getByText("/relative/path")).toBeInTheDocument();
+    await render(<HeadersSection data={data} />);
+    await expect.element(page.getByText("location", { exact: true })).toBeInTheDocument();
+    await expect.element(page.getByText("/relative/path", { exact: true })).toBeInTheDocument();
 
     // Should not have a link for relative URLs
-    expect(screen.queryByTitle(/View report for/)).not.toBeInTheDocument();
+    await expect.element(page.getByTitle(/View report for/)).not.toBeInTheDocument();
   });
 
-  it("shows alert for non-200 status codes", () => {
+  it("shows alert for non-200 status codes", async () => {
     const data = {
       headers: [{ name: "server", value: "nginx" }],
       status: 404,
       statusMessage: "Not Found",
     };
-    render(<HeadersSection data={data} />);
+    await render(<HeadersSection data={data} />);
 
     // Check that alert is displayed with link
-    expect(screen.getByText(/Server returned/)).toBeInTheDocument();
-    expect(screen.getByText(/404/)).toBeInTheDocument();
-    expect(screen.getByText(/Not Found/)).toBeInTheDocument();
+    await expect.element(page.getByText(/Server returned/)).toBeInTheDocument();
+    await expect.element(page.getByText(/404/)).toBeInTheDocument();
+    await expect.element(page.getByText(/Not Found/)).toBeInTheDocument();
   });
 
-  it("filters out headers with empty values", () => {
+  it("filters out headers with empty values", async () => {
     const data = {
       headers: [
         { name: "server", value: "nginx" },
@@ -137,28 +147,30 @@ describe("HeadersSection", () => {
       status: 200,
       statusMessage: "OK",
     };
-    render(<HeadersSection data={data} />);
+    await render(<HeadersSection data={data} />);
 
     // Check that only non-empty headers are rendered
-    expect(screen.getByText("server")).toBeInTheDocument();
-    expect(screen.getByText("nginx")).toBeInTheDocument();
-    expect(screen.getByText("x-powered-by")).toBeInTheDocument();
-    expect(screen.getByText("nextjs")).toBeInTheDocument();
+    await expect.element(page.getByText("server", { exact: true })).toBeInTheDocument();
+    await expect.element(page.getByText("nginx", { exact: true })).toBeInTheDocument();
+    await expect.element(page.getByText("x-powered-by", { exact: true })).toBeInTheDocument();
+    await expect.element(page.getByText("nextjs", { exact: true })).toBeInTheDocument();
 
     // Empty headers should not be rendered
-    expect(screen.queryByText("empty-header")).not.toBeInTheDocument();
-    expect(screen.queryByText("whitespace-header")).not.toBeInTheDocument();
+    await expect.element(page.getByText("empty-header", { exact: true })).not.toBeInTheDocument();
+    await expect
+      .element(page.getByText("whitespace-header", { exact: true }))
+      .not.toBeInTheDocument();
   });
 
-  it("does not show alert for 200 status code", () => {
+  it("does not show alert for 200 status code", async () => {
     const data = {
       headers: [{ name: "server", value: "nginx" }],
       status: 200,
       statusMessage: "OK",
     };
-    render(<HeadersSection data={data} />);
+    await render(<HeadersSection data={data} />);
 
     // Check that alert is NOT displayed
-    expect(screen.queryByText(/HTTP 200/)).not.toBeInTheDocument();
+    await expect.element(page.getByText(/HTTP 200/)).not.toBeInTheDocument();
   });
 });

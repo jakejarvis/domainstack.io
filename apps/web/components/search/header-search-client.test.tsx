@@ -1,7 +1,7 @@
-import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { page, userEvent } from "vitest/browser";
 
-import { render, screen, waitFor } from "@/mocks/react";
+import { render } from "@/mocks/react";
 
 import { HeaderSearchClient } from "./header-search-client";
 
@@ -19,24 +19,9 @@ vi.mock("next/navigation", () => ({
   useSelectedLayoutSegment: () => "domain",
 }));
 
-// Mock base-ui Form to avoid React instance mismatch in browser tests
-vi.mock("@/components/ui/form", () => ({
-  Form: ({
-    children,
-    onFormSubmit,
-    ...props
-  }: React.ComponentProps<"form"> & { onFormSubmit?: () => void }) => (
-    <form
-      {...props}
-      onSubmit={(e) => {
-        e.preventDefault();
-        onFormSubmit?.();
-      }}
-    >
-      {children}
-    </form>
-  ),
-}));
+function domainSearchInput() {
+  return page.getByRole("textbox", { name: "Domain" });
+}
 
 describe("HeaderSearch", () => {
   beforeEach(() => {
@@ -45,17 +30,17 @@ describe("HeaderSearch", () => {
 
   it("prefills normalized domain from params and navigates on Enter", async () => {
     nav.params = { domain: "Sub.Test.INVALID" };
-    render(<HeaderSearchClient />);
-    const input = screen.getByLabelText(/Search any domain/i);
-    expect(input).toHaveValue("sub.test.invalid");
+    await render(<HeaderSearchClient />);
+    const input = domainSearchInput();
+    await expect.element(input).toHaveValue("sub.test.invalid");
     await userEvent.type(input, "{Enter}");
     expect(nav.push).toHaveBeenCalledWith("/sub.test.invalid");
   });
 
   it("does nothing on invalid domain", async () => {
     nav.params = { domain: "invalid domain" };
-    render(<HeaderSearchClient />);
-    const input = screen.getByLabelText(/Search any domain/i);
+    await render(<HeaderSearchClient />);
+    const input = domainSearchInput();
     await userEvent.type(input, "{Enter}");
     expect(nav.push).not.toHaveBeenCalled();
   });
@@ -70,15 +55,15 @@ describe("HeaderSearch", () => {
     );
 
     nav.params = { domain: "foo.invalid" };
-    const { rerender } = render(<HeaderSearchClient />);
-    const input = screen.getByLabelText(/Search any domain/i);
+    const { rerender } = await render(<HeaderSearchClient />);
+    const input = domainSearchInput();
     // Submit to trigger loading state (disables input)
     await userEvent.type(input, "{Enter}");
-    expect(input).toBeDisabled();
+    await expect.element(input).toBeDisabled();
     // Simulate navigation by changing route params and re-rendering
     nav.params = { domain: "bar.invalid" };
-    rerender(<HeaderSearchClient />);
+    await rerender(<HeaderSearchClient />);
     finishNavigation?.();
-    await waitFor(() => expect(screen.getByLabelText(/Search any domain/i)).not.toBeDisabled());
+    await expect.element(domainSearchInput()).toBeEnabled();
   });
 });

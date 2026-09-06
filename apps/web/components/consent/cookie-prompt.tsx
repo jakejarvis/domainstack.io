@@ -61,7 +61,7 @@ export function CookiePrompt({ consentRequired }: { consentRequired: boolean }) 
 
   return (
     <div
-      className={`fixed bottom-3 left-3 z-100 max-w-[260px] duration-200 ${
+      className={`fixed bottom-3 left-3 z-100 max-w-[260px] duration-200 motion-reduce:animate-none motion-reduce:transition-none ${
         isExiting ? "animate-out slide-out-to-bottom-8" : "animate-in slide-in-from-bottom-8"
       }`}
     >

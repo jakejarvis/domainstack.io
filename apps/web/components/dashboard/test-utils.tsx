@@ -262,14 +262,14 @@ export type RenderDashboardShellOptions = {
   confirmActions?: boolean;
 };
 
-export function renderDashboardShell(options: RenderDashboardShellOptions = {}) {
+export async function renderDashboardShell(options: RenderDashboardShellOptions = {}) {
   const domains = options.domains ?? makeDashboardDomains();
   const totalDomains = options.totalDomains ?? domains.length;
   mockSubscription.activeCount = totalDomains;
 
   const urlUpdates: string[] = [];
 
-  const view = render(
+  const view = await render(
     <NuqsTestingAdapter
       searchParams={options.searchParams ?? ""}
       hasMemory
@@ -289,11 +289,11 @@ export function renderDashboardShell(options: RenderDashboardShellOptions = {}) 
   return { ...view, domains, urlUpdates };
 }
 
-export function renderDashboardConfirmShell(options: RenderDashboardShellOptions = {}) {
+export async function renderDashboardConfirmShell(options: RenderDashboardShellOptions = {}) {
   return renderDashboardShell({ ...options, confirmActions: true });
 }
 
-export function renderArchivedList(domains: TrackedDomainWithDetails[]) {
+export async function renderArchivedList(domains: TrackedDomainWithDetails[]) {
   mockSubscription.activeCount = 0;
   return render(
     <TooltipProvider>

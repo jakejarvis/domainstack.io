@@ -34,7 +34,7 @@ export type RenderAddDomainContentOptions = {
   onClose?: () => void;
 };
 
-export function renderAddDomainContent(options: RenderAddDomainContentOptions = {}) {
+export async function renderAddDomainContent(options: RenderAddDomainContentOptions = {}) {
   return render(
     <AddDomainContent
       onSuccess={options.onSuccess ?? addDomainActionSpies.onSuccess}

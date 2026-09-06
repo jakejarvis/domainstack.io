@@ -1,7 +1,7 @@
-import { userEvent } from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
+import { page } from "vitest/browser";
 
-import { render, screen, within } from "@/mocks/react";
+import { render } from "@/mocks/react";
 
 import { SocialPreviews } from "./social-previews";
 
@@ -16,96 +16,87 @@ describe("SocialPreviews", () => {
 
   describe("tab switching", () => {
     it("switches between social preview providers", async () => {
-      const user = userEvent.setup();
-      render(<SocialPreviews preview={mockPreview} twitterVariant="compact" />);
+      await render(<SocialPreviews preview={mockPreview} twitterVariant="compact" />);
 
       // Initial state: Twitter tab active
-      const twitterPreview = screen.getByRole("link", {
+      const twitterPreview = page.getByRole("link", {
         name: /open test.invalid in a new tab/i,
       });
-      expect(twitterPreview).toHaveAttribute("data-provider", "twitter");
+      await expect.element(twitterPreview).toHaveAttribute("data-provider", "twitter");
 
       // Click Facebook tab
-      const facebookTab = screen.getByRole("tab", { name: /facebook/i });
-      await user.click(facebookTab);
-      const facebookPreview = screen.getByRole("link", {
+      await page.getByRole("tab", { name: /facebook/i }).click();
+      const facebookPreview = page.getByRole("link", {
         name: /open test.invalid in a new tab/i,
       });
-      expect(facebookPreview).toHaveAttribute("data-provider", "facebook");
+      await expect.element(facebookPreview).toHaveAttribute("data-provider", "facebook");
 
       // Click LinkedIn tab
-      const linkedinTab = screen.getByRole("tab", { name: /linkedin/i });
-      await user.click(linkedinTab);
-      const linkedinPreview = screen.getByRole("link", {
+      await page.getByRole("tab", { name: /linkedin/i }).click();
+      const linkedinPreview = page.getByRole("link", {
         name: /open test.invalid in a new tab/i,
       });
-      expect(linkedinPreview).toHaveAttribute("data-provider", "linkedin");
+      await expect.element(linkedinPreview).toHaveAttribute("data-provider", "linkedin");
 
       // Click Discord tab
-      const discordTab = screen.getByRole("tab", { name: /discord/i });
-      await user.click(discordTab);
-      const discordPreview = screen.getByRole("link", {
+      await page.getByRole("tab", { name: /discord/i }).click();
+      const discordPreview = page.getByRole("link", {
         name: /open test.invalid in a new tab/i,
       });
-      expect(discordPreview).toHaveAttribute("data-provider", "discord");
+      await expect.element(discordPreview).toHaveAttribute("data-provider", "discord");
 
       // Click Slack tab
-      const slackTab = screen.getByRole("tab", { name: /slack/i });
-      await user.click(slackTab);
-      const slackPreview = screen.getByRole("link", {
+      await page.getByRole("tab", { name: /slack/i }).click();
+      const slackPreview = page.getByRole("link", {
         name: /open test.invalid in a new tab/i,
       });
-      expect(slackPreview).toHaveAttribute("data-provider", "slack");
+      await expect.element(slackPreview).toHaveAttribute("data-provider", "slack");
     });
 
     it("renders correct active tab content", async () => {
-      const user = userEvent.setup();
-      render(<SocialPreviews preview={mockPreview} twitterVariant="compact" />);
+      await render(<SocialPreviews preview={mockPreview} twitterVariant="compact" />);
 
       // Check initial Twitter content
-      expect(screen.getByRole("link", { name: /open test.invalid in a new tab/i })).toHaveAttribute(
-        "data-provider",
-        "twitter",
-      );
+      await expect
+        .element(page.getByRole("link", { name: /open test.invalid in a new tab/i }))
+        .toHaveAttribute("data-provider", "twitter");
 
       // Switch to Facebook and verify
-      await user.click(screen.getByRole("tab", { name: /facebook/i }));
-      expect(screen.getByRole("link", { name: /open test.invalid in a new tab/i })).toHaveAttribute(
-        "data-provider",
-        "facebook",
-      );
+      await page.getByRole("tab", { name: /facebook/i }).click();
+      await expect
+        .element(page.getByRole("link", { name: /open test.invalid in a new tab/i }))
+        .toHaveAttribute("data-provider", "facebook");
     });
   });
 
   describe("Twitter card variants", () => {
-    it("renders compact variant for Twitter when specified", () => {
-      render(<SocialPreviews preview={mockPreview} twitterVariant="compact" />);
-      const preview = screen.getByRole("link", {
+    it("renders compact variant for Twitter when specified", async () => {
+      await render(<SocialPreviews preview={mockPreview} twitterVariant="compact" />);
+      const preview = page.getByRole("link", {
         name: /open test.invalid in a new tab/i,
       });
-      expect(preview).toHaveAttribute("data-provider", "twitter");
-      expect(preview).toHaveAttribute("data-variant", "compact");
+      await expect.element(preview).toHaveAttribute("data-provider", "twitter");
+      await expect.element(preview).toHaveAttribute("data-variant", "compact");
     });
 
-    it("renders large variant for Twitter when specified", () => {
-      render(<SocialPreviews preview={mockPreview} twitterVariant="large" />);
-      const preview = screen.getByRole("link", {
+    it("renders large variant for Twitter when specified", async () => {
+      await render(<SocialPreviews preview={mockPreview} twitterVariant="large" />);
+      const preview = page.getByRole("link", {
         name: /open test.invalid in a new tab/i,
       });
-      expect(preview).toHaveAttribute("data-provider", "twitter");
-      expect(preview).toHaveAttribute("data-variant", "large");
+      await expect.element(preview).toHaveAttribute("data-provider", "twitter");
+      await expect.element(preview).toHaveAttribute("data-variant", "large");
     });
 
     it("does not apply variant to non-Twitter providers", async () => {
-      const user = userEvent.setup();
-      render(<SocialPreviews preview={mockPreview} twitterVariant="large" />);
+      await render(<SocialPreviews preview={mockPreview} twitterVariant="large" />);
 
       // Switch to Facebook - should not have variant attribute or should not be "large"
-      await user.click(screen.getByRole("tab", { name: /facebook/i }));
-      const facebookPreview = screen.getByRole("link", {
+      await page.getByRole("tab", { name: /facebook/i }).click();
+      const facebookPreview = page.getByRole("link", {
         name: /open test.invalid in a new tab/i,
       });
-      expect(facebookPreview).toHaveAttribute("data-provider", "facebook");
+      await expect.element(facebookPreview).toHaveAttribute("data-provider", "facebook");
       // Facebook doesn't use the twitterVariant prop
     });
   });
@@ -124,7 +115,6 @@ describe("SocialPreviews", () => {
 
     for (const { provider, tabName } of providers) {
       it(`renders ${provider} preview correctly`, async () => {
-        const user = userEvent.setup();
         const preview = {
           title: `${provider} Preview Title`,
           description: `${provider} Preview Description`,
@@ -132,21 +122,19 @@ describe("SocialPreviews", () => {
           imageUploaded: `https://test.invalid/${provider}-uploaded.png`,
           canonicalUrl: "https://test.invalid",
         };
-        render(<SocialPreviews preview={preview} twitterVariant="compact" />);
+        await render(<SocialPreviews preview={preview} twitterVariant="compact" />);
 
         // Switch to the provider's tab
-        const tab = screen.getByRole("tab", { name: new RegExp(tabName, "i") });
-        await user.click(tab);
+        await page.getByRole("tab", { name: new RegExp(tabName, "i") }).click();
 
         // Verify the preview is rendered with correct provider
-        const previewLink = screen.getByRole("link", {
+        const previewLink = page.getByRole("link", {
           name: /open test.invalid in a new tab/i,
         });
-        expect(previewLink).toHaveAttribute("data-provider", provider);
+        await expect.element(previewLink).toHaveAttribute("data-provider", provider);
       });
 
       it(`renders ${provider} preview without image`, async () => {
-        const user = userEvent.setup();
         const preview = {
           title: `${provider} No Image`,
           description: `${provider} description without image`,
@@ -154,23 +142,22 @@ describe("SocialPreviews", () => {
           imageUploaded: null,
           canonicalUrl: "https://test.invalid",
         };
-        render(<SocialPreviews preview={preview} twitterVariant="compact" />);
+        await render(<SocialPreviews preview={preview} twitterVariant="compact" />);
 
-        const tab = screen.getByRole("tab", { name: new RegExp(tabName, "i") });
-        await user.click(tab);
+        await page.getByRole("tab", { name: new RegExp(tabName, "i") }).click();
 
-        const previewLink = screen.getByRole("link", {
+        const previewLink = page.getByRole("link", {
           name: /open test.invalid in a new tab/i,
         });
-        expect(previewLink).toHaveAttribute("data-provider", provider);
+        await expect.element(previewLink).toHaveAttribute("data-provider", provider);
         // Verify "No image" accessible text is present in the DOM
-        const previewContainer = within(previewLink);
-        expect(previewContainer.getByText("No image")).toBeInTheDocument();
+        await expect
+          .element(previewLink.getByText("No image", { exact: true }))
+          .toBeInTheDocument();
       });
     }
 
     it("uses imageUploaded when available", async () => {
-      const user = userEvent.setup();
       const uploadedImageUrl = "https://test.invalid/uploaded-image.png";
       const preview = {
         title: "Uploaded Image Preview",
@@ -179,22 +166,23 @@ describe("SocialPreviews", () => {
         imageUploaded: uploadedImageUrl,
         canonicalUrl: "https://test.invalid",
       };
-      render(<SocialPreviews preview={preview} twitterVariant="compact" />);
+      await render(<SocialPreviews preview={preview} twitterVariant="compact" />);
 
       // Twitter preview should be visible by default
-      const twitterPreview = screen.getByRole("link", {
+      const twitterPreview = page.getByRole("link", {
         name: /open test.invalid in a new tab/i,
       });
-      expect(twitterPreview).toBeInTheDocument();
+      await expect.element(twitterPreview).toBeInTheDocument();
 
       // Switch to Facebook to verify imageUploaded is used
-      await user.click(screen.getByRole("tab", { name: /facebook/i }));
-      const facebookPreview = screen.getByRole("link", {
-        name: /open test.invalid in a new tab/i,
-      });
+      await page.getByRole("tab", { name: /facebook/i }).click();
+      await expect
+        .element(page.getByRole("link", { name: /open test.invalid in a new tab/i }))
+        .toHaveAttribute("data-provider", "facebook");
       // Check that the preview image element uses the uploaded URL
-      const image = within(facebookPreview).getByAltText("Preview image");
-      expect(image).toHaveAttribute("src", expect.stringContaining("uploaded"));
+      await expect
+        .element(page.getByAltText("Preview image"))
+        .toHaveAttribute("src", expect.stringContaining("uploaded"));
     });
   });
 });

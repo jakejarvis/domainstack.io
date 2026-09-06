@@ -1,5 +1,5 @@
-import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { page } from "vitest/browser";
 
 vi.mock("@/lib/trpc/client", async () => {
   const { useTRPC } = await import("@/mocks/trpc");
@@ -13,7 +13,7 @@ vi.mock("sonner", () => ({
   },
 }));
 
-import { createTestQueryClient, render, screen } from "@/mocks/react";
+import { createTestQueryClient, render } from "@/mocks/react";
 import { CALENDAR_FEED_QUERY_KEY, resetTrpcMocks, setCalendarFeedState } from "@/mocks/trpc";
 
 import { CalendarFeedPopover } from "./calendar-feed-popover";
@@ -28,19 +28,22 @@ describe("CalendarFeedPopover", () => {
   });
 
   it("opens the calendar feed instructions", async () => {
-    const user = userEvent.setup();
     const queryClient = createTestQueryClient();
     setCalendarFeedState({ enabled: false });
     queryClient.setQueryData(CALENDAR_FEED_QUERY_KEY, { enabled: false });
 
-    render(<CalendarFeedPopover />, { queryClient });
+    await render(<CalendarFeedPopover />, { queryClient });
 
-    await user.click(screen.getByRole("button", { name: "Subscribe" }));
+    await page.getByRole("button", { name: "Subscribe" }).click();
 
-    expect(screen.getByRole("heading", { name: "Calendar Feed" })).toBeInTheDocument();
-    expect(
-      screen.getByText("Subscribe to domain expiration dates in your favorite calendar app"),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Enable" })).toBeInTheDocument();
+    await expect.element(page.getByRole("heading", { name: "Calendar Feed" })).toBeInTheDocument();
+    await expect
+      .element(
+        page.getByText("Subscribe to domain expiration dates in your favorite calendar app", {
+          exact: true,
+        }),
+      )
+      .toBeInTheDocument();
+    await expect.element(page.getByRole("button", { name: "Enable" })).toBeInTheDocument();
   });
 });

@@ -1,0 +1,4 @@
+/* Skip rendering virtualization so hover/a11y queries see real layout. */
+[class*="[content-visibility:auto]"] {
+  content-visibility: visible !important;
+}

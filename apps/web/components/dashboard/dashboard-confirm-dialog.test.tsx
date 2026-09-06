@@ -1,5 +1,5 @@
-import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { page, userEvent } from "vitest/browser";
 
 vi.mock("@/hooks/use-subscription", async () => {
   const { useSubscription } = await import("./mocks/subscription");
@@ -31,28 +31,36 @@ import {
   renderDashboardConfirmShell,
   resetDashboardTestState,
 } from "@/components/dashboard/test-utils";
-import { screen, waitFor, within } from "@/mocks/react";
 
 async function waitForCatalog() {
-  await waitFor(() => {
-    expect(screen.getByRole("link", { name: "alpha.com" })).toBeInTheDocument();
-  });
+  await expect.element(page.getByRole("link", { name: "alpha.com" })).toBeInTheDocument();
 }
 
 function domainCard(name: string) {
-  const card = screen.getByRole("link", { name }).closest(".group");
+  const card = page.getByRole("link", { name }).element().closest(".group");
   expect(card).not.toBeNull();
   return card as HTMLElement;
 }
 
-async function selectGridCard(user: ReturnType<typeof userEvent.setup>, name: string) {
-  await user.hover(domainCard(name));
-  await user.click(screen.getByRole("checkbox", { name: `Select ${name}` }));
+function cardButton(card: HTMLElement, name: string) {
+  const button = Array.from(card.querySelectorAll("button")).find((btn) =>
+    btn.textContent?.includes(name),
+  );
+  expect(button).toBeTruthy();
+  return button!;
+}
+
+async function selectGridCard(name: string) {
+  const card = domainCard(name);
+  await userEvent.hover(card);
+  await expect.element(page.getByRole("checkbox", { name: `Select ${name}` })).toBeInTheDocument();
+  await page.getByRole("checkbox", { name: `Select ${name}` }).click();
 }
 
 describe("dashboard confirm dialog", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     resetDashboardTestState();
+    await userEvent.unhover(document.body);
   });
 
   afterEach(() => {
@@ -61,58 +69,58 @@ describe("dashboard confirm dialog", () => {
   });
 
   it("archives a card after confirming the dialog", async () => {
-    const user = userEvent.setup();
-    renderDashboardConfirmShell();
+    await renderDashboardConfirmShell();
     await waitForCatalog();
 
     const card = domainCard("alpha.com");
-    await user.hover(card);
-    await user.click(within(card).getByRole("button", { name: "Actions" }));
-    await user.click(await screen.findByRole("menuitem", { name: "Archive" }));
+    await userEvent.hover(card);
+    await userEvent.click(cardButton(card, "Actions"));
+    await page.getByRole("menuitem", { name: "Archive" }).click();
 
-    const dialog = await screen.findByRole("alertdialog");
-    expect(within(dialog).getByRole("heading", { name: "Archive domain?" })).toBeInTheDocument();
+    await expect.element(page.getByRole("alertdialog")).toBeInTheDocument();
+    await expect
+      .element(page.getByRole("alertdialog").getByRole("heading", { name: "Archive domain?" }))
+      .toBeInTheDocument();
     expect(dashboardActionSpies.onArchive).not.toHaveBeenCalled();
 
-    await user.click(within(dialog).getByRole("button", { name: "Archive" }));
+    await page.getByRole("alertdialog").getByRole("button", { name: "Archive" }).click();
     expect(dashboardActionSpies.onArchive).toHaveBeenCalledWith("domain-alpha");
   });
 
   it("does not archive when the dialog is cancelled", async () => {
-    const user = userEvent.setup();
-    renderDashboardConfirmShell();
+    await renderDashboardConfirmShell();
     await waitForCatalog();
 
     const card = domainCard("alpha.com");
-    await user.hover(card);
-    await user.click(within(card).getByRole("button", { name: "Actions" }));
-    await user.click(await screen.findByRole("menuitem", { name: "Archive" }));
+    await userEvent.hover(card);
+    await userEvent.click(cardButton(card, "Actions"));
+    await page.getByRole("menuitem", { name: "Archive" }).click();
 
-    const dialog = await screen.findByRole("alertdialog");
-    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await expect.element(page.getByRole("alertdialog")).toBeInTheDocument();
+    await page.getByRole("alertdialog").getByRole("button", { name: "Cancel" }).click();
 
-    await waitFor(() => {
-      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
-    });
+    await expect.element(page.getByRole("alertdialog")).not.toBeInTheDocument();
     expect(dashboardActionSpies.onArchive).not.toHaveBeenCalled();
   });
 
   it("bulk-deletes after confirming the dialog", async () => {
-    const user = userEvent.setup();
-    renderDashboardConfirmShell();
+    await renderDashboardConfirmShell();
     await waitForCatalog();
 
-    await selectGridCard(user, "alpha.com");
-    await selectGridCard(user, "beta.io");
+    await selectGridCard("alpha.com");
+    await selectGridCard("beta.io");
 
-    const toolbar = await screen.findByRole("toolbar", { name: "Bulk actions" });
-    await user.click(within(toolbar).getByRole("button", { name: "Delete" }));
+    const toolbar = page.getByRole("toolbar", { name: "Bulk actions" });
+    await expect.element(toolbar).toBeInTheDocument();
+    await toolbar.getByRole("button", { name: "Delete" }).click();
 
-    const dialog = await screen.findByRole("alertdialog");
-    expect(within(dialog).getByRole("heading", { name: "Delete 2 domains?" })).toBeInTheDocument();
+    await expect.element(page.getByRole("alertdialog")).toBeInTheDocument();
+    await expect
+      .element(page.getByRole("alertdialog").getByRole("heading", { name: "Delete 2 domains?" }))
+      .toBeInTheDocument();
     expect(dashboardActionSpies.onBulkDelete).not.toHaveBeenCalled();
 
-    await user.click(within(dialog).getByRole("button", { name: "Delete All" }));
+    await page.getByRole("alertdialog").getByRole("button", { name: "Delete All" }).click();
     expect(dashboardActionSpies.onBulkDelete).toHaveBeenCalledWith(["domain-alpha", "domain-beta"]);
   });
 });

@@ -1,8 +1,8 @@
-import userEvent from "@testing-library/user-event";
 import { createElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { page } from "vitest/browser";
 
-import { render, screen } from "@/mocks/react";
+import { render } from "@/mocks/react";
 
 import { HomeSearchSuggestionsClient } from "./home-search-suggestions-client";
 
@@ -56,50 +56,55 @@ describe("DomainSuggestionsClient", () => {
   });
 
   it("renders provided suggestions when there is no history", async () => {
-    render(<HomeSearchSuggestionsClient defaultSuggestions={DEFAULT_TEST_SUGGESTIONS} />);
+    await render(<HomeSearchSuggestionsClient defaultSuggestions={DEFAULT_TEST_SUGGESTIONS} />);
     // Wait for a known suggestion like jarv.invalid to appear
-    expect(await screen.findByRole("button", { name: /jarv\.invalid/i })).toBeInTheDocument();
+    await expect.element(page.getByRole("button", { name: /jarv\.invalid/i })).toBeInTheDocument();
     // At least one favicon placeholder should exist
     expect(document.querySelectorAll('[data-slot="favicon"]').length).toBeGreaterThan(0);
   });
 
   it("renders no suggestions when defaultSuggestions is empty and no history", async () => {
-    render(<HomeSearchSuggestionsClient defaultSuggestions={[]} />);
+    await render(<HomeSearchSuggestionsClient defaultSuggestions={[]} />);
     // Container should render but with no buttons
-    const buttons = screen.queryAllByRole("button");
-    expect(buttons.length).toBe(0);
+    expect(page.getByRole("button").length).toBe(0);
   });
 
   it("merges history and suggestions without duplicates, capped by max", async () => {
     mockHistoryState.history = ["foo.invalid", "github.invalid", "bar.invalid"];
-    render(<HomeSearchSuggestionsClient defaultSuggestions={DEFAULT_TEST_SUGGESTIONS} max={4} />);
+    await render(
+      <HomeSearchSuggestionsClient defaultSuggestions={DEFAULT_TEST_SUGGESTIONS} max={4} />,
+    );
     // History entries appear
-    expect(await screen.findByRole("button", { name: /foo\.invalid/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /bar\.invalid/i })).toBeInTheDocument();
+    await expect.element(page.getByRole("button", { name: /foo\.invalid/i })).toBeInTheDocument();
+    await expect.element(page.getByRole("button", { name: /bar\.invalid/i })).toBeInTheDocument();
     // github.invalid appears only once (deduped with suggestions)
-    expect(screen.getAllByRole("button", { name: /github\.invalid/i }).length).toBe(1);
+    expect(page.getByRole("button", { name: /github\.invalid/i }).length).toBe(1);
   });
 
   it("shows only history when defaultSuggestions is empty", async () => {
     mockHistoryState.history = ["example.invalid", "test.invalid"];
-    render(<HomeSearchSuggestionsClient defaultSuggestions={[]} />);
+    await render(<HomeSearchSuggestionsClient defaultSuggestions={[]} />);
     // History entries appear
-    expect(await screen.findByRole("button", { name: /example\.invalid/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /test\.invalid/i })).toBeInTheDocument();
+    await expect
+      .element(page.getByRole("button", { name: /example\.invalid/i }))
+      .toBeInTheDocument();
+    await expect.element(page.getByRole("button", { name: /test\.invalid/i })).toBeInTheDocument();
     // Should show 2 history items + 1 clear history button
-    expect(screen.getAllByRole("button").length).toBe(3);
-    expect(screen.getByRole("button", { name: /clear history/i })).toBeInTheDocument();
+    expect(page.getByRole("button").length).toBe(3);
+    await expect.element(page.getByRole("button", { name: /clear history/i })).toBeInTheDocument();
   });
 
   it("clears history when clear button is clicked", async () => {
     mockHistoryState.history = ["example.invalid"];
-    render(<HomeSearchSuggestionsClient defaultSuggestions={[]} />);
+    await render(<HomeSearchSuggestionsClient defaultSuggestions={[]} />);
 
     // Ensure history is loaded and rendered
-    expect(await screen.findByRole("button", { name: /example\.invalid/i })).toBeInTheDocument();
+    await expect
+      .element(page.getByRole("button", { name: /example\.invalid/i }))
+      .toBeInTheDocument();
 
-    const clearButton = screen.getByRole("button", { name: /clear history/i });
-    await userEvent.click(clearButton);
+    const clearButton = page.getByRole("button", { name: /clear history/i });
+    await clearButton.click();
 
     // Verify clearHistory was called
     expect(mockClearHistory).toHaveBeenCalled();
@@ -107,8 +112,8 @@ describe("DomainSuggestionsClient", () => {
 
   it("sets pending domain when a suggestion is clicked", async () => {
     mockHistoryState.history = ["example.invalid"];
-    render(<HomeSearchSuggestionsClient defaultSuggestions={DEFAULT_TEST_SUGGESTIONS} />);
-    await userEvent.click(screen.getByRole("button", { name: /example.invalid/i }));
+    await render(<HomeSearchSuggestionsClient defaultSuggestions={DEFAULT_TEST_SUGGESTIONS} />);
+    await page.getByRole("button", { name: /example.invalid/i }).click();
     expect(mockSetPendingDomain).toHaveBeenCalledWith("example.invalid");
   });
 });

@@ -1,5 +1,5 @@
-import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { page } from "vitest/browser";
 
 const nav = vi.hoisted(() => ({
   push: vi.fn<(href: string, opts?: { scroll?: boolean }) => void | Promise<void>>(),
@@ -23,11 +23,11 @@ vi.mock("@/lib/trpc/client", async () => {
 
 import { makeTrackedDomain } from "@/components/dashboard/test-fixtures";
 import { TrackDomainButton } from "@/components/domain/track-domain-button";
-import { render, screen, waitFor } from "@/mocks/react";
+import { render } from "@/mocks/react";
 import { resetTrpcMocks, setDomainsState } from "@/mocks/trpc";
 import { TooltipProvider } from "@domainstack/ui/tooltip";
 
-function renderButton(domain = "example.com") {
+async function renderButton(domain = "example.com") {
   return render(
     <TooltipProvider>
       <TrackDomainButton domain={domain} />
@@ -57,25 +57,23 @@ describe("TrackDomainButton", () => {
     );
 
     setDomainsState([]);
-    renderButton();
+    await renderButton();
 
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Track domain" })).toBeEnabled();
-    });
-    await userEvent.click(screen.getByRole("button", { name: "Track domain" }));
+    await expect.element(page.getByRole("button", { name: "Track domain" })).toBeEnabled();
+    await page.getByRole("button", { name: "Track domain" }).click();
 
     expect(nav.push).toHaveBeenCalledWith("/dashboard/add-domain?domain=example.com", {
       scroll: false,
     });
-    await waitFor(() => {
-      const button = screen.getByRole("button", { name: "Track domain" });
-      expect(button).toBeDisabled();
-      expect(screen.getByRole("status", { name: /loading/i })).toBeInTheDocument();
-      expect(button.querySelectorAll("svg")).toHaveLength(1);
+    await vi.waitFor(async () => {
+      const button = page.getByRole("button", { name: "Track domain" });
+      await expect.element(button).toBeDisabled();
+      await expect.element(page.getByRole("status", { name: /loading/i })).toBeInTheDocument();
+      expect(button.elements()[0].querySelectorAll("svg")).toHaveLength(1);
     });
 
     finishNavigation?.();
-    await waitFor(() => expect(screen.getByRole("button", { name: "Track domain" })).toBeEnabled());
+    await expect.element(page.getByRole("button", { name: "Track domain" })).toBeEnabled();
   });
 
   it("shows a pending state while resuming verification", async () => {
@@ -96,26 +94,24 @@ describe("TrackDomainButton", () => {
         verificationStatus: "unverified",
       }),
     ]);
-    renderButton();
+    await renderButton();
 
-    const button = await screen.findByRole("button", { name: "Verify domain" });
-    await waitFor(() => expect(button).toBeEnabled());
-    await userEvent.click(button);
+    await expect.element(page.getByRole("button", { name: "Verify domain" })).toBeInTheDocument();
+    await expect.element(page.getByRole("button", { name: "Verify domain" })).toBeEnabled();
+    await page.getByRole("button", { name: "Verify domain" }).click();
 
     expect(nav.push).toHaveBeenCalledWith(
       "/dashboard/add-domain?resume=true&id=domain-pending&method=dns_txt",
       { scroll: false },
     );
-    await waitFor(() => {
-      const pendingButton = screen.getByRole("button", { name: "Verify domain" });
-      expect(pendingButton).toBeDisabled();
-      expect(screen.getByRole("status", { name: /loading/i })).toBeInTheDocument();
-      expect(pendingButton.querySelectorAll("svg")).toHaveLength(1);
+    await vi.waitFor(async () => {
+      const pendingButton = page.getByRole("button", { name: "Verify domain" });
+      await expect.element(pendingButton).toBeDisabled();
+      await expect.element(page.getByRole("status", { name: /loading/i })).toBeInTheDocument();
+      expect(pendingButton.elements()[0].querySelectorAll("svg")).toHaveLength(1);
     });
 
     finishNavigation?.();
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Verify domain" })).toBeEnabled(),
-    );
+    await expect.element(page.getByRole("button", { name: "Verify domain" })).toBeEnabled();
   });
 });

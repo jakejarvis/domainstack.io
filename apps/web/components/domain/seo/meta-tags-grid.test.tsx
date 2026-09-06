@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { page } from "vitest/browser";
 
-import { render, screen } from "@/mocks/react";
+import { render } from "@/mocks/react";
 
 import { MetaTagsGrid } from "./meta-tags-grid";
 
 describe("MetaTagsGrid", () => {
   describe("basic rendering", () => {
-    it("renders all provided meta tags", () => {
+    it("renders all provided meta tags", async () => {
       const metaTagValues = [
         { label: "Title", value: "Test Title" },
         { label: "Description", value: "Test Description" },
@@ -17,73 +18,73 @@ describe("MetaTagsGrid", () => {
         { label: "Generator", value: "Next.js" },
         { label: "Robots", value: "index, follow" },
       ];
-      render(<MetaTagsGrid metaTagValues={metaTagValues} />);
+      await render(<MetaTagsGrid metaTagValues={metaTagValues} />);
 
       // Use getAllByText for elements that appear multiple times (label + value)
-      expect(screen.getAllByText("Test Title").length).toBeGreaterThan(0);
-      expect(screen.getAllByText("Test Description").length).toBeGreaterThan(0);
-      expect(screen.getAllByText("seo, testing").length).toBeGreaterThan(0);
-      expect(screen.getAllByText("Test Author").length).toBeGreaterThan(0);
-      expect(screen.getAllByText("Next.js").length).toBeGreaterThan(0);
-      expect(screen.getAllByText("index, follow").length).toBeGreaterThan(0);
+      expect(page.getByText("Test Title", { exact: true }).length).toBeGreaterThan(0);
+      expect(page.getByText("Test Description", { exact: true }).length).toBeGreaterThan(0);
+      expect(page.getByText("seo, testing", { exact: true }).length).toBeGreaterThan(0);
+      expect(page.getByText("Test Author", { exact: true }).length).toBeGreaterThan(0);
+      expect(page.getByText("Next.js", { exact: true }).length).toBeGreaterThan(0);
+      expect(page.getByText("index, follow", { exact: true }).length).toBeGreaterThan(0);
     });
 
-    it("filters out null and undefined values", () => {
+    it("filters out null and undefined values", async () => {
       const metaTagValues = [
         { label: "Title", value: "Test Title" },
         { label: "Description", value: null },
         { label: "Keywords", value: undefined },
         { label: "Author", value: "Test Author" },
       ];
-      render(<MetaTagsGrid metaTagValues={metaTagValues} />);
+      await render(<MetaTagsGrid metaTagValues={metaTagValues} />);
 
-      expect(screen.getAllByText("Test Title").length).toBeGreaterThan(0);
-      expect(screen.getAllByText("Test Author").length).toBeGreaterThan(0);
-      expect(screen.queryByText("Description")).not.toBeInTheDocument();
-      expect(screen.queryByText("Keywords")).not.toBeInTheDocument();
+      expect(page.getByText("Test Title", { exact: true }).length).toBeGreaterThan(0);
+      expect(page.getByText("Test Author", { exact: true }).length).toBeGreaterThan(0);
+      await expect.element(page.getByText("Description", { exact: true })).not.toBeInTheDocument();
+      await expect.element(page.getByText("Keywords", { exact: true })).not.toBeInTheDocument();
     });
 
-    it("displays correct count in subhead", () => {
+    it("displays correct count in subhead", async () => {
       const metaTagValues = [
         { label: "Title", value: "Test Title" },
         { label: "Description", value: "Test Description" },
         { label: "Keywords", value: null },
       ];
-      render(<MetaTagsGrid metaTagValues={metaTagValues} />);
+      await render(<MetaTagsGrid metaTagValues={metaTagValues} />);
 
       // Should show count of 2 (only non-null values)
-      expect(screen.getByText("Meta Tags")).toBeInTheDocument();
+      await expect.element(page.getByText("Meta Tags", { exact: true })).toBeInTheDocument();
       // Count badge with "2" should be present
-      expect(screen.getByText("2")).toBeInTheDocument();
+      await expect.element(page.getByText("2", { exact: true })).toBeInTheDocument();
     });
 
-    it("renders external link for URL values", () => {
+    it("renders external link for URL values", async () => {
       const metaTagValues = [
         { label: "Canonical", value: "https://test.invalid/page" },
         { label: "Image", value: "https://test.invalid/og-image.png" },
       ];
-      render(<MetaTagsGrid metaTagValues={metaTagValues} />);
+      await render(<MetaTagsGrid metaTagValues={metaTagValues} />);
 
-      const links = screen.getAllByRole("link");
+      const links = page.getByRole("link").elements();
       expect(links.length).toBeGreaterThan(0);
 
       const canonicalLink = links.find((link) =>
         link.getAttribute("href")?.includes("test.invalid/page"),
       );
       expect(canonicalLink).toBeDefined();
-      expect(canonicalLink).toHaveAttribute("target", "_blank");
-      expect(canonicalLink).toHaveAttribute("rel", "noopener");
+      await expect.element(page.elementLocator(canonicalLink!)).toHaveAttribute("target", "_blank");
+      await expect.element(page.elementLocator(canonicalLink!)).toHaveAttribute("rel", "noopener");
     });
 
-    it("does not render external link for non-URL values", () => {
+    it("does not render external link for non-URL values", async () => {
       const metaTagValues = [
         { label: "Title", value: "Just a title" },
         { label: "Author", value: "John Doe" },
       ];
-      render(<MetaTagsGrid metaTagValues={metaTagValues} />);
+      await render(<MetaTagsGrid metaTagValues={metaTagValues} />);
 
       // Should have no external links for these values
-      const links = screen.queryAllByRole("link");
+      const links = page.getByRole("link").elements();
       // Filter out any links that might be from external link icons
       const valueLinks = links.filter(
         (link) =>
@@ -154,16 +155,17 @@ describe("MetaTagsGrid", () => {
     ];
 
     for (const testCase of testCases) {
-      it(`renders ${testCase.name}`, () => {
-        render(<MetaTagsGrid metaTagValues={testCase.metaTagValues} />);
+      it(`renders ${testCase.name}`, async () => {
+        await render(<MetaTagsGrid metaTagValues={testCase.metaTagValues} />);
 
         // Verify count
-        expect(screen.getByText(testCase.expectedCount.toString())).toBeInTheDocument();
+        await expect
+          .element(page.getByText(testCase.expectedCount.toString(), { exact: true }))
+          .toBeInTheDocument();
 
         // Use getAllByText to handle elements that appear in multiple places
         for (const expectedTag of testCase.expectedTags) {
-          const elements = screen.getAllByText(expectedTag);
-          expect(elements.length).toBeGreaterThan(0);
+          expect(page.getByText(expectedTag, { exact: true }).length).toBeGreaterThan(0);
         }
       });
     }

@@ -37,6 +37,7 @@ function ModalOverlay({ className, ...props }: DialogPrimitive.Backdrop.Props) {
         "fixed inset-0 isolate z-50 bg-black/10 backdrop-blur-xs dark:bg-black/50",
         "data-open:animate-in data-open:duration-200 data-open:fade-in-0",
         "data-closed:animate-out data-closed:duration-200 data-closed:fade-out-0",
+        "motion-reduce:animate-none motion-reduce:transition-none",
         // iOS 26+: ensure backdrops cover the visual viewport
         "supports-[-webkit-touch-callout:none]:absolute",
         className,
@@ -63,6 +64,7 @@ function ModalContent({
             "rounded-lg border bg-background text-foreground shadow-lg outline-hidden",
             "data-open:animate-in data-open:duration-200 data-open:fade-in-0 data-open:zoom-in-95",
             "data-closed:animate-out data-closed:duration-200 data-closed:fade-out-0 data-closed:zoom-out-95",
+            "motion-reduce:animate-none motion-reduce:transition-none",
             className,
           )}
           {...props}

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
+import { page } from "vitest/browser";
 
-import { render, screen } from "@/mocks/react";
+import { render } from "@/mocks/react";
 
 import { HostingSection } from "./hosting-section";
 
@@ -20,7 +21,7 @@ vi.mock("@/components/domain/hosting/hosting-map-client", () => ({
 }));
 
 describe("HostingSection", () => {
-  it("renders provider names and icons", () => {
+  it("renders provider names and icons", async () => {
     const data = {
       dnsProvider: {
         id: "provider-cloudflare",
@@ -46,15 +47,15 @@ describe("HostingSection", () => {
         lon: null,
       },
     } as unknown as import("@domainstack/types").HostingResponse;
-    render(<HostingSection data={data} />);
-    expect(screen.getByText("Cloudflare")).toBeInTheDocument();
-    expect(screen.getByText(/logo:provider-cloudflare/)).toBeInTheDocument();
-    expect(screen.getByText("Vercel")).toBeInTheDocument();
-    expect(screen.getByText("Google Workspace")).toBeInTheDocument();
+    await render(<HostingSection data={data} />);
+    await expect.element(page.getByText("Cloudflare", { exact: true })).toBeInTheDocument();
+    await expect.element(page.getByText(/logo:provider-cloudflare/)).toBeInTheDocument();
+    await expect.element(page.getByText("Vercel", { exact: true })).toBeInTheDocument();
+    await expect.element(page.getByText("Google Workspace", { exact: true })).toBeInTheDocument();
   });
 
-  it("shows empty state when no providers", () => {
-    render(<HostingSection data={null} />);
-    expect(screen.getByText(/No hosting details available/i)).toBeInTheDocument();
+  it("shows empty state when no providers", async () => {
+    await render(<HostingSection data={null} />);
+    await expect.element(page.getByText(/No hosting details available/i)).toBeInTheDocument();
   });
 });

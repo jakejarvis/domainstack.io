@@ -349,6 +349,8 @@ describe("myFunction", () => {
 });
 ```
 
+Browser tests (`*.test.tsx`) use `vitest-browser-react` and locators from `vitest/browser`. Render through `@/mocks/react`, query with `page.getBy*`, interact with locator actions (`click()`, `fill()`, `hover()`), and assert with `await expect.element(...)`. Do not use Testing Library.
+
 ## Project Structure
 
 This is a **Turborepo monorepo** with the following structure:

@@ -1,6 +1,6 @@
-import userEvent from "@testing-library/user-event";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { page } from "vitest/browser";
 
 vi.mock("@/lib/trpc/client", async () => {
   const { useTRPC } = await import("@/mocks/trpc");
@@ -15,25 +15,25 @@ vi.mock("sonner", () => ({
 }));
 
 import { ShareInstructionsDialog } from "@/components/dashboard/add-domain/share-instructions-dialog";
-import { render, screen, waitFor } from "@/mocks/react";
+import { render } from "@/mocks/react";
 import { resetTrpcMocks, sendVerificationInstructionsMutation } from "@/mocks/trpc";
 
 const DOMAIN = "pending.dev";
 const TOKEN = "token-pending";
 const TRACKED_ID = "domain-pending";
 
-async function openShareDialog(user: ReturnType<typeof userEvent.setup>) {
-  render(
+async function openShareDialog() {
+  await render(
     <ShareInstructionsDialog
       domain={DOMAIN}
       verificationToken={TOKEN}
       trackedDomainId={TRACKED_ID}
     />,
   );
-  await user.click(screen.getByRole("button", { name: "Share" }));
-  expect(
-    await screen.findByRole("heading", { name: "Share Verification Instructions" }),
-  ).toBeInTheDocument();
+  await page.getByRole("button", { name: "Share" }).click();
+  await expect
+    .element(page.getByRole("heading", { name: "Share Verification Instructions" }))
+    .toBeInTheDocument();
 }
 
 describe("ShareInstructionsDialog", () => {
@@ -48,26 +48,26 @@ describe("ShareInstructionsDialog", () => {
   });
 
   it("opens the three share options", async () => {
-    const user = userEvent.setup();
-    await openShareDialog(user);
+    await openShareDialog();
 
-    expect(screen.getByText("Copy to Clipboard")).toBeInTheDocument();
-    expect(screen.getByText("Download as File")).toBeInTheDocument();
-    expect(screen.getByText("Send via Email")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Copy to clipboard" })).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(`admin@${DOMAIN}\u2026`)).toBeInTheDocument();
+    await expect.element(page.getByText("Copy to Clipboard", { exact: true })).toBeInTheDocument();
+    await expect.element(page.getByText("Download as File", { exact: true })).toBeInTheDocument();
+    await expect.element(page.getByText("Send via Email", { exact: true })).toBeInTheDocument();
+    await expect
+      .element(page.getByRole("button", { name: "Copy to clipboard" }))
+      .toBeInTheDocument();
+    await expect.element(page.getByPlaceholder(`admin@${DOMAIN}\u2026`)).toBeInTheDocument();
   });
 
   it("downloads instructions as a text file", async () => {
-    const user = userEvent.setup();
     const createObjectURL = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:test");
     const revokeObjectURL = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
     const click = vi
       .spyOn(HTMLAnchorElement.prototype, "click")
       .mockImplementation(() => undefined);
 
-    await openShareDialog(user);
-    await user.click(screen.getByRole("button", { name: "Download instructions" }));
+    await openShareDialog();
+    await page.getByRole("button", { name: "Download instructions" }).click();
 
     expect(createObjectURL).toHaveBeenCalledOnce();
     expect(click).toHaveBeenCalledOnce();
@@ -81,33 +81,31 @@ describe("ShareInstructionsDialog", () => {
   });
 
   it("keeps Send enabled and shows an inline error for invalid email", async () => {
-    const user = userEvent.setup();
-    await openShareDialog(user);
+    await openShareDialog();
 
-    const send = screen.getByRole("button", { name: "Send email" });
-    expect(send).toBeEnabled();
+    const send = page.getByRole("button", { name: "Send email" });
+    await expect.element(send).toBeEnabled();
 
-    await user.click(send);
-    expect(screen.getByText(/Enter an email address/)).toBeInTheDocument();
+    await send.click();
+    await expect.element(page.getByText(/Enter an email address/)).toBeInTheDocument();
 
-    await user.type(screen.getByLabelText("Email address"), "not-an-email");
-    await user.click(send);
-    expect(screen.getByText(/Enter a valid email address/)).toBeInTheDocument();
+    await page.getByLabelText("Email address").fill("not-an-email");
+    await send.click();
+    await expect.element(page.getByText(/Enter a valid email address/)).toBeInTheDocument();
     expect(sendVerificationInstructionsMutation).not.toHaveBeenCalled();
 
-    await user.clear(screen.getByLabelText("Email address"));
-    await user.type(screen.getByLabelText("Email address"), "admin@pending.dev");
-    expect(send).toBeEnabled();
+    await page.getByLabelText("Email address").clear();
+    await page.getByLabelText("Email address").fill("admin@pending.dev");
+    await expect.element(send).toBeEnabled();
   });
 
   it("sends instructions to a trimmed email address", async () => {
-    const user = userEvent.setup();
-    await openShareDialog(user);
+    await openShareDialog();
 
-    await user.type(screen.getByLabelText("Email address"), "  admin@pending.dev  ");
-    await user.click(screen.getByRole("button", { name: "Send email" }));
+    await page.getByLabelText("Email address").fill("  admin@pending.dev  ");
+    await page.getByRole("button", { name: "Send email" }).click();
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(sendVerificationInstructionsMutation.mock.calls[0]?.[0]).toEqual({
         trackedDomainId: TRACKED_ID,
         recipientEmail: "admin@pending.dev",
@@ -119,25 +117,24 @@ describe("ShareInstructionsDialog", () => {
   });
 
   it("toasts an error when sending fails so the user can retry", async () => {
-    const user = userEvent.setup();
     sendVerificationInstructionsMutation.mockRejectedValueOnce(new Error("nope"));
-    await openShareDialog(user);
+    await openShareDialog();
 
-    await user.type(screen.getByLabelText("Email address"), "admin@pending.dev");
-    await user.click(screen.getByRole("button", { name: "Send email" }));
+    await page.getByLabelText("Email address").fill("admin@pending.dev");
+    await page.getByRole("button", { name: "Send email" }).click();
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Failed to send email", {
         description: "Please try again or use another method.",
       });
     });
 
-    const email = screen.getByLabelText("Email address");
-    expect(email).toHaveValue("admin@pending.dev");
-    expect(screen.getByRole("button", { name: "Send email" })).toBeEnabled();
-    await user.click(screen.getByRole("button", { name: "Send email" }));
+    const email = page.getByLabelText("Email address");
+    await expect.element(email).toHaveValue("admin@pending.dev");
+    await expect.element(page.getByRole("button", { name: "Send email" })).toBeEnabled();
+    await page.getByRole("button", { name: "Send email" }).click();
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(sendVerificationInstructionsMutation).toHaveBeenCalledTimes(2);
     });
   });

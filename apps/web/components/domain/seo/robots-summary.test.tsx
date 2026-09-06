@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
+import { page } from "vitest/browser";
 
-import { render, screen } from "@/mocks/react";
+import { render } from "@/mocks/react";
 import type { SeoResponse } from "@domainstack/types";
 
 import { RobotsSummary } from "./robots-summary";
@@ -38,7 +39,7 @@ vi.mock("@/components/ui/accordion", () => ({
 
 describe("RobotsSummary", () => {
   describe("robots.txt rendering", () => {
-    it("renders robots.txt rules and sitemaps", () => {
+    it("renders robots.txt rules and sitemaps", async () => {
       const robots: SeoResponse["robots"] = {
         fetched: true,
         groups: [
@@ -52,48 +53,46 @@ describe("RobotsSummary", () => {
         ],
         sitemaps: ["https://test.invalid/sitemap.xml"],
       };
-      render(<RobotsSummary domain="test.invalid" robots={robots} />);
+      await render(<RobotsSummary domain="test.invalid" robots={robots} />);
 
       // Verify robots.txt link
-      expect(screen.getByRole("link", { name: /robots.txt/i })).toHaveAttribute(
-        "href",
-        "https://test.invalid/robots.txt",
-      );
+      await expect
+        .element(page.getByRole("link", { name: /robots.txt/i }))
+        .toHaveAttribute("href", "https://test.invalid/robots.txt");
 
       // Verify rules are present (in accordion)
-      expect(screen.getByText("/admin")).toBeInTheDocument();
-      expect(screen.getByText("/public")).toBeInTheDocument();
+      await expect.element(page.getByText("/admin", { exact: true })).toBeInTheDocument();
+      await expect.element(page.getByText("/public", { exact: true })).toBeInTheDocument();
 
       // Verify sitemap
-      expect(screen.getByRole("link", { name: /sitemap/i })).toHaveAttribute(
-        "href",
-        "https://test.invalid/sitemap.xml",
-      );
+      await expect
+        .element(page.getByRole("link", { name: /sitemap/i }))
+        .toHaveAttribute("href", "https://test.invalid/sitemap.xml");
     });
 
-    it("shows empty state when robots.txt has empty groups", () => {
+    it("shows empty state when robots.txt has empty groups", async () => {
       const robots: SeoResponse["robots"] = {
         fetched: true,
         groups: [],
         sitemaps: [],
       };
-      render(<RobotsSummary domain="test.invalid" robots={robots} />);
+      await render(<RobotsSummary domain="test.invalid" robots={robots} />);
       // When there are no groups and no sitemaps, only the header with link is shown
-      expect(screen.getByRole("link", { name: /robots\.txt/i })).toBeInTheDocument();
+      await expect.element(page.getByRole("link", { name: /robots\.txt/i })).toBeInTheDocument();
     });
 
-    it("shows appropriate message when robots.txt has no rules but has sitemaps", () => {
+    it("shows appropriate message when robots.txt has no rules but has sitemaps", async () => {
       const robots: SeoResponse["robots"] = {
         fetched: true,
         groups: [],
         sitemaps: ["https://test.invalid/sitemap.xml", "https://test.invalid/sitemap-2.xml"],
       };
-      render(<RobotsSummary domain="test.invalid" robots={robots} />);
-      expect(screen.getByText(/No crawl rules detected/i)).toBeInTheDocument();
-      expect(screen.getByText("Sitemaps")).toBeInTheDocument();
+      await render(<RobotsSummary domain="test.invalid" robots={robots} />);
+      await expect.element(page.getByText(/No crawl rules detected/i)).toBeInTheDocument();
+      await expect.element(page.getByText("Sitemaps", { exact: true })).toBeInTheDocument();
     });
 
-    it("handles multiple robot groups with different user agents", () => {
+    it("handles multiple robot groups with different user agents", async () => {
       const robots: SeoResponse["robots"] = {
         fetched: true,
         groups: [
@@ -108,13 +107,13 @@ describe("RobotsSummary", () => {
         ],
         sitemaps: [],
       };
-      render(<RobotsSummary domain="test.invalid" robots={robots} />);
+      await render(<RobotsSummary domain="test.invalid" robots={robots} />);
       // "All" appears in both the filter button and the user agent badge
-      expect(screen.getAllByText("All").length).toBeGreaterThan(0);
-      expect(screen.getByText("Googlebot")).toBeInTheDocument();
+      expect(page.getByText("All", { exact: true }).length).toBeGreaterThan(0);
+      await expect.element(page.getByText("Googlebot", { exact: true })).toBeInTheDocument();
     });
 
-    it("renders crawl-delay rules", () => {
+    it("renders crawl-delay rules", async () => {
       const robots: SeoResponse["robots"] = {
         fetched: true,
         groups: [
@@ -128,11 +127,11 @@ describe("RobotsSummary", () => {
         ],
         sitemaps: [],
       };
-      render(<RobotsSummary domain="test.invalid" robots={robots} />);
-      expect(screen.getByText("10")).toBeInTheDocument();
+      await render(<RobotsSummary domain="test.invalid" robots={robots} />);
+      await expect.element(page.getByText("10", { exact: true })).toBeInTheDocument();
     });
 
-    it("renders content-signal rules", () => {
+    it("renders content-signal rules", async () => {
       const robots: SeoResponse["robots"] = {
         fetched: true,
         groups: [
@@ -146,11 +145,11 @@ describe("RobotsSummary", () => {
         ],
         sitemaps: [],
       };
-      render(<RobotsSummary domain="test.invalid" robots={robots} />);
-      expect(screen.getByText("no-ai-training")).toBeInTheDocument();
+      await render(<RobotsSummary domain="test.invalid" robots={robots} />);
+      await expect.element(page.getByText("no-ai-training", { exact: true })).toBeInTheDocument();
     });
 
-    it("renders multiple sitemaps", () => {
+    it("renders multiple sitemaps", async () => {
       const robots: SeoResponse["robots"] = {
         fetched: true,
         groups: [
@@ -165,23 +164,27 @@ describe("RobotsSummary", () => {
           "https://test.invalid/sitemap-blog.xml",
         ],
       };
-      render(<RobotsSummary domain="test.invalid" robots={robots} />);
+      await render(<RobotsSummary domain="test.invalid" robots={robots} />);
       // Progressive reveal shows first 2 sitemaps by default
-      expect(
-        screen.getByRole("link", {
-          name: /https:\/\/test\.invalid\/sitemap\.xml/i,
-        }),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole("link", {
-          name: /https:\/\/test\.invalid\/sitemap-products\.xml/i,
-        }),
-      ).toBeInTheDocument();
+      await expect
+        .element(
+          page.getByRole("link", {
+            name: /https:\/\/test\.invalid\/sitemap\.xml/i,
+          }),
+        )
+        .toBeInTheDocument();
+      await expect
+        .element(
+          page.getByRole("link", {
+            name: /https:\/\/test\.invalid\/sitemap-products\.xml/i,
+          }),
+        )
+        .toBeInTheDocument();
       // Third sitemap is hidden behind "Show more" button
-      expect(screen.getByRole("button", { name: /Show 1 more/i })).toBeInTheDocument();
+      await expect.element(page.getByRole("button", { name: /Show 1 more/i })).toBeInTheDocument();
     });
 
-    it("handles empty disallow value (allow all)", () => {
+    it("handles empty disallow value (allow all)", async () => {
       const robots: SeoResponse["robots"] = {
         fetched: true,
         groups: [
@@ -192,14 +195,14 @@ describe("RobotsSummary", () => {
         ],
         sitemaps: [],
       };
-      render(<RobotsSummary domain="test.invalid" robots={robots} />);
+      await render(<RobotsSummary domain="test.invalid" robots={robots} />);
       // Empty disallow means allow all - the message appears inside the accordion when opened
       // Since we're using mocked accordions, we can't test the message visibility
       // Just verify the component renders
-      expect(screen.getByRole("link", { name: /robots\.txt/i })).toBeInTheDocument();
+      await expect.element(page.getByRole("link", { name: /robots\.txt/i })).toBeInTheDocument();
     });
 
-    it("lists All bots first when grouped with other user agents", () => {
+    it("lists All bots first when grouped with other user agents", async () => {
       const robots: SeoResponse["robots"] = {
         fetched: true,
         groups: [
@@ -210,16 +213,16 @@ describe("RobotsSummary", () => {
         ],
         sitemaps: [],
       };
-      render(<RobotsSummary domain="test.invalid" robots={robots} />);
+      await render(<RobotsSummary domain="test.invalid" robots={robots} />);
 
-      const allBots = screen.getByText("All bots");
-      const firstNamed = screen.getByText("AI2Bot");
+      const allBots = page.getByText("All bots", { exact: true }).elements()[0];
+      const firstNamed = page.getByText("AI2Bot", { exact: true }).elements()[0];
       expect(allBots.compareDocumentPosition(firstNamed) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
         Node.DOCUMENT_POSITION_FOLLOWING,
       );
     });
 
-    it("renders allow and disallow filter buttons", () => {
+    it("renders allow and disallow filter buttons", async () => {
       const robots: SeoResponse["robots"] = {
         fetched: true,
         groups: [
@@ -233,16 +236,16 @@ describe("RobotsSummary", () => {
         ],
         sitemaps: [],
       };
-      render(<RobotsSummary domain="test.invalid" robots={robots} />);
+      await render(<RobotsSummary domain="test.invalid" robots={robots} />);
       // Get all buttons and find the filter buttons specifically
-      const buttons = screen.getAllByRole("button");
+      const buttons = page.getByRole("button").elements();
       const allButton = buttons.find((btn) => btn.textContent?.includes("All"));
       const allowButton = buttons.find((btn) => btn.textContent?.includes("Allow"));
       const disallowButton = buttons.find((btn) => btn.textContent?.includes("Disallow"));
 
-      expect(allButton).toBeInTheDocument();
-      expect(allowButton).toBeInTheDocument();
-      expect(disallowButton).toBeInTheDocument();
+      expect(allButton).toBeDefined();
+      expect(allowButton).toBeDefined();
+      expect(disallowButton).toBeDefined();
     });
   });
 });

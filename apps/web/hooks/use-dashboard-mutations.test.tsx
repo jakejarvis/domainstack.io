@@ -20,7 +20,7 @@ import {
   makeDashboardDomains,
   makeTrackedDomain,
 } from "@/components/dashboard/test-fixtures";
-import { createTestQueryClient, renderHook, waitFor } from "@/mocks/react";
+import { createTestQueryClient, renderHook } from "@/mocks/react";
 import {
   bulkArchiveDomainsMutation,
   bulkRemoveDomainsMutation,
@@ -69,7 +69,7 @@ function getSubscription(queryClient: ReturnType<typeof createTestQueryClient>) 
   return queryClient.getQueryData<SubscriptionCache>(SUBSCRIPTION_QUERY_KEY);
 }
 
-function renderDashboardMutations(options?: {
+async function renderDashboardMutations(options?: {
   domains?: TrackedDomainWithDetails[];
   subscription?: SubscriptionCache;
 }) {
@@ -80,7 +80,7 @@ function renderDashboardMutations(options?: {
   queryClient.setQueryData(DOMAINS_QUERY_KEY, domains);
   queryClient.setQueryData(SUBSCRIPTION_QUERY_KEY, subscription);
 
-  const view = renderHook(() => useDashboardMutations(), {
+  const view = await renderHook(() => useDashboardMutations(), {
     wrapper: ({ children }) => (
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     ),
@@ -102,13 +102,13 @@ describe("useDashboardMutations", () => {
   });
 
   it("removes a domain and decrements active count", async () => {
-    const { result, queryClient } = renderDashboardMutations({
+    const { result, queryClient } = await renderDashboardMutations({
       subscription: defaultSubscription({ planQuota: 4, canAddMore: false }),
     });
 
     result.current.remove("domain-alpha");
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(getDomains(queryClient).map((d) => d.id)).not.toContain("domain-alpha");
     });
     expect(getSubscription(queryClient)).toMatchObject({
@@ -121,11 +121,11 @@ describe("useDashboardMutations", () => {
   });
 
   it("archives a domain and moves it from active to archived counts", async () => {
-    const { result, queryClient } = renderDashboardMutations();
+    const { result, queryClient } = await renderDashboardMutations();
 
     result.current.archive("domain-alpha");
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(
         getDomains(queryClient).find((d) => d.id === "domain-alpha")?.archivedAt,
       ).toBeInstanceOf(Date);
@@ -139,11 +139,11 @@ describe("useDashboardMutations", () => {
   });
 
   it("unarchives a domain and reverses the counts", async () => {
-    const { result, queryClient } = renderDashboardMutations();
+    const { result, queryClient } = await renderDashboardMutations();
 
     result.current.unarchive("domain-archived");
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(
         getDomains(queryClient).find((d) => d.id === "domain-archived")?.archivedAt,
       ).toBeNull();
@@ -157,25 +157,25 @@ describe("useDashboardMutations", () => {
   });
 
   it("mutes a domain without touching subscription cache", async () => {
-    const { result, queryClient } = renderDashboardMutations();
+    const { result, queryClient } = await renderDashboardMutations();
     const subscriptionBefore = getSubscription(queryClient);
 
     result.current.setMuted("domain-alpha", true);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(getDomains(queryClient).find((d) => d.id === "domain-alpha")?.muted).toBe(true);
     });
     expect(getSubscription(queryClient)).toEqual(subscriptionBefore);
     expect(toast.success).toHaveBeenCalledWith("Domain muted");
 
     result.current.setMuted("domain-alpha", false);
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(toast.success).toHaveBeenCalledWith("Domain unmuted");
     });
   });
 
   it("bulk-archives only non-archived ids when counting subscription changes", async () => {
-    const { result, queryClient } = renderDashboardMutations();
+    const { result, queryClient } = await renderDashboardMutations();
 
     await result.current.bulkArchive(["domain-alpha", "domain-archived"]);
 
@@ -194,7 +194,7 @@ describe("useDashboardMutations", () => {
 
   it("toasts requested count when some ids were already archived", async () => {
     bulkArchiveDomainsMutation.mockResolvedValueOnce({ successCount: 1, failedCount: 0 });
-    const { result } = renderDashboardMutations();
+    const { result } = await renderDashboardMutations();
 
     await result.current.bulkArchive(["domain-alpha", "domain-archived"]);
 
@@ -203,7 +203,7 @@ describe("useDashboardMutations", () => {
 
   it("toasts a warning when bulk archive only partially succeeds", async () => {
     bulkArchiveDomainsMutation.mockResolvedValueOnce({ successCount: 1, failedCount: 1 });
-    const { result } = renderDashboardMutations();
+    const { result } = await renderDashboardMutations();
 
     await result.current.bulkArchive(["domain-alpha", "domain-beta"]);
 
@@ -212,7 +212,7 @@ describe("useDashboardMutations", () => {
   });
 
   it("toasts a singular success when one domain is archived", async () => {
-    const { result } = renderDashboardMutations();
+    const { result } = await renderDashboardMutations();
 
     await result.current.bulkArchive(["domain-alpha"]);
 
@@ -220,7 +220,7 @@ describe("useDashboardMutations", () => {
   });
 
   it("bulk-deletes ids and decrements active and archived counts by lifecycle state", async () => {
-    const { result, queryClient } = renderDashboardMutations();
+    const { result, queryClient } = await renderDashboardMutations();
 
     await result.current.bulkDelete(["domain-alpha", "domain-archived"]);
 
@@ -238,7 +238,7 @@ describe("useDashboardMutations", () => {
   });
 
   it("bulk-mutes ids across listDomains cache variants without touching subscription", async () => {
-    const { result, queryClient } = renderDashboardMutations();
+    const { result, queryClient } = await renderDashboardMutations();
     const archivedListKey = [...DOMAINS_QUERY_KEY, { includeArchived: true }] as const;
     queryClient.setQueryData(archivedListKey, getDomains(queryClient));
     const subscriptionBefore = getSubscription(queryClient);
@@ -260,7 +260,7 @@ describe("useDashboardMutations", () => {
   });
 
   it("toasts unmute success and a warning when bulk mute only partially succeeds", async () => {
-    const { result, queryClient } = renderDashboardMutations();
+    const { result, queryClient } = await renderDashboardMutations();
 
     await result.current.bulkSetMuted(["domain-alpha"], false);
     expect(getDomains(queryClient).find((d) => d.id === "domain-alpha")?.muted).toBe(false);
@@ -273,12 +273,12 @@ describe("useDashboardMutations", () => {
 
   it("rolls back muted flags when bulk mute fails", async () => {
     bulkSetMutedMutation.mockRejectedValueOnce(new Error("nope"));
-    const { result, queryClient } = renderDashboardMutations();
+    const { result, queryClient } = await renderDashboardMutations();
     const domainsBefore = getDomains(queryClient);
 
     await expect(result.current.bulkSetMuted(["domain-alpha"], true)).rejects.toThrow("nope");
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Failed to mute domains");
     });
     expect(getDomains(queryClient)).toEqual(domainsBefore);
@@ -286,7 +286,7 @@ describe("useDashboardMutations", () => {
 
   it("toasts a warning when bulk delete only partially succeeds", async () => {
     bulkRemoveDomainsMutation.mockResolvedValueOnce({ successCount: 1, failedCount: 1 });
-    const { result } = renderDashboardMutations();
+    const { result } = await renderDashboardMutations();
 
     await result.current.bulkDelete(["domain-alpha", "domain-beta"]);
 
@@ -296,13 +296,13 @@ describe("useDashboardMutations", () => {
 
   it("rolls back domains and subscription when remove fails", async () => {
     removeDomainMutation.mockRejectedValueOnce(new Error("nope"));
-    const { result, queryClient } = renderDashboardMutations();
+    const { result, queryClient } = await renderDashboardMutations();
     const domainsBefore = getDomains(queryClient);
     const subscriptionBefore = getSubscription(queryClient);
 
     result.current.remove("domain-alpha");
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Failed to remove domain");
     });
     expect(getDomains(queryClient)).toEqual(domainsBefore);
@@ -311,13 +311,13 @@ describe("useDashboardMutations", () => {
 
   it("rolls back and toasts when bulk archive fails", async () => {
     bulkArchiveDomainsMutation.mockRejectedValueOnce(new Error("nope"));
-    const { result, queryClient } = renderDashboardMutations();
+    const { result, queryClient } = await renderDashboardMutations();
     const domainsBefore = getDomains(queryClient);
     const subscriptionBefore = getSubscription(queryClient);
 
     await expect(result.current.bulkArchive(["domain-alpha"])).rejects.toThrow("nope");
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Failed to archive domains");
     });
     expect(getDomains(queryClient)).toEqual(domainsBefore);

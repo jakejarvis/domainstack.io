@@ -1,19 +1,22 @@
 import { describe, expect, it, vi } from "vitest";
+import { page } from "vitest/browser";
 
-import { render, screen } from "@/mocks/react";
+import { render } from "@/mocks/react";
 
 describe("RelativeAgeString", () => {
   it("renders an invisible placeholder before hydration", async () => {
     vi.resetModules();
+    const raf = vi.spyOn(window, "requestAnimationFrame").mockImplementation(() => 0);
     const { resetHydratedNow } = await import("@/hooks/use-hydrated-now");
     const { RelativeAgeString } = await import("./relative-age");
 
     // Match the server and first client render: no clock yet.
     resetHydratedNow(null);
 
-    render(<RelativeAgeString from="2020-01-01T00:00:00Z" />);
+    await render(<RelativeAgeString from="2020-01-01T00:00:00Z" />);
 
-    expect(screen.getByText("(loading)")).toHaveClass("invisible");
+    await expect.element(page.getByText("(loading)", { exact: true })).toHaveClass("invisible");
+    raf.mockRestore();
   });
 
   it("renders the age from the shared clock after hydration", async () => {
@@ -23,8 +26,8 @@ describe("RelativeAgeString", () => {
 
     resetHydratedNow(new Date("2025-01-01T00:00:00Z"));
 
-    render(<RelativeAgeString from="2020-01-01T00:00:00Z" />);
+    await render(<RelativeAgeString from="2020-01-01T00:00:00Z" />);
 
-    expect(await screen.findByText("(5 years ago)")).toBeInTheDocument();
+    await expect.element(page.getByText("(5 years ago)", { exact: true })).toBeInTheDocument();
   });
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
+import { page } from "vitest/browser";
 
-import { render, screen } from "@/mocks/react";
+import { render } from "@/mocks/react";
 import type { SeoResponse } from "@domainstack/types";
 
 // Mock child components to isolate main component testing
@@ -43,7 +44,7 @@ function buildSeoResponse(overrides: Partial<SeoResponse> = {}): SeoResponse {
 
 describe("SeoSection - Integration & Orchestration", () => {
   describe("component orchestration", () => {
-    it("renders all child components when data is present", () => {
+    it("renders all child components when data is present", async () => {
       const data = buildSeoResponse({
         meta: {
           openGraph: {},
@@ -68,21 +69,21 @@ describe("SeoSection - Integration & Orchestration", () => {
           sitemaps: ["https://test.invalid/sitemap.xml"],
         },
       });
-      render(<SeoSection domain="test.invalid" data={data} />);
+      await render(<SeoSection domain="test.invalid" data={data} />);
 
-      expect(screen.getByTestId("meta-tags-grid")).toBeInTheDocument();
-      expect(screen.getByTestId("social-previews")).toBeInTheDocument();
-      expect(screen.getByTestId("robots-summary")).toBeInTheDocument();
+      await expect.element(page.getByTestId("meta-tags-grid")).toBeInTheDocument();
+      await expect.element(page.getByTestId("social-previews")).toBeInTheDocument();
+      await expect.element(page.getByTestId("robots-summary")).toBeInTheDocument();
     });
 
-    it("shows empty state when no meta tags", () => {
+    it("shows empty state when no meta tags", async () => {
       const data = buildSeoResponse();
-      render(<SeoSection domain="test.invalid" data={data} />);
-      expect(screen.getByText(/No SEO meta detected/i)).toBeInTheDocument();
-      expect(screen.queryByTestId("meta-tags-grid")).not.toBeInTheDocument();
+      await render(<SeoSection domain="test.invalid" data={data} />);
+      await expect.element(page.getByText(/No SEO meta detected/i)).toBeInTheDocument();
+      await expect.element(page.getByTestId("meta-tags-grid")).not.toBeInTheDocument();
     });
 
-    it("does not render social preview tabs when preview is null", () => {
+    it("does not render social preview tabs when preview is null", async () => {
       const data = buildSeoResponse({
         meta: {
           openGraph: {},
@@ -101,16 +102,16 @@ describe("SeoSection - Integration & Orchestration", () => {
           sitemaps: [],
         },
       });
-      render(<SeoSection domain="test.invalid" data={data} />);
+      await render(<SeoSection domain="test.invalid" data={data} />);
 
-      expect(screen.getByTestId("meta-tags-grid")).toBeInTheDocument();
-      expect(screen.queryByTestId("social-previews")).not.toBeInTheDocument();
-      expect(screen.getByTestId("robots-summary")).toBeInTheDocument();
+      await expect.element(page.getByTestId("meta-tags-grid")).toBeInTheDocument();
+      await expect.element(page.getByTestId("social-previews")).not.toBeInTheDocument();
+      await expect.element(page.getByTestId("robots-summary")).toBeInTheDocument();
     });
   });
 
   describe("Twitter variant selection", () => {
-    it("selects large variant for summary_large_image card", () => {
+    it("selects large variant for summary_large_image card", async () => {
       const data = buildSeoResponse({
         meta: {
           openGraph: {},
@@ -125,12 +126,13 @@ describe("SeoSection - Integration & Orchestration", () => {
           canonicalUrl: "https://test.invalid",
         },
       });
-      render(<SeoSection domain="test.invalid" data={data} />);
-      const tabs = screen.getByTestId("social-previews");
-      expect(tabs).toHaveAttribute("data-variant", "large");
+      await render(<SeoSection domain="test.invalid" data={data} />);
+      await expect
+        .element(page.getByTestId("social-previews"))
+        .toHaveAttribute("data-variant", "large");
     });
 
-    it("selects compact variant for summary card", () => {
+    it("selects compact variant for summary card", async () => {
       const data = buildSeoResponse({
         meta: {
           openGraph: {},
@@ -145,12 +147,13 @@ describe("SeoSection - Integration & Orchestration", () => {
           canonicalUrl: "https://test.invalid",
         },
       });
-      render(<SeoSection domain="test.invalid" data={data} />);
-      const tabs = screen.getByTestId("social-previews");
-      expect(tabs).toHaveAttribute("data-variant", "compact");
+      await render(<SeoSection domain="test.invalid" data={data} />);
+      await expect
+        .element(page.getByTestId("social-previews"))
+        .toHaveAttribute("data-variant", "compact");
     });
 
-    it("defaults to large variant when image present but no twitter card", () => {
+    it("defaults to large variant when image present but no twitter card", async () => {
       const data = buildSeoResponse({
         meta: {
           openGraph: {},
@@ -165,12 +168,13 @@ describe("SeoSection - Integration & Orchestration", () => {
           canonicalUrl: "https://test.invalid",
         },
       });
-      render(<SeoSection domain="test.invalid" data={data} />);
-      const tabs = screen.getByTestId("social-previews");
-      expect(tabs).toHaveAttribute("data-variant", "large");
+      await render(<SeoSection domain="test.invalid" data={data} />);
+      await expect
+        .element(page.getByTestId("social-previews"))
+        .toHaveAttribute("data-variant", "large");
     });
 
-    it("defaults to compact variant when no image and no twitter card", () => {
+    it("defaults to compact variant when no image and no twitter card", async () => {
       const data = buildSeoResponse({
         meta: {
           openGraph: {},
@@ -185,14 +189,15 @@ describe("SeoSection - Integration & Orchestration", () => {
           canonicalUrl: "https://test.invalid",
         },
       });
-      render(<SeoSection domain="test.invalid" data={data} />);
-      const tabs = screen.getByTestId("social-previews");
-      expect(tabs).toHaveAttribute("data-variant", "compact");
+      await render(<SeoSection domain="test.invalid" data={data} />);
+      await expect
+        .element(page.getByTestId("social-previews"))
+        .toHaveAttribute("data-variant", "compact");
     });
   });
 
   describe("redirect alert integration", () => {
-    it("shows alert when domain redirects to different domain", () => {
+    it("shows alert when domain redirects to different domain", async () => {
       const data = buildSeoResponse({
         meta: {
           openGraph: {},
@@ -211,11 +216,11 @@ describe("SeoSection - Integration & Orchestration", () => {
           status: 301,
         },
       });
-      render(<SeoSection domain="test.invalid" data={data} />);
-      expect(screen.getByText(/We followed a redirect/i)).toBeInTheDocument();
+      await render(<SeoSection domain="test.invalid" data={data} />);
+      await expect.element(page.getByText(/We followed a redirect/i)).toBeInTheDocument();
     });
 
-    it("does not show alert when no redirect occurred", () => {
+    it("does not show alert when no redirect occurred", async () => {
       const data = buildSeoResponse({
         meta: {
           openGraph: {},
@@ -234,8 +239,8 @@ describe("SeoSection - Integration & Orchestration", () => {
           status: 200,
         },
       });
-      render(<SeoSection domain="test.invalid" data={data} />);
-      expect(screen.queryByText(/We followed a redirect/i)).not.toBeInTheDocument();
+      await render(<SeoSection domain="test.invalid" data={data} />);
+      await expect.element(page.getByText(/We followed a redirect/i)).not.toBeInTheDocument();
     });
   });
 });

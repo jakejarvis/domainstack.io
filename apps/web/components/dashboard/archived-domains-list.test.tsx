@@ -1,5 +1,5 @@
-import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { page } from "vitest/browser";
 
 vi.mock("@/hooks/use-subscription", async () => {
   const { useSubscription } = await import("./mocks/subscription");
@@ -33,7 +33,6 @@ import {
   renderArchivedList,
   resetDashboardTestState,
 } from "@/components/dashboard/test-utils";
-import { screen } from "@/mocks/react";
 import { PLAN_QUOTAS } from "@domainstack/constants";
 
 const archived = makeTrackedDomain({
@@ -52,40 +51,43 @@ describe("ArchivedDomainsList", () => {
     vi.useRealTimers();
   });
 
-  it("shows an empty state", () => {
-    renderArchivedList([]);
-    expect(screen.getByText("No archived domains")).toBeInTheDocument();
+  it("shows an empty state", async () => {
+    await renderArchivedList([]);
+    await expect
+      .element(page.getByText("No archived domains", { exact: true }))
+      .toBeInTheDocument();
   });
 
   it("reactivates and deletes an archived domain", async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    renderArchivedList([archived]);
+    await renderArchivedList([archived]);
 
-    expect(screen.getByText("archived.com")).toBeInTheDocument();
+    await expect.element(page.getByText("archived.com", { exact: true })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /Reactivate/ }));
+    await page.getByRole("button", { name: /Reactivate/ }).click();
     expect(dashboardActionSpies.onUnarchive).toHaveBeenCalledWith("domain-archived");
 
-    await user.click(screen.getByRole("button", { name: "Delete" }));
+    await page.getByRole("button", { name: "Delete" }).click();
     expect(dashboardActionSpies.onRemove).toHaveBeenCalledWith("domain-archived");
   });
 
   it("blocks reactivate and shows an upgrade banner on Free at the limit", async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     mockSubscription.plan = "free";
     mockSubscription.planQuota = PLAN_QUOTAS.free;
     mockSubscription.canAddMore = false;
-    renderArchivedList([archived]);
+    await renderArchivedList([archived]);
 
-    expect(screen.getByText("Upgrade to Reactivate")).toBeInTheDocument();
-    expect(screen.getByText(/You've reached your domain tracking limit/)).toBeInTheDocument();
+    await expect
+      .element(page.getByText("Upgrade to Reactivate", { exact: true }))
+      .toBeInTheDocument();
+    await expect
+      .element(page.getByText(/You've reached your domain tracking limit/))
+      .toBeInTheDocument();
 
-    const reactivate = screen.getByRole("button", { name: /Reactivate/ });
-    expect(reactivate).toBeDisabled();
-    await user.click(reactivate);
+    const reactivate = page.getByRole("button", { name: /Reactivate/ });
+    await expect.element(reactivate).toBeDisabled();
     expect(dashboardActionSpies.onUnarchive).not.toHaveBeenCalled();
 
-    await user.click(screen.getByRole("button", { name: "Delete" }));
+    await page.getByRole("button", { name: "Delete" }).click();
     expect(dashboardActionSpies.onRemove).toHaveBeenCalledWith("domain-archived");
   });
 
@@ -93,9 +95,11 @@ describe("ArchivedDomainsList", () => {
     mockSubscription.plan = "pro";
     mockSubscription.planQuota = PLAN_QUOTAS.pro;
     mockSubscription.canAddMore = false;
-    renderArchivedList([archived]);
+    await renderArchivedList([archived]);
 
-    expect(screen.queryByText("Upgrade to Reactivate")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Reactivate/ })).toBeDisabled();
+    await expect
+      .element(page.getByText("Upgrade to Reactivate", { exact: true }))
+      .not.toBeInTheDocument();
+    await expect.element(page.getByRole("button", { name: /Reactivate/ })).toBeDisabled();
   });
 });

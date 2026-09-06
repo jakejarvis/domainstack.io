@@ -25,7 +25,7 @@ function DrawerOverlay({ className, ...props }: DrawerPrimitive.Backdrop.Props) 
     <DrawerPrimitive.Backdrop
       data-slot="drawer-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-black/10 backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        "fixed inset-0 z-50 bg-black/10 backdrop-blur-xs motion-reduce:animate-none motion-reduce:transition-none data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
         // iOS 26+: ensure backdrops cover the visual viewport
         "supports-[-webkit-touch-callout:none]:absolute",
         className,
@@ -45,7 +45,7 @@ function DrawerContent({ className, children, ...props }: DrawerPrimitive.Popup.
           className={cn(
             "group/drawer-content fixed z-50 flex h-auto flex-col bg-background text-sm shadow-lg outline-hidden",
             "data-[nested-dialog-open]:pointer-events-none data-[nested-dialog-open]:after:absolute data-[nested-dialog-open]:after:inset-0 data-[nested-dialog-open]:after:z-50 data-[nested-dialog-open]:after:rounded-[inherit] data-[nested-dialog-open]:after:bg-black/10 data-[nested-dialog-open]:after:content-['']",
-            "data-open:animate-in data-open:fade-in-0 data-[swipe-direction=down]:data-open:slide-in-from-bottom-10 data-[swipe-direction=left]:data-open:slide-in-from-left-10 data-[swipe-direction=right]:data-open:slide-in-from-right-10 data-[swipe-direction=up]:data-open:slide-in-from-top-10 data-closed:animate-out data-closed:fade-out-0 data-[swipe-direction=down]:data-closed:slide-out-to-bottom-10 data-[swipe-direction=left]:data-closed:slide-out-to-left-10 data-[swipe-direction=right]:data-closed:slide-out-to-right-10 data-[swipe-direction=up]:data-closed:slide-out-to-top-10",
+            "motion-reduce:animate-none motion-reduce:transition-none data-open:animate-in data-open:fade-in-0 data-[swipe-direction=down]:data-open:slide-in-from-bottom-10 data-[swipe-direction=left]:data-open:slide-in-from-left-10 data-[swipe-direction=right]:data-open:slide-in-from-right-10 data-[swipe-direction=up]:data-open:slide-in-from-top-10 data-closed:animate-out data-closed:fade-out-0 data-[swipe-direction=down]:data-closed:slide-out-to-bottom-10 data-[swipe-direction=left]:data-closed:slide-out-to-left-10 data-[swipe-direction=right]:data-closed:slide-out-to-right-10 data-[swipe-direction=up]:data-closed:slide-out-to-top-10",
             "data-[swipe-direction=down]:inset-x-0 data-[swipe-direction=down]:bottom-0 data-[swipe-direction=left]:inset-y-0 data-[swipe-direction=left]:left-0 data-[swipe-direction=right]:inset-y-0 data-[swipe-direction=right]:right-0 data-[swipe-direction=up]:inset-x-0 data-[swipe-direction=up]:top-0",
             "data-[swipe-direction=down]:mt-24 data-[swipe-direction=down]:max-h-[80vh] data-[swipe-direction=left]:h-full data-[swipe-direction=left]:w-3/4 data-[swipe-direction=right]:h-full data-[swipe-direction=right]:w-3/4 data-[swipe-direction=up]:mb-24 data-[swipe-direction=up]:max-h-[80vh]",
             "data-[swipe-direction=down]:rounded-t-xl data-[swipe-direction=down]:border-t data-[swipe-direction=left]:rounded-r-xl data-[swipe-direction=left]:border-r data-[swipe-direction=right]:rounded-l-xl data-[swipe-direction=right]:border-l data-[swipe-direction=up]:rounded-b-xl data-[swipe-direction=up]:border-b data-[swipe-direction=left]:sm:max-w-sm data-[swipe-direction=right]:sm:max-w-sm",

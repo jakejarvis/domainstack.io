@@ -79,6 +79,7 @@ function NavigationMenuContent({ className, ...props }: NavigationMenuPrimitive.
         "top-0 left-0 w-full p-2 pr-2.5 md:absolute md:w-auto",
         "data-open:animate-in data-open:fade-in-0",
         "data-closed:animate-out data-closed:fade-out-0",
+        "motion-reduce:animate-none motion-reduce:transition-none",
         className,
       )}
       {...props}
@@ -94,7 +95,7 @@ function NavigationMenuViewport({ className, ...props }: NavigationMenuPrimitive
         sideOffset={10}
         collisionPadding={{ top: 5, bottom: 5, left: 20, right: 20 }}
         className={cn(
-          "z-50 w-[var(--positioner-width)] max-w-[var(--available-width)] transition-[top,left,right,bottom] duration-200 ease-out will-change-[top,left,right,bottom]",
+          "z-50 w-[var(--positioner-width)] max-w-[var(--available-width)] transition-[top,left,right,bottom] duration-200 ease-out will-change-[top,left,right,bottom] motion-reduce:transition-none",
         )}
       >
         <NavigationMenuPrimitive.Popup
@@ -104,6 +105,7 @@ function NavigationMenuViewport({ className, ...props }: NavigationMenuPrimitive
             "origin-[var(--transform-origin)]",
             "data-open:animate-in data-open:duration-200 data-open:fade-in-0 data-open:zoom-in-95",
             "data-closed:animate-out data-closed:duration-200 data-closed:fade-out-0 data-closed:zoom-out-95",
+            "motion-reduce:animate-none motion-reduce:transition-none",
           )}
         >
           <NavigationMenuPrimitive.Viewport

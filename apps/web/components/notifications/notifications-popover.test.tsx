@@ -1,5 +1,5 @@
-import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { page } from "vitest/browser";
 
 const nav = vi.hoisted(() => ({
   push: vi.fn<(href: string) => void>(),
@@ -26,7 +26,7 @@ import {
   makeNotificationsInfiniteData,
 } from "@/components/notifications/test-fixtures";
 import { resetHydratedNow } from "@/hooks/use-hydrated-now";
-import { createTestQueryClient, render, screen, waitFor, within } from "@/mocks/react";
+import { createTestQueryClient, render } from "@/mocks/react";
 import {
   listNotificationsQuery,
   markAllReadMutation,
@@ -70,19 +70,17 @@ function seedNotifications(
   queryClient.setQueryData(notificationsListQueryKey("read"), makeNotificationsInfiniteData(read));
 }
 
-function renderPopover(items: NotificationData[] = [unreadAlpha, unreadGeneric, archivedGamma]) {
+async function renderPopover(
+  items: NotificationData[] = [unreadAlpha, unreadGeneric, archivedGamma],
+) {
   const queryClient = createTestQueryClient();
   seedNotifications(queryClient, items);
   return render(<NotificationsPopover />, { queryClient });
 }
 
-function setupUser() {
-  return userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-}
-
-async function openInbox(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole("button", { name: /Notifications/ }));
-  expect(await screen.findByRole("heading", { name: "Notifications" })).toBeInTheDocument();
+async function openInbox() {
+  await page.getByRole("button", { name: /Notifications/ }).click();
+  await expect.element(page.getByRole("heading", { name: "Notifications" })).toBeInTheDocument();
 }
 
 describe("NotificationsPopover", () => {
@@ -101,143 +99,147 @@ describe("NotificationsPopover", () => {
   });
 
   it("shows a badge on the bell when there are unread notifications", async () => {
-    renderPopover([unreadAlpha]);
+    await renderPopover([unreadAlpha]);
 
-    const bell = await screen.findByRole("button", { name: "Notifications (1)" });
-    expect(bell.querySelector(".bg-destructive")).not.toBeNull();
+    const bell = page.getByRole("button", { name: "Notifications (1)" });
+    await expect.element(bell).toBeInTheDocument();
+    expect(bell.element().querySelector(".bg-destructive")).not.toBeNull();
   });
 
   it("hides the badge when there are no unread notifications", async () => {
-    renderPopover([]);
+    await renderPopover([]);
 
-    const bell = await screen.findByRole("button", { name: "Notifications" });
-    expect(bell.querySelector(".bg-destructive")).toBeNull();
+    const bell = page.getByRole("button", { name: "Notifications" });
+    await expect.element(bell).toBeInTheDocument();
+    expect(bell.element().querySelector(".bg-destructive")).toBeNull();
   });
 
   it("opens the inbox with unread copy and a relative timestamp", async () => {
-    const user = setupUser();
-    renderPopover([unreadAlpha]);
-    await openInbox(user);
+    await renderPopover([unreadAlpha]);
+    await openInbox();
 
-    expect(screen.getByText("alpha.com expires in 7 days")).toBeInTheDocument();
-    expect(screen.getByRole("status", { name: "Unread" })).toBeInTheDocument();
-    expect(screen.getByText("1 day ago")).toBeInTheDocument();
+    await expect
+      .element(page.getByText("alpha.com expires in 7 days", { exact: true }))
+      .toBeInTheDocument();
+    await expect.element(page.getByRole("status", { name: "Unread" })).toBeInTheDocument();
+    await expect.element(page.getByText("1 day ago", { exact: true })).toBeInTheDocument();
   });
 
   it("shows distinct empty copy for inbox and archive", async () => {
-    const user = setupUser();
-    renderPopover([]);
-    await openInbox(user);
+    await renderPopover([]);
+    await openInbox();
 
-    expect(screen.getByText("All caught up!")).toBeInTheDocument();
-    expect(screen.getByText("No unread notifications")).toBeInTheDocument();
+    await expect.element(page.getByText("All caught up!", { exact: true })).toBeInTheDocument();
+    await expect
+      .element(page.getByText("No unread notifications", { exact: true }))
+      .toBeInTheDocument();
 
-    await user.click(screen.getByRole("tab", { name: /Archive/ }));
-    expect(await screen.findByText("Nothing archived yet")).toBeInTheDocument();
-    expect(screen.getByText("Nothing to see here (yet…)")).toBeInTheDocument();
-    expect(screen.queryByText("All caught up!")).not.toBeInTheDocument();
+    await page.getByRole("tab", { name: /Archive/ }).click();
+    await expect
+      .element(page.getByText("Nothing archived yet", { exact: true }))
+      .toBeInTheDocument();
+    await expect
+      .element(page.getByText("Nothing to see here (yet…)", { exact: true }))
+      .toBeInTheDocument();
+    await expect.element(page.getByText("All caught up!", { exact: true })).not.toBeInTheDocument();
   });
 
   it("shows an error when the list fails to load", async () => {
-    const user = setupUser();
     listNotificationsQuery.mockRejectedValue(new Error("nope"));
     const queryClient = createTestQueryClient();
     setNotificationsState([unreadAlpha]);
     queryClient.setQueryData(NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY, 1);
-    render(<NotificationsPopover />, { queryClient });
+    await render(<NotificationsPopover />, { queryClient });
 
-    await openInbox(user);
+    await openInbox();
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Failed to load notifications");
+    await expect.element(page.getByRole("alert")).toHaveTextContent("Failed to load notifications");
   });
 
   it("deep-links domain notifications and falls back to the dashboard", async () => {
-    const user = setupUser();
-    renderPopover([unreadAlpha, unreadGeneric]);
-    await openInbox(user);
+    await renderPopover([unreadAlpha, unreadGeneric]);
+    await openInbox();
 
-    expect(screen.getByRole("link", { name: /alpha.com expires in 7 days/ })).toHaveAttribute(
-      "href",
-      "/dashboard?domainId=domain-alpha",
-    );
-    expect(screen.getByRole("link", { name: /DNS provider changed/ })).toHaveAttribute(
-      "href",
-      "/dashboard",
-    );
+    await expect
+      .element(page.getByRole("link", { name: /alpha.com expires in 7 days/ }))
+      .toHaveAttribute("href", "/dashboard?domainId=domain-alpha");
+    await expect
+      .element(page.getByRole("link", { name: /DNS provider changed/ }))
+      .toHaveAttribute("href", "/dashboard");
   });
 
   it("marks only the clicked notification as read", async () => {
-    const user = setupUser();
-    renderPopover([unreadAlpha, unreadGeneric]);
-    await openInbox(user);
+    await renderPopover([unreadAlpha, unreadGeneric]);
+    await openInbox();
 
-    const notificationLink = screen.getByRole("link", { name: /alpha.com expires in 7 days/ });
-    notificationLink.addEventListener("click", (event) => event.preventDefault(), true);
-    await user.click(notificationLink);
+    const notificationLink = page.getByRole("link", { name: /alpha.com expires in 7 days/ });
+    notificationLink.element().addEventListener("click", (event) => event.preventDefault(), true);
+    await notificationLink.click();
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(markReadMutation.mock.calls[0]?.[0]).toEqual({ id: "notif-alpha" });
     });
     expect(markAllReadMutation).not.toHaveBeenCalled();
   });
 
   it("clears all unread notifications from Inbox", async () => {
-    const user = setupUser();
-    renderPopover([unreadAlpha, unreadGeneric]);
-    await openInbox(user);
+    await renderPopover([unreadAlpha, unreadGeneric]);
+    await openInbox();
 
-    await user.click(screen.getByRole("button", { name: "Clear all notifications" }));
+    await page.getByRole("button", { name: "Clear all notifications" }).click();
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(markAllReadMutation).toHaveBeenCalledOnce();
     });
-    expect(await screen.findByText("All caught up!")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Notifications" })).toBeInTheDocument();
+    await expect.element(page.getByText("All caught up!", { exact: true })).toBeInTheDocument();
+    await expect.element(page.getByRole("button", { name: "Notifications" })).toBeInTheDocument();
   });
 
   it("marks remaining unread as read when switching to Archive", async () => {
-    const user = setupUser();
-    renderPopover([unreadAlpha, archivedGamma]);
-    await openInbox(user);
+    await renderPopover([unreadAlpha, archivedGamma]);
+    await openInbox();
 
-    await user.click(screen.getByRole("tab", { name: /Archive/ }));
+    await page.getByRole("tab", { name: /Archive/ }).click();
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(markAllReadMutation).toHaveBeenCalledOnce();
     });
-    expect(await screen.findByText("alpha.com expires in 7 days")).toBeInTheDocument();
-    expect(screen.getByText("gamma.com expired")).toBeInTheDocument();
+    await expect
+      .element(page.getByText("alpha.com expires in 7 days", { exact: true }))
+      .toBeInTheDocument();
+    await expect.element(page.getByText("gamma.com expired", { exact: true })).toBeInTheDocument();
   });
 
   it("marks remaining unread as read when closing Inbox", async () => {
-    const user = setupUser();
-    renderPopover([unreadAlpha]);
-    await openInbox(user);
+    await renderPopover([unreadAlpha]);
+    await openInbox();
 
-    await user.click(screen.getByRole("button", { name: /Notifications/ }));
+    await page.getByRole("button", { name: /Notifications/ }).click();
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(markAllReadMutation).toHaveBeenCalledOnce();
     });
-    expect(screen.queryByRole("heading", { name: "Notifications" })).not.toBeInTheDocument();
+    await expect
+      .element(page.getByRole("heading", { name: "Notifications" }))
+      .not.toBeInTheDocument();
   });
 
   it("closes and navigates to settings", async () => {
-    const user = setupUser();
-    renderPopover([unreadAlpha]);
-    await openInbox(user);
+    await renderPopover([unreadAlpha]);
+    await openInbox();
 
-    await user.click(screen.getByRole("button", { name: "Notification settings" }));
+    await page.getByRole("button", { name: "Notification settings" }).click();
 
     expect(nav.push).toHaveBeenCalledWith("/settings/notifications");
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(markAllReadMutation).toHaveBeenCalledOnce();
     });
-    expect(screen.queryByRole("heading", { name: "Notifications" })).not.toBeInTheDocument();
+    await expect
+      .element(page.getByRole("heading", { name: "Notifications" }))
+      .not.toBeInTheDocument();
   });
 
   it("caps the inbox badge at 99+", async () => {
-    const user = setupUser();
     unreadCountQuery.mockResolvedValue(100);
     const queryClient = createTestQueryClient();
     setNotificationsState([unreadAlpha]);
@@ -247,10 +249,14 @@ describe("NotificationsPopover", () => {
       makeNotificationsInfiniteData([unreadAlpha]),
     );
     queryClient.setQueryData(notificationsListQueryKey("read"), makeNotificationsInfiniteData([]));
-    render(<NotificationsPopover />, { queryClient });
+    await render(<NotificationsPopover />, { queryClient });
 
-    expect(await screen.findByRole("button", { name: "Notifications (100)" })).toBeInTheDocument();
-    await openInbox(user);
-    expect(within(screen.getByRole("tab", { name: /Inbox/ })).getByText("99+")).toBeInTheDocument();
+    await expect
+      .element(page.getByRole("button", { name: "Notifications (100)" }))
+      .toBeInTheDocument();
+    await openInbox();
+    await expect
+      .element(page.getByRole("tab", { name: /Inbox/ }).getByText("99+", { exact: true }))
+      .toBeInTheDocument();
   });
 });

@@ -477,7 +477,7 @@ function MapMarkerPopup({
   return createPortal(
     <div
       className={cn(
-        "relative animate-in rounded-md border bg-popover p-3 text-popover-foreground shadow-md fade-in-0 zoom-in-95",
+        "relative animate-in rounded-md border bg-popover p-3 text-popover-foreground shadow-md fade-in-0 zoom-in-95 motion-reduce:animate-none",
         className,
       )}
     >
@@ -571,7 +571,7 @@ function MapMarkerTooltip({ children, className, ...popupOptions }: MapMarkerToo
   return createPortal(
     <div
       className={cn(
-        "animate-in rounded-md bg-foreground px-2 py-1 text-xs text-background shadow-md fade-in-0 zoom-in-95",
+        "animate-in rounded-md bg-foreground px-2 py-1 text-xs text-background shadow-md fade-in-0 zoom-in-95 motion-reduce:animate-none",
         className,
       )}
     >
@@ -918,7 +918,7 @@ function MapPopup({
   return createPortal(
     <div
       className={cn(
-        "relative animate-in rounded-md border bg-popover p-3 text-popover-foreground shadow-md fade-in-0 zoom-in-95",
+        "relative animate-in rounded-md border bg-popover p-3 text-popover-foreground shadow-md fade-in-0 zoom-in-95 motion-reduce:animate-none",
         className,
       )}
     >

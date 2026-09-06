@@ -1,5 +1,5 @@
-import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { page, userEvent } from "vitest/browser";
 
 vi.mock("@/hooks/use-subscription", async () => {
   const { useSubscription } = await import("../mocks/subscription");
@@ -24,7 +24,6 @@ vi.mock("sonner", () => ({
 import { AddDomainContent } from "@/components/dashboard/add-domain/add-domain-content";
 import { makeResumeDomain } from "@/components/dashboard/test-fixtures";
 import { DOMAIN_VALIDATION_ERROR } from "@/hooks/use-domain-verification";
-import { screen, waitFor } from "@/mocks/react";
 
 import {
   addDomainActionSpies,
@@ -37,9 +36,7 @@ import {
 } from "./test-utils";
 
 async function waitForStep2() {
-  await waitFor(() => {
-    expect(screen.getByRole("button", { name: "Check Now" })).toBeInTheDocument();
-  });
+  await expect.element(page.getByRole("button", { name: "Check Now" })).toBeInTheDocument();
 }
 
 describe("AddDomainContent", () => {
@@ -52,122 +49,149 @@ describe("AddDomainContent", () => {
   });
 
   it("adds a domain, shows DNS instructions, and calls onSuccess after verify", async () => {
-    const user = userEvent.setup();
-    renderAddDomainContent();
+    await renderAddDomainContent();
 
-    expect(screen.getByRole("heading", { name: "Add Domain" })).toBeInTheDocument();
+    await expect.element(page.getByRole("heading", { name: "Add Domain" })).toBeInTheDocument();
     expect(getVerificationDataQuery).not.toHaveBeenCalled();
 
-    await user.type(screen.getByLabelText("Domain name"), "newdomain.com");
-    await user.click(screen.getByRole("button", { name: "Continue" }));
+    await page.getByLabelText("Domain name").fill("newdomain.com");
+    await page.getByRole("button", { name: "Continue" }).click();
 
     await waitForStep2();
     expect(addDomainMutation.mock.calls[0]?.[0]).toEqual({ domain: "newdomain.com" });
-    expect(screen.getByText("Recommended: Add a DNS record")).toBeInTheDocument();
-    expect(screen.getByText("domainstack-verify=token-new")).toBeInTheDocument();
+    await expect
+      .element(page.getByText("Recommended: Add a DNS record", { exact: true }))
+      .toBeInTheDocument();
+    await expect
+      .element(page.getByText("domainstack-verify=token-new", { exact: true }))
+      .toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Check Now" }));
+    await page.getByRole("button", { name: "Check Now" }).click();
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(addDomainActionSpies.onSuccess).toHaveBeenCalledOnce();
     });
     expect(verifyDomainMutation.mock.calls[0]?.[0]).toEqual({ trackedDomainId: "domain-new" });
-    expect(screen.getByRole("heading", { name: "Domain verified!" })).toBeInTheDocument();
-    expect(screen.getByText("newdomain.com")).toBeInTheDocument();
+    await expect
+      .element(page.getByRole("heading", { name: "Domain verified!" }))
+      .toBeInTheDocument();
+    await expect.element(page.getByText("newdomain.com", { exact: true })).toBeInTheDocument();
   });
 
-  it("shows the quota gate when the user cannot add more domains", () => {
+  it("shows the quota gate when the user cannot add more domains", async () => {
     mockSubscription.canAddMore = false;
     mockSubscription.planQuota = 5;
 
-    renderAddDomainContent();
+    await renderAddDomainContent();
 
-    expect(screen.getByRole("heading", { name: "Domain Limit Reached" })).toBeInTheDocument();
-    expect(screen.getByText(/You've reached your limit of 5 tracked domains/)).toBeInTheDocument();
-    expect(screen.queryByLabelText("Domain name")).not.toBeInTheDocument();
+    await expect
+      .element(page.getByRole("heading", { name: "Domain Limit Reached" }))
+      .toBeInTheDocument();
+    await expect
+      .element(page.getByText(/You've reached your limit of 5 tracked domains/))
+      .toBeInTheDocument();
+    await expect.element(page.getByLabelText("Domain name")).not.toBeInTheDocument();
   });
 
   it("resumes verification on step 2 for a pending domain", async () => {
-    renderAddDomainContent({ resumeDomain: makeResumeDomain() });
+    await renderAddDomainContent({ resumeDomain: makeResumeDomain() });
 
     await waitForStep2();
-    expect(screen.getByRole("heading", { name: "Complete Verification" })).toBeInTheDocument();
-    expect(screen.getByText("Verify ownership of pending.dev")).toBeInTheDocument();
-    expect(screen.getByText("Recommended: Add a DNS record")).toBeInTheDocument();
-    expect(screen.getByText("domainstack-verify=token-pending")).toBeInTheDocument();
+    await expect
+      .element(page.getByRole("heading", { name: "Complete Verification" }))
+      .toBeInTheDocument();
+    await expect
+      .element(page.getByText("Verify ownership of pending.dev", { exact: true }))
+      .toBeInTheDocument();
+    await expect
+      .element(page.getByText("Recommended: Add a DNS record", { exact: true }))
+      .toBeInTheDocument();
+    await expect
+      .element(page.getByText("domainstack-verify=token-pending", { exact: true }))
+      .toBeInTheDocument();
     expect(addDomainMutation).not.toHaveBeenCalled();
     expect(getVerificationDataQuery).not.toHaveBeenCalled();
   });
 
   it("fetches verification data when resuming without a token", async () => {
-    renderAddDomainContent({ resumeDomain: makeResumeDomain({ verificationToken: "" }) });
+    await renderAddDomainContent({ resumeDomain: makeResumeDomain({ verificationToken: "" }) });
 
     await waitForStep2();
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(getVerificationDataQuery).toHaveBeenCalledWith({ trackedDomainId: "domain-pending" });
     });
-    expect(screen.getByText("domainstack-verify=token-pending")).toBeInTheDocument();
+    await expect
+      .element(page.getByText("domainstack-verify=token-pending", { exact: true }))
+      .toBeInTheDocument();
     expect(addDomainMutation).not.toHaveBeenCalled();
   });
 
   it("stays on step 2 and shows troubleshooting when verification fails", async () => {
-    const user = userEvent.setup();
     verifyDomainMutation.mockResolvedValueOnce({ verified: false, method: null });
-    renderAddDomainContent({ resumeDomain: makeResumeDomain() });
+    await renderAddDomainContent({ resumeDomain: makeResumeDomain() });
     await waitForStep2();
 
-    await user.click(screen.getByRole("button", { name: "Check Now" }));
+    await page.getByRole("button", { name: "Check Now" }).click();
 
-    await waitFor(() => {
-      expect(screen.getByText("Verification Failed")).toBeInTheDocument();
-    });
-    expect(screen.getByText("DNS Record Troubleshooting")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Check Again" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Complete Verification" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Domain verified!" })).not.toBeInTheDocument();
+    await expect
+      .element(page.getByText("Verification Failed", { exact: true }))
+      .toBeInTheDocument();
+    await expect
+      .element(page.getByText("DNS Record Troubleshooting", { exact: true }))
+      .toBeInTheDocument();
+    await expect.element(page.getByRole("button", { name: "Check Again" })).toBeInTheDocument();
+    await expect
+      .element(page.getByRole("heading", { name: "Complete Verification" }))
+      .toBeInTheDocument();
+    await expect
+      .element(page.getByRole("heading", { name: "Domain verified!" }))
+      .not.toBeInTheDocument();
     expect(addDomainActionSpies.onSuccess).not.toHaveBeenCalled();
   });
 
   it("normalizes the domain before adding it", async () => {
-    const user = userEvent.setup();
-    renderAddDomainContent();
+    await renderAddDomainContent();
 
-    await user.type(screen.getByLabelText("Domain name"), "HTTPS://www.Example.COM/path");
-    await user.click(screen.getByRole("button", { name: "Continue" }));
+    await page.getByLabelText("Domain name").fill("HTTPS://www.Example.COM/path");
+    await page.getByRole("button", { name: "Continue" }).click();
 
     await waitForStep2();
     expect(addDomainMutation.mock.calls[0]?.[0]).toEqual({ domain: "example.com" });
-    expect(screen.getByText("domainstack-verify=token-new")).toBeInTheDocument();
+    await expect
+      .element(page.getByText("domainstack-verify=token-new", { exact: true }))
+      .toBeInTheDocument();
   });
 
   it("shows an inline error for an invalid domain", async () => {
-    const user = userEvent.setup();
-    renderAddDomainContent();
+    await renderAddDomainContent();
 
-    await user.type(screen.getByLabelText("Domain name"), "not a domain");
-    await user.click(screen.getByRole("button", { name: "Continue" }));
+    await page.getByLabelText("Domain name").fill("not a domain");
+    await page.getByRole("button", { name: "Continue" }).click();
 
-    expect(screen.getByText(DOMAIN_VALIDATION_ERROR)).toBeInTheDocument();
+    await expect
+      .element(page.getByText(DOMAIN_VALIDATION_ERROR, { exact: true }))
+      .toBeInTheDocument();
     expect(addDomainMutation).not.toHaveBeenCalled();
-    expect(screen.queryByRole("button", { name: "Check Now" })).not.toBeInTheDocument();
+    await expect.element(page.getByRole("button", { name: "Check Now" })).not.toBeInTheDocument();
   });
 
   it("shows the same inline error when Enter is pressed on an invalid domain", async () => {
-    const user = userEvent.setup();
-    renderAddDomainContent();
+    await renderAddDomainContent();
 
-    const input = screen.getByLabelText("Domain name");
-    await user.type(input, "not a domain{Enter}");
+    const input = page.getByLabelText("Domain name");
+    await userEvent.type(input, "not a domain{Enter}");
 
-    expect(screen.getByText(DOMAIN_VALIDATION_ERROR)).toBeInTheDocument();
+    await expect
+      .element(page.getByText(DOMAIN_VALIDATION_ERROR, { exact: true }))
+      .toBeInTheDocument();
     expect(addDomainMutation).not.toHaveBeenCalled();
   });
 
   it("remounts to step 1 when resume identity is replaced by a prefill", async () => {
-    const { rerender } = renderAddDomainContent({ resumeDomain: makeResumeDomain() });
+    const { rerender } = await renderAddDomainContent({ resumeDomain: makeResumeDomain() });
     await waitForStep2();
 
-    rerender(
+    await rerender(
       <AddDomainContent
         onSuccess={addDomainActionSpies.onSuccess}
         onClose={addDomainActionSpies.onClose}
@@ -175,8 +199,8 @@ describe("AddDomainContent", () => {
       />,
     );
 
-    expect(screen.getByRole("heading", { name: "Add Domain" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Domain name")).toHaveValue("fresh.com");
-    expect(screen.queryByRole("button", { name: "Check Now" })).not.toBeInTheDocument();
+    await expect.element(page.getByRole("heading", { name: "Add Domain" })).toBeInTheDocument();
+    await expect.element(page.getByLabelText("Domain name")).toHaveValue("fresh.com");
+    await expect.element(page.getByRole("button", { name: "Check Now" })).not.toBeInTheDocument();
   });
 });

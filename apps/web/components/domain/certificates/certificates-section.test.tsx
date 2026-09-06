@@ -1,7 +1,7 @@
-import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { page } from "vitest/browser";
 
-import { render, screen } from "@/mocks/react";
+import { render } from "@/mocks/react";
 
 import { CertificatesSection, equalHostname } from "./certificates-section";
 
@@ -71,37 +71,41 @@ describe("CertificatesSection", () => {
         },
       ],
     };
-    render(<CertificatesSection data={data} />);
-    expect(screen.getByText("Issuer")).toBeInTheDocument();
+    await render(<CertificatesSection data={data} />);
+    await expect.element(page.getByText("Issuer", { exact: true })).toBeInTheDocument();
     expect(
-      screen.getAllByText("Let's Encrypt").some((n) => n.tagName.toLowerCase() === "span"),
+      page
+        .getByText("Let's Encrypt", { exact: true })
+        .elements()
+        .some((n) => n.tagName.toLowerCase() === "span"),
     ).toBe(true);
-    expect(screen.getByText("Subject")).toBeInTheDocument();
+    await expect.element(page.getByText("Subject", { exact: true })).toBeInTheDocument();
 
     // Assert SAN count badge - altNames has 2 items but "example.com" matches subject, so +1
-    expect(screen.getByText("+")).toBeInTheDocument();
-    expect(screen.getByText("1")).toBeInTheDocument();
+    await expect.element(page.getByText("+", { exact: true })).toBeInTheDocument();
+    await expect.element(page.getByText("1", { exact: true })).toBeInTheDocument();
 
     // Assert tooltip wrapper and content with SAN domains
-    expect(screen.getByRole("button", { name: /\+1/i })).toBeInTheDocument();
-    const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: /\+1/i }));
-    expect(await screen.findByText("*.test.invalid")).toBeInTheDocument();
+    await expect.element(page.getByRole("button", { name: /\+\s*1/ })).toBeInTheDocument();
+    await page.getByRole("button", { name: /\+\s*1/ }).click();
+    await expect.element(page.getByText("*.test.invalid", { exact: true })).toBeInTheDocument();
 
     // Assert CA provider logo
-    const providerLogo = screen.getByTestId("provider-logo");
-    expect(providerLogo).toHaveAttribute("data-provider-id", "ca-letsencrypt");
+    await expect
+      .element(page.getByTestId("provider-logo"))
+      .toHaveAttribute("data-provider-id", "ca-letsencrypt");
 
     // Assert CA provider name displayed as annotation
-    const caProviderName = screen
-      .getAllByText("Let's Encrypt")
+    const caProviderName = page
+      .getByText("Let's Encrypt", { exact: true })
+      .elements()
       .find((n) => n.className.includes("text-[11px]"));
-    expect(caProviderName).toBeInTheDocument();
+    expect(caProviderName).toBeDefined();
   });
 
-  it("shows empty state when no certificates", () => {
-    render(<CertificatesSection data={null} />);
-    expect(screen.getByText(/No certificates found/i)).toBeInTheDocument();
+  it("shows empty state when no certificates", async () => {
+    await render(<CertificatesSection data={null} />);
+    await expect.element(page.getByText(/No certificates found/i)).toBeInTheDocument();
   });
 
   it("expands and collapses the rest of the certificate chain", async () => {
@@ -137,32 +141,32 @@ describe("CertificatesSection", () => {
         },
       ],
     };
-    const user = userEvent.setup();
-    render(<CertificatesSection data={data} />);
+    await render(<CertificatesSection data={data} />);
 
     // Subject appears as both the truncated label and tooltip content
     const chainSubject = () =>
-      screen.getAllByText("R3").find((node) => node.tagName.toLowerCase() === "span");
+      page
+        .getByText("R3", { exact: true })
+        .elements()
+        .find((node) => node.tagName.toLowerCase() === "span");
 
-    expect(screen.getByRole("button", { name: "Show Chain" })).toHaveAttribute(
-      "aria-expanded",
-      "false",
-    );
+    await expect
+      .element(page.getByRole("button", { name: "Show Chain" }))
+      .toHaveAttribute("aria-expanded", "false");
     expect(chainSubject()?.closest("[inert]")).not.toBeNull();
     expect(chainSubject()?.closest('[aria-hidden="true"]')).not.toBeNull();
 
-    await user.click(screen.getByRole("button", { name: "Show Chain" }));
+    await page.getByRole("button", { name: "Show Chain" }).click();
 
     expect(chainSubject()?.closest("[inert]")).toBeNull();
     expect(chainSubject()?.closest('[aria-hidden="true"]')).toBeNull();
-    expect(screen.getByRole("button", { name: "Hide Chain" })).toHaveAttribute(
-      "aria-expanded",
-      "true",
-    );
+    await expect
+      .element(page.getByRole("button", { name: "Hide Chain" }))
+      .toHaveAttribute("aria-expanded", "true");
 
-    await user.click(screen.getByRole("button", { name: "Hide Chain" }));
+    await page.getByRole("button", { name: "Hide Chain" }).click();
 
-    expect(screen.getByRole("button", { name: "Show Chain" })).toBeInTheDocument();
+    await expect.element(page.getByRole("button", { name: "Show Chain" })).toBeInTheDocument();
     expect(chainSubject()?.closest("[inert]")).not.toBeNull();
     expect(chainSubject()?.closest('[aria-hidden="true"]')).not.toBeNull();
   });

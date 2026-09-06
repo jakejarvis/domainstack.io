@@ -1,7 +1,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { type RenderOptions, render } from "@testing-library/react";
 import { Provider as JotaiProvider } from "jotai";
 import { useHydrateAtoms } from "jotai/utils";
+import { LazyMotion, MotionConfig, domMax } from "motion/react";
+import { type ComponentRenderOptions, render as baseRender } from "vitest-browser-react";
 
 /**
  * Creates a QueryClient configured for testing.
@@ -46,22 +47,27 @@ function HydrateAtoms({
 }
 
 /**
- * Test wrapper that provides QueryClientProvider and JotaiProvider with fresh
- * instances for each test. Ensures test isolation.
+ * Test wrapper that provides QueryClient, Jotai, and Motion with a fresh
+ * instance for each test. `reducedMotion="always"` skips enter/exit so
+ * `m.*` components don't stay stuck at `opacity: 0`.
  */
 function createWrapper(queryClient: QueryClient, initialAtomValues: AtomTuple[] = []) {
   return function Wrapper({ children }: { children: React.ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>
         <JotaiProvider>
-          <HydrateAtoms initialValues={initialAtomValues}>{children}</HydrateAtoms>
+          <MotionConfig reducedMotion="always">
+            <LazyMotion features={domMax}>
+              <HydrateAtoms initialValues={initialAtomValues}>{children}</HydrateAtoms>
+            </LazyMotion>
+          </MotionConfig>
         </JotaiProvider>
       </QueryClientProvider>
     );
   };
 }
 
-interface CustomRenderOptions extends Omit<RenderOptions, "wrapper"> {
+interface CustomRenderOptions extends Omit<ComponentRenderOptions, "wrapper"> {
   /**
    * Optional QueryClient instance. If not provided, a new one will be created
    * using createTestQueryClient().
@@ -79,41 +85,33 @@ interface CustomRenderOptions extends Omit<RenderOptions, "wrapper"> {
  *
  * Usage:
  * ```tsx
- * import { render, screen } from '@/lib/test-utils'
+ * import { page } from "vitest/browser"
+ * import { render } from "@/mocks/react"
  *
- * it('renders component with React Query', () => {
- *   render(<MyComponent />)
- *   expect(screen.getByText('Hello')).toBeInTheDocument()
- * })
- *
- * // With custom QueryClient
- * it('uses prefilled cache', () => {
- *   const queryClient = createTestQueryClient()
- *   queryClient.setQueryData(['key'], { data: 'value' })
- *   render(<MyComponent />, { queryClient })
+ * it("renders component with React Query", async () => {
+ *   await render(<MyComponent />)
+ *   await expect.element(page.getByText("Hello")).toBeInTheDocument()
  * })
  * ```
  *
  * @see https://tanstack.com/query/latest/docs/framework/react/guides/testing
  */
-function customRender(ui: React.ReactElement, options?: CustomRenderOptions) {
+export async function render(ui: React.ReactNode, options?: CustomRenderOptions) {
   const {
     queryClient = createTestQueryClient(),
     initialAtomValues = [],
     ...renderOptions
   } = options ?? {};
 
+  const screen = await baseRender(ui, {
+    wrapper: createWrapper(queryClient, initialAtomValues),
+    ...renderOptions,
+  });
+
   return {
-    ...render(ui, {
-      wrapper: createWrapper(queryClient, initialAtomValues),
-      ...renderOptions,
-    }),
+    ...screen,
     queryClient,
   };
 }
 
-// Re-export everything from @testing-library/react
-export * from "@testing-library/react";
-
-// Override render with our custom version
-export { customRender as render };
+export { renderHook } from "vitest-browser-react";

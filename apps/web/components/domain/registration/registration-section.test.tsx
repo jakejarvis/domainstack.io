@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
+import { page } from "vitest/browser";
 
-import { render, screen } from "@/mocks/react";
+import { render } from "@/mocks/react";
 
 import { RegistrationSection } from "./registration-section";
 
@@ -23,8 +24,8 @@ vi.mock("@/components/ui/tooltip", () => ({
 }));
 
 describe("RegistrationSection", () => {
-  it("renders registrar and dates", () => {
-    render(
+  it("renders registrar and dates", async () => {
+    await render(
       <RegistrationSection
         data={
           {
@@ -40,13 +41,12 @@ describe("RegistrationSection", () => {
         }
       />,
     );
-    // Use getAllByText since provider name appears in multiple places (value + tooltip)
-    const namecheapElements = screen.getAllByText("Namecheap");
-    expect(namecheapElements.length).toBeGreaterThan(0);
+    // Provider name appears in multiple places (value + tooltip)
+    expect(page.getByText("Namecheap", { exact: true }).length).toBeGreaterThan(0);
   });
 
-  it("shows unavailable notice when status is unknown", () => {
-    render(
+  it("shows unavailable notice when status is unknown", async () => {
+    await render(
       <RegistrationSection
         data={
           {
@@ -61,6 +61,6 @@ describe("RegistrationSection", () => {
         }
       />,
     );
-    expect(screen.getByText(/Registration Data Unavailable/i)).toBeInTheDocument();
+    await expect.element(page.getByText(/Registration Data Unavailable/i)).toBeInTheDocument();
   });
 });

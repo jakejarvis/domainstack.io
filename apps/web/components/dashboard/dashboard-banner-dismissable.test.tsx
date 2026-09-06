@@ -1,15 +1,14 @@
-import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { page, userEvent } from "vitest/browser";
 
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
-import { render, screen, waitFor } from "@/mocks/react";
+import { render } from "@/mocks/react";
 
 describe("DashboardBannerDismissable", () => {
   it("forwards onDismiss when the banner is dismissed", async () => {
-    const user = userEvent.setup();
     const onDismiss = vi.fn<() => void>();
 
-    render(
+    await render(
       <DashboardBannerDismissable
         variant="success"
         title="Welcome to Pro!"
@@ -19,14 +18,19 @@ describe("DashboardBannerDismissable", () => {
       />,
     );
 
-    const banner = screen.getByText("Welcome to Pro!").closest("[data-slot=card]");
-    expect(banner).toBeTruthy();
-    await user.hover(banner!);
-    await user.click(screen.getByRole("button", { name: "Dismiss" }));
+    await expect.element(page.getByText("Welcome to Pro!", { exact: true })).toBeVisible();
 
-    await waitFor(() => {
-      expect(screen.queryByText("Welcome to Pro!")).not.toBeInTheDocument();
-    });
+    const banner = page
+      .getByText("Welcome to Pro!", { exact: true })
+      .element()
+      .closest("[data-slot=card]");
+    expect(banner).toBeTruthy();
+    await userEvent.hover(banner!);
+    await page.getByRole("button", { name: "Dismiss" }).click();
+
+    await expect
+      .element(page.getByText("Welcome to Pro!", { exact: true }))
+      .not.toBeInTheDocument();
     expect(onDismiss).toHaveBeenCalledOnce();
   });
 });
