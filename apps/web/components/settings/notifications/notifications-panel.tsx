@@ -9,6 +9,7 @@ import { NotificationMatrix } from "@/components/settings/notifications/notifica
 import { SettingsCard, SettingsCardSeparator } from "@/components/settings/settings-card";
 import { SettingsErrorBoundary } from "@/components/settings/settings-error-boundary";
 import { NotificationsSkeleton } from "@/components/settings/settings-skeleton";
+import { useIsClient } from "@/hooks/use-is-client";
 import { useNotificationPreferences } from "@/hooks/use-notification-preferences";
 import { useSession } from "@domainstack/auth/client";
 import {
@@ -19,6 +20,7 @@ import {
 
 export function NotificationsPanel() {
   const { data: session, isPending: isSessionPending } = useSession();
+  const mounted = useIsClient();
   const {
     domains,
     globalPrefs,
@@ -29,7 +31,7 @@ export function NotificationsPanel() {
     setDomainMuted,
   } = useNotificationPreferences();
 
-  if (isLoading || isSessionPending) {
+  if (!mounted || isLoading || isSessionPending) {
     return <NotificationsSkeleton />;
   }
 

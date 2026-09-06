@@ -84,7 +84,7 @@ export function CopyButton({
           <m.span
             key="check"
             initial={shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }}
-            animate={shouldReduceMotion ? { opacity: 1 } : { scale: 1, opacity: 1 }}
+            animate={{ scale: 1, opacity: 1 }}
             exit={shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }}
             transition={{ duration: shouldReduceMotion ? 0.1 : 0.15 }}
             className="flex items-center justify-center"
@@ -95,7 +95,7 @@ export function CopyButton({
           <m.span
             key="clipboard"
             initial={shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }}
-            animate={shouldReduceMotion ? { opacity: 1 } : { scale: 1, opacity: 1 }}
+            animate={{ scale: 1, opacity: 1 }}
             exit={shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }}
             transition={{ duration: shouldReduceMotion ? 0.1 : 0.15 }}
             className="flex items-center justify-center"

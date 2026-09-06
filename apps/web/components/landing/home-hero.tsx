@@ -86,7 +86,7 @@ export function HomeHero({ className }: { className?: string }) {
               <m.span
                 key={ROTATING_WORDS[index]}
                 initial={shouldReduceMotion ? { opacity: 0 } : { y: "100%", opacity: 0 }}
-                animate={shouldReduceMotion ? { opacity: 1 } : { y: 0, opacity: 1 }}
+                animate={{ y: 0, opacity: 1 }}
                 exit={shouldReduceMotion ? { opacity: 0 } : { y: "-100%", opacity: 0 }}
                 transition={{
                   type: "tween",
