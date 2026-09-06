@@ -128,6 +128,21 @@ export function selfSignedCertificate(): PeerCertificateFixture {
   return cert;
 }
 
+/** Leaf + intermediate whose issuer CN matches but other DN attributes do not. */
+export function incompleteChainWithSharedCn(): PeerCertificateFixture {
+  const intermediate: PeerCertificateFixture = {
+    issuer: { CN: "Shared", O: "Missing Root", C: "US" },
+    subject: { CN: "Shared", O: "Intermediate", C: "US" },
+    valid_from: VALID_FROM,
+    valid_to: VALID_TO,
+    fingerprint256: colonate(FINGERPRINTS.intermediate),
+    serialNumber: "02",
+    bits: 2048,
+    issuerCertificate: null,
+  };
+  return createLeafCertificate(intermediate);
+}
+
 /** Leaf + intermediate with no root (issuer is not self-signed). */
 export function incompleteChain(): PeerCertificateFixture {
   const intermediate: PeerCertificateFixture = {

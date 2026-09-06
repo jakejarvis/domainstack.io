@@ -18,11 +18,15 @@ export interface ResolvePublicHostOptions {
   logger?: SafeFetchLogger;
 }
 
+function normalizeHostname(hostname: string): string {
+  return hostname.trim().toLowerCase().replace(/\.+$/, "");
+}
+
 /**
  * True when the hostname is blocked from outbound connections.
  */
 export function isBlockedHostname(hostname: string): boolean {
-  const normalized = hostname.trim().toLowerCase();
+  const normalized = normalizeHostname(hostname);
   return BLOCKED_HOSTNAMES.has(normalized) || BLOCKED_SUFFIXES.some((s) => normalized.endsWith(s));
 }
 
@@ -76,7 +80,7 @@ export async function resolvePublicHost(
   options: ResolvePublicHostOptions = {},
 ): Promise<ResolvedIp[]> {
   const { timeoutMs = 8000, logger } = options;
-  const normalized = hostname.trim().toLowerCase();
+  const normalized = normalizeHostname(hostname);
 
   if (!normalized) {
     throw new SafeFetchError("invalid_url", "URL missing hostname");

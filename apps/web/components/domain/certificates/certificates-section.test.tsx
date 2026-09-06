@@ -129,20 +129,39 @@ describe("CertificatesSection", () => {
     expect(caProviderName).toBeDefined();
   });
 
-  it("does not show a valid-certificate banner when the chain is trusted", async () => {
+  it("does not show an invalid-certificate alert when the chain is trusted", async () => {
     await render(
       <CertificatesSection
         data={response([cert({ issuer: "Let's Encrypt", subject: "test.invalid" })])}
       />,
     );
     await expect
-      .element(page.getByText("Valid certificate", { exact: true }))
+      .element(page.getByText("Invalid certificate", { exact: true }))
       .not.toBeInTheDocument();
-    await expect.element(page.getByText("TLS connection", { exact: true })).not.toBeInTheDocument();
+    await expect
+      .element(page.getByText("Certificate expired", { exact: true }))
+      .not.toBeInTheDocument();
   });
 
   it("shows empty state when no certificates", async () => {
     await render(<CertificatesSection data={null} />);
+    await expect.element(page.getByText(/No certificates found/i)).toBeInTheDocument();
+  });
+
+  it("shows the invalid-certificate alert when an error is present without a chain", async () => {
+    await render(
+      <CertificatesSection
+        data={response([], {
+          valid: false,
+          error: "tls_error",
+        })}
+      />,
+    );
+
+    await expect
+      .element(page.getByText("Invalid certificate", { exact: true }))
+      .toBeInTheDocument();
+    await expect.element(page.getByText("tls_error", { exact: true })).toBeInTheDocument();
     await expect.element(page.getByText(/No certificates found/i)).toBeInTheDocument();
   });
 

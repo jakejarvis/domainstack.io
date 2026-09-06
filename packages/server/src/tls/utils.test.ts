@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   cyclicChain,
   incompleteChain,
+  incompleteChainWithSharedCn,
   noCertificate,
   selfSignedCertificate,
   validChain,
@@ -171,6 +172,11 @@ describe("walkCertificateChain", () => {
   it("marks a missing root as incomplete", () => {
     const { chain, chainComplete } = walkCertificateChain(incompleteChain() as never);
     expect(chain).toHaveLength(2);
+    expect(chainComplete).toBe(false);
+  });
+
+  it("does not treat a shared CN as a complete chain when other DN attributes differ", () => {
+    const { chainComplete } = walkCertificateChain(incompleteChainWithSharedCn() as never);
     expect(chainComplete).toBe(false);
   });
 

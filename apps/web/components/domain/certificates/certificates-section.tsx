@@ -123,14 +123,14 @@ export function CertificatesSection({
 
   return (
     <ReportSection {...sections.certificates}>
+      {isInvalid ? (
+        <div className="mb-4">
+          <CertificateAlert validationError={data?.validationError} error={error} />
+        </div>
+      ) : null}
+
       {firstCert ? (
         <>
-          {isInvalid ? (
-            <div className="mb-4">
-              <CertificateAlert validationError={data?.validationError} error={error} />
-            </div>
-          ) : null}
-
           <CertificateCard cert={firstCert} />
 
           {remainingCerts.length > 0 && !showAll && (

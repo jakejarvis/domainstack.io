@@ -131,10 +131,23 @@ function fingerprintOf(cert: DetailedPeerCertificate): string {
   return normalizeCertificateHex(cert.fingerprint256) ?? "";
 }
 
+function distinguishedNameEquals(
+  left: TlsCertificate | undefined,
+  right: TlsCertificate | undefined,
+): boolean {
+  if (!left || !right) return false;
+  const leftRecord = left as Record<string, unknown>;
+  const rightRecord = right as Record<string, unknown>;
+  const keys = new Set([...Object.keys(leftRecord), ...Object.keys(rightRecord)]);
+  if (keys.size === 0) return false;
+  for (const key of keys) {
+    if (leftRecord[key] !== rightRecord[key]) return false;
+  }
+  return true;
+}
+
 function isSelfIssued(cert: DetailedPeerCertificate): boolean {
-  const subject = toName(cert.subject);
-  const issuer = toName(cert.issuer);
-  return subject.length > 0 && subject === issuer;
+  return distinguishedNameEquals(cert.subject, cert.issuer);
 }
 
 /**

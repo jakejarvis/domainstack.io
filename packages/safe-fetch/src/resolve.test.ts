@@ -37,6 +37,16 @@ describe("resolvePublicHost", () => {
     expect(mockLookup).not.toHaveBeenCalled();
   });
 
+  it("rejects blocked hostnames that include a trailing FQDN dot", async () => {
+    await expect(resolvePublicHost("api.internal.")).rejects.toMatchObject({
+      code: "host_blocked",
+    } satisfies Partial<SafeFetchError>);
+    await expect(resolvePublicHost("localhost.")).rejects.toMatchObject({
+      code: "host_blocked",
+    } satisfies Partial<SafeFetchError>);
+    expect(mockLookup).not.toHaveBeenCalled();
+  });
+
   it("rejects loopback IPs", async () => {
     await expect(resolvePublicHost("127.0.0.1")).rejects.toMatchObject({ code: "private_ip" });
     expect(mockLookup).not.toHaveBeenCalled();
