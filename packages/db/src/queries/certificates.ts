@@ -33,7 +33,11 @@ export interface CertificateCheckValues {
 
 export interface UpsertCertificatesParams {
   domainId: string;
-  chain: Array<Omit<CertificateInsert, "id" | "domainId" | "fetchedAt" | "expiresAt">>;
+  chain: Array<
+    Omit<CertificateInsert, "id" | "domainId" | "fetchedAt" | "expiresAt" | "chainPosition"> & {
+      chainPosition: number;
+    }
+  >;
   check: CertificateCheckValues;
   fetchedAt: Date;
   expiresAt: Date; // policy window for revalidation (not cert validity)
@@ -95,7 +99,7 @@ export async function replaceCertificates(params: UpsertCertificatesParams) {
           fingerprint256: c.fingerprint256 ?? null,
           serialNumber: c.serialNumber ?? null,
           caProviderId: c.caProviderId ?? null,
-          chainPosition: c.chainPosition ?? null,
+          chainPosition: c.chainPosition,
           fetchedAt: params.fetchedAt,
           expiresAt: params.expiresAt,
         })),
@@ -108,8 +112,8 @@ export async function replaceCertificates(params: UpsertCertificatesParams) {
  * Get cached certificates for a domain with staleness metadata.
  * Returns data even if expired, with `stale: true` flag.
  *
- * Legacy certificate rows without a `certificate_checks` row are a cache miss
- * so they refresh normally rather than requiring a destructive backfill.
+ * Pre-migration rows (no `certificate_checks`, or unlabeled `chain_position`)
+ * are a cache miss so the next lookup persists a real chain and observation.
  *
  * Note: This queries the database cache. For fetching fresh data,
  * use `fetchCertificateChainStep` from workflows/shared/certificates.
@@ -148,16 +152,23 @@ export async function getCachedCertificates(
     .where(eq(domains.name, domain))
     .orderBy(asc(certificates.chainPosition));
 
-  if (existing.length === 0) {
+  const labeled = existing.filter(
+    (row): row is (typeof existing)[number] & { chainPosition: number } =>
+      row.chainPosition != null,
+  );
+  if (existing.length === 0 || labeled.length !== existing.length) {
     return { data: null, stale: false, fetchedAt: null, expiresAt: null };
   }
 
-  const check = existing[0];
+  const check = labeled[0];
+  if (!check) {
+    return { data: null, stale: false, fetchedAt: null, expiresAt: null };
+  }
   const fetchedAt = check.fetchedAt;
   const expiresAt = check.expiresAt;
   const stale = (expiresAt?.getTime?.() ?? 0) <= nowMs;
 
-  const chained: Certificate[] = existing.map((c) => ({
+  const chained: Certificate[] = labeled.map((c) => ({
     issuer: c.issuer,
     subject: c.subject,
     altNames: safeAltNamesArray(c.altNames),
@@ -165,7 +176,7 @@ export async function getCachedCertificates(
     validTo: new Date(c.validTo).toISOString(),
     fingerprint256: c.fingerprint256 ?? null,
     serialNumber: c.serialNumber ?? null,
-    chainPosition: c.chainPosition ?? 0,
+    chainPosition: c.chainPosition,
     caProvider: {
       id: c.caProviderId ?? null,
       domain: c.caProviderDomain ?? null,

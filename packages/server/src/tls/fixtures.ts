@@ -128,6 +128,25 @@ export function selfSignedCertificate(): PeerCertificateFixture {
   return cert;
 }
 
+/**
+ * Self-signed leaf whose DN repeats OU. Node stores each occurrence as its own
+ * array on subject vs issuer, so identity comparison would miss a complete root.
+ */
+export function selfSignedCertificateWithRepeatedOu(): PeerCertificateFixture {
+  const cert: PeerCertificateFixture = {
+    issuer: { CN: "Self Signed", OU: ["Engineering", "DevTeam"] },
+    subject: { CN: "Self Signed", OU: ["Engineering", "DevTeam"] },
+    subjectaltname: "DNS:example.com",
+    valid_from: VALID_FROM,
+    valid_to: VALID_TO,
+    fingerprint256: colonate(FINGERPRINTS.selfSigned),
+    serialNumber: "04",
+    bits: 2048,
+  };
+  cert.issuerCertificate = cert;
+  return cert;
+}
+
 /** Leaf + intermediate whose issuer CN matches but other DN attributes do not. */
 export function incompleteChainWithSharedCn(): PeerCertificateFixture {
   const intermediate: PeerCertificateFixture = {

@@ -707,5 +707,23 @@ describe("domain router", () => {
       });
       expect(fetchCertificates).toHaveBeenCalledWith(TEST_DOMAIN);
     });
+
+    it("treats unlabeled chain positions as a cache miss", async () => {
+      const caller = createTestCaller();
+      await insertCachedObservation();
+      await db
+        .update(certificates)
+        .set({ chainPosition: null })
+        .where(eq(certificates.domainId, TEST_DOMAIN_ID));
+
+      const result = await caller.domain.getCertificates({ domain: TEST_DOMAIN });
+
+      expect(result).toMatchObject({
+        success: true,
+        cached: false,
+        data: freshData,
+      });
+      expect(fetchCertificates).toHaveBeenCalledWith(TEST_DOMAIN);
+    });
   });
 });

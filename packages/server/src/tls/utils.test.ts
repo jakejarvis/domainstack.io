@@ -9,6 +9,7 @@ import {
   incompleteChainWithSharedCn,
   noCertificate,
   selfSignedCertificate,
+  selfSignedCertificateWithRepeatedOu,
   validChain,
 } from "./fixtures";
 import {
@@ -165,6 +166,14 @@ describe("walkCertificateChain", () => {
 
   it("marks a self-signed leaf as a complete chain", () => {
     const { chain, chainComplete } = walkCertificateChain(selfSignedCertificate() as never);
+    expect(chain).toHaveLength(1);
+    expect(chainComplete).toBe(true);
+  });
+
+  it("marks a self-signed leaf with repeated DN attributes as a complete chain", () => {
+    const { chain, chainComplete } = walkCertificateChain(
+      selfSignedCertificateWithRepeatedOu() as never,
+    );
     expect(chain).toHaveLength(1);
     expect(chainComplete).toBe(true);
   });

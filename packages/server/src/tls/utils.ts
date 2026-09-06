@@ -131,6 +131,14 @@ function fingerprintOf(cert: DetailedPeerCertificate): string {
   return normalizeCertificateHex(cert.fingerprint256) ?? "";
 }
 
+function dnAttributeEquals(left: unknown, right: unknown): boolean {
+  if (left === right) return true;
+  if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) {
+    return false;
+  }
+  return left.every((value, index) => value === right[index]);
+}
+
 function distinguishedNameEquals(
   left: TlsCertificate | undefined,
   right: TlsCertificate | undefined,
@@ -141,7 +149,7 @@ function distinguishedNameEquals(
   const keys = new Set([...Object.keys(leftRecord), ...Object.keys(rightRecord)]);
   if (keys.size === 0) return false;
   for (const key of keys) {
-    if (leftRecord[key] !== rightRecord[key]) return false;
+    if (!dnAttributeEquals(leftRecord[key], rightRecord[key])) return false;
   }
   return true;
 }
