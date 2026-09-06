@@ -161,9 +161,6 @@ export async function getCachedCertificates(
   }
 
   const check = labeled[0];
-  if (!check) {
-    return { data: null, stale: false, fetchedAt: null, expiresAt: null };
-  }
   const fetchedAt = check.fetchedAt;
   const expiresAt = check.expiresAt;
   const stale = (expiresAt?.getTime?.() ?? 0) <= nowMs;
