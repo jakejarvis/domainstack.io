@@ -118,7 +118,8 @@ interface UserSubscriptionData {
 async function fetchUserSubscription(userId: string): Promise<UserSubscriptionData | null> {
   "use step";
 
-  const { getUserWithEndingSubscription } = await import("@domainstack/db/queries");
+  const { getUserWithEndingSubscription } =
+    await import("@domainstack/db/queries/user-subscription");
 
   return await getUserWithEndingSubscription(userId);
 }
@@ -136,7 +137,7 @@ async function calculateDaysRemaining(endsAt: Date): Promise<number> {
 async function updateExpiryTracking(userId: string, threshold: number): Promise<void> {
   "use step";
 
-  const { setLastExpiryNotification } = await import("@domainstack/db/queries");
+  const { setLastExpiryNotification } = await import("@domainstack/db/queries/user-subscription");
 
   await setLastExpiryNotification(userId, threshold);
 }

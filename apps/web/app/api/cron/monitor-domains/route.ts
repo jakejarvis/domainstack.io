@@ -7,7 +7,7 @@ import { initializeSnapshotWorkflow } from "@/workflows/initialize-snapshot";
 import {
   getMonitoredSnapshotIds,
   getVerifiedDomainsWithoutSnapshots,
-} from "@domainstack/db/queries";
+} from "@domainstack/db/queries/snapshots";
 import { createLogger } from "@domainstack/logger";
 
 const logger = createLogger({ source: "cron/monitor-domains" });

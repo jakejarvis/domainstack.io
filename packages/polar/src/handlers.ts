@@ -5,7 +5,7 @@ import {
   getUserSubscription,
   setSubscriptionEndsAt,
   updateUserTier,
-} from "@domainstack/db/queries";
+} from "@domainstack/db/queries/user-subscription";
 import { createLogger } from "@domainstack/logger";
 
 import { analytics } from "./analytics";

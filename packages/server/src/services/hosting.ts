@@ -7,12 +7,12 @@
  * headers failures are handled gracefully.
  */
 
+import { ensureDomainRecord } from "@domainstack/db/queries/domains";
+import { upsertHosting } from "@domainstack/db/queries/hosting";
 import {
-  ensureDomainRecord,
   resolveOrCreateProviderId,
   upsertCatalogProvider,
-  upsertHosting,
-} from "@domainstack/db/queries";
+} from "@domainstack/db/queries/providers";
 import { getProviderCatalog } from "@domainstack/edge-config";
 import { createLogger } from "@domainstack/logger";
 import { getRedis } from "@domainstack/redis";

@@ -7,7 +7,8 @@ const { db } = await makePGliteDb();
 
 // Now import modules that depend on the db (they'll use the test db via lazy init)
 const { handleDowngrade } = await import("./downgrade");
-const { getUserIdsPastDue, getUserSubscription } = await import("@domainstack/db/queries");
+const { getUserIdsPastDue, getUserSubscription } =
+  await import("@domainstack/db/queries/user-subscription");
 const { domains, userSubscriptions, users, userTrackedDomains } =
   await import("@domainstack/db/schema");
 const { asc, eq } = await import("@domainstack/db/drizzle");

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 
 import { certificateExpiryWorkflow } from "@/workflows/certificate-expiry";
-import { getVerifiedTrackedDomainIdsWithCertificates } from "@domainstack/db/queries";
+import { getVerifiedTrackedDomainIdsWithCertificates } from "@domainstack/db/queries/certificates";
 import { createLogger } from "@domainstack/logger";
 
 const logger = createLogger({ source: "cron/check-certificate-expiry" });

@@ -1,5 +1,5 @@
 import type { SQL } from "drizzle-orm";
-import { and, asc, count, eq, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
+import { and, asc, count, eq, inArray, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import type {
@@ -357,8 +357,13 @@ async function fetchEarliestCertificatesForDomains(domainIds: string[]): Promise
     })
     .from(certificates)
     .leftJoin(providers, eq(certificates.caProviderId, providers.id))
-    .where(inArray(certificates.domainId, domainIds))
-    .orderBy(certificates.domainId, asc(certificates.validTo));
+    .where(
+      and(
+        inArray(certificates.domainId, domainIds),
+        or(eq(certificates.chainPosition, 0), isNull(certificates.chainPosition)),
+      ),
+    )
+    .orderBy(certificates.domainId, asc(certificates.chainPosition), asc(certificates.validTo));
 
   const result = new Map<
     string,

@@ -5,7 +5,11 @@
  * imported without side effects.
  */
 
-import type { Certificate as TlsCertificate } from "node:tls";
+import type { Certificate as TlsCertificate, DetailedPeerCertificate, TLSSocket } from "node:tls";
+
+import { normalizeCertificateHex } from "@domainstack/utils/certificate-hex";
+
+import type { RawCertificate } from "./types";
 
 /**
  * Convert a TLS certificate name field to a string.
@@ -91,4 +95,154 @@ export function isExpectedDnsError(err: unknown): boolean {
     message.includes("getaddrinfo") ||
     message.includes("dns")
   );
+}
+
+/**
+ * Thrown when a peer certificate contains a date that cannot be parsed.
+ */
+export class InvalidCertificateDateError extends Error {
+  readonly name = "InvalidCertificateDateError";
+
+  constructor() {
+    super("Certificate contains an invalid date");
+  }
+}
+
+/**
+ * Parse a certificate date before calling `toISOString()`.
+ */
+export function parseCertificateDate(value: unknown): Date | null {
+  if (typeof value !== "string" || value.length === 0) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
+}
+
+/**
+ * Node returns `{}` when the peer presented no certificate.
+ */
+export function isEmptyPeerCertificate(peer: object | null | undefined): boolean {
+  if (!peer || typeof peer !== "object") return true;
+  const cert = peer as Partial<DetailedPeerCertificate>;
+  return !cert.raw && !cert.valid_from && !cert.subject && !cert.issuer;
+}
+
+function fingerprintOf(cert: DetailedPeerCertificate): string {
+  return normalizeCertificateHex(cert.fingerprint256) ?? "";
+}
+
+function dnAttributeEquals(left: unknown, right: unknown): boolean {
+  if (left === right) return true;
+  if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) {
+    return false;
+  }
+  return left.every((value, index) => value === right[index]);
+}
+
+function distinguishedNameEquals(
+  left: TlsCertificate | undefined,
+  right: TlsCertificate | undefined,
+): boolean {
+  if (!left || !right) return false;
+  const leftRecord = left as Record<string, unknown>;
+  const rightRecord = right as Record<string, unknown>;
+  const keys = new Set([...Object.keys(leftRecord), ...Object.keys(rightRecord)]);
+  if (keys.size === 0) return false;
+  for (const key of keys) {
+    if (!dnAttributeEquals(leftRecord[key], rightRecord[key])) return false;
+  }
+  return true;
+}
+
+function isSelfIssued(cert: DetailedPeerCertificate): boolean {
+  return distinguishedNameEquals(cert.subject, cert.issuer);
+}
+
+/**
+ * Walk the issuer chain from the leaf, assigning `chainPosition` and
+ * stopping on self-signed roots or fingerprint cycles.
+ */
+export function walkCertificateChain(peer: DetailedPeerCertificate): {
+  chain: RawCertificate[];
+  chainComplete: boolean;
+} {
+  const chain: RawCertificate[] = [];
+  const seenFingerprints = new Set<string>();
+  const seenObjects = new WeakSet<object>();
+  let current: DetailedPeerCertificate | null = peer;
+  let chainComplete = false;
+  let position = 0;
+
+  while (current) {
+    if (seenObjects.has(current)) break;
+    seenObjects.add(current);
+
+    const fingerprint256 = fingerprintOf(current);
+    if (fingerprint256 && seenFingerprints.has(fingerprint256)) break;
+    if (fingerprint256) seenFingerprints.add(fingerprint256);
+
+    const validFrom = parseCertificateDate(current.valid_from);
+    const validTo = parseCertificateDate(current.valid_to);
+    if (!validFrom || !validTo) {
+      throw new InvalidCertificateDateError();
+    }
+
+    chain.push({
+      issuer: toName(current.issuer),
+      subject: toName(current.subject),
+      altNames: parseAltNames((current as Partial<{ subjectaltname: string }>).subjectaltname),
+      validFrom: validFrom.toISOString(),
+      validTo: validTo.toISOString(),
+      fingerprint256,
+      serialNumber:
+        normalizeCertificateHex(
+          typeof current.serialNumber === "string" ? current.serialNumber : null,
+        ) ?? "",
+      chainPosition: position,
+    });
+
+    const next: DetailedPeerCertificate | undefined = (
+      current as { issuerCertificate?: DetailedPeerCertificate }
+    ).issuerCertificate;
+    if (!next || next === current) {
+      chainComplete = isSelfIssued(current);
+      break;
+    }
+
+    const nextFingerprint = fingerprintOf(next);
+    if (nextFingerprint && nextFingerprint === fingerprint256) {
+      chainComplete = isSelfIssued(current);
+      break;
+    }
+
+    current = next;
+    position += 1;
+  }
+
+  return { chain, chainComplete };
+}
+
+/**
+ * Read Node's authorization result without treating it as a fetch failure.
+ */
+export function readTlsAuthorization(socket: TLSSocket): {
+  valid: boolean;
+  validationError: string | null;
+} {
+  if (socket.authorized) {
+    return { valid: true, validationError: null };
+  }
+
+  const err = socket.authorizationError;
+  if (!err) {
+    return { valid: false, validationError: "UNABLE_TO_VERIFY_LEAF_SIGNATURE" };
+  }
+  if (typeof err === "string") {
+    return { valid: false, validationError: err };
+  }
+  if (err instanceof Error) {
+    const code = (err as NodeJS.ErrnoException).code;
+    return { valid: false, validationError: code || err.message };
+  }
+  return { valid: false, validationError: String(err) };
 }

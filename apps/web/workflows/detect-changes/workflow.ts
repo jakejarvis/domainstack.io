@@ -37,6 +37,7 @@ import {
   detectRegistrationChange,
   evaluateCertificateChange,
 } from "@domainstack/utils/change-detection";
+import { findLeafCertificate } from "@domainstack/utils/tls";
 
 // =============================================================================
 // Workflow Types
@@ -121,10 +122,18 @@ export async function detectChangesWorkflow(
   // Process and persist certificates
   let certificatesData: CertificatesResponse | null = null;
   if (certificatesResult?.success) {
-    const processed = await optionalCall(processChainStep(certificatesResult.data.chainJson));
+    const processed = await optionalCall(processChainStep(certificatesResult.data));
     if (processed) {
       await optionalCall(persistCertificatesStep(domainName, processed));
-      certificatesData = { certificates: processed.certificates };
+      certificatesData = {
+        certificates: processed.certificates,
+        valid: processed.valid,
+        validationError: processed.validationError,
+        protocol: processed.protocol,
+        cipher: processed.cipher,
+        publicKeyBits: processed.publicKeyBits,
+        chainComplete: processed.chainComplete,
+      };
     }
   }
 
@@ -446,119 +455,121 @@ export async function detectChangesWorkflow(
 
   // Step 5: Check certificate changes
   if (certificatesData && certificatesData.certificates.length > 0) {
-    const [leafCert] = certificatesData.certificates;
+    const leafCert = findLeafCertificate(certificatesData.certificates);
 
-    const currentCertificate: CertificateSnapshotData = {
-      caProviderId: leafCert.caProvider?.id ?? null,
-      issuer: leafCert.issuer,
-      validTo: new Date(leafCert.validTo).toISOString(),
-      fingerprint: leafCert.fingerprint256,
-      serialNumber: leafCert.serialNumber,
-    };
+    if (leafCert) {
+      const currentCertificate: CertificateSnapshotData = {
+        caProviderId: leafCert.caProvider?.id ?? null,
+        issuer: leafCert.issuer,
+        validTo: new Date(leafCert.validTo).toISOString(),
+        fingerprint: leafCert.fingerprint256,
+        serialNumber: leafCert.serialNumber,
+      };
 
-    const evaluation = evaluateCertificateChange(snapshot.certificate, currentCertificate);
+      const evaluation = evaluateCertificateChange(snapshot.certificate, currentCertificate);
 
-    const persistCertificateSnapshot = async () => {
-      if (evaluation.snapshotToWrite) {
-        await updateCertificateSnapshot(trackedDomainId, evaluation.snapshotToWrite);
-      }
-    };
-
-    if (evaluation.shouldNotify) {
-      const channels = await determineNotificationChannelsStep(
-        userId,
-        trackedDomainId,
-        "certificateChanges",
-      );
-
-      if (channels.shouldSendEmail || channels.shouldSendInApp) {
-        const certificateChange = evaluation.change;
-        const caIds = [
-          certificateChange.previousCaProviderId,
-          certificateChange.newCaProviderId,
-        ].filter((id): id is string => id !== null);
-
-        const caProviderNames = await resolveProviderNamesStep(caIds);
-
-        const enrichedChange: CertificateChangeWithNames = {
-          ...certificateChange,
-          previousCaProvider: certificateChange.previousCaProviderId
-            ? caProviderNames.get(certificateChange.previousCaProviderId) || null
-            : null,
-          newCaProvider: certificateChange.newCaProviderId
-            ? caProviderNames.get(certificateChange.newCaProviderId) || null
-            : null,
-        };
-
-        const validUntil = formatCertificateValidUntil(currentCertificate.validTo);
-        const certChangeDetails: string[] = [];
-
-        if (evaluation.kind === "renewal") {
-          certChangeDetails.push(`Valid until ${validUntil}`);
-        } else {
-          if (enrichedChange.caProviderChanged) {
-            const prev = enrichedChange.previousCaProvider;
-            const next = enrichedChange.newCaProvider;
-            if (prev && next) {
-              certChangeDetails.push(`Certificate authority changed from ${prev} to ${next}`);
-            } else if (next) {
-              certChangeDetails.push(`Certificate authority set to ${next}`);
-            }
-          }
-
-          if (enrichedChange.issuerChanged) {
-            const prev = enrichedChange.previousIssuer;
-            const next = enrichedChange.newIssuer;
-            if (prev && next) {
-              certChangeDetails.push(`Issuer changed from ${prev} to ${next}`);
-            } else if (next) {
-              certChangeDetails.push(`Issuer set to ${next}`);
-            }
-          }
-
-          certChangeDetails.push(`Valid until ${validUntil}`);
+      const persistCertificateSnapshot = async () => {
+        if (evaluation.snapshotToWrite) {
+          await updateCertificateSnapshot(trackedDomainId, evaluation.snapshotToWrite);
         }
+      };
 
-        const title =
-          evaluation.kind === "renewal"
-            ? `Certificate renewed for ${domainName}`
-            : evaluation.kind === "authority"
-              ? `Certificate authority changed for ${domainName}`
-              : `Certificate changed for ${domainName}`;
-        const emailSubject = `🔒 ${title}`;
-        const message = `${certChangeDetails.join(". ")}.`;
-
-        const sent = await sendCertificateChangeNotificationStep(
-          {
-            userId,
-            userEmail,
-            trackedDomainId,
-            domainName,
-            userName,
-            title,
-            message,
-            emailSubject,
-            newValidTo: currentCertificate.validTo,
-            kind: evaluation.kind,
-            changes: enrichedChange,
-          },
-          channels.shouldSendEmail,
-          channels.shouldSendInApp,
+      if (evaluation.shouldNotify) {
+        const channels = await determineNotificationChannelsStep(
+          userId,
+          trackedDomainId,
+          "certificateChanges",
         );
 
-        if (sent) {
-          results.certificateChanges = true;
-        }
+        if (channels.shouldSendEmail || channels.shouldSendInApp) {
+          const certificateChange = evaluation.change;
+          const caIds = [
+            certificateChange.previousCaProviderId,
+            certificateChange.newCaProviderId,
+          ].filter((id): id is string => id !== null);
 
-        // Advance only after delivery (see registration branch rationale).
-        await persistCertificateSnapshot();
+          const caProviderNames = await resolveProviderNamesStep(caIds);
+
+          const enrichedChange: CertificateChangeWithNames = {
+            ...certificateChange,
+            previousCaProvider: certificateChange.previousCaProviderId
+              ? caProviderNames.get(certificateChange.previousCaProviderId) || null
+              : null,
+            newCaProvider: certificateChange.newCaProviderId
+              ? caProviderNames.get(certificateChange.newCaProviderId) || null
+              : null,
+          };
+
+          const validUntil = formatCertificateValidUntil(currentCertificate.validTo);
+          const certChangeDetails: string[] = [];
+
+          if (evaluation.kind === "renewal") {
+            certChangeDetails.push(`Valid until ${validUntil}`);
+          } else {
+            if (enrichedChange.caProviderChanged) {
+              const prev = enrichedChange.previousCaProvider;
+              const next = enrichedChange.newCaProvider;
+              if (prev && next) {
+                certChangeDetails.push(`Certificate authority changed from ${prev} to ${next}`);
+              } else if (next) {
+                certChangeDetails.push(`Certificate authority set to ${next}`);
+              }
+            }
+
+            if (enrichedChange.issuerChanged) {
+              const prev = enrichedChange.previousIssuer;
+              const next = enrichedChange.newIssuer;
+              if (prev && next) {
+                certChangeDetails.push(`Issuer changed from ${prev} to ${next}`);
+              } else if (next) {
+                certChangeDetails.push(`Issuer set to ${next}`);
+              }
+            }
+
+            certChangeDetails.push(`Valid until ${validUntil}`);
+          }
+
+          const title =
+            evaluation.kind === "renewal"
+              ? `Certificate renewed for ${domainName}`
+              : evaluation.kind === "authority"
+                ? `Certificate authority changed for ${domainName}`
+                : `Certificate changed for ${domainName}`;
+          const emailSubject = `🔒 ${title}`;
+          const message = `${certChangeDetails.join(". ")}.`;
+
+          const sent = await sendCertificateChangeNotificationStep(
+            {
+              userId,
+              userEmail,
+              trackedDomainId,
+              domainName,
+              userName,
+              title,
+              message,
+              emailSubject,
+              newValidTo: currentCertificate.validTo,
+              kind: evaluation.kind,
+              changes: enrichedChange,
+            },
+            channels.shouldSendEmail,
+            channels.shouldSendInApp,
+          );
+
+          if (sent) {
+            results.certificateChanges = true;
+          }
+
+          // Advance only after delivery (see registration branch rationale).
+          await persistCertificateSnapshot();
+        } else {
+          // Muted / disabled: advance on detection so we don't infinitely
+          // re-detect (see registration branch rationale).
+          await persistCertificateSnapshot();
+        }
       } else {
-        // Muted / disabled: advance on detection so we don't infinitely
-        // re-detect (see registration branch rationale).
         await persistCertificateSnapshot();
       }
-    } else {
-      await persistCertificateSnapshot();
     }
   }
 
@@ -597,12 +608,14 @@ async function releaseMonitorLockStep(
 }
 
 // Import SnapshotForMonitoring type for proper typing
-type SnapshotData = Awaited<ReturnType<typeof import("@domainstack/db/queries").getSnapshot>>;
+type SnapshotData = Awaited<
+  ReturnType<typeof import("@domainstack/db/queries/snapshots").getSnapshot>
+>;
 
 async function fetchSnapshot(trackedDomainId: string): Promise<SnapshotData> {
   "use step";
 
-  const { getSnapshot } = await import("@domainstack/db/queries");
+  const { getSnapshot } = await import("@domainstack/db/queries/snapshots");
   return await getSnapshot(trackedDomainId);
 }
 
@@ -612,7 +625,7 @@ async function updateRegistrationSnapshot(
 ): Promise<void> {
   "use step";
 
-  const { updateSnapshot } = await import("@domainstack/db/queries");
+  const { updateSnapshot } = await import("@domainstack/db/queries/snapshots");
   await updateSnapshot(trackedDomainId, { registration });
 }
 
@@ -626,7 +639,7 @@ async function updateProviderSnapshot(
 ): Promise<void> {
   "use step";
 
-  const { updateSnapshot } = await import("@domainstack/db/queries");
+  const { updateSnapshot } = await import("@domainstack/db/queries/snapshots");
   await updateSnapshot(trackedDomainId, {
     dnsProviderId: providers.dns,
     hostingProviderId: providers.hosting,
@@ -640,6 +653,6 @@ async function updateCertificateSnapshot(
 ): Promise<void> {
   "use step";
 
-  const { updateSnapshot } = await import("@domainstack/db/queries");
+  const { updateSnapshot } = await import("@domainstack/db/queries/snapshots");
   await updateSnapshot(trackedDomainId, { certificate });
 }

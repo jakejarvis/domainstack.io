@@ -4,7 +4,9 @@ import { getRun, start } from "workflow/api";
 
 import { checkRateLimit } from "@/lib/ratelimit/api";
 import { type ScreenshotWorkflowResult, screenshotWorkflow } from "@/workflows/screenshot";
-import { getDomainById, getScreenshotByDomainId, isDomainBlocked } from "@domainstack/db/queries";
+import { isDomainBlocked } from "@domainstack/db/queries/blocked-domains";
+import { getDomainById } from "@domainstack/db/queries/domains";
+import { getScreenshotByDomainId } from "@domainstack/db/queries/screenshots";
 import { createLogger } from "@domainstack/logger";
 import type { ScreenshotData } from "@domainstack/types";
 

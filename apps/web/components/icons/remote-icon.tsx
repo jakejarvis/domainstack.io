@@ -6,7 +6,7 @@ import { useState } from "react";
 
 import { Skeleton } from "@domainstack/ui/skeleton";
 import { cn } from "@domainstack/ui/utils";
-import { simpleHash } from "@domainstack/utils";
+import { simpleHash } from "@domainstack/utils/simple-hash";
 
 type IconQueryOptions = {
   queryKey: QueryKey;

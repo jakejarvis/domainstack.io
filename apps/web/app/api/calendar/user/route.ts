@@ -3,10 +3,10 @@ import { after, NextResponse } from "next/server";
 
 import { generateCalendarFeed } from "@/lib/calendar";
 import {
-  getTrackedDomainsForUser,
   recordCalendarFeedAccess,
   validateCalendarFeedToken,
-} from "@domainstack/db/queries";
+} from "@domainstack/db/queries/calendar-feeds";
+import { getTrackedDomainsForUser } from "@domainstack/db/queries/tracked-domains";
 import { createLogger } from "@domainstack/logger";
 
 const logger = createLogger({ source: "api/calendar/user" });

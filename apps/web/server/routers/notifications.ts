@@ -7,7 +7,7 @@ import {
   getUserNotifications,
   markAllAsRead,
   markAsRead,
-} from "@domainstack/db/queries";
+} from "@domainstack/db/queries/notifications";
 
 /** Schema for notification filter parameter */
 const notificationFilterSchema = z.enum(["unread", "read", "all"]).default("all");

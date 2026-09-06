@@ -13,14 +13,25 @@ export interface RawCertificate {
   validTo: string;
   fingerprint256: string;
   serialNumber: string;
+  /** Zero-based position in the presented chain. The leaf is always `0`. */
+  chainPosition: number;
 }
 
 /**
  * TLS fetch success result.
+ *
+ * Retrieval and validation are separate: an expired or otherwise untrusted
+ * certificate still returns its chain with `valid: false`.
  */
 export interface TlsFetchSuccess {
   success: true;
   chain: RawCertificate[];
+  valid: boolean;
+  validationError: string | null;
+  protocol: string | null;
+  cipher: string | null;
+  publicKeyBits: number | null;
+  chainComplete: boolean;
 }
 
 /**

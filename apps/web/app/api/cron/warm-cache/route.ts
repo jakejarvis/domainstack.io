@@ -2,24 +2,20 @@ import { NextResponse } from "next/server";
 
 import type { Section } from "@/lib/constants/sections";
 import { sections } from "@/lib/constants/sections";
-import {
-  getCachedCertificates,
-  getCachedDns,
-  getCachedHeaders,
-  getCachedHosting,
-  getCachedRegistration,
-  getCachedSeo,
-  getRecentlyAccessedDomains,
-} from "@domainstack/db/queries";
+import { getCachedCertificates } from "@domainstack/db/queries/certificates";
+import { getCachedDns } from "@domainstack/db/queries/dns";
+import { getRecentlyAccessedDomains } from "@domainstack/db/queries/domains";
+import { getCachedHeaders } from "@domainstack/db/queries/headers";
+import { getCachedHosting } from "@domainstack/db/queries/hosting";
+import { getCachedRegistration } from "@domainstack/db/queries/registrations";
+import { getCachedSeo } from "@domainstack/db/queries/seo";
 import { createLogger } from "@domainstack/logger";
-import {
-  fetchCertificates,
-  fetchDns,
-  fetchHeaders,
-  fetchHosting,
-  fetchRegistration,
-  fetchSeo,
-} from "@domainstack/server";
+import { fetchCertificates } from "@domainstack/server/services/certificates";
+import { fetchDns } from "@domainstack/server/services/dns";
+import { fetchHeaders } from "@domainstack/server/services/headers";
+import { fetchHosting } from "@domainstack/server/services/hosting";
+import { fetchRegistration } from "@domainstack/server/services/registration";
+import { fetchSeo } from "@domainstack/server/services/seo";
 
 /** All section types */
 const ALL_SECTIONS = Object.keys(sections) as Section[];

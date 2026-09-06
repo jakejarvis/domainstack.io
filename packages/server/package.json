@@ -5,15 +5,15 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": "./src/index.ts",
+    "./cloudflare": "./src/cloudflare.ts",
     "./dns": "./src/dns/index.ts",
     "./headers": "./src/headers/index.ts",
     "./seo": "./src/seo/index.ts",
+    "./services/*": "./src/services/*.ts",
     "./tls": "./src/tls/index.ts",
-    "./verification": "./src/verification/index.ts",
-    "./whois": "./src/whois/index.ts",
     "./ttl": "./src/ttl.ts",
-    "./cloudflare": "./src/cloudflare.ts"
+    "./verification": "./src/verification/index.ts",
+    "./whois": "./src/whois/index.ts"
   },
   "scripts": {
     "lint": "oxlint",

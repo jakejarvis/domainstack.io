@@ -63,7 +63,7 @@ interface LocalSubscription {
 async function fetchLocalSubscription(userId: string): Promise<LocalSubscription> {
   "use step";
 
-  const { getUserSubscription } = await import("@domainstack/db/queries");
+  const { getUserSubscription } = await import("@domainstack/db/queries/user-subscription");
   const sub = await getUserSubscription(userId);
   return { plan: sub.plan, endsAt: sub.endsAt };
 }
@@ -71,22 +71,26 @@ async function fetchLocalSubscription(userId: string): Promise<LocalSubscription
 async function fetchPolarState(userId: string) {
   "use step";
 
-  const { getCustomerSubscriptionState } = await import("@domainstack/polar");
+  const { getCustomerSubscriptionState } = await import("@domainstack/polar/reconcile");
   return await getCustomerSubscriptionState(userId);
 }
 
 async function clearEndsAt(userId: string): Promise<void> {
   "use step";
 
-  const { clearSubscriptionEndsAt } = await import("@domainstack/db/queries");
+  const { clearSubscriptionEndsAt } = await import("@domainstack/db/queries/user-subscription");
   await clearSubscriptionEndsAt(userId);
 }
 
 async function downgrade(userId: string): Promise<number> {
   "use step";
 
-  const [{ clearSubscriptionEndsAt }, { handleDowngrade, sendSubscriptionExpiredEmail }] =
-    await Promise.all([import("@domainstack/db/queries"), import("@domainstack/polar")]);
+  const [{ clearSubscriptionEndsAt }, { handleDowngrade }, { sendSubscriptionExpiredEmail }] =
+    await Promise.all([
+      import("@domainstack/db/queries/user-subscription"),
+      import("@domainstack/polar/downgrade"),
+      import("@domainstack/polar/emails"),
+    ]);
 
   const archivedCount = await handleDowngrade(userId);
   await clearSubscriptionEndsAt(userId);

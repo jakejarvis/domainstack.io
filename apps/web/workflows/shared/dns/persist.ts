@@ -30,7 +30,8 @@ export async function persistDnsRecordsStep(
 
   // Dynamic imports for Node.js modules and database operations
   const { DNS_RECORD_TYPES } = await import("@domainstack/constants");
-  const { ensureDomainRecord, replaceDns } = await import("@domainstack/db/queries");
+  const { replaceDns } = await import("@domainstack/db/queries/dns");
+  const { ensureDomainRecord } = await import("@domainstack/db/queries/domains");
 
   const types = DNS_RECORD_TYPES;
   const now = new Date();

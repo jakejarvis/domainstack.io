@@ -5,11 +5,10 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": "./src/index.ts",
     "./client": "./src/client.ts",
     "./drizzle": "./src/drizzle.ts",
     "./schema": "./src/schema.ts",
-    "./queries": "./src/queries/index.ts",
+    "./queries/*": "./src/queries/*.ts",
     "./testing": "./src/testing.ts"
   },
   "scripts": {

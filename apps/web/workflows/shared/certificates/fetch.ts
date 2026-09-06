@@ -9,7 +9,11 @@
 import type { RawCertificate } from "@domainstack/server/tls";
 import type { Certificate } from "@domainstack/types";
 
-import type { CertificatesProcessedData, FetchCertificatesResult } from "./types";
+import type {
+  CertificatesFetchData,
+  CertificatesProcessedData,
+  FetchCertificatesResult,
+} from "./types";
 
 /**
  * Step: Fetch certificate chain via TLS handshake.
@@ -34,30 +38,39 @@ export async function fetchCertificateChainStep(domain: string): Promise<FetchCe
 
   return {
     success: true,
-    data: { chainJson: JSON.stringify(result.chain) },
+    data: {
+      chainJson: JSON.stringify(result.chain),
+      valid: result.valid,
+      validationError: result.validationError,
+      protocol: result.protocol,
+      cipher: result.cipher,
+      publicKeyBits: result.publicKeyBits,
+      chainComplete: result.chainComplete,
+    },
   };
 }
 
 /**
  * Step: Detect CA providers from issuer names and build response.
  *
- * @param chainJson - JSON-serialized certificate chain
+ * @param fetchData - Serialized chain plus TLS observation
  * @returns Processed certificates with provider IDs and expiry metadata
  */
-export async function processChainStep(chainJson: string): Promise<CertificatesProcessedData> {
+export async function processChainStep(
+  fetchData: CertificatesFetchData,
+): Promise<CertificatesProcessedData> {
   "use step";
 
   // Dynamic imports to avoid top-level db/network dependencies
   const { getProviderCatalog } = await import("@domainstack/edge-config");
   const { detectCertificateAuthority, getProvidersFromCatalog } =
     await import("@domainstack/utils/providers");
-  const { upsertCatalogProvider } = await import("@domainstack/db/queries");
+  const { upsertCatalogProvider } = await import("@domainstack/db/queries/providers");
 
-  const chain = JSON.parse(chainJson) as RawCertificate[];
+  const chain = JSON.parse(fetchData.chainJson) as RawCertificate[];
   const catalog = await getProviderCatalog();
   const caProviders = catalog ? getProvidersFromCatalog(catalog, "ca") : [];
 
-  // Detect providers and upsert to get IDs
   const certificatesWithMatches = chain.map((c) => {
     const matched = detectCertificateAuthority(c.issuer, caProviders);
     return {
@@ -69,6 +82,7 @@ export async function processChainStep(chainJson: string): Promise<CertificatesP
         validTo: c.validTo,
         fingerprint256: c.fingerprint256 || null,
         serialNumber: c.serialNumber || null,
+        chainPosition: c.chainPosition,
         caProvider: {
           id: null,
           name: matched?.name ?? null,
@@ -79,7 +93,6 @@ export async function processChainStep(chainJson: string): Promise<CertificatesP
     };
   });
 
-  // Upsert catalog providers and get IDs
   const providerIds = await Promise.all(
     certificatesWithMatches.map(async ({ catalogProvider }) => {
       if (catalogProvider) {
@@ -90,7 +103,6 @@ export async function processChainStep(chainJson: string): Promise<CertificatesP
     }),
   );
 
-  // Update certificates with provider IDs
   const certificates: Certificate[] = certificatesWithMatches.map(({ cert }, i) => ({
     issuer: cert.issuer,
     subject: cert.subject,
@@ -99,6 +111,7 @@ export async function processChainStep(chainJson: string): Promise<CertificatesP
     validTo: cert.validTo,
     fingerprint256: cert.fingerprint256,
     serialNumber: cert.serialNumber,
+    chainPosition: cert.chainPosition,
     caProvider: {
       id: providerIds[i],
       name: cert.caProvider.name,
@@ -111,5 +124,15 @@ export async function processChainStep(chainJson: string): Promise<CertificatesP
       ? new Date(Math.min(...certificates.map((c) => new Date(c.validTo).getTime())))
       : new Date(Date.now() + 3_600_000);
 
-  return { certificates, providerIds, earliestValidTo };
+  return {
+    certificates,
+    providerIds,
+    earliestValidTo,
+    valid: fetchData.valid,
+    validationError: fetchData.validationError,
+    protocol: fetchData.protocol,
+    cipher: fetchData.cipher,
+    publicKeyBits: fetchData.publicKeyBits,
+    chainComplete: fetchData.chainComplete,
+  };
 }

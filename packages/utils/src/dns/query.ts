@@ -6,8 +6,8 @@
 
 import { DOH_PROVIDERS } from "@domainstack/constants";
 import type { DohProvider } from "@domainstack/types";
-import { simpleHash } from "@domainstack/utils";
 
+import { simpleHash } from "../simple-hash";
 import type { DnsAnswer, DnsJson, DohQueryOptions } from "./types";
 
 const DEFAULT_TIMEOUT_MS = 5000;

@@ -1,7 +1,7 @@
 import { subDays } from "date-fns";
 import { NextResponse } from "next/server";
 
-import { deleteStaleUnverifiedDomainsByCutoff } from "@domainstack/db/queries";
+import { deleteStaleUnverifiedDomainsByCutoff } from "@domainstack/db/queries/tracked-domains";
 import { createLogger } from "@domainstack/logger";
 
 const logger = createLogger({ source: "cron/cleanup-stale-domains" });

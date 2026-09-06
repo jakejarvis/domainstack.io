@@ -1,7 +1,7 @@
 import { DNS_TYPE_NUMBERS, DOH_PROVIDERS } from "@domainstack/constants";
 
 type DohProvider = (typeof DOH_PROVIDERS)[number];
-import { simpleHash } from "@domainstack/utils";
+import { simpleHash } from "@domainstack/utils/simple-hash";
 
 import { SafeFetchError } from "./errors";
 import { withRetry, withTimeout } from "./utils";

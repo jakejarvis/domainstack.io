@@ -3,7 +3,7 @@ import { IconGift, IconRocket } from "@tabler/icons-react";
 import { QuotaBar } from "@/components/dashboard/quota-bar";
 import { Badge } from "@domainstack/ui/badge";
 import { cn } from "@domainstack/ui/utils";
-import { formatDate } from "@domainstack/utils";
+import { formatDate } from "@domainstack/utils/date";
 
 interface PlanStatusCardProps {
   activeCount: number;

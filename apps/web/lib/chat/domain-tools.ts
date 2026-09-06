@@ -39,7 +39,7 @@ export const DOMAIN_TOOL_DEFS = [
     procedure: "getCertificates",
     status: "Checking SSL certificate",
     description:
-      "Get SSL/TLS certificate information for a domain including issuer, validity dates, and certificate chain. Use this tool when users ask about HTTPS, SSL certificates, security, or certificate expiry.",
+      "Get SSL/TLS certificate information for a domain including issuer, validity, TLS protocol, and certificate chain. Use this tool when users ask about HTTPS, SSL certificates, security, or certificate expiry.",
   },
   {
     name: "get_headers",

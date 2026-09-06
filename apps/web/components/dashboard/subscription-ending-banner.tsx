@@ -5,7 +5,7 @@ import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-ban
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { useSubscription } from "@/hooks/use-subscription";
 import { PLAN_QUOTAS } from "@domainstack/constants";
-import { formatDate } from "@domainstack/utils";
+import { formatDate } from "@domainstack/utils/date";
 
 export function SubscriptionEndingBanner() {
   const { handleCheckout, isCheckoutLoading, handleCustomerPortal, isCustomerPortalLoading } =

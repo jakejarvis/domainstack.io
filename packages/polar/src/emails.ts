@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 
-import { getUserById } from "@domainstack/db/queries";
+import { getUserById } from "@domainstack/db/queries/users";
 import { sendEmail } from "@domainstack/email";
 import ProUpgradeSuccessEmail from "@domainstack/email/templates/pro-upgrade-success";
 import SubscriptionCancelingEmail from "@domainstack/email/templates/subscription-canceling";

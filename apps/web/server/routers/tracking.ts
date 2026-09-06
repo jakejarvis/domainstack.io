@@ -6,6 +6,7 @@ import { analytics } from "@/lib/analytics/server";
 import { autoVerifyWorkflow } from "@/workflows/auto-verify";
 import { initializeSnapshotWorkflow } from "@/workflows/initialize-snapshot";
 import { VERIFICATION_METHODS } from "@domainstack/constants";
+import { ensureDomainRecord } from "@domainstack/db/queries/domains";
 import {
   archiveTrackedDomain,
   bulkArchiveTrackedDomains,
@@ -13,16 +14,15 @@ import {
   bulkSetTrackedDomainsMuted,
   createTrackedDomainWithLimitCheck,
   deleteTrackedDomain,
-  ensureDomainRecord,
   findTrackedDomain,
   findTrackedDomainById,
   findTrackedDomainWithDomainName,
   getTrackedDomainDetails,
   getTrackedDomainsForUser,
-  getUserSubscription,
   unarchiveTrackedDomainWithLimitCheck,
   verifyTrackedDomain,
-} from "@domainstack/db/queries";
+} from "@domainstack/db/queries/tracked-domains";
+import { getUserSubscription } from "@domainstack/db/queries/user-subscription";
 import { sendEmail } from "@domainstack/email";
 import VerificationInstructionsEmail from "@domainstack/email/templates/verification-instructions";
 import { createLogger } from "@domainstack/logger";

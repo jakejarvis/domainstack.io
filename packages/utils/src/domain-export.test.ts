@@ -49,9 +49,16 @@ describe("serializeDomainExport", () => {
             issuer: "Let's Encrypt",
             validFrom: "2026-01-01",
             validTo: "2026-04-01",
+            chainPosition: 0,
             caProvider: { id: "ca_1", name: "Let's Encrypt" },
           },
         ],
+        valid: true,
+        validationError: null,
+        protocol: "TLSv1.3",
+        cipher: "TLS_AES_256_GCM_SHA384",
+        publicKeyBits: 256,
+        chainComplete: true,
       },
       headers: {
         status: 200,
@@ -88,8 +95,16 @@ describe("serializeDomainExport", () => {
       geo: { country: "US", city: "Ashburn" },
     });
 
-    expect(result.certificates?.[0]).not.toHaveProperty("caProvider");
-    expect(result.certificates?.[0]).toMatchObject({ issuer: "Let's Encrypt" });
+    expect(result.certificates).toMatchObject({
+      valid: true,
+      validationError: null,
+      protocol: "TLSv1.3",
+      cipher: "TLS_AES_256_GCM_SHA384",
+      publicKeyBits: 256,
+      chainComplete: true,
+    });
+    expect(result.certificates?.certificates?.[0]).not.toHaveProperty("caProvider");
+    expect(result.certificates?.certificates?.[0]).toMatchObject({ issuer: "Let's Encrypt" });
 
     expect(result.headers).toEqual({ "content-type": "text/html" });
 

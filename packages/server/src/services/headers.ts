@@ -6,7 +6,8 @@
  * Permanent errors return { success: false, error }.
  */
 
-import { ensureDomainRecord, replaceHeaders } from "@domainstack/db/queries";
+import { ensureDomainRecord } from "@domainstack/db/queries/domains";
+import { replaceHeaders } from "@domainstack/db/queries/headers";
 import type { HeadersResponse } from "@domainstack/types";
 
 import { fetchHttpHeaders, type HeadersError, type HeadersFetchData } from "../headers";

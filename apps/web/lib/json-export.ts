@@ -1,5 +1,5 @@
 import type { DomainResponse } from "@domainstack/types";
-import { serializeDomainExport } from "@domainstack/utils";
+import { serializeDomainExport } from "@domainstack/utils/domain-export";
 
 export function exportDomainData(domain: string, data: Partial<DomainResponse>) {
   const payload = serializeDomainExport(domain, data);

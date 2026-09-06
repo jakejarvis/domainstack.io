@@ -9,7 +9,7 @@ import type {
   RegistrationSource,
 } from "@domainstack/types";
 import { Spinner } from "@domainstack/ui/spinner";
-import { formatDate } from "@domainstack/utils";
+import { formatDate } from "@domainstack/utils/date";
 
 type ProviderTooltipContentProps = {
   providerId?: string | null;

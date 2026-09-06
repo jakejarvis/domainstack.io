@@ -97,7 +97,8 @@ interface DomainData {
 async function fetchDomain(trackedDomainId: string): Promise<DomainData | null> {
   "use step";
 
-  const { getTrackedDomainForReverification } = await import("@domainstack/db/queries");
+  const { getTrackedDomainForReverification } =
+    await import("@domainstack/db/queries/tracked-domains");
 
   return await getTrackedDomainForReverification(trackedDomainId);
 }
@@ -105,7 +106,7 @@ async function fetchDomain(trackedDomainId: string): Promise<DomainData | null> 
 async function markSuccess(trackedDomainId: string): Promise<void> {
   "use step";
 
-  const { markVerificationSuccessful } = await import("@domainstack/db/queries");
+  const { markVerificationSuccessful } = await import("@domainstack/db/queries/tracked-domains");
 
   await markVerificationSuccessful(trackedDomainId);
 }
@@ -131,7 +132,8 @@ async function determineFailureAction(domain: DomainForFailureCheck): Promise<Fa
 
   const { differenceInDays: diffInDays } = await import("date-fns");
   const { VERIFICATION_GRACE_PERIOD_DAYS } = await import("@domainstack/constants");
-  const { markVerificationFailing, revokeVerification } = await import("@domainstack/db/queries");
+  const { markVerificationFailing, revokeVerification } =
+    await import("@domainstack/db/queries/tracked-domains");
 
   const now = new Date();
 
@@ -203,7 +205,7 @@ async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boo
     await import("@domainstack/email/templates/verification-failing");
   const { VERIFICATION_GRACE_PERIOD_DAYS } = await import("@domainstack/constants");
   const { hasRecentNotification, createNotification, updateNotificationResendId } =
-    await import("@domainstack/db/queries");
+    await import("@domainstack/db/queries/notifications");
   const { sendEmail } = await import("@/workflows/shared/send-email");
 
   const alreadySent = await hasRecentNotification(domain.id, "verification_failing");
@@ -259,7 +261,7 @@ async function sendVerificationRevokedEmail(domain: DomainForEmail): Promise<boo
   const { default: VerificationRevokedEmail } =
     await import("@domainstack/email/templates/verification-revoked");
   const { hasRecentNotification, createNotification, updateNotificationResendId } =
-    await import("@domainstack/db/queries");
+    await import("@domainstack/db/queries/notifications");
   const { sendEmail } = await import("@/workflows/shared/send-email");
 
   const alreadySent = await hasRecentNotification(domain.id, "verification_revoked");

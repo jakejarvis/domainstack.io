@@ -5,7 +5,9 @@
  * Transient errors throw (for TanStack Query to retry).
  */
 
-import { ensureDomainRecord, isDomainBlocked, upsertSeo } from "@domainstack/db/queries";
+import { isDomainBlocked } from "@domainstack/db/queries/blocked-domains";
+import { ensureDomainRecord } from "@domainstack/db/queries/domains";
+import { upsertSeo } from "@domainstack/db/queries/seo";
 import { optimizeImage, storeImage } from "@domainstack/image";
 import { isExpectedDnsError, safeFetch } from "@domainstack/safe-fetch";
 import type {

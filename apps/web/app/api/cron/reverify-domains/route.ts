@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 
 import { reverifyOwnershipWorkflow } from "@/workflows/reverify-ownership";
-import { getVerifiedTrackedDomainIds } from "@domainstack/db/queries";
+import { getVerifiedTrackedDomainIds } from "@domainstack/db/queries/tracked-domains";
 import { createLogger } from "@domainstack/logger";
 
 const logger = createLogger({ source: "cron/reverify-domains" });

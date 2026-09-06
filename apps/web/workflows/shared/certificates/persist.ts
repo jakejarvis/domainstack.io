@@ -29,7 +29,8 @@ export async function persistCertificatesStep(
   "use step";
 
   // Dynamic imports for Node.js modules and database operations
-  const { ensureDomainRecord, replaceCertificates } = await import("@domainstack/db/queries");
+  const { replaceCertificates } = await import("@domainstack/db/queries/certificates");
+  const { ensureDomainRecord } = await import("@domainstack/db/queries/domains");
   const { ttlForCertificates } = await import("@domainstack/server/ttl");
 
   const now = new Date();
@@ -47,6 +48,7 @@ export async function persistCertificatesStep(
       fingerprint256: c.fingerprint256,
       serialNumber: c.serialNumber,
       caProviderId: processedData.providerIds[i],
+      chainPosition: c.chainPosition,
     }));
 
     const expiresAt = ttlForCertificates(now, processedData.earliestValidTo);
@@ -54,6 +56,14 @@ export async function persistCertificatesStep(
     await replaceCertificates({
       domainId: domainRecord.id,
       chain: chainWithIds,
+      check: {
+        valid: processedData.valid,
+        validationError: processedData.validationError,
+        protocol: processedData.protocol,
+        cipher: processedData.cipher,
+        publicKeyBits: processedData.publicKeyBits,
+        chainComplete: processedData.chainComplete,
+      },
       fetchedAt: now,
       expiresAt,
     });

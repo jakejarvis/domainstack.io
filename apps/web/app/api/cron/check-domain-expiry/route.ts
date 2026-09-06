@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 
 import { domainExpiryWorkflow } from "@/workflows/domain-expiry";
-import { getVerifiedTrackedDomainIds } from "@domainstack/db/queries";
+import { getVerifiedTrackedDomainIds } from "@domainstack/db/queries/tracked-domains";
 import { createLogger } from "@domainstack/logger";
 
 const logger = createLogger({ source: "cron/check-domain-expiry" });

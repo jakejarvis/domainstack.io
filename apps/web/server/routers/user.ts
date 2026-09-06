@@ -4,19 +4,23 @@ import { z } from "zod";
 import { analytics } from "@/lib/analytics/server";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import {
-  countTrackedDomainsByStatus,
   deleteCalendarFeed,
   disableCalendarFeed,
   enableCalendarFeed,
-  findTrackedDomainById,
   getCalendarFeed,
-  getLinkedAccounts,
-  getOrCreateUserNotificationPreferences,
-  getUserSubscription,
   rotateCalendarFeedToken,
+} from "@domainstack/db/queries/calendar-feeds";
+import {
+  countTrackedDomainsByStatus,
+  findTrackedDomainById,
   setDomainMuted,
+} from "@domainstack/db/queries/tracked-domains";
+import {
+  getOrCreateUserNotificationPreferences,
   updateUserNotificationPreferences,
-} from "@domainstack/db/queries";
+} from "@domainstack/db/queries/user-notification-preferences";
+import { getUserSubscription } from "@domainstack/db/queries/user-subscription";
+import { getLinkedAccounts } from "@domainstack/db/queries/users";
 import type { SubscriptionQuota } from "@domainstack/types";
 
 const NotificationChannelsSchema = z.object({

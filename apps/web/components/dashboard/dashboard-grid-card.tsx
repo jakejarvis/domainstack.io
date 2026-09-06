@@ -43,7 +43,7 @@ import {
 } from "@domainstack/ui/responsive-tooltip";
 import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
-import { formatDate, formatDateTimeUtc } from "@domainstack/utils";
+import { formatDate, formatDateTimeUtc } from "@domainstack/utils/date";
 
 type DashboardGridCardProps = {
   domain: TrackedDomainWithDetails;

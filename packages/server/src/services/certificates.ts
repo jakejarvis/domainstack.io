@@ -6,16 +6,14 @@
  * Permanent errors return { success: false, error }.
  */
 
-import {
-  ensureDomainRecord,
-  replaceCertificates,
-  upsertCatalogProvider,
-} from "@domainstack/db/queries";
+import { replaceCertificates } from "@domainstack/db/queries/certificates";
+import { ensureDomainRecord } from "@domainstack/db/queries/domains";
+import { upsertCatalogProvider } from "@domainstack/db/queries/providers";
 import { getProviderCatalog } from "@domainstack/edge-config";
 import type { Certificate, CertificatesResponse } from "@domainstack/types";
 import { detectCertificateAuthority, getProvidersFromCatalog } from "@domainstack/utils/providers";
 
-import { fetchCertificateChain, type RawCertificate } from "../tls";
+import { fetchCertificateChain, type RawCertificate, type TlsFetchSuccess } from "../tls";
 import { ttlForCertificates } from "../ttl";
 
 // ============================================================================
@@ -32,6 +30,12 @@ interface CertificatesProcessedData {
   certificates: Certificate[];
   providerIds: (string | null)[];
   earliestValidTo: Date;
+  valid: boolean;
+  validationError: string | null;
+  protocol: string | null;
+  cipher: string | null;
+  publicKeyBits: number | null;
+  chainComplete: boolean;
 }
 
 // ============================================================================
@@ -47,22 +51,31 @@ interface CertificatesProcessedData {
  * @throws Error on transient failures (timeout, fetch_error) - TanStack Query retries these
  */
 export async function fetchCertificates(domain: string): Promise<CertificatesResult> {
-  // 1. Fetch certificate chain via TLS handshake
   const fetchResult = await fetchCertificateChainInternal(domain);
 
   if (!fetchResult.success) {
     return { success: false, error: fetchResult.error };
   }
 
-  // 2. Detect CA providers and build response
-  const processedData = await processChain(fetchResult.chain);
+  const processedData = await processChain(fetchResult);
 
-  // 3. Persist to database
   await persistCertificates(domain, processedData);
 
   return {
     success: true,
-    data: { certificates: processedData.certificates },
+    data: toCertificatesResponse(processedData),
+  };
+}
+
+function toCertificatesResponse(processedData: CertificatesProcessedData): CertificatesResponse {
+  return {
+    certificates: processedData.certificates,
+    valid: processedData.valid,
+    validationError: processedData.validationError,
+    protocol: processedData.protocol,
+    cipher: processedData.cipher,
+    publicKeyBits: processedData.publicKeyBits,
+    chainComplete: processedData.chainComplete,
   };
 }
 
@@ -70,9 +83,7 @@ export async function fetchCertificates(domain: string): Promise<CertificatesRes
 // Internal: Fetch Certificate Chain
 // ============================================================================
 
-type FetchResult =
-  | { success: true; chain: RawCertificate[] }
-  | { success: false; error: CertificatesError };
+type FetchResult = TlsFetchSuccess | { success: false; error: CertificatesError };
 
 async function fetchCertificateChainInternal(domain: string): Promise<FetchResult> {
   const result = await fetchCertificateChain(domain);
@@ -87,21 +98,18 @@ async function fetchCertificateChainInternal(domain: string): Promise<FetchResul
     return { success: false, error: result.error };
   }
 
-  return {
-    success: true,
-    chain: result.chain,
-  };
+  return result;
 }
 
 // ============================================================================
 // Internal: Process Chain
 // ============================================================================
 
-async function processChain(chain: RawCertificate[]): Promise<CertificatesProcessedData> {
+async function processChain(observation: TlsFetchSuccess): Promise<CertificatesProcessedData> {
   const catalog = await getProviderCatalog();
   const caProviders = catalog ? getProvidersFromCatalog(catalog, "ca") : [];
+  const chain: RawCertificate[] = observation.chain;
 
-  // Detect providers and upsert to get IDs
   const certificatesWithMatches = chain.map((c) => {
     const matched = detectCertificateAuthority(c.issuer, caProviders);
     return {
@@ -113,6 +121,7 @@ async function processChain(chain: RawCertificate[]): Promise<CertificatesProces
         validTo: c.validTo,
         fingerprint256: c.fingerprint256 || null,
         serialNumber: c.serialNumber || null,
+        chainPosition: c.chainPosition,
         caProvider: {
           id: null,
           name: matched?.name ?? null,
@@ -123,7 +132,6 @@ async function processChain(chain: RawCertificate[]): Promise<CertificatesProces
     };
   });
 
-  // Upsert catalog providers and get IDs
   const providerIds = await Promise.all(
     certificatesWithMatches.map(async ({ catalogProvider }) => {
       if (catalogProvider) {
@@ -134,7 +142,6 @@ async function processChain(chain: RawCertificate[]): Promise<CertificatesProces
     }),
   );
 
-  // Update certificates with provider IDs
   const certificates: Certificate[] = certificatesWithMatches.map(({ cert }, i) => ({
     issuer: cert.issuer,
     subject: cert.subject,
@@ -143,6 +150,7 @@ async function processChain(chain: RawCertificate[]): Promise<CertificatesProces
     validTo: cert.validTo,
     fingerprint256: cert.fingerprint256,
     serialNumber: cert.serialNumber,
+    chainPosition: cert.chainPosition,
     caProvider: {
       id: providerIds[i],
       name: cert.caProvider.name,
@@ -150,12 +158,23 @@ async function processChain(chain: RawCertificate[]): Promise<CertificatesProces
     },
   }));
 
+  // Cache freshness is driven by the earliest expiration anywhere in the chain.
   const earliestValidTo =
     certificates.length > 0
       ? new Date(Math.min(...certificates.map((c) => new Date(c.validTo).getTime())))
       : new Date(Date.now() + 3_600_000);
 
-  return { certificates, providerIds, earliestValidTo };
+  return {
+    certificates,
+    providerIds,
+    earliestValidTo,
+    valid: observation.valid,
+    validationError: observation.validationError,
+    protocol: observation.protocol,
+    cipher: observation.cipher,
+    publicKeyBits: observation.publicKeyBits,
+    chainComplete: observation.chainComplete,
+  };
 }
 
 // ============================================================================
@@ -180,11 +199,20 @@ async function persistCertificates(
     fingerprint256: c.fingerprint256,
     serialNumber: c.serialNumber,
     caProviderId: processedData.providerIds[i],
+    chainPosition: c.chainPosition,
   }));
 
   await replaceCertificates({
     domainId: domainRecord.id,
     chain: chainWithIds,
+    check: {
+      valid: processedData.valid,
+      validationError: processedData.validationError,
+      protocol: processedData.protocol,
+      cipher: processedData.cipher,
+      publicKeyBits: processedData.publicKeyBits,
+      chainComplete: processedData.chainComplete,
+    },
     fetchedAt: now,
     expiresAt,
   });

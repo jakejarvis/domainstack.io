@@ -13,7 +13,7 @@ vi.mock("@domainstack/utils/providers", () => ({
 }));
 
 // Mock providers repo functions
-vi.mock("@domainstack/db/queries", () => ({
+vi.mock("@domainstack/db/queries/providers", () => ({
   resolveOrCreateProviderId: vi
     .fn<(...args: unknown[]) => Promise<unknown>>()
     .mockResolvedValue(null),

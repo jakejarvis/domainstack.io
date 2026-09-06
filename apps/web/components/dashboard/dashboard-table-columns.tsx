@@ -33,7 +33,7 @@ import {
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
 import { cn } from "@domainstack/ui/utils";
-import { formatDate, formatDateTimeUtc } from "@domainstack/utils";
+import { formatDate, formatDateTimeUtc } from "@domainstack/utils/date";
 
 /**
  * Header labels for every column that renders a plain text header. Shared with
