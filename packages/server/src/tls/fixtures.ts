@@ -5,17 +5,21 @@
  * BadSSL targets — network-dependent checks stay out of the automated suite.
  */
 
-export interface PeerCertificateFixture {
-  issuer: { CN?: string; O?: string; C?: string };
-  subject: { CN?: string; O?: string; C?: string };
-  subjectaltname?: string;
-  valid_from: string;
-  valid_to: string;
-  fingerprint256: string;
-  serialNumber: string;
-  bits?: number;
+import type { DetailedPeerCertificate } from "node:tls";
+
+export type PeerCertificateFixture = Pick<
+  DetailedPeerCertificate,
+  | "issuer"
+  | "subject"
+  | "subjectaltname"
+  | "valid_from"
+  | "valid_to"
+  | "fingerprint256"
+  | "serialNumber"
+  | "bits"
+> & {
   issuerCertificate?: PeerCertificateFixture | null;
-}
+};
 
 const FINGERPRINTS = {
   leaf: "aa".repeat(32),

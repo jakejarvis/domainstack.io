@@ -127,8 +127,12 @@ export function createPinnedLookup(addresses: ResolvedIp[]): LookupFunction {
   }));
 
   return (hostname, options, callback) => {
+    const family = options.family;
+    const candidates =
+      family === 4 || family === 6 ? mapped.filter((address) => address.family === family) : mapped;
     const all = Boolean(options.all);
-    if (mapped.length === 0) {
+
+    if (candidates.length === 0) {
       const err = Object.assign(new Error(`getaddrinfo ENOTFOUND ${hostname}`), {
         code: "ENOTFOUND",
       });
@@ -142,11 +146,11 @@ export function createPinnedLookup(addresses: ResolvedIp[]): LookupFunction {
     }
 
     if (all) {
-      callback(null, mapped);
+      callback(null, candidates);
       return;
     }
 
-    const first = mapped[0];
+    const first = candidates[0];
     callback(null, first.address, first.family);
   };
 }

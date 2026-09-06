@@ -1,5 +1,5 @@
 import type { InferInsertModel } from "drizzle-orm";
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, isNull, or } from "drizzle-orm";
 
 import type { Certificate, CertificatesResponse } from "@domainstack/types";
 
@@ -15,6 +15,12 @@ import {
 import type { CacheResult } from "../types";
 
 type CertificateInsert = InferInsertModel<typeof certificates>;
+
+/** Leaf when known; NULL `chain_position` is pre-migration data treated as the site cert. */
+const leafOrLegacyCertificate = or(
+  eq(certificates.chainPosition, 0),
+  isNull(certificates.chainPosition),
+);
 
 export interface CertificateCheckValues {
   valid: boolean;
@@ -200,7 +206,7 @@ export async function getVerifiedTrackedDomainIdsWithCertificates(): Promise<str
       and(
         eq(userTrackedDomains.verified, true),
         isNull(userTrackedDomains.archivedAt),
-        eq(certificates.chainPosition, 0),
+        leafOrLegacyCertificate,
       ),
     );
 
@@ -230,7 +236,8 @@ export async function getEarliestCertificate(
     .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
     .innerJoin(certificates, eq(domains.id, certificates.domainId))
     .innerJoin(users, eq(userTrackedDomains.userId, users.id))
-    .where(and(eq(userTrackedDomains.id, trackedDomainId), eq(certificates.chainPosition, 0)))
+    .where(and(eq(userTrackedDomains.id, trackedDomainId), leafOrLegacyCertificate))
+    .orderBy(asc(certificates.chainPosition), asc(certificates.validTo))
     .limit(1);
 
   return rows[0] ?? null;

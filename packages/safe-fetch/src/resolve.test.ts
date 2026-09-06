@@ -87,4 +87,21 @@ describe("createPinnedLookup", () => {
     lookupFn("example.com", { all: false }, callback);
     expect(callback).toHaveBeenCalledWith(null, "8.8.8.8", 4);
   });
+
+  it("filters pinned addresses by requested family", () => {
+    const lookupFn = createPinnedLookup([
+      { address: "1.1.1.1", family: 4 },
+      { address: "2606:4700:4700::1111", family: 6 },
+    ]);
+    const callback = vi.fn<Parameters<LookupFunction>[2]>();
+    lookupFn("example.com", { all: true, family: 6 }, callback);
+    expect(callback).toHaveBeenCalledWith(null, [{ address: "2606:4700:4700::1111", family: 6 }]);
+  });
+
+  it("returns ENOTFOUND when no pinned address matches the requested family", () => {
+    const lookupFn = createPinnedLookup([{ address: "1.1.1.1", family: 4 }]);
+    const callback = vi.fn<Parameters<LookupFunction>[2]>();
+    lookupFn("example.com", { all: false, family: 6 }, callback);
+    expect(callback).toHaveBeenCalledWith(expect.objectContaining({ code: "ENOTFOUND" }), "", 4);
+  });
 });

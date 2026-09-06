@@ -75,9 +75,13 @@ describe("fetchCertificateChain", () => {
     });
 
     socket.getPeerCertificate = vi.fn<() => object>(() => options.peerCertificate ?? {});
-    socket.getProtocol = vi.fn<() => string | null>(() => options.protocol ?? "TLSv1.3");
-    socket.getCipher = vi.fn<() => { name: string } | undefined>(
-      () => options.cipher ?? { name: "TLS_AES_256_GCM_SHA384" },
+    socket.getProtocol = vi.fn<() => string | null>(() =>
+      Object.hasOwn(options, "protocol") ? (options.protocol ?? null) : "TLSv1.3",
+    );
+    socket.getCipher = vi.fn<() => { name: string } | undefined>(() =>
+      Object.hasOwn(options, "cipher")
+        ? (options.cipher ?? undefined)
+        : { name: "TLS_AES_256_GCM_SHA384" },
     );
     socket.authorized = options.authorized ?? true;
     socket.authorizationError = options.authorizationError;
@@ -249,6 +253,45 @@ describe("fetchCertificateChain", () => {
     expect(result.protocol).toBe("TLSv1.2");
     expect(result.cipher).toBe("ECDHE-RSA-AES128-GCM-SHA256");
     expect(result.publicKeyBits).toBe(256);
+  });
+
+  it("keeps explicitly null protocol and cipher instead of substituting defaults", async () => {
+    const socket = createMockSocket({
+      peerCertificate: validChain(),
+      protocol: null,
+      cipher: null,
+    });
+    mockSuccessfulConnect(socket);
+
+    const result = await fetchCertificateChain("example.com");
+
+    expect(result.success).toBe(true);
+    if (!result.success) {
+      throw new Error("Expected fetchCertificateChain to succeed");
+    }
+    expect(result.protocol).toBeNull();
+    expect(result.cipher).toBeNull();
+  });
+
+  it("reads authorizationError from an Error instance", async () => {
+    const authorizationError = Object.assign(new Error("certificate has expired"), {
+      code: "CERT_HAS_EXPIRED",
+    });
+    const socket = createMockSocket({
+      peerCertificate: expiredChain(),
+      authorized: false,
+      authorizationError,
+    });
+    mockSuccessfulConnect(socket);
+
+    const result = await fetchCertificateChain("example.com");
+
+    expect(result.success).toBe(true);
+    if (!result.success) {
+      throw new Error("Expected fetchCertificateChain to succeed");
+    }
+    expect(result.valid).toBe(false);
+    expect(result.validationError).toBe("CERT_HAS_EXPIRED");
   });
 
   it("extracts and normalizes fingerprint256 and serialNumber", async () => {

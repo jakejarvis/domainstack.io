@@ -75,7 +75,10 @@ export async function fetchCertificateChain(
             } catch (err) {
               reject(err);
             } finally {
-              socket.end();
+              if (!isDestroyed) {
+                isDestroyed = true;
+                socket.destroy();
+              }
             }
           },
         );
