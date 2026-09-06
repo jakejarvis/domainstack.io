@@ -128,7 +128,8 @@ type DomainStatus =
 async function checkDomainStatus(trackedDomainId: string): Promise<DomainStatus> {
   "use step";
 
-  const { findTrackedDomainWithDomainName } = await import("@domainstack/db/queries");
+  const { findTrackedDomainWithDomainName } =
+    await import("@domainstack/db/queries/tracked-domains");
 
   const domain = await findTrackedDomainWithDomainName(trackedDomainId);
 
@@ -174,7 +175,7 @@ async function markVerified(
 ): Promise<{ trackedDomainId: string; domainId: string }> {
   "use step";
 
-  const { verifyTrackedDomain } = await import("@domainstack/db/queries");
+  const { verifyTrackedDomain } = await import("@domainstack/db/queries/tracked-domains");
 
   const result = await verifyTrackedDomain(trackedDomainId, method);
   if (!result) {

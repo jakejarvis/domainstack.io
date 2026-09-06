@@ -6,7 +6,8 @@
  */
 
 import { DNS_RECORD_TYPES } from "@domainstack/constants";
-import { ensureDomainRecord, replaceDns } from "@domainstack/db/queries";
+import { replaceDns } from "@domainstack/db/queries/dns";
+import { ensureDomainRecord } from "@domainstack/db/queries/domains";
 import type { DnsRecordType, DnsRecordsResponse } from "@domainstack/types";
 
 import { type DnsFetchData, fetchDnsRecords } from "../dns";

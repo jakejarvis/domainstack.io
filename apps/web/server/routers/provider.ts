@@ -1,9 +1,10 @@
 import { z } from "zod";
 
 import { createTRPCRouter, rateLimit, publicProcedure } from "@/trpc/init";
-import { getProviderById, getProviderLogo } from "@domainstack/db/queries";
+import { getProviderLogo } from "@domainstack/db/queries/provider-logos";
+import { getProviderById } from "@domainstack/db/queries/providers";
 import { createLogger } from "@domainstack/logger";
-import { fetchProviderLogo } from "@domainstack/server";
+import { fetchProviderLogo } from "@domainstack/server/services/provider-logo";
 
 const logger = createLogger({ source: "routers/provider" });
 

@@ -31,7 +31,8 @@ export async function persistRegistrationStep(
   // Dynamic imports for Node.js modules and database operations
   const { getDomainTld } = await import("@domainstack/utils/domain");
   const { ttlForRegistration } = await import("@domainstack/server/ttl");
-  const { upsertDomain, upsertRegistration } = await import("@domainstack/db/queries");
+  const { upsertDomain } = await import("@domainstack/db/queries/domains");
+  const { upsertRegistration } = await import("@domainstack/db/queries/registrations");
 
   const now = new Date();
 

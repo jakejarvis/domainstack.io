@@ -41,7 +41,7 @@ export async function detectAndResolveProvidersStep(
   const { detectDnsProvider, detectEmailProvider, detectHostingProvider, getProvidersFromCatalog } =
     await import("@domainstack/utils/providers");
   const { upsertCatalogProvider, resolveOrCreateProviderId } =
-    await import("@domainstack/db/queries");
+    await import("@domainstack/db/queries/providers");
 
   // Extract MX and NS records
   const mx = dnsRecords.filter((d) => d.type === "MX");

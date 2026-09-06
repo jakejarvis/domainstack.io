@@ -1,7 +1,7 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 
-import { slugify } from "@domainstack/utils";
 import { catalogRuleMatchesDiscovered, type Provider } from "@domainstack/utils/providers";
+import { slugify } from "@domainstack/utils/slugify";
 
 import { db } from "../client";
 import { type providerCategory, providers } from "../schema";

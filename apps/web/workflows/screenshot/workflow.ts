@@ -152,7 +152,8 @@ async function storeScreenshot(
 async function persistSuccess(domain: string, url: string, pathname: string | null): Promise<void> {
   "use step";
 
-  const { ensureDomainRecord, upsertScreenshot } = await import("@domainstack/db/queries");
+  const { ensureDomainRecord } = await import("@domainstack/db/queries/domains");
+  const { upsertScreenshot } = await import("@domainstack/db/queries/screenshots");
   const { ttlForScreenshot } = await import("@domainstack/server/ttl");
 
   const domainRecord = await ensureDomainRecord(domain);
@@ -177,7 +178,8 @@ async function persistSuccess(domain: string, url: string, pathname: string | nu
 async function persistFailure(domain: string): Promise<void> {
   "use step";
 
-  const { ensureDomainRecord, upsertScreenshot } = await import("@domainstack/db/queries");
+  const { ensureDomainRecord } = await import("@domainstack/db/queries/domains");
+  const { upsertScreenshot } = await import("@domainstack/db/queries/screenshots");
   const { ttlForScreenshot } = await import("@domainstack/server/ttl");
 
   try {

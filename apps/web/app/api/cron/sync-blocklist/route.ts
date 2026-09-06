@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { syncBlockedDomains } from "@domainstack/db/queries";
+import { syncBlockedDomains } from "@domainstack/db/queries/blocked-domains";
 import { getBlocklistSources } from "@domainstack/edge-config";
 import { createLogger } from "@domainstack/logger";
 

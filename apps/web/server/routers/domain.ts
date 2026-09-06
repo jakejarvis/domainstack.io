@@ -5,16 +5,13 @@ import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { createTRPCRouter, rateLimit, publicProcedure, withDomainAccessUpdate } from "@/trpc/init";
 import { createLogger } from "@domainstack/logger";
 import type { RateLimitConfig } from "@domainstack/redis/ratelimit";
-import {
-  fetchCertificates,
-  fetchDns,
-  fetchFavicon,
-  fetchHeaders,
-  fetchHosting,
-  fetchRegistration,
-  fetchSeo,
-  getHttpStatusMessage,
-} from "@domainstack/server";
+import { fetchCertificates } from "@domainstack/server/services/certificates";
+import { fetchDns } from "@domainstack/server/services/dns";
+import { fetchFavicon } from "@domainstack/server/services/favicon";
+import { fetchHeaders, getHttpStatusMessage } from "@domainstack/server/services/headers";
+import { fetchHosting } from "@domainstack/server/services/hosting";
+import { fetchRegistration } from "@domainstack/server/services/registration";
+import { fetchSeo } from "@domainstack/server/services/seo";
 
 const logger = createLogger({ source: "routers/domain" });
 
@@ -48,7 +45,7 @@ export const domainRouter = createTRPCRouter({
     .input(DomainInputSchema)
     .use(withDomainAccessUpdate)
     .query(async ({ ctx, input, path }) => {
-      const { getCachedRegistration } = await import("@domainstack/db/queries");
+      const { getCachedRegistration } = await import("@domainstack/db/queries/registrations");
 
       // Check cache first — cached reads must not consume the rate-limit budget
       const cached = await getCachedRegistration(input.domain);
@@ -89,7 +86,7 @@ export const domainRouter = createTRPCRouter({
     .input(DomainInputSchema)
     .use(withDomainAccessUpdate)
     .query(async ({ ctx, input, path }) => {
-      const { getCachedDns } = await import("@domainstack/db/queries");
+      const { getCachedDns } = await import("@domainstack/db/queries/dns");
 
       // Check cache first — cached reads must not consume the rate-limit budget
       const cached = await getCachedDns(input.domain);
@@ -122,7 +119,7 @@ export const domainRouter = createTRPCRouter({
     .input(DomainInputSchema)
     .use(withDomainAccessUpdate)
     .query(async ({ ctx, input, path }) => {
-      const { getCachedHosting } = await import("@domainstack/db/queries");
+      const { getCachedHosting } = await import("@domainstack/db/queries/hosting");
 
       // Check cache first — cached reads must not consume the rate-limit budget
       const cached = await getCachedHosting(input.domain);
@@ -155,7 +152,7 @@ export const domainRouter = createTRPCRouter({
     .input(DomainInputSchema)
     .use(withDomainAccessUpdate)
     .query(async ({ ctx, input, path }) => {
-      const { getCachedCertificates } = await import("@domainstack/db/queries");
+      const { getCachedCertificates } = await import("@domainstack/db/queries/certificates");
 
       // Check cache first — cached reads must not consume the rate-limit budget
       const cached = await getCachedCertificates(input.domain);
@@ -196,7 +193,7 @@ export const domainRouter = createTRPCRouter({
     .input(DomainInputSchema)
     .use(withDomainAccessUpdate)
     .query(async ({ ctx, input, path }) => {
-      const { getCachedHeaders } = await import("@domainstack/db/queries");
+      const { getCachedHeaders } = await import("@domainstack/db/queries/headers");
 
       // Check cache first — cached reads must not consume the rate-limit budget
       const cached = await getCachedHeaders(input.domain);
@@ -244,7 +241,7 @@ export const domainRouter = createTRPCRouter({
     .input(DomainInputSchema)
     .use(withDomainAccessUpdate)
     .query(async ({ ctx, input, path }) => {
-      const { getCachedSeo } = await import("@domainstack/db/queries");
+      const { getCachedSeo } = await import("@domainstack/db/queries/seo");
 
       // Check cache first — cached reads must not consume the rate-limit budget
       const cached = await getCachedSeo(input.domain);
@@ -283,7 +280,7 @@ export const domainRouter = createTRPCRouter({
    * Fresh cache hits skip rate limiting so archived lists over the cap still load icons.
    */
   getFavicon: publicProcedure.input(DomainInputSchema).query(async ({ ctx, input, path }) => {
-    const { getFavicon: getCachedFavicon } = await import("@domainstack/db/queries");
+    const { getFavicon: getCachedFavicon } = await import("@domainstack/db/queries/favicons");
 
     // Check cache first — cached reads must not consume the rate-limit budget
     const cached = await getCachedFavicon(input.domain);

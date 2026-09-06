@@ -1,4 +1,4 @@
-import { updateLastAccessed } from "@domainstack/db/queries";
+import { updateLastAccessed } from "@domainstack/db/queries/domains";
 
 import { t } from "../trpc";
 import { scheduleBackground } from "../wait-until";

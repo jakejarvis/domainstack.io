@@ -126,7 +126,8 @@ interface DomainData {
 async function fetchDomain(trackedDomainId: string): Promise<DomainData | null> {
   "use step";
 
-  const { getTrackedDomainForNotification } = await import("@domainstack/db/queries");
+  const { getTrackedDomainForNotification } =
+    await import("@domainstack/db/queries/tracked-domains");
 
   return await getTrackedDomainForNotification(trackedDomainId);
 }
@@ -134,7 +135,7 @@ async function fetchDomain(trackedDomainId: string): Promise<DomainData | null> 
 async function clearRenewedNotifications(trackedDomainId: string): Promise<number> {
   "use step";
 
-  const { clearDomainExpiryNotifications } = await import("@domainstack/db/queries");
+  const { clearDomainExpiryNotifications } = await import("@domainstack/db/queries/notifications");
 
   return await clearDomainExpiryNotifications(trackedDomainId);
 }
@@ -153,7 +154,7 @@ async function createNotificationRecord(params: {
   "use step";
 
   const { format } = await import("date-fns");
-  const { createNotification } = await import("@domainstack/db/queries");
+  const { createNotification } = await import("@domainstack/db/queries/notifications");
 
   const {
     trackedDomainId,

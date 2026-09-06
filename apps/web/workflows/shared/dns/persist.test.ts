@@ -21,7 +21,7 @@ describe("persistDnsRecordsStep", () => {
   });
 
   it("persists DNS records to database", async () => {
-    const { upsertDomain } = await import("@domainstack/db/queries");
+    const { upsertDomain } = await import("@domainstack/db/queries/domains");
     const domain = await upsertDomain({
       name: "persist.com",
       tld: "com",

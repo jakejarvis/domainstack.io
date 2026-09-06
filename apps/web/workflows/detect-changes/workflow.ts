@@ -32,12 +32,12 @@ import type {
   RegistrationResponse,
   RegistrationSnapshotData,
 } from "@domainstack/types";
-import { findLeafCertificate } from "@domainstack/utils";
 import {
   detectProviderChange,
   detectRegistrationChange,
   evaluateCertificateChange,
 } from "@domainstack/utils/change-detection";
+import { findLeafCertificate } from "@domainstack/utils/tls";
 
 // =============================================================================
 // Workflow Types
@@ -608,12 +608,14 @@ async function releaseMonitorLockStep(
 }
 
 // Import SnapshotForMonitoring type for proper typing
-type SnapshotData = Awaited<ReturnType<typeof import("@domainstack/db/queries").getSnapshot>>;
+type SnapshotData = Awaited<
+  ReturnType<typeof import("@domainstack/db/queries/snapshots").getSnapshot>
+>;
 
 async function fetchSnapshot(trackedDomainId: string): Promise<SnapshotData> {
   "use step";
 
-  const { getSnapshot } = await import("@domainstack/db/queries");
+  const { getSnapshot } = await import("@domainstack/db/queries/snapshots");
   return await getSnapshot(trackedDomainId);
 }
 
@@ -623,7 +625,7 @@ async function updateRegistrationSnapshot(
 ): Promise<void> {
   "use step";
 
-  const { updateSnapshot } = await import("@domainstack/db/queries");
+  const { updateSnapshot } = await import("@domainstack/db/queries/snapshots");
   await updateSnapshot(trackedDomainId, { registration });
 }
 
@@ -637,7 +639,7 @@ async function updateProviderSnapshot(
 ): Promise<void> {
   "use step";
 
-  const { updateSnapshot } = await import("@domainstack/db/queries");
+  const { updateSnapshot } = await import("@domainstack/db/queries/snapshots");
   await updateSnapshot(trackedDomainId, {
     dnsProviderId: providers.dns,
     hostingProviderId: providers.hosting,
@@ -651,6 +653,6 @@ async function updateCertificateSnapshot(
 ): Promise<void> {
   "use step";
 
-  const { updateSnapshot } = await import("@domainstack/db/queries");
+  const { updateSnapshot } = await import("@domainstack/db/queries/snapshots");
   await updateSnapshot(trackedDomainId, { certificate });
 }

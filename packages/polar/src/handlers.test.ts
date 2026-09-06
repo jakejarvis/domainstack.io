@@ -69,7 +69,7 @@ const {
 });
 
 // Mock the dependencies - export functions directly (not via repo objects)
-vi.mock("@domainstack/db/queries", () => ({
+vi.mock("@domainstack/db/queries/user-subscription", () => ({
   updateUserTier,
   setSubscriptionEndsAt,
   clearSubscriptionEndsAt,

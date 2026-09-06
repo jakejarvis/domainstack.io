@@ -6,12 +6,12 @@
  * Permanent errors return { success: false, error }.
  */
 
+import { upsertDomain } from "@domainstack/db/queries/domains";
 import {
   resolveOrCreateProviderId,
   upsertCatalogProvider,
-  upsertDomain,
-  upsertRegistration,
-} from "@domainstack/db/queries";
+} from "@domainstack/db/queries/providers";
+import { upsertRegistration } from "@domainstack/db/queries/registrations";
 import { getProviderCatalog } from "@domainstack/edge-config";
 import type { RegistrationContact, RegistrationResponse } from "@domainstack/types";
 import { getDomainTld } from "@domainstack/utils/domain";

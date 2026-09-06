@@ -29,7 +29,8 @@ export async function persistCertificatesStep(
   "use step";
 
   // Dynamic imports for Node.js modules and database operations
-  const { ensureDomainRecord, replaceCertificates } = await import("@domainstack/db/queries");
+  const { replaceCertificates } = await import("@domainstack/db/queries/certificates");
+  const { ensureDomainRecord } = await import("@domainstack/db/queries/domains");
   const { ttlForCertificates } = await import("@domainstack/server/ttl");
 
   const now = new Date();

@@ -30,7 +30,7 @@ import {
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
 import { cn } from "@domainstack/ui/utils";
-import { formatDate, formatDateTimeUtc } from "@domainstack/utils";
+import { formatDate, formatDateTimeUtc } from "@domainstack/utils/date";
 
 function CertificateCard({ cert }: { cert: Certificate }) {
   const sans = Array.isArray(cert.altNames)

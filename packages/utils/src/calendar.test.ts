@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import type { ProviderInfo, TrackedDomainWithDetails } from "@domainstack/types";
 
-import { buildDomainExpiryEvents } from "./events";
+import { buildDomainExpiryEvents } from "./calendar";
 
 const BASE_URL = "https://domainstack.io";
 

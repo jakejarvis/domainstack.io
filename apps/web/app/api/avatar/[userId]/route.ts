@@ -1,7 +1,7 @@
 import { connection, type NextRequest, NextResponse } from "next/server";
 
 import { TTL_AVATAR_BROWSER, TTL_AVATAR_CDN, TTL_AVATAR_STALE } from "@domainstack/constants";
-import { getUserAvatarUrl } from "@domainstack/db/queries";
+import { getUserAvatarUrl } from "@domainstack/db/queries/users";
 import { createLogger } from "@domainstack/logger";
 import { SafeFetchError, safeFetch } from "@domainstack/safe-fetch";
 

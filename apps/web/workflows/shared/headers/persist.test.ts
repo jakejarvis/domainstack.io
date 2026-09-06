@@ -34,7 +34,7 @@ describe("persistHeadersStep", () => {
     });
 
     // Verify persistence - domain should have been created
-    const { findDomainByName } = await import("@domainstack/db/queries");
+    const { findDomainByName } = await import("@domainstack/db/queries/domains");
     const domain = await findDomainByName("persist.test");
     expect(domain).toBeTruthy();
 

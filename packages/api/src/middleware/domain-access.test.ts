@@ -9,7 +9,7 @@ const { updateLastAccessed, scheduleBackground } = vi.hoisted(() => ({
   }),
 }));
 
-vi.mock("@domainstack/db/queries", () => ({
+vi.mock("@domainstack/db/queries/domains", () => ({
   updateLastAccessed,
 }));
 

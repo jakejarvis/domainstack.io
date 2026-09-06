@@ -21,7 +21,7 @@ import {
 import { Separator } from "@domainstack/ui/separator";
 import { ToggleGroup, ToggleGroupItem } from "@domainstack/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
-import { formatDate } from "@domainstack/utils";
+import { formatDate } from "@domainstack/utils/date";
 
 type DashboardHeaderProps = {
   userName: string;

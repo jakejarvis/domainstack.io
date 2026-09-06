@@ -19,7 +19,7 @@ vi.mock("@/workflows/detect-changes", () => ({
 vi.mock("@/workflows/initialize-snapshot", () => ({
   initializeSnapshotWorkflow: vi.fn<(input: unknown) => Promise<unknown>>(),
 }));
-vi.mock("@domainstack/db/queries", () => ({
+vi.mock("@domainstack/db/queries/snapshots", () => ({
   getMonitoredSnapshotIds: mocks.getMonitoredSnapshotIds,
   getVerifiedDomainsWithoutSnapshots: mocks.getVerifiedDomainsWithoutSnapshots,
 }));

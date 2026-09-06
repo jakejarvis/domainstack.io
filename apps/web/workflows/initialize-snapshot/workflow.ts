@@ -22,7 +22,7 @@ import type {
   HostingResponse,
   RegistrationResponse,
 } from "@domainstack/types";
-import { findLeafCertificate } from "@domainstack/utils";
+import { findLeafCertificate } from "@domainstack/utils/tls";
 
 export interface InitializeSnapshotWorkflowInput {
   trackedDomainId: string;
@@ -194,7 +194,7 @@ export async function initializeSnapshotWorkflow(
 async function fetchDomainStep(domainId: string): Promise<{ name: string } | null> {
   "use step";
 
-  const { getDomainNameById } = await import("@domainstack/db/queries");
+  const { getDomainNameById } = await import("@domainstack/db/queries/domains");
   return getDomainNameById(domainId);
 }
 
@@ -213,7 +213,7 @@ async function createSnapshotStep(params: {
 }): Promise<{ id: string }> {
   "use step";
 
-  const { createSnapshot } = await import("@domainstack/db/queries");
+  const { createSnapshot } = await import("@domainstack/db/queries/snapshots");
 
   const snapshot = await createSnapshot({
     trackedDomainId: params.trackedDomainId,

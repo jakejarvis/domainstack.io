@@ -14,7 +14,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@domainstack/ui/empty";
-import { countryCodeToEmoji } from "@domainstack/utils";
+import { countryCodeToEmoji } from "@domainstack/utils/country-emoji";
 
 function formatLocation(geo: HostingGeo): string {
   const parts = [geo.city, geo.region, geo.country].filter(Boolean);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { calculateDaysRemaining, getThresholdNotificationType } from "./threshold";
+import { calculateDaysRemaining, getThresholdNotificationType } from "./expiry";
 
 describe("getThresholdNotificationType", () => {
   const domainThresholds = [30, 14, 7, 1];

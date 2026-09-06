@@ -2,7 +2,7 @@ import { IconShieldExclamation } from "@tabler/icons-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@domainstack/ui/alert";
 import { cn } from "@domainstack/ui/utils";
-import { describeTlsValidationError } from "@domainstack/utils";
+import { describeTlsValidationError } from "@domainstack/utils/tls";
 
 export function CertificateAlert({
   validationError,

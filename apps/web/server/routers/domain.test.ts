@@ -13,28 +13,33 @@ vi.mock("workflow/api", () => ({
   }),
 }));
 
-// Mock the services (used by getRegistration and getDnsRecords)
-vi.mock("@domainstack/server", async (importOriginal) => {
-  const original = await importOriginal<typeof import("@domainstack/server")>();
+vi.mock("@domainstack/server/services/registration", () => ({
+  fetchRegistration: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue({
+    success: true,
+    data: {
+      isRegistered: true,
+      registrarProvider: {
+        id: "00000000-0000-0000-0000-000000000002",
+        name: "Unknown",
+      },
+    },
+  }),
+}));
+
+vi.mock("@domainstack/server/services/dns", () => ({
+  fetchDns: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue({
+    success: true,
+    data: {
+      records: [],
+      resolver: "cloudflare",
+    },
+  }),
+}));
+
+vi.mock("@domainstack/server/services/headers", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@domainstack/server/services/headers")>();
   return {
     ...original,
-    fetchRegistration: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue({
-      success: true,
-      data: {
-        isRegistered: true,
-        registrarProvider: {
-          id: "00000000-0000-0000-0000-000000000002",
-          name: "Unknown",
-        },
-      },
-    }),
-    fetchDns: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue({
-      success: true,
-      data: {
-        records: [],
-        resolver: "cloudflare",
-      },
-    }),
     fetchHeaders: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue({
       success: true,
       data: {
@@ -43,24 +48,30 @@ vi.mock("@domainstack/server", async (importOriginal) => {
         statusMessage: "OK",
       },
     }),
-    fetchFavicon: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue({
-      success: true,
-      data: { url: "https://example.com/favicon.ico" },
-    }),
-    fetchCertificates: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue({
-      success: true,
-      data: {
-        certificates: [],
-        valid: true,
-        validationError: null,
-        protocol: "TLSv1.3",
-        cipher: "TLS_AES_256_GCM_SHA384",
-        publicKeyBits: 256,
-        chainComplete: true,
-      },
-    }),
   };
 });
+
+vi.mock("@domainstack/server/services/favicon", () => ({
+  fetchFavicon: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue({
+    success: true,
+    data: { url: "https://example.com/favicon.ico" },
+  }),
+}));
+
+vi.mock("@domainstack/server/services/certificates", () => ({
+  fetchCertificates: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue({
+    success: true,
+    data: {
+      certificates: [],
+      valid: true,
+      validationError: null,
+      protocol: "TLSv1.3",
+      cipher: "TLS_AES_256_GCM_SHA384",
+      publicKeyBits: 256,
+      chainComplete: true,
+    },
+  }),
+}));
 
 // Mock edge-config
 vi.mock("@domainstack/edge-config", () => ({
@@ -89,8 +100,11 @@ const {
   registrations,
 } = await import("@domainstack/db/schema");
 const { start } = await import("workflow/api");
-const { fetchCertificates, fetchDns, fetchFavicon, fetchHeaders, fetchRegistration } =
-  await import("@domainstack/server");
+const { fetchCertificates } = await import("@domainstack/server/services/certificates");
+const { fetchDns } = await import("@domainstack/server/services/dns");
+const { fetchFavicon } = await import("@domainstack/server/services/favicon");
+const { fetchHeaders } = await import("@domainstack/server/services/headers");
+const { fetchRegistration } = await import("@domainstack/server/services/registration");
 const { getRateLimiter } = await import("@domainstack/redis/ratelimit");
 const { createCaller } = await import("@/server/routers/_app");
 const { eq } = await import("@domainstack/db/drizzle");

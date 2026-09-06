@@ -1,4 +1,4 @@
-import { downgradeToFree } from "@domainstack/db/queries";
+import { downgradeToFree } from "@domainstack/db/queries/user-subscription";
 
 /**
  * Handle user downgrade from Pro to Free tier.

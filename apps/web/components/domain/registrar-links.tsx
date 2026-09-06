@@ -10,7 +10,7 @@ import { Button } from "@domainstack/ui/button";
 import { Skeleton } from "@domainstack/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 import { cn } from "@domainstack/ui/utils";
-import { formatPrice } from "@domainstack/utils";
+import { formatPrice } from "@domainstack/utils/price";
 
 const REGISTRAR_ICONS: Record<RegistrarKey, React.ReactNode> = {
   porkbun: (

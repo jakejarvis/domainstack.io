@@ -65,7 +65,7 @@ export async function processChainStep(
   const { getProviderCatalog } = await import("@domainstack/edge-config");
   const { detectCertificateAuthority, getProvidersFromCatalog } =
     await import("@domainstack/utils/providers");
-  const { upsertCatalogProvider } = await import("@domainstack/db/queries");
+  const { upsertCatalogProvider } = await import("@domainstack/db/queries/providers");
 
   const chain = JSON.parse(fetchData.chainJson) as RawCertificate[];
   const catalog = await getProviderCatalog();

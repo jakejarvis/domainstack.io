@@ -7,7 +7,7 @@
 
 import type { Certificate as TlsCertificate, DetailedPeerCertificate, TLSSocket } from "node:tls";
 
-import { normalizeCertificateHex } from "@domainstack/utils";
+import { normalizeCertificateHex } from "@domainstack/utils/certificate-hex";
 
 import type { RawCertificate } from "./types";
 

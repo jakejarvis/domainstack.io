@@ -130,7 +130,7 @@ interface CertificateData {
 async function fetchCertificate(trackedDomainId: string): Promise<CertificateData | null> {
   "use step";
 
-  const { getEarliestCertificate } = await import("@domainstack/db/queries");
+  const { getEarliestCertificate } = await import("@domainstack/db/queries/certificates");
 
   return await getEarliestCertificate(trackedDomainId);
 }
@@ -138,7 +138,8 @@ async function fetchCertificate(trackedDomainId: string): Promise<CertificateDat
 async function clearRenewedNotifications(trackedDomainId: string): Promise<number> {
   "use step";
 
-  const { clearCertificateExpiryNotifications } = await import("@domainstack/db/queries");
+  const { clearCertificateExpiryNotifications } =
+    await import("@domainstack/db/queries/notifications");
 
   return await clearCertificateExpiryNotifications(trackedDomainId);
 }
@@ -157,7 +158,7 @@ async function createNotificationRecord(params: {
   "use step";
 
   const { format } = await import("date-fns");
-  const { createNotification } = await import("@domainstack/db/queries");
+  const { createNotification } = await import("@domainstack/db/queries/notifications");
 
   const {
     trackedDomainId,

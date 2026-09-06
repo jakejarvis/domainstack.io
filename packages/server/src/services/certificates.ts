@@ -6,11 +6,9 @@
  * Permanent errors return { success: false, error }.
  */
 
-import {
-  ensureDomainRecord,
-  replaceCertificates,
-  upsertCatalogProvider,
-} from "@domainstack/db/queries";
+import { replaceCertificates } from "@domainstack/db/queries/certificates";
+import { ensureDomainRecord } from "@domainstack/db/queries/domains";
+import { upsertCatalogProvider } from "@domainstack/db/queries/providers";
 import { getProviderCatalog } from "@domainstack/edge-config";
 import type { Certificate, CertificatesResponse } from "@domainstack/types";
 import { detectCertificateAuthority, getProvidersFromCatalog } from "@domainstack/utils/providers";

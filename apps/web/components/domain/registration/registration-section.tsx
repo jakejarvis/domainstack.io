@@ -19,7 +19,7 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
-import { formatDate, formatDateTimeUtc } from "@domainstack/utils";
+import { formatDate, formatDateTimeUtc } from "@domainstack/utils/date";
 
 type RegistrantView = { organization: string; country: string; state?: string };
 

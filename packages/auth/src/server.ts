@@ -6,21 +6,21 @@ import { betterAuth } from "better-auth/minimal";
 import { nextCookies, toNextJsHandler } from "better-auth/next-js";
 
 import { db } from "@domainstack/db/client";
-import { createSubscription } from "@domainstack/db/queries";
+import { createSubscription } from "@domainstack/db/queries/user-subscription";
 import * as schema from "@domainstack/db/schema";
 import { addContact, removeContact, sendEmail } from "@domainstack/email";
 import DeleteAccountVerifyEmail from "@domainstack/email/templates/delete-account-verify";
 import { createLogger } from "@domainstack/logger";
+import { checkout, polar, portal, webhooks } from "@domainstack/polar/better-auth/server";
 import {
-  getProductsForCheckout,
   handleOrderPaid,
   handleSubscriptionActive,
   handleSubscriptionCanceled,
   handleSubscriptionCreated,
   handleSubscriptionRevoked,
   handleSubscriptionUncanceled,
-} from "@domainstack/polar";
-import { checkout, polar, portal, webhooks } from "@domainstack/polar/better-auth/server";
+} from "@domainstack/polar/handlers";
+import { getProductsForCheckout } from "@domainstack/polar/products";
 import { polarClient } from "@domainstack/polar/server";
 import { getRedis } from "@domainstack/redis";
 

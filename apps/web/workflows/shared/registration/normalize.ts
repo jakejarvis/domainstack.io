@@ -61,7 +61,7 @@ export async function normalizeAndBuildResponseStep(
   const { getProviderCatalog } = await import("@domainstack/edge-config");
   const { detectRegistrar, getProvidersFromCatalog } = await import("@domainstack/utils/providers");
   const { upsertCatalogProvider, resolveOrCreateProviderId } =
-    await import("@domainstack/db/queries");
+    await import("@domainstack/db/queries/providers");
 
   const record = JSON.parse(recordJson) as ParsedRdapRecord;
   const catalog = await getProviderCatalog();

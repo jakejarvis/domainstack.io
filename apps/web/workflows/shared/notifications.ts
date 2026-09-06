@@ -36,8 +36,9 @@ export async function determineNotificationChannelsStep(
 ): Promise<NotificationChannels> {
   "use step";
 
-  const { findTrackedDomainById, getOrCreateUserNotificationPreferences } =
-    await import("@domainstack/db/queries");
+  const { findTrackedDomainById } = await import("@domainstack/db/queries/tracked-domains");
+  const { getOrCreateUserNotificationPreferences } =
+    await import("@domainstack/db/queries/user-notification-preferences");
 
   const trackedDomain = await findTrackedDomainById(trackedDomainId);
   if (!trackedDomain) {
@@ -70,7 +71,7 @@ export async function resolveProviderNamesStep(
 
   if (providerIds.length === 0) return new Map();
 
-  const { getProviderNames } = await import("@domainstack/db/queries");
+  const { getProviderNames } = await import("@domainstack/db/queries/providers");
 
   return await getProviderNames(providerIds);
 }
@@ -112,7 +113,8 @@ export async function checkExpiryPreferencesStep(
     return { shouldSendEmail: false, shouldSendInApp: false };
   }
 
-  const { getOrCreateUserNotificationPreferences } = await import("@domainstack/db/queries");
+  const { getOrCreateUserNotificationPreferences } =
+    await import("@domainstack/db/queries/user-notification-preferences");
 
   const globalPrefs = await getOrCreateUserNotificationPreferences(userId);
 
@@ -131,7 +133,7 @@ export async function checkAlreadySentStep(
 ): Promise<boolean> {
   "use step";
 
-  const { hasRecentNotification } = await import("@domainstack/db/queries");
+  const { hasRecentNotification } = await import("@domainstack/db/queries/notifications");
 
   return await hasRecentNotification(trackedDomainId, notificationType);
 }
@@ -145,7 +147,7 @@ export async function updateNotificationEmailIdStep(
 ): Promise<void> {
   "use step";
 
-  const { updateNotificationResendId } = await import("@domainstack/db/queries");
+  const { updateNotificationResendId } = await import("@domainstack/db/queries/notifications");
 
   await updateNotificationResendId(notificationId, emailId);
 }
@@ -189,7 +191,7 @@ async function sendNotificationInternal(
   shouldSendInApp: boolean,
 ): Promise<boolean> {
   const { createNotification, updateNotificationResendId } =
-    await import("@domainstack/db/queries");
+    await import("@domainstack/db/queries/notifications");
   const { sendEmail } = await import("@domainstack/email");
 
   const {
