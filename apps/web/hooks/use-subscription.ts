@@ -124,7 +124,7 @@ export function useSubscription(options: UseSubscriptionOptions = {}): UseSubscr
         products: [monthlyProductId, yearlyProductId],
       });
     } catch (err) {
-      analytics.trackException(err instanceof Error ? err : new Error(String(err)), {
+      analytics.trackException(err, {
         action: "upgrade_checkout",
       });
       toast.error("Failed to open checkout. Please try again.");
@@ -141,7 +141,7 @@ export function useSubscription(options: UseSubscriptionOptions = {}): UseSubscr
     try {
       await customer.portal();
     } catch (err) {
-      analytics.trackException(err instanceof Error ? err : new Error(String(err)), {
+      analytics.trackException(err, {
         action: "open_customer_portal",
       });
       toast.error("Failed to open customer portal. Please try again.");

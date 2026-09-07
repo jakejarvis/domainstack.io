@@ -126,8 +126,14 @@ export const auth = betterAuth({
           // Create free tier subscription for new users (do not defer)
           await createSubscription(user.id);
 
-          // Create Resend contact for marketing communications
-          waitUntil(addContact(user.email, user.name));
+          // Create Resend contact for marketing communications. `waitUntil`
+          // never awaits the promise itself, so a rejection escaping here is an
+          // unhandled rejection that takes down the invocation.
+          waitUntil(
+            addContact(user.email, user.name).catch((err: unknown) =>
+              logger.error({ err, userId: user.id }, "failed to add Resend contact"),
+            ),
+          );
 
           analytics.track(
             "signed_up",
@@ -160,7 +166,11 @@ export const auth = betterAuth({
         }
 
         // Delete Resend contact
-        waitUntil(removeContact(user.email));
+        waitUntil(
+          removeContact(user.email).catch((err: unknown) =>
+            logger.error({ err, userId: user.id }, "failed to remove Resend contact"),
+          ),
+        );
       },
       sendDeleteAccountVerification: async ({ user, url }) => {
         waitUntil(
@@ -175,6 +185,8 @@ export const auth = betterAuth({
               }),
             },
             { baseUrl: process.env.NEXT_PUBLIC_BASE_URL as string },
+          ).catch((err: unknown) =>
+            logger.error({ err, userId: user.id }, "failed to send delete account verification"),
           ),
         );
       },

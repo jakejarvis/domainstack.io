@@ -43,7 +43,7 @@ function makeClientDomainTool<TDef extends (typeof DOMAIN_TOOL_DEFS)[number]>(
         }
         return result.data;
       } catch (err) {
-        analytics.trackException(err instanceof Error ? err : new Error(String(err)), {
+        analytics.trackException(err, {
           context: "client-domain-tool",
           tool: def.name,
           domain,

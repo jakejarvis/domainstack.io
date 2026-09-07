@@ -94,7 +94,7 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
       analytics.track("delete_account_initiated");
       dispatch({ type: "DELETE_SUCCESS" });
     } catch (err) {
-      analytics.trackException(err instanceof Error ? err : new Error(String(err)), {
+      analytics.trackException(err, {
         action: "delete_account",
       });
       dispatch({

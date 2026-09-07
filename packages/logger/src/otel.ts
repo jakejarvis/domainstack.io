@@ -1,10 +1,22 @@
-import { SeverityNumber } from "@opentelemetry/api-logs";
+import { context } from "@opentelemetry/api";
+import { logs, SeverityNumber } from "@opentelemetry/api-logs";
 import type { LogRecord } from "@opentelemetry/api-logs";
-import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
-import { resourceFromAttributes } from "@opentelemetry/resources";
-import { BatchLogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs";
+import pino from "pino";
 
 const RESERVED_KEYS = new Set(["level", "time", "msg"]);
+
+/** The key `pino.stdSerializers.err` output lands on. Pino's `errorKey` default. */
+const ERROR_KEY = "err";
+
+/**
+ * Maps the fields of a serialized Pino error onto OpenTelemetry's exception
+ * attribute names, which is what error tracking reads.
+ */
+const EXCEPTION_ATTRIBUTES: Record<string, string> = {
+  type: "exception.type",
+  message: "exception.message",
+  stack: "exception.stacktrace",
+};
 
 const PINO_LABEL_TO_SEVERITY: Record<string, SeverityNumber> = {
   trace: SeverityNumber.TRACE,
@@ -24,58 +36,6 @@ const PINO_NUMERIC_TO_SEVERITY: Record<number, SeverityNumber> = {
   60: SeverityNumber.FATAL,
 };
 
-let provider: LoggerProvider | undefined;
-
-/**
- * Schedules work to run after the current request completes. Hosts provide
- * their own primitive (Next.js supplies `after()`) so this package stays
- * framework-agnostic.
- */
-export type FlushScheduler = (task: () => Promise<void>) => void;
-
-let scheduleFlush: FlushScheduler | undefined;
-let flushScheduled = false;
-
-/**
- * Register the scheduler used to flush buffered records at request boundaries.
- * Call once during server startup; until then, records are only exported when
- * the batch processor's own timer fires or `flushLogs` is called directly.
- */
-export function setFlushScheduler(scheduler: FlushScheduler): void {
-  scheduleFlush = scheduler;
-}
-
-/**
- * Queue a flush for the end of the current request, at most one at a time.
- *
- * The flag resets when the task starts rather than when it finishes, so
- * records emitted while an export is in flight schedule a fresh flush instead
- * of being stranded in the buffer.
- */
-function ensureFlushScheduled(): void {
-  if (!scheduleFlush || flushScheduled) {
-    return;
-  }
-
-  flushScheduled = true;
-  try {
-    scheduleFlush(async () => {
-      flushScheduled = false;
-      await flushLogs();
-    });
-  } catch {
-    // No active request scope (workflow step, script, module init)
-    flushScheduled = false;
-  }
-}
-
-function isExportEnabled(): boolean {
-  if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) {
-    return false;
-  }
-  return process.env.NODE_ENV === "production";
-}
-
 function toSeverity(level: unknown): SeverityNumber {
   if (typeof level === "string") {
     return PINO_LABEL_TO_SEVERITY[level] ?? SeverityNumber.UNSPECIFIED;
@@ -84,6 +44,17 @@ function toSeverity(level: unknown): SeverityNumber {
     return PINO_NUMERIC_TO_SEVERITY[level] ?? SeverityNumber.UNSPECIFIED;
   }
   return SeverityNumber.UNSPECIFIED;
+}
+
+/** `formatters.level` emits labels, but stay readable if that ever changes. */
+function toSeverityText(level: unknown): string | undefined {
+  if (typeof level === "string") {
+    return level;
+  }
+  if (typeof level === "number") {
+    return pino.levels.labels[level];
+  }
+  return undefined;
 }
 
 function toTimestamp(time: unknown): number | undefined {
@@ -115,6 +86,29 @@ function toAttributeValue(value: unknown): string | number | boolean {
   }
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Flattens nested objects one level deep with dotted keys. OTLP allows nested
+ * maps, but flat scalar keys are what stays filterable downstream.
+ */
+function assignNested(
+  attributes: Record<string, string | number | boolean>,
+  prefix: string,
+  value: Record<string, unknown>,
+  keyMap?: Record<string, string>,
+): void {
+  for (const [nestedKey, nestedValue] of Object.entries(value)) {
+    if (nestedValue === null || nestedValue === undefined) {
+      continue;
+    }
+    const mapped = keyMap?.[nestedKey];
+    attributes[mapped ?? `${prefix}.${nestedKey}`] = toAttributeValue(nestedValue);
+  }
+}
+
 function toAttributes(record: Record<string, unknown>): Record<string, string | number | boolean> {
   const attributes: Record<string, string | number | boolean> = {};
 
@@ -128,13 +122,8 @@ function toAttributes(record: Record<string, unknown>): Record<string, string | 
       continue;
     }
 
-    if (typeof value === "object" && !Array.isArray(value)) {
-      for (const [nestedKey, nestedValue] of Object.entries(value as Record<string, unknown>)) {
-        if (nestedValue === null || nestedValue === undefined) {
-          continue;
-        }
-        attributes[`${key}.${nestedKey}`] = toAttributeValue(nestedValue);
-      }
+    if (isPlainObject(value)) {
+      assignNested(attributes, key, value, key === ERROR_KEY ? EXCEPTION_ATTRIBUTES : undefined);
       continue;
     }
 
@@ -149,95 +138,32 @@ function toAttributes(record: Record<string, unknown>): Record<string, string | 
  */
 export function toLogRecord(record: Record<string, unknown>): LogRecord {
   const timestamp = toTimestamp(record.time);
-  const body = typeof record.msg === "string" ? record.msg : "";
+  const severityText = toSeverityText(record.level);
 
   return {
-    body,
+    body: typeof record.msg === "string" ? record.msg : "",
     severityNumber: toSeverity(record.level),
+    ...(severityText !== undefined ? { severityText } : {}),
     ...(timestamp !== undefined ? { timestamp } : {}),
     attributes: toAttributes(record),
+    // Populates the record's own trace_id/span_id from the active span, which
+    // is what log/trace correlation reads. Resolves to an invalid span context
+    // outside a traced scope, and the SDK omits the fields.
+    context: context.active(),
   };
-}
-
-function getProvider(): LoggerProvider | undefined {
-  if (provider) {
-    return provider;
-  }
-  if (!isExportEnabled()) {
-    return undefined;
-  }
-
-  const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-  if (!key) {
-    return undefined;
-  }
-
-  const host = (process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com").replace(
-    /\/$/,
-    "",
-  );
-
-  const resourceAttributes: Record<string, string> = {
-    "service.name": "domainstack-web",
-  };
-  if (process.env.VERCEL_ENV) {
-    resourceAttributes["deployment.environment"] = process.env.VERCEL_ENV;
-  }
-  if (process.env.VERCEL_GIT_COMMIT_SHA) {
-    resourceAttributes["service.version"] = process.env.VERCEL_GIT_COMMIT_SHA;
-  }
-
-  provider = new LoggerProvider({
-    resource: resourceFromAttributes(resourceAttributes),
-    processors: [
-      new BatchLogRecordProcessor({
-        exporter: new OTLPLogExporter({
-          url: `${host}/i/v1/logs`,
-          headers: {
-            Authorization: `Bearer ${key}`,
-            "Content-Type": "application/json",
-          },
-        }),
-      }),
-    ],
-  });
-
-  return provider;
 }
 
 /**
- * Convert a parsed Pino record and emit it to PostHog via OTLP.
- * No-ops when export is disabled (tests, local dev).
+ * Emit a parsed Pino record through the global OpenTelemetry logs API.
+ *
+ * No-ops until a provider is registered, so nothing is exported from local
+ * runs, tests, or the edge runtime. The host owns provider setup, batching,
+ * and flushing; see `apps/web/instrumentation.ts`.
  */
-export function emitToPostHog(record: Record<string, unknown>): void {
-  if (!isExportEnabled()) {
-    return;
-  }
-
+export function emitLogRecord(record: Record<string, unknown>): void {
   try {
-    const current = getProvider();
-    if (!current) {
-      return;
-    }
-    current.getLogger("domainstack").emit(toLogRecord(record));
-    ensureFlushScheduled();
+    logs.getLogger("domainstack").emit(toLogRecord(record));
   } catch {
     // Logging must never throw
-  }
-}
-
-/**
- * Flush buffered OTLP log records. Normally driven by the registered
- * `FlushScheduler`; call directly from contexts that have no request scope
- * so serverless functions do not freeze before the batch export completes.
- */
-export async function flushLogs(): Promise<void> {
-  if (!provider) {
-    return;
-  }
-  try {
-    await provider.forceFlush();
-  } catch {
-    // Flush must never throw at request boundaries
   }
 }

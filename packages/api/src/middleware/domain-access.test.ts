@@ -2,19 +2,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
-const { updateLastAccessed, scheduleBackground } = vi.hoisted(() => ({
+const { updateLastAccessed, waitUntil } = vi.hoisted(() => ({
   updateLastAccessed: vi.fn<(domain: string) => Promise<boolean>>(),
-  scheduleBackground: vi.fn<(work: Promise<unknown>) => Promise<void>>(async (work) => {
-    await work;
-  }),
+  waitUntil: vi.fn<(work: Promise<unknown>) => void>(),
 }));
 
 vi.mock("@domainstack/db/queries/domains", () => ({
   updateLastAccessed,
 }));
 
-vi.mock("../wait-until", () => ({
-  scheduleBackground,
+vi.mock("@vercel/functions", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@vercel/functions")>()),
+  waitUntil,
 }));
 
 import { createCallerFactory, t } from "../trpc";
@@ -58,14 +57,14 @@ describe("withDomainAccessUpdate", () => {
     await expect(lookupAfterInput("example.com")).resolves.toEqual({ domain: "example.com" });
 
     expect(updateLastAccessed).toHaveBeenCalledWith("example.com");
-    expect(scheduleBackground).toHaveBeenCalledTimes(1);
-    expect(scheduleBackground).toHaveBeenCalledWith(expect.any(Promise));
+    expect(waitUntil).toHaveBeenCalledTimes(1);
+    expect(waitUntil).toHaveBeenCalledWith(expect.any(Promise));
   });
 
   it("still records access when middleware is attached before .input()", async () => {
     await expect(lookupBeforeInput("example.com")).resolves.toEqual({ domain: "example.com" });
 
     expect(updateLastAccessed).toHaveBeenCalledWith("example.com");
-    expect(scheduleBackground).toHaveBeenCalledTimes(1);
+    expect(waitUntil).toHaveBeenCalledTimes(1);
   });
 });

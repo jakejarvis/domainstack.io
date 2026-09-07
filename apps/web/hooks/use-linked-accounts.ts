@@ -39,7 +39,7 @@ async function linkProvider(provider: OAuthProviderConfig) {
       callbackURL: "/settings",
     });
   } catch (err) {
-    analytics.trackException(err instanceof Error ? err : new Error(String(err)), {
+    analytics.trackException(err, {
       provider: provider.id,
       action: "link_account",
     });
@@ -93,7 +93,7 @@ export function useLinkedAccounts(): UseLinkedAccountsReturn {
       if (context?.previousAccounts) {
         queryClient.setQueryData(linkedAccountsQueryKey, context.previousAccounts);
       }
-      analytics.trackException(err instanceof Error ? err : new Error(String(err)), {
+      analytics.trackException(err, {
         provider: providerId,
         action: "unlink_account",
       });
