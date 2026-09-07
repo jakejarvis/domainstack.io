@@ -395,7 +395,7 @@ function ChatShell({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={handleOpenChange}>
-        <DrawerContent>
+        <DrawerContent className="data-[swipe-direction=down]:mt-0 data-[swipe-direction=down]:h-[calc(100dvh---spacing(16))] data-[swipe-direction=down]:max-h-[calc(100dvh---spacing(16))]">
           <DrawerHeader className="flex flex-row items-center justify-between">
             <DrawerTitle className="flex items-center gap-2">
               <IconLego className="size-4" />

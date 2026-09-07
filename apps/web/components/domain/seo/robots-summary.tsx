@@ -541,7 +541,7 @@ function RuleRow({
   return (
     <div
       className={cn(
-        "group flex items-center gap-2 border-t border-muted px-2 py-2.5 font-mono text-xs [contain-intrinsic-size:auto_2.5rem] [content-visibility:auto]",
+        "group flex items-center gap-2 border-t border-muted px-2 py-2.5 font-mono text-xs",
         isFirst && "border-t-0",
       )}
     >

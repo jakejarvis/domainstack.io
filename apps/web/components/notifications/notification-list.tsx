@@ -70,7 +70,6 @@ export function NotificationList({
                   duration: shouldReduceMotion ? 0.1 : 0.2,
                   ease: "easeInOut",
                 }}
-                className="[contain-intrinsic-size:auto_4.5rem] [content-visibility:auto]"
               >
                 <NotificationCard
                   notification={notification}

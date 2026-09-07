@@ -9,7 +9,6 @@ import { vi } from "vitest";
 import "vitest-browser-react";
 
 import "./app/globals.css";
-import "./vitest.browser.css";
 
 // Mock fetch to prevent network requests
 globalThis.fetch = vi.fn<typeof fetch>(() => {

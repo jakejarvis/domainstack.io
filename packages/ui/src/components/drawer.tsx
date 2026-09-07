@@ -37,35 +37,40 @@ function DrawerOverlay({ className, ...props }: DrawerPrimitive.Backdrop.Props) 
 
 function DrawerContent({ className, children, ...props }: DrawerPrimitive.Popup.Props) {
   return (
-    <DrawerPortal data-slot="drawer-portal">
-      <DrawerOverlay />
-      <DrawerPrimitive.Viewport className="fixed inset-0 z-50 overflow-hidden overscroll-contain">
-        <DrawerPrimitive.Popup
-          data-slot="drawer-content"
-          className={cn(
-            "group/drawer-content fixed z-50 flex h-auto flex-col bg-background text-sm shadow-lg outline-hidden",
-            "data-[nested-dialog-open]:pointer-events-none data-[nested-dialog-open]:after:absolute data-[nested-dialog-open]:after:inset-0 data-[nested-dialog-open]:after:z-50 data-[nested-dialog-open]:after:rounded-[inherit] data-[nested-dialog-open]:after:bg-black/10 data-[nested-dialog-open]:after:content-['']",
-            "motion-reduce:animate-none motion-reduce:transition-none data-open:animate-in data-open:fade-in-0 data-[swipe-direction=down]:data-open:slide-in-from-bottom-10 data-[swipe-direction=left]:data-open:slide-in-from-left-10 data-[swipe-direction=right]:data-open:slide-in-from-right-10 data-[swipe-direction=up]:data-open:slide-in-from-top-10 data-closed:animate-out data-closed:fade-out-0 data-[swipe-direction=down]:data-closed:slide-out-to-bottom-10 data-[swipe-direction=left]:data-closed:slide-out-to-left-10 data-[swipe-direction=right]:data-closed:slide-out-to-right-10 data-[swipe-direction=up]:data-closed:slide-out-to-top-10",
-            "data-[swipe-direction=down]:inset-x-0 data-[swipe-direction=down]:bottom-0 data-[swipe-direction=left]:inset-y-0 data-[swipe-direction=left]:left-0 data-[swipe-direction=right]:inset-y-0 data-[swipe-direction=right]:right-0 data-[swipe-direction=up]:inset-x-0 data-[swipe-direction=up]:top-0",
-            "data-[swipe-direction=down]:mt-24 data-[swipe-direction=down]:max-h-[80vh] data-[swipe-direction=left]:h-full data-[swipe-direction=left]:w-3/4 data-[swipe-direction=right]:h-full data-[swipe-direction=right]:w-3/4 data-[swipe-direction=up]:mb-24 data-[swipe-direction=up]:max-h-[80vh]",
-            "data-[swipe-direction=down]:rounded-t-xl data-[swipe-direction=down]:border-t data-[swipe-direction=left]:rounded-r-xl data-[swipe-direction=left]:border-r data-[swipe-direction=right]:rounded-l-xl data-[swipe-direction=right]:border-l data-[swipe-direction=up]:rounded-b-xl data-[swipe-direction=up]:border-b data-[swipe-direction=left]:sm:max-w-sm data-[swipe-direction=right]:sm:max-w-sm",
-            className,
-          )}
-          {...props}
-        >
-          <div
-            aria-hidden
-            className="mx-auto mt-4 hidden h-1 w-[100px] shrink-0 rounded-full bg-muted group-data-[swipe-direction=down]/drawer-content:block"
-          />
-          <DrawerPrimitive.Content
-            data-slot="drawer-content-inner"
-            className="flex min-h-0 flex-1 flex-col select-text"
+    <DrawerPrimitive.VirtualKeyboardProvider>
+      <DrawerPortal data-slot="drawer-portal">
+        <DrawerOverlay />
+        <DrawerPrimitive.Viewport className="fixed inset-0 z-50 overflow-hidden overscroll-contain">
+          <DrawerPrimitive.Popup
+            data-slot="drawer-content"
+            className={cn(
+              "group/drawer-content fixed z-50 flex h-auto flex-col bg-background text-sm shadow-lg outline-hidden",
+              "data-[nested-dialog-open]:pointer-events-none data-[nested-dialog-open]:after:absolute data-[nested-dialog-open]:after:inset-0 data-[nested-dialog-open]:after:z-50 data-[nested-dialog-open]:after:rounded-[inherit] data-[nested-dialog-open]:after:bg-black/10 data-[nested-dialog-open]:after:content-['']",
+              "motion-reduce:animate-none motion-reduce:transition-none data-open:animate-in data-open:fade-in-0 data-[swipe-direction=down]:data-open:slide-in-from-bottom-10 data-[swipe-direction=left]:data-open:slide-in-from-left-10 data-[swipe-direction=right]:data-open:slide-in-from-right-10 data-[swipe-direction=up]:data-open:slide-in-from-top-10 data-closed:animate-out data-closed:fade-out-0 data-[swipe-direction=down]:data-closed:slide-out-to-bottom-10 data-[swipe-direction=left]:data-closed:slide-out-to-left-10 data-[swipe-direction=right]:data-closed:slide-out-to-right-10 data-[swipe-direction=up]:data-closed:slide-out-to-top-10",
+              "data-[swipe-direction=down]:inset-x-0 data-[swipe-direction=down]:bottom-0 data-[swipe-direction=left]:inset-y-0 data-[swipe-direction=left]:left-0 data-[swipe-direction=right]:inset-y-0 data-[swipe-direction=right]:right-0 data-[swipe-direction=up]:inset-x-0 data-[swipe-direction=up]:top-0",
+              "data-[swipe-direction=down]:mt-24 data-[swipe-direction=down]:max-h-[80vh] data-[swipe-direction=left]:h-full data-[swipe-direction=left]:w-3/4 data-[swipe-direction=right]:h-full data-[swipe-direction=right]:w-3/4 data-[swipe-direction=up]:mb-24 data-[swipe-direction=up]:max-h-[80vh]",
+              "data-[swipe-direction=down]:rounded-t-xl data-[swipe-direction=down]:border-t data-[swipe-direction=left]:rounded-r-xl data-[swipe-direction=left]:border-r data-[swipe-direction=right]:rounded-l-xl data-[swipe-direction=right]:border-l data-[swipe-direction=up]:rounded-b-xl data-[swipe-direction=up]:border-b data-[swipe-direction=left]:sm:max-w-sm data-[swipe-direction=right]:sm:max-w-sm",
+              // Lift bottom sheets above the software keyboard / home indicator.
+              // `--drawer-keyboard-inset` is set by VirtualKeyboardProvider; always include the 0px fallback.
+              "data-[swipe-direction=down]:pb-[max(env(safe-area-inset-bottom,0px),var(--drawer-keyboard-inset,0px))]",
+              className,
+            )}
+            {...props}
           >
-            {children}
-          </DrawerPrimitive.Content>
-        </DrawerPrimitive.Popup>
-      </DrawerPrimitive.Viewport>
-    </DrawerPortal>
+            <div
+              aria-hidden
+              className="mx-auto mt-4 hidden h-1 w-[100px] shrink-0 rounded-full bg-muted group-data-[swipe-direction=down]/drawer-content:block"
+            />
+            <DrawerPrimitive.Content
+              data-slot="drawer-content-inner"
+              className="flex min-h-0 flex-1 flex-col select-text"
+            >
+              {children}
+            </DrawerPrimitive.Content>
+          </DrawerPrimitive.Popup>
+        </DrawerPrimitive.Viewport>
+      </DrawerPortal>
+    </DrawerPrimitive.VirtualKeyboardProvider>
   );
 }
 
@@ -74,7 +79,7 @@ function DrawerHeader({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="drawer-header"
       className={cn(
-        "flex flex-col gap-0.5 p-4 group-data-[swipe-direction=down]/drawer-content:text-center group-data-[swipe-direction=up]/drawer-content:text-center md:gap-0.5 md:text-left",
+        "flex shrink-0 flex-col gap-0.5 p-4 group-data-[swipe-direction=down]/drawer-content:text-center group-data-[swipe-direction=up]/drawer-content:text-center md:gap-0.5 md:text-left",
         className,
       )}
       {...props}
