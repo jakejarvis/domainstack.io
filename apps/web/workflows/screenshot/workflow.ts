@@ -1,9 +1,11 @@
-import { FatalError } from "workflow";
+import { getStepMetadata, RetryableError } from "workflow";
 
 import { checkBlocklist } from "@/workflows/shared/check-blocklist";
+import { createLogger } from "@domainstack/logger";
 
 const VIEWPORT_WIDTH = 1200;
 const VIEWPORT_HEIGHT = 630;
+const logger = createLogger({ source: "workflow/screenshot" });
 
 export interface ScreenshotWorkflowInput {
   domain: string;
@@ -29,11 +31,13 @@ export type ScreenshotWorkflowResult =
 interface CaptureSuccess {
   success: true;
   imageBuffer: string; // base64 encoded for serialization
+  width: number;
+  height: number;
 }
 
 interface CaptureFailure {
   success: false;
-  isPermanentFailure: boolean;
+  errorCode: string;
 }
 
 type CaptureResult = CaptureSuccess | CaptureFailure;
@@ -42,7 +46,7 @@ type CaptureResult = CaptureSuccess | CaptureFailure;
  * Durable screenshot workflow that breaks down screenshot generation into
  * independently retryable steps:
  * 1. Check blocklist
- * 2. Capture screenshot (Puppeteer)
+ * 2. Capture screenshot (Vercel Sandbox)
  * 3. Process and store image (Vercel Blob)
  * 4. Persist to database
  */
@@ -63,8 +67,7 @@ export async function screenshotWorkflow(
     };
   }
 
-  // Step 2: Capture screenshot using Puppeteer
-  // This is the heavy operation that benefits most from durability
+  // Step 2: Capture screenshot in an isolated Vercel Sandbox
   const captureResult = await captureScreenshot(domain);
 
   if (!captureResult.success) {
@@ -90,13 +93,19 @@ export async function screenshotWorkflow(
 }
 
 /**
- * Step: Capture screenshot using Puppeteer
+ * Step: Capture screenshot using Vercel Sandbox
  * This is the heavy operation that benefits from workflow durability
  */
 async function captureScreenshot(domain: string): Promise<CaptureResult> {
   "use step";
 
-  const { captureScreenshotBase64 } = await import("@domainstack/screenshot");
+  const {
+    captureScreenshotBase64,
+    classifyScreenshotError,
+    getScreenshotErrorCode,
+    getScreenshotErrorContext,
+  } = await import("@domainstack/screenshot");
+  const { attempt } = getStepMetadata();
 
   try {
     const result = await captureScreenshotBase64(`https://${domain}`, {
@@ -106,14 +115,40 @@ async function captureScreenshot(domain: string): Promise<CaptureResult> {
       fullPage: false,
     });
 
+    logger.info(
+      {
+        domain,
+        attempt,
+        sandboxId: result.sandboxId,
+        durationMs: result.durationMs,
+        width: result.width,
+        height: result.height,
+        errorCode: null,
+        cleanupSucceeded: result.cleanupSucceeded,
+      },
+      "screenshot capture succeeded",
+    );
+
     return {
       success: true,
       imageBuffer: result.imageBase64,
+      width: result.width,
+      height: result.height,
     };
   } catch (err) {
-    throw new FatalError(
-      `Screenshot capture failed for domain ${domain}: ${err instanceof Error ? err.message : String(err)}`,
+    const errorCode = getScreenshotErrorCode(err);
+    const errorContext = getScreenshotErrorContext(err);
+    const classification = classifyScreenshotError(err);
+    logger.warn(
+      { err, domain, attempt, errorCode, classification, ...errorContext },
+      "screenshot capture failed",
     );
+
+    if (classification === "permanent_target") {
+      return { success: false, errorCode };
+    }
+
+    throw new RetryableError(`Screenshot capture failed: ${errorCode}`, { retryAfter: "5s" });
   }
 }
 
@@ -182,24 +217,18 @@ async function persistFailure(domain: string): Promise<void> {
   const { upsertScreenshot } = await import("@domainstack/db/queries/screenshots");
   const { ttlForScreenshot } = await import("@domainstack/server/ttl");
 
-  try {
-    const domainRecord = await ensureDomainRecord(domain);
-    const now = new Date();
-    const expiresAt = ttlForScreenshot(now);
+  const domainRecord = await ensureDomainRecord(domain);
+  const now = new Date();
+  const expiresAt = ttlForScreenshot(now);
 
-    await upsertScreenshot({
-      domainId: domainRecord.id,
-      url: null,
-      pathname: null,
-      width: VIEWPORT_WIDTH,
-      height: VIEWPORT_HEIGHT,
-      notFound: true,
-      fetchedAt: now,
-      expiresAt,
-    });
-  } catch (err) {
-    throw new FatalError(
-      `Failed to persist screenshot failure for domain ${domain}: ${err instanceof Error ? err.message : String(err)}`,
-    );
-  }
+  await upsertScreenshot({
+    domainId: domainRecord.id,
+    url: null,
+    pathname: null,
+    width: VIEWPORT_WIDTH,
+    height: VIEWPORT_HEIGHT,
+    notFound: true,
+    fetchedAt: now,
+    expiresAt,
+  });
 }

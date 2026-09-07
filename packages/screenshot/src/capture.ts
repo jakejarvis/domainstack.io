@@ -1,106 +1,99 @@
-import { createLogger } from "@domainstack/logger";
+import { resolvePublicHost, SafeFetchError } from "@domainstack/safe-fetch";
 
-import { type Browser, getBrowser, type Page } from "./browser";
-import { createPage } from "./page";
-
-const logger = createLogger({ source: "screenshot/capture" });
+import { ScreenshotError } from "./errors";
+import { runSandboxCapture } from "./sandbox";
 
 const DEFAULT_VIEWPORT_WIDTH = 1200;
 const DEFAULT_VIEWPORT_HEIGHT = 630;
 
 export interface CaptureOptions {
-  /** Viewport width in pixels */
   width?: number;
-  /** Viewport height in pixels */
   height?: number;
-  /** Screenshot format */
   format?: "webp" | "png" | "jpeg";
-  /** Whether to capture full page */
   fullPage?: boolean;
 }
 
 export interface CaptureResult {
-  /** Screenshot buffer */
   buffer: Buffer;
-  /** Width of the captured screenshot */
   width: number;
-  /** Height of the captured screenshot */
   height: number;
+  sandboxId: string;
+  durationMs: number;
+  cleanupSucceeded: boolean;
 }
 
-/**
- * Capture a screenshot of a URL.
- * Handles browser lifecycle and page creation.
- */
+function validateTarget(url: string): URL {
+  let target: URL;
+  try {
+    target = new URL(url);
+  } catch (error) {
+    throw new ScreenshotError("invalid_url", "Screenshot target is not a valid URL", {
+      cause: error,
+    });
+  }
+  if (target.protocol !== "https:") {
+    throw new ScreenshotError("invalid_url", "Screenshot target must use HTTPS");
+  }
+  if (target.username || target.password) {
+    throw new ScreenshotError("invalid_url", "Screenshot target must not contain credentials");
+  }
+  return target;
+}
+
+async function validatePublicTarget(target: URL): Promise<void> {
+  try {
+    await resolvePublicHost(target.hostname);
+  } catch (error) {
+    if (error instanceof SafeFetchError) {
+      const code =
+        error.code === "dns_error"
+          ? "dns_error"
+          : error.code === "host_blocked" || error.code === "private_ip"
+            ? "target_blocked"
+            : "invalid_target";
+      throw new ScreenshotError(code, "Screenshot target is not publicly reachable", {
+        cause: error,
+      });
+    }
+    throw new ScreenshotError("dns_error", "Screenshot target DNS validation failed", {
+      cause: error,
+    });
+  }
+}
+
 export async function captureScreenshot(
   url: string,
   options: CaptureOptions = {},
 ): Promise<CaptureResult> {
-  const {
-    width = DEFAULT_VIEWPORT_WIDTH,
-    height = DEFAULT_VIEWPORT_HEIGHT,
-    format = "webp",
-    fullPage = false,
-  } = options;
+  const target = validateTarget(url);
+  await validatePublicTarget(target);
 
-  let browser: Browser | null = null;
-  let page: Page | null = null;
-
-  try {
-    browser = await getBrowser();
-
-    page = await createPage(browser, url, {
-      viewport: { width, height },
-    });
-
-    if (!page) {
-      throw new Error("Failed to create page");
-    }
-
-    const buffer = await page.screenshot({
-      type: format,
-      fullPage,
-      encoding: "binary",
-    });
-
-    // For fullPage screenshots, get actual content dimensions
-    let actualWidth = width;
-    let actualHeight = height;
-    if (fullPage) {
-      const dimensions = await page.evaluate(() => ({
-        width: document.documentElement.scrollWidth,
-        height: document.documentElement.scrollHeight,
-      }));
-      actualWidth = dimensions.width;
-      actualHeight = dimensions.height;
-    }
-
-    return {
-      buffer: Buffer.from(buffer),
-      width: actualWidth,
-      height: actualHeight,
-    };
-  } catch (err) {
-    logger.error(err, "screenshot capture failed");
-    throw err;
-  } finally {
-    // Close page in background to avoid blocking
-    void page?.close();
-  }
+  return runSandboxCapture(target.href, {
+    width: options.width ?? DEFAULT_VIEWPORT_WIDTH,
+    height: options.height ?? DEFAULT_VIEWPORT_HEIGHT,
+    format: options.format ?? "webp",
+    fullPage: options.fullPage ?? false,
+  });
 }
 
-/**
- * Capture a screenshot and return as base64.
- * Useful for serialization between workflow steps.
- */
 export async function captureScreenshotBase64(
   url: string,
   options: CaptureOptions = {},
-): Promise<{ imageBase64: string; width: number; height: number }> {
+): Promise<{
+  imageBase64: string;
+  width: number;
+  height: number;
+  sandboxId: string;
+  durationMs: number;
+  cleanupSucceeded: boolean;
+}> {
   const result = await captureScreenshot(url, options);
   return {
     imageBase64: result.buffer.toString("base64"),
     width: result.width,
     height: result.height,
+    sandboxId: result.sandboxId,
+    durationMs: result.durationMs,
+    cleanupSucceeded: result.cleanupSucceeded,
   };
 }
