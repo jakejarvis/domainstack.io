@@ -83,7 +83,7 @@ export function HomeSearchSuggestionsClient({
             nativeButton={false}
             aria-label={domain}
             render={
-              <Link href={`/${encodeURIComponent(domain)}`} prefetch={false}>
+              <Link href={`/${encodeURIComponent(domain)}`}>
                 <Favicon domain={domain} className="shrink-0" />
                 {domain}
               </Link>

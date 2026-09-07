@@ -17,7 +17,7 @@ export const metadata: Metadata = createMetadata({
   },
 });
 
-export default async function AddDomainPage({
+async function AddDomainPrefill({
   searchParams,
 }: {
   searchParams: Promise<{
@@ -27,10 +27,20 @@ export default async function AddDomainPage({
     method?: string;
   }>;
 }) {
-  // Extract domain query param on server
   const params = await searchParams;
-  const prefillDomain = params.domain;
+  return <AddDomainPageClient prefillDomain={params.domain} />;
+}
 
+export default function AddDomainPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    domain?: string;
+    resume?: string;
+    id?: string;
+    method?: string;
+  }>;
+}) {
   return (
     <div className="mx-auto my-auto flex w-full max-w-lg flex-col">
       <Link
@@ -41,7 +51,7 @@ export default async function AddDomainPage({
         Back to dashboard
       </Link>
       <Suspense fallback={<AddDomainSkeleton />}>
-        <AddDomainPageClient prefillDomain={prefillDomain} />
+        <AddDomainPrefill searchParams={searchParams} />
       </Suspense>
     </div>
   );

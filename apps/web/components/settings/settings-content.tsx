@@ -130,11 +130,12 @@ export function SettingsTabsRouter({
   }, [activeTab, scrollPanelsToTop]);
 
   useEffect(() => {
+    if (navigationMode !== "modal") return;
+
     for (const tab of SETTINGS_TABS) {
-      const href = `/settings/${tab.value}`;
-      router.prefetch(href);
+      router.prefetch(`/settings/${tab.value}`);
     }
-  }, [router]);
+  }, [navigationMode, router]);
 
   const onValueChange = (nextValue: string) => {
     if (!isSettingsTabValue(nextValue)) return;

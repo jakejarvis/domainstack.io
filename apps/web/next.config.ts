@@ -5,6 +5,7 @@ import { withWorkflow } from "workflow/next";
 let nextConfig: NextConfig = {
   reactCompiler: true,
   cacheComponents: true,
+  partialPrefetching: true,
   typescript: {
     ignoreBuildErrors: true,
   },

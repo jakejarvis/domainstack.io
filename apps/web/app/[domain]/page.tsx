@@ -1,8 +1,11 @@
 import { noop } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { io } from "next/cache";
 import { notFound, redirect } from "next/navigation";
+import { Suspense } from "react";
 
 import { DomainReportClient } from "@/components/domain/report-client";
+import { DomainReportSkeleton } from "@/components/domain/report-skeleton";
 import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { OG_IMAGE_SIZE } from "@/lib/og-utils";
 import { createMetadata, notFoundMetadata } from "@/lib/seo";
@@ -45,7 +48,9 @@ export async function generateMetadata({
   });
 }
 
-export default async function DomainPage({ params }: { params: Promise<{ domain: string }> }) {
+async function DomainReport({ params }: { params: Promise<{ domain: string }> }) {
+  await io();
+
   const { domain: raw } = await params;
   const decoded = decodeURIComponent(raw);
 
@@ -66,5 +71,13 @@ export default async function DomainPage({ params }: { params: Promise<{ domain:
     <HydrateClient>
       <DomainReportClient domain={registrable} />
     </HydrateClient>
+  );
+}
+
+export default function DomainPage({ params }: { params: Promise<{ domain: string }> }) {
+  return (
+    <Suspense fallback={<DomainReportSkeleton />}>
+      <DomainReport params={params} />
+    </Suspense>
   );
 }

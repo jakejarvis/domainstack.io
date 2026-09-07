@@ -1,3 +1,5 @@
+import { cacheLife } from "next/cache";
+
 import { getDefaultSuggestions } from "@domainstack/edge-config";
 
 import { ChatClientLazy } from "./chat-client-lazy";
@@ -27,10 +29,13 @@ function shuffle<T>(array: T[]): T[] {
 }
 
 /**
- * Server component wrapper that generates randomized suggestions
- * using domains from Edge Config.
+ * Shared suggestion list for the cache window. Shuffle is legal inside
+ * `"use cache"` because the result is captured and reused across visitors.
  */
-export async function ChatServer() {
+async function getChatSuggestions(): Promise<string[]> {
+  "use cache";
+  cacheLife("hours");
+
   const configDomains = await getDefaultSuggestions();
   const domains = configDomains.length > 0 ? configDomains : FALLBACK_DOMAINS;
 
@@ -38,9 +43,16 @@ export async function ChatServer() {
   const shuffledDomains = shuffle(domains);
   const shuffledTemplates = shuffle(QUESTION_TEMPLATES);
 
-  const suggestions = shuffledTemplates
+  return shuffledTemplates
     .slice(0, 4)
     .map((template, i) => template(shuffledDomains[i % shuffledDomains.length]));
+}
 
+/**
+ * Server component wrapper that generates cached suggestions
+ * using domains from Edge Config.
+ */
+export async function ChatServer() {
+  const suggestions = await getChatSuggestions();
   return <ChatClientLazy suggestions={suggestions} />;
 }

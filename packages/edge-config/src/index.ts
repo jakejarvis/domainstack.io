@@ -5,7 +5,7 @@
  * Uses React's cache() for request-level deduplication.
  */
 
-import { get } from "@vercel/edge-config";
+import { createClient, get } from "@vercel/edge-config";
 import { cache } from "react";
 
 import { createLogger } from "@domainstack/logger";
@@ -29,18 +29,13 @@ export const getDefaultSuggestions = cache(async (): Promise<string[]> => {
   }
 
   try {
-    const suggestions = await get<string[]>("domain_suggestions");
+    // Uses `force-cache` so Cache Components can include the list in the static shell.
+    // The default Edge Config client uses `no-store`, which hangs during prerender.
+    const edgeConfig = createClient(process.env.EDGE_CONFIG, { cache: "force-cache" });
+    const suggestions = await edgeConfig.get<string[]>("domain_suggestions");
     return suggestions ?? [];
   } catch (err) {
-    // Check for specific prerender error from Next.js/Edge Config
-    const isPrerenderError = err instanceof Error && err.message.includes("During prerendering");
-
-    if (isPrerenderError) {
-      logger.info("skipping domain suggestions during prerender");
-    } else {
-      logger.error(err, "failed to fetch domain suggestions");
-    }
-
+    logger.error(err, "failed to fetch domain suggestions");
     return [];
   }
 });
