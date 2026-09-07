@@ -47,6 +47,8 @@ Before editing files for a substantial task:
 - `pnpm db:migrate` — Apply migrations
 - `pnpm db:studio` — Open Drizzle Studio
 
+After pulling a schema change (a new migration), run `pnpm db:migrate` on your local database before starting the app. A cache query that reads a table or column the local database has not migrated yet will fail the read.
+
 ## Code Style
 
 ### General

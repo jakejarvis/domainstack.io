@@ -15,6 +15,26 @@ import { fetchSeo } from "@domainstack/server/services/seo";
 
 const logger = createLogger({ source: "routers/domain" });
 
+/**
+ * Read a cache entry, treating a read failure as a cache miss.
+ *
+ * A schema drift (a local database that has not run `pnpm db:migrate`) or a
+ * transient production database hiccup then degrades to a fresh fetch instead
+ * of surfacing to the client as a tRPC error.
+ */
+async function readCache<T>(
+  source: string,
+  domain: string,
+  read: () => Promise<T>,
+): Promise<T | null> {
+  try {
+    return await read();
+  } catch (err) {
+    logger.error({ domain, err }, `${source} cache read failed`);
+    return null;
+  }
+}
+
 const LOOKUP_RATE_LIMITS = {
   getRegistration: { requests: 30, window: "1 m" },
   getDnsRecords: { requests: 60, window: "1 m" },
@@ -48,8 +68,10 @@ export const domainRouter = createTRPCRouter({
       const { getCachedRegistration } = await import("@domainstack/db/queries/registrations");
 
       // Check cache first — cached reads must not consume the rate-limit budget
-      const cached = await getCachedRegistration(input.domain);
-      if (cached.data && !cached.stale) {
+      const cached = await readCache("registration", input.domain, () =>
+        getCachedRegistration(input.domain),
+      );
+      if (cached?.data && !cached.stale) {
         return { success: true, cached: true, data: cached.data };
       }
 
@@ -89,8 +111,8 @@ export const domainRouter = createTRPCRouter({
       const { getCachedDns } = await import("@domainstack/db/queries/dns");
 
       // Check cache first — cached reads must not consume the rate-limit budget
-      const cached = await getCachedDns(input.domain);
-      if (cached.data && !cached.stale) {
+      const cached = await readCache("dns", input.domain, () => getCachedDns(input.domain));
+      if (cached?.data && !cached.stale) {
         return { success: true, cached: true, data: cached.data };
       }
 
@@ -122,8 +144,8 @@ export const domainRouter = createTRPCRouter({
       const { getCachedHosting } = await import("@domainstack/db/queries/hosting");
 
       // Check cache first — cached reads must not consume the rate-limit budget
-      const cached = await getCachedHosting(input.domain);
-      if (cached.data && !cached.stale) {
+      const cached = await readCache("hosting", input.domain, () => getCachedHosting(input.domain));
+      if (cached?.data && !cached.stale) {
         return { success: true, cached: true, data: cached.data };
       }
 
@@ -155,8 +177,10 @@ export const domainRouter = createTRPCRouter({
       const { getCachedCertificates } = await import("@domainstack/db/queries/certificates");
 
       // Check cache first — cached reads must not consume the rate-limit budget
-      const cached = await getCachedCertificates(input.domain);
-      if (cached.data && !cached.stale) {
+      const cached = await readCache("certificates", input.domain, () =>
+        getCachedCertificates(input.domain),
+      );
+      if (cached?.data && !cached.stale) {
         return { success: true, cached: true, data: cached.data };
       }
 
@@ -196,8 +220,8 @@ export const domainRouter = createTRPCRouter({
       const { getCachedHeaders } = await import("@domainstack/db/queries/headers");
 
       // Check cache first — cached reads must not consume the rate-limit budget
-      const cached = await getCachedHeaders(input.domain);
-      if (cached.data && !cached.stale) {
+      const cached = await readCache("headers", input.domain, () => getCachedHeaders(input.domain));
+      if (cached?.data && !cached.stale) {
         return {
           success: true,
           cached: true,
@@ -244,8 +268,8 @@ export const domainRouter = createTRPCRouter({
       const { getCachedSeo } = await import("@domainstack/db/queries/seo");
 
       // Check cache first — cached reads must not consume the rate-limit budget
-      const cached = await getCachedSeo(input.domain);
-      if (cached.data && !cached.stale) {
+      const cached = await readCache("seo", input.domain, () => getCachedSeo(input.domain));
+      if (cached?.data && !cached.stale) {
         return { success: true, cached: true, data: cached.data };
       }
 
@@ -283,8 +307,8 @@ export const domainRouter = createTRPCRouter({
     const { getFavicon: getCachedFavicon } = await import("@domainstack/db/queries/favicons");
 
     // Check cache first — cached reads must not consume the rate-limit budget
-    const cached = await getCachedFavicon(input.domain);
-    if (cached.data && !cached.stale) {
+    const cached = await readCache("favicon", input.domain, () => getCachedFavicon(input.domain));
+    if (cached?.data && !cached.stale) {
       return { success: true, cached: true, data: cached.data };
     }
 

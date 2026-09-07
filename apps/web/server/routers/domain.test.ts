@@ -708,6 +708,24 @@ describe("domain router", () => {
       expect(fetchCertificates).toHaveBeenCalledWith(TEST_DOMAIN);
     });
 
+    it("falls back to a fresh fetch when the cache read throws", async () => {
+      const caller = createTestCaller();
+      const certQueries = await import("@domainstack/db/queries/certificates");
+      const spy = vi
+        .spyOn(certQueries, "getCachedCertificates")
+        .mockRejectedValueOnce(new Error('relation "certificate_checks" does not exist'));
+
+      const result = await caller.domain.getCertificates({ domain: TEST_DOMAIN });
+
+      expect(result).toMatchObject({
+        success: true,
+        cached: false,
+        data: freshData,
+      });
+      expect(fetchCertificates).toHaveBeenCalledWith(TEST_DOMAIN);
+      spy.mockRestore();
+    });
+
     it("treats unlabeled chain positions as a cache miss", async () => {
       const caller = createTestCaller();
       await insertCachedObservation();
