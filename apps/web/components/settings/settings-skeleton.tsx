@@ -1,7 +1,23 @@
-import { CardContent, CardHeader } from "@domainstack/ui/card";
+import { getEnabledProviders } from "@/lib/oauth";
+import { Card, CardContent, CardHeader } from "@domainstack/ui/card";
 import { Separator } from "@domainstack/ui/separator";
 import { Skeleton } from "@domainstack/ui/skeleton";
 import { cn } from "@domainstack/ui/utils";
+
+function SettingsCardHeaderSkeleton({
+  titleClassName,
+  descriptionClassName,
+}: {
+  titleClassName: string;
+  descriptionClassName: string;
+}) {
+  return (
+    <CardHeader className="gap-1 px-0 pt-0">
+      <Skeleton className={cn("h-[15px]", titleClassName)} />
+      <Skeleton className={cn("h-5", descriptionClassName)} />
+    </CardHeader>
+  );
+}
 
 /**
  * Skeleton for the subscription section.
@@ -9,13 +25,10 @@ import { cn } from "@domainstack/ui/utils";
  */
 export function SubscriptionSkeleton({ className }: { className?: string }) {
   return (
-    <div className={className}>
-      <CardHeader className="mb-2 px-0 pt-0 pb-2">
-        <Skeleton className="h-6 w-28" />
-        <Skeleton className="mt-1 h-4 w-64" />
-      </CardHeader>
-      <CardContent className="space-y-4 px-0 pt-1">
-        {/* Current plan card */}
+    <div className={cn("space-y-4", className)}>
+      <SettingsCardHeaderSkeleton titleClassName="w-12" descriptionClassName="w-64" />
+      <CardContent className="space-y-4 px-0">
+        {/* Current plan card — matches PlanStatusCard */}
         <div className="flex items-center justify-between rounded-xl border border-black/10 bg-muted/30 p-4 dark:border-white/10">
           <div className="space-y-1.5">
             <Skeleton className="h-5 w-20" />
@@ -24,9 +37,8 @@ export function SubscriptionSkeleton({ className }: { className?: string }) {
           <Skeleton className="h-2 w-24 rounded-full" />
         </div>
 
-        {/* Pro upgrade section */}
+        {/* Pro upgrade section — default Free-plan loaded UI */}
         <div className="relative overflow-hidden rounded-xl border border-black/10 bg-gradient-to-br from-black/[0.02] to-black/[0.04] p-4 dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04]">
-          {/* Decorative elements - matching the actual component */}
           <div
             aria-hidden
             className="pointer-events-none absolute -top-8 -right-8 size-32 rounded-full bg-accent-gold/10 blur-3xl"
@@ -62,7 +74,7 @@ function NotificationMatrixSkeleton({ className }: { className?: string }) {
   return (
     <div className={className}>
       {/* Header row */}
-      <div className="flex items-center border-b border-border py-2 pr-2 pl-1.5">
+      <div className="flex items-center border-b border-border py-2 pr-2 pl-1">
         <Skeleton className="h-3 w-16" />
         <div className="ml-auto flex items-center gap-1">
           <div className="flex w-14 justify-center">
@@ -77,10 +89,10 @@ function NotificationMatrixSkeleton({ className }: { className?: string }) {
       {/* Category rows */}
       <div className="divide-y divide-border/30">
         {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="flex items-center py-2.5 pr-2 pl-1">
+          <div key={i} className="flex items-center py-2 pr-2 pl-1">
             <div className="flex min-w-0 flex-1 items-center gap-2">
-              <Skeleton className="mr-0.5 size-4 shrink-0" />
-              <Skeleton className="h-4 w-28" />
+              <Skeleton className="mr-0.5 size-3.5 shrink-0" />
+              <Skeleton className="h-3.5 w-28" />
             </div>
             <div className="flex items-center gap-1">
               <div className="flex w-14 items-center justify-center py-1">
@@ -99,21 +111,14 @@ function NotificationMatrixSkeleton({ className }: { className?: string }) {
 
 /**
  * Skeleton for the calendar feed section.
- * Matches the Calendar Feed header in NotificationsPanel.
+ * Matches the Calendar Feed SettingsCard + disabled Enable button.
  */
 function CalendarFeedSkeleton({ className }: { className?: string }) {
   return (
-    <div className={className}>
-      <CardHeader className="px-0 pt-0 pb-2">
-        <div className="mb-1 flex items-center gap-2 leading-none">
-          <Skeleton className="size-4.5" />
-          <Skeleton className="h-5 w-28" />
-        </div>
-        <Skeleton className="h-4 w-72" />
-      </CardHeader>
-      <CardContent className="px-0 pt-2">
-        {/* Enable button placeholder */}
-        <Skeleton className="h-9 w-full rounded-lg" />
+    <div className={cn("space-y-4", className)}>
+      <SettingsCardHeaderSkeleton titleClassName="w-28" descriptionClassName="w-72" />
+      <CardContent className="px-0">
+        <Skeleton className="h-9 w-full rounded-md" />
       </CardContent>
     </div>
   );
@@ -127,27 +132,24 @@ export function NotificationsSkeleton({ className }: { className?: string }) {
   return (
     <div className={cn("max-w-full overflow-x-hidden", className)}>
       {/* Global Preferences section */}
-      <CardHeader className="gap-1 px-0 pt-0">
-        <Skeleton className="h-5 w-36" />
-        <Skeleton className="h-4 w-64" />
-      </CardHeader>
-      <CardContent className="px-0">
-        <NotificationMatrixSkeleton />
-      </CardContent>
+      <div className="space-y-4">
+        <SettingsCardHeaderSkeleton titleClassName="w-36" descriptionClassName="w-64" />
+        <CardContent className="px-0">
+          <NotificationMatrixSkeleton />
+        </CardContent>
+      </div>
 
-      <Separator className="my-6 bg-muted" />
+      <Separator className="mt-4 mb-6 bg-muted" />
 
       {/* Muted Domains section */}
-      <CardHeader className="gap-1 px-0 pt-0">
-        <Skeleton className="h-5 w-32" />
-        <Skeleton className="h-4 w-72" />
-      </CardHeader>
-      <CardContent className="px-0">
-        {/* Chip picker with "Mute domain" button */}
-        <div className="flex flex-wrap items-center gap-2">
-          <Skeleton className="h-8 w-28 rounded-full" />
-        </div>
-      </CardContent>
+      <div className="space-y-4">
+        <SettingsCardHeaderSkeleton titleClassName="w-32" descriptionClassName="w-72" />
+        <CardContent className="px-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <Skeleton className="h-8 w-28 rounded-full" />
+          </div>
+        </CardContent>
+      </div>
 
       <Separator className="my-6 bg-muted" />
 
@@ -159,13 +161,13 @@ export function NotificationsSkeleton({ className }: { className?: string }) {
 
 /**
  * Skeleton for a single linked account row.
- * Shows placeholder for provider icon, name, and action button.
+ * Matches Item size="default" variant="outline".
  */
 function LinkedAccountRowSkeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "flex items-center justify-between rounded-xl border border-black/10 bg-black/[0.02] px-4 py-3 dark:border-white/10 dark:bg-white/[0.02]",
+        "flex w-full items-center justify-between rounded-lg border border-border px-3 py-2.5",
         className,
       )}
     >
@@ -184,20 +186,14 @@ function LinkedAccountRowSkeleton({ className }: { className?: string }) {
  */
 function DangerZoneSkeleton({ className }: { className?: string }) {
   return (
-    <div
-      className={cn(
-        "flex items-center justify-between rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3",
-        className,
-      )}
-    >
-      <div className="flex items-center gap-3">
-        <Skeleton className="size-4 bg-destructive/20" />
-        <div className="space-y-1">
-          <Skeleton className="h-4 w-24 bg-destructive/20" />
-          <Skeleton className="h-3 w-40 bg-destructive/10" />
+    <div className={cn("rounded-md border border-destructive/20", className)}>
+      <div className="flex items-center justify-between bg-destructive/5 px-4 py-3">
+        <div className="flex items-center gap-3">
+          <Skeleton className="size-5 bg-destructive/20" />
+          <Skeleton className="h-3.5 w-24 bg-destructive/20" />
         </div>
+        <Skeleton className="size-4 bg-destructive/20" />
       </div>
-      <Skeleton className="size-4 bg-destructive/20" />
     </div>
   );
 }
@@ -207,21 +203,22 @@ function DangerZoneSkeleton({ className }: { className?: string }) {
  * Matches AccountPanel: "Login Providers" header + provider rows + danger zone.
  */
 export function LinkedAccountsSkeleton({ className }: { className?: string }) {
+  const providers = getEnabledProviders();
+  const rowKeys =
+    providers.length > 0 ? providers.map((p) => p.id) : ["github", "gitlab", "google", "vercel"];
+
   return (
     <div className={cn("max-w-full overflow-x-hidden", className)}>
-      <CardHeader className="px-0 pt-0 pb-2">
-        <div className="mb-1 flex items-center gap-2 leading-none">
-          <Skeleton className="size-4.5" />
-          <Skeleton className="h-5 w-28" />
-        </div>
-        <Skeleton className="h-4 w-80" />
-      </CardHeader>
-      <CardContent className="space-y-3 px-0 pt-1">
-        <LinkedAccountRowSkeleton />
-        <LinkedAccountRowSkeleton />
-        <LinkedAccountRowSkeleton />
-        <LinkedAccountRowSkeleton />
-      </CardContent>
+      <div className="space-y-4">
+        <SettingsCardHeaderSkeleton titleClassName="w-28" descriptionClassName="w-80" />
+        <CardContent className="px-0">
+          <div className="flex w-full flex-col gap-2.5">
+            {rowKeys.map((key) => (
+              <LinkedAccountRowSkeleton key={key} />
+            ))}
+          </div>
+        </CardContent>
+      </div>
 
       <Separator className="my-6 bg-muted" />
 
@@ -268,6 +265,24 @@ export function SettingsSkeletonPanels({ className }: { className?: string }) {
   return (
     <div className={className}>
       <SubscriptionSkeleton />
+    </div>
+  );
+}
+
+/**
+ * Full settings page loading shell: title + tabbed card.
+ */
+export function SettingsPageSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <Skeleton className="h-7 w-28" />
+        <Skeleton className="h-5 w-80" />
+      </div>
+      <Card className="overflow-hidden border border-black/10 bg-background/80 p-3 shadow-xl backdrop-blur-xl dark:border-white/10">
+        <SettingsSkeletonTabsList />
+        <SettingsSkeletonPanels className="mt-2 p-2" />
+      </Card>
     </div>
   );
 }

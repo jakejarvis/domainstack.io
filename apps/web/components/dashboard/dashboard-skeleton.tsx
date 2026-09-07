@@ -26,36 +26,45 @@ export function DashboardSkeleton() {
           </div>
 
           {/* View toggle and Calendar */}
-          <div className="flex items-center gap-3">
-            <Skeleton className="h-9 w-30 rounded-md lg:w-20" />
-            <Skeleton className="h-9 w-24 rounded-md lg:w-9" />
+          <div className="flex items-center gap-2.5">
+            <Skeleton className="h-9 w-20 rounded-md" />
+            <Skeleton className="size-9 rounded-md" />
           </div>
         </div>
       </div>
 
-      {/* Filters skeleton */}
-      <div className="space-y-3">
-        {/* Mobile: collapsible button */}
-        <Skeleton className="h-10 w-full rounded-md md:hidden" />
-        {/* Desktop: full filter row */}
-        <div className="hidden md:flex md:flex-wrap md:items-center md:gap-3">
-          {/* Search input */}
-          <Skeleton className="h-9 w-48 rounded-md lg:w-[300px]" />
-          {/* Filter dropdowns */}
-          <Skeleton className="h-9 w-22 rounded-md" />
-          <Skeleton className="h-9 w-22 rounded-md" />
-          <Skeleton className="h-9 w-24 rounded-md" />
+      {/* Matches DashboardActiveView: filters + content */}
+      <div className="space-y-4">
+        {/* Filters skeleton - matches DashboardFilters lg vs collapsible split */}
+        <div className="space-y-3">
+          {/* Small/medium screens: collapsible trigger */}
+          <Skeleton className="h-9 w-full rounded-md lg:hidden" />
+          {/* Large screens: full filter row */}
+          <div className="hidden lg:flex lg:flex-row lg:items-center lg:justify-between lg:gap-3">
+            <div className="flex flex-1 items-center gap-3">
+              {/* Search input: flex-1 lg:max-w-xs */}
+              <Skeleton className="h-9 flex-1 rounded-md lg:max-w-xs" />
+              {/* Filter dropdowns: Health, TLD, Providers */}
+              <div className="flex flex-wrap gap-2">
+                <Skeleton className="h-9 w-[5.75rem] rounded-md" />
+                <Skeleton className="h-9 w-16 rounded-md" />
+                <Skeleton className="h-9 w-[6.75rem] rounded-md" />
+              </div>
+            </div>
+            {/* Grid sort dropdown */}
+            <Skeleton className="h-9 w-28 rounded-md" />
+          </div>
         </div>
-      </div>
 
-      {/* Domain cards grid skeleton */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <DashboardGridCardSkeleton />
-        <DashboardGridCardSkeleton />
-        <DashboardGridCardSkeleton />
-        <DashboardGridCardSkeleton />
-        <DashboardGridCardSkeleton />
-        <DashboardGridCardSkeleton />
+        {/* Domain cards grid skeleton */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <DashboardGridCardSkeleton />
+          <DashboardGridCardSkeleton />
+          <DashboardGridCardSkeleton />
+          <DashboardGridCardSkeleton />
+          <DashboardGridCardSkeleton />
+          <DashboardGridCardSkeleton />
+        </div>
       </div>
     </div>
   );

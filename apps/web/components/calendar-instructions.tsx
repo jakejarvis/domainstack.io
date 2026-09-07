@@ -35,7 +35,6 @@ import {
 } from "@domainstack/ui/dropdown-menu";
 import { Skeleton } from "@domainstack/ui/skeleton";
 import { Spinner } from "@domainstack/ui/spinner";
-import { cn } from "@domainstack/ui/utils";
 import { toDateTimeAttr } from "@domainstack/utils/date";
 
 /**
@@ -58,20 +57,9 @@ function OutlookIcon(props: React.SVGProps<SVGSVGElement>) {
  */
 export function CalendarInstructionsSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn("space-y-4", className)}>
-      <Skeleton className="h-16 w-full" />
-      <Skeleton className="h-9 w-full rounded-lg" />
-      <div className="flex items-center gap-1.5">
-        <Skeleton className="h-3 w-3" />
-        <Skeleton className="h-3 w-1/3" />
-      </div>
-      <div className="flex flex-col gap-2">
-        <div className="grid grid-cols-2 gap-2 pt-1">
-          <Skeleton className="h-10 w-full rounded-lg" />
-          <Skeleton className="h-10 w-full rounded-lg" />
-        </div>
-        <Skeleton className="h-10 w-full rounded-lg" />
-      </div>
+    <div className={className}>
+      {/* Default/disabled state is a single Enable button (h-9). */}
+      <Skeleton className="h-9 w-full rounded-md" />
     </div>
   );
 }

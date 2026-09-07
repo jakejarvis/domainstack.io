@@ -1,24 +1,5 @@
-import {
-  SettingsSkeletonPanels,
-  SettingsSkeletonTabsList,
-} from "@/components/settings/settings-skeleton";
-import { Card } from "@domainstack/ui/card";
-import { Skeleton } from "@domainstack/ui/skeleton";
+import { SettingsPageSkeleton } from "@/components/settings/settings-skeleton";
 
 export default function SettingsLoading() {
-  return (
-    <div className="space-y-5">
-      {/* Page header skeleton */}
-      <div>
-        <Skeleton className="h-8 w-28" />
-        <Skeleton className="mt-2 h-5 w-80" />
-      </div>
-
-      {/* Settings content skeleton */}
-      <Card className="overflow-hidden p-3">
-        <SettingsSkeletonTabsList />
-        <SettingsSkeletonPanels className="mt-2 p-2" />
-      </Card>
-    </div>
-  );
+  return <SettingsPageSkeleton />;
 }

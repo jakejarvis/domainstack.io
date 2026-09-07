@@ -15,7 +15,12 @@ function DnsGroupSkeleton({ title, records = 2 }: { title: string; records?: num
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {Array.from({ length: records }, (_, n) => `dns-skel-${title}-${records}-${n}`).map(
           (id) => (
-            <KeyValueSkeleton key={id} withTrailing widthClass="w-[100px]" />
+            <KeyValueSkeleton
+              key={id}
+              withTrailing
+              trailingClassName="h-6 w-14"
+              widthClass="w-[100px]"
+            />
           ),
         )}
       </div>

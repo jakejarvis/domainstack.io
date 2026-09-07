@@ -5,25 +5,25 @@ import { cn } from "@domainstack/ui/utils";
 export function LoginSkeleton() {
   return (
     <div className="flex flex-col items-center">
-      {/* Logo skeleton - circular to match the logo shape */}
-      <Skeleton className="mb-6 size-14 rounded-md" />
+      {/* Logo — Icon size="xl" is size-14 with mb-5 */}
+      <Skeleton className="mb-5 size-14 rounded-md" />
 
-      {/* Title skeleton */}
+      {/* Title — text-xl font-semibold tracking-tight */}
       <Skeleton className="mb-2 h-7 w-full max-w-56" />
 
-      {/* Description skeleton - two lines centered */}
-      <Skeleton className="h-4 w-full max-w-76" />
+      {/* Description — text-sm with mb-6 */}
+      <Skeleton className="mb-6 h-5 w-full max-w-76" />
 
-      {/* Sign in button skeleton */}
-      <div className="my-6 flex w-full flex-wrap items-center gap-3">
-        <Skeleton className="h-10 w-full max-w-[400px] rounded-md" />
-        <Skeleton className="h-10 w-full max-w-[400px] rounded-md" />
-        <Skeleton className="h-10 w-full max-w-[400px] rounded-md" />
-        <Skeleton className="h-10 w-full max-w-[400px] rounded-md" />
+      {/* OAuth buttons — flex-col gap-3, size="lg" is h-10 */}
+      <div className="flex w-full flex-col gap-3">
+        <Skeleton className="h-10 w-full rounded-md" />
+        <Skeleton className="h-10 w-full rounded-md" />
+        <Skeleton className="h-10 w-full rounded-md" />
+        <Skeleton className="h-10 w-full rounded-md" />
       </div>
 
-      {/* Legal text skeleton - two short lines centered */}
-      <Skeleton className="my-1 h-3 w-full max-w-82" />
+      {/* Legal text — mt-6 text-xs leading-relaxed (two wrapped lines) */}
+      <Skeleton className="mt-6 h-8 w-full max-w-82" />
     </div>
   );
 }

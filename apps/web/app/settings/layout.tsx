@@ -3,14 +3,9 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { StaticBackground } from "@/components/layout/static-background";
-import {
-  SettingsSkeletonPanels,
-  SettingsSkeletonTabsList,
-} from "@/components/settings/settings-skeleton";
+import { SettingsPageSkeleton } from "@/components/settings/settings-skeleton";
 import { getServerSession } from "@/lib/auth/session";
 import { createMetadata } from "@/lib/seo";
-import { Card } from "@domainstack/ui/card";
-import { Skeleton } from "@domainstack/ui/skeleton";
 
 export const metadata: Metadata = createMetadata({
   path: "/settings",
@@ -37,20 +32,7 @@ export default function SettingsLayout({ children }: LayoutProps<"/settings">) {
     <>
       <StaticBackground />
       <div className="container mx-auto max-w-3xl px-4 py-8">
-        <Suspense
-          fallback={
-            <div className="space-y-5">
-              <div>
-                <Skeleton className="h-8 w-28" />
-                <Skeleton className="mt-2 h-5 w-80" />
-              </div>
-              <Card className="overflow-hidden p-3">
-                <SettingsSkeletonTabsList />
-                <SettingsSkeletonPanels className="mt-2 p-2" />
-              </Card>
-            </div>
-          }
-        >
+        <Suspense fallback={<SettingsPageSkeleton />}>
           <ProtectedSettingsLayout>{children}</ProtectedSettingsLayout>
         </Suspense>
       </div>

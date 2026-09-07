@@ -21,7 +21,7 @@ export function HomeSearchSuggestionsSkeleton({
           {skeletonItems.map((item) => (
             <div
               key={item.id}
-              className="flex h-8 shrink-0 animate-pulse items-center gap-2 rounded-md bg-muted/15 px-2.5 ring-1 ring-border/60"
+              className="flex h-8 shrink-0 animate-pulse items-center gap-2 rounded-md border-none bg-muted/40 px-2.5 ring-1 ring-ring/20"
             >
               {/* Favicon placeholder */}
               <Skeleton className="size-4 rounded-sm" />

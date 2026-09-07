@@ -11,8 +11,8 @@ export function CertificatesSectionSkeleton() {
         <KeyValueGrid colsDesktop={2}>
           <KeyValueSkeleton label="Issuer" widthClass="w-[100px]" withLeading />
           <KeyValueSkeleton label="Subject" widthClass="w-[100px]" />
-          <KeyValueSkeleton label="Valid from" widthClass="w-[120px]" />
-          <KeyValueSkeleton label="Valid to" widthClass="w-[120px]" />
+          <KeyValueSkeleton label="Valid from" widthClass="w-[120px]" withSuffix />
+          <KeyValueSkeleton label="Valid to" widthClass="w-[120px]" withSuffix />
         </KeyValueGrid>
       </div>
       <div className="mt-4 flex justify-center">

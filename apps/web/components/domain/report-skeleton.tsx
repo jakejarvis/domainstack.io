@@ -14,21 +14,22 @@ import { cn } from "@domainstack/ui/utils";
 function HeaderSkeleton() {
   return (
     <div className="flex min-w-0 items-center justify-between gap-4">
-      {/* Left: favicon + domain name */}
+      {/* Left: favicon + domain name + camera/spinner slot */}
       <div className="flex min-w-0 items-center gap-2">
         <Skeleton className="size-5 shrink-0 rounded-xs" />
-        <Skeleton className="h-5 w-38 rounded-sm" />
+        <Skeleton className="h-7 w-38 rounded-sm" />
+        <Skeleton className="ml-0.5 size-3.5 shrink-0 rounded-full" />
       </div>
 
       {/* Right: Track button + Export button + Tools dropdown */}
-      {/* Buttons show icon-only on mobile, icon+text on desktop */}
+      {/* Buttons show icon-only on mobile, icon+text on desktop (default h-9) */}
       <div className="flex shrink-0 items-center gap-2">
         {/* Track button: icon on mobile, icon+"Track" on desktop */}
-        <Skeleton className="size-8 rounded-md sm:w-[76px]" />
+        <Skeleton className="h-9 w-9 rounded-md sm:w-[5.75rem]" />
         {/* Export button: icon on mobile, icon+"Export" on desktop */}
-        <Skeleton className="size-8 rounded-md sm:w-[88px]" />
-        {/* Tools dropdown: always icon-only */}
-        <Skeleton className="size-8 rounded-md" />
+        <Skeleton className="h-9 w-9 rounded-md sm:w-[6.5rem]" />
+        {/* Tools dropdown: always icon-only (size="icon") */}
+        <Skeleton className="size-9 rounded-md" />
       </div>
     </div>
   );
@@ -56,10 +57,10 @@ function SectionNavSkeleton() {
           "h-[var(--section-nav-height)]",
           // Full-width background using pseudo-element
           "before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-screen before:-translate-x-1/2",
-          "before:bg-background/80 before:backdrop-blur-md dark:before:bg-background/90",
+          "before:bg-background/80 before:backdrop-blur",
           // Full-width bottom border with gradient fade (header visible state)
           "after:absolute after:bottom-0 after:left-1/2 after:h-px after:w-screen after:-translate-x-1/2",
-          "after:bg-gradient-to-r after:from-transparent after:via-black/5 after:to-transparent dark:after:via-white/10",
+          "after:bg-gradient-to-r after:from-transparent after:via-black/10 after:to-transparent dark:after:via-white/10",
         )}
       >
         {/* Skeleton tabs - horizontally scrollable on mobile, centered on desktop */}

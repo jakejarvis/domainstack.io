@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { AddDomainPageClient } from "@/components/dashboard/add-domain/add-domain-page-client";
 import { AddDomainSkeleton } from "@/components/dashboard/add-domain/add-domain-skeleton";
 import { createMetadata } from "@/lib/seo";
+import { Card } from "@domainstack/ui/card";
 
 export const metadata: Metadata = createMetadata({
   path: "/dashboard/add-domain",
@@ -34,7 +35,13 @@ export default function AddDomainPage({ searchParams }: PageProps<"/dashboard/ad
         <IconArrowLeft className="size-4" />
         Back to dashboard
       </Link>
-      <Suspense fallback={<AddDomainSkeleton />}>
+      <Suspense
+        fallback={
+          <Card className="w-full px-6">
+            <AddDomainSkeleton />
+          </Card>
+        }
+      >
         <AddDomainPrefill searchParams={searchParams} />
       </Suspense>
     </div>

@@ -1,5 +1,5 @@
-import { AddDomainSkeleton } from "@/components/dashboard/add-domain/add-domain-skeleton";
+import { AddDomainPageSkeleton } from "@/components/dashboard/add-domain/add-domain-skeleton";
 
 export default function AddDomainLoading() {
-  return <AddDomainSkeleton />;
+  return <AddDomainPageSkeleton />;
 }

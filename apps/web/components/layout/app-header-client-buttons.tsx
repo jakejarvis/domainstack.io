@@ -36,9 +36,9 @@ export function AppHeaderClientButtons() {
   if (!mounted || isPending) {
     return (
       <>
-        <Skeleton className="size-7 max-md:ml-1" />
+        <Skeleton className="size-8 rounded-md max-md:ml-1" />
         <AppHeaderSeparator className="hidden md:block" />
-        <Skeleton className="hidden h-7 w-12 md:block" />
+        <Skeleton className="hidden h-8 w-[4.75rem] rounded-md md:block" />
       </>
     );
   }

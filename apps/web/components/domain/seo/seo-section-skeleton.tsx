@@ -28,10 +28,10 @@ export function SeoSectionSkeleton() {
           <div className="text-[11px] tracking-[0.08em] text-foreground/70 uppercase dark:text-foreground/80">
             Open Graph
           </div>
-          {/* Tabs row skeleton */}
-          <div className="flex h-auto w-full flex-wrap gap-1 rounded-md border border-muted-foreground/15 p-1 md:justify-start">
+          {/* Tabs row skeleton — TabsList is h-11 w-full with default variant chrome */}
+          <div className="flex h-11 w-full items-center gap-1 rounded-lg border border-black/8 bg-muted/40 p-1 backdrop-blur-sm dark:border-white/10">
             {[1, 2, 3, 4, 5].map((id) => (
-              <Skeleton key={`og-tab-${id}`} className="h-9 flex-1 basis-0 rounded-md" />
+              <Skeleton key={`og-tab-${id}`} className="h-full flex-1 basis-0 rounded-md" />
             ))}
           </div>
           {/* Preview skeleton */}
@@ -44,11 +44,11 @@ export function SeoSectionSkeleton() {
               </div>
               <div className="p-3">
                 <Skeleton className="h-[11px] w-24" />
-                <div className="mt-1.5">
-                  <Skeleton className="h-5 w-3/4" />
+                <div className="mt-0.5">
+                  <Skeleton className="h-[15px] w-3/4" />
                 </div>
-                <div className="mt-1">
-                  <Skeleton className="h-4 w-full" />
+                <div className="mt-0.5">
+                  <Skeleton className="h-[13px] w-full" />
                 </div>
               </div>
             </div>
@@ -65,10 +65,10 @@ export function SeoSectionSkeleton() {
           {/* Filters row */}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <Skeleton className="h-9 w-full rounded-md sm:flex-1" />
-            <div className="flex h-9 w-full items-stretch gap-2 sm:w-auto [&>*]:flex-1 sm:[&>*]:flex-none">
-              <Skeleton className="h-9 rounded-md sm:w-20" />
-              <Skeleton className="h-9 rounded-md sm:w-20" />
-              <Skeleton className="h-9 rounded-md sm:w-20" />
+            <div className="flex h-9 w-full items-stretch gap-1 rounded-lg border border-black/8 bg-muted/50 p-1 sm:w-auto dark:border-white/10 [&>*]:flex-1 sm:[&>*]:flex-none">
+              <Skeleton className="h-full rounded-md sm:w-[4.5rem]" />
+              <Skeleton className="h-full rounded-md sm:w-[5.5rem]" />
+              <Skeleton className="h-full rounded-md sm:w-[6.75rem]" />
             </div>
           </div>
 
@@ -77,7 +77,7 @@ export function SeoSectionSkeleton() {
             {["g-0", "g-1", "g-2"].map((gid, gidx) => (
               <div key={gid}>
                 {/* Group header */}
-                <div className="flex w-full items-center justify-between rounded-md p-1.5 py-2">
+                <div className="flex w-full items-center justify-between rounded-md px-2 py-2">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <Skeleton className="h-5 w-25 rounded" />
                   </div>
@@ -89,9 +89,9 @@ export function SeoSectionSkeleton() {
                     {[0, 1, 2, 3, 4, 5].map((rid) => (
                       <div
                         key={`${gid}-rule-${rid}`}
-                        className={`flex items-center gap-2 border-t border-input px-2.5 py-2.5 ${rid === 0 ? "border-t-0" : ""}`}
+                        className={`flex items-center gap-2 border-t border-muted px-2.5 py-2.5 ${rid === 0 ? "border-t-0" : ""}`}
                       >
-                        <Skeleton className="size-3.5 rounded-full" />
+                        <Skeleton className="size-4 rounded-full" />
                         <Skeleton className="h-3 w-32 rounded" />
                       </div>
                     ))}

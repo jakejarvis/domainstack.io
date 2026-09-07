@@ -43,11 +43,13 @@ export function RegistrarLinksSkeleton({ className }: { className?: string }) {
 
   return (
     <div className={cn("flex flex-col items-center justify-center", className)}>
-      <Skeleton className="mt-1 mb-1 h-3 w-20" aria-hidden />
-      {Array.from({ length: providerCount }, (_, i) => (
-        <Skeleton key={i} className="mt-2 h-8 w-48" aria-hidden />
-      ))}
-      <Skeleton className="mt-7 mb-1 h-3 w-64" aria-hidden />
+      <Skeleton className="mb-2 h-[13px] w-20" aria-hidden />
+      <div className="flex flex-col gap-2">
+        {Array.from({ length: providerCount }, (_, i) => (
+          <Skeleton key={i} className="h-9 w-full min-w-[250px] rounded-md" aria-hidden />
+        ))}
+      </div>
+      <Skeleton className="mt-6 h-4 w-64" aria-hidden />
     </div>
   );
 }
