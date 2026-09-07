@@ -36,9 +36,16 @@ export const withDomainAccessUpdate = t.middleware(async ({ input, next, getRawI
     // `waitUntil` hands the promise to the platform rather than awaiting it, so a
     // rejection escaping here would surface as an unhandled rejection.
     waitUntil(
-      updateLastAccessed(domain).catch((err: unknown) =>
-        logger.error({ err, domain }, "failed to record domain access"),
-      ),
+      (async () => {
+        try {
+          const updated = await updateLastAccessed(domain);
+          if (!updated) {
+            logger.error({ domain }, "failed to record domain access");
+          }
+        } catch (err: unknown) {
+          logger.error({ err, domain }, "failed to record domain access");
+        }
+      })(),
     );
   }
 

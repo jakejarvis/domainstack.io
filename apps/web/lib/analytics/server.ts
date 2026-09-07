@@ -12,6 +12,34 @@ const client = process.env.NEXT_PUBLIC_POSTHOG_KEY
     })
   : null;
 
+function stringifyThrownObject(error: object): string {
+  try {
+    const serialized = JSON.stringify(error);
+    if (typeof serialized === "string") {
+      return serialized;
+    }
+  } catch {
+    // circular structures, BigInt, etc.
+  }
+  return Object.prototype.toString.call(error);
+}
+
+function exceptionFingerprint(error: unknown): string {
+  if (error instanceof Error) {
+    return `${error.name}: ${error.message}`;
+  }
+
+  if (typeof error === "object" && error !== null) {
+    const message =
+      "message" in error && typeof error.message === "string"
+        ? error.message
+        : stringifyThrownObject(error);
+    return `Error: ${message}`;
+  }
+
+  return `Error: ${String(error)}`;
+}
+
 export async function captureException(
   error: unknown,
   userId?: string,
@@ -30,11 +58,9 @@ export async function captureException(
   // tick frames between otherwise identical throws, so a stack-based fingerprint
   // splits one burst across several issues. Non-Errors are coerced only to build
   // the fingerprint; posthog-node extracts its own details from the raw value.
-  const { name, message } = error instanceof Error ? error : new Error(String(error));
-
   client.captureException(error, distinctId, {
     ...properties,
-    $exception_fingerprint: `${name}: ${message}`,
+    $exception_fingerprint: exceptionFingerprint(error),
   });
 
   // Deferring past the response is the caller's job — `trackException` already
