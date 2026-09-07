@@ -15,7 +15,7 @@ function track(event: string, properties?: Record<string, unknown>) {
   }
 }
 
-function trackException(error: Error, properties?: Record<string, unknown>) {
+function trackException(error: unknown, properties?: Record<string, unknown>) {
   try {
     posthogClient.captureException(error, properties);
   } catch {

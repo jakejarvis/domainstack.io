@@ -145,8 +145,10 @@ export async function checkRateLimit(
   try {
     const { success, limit, remaining, reset, pending } = await limiter.limit(identifier);
 
-    // Handle analytics write in background (non-blocking)
-    waitUntil(pending);
+    // Analytics write lands after the response; `waitUntil` no-ops off-platform
+    // (local dev, tests) and drops it, which is fine for analytics. Swallow
+    // failures either way so they can't become an unhandled rejection.
+    waitUntil(pending.catch(() => undefined));
 
     const info = { limit, remaining, reset };
 
