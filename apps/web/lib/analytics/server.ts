@@ -12,32 +12,24 @@ const client = process.env.NEXT_PUBLIC_POSTHOG_KEY
     })
   : null;
 
-function stringifyThrownObject(error: object): string {
-  try {
-    const serialized = JSON.stringify(error);
-    if (typeof serialized === "string") {
-      return serialized;
-    }
-  } catch {
-    // circular structures, BigInt, etc.
-  }
-  return Object.prototype.toString.call(error);
-}
-
 function exceptionFingerprint(error: unknown): string {
-  if (error instanceof Error) {
-    return `${error.name}: ${error.message}`;
-  }
+  try {
+    if (error instanceof Error) {
+      return `${error.name}: ${error.message}`;
+    }
 
-  if (typeof error === "object" && error !== null) {
-    const message =
-      "message" in error && typeof error.message === "string"
-        ? error.message
-        : stringifyThrownObject(error);
-    return `Error: ${message}`;
-  }
+    if (typeof error === "object" && error !== null) {
+      const message = (error as { message?: unknown }).message;
+      if (typeof message === "string") {
+        return `Error: ${message}`;
+      }
+      return "Error: unknown";
+    }
 
-  return `Error: ${String(error)}`;
+    return `Error: ${String(error)}`;
+  } catch {
+    return "Error: unknown";
+  }
 }
 
 export async function captureException(
