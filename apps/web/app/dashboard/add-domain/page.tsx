@@ -19,28 +19,12 @@ export const metadata: Metadata = createMetadata({
 
 async function AddDomainPrefill({
   searchParams,
-}: {
-  searchParams: Promise<{
-    domain?: string;
-    resume?: string;
-    id?: string;
-    method?: string;
-  }>;
-}) {
-  const params = await searchParams;
-  return <AddDomainPageClient prefillDomain={params.domain} />;
+}: Pick<PageProps<"/dashboard/add-domain">, "searchParams">) {
+  const { domain } = await searchParams;
+  return <AddDomainPageClient prefillDomain={Array.isArray(domain) ? domain[0] : domain} />;
 }
 
-export default function AddDomainPage({
-  searchParams,
-}: {
-  searchParams: Promise<{
-    domain?: string;
-    resume?: string;
-    id?: string;
-    method?: string;
-  }>;
-}) {
+export default function AddDomainPage({ searchParams }: PageProps<"/dashboard/add-domain">) {
   return (
     <div className="mx-auto my-auto flex w-full max-w-lg flex-col">
       <Link

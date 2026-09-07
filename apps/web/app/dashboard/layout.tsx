@@ -27,7 +27,7 @@ async function ProtectedDashboardLayout({ children }: { children: React.ReactNod
   return <>{children}</>;
 }
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({ children }: LayoutProps<"/dashboard">) {
   return (
     <div className="container mx-auto px-4 py-8">
       <NuqsAdapter>

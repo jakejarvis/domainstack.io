@@ -21,12 +21,7 @@ import { createLogger } from "@domainstack/logger";
 
 const logger = createLogger({ source: "api/chat/stream" });
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ runId: string }> },
-) {
-  const paramsPromise = params;
-
+export async function GET(request: NextRequest, context: RouteContext<"/api/chat/[runId]/stream">) {
   let userId: string | null = null;
   try {
     const session = await auth.api.getSession({ headers: request.headers });
@@ -47,7 +42,7 @@ export async function GET(
     return rateLimit.error;
   }
 
-  const { runId } = await paramsPromise;
+  const { runId } = await context.params;
   const rawStartIndex = request.nextUrl.searchParams.get("startIndex") ?? "0";
   const startIndex = /^\d+$/.test(rawStartIndex) ? Number(rawStartIndex) : Number.NaN;
   if (!Number.isSafeInteger(startIndex)) {

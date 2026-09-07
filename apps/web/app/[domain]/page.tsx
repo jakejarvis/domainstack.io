@@ -11,11 +11,7 @@ import { OG_IMAGE_SIZE } from "@/lib/og-utils";
 import { createMetadata, notFoundMetadata } from "@/lib/seo";
 import { getQueryClient, HydrateClient, trpc } from "@/trpc/server";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ domain: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps<"/[domain]">): Promise<Metadata> {
   const { domain: raw } = await params;
   const decoded = decodeURIComponent(raw);
 
@@ -48,7 +44,7 @@ export async function generateMetadata({
   });
 }
 
-async function DomainReport({ params }: { params: Promise<{ domain: string }> }) {
+async function DomainReport({ params }: Pick<PageProps<"/[domain]">, "params">) {
   await io();
 
   const { domain: raw } = await params;
@@ -74,7 +70,7 @@ async function DomainReport({ params }: { params: Promise<{ domain: string }> })
   );
 }
 
-export default function DomainPage({ params }: { params: Promise<{ domain: string }> }) {
+export default function DomainPage({ params }: PageProps<"/[domain]">) {
   return (
     <Suspense fallback={<DomainReportSkeleton />}>
       <DomainReport params={params} />
