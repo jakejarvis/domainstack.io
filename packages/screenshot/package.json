@@ -11,17 +11,17 @@
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt --config ../../.oxfmtrc.json",
-    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json"
+    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json",
+    "test": "vitest run"
   },
   "dependencies": {
     "@domainstack/logger": "workspace:*",
-    "@ghostery/adblocker-puppeteer": "2.18.2",
-    "@sparticuz/chromium": "149.0.0",
-    "puppeteer-core": "25.1.0"
+    "@domainstack/safe-fetch": "workspace:*",
+    "@vercel/sandbox": "^3.2.1"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@types/node": "catalog:",
-    "puppeteer": "25.1.0"
+    "vitest": "catalog:"
   }
 }
