@@ -7,6 +7,7 @@
  */
 
 import { tool, type Tool } from "ai";
+import { RetryableError } from "workflow";
 import { z } from "zod";
 
 import {
@@ -15,6 +16,7 @@ import {
   domainToolInputSchema,
   getDomainToolErrorMessage,
   getTrpcErrorCode,
+  isExpectedDomainToolError,
   type DomainToolInput,
   type DomainToolProcedure,
   type DomainToolResult,
@@ -52,12 +54,12 @@ async function domainLookupStep(procedure: DomainToolProcedure, domain: string, 
     // Domain lookups return `{ success: false }` instead of throwing.
     // Throws here are tRPC validation/rate-limit errors, or unexpected bugs.
     const trpcCode = getTrpcErrorCode(err);
-    if (trpcCode && trpcCode !== "INTERNAL_SERVER_ERROR") {
+    if (isExpectedDomainToolError(err)) {
       logger.warn({ err, domain, procedure, code: trpcCode }, "tool step failed (expected)");
-    } else {
-      logger.error({ err, domain, procedure }, "tool step failed (unexpected)");
+      return { error: getDomainToolErrorMessage(err) };
     }
-    return { error: getDomainToolErrorMessage(err) };
+    logger.error({ err, domain, procedure }, "tool step failed (unexpected)");
+    throw new RetryableError(`domain tool ${procedure} failed`, { retryAfter: "5s" });
   }
 }
 

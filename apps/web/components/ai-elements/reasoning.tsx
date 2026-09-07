@@ -2,16 +2,7 @@
 
 import { IconBrain, IconChevronDown } from "@tabler/icons-react";
 import type { ComponentProps, ReactNode } from "react";
-import {
-  createContext,
-  memo,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { createContext, memo, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Streamdown } from "streamdown";
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@domainstack/ui/collapsible";
@@ -24,6 +15,7 @@ interface ReasoningContextValue {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   duration: number | undefined;
+  hasContent: boolean;
 }
 
 const ReasoningContext = createContext<ReasoningContextValue | null>(null);
@@ -38,63 +30,24 @@ export const useReasoning = () => {
 
 export type ReasoningProps = ComponentProps<typeof Collapsible> & {
   isStreaming?: boolean;
-  open?: boolean;
-  defaultOpen?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  duration?: number;
+  hasContent?: boolean;
 };
 
 const AUTO_CLOSE_DELAY = 1000;
 const MS_IN_S = 1000;
 
-// Custom hook to handle controllable state (replacing @radix-ui/react-use-controllable-state)
-function useControllableState<T>({
-  prop,
-  defaultProp,
-  onChange,
-}: {
-  prop?: T;
-  defaultProp?: T;
-  onChange?: (value: T) => void;
-}): [T | undefined, (value: T) => void] {
-  const [uncontrolledValue, setUncontrolledValue] = useState(defaultProp);
-  const isControlled = prop !== undefined;
-  const value = isControlled ? prop : uncontrolledValue;
-
-  const setValue = useCallback(
-    (nextValue: T) => {
-      if (!isControlled) {
-        setUncontrolledValue(nextValue);
-      }
-      onChange?.(nextValue);
-    },
-    [isControlled, onChange],
-  );
-
-  return [value, setValue];
-}
-
 export const Reasoning = memo(
   ({
     className,
     isStreaming = false,
-    open,
     defaultOpen = true,
     onOpenChange,
-    duration: durationProp,
+    hasContent = true,
     children,
     ...props
   }: ReasoningProps) => {
-    const [isOpen, setIsOpen] = useControllableState({
-      prop: open,
-      defaultProp: defaultOpen,
-      onChange: onOpenChange,
-    });
-    const [duration, setDuration] = useControllableState({
-      prop: durationProp,
-      defaultProp: undefined,
-    });
-
+    const [isOpen, setIsOpen] = useState(defaultOpen);
+    const [duration, setDuration] = useState<number | undefined>();
     const [hasAutoClosed, setHasAutoClosed] = useState(false);
     const startTimeRef = useRef<number | null>(null);
 
@@ -110,11 +63,11 @@ export const Reasoning = memo(
         setDuration(Math.ceil((Date.now() - startTimeRef.current) / MS_IN_S));
         startTimeRef.current = null;
       }
-    }, [isStreaming, setDuration]);
+    }, [isStreaming]);
 
     // Auto-open when streaming starts, auto-close when streaming ends (once only)
     useEffect(() => {
-      if (defaultOpen && !isStreaming && isOpen && !hasAutoClosed) {
+      if (hasContent && defaultOpen && !isStreaming && isOpen && !hasAutoClosed) {
         // Add a small delay before closing to allow user to see the content
         const timer = setTimeout(() => {
           setIsOpen(false);
@@ -123,23 +76,28 @@ export const Reasoning = memo(
 
         return () => clearTimeout(timer);
       }
-    }, [isStreaming, isOpen, defaultOpen, setIsOpen, hasAutoClosed]);
+    }, [hasContent, isStreaming, isOpen, defaultOpen, hasAutoClosed]);
 
-    const handleOpenChange = (newOpen: boolean) => {
+    const handleOpenChange: NonNullable<ReasoningProps["onOpenChange"]> = (
+      newOpen,
+      eventDetails,
+    ) => {
       setIsOpen(newOpen);
+      onOpenChange?.(newOpen, eventDetails);
     };
+    const open = hasContent && isOpen;
     const contextValue = useMemo(
-      () => ({ isStreaming, isOpen: isOpen ?? false, setIsOpen, duration }),
-      [isStreaming, isOpen, setIsOpen, duration],
+      () => ({ isStreaming, isOpen: open, setIsOpen, duration, hasContent }),
+      [isStreaming, open, duration, hasContent],
     );
 
     return (
       <ReasoningContext.Provider value={contextValue}>
         <Collapsible
+          {...props}
           className={cn("text-muted-foreground", className)}
           onOpenChange={handleOpenChange}
-          open={isOpen}
-          {...props}
+          open={open}
         >
           {children}
         </Collapsible>
@@ -169,25 +127,31 @@ export const ReasoningTrigger = memo(
     getThinkingMessage = defaultGetThinkingMessage,
     ...props
   }: ReasoningTriggerProps) => {
-    const { isStreaming, isOpen, duration } = useReasoning();
+    const { isStreaming, isOpen, duration, hasContent } = useReasoning();
+    const label = children ?? (
+      <>
+        <IconBrain className="size-3.5" aria-hidden />
+        {getThinkingMessage(isStreaming, duration)}
+        {hasContent ? (
+          <IconChevronDown
+            className={cn("size-3 transition-transform", isOpen ? "rotate-180" : "rotate-0")}
+          />
+        ) : null}
+      </>
+    );
+    const triggerClassName = cn(
+      "flex w-full items-center gap-2 text-[13px] text-muted-foreground",
+      hasContent && "hover:text-foreground",
+      className,
+    );
+
+    if (!hasContent) {
+      return <div className={triggerClassName}>{label}</div>;
+    }
 
     return (
-      <CollapsibleTrigger
-        className={cn(
-          "flex w-full items-center gap-2 text-[13px] text-muted-foreground hover:text-foreground",
-          className,
-        )}
-        {...props}
-      >
-        {children ?? (
-          <>
-            <IconBrain className="size-3.5" />
-            {getThinkingMessage(isStreaming, duration)}
-            <IconChevronDown
-              className={cn("size-3 transition-transform", isOpen ? "rotate-180" : "rotate-0")}
-            />
-          </>
-        )}
+      <CollapsibleTrigger className={triggerClassName} {...props}>
+        {label}
       </CollapsibleTrigger>
     );
   },

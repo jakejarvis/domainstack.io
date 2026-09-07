@@ -19,6 +19,7 @@ import { analytics } from "@/lib/analytics/client";
 import { chatOpenAtom } from "@/lib/atoms/chat-atoms";
 import { createClientDomainTools } from "@/lib/chat/client-tools";
 import { buildSystemPrompt } from "@/lib/chat/system-prompt";
+import type { DomainChatUIMessage } from "@/lib/chat/ui-message";
 import { safeDecodeURIComponent } from "@/lib/safe-parse";
 import { useChatHydrated, useChatStore } from "@/lib/stores/chat-store";
 import { type ChatMode, usePreferencesStore } from "@/lib/stores/preferences-store";
@@ -160,6 +161,8 @@ function CloudChatSession({
   // Capture initial runId for resume — must stay stable so AI SDK does not
   // restart resumption when onChatEnd later clears the live run ID.
   const [initialRunId] = useState(runId);
+  const storedMessages = useChatStore((s) => s.messages);
+  const [initialMessages] = useState(storedMessages);
   const setRunId = useChatStore((s) => s.setRunId);
   const setStoredMessages = useChatStore((s) => s.setMessages);
   const clearSession = useChatStore((s) => s.clearSession);
@@ -197,8 +200,9 @@ function CloudChatSession({
     [setStoredMessages, setRunId, ensureSessionId],
   );
 
-  const chat = useChat({
+  const chat = useChat<DomainChatUIMessage>({
     transport,
+    messages: initialMessages as DomainChatUIMessage[],
     resume: !!initialRunId,
     onError: (error) => {
       analytics.trackException(error, { context: "chat-send", domain });
@@ -208,7 +212,6 @@ function CloudChatSession({
   useChatPersistence({
     messages: chat.messages,
     status: chat.status,
-    setMessages: chat.setMessages,
   });
 
   const clearMessages = useCallback(() => {

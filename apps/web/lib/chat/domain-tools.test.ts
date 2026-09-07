@@ -8,6 +8,7 @@ import {
   getDomainToolStatus,
   getToolPartType,
   getTrpcErrorCode,
+  isExpectedDomainToolError,
   type DomainToolResult,
 } from "./domain-tools";
 
@@ -72,6 +73,18 @@ describe("getTrpcErrorCode", () => {
 
   it("ignores generic string codes that are not tRPC codes", () => {
     expect(getTrpcErrorCode({ code: "ENOTFOUND" })).toBeUndefined();
+  });
+});
+
+describe("isExpectedDomainToolError", () => {
+  it("treats validation and rate-limit failures as expected", () => {
+    expect(isExpectedDomainToolError({ code: "BAD_REQUEST" })).toBe(true);
+    expect(isExpectedDomainToolError({ data: { code: "TOO_MANY_REQUESTS" } })).toBe(true);
+  });
+
+  it("treats internal and unknown failures as unexpected", () => {
+    expect(isExpectedDomainToolError({ code: "INTERNAL_SERVER_ERROR" })).toBe(false);
+    expect(isExpectedDomainToolError(new Error("boom"))).toBe(false);
   });
 });
 

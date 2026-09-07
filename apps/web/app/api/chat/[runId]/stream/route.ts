@@ -54,15 +54,6 @@ export async function GET(request: NextRequest, context: RouteContext<"/api/chat
 
   try {
     const run = getRun(runId);
-    const status = await run.status;
-    if (status === "failed") {
-      logger.error({ runId }, "chat workflow failed");
-      return NextResponse.json(
-        { error: "Workflow failed" },
-        { status: 500, headers: { ...rateLimit.headers } },
-      );
-    }
-
     const readable = run
       .getReadable({ startIndex: 0 })
       .pipeThrough(createModelCallToUIChunkTransform({ uiStartIndex: startIndex }));

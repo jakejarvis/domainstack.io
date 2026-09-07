@@ -17,11 +17,12 @@
 
 import { createModelCallToUIChunkTransform } from "@ai-sdk/workflow";
 import { ipAddress } from "@vercel/functions";
-import { createUIMessageStreamResponse, type UIMessage } from "ai";
+import { createUIMessageStreamResponse } from "ai";
 import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 
 import { chatRequestSchema } from "@/lib/chat/request-schema";
+import { validateChatMessages } from "@/lib/chat/validate-messages";
 import { checkRateLimit } from "@/lib/ratelimit/api";
 import { chatWorkflow } from "@/workflows/chat";
 import { auth } from "@domainstack/auth/server";
@@ -120,7 +121,20 @@ export async function POST(request: Request) {
 
   // Truncate conversation history to prevent abuse
   // Keep the most recent messages within limit
-  const messages = rawMessages.slice(-MAX_CONVERSATION_MESSAGES) as UIMessage[];
+  const truncatedMessages = rawMessages.slice(-MAX_CONVERSATION_MESSAGES);
+  const validatedMessages = await validateChatMessages(truncatedMessages);
+  if (!validatedMessages.success) {
+    logger.warn({ err: validatedMessages.error }, "chat history failed tool validation");
+    return NextResponse.json(
+      {
+        error: "Validation failed",
+        details: [{ path: "messages", message: "Invalid chat history" }],
+      },
+      { status: 400, headers: { ...rateLimit.headers } },
+    );
+  }
+
+  const messages = validatedMessages.data;
 
   // Get IP for rate limiting in tools
   const ip = ipAddress(request) ?? null;

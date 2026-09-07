@@ -42,10 +42,13 @@ export async function chatWorkflow(input: ChatWorkflowInput) {
 
   const { messages, domain, ip, userId, sessionId } = input;
 
-  const modelMessages = await convertToModelMessages(messages);
+  const domainTools = createDomainToolset();
+  const modelMessages = await convertToModelMessages(messages, {
+    tools: domainTools,
+    ignoreIncompleteToolCalls: true,
+  });
   const systemPrompt = await buildSystemPromptStep(domain);
   const model = await getModelStep();
-  const domainTools = createDomainToolset();
   const { workflowRunId } = getWorkflowMetadata();
 
   const agent = new WorkflowAgent({
@@ -74,6 +77,12 @@ export async function chatWorkflow(input: ChatWorkflowInput) {
     writable,
     stopWhen: isStepCount(MAX_TOOL_STEPS),
     maxOutputTokens: MAX_OUTPUT_TOKENS,
+    onError: async ({ error }) => {
+      await logChatAgentErrorStep({
+        name: error instanceof Error ? error.name : "Error",
+        message: error instanceof Error ? error.message : String(error),
+      });
+    },
   });
 
   await captureChatTelemetryStep(
@@ -91,4 +100,11 @@ export async function chatWorkflow(input: ChatWorkflowInput) {
   );
 
   return { messages: result.messages };
+}
+
+async function logChatAgentErrorStep(error: { name: string; message: string }) {
+  "use step";
+  const { createLogger } = await import("@domainstack/logger");
+  const logger = createLogger({ source: "chat/workflow" });
+  logger.error(error, "chat agent failed");
 }

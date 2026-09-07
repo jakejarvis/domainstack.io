@@ -137,6 +137,15 @@ function asTrpcErrorCode(code: unknown): string | undefined {
   return typeof code === "string" && TRPC_ERROR_CODES.has(code) ? code : undefined;
 }
 
+/**
+ * tRPC failures the model can report to the user (validation, rate limits).
+ * Unexpected / internal errors should be retried by the workflow step instead.
+ */
+export function isExpectedDomainToolError(err: unknown): boolean {
+  const code = getTrpcErrorCode(err);
+  return code != null && code !== "INTERNAL_SERVER_ERROR";
+}
+
 export function getTrpcErrorCode(err: unknown): string | undefined {
   if (typeof err !== "object" || err === null) {
     return undefined;

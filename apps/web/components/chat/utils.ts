@@ -1,4 +1,4 @@
-import type { UIMessage } from "@ai-sdk/react";
+import type { UIMessage } from "ai";
 import { isTextUIPart } from "ai";
 
 /** Format messages as markdown for clipboard copy */

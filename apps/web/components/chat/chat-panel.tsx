@@ -90,10 +90,16 @@ function ChatMessagePart({
     if (!showReasoning) {
       return null;
     }
+    const hasThoughts = item.text.trim().length > 0;
     return (
-      <Reasoning key={item.key} className="w-full" isStreaming={item.isStreaming}>
+      <Reasoning
+        key={item.key}
+        className="w-full"
+        isStreaming={item.isStreaming}
+        hasContent={hasThoughts}
+      >
         <ReasoningTrigger />
-        <ReasoningContent>{item.text}</ReasoningContent>
+        {hasThoughts ? <ReasoningContent>{item.text}</ReasoningContent> : null}
       </Reasoning>
     );
   }

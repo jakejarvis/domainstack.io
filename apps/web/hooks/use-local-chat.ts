@@ -4,13 +4,15 @@ import type { browserAI } from "@browser-ai/core";
 import {
   convertToModelMessages,
   generateId,
-  readUIMessageStream,
   isStepCount,
-  streamText,
+  readUIMessageStream,
+  ToolLoopAgent,
   type ToolSet,
   type UIMessage,
 } from "ai";
 import { useCallback, useEffect, useRef, useState } from "react";
+
+import { MAX_OUTPUT_TOKENS, MAX_TOOL_STEPS } from "@domainstack/constants";
 
 /**
  * Chat status matching the useChat hook from @ai-sdk/react.
@@ -114,15 +116,19 @@ export function useLocalChat({
       try {
         setStatus("streaming");
 
-        const modelMessages = await convertToModelMessages(conversation);
-        // stopWhen: isStepCount(3) enables multi-step tool execution — without
-        // it the model stops after generating a tool call without executing it
-        const result = streamText({
+        const modelMessages = await convertToModelMessages(conversation, {
+          tools,
+          ignoreIncompleteToolCalls: true,
+        });
+        const agent = new ToolLoopAgent({
           model,
           instructions: systemPrompt,
-          messages: modelMessages,
           tools,
-          stopWhen: isStepCount(3),
+          stopWhen: isStepCount(MAX_TOOL_STEPS),
+          maxOutputTokens: MAX_OUTPUT_TOKENS,
+        });
+        const result = await agent.stream({
+          messages: modelMessages,
           abortSignal: abortControllerRef.current.signal,
         });
 

@@ -35,6 +35,7 @@ function makeClientDomainTool<TDef extends (typeof DOMAIN_TOOL_DEFS)[number]>(
   return tool({
     description: def.description,
     inputSchema: domainToolInputSchema,
+    strict: true,
     execute: async ({ domain }: DomainToolInput) => {
       try {
         const result = await trpc.domain[def.procedure].query({ domain });

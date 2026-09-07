@@ -13,7 +13,7 @@
  * it well.
  * See: https://vercel.com/ai-gateway/models (Provider support table)
  */
-export const DEFAULT_CHAT_MODEL = "google/gemini-2.5-flash";
+export const DEFAULT_CHAT_MODEL = "google/gemini-3.5-flash-lite";
 
 /**
  * Friendly chatbot name.
@@ -73,10 +73,11 @@ export const MAX_ASSISTANT_PARTS = 32;
 export const MAX_CHAT_REQUEST_BYTES = 512_000;
 
 /**
- * Maximum number of tool calls (steps) per request.
- * Prevents infinite loops and controls execution time.
+ * Maximum number of LLM steps per request (`isStepCount`).
+ * One step can run several tools in parallel. Prevents runaway loops
+ * and bounds execution time and cost.
  */
-export const MAX_TOOL_STEPS = 8;
+export const MAX_TOOL_STEPS = 5;
 
 // =============================================================================
 // Rate Limits
