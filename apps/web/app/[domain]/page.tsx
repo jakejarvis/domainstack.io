@@ -1,18 +1,17 @@
 import { noop } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { io } from "next/cache";
 import { notFound, redirect } from "next/navigation";
+import { Suspense } from "react";
 
 import { DomainReportClient } from "@/components/domain/report-client";
+import { DomainReportSkeleton } from "@/components/domain/report-skeleton";
 import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { OG_IMAGE_SIZE } from "@/lib/og-utils";
 import { createMetadata, notFoundMetadata } from "@/lib/seo";
 import { getQueryClient, HydrateClient, trpc } from "@/trpc/server";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ domain: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps<"/[domain]">): Promise<Metadata> {
   const { domain: raw } = await params;
   const decoded = decodeURIComponent(raw);
 
@@ -45,7 +44,9 @@ export async function generateMetadata({
   });
 }
 
-export default async function DomainPage({ params }: { params: Promise<{ domain: string }> }) {
+async function DomainReport({ params }: Pick<PageProps<"/[domain]">, "params">) {
+  await io();
+
   const { domain: raw } = await params;
   const decoded = decodeURIComponent(raw);
 
@@ -66,5 +67,13 @@ export default async function DomainPage({ params }: { params: Promise<{ domain:
     <HydrateClient>
       <DomainReportClient domain={registrable} />
     </HydrateClient>
+  );
+}
+
+export default function DomainPage({ params }: PageProps<"/[domain]">) {
+  return (
+    <Suspense fallback={<DomainReportSkeleton />}>
+      <DomainReport params={params} />
+    </Suspense>
   );
 }

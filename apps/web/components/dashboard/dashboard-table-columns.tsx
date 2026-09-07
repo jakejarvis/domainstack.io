@@ -221,7 +221,6 @@ export function createColumns(
         <ScreenshotPopover domain={row.original.domainName} domainId={row.original.domainId}>
           <Link
             href={`/${encodeURIComponent(row.original.domainName)}`}
-            prefetch={false}
             className="group/link flex items-center"
             data-disable-progress
           >
@@ -459,7 +458,7 @@ export function createColumns(
             <DropdownMenuItem
               nativeButton={false}
               render={
-                <Link href={`/${encodeURIComponent(row.original.domainName)}`} prefetch={false}>
+                <Link href={`/${encodeURIComponent(row.original.domainName)}`}>
                   <IconBookmark />
                   View Report
                 </Link>

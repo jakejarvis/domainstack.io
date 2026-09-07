@@ -220,7 +220,6 @@ function DashboardGridCardHeader({
           <ScreenshotPopover domain={domain.domainName} domainId={domain.domainId}>
             <Link
               href={`/${encodeURIComponent(domain.domainName)}`}
-              prefetch={false}
               className="block min-w-0 hover:underline"
               data-disable-progress
             >
@@ -265,7 +264,7 @@ function DashboardGridCardHeader({
             <DropdownMenuItem
               nativeButton={false}
               render={
-                <Link href={`/${encodeURIComponent(domain.domainName)}`} prefetch={false}>
+                <Link href={`/${encodeURIComponent(domain.domainName)}`}>
                   <IconBookmark />
                   View Report
                 </Link>

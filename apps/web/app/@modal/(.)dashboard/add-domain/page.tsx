@@ -21,9 +21,7 @@ export const metadata: Metadata = createMetadata({
 
 export default function InterceptedAddDomainPage({
   searchParams,
-}: {
-  searchParams: Promise<{ domain?: string }>;
-}) {
+}: PageProps<"/dashboard/add-domain">) {
   return (
     <Modal>
       <ModalContent>
@@ -41,14 +39,12 @@ export default function InterceptedAddDomainPage({
 
 async function AuthorizedAddDomainContent({
   searchParams,
-}: {
-  searchParams: Promise<{ domain?: string }>;
-}) {
+}: Pick<PageProps<"/dashboard/add-domain">, "searchParams">) {
   const [session, { domain }] = await Promise.all([getServerSession(), searchParams]);
 
   if (!session?.user) {
     redirect("/login");
   }
 
-  return <AddDomainModalClient prefillDomain={domain} />;
+  return <AddDomainModalClient prefillDomain={Array.isArray(domain) ? domain[0] : domain} />;
 }
