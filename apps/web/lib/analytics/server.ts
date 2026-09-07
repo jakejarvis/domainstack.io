@@ -13,7 +13,7 @@ const client = process.env.NEXT_PUBLIC_POSTHOG_KEY
   : null;
 
 export async function captureException(
-  error: Error,
+  error: unknown,
   userId?: string,
   properties?: Record<string, unknown>,
 ) {
@@ -28,13 +28,18 @@ export async function captureException(
 
   // Group by the error type and message, not the stack. Node adds or drops async
   // tick frames between otherwise identical throws, so a stack-based fingerprint
-  // splits one burst across several issues.
+  // splits one burst across several issues. Non-Errors are coerced only to build
+  // the fingerprint; posthog-node extracts its own details from the raw value.
+  const { name, message } = error instanceof Error ? error : new Error(String(error));
+
   client.captureException(error, distinctId, {
     ...properties,
-    $exception_fingerprint: `${error.name}: ${error.message}`,
+    $exception_fingerprint: `${name}: ${message}`,
   });
 
-  after(() => client.flush());
+  // Deferring past the response is the caller's job — `trackException` already
+  // wraps this in `after()`, and `onRequestError` runs off the response path.
+  await client.flush();
 }
 
 export const analytics = {
@@ -74,7 +79,7 @@ export const analytics = {
     );
   },
 
-  trackException: (error: Error, properties?: Record<string, unknown>, userId?: string) => {
+  trackException: (error: unknown, properties?: Record<string, unknown>, userId?: string) => {
     after(() => captureException(error, userId, properties));
   },
 };

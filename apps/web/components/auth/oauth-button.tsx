@@ -74,7 +74,7 @@ export function OAuthButton({
       // Only reset on actual error
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       onLoadingChange?.(false);
-      analytics.trackException(err instanceof Error ? err : new Error(String(err)), {
+      analytics.trackException(err, {
         provider: provider.id,
         action: "sign_in",
       });

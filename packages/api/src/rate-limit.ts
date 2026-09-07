@@ -68,8 +68,10 @@ export async function rateLimit({
 
   const { success, limit, remaining, reset, pending } = rateLimitResult;
 
-  // Handle analytics write after the response (or immediately outside a request)
-  waitUntil(pending);
+  // Analytics write lands after the response; `waitUntil` no-ops off-platform
+  // (local dev, tests) and drops it, which is fine for analytics. Swallow
+  // failures either way so they can't become an unhandled rejection.
+  waitUntil(pending.catch(() => undefined));
 
   const rateLimitInfo = { limit, remaining, reset } satisfies RateLimitInfo;
 

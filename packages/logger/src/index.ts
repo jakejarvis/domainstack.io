@@ -1,9 +1,7 @@
 import pino from "pino";
 import pretty from "pino-pretty";
 
-import { emitToPostHog } from "./otel";
-
-export { type FlushScheduler, flushLogs, setFlushScheduler } from "./otel";
+import { emitLogRecord } from "./otel";
 
 const isDev = process.env.NODE_ENV === "development";
 const isTest = process.env.NODE_ENV === "test";
@@ -13,7 +11,7 @@ const levels = pino.levels.values;
 
 /**
  * Creates a destination stream that routes logs to the appropriate console
- * method (or pino-pretty in development) and forwards each record to PostHog.
+ * method (or pino-pretty in development) and forwards each record to OTLP.
  *
  * Parsing once serves both console routing and OTLP export. pino-pretty is a
  * stream (not a worker transport) so HMR does not leak listener handles.
@@ -31,7 +29,7 @@ function createDestination(): pino.DestinationStream {
 
       try {
         const parsed = JSON.parse(trimmed) as Record<string, unknown>;
-        emitToPostHog(parsed);
+        emitLogRecord(parsed);
 
         if (prettyStream) {
           prettyStream.write(msg);
@@ -88,7 +86,7 @@ const baseOptions: pino.LoggerOptions = {
  * - Standard error serialization
  * - Pretty printing in development only
  * - Uses console methods for safe Vercel log level translation
- * - Forwards records to PostHog via OTLP when enabled
+ * - Forwards records to the global OpenTelemetry logs API when one is registered
  *
  * @example
  * ```typescript
