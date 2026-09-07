@@ -33,7 +33,7 @@ import {
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
 import { cn } from "@domainstack/ui/utils";
-import { formatDate, formatDateTimeUtc } from "@domainstack/utils/date";
+import { formatDate, formatDateTimeUtc, toDateTimeAttr } from "@domainstack/utils/date";
 
 /**
  * Header labels for every column that renders a plain text header. Shared with
@@ -123,6 +123,34 @@ type DomainSelectCellProps = {
   domainId: string;
   domainName: string;
 };
+
+function DateCell({ date }: { date: Date }) {
+  const dateTime = toDateTimeAttr(date);
+
+  if (!dateTime) {
+    return <span className="text-xs text-muted-foreground">-</span>;
+  }
+
+  return (
+    <div className="text-[13px] whitespace-nowrap">
+      <ResponsiveTooltip>
+        <ResponsiveTooltipTrigger
+          nativeButton={false}
+          render={
+            <time dateTime={dateTime} suppressHydrationWarning>
+              {formatDate(date)}
+            </time>
+          }
+        />
+        <ResponsiveTooltipContent>
+          <time dateTime={dateTime} suppressHydrationWarning>
+            {formatDateTimeUtc(date)}
+          </time>
+        </ResponsiveTooltipContent>
+      </ResponsiveTooltip>
+    </div>
+  );
+}
 
 /**
  * Subscribes to selection itself so the compiler can memoize the table/row
@@ -275,19 +303,7 @@ export function createColumns(
         if (!date) {
           return <span className="text-xs text-muted-foreground">-</span>;
         }
-        return (
-          <div className="text-[13px] whitespace-nowrap">
-            <ResponsiveTooltip>
-              <ResponsiveTooltipTrigger
-                nativeButton={false}
-                render={<span suppressHydrationWarning>{formatDate(date)}</span>}
-              />
-              <ResponsiveTooltipContent>
-                <span suppressHydrationWarning>{formatDateTimeUtc(date)}</span>
-              </ResponsiveTooltipContent>
-            </ResponsiveTooltip>
-          </div>
-        );
+        return <DateCell date={date} />;
       },
       size: 110,
       sortFn: withUnverifiedLast((a, b) => {
@@ -394,19 +410,7 @@ export function createColumns(
         if (!date) {
           return <span className="text-xs text-muted-foreground">-</span>;
         }
-        return (
-          <div className="text-[13px] whitespace-nowrap">
-            <ResponsiveTooltip>
-              <ResponsiveTooltipTrigger
-                nativeButton={false}
-                render={<span suppressHydrationWarning>{formatDate(date)}</span>}
-              />
-              <ResponsiveTooltipContent>
-                <span suppressHydrationWarning>{formatDateTimeUtc(date)}</span>
-              </ResponsiveTooltipContent>
-            </ResponsiveTooltip>
-          </div>
-        );
+        return <DateCell date={date} />;
       },
       size: 110,
       sortFn: withUnverifiedLast((a, b) => {
@@ -420,19 +424,7 @@ export function createColumns(
       header: COLUMN_HEADERS.createdAt,
       cell: ({ row }) => {
         const date = row.original.createdAt;
-        return (
-          <div className="text-[13px] whitespace-nowrap">
-            <ResponsiveTooltip>
-              <ResponsiveTooltipTrigger
-                nativeButton={false}
-                render={<span suppressHydrationWarning>{formatDate(date)}</span>}
-              />
-              <ResponsiveTooltipContent>
-                <span suppressHydrationWarning>{formatDateTimeUtc(date)}</span>
-              </ResponsiveTooltipContent>
-            </ResponsiveTooltip>
-          </div>
-        );
+        return <DateCell date={date} />;
       },
       size: 110,
       sortFn: (rowA, rowB) => rowA.original.createdAt.getTime() - rowB.original.createdAt.getTime(),

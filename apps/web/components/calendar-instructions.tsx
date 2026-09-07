@@ -36,6 +36,7 @@ import {
 import { Skeleton } from "@domainstack/ui/skeleton";
 import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
+import { toDateTimeAttr } from "@domainstack/utils/date";
 
 /**
  * Outlook doesn't have an icon in @icons-pack/react-simple-icons, so we draw
@@ -120,6 +121,8 @@ export function CalendarInstructions({ className }: { className?: string }) {
 
   // Only compute integrations when feed is enabled (has feedUrl)
   const integrations = feed.enabled ? getIntegrations(feed.feedUrl) : [];
+  const lastAccessedDateTime =
+    feed.enabled && feed.lastAccessedAt ? toDateTimeAttr(feed.lastAccessedAt) : undefined;
 
   return (
     <>
@@ -145,14 +148,16 @@ export function CalendarInstructions({ className }: { className?: string }) {
             {/* Stats */}
             <div className="flex items-center gap-[5px] text-xs leading-none text-muted-foreground">
               <IconInfoCircle className="size-3 shrink-0" />
-              {feed.lastAccessedAt ? (
+              {lastAccessedDateTime ? (
                 <span suppressHydrationWarning>
                   Last accessed{" "}
-                  {now
-                    ? formatDistanceStrict(new Date(feed.lastAccessedAt), now, {
-                        addSuffix: true,
-                      })
-                    : "…"}
+                  <time dateTime={lastAccessedDateTime} suppressHydrationWarning>
+                    {now
+                      ? formatDistanceStrict(new Date(lastAccessedDateTime), now, {
+                          addSuffix: true,
+                        })
+                      : "…"}
+                  </time>
                 </span>
               ) : (
                 <span>Not accessed yet.</span>

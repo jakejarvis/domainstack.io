@@ -4,7 +4,7 @@ import { page } from "vitest/browser";
 import { render } from "@/mocks/react";
 
 describe("RelativeExpiryString", () => {
-  it("renders an invisible placeholder before hydration", async () => {
+  it("renders an invisible time placeholder before hydration", async () => {
     vi.resetModules();
     const raf = vi.spyOn(window, "requestAnimationFrame").mockImplementation(() => 0);
     const { resetHydratedNow } = await import("@/hooks/use-hydrated-now");
@@ -14,7 +14,8 @@ describe("RelativeExpiryString", () => {
 
     await render(<RelativeExpiryString to="2026-01-01T00:00:00Z" />);
 
-    await expect.element(page.getByText("(loading)", { exact: true })).toHaveClass("invisible");
+    await expect.element(page.getByText("()", { exact: true })).toHaveClass("invisible");
+    expect(document.querySelector("time")).toHaveAttribute("datetime", "2026-01-01T00:00:00.000Z");
     raf.mockRestore();
   });
 
@@ -28,5 +29,8 @@ describe("RelativeExpiryString", () => {
     await render(<RelativeExpiryString to="2026-01-01T00:00:00Z" />);
 
     await expect.element(page.getByText("(in 1 year)", { exact: true })).toBeInTheDocument();
+    await expect
+      .element(page.getByText("in 1 year", { exact: true }))
+      .toHaveAttribute("datetime", "2026-01-01T00:00:00.000Z");
   });
 });

@@ -5,7 +5,7 @@ import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-ban
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { useSubscription } from "@/hooks/use-subscription";
 import { PLAN_QUOTAS } from "@domainstack/constants";
-import { formatDate } from "@domainstack/utils/date";
+import { formatDate, toDateTimeAttr } from "@domainstack/utils/date";
 
 export function SubscriptionEndingBanner() {
   const { handleCheckout, isCheckoutLoading, handleCustomerPortal, isCustomerPortalLoading } =
@@ -44,9 +44,13 @@ export function SubscriptionEndingBanner() {
       description={
         <>
           Your access continues until{" "}
-          <span className="font-medium" suppressHydrationWarning>
+          <time
+            className="font-medium"
+            dateTime={toDateTimeAttr(subscription.endsAt)}
+            suppressHydrationWarning
+          >
             {formattedDate}
-          </span>
+          </time>
           . After that, domains beyond the free quota of {PLAN_QUOTAS.free} domains will be
           archived.
         </>

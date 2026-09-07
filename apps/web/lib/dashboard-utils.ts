@@ -38,7 +38,7 @@ function getHealthStatus(
   verified: boolean,
   now: Date,
 ): HealthFilter | null {
-  if (!verified || !expirationDate) return null;
+  if (!verified || !expirationDate || Number.isNaN(expirationDate.getTime())) return null;
 
   const daysUntilExpiry = Math.ceil(
     (expirationDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),

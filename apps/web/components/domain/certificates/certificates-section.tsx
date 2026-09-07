@@ -30,7 +30,7 @@ import {
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
 import { cn } from "@domainstack/ui/utils";
-import { formatDate, formatDateTimeUtc } from "@domainstack/utils/date";
+import { formatDate, formatDateTimeUtc, toDateTimeAttr } from "@domainstack/utils/date";
 
 function CertificateCard({ cert }: { cert: Certificate }) {
   const sans = Array.isArray(cert.altNames)
@@ -83,8 +83,16 @@ function CertificateCard({ cert }: { cert: Certificate }) {
 
         <KeyValue
           label="Valid from"
-          value={<span suppressHydrationWarning>{formatDate(cert.validFrom)}</span>}
-          valueTooltip={<span suppressHydrationWarning>{formatDateTimeUtc(cert.validFrom)}</span>}
+          value={
+            <time dateTime={toDateTimeAttr(cert.validFrom)} suppressHydrationWarning>
+              {formatDate(cert.validFrom)}
+            </time>
+          }
+          valueTooltip={
+            <time dateTime={toDateTimeAttr(cert.validFrom)} suppressHydrationWarning>
+              {formatDateTimeUtc(cert.validFrom)}
+            </time>
+          }
           suffix={
             <span className="text-[11px] leading-none text-muted-foreground">
               <RelativeAgeString from={cert.validFrom} />
@@ -94,8 +102,16 @@ function CertificateCard({ cert }: { cert: Certificate }) {
 
         <KeyValue
           label="Valid to"
-          value={<span suppressHydrationWarning>{formatDate(cert.validTo)}</span>}
-          valueTooltip={<span suppressHydrationWarning>{formatDateTimeUtc(cert.validTo)}</span>}
+          value={
+            <time dateTime={toDateTimeAttr(cert.validTo)} suppressHydrationWarning>
+              {formatDate(cert.validTo)}
+            </time>
+          }
+          valueTooltip={
+            <time dateTime={toDateTimeAttr(cert.validTo)} suppressHydrationWarning>
+              {formatDateTimeUtc(cert.validTo)}
+            </time>
+          }
           suffix={
             <span className="text-[11px] leading-none text-muted-foreground">
               <RelativeExpiryString to={cert.validTo} dangerDays={7} warnDays={21} />

@@ -1,4 +1,4 @@
-function toDate(value: string | Date): Date {
+function toDate(value: string | Date | number): Date {
   return value instanceof Date ? value : new Date(value);
 }
 
@@ -63,4 +63,28 @@ export function formatDateTimeUtc(value: string | Date): string {
   } catch {
     return fallbackDateLabel(value);
   }
+}
+
+/**
+ * Machine-readable instant for a `<time dateTime>` attribute.
+ * @returns UTC ISO 8601 string, or `undefined` when `value` is not a valid date
+ */
+export function toDateTimeAttr(value: string | Date | number): string | undefined {
+  try {
+    const d = toDate(value);
+    if (Number.isNaN(d.getTime())) return undefined;
+    return d.toISOString();
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Machine-readable duration for a `<time dateTime>` attribute.
+ * @param seconds - Non-negative duration in seconds
+ * @returns ISO 8601 duration such as `PT3600S`, or `undefined` when invalid
+ */
+export function toDurationAttr(seconds: number): string | undefined {
+  if (!Number.isFinite(seconds) || seconds < 0) return undefined;
+  return `PT${seconds}S`;
 }

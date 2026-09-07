@@ -197,6 +197,22 @@ describe("filterDomains", () => {
         ),
       ),
     ).toEqual(["gamma.com"]);
+    expect(
+      names(
+        filterDomains(
+          [
+            makeTrackedDomain({
+              id: "domain-invalid-expiry",
+              domainName: "invalid-expiry.com",
+              expirationDate: new Date(Number.NaN),
+            }),
+          ],
+          { ...emptyCriteria, health: ["healthy"] },
+          validProviderIds,
+          DASHBOARD_TEST_NOW,
+        ),
+      ),
+    ).toEqual([]);
   });
 
   it("filters by TLD", () => {

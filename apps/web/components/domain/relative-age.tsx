@@ -3,8 +3,9 @@
 import { formatDistanceStrict } from "date-fns";
 import { useMemo } from "react";
 
+import { RelativeTimeSuffix } from "@/components/domain/relative-time-suffix";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
-import { cn } from "@domainstack/ui/utils";
+import { toDateTimeAttr } from "@domainstack/utils/date";
 
 export function RelativeAgeString({
   from,
@@ -16,23 +17,12 @@ export function RelativeAgeString({
   className?: string;
 }) {
   const now = useHydratedNow();
+  const dateTime = toDateTimeAttr(from);
 
   const text = useMemo(() => {
-    if (!now) return null;
-    try {
-      return formatDistanceStrict(new Date(from), now, { addSuffix: true });
-    } catch {
-      return null;
-    }
-  }, [from, now]);
+    if (!now || !dateTime) return null;
+    return formatDistanceStrict(new Date(dateTime), now, { addSuffix: true });
+  }, [dateTime, now]);
 
-  return (
-    <span
-      className={cn(!text && "invisible", className)}
-      aria-hidden={!text || undefined}
-      suppressHydrationWarning
-    >
-      ({text ?? "loading"})
-    </span>
-  );
+  return <RelativeTimeSuffix dateTime={dateTime} text={text} className={className} />;
 }

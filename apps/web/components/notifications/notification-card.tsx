@@ -14,6 +14,7 @@ import {
 import type { NotificationData } from "@domainstack/types";
 import { Icon } from "@domainstack/ui/icon";
 import { cn } from "@domainstack/ui/utils";
+import { toDateTimeAttr } from "@domainstack/utils/date";
 
 interface NotificationCardProps {
   notification: NotificationData;
@@ -26,6 +27,7 @@ export function NotificationCard({ notification, onClick }: NotificationCardProp
   const iconColor = getSeverityIconColor(severity, !!notification.readAt);
   const isUnread = !notification.readAt;
   const now = useHydratedNow();
+  const sentAtDateTime = toDateTimeAttr(notification.sentAt);
 
   // Build href with domainId filter when notification is domain-specific
   const href = notification.trackedDomainId
@@ -64,12 +66,16 @@ export function NotificationCard({ notification, onClick }: NotificationCardProp
             )}
           </div>
           <p className="line-clamp-3 text-[13px] text-muted-foreground">{notification.message}</p>
-          <p className="mt-1 text-xs text-muted-foreground/75" suppressHydrationWarning>
-            {now
-              ? formatDistanceStrict(notification.sentAt, now, {
-                  addSuffix: true,
-                })
-              : "…"}
+          <p className="mt-1 text-xs text-muted-foreground/75">
+            {sentAtDateTime ? (
+              <time dateTime={sentAtDateTime} suppressHydrationWarning>
+                {now
+                  ? formatDistanceStrict(new Date(sentAtDateTime), now, {
+                      addSuffix: true,
+                    })
+                  : "…"}
+              </time>
+            ) : null}
           </p>
         </div>
       </div>

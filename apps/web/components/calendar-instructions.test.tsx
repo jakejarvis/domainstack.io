@@ -86,6 +86,16 @@ describe("CalendarInstructions", () => {
     await expect.element(page.getByText("Not accessed yet.", { exact: true })).toBeInTheDocument();
   });
 
+  it("treats an invalid last-accessed timestamp as not accessed", async () => {
+    await renderInstructions({
+      ...enabledFeed,
+      lastAccessedAt: new Date(Number.NaN),
+    });
+
+    await expect.element(page.getByText("Not accessed yet.", { exact: true })).toBeInTheDocument();
+    await expect.element(page.getByText(/Last accessed/)).not.toBeInTheDocument();
+  });
+
   it("opens calendar apps from the Open In menu", async () => {
     await renderInstructions(enabledFeed);
 

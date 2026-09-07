@@ -43,7 +43,7 @@ import {
 } from "@domainstack/ui/responsive-tooltip";
 import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
-import { formatDate, formatDateTimeUtc } from "@domainstack/utils/date";
+import { formatDate, formatDateTimeUtc, toDateTimeAttr } from "@domainstack/utils/date";
 
 type DashboardGridCardProps = {
   domain: TrackedDomainWithDetails;
@@ -101,13 +101,19 @@ function ExpiresInfoRow({
         <ResponsiveTooltipTrigger
           nativeButton={false}
           render={
-            <span className="truncate" suppressHydrationWarning>
+            <time
+              className="truncate"
+              dateTime={toDateTimeAttr(expirationDate)}
+              suppressHydrationWarning
+            >
               {formatDate(expirationDate)}
-            </span>
+            </time>
           }
         />
         <ResponsiveTooltipContent>
-          <span suppressHydrationWarning>{formatDateTimeUtc(expirationDate)}</span>
+          <time dateTime={toDateTimeAttr(expirationDate)} suppressHydrationWarning>
+            {formatDateTimeUtc(expirationDate)}
+          </time>
         </ResponsiveTooltipContent>
       </ResponsiveTooltip>
       {showRelative ? (

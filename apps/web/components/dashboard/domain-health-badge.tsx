@@ -11,6 +11,7 @@ import { useMemo } from "react";
 import { BadgeWithTooltip } from "@/components/dashboard/badge-with-tooltip";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { cn } from "@domainstack/ui/utils";
+import { toDateTimeAttr } from "@domainstack/utils/date";
 
 type HealthStatus = "healthy" | "warning" | "critical" | "unknown";
 
@@ -22,32 +23,40 @@ type DomainHealthBadgeProps = {
 
 export function DomainHealthBadge({ expirationDate, verified, className }: DomainHealthBadgeProps) {
   const now = useHydratedNow();
+  const dateTime = expirationDate ? toDateTimeAttr(expirationDate) : undefined;
 
-  // During SSR (when now is null), show "Unknown" status without calculating
-  const status = now ? getHealthStatus(expirationDate, verified, now) : "unknown";
+  // SSR and invalid dates stay "unknown" — NaN day counts would otherwise look healthy.
+  const status = now ? getHealthStatus(dateTime ? expirationDate : null, verified, now) : "unknown";
   const { label, colorClass, icon } = getStatusConfig(status);
 
   const tooltipText = useMemo(() => {
-    if (!expirationDate || !now) return null;
-    const isExpired = expirationDate <= now;
-    const relativeTime = formatDistanceStrict(expirationDate, now, {
+    if (!dateTime || !now) return null;
+    const expiration = new Date(dateTime);
+    const isExpired = expiration <= now;
+    const relativeTime = formatDistanceStrict(expiration, now, {
       addSuffix: true,
     });
     return `${isExpired ? "Expired" : "Expires"} ${relativeTime}`;
-  }, [expirationDate, now]);
+  }, [dateTime, now]);
 
   return (
     <BadgeWithTooltip
       icon={icon}
       label={label}
       className={cn(colorClass, className)}
-      tooltipContent={tooltipText ? <span suppressHydrationWarning>{tooltipText}</span> : undefined}
+      tooltipContent={
+        tooltipText && dateTime ? (
+          <time dateTime={dateTime} suppressHydrationWarning>
+            {tooltipText}
+          </time>
+        ) : undefined
+      }
     />
   );
 }
 
 function getHealthStatus(expirationDate: Date | null, verified: boolean, now: Date): HealthStatus {
-  if (!verified || !expirationDate) {
+  if (!verified || !expirationDate || Number.isNaN(expirationDate.getTime())) {
     return "unknown";
   }
 

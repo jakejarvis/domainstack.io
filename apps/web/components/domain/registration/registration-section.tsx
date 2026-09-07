@@ -19,7 +19,7 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
-import { formatDate, formatDateTimeUtc } from "@domainstack/utils/date";
+import { formatDate, formatDateTimeUtc, toDateTimeAttr } from "@domainstack/utils/date";
 
 type RegistrantView = { organization: string; country: string; state?: string };
 
@@ -157,10 +157,20 @@ function RegistrationDetailsGrid({ data }: { data: RegistrationResponse }) {
 
       <KeyValue
         label="Created"
-        value={<span suppressHydrationWarning>{formatDate(data.creationDate || "Unknown")}</span>}
+        value={
+          data.creationDate ? (
+            <time dateTime={toDateTimeAttr(data.creationDate)} suppressHydrationWarning>
+              {formatDate(data.creationDate)}
+            </time>
+          ) : (
+            "Unknown"
+          )
+        }
         valueTooltip={
           data.creationDate ? (
-            <span suppressHydrationWarning>{formatDateTimeUtc(data.creationDate)}</span>
+            <time dateTime={toDateTimeAttr(data.creationDate)} suppressHydrationWarning>
+              {formatDateTimeUtc(data.creationDate)}
+            </time>
           ) : undefined
         }
         suffix={
@@ -174,10 +184,20 @@ function RegistrationDetailsGrid({ data }: { data: RegistrationResponse }) {
 
       <KeyValue
         label="Expires"
-        value={<span suppressHydrationWarning>{formatDate(data.expirationDate || "Unknown")}</span>}
+        value={
+          data.expirationDate ? (
+            <time dateTime={toDateTimeAttr(data.expirationDate)} suppressHydrationWarning>
+              {formatDate(data.expirationDate)}
+            </time>
+          ) : (
+            "Unknown"
+          )
+        }
         valueTooltip={
           data.expirationDate ? (
-            <span suppressHydrationWarning>{formatDateTimeUtc(data.expirationDate)}</span>
+            <time dateTime={toDateTimeAttr(data.expirationDate)} suppressHydrationWarning>
+              {formatDateTimeUtc(data.expirationDate)}
+            </time>
           ) : undefined
         }
         suffix={

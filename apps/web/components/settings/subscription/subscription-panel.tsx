@@ -7,7 +7,7 @@ import { UpgradeCard } from "@/components/upgrade-card";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Button } from "@domainstack/ui/button";
 import { Spinner } from "@domainstack/ui/spinner";
-import { formatDate } from "@domainstack/utils/date";
+import { formatDate, toDateTimeAttr } from "@domainstack/utils/date";
 
 export function SubscriptionPanel() {
   // Subscription query and hooks
@@ -63,7 +63,9 @@ export function SubscriptionPanel() {
             {subscription?.endsAt && (
               <p className="text-center text-xs text-muted-foreground">
                 Your Pro access continues until{" "}
-                <span suppressHydrationWarning>{formatDate(subscription.endsAt)}</span>
+                <time dateTime={toDateTimeAttr(subscription.endsAt)} suppressHydrationWarning>
+                  {formatDate(subscription.endsAt)}
+                </time>
               </p>
             )}
           </div>

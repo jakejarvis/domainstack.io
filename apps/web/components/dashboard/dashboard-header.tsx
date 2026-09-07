@@ -21,7 +21,7 @@ import {
 import { Separator } from "@domainstack/ui/separator";
 import { ToggleGroup, ToggleGroupItem } from "@domainstack/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
-import { formatDate } from "@domainstack/utils/date";
+import { formatDate, toDateTimeAttr } from "@domainstack/utils/date";
 
 type DashboardHeaderProps = {
   userName: string;
@@ -53,7 +53,10 @@ export function DashboardHeader({ userName }: DashboardHeaderProps) {
                 }
               />
               <ResponsiveTooltipContent>
-                Access until <span suppressHydrationWarning>{formatDate(subscription.endsAt)}</span>
+                Access until{" "}
+                <time dateTime={toDateTimeAttr(subscription.endsAt)} suppressHydrationWarning>
+                  {formatDate(subscription.endsAt)}
+                </time>
               </ResponsiveTooltipContent>
             </ResponsiveTooltip>
           ) : (

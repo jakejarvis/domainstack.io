@@ -7,8 +7,11 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
+import { toDurationAttr } from "@domainstack/utils/date";
 
 export function TtlBadge({ ttl }: { ttl: number }) {
+  const duration = toDurationAttr(ttl);
+
   return (
     <ResponsiveTooltip>
       <ResponsiveTooltipTrigger
@@ -19,7 +22,13 @@ export function TtlBadge({ ttl }: { ttl: number }) {
             className="cursor-default py-1 text-[11px] leading-none text-muted-foreground"
           >
             <IconHourglassEmpty />
-            <span suppressHydrationWarning>{ms(ttl * 1000)}</span>
+            {duration ? (
+              <time dateTime={duration} suppressHydrationWarning>
+                {ms(ttl * 1000)}
+              </time>
+            ) : (
+              <span>-</span>
+            )}
           </Badge>
         }
       />

@@ -18,6 +18,7 @@ import {
 } from "@domainstack/ui/empty";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 import { cn } from "@domainstack/ui/utils";
+import { toDateTimeAttr } from "@domainstack/utils/date";
 
 type ArchivedDomainsListProps = {
   domains: TrackedDomainWithDetails[];
@@ -114,12 +115,23 @@ export function ArchivedDomainsList({ domains }: ArchivedDomainsListProps) {
 
 function ArchivedRelativeTime({ archivedAt }: { archivedAt: Date | string | null | undefined }) {
   const now = useHydratedNow();
+  const dateTime = archivedAt ? toDateTimeAttr(archivedAt) : undefined;
+
+  // Unknown timestamp — not a loading state.
+  if (!dateTime) {
+    return <span>recently</span>;
+  }
+
+  const label = now ? formatDistanceStrict(new Date(dateTime), now, { addSuffix: true }) : null;
 
   return (
-    <span suppressHydrationWarning>
-      {!archivedAt || !now
-        ? "recently"
-        : formatDistanceStrict(new Date(archivedAt), now, { addSuffix: true })}
-    </span>
+    <time
+      dateTime={dateTime}
+      className={!label ? "invisible" : undefined}
+      aria-hidden={!label || undefined}
+      suppressHydrationWarning
+    >
+      {label}
+    </time>
   );
 }

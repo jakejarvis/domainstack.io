@@ -9,7 +9,7 @@ import type {
   RegistrationSource,
 } from "@domainstack/types";
 import { Spinner } from "@domainstack/ui/spinner";
-import { formatDate } from "@domainstack/utils/date";
+import { formatDate, toDateTimeAttr } from "@domainstack/utils/date";
 
 type ProviderTooltipContentProps = {
   providerId?: string | null;
@@ -190,7 +190,10 @@ function CaTooltipBody({ certificateExpiryDate }: { certificateExpiryDate?: Date
   if (certificateExpiryDate != null) {
     return (
       <div className="text-xs">
-        Expires on <span suppressHydrationWarning>{formatDate(certificateExpiryDate)}</span>
+        Expires on{" "}
+        <time dateTime={toDateTimeAttr(certificateExpiryDate)} suppressHydrationWarning>
+          {formatDate(certificateExpiryDate)}
+        </time>
       </div>
     );
   }

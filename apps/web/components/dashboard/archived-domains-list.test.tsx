@@ -51,6 +51,18 @@ describe("ArchivedDomainsList", () => {
     vi.useRealTimers();
   });
 
+  it("falls back to recently when archivedAt is not a valid date", async () => {
+    await renderArchivedList([
+      makeTrackedDomain({
+        id: "domain-invalid-archive",
+        domainName: "invalid-archive.com",
+        archivedAt: new Date(Number.NaN),
+      }),
+    ]);
+
+    await expect.element(page.getByText("Archived recently", { exact: true })).toBeInTheDocument();
+  });
+
   it("shows an empty state", async () => {
     await renderArchivedList([]);
     await expect
