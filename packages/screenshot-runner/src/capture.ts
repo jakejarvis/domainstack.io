@@ -1,5 +1,6 @@
-import { PuppeteerBlocker } from "@ghostery/adblocker-puppeteer";
 import puppeteer, { type Browser, type Page } from "puppeteer";
+
+import { type AdblockStatus, enableAdBlocking } from "./adblock.js";
 
 type ImageFormat = "webp" | "png" | "jpeg";
 
@@ -138,6 +139,7 @@ async function main(): Promise<void> {
   let browser: Browser | null = null;
   let args: CaptureArguments | null = null;
   let finalUrl: string | null = null;
+  let adblock: AdblockStatus = "skipped";
   let failure: unknown;
   let argumentPhase = true;
 
@@ -158,10 +160,7 @@ async function main(): Promise<void> {
     page = await browser.newPage();
     await page.setViewport({ width: args.width, height: args.height, deviceScaleFactor: 1 });
 
-    try {
-      const blocker = await PuppeteerBlocker.fromPrebuiltAdsAndTracking();
-      await blocker.enableBlockingInPage(page);
-    } catch {}
+    adblock = await enableAdBlocking(page);
 
     const response = await page.goto(url.href, {
       waitUntil: "domcontentloaded",
@@ -200,6 +199,7 @@ async function main(): Promise<void> {
         width: null,
         height: null,
         finalUrl,
+        adblock,
         durationMs: Date.now() - startedAt,
         errorCode: classifyError(failure, argumentPhase),
       }),
@@ -214,6 +214,7 @@ async function main(): Promise<void> {
       width: args.width,
       height: args.height,
       finalUrl,
+      adblock,
       durationMs: Date.now() - startedAt,
       errorCode: null,
     }),

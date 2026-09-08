@@ -55,11 +55,16 @@ const DENIED_NETWORKS = [
   "ff00::/8",
 ];
 
+type AdblockStatus = "enabled" | "skipped" | "unavailable";
+
+const ADBLOCK_STATUSES = new Set<AdblockStatus>(["enabled", "skipped", "unavailable"]);
+
 interface RunnerSuccess {
   success: true;
   width: number;
   height: number;
   finalUrl: string;
+  adblock: AdblockStatus;
   durationMs: number;
   errorCode: null;
 }
@@ -69,6 +74,7 @@ interface RunnerFailure {
   width: null;
   height: null;
   finalUrl: string | null;
+  adblock: AdblockStatus;
   durationMs: number;
   errorCode: ScreenshotErrorCode;
 }
@@ -97,7 +103,8 @@ function isRunnerResult(value: unknown): value is RunnerResult {
   if (
     typeof result.success !== "boolean" ||
     typeof result.durationMs !== "number" ||
-    !(typeof result.finalUrl === "string" || result.finalUrl === null)
+    !(typeof result.finalUrl === "string" || result.finalUrl === null) ||
+    !ADBLOCK_STATUSES.has(result.adblock as AdblockStatus)
   ) {
     return false;
   }
@@ -166,6 +173,7 @@ export async function runSandboxCapture(
   let sandbox: Awaited<ReturnType<typeof Sandbox.create>> | null = null;
   let sandboxId: string | null = null;
   let exitCode: number | null = null;
+  let adblock: AdblockStatus | null = null;
   let primaryError: ScreenshotError | undefined;
   let cleanupError: unknown;
   let cleanupSucceeded = false;
@@ -207,6 +215,7 @@ export async function runSandboxCapture(
     );
     exitCode = command.exitCode;
     const result = parseRunnerResult(await command.stdout());
+    adblock = result.adblock;
 
     if (command.exitCode !== 0 || !result.success) {
       const code = result.success ? "command_failed" : result.errorCode;
@@ -259,6 +268,7 @@ export async function runSandboxCapture(
         sandboxId,
         durationMs: Date.now() - startedAt,
         exitCode,
+        adblock,
         errorCode: primaryError
           ? primaryError instanceof ScreenshotError
             ? primaryError.code
