@@ -3,6 +3,12 @@ FROM ghcr.io/puppeteer/puppeteer@sha256:e816d314227d2f2754b5b696f4734dcefc85fb3b
 USER root
 WORKDIR /workspace
 
+# The Puppeteer base image ships CJK, Thai and Khmer fonts but no color emoji,
+# so emoji in page content render as tofu boxes without this.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends fonts-noto-color-emoji \
+    && rm -rf /var/lib/apt/lists/*
+
 ENV PUPPETEER_CACHE_DIR=/home/pptruser/.cache/puppeteer \
     PUPPETEER_SKIP_DOWNLOAD=true \
     CI=true
@@ -16,7 +22,10 @@ RUN pnpm install --frozen-lockfile --filter @domainstack/screenshot-runner
 
 COPY packages/screenshot-runner packages/screenshot-runner
 
+# Compile the ad-blocking engine here so a capture never downloads and parses
+# filter lists at runtime. This pins the lists to the image digest.
 RUN pnpm --filter @domainstack/screenshot-runner build \
+    && pnpm --filter @domainstack/screenshot-runner build:blocklist \
     && pnpm prune --prod
 
 USER 10042
