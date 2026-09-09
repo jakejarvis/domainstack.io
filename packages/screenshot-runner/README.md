@@ -46,8 +46,10 @@ Authentication uses [OIDC](https://vercel.com/docs/container-registry/github-act
 Publishing is not the same as rolling out. `SCREENSHOT_SANDBOX_IMAGE` only accepts an immutable digest, so promoting a new image stays a deliberate step: wait for the VCR repository details page to report `Ready` (not `Preparing` or `Unoptimized`), then set the digest the workflow printed in Preview and Production:
 
 ```text
-SCREENSHOT_SANDBOX_IMAGE=domainstack-screenshot@sha256:<digest>
+SCREENSHOT_SANDBOX_IMAGE=vcr.vercel.com/<team-slug>/<project-name>/domainstack-screenshot@sha256:<digest>
 ```
+
+A bare `domainstack-screenshot@sha256:<digest>` also resolves, but only against the project the deployment authenticates as. The fully qualified form is what the workflow prints, since it resolves the same way either way.
 
 Deployments authenticate to Sandbox automatically with Vercel OIDC. `latest` and mutable version tags must not be used in application configuration.
 
