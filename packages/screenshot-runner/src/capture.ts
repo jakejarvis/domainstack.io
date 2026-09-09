@@ -9,7 +9,6 @@ import { classifyError, RunnerError } from "./errors.js";
 const NAVIGATION_TIMEOUT_MS = 15_000;
 const NETWORK_IDLE_TIMEOUT_MS = 2_000;
 const NETWORK_IDLE_TIME_MS = 500;
-const CHROMIUM_VERSION = "149.0.7827.22";
 const MAX_OUTPUT_BYTES = 10 * 1024 * 1024;
 // Chromium's own sandbox needs unprivileged user namespaces. It is never
 // disabled to work around a host that lacks them: the page being rendered is
@@ -42,6 +41,7 @@ async function main(): Promise<void> {
   let args: CaptureArguments | null = null;
   let finalUrl: string | null = null;
   let adblock: AdblockStatus = "skipped";
+  let browserVersion: string | null = null;
   let dimensions: { width: number; height: number } | null = null;
   let failure: unknown;
 
@@ -50,16 +50,10 @@ async function main(): Promise<void> {
     const url = validateUrl(args.url);
 
     browser = await puppeteer.launch({ headless: true, args: LAUNCH_ARGS });
-
-    const browserVersion = await browser.version();
-    if (!browserVersion.includes(CHROMIUM_VERSION)) {
-      // A mismatched image stays broken until it is republished, so this must
-      // not be reported as a transient failure the caller retries.
-      throw new RunnerError(
-        "configuration_error",
-        `Expected Chromium ${CHROMIUM_VERSION} but the image provides ${browserVersion}`,
-      );
-    }
+    // Reported rather than asserted: the browser comes from the image's distro
+    // packages, so its exact version is a property of the published image
+    // digest, not something a capture should refuse to run against.
+    browserVersion = await browser.version();
 
     page = await browser.newPage();
     await page.setViewport({ width: args.width, height: args.height, deviceScaleFactor: 1 });
@@ -136,6 +130,7 @@ async function main(): Promise<void> {
         height: null,
         finalUrl,
         adblock,
+        browserVersion,
         durationMs: Date.now() - startedAt,
         errorCode: classifyError(failure),
       }),
@@ -151,6 +146,7 @@ async function main(): Promise<void> {
       height: dimensions.height,
       finalUrl,
       adblock,
+      browserVersion,
       durationMs: Date.now() - startedAt,
       errorCode: null,
     }),
