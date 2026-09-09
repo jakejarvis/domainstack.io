@@ -15,7 +15,6 @@ const OUTPUT_PATH = "/tmp/domainstack-screenshot";
 const RUNNER_ERROR_CODES = new Set<ScreenshotErrorCode>([
   "browser_crash",
   "capture_failed",
-  "configuration_error",
   "connection_reset",
   "dns_error",
   "invalid_arguments",
@@ -81,6 +80,7 @@ interface RunnerSuccess {
   height: number;
   finalUrl: string;
   adblock: AdblockStatus;
+  browserVersion: string;
   durationMs: number;
   errorCode: null;
 }
@@ -91,6 +91,7 @@ interface RunnerFailure {
   height: null;
   finalUrl: string | null;
   adblock: AdblockStatus;
+  browserVersion: string | null;
   durationMs: number;
   errorCode: ScreenshotErrorCode;
 }
@@ -120,7 +121,8 @@ function isRunnerResult(value: unknown): value is RunnerResult {
     typeof result.success !== "boolean" ||
     typeof result.durationMs !== "number" ||
     !(typeof result.finalUrl === "string" || result.finalUrl === null) ||
-    !ADBLOCK_STATUSES.has(result.adblock as AdblockStatus)
+    !ADBLOCK_STATUSES.has(result.adblock as AdblockStatus) ||
+    !(typeof result.browserVersion === "string" || result.browserVersion === null)
   ) {
     return false;
   }
@@ -128,6 +130,7 @@ function isRunnerResult(value: unknown): value is RunnerResult {
     return (
       typeof result.width === "number" &&
       typeof result.height === "number" &&
+      typeof result.browserVersion === "string" &&
       result.errorCode === null
     );
   }
@@ -201,6 +204,7 @@ export async function runSandboxCapture(
   let sandboxId: string | null = null;
   let exitCode: number | null = null;
   let adblock: AdblockStatus | null = null;
+  let browserVersion: string | null = null;
   let runnerErrorCode: ScreenshotErrorCode | null = null;
   let stderr: string | null = null;
   let primaryError: ScreenshotError | undefined;
@@ -248,6 +252,7 @@ export async function runSandboxCapture(
 
     const result = parseRunnerResult(stdout);
     adblock = result.adblock;
+    browserVersion = result.browserVersion;
 
     if (command.exitCode !== 0 || !result.success) {
       runnerErrorCode = result.success ? null : result.errorCode;
@@ -303,6 +308,7 @@ export async function runSandboxCapture(
         durationMs: Date.now() - startedAt,
         exitCode,
         adblock,
+        browserVersion,
         runnerErrorCode,
         stderr,
         errorCode: primaryError

@@ -1,21 +1,37 @@
-FROM ghcr.io/puppeteer/puppeteer@sha256:e816d314227d2f2754b5b696f4734dcefc85fb3b1f92810a9fffc1570a27ce3e
+# node:24-slim, named explicitly: the Debian release decides the pinned font
+# version below, so it must not drift silently when the `24-slim` alias moves.
+FROM node:24-bookworm-slim@sha256:ba849c60be29959425b8734d57b8b4b7d56f98edd9504c9af091d5281095a71e
 
-USER root
-WORKDIR /workspace
-
-# The Puppeteer base image ships CJK, Thai and Khmer fonts but no color emoji,
-# so emoji in page content render as tofu boxes without this. The version is
-# pinned so a rebuild cannot silently change what the runner renders; bump it
-# together with the base image digest above, since a Debian point release will
-# retire this exact version and fail the build.
+# Chromium comes from Debian rather than a prebuilt browser image, and is
+# deliberately not version-pinned: it renders untrusted pages, so a rebuild
+# should pick up the distro's current security build. Reproducibility comes
+# from the published image digest instead, which SCREENSHOT_SANDBOX_IMAGE
+# requires.
+#
+# chromium-sandbox is not pulled in by --no-install-recommends, but it provides
+# the setuid helper Chromium falls back to when the host does not expose
+# unprivileged user namespaces. The runner never passes --no-sandbox, so this
+# is what keeps it working on a host that lacks them.
+#
+# The font packages are pinned: unlike the browser they are inert glyph data,
+# and drift would silently change what screenshots look like. Bump them with
+# the base image, since a Debian point release retires the exact version and
+# fails the build.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
+        chromium \
+        chromium-sandbox \
+        fonts-freefont-ttf \
+        fonts-liberation \
+        fonts-noto-cjk \
         fonts-noto-color-emoji=2.042-0+deb12u1 \
     && rm -rf /var/lib/apt/lists/*
 
-ENV PUPPETEER_CACHE_DIR=/home/pptruser/.cache/puppeteer \
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
     PUPPETEER_SKIP_DOWNLOAD=true \
     CI=true
+
+WORKDIR /workspace
 
 RUN corepack enable
 
@@ -26,11 +42,16 @@ RUN pnpm install --frozen-lockfile --filter @domainstack/screenshot-runner
 
 COPY packages/screenshot-runner packages/screenshot-runner
 
-# Compile the ad-blocking engine here so a capture never downloads and parses
-# filter lists at runtime. This pins the lists to the image digest.
+# The ad-blocking engine is compiled here so a capture never downloads and
+# parses filter lists at runtime. This pins the lists to the image digest.
 RUN pnpm --filter @domainstack/screenshot-runner build \
     && pnpm --filter @domainstack/screenshot-runner build:blocklist \
     && pnpm prune --prod
+
+# Chromium's sandbox refuses to start as root and the runner never disables it,
+# so captures have to run unprivileged.
+RUN useradd --system --create-home --uid 10042 runner \
+    && chown -R runner:runner /workspace
 
 USER 10042
 WORKDIR /workspace/packages/screenshot-runner
