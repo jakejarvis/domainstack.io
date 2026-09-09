@@ -4,9 +4,13 @@ USER root
 WORKDIR /workspace
 
 # The Puppeteer base image ships CJK, Thai and Khmer fonts but no color emoji,
-# so emoji in page content render as tofu boxes without this.
+# so emoji in page content render as tofu boxes without this. The version is
+# pinned so a rebuild cannot silently change what the runner renders; bump it
+# together with the base image digest above, since a Debian point release will
+# retire this exact version and fail the build.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends fonts-noto-color-emoji \
+    && apt-get install -y --no-install-recommends \
+        fonts-noto-color-emoji=2.042-0+deb12u1 \
     && rm -rf /var/lib/apt/lists/*
 
 ENV PUPPETEER_CACHE_DIR=/home/pptruser/.cache/puppeteer \

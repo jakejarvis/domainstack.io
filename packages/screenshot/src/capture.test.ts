@@ -29,7 +29,6 @@ function runnerFailure(errorCode: string) {
     height: null,
     finalUrl: null,
     adblock: "enabled",
-    chromiumSandbox: "enabled",
     durationMs: 80,
     errorCode,
   });
@@ -53,7 +52,6 @@ function createSandboxMock(options?: {
         height: 630,
         finalUrl: "https://example.com/",
         adblock: "enabled",
-        chromiumSandbox: "enabled",
         durationMs: 120,
         errorCode: null,
       }),
@@ -208,6 +206,33 @@ describe("captureScreenshotBase64", () => {
       context: expect.objectContaining({ stderr: "chromium exploded" }),
     });
   });
+
+  // resolvePublicHost reports its own timeout and the resolver's temporary
+  // failures under the same code as a genuine NXDOMAIN.
+  it.each([
+    ["DNS lookup timed out after 8000ms"],
+    ["getaddrinfo EAI_AGAIN example.com"],
+    ["queryA ESERVFAIL example.com"],
+  ])("retries a transient DNS failure (%s)", async (message) => {
+    const { SafeFetchError } = await import("@domainstack/safe-fetch");
+    mocks.resolvePublicHost.mockRejectedValue(new SafeFetchError("dns_error", message));
+
+    const error = await captureScreenshotBase64("https://example.com").catch((caught) => caught);
+    expect(error).toMatchObject({ code: "upstream_temporary" });
+    expect(classifyScreenshotError(error)).toBe("retryable_infrastructure");
+  });
+
+  it.each([["getaddrinfo ENOTFOUND example.com"], ["DNS lookup returned no records"]])(
+    "caches a definitive DNS failure (%s)",
+    async (message) => {
+      const { SafeFetchError } = await import("@domainstack/safe-fetch");
+      mocks.resolvePublicHost.mockRejectedValue(new SafeFetchError("dns_error", message));
+
+      const error = await captureScreenshotBase64("https://example.com").catch((caught) => caught);
+      expect(error).toMatchObject({ code: "dns_error" });
+      expect(classifyScreenshotError(error)).toBe("permanent_target");
+    },
+  );
 
   it("keeps an internal resolver fault retryable", async () => {
     mocks.resolvePublicHost.mockRejectedValue(new Error("resolver exploded"));

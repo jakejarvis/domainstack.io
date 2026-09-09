@@ -54,11 +54,30 @@ const PERMANENT_RESOLVE_CODES = new Set<SafeFetchErrorCode>([
   "protocol_not_allowed",
 ]);
 
+/**
+ * `resolvePublicHost` reports every lookup failure as `dns_error`, including
+ * its own timeout and the resolver's temporary failures. Only a definitive
+ * answer means the domain has no address; anything else would cache a working
+ * domain as missing for the whole TTL.
+ */
+const DEFINITIVE_DNS_FAILURES = [/enotfound/i, /nxdomain/i, /returned no records/i];
+
+function isTransientDnsFailure(error: SafeFetchError): boolean {
+  return (
+    error.code === "dns_error" &&
+    !DEFINITIVE_DNS_FAILURES.some((pattern) => pattern.test(error.message))
+  );
+}
+
 async function validatePublicTarget(target: URL): Promise<void> {
   try {
     await resolvePublicHost(target.hostname);
   } catch (error) {
-    if (error instanceof SafeFetchError && PERMANENT_RESOLVE_CODES.has(error.code)) {
+    if (
+      error instanceof SafeFetchError &&
+      PERMANENT_RESOLVE_CODES.has(error.code) &&
+      !isTransientDnsFailure(error)
+    ) {
       const code =
         error.code === "dns_error"
           ? "dns_error"

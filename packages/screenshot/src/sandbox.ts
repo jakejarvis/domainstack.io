@@ -72,10 +72,8 @@ const DENIED_NETWORKS = [
 ];
 
 type AdblockStatus = "enabled" | "skipped" | "unavailable";
-type ChromiumSandboxStatus = "enabled" | "disabled";
 
 const ADBLOCK_STATUSES = new Set<AdblockStatus>(["enabled", "skipped", "unavailable"]);
-const CHROMIUM_SANDBOX_STATUSES = new Set<ChromiumSandboxStatus>(["enabled", "disabled"]);
 
 interface RunnerSuccess {
   success: true;
@@ -83,7 +81,6 @@ interface RunnerSuccess {
   height: number;
   finalUrl: string;
   adblock: AdblockStatus;
-  chromiumSandbox: ChromiumSandboxStatus;
   durationMs: number;
   errorCode: null;
 }
@@ -94,7 +91,6 @@ interface RunnerFailure {
   height: null;
   finalUrl: string | null;
   adblock: AdblockStatus;
-  chromiumSandbox: ChromiumSandboxStatus | null;
   durationMs: number;
   errorCode: ScreenshotErrorCode;
 }
@@ -132,15 +128,8 @@ function isRunnerResult(value: unknown): value is RunnerResult {
     return (
       typeof result.width === "number" &&
       typeof result.height === "number" &&
-      CHROMIUM_SANDBOX_STATUSES.has(result.chromiumSandbox as ChromiumSandboxStatus) &&
       result.errorCode === null
     );
-  }
-  if (
-    result.chromiumSandbox !== null &&
-    !CHROMIUM_SANDBOX_STATUSES.has(result.chromiumSandbox as ChromiumSandboxStatus)
-  ) {
-    return false;
   }
   return (
     result.width === null &&
@@ -212,7 +201,6 @@ export async function runSandboxCapture(
   let sandboxId: string | null = null;
   let exitCode: number | null = null;
   let adblock: AdblockStatus | null = null;
-  let chromiumSandbox: ChromiumSandboxStatus | null = null;
   let runnerErrorCode: ScreenshotErrorCode | null = null;
   let stderr: string | null = null;
   let primaryError: ScreenshotError | undefined;
@@ -260,7 +248,6 @@ export async function runSandboxCapture(
 
     const result = parseRunnerResult(stdout);
     adblock = result.adblock;
-    chromiumSandbox = result.chromiumSandbox;
 
     if (command.exitCode !== 0 || !result.success) {
       runnerErrorCode = result.success ? null : result.errorCode;
@@ -316,7 +303,6 @@ export async function runSandboxCapture(
         durationMs: Date.now() - startedAt,
         exitCode,
         adblock,
-        chromiumSandbox,
         runnerErrorCode,
         stderr,
         errorCode: primaryError

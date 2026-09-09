@@ -6,40 +6,21 @@ import { type AdblockStatus, enableAdBlocking } from "./adblock.js";
 import { type CaptureArguments, parseArguments, safeFinalUrl, validateUrl } from "./args.js";
 import { classifyError, RunnerError } from "./errors.js";
 
-/**
- * `enabled` uses Chromium's own sandbox, which needs unprivileged user
- * namespaces. Where the host does not provide them Chromium refuses to start,
- * so the runner falls back to `disabled` rather than failing every capture; the
- * Sandbox microVM remains the real isolation boundary either way.
- */
-type ChromiumSandboxStatus = "enabled" | "disabled";
-
 const NAVIGATION_TIMEOUT_MS = 15_000;
 const NETWORK_IDLE_TIMEOUT_MS = 2_000;
 const NETWORK_IDLE_TIME_MS = 500;
 const CHROMIUM_VERSION = "149.0.7827.22";
 const MAX_OUTPUT_BYTES = 10 * 1024 * 1024;
+// Chromium's own sandbox needs unprivileged user namespaces. It is never
+// disabled to work around a host that lacks them: the page being rendered is
+// attacker-supplied, so a launch failure must surface rather than silently
+// downgrade isolation.
 const LAUNCH_ARGS = ["--disable-dev-shm-usage", "--no-default-browser-check", "--no-first-run"];
 
-async function launchBrowser(): Promise<{ browser: Browser; sandbox: ChromiumSandboxStatus }> {
-  try {
-    return {
-      browser: await puppeteer.launch({ headless: true, args: LAUNCH_ARGS }),
-      sandbox: "enabled",
-    };
-  } catch (error) {
-    try {
-      return {
-        browser: await puppeteer.launch({ headless: true, args: [...LAUNCH_ARGS, "--no-sandbox"] }),
-        sandbox: "disabled",
-      };
-    } catch {
-      // Report the sandboxed failure: the fallback failing too means the cause
-      // was never the sandbox.
-      throw error;
-    }
-  }
-}
+// A full-page capture allocates width x height x 4 bytes before any encoding,
+// so the pixel budget is checked before rendering; the byte limit below only
+// catches what compresses badly, which is too late to protect memory.
+const MAX_OUTPUT_PIXELS = 64_000_000;
 
 async function closeResources(page: Page | null, browser: Browser | null): Promise<void> {
   if (page) {
@@ -61,7 +42,6 @@ async function main(): Promise<void> {
   let args: CaptureArguments | null = null;
   let finalUrl: string | null = null;
   let adblock: AdblockStatus = "skipped";
-  let chromiumSandbox: ChromiumSandboxStatus | null = null;
   let dimensions: { width: number; height: number } | null = null;
   let failure: unknown;
 
@@ -69,9 +49,7 @@ async function main(): Promise<void> {
     args = parseArguments(process.argv.slice(2));
     const url = validateUrl(args.url);
 
-    const launched = await launchBrowser();
-    browser = launched.browser;
-    chromiumSandbox = launched.sandbox;
+    browser = await puppeteer.launch({ headless: true, args: LAUNCH_ARGS });
 
     const browserVersion = await browser.version();
     if (!browserVersion.includes(CHROMIUM_VERSION)) {
@@ -122,6 +100,13 @@ async function main(): Promise<void> {
         }))
       : { width: args.width, height: args.height };
 
+    if (dimensions.width * dimensions.height > MAX_OUTPUT_PIXELS) {
+      throw new RunnerError(
+        "output_too_large",
+        `Capture would be ${dimensions.width}x${dimensions.height} pixels`,
+      );
+    }
+
     await page.screenshot({
       type: args.format,
       fullPage: args.fullPage,
@@ -151,7 +136,6 @@ async function main(): Promise<void> {
         height: null,
         finalUrl,
         adblock,
-        chromiumSandbox,
         durationMs: Date.now() - startedAt,
         errorCode: classifyError(failure),
       }),
@@ -167,7 +151,6 @@ async function main(): Promise<void> {
       height: dimensions.height,
       finalUrl,
       adblock,
-      chromiumSandbox,
       durationMs: Date.now() - startedAt,
       errorCode: null,
     }),
