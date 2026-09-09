@@ -1,4 +1,8 @@
-import { resolvePublicHost, SafeFetchError } from "@domainstack/safe-fetch";
+import {
+  resolvePublicHost,
+  SafeFetchError,
+  type SafeFetchErrorCode,
+} from "@domainstack/safe-fetch";
 
 import { ScreenshotError } from "./errors";
 import { runSandboxCapture } from "./sandbox";
@@ -40,11 +44,21 @@ function validateTarget(url: string): URL {
   return target;
 }
 
+/** SafeFetch codes that say the target itself is unusable, not the resolver. */
+const PERMANENT_RESOLVE_CODES = new Set<SafeFetchErrorCode>([
+  "dns_error",
+  "host_blocked",
+  "host_not_allowed",
+  "invalid_url",
+  "private_ip",
+  "protocol_not_allowed",
+]);
+
 async function validatePublicTarget(target: URL): Promise<void> {
   try {
     await resolvePublicHost(target.hostname);
   } catch (error) {
-    if (error instanceof SafeFetchError) {
+    if (error instanceof SafeFetchError && PERMANENT_RESOLVE_CODES.has(error.code)) {
       const code =
         error.code === "dns_error"
           ? "dns_error"
@@ -55,7 +69,10 @@ async function validatePublicTarget(target: URL): Promise<void> {
         cause: error,
       });
     }
-    throw new ScreenshotError("dns_error", "Screenshot target DNS validation failed", {
+    // A timeout, connection error, or an unexpected throw is a fault in our own
+    // resolution path. Treating it as a bad target would cache the domain as
+    // missing for the whole TTL, so it stays retryable.
+    throw new ScreenshotError("upstream_temporary", "Screenshot target DNS validation failed", {
       cause: error,
     });
   }

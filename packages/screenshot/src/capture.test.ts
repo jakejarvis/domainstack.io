@@ -22,9 +22,23 @@ vi.mock("@domainstack/safe-fetch", async (importOriginal) => {
 
 import { captureScreenshotBase64, classifyScreenshotError, ScreenshotError } from "./index";
 
+function runnerFailure(errorCode: string) {
+  return JSON.stringify({
+    success: false,
+    width: null,
+    height: null,
+    finalUrl: null,
+    adblock: "enabled",
+    chromiumSandbox: "enabled",
+    durationMs: 80,
+    errorCode,
+  });
+}
+
 function createSandboxMock(options?: {
   exitCode?: number;
   stdout?: string;
+  stderr?: string;
   buffer?: Buffer | null;
   stopError?: Error;
 }) {
@@ -39,15 +53,18 @@ function createSandboxMock(options?: {
         height: 630,
         finalUrl: "https://example.com/",
         adblock: "enabled",
+        chromiumSandbox: "enabled",
         durationMs: 120,
         errorCode: null,
       }),
   );
+  const stderr = vi.fn<() => Promise<string>>().mockResolvedValue(options?.stderr ?? "");
   const runCommand = vi
-    .fn<() => Promise<{ exitCode: number; stdout: typeof stdout }>>()
+    .fn<() => Promise<{ exitCode: number; stdout: typeof stdout; stderr: typeof stderr }>>()
     .mockResolvedValue({
       exitCode: options?.exitCode ?? 0,
       stdout,
+      stderr,
     });
   const readFileToBuffer = vi
     .fn<() => Promise<Buffer | null>>()
@@ -116,24 +133,89 @@ describe("captureScreenshotBase64", () => {
   it("preserves a permanent runner failure when sandbox cleanup also fails", async () => {
     const sandbox = createSandboxMock({
       exitCode: 1,
-      stdout: JSON.stringify({
-        success: false,
-        width: null,
-        height: null,
-        finalUrl: null,
-        adblock: "enabled",
-        durationMs: 80,
-        errorCode: "tls_error",
-      }),
+      stdout: runnerFailure("invalid_url"),
       stopError: new Error("stop failed"),
     });
     mocks.createSandbox.mockResolvedValue(sandbox);
 
     const error = await captureScreenshotBase64("https://example.com").catch((caught) => caught);
     expect(error).toBeInstanceOf(ScreenshotError);
-    expect(error).toMatchObject({ code: "tls_error" });
+    expect(error).toMatchObject({ code: "invalid_url" });
     expect(classifyScreenshotError(error)).toBe("permanent_target");
     expect(sandbox.stop).toHaveBeenCalledOnce();
+  });
+
+  // The pre-flight resolve already succeeded, so the same lookup failing inside
+  // the sandbox is transient and must not cache the domain as missing.
+  it.each(["dns_error", "tls_error"])(
+    "retries a runner-reported %s instead of caching it as a bad target",
+    async (runnerCode) => {
+      const sandbox = createSandboxMock({ exitCode: 1, stdout: runnerFailure(runnerCode) });
+      mocks.createSandbox.mockResolvedValue(sandbox);
+
+      const error = await captureScreenshotBase64("https://example.com").catch((caught) => caught);
+      expect(error).toMatchObject({
+        code: "upstream_temporary",
+        context: expect.objectContaining({ runnerErrorCode: runnerCode }),
+      });
+      expect(classifyScreenshotError(error)).toBe("retryable_infrastructure");
+    },
+  );
+
+  it("treats a runner configuration failure as permanently misconfigured", async () => {
+    const sandbox = createSandboxMock({
+      exitCode: 1,
+      stdout: runnerFailure("configuration_error"),
+    });
+    mocks.createSandbox.mockResolvedValue(sandbox);
+
+    const error = await captureScreenshotBase64("https://example.com").catch((caught) => caught);
+    expect(classifyScreenshotError(error)).toBe("permanent_configuration");
+  });
+
+  it("stops retrying a capture that exceeds the size limit", async () => {
+    const sandbox = createSandboxMock({ exitCode: 1, stdout: runnerFailure("output_too_large") });
+    mocks.createSandbox.mockResolvedValue(sandbox);
+
+    const error = await captureScreenshotBase64("https://example.com").catch((caught) => caught);
+    expect(classifyScreenshotError(error)).toBe("permanent_target");
+  });
+
+  it("keeps the captured image when stopping the sandbox fails", async () => {
+    const sandbox = createSandboxMock({ stopError: new Error("stop failed") });
+    mocks.createSandbox.mockResolvedValue(sandbox);
+
+    await expect(captureScreenshotBase64("https://example.com")).resolves.toMatchObject({
+      imageBase64: Buffer.from("webp").toString("base64"),
+      cleanupSucceeded: false,
+    });
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.objectContaining({ sandboxId: "sbx_test" }),
+      "failed to stop screenshot sandbox",
+    );
+  });
+
+  it("attaches truncated runner stderr to the failure context", async () => {
+    const sandbox = createSandboxMock({
+      exitCode: 1,
+      stdout: runnerFailure("capture_failed"),
+      stderr: "  chromium exploded  ",
+    });
+    mocks.createSandbox.mockResolvedValue(sandbox);
+
+    const error = await captureScreenshotBase64("https://example.com").catch((caught) => caught);
+    expect(error).toMatchObject({
+      context: expect.objectContaining({ stderr: "chromium exploded" }),
+    });
+  });
+
+  it("keeps an internal resolver fault retryable", async () => {
+    mocks.resolvePublicHost.mockRejectedValue(new Error("resolver exploded"));
+
+    const error = await captureScreenshotBase64("https://example.com").catch((caught) => caught);
+    expect(error).toMatchObject({ code: "upstream_temporary" });
+    expect(classifyScreenshotError(error)).toBe("retryable_infrastructure");
+    expect(mocks.createSandbox).not.toHaveBeenCalled();
   });
 
   it("classifies Sandbox creation failures as retryable infrastructure errors", async () => {

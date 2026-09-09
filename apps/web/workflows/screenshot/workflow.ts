@@ -1,11 +1,9 @@
 import { getStepMetadata, RetryableError } from "workflow";
 
 import { checkBlocklist } from "@/workflows/shared/check-blocklist";
-import { createLogger } from "@domainstack/logger";
 
 const VIEWPORT_WIDTH = 1200;
 const VIEWPORT_HEIGHT = 630;
-const logger = createLogger({ source: "workflow/screenshot" });
 
 export interface ScreenshotWorkflowInput {
   domain: string;
@@ -23,7 +21,9 @@ export type ScreenshotWorkflowResult =
     }
   | {
       success: false;
-      error: "capture_error" | "not_found" | "blocked_domain";
+      error: "capture_error" | "configuration_error" | "not_found" | "blocked_domain";
+      /** Specific capture failure, e.g. `dns_error` or `target_blocked`. */
+      errorCode?: string;
       data: ScreenshotWorkflowData | null;
     };
 
@@ -38,6 +38,8 @@ interface CaptureSuccess {
 interface CaptureFailure {
   success: false;
   errorCode: string;
+  /** A broken deployment must not be cached as a missing screenshot. */
+  configurationError: boolean;
 }
 
 type CaptureResult = CaptureSuccess | CaptureFailure;
@@ -71,20 +73,43 @@ export async function screenshotWorkflow(
   const captureResult = await captureScreenshot(domain);
 
   if (!captureResult.success) {
+    // A misconfigured deployment says nothing about the domain, so it must not
+    // be cached as a missing screenshot.
+    if (captureResult.configurationError) {
+      return {
+        success: false,
+        error: "configuration_error",
+        errorCode: captureResult.errorCode,
+        data: { url: null },
+      };
+    }
+
     // Step 3a: Persist failure to cache
     await persistFailure(domain);
     return {
       success: false,
       error: "capture_error",
+      errorCode: captureResult.errorCode,
       data: { url: null },
     };
   }
 
   // Step 3b: Process and store image to Vercel Blob
-  const storageResult = await storeScreenshot(domain, captureResult.imageBuffer);
+  const storageResult = await storeScreenshot(
+    domain,
+    captureResult.imageBuffer,
+    captureResult.width,
+    captureResult.height,
+  );
 
   // Step 4: Persist to database
-  await persistSuccess(domain, storageResult.url, storageResult.pathname);
+  await persistSuccess(
+    domain,
+    storageResult.url,
+    storageResult.pathname,
+    captureResult.width,
+    captureResult.height,
+  );
 
   return {
     success: true,
@@ -105,6 +130,8 @@ async function captureScreenshot(domain: string): Promise<CaptureResult> {
     getScreenshotErrorCode,
     getScreenshotErrorContext,
   } = await import("@domainstack/screenshot");
+  const { createLogger } = await import("@domainstack/logger");
+  const logger = createLogger({ source: "workflow/screenshot" });
   const { attempt } = getStepMetadata();
 
   try {
@@ -144,8 +171,12 @@ async function captureScreenshot(domain: string): Promise<CaptureResult> {
       "screenshot capture failed",
     );
 
-    if (classification === "permanent_target") {
-      return { success: false, errorCode };
+    if (classification === "permanent_target" || classification === "permanent_configuration") {
+      return {
+        success: false,
+        errorCode,
+        configurationError: classification === "permanent_configuration",
+      };
     }
 
     throw new RetryableError(`Screenshot capture failed: ${errorCode}`, { retryAfter: "5s" });
@@ -158,6 +189,8 @@ async function captureScreenshot(domain: string): Promise<CaptureResult> {
 async function storeScreenshot(
   domain: string,
   imageBufferBase64: string,
+  width: number,
+  height: number,
 ): Promise<{
   url: string;
   pathname: string | null;
@@ -174,8 +207,8 @@ async function storeScreenshot(
     kind: "screenshot",
     domain,
     buffer: imageBuffer,
-    width: VIEWPORT_WIDTH,
-    height: VIEWPORT_HEIGHT,
+    width,
+    height,
   });
 
   return { url, pathname: pathname ?? null };
@@ -184,7 +217,13 @@ async function storeScreenshot(
 /**
  * Step: Persist successful screenshot to database
  */
-async function persistSuccess(domain: string, url: string, pathname: string | null): Promise<void> {
+async function persistSuccess(
+  domain: string,
+  url: string,
+  pathname: string | null,
+  width: number,
+  height: number,
+): Promise<void> {
   "use step";
 
   const { ensureDomainRecord } = await import("@domainstack/db/queries/domains");
@@ -199,8 +238,8 @@ async function persistSuccess(domain: string, url: string, pathname: string | nu
     domainId: domainRecord.id,
     url,
     pathname,
-    width: VIEWPORT_WIDTH,
-    height: VIEWPORT_HEIGHT,
+    width,
+    height,
     notFound: false,
     fetchedAt: now,
     expiresAt,
