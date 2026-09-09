@@ -59,14 +59,25 @@ const PERMANENT_RESOLVE_CODES = new Set<SafeFetchErrorCode>([
  * its own timeout and the resolver's temporary failures. Only a definitive
  * answer means the domain has no address; anything else would cache a working
  * domain as missing for the whole TTL.
+ *
+ * Node phrases these as `getaddrinfo <STATUS> <hostname>`, and the hostname is
+ * the untrusted part. The status is read as an uppercase token in its fixed
+ * position so a domain that merely contains one (`thenotfound.com`) cannot be
+ * mistaken for the resolver's answer.
  */
-const DEFINITIVE_DNS_FAILURES = [/enotfound/i, /nxdomain/i, /returned no records/i];
+const DNS_STATUS = /^\w+ ([A-Z_]+)\b/;
+const DEFINITIVE_DNS_STATUSES = new Set(["ENODATA", "ENOTFOUND", "NXDOMAIN"]);
+/** Raised by `resolvePublicHost` itself, so it carries no resolver status. */
+const NO_ADDRESSES = "returned no records";
 
 function isTransientDnsFailure(error: SafeFetchError): boolean {
-  return (
-    error.code === "dns_error" &&
-    !DEFINITIVE_DNS_FAILURES.some((pattern) => pattern.test(error.message))
-  );
+  if (error.code !== "dns_error") return false;
+  if (error.message.includes(NO_ADDRESSES)) return false;
+  const status = DNS_STATUS.exec(error.message)?.[1];
+  // An unrecognized message shape (the timeout, most importantly) is treated as
+  // transient: retrying costs an attempt, caching a live domain as missing
+  // costs a whole TTL.
+  return status === undefined || !DEFINITIVE_DNS_STATUSES.has(status);
 }
 
 async function validatePublicTarget(target: URL): Promise<void> {

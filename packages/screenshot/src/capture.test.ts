@@ -204,6 +204,10 @@ describe("captureScreenshotBase64", () => {
     ["DNS lookup timed out after 8000ms"],
     ["getaddrinfo EAI_AGAIN example.com"],
     ["queryA ESERVFAIL example.com"],
+    // The hostname is interpolated into the message, so it must not be able to
+    // pass itself off as the resolver's status.
+    ["getaddrinfo EAI_AGAIN thenotfound.com"],
+    ["getaddrinfo EAI_AGAIN the-nxdomain.io"],
   ])("retries a transient DNS failure (%s)", async (message) => {
     const { SafeFetchError } = await import("@domainstack/safe-fetch");
     mocks.resolvePublicHost.mockRejectedValue(new SafeFetchError("dns_error", message));
@@ -213,17 +217,19 @@ describe("captureScreenshotBase64", () => {
     expect(classifyScreenshotError(error)).toBe("retryable_infrastructure");
   });
 
-  it.each([["getaddrinfo ENOTFOUND example.com"], ["DNS lookup returned no records"]])(
-    "caches a definitive DNS failure (%s)",
-    async (message) => {
-      const { SafeFetchError } = await import("@domainstack/safe-fetch");
-      mocks.resolvePublicHost.mockRejectedValue(new SafeFetchError("dns_error", message));
+  it.each([
+    ["getaddrinfo ENOTFOUND example.com"],
+    ["getaddrinfo ENODATA example.com"],
+    ["getaddrinfo ENOTFOUND thenotfound.com"],
+    ["DNS lookup returned no records"],
+  ])("caches a definitive DNS failure (%s)", async (message) => {
+    const { SafeFetchError } = await import("@domainstack/safe-fetch");
+    mocks.resolvePublicHost.mockRejectedValue(new SafeFetchError("dns_error", message));
 
-      const error = await captureScreenshotBase64("https://example.com").catch((caught) => caught);
-      expect(error).toMatchObject({ code: "dns_error" });
-      expect(classifyScreenshotError(error)).toBe("permanent_target");
-    },
-  );
+    const error = await captureScreenshotBase64("https://example.com").catch((caught) => caught);
+    expect(error).toMatchObject({ code: "dns_error" });
+    expect(classifyScreenshotError(error)).toBe("permanent_target");
+  });
 
   it("keeps an internal resolver fault retryable", async () => {
     mocks.resolvePublicHost.mockRejectedValue(new Error("resolver exploded"));
