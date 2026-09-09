@@ -29,6 +29,7 @@ function runnerFailure(errorCode: string) {
     height: null,
     finalUrl: null,
     adblock: "enabled",
+    browserVersion: "Chrome/150.0.7871.100",
     durationMs: 80,
     errorCode,
   });
@@ -52,6 +53,7 @@ function createSandboxMock(options?: {
         height: 630,
         finalUrl: "https://example.com/",
         adblock: "enabled",
+        browserVersion: "Chrome/150.0.7871.100",
         durationMs: 120,
         errorCode: null,
       }),
@@ -160,17 +162,6 @@ describe("captureScreenshotBase64", () => {
     },
   );
 
-  it("treats a runner configuration failure as permanently misconfigured", async () => {
-    const sandbox = createSandboxMock({
-      exitCode: 1,
-      stdout: runnerFailure("configuration_error"),
-    });
-    mocks.createSandbox.mockResolvedValue(sandbox);
-
-    const error = await captureScreenshotBase64("https://example.com").catch((caught) => caught);
-    expect(classifyScreenshotError(error)).toBe("permanent_configuration");
-  });
-
   it("stops retrying a capture that exceeds the size limit", async () => {
     const sandbox = createSandboxMock({ exitCode: 1, stdout: runnerFailure("output_too_large") });
     mocks.createSandbox.mockResolvedValue(sandbox);
@@ -254,9 +245,10 @@ describe("captureScreenshotBase64", () => {
   it("requires an immutable image reference", async () => {
     process.env.SCREENSHOT_SANDBOX_IMAGE = "domainstack-screenshot:latest";
 
-    await expect(captureScreenshotBase64("https://example.com")).rejects.toMatchObject({
-      code: "configuration_error",
-    });
+    const error = await captureScreenshotBase64("https://example.com").catch((caught) => caught);
+    expect(error).toMatchObject({ code: "configuration_error" });
+    // A broken deployment is neither retried nor cached against the domain.
+    expect(classifyScreenshotError(error)).toBe("permanent_configuration");
     expect(mocks.createSandbox).not.toHaveBeenCalled();
   });
 });

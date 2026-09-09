@@ -5,7 +5,6 @@
 export type RunnerErrorCode =
   | "browser_crash"
   | "capture_failed"
-  | "configuration_error"
   | "connection_reset"
   | "dns_error"
   | "invalid_arguments"

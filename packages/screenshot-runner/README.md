@@ -1,13 +1,17 @@
 # Screenshot runner image
 
-This package builds the immutable Chromium runner used by `@domainstack/screenshot`. The base image is the official Puppeteer 25.1.0 linux/amd64 image pinned by digest; it includes Chromium 149.0.7827.22 and browser fonts. Dependencies are installed while the image is built, never when a Sandbox starts.
+This package builds the Chromium runner used by `@domainstack/screenshot`. It runs as a single-use [Vercel Sandbox](https://vercel.com/docs/sandbox), not inside the Next.js process.
+
+The base is `node:24-bookworm-slim` pinned by digest, with Chromium installed from Debian. Chromium itself is deliberately **not** version-pinned: it renders untrusted pages, so a rebuild should pick up the distro's current security build, and `@domainstack/screenshot` records the version it actually ran. Reproducibility comes from the published image digest, which `SCREENSHOT_SANDBOX_IMAGE` requires.
 
 Nothing a capture needs is fetched at runtime:
 
-- **Fonts.** The base image ships CJK, Thai and Khmer fonts but no color emoji, so the Dockerfile adds `fonts-noto-color-emoji`. Without it, emoji in page content render as tofu boxes.
-- **Ad blocking.** `build:blocklist` compiles the Ghostery ads-and-tracking engine during the image build and serializes it to `dist/adblock-engine.bin`; `capture.ts` deserializes that file. Building the engine at runtime would download and parse fourteen filter lists from `raw.githubusercontent.com` before every navigation. Baking it also pins the filter lists to the image digest, so refreshing them means publishing a new image.
+- **Fonts.** `fonts-liberation`, `fonts-noto-cjk`, `fonts-noto-color-emoji` and `fonts-freefont-ttf` are installed at build time. Without the emoji font in particular, emoji in page content render as tofu boxes. Unlike the browser these are inert glyph data, so they are version-pinned — drift would silently change what screenshots look like. Bump them alongside the base image digest, since a Debian point release retires the exact version and fails the build.
+- **Ad blocking.** `build:blocklist` compiles the Ghostery ads-and-tracking engine during the image build and serializes it to `dist/adblock-engine.bin`; `capture.ts` deserializes that file. Building the engine at runtime would download and parse fourteen filter lists from `raw.githubusercontent.com` before every navigation. Baking it also pins the filter lists to the image digest.
 
 Blocking is best-effort. If the engine is missing or unreadable the capture still runs, and the runner reports `adblock: "unavailable"` in its JSON result so a broken image shows up in the capture logs instead of silently degrading. A capture that failed before blocking was set up reports `adblock: "skipped"` instead, which says nothing about the engine.
+
+Chromium's own sandbox needs either unprivileged user namespaces or the setuid helper from `chromium-sandbox`, which is installed for exactly that reason. The runner never passes `--no-sandbox`: the page being rendered is attacker-supplied, so a host that provides neither must surface as a launch failure rather than silently downgrading isolation.
 
 ## Local smoke test
 
@@ -30,9 +34,24 @@ Prefer `smoke:docker` over the plain `smoke` script: `smoke` runs the TypeScript
 
 After a VCR image is configured in `apps/web/.env.local`, run the screenshot package's focused tests or invoke the screenshot workflow from the app.
 
-## Publish to Vercel Container Registry
+## Publishing
 
-Publishing is a manual operational action. Do not run these commands from automation until the project has explicitly authorized image publication.
+`.github/workflows/screenshot-runner-image.yml` builds and publishes the image. Pull requests that touch this package build it without pushing, so a retired font pin or a broken blocklist build fails before merge. Pushes to `main` build and push to VCR with zstd compression, and print the resulting digest in the job summary.
+
+Authentication uses [OIDC](https://vercel.com/docs/container-registry/github-actions) via `vercel/vcr-action/login`, so no registry credential is stored. It requires, once:
+
+- A VCR OIDC policy on the Vercel team granting read-write access, matching this repository.
+- Repository variables `VERCEL_TEAM_ID` (the `team_...` id, used to log in), plus `VERCEL_TEAM_SLUG` and `VERCEL_PROJECT_NAME` (used to build the image reference).
+
+Publishing is not the same as rolling out. `SCREENSHOT_SANDBOX_IMAGE` only accepts an immutable digest, so promoting a new image stays a deliberate step: wait for the VCR repository details page to report `Ready` (not `Preparing` or `Unoptimized`), then set the digest the workflow printed in Preview and Production:
+
+```text
+SCREENSHOT_SANDBOX_IMAGE=domainstack-screenshot@sha256:<digest>
+```
+
+Deployments authenticate to Sandbox automatically with Vercel OIDC. `latest` and mutable version tags must not be used in application configuration.
+
+### Publishing by hand
 
 ```bash
 vercel link
@@ -40,27 +59,9 @@ vercel vcr login docker
 docker buildx build \
   --file packages/screenshot-runner/Dockerfile \
   --platform linux/amd64 \
-  --pull \
   --provenance=false \
-  --tag vcr.vercel.com/<team-slug>/<project-slug>/domainstack-screenshot:<version> \
-  --output "type=image,push=true,oci-mediatypes=true,compression=zstd,compression-level=3,force-compression=true" \
+  --output "type=image,name=vcr.vercel.com/<team-slug>/<project-name>/domainstack-screenshot:latest,push=true,oci-mediatypes=true,compression=zstd,compression-level=3,force-compression=true" \
   .
 ```
 
-`vercel vcr login docker` writes the VCR-managed registry credentials, then Buildx builds and pushes in one operation. Buildx is used directly rather than `vercel vcr build` so the output flags apply: zstd with OCI media types decompresses faster than the default gzip, which is on the Sandbox boot path for every capture. `--provenance=false` keeps the push to a single-platform manifest instead of an index.
-
-The build context is the monorepo root, since the Dockerfile copies the workspace manifests and lockfile. Compiling the ad-blocking engine requires network access during the build.
-
-Wait for the repository details page to report `Ready`, not `Preparing` or `Unoptimized`. Then inspect the published tag and copy its immutable `sha256` digest:
-
-```bash
-vercel vcr tag inspect domainstack-screenshot <version>
-```
-
-Set the same digest-qualified reference in Preview and Production:
-
-```text
-SCREENSHOT_SANDBOX_IMAGE=domainstack-screenshot@sha256:<digest>
-```
-
-Deployments authenticate to Sandbox automatically with Vercel OIDC. `latest` and mutable version tags must not be used in application configuration.
+Buildx is used directly rather than `vercel vcr build` so the compression flags apply. The build context is the monorepo root, since the Dockerfile copies the workspace manifests and lockfile, and the build needs network access to compile the ad-blocking engine.

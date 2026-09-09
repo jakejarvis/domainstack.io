@@ -84,8 +84,8 @@ describe("safeFinalUrl", () => {
 describe("classifyError", () => {
   it("prefers an explicit runner code over message matching", () => {
     // The message would otherwise be read as a TLS failure.
-    const error = new RunnerError("configuration_error", "ssl certificate mismatch");
-    expect(classifyError(error)).toBe("configuration_error");
+    const error = new RunnerError("invalid_url", "ssl certificate mismatch");
+    expect(classifyError(error)).toBe("invalid_url");
   });
 
   it.each([
