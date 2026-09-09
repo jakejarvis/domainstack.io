@@ -12,6 +12,7 @@ export interface CaptureArguments {
 }
 
 const IMAGE_FORMATS = new Set<ImageFormat>(["webp", "png", "jpeg"]);
+const OPTIONS = new Set(["url", "width", "height", "format", "output", "full-page"]);
 const MAX_WIDTH = 7680;
 const MAX_HEIGHT = 4320;
 
@@ -26,7 +27,13 @@ export function parseArguments(argv: string[]): CaptureArguments {
         "Arguments must be provided as named key/value pairs",
       );
     }
-    values.set(key.slice(2), value);
+    const name = key.slice(2);
+    // A misspelled option would otherwise be dropped, silently capturing
+    // something other than what the caller asked for.
+    if (!OPTIONS.has(name)) {
+      throw new RunnerError("invalid_arguments", `Unknown option --${name}`);
+    }
+    values.set(name, value);
   }
 
   const url = values.get("url");
@@ -34,7 +41,11 @@ export function parseArguments(argv: string[]): CaptureArguments {
   const format = values.get("format");
   const width = Number(values.get("width"));
   const height = Number(values.get("height"));
-  const fullPage = values.get("full-page") === "true";
+  const fullPageValue = values.get("full-page");
+  if (fullPageValue !== "true" && fullPageValue !== "false") {
+    throw new RunnerError("invalid_arguments", "--full-page must be true or false");
+  }
+  const fullPage = fullPageValue === "true";
   if (
     !url ||
     !output ||
