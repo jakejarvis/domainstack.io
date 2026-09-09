@@ -1,123 +1,44 @@
+import { stat } from "node:fs/promises";
+
 import puppeteer, { type Browser, type Page } from "puppeteer";
 
 import { type AdblockStatus, enableAdBlocking } from "./adblock.js";
+import { type CaptureArguments, parseArguments, safeFinalUrl, validateUrl } from "./args.js";
+import { classifyError, RunnerError } from "./errors.js";
 
-type ImageFormat = "webp" | "png" | "jpeg";
-
-type RunnerErrorCode =
-  | "browser_crash"
-  | "capture_failed"
-  | "connection_reset"
-  | "dns_error"
-  | "invalid_arguments"
-  | "invalid_url"
-  | "timeout"
-  | "tls_error"
-  | "upstream_temporary";
-
-interface CaptureArguments {
-  url: string;
-  width: number;
-  height: number;
-  format: ImageFormat;
-  output: string;
-  fullPage: boolean;
-}
+/**
+ * `enabled` uses Chromium's own sandbox, which needs unprivileged user
+ * namespaces. Where the host does not provide them Chromium refuses to start,
+ * so the runner falls back to `disabled` rather than failing every capture; the
+ * Sandbox microVM remains the real isolation boundary either way.
+ */
+type ChromiumSandboxStatus = "enabled" | "disabled";
 
 const NAVIGATION_TIMEOUT_MS = 15_000;
 const NETWORK_IDLE_TIMEOUT_MS = 2_000;
 const NETWORK_IDLE_TIME_MS = 500;
 const CHROMIUM_VERSION = "149.0.7827.22";
+const MAX_OUTPUT_BYTES = 10 * 1024 * 1024;
+const LAUNCH_ARGS = ["--disable-dev-shm-usage", "--no-default-browser-check", "--no-first-run"];
 
-function parseArguments(argv: string[]): CaptureArguments {
-  const values = new Map<string, string>();
-  for (let index = 0; index < argv.length; index += 2) {
-    const key = argv[index];
-    const value = argv[index + 1];
-    if (!key?.startsWith("--") || value === undefined) {
-      throw new Error("Arguments must be provided as named key/value pairs");
-    }
-    values.set(key.slice(2), value);
-  }
-
-  const url = values.get("url");
-  const output = values.get("output");
-  const format = values.get("format");
-  const width = Number(values.get("width"));
-  const height = Number(values.get("height"));
-  const fullPage = values.get("full-page") === "true";
-  if (
-    !url ||
-    !output ||
-    !format ||
-    !["webp", "png", "jpeg"].includes(format) ||
-    !Number.isInteger(width) ||
-    !Number.isInteger(height) ||
-    width < 1 ||
-    height < 1 ||
-    width > 7680 ||
-    height > 4320
-  ) {
-    throw new Error("Missing or invalid capture arguments");
-  }
-
-  return { url, width, height, format: format as ImageFormat, output, fullPage };
-}
-
-function validateUrl(value: string): URL {
-  const url = new URL(value);
-  if (url.protocol !== "https:" || url.username || url.password) {
-    throw new Error("Only credential-free HTTPS URLs are supported");
-  }
-  return url;
-}
-
-function safeFinalUrl(value: string | undefined): string | null {
-  if (!value) return null;
+async function launchBrowser(): Promise<{ browser: Browser; sandbox: ChromiumSandboxStatus }> {
   try {
-    const url = new URL(value);
-    url.username = "";
-    url.password = "";
-    url.search = "";
-    url.hash = "";
-    return url.href;
-  } catch {
-    return null;
+    return {
+      browser: await puppeteer.launch({ headless: true, args: LAUNCH_ARGS }),
+      sandbox: "enabled",
+    };
+  } catch (error) {
+    try {
+      return {
+        browser: await puppeteer.launch({ headless: true, args: [...LAUNCH_ARGS, "--no-sandbox"] }),
+        sandbox: "disabled",
+      };
+    } catch {
+      // Report the sandboxed failure: the fallback failing too means the cause
+      // was never the sandbox.
+      throw error;
+    }
   }
-}
-
-function classifyError(error: unknown, argumentPhase: boolean): RunnerErrorCode {
-  if (argumentPhase) return "invalid_arguments";
-  const message = error instanceof Error ? error.message.toLowerCase() : "";
-  if (message.includes("invalid url") || message.includes("https urls")) return "invalid_url";
-  if (message.includes("err_name_not_resolved") || message.includes("enotfound"))
-    return "dns_error";
-  if (
-    message.includes("certificate") ||
-    message.includes("ssl") ||
-    message.includes("tls") ||
-    message.includes("err_cert")
-  ) {
-    return "tls_error";
-  }
-  if (message.includes("timeout") || message.includes("timed out")) return "timeout";
-  if (
-    message.includes("econnreset") ||
-    message.includes("econnrefused") ||
-    message.includes("connection reset") ||
-    message.includes("err_connection")
-  ) {
-    return "connection_reset";
-  }
-  if (
-    message.includes("target closed") ||
-    message.includes("browser has disconnected") ||
-    message.includes("failed to launch the browser process")
-  ) {
-    return "browser_crash";
-  }
-  if (message.includes("429") || /\b5\d\d\b/.test(message)) return "upstream_temporary";
-  return "capture_failed";
 }
 
 async function closeResources(page: Page | null, browser: Browser | null): Promise<void> {
@@ -140,21 +61,26 @@ async function main(): Promise<void> {
   let args: CaptureArguments | null = null;
   let finalUrl: string | null = null;
   let adblock: AdblockStatus = "skipped";
+  let chromiumSandbox: ChromiumSandboxStatus | null = null;
+  let dimensions: { width: number; height: number } | null = null;
   let failure: unknown;
-  let argumentPhase = true;
 
   try {
     args = parseArguments(process.argv.slice(2));
     const url = validateUrl(args.url);
-    argumentPhase = false;
 
-    browser = await puppeteer.launch({
-      headless: true,
-      args: ["--disable-dev-shm-usage", "--no-default-browser-check", "--no-first-run"],
-    });
+    const launched = await launchBrowser();
+    browser = launched.browser;
+    chromiumSandbox = launched.sandbox;
+
     const browserVersion = await browser.version();
     if (!browserVersion.includes(CHROMIUM_VERSION)) {
-      throw new Error("Pinned Chromium version is unavailable");
+      // A mismatched image stays broken until it is republished, so this must
+      // not be reported as a transient failure the caller retries.
+      throw new RunnerError(
+        "configuration_error",
+        `Expected Chromium ${CHROMIUM_VERSION} but the image provides ${browserVersion}`,
+      );
     }
 
     page = await browser.newPage();
@@ -167,11 +93,12 @@ async function main(): Promise<void> {
       timeout: NAVIGATION_TIMEOUT_MS,
     });
     finalUrl = safeFinalUrl(page.url()) ?? url.href;
-    if (new URL(page.url()).protocol !== "https:") {
-      throw new Error("Only HTTPS URLs are supported after redirects");
-    }
+    validateUrl(page.url());
     if (response && (response.status() === 429 || response.status() >= 500)) {
-      throw new Error(`Temporary upstream response ${response.status()}`);
+      throw new RunnerError(
+        "upstream_temporary",
+        `Temporary upstream response ${response.status()}`,
+      );
     }
 
     try {
@@ -181,18 +108,42 @@ async function main(): Promise<void> {
       });
     } catch {}
 
+    // The page may have navigated again while settling, so the scheme is
+    // re-checked against the URL that is actually about to be captured.
+    finalUrl = safeFinalUrl(page.url()) ?? finalUrl;
+    validateUrl(page.url());
+
+    // A full-page capture is as tall as the document, so reporting the viewport
+    // height would misdescribe the image.
+    dimensions = args.fullPage
+      ? await page.evaluate(() => ({
+          width: document.documentElement.scrollWidth,
+          height: document.documentElement.scrollHeight,
+        }))
+      : { width: args.width, height: args.height };
+
     await page.screenshot({
       type: args.format,
       fullPage: args.fullPage,
       path: args.output,
     });
+
+    // Checked here so an oversized image is never transferred out of the
+    // sandbox only to be rejected by the caller.
+    const { size } = await stat(args.output);
+    if (size === 0) {
+      throw new RunnerError("capture_failed", "Screenshot produced an empty file");
+    }
+    if (size > MAX_OUTPUT_BYTES) {
+      throw new RunnerError("output_too_large", `Screenshot is ${size} bytes`);
+    }
   } catch (error) {
     failure = error;
   } finally {
     await closeResources(page, browser);
   }
 
-  if (failure || !args) {
+  if (failure || !args || !dimensions) {
     console.log(
       JSON.stringify({
         success: false,
@@ -200,8 +151,9 @@ async function main(): Promise<void> {
         height: null,
         finalUrl,
         adblock,
+        chromiumSandbox,
         durationMs: Date.now() - startedAt,
-        errorCode: classifyError(failure, argumentPhase),
+        errorCode: classifyError(failure),
       }),
     );
     process.exitCode = 1;
@@ -211,10 +163,11 @@ async function main(): Promise<void> {
   console.log(
     JSON.stringify({
       success: true,
-      width: args.width,
-      height: args.height,
+      width: dimensions.width,
+      height: dimensions.height,
       finalUrl,
       adblock,
+      chromiumSandbox,
       durationMs: Date.now() - startedAt,
       errorCode: null,
     }),
