@@ -15,14 +15,30 @@ const OUTPUT_PATH = "/tmp/domainstack-screenshot";
 const RUNNER_ERROR_CODES = new Set<ScreenshotErrorCode>([
   "browser_crash",
   "capture_failed",
+  "configuration_error",
   "connection_reset",
   "dns_error",
   "invalid_arguments",
   "invalid_url",
+  "output_too_large",
   "timeout",
   "tls_error",
   "upstream_temporary",
 ]);
+
+/**
+ * `validatePublicTarget` already resolved this host over the public internet
+ * moments earlier, so the same lookup failing inside the sandbox points at a
+ * transient network or certificate problem rather than a permanently bad
+ * target. Remapping keeps those out of the cached-as-missing path; the code the
+ * runner reported is preserved in the error context.
+ */
+const RUNNER_TRANSIENT_CODES: Partial<Record<ScreenshotErrorCode, ScreenshotErrorCode>> = {
+  dns_error: "upstream_temporary",
+  tls_error: "upstream_temporary",
+};
+
+const MAX_STDERR_CHARS = 2_000;
 
 const DENIED_NETWORKS = [
   "0.0.0.0/8",
@@ -56,8 +72,10 @@ const DENIED_NETWORKS = [
 ];
 
 type AdblockStatus = "enabled" | "skipped" | "unavailable";
+type ChromiumSandboxStatus = "enabled" | "disabled";
 
 const ADBLOCK_STATUSES = new Set<AdblockStatus>(["enabled", "skipped", "unavailable"]);
+const CHROMIUM_SANDBOX_STATUSES = new Set<ChromiumSandboxStatus>(["enabled", "disabled"]);
 
 interface RunnerSuccess {
   success: true;
@@ -65,6 +83,7 @@ interface RunnerSuccess {
   height: number;
   finalUrl: string;
   adblock: AdblockStatus;
+  chromiumSandbox: ChromiumSandboxStatus;
   durationMs: number;
   errorCode: null;
 }
@@ -75,6 +94,7 @@ interface RunnerFailure {
   height: null;
   finalUrl: string | null;
   adblock: AdblockStatus;
+  chromiumSandbox: ChromiumSandboxStatus | null;
   durationMs: number;
   errorCode: ScreenshotErrorCode;
 }
@@ -112,8 +132,15 @@ function isRunnerResult(value: unknown): value is RunnerResult {
     return (
       typeof result.width === "number" &&
       typeof result.height === "number" &&
+      CHROMIUM_SANDBOX_STATUSES.has(result.chromiumSandbox as ChromiumSandboxStatus) &&
       result.errorCode === null
     );
+  }
+  if (
+    result.chromiumSandbox !== null &&
+    !CHROMIUM_SANDBOX_STATUSES.has(result.chromiumSandbox as ChromiumSandboxStatus)
+  ) {
+    return false;
   }
   return (
     result.width === null &&
@@ -121,6 +148,17 @@ function isRunnerResult(value: unknown): value is RunnerResult {
     typeof result.errorCode === "string" &&
     RUNNER_ERROR_CODES.has(result.errorCode as ScreenshotErrorCode)
   );
+}
+
+/** Never lets a diagnostics read mask the failure that prompted it. */
+async function readStderr(command: { stderr: () => Promise<string> }): Promise<string | null> {
+  try {
+    const output = (await command.stderr()).trim();
+    if (!output) return null;
+    return output.length > MAX_STDERR_CHARS ? `${output.slice(0, MAX_STDERR_CHARS)}…` : output;
+  } catch {
+    return null;
+  }
 }
 
 function parseRunnerResult(stdout: string): RunnerResult {
@@ -174,6 +212,9 @@ export async function runSandboxCapture(
   let sandboxId: string | null = null;
   let exitCode: number | null = null;
   let adblock: AdblockStatus | null = null;
+  let chromiumSandbox: ChromiumSandboxStatus | null = null;
+  let runnerErrorCode: ScreenshotErrorCode | null = null;
+  let stderr: string | null = null;
   let primaryError: ScreenshotError | undefined;
   let cleanupError: unknown;
   let cleanupSucceeded = false;
@@ -214,11 +255,17 @@ export async function runSandboxCapture(
       { timeoutMs: COMMAND_TIMEOUT_MS },
     );
     exitCode = command.exitCode;
-    const result = parseRunnerResult(await command.stdout());
+    const stdout = await command.stdout();
+    if (command.exitCode !== 0) stderr = await readStderr(command);
+
+    const result = parseRunnerResult(stdout);
     adblock = result.adblock;
+    chromiumSandbox = result.chromiumSandbox;
 
     if (command.exitCode !== 0 || !result.success) {
-      const code = result.success ? "command_failed" : result.errorCode;
+      runnerErrorCode = result.success ? null : result.errorCode;
+      const reported = result.success ? "command_failed" : result.errorCode;
+      const code = RUNNER_TRANSIENT_CODES[reported] ?? reported;
       throw new ScreenshotError(code, `Capture runner failed with exit code ${command.exitCode}`);
     }
 
@@ -269,6 +316,9 @@ export async function runSandboxCapture(
         durationMs: Date.now() - startedAt,
         exitCode,
         adblock,
+        chromiumSandbox,
+        runnerErrorCode,
+        stderr,
         errorCode: primaryError
           ? primaryError instanceof ScreenshotError
             ? primaryError.code
@@ -285,6 +335,8 @@ export async function runSandboxCapture(
     durationMs: Date.now() - startedAt,
     exitCode,
     cleanupSucceeded,
+    runnerErrorCode,
+    stderr,
   };
   if (primaryError) {
     throw new ScreenshotError(
@@ -294,16 +346,16 @@ export async function runSandboxCapture(
       errorContext,
     );
   }
-  if (cleanupError) {
+  if (!successfulResult) {
     throw new ScreenshotError(
       "sandbox_control_plane",
-      "Failed to stop screenshot sandbox",
-      { cause: cleanupError },
+      cleanupError ? "Failed to stop screenshot sandbox" : "Screenshot capture produced no result",
+      cleanupError ? { cause: cleanupError } : undefined,
       errorContext,
     );
   }
-  if (!successfulResult) {
-    throw new ScreenshotError("capture_failed", "Screenshot capture produced no result");
-  }
+  // A stop() failure after the image is already in hand only leaks a sandbox
+  // that the platform reclaims on timeout anyway. Discarding a valid capture
+  // would buy nothing and cost a full retry, so it is reported instead.
   return successfulResult;
 }
