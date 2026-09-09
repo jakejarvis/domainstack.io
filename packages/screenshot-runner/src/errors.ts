@@ -48,7 +48,14 @@ export function classifyError(error: unknown): RunnerErrorCode {
   ) {
     return "tls_error";
   }
-  if (message.includes("timeout") || message.includes("timed out")) return "timeout";
+  if (
+    message.includes("timeout") ||
+    message.includes("timed out") ||
+    message.includes("timed_out") ||
+    message.includes("etimedout")
+  ) {
+    return "timeout";
+  }
   if (
     message.includes("econnreset") ||
     message.includes("econnrefused") ||

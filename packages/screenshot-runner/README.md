@@ -26,6 +26,8 @@ pnpm --filter @domainstack/screenshot-runner smoke:docker
 
 Prefer `smoke:docker` over the plain `smoke` script: `smoke` runs the TypeScript source directly, where no compiled engine sits next to it, so it always reports `adblock: "unavailable"`.
 
+`smoke:docker` grants no extra capabilities, matching what Sandbox provides. Chromium's own sandbox needs unprivileged user namespaces and is never disabled to work around a host without them, since the page being rendered is attacker-supplied. A `browser_crash` result whose stderr mentions the sandbox or zygote means the host does not expose them.
+
 After a VCR image is configured in `apps/web/.env.local`, run the screenshot package's focused tests or invoke the screenshot workflow from the app.
 
 ## Publish to Vercel Container Registry
