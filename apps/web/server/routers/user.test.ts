@@ -156,7 +156,6 @@ describe("user router", () => {
       // Create a linked account
       await db.insert(accounts).values({
         id: "account-1",
-        issuer: "https://accounts.google.com",
         accountId: "google-account-123",
         providerId: "google",
         userId: TEST_USER_ID,
@@ -177,7 +176,6 @@ describe("user router", () => {
       // Create account for different user
       await db.insert(accounts).values({
         id: "account-2",
-        issuer: "local:oauth:github",
         accountId: "github-account-456",
         providerId: "github",
         userId: TEST_USER_2_ID,

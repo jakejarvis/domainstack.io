@@ -11,7 +11,6 @@ import {
   text,
   timestamp,
   unique,
-  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -89,7 +88,12 @@ export const accounts = pgTable(
   "accounts",
   {
     id: text("id").primaryKey(),
-    issuer: text("issuer").notNull(),
+    // Legacy from the better-auth 1.7.0-1.7.2 account-identity migration. better-auth
+    // 1.7.3 reverted to identifying accounts by (providerId, accountId), like 1.6, and
+    // no longer reads or writes this column. Kept nullable (rather than dropped) so a
+    // rolling deploy that still has 1.7.2 code running can keep inserting into it.
+    // See https://better-auth.com/docs/guides/1-7-upgrade-guide#account-identity-keeps-the-provider-key
+    issuer: text("issuer"),
     accountId: text("account_id").notNull(),
     providerId: text("provider_id").notNull(),
     userId: text("user_id")
@@ -107,10 +111,7 @@ export const accounts = pgTable(
       .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
   },
-  (table) => [
-    uniqueIndex("accounts_issuer_accountId_uidx").on(table.issuer, table.accountId),
-    index("accounts_userId_idx").on(table.userId),
-  ],
+  (table) => [index("accounts_userId_idx").on(table.userId)],
 );
 
 export const verifications = pgTable("verifications", {
