@@ -1,0 +1,126 @@
+name: Screenshot runner image
+
+on:
+  push:
+    branches: [main]
+    # The Dockerfile copies the root manifests before installing, so a change
+    # to packageManager or workspace config changes the image too.
+    paths:
+      - "packages/screenshot-runner/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/screenshot-runner-image.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "packages/screenshot-runner/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/screenshot-runner-image.yml"
+  workflow_dispatch:
+
+# Publishing needs id-token: write to exchange the GitHub OIDC token. It is
+# granted on that job alone, so the job that builds a pull request's own
+# Dockerfile never holds a credential it could exfiltrate. Actions are pinned to
+# commit SHAs for the same reason: a retargeted tag must not be able to run
+# unreviewed code beside that token.
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # Proves the image still builds. The apt font pin and the build-time
+  # ad-blocking engine both fail loudly here rather than after a merge.
+  build:
+    name: Build
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Build
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .
+          file: packages/screenshot-runner/Dockerfile
+          platforms: linux/amd64
+          provenance: false
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  publish:
+    name: Publish
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      IMAGE_REFERENCE: vcr.vercel.com/${{ vars.VERCEL_TEAM_SLUG }}/${{ vars.VERCEL_PROJECT_NAME }}/domainstack-screenshot
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      # Exchanges the GitHub OIDC token for a short-lived Vercel token, so
+      # there is no registry credential to store or rotate. Requires a VCR
+      # OIDC policy on the Vercel team that matches this repository.
+      - name: Log in to Vercel Container Registry
+        uses: vercel/vcr-action/login@3affda703d82e1d40e4407ceb2c3c2b4238266a8 # v1.0.2
+        with:
+          team: ${{ vars.VERCEL_TEAM_ID }}
+
+      - name: Build and push
+        id: push
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .
+          file: packages/screenshot-runner/Dockerfile
+          platforms: linux/amd64
+          provenance: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: |
+            ${{ env.IMAGE_REFERENCE }}:latest
+            ${{ env.IMAGE_REFERENCE }}:${{ github.sha }}
+          # zstd with OCI media types is what VCR recommends; image
+          # decompression is on the Sandbox boot path for every capture.
+          outputs: type=image,push=true,oci-mediatypes=true,compression=zstd,compression-level=3,force-compression=true
+
+      # SCREENSHOT_SANDBOX_IMAGE only accepts an immutable digest, so publishing
+      # is deliberately not the same as rolling out. Promoting the digest stays
+      # a human step. The reference is fully qualified so it resolves the same
+      # way regardless of which project the deployment authenticates as.
+      - name: Summarize
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          {
+            echo "### Screenshot runner image published"
+            echo
+            echo 'Wait for the VCR repository to report `Ready`, then set this in Preview and Production:'
+            echo
+            echo '```'
+            echo "SCREENSHOT_SANDBOX_IMAGE=${IMAGE_REFERENCE}@${DIGEST}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

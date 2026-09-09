@@ -23,9 +23,6 @@ let nextConfig: NextConfig = {
     // https://github.com/resend/react-email/issues/2426
     "prettier",
   ],
-  outputFileTracingIncludes: {
-    "/.well-known/workflow/v1/flow": ["../../node_modules/@sparticuz/chromium/bin/**"],
-  },
   logging: {
     incomingRequests: {
       ignore: [/\/api\/trpc/, /\/.well-known\/workflow/],

@@ -1,0 +1,27 @@
+{
+  "name": "@domainstack/screenshot-runner",
+  "version": "0.0.0-beta.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "build:blocklist": "node dist/build-blocklist.js",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "fmt": "oxfmt --config ../../.oxfmtrc.json",
+    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json",
+    "test": "vitest run",
+    "smoke": "tsx src/capture.ts --url https://example.com --width 1200 --height 630 --format webp --output /tmp/domainstack-screenshot-smoke.webp --full-page false",
+    "smoke:docker": "docker build --platform linux/amd64 -f packages/screenshot-runner/Dockerfile -t domainstack-screenshot-runner . && docker run --rm --platform linux/amd64 domainstack-screenshot-runner node /workspace/packages/screenshot-runner/dist/capture.js --url https://example.com --width 1200 --height 630 --format webp --output /tmp/smoke.webp --full-page false"
+  },
+  "dependencies": {
+    "@ghostery/adblocker-puppeteer": "2.18.2",
+    "puppeteer": "25.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "4.21.0",
+    "typescript": "7.0.2",
+    "vitest": "catalog:"
+  }
+}

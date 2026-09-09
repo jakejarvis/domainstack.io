@@ -14,9 +14,6 @@ overrides:
   next: 16.3.4
   react: 19.2.8
   react-dom: 19.2.8
-publicHoistPattern:
-  - '@sparticuz/chromium'
-  - puppeteer-core
 allowBuilds:
   '@posthog/cli': true
   '@swc/core': true

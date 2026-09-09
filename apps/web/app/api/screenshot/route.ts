@@ -19,7 +19,15 @@ type ScreenshotStartResponse =
 type ScreenshotStatusResponse =
   | { status: "running" }
   | { status: "completed"; cached: false; success: true; data: ScreenshotData }
-  | { status: "completed"; cached: false; success: false; error: string; data: { url: null } }
+  | {
+      status: "completed";
+      cached: false;
+      success: false;
+      error: string;
+      /** Specific capture failure, e.g. `dns_error` or `target_blocked`. */
+      errorCode?: string;
+      data: { url: null };
+    }
   | { status: "failed"; error: string };
 
 /**
@@ -170,7 +178,7 @@ export async function GET(
           cached: false,
           success: result.success,
           data: result.data,
-          ...(!result.success && { error: result.error }),
+          ...(!result.success && { error: result.error, errorCode: result.errorCode }),
         } as ScreenshotStatusResponse,
         { headers: rateLimit.headers },
       );
