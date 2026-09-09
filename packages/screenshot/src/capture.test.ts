@@ -153,7 +153,7 @@ describe("captureScreenshot", () => {
       const sandbox = createSandboxMock({ exitCode: 1, stdout: runnerFailure(runnerCode) });
       mocks.createSandbox.mockResolvedValue(sandbox);
 
-      const error = await captureScreenshotBase64("https://example.com").catch((caught) => caught);
+      const error = await captureScreenshot("https://example.com").catch((caught) => caught);
       expect(error).toMatchObject({
         code: "upstream_temporary",
         context: expect.objectContaining({ runnerErrorCode: runnerCode }),
@@ -166,7 +166,7 @@ describe("captureScreenshot", () => {
     const sandbox = createSandboxMock({ exitCode: 1, stdout: runnerFailure("output_too_large") });
     mocks.createSandbox.mockResolvedValue(sandbox);
 
-    const error = await captureScreenshotBase64("https://example.com").catch((caught) => caught);
+    const error = await captureScreenshot("https://example.com").catch((caught) => caught);
     expect(classifyScreenshotError(error)).toBe("permanent_target");
   });
 
@@ -174,8 +174,8 @@ describe("captureScreenshot", () => {
     const sandbox = createSandboxMock({ stopError: new Error("stop failed") });
     mocks.createSandbox.mockResolvedValue(sandbox);
 
-    await expect(captureScreenshotBase64("https://example.com")).resolves.toMatchObject({
-      imageBase64: Buffer.from("webp").toString("base64"),
+    await expect(captureScreenshot("https://example.com")).resolves.toMatchObject({
+      buffer: Buffer.from("webp"),
       cleanupSucceeded: false,
     });
     expect(mocks.loggerWarn).toHaveBeenCalledWith(
@@ -192,7 +192,7 @@ describe("captureScreenshot", () => {
     });
     mocks.createSandbox.mockResolvedValue(sandbox);
 
-    const error = await captureScreenshotBase64("https://example.com").catch((caught) => caught);
+    const error = await captureScreenshot("https://example.com").catch((caught) => caught);
     expect(error).toMatchObject({
       context: expect.objectContaining({ stderr: "chromium exploded" }),
     });
@@ -204,31 +204,37 @@ describe("captureScreenshot", () => {
     ["DNS lookup timed out after 8000ms"],
     ["getaddrinfo EAI_AGAIN example.com"],
     ["queryA ESERVFAIL example.com"],
+    // The hostname is interpolated into the message, so it must not be able to
+    // pass itself off as the resolver's status.
+    ["getaddrinfo EAI_AGAIN thenotfound.com"],
+    ["getaddrinfo EAI_AGAIN the-nxdomain.io"],
   ])("retries a transient DNS failure (%s)", async (message) => {
     const { SafeFetchError } = await import("@domainstack/safe-fetch");
     mocks.resolvePublicHost.mockRejectedValue(new SafeFetchError("dns_error", message));
 
-    const error = await captureScreenshotBase64("https://example.com").catch((caught) => caught);
+    const error = await captureScreenshot("https://example.com").catch((caught) => caught);
     expect(error).toMatchObject({ code: "upstream_temporary" });
     expect(classifyScreenshotError(error)).toBe("retryable_infrastructure");
   });
 
-  it.each([["getaddrinfo ENOTFOUND example.com"], ["DNS lookup returned no records"]])(
-    "caches a definitive DNS failure (%s)",
-    async (message) => {
-      const { SafeFetchError } = await import("@domainstack/safe-fetch");
-      mocks.resolvePublicHost.mockRejectedValue(new SafeFetchError("dns_error", message));
+  it.each([
+    ["getaddrinfo ENOTFOUND example.com"],
+    ["getaddrinfo ENODATA example.com"],
+    ["getaddrinfo ENOTFOUND thenotfound.com"],
+    ["DNS lookup returned no records"],
+  ])("caches a definitive DNS failure (%s)", async (message) => {
+    const { SafeFetchError } = await import("@domainstack/safe-fetch");
+    mocks.resolvePublicHost.mockRejectedValue(new SafeFetchError("dns_error", message));
 
-      const error = await captureScreenshotBase64("https://example.com").catch((caught) => caught);
-      expect(error).toMatchObject({ code: "dns_error" });
-      expect(classifyScreenshotError(error)).toBe("permanent_target");
-    },
-  );
+    const error = await captureScreenshot("https://example.com").catch((caught) => caught);
+    expect(error).toMatchObject({ code: "dns_error" });
+    expect(classifyScreenshotError(error)).toBe("permanent_target");
+  });
 
   it("keeps an internal resolver fault retryable", async () => {
     mocks.resolvePublicHost.mockRejectedValue(new Error("resolver exploded"));
 
-    const error = await captureScreenshotBase64("https://example.com").catch((caught) => caught);
+    const error = await captureScreenshot("https://example.com").catch((caught) => caught);
     expect(error).toMatchObject({ code: "upstream_temporary" });
     expect(classifyScreenshotError(error)).toBe("retryable_infrastructure");
     expect(mocks.createSandbox).not.toHaveBeenCalled();
@@ -245,16 +251,10 @@ describe("captureScreenshot", () => {
   it("requires an immutable image reference", async () => {
     process.env.SCREENSHOT_SANDBOX_IMAGE = "domainstack-screenshot:latest";
 
-<<<<<<< HEAD
-    await expect(captureScreenshot("https://example.com")).rejects.toMatchObject({
-      code: "configuration_error",
-    });
-=======
-    const error = await captureScreenshotBase64("https://example.com").catch((caught) => caught);
+    const error = await captureScreenshot("https://example.com").catch((caught) => caught);
     expect(error).toMatchObject({ code: "configuration_error" });
     // A broken deployment is neither retried nor cached against the domain.
     expect(classifyScreenshotError(error)).toBe("permanent_configuration");
->>>>>>> 8a510a7 (refactor: build the screenshot runner on node:24-slim with Debian Chromium)
     expect(mocks.createSandbox).not.toHaveBeenCalled();
   });
 });
