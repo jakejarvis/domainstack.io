@@ -12,7 +12,7 @@ import { safeFetch } from "@domainstack/safe-fetch";
 import type { FaviconResponse } from "@domainstack/types";
 
 import { ttlForFavicon } from "../ttl";
-import { isDefinitiveNotFoundError } from "./fetch-errors";
+import { isDefinitiveNotFoundError, RemoteDataUnavailableError } from "./fetch-errors";
 
 // ============================================================================
 // Types
@@ -70,7 +70,7 @@ export async function fetchFavicon(domain: string): Promise<FaviconResult> {
     // If at least one source failed with a transient error (not 404/400),
     // throw so TanStack Query can retry instead of caching failure
     if (!fetchResult.allNotFound) {
-      throw new Error(`Favicon fetch failed for ${domain} (transient)`);
+      throw new RemoteDataUnavailableError(`Favicon unavailable for ${domain}`);
     }
 
     // Persist "no favicon found" as a cached state (all sources returned 404)

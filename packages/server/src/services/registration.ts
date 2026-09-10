@@ -24,6 +24,7 @@ import {
 
 import { ttlForRegistration } from "../ttl";
 import { lookupWhois as lookup } from "../whois";
+import { RemoteDataUnavailableError } from "./fetch-errors";
 
 // ============================================================================
 // Types
@@ -85,7 +86,7 @@ async function lookupWhois(domain: string): Promise<LookupResult> {
   if (!result.success) {
     // Transient errors throw - let TanStack Query retry
     if (result.error === "retry" || result.error === "timeout") {
-      throw new Error(`WHOIS lookup failed: ${result.error}`);
+      throw new RemoteDataUnavailableError(`WHOIS lookup failed: ${result.error}`);
     }
     // Permanent errors return as result
     return { success: false, error: result.error };

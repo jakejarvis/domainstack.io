@@ -11,22 +11,17 @@ const logger = createLogger({ source: "blob/vercel" });
  */
 export class VercelBlobProvider implements BlobProvider {
   async put(options: PutBlobOptions): Promise<PutBlobResult> {
-    try {
-      const blob = await put(options.pathname, options.body, {
-        access: "public",
-        contentType: options.contentType,
-        cacheControlMaxAge: options.cacheControlMaxAge,
-        allowOverwrite: true,
-      });
+    const blob = await put(options.pathname, options.body, {
+      access: "public",
+      contentType: options.contentType,
+      cacheControlMaxAge: options.cacheControlMaxAge,
+      allowOverwrite: true,
+    });
 
-      return {
-        url: blob.url,
-        pathname: options.pathname,
-      };
-    } catch (err) {
-      logger.error({ err, pathname: options.pathname }, "Failed to upload blob");
-      throw err;
-    }
+    return {
+      url: blob.url,
+      pathname: options.pathname,
+    };
   }
 
   async delete(urls: string[]): Promise<DeleteBlobResult[]> {

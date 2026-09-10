@@ -58,30 +58,34 @@ const sectionFetchers: Record<Section, (domain: string) => Promise<unknown>> = {
 /**
  * Check if a section is stale for a given domain.
  */
-async function isSectionStale(domain: string, section: Section): Promise<boolean> {
+async function isSectionStale(
+  domain: string,
+  section: Section,
+): Promise<{ stale: boolean; failed: boolean }> {
   try {
     const result = await sectionCacheGetters[section](domain);
-    return result.stale || result.data === null;
+    return { stale: result.stale || result.data === null, failed: false };
   } catch (err) {
     logger.error({ domain, section, err }, "failed to check staleness, assuming stale");
-    return true;
+    return { stale: true, failed: true };
   }
 }
 
 /**
  * Get all stale sections for a domain.
  */
-async function getStaleSections(domain: string): Promise<Section[]> {
+async function getStaleSections(domain: string): Promise<{ sections: Section[]; failed: boolean }> {
   const staleChecks = await Promise.all(
     ALL_SECTIONS.map(async (section) => ({
       section,
-      stale: await isSectionStale(domain, section),
+      result: await isSectionStale(domain, section),
     })),
   );
 
-  return staleChecks
-    .filter((c): c is { section: Section; stale: true } => c.stale)
-    .map((c) => c.section);
+  return {
+    sections: staleChecks.filter(({ result }) => result.stale).map(({ section }) => section),
+    failed: staleChecks.some(({ result }) => result.failed),
+  };
 }
 
 /**
@@ -119,14 +123,12 @@ export async function GET(request: Request) {
     // Check staleness for all domains in parallel
     await Promise.all(
       recentDomains.map(async (domain) => {
-        try {
-          const staleSections = await getStaleSections(domain);
-          for (const section of staleSections) {
-            jobs.push({ domain, section });
-          }
-        } catch (err) {
+        const { sections: staleSections, failed } = await getStaleSections(domain);
+        if (failed) {
           domainsFailed++;
-          logger.error({ domain, err }, "Failed to check staleness for domain");
+        }
+        for (const section of staleSections) {
+          jobs.push({ domain, section });
         }
       }),
     );
@@ -154,7 +156,7 @@ export async function GET(request: Request) {
             sectionsStarted++;
           } catch (err) {
             // Log but don't fail the cron - other sections may succeed
-            logger.error({ domain, section, err }, "Failed to refresh section");
+            logger.debug({ domain, section, err }, "Section unavailable during cache warm");
           }
         }),
       );

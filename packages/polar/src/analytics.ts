@@ -22,7 +22,7 @@ export const analytics = {
           properties,
         }),
       }).catch((err) => {
-        console.error("failed to track event", err);
+        console.debug("failed to track event", err);
       }),
     );
   },

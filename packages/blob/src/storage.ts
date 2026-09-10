@@ -77,11 +77,9 @@ async function uploadWithRetry(
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
 
-      logger.warn({ err, pathname, attempt: attempt + 1, maxAttempts });
-
       if (attempt < maxAttempts - 1) {
         const delay = backoffDelayMs(attempt, UPLOAD_BACKOFF_BASE_MS, UPLOAD_BACKOFF_MAX_MS);
-        logger.warn({ err, pathname, retryDelay: delay });
+        logger.warn({ err, pathname, attempt: attempt + 1, maxAttempts, retryDelay: delay });
         await sleep(delay);
       }
     }

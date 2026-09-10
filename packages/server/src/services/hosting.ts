@@ -161,7 +161,7 @@ async function lookupGeoIp(ip: string): Promise<GeoIpData | null> {
   const apiKey = process.env.IPLOCATE_API_KEY;
 
   if (!apiKey) {
-    logger.warn("IPLOCATE_API_KEY not configured, skipping IP lookup");
+    logger.debug("IPLOCATE_API_KEY not configured, skipping IP lookup");
     return null;
   }
 
@@ -181,7 +181,7 @@ async function lookupGeoIp(ip: string): Promise<GeoIpData | null> {
 
     if (!res.ok) {
       const body = await res.text().catch(() => "");
-      logger.error(
+      logger.warn(
         { status: res.status, body: body.slice(0, 500) },
         "iplocate.io lookup failed with non-OK status",
       );
@@ -191,7 +191,7 @@ async function lookupGeoIp(ip: string): Promise<GeoIpData | null> {
     const data = (await res.json()) as IplocateApiResponse;
 
     if (data.error) {
-      logger.error({ error: data.error }, "iplocate.io returned error message");
+      logger.warn({ error: data.error }, "iplocate.io returned error message");
       return null;
     }
 
@@ -204,7 +204,7 @@ async function lookupGeoIp(ip: string): Promise<GeoIpData | null> {
 
     return transformApiResponse(data);
   } catch (err) {
-    logger.error({ err }, "iplocate.io lookup failed");
+    logger.warn({ err }, "iplocate.io lookup failed");
     return null;
   }
 }

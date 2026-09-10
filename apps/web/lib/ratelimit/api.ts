@@ -181,7 +181,7 @@ export async function checkRateLimit(
     };
   } catch (err) {
     // Redis error - fail open to prevent blocking requests
-    logger.warn({ err }, "rate limit check failed, allowing request");
+    logger.error({ err }, "rate limit check failed, allowing request");
     return { success: true };
   }
 }

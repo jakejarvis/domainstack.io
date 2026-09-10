@@ -15,6 +15,7 @@ import { detectCertificateAuthority, getProvidersFromCatalog } from "@domainstac
 
 import { fetchCertificateChain, type RawCertificate, type TlsFetchSuccess } from "../tls";
 import { ttlForCertificates } from "../ttl";
+import { RemoteDataUnavailableError } from "./fetch-errors";
 
 // ============================================================================
 // Types
@@ -91,7 +92,7 @@ async function fetchCertificateChainInternal(domain: string): Promise<FetchResul
   if (!result.success) {
     // Transient failures - throw for TanStack Query to retry
     if (result.error === "fetch_error" || result.error === "timeout") {
-      throw new Error("Certificate fetch failed");
+      throw new RemoteDataUnavailableError("Certificate data unavailable");
     }
 
     // Permanent failures (dns_error, tls_error) - return error result

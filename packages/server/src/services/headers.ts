@@ -10,8 +10,14 @@ import { ensureDomainRecord } from "@domainstack/db/queries/domains";
 import { replaceHeaders } from "@domainstack/db/queries/headers";
 import type { HeadersResponse } from "@domainstack/types";
 
-import { fetchHttpHeaders, type HeadersError, type HeadersFetchData } from "../headers";
+import {
+  fetchHttpHeaders,
+  HeadersFetchError,
+  type HeadersError,
+  type HeadersFetchData,
+} from "../headers";
 import { ttlForHeaders } from "../ttl";
+import { RemoteDataUnavailableError } from "./fetch-errors";
 
 export { getHttpStatusMessage } from "../headers";
 
@@ -39,7 +45,15 @@ export type HeadersResult =
  */
 export async function fetchHeaders(domain: string): Promise<HeadersResult> {
   // 1. Fetch headers from domain (throws HeadersFetchError on transient failure)
-  const fetchResult = await fetchHttpHeaders(domain);
+  let fetchResult;
+  try {
+    fetchResult = await fetchHttpHeaders(domain);
+  } catch (err) {
+    if (err instanceof HeadersFetchError) {
+      throw new RemoteDataUnavailableError("HTTP headers unavailable", { cause: err });
+    }
+    throw err;
+  }
 
   if (!fetchResult.success) {
     return { success: false, error: fetchResult.error };

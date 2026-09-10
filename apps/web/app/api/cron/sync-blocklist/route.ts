@@ -115,7 +115,7 @@ export async function GET(request: Request) {
       if (result.status === "fulfilled") {
         allDomains.push(...result.value);
       } else {
-        logger.error({ err: result.reason, sourceUrl: sources[i] }, "Error fetching blocklist");
+        logger.warn({ err: result.reason, sourceUrl: sources[i] }, "Error fetching blocklist");
       }
     }
 

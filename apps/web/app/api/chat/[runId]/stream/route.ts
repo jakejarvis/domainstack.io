@@ -27,7 +27,7 @@ export async function GET(request: NextRequest, context: RouteContext<"/api/chat
     const session = await auth.api.getSession({ headers: request.headers });
     userId = session?.user?.id ?? null;
   } catch (err) {
-    logger.debug({ err }, "auth session check failed, treating as anonymous");
+    logger.warn({ err }, "auth session check failed, treating as anonymous");
   }
 
   const rateLimitConfig = userId ? RATE_LIMIT_AUTHENTICATED.stream : RATE_LIMIT_ANONYMOUS.stream;

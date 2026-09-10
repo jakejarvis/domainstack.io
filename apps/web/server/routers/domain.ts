@@ -8,6 +8,7 @@ import type { RateLimitConfig } from "@domainstack/redis/ratelimit";
 import { fetchCertificates } from "@domainstack/server/services/certificates";
 import { fetchDns } from "@domainstack/server/services/dns";
 import { fetchFavicon } from "@domainstack/server/services/favicon";
+import { RemoteDataUnavailableError } from "@domainstack/server/services/fetch-errors";
 import { fetchHeaders, getHttpStatusMessage } from "@domainstack/server/services/headers";
 import { fetchHosting } from "@domainstack/server/services/hosting";
 import { fetchRegistration } from "@domainstack/server/services/registration";
@@ -35,6 +36,19 @@ const DomainInputSchema = z.object({ domain: z.string().min(1) }).transform(({ d
   }
   return { domain: registrable };
 });
+
+function logFlex(domain: string, section: string, err: unknown, optional = false): void {
+  const fields = { domain, section, err };
+  if (err instanceof RemoteDataUnavailableError) {
+    if (optional) {
+      logger.debug(fields, `${section} unavailable`);
+    } else {
+      logger.warn(fields, `${section} unavailable`);
+    }
+    return;
+  }
+  logger.error(fields, `${section} failed unexpectedly`);
+}
 
 export const domainRouter = createTRPCRouter({
   /**
@@ -68,7 +82,7 @@ export const domainRouter = createTRPCRouter({
         }
         return { success: true, cached: false, data: result.data };
       } catch (err) {
-        logger.error({ domain: input.domain, err }, "registration fetch failed");
+        logFlex(input.domain, "registration", err);
         return {
           success: false,
           cached: false,
@@ -101,7 +115,7 @@ export const domainRouter = createTRPCRouter({
         const result = await fetchDns(input.domain);
         return { success: true, cached: false, data: result.data };
       } catch (err) {
-        logger.error({ domain: input.domain, err }, "dns fetch failed");
+        logFlex(input.domain, "dns", err);
         return {
           success: false,
           cached: false,
@@ -134,7 +148,7 @@ export const domainRouter = createTRPCRouter({
         const result = await fetchHosting(input.domain);
         return { success: true, cached: false, data: result.data };
       } catch (err) {
-        logger.error({ domain: input.domain, err }, "hosting fetch failed");
+        logFlex(input.domain, "hosting", err);
         return {
           success: false,
           cached: false,
@@ -175,7 +189,7 @@ export const domainRouter = createTRPCRouter({
         }
         return { success: true, cached: false, data: result.data };
       } catch (err) {
-        logger.error({ domain: input.domain, err }, "certificates fetch failed");
+        logFlex(input.domain, "certificates", err);
         return {
           success: false,
           cached: false,
@@ -223,7 +237,7 @@ export const domainRouter = createTRPCRouter({
         }
         return { success: true, cached: false, data: result.data };
       } catch (err) {
-        logger.error({ domain: input.domain, err }, "headers fetch failed");
+        logFlex(input.domain, "headers", err);
         return {
           success: false,
           cached: false,
@@ -264,7 +278,7 @@ export const domainRouter = createTRPCRouter({
         }
         return { success: true, cached: false, data: result.data };
       } catch (err) {
-        logger.error({ domain: input.domain, err }, "seo fetch failed");
+        logFlex(input.domain, "seo", err);
         return {
           success: false,
           cached: false,
@@ -295,7 +309,7 @@ export const domainRouter = createTRPCRouter({
       const result = await fetchFavicon(input.domain);
       return { success: true, cached: false, data: result.data };
     } catch (err) {
-      logger.error({ domain: input.domain, err }, "favicon fetch failed");
+      logFlex(input.domain, "favicon", err, true);
       return {
         success: false,
         cached: false,

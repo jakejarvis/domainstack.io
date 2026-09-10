@@ -40,7 +40,7 @@ export const withDomainAccessUpdate = t.middleware(async ({ input, next, getRawI
         try {
           const updated = await updateLastAccessed(domain);
           if (!updated) {
-            logger.error({ domain }, "failed to record domain access");
+            logger.debug({ domain }, "domain access record not found");
           }
         } catch (err: unknown) {
           logger.error({ err, domain }, "failed to record domain access");

@@ -10,7 +10,7 @@ import { safeFetch } from "@domainstack/safe-fetch";
 import type { ProviderLogoResponse } from "@domainstack/types";
 
 import { ttlForProviderIcon } from "../ttl";
-import { isDefinitiveNotFoundError } from "./fetch-errors";
+import { isDefinitiveNotFoundError, RemoteDataUnavailableError } from "./fetch-errors";
 
 // ============================================================================
 // Types
@@ -70,7 +70,7 @@ export async function fetchProviderLogo(
     // If at least one source failed with a transient error (not 404/400),
     // throw so TanStack Query can retry instead of caching failure
     if (!fetchResult.allNotFound) {
-      throw new Error(`Provider logo fetch failed for ${providerDomain} (transient)`);
+      throw new RemoteDataUnavailableError(`Provider logo unavailable for ${providerDomain}`);
     }
 
     // Persist "no logo found" as a cached state (all sources returned 404)

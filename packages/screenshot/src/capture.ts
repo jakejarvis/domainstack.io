@@ -1,9 +1,5 @@
-import { createLogger } from "@domainstack/logger";
-
 import { type Browser, getBrowser, type Page } from "./browser";
 import { createPage } from "./page";
-
-const logger = createLogger({ source: "screenshot/capture" });
 
 const DEFAULT_VIEWPORT_WIDTH = 1200;
 const DEFAULT_VIEWPORT_HEIGHT = 630;
@@ -80,9 +76,6 @@ export async function captureScreenshot(
       width: actualWidth,
       height: actualHeight,
     };
-  } catch (err) {
-    logger.error(err, "screenshot capture failed");
-    throw err;
   } finally {
     // Close page in background to avoid blocking
     void page?.close();

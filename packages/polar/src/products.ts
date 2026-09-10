@@ -15,7 +15,7 @@ function getProductIds(): { monthlyId?: string; yearlyId?: string } {
   const monthlyId = process.env.NEXT_PUBLIC_POLAR_MONTHLY_PRODUCT_ID;
   const yearlyId = process.env.NEXT_PUBLIC_POLAR_YEARLY_PRODUCT_ID;
 
-  if ((!monthlyId || !yearlyId) && !missingProductIdsWarned) {
+  if ((!monthlyId || !yearlyId) && !missingProductIdsWarned && process.env.NODE_ENV !== "test") {
     missingProductIdsWarned = true;
     // `products.ts` is imported from client components (checkout UI). Do not
     // pull `@domainstack/logger` / pino-pretty into the browser bundle.

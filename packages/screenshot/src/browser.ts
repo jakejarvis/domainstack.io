@@ -113,7 +113,7 @@ export async function closeBrowser(): Promise<void> {
     const browser = await browserPromise;
     await browser.close();
   } catch (err) {
-    logger.error(err, "failed to close browser");
+    logger.warn(err, "failed to close browser");
   } finally {
     browserPromise = null;
   }

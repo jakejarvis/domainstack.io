@@ -4,6 +4,7 @@ import { createTRPCRouter, rateLimit, publicProcedure } from "@/trpc/init";
 import { getProviderLogo } from "@domainstack/db/queries/provider-logos";
 import { getProviderById } from "@domainstack/db/queries/providers";
 import { createLogger } from "@domainstack/logger";
+import { RemoteDataUnavailableError } from "@domainstack/server/services/fetch-errors";
 import { fetchProviderLogo } from "@domainstack/server/services/provider-logo";
 
 const logger = createLogger({ source: "routers/provider" });
@@ -36,7 +37,11 @@ export const providerRouter = createTRPCRouter({
         const result = await fetchProviderLogo(input.providerId, providerDomain);
         return { success: true, cached: false, data: result.data };
       } catch (err) {
-        logger.error({ providerId: input.providerId, err }, "provider logo fetch failed");
+        if (err instanceof RemoteDataUnavailableError) {
+          logger.debug({ providerId: input.providerId, err }, "provider logo unavailable");
+        } else {
+          logger.error({ providerId: input.providerId, err }, "provider logo failed unexpectedly");
+        }
         return {
           success: false,
           cached: false,

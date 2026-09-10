@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     userId = session?.user?.id ?? null;
   } catch (err) {
     // Auth error - treat as anonymous, but log for debugging
-    logger.debug({ err }, "auth session check failed, treating as anonymous");
+    logger.warn({ err }, "auth session check failed, treating as anonymous");
   }
 
   // Apply rate limits based on auth status
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
   try {
     rawBody = await bodyPromise;
   } catch (err) {
-    logger.warn({ err }, "failed to read chat request body");
+    logger.debug({ err }, "failed to read chat request body");
     return NextResponse.json(
       { error: "Invalid request body" },
       { status: 400, headers: { ...rateLimit.headers } },
@@ -98,7 +98,7 @@ export async function POST(request: Request) {
   try {
     body = JSON.parse(rawBody);
   } catch (err) {
-    logger.warn({ err }, "invalid JSON in chat request body");
+    logger.debug({ err }, "invalid JSON in chat request body");
     return NextResponse.json(
       { error: "Invalid JSON in request body" },
       { status: 400, headers: { ...rateLimit.headers } },
@@ -124,7 +124,7 @@ export async function POST(request: Request) {
   const truncatedMessages = rawMessages.slice(-MAX_CONVERSATION_MESSAGES);
   const validatedMessages = await validateChatMessages(truncatedMessages);
   if (!validatedMessages.success) {
-    logger.warn({ err: validatedMessages.error }, "chat history failed tool validation");
+    logger.debug({ err: validatedMessages.error }, "chat history failed tool validation");
     return NextResponse.json(
       {
         error: "Validation failed",

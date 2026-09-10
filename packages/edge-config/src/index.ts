@@ -35,7 +35,7 @@ export const getDefaultSuggestions = cache(async (): Promise<string[]> => {
     const suggestions = await edgeConfig.get<string[]>("domain_suggestions");
     return suggestions ?? [];
   } catch (err) {
-    logger.error(err, "failed to fetch domain suggestions");
+    logger.warn(err, "failed to fetch domain suggestions");
     return [];
   }
 });
@@ -72,7 +72,7 @@ export const getProviderCatalog = cache(async (): Promise<ProviderCatalog | null
 
     return result.data;
   } catch (err) {
-    logger.error(err, "failed to fetch provider catalog");
+    logger.warn(err, "failed to fetch provider catalog");
     return null;
   }
 });
@@ -96,7 +96,7 @@ export async function getBlocklistSources(): Promise<string[]> {
     const sources = await get<string[]>("screenshot_blocklist_sources");
     return sources ?? [];
   } catch (err) {
-    logger.error(err, "failed to fetch screenshot blocklist sources");
+    logger.warn(err, "failed to fetch screenshot blocklist sources");
     return [];
   }
 }
@@ -120,7 +120,7 @@ export async function getAiChatModel(): Promise<string | null> {
     const model = await get<string>("ai_chat_model");
     return model ?? null;
   } catch (err) {
-    logger.error(err, "failed to fetch AI chat model");
+    logger.warn(err, "failed to fetch AI chat model");
     return null;
   }
 }

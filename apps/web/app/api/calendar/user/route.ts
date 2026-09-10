@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
   const validation = await validateCalendarFeedToken(token);
 
   if (!validation.valid) {
-    logger.warn({ reason: validation.reason }, "invalid calendar feed token");
+    logger.debug({ reason: validation.reason }, "invalid calendar feed token");
 
     // Use same error message for both cases to prevent enumeration
     return NextResponse.json(

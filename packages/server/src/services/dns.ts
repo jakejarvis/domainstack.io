@@ -10,7 +10,8 @@ import { replaceDns } from "@domainstack/db/queries/dns";
 import { ensureDomainRecord } from "@domainstack/db/queries/domains";
 import type { DnsRecordType, DnsRecordsResponse } from "@domainstack/types";
 
-import { type DnsFetchData, fetchDnsRecords } from "../dns";
+import { DnsProviderError, type DnsFetchData, fetchDnsRecords } from "../dns";
+import { RemoteDataUnavailableError } from "./fetch-errors";
 
 // ============================================================================
 // Types
@@ -32,7 +33,15 @@ export type DnsResult = { success: true; data: DnsRecordsResponse };
  */
 export async function fetchDns(domain: string): Promise<DnsResult> {
   // 1. Fetch from DoH providers (throws DnsProviderError on failure)
-  const fetchData = await fetchDnsRecords(domain);
+  let fetchData: DnsFetchData;
+  try {
+    fetchData = await fetchDnsRecords(domain);
+  } catch (err) {
+    if (err instanceof DnsProviderError) {
+      throw new RemoteDataUnavailableError("DNS data unavailable", { cause: err });
+    }
+    throw err;
+  }
 
   // 2. Persist to database
   await persistDnsRecords(domain, fetchData);

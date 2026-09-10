@@ -79,25 +79,14 @@ interface IplocateApiResponse {
  * Fetch raw GeoIP data from iplocate.io API.
  * Returns the raw response for caching.
  */
-async function fetchFromApi(ip: string): Promise<IplocateApiResponse> {
-  const apiKey = process.env.IPLOCATE_API_KEY;
-
-  if (!apiKey) {
-    logger.warn("IPLOCATE_API_KEY not configured, skipping IP lookup");
-    throw new Error("IPLOCATE_API_KEY not configured");
-  }
-
+async function fetchFromApi(ip: string, apiKey: string): Promise<IplocateApiResponse> {
   const url = new URL(`https://www.iplocate.io/api/lookup/${encodeURIComponent(ip)}`);
   url.searchParams.set("apikey", apiKey);
 
   const res = await fetch(url.toString());
 
   if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    logger.error(
-      { status: res.status, body: body.slice(0, 500) },
-      "iplocate.io lookup failed with non-OK status",
-    );
+    await res.body?.cancel();
     throw new Error(`Upstream error looking up IP metadata: ${res.status}`);
   }
 
@@ -105,7 +94,6 @@ async function fetchFromApi(ip: string): Promise<IplocateApiResponse> {
 
   // Check for API error response
   if (data.error) {
-    logger.error({ error: data.error }, "iplocate.io returned error message");
     throw new Error(`iplocate.io error: ${data.error}`);
   }
 
@@ -133,8 +121,14 @@ async function getOrFetchApiResponse(ip: string): Promise<IplocateApiResponse | 
   }
 
   // Cache miss or Redis unavailable - fetch from API
+  const apiKey = process.env.IPLOCATE_API_KEY;
+  if (!apiKey) {
+    logger.debug("IPLOCATE_API_KEY not configured, skipping IP lookup");
+    return null;
+  }
+
   try {
-    const raw = await fetchFromApi(ip);
+    const raw = await fetchFromApi(ip, apiKey);
 
     // Store raw response in Redis (fire-and-forget)
     if (redis) {
@@ -145,7 +139,7 @@ async function getOrFetchApiResponse(ip: string): Promise<IplocateApiResponse | 
 
     return raw;
   } catch (err) {
-    logger.error({ err }, "iplocate.io lookup failed");
+    logger.warn({ err }, "iplocate.io lookup failed");
     return null;
   }
 }

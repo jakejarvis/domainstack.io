@@ -19,7 +19,7 @@ import {
   type DomainToolProcedure,
   type DomainToolResult,
 } from "@/lib/chat/domain-tools";
-import { getTrpcErrorCode, isExpectedTrpcError } from "@/lib/trpc/errors";
+import { isExpectedTrpcError } from "@/lib/trpc/errors";
 
 export interface ToolContext {
   ip: string | null;
@@ -48,17 +48,13 @@ async function domainLookupStep(procedure: DomainToolProcedure, domain: string, 
     }
     return result.data;
   } catch (err) {
-    const { createLogger } = await import("@domainstack/logger");
-    const logger = createLogger({ source: "chat/tools" });
     // Domain lookups return `{ success: false }` instead of throwing.
     // Throws here are tRPC validation/rate-limit errors, or unexpected bugs.
-    const trpcCode = getTrpcErrorCode(err);
     if (isExpectedTrpcError(err)) {
-      logger.warn({ err, domain, procedure, code: trpcCode }, "tool step failed (expected)");
       return { error: getDomainToolErrorMessage(err) };
     }
-    logger.error({ err, domain, procedure }, "tool step failed (unexpected)");
-    throw new RetryableError(`domain tool ${procedure} failed`, { retryAfter: "5s" });
+    const reason = err instanceof Error ? err.message : String(err);
+    throw new RetryableError(`domain tool ${procedure} failed: ${reason}`, { retryAfter: "5s" });
   }
 }
 

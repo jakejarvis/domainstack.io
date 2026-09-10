@@ -129,7 +129,7 @@ async function captureScreenshot(domain: string): Promise<CaptureResult> {
       imageBuffer: result.imageBase64,
     };
   } catch (err) {
-    logger.warn({ err, domain }, "screenshot capture failed, caching miss");
+    logger.debug({ err, domain }, "screenshot unavailable, caching miss");
     return { success: false };
   }
 }

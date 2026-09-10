@@ -64,7 +64,7 @@ export async function POST(
     ]);
 
     if (!domain) {
-      logger.warn({ domainId }, "screenshot requested for unknown domain");
+      logger.debug({ domainId }, "screenshot requested for unknown domain");
       return NextResponse.json({ error: "Domain not found" }, { status: 404 });
     }
 
@@ -87,7 +87,7 @@ export async function POST(
           } catch (err) {
             // Log error but fall back to unblocked to avoid breaking screenshots
             // for transient database issues. Blocked domains are a soft protection.
-            logger.warn(
+            logger.error(
               { err, domain: domain.name },
               "failed to check block status, defaulting to unblocked",
             );
@@ -189,7 +189,7 @@ export async function GET(
     // Still running
     return NextResponse.json({ status: "running" }, { headers: rateLimit.headers });
   } catch (err) {
-    logger.warn({ err, runId }, "failed to get workflow run status");
+    logger.debug({ err, runId }, "workflow run unavailable");
     return NextResponse.json({ error: "Run not found" }, { status: 404 });
   }
 }

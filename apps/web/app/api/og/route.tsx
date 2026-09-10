@@ -118,7 +118,7 @@ async function fetchProviderData(domain: string): Promise<ProviderData> {
 
     return { providers };
   } catch (err) {
-    logger.warn({ err, domain }, "failed to fetch provider data");
+    logger.debug({ err, domain }, "provider data unavailable for OG image");
   }
 
   return { providers: [] };

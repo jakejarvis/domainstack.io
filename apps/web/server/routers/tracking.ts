@@ -599,10 +599,10 @@ export const trackingRouter = createTRPCRouter({
         );
 
         if (error) {
-          logger.error({ err: error, trackedDomainId });
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
             message: "Failed to send email",
+            cause: error,
           });
         }
 
@@ -614,12 +614,11 @@ export const trackingRouter = createTRPCRouter({
 
         return { success: true };
       } catch (error) {
-        logger.error({ err: error, trackedDomainId });
-
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to send email",
+          cause: error,
         });
       }
     }),

@@ -21,6 +21,7 @@ import type {
 import { parseHtmlMeta, parseRobotsTxt, selectPreview } from "../seo";
 import { isExpectedTlsError } from "../tls";
 import { ttlForSeo } from "../ttl";
+import { RemoteDataUnavailableError } from "./fetch-errors";
 
 // ============================================================================
 // Types
@@ -214,7 +215,7 @@ async function fetchHtml(domain: string): Promise<HtmlFetchData> {
     }
 
     // Transient failure - throw for TanStack Query to retry
-    throw new Error("HTML fetch failed", { cause: err });
+    throw new RemoteDataUnavailableError("HTML data unavailable", { cause: err });
   }
 }
 

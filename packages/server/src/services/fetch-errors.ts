@@ -5,6 +5,15 @@ import {
 } from "@domainstack/safe-fetch";
 
 /**
+ * A remote domain or provider could not supply data, but the application is
+ * otherwise healthy. Routers use this boundary to keep target-specific
+ * failures separate from persistence, parsing, and other internal failures.
+ */
+export class RemoteDataUnavailableError extends Error {
+  readonly name = "RemoteDataUnavailableError";
+}
+
+/**
  * Failures that mean "this URL will never serve us an asset", as opposed to
  * "the attempt failed this time". Retrying any of these produces the same
  * result, so callers record a permanent not-found instead of scheduling work.

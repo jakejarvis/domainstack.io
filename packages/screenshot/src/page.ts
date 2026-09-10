@@ -87,7 +87,6 @@ export async function createPage(
     if (page) {
       await page.close().catch(() => {});
     }
-    logger.warn(err, "failed to create page");
     throw err;
   }
 }

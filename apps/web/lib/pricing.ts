@@ -79,7 +79,7 @@ function createPricingProvider(
     });
 
     if (!res.ok) {
-      logger.error({ provider: name, status: res.status }, "upstream error");
+      logger.warn({ provider: name, status: res.status }, "upstream error");
       throw new Error(`${name} API returned ${res.status}`);
     }
 
@@ -160,7 +160,7 @@ const dynadotProvider = createPricingProvider(
 
       // Check for API errors (Dynadot returns 200 OK with error payloads)
       if (data?.code !== 200) {
-        logger.error(
+        logger.warn(
           {
             err: data?.error,
             provider: "dynadot",
