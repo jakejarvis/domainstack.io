@@ -642,8 +642,8 @@ importers:
         specifier: ^2.5.0
         version: 2.5.0
       undici:
-        specifier: ^7.29.1
-        version: 7.29.1
+        specifier: ^8.10.2
+        version: 8.10.2
     devDependencies:
       '@domainstack/typescript-config':
         specifier: workspace:*
@@ -7173,6 +7173,10 @@ packages:
   undici@7.29.1:
     resolution: {integrity: sha512-RYONW2MeafgYlkVOKYKkA/Ag7BmXqgIWCa8t1m0JcxrQg9pI9lEqRhAOruOBCbAohOa/gkCF+iPi9hrgvTzu6Q==}
     engines: {node: '>=20.18.1'}
+
+  undici@8.10.2:
+    resolution: {integrity: sha512-/y4/bH9YNU5hi9NIrpOuvGXFcxrj3CMrV+/AYpowAYTpHn8gX/XPFjNy766FPoYY0miQhdW977JFWKGNhBdwyQ==}
+    engines: {node: '>=22.19.0'}
 
   unicorn-magic@0.1.0:
     resolution: {integrity: sha512-lRfVq8fE8gz6QMBuDM6a+LO3IAzTi05H6gCVaUpir2E1Rwpo4ZUog45KpNXKC/Mn3Yb9UDuHumeFTo9iV/D9FQ==}
@@ -13876,6 +13880,8 @@ snapshots:
   undici@7.29.0: {}
 
   undici@7.29.1: {}
+
+  undici@8.10.2: {}
 
   unicorn-magic@0.1.0: {}
 
