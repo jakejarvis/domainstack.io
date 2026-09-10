@@ -15,7 +15,7 @@ export function HomeSearchSuggestionsSkeleton({
   }));
 
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn("relative", className)} aria-hidden="true">
       <div className="overflow-hidden py-0.5">
         <div className="flex gap-2 pl-0.5">
           {skeletonItems.map((item) => (

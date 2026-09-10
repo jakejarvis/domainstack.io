@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useCallback, useMemo, useRef } from "react";
 
 import { Favicon } from "@/components/icons/favicon";
+import { HomeSearchSuggestionsSkeleton } from "@/components/search/home-search-suggestions-skeleton";
 import { useAnalytics } from "@/lib/analytics/client";
 import { pendingDomainAtom } from "@/lib/atoms/search-atoms";
 import { useSearchHistory } from "@/lib/stores/search-history-store";
@@ -64,6 +65,14 @@ export function HomeSearchSuggestionsClient({
     }
   }, [analytics, clearHistory]);
 
+  // Persisted history is unavailable during SSR and until zustand rehydrates, so show the
+  // skeleton instead of chips that would shuffle once localStorage lands.
+  if (!hydrated) {
+    return displayedSuggestions.length > 0 ? (
+      <HomeSearchSuggestionsSkeleton className={className} count={displayedSuggestions.length} />
+    ) : null;
+  }
+
   return (
     <ScrollArea className={cn("w-full", className)} scrollRef={scrollContainerRef} hideScrollbar>
       <div className="flex gap-2 p-0.5">
@@ -72,10 +81,7 @@ export function HomeSearchSuggestionsClient({
             key={domain}
             variant="secondary"
             size="sm"
-            className={cn(
-              "shrink-0 gap-2 border-none bg-muted/40 px-2.5 leading-none ring-1 ring-ring/20 hover:bg-muted/60",
-              hydrated ? "visible" : "invisible",
-            )}
+            className="shrink-0 gap-2 border-none bg-muted/40 px-2.5 leading-none ring-1 ring-ring/20 hover:bg-muted/60"
             onClick={(e) => {
               e.preventDefault();
               handleClick(domain);
