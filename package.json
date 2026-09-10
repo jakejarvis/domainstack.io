@@ -28,8 +28,8 @@
     "clean": "shx rm -rf .turbo \"apps/*/.turbo\" \"apps/*/node_modules\" \"apps/*/*.tsbuildinfo\" apps/web/.next \"packages/*/.turbo\" \"packages/*/node_modules\" \"packages/*/*.tsbuildinfo\" node_modules pnpm-lock.yaml"
   },
   "devDependencies": {
-    "oxfmt": "^0.66.0",
-    "oxlint": "^1.81.0",
+    "oxfmt": "^0.67.0",
+    "oxlint": "^1.82.0",
     "oxlint-tsgolint": "^7.0.2001",
     "shx": "^0.4.0",
     "turbo": "^2.10.12",
@@ -38,5 +38,5 @@
   "engines": {
     "node": ">=24.x"
   },
-  "packageManager": "pnpm@11.25.0"
+  "packageManager": "pnpm@11.26.0"
 }
