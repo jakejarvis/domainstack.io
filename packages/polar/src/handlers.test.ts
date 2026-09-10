@@ -35,6 +35,7 @@ const {
   updateUserTier,
   setSubscriptionEndsAt,
   clearSubscriptionEndsAt,
+  downgradeToFree,
   getUserSubscription,
   getCustomerSubscriptionState,
   createMockLogger,
@@ -60,6 +61,7 @@ const {
     updateUserTier: vi.fn<(userId: string, tier: "free" | "pro") => Promise<void>>(),
     setSubscriptionEndsAt: vi.fn<(userId: string, endsAt: Date) => Promise<void>>(),
     clearSubscriptionEndsAt: vi.fn<(userId: string) => Promise<void>>(),
+    downgradeToFree: vi.fn<(userId: string) => Promise<number>>(),
     getUserSubscription: vi.fn<(userId: string) => Promise<UserSubscriptionFixture>>(),
     getCustomerSubscriptionState: vi.fn<(userId: string) => Promise<CustomerStateFixture>>(),
     createMockLogger: buildMockLogger,
@@ -73,6 +75,7 @@ vi.mock("@domainstack/db/queries/user-subscription", () => ({
   updateUserTier,
   setSubscriptionEndsAt,
   clearSubscriptionEndsAt,
+  downgradeToFree,
   getUserSubscription,
 }));
 
@@ -81,10 +84,6 @@ vi.mock("@domainstack/logger", () => ({
   createLogger: vi.fn<(...args: unknown[]) => ReturnType<typeof createMockLogger>>(() =>
     createMockLogger(),
   ),
-}));
-
-vi.mock("./downgrade", () => ({
-  handleDowngrade: vi.fn<(userId: string) => Promise<number>>(),
 }));
 
 vi.mock("./products", () => ({
@@ -109,7 +108,6 @@ vi.mock("./reconcile", () => ({
   getCustomerSubscriptionState,
 }));
 
-import { handleDowngrade } from "./downgrade";
 import {
   sendProUpgradeEmail,
   sendSubscriptionCancelingEmail,
@@ -354,7 +352,7 @@ describe("handleSubscriptionCanceled", () => {
     expect(setSubscriptionEndsAt).toHaveBeenCalledWith("user-456", periodEnd);
     // Should NOT change tier yet
     expect(updateUserTier).not.toHaveBeenCalled();
-    expect(handleDowngrade).not.toHaveBeenCalled();
+    expect(downgradeToFree).not.toHaveBeenCalled();
   });
 
   it("does not set end date when currentPeriodEnd is null", async () => {
@@ -452,15 +450,15 @@ describe("handleSubscriptionCanceled", () => {
 describe("handleSubscriptionRevoked", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    // Default: handleDowngrade returns 0 archived domains
-    vi.mocked(handleDowngrade).mockResolvedValue(0);
+    // Default: downgradeToFree returns 0 archived domains
+    vi.mocked(downgradeToFree).mockResolvedValue(0);
     vi.mocked(getCustomerSubscriptionState).mockResolvedValue(okPolarState());
   });
 
-  it("calls handleDowngrade with user ID from customer.externalId", async () => {
+  it("calls downgradeToFree with user ID from customer.externalId", async () => {
     await handleSubscriptionRevoked(createRevokedPayload());
 
-    expect(handleDowngrade).toHaveBeenCalledWith("user-456");
+    expect(downgradeToFree).toHaveBeenCalledWith("user-456");
   });
 
   it("clears subscription end date after downgrade", async () => {
@@ -470,7 +468,7 @@ describe("handleSubscriptionRevoked", () => {
   });
 
   it("sends subscription expired email with archived count", async () => {
-    vi.mocked(handleDowngrade).mockResolvedValue(3);
+    vi.mocked(downgradeToFree).mockResolvedValue(3);
 
     await handleSubscriptionRevoked(createRevokedPayload());
 
@@ -483,14 +481,14 @@ describe("handleSubscriptionRevoked", () => {
     // Should not throw - email errors are logged but swallowed
     await expect(handleSubscriptionRevoked(createRevokedPayload())).resolves.not.toThrow();
 
-    expect(handleDowngrade).toHaveBeenCalled();
+    expect(downgradeToFree).toHaveBeenCalled();
     expect(clearSubscriptionEndsAt).toHaveBeenCalled();
   });
 
   it("does not downgrade when externalId (userId) is missing", async () => {
     await handleSubscriptionRevoked(createRevokedPayload({ userId: null }));
 
-    expect(handleDowngrade).not.toHaveBeenCalled();
+    expect(downgradeToFree).not.toHaveBeenCalled();
     expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
     expect(sendSubscriptionExpiredEmail).not.toHaveBeenCalled();
   });
@@ -500,7 +498,7 @@ describe("handleSubscriptionRevoked", () => {
 
     await handleSubscriptionRevoked(createRevokedPayload());
 
-    expect(handleDowngrade).not.toHaveBeenCalled();
+    expect(downgradeToFree).not.toHaveBeenCalled();
     expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
   });
 
@@ -511,12 +509,12 @@ describe("handleSubscriptionRevoked", () => {
 
     await handleSubscriptionRevoked(createRevokedPayload());
 
-    expect(handleDowngrade).not.toHaveBeenCalled();
+    expect(downgradeToFree).not.toHaveBeenCalled();
     expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
   });
 
-  it("re-throws errors from handleDowngrade for webhook retry", async () => {
-    vi.mocked(handleDowngrade).mockRejectedValue(new Error("Downgrade failed"));
+  it("re-throws errors from downgradeToFree for webhook retry", async () => {
+    vi.mocked(downgradeToFree).mockRejectedValue(new Error("Downgrade failed"));
 
     await expect(handleSubscriptionRevoked(createRevokedPayload())).rejects.toThrow(
       "Downgrade failed",

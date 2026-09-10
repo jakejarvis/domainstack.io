@@ -19,34 +19,33 @@ let redis: Redis | undefined;
  * @returns Redis client instance, or undefined if not configured
  */
 export function getRedis(): Redis | undefined {
-  if (
-    process.env.NODE_ENV !== "production" &&
-    (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN)
-  ) {
-    logger.warn("UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are not set");
-    // Don't block app if Redis is not set in development
+  // Mirror the fallbacks in `Redis.fromEnv`, which also accepts the
+  // `KV_REST_API_*` pair used by Vercel KV. Checking only the `UPSTASH_*`
+  // names would report "not configured" on a perfectly good Vercel KV setup.
+  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+
+  if (!url || !token) {
+    // `Redis.fromEnv` only warns on a missing pair and hands back a client
+    // whose every call fails. Callers all branch on `undefined` to fail open,
+    // so return that instead of a client that cannot work.
+    const message =
+      "Redis is not configured (set UPSTASH_REDIS_REST_URL/TOKEN or KV_REST_API_URL/TOKEN); continuing without it";
+    // Expected locally, but in production it silently drops rate limiting and
+    // session caching, so it should page rather than blend into the logs.
+    if (process.env.NODE_ENV === "production") {
+      logger.error(message);
+    } else {
+      logger.warn(message);
+    }
     return undefined;
   }
 
   if (!redis) {
-    redis = Redis.fromEnv();
+    redis = new Redis({ url, token });
   }
 
   return redis;
-}
-
-/**
- * Create a Redis client from explicit configuration.
- * Use this when environment variables are not available.
- *
- * @param config - Redis connection configuration
- * @returns Redis client instance
- */
-export function createRedisClient(config: { url: string; token: string }): Redis {
-  return new Redis({
-    url: config.url,
-    token: config.token,
-  });
 }
 
 // Re-export the Redis type for consumers

@@ -85,14 +85,13 @@ async function clearEndsAt(userId: string): Promise<void> {
 async function downgrade(userId: string): Promise<number> {
   "use step";
 
-  const [{ clearSubscriptionEndsAt }, { handleDowngrade }, { sendSubscriptionExpiredEmail }] =
+  const [{ clearSubscriptionEndsAt, downgradeToFree }, { sendSubscriptionExpiredEmail }] =
     await Promise.all([
       import("@domainstack/db/queries/user-subscription"),
-      import("@domainstack/polar/downgrade"),
       import("@domainstack/polar/emails"),
     ]);
 
-  const archivedCount = await handleDowngrade(userId);
+  const archivedCount = await downgradeToFree(userId);
   await clearSubscriptionEndsAt(userId);
 
   try {

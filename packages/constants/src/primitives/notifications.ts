@@ -34,6 +34,10 @@ type NotificationType =
 // Dashboard "expiring soon" threshold (first notification threshold)
 export const EXPIRING_SOON_DAYS = DOMAIN_EXPIRY_THRESHOLDS[0];
 
+// Dashboard "critical" threshold, where an expiry badge turns red. Matches the
+// `domain_expiry_7d` notification so the badge and the email agree.
+export const EXPIRING_CRITICAL_DAYS = 7 satisfies DomainExpiryThreshold;
+
 // Mapping from threshold to notification type
 export const DOMAIN_THRESHOLD_TO_TYPE: Record<DomainExpiryThreshold, NotificationType> = {
   30: "domain_expiry_30d",

@@ -348,7 +348,7 @@ export const DashboardGridCard = memo(function DashboardGridCard({
     >
       <div
         className={cn(
-          "pointer-events-none absolute inset-0 rounded-xl transition-all duration-150",
+          "pointer-events-none absolute inset-0 rounded-xl transition duration-150",
           selected ? "ring-2 ring-primary/60 ring-offset-2 ring-offset-background" : "ring-0",
         )}
         aria-hidden

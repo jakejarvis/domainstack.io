@@ -1,7 +1,8 @@
 import type { SortingState } from "@tanstack/react-table";
 
-import { EXPIRING_SOON_DAYS } from "@domainstack/constants";
+import { EXPIRING_CRITICAL_DAYS, EXPIRING_SOON_DAYS } from "@domainstack/constants";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
+import { calculateDaysRemaining } from "@domainstack/utils/expiry";
 
 // ---------------------------------------------------------------------------
 // Provider Types
@@ -30,6 +31,29 @@ const VALID_STATUS_FILTERS = new Set<StatusFilter>(["verified", "pending"]);
 /** Valid health filter values for runtime validation of URL params */
 const VALID_HEALTH_FILTERS = new Set<HealthFilter>(["healthy", "expiring", "expired"]);
 
+/** Severity shown on a domain's health badge. */
+export type HealthSeverity = "healthy" | "warning" | "critical" | "unknown";
+
+/**
+ * Whole days until a tracked domain expires, or null when there is nothing to
+ * count (unverified, missing date, unparseable date).
+ *
+ * Every dashboard reading of "days left" goes through here so the filter, the
+ * summary counts, the row badge, and the sort all classify a domain the same
+ * way. `calculateDaysRemaining` is the same helper the expiry notifications
+ * use, so the dashboard and the emails agree on the day count too.
+ */
+export function getDaysUntilExpiry(
+  expirationDate: Date | null,
+  verified: boolean,
+  now: Date,
+): number | null {
+  if (!verified || !expirationDate || Number.isNaN(expirationDate.getTime())) return null;
+
+  const days = calculateDaysRemaining(expirationDate, now);
+  return Number.isNaN(days) ? null : days;
+}
+
 /**
  * Determine health status based on expiration date
  */
@@ -38,14 +62,30 @@ function getHealthStatus(
   verified: boolean,
   now: Date,
 ): HealthFilter | null {
-  if (!verified || !expirationDate || Number.isNaN(expirationDate.getTime())) return null;
-
-  const daysUntilExpiry = Math.ceil(
-    (expirationDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
-  );
+  const daysUntilExpiry = getDaysUntilExpiry(expirationDate, verified, now);
+  if (daysUntilExpiry === null) return null;
 
   if (daysUntilExpiry <= 0) return "expired";
   if (daysUntilExpiry <= EXPIRING_SOON_DAYS) return "expiring";
+  return "healthy";
+}
+
+/**
+ * Determine badge severity based on expiration date.
+ *
+ * Shares its day count and thresholds with the health filter above, so a row
+ * badge can never contradict the "Expiring Soon" summary beside it.
+ */
+export function getHealthSeverity(
+  expirationDate: Date | null,
+  verified: boolean,
+  now: Date,
+): HealthSeverity {
+  const daysUntilExpiry = getDaysUntilExpiry(expirationDate, verified, now);
+  if (daysUntilExpiry === null) return "unknown";
+
+  if (daysUntilExpiry <= EXPIRING_CRITICAL_DAYS) return "critical";
+  if (daysUntilExpiry <= EXPIRING_SOON_DAYS) return "warning";
   return "healthy";
 }
 

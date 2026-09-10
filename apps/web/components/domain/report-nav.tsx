@@ -92,8 +92,7 @@ export function SectionNav({
       >
         <div
           className={cn(
-            "flex shrink-0 items-center gap-2 overflow-hidden",
-            "transition-all duration-200 ease-out",
+            "flex shrink-0 items-center gap-2 overflow-hidden transition duration-200 ease-out",
             isHeaderVisible
               ? "w-0 opacity-0"
               : "mr-3 w-auto border-r border-black/10 pr-3 opacity-100 dark:border-white/10",
@@ -129,7 +128,7 @@ export function SectionNav({
                 }
                 className={cn(
                   "rounded-md px-3 py-1.5 text-[13px] tracking-[0.01em] whitespace-nowrap",
-                  "transition-all duration-150",
+                  "transition duration-150",
                   "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none",
                   "hover:!bg-[color-mix(in_oklch,var(--section-accent)_15%,transparent)] hover:text-foreground",
                   activeSection === slug

@@ -7,7 +7,6 @@
     "./products": "./src/products.ts",
     "./handlers": "./src/handlers.ts",
     "./emails": "./src/emails.ts",
-    "./downgrade": "./src/downgrade.ts",
     "./reconcile": "./src/reconcile.ts",
     "./better-auth/server": "./src/better-auth/server.ts",
     "./better-auth/client": "./src/better-auth/client.ts",

@@ -2,6 +2,7 @@ import type { WebhooksOptions } from "@polar-sh/better-auth";
 
 import {
   clearSubscriptionEndsAt,
+  downgradeToFree,
   getUserSubscription,
   setSubscriptionEndsAt,
   updateUserTier,
@@ -9,7 +10,6 @@ import {
 import { createLogger } from "@domainstack/logger";
 
 import { analytics } from "./analytics";
-import { handleDowngrade } from "./downgrade";
 import {
   sendProUpgradeEmail,
   sendSubscriptionCancelingEmail,
@@ -243,7 +243,7 @@ export async function handleSubscriptionRevoked(
   }
 
   // Downgrade user to free tier (may archive domains if over limit)
-  const archivedCount = await handleDowngrade(userId);
+  const archivedCount = await downgradeToFree(userId);
 
   // Clear the subscription end date
   await clearSubscriptionEndsAt(userId);

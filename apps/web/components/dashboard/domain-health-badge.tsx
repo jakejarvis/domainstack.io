@@ -5,15 +5,14 @@ import {
   IconQuestionMark,
   type TablerIcon,
 } from "@tabler/icons-react";
-import { differenceInDays, formatDistanceStrict } from "date-fns";
+import { formatDistanceStrict } from "date-fns";
 import { useMemo } from "react";
 
 import { BadgeWithTooltip } from "@/components/dashboard/badge-with-tooltip";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
+import { getHealthSeverity, type HealthSeverity } from "@/lib/dashboard-utils";
 import { cn } from "@domainstack/ui/utils";
 import { toDateTimeAttr } from "@domainstack/utils/date";
-
-type HealthStatus = "healthy" | "warning" | "critical" | "unknown";
 
 type DomainHealthBadgeProps = {
   expirationDate: Date | null;
@@ -26,7 +25,9 @@ export function DomainHealthBadge({ expirationDate, verified, className }: Domai
   const dateTime = expirationDate ? toDateTimeAttr(expirationDate) : undefined;
 
   // SSR and invalid dates stay "unknown" — NaN day counts would otherwise look healthy.
-  const status = now ? getHealthStatus(dateTime ? expirationDate : null, verified, now) : "unknown";
+  const status = now
+    ? getHealthSeverity(dateTime ? expirationDate : null, verified, now)
+    : "unknown";
   const { label, colorClass, icon } = getStatusConfig(status);
 
   const tooltipText = useMemo(() => {
@@ -55,23 +56,7 @@ export function DomainHealthBadge({ expirationDate, verified, className }: Domai
   );
 }
 
-function getHealthStatus(expirationDate: Date | null, verified: boolean, now: Date): HealthStatus {
-  if (!verified || !expirationDate || Number.isNaN(expirationDate.getTime())) {
-    return "unknown";
-  }
-
-  const daysUntilExpiry = differenceInDays(expirationDate, now);
-
-  if (daysUntilExpiry <= 7) {
-    return "critical";
-  }
-  if (daysUntilExpiry <= 30) {
-    return "warning";
-  }
-  return "healthy";
-}
-
-function getStatusConfig(status: HealthStatus): {
+function getStatusConfig(status: HealthSeverity): {
   label: string;
   colorClass: string;
   icon: TablerIcon;
@@ -117,7 +102,7 @@ export function getHealthAccent(
   // If no 'now' provided, return slate (unknown) to avoid Date.now() during SSR
   if (!now) return "slate";
 
-  const status = getHealthStatus(expirationDate, verified, now);
+  const status = getHealthSeverity(expirationDate, verified, now);
 
   switch (status) {
     case "healthy":

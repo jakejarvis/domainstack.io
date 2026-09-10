@@ -6,8 +6,7 @@ const { makePGliteDb, closePGliteDb } = await import("@domainstack/db/testing");
 const { db } = await makePGliteDb();
 
 // Now import modules that depend on the db (they'll use the test db via lazy init)
-const { handleDowngrade } = await import("./downgrade");
-const { getUserIdsPastDue, getUserSubscription } =
+const { downgradeToFree, getUserIdsPastDue, getUserSubscription } =
   await import("@domainstack/db/queries/user-subscription");
 const { domains, userSubscriptions, users, userTrackedDomains } =
   await import("@domainstack/db/schema");
@@ -60,7 +59,7 @@ beforeEach(async () => {
   await db.update(userSubscriptions).set({ tier: "pro" });
 });
 
-describe("handleDowngrade", () => {
+describe("downgradeToFree", () => {
   it("updates user tier to free", async () => {
     // Add 3 tracked domains (under limit)
     for (let i = 0; i < 3; i++) {
@@ -72,7 +71,7 @@ describe("handleDowngrade", () => {
       });
     }
 
-    await handleDowngrade(testUserId);
+    await downgradeToFree(testUserId);
 
     // Check tier was updated to free
     const [subscription] = await db.select().from(userSubscriptions).limit(1);
@@ -90,7 +89,7 @@ describe("handleDowngrade", () => {
       });
     }
 
-    const result = await handleDowngrade(testUserId);
+    const result = await downgradeToFree(testUserId);
 
     expect(result).toBe(0);
 
@@ -110,7 +109,7 @@ describe("handleDowngrade", () => {
       });
     }
 
-    const result = await handleDowngrade(testUserId);
+    const result = await downgradeToFree(testUserId);
 
     expect(result).toBe(0);
 
@@ -130,7 +129,7 @@ describe("handleDowngrade", () => {
       });
     }
 
-    const result = await handleDowngrade(testUserId);
+    const result = await downgradeToFree(testUserId);
 
     expect(result).toBe(3);
 
@@ -156,7 +155,7 @@ describe("handleDowngrade", () => {
       });
     }
 
-    const result = await handleDowngrade(testUserId);
+    const result = await downgradeToFree(testUserId);
 
     expect(result).toBe(2);
 
@@ -195,7 +194,7 @@ describe("handleDowngrade", () => {
       verified: true,
     });
 
-    const result = await handleDowngrade(newUser.id);
+    const result = await downgradeToFree(newUser.id);
 
     expect(result).toBe(0);
 

@@ -17,6 +17,7 @@ import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Favicon } from "@/components/icons/favicon";
 import { useIsDomainSelected, useToggleDomainSelection } from "@/hooks/use-dashboard-selection";
 import type { DashboardTableFeatures } from "@/lib/dashboard-table-features";
+import { getHealthSeverity, type HealthSeverity } from "@/lib/dashboard-utils";
 import type { TrackedDomainWithDetails, VerificationMethod } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { Checkbox } from "@domainstack/ui/checkbox";
@@ -80,6 +81,14 @@ export const HIDEABLE_COLUMNS = (
     "createdAt",
   ] as const satisfies readonly (keyof typeof COLUMN_HEADERS)[]
 ).map((id) => ({ id, header: COLUMN_HEADERS[id] }));
+
+/** Health badge severities in the order the health column sorts them. */
+const HEALTH_SORT_PRIORITY: Record<HealthSeverity, number> = {
+  critical: 0,
+  warning: 1,
+  healthy: 2,
+  unknown: 3,
+};
 
 /**
  * Creates a sorting function factory that pushes unverified domains to the end.
@@ -273,13 +282,8 @@ export function createColumns(
       // Within the same status, sort by expiration date for more granular ordering
       sortFn: withUnverifiedLast((a, b) => {
         const now = new Date();
-        const getHealthPriority = (exp: Date | null, verified: boolean): number => {
-          if (!verified || !exp) return 3; // unknown
-          const days = Math.floor((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-          if (days <= 7) return 0; // critical
-          if (days <= 30) return 1; // warning
-          return 2; // healthy
-        };
+        const getHealthPriority = (exp: Date | null, verified: boolean): number =>
+          HEALTH_SORT_PRIORITY[getHealthSeverity(exp, verified, now)];
 
         const aPriority = getHealthPriority(a.expirationDate, a.verified);
         const bPriority = getHealthPriority(b.expirationDate, b.verified);
