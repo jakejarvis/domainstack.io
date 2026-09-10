@@ -5,6 +5,8 @@
  * and notification sending for monitoring and expiry workflows.
  */
 
+import { FatalError } from "workflow";
+
 import type {
   CertificateChangeKind,
   CertificateChangeWithNames,
@@ -162,15 +164,22 @@ export async function updateNotificationEmailIdStep(
  *
  * ## Idempotency Strategy
  *
- * This function uses a two-layer idempotency approach to handle workflow retries gracefully:
+ * Every caller runs this inside a `"use step"` function, so the whole body
+ * re-runs from the top when the step is retried.
  *
- * 1. **Database-level deduplication**: Callers typically check `hasRecentNotification()` before
- *    calling this function, preventing duplicate notifications within a time window (usually 30 days).
- *    This protects against multiple workflow runs for the same event.
+ * 1. **Email first, record second**: `createNotification` is a plain insert with
+ *    no deduplication, so writing the row before the send would leave one extra
+ *    copy of the alert in the user's inbox view for every failed email attempt.
+ *    Sending first means a failed attempt leaves no trace to duplicate, and the
+ *    row is only written once delivery is confirmed.
  *
  * 2. **Email-level idempotency**: Resend's idempotency key (format: `{stepId}`)
- *    prevents duplicate emails if this function is retried within Resend's idempotency window (~24-48 hours).
- *    This protects against transient failures during email sending.
+ *    is stable across retries, so a retry after a partial failure re-sends the
+ *    same mail without delivering it twice (~24-48 hour window).
+ *
+ * Nothing after the send can throw: `updateNotificationResendId` swallows its
+ * own errors, and a failed insert raises a non-retryable error rather than
+ * looping the send.
  *
  * @throws {Error} If notification record creation fails or email sending fails
  */
@@ -209,11 +218,31 @@ async function sendNotificationInternal(
 
   if (!shouldSendEmail && !shouldSendInApp) return false;
 
+  const email =
+    shouldSendEmail && emailComponent && emailSubject
+      ? { react: emailComponent, subject: emailSubject }
+      : null;
+
   const channels: NotificationChannel[] = [];
-  if (shouldSendEmail && emailComponent && emailSubject) channels.push("email");
+  if (email) channels.push("email");
   if (shouldSendInApp) channels.push("in-app");
 
-  // Create notification record
+  // Send the email first so a retry after a failed send has no half-written
+  // row to duplicate. Resend dedupes the delivery via the idempotency key.
+  let emailId: string | null = null;
+  if (email) {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
+    const { data, error } = await sendEmail(
+      { to: userEmail, subject: email.subject, react: email.react },
+      { baseUrl, ...(idempotencyKey ? { idempotencyKey } : {}) },
+    );
+
+    if (error) throw new Error(`Resend error: ${error.message}`);
+
+    emailId = data?.id ?? null;
+  }
+
+  // Record the notification only once delivery is settled.
   const notification = await createNotification({
     userId,
     trackedDomainId,
@@ -225,27 +254,13 @@ async function sendNotificationInternal(
   });
 
   if (!notification) {
-    throw new Error("Failed to create notification record in database");
+    // Retrying would re-send the email without ever succeeding here, so fail
+    // the run instead of looping.
+    throw new FatalError("Failed to create notification record in database");
   }
 
-  // Send email notification if enabled and component provided
-  if (shouldSendEmail && emailComponent && emailSubject) {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
-    const { data, error } = await sendEmail(
-      {
-        to: userEmail,
-        subject: emailSubject,
-        react: emailComponent,
-      },
-      { baseUrl, ...(idempotencyKey ? { idempotencyKey } : {}) },
-    );
-
-    if (error) throw new Error(`Resend error: ${error.message}`);
-
-    // Update notification with email ID
-    if (data?.id) {
-      await updateNotificationResendId(notification.id, data.id);
-    }
+  if (emailId) {
+    await updateNotificationResendId(notification.id, emailId);
   }
 
   return true;

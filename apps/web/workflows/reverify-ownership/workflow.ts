@@ -197,6 +197,12 @@ interface DomainForEmail {
 
 /**
  * Step: Send verification failing notification email.
+ *
+ * Sends before recording. The whole step body re-runs on retry, so writing the
+ * notification row first would make the `hasRecentNotification` guard match the
+ * row from the failed attempt and swallow the email for the next 30 days while
+ * the database claimed it was sent. Resend's idempotency key (the inner step
+ * id) keeps a retry from delivering the mail twice.
  */
 async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boolean> {
   "use step";
@@ -215,22 +221,6 @@ async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boo
   const subject = `⚠️ ${title}`;
   const message = `Verification for ${domain.domainName} is failing. You have ${VERIFICATION_GRACE_PERIOD_DAYS} days to fix it before access is revoked.`;
 
-  // Create in-app notification first
-  const notification = await createNotification({
-    userId: domain.userId,
-    trackedDomainId: domain.id,
-    type: "verification_failing",
-    title,
-    message,
-    data: { domainName: domain.domainName },
-  });
-
-  if (!notification) {
-    throw new FatalError(
-      `Failed to create notification record: verification_failing for ${domain.domainName}`,
-    );
-  }
-
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
 
   // Send email notification using shared step (handles error classification)
@@ -246,7 +236,23 @@ async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boo
     }),
   });
 
-  // Update notification with email ID
+  // Record the delivery. `updateNotificationResendId` swallows its own errors,
+  // so nothing after the send can fail the step and trigger a re-send.
+  const notification = await createNotification({
+    userId: domain.userId,
+    trackedDomainId: domain.id,
+    type: "verification_failing",
+    title,
+    message,
+    data: { domainName: domain.domainName },
+  });
+
+  if (!notification) {
+    throw new FatalError(
+      `Failed to create notification record: verification_failing for ${domain.domainName}`,
+    );
+  }
+
   await updateNotificationResendId(notification.id, result.emailId);
 
   return true;
@@ -254,6 +260,9 @@ async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boo
 
 /**
  * Step: Send verification revoked notification email.
+ *
+ * Sends before recording, for the same reason as
+ * {@link sendVerificationFailingEmail}.
  */
 async function sendVerificationRevokedEmail(domain: DomainForEmail): Promise<boolean> {
   "use step";
@@ -271,7 +280,19 @@ async function sendVerificationRevokedEmail(domain: DomainForEmail): Promise<boo
   const subject = `❌ ${title}`;
   const message = `Verification for ${domain.domainName} has been revoked. The grace period has expired without successful re-verification.`;
 
-  // Create in-app notification first
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
+
+  // Send email notification using shared step (handles error classification)
+  const result = await sendEmail({
+    to: domain.userEmail,
+    subject,
+    react: VerificationRevokedEmail({
+      userName: domain.userName.split(" ")[0] || "there",
+      domainName: domain.domainName,
+      baseUrl,
+    }),
+  });
+
   const notification = await createNotification({
     userId: domain.userId,
     trackedDomainId: domain.id,
@@ -287,20 +308,6 @@ async function sendVerificationRevokedEmail(domain: DomainForEmail): Promise<boo
     );
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
-
-  // Send email notification using shared step (handles error classification)
-  const result = await sendEmail({
-    to: domain.userEmail,
-    subject,
-    react: VerificationRevokedEmail({
-      userName: domain.userName.split(" ")[0] || "there",
-      domainName: domain.domainName,
-      baseUrl,
-    }),
-  });
-
-  // Update notification with email ID
   await updateNotificationResendId(notification.id, result.emailId);
 
   return true;

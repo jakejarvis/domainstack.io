@@ -1,4 +1,4 @@
-import { FatalError } from "workflow";
+import { FatalError, RetryableError } from "workflow";
 
 import { checkBlocklist } from "@/workflows/shared/check-blocklist";
 
@@ -21,7 +21,7 @@ export type ScreenshotWorkflowResult =
     }
   | {
       success: false;
-      error: "capture_error" | "not_found" | "blocked_domain";
+      error: "capture_error";
       data: ScreenshotWorkflowData | null;
     };
 
@@ -33,7 +33,6 @@ interface CaptureSuccess {
 
 interface CaptureFailure {
   success: false;
-  isPermanentFailure: boolean;
 }
 
 type CaptureResult = CaptureSuccess | CaptureFailure;
@@ -92,11 +91,30 @@ export async function screenshotWorkflow(
 /**
  * Step: Capture screenshot using Puppeteer
  * This is the heavy operation that benefits from workflow durability
+ *
+ * Two failure classes are handled differently:
+ * - Browser launch failures are an infrastructure problem, not a property of
+ *   the domain, so they retry. Caching them would blank out every domain
+ *   captured during the outage for a full screenshot TTL.
+ * - Navigation, timeout, and TLS failures mean this site cannot be captured.
+ *   They are returned so the caller can cache the miss instead of re-running
+ *   Puppeteer against a dead host on every request.
  */
 async function captureScreenshot(domain: string): Promise<CaptureResult> {
   "use step";
 
-  const { captureScreenshotBase64 } = await import("@domainstack/screenshot");
+  const { captureScreenshotBase64, getBrowser } = await import("@domainstack/screenshot");
+  const { createLogger } = await import("@domainstack/logger");
+  const logger = createLogger({ source: "screenshot/workflow" });
+
+  try {
+    await getBrowser();
+  } catch (err) {
+    throw new RetryableError(
+      `Browser launch failed: ${err instanceof Error ? err.message : String(err)}`,
+      { retryAfter: "10s" },
+    );
+  }
 
   try {
     const result = await captureScreenshotBase64(`https://${domain}`, {
@@ -111,9 +129,8 @@ async function captureScreenshot(domain: string): Promise<CaptureResult> {
       imageBuffer: result.imageBase64,
     };
   } catch (err) {
-    throw new FatalError(
-      `Screenshot capture failed for domain ${domain}: ${err instanceof Error ? err.message : String(err)}`,
-    );
+    logger.warn({ err, domain }, "screenshot capture failed, caching miss");
+    return { success: false };
   }
 }
 

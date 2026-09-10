@@ -52,6 +52,15 @@ export async function certificateExpiryWorkflow(
   const daysRemaining = await calculateDaysRemainingStep(validTo);
   const MAX_THRESHOLD_DAYS = Math.max(...CERTIFICATE_EXPIRY_THRESHOLDS);
 
+  // The cron starts this workflow for every verified tracked domain holding a
+  // certificate, so an already-expired one reaches us here. The thresholds only
+  // describe an approaching expiry and getThresholdNotificationType maps
+  // anything at or below the smallest one, so without this guard an expired
+  // certificate alerts "expires in -12 days".
+  if (daysRemaining < 0) {
+    return { skipped: true, reason: "already_expired" };
+  }
+
   // Detect renewal: If certificate is renewed beyond our notification window
   if (daysRemaining > MAX_THRESHOLD_DAYS) {
     const cleared = await clearRenewedNotifications(trackedDomainId);

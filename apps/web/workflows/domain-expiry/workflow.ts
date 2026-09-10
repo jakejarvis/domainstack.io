@@ -46,6 +46,19 @@ export async function domainExpiryWorkflow(
   const daysRemaining = await calculateDaysRemainingStep(domain.expirationDate);
   const MAX_THRESHOLD_DAYS = Math.max(...DOMAIN_EXPIRY_THRESHOLDS);
 
+  // The cron starts this workflow for every verified tracked domain, so an
+  // already-expired (or unparseable) date reaches us here. The thresholds only
+  // describe an approaching expiry and getThresholdNotificationType maps
+  // anything at or below the smallest one, so without this guard an expired
+  // domain alerts "expires in -12 days" and re-alerts every time the 30-day
+  // already-sent window lapses.
+  if (!Number.isFinite(daysRemaining)) {
+    return { skipped: true, reason: "invalid_expiration_date" };
+  }
+  if (daysRemaining < 0) {
+    return { skipped: true, reason: "already_expired" };
+  }
+
   // Detect renewal: If expiration is now beyond our notification window,
   // clear previous notifications so they can be re-sent when approaching expiry again.
   if (daysRemaining > MAX_THRESHOLD_DAYS) {

@@ -47,8 +47,9 @@ export async function chatWorkflow(input: ChatWorkflowInput) {
     tools: domainTools,
     ignoreIncompleteToolCalls: true,
   });
-  const systemPrompt = await buildSystemPromptStep(domain);
-  const model = await getModelStep();
+  // Independent steps: the prompt is built locally while the model ID is
+  // resolved from Edge Config, so run them concurrently.
+  const [systemPrompt, model] = await Promise.all([buildSystemPromptStep(domain), getModelStep()]);
   const { workflowRunId } = getWorkflowMetadata();
 
   const agent = new WorkflowAgent({

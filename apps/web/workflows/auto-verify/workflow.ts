@@ -148,12 +148,18 @@ async function checkDomainStatus(trackedDomainId: string): Promise<DomainStatus>
   };
 }
 
+/**
+ * Plain orchestration helper, deliberately not a step.
+ *
+ * It runs inside the workflow sandbox and does nothing but await the three
+ * verification steps, which keeps each method independently journaled and
+ * retryable. Marking it `"use step"` would collapse them into one unit and
+ * re-run DNS, HTML, and meta-tag checks together on any single retry.
+ */
 async function attemptVerification(
   domainName: string,
   token: string,
 ): Promise<{ verified: boolean; method: VerificationMethod | null }> {
-  "use workflow step";
-
   // Try DNS first (most reliable)
   const dnsResult = await verifyDomainByDns(domainName, token);
   if (dnsResult.verified) return dnsResult;
