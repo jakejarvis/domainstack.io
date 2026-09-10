@@ -26,6 +26,7 @@ import type {
 } from "@domainstack/types";
 
 import { normalizeCertificateHex } from "../certificate-hex";
+import { normalizeDnsHost } from "../providers/detection";
 import { statusesAreEqual } from "./status";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -57,12 +58,11 @@ export function detectRegistrationChange(
   // Check nameserver changes (order-independent, case-insensitive per RFC 4343).
   // The root label is stripped so "ns1.example.com." and "ns1.example.com" are
   // the same host and do not raise a spurious change notification.
-  const normalizeNsHost = (host: string) => host.trim().toLowerCase().replace(/\.$/, "");
   const prevNsHosts = [...snapshotNameservers]
-    .map((ns) => normalizeNsHost(ns.host))
+    .map((ns) => normalizeDnsHost(ns.host))
     .sort((a, b) => a.localeCompare(b));
   const currNsHosts = [...currentNameservers]
-    .map((ns) => normalizeNsHost(ns.host))
+    .map((ns) => normalizeDnsHost(ns.host))
     .sort((a, b) => a.localeCompare(b));
   const nameserversChanged =
     prevNsHosts.length !== currNsHosts.length ||

@@ -8,7 +8,6 @@ import {
   IconRefresh,
   IconShieldLock,
 } from "@tabler/icons-react";
-import { formatDistanceStrict } from "date-fns";
 import { useCallback, useState } from "react";
 
 import { useCalendarFeed } from "@/hooks/use-calendar-feed";
@@ -35,7 +34,7 @@ import {
 } from "@domainstack/ui/dropdown-menu";
 import { Skeleton } from "@domainstack/ui/skeleton";
 import { Spinner } from "@domainstack/ui/spinner";
-import { toDateTimeAttr } from "@domainstack/utils/date";
+import { formatRelativeTime, toDateTimeAttr } from "@domainstack/utils/date";
 
 /**
  * Outlook doesn't have an icon in @icons-pack/react-simple-icons, so we draw
@@ -140,11 +139,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
                 <span suppressHydrationWarning>
                   Last accessed{" "}
                   <time dateTime={lastAccessedDateTime} suppressHydrationWarning>
-                    {now
-                      ? formatDistanceStrict(new Date(lastAccessedDateTime), now, {
-                          addSuffix: true,
-                        })
-                      : "…"}
+                    {now ? formatRelativeTime(new Date(lastAccessedDateTime), now) : "…"}
                   </time>
                 </span>
               ) : (

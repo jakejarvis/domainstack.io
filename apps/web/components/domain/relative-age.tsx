@@ -1,11 +1,10 @@
 "use client";
 
-import { formatDistanceStrict } from "date-fns";
 import { useMemo } from "react";
 
 import { RelativeTimeSuffix } from "@/components/domain/relative-time-suffix";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
-import { toDateTimeAttr } from "@domainstack/utils/date";
+import { formatRelativeTime, toDateTimeAttr } from "@domainstack/utils/date";
 
 export function RelativeAgeString({
   from,
@@ -21,7 +20,7 @@ export function RelativeAgeString({
 
   const text = useMemo(() => {
     if (!now || !dateTime) return null;
-    return formatDistanceStrict(new Date(dateTime), now, { addSuffix: true });
+    return formatRelativeTime(new Date(dateTime), now) ?? null;
   }, [dateTime, now]);
 
   return <RelativeTimeSuffix dateTime={dateTime} text={text} className={className} />;

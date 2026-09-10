@@ -5,14 +5,13 @@ import {
   IconQuestionMark,
   type TablerIcon,
 } from "@tabler/icons-react";
-import { formatDistanceStrict } from "date-fns";
 import { useMemo } from "react";
 
 import { BadgeWithTooltip } from "@/components/dashboard/badge-with-tooltip";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { getHealthSeverity, type HealthSeverity } from "@/lib/dashboard-utils";
 import { cn } from "@domainstack/ui/utils";
-import { toDateTimeAttr } from "@domainstack/utils/date";
+import { formatRelativeTime, toDateTimeAttr } from "@domainstack/utils/date";
 
 type DomainHealthBadgeProps = {
   expirationDate: Date | null;
@@ -34,9 +33,7 @@ export function DomainHealthBadge({ expirationDate, verified, className }: Domai
     if (!dateTime || !now) return null;
     const expiration = new Date(dateTime);
     const isExpired = expiration <= now;
-    const relativeTime = formatDistanceStrict(expiration, now, {
-      addSuffix: true,
-    });
+    const relativeTime = formatRelativeTime(expiration, now);
     return `${isExpired ? "Expired" : "Expires"} ${relativeTime}`;
   }, [dateTime, now]);
 

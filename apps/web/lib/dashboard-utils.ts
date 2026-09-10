@@ -1,7 +1,7 @@
 import type { SortingState } from "@tanstack/react-table";
 
 import { EXPIRING_CRITICAL_DAYS, EXPIRING_SOON_DAYS } from "@domainstack/constants";
-import type { TrackedDomainWithDetails } from "@domainstack/types";
+import type { ProviderCategory, TrackedDomainWithDetails } from "@domainstack/types";
 import { calculateDaysRemaining } from "@domainstack/utils/expiry";
 
 // ---------------------------------------------------------------------------
@@ -14,10 +14,7 @@ export interface AvailableProvider {
   domain: string | null;
 }
 
-export type AvailableProvidersByCategory = Record<
-  "registrar" | "dns" | "hosting" | "email" | "ca",
-  AvailableProvider[]
->;
+export type AvailableProvidersByCategory = Record<ProviderCategory, AvailableProvider[]>;
 
 /** Filter types for domain verification status */
 export type StatusFilter = "verified" | "pending";

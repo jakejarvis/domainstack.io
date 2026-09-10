@@ -15,12 +15,11 @@ import {
   DOMAIN_TOOL_DEFS,
   domainToolInputSchema,
   getDomainToolErrorMessage,
-  getTrpcErrorCode,
-  isExpectedDomainToolError,
   type DomainToolInput,
   type DomainToolProcedure,
   type DomainToolResult,
 } from "@/lib/chat/domain-tools";
+import { getTrpcErrorCode, isExpectedTrpcError } from "@/lib/trpc/errors";
 
 export interface ToolContext {
   ip: string | null;
@@ -54,7 +53,7 @@ async function domainLookupStep(procedure: DomainToolProcedure, domain: string, 
     // Domain lookups return `{ success: false }` instead of throwing.
     // Throws here are tRPC validation/rate-limit errors, or unexpected bugs.
     const trpcCode = getTrpcErrorCode(err);
-    if (isExpectedDomainToolError(err)) {
+    if (isExpectedTrpcError(err)) {
       logger.warn({ err, domain, procedure, code: trpcCode }, "tool step failed (expected)");
       return { error: getDomainToolErrorMessage(err) };
     }

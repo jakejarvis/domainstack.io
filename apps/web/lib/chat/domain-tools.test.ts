@@ -7,8 +7,6 @@ import {
   getDomainToolErrorMessage,
   getDomainToolStatus,
   getToolPartType,
-  getTrpcErrorCode,
-  isExpectedDomainToolError,
   type DomainToolResult,
 } from "./domain-tools";
 
@@ -54,37 +52,6 @@ describe("getDomainToolStatus", () => {
     expect(
       getDomainToolStatus(getToolPartType({ type: "dynamic-tool", toolName: "custom_lookup" })),
     ).toBe("custom_lookup");
-  });
-});
-
-describe("getTrpcErrorCode", () => {
-  it("returns a direct tRPC code", () => {
-    expect(getTrpcErrorCode({ code: "BAD_REQUEST" })).toBe("BAD_REQUEST");
-  });
-
-  it("returns a nested data.code tRPC code", () => {
-    expect(getTrpcErrorCode({ data: { code: "TOO_MANY_REQUESTS" } })).toBe("TOO_MANY_REQUESTS");
-  });
-
-  it("returns undefined for non-object inputs", () => {
-    expect(getTrpcErrorCode("BAD_REQUEST")).toBeUndefined();
-    expect(getTrpcErrorCode(null)).toBeUndefined();
-  });
-
-  it("ignores generic string codes that are not tRPC codes", () => {
-    expect(getTrpcErrorCode({ code: "ENOTFOUND" })).toBeUndefined();
-  });
-});
-
-describe("isExpectedDomainToolError", () => {
-  it("treats validation and rate-limit failures as expected", () => {
-    expect(isExpectedDomainToolError({ code: "BAD_REQUEST" })).toBe(true);
-    expect(isExpectedDomainToolError({ data: { code: "TOO_MANY_REQUESTS" } })).toBe(true);
-  });
-
-  it("treats internal and unknown failures as unexpected", () => {
-    expect(isExpectedDomainToolError({ code: "INTERNAL_SERVER_ERROR" })).toBe(false);
-    expect(isExpectedDomainToolError(new Error("boom"))).toBe(false);
   });
 });
 

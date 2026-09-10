@@ -127,11 +127,10 @@ async function fetchUserSubscription(userId: string): Promise<UserSubscriptionDa
 async function calculateDaysRemaining(endsAt: Date): Promise<number> {
   "use step";
 
-  const { differenceInDays } = await import("date-fns");
+  const { calculateDaysRemaining: daysUntil } = await import("@domainstack/utils/expiry");
 
   // Getting current time inside a step ensures deterministic replay
-  const now = new Date();
-  return differenceInDays(endsAt, now);
+  return daysUntil(endsAt);
 }
 
 async function updateExpiryTracking(userId: string, threshold: number): Promise<void> {
@@ -162,7 +161,7 @@ async function sendSubscriptionExpiryNotification(params: {
 }): Promise<boolean> {
   "use step";
 
-  const { format } = await import("date-fns");
+  const { formatDateLong } = await import("@domainstack/utils/date");
   const { default: SubscriptionCancelingEmail } =
     await import("@domainstack/email/templates/subscription-canceling");
   const { sendEmail } = await import("@/workflows/shared/send-email");
@@ -170,7 +169,7 @@ async function sendSubscriptionExpiryNotification(params: {
   const { userName, userEmail, endsAt, daysRemaining, threshold: _ } = params;
 
   const firstName = getFirstName(userName);
-  const endDate = format(endsAt, "MMMM d, yyyy");
+  const endDate = formatDateLong(endsAt);
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
 
   // Determine urgency for subject line

@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { CERTIFICATE_EXPIRY_THRESHOLDS, DOMAIN_EXPIRY_THRESHOLDS } from "@domainstack/constants";
 
-import { calculateDaysRemaining, getThresholdNotificationType } from "./expiry";
+import {
+  calculateDaysElapsed,
+  calculateDaysRemaining,
+  getThresholdNotificationType,
+} from "./expiry";
 
 describe("getThresholdNotificationType", () => {
   it("returns smallest matching threshold for domain expiry", () => {
@@ -116,5 +120,34 @@ describe("getThresholdNotificationType with an unusable date", () => {
   it("returns null for an unparseable expiration date end to end", () => {
     const days = calculateDaysRemaining("not-a-date");
     expect(getThresholdNotificationType(days, [30, 14, 7, 1], "domain_expiry")).toBeNull();
+  });
+});
+
+describe("calculateDaysElapsed", () => {
+  const now = new Date("2024-06-15T12:00:00Z");
+
+  it("counts whole days since a past date", () => {
+    expect(calculateDaysElapsed(new Date("2024-06-10T12:00:00Z"), now)).toBe(5);
+  });
+
+  it("ignores a partial day rather than rounding it up", () => {
+    expect(calculateDaysElapsed(new Date("2024-06-10T00:00:00Z"), now)).toBe(5);
+  });
+
+  it("returns 0 for the same instant", () => {
+    expect(calculateDaysElapsed(now, now)).toBe(0);
+  });
+
+  it("is negative for a future date", () => {
+    expect(calculateDaysElapsed(new Date("2024-06-20T12:00:00Z"), now)).toBe(-5);
+  });
+
+  it("mirrors calculateDaysRemaining with the arguments swapped", () => {
+    const other = new Date("2024-07-01T00:00:00Z");
+    expect(calculateDaysElapsed(other, now)).toBe(calculateDaysRemaining(now, other));
+  });
+
+  it("accepts an ISO string", () => {
+    expect(calculateDaysElapsed("2024-06-10T12:00:00Z", now)).toBe(5);
   });
 });

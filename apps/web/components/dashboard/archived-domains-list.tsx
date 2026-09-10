@@ -1,5 +1,4 @@
 import { IconArchive, IconCircleArrowUp, IconRefresh, IconTrash } from "@tabler/icons-react";
-import { formatDistanceStrict } from "date-fns";
 
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
 import { Favicon } from "@/components/icons/favicon";
@@ -18,7 +17,7 @@ import {
 } from "@domainstack/ui/empty";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 import { cn } from "@domainstack/ui/utils";
-import { toDateTimeAttr } from "@domainstack/utils/date";
+import { formatRelativeTime, toDateTimeAttr } from "@domainstack/utils/date";
 
 type ArchivedDomainsListProps = {
   domains: TrackedDomainWithDetails[];
@@ -122,7 +121,7 @@ function ArchivedRelativeTime({ archivedAt }: { archivedAt: Date | string | null
     return <span>recently</span>;
   }
 
-  const label = now ? formatDistanceStrict(new Date(dateTime), now, { addSuffix: true }) : null;
+  const label = now ? formatRelativeTime(new Date(dateTime), now) : null;
 
   return (
     <time

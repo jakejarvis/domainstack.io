@@ -6,15 +6,11 @@
 
 import { upsertProviderLogo } from "@domainstack/db/queries/provider-logos";
 import { optimizeImage, storeImage } from "@domainstack/image";
-import {
-  isExpectedDnsError,
-  safeFetch,
-  SafeFetchError,
-  type SafeFetchErrorCode,
-} from "@domainstack/safe-fetch";
+import { safeFetch } from "@domainstack/safe-fetch";
 import type { ProviderLogoResponse } from "@domainstack/types";
 
 import { ttlForProviderIcon } from "../ttl";
+import { isDefinitiveNotFoundError } from "./fetch-errors";
 
 // ============================================================================
 // Types
@@ -183,23 +179,6 @@ async function fetchIconFromSources(domain: string): Promise<IconFetchResult> {
   }
 
   return { success: false, allNotFound };
-}
-
-const DEFINITIVE_CODES = new Set<SafeFetchErrorCode>([
-  "host_blocked",
-  "host_not_allowed",
-  "private_ip",
-  "protocol_not_allowed",
-  "invalid_url",
-]);
-
-function isDefinitiveNotFoundError(err: unknown): boolean {
-  if (!(err instanceof SafeFetchError)) return false;
-
-  // safe-fetch also raises dns_error for lookup timeouts, which are transient.
-  if (err.code === "dns_error") return isExpectedDnsError(err);
-
-  return DEFINITIVE_CODES.has(err.code);
 }
 
 // ============================================================================

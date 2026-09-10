@@ -166,7 +166,7 @@ async function createNotificationRecord(params: {
 }): Promise<{ notificationId: string; title: string; subject: string }> {
   "use step";
 
-  const { format } = await import("date-fns");
+  const { formatDateLong } = await import("@domainstack/utils/date");
   const { createNotification } = await import("@domainstack/db/queries/notifications");
 
   const {
@@ -183,7 +183,7 @@ async function createNotificationRecord(params: {
 
   const title = `${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;
   const subject = `${daysRemaining <= 7 ? "⚠️ " : ""}${title}`;
-  const message = `Your domain ${domainName} will expire on ${format(expirationDate, "MMMM d, yyyy")}${registrar ? ` (registered with ${registrar})` : ""}.`;
+  const message = `Your domain ${domainName} will expire on ${formatDateLong(expirationDate)}${registrar ? ` (registered with ${registrar})` : ""}.`;
 
   const channels: NotificationChannel[] = [];
   if (shouldSendEmail) channels.push("email");
@@ -219,7 +219,7 @@ async function sendDomainExpiryEmail(params: {
 }): Promise<{ emailId: string }> {
   "use step";
 
-  const { format } = await import("date-fns");
+  const { formatDateLong } = await import("@domainstack/utils/date");
   const { default: DomainExpiryEmail } = await import("@domainstack/email/templates/domain-expiry");
   const { sendEmail } = await import("@/workflows/shared/send-email");
 
@@ -234,7 +234,7 @@ async function sendDomainExpiryEmail(params: {
     react: DomainExpiryEmail({
       userName: userName.split(" ")[0] || "there",
       domainName,
-      expirationDate: format(expirationDate, "MMMM d, yyyy"),
+      expirationDate: formatDateLong(expirationDate),
       daysRemaining,
       registrar,
       baseUrl,

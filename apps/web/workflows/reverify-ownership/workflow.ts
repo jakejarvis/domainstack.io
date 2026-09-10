@@ -130,7 +130,7 @@ interface FailureActionResult {
 async function determineFailureAction(domain: DomainForFailureCheck): Promise<FailureActionResult> {
   "use step";
 
-  const { differenceInDays: diffInDays } = await import("date-fns");
+  const { calculateDaysElapsed } = await import("@domainstack/utils/expiry");
   const { VERIFICATION_GRACE_PERIOD_DAYS } = await import("@domainstack/constants");
   const { markVerificationFailing, revokeVerification } =
     await import("@domainstack/db/queries/tracked-domains");
@@ -160,7 +160,7 @@ async function determineFailureAction(domain: DomainForFailureCheck): Promise<Fa
       };
     }
 
-    const daysFailing = diffInDays(now, failedAt);
+    const daysFailing = calculateDaysElapsed(failedAt, now);
 
     if (daysFailing >= VERIFICATION_GRACE_PERIOD_DAYS) {
       // Grace period exceeded - revoke verification

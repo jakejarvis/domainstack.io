@@ -1,11 +1,11 @@
 import { IconCalendarDot } from "@tabler/icons-react";
-import { differenceInDays, formatDistanceStrict } from "date-fns";
 
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { useSubscription } from "@/hooks/use-subscription";
 import { PLAN_QUOTAS } from "@domainstack/constants";
-import { formatDate, toDateTimeAttr } from "@domainstack/utils/date";
+import { formatDate, formatRelativeTime, toDateTimeAttr } from "@domainstack/utils/date";
+import { calculateDaysRemaining } from "@domainstack/utils/expiry";
 
 export function SubscriptionEndingBanner() {
   const { handleCheckout, isCheckoutLoading, handleCustomerPortal, isCustomerPortalLoading } =
@@ -25,11 +25,9 @@ export function SubscriptionEndingBanner() {
   const isExpired = subscription.endsAt < now;
   if (isExpired) return null;
 
-  const daysRemaining = differenceInDays(subscription.endsAt, now);
+  const daysRemaining = calculateDaysRemaining(subscription.endsAt, now);
   const formattedDate = formatDate(subscription.endsAt);
-  const relativeTime = formatDistanceStrict(subscription.endsAt, now, {
-    addSuffix: true,
-  });
+  const relativeTime = formatRelativeTime(subscription.endsAt, now);
 
   // Determine urgency based on days remaining
   const isUrgent = daysRemaining <= 3;

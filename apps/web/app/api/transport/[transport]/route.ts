@@ -4,6 +4,7 @@ import { createMcpHandler } from "mcp-handler";
 import { PostHog } from "posthog-node";
 import { z } from "zod";
 
+import { type Section, SECTION_IDS } from "@/lib/constants/sections";
 import { checkRateLimit } from "@/lib/ratelimit/api";
 import { createCaller } from "@/server/routers/_app";
 import type { Context } from "@/trpc/init";
@@ -27,22 +28,8 @@ const domainSchema = z.object({
   domain: z.string().min(1, "Domain is required"),
 });
 
-/**
- * Available sections for domain_report bundle tool.
- */
-const REPORT_SECTIONS = [
-  "dns",
-  "registration",
-  "hosting",
-  "certificates",
-  "headers",
-  "seo",
-] as const;
-
-type ReportSection = (typeof REPORT_SECTIONS)[number];
-
 const sectionsSchema = z
-  .array(z.enum(REPORT_SECTIONS))
+  .array(z.enum(SECTION_IDS))
   .optional()
   .describe("Sections to include in the report. If omitted, all sections are included.");
 
@@ -225,12 +212,12 @@ function createMcpHandlerWithContext(request: Request) {
         },
         async ({ domain, sections }) => {
           // Default to all sections if not specified
-          const requestedSections: ReportSection[] =
-            sections && sections.length > 0 ? sections : [...REPORT_SECTIONS];
+          const requestedSections: Section[] =
+            sections && sections.length > 0 ? sections : [...SECTION_IDS];
 
           // Define section fetchers
           const sectionFetchers: Record<
-            ReportSection,
+            Section,
             () => Promise<{ success: boolean; data?: unknown; error?: string }>
           > = {
             registration: () => trpc.domain.getRegistration({ domain }),

@@ -1,11 +1,10 @@
-import { format } from "date-fns";
-
 import { getUserById } from "@domainstack/db/queries/users";
 import { sendEmail } from "@domainstack/email";
 import ProUpgradeSuccessEmail from "@domainstack/email/templates/pro-upgrade-success";
 import SubscriptionCancelingEmail from "@domainstack/email/templates/subscription-canceling";
 import SubscriptionExpiredEmail from "@domainstack/email/templates/subscription-expired";
 import { createLogger } from "@domainstack/logger";
+import { formatDateLong } from "@domainstack/utils/date";
 
 const logger = createLogger({ source: "polar/emails" });
 
@@ -53,7 +52,7 @@ export async function sendSubscriptionCancelingEmail(
       subject: "Your Pro subscription is ending",
       react: SubscriptionCancelingEmail({
         userName: user.name || "there",
-        endDate: format(periodEnd, "MMMM d, yyyy"),
+        endDate: formatDateLong(periodEnd),
         baseUrl,
       }),
     },

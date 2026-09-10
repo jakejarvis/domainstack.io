@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { getTrpcErrorCode } from "@/lib/trpc/errors";
 import type {
   CertificatesResponse,
   DnsRecordsResponse,
@@ -86,30 +87,6 @@ const DOMAIN_TOOL_STATUS = Object.fromEntries(
   DOMAIN_TOOL_DEFS.map((def) => [def.name, def.status]),
 ) as Record<DomainToolName, string>;
 
-const TRPC_ERROR_CODES = new Set([
-  "PARSE_ERROR",
-  "BAD_REQUEST",
-  "INTERNAL_SERVER_ERROR",
-  "NOT_IMPLEMENTED",
-  "BAD_GATEWAY",
-  "SERVICE_UNAVAILABLE",
-  "GATEWAY_TIMEOUT",
-  "UNAUTHORIZED",
-  "PAYMENT_REQUIRED",
-  "FORBIDDEN",
-  "NOT_FOUND",
-  "METHOD_NOT_SUPPORTED",
-  "TIMEOUT",
-  "CONFLICT",
-  "PRECONDITION_FAILED",
-  "PAYLOAD_TOO_LARGE",
-  "UNSUPPORTED_MEDIA_TYPE",
-  "UNPROCESSABLE_CONTENT",
-  "PRECONDITION_REQUIRED",
-  "TOO_MANY_REQUESTS",
-  "CLIENT_CLOSED_REQUEST",
-]);
-
 export type DomainToolInput = z.infer<typeof domainToolInputSchema>;
 
 /**
@@ -131,38 +108,6 @@ export function getToolPartType(part: { type: string; toolName?: unknown }): str
 export function getDomainToolStatus(type: string): string {
   const toolName = type.replace(/^tool-/, "");
   return DOMAIN_TOOL_STATUS[toolName as DomainToolName] ?? toolName;
-}
-
-function asTrpcErrorCode(code: unknown): string | undefined {
-  return typeof code === "string" && TRPC_ERROR_CODES.has(code) ? code : undefined;
-}
-
-/**
- * tRPC failures the model can report to the user (validation, rate limits).
- * Unexpected / internal errors should be retried by the workflow step instead.
- */
-export function isExpectedDomainToolError(err: unknown): boolean {
-  const code = getTrpcErrorCode(err);
-  return code != null && code !== "INTERNAL_SERVER_ERROR";
-}
-
-export function getTrpcErrorCode(err: unknown): string | undefined {
-  if (typeof err !== "object" || err === null) {
-    return undefined;
-  }
-
-  if ("code" in err) {
-    const code = asTrpcErrorCode(err.code);
-    if (code) {
-      return code;
-    }
-  }
-
-  if ("data" in err && typeof err.data === "object" && err.data !== null && "code" in err.data) {
-    return asTrpcErrorCode(err.data.code);
-  }
-
-  return undefined;
 }
 
 export function getDomainToolErrorMessage(err: unknown): string {

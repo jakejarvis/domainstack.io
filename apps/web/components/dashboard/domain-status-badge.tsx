@@ -4,13 +4,13 @@ import {
   IconRosetteDiscountCheck,
   type TablerIcon,
 } from "@tabler/icons-react";
-import { differenceInDays } from "date-fns";
 
 import { BadgeWithTooltip } from "@/components/dashboard/badge-with-tooltip";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { VERIFICATION_GRACE_PERIOD_DAYS } from "@domainstack/constants";
 import type { VerificationMethod, VerificationStatus } from "@domainstack/types";
 import { cn } from "@domainstack/ui/utils";
+import { calculateDaysElapsed } from "@domainstack/utils/expiry";
 
 type DomainStatusBadgeProps = {
   verified: boolean;
@@ -41,7 +41,10 @@ function getFailingTooltip(
 ): string {
   const daysRemaining =
     verificationFailedAt && now
-      ? Math.max(0, VERIFICATION_GRACE_PERIOD_DAYS - differenceInDays(now, verificationFailedAt))
+      ? Math.max(
+          0,
+          VERIFICATION_GRACE_PERIOD_DAYS - calculateDaysElapsed(verificationFailedAt, now),
+        )
       : VERIFICATION_GRACE_PERIOD_DAYS;
 
   if (daysRemaining > 0) {

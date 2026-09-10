@@ -14,7 +14,6 @@ import {
 } from "./fixtures";
 import {
   isEmptyPeerCertificate,
-  isExpectedDnsError,
   isExpectedTlsError,
   parseAltNames,
   parseCertificateDate,
@@ -101,36 +100,6 @@ describe("isExpectedTlsError", () => {
   it("detects certificate errors by message", () => {
     const err = new Error("Certificate validation failed");
     expect(isExpectedTlsError(err)).toBe(true);
-  });
-});
-
-describe("isExpectedDnsError", () => {
-  it("returns false for non-Error values", () => {
-    expect(isExpectedDnsError("error")).toBe(false);
-    expect(isExpectedDnsError(null)).toBe(false);
-  });
-
-  it("detects ENOTFOUND errors", () => {
-    const err = new Error("DNS error");
-    (err as unknown as { code: string }).code = "ENOTFOUND";
-    expect(isExpectedDnsError(err)).toBe(true);
-  });
-
-  it("treats EAI_AGAIN as retryable, not permanent", () => {
-    const err = new Error("DNS error");
-    (err as unknown as { code: string }).code = "EAI_AGAIN";
-    expect(isExpectedDnsError(err)).toBe(false);
-  });
-
-  it("detects ENODATA when A/AAAA records are missing", () => {
-    const err = new Error("queryA ENODATA example.com");
-    (err as unknown as { code: string }).code = "ENODATA";
-    expect(isExpectedDnsError(err)).toBe(true);
-  });
-
-  it("detects getaddrinfo errors by message", () => {
-    const err = new Error("getaddrinfo ENOTFOUND example.com");
-    expect(isExpectedDnsError(err)).toBe(true);
   });
 });
 

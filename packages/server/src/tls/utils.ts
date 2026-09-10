@@ -75,35 +75,6 @@ export function isExpectedTlsError(err: unknown): boolean {
 }
 
 /**
- * Check if an error is a permanent DNS failure.
- *
- * `EAI_AGAIN` is excluded: getaddrinfo returns it for a *temporary* resolver
- * failure, so it stays retryable.
- */
-export function isExpectedDnsError(err: unknown): boolean {
-  if (!(err instanceof Error)) return false;
-  const anyErr = err as unknown as {
-    cause?: { code?: string; message?: string };
-    code?: string;
-    message?: string;
-  };
-  const code = anyErr?.cause?.code || anyErr?.code;
-  const message = (anyErr?.cause?.message || anyErr?.message || "").toLowerCase();
-
-  if (code === "EAI_AGAIN" || message.includes("eai_again")) {
-    return false;
-  }
-
-  return (
-    code === "ENOTFOUND" ||
-    code === "ENODATA" ||
-    code === "ENOENT" ||
-    message.includes("getaddrinfo") ||
-    message.includes("dns")
-  );
-}
-
-/**
  * Thrown when a peer certificate contains a date that cannot be parsed.
  */
 export class InvalidCertificateDateError extends Error {

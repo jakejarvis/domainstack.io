@@ -166,7 +166,7 @@ async function createNotificationRecord(params: {
 }): Promise<{ notificationId: string; title: string; subject: string }> {
   "use step";
 
-  const { format } = await import("date-fns");
+  const { formatDateLong } = await import("@domainstack/utils/date");
   const { createNotification } = await import("@domainstack/db/queries/notifications");
 
   const {
@@ -183,7 +183,7 @@ async function createNotificationRecord(params: {
 
   const title = `SSL certificate for ${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;
   const subject = `${daysRemaining <= 3 ? "🔒⚠️ " : "🔒 "}${title}`;
-  const message = `The SSL certificate for ${domainName} (issued by ${issuer}) will expire on ${format(validTo, "MMMM d, yyyy")}.`;
+  const message = `The SSL certificate for ${domainName} (issued by ${issuer}) will expire on ${formatDateLong(validTo)}.`;
 
   const channels: NotificationChannel[] = [];
   if (shouldSendEmail) channels.push("email");
@@ -219,7 +219,7 @@ async function sendCertificateExpiryEmail(params: {
 }): Promise<{ emailId: string }> {
   "use step";
 
-  const { format } = await import("date-fns");
+  const { formatDateLong } = await import("@domainstack/utils/date");
   const { default: CertificateExpiryEmail } =
     await import("@domainstack/email/templates/certificate-expiry");
   const { sendEmail } = await import("@/workflows/shared/send-email");
@@ -234,7 +234,7 @@ async function sendCertificateExpiryEmail(params: {
     react: CertificateExpiryEmail({
       userName: userName.split(" ")[0] || "there",
       domainName,
-      expirationDate: format(validTo, "MMMM d, yyyy"),
+      expirationDate: formatDateLong(validTo),
       daysRemaining,
       issuer,
       baseUrl,

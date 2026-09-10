@@ -56,6 +56,12 @@ describe("isExpectedDnsError", () => {
     expect(isExpectedDnsError(err)).toBe(false);
   });
 
+  it("does not treat a plain DNS timeout message as permanent", () => {
+    // The message mentions DNS but describes a transient failure, so a
+    // substring match on "dns" would wrongly mark it permanent.
+    expect(isExpectedDnsError(new Error("DNS query timed out"))).toBe(false);
+  });
+
   it("detects getaddrinfo errors by message", () => {
     expect(isExpectedDnsError(new Error("getaddrinfo ENOTFOUND example.com"))).toBe(true);
   });

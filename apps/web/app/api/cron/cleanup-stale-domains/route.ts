@@ -1,4 +1,3 @@
-import { subDays } from "date-fns";
 import { NextResponse } from "next/server";
 
 import { deleteStaleUnverifiedDomainsByCutoff } from "@domainstack/db/queries/tracked-domains";
@@ -8,6 +7,7 @@ const logger = createLogger({ source: "cron/cleanup-stale-domains" });
 
 // Domains that remain unverified after this many days will be deleted
 const STALE_DOMAIN_DAYS = 30;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /**
  * Cron job to clean up stale unverified domains.
@@ -25,7 +25,9 @@ export async function GET(request: Request) {
   try {
     logger.info("Starting cleanup stale domains cron job");
 
-    const cutoffDate = subDays(new Date(), STALE_DOMAIN_DAYS);
+    // Absolute rather than calendar days: an hour either side of a clock
+    // change is immaterial to a month-long staleness cutoff.
+    const cutoffDate = new Date(Date.now() - STALE_DOMAIN_DAYS * MS_PER_DAY);
 
     // Optimized: Delete directly by cutoff date in a single query
     const deletedCount = await deleteStaleUnverifiedDomainsByCutoff(cutoffDate);

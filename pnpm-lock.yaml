@@ -189,9 +189,6 @@ importers:
       ai:
         specifier: ^7.0.95
         version: 7.0.95(zod@4.5.4)
-      date-fns:
-        specifier: ^4.4.0
-        version: 4.4.0
       geist:
         specifier: ^1.7.2
         version: 1.7.2(next@16.3.4(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))
@@ -582,6 +579,9 @@ importers:
       '@domainstack/logger':
         specifier: workspace:*
         version: link:../logger
+      '@domainstack/utils':
+        specifier: workspace:*
+        version: link:../utils
       '@polar-sh/better-auth':
         specifier: ^1.8.4
         version: 1.8.4(@polar-sh/sdk@0.47.1)(@stripe/react-stripe-js@4.0.2(@stripe/stripe-js@7.9.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(@stripe/stripe-js@7.9.0)(better-auth@1.7.3(@opentelemetry/api@1.9.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(@upstash/redis@1.38.4)(kysely@0.29.5)(pg@8.23.0))(next@16.3.4(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(pg@8.23.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@5.0.0))(react@19.2.8)(zod@4.5.4)
@@ -591,9 +591,6 @@ importers:
       '@vercel/functions':
         specifier: ^3.9.6
         version: 3.9.6(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.21.3(bufferutil@4.1.0))
-      date-fns:
-        specifier: ^4.4.0
-        version: 4.4.0
       next:
         specifier: 16.3.4
         version: 16.3.4(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)

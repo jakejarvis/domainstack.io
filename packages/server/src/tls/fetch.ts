@@ -12,7 +12,7 @@ import type { TLSSocket } from "node:tls";
 
 import {
   createPinnedLookup,
-  isExpectedDnsError as isSafeFetchDnsError,
+  isExpectedDnsError,
   resolvePublicHost,
   SafeFetchError,
 } from "@domainstack/safe-fetch";
@@ -21,7 +21,6 @@ import type { TlsFetchOptions, TlsFetchResult } from "./types";
 import {
   InvalidCertificateDateError,
   isEmptyPeerCertificate,
-  isExpectedDnsError,
   isExpectedTlsError,
   readTlsAuthorization,
   walkCertificateChain,
@@ -111,7 +110,7 @@ export async function fetchCertificateChain(
       return { success: false, error: "timeout" };
     }
 
-    if (isExpectedDnsError(err) || isSafeFetchDnsError(err)) {
+    if (isExpectedDnsError(err)) {
       return { success: false, error: "dns_error" };
     }
 
@@ -164,7 +163,7 @@ function mapResolutionError(err: unknown): TlsFetchResult {
     }
   }
 
-  if (isExpectedDnsError(err) || isSafeFetchDnsError(err)) {
+  if (isExpectedDnsError(err)) {
     return { success: false, error: "dns_error" };
   }
 

@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { PROVIDER_CATEGORIES } from "@domainstack/constants";
 import type { ProviderCategory } from "@domainstack/types";
 
 import type { Rule } from "./rules";
@@ -37,58 +38,66 @@ export interface Provider extends ProviderEntry {
  * }
  * ```
  */
-const ProviderCatalogSchema = z
-  .object({
-    ca: z.array(ProviderEntrySchema).default([]),
-    dns: z.array(ProviderEntrySchema).default([]),
-    email: z.array(ProviderEntrySchema).default([]),
-    hosting: z.array(ProviderEntrySchema).default([]),
-    registrar: z.array(ProviderEntrySchema).default([]),
-  })
-  .superRefine((catalog, ctx) => {
-    // Validate all regex patterns at parse time
-    const validateRegexInRule = (
-      rule: Rule,
-      category: string,
-      providerName: string,
-      path: string[],
-    ): void => {
-      if ("all" in rule) {
-        for (let i = 0; i < rule.all.length; i++) {
-          validateRegexInRule(rule.all[i], category, providerName, [...path, "all", String(i)]);
-        }
-      } else if ("any" in rule) {
-        for (let i = 0; i < rule.any.length; i++) {
-          validateRegexInRule(rule.any[i], category, providerName, [...path, "any", String(i)]);
-        }
-      } else if ("not" in rule) {
-        validateRegexInRule(rule.not, category, providerName, [...path, "not"]);
-      } else if (rule.kind === "mxRegex" || rule.kind === "nsRegex") {
-        try {
-          new RegExp(rule.pattern, rule.flags);
-        } catch (e) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: `Invalid regex pattern in ${category}.${providerName}: ${rule.pattern} - ${e instanceof Error ? e.message : "unknown error"}`,
-            path: [...path, "pattern"],
-          });
-        }
-      }
-    };
+// Typed as a Record over ProviderCategory so a category added to
+// PROVIDER_CATEGORIES fails to compile here until the catalog gains a key for
+// it, rather than silently parsing to a catalog that is missing the section.
+const catalogShape: Record<
+  ProviderCategory,
+  z.ZodDefault<z.ZodArray<typeof ProviderEntrySchema>>
+> = {
+  ca: z.array(ProviderEntrySchema).default([]),
+  dns: z.array(ProviderEntrySchema).default([]),
+  email: z.array(ProviderEntrySchema).default([]),
+  hosting: z.array(ProviderEntrySchema).default([]),
+  registrar: z.array(ProviderEntrySchema).default([]),
+};
 
-    const categories: ProviderCategory[] = ["ca", "dns", "email", "hosting", "registrar"];
-    for (const category of categories) {
-      const providers = catalog[category];
-      for (let index = 0; index < providers.length; index++) {
-        const provider = providers[index];
-        validateRegexInRule(provider.rule, category, provider.name, [
-          category,
-          String(index),
-          "rule",
-        ]);
+const ProviderCatalogSchema = z.object(catalogShape).superRefine((catalog, ctx) => {
+  // Validate all regex patterns at parse time
+  const validateRegexInRule = (
+    rule: Rule,
+    category: string,
+    providerName: string,
+    path: string[],
+  ): void => {
+    if ("all" in rule) {
+      for (let i = 0; i < rule.all.length; i++) {
+        validateRegexInRule(rule.all[i], category, providerName, [...path, "all", String(i)]);
+      }
+    } else if ("any" in rule) {
+      for (let i = 0; i < rule.any.length; i++) {
+        validateRegexInRule(rule.any[i], category, providerName, [...path, "any", String(i)]);
+      }
+    } else if ("not" in rule) {
+      validateRegexInRule(rule.not, category, providerName, [...path, "not"]);
+    } else if (rule.kind === "mxRegex" || rule.kind === "nsRegex") {
+      try {
+        new RegExp(rule.pattern, rule.flags);
+      } catch (e) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Invalid regex pattern in ${category}.${providerName}: ${rule.pattern} - ${e instanceof Error ? e.message : "unknown error"}`,
+          path: [...path, "pattern"],
+        });
       }
     }
-  });
+  };
+
+  // Iterate the shared list: a hardcoded copy annotated `ProviderCategory[]`
+  // rejects an invalid member but says nothing about a missing one, so a new
+  // category would silently skip regex validation.
+  for (const category of PROVIDER_CATEGORIES) {
+    const providers = catalog[category];
+    for (let index = 0; index < providers.length; index++) {
+      const provider = providers[index];
+      validateRegexInRule(provider.rule, category, provider.name, [
+        category,
+        String(index),
+        "rule",
+      ]);
+    }
+  }
+});
 
 export type ProviderCatalog = z.infer<typeof ProviderCatalogSchema>;
 

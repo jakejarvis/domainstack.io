@@ -90,12 +90,9 @@ export async function resolveProviderNamesStep(
 export async function calculateDaysRemainingStep(expirationDate: Date | string): Promise<number> {
   "use step";
 
-  const { differenceInDays } = await import("date-fns");
+  const { calculateDaysRemaining } = await import("@domainstack/utils/expiry");
 
-  const now = new Date();
-  const expDate = typeof expirationDate === "string" ? new Date(expirationDate) : expirationDate;
-
-  return differenceInDays(expDate, now);
+  return calculateDaysRemaining(expirationDate);
 }
 
 /**

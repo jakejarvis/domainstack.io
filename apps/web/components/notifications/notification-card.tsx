@@ -1,6 +1,5 @@
 "use client";
 
-import { formatDistanceStrict } from "date-fns";
 import Link from "next/link";
 import { createElement } from "react";
 
@@ -14,7 +13,7 @@ import {
 import type { NotificationData } from "@domainstack/types";
 import { Icon } from "@domainstack/ui/icon";
 import { cn } from "@domainstack/ui/utils";
-import { toDateTimeAttr } from "@domainstack/utils/date";
+import { formatRelativeTime, toDateTimeAttr } from "@domainstack/utils/date";
 
 interface NotificationCardProps {
   notification: NotificationData;
@@ -69,11 +68,7 @@ export function NotificationCard({ notification, onClick }: NotificationCardProp
           <p className="mt-1 text-xs text-muted-foreground/75">
             {sentAtDateTime ? (
               <time dateTime={sentAtDateTime} suppressHydrationWarning>
-                {now
-                  ? formatDistanceStrict(new Date(sentAtDateTime), now, {
-                      addSuffix: true,
-                    })
-                  : "…"}
+                {now ? formatRelativeTime(new Date(sentAtDateTime), now) : "…"}
               </time>
             ) : null}
           </p>

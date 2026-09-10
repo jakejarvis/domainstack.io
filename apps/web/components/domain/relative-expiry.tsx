@@ -1,12 +1,12 @@
 "use client";
 
-import { differenceInDays, formatDistanceStrict } from "date-fns";
 import { useMemo } from "react";
 
 import { RelativeTimeSuffix } from "@/components/domain/relative-time-suffix";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { cn } from "@domainstack/ui/utils";
-import { toDateTimeAttr } from "@domainstack/utils/date";
+import { formatRelativeTime, toDateTimeAttr } from "@domainstack/utils/date";
+import { calculateDaysRemaining } from "@domainstack/utils/expiry";
 
 export function RelativeExpiryString({
   to,
@@ -30,8 +30,8 @@ export function RelativeExpiryString({
     if (!now || !dateTime) return null;
     const targetDate = new Date(dateTime);
     return {
-      text: formatDistanceStrict(targetDate, now, { addSuffix: true }),
-      daysUntil: differenceInDays(targetDate, now),
+      text: formatRelativeTime(targetDate, now),
+      daysUntil: calculateDaysRemaining(targetDate, now),
     };
   }, [dateTime, now]);
 
