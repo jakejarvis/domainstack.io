@@ -14,6 +14,18 @@ export interface ParseRobotsTxtOptions {
 }
 
 /**
+ * Truncate to a UTF-8 byte budget.
+ *
+ * The cap is expressed in bytes, which is not the same as string length once
+ * the file contains non-ASCII characters.
+ */
+function capToBytes(text: string, capBytes: number): string {
+  const buffer = Buffer.from(text, "utf8");
+  if (buffer.byteLength <= capBytes) return text;
+  return buffer.subarray(0, capBytes).toString("utf8");
+}
+
+/**
  * Parse a robots.txt file into structured data.
  *
  * Handles:
@@ -32,8 +44,7 @@ export interface ParseRobotsTxtOptions {
 export function parseRobotsTxt(text: string, opts?: ParseRobotsTxtOptions): RobotsTxt {
   // Cap processing to avoid huge files (align with Google ~500 KiB)
   const capBytes = opts?.sizeCapBytes ?? 500 * 1024;
-  const capped = text.length > capBytes ? text.slice(0, capBytes) : text;
-  const lines = capped.split(/\r?\n/);
+  const lines = capToBytes(text, capBytes).split(/\r?\n/);
   const groups: RobotsGroup[] = [];
   const sitemaps: string[] = [];
   const sitemapSeen = new Set<string>();

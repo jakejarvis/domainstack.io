@@ -55,14 +55,17 @@ export async function queryDohProvider(
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
 
-  const res = await fetch(url, {
-    headers: {
-      Accept: "application/dns-json",
-    },
-    signal: controller.signal,
-  });
-
-  clearTimeout(timeoutId);
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      headers: {
+        Accept: "application/dns-json",
+      },
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!res.ok) {
     throw new Error(`DoH query failed: ${provider.key} ${type} ${res.status}`);

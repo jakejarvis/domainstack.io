@@ -8,7 +8,12 @@
 import { ensureDomainRecord } from "@domainstack/db/queries/domains";
 import { upsertFavicon } from "@domainstack/db/queries/favicons";
 import { optimizeImage, storeImage } from "@domainstack/image";
-import { safeFetch } from "@domainstack/safe-fetch";
+import {
+  isExpectedDnsError,
+  safeFetch,
+  SafeFetchError,
+  type SafeFetchErrorCode,
+} from "@domainstack/safe-fetch";
 import type { FaviconResponse } from "@domainstack/types";
 
 import { ttlForFavicon } from "../ttl";
@@ -23,6 +28,7 @@ interface IconFetchSuccess {
   success: true;
   imageBase64: string;
   contentType: string | null;
+  status: number;
   sourceName: string;
 }
 
@@ -82,7 +88,7 @@ export async function fetchFavicon(domain: string): Promise<FaviconResult> {
   }
 
   // Step 2: Process, store, and persist
-  const result = await processAndStore(domain, fetchResult.imageBase64, fetchResult.sourceName);
+  const result = await processAndStore(domain, fetchResult);
 
   return {
     success: true,
@@ -97,11 +103,11 @@ export async function fetchFavicon(domain: string): Promise<FaviconResult> {
 async function fetchIconFromSources(domain: string): Promise<IconFetchResult> {
   const sources: IconSource[] = [
     {
-      url: `https://www.google.com/s2/favicons?domain=${domain}&sz=${DEFAULT_SIZE}`,
+      url: `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=${DEFAULT_SIZE}`,
       name: "google",
     },
     {
-      url: `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+      url: `https://icons.duckduckgo.com/ip3/${encodeURIComponent(domain)}.ico`,
       name: "duckduckgo",
     },
     {
@@ -148,6 +154,7 @@ async function fetchIconFromSources(domain: string): Promise<IconFetchResult> {
         success: true,
         imageBase64: asset.buffer.toString("base64"),
         contentType: asset.contentType ?? null,
+        status: asset.status,
         sourceName: source.name,
       };
     } catch (err) {
@@ -160,34 +167,30 @@ async function fetchIconFromSources(domain: string): Promise<IconFetchResult> {
   return { success: false, allNotFound };
 }
 
+const DEFINITIVE_CODES = new Set<SafeFetchErrorCode>([
+  "host_blocked",
+  "host_not_allowed",
+  "private_ip",
+  "protocol_not_allowed",
+  "invalid_url",
+]);
+
 function isDefinitiveNotFoundError(err: unknown): boolean {
-  if (!err || typeof err !== "object") return false;
-  const maybe = err as { name?: unknown; code?: unknown };
-  if (maybe.name !== "SafeFetchError") return false;
+  if (!(err instanceof SafeFetchError)) return false;
 
-  const definitiveCodes = new Set([
-    "dns_error",
-    "host_blocked",
-    "host_not_allowed",
-    "private_ip",
-    "protocol_not_allowed",
-    "invalid_url",
-  ]);
+  // safe-fetch also raises dns_error for lookup timeouts, which are transient.
+  if (err.code === "dns_error") return isExpectedDnsError(err);
 
-  return typeof maybe.code === "string" && definitiveCodes.has(maybe.code);
+  return DEFINITIVE_CODES.has(err.code);
 }
 
 // ============================================================================
 // Internal: Process and Store
 // ============================================================================
 
-async function processAndStore(
-  domain: string,
-  imageBase64: string,
-  sourceName: string,
-): Promise<{ url: string }> {
+async function processAndStore(domain: string, icon: IconFetchSuccess): Promise<{ url: string }> {
   // 1. Process image
-  const inputBuffer = Buffer.from(imageBase64, "base64");
+  const inputBuffer = Buffer.from(icon.imageBase64, "base64");
   const optimized = await optimizeImage(inputBuffer, {
     width: DEFAULT_SIZE,
     height: DEFAULT_SIZE,
@@ -216,10 +219,10 @@ async function processAndStore(
     url,
     pathname: pathname ?? null,
     size: DEFAULT_SIZE,
-    source: sourceName,
+    source: icon.sourceName,
     notFound: false,
-    upstreamStatus: 200,
-    upstreamContentType: "image/webp",
+    upstreamStatus: icon.status,
+    upstreamContentType: icon.contentType,
     fetchedAt: now,
     expiresAt,
   });

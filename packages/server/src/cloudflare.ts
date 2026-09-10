@@ -16,6 +16,9 @@ const CLOUDFLARE_IPS_URL = "https://api.cloudflare.com/client/v4/ips";
 /**
  * LRU cache for Cloudflare IP check results.
  * Same IPs are checked repeatedly across different domains.
+ *
+ * Only populated while the range list is known, so an upstream outage cannot
+ * persist a false negative.
  */
 const cache = new LRUCache<string, boolean>({
   max: 1000,
@@ -33,10 +36,10 @@ interface ParsedCloudflareRanges {
 }
 
 // Cache Cloudflare IP ranges in memory (refreshed weekly)
-let cachedRanges: CloudflareIpRanges | null = null;
 let parsedRanges: ParsedCloudflareRanges | null = null;
-let cachedAt = 0;
-let activePromise: Promise<CloudflareIpRanges> | null = null;
+let loadedAt = 0;
+let lastFailureAt = 0;
+let activePromise: Promise<ParsedCloudflareRanges | null> | null = null;
 const CACHE_TTL_MS = 604_800_000; // 1 week
 const ERROR_BACKOFF_MS = 60_000; // 1 minute backoff on errors
 
@@ -72,23 +75,60 @@ function parseCidrs(ranges: CloudflareIpRanges): ParsedCloudflareRanges {
   return { ipv4, ipv6 };
 }
 
-/**
- * Fetch Cloudflare IP ranges with request coalescing and error backoff.
- */
-async function getCloudflareIpRanges(): Promise<CloudflareIpRanges> {
-  const now = Date.now();
+function toCidrArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((entry): entry is string => typeof entry === "string")
+    : [];
+}
 
-  // Return cached ranges if still valid
-  if (cachedRanges !== null && now - cachedAt < CACHE_TTL_MS) {
-    return cachedRanges;
+/**
+ * Fetch and parse the Cloudflare ranges.
+ *
+ * Throws when the response is unusable so a malformed payload is retried
+ * after the error backoff instead of being cached for a week.
+ */
+async function fetchParsedRanges(): Promise<ParsedCloudflareRanges> {
+  const res = await fetch(CLOUDFLARE_IPS_URL, {
+    headers: process.env.EXTERNAL_USER_AGENT
+      ? { "User-Agent": process.env.EXTERNAL_USER_AGENT }
+      : undefined,
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch Cloudflare IPs: ${res.status}`);
   }
 
-  // Respect error backoff even on cold start (when cachedRanges is null)
-  // This prevents request storms when the upstream service is down.
-  // The error handler sets cachedAt to a synthetic timestamp that makes
-  // (now - cachedAt < CACHE_TTL_MS) true for ERROR_BACKOFF_MS duration.
-  if (cachedRanges === null && cachedAt > 0 && now - cachedAt < CACHE_TTL_MS) {
-    return { ipv4Cidrs: [], ipv6Cidrs: [] };
+  const data = (await res.json()) as { result?: { ipv4_cidrs?: unknown; ipv6_cidrs?: unknown } };
+  const parsed = parseCidrs({
+    ipv4Cidrs: toCidrArray(data?.result?.ipv4_cidrs),
+    ipv6Cidrs: toCidrArray(data?.result?.ipv6_cidrs),
+  });
+
+  if (parsed.ipv4.length === 0 && parsed.ipv6.length === 0) {
+    throw new Error("Cloudflare IP response contained no usable CIDRs");
+  }
+
+  return parsed;
+}
+
+/**
+ * Get parsed Cloudflare IP ranges with request coalescing and error backoff.
+ *
+ * Returns null when the ranges have never loaded successfully, so callers can
+ * tell "not a Cloudflare IP" apart from "ranges unavailable".
+ */
+async function getParsedRanges(): Promise<ParsedCloudflareRanges | null> {
+  const now = Date.now();
+
+  // Return cached ranges if still fresh
+  if (parsedRanges !== null && now - loadedAt < CACHE_TTL_MS) {
+    return parsedRanges;
+  }
+
+  // Respect error backoff, including on cold start, to prevent request storms
+  // when the upstream service is down. Serves stale ranges when we have them.
+  if (now - lastFailureAt < ERROR_BACKOFF_MS) {
+    return parsedRanges;
   }
 
   // Request coalescing: return active promise if one is in progress
@@ -98,31 +138,14 @@ async function getCloudflareIpRanges(): Promise<CloudflareIpRanges> {
 
   activePromise = (async () => {
     try {
-      const res = await fetch(CLOUDFLARE_IPS_URL, {
-        headers: process.env.EXTERNAL_USER_AGENT
-          ? { "User-Agent": process.env.EXTERNAL_USER_AGENT }
-          : undefined,
-      });
-
-      if (!res.ok) {
-        throw new Error(`Failed to fetch Cloudflare IPs: ${res.status}`);
-      }
-
-      const data = await res.json();
-
-      cachedRanges = {
-        ipv4Cidrs: data.result?.ipv4_cidrs || [],
-        ipv6Cidrs: data.result?.ipv6_cidrs || [],
-      };
-      // Parse CIDRs once when caching
-      parsedRanges = parseCidrs(cachedRanges);
-      cachedAt = Date.now();
-      return cachedRanges;
+      parsedRanges = await fetchParsedRanges();
+      loadedAt = Date.now();
+      lastFailureAt = 0;
+      return parsedRanges;
     } catch {
-      // Update cachedAt even on error to implement backoff
-      cachedAt = Date.now() - CACHE_TTL_MS + ERROR_BACKOFF_MS;
-      // Return cached ranges if available, otherwise empty
-      return cachedRanges ?? { ipv4Cidrs: [], ipv6Cidrs: [] };
+      lastFailureAt = Date.now();
+      // Keep serving stale ranges if we have them, otherwise signal "unknown"
+      return parsedRanges;
     } finally {
       activePromise = null;
     }
@@ -133,6 +156,9 @@ async function getCloudflareIpRanges(): Promise<CloudflareIpRanges> {
 
 /**
  * Check if a given IP address is part of Cloudflare's IP ranges.
+ *
+ * Returns false when the range list is unavailable, without caching that
+ * result.
  */
 export async function isCloudflareIp(ip: string): Promise<boolean> {
   const cached = cache.get(ip);
@@ -140,12 +166,8 @@ export async function isCloudflareIp(ip: string): Promise<boolean> {
     return cached;
   }
 
-  // Ensure ranges are fetched and parsed
-  await getCloudflareIpRanges();
-
-  // Use pre-parsed ranges for efficient matching
-  if (!parsedRanges) {
-    cache.set(ip, false);
+  const ranges = await getParsedRanges();
+  if (!ranges) {
     return false;
   }
 
@@ -153,10 +175,10 @@ export async function isCloudflareIp(ip: string): Promise<boolean> {
 
   if (ipaddr.IPv4.isValid(ip)) {
     const parsed = ipaddr.IPv4.parse(ip);
-    result = parsedRanges.ipv4.some(([net, prefix]) => parsed.match([net, prefix]));
+    result = ranges.ipv4.some(([net, prefix]) => parsed.match([net, prefix]));
   } else if (ipaddr.IPv6.isValid(ip)) {
     const parsed = ipaddr.IPv6.parse(ip);
-    result = parsedRanges.ipv6.some(([net, prefix]) => parsed.match([net, prefix]));
+    result = ranges.ipv6.some(([net, prefix]) => parsed.match([net, prefix]));
   }
 
   cache.set(ip, result);

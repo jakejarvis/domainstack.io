@@ -15,7 +15,7 @@ export interface RdapLookupSuccess {
  */
 export interface RdapLookupFailure {
   success: false;
-  error: "unsupported_tld" | "timeout" | "retry" | "not_found";
+  error: "unsupported_tld" | "timeout" | "retry";
 }
 
 /**

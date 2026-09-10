@@ -96,7 +96,7 @@ export async function fetchSeo(domain: string): Promise<SeoResult> {
   // Step 3: Process OG image (if present and not blocked)
   let uploadedImageUrl: string | null = null;
   if (htmlResult.preview?.image) {
-    const isBlocked = await checkBlocklist(domain);
+    const isBlocked = await isDomainBlocked(domain);
 
     if (!isBlocked) {
       uploadedImageUrl = await processOgImage(
@@ -117,14 +117,6 @@ export async function fetchSeo(domain: string): Promise<SeoResult> {
     success: true,
     data: response,
   };
-}
-
-// ============================================================================
-// Internal: Check Blocklist
-// ============================================================================
-
-async function checkBlocklist(domain: string): Promise<boolean> {
-  return isDomainBlocked(domain);
 }
 
 // ============================================================================

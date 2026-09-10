@@ -50,16 +50,37 @@ describe("TTL policy", () => {
     expect(d.getTime() - now.getTime()).toBe(24 * 60 * 60 * 1000);
   });
 
-  it("certs: before valid_to and within 24h window", () => {
+  it("certs: full 24h window when expiry is far away", () => {
+    const now = new Date("2024-01-01T00:00:00.000Z");
+    const validTo = new Date("2024-04-01T00:00:00.000Z");
+    const d = ttlForCertificates(now, validTo);
+    expect(d.getTime() - now.getTime()).toBe(24 * 60 * 60 * 1000);
+  });
+
+  it("certs: full 24h window when expiry is exactly 24h past the buffer", () => {
     const now = new Date("2024-01-01T00:00:00.000Z");
     const validTo = new Date("2024-01-04T00:00:00.000Z");
     const d = ttlForCertificates(now, validTo);
-    expect(d.toISOString()).toBe(new Date("2024-01-01T01:00:00.000Z").toISOString());
+    expect(d.getTime() - now.getTime()).toBe(24 * 60 * 60 * 1000);
+  });
+
+  it("certs: shrinks to reach the 48h buffer as expiry approaches", () => {
+    const now = new Date("2024-01-01T00:00:00.000Z");
+    const validTo = new Date("2024-01-03T12:00:00.000Z");
+    const d = ttlForCertificates(now, validTo);
+    expect(d.getTime() - now.getTime()).toBe(12 * 60 * 60 * 1000);
   });
 
   it("certs: clamps to minimum when valid_to is inside the 48h buffer", () => {
     const now = new Date("2024-01-01T00:00:00.000Z");
     const validTo = new Date("2024-01-01T02:00:00.000Z");
+    const d = ttlForCertificates(now, validTo);
+    expect(d.getTime() - now.getTime()).toBe(60 * 60 * 1000);
+  });
+
+  it("certs: clamps to minimum when the certificate already expired", () => {
+    const now = new Date("2024-01-01T00:00:00.000Z");
+    const validTo = new Date("2023-12-25T00:00:00.000Z");
     const d = ttlForCertificates(now, validTo);
     expect(d.getTime() - now.getTime()).toBe(60 * 60 * 1000);
   });

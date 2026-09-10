@@ -132,13 +132,19 @@ async function processChain(observation: TlsFetchSuccess): Promise<CertificatesP
     };
   });
 
+  // A chain usually repeats the same authority, so upsert each one once.
+  const upsertsByProvider = new Map<string, Promise<string>>();
   const providerIds = await Promise.all(
     certificatesWithMatches.map(async ({ catalogProvider }) => {
-      if (catalogProvider) {
-        const ref = await upsertCatalogProvider(catalogProvider);
-        return ref.id;
+      if (!catalogProvider) return null;
+
+      const key = `${catalogProvider.category}|${catalogProvider.name}|${catalogProvider.domain}`;
+      let pending = upsertsByProvider.get(key);
+      if (!pending) {
+        pending = upsertCatalogProvider(catalogProvider).then((ref) => ref.id);
+        upsertsByProvider.set(key, pending);
       }
-      return null;
+      return pending;
     }),
   );
 

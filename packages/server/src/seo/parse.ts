@@ -23,45 +23,38 @@ import { resolveUrlMaybe, sanitizeText } from "./utils";
  */
 export function parseHtmlMeta(html: string, finalUrl: string): SeoMeta {
   const $ = cheerio.load(html);
-
-  const titleTag = sanitizeText($("title").first().text());
-  const descriptionTag = sanitizeText($('meta[name="description"]').attr("content") ?? "");
-  const canonicalHref = $('link[rel="canonical"]').attr("href") ?? "";
-  const robotsMeta = $('meta[name="robots"]').attr("content") ?? "";
-  const generatorMeta = $('meta[name="generator"]').attr("content") ?? "";
-  const authorMeta = $('meta[name="author"]').attr("content") ?? "";
-  const keywordsMeta = $('meta[name="keywords"]').attr("content") ?? "";
+  const meta = indexMetaTags($);
 
   const og: OpenGraphMeta = {
-    title: pickMetaAttr($, "property", "og:title"),
-    description: pickMetaAttr($, "property", "og:description"),
-    type: pickMetaAttr($, "property", "og:type"),
-    url: pickMetaAttr($, "property", "og:url"),
-    siteName: pickMetaAttr($, "property", "og:site_name"),
+    title: pickMeta(meta, "og:title"),
+    description: pickMeta(meta, "og:description"),
+    type: pickMeta(meta, "og:type"),
+    url: pickMeta(meta, "og:url"),
+    siteName: pickMeta(meta, "og:site_name"),
     images: Array.from(
       new Set([
-        ...collectMetaMulti($, "property", "og:image"),
-        ...collectMetaMulti($, "property", "og:image:url"),
-        ...collectMetaMulti($, "property", "og:image:secure_url"),
+        ...collectMeta(meta, "og:image"),
+        ...collectMeta(meta, "og:image:url"),
+        ...collectMeta(meta, "og:image:secure_url"),
       ]),
     ),
   };
 
   const tw: TwitterMeta = {
-    card: pickMetaAttr($, "name", "twitter:card"),
-    title: pickMetaAttr($, "name", "twitter:title"),
-    description: pickMetaAttr($, "name", "twitter:description"),
-    image: pickMetaAttr($, "name", "twitter:image") ?? pickMetaAttr($, "name", "twitter:image:src"),
+    card: pickMeta(meta, "twitter:card"),
+    title: pickMeta(meta, "twitter:title"),
+    description: pickMeta(meta, "twitter:description"),
+    image: pickMeta(meta, "twitter:image") ?? pickMeta(meta, "twitter:image:src"),
   };
 
   const general: GeneralMeta = {
-    title: titleTag || undefined,
-    description: descriptionTag || undefined,
-    keywords: sanitizeText(keywordsMeta) || undefined,
-    author: sanitizeText(authorMeta) || undefined,
-    canonical: sanitizeText(canonicalHref) || undefined,
-    generator: sanitizeText(generatorMeta) || undefined,
-    robots: sanitizeText(robotsMeta) || undefined,
+    title: sanitizeText($("title").first().text()) || undefined,
+    description: pickMeta(meta, "description"),
+    keywords: pickMeta(meta, "keywords"),
+    author: pickMeta(meta, "author"),
+    canonical: findCanonicalHref($) || undefined,
+    generator: pickMeta(meta, "generator"),
+    robots: pickMeta(meta, "robots"),
   };
 
   general.canonical = resolveUrlMaybe(general.canonical, finalUrl) ?? general.canonical;
@@ -80,28 +73,66 @@ export function parseHtmlMeta(html: string, finalUrl: string): SeoMeta {
 }
 
 /**
- * Extract a single meta tag attribute value.
+ * Index every meta tag by its `name` or `property` key.
+ *
+ * Keys are lowercased because HTML attribute values are case-sensitive to CSS
+ * selectors but not to publishers, and OpenGraph tags are commonly authored
+ * with `name` instead of `property` (and vice versa for Twitter tags).
  */
-function pickMetaAttr(
-  $: cheerio.CheerioAPI,
-  attr: "name" | "property",
-  key: string,
-): string | undefined {
-  const value = $(`meta[${attr}="${key}"]`).attr("content") ?? "";
-  const s = sanitizeText(value);
-  return s === "" ? undefined : s;
+function indexMetaTags($: cheerio.CheerioAPI): Map<string, string[]> {
+  const index = new Map<string, string[]>();
+
+  $("meta").each((_i, el) => {
+    const attribs = el.attribs ?? {};
+    const key = (attribs.name ?? attribs.property ?? "").trim().toLowerCase();
+    if (!key) return;
+
+    const value = sanitizeText(attribs.content ?? "");
+    if (!value) return;
+
+    const existing = index.get(key);
+    if (existing) {
+      existing.push(value);
+    } else {
+      index.set(key, [value]);
+    }
+  });
+
+  return index;
 }
 
 /**
- * Collect multiple meta tag values (e.g., multiple og:image tags).
+ * Read the first value for a meta key.
  */
-function collectMetaMulti($: cheerio.CheerioAPI, attr: "name" | "property", key: string): string[] {
-  const out: string[] = [];
-  $(`meta[${attr}="${key}"]`).each((_i, el) => {
-    const v = sanitizeText($(el).attr("content") ?? "");
-    if (v) out.push(v);
+function pickMeta(index: Map<string, string[]>, key: string): string | undefined {
+  return index.get(key)?.[0];
+}
+
+/**
+ * Read every value for a meta key (e.g., multiple og:image tags).
+ */
+function collectMeta(index: Map<string, string[]>, key: string): string[] {
+  return index.get(key) ?? [];
+}
+
+/**
+ * Find the canonical link href, tolerating case and multi-token `rel` values.
+ */
+function findCanonicalHref($: cheerio.CheerioAPI): string {
+  let href = "";
+
+  $("link[rel]").each((_i, el) => {
+    if (href) return;
+    const rel = el.attribs?.rel ?? "";
+    const isCanonical = rel
+      .split(/\s+/)
+      .some((token) => token.trim().toLowerCase() === "canonical");
+    if (isCanonical) {
+      href = sanitizeText(el.attribs?.href ?? "");
+    }
   });
-  return out;
+
+  return href;
 }
 
 /**
@@ -133,14 +164,5 @@ export function selectPreview(meta: SeoMeta | null, finalUrl: string): SeoPrevie
  */
 export function extractMetaTagValues(html: string, metaName: string): string[] {
   const $ = cheerio.load(html);
-  const values: string[] = [];
-
-  $(`meta[name="${metaName}"]`).each((_, element) => {
-    const content = $(element).attr("content")?.trim();
-    if (content) {
-      values.push(content);
-    }
-  });
-
-  return values;
+  return collectMeta(indexMetaTags($), metaName.trim().toLowerCase());
 }

@@ -25,20 +25,6 @@ function addSeconds(base: Date, seconds: number): Date {
   return new Date(base.getTime() + seconds * 1000);
 }
 
-function clampFuture(min: Date, max: Date, now: Date): Date {
-  const nowMs = now.getTime();
-  const minMs = min.getTime();
-  const maxMs = max.getTime();
-  const candidate = Math.max(minMs, nowMs + 60_000);
-  if (candidate <= maxMs) {
-    return new Date(candidate);
-  }
-  if (maxMs >= minMs) {
-    return new Date(maxMs);
-  }
-  return new Date(minMs);
-}
-
 /**
  * TTL for registration data.
  * Revalidates more aggressively near expiry (within 7 days).
@@ -67,16 +53,18 @@ export function ttlForDnsRecord(now: Date, ttlSeconds?: number | null): Date {
 
 /**
  * TTL for certificates.
- * Sliding window with aggressive checks near expiry.
+ *
+ * Normally revalidates once per window. As `validTo` approaches, the TTL
+ * shrinks so the certificate is re-checked before it enters the expiry
+ * buffer, never sooner than the minimum check interval.
  */
 export function ttlForCertificates(now: Date, validTo: Date): Date {
   const window = addSeconds(now, TTL_CERTIFICATES_WINDOW);
   const revalidateBefore = new Date(validTo.getTime() - TTL_CERTIFICATES_EXPIRY_BUFFER * 1000);
-  return clampFuture(
-    addSeconds(now, TTL_CERTIFICATES_MIN),
-    new Date(Math.min(window.getTime(), revalidateBefore.getTime())),
-    now,
-  );
+  const floor = addSeconds(now, TTL_CERTIFICATES_MIN);
+
+  const target = Math.min(window.getTime(), revalidateBefore.getTime());
+  return new Date(Math.max(target, floor.getTime()));
 }
 
 export function ttlForHeaders(now: Date): Date {

@@ -176,6 +176,16 @@ describe("robots.txt parsing", () => {
     expect(Array.isArray(robots.groups)).toBe(true);
   });
 
+  it("measures the size cap in bytes, not characters", () => {
+    // Each emoji is 4 UTF-8 bytes, so 40 characters exceed a 100 byte cap
+    const padding = "\u{1F600}".repeat(40);
+    const text = `User-agent: *\nDisallow: /a\n# ${padding}\nDisallow: /b`;
+    const robots = parseRobotsTxt(text, { sizeCapBytes: 100 });
+    const [group] = robots.groups;
+    expect(group.rules.some((r) => r.value === "/a")).toBe(true);
+    expect(group.rules.some((r) => r.value === "/b")).toBe(false);
+  });
+
   it("preserves wildcard and anchor characters in values", () => {
     const text = ["User-agent:*", "Disallow: /*.php$", "Allow: /search/*"].join("\n");
     const robots = parseRobotsTxt(text);

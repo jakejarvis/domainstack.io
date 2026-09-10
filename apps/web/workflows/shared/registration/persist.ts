@@ -16,7 +16,8 @@ import type { RegistrationResponse } from "@domainstack/types";
  *
  * Creates/updates domain record. Returns lastAccessedAt for use in
  * scheduling revalidation at the workflow level.
- * Only call this for registered domains (isRegistered: true).
+ * Handles registered and unregistered domains alike, so a domain that drops
+ * updates its cached row instead of keeping the last registered snapshot.
  *
  * @param domain - The domain name
  * @param response - The normalized registration response

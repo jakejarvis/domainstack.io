@@ -29,7 +29,7 @@ import { lookupWhois as lookup } from "../whois";
 // Types
 // ============================================================================
 
-export type RegistrationError = "unsupported_tld" | "not_found" | "lookup_failed";
+export type RegistrationError = "unsupported_tld" | "lookup_failed";
 
 export type RegistrationResult =
   | { success: true; data: RegistrationResponse }
@@ -63,10 +63,8 @@ export async function fetchRegistration(domain: string): Promise<RegistrationRes
     catalog,
   });
 
-  // 4. Persist (only for registered domains)
-  if (normalized.isRegistered) {
-    await persistRegistration(domain, normalized);
-  }
+  // 4. Persist (registered and unregistered alike, so drops are cached too)
+  await persistRegistration(domain, normalized);
 
   return { success: true, data: normalized };
 }

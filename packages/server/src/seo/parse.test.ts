@@ -1,7 +1,7 @@
 /* @vitest-environment node */
 import { describe, expect, it } from "vitest";
 
-import { parseHtmlMeta, selectPreview } from "./parse";
+import { extractMetaTagValues, parseHtmlMeta, selectPreview } from "./parse";
 import { resolveUrlMaybe, sanitizeText } from "./utils";
 
 describe("seo html/meta parsing", () => {
@@ -52,6 +52,32 @@ describe("seo html/meta parsing", () => {
     expect(preview.canonicalUrl).toBe("https://example.test/about");
   });
 
+  it("reads meta keys regardless of attribute name or case", () => {
+    const html = `<!doctype html><html><head>
+      <title>Case Test</title>
+      <meta NAME="Description" CONTENT="upper attrs">
+      <meta name="OG:Image" content="/og.png">
+      <meta property="Twitter:Title" content="TW Title">
+      <link REL="Canonical" href="/canon">
+    </head></html>`;
+
+    const meta = parseHtmlMeta(html, "https://ex.test/page");
+    expect(meta.general.description).toBe("upper attrs");
+    expect(meta.general.canonical).toBe("https://ex.test/canon");
+    expect(meta.openGraph.images?.[0]).toBe("https://ex.test/og.png");
+    expect(meta.twitter.title).toBe("TW Title");
+    expect(selectPreview(meta, "https://ex.test/").image).toBe("https://ex.test/og.png");
+  });
+
+  it("ignores non-canonical rel values", () => {
+    const html = `<!doctype html><html><head>
+      <link rel="alternate" href="/alt">
+      <link rel="stylesheet canonical-ish" href="/nope">
+    </head></html>`;
+    const meta = parseHtmlMeta(html, "https://ex.test/page");
+    expect(meta.general.canonical).toBeUndefined();
+  });
+
   it("falls back in selectPreview and baseUrl when fields are missing", () => {
     const html = `<!doctype html><html><head>
       <title>Title Only</title>
@@ -63,6 +89,21 @@ describe("seo html/meta parsing", () => {
     expect(preview.description).toBe("General");
     expect(preview.image).toBeNull();
     expect(preview.canonicalUrl).toBe("https://ex.org/");
+  });
+});
+
+describe("extractMetaTagValues", () => {
+  it("collects every matching tag, case-insensitively", () => {
+    const html = `<html><head>
+      <meta name="domainstack-verify" content="token-a">
+      <meta NAME="DomainStack-Verify" content="token-b">
+      <meta name="other" content="token-c">
+    </head></html>`;
+    expect(extractMetaTagValues(html, "domainstack-verify")).toEqual(["token-a", "token-b"]);
+  });
+
+  it("returns an empty array when nothing matches", () => {
+    expect(extractMetaTagValues("<html><head></head></html>", "domainstack-verify")).toEqual([]);
   });
 });
 

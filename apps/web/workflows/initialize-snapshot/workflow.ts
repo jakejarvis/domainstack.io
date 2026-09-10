@@ -76,9 +76,8 @@ export async function initializeSnapshotWorkflow(
   let registrationData: RegistrationResponse | null = null;
   if (registrationResult?.success) {
     registrationData = await normalizeAndBuildResponseStep(registrationResult.data.recordJson);
-    if (registrationData.isRegistered) {
-      await optionalCall(persistRegistrationStep(domainName, registrationData));
-    }
+    // Persist registered and unregistered alike, so a drop updates the cache
+    await optionalCall(persistRegistrationStep(domainName, registrationData));
   }
 
   // Persist DNS (always succeeds or throws)

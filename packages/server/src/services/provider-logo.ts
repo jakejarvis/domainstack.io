@@ -6,7 +6,12 @@
 
 import { upsertProviderLogo } from "@domainstack/db/queries/provider-logos";
 import { optimizeImage, storeImage } from "@domainstack/image";
-import { safeFetch } from "@domainstack/safe-fetch";
+import {
+  isExpectedDnsError,
+  safeFetch,
+  SafeFetchError,
+  type SafeFetchErrorCode,
+} from "@domainstack/safe-fetch";
 import type { ProviderLogoResponse } from "@domainstack/types";
 
 import { ttlForProviderIcon } from "../ttl";
@@ -20,7 +25,6 @@ export type ProviderLogoResult = { success: true; data: ProviderLogoResponse };
 interface IconFetchSuccess {
   success: true;
   imageBase64: string;
-  contentType: string | null;
   sourceName: string;
 }
 
@@ -108,7 +112,7 @@ async function fetchIconFromSources(domain: string): Promise<IconFetchResult> {
   const logoDevKey = process.env.LOGO_DEV_PUBLISHABLE_KEY;
   if (logoDevKey) {
     sources.push({
-      url: `https://img.logo.dev/${domain}?token=${logoDevKey}&size=${DEFAULT_SIZE}&format=png&fallback=404`,
+      url: `https://img.logo.dev/${encodeURIComponent(domain)}?token=${encodeURIComponent(logoDevKey)}&size=${DEFAULT_SIZE}&format=png&fallback=404`,
       name: "logo_dev",
       headers: {
         Referer: process.env.NEXT_PUBLIC_BASE_URL ?? "",
@@ -119,11 +123,11 @@ async function fetchIconFromSources(domain: string): Promise<IconFetchResult> {
   // Fallback to standard favicon sources
   sources.push(
     {
-      url: `https://www.google.com/s2/favicons?domain=${domain}&sz=${DEFAULT_SIZE}`,
+      url: `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=${DEFAULT_SIZE}`,
       name: "google",
     },
     {
-      url: `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+      url: `https://icons.duckduckgo.com/ip3/${encodeURIComponent(domain)}.ico`,
       name: "duckduckgo",
     },
     {
@@ -169,7 +173,6 @@ async function fetchIconFromSources(domain: string): Promise<IconFetchResult> {
       return {
         success: true,
         imageBase64: asset.buffer.toString("base64"),
-        contentType: asset.contentType ?? null,
         sourceName: source.name,
       };
     } catch (err) {
@@ -182,21 +185,21 @@ async function fetchIconFromSources(domain: string): Promise<IconFetchResult> {
   return { success: false, allNotFound };
 }
 
+const DEFINITIVE_CODES = new Set<SafeFetchErrorCode>([
+  "host_blocked",
+  "host_not_allowed",
+  "private_ip",
+  "protocol_not_allowed",
+  "invalid_url",
+]);
+
 function isDefinitiveNotFoundError(err: unknown): boolean {
-  if (!err || typeof err !== "object") return false;
-  const maybe = err as { name?: unknown; code?: unknown };
-  if (maybe.name !== "SafeFetchError") return false;
+  if (!(err instanceof SafeFetchError)) return false;
 
-  const definitiveCodes = new Set([
-    "dns_error",
-    "host_blocked",
-    "host_not_allowed",
-    "private_ip",
-    "protocol_not_allowed",
-    "invalid_url",
-  ]);
+  // safe-fetch also raises dns_error for lookup timeouts, which are transient.
+  if (err.code === "dns_error") return isExpectedDnsError(err);
 
-  return typeof maybe.code === "string" && definitiveCodes.has(maybe.code);
+  return DEFINITIVE_CODES.has(err.code);
 }
 
 // ============================================================================
