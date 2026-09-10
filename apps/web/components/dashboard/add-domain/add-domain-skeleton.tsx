@@ -12,20 +12,28 @@ export function AddDomainSkeleton() {
         <Skeleton className="h-6 w-32" />
         <Skeleton className="h-5 w-48" />
       </div>
-      {/* StepperNav: mb-1 py-5, indicators only (labels are tooltips) */}
+      {/* StepperNav: mb-1 py-5, indicators only (labels are tooltips).
+          Mirrors the `auto 1fr auto 1fr auto` grid the real nav lays out. */}
       <div className="mb-1 flex items-center py-5">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="flex flex-1 items-center">
-            <Skeleton className="size-8 rounded-full" />
-            {i < 3 ? <Skeleton className="mx-2 h-px flex-1" /> : null}
-          </div>
-        ))}
+        <Skeleton className="size-8 rounded-full" />
+        <div className="mx-3 h-0.5 flex-1 rounded-full bg-muted" />
+        <Skeleton className="size-8 rounded-full" />
+        <div className="mx-3 h-0.5 flex-1 rounded-full bg-muted" />
+        <Skeleton className="size-8 rounded-full" />
       </div>
       {/* Step 1: min-h-[200px] with description + input, footer mt-6 */}
       <div className="flex min-h-[200px] flex-col justify-between">
-        <div className="space-y-2">
-          <Skeleton className="h-5 w-full" />
-          <Skeleton className="h-5 w-3/4" />
+        {/* Field is `flex flex-col gap-3`: description then input */}
+        <div className="flex flex-col gap-3">
+          {/* FieldDescription — two lines of text-sm/leading-normal */}
+          <div className="text-sm leading-normal">
+            <div className="flex h-[1lh] items-center">
+              <Skeleton className="h-3.5 w-full" />
+            </div>
+            <div className="flex h-[1lh] items-center">
+              <Skeleton className="h-3.5 w-3/4" />
+            </div>
+          </div>
           <Skeleton className="h-9 w-full rounded-md" />
         </div>
         <div className="mt-6 flex w-full items-center justify-end">

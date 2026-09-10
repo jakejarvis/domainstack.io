@@ -234,21 +234,22 @@ export function LinkedAccountsSkeleton({ className }: { className?: string }) {
 export function SettingsSkeletonTabsList({ className }: { className?: string }) {
   return (
     <div className={cn("w-full", className)}>
-      <div className="flex h-10 w-full items-center border-b border-muted">
-        {/* Subscription Tab (Active) */}
-        <div className="flex h-10 items-center gap-2 border-b border-foreground px-3">
+      <div className="flex h-10 w-full items-center gap-1.5 border-b border-muted">
+        {/* Subscription Tab (active) — indicator is the 2px `bg-foreground` underline */}
+        <div className="relative flex h-full items-center gap-2 px-2">
           <Skeleton className="size-4 rounded-sm" />
           <Skeleton className="h-3.5 w-[76px]" />
+          <div className="absolute inset-x-0 bottom-0 h-0.5 bg-foreground" />
         </div>
 
         {/* Notifications Tab */}
-        <div className="flex h-10 items-center gap-2 px-3">
+        <div className="flex h-full items-center gap-2 px-2">
           <Skeleton className="size-4 rounded-sm" />
           <Skeleton className="h-3.5 w-[76px]" />
         </div>
 
         {/* Account Tab */}
-        <div className="flex h-10 items-center gap-2 px-3">
+        <div className="flex h-full items-center gap-2 px-2">
           <Skeleton className="size-4 rounded-sm" />
           <Skeleton className="h-3.5 w-[52px]" />
         </div>
@@ -277,7 +278,7 @@ export function SettingsPageSkeleton() {
     <div className="space-y-6">
       <div className="space-y-1">
         <Skeleton className="h-7 w-28" />
-        <Skeleton className="h-5 w-80" />
+        <Skeleton className="h-6 w-80" />
       </div>
       <Card className="overflow-hidden border border-black/10 bg-background/80 p-3 shadow-xl backdrop-blur-xl dark:border-white/10">
         <SettingsSkeletonTabsList />

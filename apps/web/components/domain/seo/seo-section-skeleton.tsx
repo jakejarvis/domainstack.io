@@ -1,13 +1,13 @@
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { KeyValueSkeleton } from "@/components/domain/key-value-skeleton";
 import { PillCountSkeleton } from "@/components/domain/pill-count";
-import { ReportSectionSkeleton } from "@/components/domain/report-section-skeleton";
+import { ReportSection } from "@/components/domain/report-section";
 import { sections } from "@/lib/constants/sections";
 import { Skeleton } from "@domainstack/ui/skeleton";
 
 export function SeoSectionSkeleton() {
   return (
-    <ReportSectionSkeleton {...sections.seo}>
+    <ReportSection isLoading {...sections.seo}>
       <div className="space-y-4">
         {/* Meta Tags */}
         <div className="space-y-3">
@@ -29,7 +29,7 @@ export function SeoSectionSkeleton() {
             Open Graph
           </div>
           {/* Tabs row skeleton — TabsList is h-11 w-full with default variant chrome */}
-          <div className="flex h-11 w-full items-center gap-1 rounded-lg border border-black/8 bg-muted/40 p-1 backdrop-blur-sm dark:border-white/10">
+          <div className="flex h-11 w-full items-center rounded-lg border border-black/8 bg-muted/40 p-1 backdrop-blur-sm dark:border-white/10">
             {[1, 2, 3, 4, 5].map((id) => (
               <Skeleton key={`og-tab-${id}`} className="h-full flex-1 basis-0 rounded-md" />
             ))}
@@ -43,11 +43,14 @@ export function SeoSectionSkeleton() {
                 </div>
               </div>
               <div className="p-3">
-                <Skeleton className="h-[11px] w-24" />
-                <div className="mt-0.5">
+                {/* hostname / title / description line boxes from TwitterPreview */}
+                <div className="flex h-[1lh] items-center text-[11px]">
+                  <Skeleton className="h-[11px] w-24" />
+                </div>
+                <div className="mt-0.5 flex h-[1lh] items-center text-[15px]">
                   <Skeleton className="h-[15px] w-3/4" />
                 </div>
-                <div className="mt-0.5">
+                <div className="mt-0.5 flex h-[1lh] items-center text-[13px]">
                   <Skeleton className="h-[13px] w-full" />
                 </div>
               </div>
@@ -115,6 +118,6 @@ export function SeoSectionSkeleton() {
           </div>
         </div>
       </div>
-    </ReportSectionSkeleton>
+    </ReportSection>
   );
 }

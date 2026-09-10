@@ -25,14 +25,18 @@ export function KeyValueSkeleton({
             {label}
           </div>
         ) : null}
-        <div className="inline-flex min-w-0 items-center gap-1.5">
+        {/* `h-[1lh]` reserves the same line box as KeyValue's `text-[13px]` value row */}
+        <div className="inline-flex h-[1lh] min-w-0 items-center gap-1.5 text-[13px]">
           {withLeading && <Skeleton className="size-4 shrink-0 rounded" />}
           <Skeleton className={cn("h-4 shrink-0", widthClass)} />
           {withSuffix && <Skeleton className="h-3 w-15 shrink-0" />}
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-2">
-        {withTrailing && <Skeleton className={cn("rounded-md", trailingClassName ?? "size-8")} />}
+        {/* Default mirrors CopyButton: `size-icon-sm` with its `-mr-1` nudge */}
+        {withTrailing && (
+          <Skeleton className={cn("rounded-md", trailingClassName ?? "-mr-1 size-8")} />
+        )}
       </div>
     </div>
   );

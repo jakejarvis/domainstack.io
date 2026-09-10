@@ -18,16 +18,16 @@ function HeaderSkeleton() {
       <div className="flex min-w-0 items-center gap-2">
         <Skeleton className="size-5 shrink-0 rounded-xs" />
         <Skeleton className="h-7 w-38 rounded-sm" />
-        <Skeleton className="ml-0.5 size-3.5 shrink-0 rounded-full" />
+        <Skeleton className="mr-3 ml-0.5 size-3.5 shrink-0 rounded-full" />
       </div>
 
       {/* Right: Track button + Export button + Tools dropdown */}
       {/* Buttons show icon-only on mobile, icon+text on desktop (default h-9) */}
       <div className="flex shrink-0 items-center gap-2">
         {/* Track button: icon on mobile, icon+"Track" on desktop */}
-        <Skeleton className="h-9 w-9 rounded-md sm:w-[5.75rem]" />
+        <Skeleton className="h-9 w-9 rounded-md sm:w-[86px]" />
         {/* Export button: icon on mobile, icon+"Export" on desktop */}
-        <Skeleton className="h-9 w-9 rounded-md sm:w-[6.5rem]" />
+        <Skeleton className="h-9 w-9 rounded-md sm:w-[93px]" />
         {/* Tools dropdown: always icon-only (size="icon") */}
         <Skeleton className="size-9 rounded-md" />
       </div>
@@ -65,13 +65,14 @@ function SectionNavSkeleton() {
       >
         {/* Skeleton tabs - horizontally scrollable on mobile, centered on desktop */}
         <div className="no-scrollbar flex flex-1 items-center gap-1 overflow-x-auto px-1 md:justify-center">
+          {/* Widths approximate each SectionNav tab: icon + label at `text-[13px]` */}
           {[
-            { key: "overview", w: 125 },
-            { key: "dns", w: 140 },
-            { key: "ssl", w: 130 },
-            { key: "whois", w: 145 },
-            { key: "headers", w: 135 },
-            { key: "seo", w: 130 },
+            { key: "registration", w: 117 },
+            { key: "hosting", w: 139 },
+            { key: "dns", w: 124 },
+            { key: "certificates", w: 142 },
+            { key: "headers", w: 129 },
+            { key: "seo", w: 122 },
           ].map(({ key, w }) => (
             <Skeleton key={key} className="h-8 shrink-0 rounded-md" style={{ width: w }} />
           ))}
