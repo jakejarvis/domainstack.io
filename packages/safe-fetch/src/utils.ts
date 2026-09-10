@@ -64,15 +64,18 @@ export function sleep(ms: number, signal?: AbortSignal): Promise<void> {
       return;
     }
 
-    const timeoutId = setTimeout(resolve, ms);
+    const onAbort = () => {
+      clearTimeout(timeoutId);
+      reject(new Error("Aborted"));
+    };
 
-    signal?.addEventListener(
-      "abort",
-      () => {
-        clearTimeout(timeoutId);
-        reject(new Error("Aborted"));
-      },
-      { once: true },
-    );
+    const timeoutId = setTimeout(() => {
+      // Detach so repeated sleeps on one long-lived signal do not accumulate
+      // listeners (Node warns past ten).
+      signal?.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
+
+    signal?.addEventListener("abort", onAbort, { once: true });
   });
 }

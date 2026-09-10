@@ -55,6 +55,9 @@ export interface SafeFetchOptions {
   /**
    * Custom fetch function (default: globalThis.fetch).
    * Useful for Next.js caching: `fetch: (url, init) => fetch(url, { ...init, next: { revalidate: 3600 } })`
+   *
+   * Must forward `init` verbatim: it carries the `dispatcher` that pins the
+   * connection to the validated addresses. Dropping it reopens DNS rebinding.
    */
   fetch?: typeof globalThis.fetch;
 

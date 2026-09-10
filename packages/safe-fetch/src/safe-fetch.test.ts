@@ -665,6 +665,104 @@ describe("safeFetch", () => {
     });
   });
 
+  describe("connection pinning", () => {
+    it("pins the request to the addresses that were validated", async () => {
+      mockLookupRecords([{ address: "93.184.216.34", family: 4 }]);
+      const mockFetch = createMockFetch(mockResponse("ok", { status: 200 }));
+
+      await safeFetch({
+        url: "https://example.com",
+        userAgent: null,
+        fetch: mockFetch,
+        logger: silentLogger,
+      });
+
+      const init = mockFetch.mock.calls[0][1] as RequestInit & {
+        dispatcher?: { closed: boolean };
+      };
+      expect(init.dispatcher).toBeDefined();
+    });
+  });
+
+  describe("credential headers across redirects", () => {
+    function redirectingFetch(location: string) {
+      let call = 0;
+      return vi.fn<typeof fetch>(async () => {
+        call += 1;
+        return call === 1
+          ? mockResponse("", { status: 302, headers: { location } })
+          : mockResponse("done", { status: 200 });
+      });
+    }
+
+    it("drops Authorization and Cookie when the redirect changes origin", async () => {
+      const mockFetch = redirectingFetch("https://elsewhere.test/next");
+
+      await safeFetch({
+        url: "https://example.com",
+        userAgent: "TestBot/1.0",
+        headers: { Authorization: "Bearer secret", Cookie: "sid=1", Accept: "text/html" },
+        fetch: mockFetch,
+        logger: silentLogger,
+      });
+
+      const second = mockFetch.mock.calls[1][1]?.headers as Record<string, string>;
+      expect(second.Authorization).toBeUndefined();
+      expect(second.Cookie).toBeUndefined();
+      expect(second.Accept).toBe("text/html");
+      expect(second["User-Agent"]).toBe("TestBot/1.0");
+    });
+
+    it("keeps them on a same-origin redirect", async () => {
+      const mockFetch = redirectingFetch("https://example.com/next");
+
+      await safeFetch({
+        url: "https://example.com",
+        userAgent: null,
+        headers: { Authorization: "Bearer secret" },
+        fetch: mockFetch,
+        logger: silentLogger,
+      });
+
+      const second = mockFetch.mock.calls[1][1]?.headers as Record<string, string>;
+      expect(second.Authorization).toBe("Bearer secret");
+    });
+  });
+
+  describe("transport errors", () => {
+    it("maps a network failure to connection_error", async () => {
+      const mockFetch = vi.fn<typeof fetch>(async () => {
+        throw new TypeError("fetch failed");
+      });
+
+      const err = await safeFetch({
+        url: "https://example.com",
+        userAgent: null,
+        fetch: mockFetch,
+        logger: silentLogger,
+      }).catch((e: unknown) => e);
+
+      expect(err).toBeInstanceOf(SafeFetchError);
+      expect((err as SafeFetchError).code).toBe("connection_error");
+    });
+
+    it("maps an aborted request to timeout", async () => {
+      const mockFetch = vi.fn<typeof fetch>(async () => {
+        throw new DOMException("The operation timed out", "TimeoutError");
+      });
+
+      const err = await safeFetch({
+        url: "https://example.com",
+        userAgent: null,
+        fetch: mockFetch,
+        logger: silentLogger,
+      }).catch((e: unknown) => e);
+
+      expect(err).toBeInstanceOf(SafeFetchError);
+      expect((err as SafeFetchError).code).toBe("timeout");
+    });
+  });
+
   describe("response headers", () => {
     it("includes all response headers", async () => {
       const mockFetch = createMockFetch(

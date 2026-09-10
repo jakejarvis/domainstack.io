@@ -64,6 +64,10 @@ export function getThresholdNotificationType(
   thresholds: readonly number[],
   prefix: ExpiryNotificationPrefix,
 ): NotificationType | null {
+  // NaN compares false against every threshold, which would otherwise fall
+  // through to the smallest one and raise the most urgent notification.
+  if (!Number.isFinite(daysRemaining)) return null;
+
   const sorted = [...thresholds].sort((a, b) => a - b);
   for (const threshold of sorted) {
     if (daysRemaining > threshold) continue;
@@ -78,7 +82,8 @@ export function getThresholdNotificationType(
  *
  * @param expirationDate - The expiration date
  * @param now - The current date (defaults to new Date())
- * @returns Number of days remaining (can be negative if expired)
+ * @returns Number of days remaining (negative if expired, `NaN` if the date
+ *          cannot be parsed)
  */
 export function calculateDaysRemaining(
   expirationDate: Date | string,

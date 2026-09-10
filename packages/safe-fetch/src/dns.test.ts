@@ -21,10 +21,17 @@ describe("isExpectedDnsError", () => {
     expect(isExpectedDnsError(err)).toBe(true);
   });
 
-  it("detects EAI_AGAIN errors", () => {
+  it("treats EAI_AGAIN as retryable, not permanent", () => {
     const err = new Error("DNS error");
     (err as NodeJS.ErrnoException).code = "EAI_AGAIN";
-    expect(isExpectedDnsError(err)).toBe(true);
+    expect(isExpectedDnsError(err)).toBe(false);
+  });
+
+  it("treats a nested EAI_AGAIN as retryable", () => {
+    const err = new Error("fetch failed", {
+      cause: Object.assign(new Error("getaddrinfo EAI_AGAIN example.com"), { code: "EAI_AGAIN" }),
+    });
+    expect(isExpectedDnsError(err)).toBe(false);
   });
 
   it("detects nested cause codes", () => {

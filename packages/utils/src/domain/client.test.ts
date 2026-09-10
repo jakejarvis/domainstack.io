@@ -83,3 +83,18 @@ describe("isValidDomain", () => {
     expect(isValidDomain("badend-.test")).toBe(false);
   });
 });
+
+describe("normalizeDomainInput IDN handling", () => {
+  it("punycodes an IDN whether or not a scheme was typed", () => {
+    const expected = "xn--mnchen-3ya.de";
+    expect(normalizeDomainInput("münchen.de")).toBe(expected);
+    expect(normalizeDomainInput("https://münchen.de")).toBe(expected);
+    expect(normalizeDomainInput("http://münchen.de/path?q=1")).toBe(expected);
+    expect(normalizeDomainInput("MÜNCHEN.DE")).toBe(expected);
+  });
+
+  it("produces a value isValidDomain accepts either way", () => {
+    expect(isValidDomain(normalizeDomainInput("https://münchen.de"))).toBe(true);
+    expect(isValidDomain(normalizeDomainInput("münchen.de"))).toBe(true);
+  });
+});

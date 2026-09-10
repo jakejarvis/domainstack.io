@@ -75,7 +75,10 @@ export function isExpectedTlsError(err: unknown): boolean {
 }
 
 /**
- * Check if an error is a DNS-related error.
+ * Check if an error is a permanent DNS failure.
+ *
+ * `EAI_AGAIN` is excluded: getaddrinfo returns it for a *temporary* resolver
+ * failure, so it stays retryable.
  */
 export function isExpectedDnsError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
@@ -87,9 +90,12 @@ export function isExpectedDnsError(err: unknown): boolean {
   const code = anyErr?.cause?.code || anyErr?.code;
   const message = (anyErr?.cause?.message || anyErr?.message || "").toLowerCase();
 
+  if (code === "EAI_AGAIN" || message.includes("eai_again")) {
+    return false;
+  }
+
   return (
     code === "ENOTFOUND" ||
-    code === "EAI_AGAIN" ||
     code === "ENODATA" ||
     code === "ENOENT" ||
     message.includes("getaddrinfo") ||

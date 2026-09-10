@@ -109,7 +109,10 @@ export interface DetectionContext {
  * Evaluate a detection rule against the provided context.
  */
 export function evalRule(rule: Rule, ctx: DetectionContext): boolean {
-  const get = (name: string) => ctx.headers[name.toLowerCase()];
+  const get = (name: string) => {
+    const key = name.toLowerCase();
+    return Object.hasOwn(ctx.headers, key) ? ctx.headers[key] : undefined;
+  };
   const anyDns = (arr: string[], suf: string) =>
     arr.some((h) => h === suf || h.endsWith(`.${suf}`));
   const anyDnsRegex = (arr: string[], pattern: string, flags?: string) => {
@@ -135,8 +138,8 @@ export function evalRule(rule: Rule, ctx: DetectionContext): boolean {
       return typeof v === "string" && v.toLowerCase().includes(rule.substr.toLowerCase());
     }
     case "headerPresent": {
-      const key = rule.name.toLowerCase();
-      return key in ctx.headers;
+      // `in` would also match inherited keys like "constructor" or "toString".
+      return Object.hasOwn(ctx.headers, rule.name.toLowerCase());
     }
     case "mxSuffix": {
       return anyDns(ctx.mx, rule.suffix.toLowerCase());

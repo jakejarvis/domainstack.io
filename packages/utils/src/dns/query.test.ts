@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 /* @vitest-environment node */
 import type { DohProvider } from "@domainstack/types";
 
-import { filterAnswersByType, providerOrderForLookup, queryDohProvider } from "./query";
+import { providerOrderForLookup, queryDohProvider } from "./query";
 
 // Use type assertion for mock provider since DohProvider is a literal union type
 const mockProvider = {
@@ -13,7 +13,9 @@ const mockProvider = {
 } as unknown as DohProvider;
 
 function mockFetchResponse(response: Partial<Response> & { json?: () => Promise<unknown> }) {
-  globalThis.fetch = vi.fn<typeof fetch>().mockResolvedValue(response as Response);
+  globalThis.fetch = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue({ headers: new Headers(), ...response } as Response);
 }
 
 function mockFetchImplementation(implementation: typeof fetch) {
@@ -159,6 +161,7 @@ describe("queryDohProvider", () => {
         typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
       return Promise.resolve({
         ok: true,
+        headers: new Headers(),
         json: () => Promise.resolve({ Status: 0 }),
       } as Response);
     });
@@ -177,6 +180,7 @@ describe("queryDohProvider", () => {
         typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
       return Promise.resolve({
         ok: true,
+        headers: new Headers(),
         json: () => Promise.resolve({ Status: 0 }),
       } as Response);
     });
@@ -192,6 +196,7 @@ describe("queryDohProvider", () => {
       capturedHeaders = options?.headers as Record<string, string>;
       return Promise.resolve({
         ok: true,
+        headers: new Headers(),
         json: () => Promise.resolve({ Status: 0 }),
       } as Response);
     });
@@ -199,46 +204,5 @@ describe("queryDohProvider", () => {
     await queryDohProvider(mockProvider, "example.com", "A");
 
     expect(capturedHeaders.Accept).toBe("application/dns-json");
-  });
-});
-
-describe("filterAnswersByType", () => {
-  it("filters answers to only matching type", () => {
-    const answers = [
-      { name: "example.com", type: 5, TTL: 300, data: "alias.example.com" }, // CNAME
-      { name: "alias.example.com", type: 1, TTL: 300, data: "93.184.216.34" }, // A
-    ];
-
-    const filtered = filterAnswersByType(answers, 1);
-
-    expect(filtered).toHaveLength(1);
-    expect(filtered[0]?.type).toBe(1);
-    expect(filtered[0]?.data).toBe("93.184.216.34");
-  });
-
-  it("returns empty array when no matches", () => {
-    const answers = [{ name: "example.com", type: 5, TTL: 300, data: "alias.example.com" }];
-
-    const filtered = filterAnswersByType(answers, 1);
-
-    expect(filtered).toEqual([]);
-  });
-
-  it("handles empty input array", () => {
-    const filtered = filterAnswersByType([], 1);
-
-    expect(filtered).toEqual([]);
-  });
-
-  it("returns multiple matching answers", () => {
-    const answers = [
-      { name: "example.com", type: 1, TTL: 300, data: "93.184.216.34" },
-      { name: "example.com", type: 1, TTL: 300, data: "93.184.216.35" },
-      { name: "example.com", type: 28, TTL: 300, data: "2606:2800:220:1::" }, // AAAA
-    ];
-
-    const filtered = filterAnswersByType(answers, 1);
-
-    expect(filtered).toHaveLength(2);
   });
 });

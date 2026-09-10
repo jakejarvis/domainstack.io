@@ -77,6 +77,33 @@ describe("resolvePublicHost", () => {
   });
 });
 
+describe("IPv6 literals", () => {
+  it("accepts a public IPv6 literal in URL bracket form", async () => {
+    const addresses = await resolvePublicHost("[2606:4700::1111]");
+    expect(addresses).toEqual([{ address: "2606:4700::1111", family: 6 }]);
+    expect(mockLookup).not.toHaveBeenCalled();
+  });
+
+  it("blocks IPv6 loopback in bracket form as a private IP", async () => {
+    await expect(resolvePublicHost("[::1]")).rejects.toMatchObject({ code: "private_ip" });
+    expect(mockLookup).not.toHaveBeenCalled();
+  });
+
+  it("blocks a link-local literal carrying a zone index", async () => {
+    await expect(resolvePublicHost("[fe80::1%25eth0]")).rejects.toMatchObject({
+      code: "private_ip",
+    });
+    expect(mockLookup).not.toHaveBeenCalled();
+  });
+
+  it("rejects an unparseable IP literal instead of resolving it", async () => {
+    await expect(resolvePublicHost("[::zz]")).rejects.toMatchObject({
+      code: "invalid_url",
+    });
+    expect(mockLookup).not.toHaveBeenCalled();
+  });
+});
+
 describe("createPinnedLookup", () => {
   it("returns the pinned addresses when all is requested", () => {
     const lookupFn = createPinnedLookup([

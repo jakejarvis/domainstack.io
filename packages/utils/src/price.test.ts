@@ -19,3 +19,11 @@ describe("formatPrice", () => {
     expect(eur).not.toContain("$");
   });
 });
+
+describe("formatPrice fallback", () => {
+  it("does not imply USD when the currency code is unsupported", () => {
+    const result = formatPrice("9.99", { currency: "NOT_A_CURRENCY" });
+    expect(result).toBe("9.99 NOT_A_CURRENCY");
+    expect(result).not.toContain("$");
+  });
+});

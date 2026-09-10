@@ -104,3 +104,17 @@ describe("calculateDaysRemaining", () => {
     expect(calculateDaysRemaining(justOverTomorrow, now)).toBe(1);
   });
 });
+
+describe("getThresholdNotificationType with an unusable date", () => {
+  it("returns null instead of the most urgent threshold for NaN", () => {
+    expect(getThresholdNotificationType(Number.NaN, [30, 14, 7, 1], "domain_expiry")).toBeNull();
+    expect(
+      getThresholdNotificationType(Number.POSITIVE_INFINITY, [30, 14, 7, 1], "domain_expiry"),
+    ).toBeNull();
+  });
+
+  it("returns null for an unparseable expiration date end to end", () => {
+    const days = calculateDaysRemaining("not-a-date");
+    expect(getThresholdNotificationType(days, [30, 14, 7, 1], "domain_expiry")).toBeNull();
+  });
+});

@@ -2,6 +2,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  catalogRuleMatchesDiscovered,
   detectCertificateAuthority,
   detectDnsProvider,
   detectEmailProvider,
@@ -214,5 +215,32 @@ describe("provider detection", () => {
     expect(detectDnsProvider(["ns1.example.com"], [])).toBeNull();
     expect(detectRegistrar("Some Registrar", [])).toBeNull();
     expect(detectCertificateAuthority("Some CA", [])).toBeNull();
+  });
+});
+
+describe("catalogRuleMatchesDiscovered normalization", () => {
+  const tuta: Provider = {
+    name: "Tuta",
+    domain: "tutanota.de",
+    category: "email",
+    rule: { kind: "mxSuffix", suffix: "tutanota.de" },
+  };
+
+  it("matches regardless of case or a trailing root label", () => {
+    expect(catalogRuleMatchesDiscovered(tuta, { name: "mail.tutanota.de", domain: null })).toBe(
+      true,
+    );
+    expect(catalogRuleMatchesDiscovered(tuta, { name: "MAIL.Tutanota.DE", domain: null })).toBe(
+      true,
+    );
+    expect(catalogRuleMatchesDiscovered(tuta, { name: "mail.tutanota.de.", domain: null })).toBe(
+      true,
+    );
+  });
+
+  it("normalizes the discovered domain too", () => {
+    expect(
+      catalogRuleMatchesDiscovered(tuta, { name: "unrelated.test", domain: "Tutanota.DE." }),
+    ).toBe(true);
   });
 });

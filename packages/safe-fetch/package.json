@@ -18,7 +18,8 @@
     "@domainstack/constants": "workspace:*",
     "@domainstack/logger": "workspace:*",
     "@domainstack/utils": "workspace:*",
-    "ipaddr.js": "^2.5.0"
+    "ipaddr.js": "^2.5.0",
+    "undici": "^7.29.1"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",

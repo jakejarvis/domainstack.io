@@ -5,8 +5,6 @@
  * (HTTP headers, DNS records, certificate issuers, registrar names).
  */
 
-// Default catalog
-export * from "./catalog";
 // Detection functions
 export * from "./detection";
 // Catalog parsing and types

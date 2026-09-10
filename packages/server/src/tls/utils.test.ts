@@ -116,10 +116,10 @@ describe("isExpectedDnsError", () => {
     expect(isExpectedDnsError(err)).toBe(true);
   });
 
-  it("detects EAI_AGAIN errors", () => {
+  it("treats EAI_AGAIN as retryable, not permanent", () => {
     const err = new Error("DNS error");
     (err as unknown as { code: string }).code = "EAI_AGAIN";
-    expect(isExpectedDnsError(err)).toBe(true);
+    expect(isExpectedDnsError(err)).toBe(false);
   });
 
   it("detects ENODATA when A/AAAA records are missing", () => {

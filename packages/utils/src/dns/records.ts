@@ -87,26 +87,33 @@ export function sortDnsRecordsForType(records: DnsRecord[], type: DnsRecordType)
 /**
  * Sort DNS records by type order, then by type-specific sorting rules.
  * Used for consistent display ordering in API responses.
+ *
+ * `order` also acts as a filter: records whose type it does not name are
+ * omitted. A type repeated in `order` is emitted once.
  */
 export function sortDnsRecordsByType(
   records: DnsRecord[],
   order: readonly DnsRecordType[],
 ): DnsRecord[] {
-  const byType: Record<DnsRecordType, DnsRecord[]> = {
-    A: [],
-    AAAA: [],
-    MX: [],
-    TXT: [],
-    NS: [],
-  };
+  const byType = new Map<DnsRecordType, DnsRecord[]>();
 
   for (const r of records) {
-    byType[r.type].push(r);
+    const bucket = byType.get(r.type);
+    if (bucket) {
+      bucket.push(r);
+    } else {
+      byType.set(r.type, [r]);
+    }
   }
 
   const sorted: DnsRecord[] = [];
+  const emitted = new Set<DnsRecordType>();
   for (const t of order) {
-    sorted.push(...sortDnsRecordsForType(byType[t], t));
+    if (emitted.has(t)) continue;
+    emitted.add(t);
+
+    const bucket = byType.get(t);
+    if (bucket) sorted.push(...sortDnsRecordsForType(bucket, t));
   }
 
   return sorted;

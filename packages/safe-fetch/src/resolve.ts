@@ -4,10 +4,17 @@ import type { LookupFunction } from "node:net";
 
 import * as ipaddr from "ipaddr.js";
 
-import type { ResolvedIp } from "./dns";
 import { SafeFetchError } from "./errors";
 import { isPrivateIp } from "./ip";
 import type { SafeFetchLogger } from "./types";
+
+/**
+ * A resolved IP address with family (IPv4 or IPv6).
+ */
+export interface ResolvedIp {
+  address: string;
+  family: 4 | 6;
+}
 
 const BLOCKED_HOSTNAMES = new Set(["localhost"]);
 const BLOCKED_SUFFIXES = [".local", ".internal", ".localhost"];
@@ -19,7 +26,10 @@ export interface ResolvePublicHostOptions {
 }
 
 function normalizeHostname(hostname: string): string {
-  return hostname.trim().toLowerCase().replace(/\.+$/, "");
+  const trimmed = hostname.trim().toLowerCase().replace(/\.+$/, "");
+  // `URL.hostname` keeps the brackets around an IPv6 literal ("[::1]"), but
+  // both ipaddr.js and dns.lookup want the bare address.
+  return trimmed.startsWith("[") && trimmed.endsWith("]") ? trimmed.slice(1, -1) : trimmed;
 }
 
 /**
@@ -88,6 +98,12 @@ export async function resolvePublicHost(
 
   if (isBlockedHostname(normalized)) {
     throw new SafeFetchError("host_blocked", `Host ${normalized} is blocked`);
+  }
+
+  // Only an IPv6 literal can carry a colon in a URL hostname. One that ipaddr
+  // cannot parse (a zone index, say) must not fall through to a DNS lookup.
+  if (normalized.includes(":") && !ipaddr.isValid(normalized)) {
+    throw new SafeFetchError("invalid_url", `Invalid IP literal ${normalized}`);
   }
 
   if (ipaddr.isValid(normalized)) {

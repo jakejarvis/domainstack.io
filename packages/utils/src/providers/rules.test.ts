@@ -631,3 +631,21 @@ describe("evalRule", () => {
     });
   });
 });
+
+describe("headerPresent does not match inherited properties", () => {
+  const ctx = { headers: Object.fromEntries([["server", "nginx"]]), mx: [], ns: [] };
+
+  it("is false for Object.prototype keys", () => {
+    expect(evalRule({ kind: "headerPresent", name: "constructor" }, ctx)).toBe(false);
+    expect(evalRule({ kind: "headerPresent", name: "toString" }, ctx)).toBe(false);
+    expect(evalRule({ kind: "headerPresent", name: "valueOf" }, ctx)).toBe(false);
+  });
+
+  it("is still true for a real header", () => {
+    expect(evalRule({ kind: "headerPresent", name: "Server" }, ctx)).toBe(true);
+  });
+
+  it("does not read inherited values for headerEquals", () => {
+    expect(evalRule({ kind: "headerEquals", name: "toString", value: "x" }, ctx)).toBe(false);
+  });
+});

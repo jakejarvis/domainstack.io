@@ -54,12 +54,15 @@ export function detectRegistrationChange(
   const snapshotNameservers = previous.nameservers ?? [];
   const currentNameservers = current.nameservers ?? [];
 
-  // Check nameserver changes (order-independent, case-insensitive per RFC 4343)
+  // Check nameserver changes (order-independent, case-insensitive per RFC 4343).
+  // The root label is stripped so "ns1.example.com." and "ns1.example.com" are
+  // the same host and do not raise a spurious change notification.
+  const normalizeNsHost = (host: string) => host.trim().toLowerCase().replace(/\.$/, "");
   const prevNsHosts = [...snapshotNameservers]
-    .map((ns) => ns.host.toLowerCase())
+    .map((ns) => normalizeNsHost(ns.host))
     .sort((a, b) => a.localeCompare(b));
   const currNsHosts = [...currentNameservers]
-    .map((ns) => ns.host.toLowerCase())
+    .map((ns) => normalizeNsHost(ns.host))
     .sort((a, b) => a.localeCompare(b));
   const nameserversChanged =
     prevNsHosts.length !== currNsHosts.length ||
@@ -137,9 +140,11 @@ export function detectProviderChange(
  * Decision order:
  * 1. Previous snapshot has no certificate identity (initialize placeholder)
  *    → `none`. First observation is committed silently by dampening.
- * 2. Both CA provider IDs non-null and different → `authority`
+ * 2. Both fingerprints known and equal → `none`. The certificate is
+ *    byte-identical, so a `caProviderId` difference is a catalog remap rather
+ *    than a change of authority (this also ignores issuer CN rotation).
+ * 3. Both CA provider IDs non-null and different → `authority`
  *    (`null → X` / `X → null` is not an authority change — catalog miss).
- * 3. Both fingerprints known and equal → `none` (ignore issuer CN rotation).
  * 4. Both fingerprints known and different → `renewal` if `validTo` moved
  *    forward, else `reissue`.
  * 5. Fingerprint missing on either side (legacy) → degrade:
@@ -166,33 +171,30 @@ export function detectCertificateChange(
     newIssuer: currIssuer || null,
   };
 
+  const prevFp = normalizeCertificateHex(previous.fingerprint);
+  const currFp = normalizeCertificateHex(current.fingerprint);
+  const sameCertificate = isSameCertificate(previous, current);
+
   let kind: CertificateChangeKind;
 
   if (isUninitializedCertificate(previous)) {
     kind = "none";
+  } else if (sameCertificate) {
+    // Byte-identical certificate: a caProviderId difference is a catalog
+    // remap, not a change of authority.
+    kind = "none";
   } else if (caProviderChanged) {
     kind = "authority";
+  } else if (prevFp && currFp) {
+    kind = validToMovedForward(previous, current) ? "renewal" : "reissue";
+  } else if (validToMovedForward(previous, current)) {
+    kind = "renewal";
+  } else if (serialChanged(previous.serialNumber, current.serialNumber)) {
+    kind = "reissue";
+  } else if (issuerChanged) {
+    kind = "intermediate";
   } else {
-    const prevFp = normalizeCertificateHex(previous.fingerprint);
-    const currFp = normalizeCertificateHex(current.fingerprint);
-
-    if (prevFp && currFp) {
-      if (prevFp === currFp) {
-        kind = "none";
-      } else if (validToMovedForward(previous, current)) {
-        kind = "renewal";
-      } else {
-        kind = "reissue";
-      }
-    } else if (validToMovedForward(previous, current)) {
-      kind = "renewal";
-    } else if (serialChanged(previous.serialNumber, current.serialNumber)) {
-      kind = "reissue";
-    } else if (issuerChanged) {
-      kind = "intermediate";
-    } else {
-      kind = "none";
-    }
+    kind = "none";
   }
 
   return { kind, ...details };
@@ -282,6 +284,19 @@ function isUninitializedCertificate(data: CertificateSnapshotData): boolean {
   );
 }
 
+/**
+ * True when both sides carry the same known fingerprint, i.e. the exact same
+ * certificate was observed.
+ */
+function isSameCertificate(
+  previous: CertificateSnapshotData,
+  current: CertificateSnapshotData,
+): boolean {
+  const prevFp = normalizeCertificateHex(previous.fingerprint);
+  const currFp = normalizeCertificateHex(current.fingerprint);
+  return prevFp !== null && currFp !== null && prevFp === currFp;
+}
+
 function serialChanged(
   previous: string | null | undefined,
   current: string | null | undefined,
@@ -320,7 +335,12 @@ function snapshotAfterNone(
   const healedFp = prevFp ?? normalizeCertificateHex(current.fingerprint);
   const prevSerial = normalizeCertificateHex(previous.serialNumber);
   const healedSerial = prevSerial ?? normalizeCertificateHex(current.serialNumber);
-  const healedCa = previous.caProviderId ?? current.caProviderId;
+  // An identical certificate whose catalog mapping moved adopts the new
+  // provider id, otherwise the snapshot would never converge and every later
+  // check would re-detect the same difference.
+  const healedCa = isSameCertificate(previous, current)
+    ? current.caProviderId
+    : (previous.caProviderId ?? current.caProviderId);
   const pendingCleared = previous.pending != null;
   const identityHealed =
     healedFp !== prevFp || healedSerial !== prevSerial || healedCa !== previous.caProviderId;

@@ -1,5 +1,8 @@
 const FORMATTER_CACHE = new Map<string, Intl.NumberFormat>();
 
+/** Locale and currency can come from user input, so the cache stays bounded. */
+const FORMATTER_CACHE_LIMIT = 32;
+
 function getFormatter(locale: string, currency: string): Intl.NumberFormat {
   const key = `${locale}|${currency}`;
   let formatter = FORMATTER_CACHE.get(key);
@@ -9,6 +12,9 @@ function getFormatter(locale: string, currency: string): Intl.NumberFormat {
       currency,
       maximumFractionDigits: 2,
     });
+    if (FORMATTER_CACHE.size >= FORMATTER_CACHE_LIMIT) {
+      FORMATTER_CACHE.clear();
+    }
     FORMATTER_CACHE.set(key, formatter);
   }
   return formatter;
@@ -35,6 +41,7 @@ export function formatPrice(value: string, opts?: FormatPriceOptions): string | 
   try {
     return getFormatter(locale, currency).format(amount);
   } catch {
-    return `$${amount.toFixed(2)}`;
+    // Unsupported locale or currency code: never imply USD with a bare "$".
+    return `${amount.toFixed(2)} ${currency}`;
   }
 }

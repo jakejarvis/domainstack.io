@@ -12,30 +12,11 @@ import type { DetectionContext } from "./rules";
 import { evalRule } from "./rules";
 
 /**
- * A context object for header-based detection, pre-calculating values to
- * avoid redundant work in the loop.
+ * Normalize a DNS hostname for rule matching: rules compare against lowercase
+ * suffixes and never carry the root label.
  */
-interface HeaderDetectionContext {
-  headers: Header[];
-  headerMap: Map<string, string>;
-  headerNames: Set<string>;
-}
-
-/**
- * Create a detection context from HTTP headers for efficient rule evaluation.
- */
-function createHeaderContext(headers: Header[]): HeaderDetectionContext {
-  const headerMap = new Map<string, string>();
-  const headerNames = new Set<string>();
-
-  for (const header of headers) {
-    const name = header.name.toLowerCase();
-    const value = header.value.toLowerCase();
-    headerMap.set(name, value);
-    headerNames.add(name);
-  }
-
-  return { headers, headerMap, headerNames };
+export function normalizeDnsHost(host: string): string {
+  return host.trim().toLowerCase().replace(/\.$/, "");
 }
 
 /**
@@ -44,19 +25,19 @@ function createHeaderContext(headers: Header[]): HeaderDetectionContext {
  */
 function detectProviderFromList(
   providers: Provider[],
-  headerContext?: HeaderDetectionContext,
+  headers?: Header[],
   mxHosts?: string[],
   nsHosts?: string[],
   issuer?: string,
   registrar?: string,
 ): Provider | null {
   const headersObj: Record<string, string> = Object.fromEntries(
-    (headerContext?.headers ?? []).map((h) => [h.name.toLowerCase(), h.value.trim().toLowerCase()]),
+    (headers ?? []).map((h) => [h.name.toLowerCase(), h.value.trim().toLowerCase()]),
   );
   const ctx: DetectionContext = {
     headers: headersObj,
-    mx: (mxHosts ?? []).map((h) => h.toLowerCase().replace(/\.$/, "")),
-    ns: (nsHosts ?? []).map((h) => h.toLowerCase().replace(/\.$/, "")),
+    mx: (mxHosts ?? []).map(normalizeDnsHost),
+    ns: (nsHosts ?? []).map(normalizeDnsHost),
     issuer,
     registrar,
   };
@@ -80,8 +61,7 @@ function detectProviderFromList(
  * @returns Matched provider or null
  */
 export function detectHostingProvider(headers: Header[], providers: Provider[]): Provider | null {
-  const context = createHeaderContext(headers);
-  return detectProviderFromList(providers, context);
+  return detectProviderFromList(providers, headers);
 }
 
 /**
@@ -167,13 +147,13 @@ export function catalogRuleMatchesDiscovered(
   switch (catalogProvider.category) {
     case "email":
       // Discovered email providers are typically auto-created from MX record hostnames
-      ctx.mx = [discoveredProvider.name];
-      if (discoveredProvider.domain) ctx.mx.push(discoveredProvider.domain);
+      ctx.mx = [normalizeDnsHost(discoveredProvider.name)];
+      if (discoveredProvider.domain) ctx.mx.push(normalizeDnsHost(discoveredProvider.domain));
       break;
     case "dns":
       // Discovered DNS providers are typically auto-created from NS record hostnames
-      ctx.ns = [discoveredProvider.name];
-      if (discoveredProvider.domain) ctx.ns.push(discoveredProvider.domain);
+      ctx.ns = [normalizeDnsHost(discoveredProvider.name)];
+      if (discoveredProvider.domain) ctx.ns.push(normalizeDnsHost(discoveredProvider.domain));
       break;
     case "hosting":
       // Hosting providers use header-based detection, harder to match retrospectively

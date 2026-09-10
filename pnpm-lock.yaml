@@ -641,6 +641,9 @@ importers:
       ipaddr.js:
         specifier: ^2.5.0
         version: 2.5.0
+      undici:
+        specifier: ^7.29.1
+        version: 7.29.1
     devDependencies:
       '@domainstack/typescript-config':
         specifier: workspace:*

@@ -650,3 +650,66 @@ describe("evaluateCertificateChange", () => {
     expect(result.snapshotToWrite).toBeNull();
   });
 });
+
+describe("nameserver root label", () => {
+  const baseSnapshot = {
+    registrarProviderId: "registrar-1",
+    nameservers: [{ host: "ns1.example.com" }, { host: "ns2.example.com" }],
+    transferLock: true,
+    statuses: ["active"],
+  };
+
+  it("ignores a trailing dot difference", () => {
+    const current = {
+      ...baseSnapshot,
+      nameservers: [{ host: "ns1.example.com." }, { host: "NS2.example.com." }],
+    };
+    expect(detectRegistrationChange(baseSnapshot, current)).toBeNull();
+  });
+});
+
+describe("certificate authority remapping", () => {
+  const cert: CertificateSnapshotData = {
+    caProviderId: "ca-old",
+    issuer: "R3",
+    validTo: "2026-06-01T00:00:00.000Z",
+    fingerprint: "AA:BB:CC",
+    serialNumber: "01",
+    pending: null,
+    recent: [],
+  };
+
+  it("reports none when the certificate is byte-identical", () => {
+    const remapped = { ...cert, caProviderId: "ca-new" };
+    expect(detectCertificateChange(cert, remapped).kind).toBe("none");
+  });
+
+  it("never notifies for a catalog remap, even after repeated observations", () => {
+    const remapped = { ...cert, caProviderId: "ca-new" };
+    const now = new Date("2026-01-01T00:00:00.000Z");
+
+    const first = evaluateCertificateChange(cert, remapped, now);
+    expect(first.shouldNotify).toBe(false);
+
+    const second = evaluateCertificateChange(first.snapshotToWrite ?? cert, remapped, now);
+    expect(second.shouldNotify).toBe(false);
+  });
+
+  it("adopts the new provider id so the snapshot converges", () => {
+    const remapped = { ...cert, caProviderId: "ca-new" };
+    const written = evaluateCertificateChange(cert, remapped).snapshotToWrite;
+
+    expect(written?.caProviderId).toBe("ca-new");
+    expect(evaluateCertificateChange(written ?? cert, remapped).snapshotToWrite).toBeNull();
+  });
+
+  it("still reports authority when the certificate itself changed", () => {
+    const rotated = {
+      ...cert,
+      caProviderId: "ca-new",
+      fingerprint: "DD:EE:FF",
+      serialNumber: "02",
+    };
+    expect(detectCertificateChange(cert, rotated).kind).toBe("authority");
+  });
+});

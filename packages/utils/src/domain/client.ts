@@ -35,11 +35,10 @@ export function normalizeDomainInput(input: string): string {
     return "";
   }
 
-  // Try to extract authority (host) from scheme-prefixed input
-  // This handles both valid and malformed protocols
+  // Reduce the input to a bare authority. Scheme-prefixed input goes through
+  // the regex so malformed protocols still work.
   const schemeMatch = value.match(SCHEME_PREFIX_REGEX);
   if (schemeMatch) {
-    // Extract authority from the scheme match
     const [, authority] = schemeMatch;
     value = authority;
   } else if (/:\/\//.test(value)) {
@@ -52,30 +51,24 @@ export function normalizeDomainInput(input: string): string {
       // Fallback: strip scheme-like prefix manually
       value = value.replace(/^\w+:\/\//, "");
     }
-  } else {
-    // No scheme detected: try URL parsing with implicit http:// to get punycoded hostname
-    try {
-      const url = new URL(`http://${value}`);
-      value = url.hostname;
-    } catch {
-      // Fallback: treat as raw authority and parse manually
-    }
   }
 
-  // Strip query and fragment (in case they weren't already removed)
+  // Strip query, fragment, and any remaining path components
   value = value.split(/[?#]/)[0];
-
-  // Strip User Info (credentials)
-  const atIndex = value.lastIndexOf("@");
-  if (atIndex !== -1) {
-    value = value.slice(atIndex + 1);
-  }
-
-  // Strip port
-  value = value.split(":")[0];
-
-  // Remove any path components that might remain
   value = value.split("/")[0];
+
+  // Re-parse the authority through URL on every path, so an IDN punycodes and
+  // userinfo/port are dropped the same way whether or not a scheme was typed.
+  try {
+    value = new URL(`http://${value}`).hostname;
+  } catch {
+    // Fallback: strip user info and port by hand
+    const atIndex = value.lastIndexOf("@");
+    if (atIndex !== -1) {
+      value = value.slice(atIndex + 1);
+    }
+    value = value.split(":")[0];
+  }
 
   // Strip trailing dot
   value = value.replace(/\.$/, "");
@@ -102,10 +95,17 @@ export function isValidDomain(value: string): boolean {
 }
 
 /**
- * Client-side utility to extract the TLD from a domain name.
- * This is a simple implementation that doesn't rely on rdapper (which is server-only).
- * For a full domain like "example.com", returns "com".
- * For a subdomain like "blog.example.com", returns "com".
+ * Client-side utility to extract the TLD from a **registrable domain**
+ * (eTLD+1), without rdapper or the Public Suffix List (both server-only).
+ *
+ * It simply drops the first label, which is the TLD only when the input really
+ * is a registrable domain:
+ * - "example.com" -> "com"
+ * - "example.co.uk" -> "co.uk" (multi-part TLDs work)
+ *
+ * Given a subdomain it returns the parent domain, not a TLD
+ * ("blog.example.com" -> "example.com"), so callers must normalize to the
+ * registrable domain first. Returns null for single-label hosts.
  */
 export function extractTldClient(domain: string): string | null {
   const input = (domain ?? "").trim().toLowerCase();
@@ -113,13 +113,8 @@ export function extractTldClient(domain: string): string | null {
   // Ignore single-label hosts like "localhost" or invalid inputs
   if (!input.includes(".")) return null;
 
-  // Split by dots and take everything after the first dot
-  // For "example.com" -> ["example", "com"] -> "com"
-  // For "blog.example.com" -> ["blog", "example", "com"] -> "example.com"
   const parts = input.split(".");
   if (parts.length < 2) return null;
 
-  // Return everything after the first label joined with dots
-  // This handles multi-part TLDs like "co.uk" correctly
   return parts.slice(1).join(".");
 }

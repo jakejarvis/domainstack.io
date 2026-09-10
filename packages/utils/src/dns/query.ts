@@ -12,6 +12,9 @@ import type { DnsAnswer, DnsJson, DohQueryOptions } from "./types";
 
 const DEFAULT_TIMEOUT_MS = 5000;
 
+/** DoH JSON answers are small; anything larger is a misbehaving provider. */
+const MAX_RESPONSE_BYTES = 1024 * 1024;
+
 /**
  * Build a DoH query URL for a given provider, domain, and record type.
  */
@@ -52,23 +55,23 @@ export async function queryDohProvider(
     url.searchParams.set("t", Date.now().toString());
   }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
-
-  let res: Response;
-  try {
-    res = await fetch(url, {
-      headers: {
-        Accept: "application/dns-json",
-      },
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timeoutId);
-  }
+  // AbortSignal.timeout stays armed through the body read. A manually cleared
+  // timer stops covering the response the moment the headers arrive, so a
+  // provider that stalls mid-body would hang the query indefinitely.
+  const res = await fetch(url, {
+    headers: {
+      Accept: "application/dns-json",
+    },
+    signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS),
+  });
 
   if (!res.ok) {
     throw new Error(`DoH query failed: ${provider.key} ${type} ${res.status}`);
+  }
+
+  const declaredLength = Number(res.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_RESPONSE_BYTES) {
+    throw new Error(`DoH response too large: ${provider.key} ${type} ${declaredLength} bytes`);
   }
 
   const json = (await res.json()) as DnsJson;
@@ -88,12 +91,4 @@ export async function queryDohProvider(
   }
 
   return json.Answer;
-}
-
-/**
- * Filter DNS answers to only those matching the expected type number.
- * DoH providers often include CNAME records in answer chains.
- */
-export function filterAnswersByType(answers: DnsAnswer[], expectedType: number): DnsAnswer[] {
-  return answers.filter((a) => a.type === expectedType);
 }

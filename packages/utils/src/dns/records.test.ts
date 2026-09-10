@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import type { DnsRecord } from "@domainstack/types";
+import type { DnsRecord, DnsRecordType } from "@domainstack/types";
 
 import {
   deduplicateDnsRecords,
@@ -172,5 +172,24 @@ describe("sortDnsRecordsByType", () => {
     expect(result[0].type).toBe("A");
     expect(result[1].type).toBe("MX");
     expect(result[2].type).toBe("TXT");
+  });
+});
+
+describe("sortDnsRecordsByType ordering edge cases", () => {
+  const record = (type: DnsRecordType, value: string): DnsRecord => ({
+    type,
+    name: "example.com",
+    value,
+  });
+
+  it("emits a repeated type in order only once", () => {
+    const records = [record("A", "1.1.1.1"), record("NS", "ns1.example.com")];
+    const sorted = sortDnsRecordsByType(records, ["A", "NS", "A"]);
+    expect(sorted.map((r) => r.value)).toEqual(["1.1.1.1", "ns1.example.com"]);
+  });
+
+  it("omits records whose type is absent from the order", () => {
+    const records = [record("A", "1.1.1.1"), record("TXT", "v=spf1")];
+    expect(sortDnsRecordsByType(records, ["A"]).map((r) => r.value)).toEqual(["1.1.1.1"]);
   });
 });
