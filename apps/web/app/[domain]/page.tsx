@@ -8,12 +8,16 @@ import { DomainReportClient } from "@/components/domain/report-client";
 import { DomainReportSkeleton } from "@/components/domain/report-skeleton";
 import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { OG_IMAGE_SIZE } from "@/lib/og-utils";
+import { safeDecodeURIComponent } from "@/lib/safe-parse";
 import { createMetadata, notFoundMetadata } from "@/lib/seo";
 import { getQueryClient, HydrateClient, trpc } from "@/trpc/server";
 
 export async function generateMetadata({ params }: PageProps<"/[domain]">): Promise<Metadata> {
   const { domain: raw } = await params;
-  const decoded = decodeURIComponent(raw);
+  // Route params arrive decoded; a malformed escape like `/%25` would make a
+  // second bare decode throw, so fall back to the raw segment and let
+  // `toRegistrableDomain` reject it.
+  const decoded = safeDecodeURIComponent(raw) ?? raw;
 
   const registrable = toRegistrableDomain(decoded);
   if (!registrable) {
@@ -48,7 +52,8 @@ async function DomainReport({ params }: Pick<PageProps<"/[domain]">, "params">) 
   await io();
 
   const { domain: raw } = await params;
-  const decoded = decodeURIComponent(raw);
+  // Decoded defensively for the same reason as in `generateMetadata` above.
+  const decoded = safeDecodeURIComponent(raw) ?? raw;
 
   const registrable = toRegistrableDomain(decoded);
   if (!registrable) notFound();

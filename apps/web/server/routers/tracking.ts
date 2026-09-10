@@ -537,7 +537,10 @@ export const trackingRouter = createTRPCRouter({
    * Allows users to share verification instructions with someone who manages their domain.
    */
   sendVerificationInstructions: protectedProcedure
-    .meta({ rateLimit: { requests: 5, window: "1 m" } })
+    // This is the only procedure that mails a third party chosen by the caller,
+    // so the budget is a daily one. A per-minute cap still allows thousands of
+    // messages a day, which makes the feature a usable spam relay.
+    .meta({ rateLimit: { requests: 20, window: "1 d" } })
     .input(
       z.object({
         trackedDomainId: z.uuid(),

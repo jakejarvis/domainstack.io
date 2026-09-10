@@ -27,6 +27,8 @@ const TEST_USER_2_ID = "test-user-id-notifications-2";
 const TEST_NOTIFICATION_ID = "c0000000-0000-1000-a000-000000000001";
 const TEST_NOTIFICATION_2_ID = "c0000000-0000-1000-a000-000000000002";
 const TEST_NOTIFICATION_3_ID = "c0000000-0000-1000-a000-000000000003";
+const TEST_NOTIFICATION_4_ID = "c0000000-0000-1000-a000-000000000004";
+const TEST_NOTIFICATION_5_ID = "c0000000-0000-1000-a000-000000000005";
 
 // Helper to create a caller with authenticated context
 function createAuthenticatedCaller(userId = TEST_USER_ID) {
@@ -268,6 +270,48 @@ describe("notifications router", () => {
 
       expect(result.items.length).toBe(2);
       expect(result.nextCursor).toBeDefined();
+    });
+
+    it("returns every notification when paging through with a cursor", async () => {
+      const caller = createAuthenticatedCaller();
+
+      // Five rows, newest first, paged two at a time. The cursor is exclusive,
+      // so it must resume from the last returned row rather than the dropped
+      // look-ahead row, or the third notification never surfaces.
+      await db.insert(notifications).values(
+        [
+          TEST_NOTIFICATION_ID,
+          TEST_NOTIFICATION_2_ID,
+          TEST_NOTIFICATION_3_ID,
+          TEST_NOTIFICATION_4_ID,
+          TEST_NOTIFICATION_5_ID,
+        ].map((id, index) => ({
+          id,
+          userId: TEST_USER_ID,
+          type: "domain_expiry_30d" as const,
+          title: `Notification ${index + 1}`,
+          message: `Message ${index + 1}`,
+          sentAt: new Date(Date.now() - (5 - index) * 10_000),
+        })),
+      );
+
+      const seen: string[] = [];
+      let cursor: string | undefined;
+
+      for (let page = 0; page < 10; page++) {
+        const result = await caller.notifications.list({ limit: 2, filter: "all", cursor });
+        seen.push(...result.items.map((n) => n.title));
+        if (!result.nextCursor) break;
+        cursor = result.nextCursor;
+      }
+
+      expect(seen).toEqual([
+        "Notification 5",
+        "Notification 4",
+        "Notification 3",
+        "Notification 2",
+        "Notification 1",
+      ]);
     });
   });
 

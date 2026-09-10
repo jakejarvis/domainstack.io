@@ -383,15 +383,16 @@ export function filterDomains(
   const statusSet = new Set(criteria.status);
   const healthSet = new Set(criteria.health);
   const tldSet = new Set(criteria.tlds);
+  // Trimmed so pasted values and trailing spaces still match.
+  const searchLower = criteria.search.trim().toLowerCase();
 
   return domains.filter((domain) => {
     // Filter by specific domain ID
     if (criteria.domainId && domain.id !== criteria.domainId) return false;
 
     // Filter by search term
-    if (criteria.search) {
-      const searchLower = criteria.search.toLowerCase();
-      if (!domain.domainName.toLowerCase().includes(searchLower)) return false;
+    if (searchLower && !domain.domainName.toLowerCase().includes(searchLower)) {
+      return false;
     }
 
     // Filter by verification status

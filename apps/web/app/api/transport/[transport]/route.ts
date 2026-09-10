@@ -48,7 +48,10 @@ const sectionsSchema = z
 
 /**
  * Helper to format SwrResult for MCP tool response.
- * Strips internal metadata (cached, stale) and returns clean JSON.
+ *
+ * The router's internal metadata (`cached`, `stale`) sits alongside `data` on
+ * the result rather than inside it, so serializing `data` on its own already
+ * gives MCP consumers a clean payload.
  */
 function formatToolResponse(result: { success: boolean; data?: unknown; error?: string }) {
   if (!result.success) {
@@ -58,13 +61,8 @@ function formatToolResponse(result: { success: boolean; data?: unknown; error?: 
     };
   }
 
-  // Strip internal metadata that's not useful for MCP consumers
-  const { ...data } = result.data as Record<string, unknown>;
-  delete data.cached;
-  delete data.stale;
-
   return {
-    content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
+    content: [{ type: "text" as const, text: JSON.stringify(result.data ?? {}, null, 2) }],
   };
 }
 
@@ -249,11 +247,8 @@ function createMcpHandlerWithContext(request: Request) {
               try {
                 const result = await sectionFetchers[section]();
                 if (result.success) {
-                  // Strip internal metadata
-                  const { ...data } = result.data as Record<string, unknown>;
-                  delete data.cached;
-                  delete data.stale;
-                  return { section, success: true, data };
+                  // `cached`/`stale` sit beside `data` on the result, not in it
+                  return { section, success: true, data: result.data ?? {} };
                 }
                 return { section, success: false, error: result.error };
               } catch (err) {

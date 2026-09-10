@@ -1,7 +1,13 @@
 import { defaultShouldDehydrateQuery, QueryClient } from "@tanstack/react-query";
 import superjson from "superjson";
 
-const NON_RETRYABLE_TRPC_CODES = new Set([
+/**
+ * Codes tRPC raises deliberately, where the message describes a client-side
+ * problem and is safe to show. Anything else (INTERNAL_SERVER_ERROR, a thrown
+ * driver error) may carry server internals, so it is neither retried nor
+ * serialized into the hydration payload.
+ */
+const EXPECTED_TRPC_ERROR_CODES = new Set([
   "BAD_REQUEST",
   "UNAUTHORIZED",
   "FORBIDDEN",
@@ -46,7 +52,7 @@ function shouldRetryQuery(failureCount: number, error: unknown): boolean {
     return false;
   }
   const code = getTrpcErrorCode(error);
-  if (code && NON_RETRYABLE_TRPC_CODES.has(code)) {
+  if (code && EXPECTED_TRPC_ERROR_CODES.has(code)) {
     return false;
   }
   return true;
@@ -68,8 +74,12 @@ export const makeQueryClient = () => {
         // Include pending queries so streaming works smoothly
         shouldDehydrateQuery: (query) =>
           defaultShouldDehydrateQuery(query) || query.state.status === "pending",
-        // Do not redact errors on the server; Next.js handles error redaction/digests
-        shouldRedactErrors: () => false,
+        // Hydrate the message only for errors the server raised on purpose.
+        // Unexpected failures are redacted so their text stays off the wire.
+        shouldRedactErrors: (error) => {
+          const code = getTrpcErrorCode(error);
+          return !code || !EXPECTED_TRPC_ERROR_CODES.has(code);
+        },
       },
     },
   });

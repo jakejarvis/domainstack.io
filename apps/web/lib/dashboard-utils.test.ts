@@ -120,6 +120,32 @@ describe("filterDomains", () => {
     ).toEqual(["beta.io"]);
   });
 
+  it("trims surrounding whitespace from the search term", () => {
+    expect(
+      names(
+        filterDomains(
+          domains,
+          { ...emptyCriteria, search: "  beta  " },
+          validProviderIds,
+          DASHBOARD_TEST_NOW,
+        ),
+      ),
+    ).toEqual(["beta.io"]);
+  });
+
+  it("treats a whitespace-only search as no search", () => {
+    expect(
+      names(
+        filterDomains(
+          domains,
+          { ...emptyCriteria, search: "   " },
+          validProviderIds,
+          DASHBOARD_TEST_NOW,
+        ),
+      ),
+    ).toEqual(names(domains));
+  });
+
   it("ANDs search with TLD and health", () => {
     expect(
       names(

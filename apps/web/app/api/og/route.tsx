@@ -198,7 +198,7 @@ export async function GET(request: NextRequest) {
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
             <img
-              src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`}
+              src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(registrable)}&sz=128`}
               alt="favicon"
               width={64}
               height={64}
@@ -217,9 +217,9 @@ export async function GET(request: NextRequest) {
                 overflow: "hidden",
                 textOverflow: "ellipsis",
               }}
-              title={normalized}
+              title={registrable}
             >
-              {normalized}
+              {registrable}
             </div>
           </div>
 
@@ -232,7 +232,7 @@ export async function GET(request: NextRequest) {
               maxWidth: 990,
             }}
           >
-            Domain intelligence report for {normalized}
+            Domain intelligence report for {registrable}
           </div>
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 6 }}>

@@ -31,10 +31,13 @@ export const notificationsRouter = createTRPCRouter({
       // Fetch one extra to determine if there's a next page
       const items = await getUserNotifications(ctx.user.id, limit + 1, cursor ?? undefined, filter);
 
+      // `getUserNotifications` treats the cursor as exclusive, so the next page
+      // must resume from the last item we actually return. Using the dropped
+      // look-ahead row here would skip it on the following page.
       let nextCursor: string | undefined;
       if (items.length > limit) {
-        const nextItem = items.pop(); // Remove the extra item
-        nextCursor = nextItem?.id;
+        items.pop(); // Drop the extra look-ahead item
+        nextCursor = items[items.length - 1]?.id;
       }
 
       return {
