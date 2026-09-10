@@ -1,9 +1,9 @@
 "use client";
 
 import { IconCircleX, IconShieldExclamation } from "@tabler/icons-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { analytics } from "@/lib/analytics/client";
@@ -13,69 +13,81 @@ import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
 
 const POLL_INTERVAL_MS = 2000;
+const POLL_RECOVERY_INTERVAL_MS = 5000;
 
-type StartParseResult =
-  | { status: "completed"; cached: true; data: ScreenshotData }
+type ScreenshotQueryState =
+  | { status: "completed"; source: "cache" | "workflow"; data: ScreenshotData }
   | { status: "running"; runId: string }
-  | { status: "error"; error: string }
-  | { status: "rate_limited"; retryAfter: number };
-
-type StatusParseResult =
-  | { status: "running" }
-  | { status: "completed"; data: ScreenshotData }
   | { status: "failed"; error: string }
-  | { status: "error"; error: string }
-  | { status: "rate_limited"; retryAfter: number };
+  | { status: "rate_limited"; retryAfter: number; runId?: string };
 
-function parseStartResponse(raw: unknown): StartParseResult {
+type TerminalScreenshotQueryState = Extract<
+  ScreenshotQueryState,
+  { status: "completed" | "failed" }
+>;
+
+function getScreenshotQueryKey(domain: string, domainId?: string) {
+  return ["screenshot", domainId ?? domain] as const;
+}
+
+function parseScreenshotData(raw: unknown): ScreenshotData {
   if (!raw || typeof raw !== "object") {
-    return { status: "error", error: "Invalid response" };
+    throw new Error("Screenshot response is missing data");
+  }
+
+  const data = raw as Record<string, unknown>;
+  return {
+    url: typeof data.url === "string" ? data.url : null,
+    blocked: data.blocked === true,
+  };
+}
+
+function parseStartResponse(raw: unknown): ScreenshotQueryState {
+  if (!raw || typeof raw !== "object") {
+    throw new Error("Invalid screenshot response");
   }
 
   const obj = raw as Record<string, unknown>;
 
   if ("error" in obj && !("status" in obj)) {
-    return {
-      status: "error",
-      error: typeof obj.error === "string" ? obj.error : "Invalid response",
-    };
+    throw new Error(typeof obj.error === "string" ? obj.error : "Screenshot request failed");
   }
 
   if (obj.status === "running" && typeof obj.runId === "string") {
     return { status: "running", runId: obj.runId };
   }
 
-  if (obj.status === "completed" && obj.data) {
-    const data = obj.data as Record<string, unknown>;
+  if (obj.status === "completed" && obj.success === false) {
     return {
-      status: "completed",
-      cached: true,
-      data: {
-        url: typeof data.url === "string" ? data.url : null,
-        blocked: data.blocked === true,
-      },
+      status: "failed",
+      error: typeof obj.error === "string" ? obj.error : "Screenshot capture failed",
     };
   }
 
-  return { status: "error", error: "Unknown response format" };
+  if (obj.status === "completed" && obj.data) {
+    return {
+      status: "completed",
+      source: "cache",
+      data: parseScreenshotData(obj.data),
+    };
+  }
+
+  throw new Error("Unknown screenshot response format");
 }
 
-function parseStatusResponse(raw: unknown): StatusParseResult {
+function parseStatusResponse(raw: unknown, runId: string): ScreenshotQueryState {
   if (!raw || typeof raw !== "object") {
-    return { status: "error", error: "Invalid response" };
+    throw new Error("Invalid screenshot status response");
   }
 
   const obj = raw as Record<string, unknown>;
 
   if ("error" in obj && !("status" in obj)) {
-    return {
-      status: "error",
-      error: typeof obj.error === "string" ? obj.error : "Invalid response",
-    };
+    throw new Error(typeof obj.error === "string" ? obj.error : "Screenshot status unavailable");
   }
 
   if (obj.status === "running") {
-    return { status: "running" };
+    return { status: "running", runId };
   }
 
   if (obj.status === "failed") {
@@ -86,17 +98,73 @@ function parseStatusResponse(raw: unknown): StatusParseResult {
   }
 
   if (obj.status === "completed" && obj.data) {
-    const data = obj.data as Record<string, unknown>;
     return {
       status: "completed",
-      data: {
-        url: typeof data.url === "string" ? data.url : null,
-        blocked: data.blocked === true,
-      },
+      source: "workflow",
+      data: parseScreenshotData(obj.data),
     };
   }
 
-  return { status: "error", error: "Unknown response format" };
+  throw new Error("Unknown screenshot status response format");
+}
+
+async function readErrorMessage(response: Response, fallback: string): Promise<string> {
+  try {
+    const raw = (await response.json()) as { error?: unknown };
+    return typeof raw.error === "string" ? raw.error : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+async function startScreenshot(domainId: string): Promise<ScreenshotQueryState> {
+  const response = await fetch("/api/screenshot", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ domainId }),
+  });
+
+  if (response.status === 429) {
+    return { status: "rate_limited", retryAfter: parseRetryAfterHeader(response) };
+  }
+
+  if (!response.ok) {
+    const error = await readErrorMessage(response, `Screenshot request failed: ${response.status}`);
+    if (response.status >= 400 && response.status < 500) {
+      return { status: "failed", error };
+    }
+    throw new Error(error);
+  }
+
+  return parseStartResponse(await response.json());
+}
+
+async function pollScreenshot(runId: string): Promise<ScreenshotQueryState> {
+  const response = await fetch(`/api/screenshot?runId=${encodeURIComponent(runId)}`, {
+    cache: "no-store",
+  });
+
+  if (response.status === 429) {
+    return {
+      status: "rate_limited",
+      retryAfter: parseRetryAfterHeader(response),
+      runId,
+    };
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      await readErrorMessage(response, `Screenshot status poll failed: ${response.status}`),
+    );
+  }
+
+  return parseStatusResponse(await response.json(), runId);
+}
+
+function isTerminalState(
+  state: ScreenshotQueryState | undefined,
+): state is TerminalScreenshotQueryState {
+  return state?.status === "completed" || state?.status === "failed";
 }
 
 export interface UseScreenshotResult {
@@ -104,6 +172,118 @@ export interface UseScreenshotResult {
   isLoading: boolean;
   error: Error | null;
   hasFailed: boolean;
+}
+
+function ScreenshotPlaceholder({
+  isLoading,
+  blocked,
+  aspectClassName,
+  onReload,
+}: {
+  isLoading: boolean;
+  blocked: boolean;
+  aspectClassName: string;
+  onReload?: () => void;
+}) {
+  return (
+    <div
+      className={`h-auto w-full ${aspectClassName} flex items-center justify-center bg-muted/50`}
+    >
+      <div
+        className="flex items-center gap-2 text-xs text-muted-foreground [&_svg]:size-4"
+        aria-live="polite"
+      >
+        {isLoading ? (
+          <>
+            <Spinner />
+            Taking screenshot…
+          </>
+        ) : blocked ? (
+          <>
+            <IconShieldExclamation />
+            Screenshot unavailable for this domain.
+          </>
+        ) : (
+          <>
+            <IconCircleX />
+            <span>Unable to take a screenshot.</span>
+            {onReload ? (
+              <button
+                type="button"
+                className="min-h-6 rounded-sm px-1.5 font-medium text-foreground underline underline-offset-2 hover:text-foreground/80 focus-visible:outline-2 focus-visible:outline-offset-2"
+                onClick={onReload}
+              >
+                Reload preview
+              </button>
+            ) : null}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function withReloadToken(url: string, reloadCount: number): string {
+  if (reloadCount === 0) return url;
+
+  try {
+    const reloadUrl = new URL(url);
+    reloadUrl.searchParams.set("domainstack-reload", String(reloadCount));
+    return reloadUrl.toString();
+  } catch {
+    const separator = url.includes("?") ? "&" : "?";
+    return `${url}${separator}domainstack-reload=${reloadCount}`;
+  }
+}
+
+function ScreenshotImage({
+  domain,
+  url,
+  width,
+  height,
+  imageClassName,
+  aspectClassName,
+}: {
+  domain: string;
+  url: string;
+  width: number;
+  height: number;
+  imageClassName?: string;
+  aspectClassName: string;
+}) {
+  const [reloadCount, setReloadCount] = useState(0);
+  const [hasFailed, setHasFailed] = useState(false);
+
+  if (hasFailed) {
+    return (
+      <ScreenshotPlaceholder
+        isLoading={false}
+        blocked={false}
+        aspectClassName={aspectClassName}
+        onReload={() => {
+          setReloadCount((current) => current + 1);
+          setHasFailed(false);
+        }}
+      />
+    );
+  }
+
+  return (
+    <a href={`https://${domain}`} target="_blank" rel="noopener">
+      <Image
+        key={reloadCount}
+        src={withReloadToken(url, reloadCount)}
+        alt={`Homepage preview of ${domain}`}
+        width={width}
+        height={height}
+        className={cn("h-auto w-full object-cover", aspectClassName, imageClassName)}
+        unoptimized
+        priority={false}
+        draggable={false}
+        onError={() => setHasFailed(true)}
+      />
+    </a>
+  );
 }
 
 /**
@@ -120,174 +300,92 @@ export function useScreenshot({
   enabled?: boolean;
 }): UseScreenshotResult {
   const queryClient = useQueryClient();
-  const [runId, setRunId] = useState<string | null>(null);
-  const [screenshotData, setScreenshotData] = useState<ScreenshotData | null>(null);
-  const hasStartedRef = useRef(false);
-  const startedForDomainRef = useRef<string | null>(null);
-  const [rateLimitedUntil, setRateLimitedUntil] = useState<number | null>(null);
-  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const queryKey = getScreenshotQueryKey(domain, domainId);
+  const screenshotQuery = useQuery<ScreenshotQueryState>({
+    queryKey,
+    queryFn: async () => {
+      const current = queryClient.getQueryData<ScreenshotQueryState>(queryKey);
 
-  const screenshotQueryKey = useMemo(() => ["screenshot", domain], [domain]);
-  const cachedData = queryClient.getQueryData<ScreenshotData>(screenshotQueryKey);
-
-  const [trackedDomain, setTrackedDomain] = useState(domain);
-  if (domain !== trackedDomain) {
-    setTrackedDomain(domain);
-    setScreenshotData(null);
-    setRunId(null);
-    setRateLimitedUntil(null);
-  }
-
-  const startScreenshot = useCallback(async (id: string) => {
-    const response = await fetch("/api/screenshot", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ domainId: id }),
-    });
-
-    if (response.status === 429) {
-      const retryAfter = parseRetryAfterHeader(response);
-      return { status: "rate_limited", retryAfter } as const;
-    }
-
-    if (!response.ok) {
-      throw new Error(`Screenshot request failed: ${response.status}`);
-    }
-
-    return parseStartResponse(await response.json());
-  }, []);
-
-  const startMutation = useMutation({
-    mutationFn: startScreenshot,
-    onSuccess: (data) => {
-      if (data.status === "completed") {
-        setScreenshotData(data.data);
-        queryClient.setQueryData(screenshotQueryKey, data.data);
-        analytics.track("screenshot_loaded_from_cache", { domain });
-      } else if (data.status === "running") {
-        setRunId(data.runId);
-        analytics.track("screenshot_requested", { domain });
-      } else if (data.status === "rate_limited") {
-        const retryAt = Date.now() + data.retryAfter * 1000;
-        setRateLimitedUntil(retryAt);
-        toast.error("Too many requests", {
-          description: `Please wait ${data.retryAfter} second${data.retryAfter !== 1 ? "s" : ""} before trying again.`,
-        });
-        analytics.track("screenshot_rate_limited", {
-          domain,
-          retryAfter: data.retryAfter,
-        });
-
-        if (retryTimeoutRef.current) {
-          clearTimeout(retryTimeoutRef.current);
-        }
-        retryTimeoutRef.current = setTimeout(() => {
-          hasStartedRef.current = false;
-          setRateLimitedUntil(null);
-        }, data.retryAfter * 1000);
+      if (current?.status === "running") {
+        return pollScreenshot(current.runId);
       }
-    },
-    onError: (error) => {
-      analytics.trackException(error, { domain });
-    },
-  });
-
-  const statusQuery = useQuery({
-    queryKey: ["screenshot-status", runId],
-    queryFn: async (): Promise<StatusParseResult> => {
-      const response = await fetch(`/api/screenshot?runId=${runId}`);
-
-      if (response.status === 429) {
-        const retryAfter = parseRetryAfterHeader(response);
-        return { status: "rate_limited", retryAfter };
+      if (current?.status === "rate_limited" && current.runId) {
+        return pollScreenshot(current.runId);
+      }
+      if (isTerminalState(current)) {
+        return current;
       }
 
-      if (!response.ok) {
-        throw new Error(`Screenshot status poll failed: ${response.status}`);
+      if (!domainId) {
+        throw new Error("Screenshot domain ID is missing");
       }
-      return parseStatusResponse(await response.json());
+      return startScreenshot(domainId);
     },
-    enabled: !!runId,
-    staleTime: Infinity,
+    enabled: enabled && !!domainId,
+    retry: false,
+    staleTime: (query) => (isTerminalState(query.state.data) ? Number.POSITIVE_INFINITY : 0),
+    refetchOnMount: (query) => !isTerminalState(query.state.data),
     refetchInterval: (query) => {
-      const { data } = query.state;
-      if (data?.status !== "running") {
-        if (data?.status === "rate_limited") {
-          return data.retryAfter * 1000;
-        }
+      const state = query.state.data;
+      if (isTerminalState(state)) {
         return false;
       }
-      return POLL_INTERVAL_MS;
+      if (state?.status === "rate_limited") {
+        return state.retryAfter * 1000;
+      }
+      return state?.status === "running" ? POLL_INTERVAL_MS : POLL_RECOVERY_INTERVAL_MS;
     },
+    refetchIntervalInBackground: true,
   });
 
-  // Side effects only: cache the completed screenshot and notify. Terminal
-  // poll status is derived from the query during render so we don't copy it
-  // into state or clear runId (that would change the query key and drop data).
+  const reportedStateRef = useRef<string | null>(null);
   useEffect(() => {
-    const data = statusQuery.data;
-    if (!data || data.status === "running") return;
+    const state = screenshotQuery.data;
+    if (!state) return;
 
-    if (data.status === "rate_limited") {
+    const marker =
+      state.status === "running"
+        ? `running:${state.runId}`
+        : state.status === "completed"
+          ? `completed:${state.source}:${state.data.url ?? "none"}`
+          : state.status === "rate_limited"
+            ? `rate-limited:${state.runId ?? "start"}:${state.retryAfter}`
+            : `failed:${state.error}`;
+    if (reportedStateRef.current === marker) return;
+    reportedStateRef.current = marker;
+
+    if (state.status === "running") {
+      analytics.track("screenshot_requested", { domain });
+    } else if (state.status === "completed") {
+      analytics.track(
+        state.source === "cache" ? "screenshot_loaded_from_cache" : "screenshot_loaded_from_api",
+        { domain },
+      );
+    } else if (state.status === "rate_limited") {
       toast.error("Too many requests", {
-        description: `Polling paused. Retrying in ${data.retryAfter} seconds.`,
+        id: `screenshot-rate-limited-${domainId ?? domain}`,
+        description: `Retrying in ${state.retryAfter} second${state.retryAfter !== 1 ? "s" : ""}.`,
       });
-      return;
+      analytics.track("screenshot_rate_limited", {
+        domain,
+        retryAfter: state.retryAfter,
+      });
     }
+  }, [screenshotQuery.data, domain, domainId]);
 
-    if (data.status === "completed") {
-      queryClient.setQueryData(screenshotQueryKey, data.data);
-      analytics.track("screenshot_loaded_from_api", { domain });
-    }
-  }, [statusQuery.data, queryClient, screenshotQueryKey, domain]);
-
-  // Cleanup retry timeout on unmount
-  useEffect(
-    () => () => {
-      if (retryTimeoutRef.current) {
-        clearTimeout(retryTimeoutRef.current);
-      }
-    },
-    [],
-  );
-
-  // Reset and auto-start when domain/enabled/domainId changes
   useEffect(() => {
-    if (startedForDomainRef.current !== domain) {
-      hasStartedRef.current = false;
-      startedForDomainRef.current = domain;
-      if (retryTimeoutRef.current) {
-        clearTimeout(retryTimeoutRef.current);
-        retryTimeoutRef.current = null;
-      }
+    if (screenshotQuery.error) {
+      analytics.trackException(screenshotQuery.error, { domain });
     }
+  }, [screenshotQuery.error, domain]);
 
-    if (hasStartedRef.current || !enabled || !domainId || cachedData || screenshotData) {
-      return;
-    }
+  const state = screenshotQuery.data;
+  const data = state?.status === "completed" ? state.data : null;
+  const hasFailed = state?.status === "failed";
+  const error = hasFailed ? new Error(state.error) : (screenshotQuery.error ?? null);
+  const isLoading = enabled && (!domainId || (!data && !hasFailed));
 
-    if (rateLimitedUntil && Date.now() < rateLimitedUntil) {
-      return;
-    }
-
-    hasStartedRef.current = true;
-    startMutation.mutate(domainId);
-  }, [domain, enabled, domainId, cachedData, screenshotData, startMutation, rateLimitedUntil]);
-
-  // Derive return values
-  const polledData = statusQuery.data?.status === "completed" ? statusQuery.data.data : undefined;
-  const finalData = screenshotData ?? polledData ?? cachedData ?? null;
-  const pollError = statusQuery.data?.status === "error" ? new Error(statusQuery.data.error) : null;
-  const error = startMutation.error ?? statusQuery.error ?? pollError;
-  const hasFailed = statusQuery.data?.status === "failed";
-  const isLoading =
-    !finalData &&
-    !error &&
-    !hasFailed &&
-    enabled &&
-    (domainId === undefined || startMutation.isPending || !!runId);
-
-  return { data: finalData, isLoading, error, hasFailed };
+  return { data, isLoading, error, hasFailed };
 }
 
 /**
@@ -313,54 +411,27 @@ export function Screenshot({
   imageClassName?: string;
   aspectClassName?: string;
 }) {
-  const [failedUrl, setFailedUrl] = useState<string | null>(null);
-
   const url = data?.url ?? null;
   const blocked = data?.blocked ?? false;
 
   return (
     <div className={className}>
-      {url && failedUrl !== url ? (
-        <a href={`https://${domain}`} target="_blank" rel="noopener">
-          <Image
-            key={url}
-            src={url}
-            alt={`Homepage preview of ${domain}`}
-            width={width}
-            height={height}
-            className={cn("h-auto w-full object-cover", aspectClassName, imageClassName)}
-            unoptimized
-            priority={false}
-            draggable={false}
-            onError={() => setFailedUrl(url)}
-          />
-        </a>
+      {url ? (
+        <ScreenshotImage
+          key={url}
+          domain={domain}
+          url={url}
+          width={width}
+          height={height}
+          imageClassName={imageClassName}
+          aspectClassName={aspectClassName}
+        />
       ) : (
-        <div
-          className={`h-auto w-full ${aspectClassName} flex items-center justify-center bg-muted/50`}
-        >
-          <div
-            className="flex items-center gap-2 text-xs text-muted-foreground [&_svg]:size-4"
-            aria-live="polite"
-          >
-            {isLoading ? (
-              <>
-                <Spinner />
-                Taking screenshot…
-              </>
-            ) : blocked ? (
-              <>
-                <IconShieldExclamation />
-                Screenshot unavailable for this domain.
-              </>
-            ) : (
-              <>
-                <IconCircleX />
-                Unable to take a screenshot.
-              </>
-            )}
-          </div>
-        </div>
+        <ScreenshotPlaceholder
+          isLoading={isLoading}
+          blocked={blocked}
+          aspectClassName={aspectClassName}
+        />
       )}
     </div>
   );

@@ -1,4 +1,5 @@
 export {
+  getScreenshotWorkflowToken,
   type ScreenshotWorkflowInput,
   type ScreenshotWorkflowResult,
   screenshotWorkflow,

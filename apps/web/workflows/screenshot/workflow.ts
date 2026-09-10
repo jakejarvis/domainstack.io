@@ -1,12 +1,17 @@
-import { FatalError, RetryableError } from "workflow";
+import { createHook, FatalError, RetryableError } from "workflow";
 
 import { checkBlocklist } from "@/workflows/shared/check-blocklist";
 
 const VIEWPORT_WIDTH = 1200;
 const VIEWPORT_HEIGHT = 630;
 
+export function getScreenshotWorkflowToken(domainId: string): string {
+  return `screenshot:${domainId}`;
+}
+
 export interface ScreenshotWorkflowInput {
   domain: string;
+  domainId: string;
 }
 
 export interface ScreenshotWorkflowData {
@@ -50,7 +55,15 @@ export async function screenshotWorkflow(
 ): Promise<ScreenshotWorkflowResult> {
   "use workflow";
 
-  const { domain } = input;
+  const { domain, domainId } = input;
+
+  using ownership = createHook({
+    token: getScreenshotWorkflowToken(domainId),
+  });
+  const conflictingRun = await ownership.getConflict();
+  if (conflictingRun) {
+    return (await conflictingRun.returnValue) as ScreenshotWorkflowResult;
+  }
 
   // Step 1: Check if domain is blocked (shared step)
   const isBlocked = await checkBlocklist(domain);

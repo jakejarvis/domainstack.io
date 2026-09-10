@@ -1,9 +1,14 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { getRun, start } from "workflow/api";
+import { getHookByToken, getRun, start } from "workflow/api";
+import { HookNotFoundError, WorkflowRunNotFoundError } from "workflow/errors";
 
 import { checkRateLimit } from "@/lib/ratelimit/api";
-import { type ScreenshotWorkflowResult, screenshotWorkflow } from "@/workflows/screenshot";
+import {
+  getScreenshotWorkflowToken,
+  type ScreenshotWorkflowResult,
+  screenshotWorkflow,
+} from "@/workflows/screenshot";
 import { isDomainBlocked } from "@domainstack/db/queries/blocked-domains";
 import { getDomainById } from "@domainstack/db/queries/domains";
 import { getScreenshotByDomainId } from "@domainstack/db/queries/screenshots";
@@ -21,6 +26,16 @@ type ScreenshotStatusResponse =
   | { status: "completed"; cached: false; success: true; data: ScreenshotData }
   | { status: "completed"; cached: false; success: false; error: string; data: { url: null } }
   | { status: "failed"; error: string };
+
+const NO_STORE_HEADERS = {
+  "Cache-Control": "no-cache, no-store",
+} as const;
+
+function withNoStore(headers?: HeadersInit): Headers {
+  const result = new Headers(headers);
+  result.set("Cache-Control", NO_STORE_HEADERS["Cache-Control"]);
+  return result;
+}
 
 /**
  * POST /api/screenshot
@@ -101,13 +116,35 @@ export async function POST(
             cached: true,
             data: { url: cachedScreenshot.url, blocked },
           },
-          { headers: rateLimit.headers },
+          { headers: withNoStore(rateLimit.headers) },
         );
       }
     }
 
-    // Cache miss - start workflow
-    const run = await start(screenshotWorkflow, [{ domain: domain.name }]);
+    // Cache miss - reuse an active workflow when its ownership hook has
+    // already been registered. The workflow also checks for hook conflicts
+    // to close the race between this advisory lookup and start().
+    const token = getScreenshotWorkflowToken(domainId);
+    try {
+      const activeHook = await getHookByToken(token);
+      logger.debug(
+        { domainId, domain: domain.name, runId: activeHook.runId },
+        "reusing active screenshot workflow",
+      );
+      return NextResponse.json(
+        { status: "running", runId: activeHook.runId },
+        { headers: withNoStore(rateLimit.headers) },
+      );
+    } catch (err) {
+      if (!HookNotFoundError.is(err)) {
+        logger.warn(
+          { err, domainId, domain: domain.name },
+          "failed to look up screenshot workflow",
+        );
+      }
+    }
+
+    const run = await start(screenshotWorkflow, [{ domain: domain.name, domainId }]);
 
     logger.debug(
       { domainId, domain: domain.name, runId: run.runId },
@@ -119,7 +156,7 @@ export async function POST(
         status: "running",
         runId: run.runId,
       },
-      { headers: rateLimit.headers },
+      { headers: withNoStore(rateLimit.headers) },
     );
   } catch (err) {
     logger.error({ err }, "failed to start screenshot workflow");
@@ -172,24 +209,35 @@ export async function GET(
           data: result.data,
           ...(!result.success && { error: result.error }),
         } as ScreenshotStatusResponse,
-        { headers: rateLimit.headers },
+        { headers: withNoStore(rateLimit.headers) },
       );
     }
 
-    if (status === "failed") {
+    if (status === "failed" || status === "cancelled") {
       return NextResponse.json(
         {
           status: "failed",
-          error: "workflow_failed",
+          error: status === "cancelled" ? "workflow_cancelled" : "workflow_failed",
         },
-        { headers: rateLimit.headers },
+        { headers: withNoStore(rateLimit.headers) },
       );
     }
 
-    // Still running
-    return NextResponse.json({ status: "running" }, { headers: rateLimit.headers });
+    // Pending and running are both non-terminal.
+    return NextResponse.json({ status: "running" }, { headers: withNoStore(rateLimit.headers) });
   } catch (err) {
-    logger.debug({ err, runId }, "workflow run unavailable");
-    return NextResponse.json({ error: "Run not found" }, { status: 404 });
+    if (WorkflowRunNotFoundError.is(err)) {
+      logger.debug({ err, runId }, "workflow run not visible yet");
+      return NextResponse.json(
+        { error: "Run not found" },
+        { status: 404, headers: NO_STORE_HEADERS },
+      );
+    }
+
+    logger.warn({ err, runId }, "failed to get workflow run status");
+    return NextResponse.json(
+      { error: "Workflow status unavailable" },
+      { status: 503, headers: NO_STORE_HEADERS },
+    );
   }
 }
