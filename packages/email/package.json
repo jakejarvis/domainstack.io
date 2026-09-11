@@ -24,9 +24,9 @@
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@types/node": "catalog:",
-    "@types/react": "19.2.18"
+    "@types/react": "19.3.0"
   },
   "peerDependencies": {
-    "react": ">=19"
+    "react": ">=19.3.0"
   }
 }
