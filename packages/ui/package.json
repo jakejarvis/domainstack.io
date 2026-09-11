@@ -33,7 +33,7 @@
   },
   "peerDependencies": {
     "@tabler/icons-react": "^3",
-    "motion": "^13",
+    "motion": "^13.2.0",
     "react": ">=19",
     "react-dom": ">=19",
     "sonner": "^2"
