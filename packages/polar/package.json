@@ -35,6 +35,6 @@
     "vitest": "catalog:"
   },
   "peerDependencies": {
-    "next": ">=16"
+    "next": ">=16.3.4"
   }
 }
