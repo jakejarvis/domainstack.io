@@ -25,7 +25,7 @@
     "@domainstack/logger": "workspace:*",
     "@domainstack/polar": "workspace:*",
     "@domainstack/redis": "workspace:*",
-    "@vercel/functions": "^3.9.6",
+    "@vercel/functions": "^3.9.7",
     "better-auth": "^1.7.3"
   },
   "devDependencies": {

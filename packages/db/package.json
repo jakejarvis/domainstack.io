@@ -33,12 +33,12 @@
     "@electric-sql/pglite": "^0.5.8",
     "@types/node": "catalog:",
     "@types/pg": "^8.23.1",
-    "@vercel/functions": "^3.9.6",
+    "@vercel/functions": "^3.9.7",
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10"
   },
   "peerDependencies": {
-    "@vercel/functions": ">=2.0.0"
+    "@vercel/functions": ">=3.9.7"
   },
   "peerDependenciesMeta": {
     "@vercel/functions": {
