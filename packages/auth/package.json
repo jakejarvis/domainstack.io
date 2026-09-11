@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.7.3",
-    "@better-auth/infra": "^0.4.7",
+    "@better-auth/infra": "^0.4.9",
     "@domainstack/db": "workspace:*",
     "@domainstack/email": "workspace:*",
     "@domainstack/logger": "workspace:*",
