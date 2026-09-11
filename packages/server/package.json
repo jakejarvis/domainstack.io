@@ -48,6 +48,6 @@
   },
   "peerDependencies": {
     "react": ">=19",
-    "zod": "^4"
+    "zod": "^4.6.2"
   }
 }
