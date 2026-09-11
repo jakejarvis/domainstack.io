@@ -1,30 +1,5 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended", ":dependencyDashboard"],
-  "timezone": "America/New_York",
-  "schedule": ["before 10am every weekday"],
-  "labels": ["dependencies"],
-  "commitMessagePrefix": "chore(deps):",
-  "rangeStrategy": "bump",
-  "lockFileMaintenance": {
-    "enabled": true,
-    "schedule": ["before 10am on monday"]
-  },
-  "ignoreDeps": ["@sparticuz/chromium", "puppeteer", "puppeteer-core"],
-  "packageRules": [
-    {
-      "matchManagers": ["github-actions"],
-      "schedule": ["before 10am on monday"],
-      "groupName": "github-actions"
-    },
-    {
-      "matchDepTypes": ["devDependencies"],
-      "matchUpdateTypes": ["patch", "minor"],
-      "groupName": "dev dependencies (non-major)"
-    },
-    {
-      "matchUpdateTypes": ["major"],
-      "dependencyDashboardApproval": true
-    }
-  ]
+  "extends": ["config:recommended"],
+  "ignoreDeps": ["@sparticuz/chromium", "puppeteer", "puppeteer-core"]
 }
