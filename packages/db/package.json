@@ -38,7 +38,7 @@
     "drizzle-kit": "^0.31.10"
   },
   "peerDependencies": {
-    "@vercel/functions": ">=2.0.0"
+    "@vercel/functions": ">=2.2.13"
   },
   "peerDependenciesMeta": {
     "@vercel/functions": {
