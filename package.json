@@ -36,7 +36,7 @@
     "typescript": "^7.0.2"
   },
   "engines": {
-    "node": ">=24.x"
+    "node": ">=24.21.0"
   },
   "packageManager": "pnpm@11.26.0"
 }

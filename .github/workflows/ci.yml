@@ -27,7 +27,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/setup@v2
         with:
-          runtime: node@24
+          runtime: node@24.21.0
           cache: true
 
       - name: Install Playwright browsers
