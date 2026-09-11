@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@ai-sdk/gateway": "^4.0.76",
-    "@ai-sdk/react": "^4.0.98",
+    "@ai-sdk/react": "^4.0.100",
     "@ai-sdk/workflow": "^2.0.26",
     "@bprogress/next": "^3.2.12",
     "@browser-ai/core": "^3.0.3",
