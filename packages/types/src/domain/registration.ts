@@ -119,4 +119,6 @@ export interface RegistrationSnapshotData {
   statuses: string[];
   /** Unconfirmed change awaiting a repeat observation (see confirmChange). */
   pending?: PendingChangeObservation | null;
+  /** True once a confirmed "domain is no longer registered" alert has been handled for this snapshot. */
+  unregistered?: boolean;
 }

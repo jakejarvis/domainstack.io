@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { CertificateSnapshotData } from "@domainstack/types";
+import type { CertificateSnapshotData, RegistrationSnapshotData } from "@domainstack/types";
 
 import {
   applyCertificateDampening,
@@ -9,6 +9,7 @@ import {
   detectProviderChange,
   detectRegistrationChange,
   evaluateCertificateChange,
+  isUninitializedRegistration,
   providerObservationKey,
   registrationObservationKey,
 } from "./detection";
@@ -847,5 +848,61 @@ describe("registrationObservationKey", () => {
       expect(detectRegistrationChange(previous, current)).toBeNull();
       expect(registrationObservationKey(previous)).toBe(registrationObservationKey(current));
     }
+  });
+});
+
+describe("isUninitializedRegistration", () => {
+  it("is true for the explicit empty shape", () => {
+    const data: RegistrationSnapshotData = {
+      registrarProviderId: null,
+      nameservers: [],
+      transferLock: null,
+      statuses: [],
+    };
+    expect(isUninitializedRegistration(data)).toBe(true);
+  });
+
+  it("is true for the column default {}", () => {
+    expect(isUninitializedRegistration({} as RegistrationSnapshotData)).toBe(true);
+  });
+
+  it("is false when only registrarProviderId is set", () => {
+    const data = {
+      registrarProviderId: "r-1",
+      nameservers: [],
+      transferLock: null,
+      statuses: [],
+    };
+    expect(isUninitializedRegistration(data)).toBe(false);
+  });
+
+  it("is false when only a nameserver is set", () => {
+    const data = {
+      registrarProviderId: null,
+      nameservers: [{ host: "ns1.example.com" }],
+      transferLock: null,
+      statuses: [],
+    };
+    expect(isUninitializedRegistration(data)).toBe(false);
+  });
+
+  it("is false when only transferLock is set to false", () => {
+    const data = {
+      registrarProviderId: null,
+      nameservers: [],
+      transferLock: false,
+      statuses: [],
+    };
+    expect(isUninitializedRegistration(data)).toBe(false);
+  });
+
+  it("is false when only a status is set", () => {
+    const data = {
+      registrarProviderId: null,
+      nameservers: [],
+      transferLock: null,
+      statuses: ["active"],
+    };
+    expect(isUninitializedRegistration(data)).toBe(false);
   });
 });

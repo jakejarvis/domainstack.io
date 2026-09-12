@@ -21,6 +21,8 @@ export interface RegistrationChange {
   newNameservers: { host: string }[];
   newTransferLock: boolean | null;
   newStatuses: string[];
+  /** The domain was registered at the last snapshot and the registry now reports it unregistered. */
+  unregistered?: boolean;
 }
 
 /**

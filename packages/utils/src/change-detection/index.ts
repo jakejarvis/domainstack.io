@@ -13,6 +13,7 @@ export {
   detectProviderChange,
   detectRegistrationChange,
   evaluateCertificateChange,
+  isUninitializedRegistration,
   providerObservationKey,
   registrationObservationKey,
 } from "./detection";

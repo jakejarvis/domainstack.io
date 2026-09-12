@@ -186,6 +186,21 @@ export function registrationObservationKey(current: RegistrationSnapshotData): s
 }
 
 /**
+ * True when a registration snapshot carries no observed data — the baseline was
+ * written while the WHOIS/RDAP lookup was unavailable, or the row still holds
+ * the `{}` column default. The first real observation should be committed
+ * silently rather than reported as a change (mirrors isUninitializedCertificate).
+ */
+export function isUninitializedRegistration(data: RegistrationSnapshotData): boolean {
+  return (
+    data.registrarProviderId == null &&
+    (data.nameservers ?? []).length === 0 &&
+    data.transferLock == null &&
+    (data.statuses ?? []).length === 0
+  );
+}
+
+/**
  * Classify the difference between two certificate snapshots.
  *
  * Decision order:

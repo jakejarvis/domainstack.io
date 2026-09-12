@@ -114,8 +114,21 @@ function StatusesChangeBlock({ changes }: { changes: RegistrationChange }) {
   );
 }
 
+function UnregisteredBlock({ changes }: { changes: RegistrationChange }) {
+  return (
+    <>
+      <EmailSubheading>Domain No Longer Registered</EmailSubheading>
+      <EmailBox variant="danger">
+        <EmailBoxText variant="danger">
+          <strong>Previous registrar:</strong> {changes.previousRegistrar || "Unknown"}
+        </EmailBoxText>
+      </EmailBox>
+    </>
+  );
+}
+
 function RegistrationChangeRiskBanner({ changes }: { changes: RegistrationChange }) {
-  if (changes.registrarChanged || changes.transferLockChanged) {
+  if (changes.unregistered || changes.registrarChanged || changes.transferLockChanged) {
     return (
       <EmailBox variant="danger">
         <EmailBoxText variant="danger">
@@ -146,7 +159,9 @@ function RegistrationChangeEmail({
   changes,
   baseUrl,
 }: RegistrationChangeEmailProps) {
-  const previewText = `Registration changes detected for ${domainName}`;
+  const previewText = changes.unregistered
+    ? `${domainName} is no longer registered`
+    : `Registration changes detected for ${domainName}`;
   const changeCount =
     Number(changes.registrarChanged) +
     Number(changes.nameserversChanged) +
@@ -155,19 +170,36 @@ function RegistrationChangeEmail({
 
   return (
     <EmailLayout previewText={previewText}>
-      <EmailHeading>⚠️ Registration Change Detected</EmailHeading>
+      <EmailHeading>
+        {changes.unregistered
+          ? "🚨 Domain No Longer Registered"
+          : "⚠️ Registration Change Detected"}
+      </EmailHeading>
 
       <EmailText>Hi {userName},</EmailText>
 
-      <EmailText>
-        We detected {changeCount === 1 ? "a change" : `${changeCount} changes`} to the registration
-        details for <strong>{domainName}</strong>.
-      </EmailText>
+      {changes.unregistered ? (
+        <EmailText>
+          The registry now reports <strong>{domainName}</strong> as unregistered. It may have
+          expired, been deleted, or been transferred out of registration.
+        </EmailText>
+      ) : (
+        <EmailText>
+          We detected {changeCount === 1 ? "a change" : `${changeCount} changes`} to the
+          registration details for <strong>{domainName}</strong>.
+        </EmailText>
+      )}
 
-      {changes.registrarChanged ? <RegistrarChangeBlock changes={changes} /> : null}
-      {changes.nameserversChanged ? <NameserverChangeBlock changes={changes} /> : null}
-      {changes.transferLockChanged ? <TransferLockChangeBlock changes={changes} /> : null}
-      {changes.statusesChanged ? <StatusesChangeBlock changes={changes} /> : null}
+      {changes.unregistered ? (
+        <UnregisteredBlock changes={changes} />
+      ) : (
+        <>
+          {changes.registrarChanged ? <RegistrarChangeBlock changes={changes} /> : null}
+          {changes.nameserversChanged ? <NameserverChangeBlock changes={changes} /> : null}
+          {changes.transferLockChanged ? <TransferLockChangeBlock changes={changes} /> : null}
+          {changes.statusesChanged ? <StatusesChangeBlock changes={changes} /> : null}
+        </>
+      )}
 
       <RegistrationChangeRiskBanner changes={changes} />
 
