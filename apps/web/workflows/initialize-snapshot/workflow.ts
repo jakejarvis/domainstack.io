@@ -177,6 +177,19 @@ export async function initializeSnapshotWorkflow(
     email: hostingData?.emailProvider?.id ?? null,
   };
 
+  // An empty DNS record set means we could not observe the domain's providers —
+  // either every resolver failed or the domain resolves to nothing right now.
+  // Writing that as the baseline would lock in an all-null provider snapshot,
+  // and the first time providers are actually observed later, detect-changes
+  // would read that as "provider added" and send a false alert. Skip creating
+  // a snapshot this run; the domain stays in getVerifiedDomainsWithoutSnapshots()
+  // and the next cron cycle retries it.
+  const dnsObserved = dnsResult.data.records.length > 0;
+
+  if (!dnsObserved) {
+    return { success: false, error: "dns_unobserved" };
+  }
+
   // Step 3: Create the baseline snapshot
   const snapshot = await createSnapshotStep({
     trackedDomainId,

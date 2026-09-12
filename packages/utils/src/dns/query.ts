@@ -15,6 +15,9 @@ const DEFAULT_TIMEOUT_MS = 5000;
 /** DoH JSON answers are small; anything larger is a misbehaving provider. */
 const MAX_RESPONSE_BYTES = 1024 * 1024;
 
+/** DNS RCODE 3 — the name does not exist. A legitimate empty result. */
+const RCODE_NXDOMAIN = 3;
+
 /**
  * Build a DoH query URL for a given provider, domain, and record type.
  */
@@ -81,8 +84,21 @@ export async function queryDohProvider(
     throw new Error(`DoH invalid response: ${provider.key} (not an object)`);
   }
 
-  // NXDOMAIN or no answers
-  if (json.Status !== 0 || !json.Answer) {
+  // NXDOMAIN means the name genuinely has no records — a successful empty result.
+  if (json.Status === RCODE_NXDOMAIN) {
+    return [];
+  }
+
+  // Any other non-zero RCODE (SERVFAIL, REFUSED, …) is a resolver failure, not
+  // an answer. It must throw so callers fall back to the next DoH provider —
+  // returning [] here would be indistinguishable from "this domain has no
+  // records" and has caused false "provider removed" notifications.
+  if (json.Status !== 0) {
+    throw new Error(`DoH query failed: ${provider.key} ${type} rcode=${json.Status}`);
+  }
+
+  // NOERROR with no answer section: the name exists but has no records of this type.
+  if (!json.Answer) {
     return [];
   }
 

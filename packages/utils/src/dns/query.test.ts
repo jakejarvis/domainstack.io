@@ -87,7 +87,7 @@ describe("queryDohProvider", () => {
     expect(globalThis.fetch).toHaveBeenCalledTimes(1);
   });
 
-  it("returns empty array for NXDOMAIN (Status !== 0)", async () => {
+  it("returns empty array for NXDOMAIN (Status 3)", async () => {
     mockFetchResponse({
       ok: true,
       json: () =>
@@ -109,6 +109,66 @@ describe("queryDohProvider", () => {
         Promise.resolve({
           Status: 0,
           // No Answer field
+        }),
+    });
+
+    const answers = await queryDohProvider(mockProvider, "example.com", "A");
+
+    expect(answers).toEqual([]);
+  });
+
+  it("throws on SERVFAIL (Status 2) instead of returning an empty array", async () => {
+    mockFetchResponse({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          Status: 2, // SERVFAIL
+          Answer: undefined,
+        }),
+    });
+
+    await expect(queryDohProvider(mockProvider, "example.com", "A")).rejects.toThrow(
+      "DoH query failed: test A rcode=2",
+    );
+  });
+
+  it("throws on REFUSED (Status 5) instead of returning an empty array", async () => {
+    mockFetchResponse({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          Status: 5, // REFUSED
+          Answer: undefined,
+        }),
+    });
+
+    await expect(queryDohProvider(mockProvider, "example.com", "A")).rejects.toThrow(
+      "DoH query failed: test A rcode=5",
+    );
+  });
+
+  it("returns empty array for NOERROR (Status 0) with no Answer section", async () => {
+    mockFetchResponse({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          Status: 0,
+          Answer: undefined,
+        }),
+    });
+
+    const answers = await queryDohProvider(mockProvider, "example.com", "A");
+
+    expect(answers).toEqual([]);
+  });
+
+  it("returns empty array for NXDOMAIN (Status 3) even with a populated Answer section", async () => {
+    mockFetchResponse({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          Status: 3, // NXDOMAIN
+          Answer: [{ name: "example.com", type: 1, TTL: 300, data: "93.184.216.34" }],
         }),
     });
 

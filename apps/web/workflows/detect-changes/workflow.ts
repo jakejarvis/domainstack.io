@@ -302,149 +302,158 @@ export async function detectChangesWorkflow(
     }
   }
 
+  // An empty DNS record set means we could not observe the domain's providers —
+  // either every resolver failed or the domain resolves to nothing right now.
+  // Either way it is not evidence that the providers were removed, and treating
+  // it as such emails users a false "provider removed" alert and then advances
+  // the snapshot so the recovery looks like a second change.
+  const dnsObserved = dnsResult.data.records.length > 0;
+
   // Step 4: Check provider changes
-  const currentProviderIds = {
-    dns: hostingData.dnsProvider?.id ?? null,
-    hosting: hostingData.hostingProvider?.id ?? null,
-    email: hostingData.emailProvider?.id ?? null,
-  };
+  if (dnsObserved) {
+    const currentProviderIds = {
+      dns: hostingData.dnsProvider?.id ?? null,
+      hosting: hostingData.hostingProvider?.id ?? null,
+      email: hostingData.emailProvider?.id ?? null,
+    };
 
-  const providerChange = detectProviderChange(
-    {
-      dnsProviderId: snapshot.dnsProviderId,
-      hostingProviderId: snapshot.hostingProviderId,
-      emailProviderId: snapshot.emailProviderId,
-    },
-    {
-      dnsProviderId: currentProviderIds.dns,
-      hostingProviderId: currentProviderIds.hosting,
-      emailProviderId: currentProviderIds.email,
-    },
-  );
-
-  if (providerChange) {
-    // Step 4a: Check notification preferences
-    const channels = await determineNotificationChannelsStep(
-      userId,
-      trackedDomainId,
-      "providerChanges",
+    const providerChange = detectProviderChange(
+      {
+        dnsProviderId: snapshot.dnsProviderId,
+        hostingProviderId: snapshot.hostingProviderId,
+        emailProviderId: snapshot.emailProviderId,
+      },
+      {
+        dnsProviderId: currentProviderIds.dns,
+        hostingProviderId: currentProviderIds.hosting,
+        emailProviderId: currentProviderIds.email,
+      },
     );
 
-    if (!channels.shouldSendEmail && !channels.shouldSendInApp) {
-      // Muted / disabled: advance on detection so we don't infinitely
-      // re-detect (see registration branch rationale).
-      await updateProviderSnapshot(trackedDomainId, currentProviderIds);
-    } else {
-      // Step 4b: Fetch provider names for notification
-      const providerIds = [
-        snapshot.dnsProviderId,
-        snapshot.hostingProviderId,
-        snapshot.emailProviderId,
-        currentProviderIds.dns,
-        currentProviderIds.hosting,
-        currentProviderIds.email,
-      ].filter((id): id is string => id !== null);
-
-      const providerNames = await resolveProviderNamesStep(providerIds);
-
-      const enrichedChange: ProviderChangeWithNames = {
-        ...providerChange,
-        previousDnsProvider: providerChange.previousDnsProviderId
-          ? providerNames.get(providerChange.previousDnsProviderId) || null
-          : null,
-        newDnsProvider: providerChange.newDnsProviderId
-          ? providerNames.get(providerChange.newDnsProviderId) || null
-          : null,
-        previousHostingProvider: providerChange.previousHostingProviderId
-          ? providerNames.get(providerChange.previousHostingProviderId) || null
-          : null,
-        newHostingProvider: providerChange.newHostingProviderId
-          ? providerNames.get(providerChange.newHostingProviderId) || null
-          : null,
-        previousEmailProvider: providerChange.previousEmailProviderId
-          ? providerNames.get(providerChange.previousEmailProviderId) || null
-          : null,
-        newEmailProvider: providerChange.newEmailProviderId
-          ? providerNames.get(providerChange.newEmailProviderId) || null
-          : null,
-      };
-
-      // Step 4c: Build notification content - inlined
-      const providerChangeDetails: string[] = [];
-
-      if (enrichedChange.dnsProviderChanged) {
-        const prev = enrichedChange.previousDnsProvider;
-        const next = enrichedChange.newDnsProvider;
-        if (prev && next) {
-          providerChangeDetails.push(`DNS provider changed from ${prev} to ${next}`);
-        } else if (next) {
-          providerChangeDetails.push(`DNS provider set to ${next}`);
-        } else if (prev) {
-          providerChangeDetails.push(`DNS provider ${prev} removed`);
-        }
-      }
-
-      if (enrichedChange.hostingProviderChanged) {
-        const prev = enrichedChange.previousHostingProvider;
-        const next = enrichedChange.newHostingProvider;
-        if (prev && next) {
-          providerChangeDetails.push(`Hosting changed from ${prev} to ${next}`);
-        } else if (next) {
-          providerChangeDetails.push(`Hosting set to ${next}`);
-        } else if (prev) {
-          providerChangeDetails.push(`Hosting provider ${prev} removed`);
-        }
-      }
-
-      if (enrichedChange.emailProviderChanged) {
-        const prev = enrichedChange.previousEmailProvider;
-        const next = enrichedChange.newEmailProvider;
-        if (prev && next) {
-          providerChangeDetails.push(`Email provider changed from ${prev} to ${next}`);
-        } else if (next) {
-          providerChangeDetails.push(`Email provider set to ${next}`);
-        } else if (prev) {
-          providerChangeDetails.push(`Email provider ${prev} removed`);
-        }
-      }
-
-      // Determine primary change type for title (in priority order)
-      let providerPrimaryChange = "Provider";
-      if (enrichedChange.dnsProviderChanged) {
-        providerPrimaryChange = "DNS provider";
-      } else if (enrichedChange.hostingProviderChanged) {
-        providerPrimaryChange = "Hosting";
-      } else if (enrichedChange.emailProviderChanged) {
-        providerPrimaryChange = "Email provider";
-      }
-
-      const title = `${providerPrimaryChange} changed for ${domainName}`;
-      const emailSubject = `🔄 ${title}`;
-      const message =
-        providerChangeDetails.length > 0
-          ? `${providerChangeDetails.join(". ")}.`
-          : `Provider configuration updated for ${domainName}.`;
-
-      await sendProviderChangeNotificationStep(
-        {
-          userId,
-          userEmail,
-          trackedDomainId,
-          domainName,
-          userName,
-          title,
-          message,
-          emailSubject,
-          changes: enrichedChange,
-        },
-        channels.shouldSendEmail,
-        channels.shouldSendInApp,
+    if (providerChange) {
+      // Step 4a: Check notification preferences
+      const channels = await determineNotificationChannelsStep(
+        userId,
+        trackedDomainId,
+        "providerChanges",
       );
 
-      results.providerChanges = true;
+      if (!channels.shouldSendEmail && !channels.shouldSendInApp) {
+        // Muted / disabled: advance on detection so we don't infinitely
+        // re-detect (see registration branch rationale).
+        await updateProviderSnapshot(trackedDomainId, currentProviderIds);
+      } else {
+        // Step 4b: Fetch provider names for notification
+        const providerIds = [
+          snapshot.dnsProviderId,
+          snapshot.hostingProviderId,
+          snapshot.emailProviderId,
+          currentProviderIds.dns,
+          currentProviderIds.hosting,
+          currentProviderIds.email,
+        ].filter((id): id is string => id !== null);
 
-      // Advance only after delivery (see registration branch rationale).
-      await updateProviderSnapshot(trackedDomainId, currentProviderIds);
+        const providerNames = await resolveProviderNamesStep(providerIds);
+
+        const enrichedChange: ProviderChangeWithNames = {
+          ...providerChange,
+          previousDnsProvider: providerChange.previousDnsProviderId
+            ? providerNames.get(providerChange.previousDnsProviderId) || null
+            : null,
+          newDnsProvider: providerChange.newDnsProviderId
+            ? providerNames.get(providerChange.newDnsProviderId) || null
+            : null,
+          previousHostingProvider: providerChange.previousHostingProviderId
+            ? providerNames.get(providerChange.previousHostingProviderId) || null
+            : null,
+          newHostingProvider: providerChange.newHostingProviderId
+            ? providerNames.get(providerChange.newHostingProviderId) || null
+            : null,
+          previousEmailProvider: providerChange.previousEmailProviderId
+            ? providerNames.get(providerChange.previousEmailProviderId) || null
+            : null,
+          newEmailProvider: providerChange.newEmailProviderId
+            ? providerNames.get(providerChange.newEmailProviderId) || null
+            : null,
+        };
+
+        // Step 4c: Build notification content - inlined
+        const providerChangeDetails: string[] = [];
+
+        if (enrichedChange.dnsProviderChanged) {
+          const prev = enrichedChange.previousDnsProvider;
+          const next = enrichedChange.newDnsProvider;
+          if (prev && next) {
+            providerChangeDetails.push(`DNS provider changed from ${prev} to ${next}`);
+          } else if (next) {
+            providerChangeDetails.push(`DNS provider set to ${next}`);
+          } else if (prev) {
+            providerChangeDetails.push(`DNS provider ${prev} removed`);
+          }
+        }
+
+        if (enrichedChange.hostingProviderChanged) {
+          const prev = enrichedChange.previousHostingProvider;
+          const next = enrichedChange.newHostingProvider;
+          if (prev && next) {
+            providerChangeDetails.push(`Hosting changed from ${prev} to ${next}`);
+          } else if (next) {
+            providerChangeDetails.push(`Hosting set to ${next}`);
+          } else if (prev) {
+            providerChangeDetails.push(`Hosting provider ${prev} removed`);
+          }
+        }
+
+        if (enrichedChange.emailProviderChanged) {
+          const prev = enrichedChange.previousEmailProvider;
+          const next = enrichedChange.newEmailProvider;
+          if (prev && next) {
+            providerChangeDetails.push(`Email provider changed from ${prev} to ${next}`);
+          } else if (next) {
+            providerChangeDetails.push(`Email provider set to ${next}`);
+          } else if (prev) {
+            providerChangeDetails.push(`Email provider ${prev} removed`);
+          }
+        }
+
+        // Determine primary change type for title (in priority order)
+        let providerPrimaryChange = "Provider";
+        if (enrichedChange.dnsProviderChanged) {
+          providerPrimaryChange = "DNS provider";
+        } else if (enrichedChange.hostingProviderChanged) {
+          providerPrimaryChange = "Hosting";
+        } else if (enrichedChange.emailProviderChanged) {
+          providerPrimaryChange = "Email provider";
+        }
+
+        const title = `${providerPrimaryChange} changed for ${domainName}`;
+        const emailSubject = `🔄 ${title}`;
+        const message =
+          providerChangeDetails.length > 0
+            ? `${providerChangeDetails.join(". ")}.`
+            : `Provider configuration updated for ${domainName}.`;
+
+        await sendProviderChangeNotificationStep(
+          {
+            userId,
+            userEmail,
+            trackedDomainId,
+            domainName,
+            userName,
+            title,
+            message,
+            emailSubject,
+            changes: enrichedChange,
+          },
+          channels.shouldSendEmail,
+          channels.shouldSendInApp,
+        );
+
+        results.providerChanges = true;
+
+        // Advance only after delivery (see registration branch rationale).
+        await updateProviderSnapshot(trackedDomainId, currentProviderIds);
+      }
     }
   }
 
