@@ -1,5 +1,5 @@
 import type { SQL } from "drizzle-orm";
-import { and, asc, count, eq, inArray, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
+import { and, asc, count, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import type {
@@ -528,31 +528,24 @@ async function queryTrackedDomainsWithDetails(
 }
 
 /**
- * Create a new tracked domain record.
+ * Serialize plan-limit checks for one user for the rest of the transaction.
+ *
+ * `SELECT … FOR UPDATE` alone is not enough: it locks existing rows only, so two
+ * concurrent transactions can both count N < max and both insert. A
+ * transaction-scoped advisory lock keyed on the user makes the count-then-write
+ * sequence exclusive per user. Released automatically at commit/rollback.
  */
-export async function createTrackedDomain(params: CreateTrackedDomainParams) {
-  const { userId, domainId, verificationToken, verificationMethod } = params;
-
-  const inserted = await db
-    .insert(userTrackedDomains)
-    .values({
-      userId,
-      domainId,
-      verificationToken,
-      verificationMethod,
-    })
-    .onConflictDoNothing()
-    .returning();
-
-  if (inserted.length === 0) {
-    return null;
-  }
-
-  return inserted[0];
+async function lockUserDomainQuota(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  userId: string,
+) {
+  await tx.execute(
+    sql`select pg_advisory_xact_lock(hashtext(${"tracked-domain-quota:" + userId}))`,
+  );
 }
 
 /**
- * Create a new tracked domain record with atomic limit checking.
+ * Create a new tracked domain record with limit checking serialized per user via an advisory lock.
  */
 export async function createTrackedDomainWithLimitCheck(
   params: CreateTrackedDomainParams & { maxDomains: number },
@@ -560,6 +553,8 @@ export async function createTrackedDomainWithLimitCheck(
   const { userId, domainId, verificationToken, verificationMethod, maxDomains } = params;
 
   return await db.transaction(async (tx) => {
+    await lockUserDomainQuota(tx, userId);
+
     const lockedRows = await tx
       .select({ id: userTrackedDomains.id })
       .from(userTrackedDomains)
@@ -710,23 +705,6 @@ export async function countTrackedDomainsForUser(
  */
 export async function countActiveTrackedDomainsForUser(userId: string): Promise<number> {
   return countTrackedDomainsForUser(userId, false);
-}
-
-/**
- * Count archived tracked domains for a user.
- */
-export async function countArchivedTrackedDomainsForUser(userId: string): Promise<number> {
-  const whereCondition = and(
-    eq(userTrackedDomains.userId, userId),
-    isNotNull(userTrackedDomains.archivedAt),
-  ) as SQL;
-
-  const [result] = await db
-    .select({ count: count() })
-    .from(userTrackedDomains)
-    .where(whereCondition);
-
-  return result?.count ?? 0;
 }
 
 /**
@@ -957,7 +935,7 @@ export async function unarchiveTrackedDomain(id: string) {
 }
 
 /**
- * Unarchive a tracked domain with atomic limit checking.
+ * Unarchive a tracked domain with limit checking serialized per user via an advisory lock.
  */
 export async function unarchiveTrackedDomainWithLimitCheck(
   id: string,
@@ -965,6 +943,8 @@ export async function unarchiveTrackedDomainWithLimitCheck(
   maxDomains: number,
 ): Promise<UnarchiveTrackedDomainWithLimitCheckResult> {
   return await db.transaction(async (tx) => {
+    await lockUserDomainQuota(tx, userId);
+
     const [tracked] = await tx
       .select()
       .from(userTrackedDomains)
@@ -1003,34 +983,6 @@ export async function unarchiveTrackedDomainWithLimitCheck(
 
     return { success: true, trackedDomain: updated } as const;
   });
-}
-
-/**
- * Archive the oldest active tracked domains for a user.
- */
-export async function archiveOldestActiveDomains(
-  userId: string,
-  countToArchive: number,
-): Promise<number> {
-  if (countToArchive <= 0) return 0;
-
-  const result = await db
-    .update(userTrackedDomains)
-    .set({ archivedAt: new Date() })
-    .where(
-      inArray(
-        userTrackedDomains.id,
-        db
-          .select({ id: userTrackedDomains.id })
-          .from(userTrackedDomains)
-          .where(and(eq(userTrackedDomains.userId, userId), isNull(userTrackedDomains.archivedAt)))
-          .orderBy(asc(userTrackedDomains.createdAt))
-          .limit(countToArchive),
-      ),
-    )
-    .returning({ id: userTrackedDomains.id });
-
-  return result.length;
 }
 
 /**
@@ -1188,54 +1140,6 @@ export async function bulkRemoveTrackedDomains(
   const succeeded = deleted.map((d) => d.id);
 
   return { succeeded, notFound, notOwned };
-}
-
-/**
- * Get all archived domains for a user.
- */
-export async function getArchivedDomainsForUser(
-  userId: string,
-): Promise<TrackedDomainWithDetails[]> {
-  const whereCondition = and(
-    eq(userTrackedDomains.userId, userId),
-    isNotNull(userTrackedDomains.archivedAt),
-  );
-
-  return queryTrackedDomainsWithDetails(whereCondition as SQL, userTrackedDomains.archivedAt);
-}
-
-/**
- * Get all stale unverified domains (unverified and older than the cutoff date).
- */
-export async function getStaleUnverifiedDomains(cutoffDate: Date) {
-  const rows = await db
-    .select({
-      id: userTrackedDomains.id,
-      userId: userTrackedDomains.userId,
-      domainName: domains.name,
-      createdAt: userTrackedDomains.createdAt,
-    })
-    .from(userTrackedDomains)
-    .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
-    .where(
-      and(eq(userTrackedDomains.verified, false), lt(userTrackedDomains.createdAt, cutoffDate)),
-    );
-
-  return rows;
-}
-
-/**
- * Delete stale unverified domains.
- */
-export async function deleteStaleUnverifiedDomains(ids: string[]): Promise<number> {
-  if (ids.length === 0) return 0;
-
-  const deleted = await db
-    .delete(userTrackedDomains)
-    .where(inArray(userTrackedDomains.id, ids))
-    .returning({ id: userTrackedDomains.id });
-
-  return deleted.length;
 }
 
 /**

@@ -38,6 +38,8 @@ vi.mock("@domainstack/email/templates/verification-instructions", () => ({
 // Now import modules that depend on the db
 const { domains, userSubscriptions, users, userTrackedDomains } =
   await import("@domainstack/db/schema");
+const { countActiveTrackedDomainsForUser } =
+  await import("@domainstack/db/queries/tracked-domains");
 const { sendEmail } = await import("@domainstack/email");
 const { start } = await import("workflow/api");
 const { createCaller } = await import("@/server/routers/_app");
@@ -53,6 +55,16 @@ const TEST_DOMAIN_ID = "a0000000-0000-1000-a000-000000000001";
 const TEST_DOMAIN_2_ID = "a0000000-0000-1000-a000-000000000002";
 const TEST_TRACKED_ID = "b0000000-0000-1000-a000-000000000010";
 const TEST_TRACKED_2_ID = "b0000000-0000-1000-a000-000000000011";
+
+// Extra domains for exercising the free-plan quota (5 active domains)
+const QUOTA_DOMAIN_IDS = [
+  "a0000000-0000-1000-a000-000000000003",
+  "a0000000-0000-1000-a000-000000000004",
+  "a0000000-0000-1000-a000-000000000005",
+  "a0000000-0000-1000-a000-000000000006",
+  "a0000000-0000-1000-a000-000000000007",
+];
+const QUOTA_DOMAIN_NAMES = QUOTA_DOMAIN_IDS.map((_, i) => `quota-domain-${i + 3}.com`);
 
 // Helper to create a caller with authenticated context
 function createAuthenticatedCaller(userId = TEST_USER_ID) {
@@ -125,6 +137,12 @@ beforeAll(async () => {
         tld: "com",
         unicodeName: "example2.com",
       },
+      ...QUOTA_DOMAIN_IDS.map((id, i) => ({
+        id,
+        name: QUOTA_DOMAIN_NAMES[i],
+        tld: "com",
+        unicodeName: QUOTA_DOMAIN_NAMES[i],
+      })),
     ])
     .onConflictDoNothing();
 });
@@ -319,6 +337,81 @@ describe("tracking router", () => {
       await expect(caller.tracking.addDomain({ domain: "not-a-domain" })).rejects.toThrow(
         "Invalid domain",
       );
+    });
+  });
+
+  describe("addDomain plan-limit enforcement", () => {
+    // Free plan quota is 5 active domains (PLAN_QUOTAS.free).
+    async function trackDomains(userId: string, domainIds: string[]) {
+      await db.insert(userTrackedDomains).values(
+        domainIds.map((domainId, i) => ({
+          id: `b0000000-0000-1000-a000-0000000000${(20 + i).toString().padStart(2, "0")}`,
+          userId,
+          domainId,
+          verificationToken: `token-${i}`,
+          verified: true,
+          verificationMethod: "dns_txt" as const,
+        })),
+      );
+    }
+
+    it("still succeeds under the limit", async () => {
+      const caller = createAuthenticatedCaller();
+
+      // 2 active domains, well under the free-plan quota of 5
+      await trackDomains(TEST_USER_ID, [TEST_DOMAIN_ID, TEST_DOMAIN_2_ID]);
+
+      const result = await caller.tracking.addDomain({ domain: QUOTA_DOMAIN_NAMES[0] });
+
+      expect(result.id).toBeDefined();
+      expect(await countActiveTrackedDomainsForUser(TEST_USER_ID)).toBe(3);
+    });
+
+    it("throws FORBIDDEN at exactly the limit", async () => {
+      const caller = createAuthenticatedCaller();
+
+      // 5 active domains == free-plan quota
+      await trackDomains(TEST_USER_ID, [
+        TEST_DOMAIN_ID,
+        TEST_DOMAIN_2_ID,
+        ...QUOTA_DOMAIN_IDS.slice(0, 3),
+      ]);
+
+      await expect(caller.tracking.addDomain({ domain: "over-the-limit.com" })).rejects.toThrow(
+        "reached your domain tracking limit",
+      );
+      expect(await countActiveTrackedDomainsForUser(TEST_USER_ID)).toBe(5);
+    });
+
+    it("allows exactly one of two concurrent adds at max - 1", async () => {
+      const caller = createAuthenticatedCaller();
+
+      // 4 active domains == quota - 1
+      await trackDomains(TEST_USER_ID, [
+        TEST_DOMAIN_ID,
+        TEST_DOMAIN_2_ID,
+        ...QUOTA_DOMAIN_IDS.slice(0, 2),
+      ]);
+
+      // Two different domains added concurrently (double-click / two tabs).
+      // Note: PGlite is a single connection and may serialize these transactions
+      // regardless of the advisory lock, so this test documents the contract and
+      // guards against regressions with a real connection pool rather than proving
+      // true concurrency here.
+      const results = await Promise.allSettled([
+        caller.tracking.addDomain({ domain: QUOTA_DOMAIN_NAMES[3] }),
+        caller.tracking.addDomain({ domain: QUOTA_DOMAIN_NAMES[4] }),
+      ]);
+
+      const fulfilled = results.filter((r) => r.status === "fulfilled");
+      const rejected = results.filter((r) => r.status === "rejected");
+
+      expect(fulfilled).toHaveLength(1);
+      expect(rejected).toHaveLength(1);
+      expect(rejected[0].reason).toMatchObject({
+        message: expect.stringContaining("reached your domain tracking limit"),
+      });
+      expect(await countActiveTrackedDomainsForUser(TEST_USER_ID)).toBe(5);
     });
   });
 

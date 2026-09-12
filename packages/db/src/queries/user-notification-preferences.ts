@@ -1,5 +1,3 @@
-import { eq } from "drizzle-orm";
-
 import type { UserNotificationPreferences as UserNotificationPreferencesData } from "@domainstack/types";
 
 import { db } from "../client";
@@ -74,23 +72,4 @@ export async function updateUserNotificationPreferences(
     .returning();
 
   return mapPreferences(updated);
-}
-
-/**
- * Get notification preferences for a user (returns null if not found).
- */
-export async function getUserNotificationPreferences(
-  userId: string,
-): Promise<UserNotificationPreferencesData | null> {
-  const rows = await db
-    .select()
-    .from(userNotificationPreferences)
-    .where(eq(userNotificationPreferences.userId, userId))
-    .limit(1);
-
-  if (rows.length === 0) {
-    return null;
-  }
-
-  return mapPreferences(rows[0]);
 }

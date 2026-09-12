@@ -50,23 +50,6 @@ export function buildOAuthProviders(credentials: OAuthConfig): OAuthProviderResu
 }
 
 /**
- * Validates that at least one OAuth provider is configured.
- * Throws an error if no providers have valid credentials.
- *
- * @param credentials - Map of provider to credentials
- * @throws Error if no providers are configured
- */
-export function validateOAuthProviders(credentials: OAuthConfig): void {
-  const { enabledProviders } = buildOAuthProviders(credentials);
-
-  if (enabledProviders.length === 0) {
-    throw new Error(
-      "At least one OAuth provider must be configured (GitHub, GitLab, Google, or Vercel)",
-    );
-  }
-}
-
-/**
  * Validates OAuth credentials pair.
  * Throws an error if only one of clientId/clientSecret is provided.
  *

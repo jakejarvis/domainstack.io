@@ -252,20 +252,6 @@ export async function getNotificationsForTrackedDomain(
 }
 
 /**
- * Delete all notifications for a tracked domain.
- */
-export async function deleteNotificationsForTrackedDomain(
-  trackedDomainId: string,
-): Promise<boolean> {
-  try {
-    await db.delete(notifications).where(eq(notifications.trackedDomainId, trackedDomainId));
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
  * Clear all domain expiry notifications for a tracked domain.
  */
 export async function clearDomainExpiryNotifications(trackedDomainId: string): Promise<number> {
