@@ -5,10 +5,10 @@ import {
   checkAlreadySentStep,
   checkExpiryPreferencesStep,
   getThresholdNotificationType,
-  updateNotificationEmailIdStep,
 } from "@/workflows/shared/notifications";
 import { DOMAIN_EXPIRY_THRESHOLDS } from "@domainstack/constants";
 import type { NotificationChannel, NotificationType } from "@domainstack/types";
+import { formatDateLong } from "@domainstack/utils/date";
 
 export interface DomainExpiryWorkflowInput {
   trackedDomainId: string;
@@ -93,23 +93,22 @@ export async function domainExpiryWorkflow(
     return { skipped: true, reason: "already_sent" };
   }
 
-  // Step 6: Create notification record
+  // Step 6: Build the notification content (pure — no I/O, safe to recompute)
   const expirationDate = new Date(domain.expirationDate);
-  const { notificationId, subject } = await createNotificationRecord({
-    trackedDomainId,
+  const { title, subject, message } = buildDomainExpiryContent({
     domainName: domain.domainName,
-    userId: domain.userId,
     expirationDate,
     daysRemaining,
     registrar: domain.registrar ?? undefined,
-    notificationType,
-    shouldSendEmail: prefs.shouldSendEmail,
-    shouldSendInApp: prefs.shouldSendInApp,
   });
 
-  // Step 7: Send email if enabled
+  // Step 7: Send the email FIRST. A failed send must leave no row behind —
+  // the row is the 30-day dedup key, so recording it before a failed send
+  // would suppress this warning for 30 days. See the idempotency contract in
+  // apps/web/workflows/shared/notifications.ts.
+  let emailId: string | undefined;
   if (prefs.shouldSendEmail) {
-    const { emailId } = await sendDomainExpiryEmail({
+    const sent = await sendDomainExpiryEmail({
       userEmail: domain.userEmail,
       userName: domain.userName,
       domainName: domain.domainName,
@@ -118,10 +117,21 @@ export async function domainExpiryWorkflow(
       registrar: domain.registrar ?? undefined,
       subject,
     });
-
-    // Step 8: Update notification with email ID
-    await updateNotificationEmailIdStep(notificationId, emailId);
+    emailId = sent.emailId;
   }
+
+  // Step 8: Record the notification only after delivery is confirmed.
+  await createNotificationRecord({
+    trackedDomainId,
+    domainName: domain.domainName,
+    userId: domain.userId,
+    title,
+    message,
+    notificationType,
+    shouldSendEmail: prefs.shouldSendEmail,
+    shouldSendInApp: prefs.shouldSendInApp,
+    resendId: emailId,
+  });
 
   return { skipped: false, sent: true };
 }
@@ -153,37 +163,48 @@ async function clearRenewedNotifications(trackedDomainId: string): Promise<numbe
   return await clearDomainExpiryNotifications(trackedDomainId);
 }
 
+function buildDomainExpiryContent(params: {
+  domainName: string;
+  expirationDate: Date;
+  daysRemaining: number;
+  registrar?: string;
+}): { title: string; subject: string; message: string } {
+  const { domainName, expirationDate, daysRemaining, registrar } = params;
+
+  const title = `${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;
+  const subject = `${daysRemaining <= 7 ? "⚠️ " : ""}${title}`;
+  const message = `Your domain ${domainName} will expire on ${formatDateLong(expirationDate)}${registrar ? ` (registered with ${registrar})` : ""}.`;
+
+  return { title, subject, message };
+}
+
 async function createNotificationRecord(params: {
   trackedDomainId: string;
   domainName: string;
   userId: string;
-  expirationDate: Date;
-  daysRemaining: number;
-  registrar?: string;
+  title: string;
+  message: string;
   notificationType: NotificationType;
   shouldSendEmail: boolean;
   shouldSendInApp: boolean;
-}): Promise<{ notificationId: string; title: string; subject: string }> {
+  resendId?: string;
+}): Promise<{ notificationId: string }> {
   "use step";
 
-  const { formatDateLong } = await import("@domainstack/utils/date");
-  const { createNotification } = await import("@domainstack/db/queries/notifications");
+  const { createNotification, updateNotificationResendId } =
+    await import("@domainstack/db/queries/notifications");
 
   const {
     trackedDomainId,
     domainName,
     userId,
-    expirationDate,
-    daysRemaining,
-    registrar,
+    title,
+    message,
     notificationType,
     shouldSendEmail,
     shouldSendInApp,
+    resendId,
   } = params;
-
-  const title = `${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;
-  const subject = `${daysRemaining <= 7 ? "⚠️ " : ""}${title}`;
-  const message = `Your domain ${domainName} will expire on ${formatDateLong(expirationDate)}${registrar ? ` (registered with ${registrar})` : ""}.`;
 
   const channels: NotificationChannel[] = [];
   if (shouldSendEmail) channels.push("email");
@@ -205,7 +226,11 @@ async function createNotificationRecord(params: {
     );
   }
 
-  return { notificationId: notification.id, title, subject };
+  if (resendId) {
+    await updateNotificationResendId(notification.id, resendId);
+  }
+
+  return { notificationId: notification.id };
 }
 
 async function sendDomainExpiryEmail(params: {
@@ -219,7 +244,6 @@ async function sendDomainExpiryEmail(params: {
 }): Promise<{ emailId: string }> {
   "use step";
 
-  const { formatDateLong } = await import("@domainstack/utils/date");
   const { default: DomainExpiryEmail } = await import("@domainstack/email/templates/domain-expiry");
   const { sendEmail } = await import("@/workflows/shared/send-email");
 

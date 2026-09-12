@@ -5,10 +5,10 @@ import {
   checkAlreadySentStep,
   checkExpiryPreferencesStep,
   getThresholdNotificationType,
-  updateNotificationEmailIdStep,
 } from "@/workflows/shared/notifications";
 import { CERTIFICATE_EXPIRY_THRESHOLDS } from "@domainstack/constants";
 import type { NotificationChannel, NotificationType } from "@domainstack/types";
+import { formatDateLong } from "@domainstack/utils/date";
 
 export interface CertificateExpiryWorkflowInput {
   trackedDomainId: string;
@@ -94,22 +94,21 @@ export async function certificateExpiryWorkflow(
     return { skipped: true, reason: "already_sent" };
   }
 
-  // Step 6: Create notification record
-  const { notificationId, subject } = await createNotificationRecord({
-    trackedDomainId,
+  // Step 6: Build the notification content (pure — no I/O, safe to recompute)
+  const { title, subject, message } = buildCertificateExpiryContent({
     domainName: cert.domainName,
-    userId: cert.userId,
     validTo,
     issuer: cert.issuer,
     daysRemaining,
-    notificationType,
-    shouldSendEmail: prefs.shouldSendEmail,
-    shouldSendInApp: prefs.shouldSendInApp,
   });
 
-  // Step 7: Send email if enabled
+  // Step 7: Send the email FIRST. A failed send must leave no row behind —
+  // the row is the 30-day dedup key, so recording it before a failed send
+  // would suppress this warning for 30 days. See the idempotency contract in
+  // apps/web/workflows/shared/notifications.ts.
+  let emailId: string | undefined;
   if (prefs.shouldSendEmail) {
-    const { emailId } = await sendCertificateExpiryEmail({
+    const sent = await sendCertificateExpiryEmail({
       userEmail: cert.userEmail,
       userName: cert.userName,
       domainName: cert.domainName,
@@ -118,10 +117,21 @@ export async function certificateExpiryWorkflow(
       daysRemaining,
       subject,
     });
-
-    // Step 8: Update notification with email ID
-    await updateNotificationEmailIdStep(notificationId, emailId);
+    emailId = sent.emailId;
   }
+
+  // Step 8: Record the notification only after delivery is confirmed.
+  await createNotificationRecord({
+    trackedDomainId,
+    domainName: cert.domainName,
+    userId: cert.userId,
+    title,
+    message,
+    notificationType,
+    shouldSendEmail: prefs.shouldSendEmail,
+    shouldSendInApp: prefs.shouldSendInApp,
+    resendId: emailId,
+  });
 
   return { skipped: false, sent: true };
 }
@@ -153,37 +163,48 @@ async function clearRenewedNotifications(trackedDomainId: string): Promise<numbe
   return await clearCertificateExpiryNotifications(trackedDomainId);
 }
 
+function buildCertificateExpiryContent(params: {
+  domainName: string;
+  validTo: Date;
+  issuer: string;
+  daysRemaining: number;
+}): { title: string; subject: string; message: string } {
+  const { domainName, validTo, issuer, daysRemaining } = params;
+
+  const title = `SSL certificate for ${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;
+  const subject = `${daysRemaining <= 3 ? "🔒⚠️ " : "🔒 "}${title}`;
+  const message = `The SSL certificate for ${domainName} (issued by ${issuer}) will expire on ${formatDateLong(validTo)}.`;
+
+  return { title, subject, message };
+}
+
 async function createNotificationRecord(params: {
   trackedDomainId: string;
   domainName: string;
   userId: string;
-  validTo: Date;
-  issuer: string;
-  daysRemaining: number;
+  title: string;
+  message: string;
   notificationType: NotificationType;
   shouldSendEmail: boolean;
   shouldSendInApp: boolean;
-}): Promise<{ notificationId: string; title: string; subject: string }> {
+  resendId?: string;
+}): Promise<{ notificationId: string }> {
   "use step";
 
-  const { formatDateLong } = await import("@domainstack/utils/date");
-  const { createNotification } = await import("@domainstack/db/queries/notifications");
+  const { createNotification, updateNotificationResendId } =
+    await import("@domainstack/db/queries/notifications");
 
   const {
     trackedDomainId,
     domainName,
     userId,
-    validTo,
-    issuer,
-    daysRemaining,
+    title,
+    message,
     notificationType,
     shouldSendEmail,
     shouldSendInApp,
+    resendId,
   } = params;
-
-  const title = `SSL certificate for ${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;
-  const subject = `${daysRemaining <= 3 ? "🔒⚠️ " : "🔒 "}${title}`;
-  const message = `The SSL certificate for ${domainName} (issued by ${issuer}) will expire on ${formatDateLong(validTo)}.`;
 
   const channels: NotificationChannel[] = [];
   if (shouldSendEmail) channels.push("email");
@@ -205,7 +226,11 @@ async function createNotificationRecord(params: {
     );
   }
 
-  return { notificationId: notification.id, title, subject };
+  if (resendId) {
+    await updateNotificationResendId(notification.id, resendId);
+  }
+
+  return { notificationId: notification.id };
 }
 
 async function sendCertificateExpiryEmail(params: {
@@ -219,7 +244,6 @@ async function sendCertificateExpiryEmail(params: {
 }): Promise<{ emailId: string }> {
   "use step";
 
-  const { formatDateLong } = await import("@domainstack/utils/date");
   const { default: CertificateExpiryEmail } =
     await import("@domainstack/email/templates/certificate-expiry");
   const { sendEmail } = await import("@/workflows/shared/send-email");
