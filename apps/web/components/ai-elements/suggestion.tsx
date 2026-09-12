@@ -2,7 +2,6 @@
 
 import type { ComponentProps } from "react";
 
-import { useHaptics } from "@/components/providers/haptics-provider";
 import { Button } from "@domainstack/ui/button";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
 import { cn } from "@domainstack/ui/utils";
@@ -29,10 +28,7 @@ export const Suggestion = ({
   children,
   ...props
 }: SuggestionProps) => {
-  const { trigger } = useHaptics();
-
   const handleClick = () => {
-    void trigger("light");
     onClick?.(suggestion);
   };
 

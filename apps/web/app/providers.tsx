@@ -5,7 +5,6 @@ import { LazyMotion, MotionConfig, domMax } from "motion/react";
 import { ThemeProvider } from "next-themes";
 
 import { PostHogIdentityProvider } from "@/components/analytics/posthog-identity";
-import { HapticsProvider } from "@/components/providers/haptics-provider";
 import { TRPCProvider } from "@/trpc/client";
 import { TooltipProvider } from "@domainstack/ui/tooltip";
 
@@ -29,9 +28,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
                   ease: [0.22, 1, 0.36, 1] as const,
                 }}
               >
-                <LazyMotion features={domMax}>
-                  <HapticsProvider>{children}</HapticsProvider>
-                </LazyMotion>
+                <LazyMotion features={domMax}>{children}</LazyMotion>
               </MotionConfig>
             </ProgressProvider>
           </TooltipProvider>
