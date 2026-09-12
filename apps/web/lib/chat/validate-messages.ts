@@ -23,7 +23,7 @@ export async function validateChatMessages(
 ): Promise<{ success: true; data: UIMessage[] } | { success: false; error: Error }> {
   const result = await safeValidateUIMessages({
     messages,
-    tools: createDomainToolSchemas() as never,
+    tools: createDomainToolSchemas(),
   });
 
   if (!result.success) {
