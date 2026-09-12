@@ -54,7 +54,7 @@ export async function GithubStars() {
           className="group inline-flex shrink-0 items-center gap-2"
         >
           <SiGithub className="flex size-3.5 shrink-0 transition-colors group-hover:text-foreground" />
-          <span className="relative inline-block font-mono text-[13px] leading-none text-muted-foreground transition-colors group-hover:text-foreground">
+          <span className="relative hidden font-mono text-[13px] leading-none text-muted-foreground transition-colors group-hover:text-foreground sm:inline-block">
             {label}
           </span>
         </a>

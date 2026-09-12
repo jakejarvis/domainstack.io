@@ -17,7 +17,7 @@ export function AppHeader() {
     <AppHeaderGrid>
       <Link
         href="/"
-        className="mr-1 flex items-center justify-self-start rounded-md text-foreground transition-[color,transform] duration-200 hover:text-muted-foreground active:scale-95"
+        className="mr-1 flex items-center justify-self-start rounded-md p-1 text-foreground transition-[color,transform] duration-200 hover:text-muted-foreground active:scale-95"
         aria-label="Go to homepage"
       >
         <Logo className="size-8" />
@@ -30,7 +30,7 @@ export function AppHeader() {
           fallback={
             <div className="inline-flex h-8 shrink-0 items-center gap-2 px-2.5">
               <SiGithub className="flex size-3.5 shrink-0" aria-hidden="true" />
-              <Skeleton className="h-[13px] w-[28px]" />
+              <Skeleton className="hidden h-[13px] w-[28px] sm:block" />
             </div>
           }
         >

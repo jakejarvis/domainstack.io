@@ -74,7 +74,11 @@ export function HomeSearchSuggestionsClient({
   }
 
   return (
-    <ScrollArea className={cn("w-full", className)} scrollRef={scrollContainerRef} hideScrollbar>
+    <ScrollArea
+      className={cn("w-full [&_[data-slot=scroll-area-viewport]]:overscroll-y-none", className)}
+      scrollRef={scrollContainerRef}
+      hideScrollbar
+    >
       <div className="flex gap-2 p-0.5">
         {displayedSuggestions.map((domain) => (
           <Button
