@@ -83,7 +83,7 @@ async function fetchFromApi(ip: string, apiKey: string): Promise<IplocateApiResp
   const url = new URL(`https://www.iplocate.io/api/lookup/${encodeURIComponent(ip)}`);
   url.searchParams.set("apikey", apiKey);
 
-  const res = await fetch(url.toString());
+  const res = await fetch(url.toString(), { signal: AbortSignal.timeout(5000) });
 
   if (!res.ok) {
     await res.body?.cancel();
@@ -164,12 +164,6 @@ function transformApiResponse(data: IplocateApiResponse): GeoIpData {
   return { geo, owner, domain };
 }
 
-const EMPTY_RESPONSE: GeoIpData = {
-  geo: null,
-  owner: null,
-  domain: null,
-};
-
 /**
  * Lookup IP metadata including geolocation and ownership information.
  *
@@ -179,12 +173,15 @@ const EMPTY_RESPONSE: GeoIpData = {
  *
  * Raw response is cached in Redis for flexibility - if transformation logic changes,
  * cached data remains valid. Transformation is cheap and happens per-request.
+ *
+ * Returns `null` when no data is available (API key unset, upstream failure, or
+ * timeout) so callers can tell "unobserved" from "no owner".
  */
-export const lookupGeoIp = cache(async function lookupGeoIp(ip: string): Promise<GeoIpData> {
+export const lookupGeoIp = cache(async function lookupGeoIp(ip: string): Promise<GeoIpData | null> {
   const raw = await getOrFetchApiResponse(ip);
 
   if (!raw) {
-    return EMPTY_RESPONSE;
+    return null;
   }
 
   return transformApiResponse(raw);

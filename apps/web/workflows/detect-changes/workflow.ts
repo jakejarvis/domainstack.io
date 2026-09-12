@@ -443,11 +443,19 @@ export async function detectChangesWorkflow(
   // the snapshot so the recovery looks like a second change.
   const dnsObserved = dnsResult.data.records.length > 0;
 
+  // Hosting is derived from HTTP headers (catalog match), falling back to the
+  // IP owner from GeoIP. When the domain has an address but either input was
+  // unavailable this run, the derived value is not evidence of a change —
+  // compare against the stored provider instead (same rule as dnsObserved).
+  const hostingObserved = ip === null || (headersResult?.success === true && geoResult !== null);
+
   // Step 4: Check provider changes
   if (dnsObserved) {
     const currentProviderIds = {
       dns: hostingData.dnsProvider?.id ?? null,
-      hosting: hostingData.hostingProvider?.id ?? null,
+      hosting: hostingObserved
+        ? (hostingData.hostingProvider?.id ?? null)
+        : snapshot.hostingProviderId,
       email: hostingData.emailProvider?.id ?? null,
     };
 

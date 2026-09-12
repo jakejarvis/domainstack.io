@@ -11,9 +11,9 @@ import type { DnsRecord, GeoIpData, Header, ProviderDetectionData } from "@domai
  * Step: Lookup GeoIP data for an IP address.
  *
  * @param ip - The IP address to lookup
- * @returns GeoIpData with location and ownership info
+ * @returns GeoIpData, or null when the lookup produced no data
  */
-export async function lookupGeoIpStep(ip: string): Promise<GeoIpData> {
+export async function lookupGeoIpStep(ip: string): Promise<GeoIpData | null> {
   "use step";
 
   const { lookupGeoIp } = await import("@/lib/geoip");
