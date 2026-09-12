@@ -23,6 +23,7 @@ import { start } from "workflow/api";
 
 import { chatRequestSchema } from "@/lib/chat/request-schema";
 import { validateChatMessages } from "@/lib/chat/validate-messages";
+import { aiModel } from "@/lib/flags";
 import { checkRateLimit } from "@/lib/ratelimit/api";
 import { chatWorkflow } from "@/workflows/chat";
 import { auth } from "@domainstack/auth/server";
@@ -139,10 +140,14 @@ export async function POST(request: Request) {
   // Get IP for rate limiting in tools
   const ip = ipAddress(request) ?? null;
 
+  // Resolve the model here rather than inside the workflow: the flag is
+  // evaluated against the real user request, so Flags Explorer overrides apply.
+  const model = await aiModel();
+
   // Start the chat workflow with serializable inputs only
   try {
     const run = await start(chatWorkflow, [
-      { messages, domain, ip, userId, sessionId: sessionId ?? null },
+      { messages, domain, ip, userId, sessionId: sessionId ?? null, model },
     ]);
 
     // Convert raw ModelCallStreamPart chunks to UI message chunks for the client

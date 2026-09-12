@@ -1,3 +1,4 @@
+import { VercelToolbar } from "@vercel/toolbar/next";
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import type { Metadata, Viewport } from "next";
@@ -70,6 +71,8 @@ export default function RootLayout({ children, modal }: LayoutProps<"/">) {
 
           {modal}
         </Providers>
+
+        {process.env.NODE_ENV === "development" && <VercelToolbar />}
       </body>
     </html>
   );

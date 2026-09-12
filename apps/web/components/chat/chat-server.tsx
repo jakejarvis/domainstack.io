@@ -1,6 +1,6 @@
 import { cacheLife } from "next/cache";
 
-import { getDefaultSuggestions } from "@domainstack/edge-config";
+import { landingSuggestions } from "@/lib/flags";
 
 import { ChatClientLazy } from "./chat-client-lazy";
 
@@ -14,9 +14,6 @@ const QUESTION_TEMPLATES = [
   (d: string) => `What DNS records does ${d} have?`,
   (d: string) => `Which email provider does ${d} use?`,
 ];
-
-/** Fallback domains when Edge Config is empty */
-const FALLBACK_DOMAINS = ["vercel.com", "github.com", "stackoverflow.com", "chatgpt.com"];
 
 /** Fisher-Yates shuffle */
 function shuffle<T>(array: T[]): T[] {
@@ -32,12 +29,12 @@ function shuffle<T>(array: T[]): T[] {
  * Shared suggestion list for the cache window. Shuffle is legal inside
  * `"use cache"` because the result is captured and reused across visitors.
  */
-async function getChatSuggestions(): Promise<string[]> {
+async function getChatSuggestions(domains: string[]): Promise<string[]> {
   "use cache";
   cacheLife("hours");
 
-  const configDomains = await getDefaultSuggestions();
-  const domains = configDomains.length > 0 ? configDomains : FALLBACK_DOMAINS;
+  // No domains configured means no suggestions; also avoids a modulo by zero below.
+  if (domains.length === 0) return [];
 
   // Shuffle both domains and questions, then pair them up
   const shuffledDomains = shuffle(domains);
@@ -50,9 +47,13 @@ async function getChatSuggestions(): Promise<string[]> {
 
 /**
  * Server component wrapper that generates cached suggestions
- * using domains from Edge Config.
+ * using domains from the `landing-suggestions` flag.
+ *
+ * The flag is read here rather than inside `getChatSuggestions`: flag
+ * evaluation reads request headers, which is not allowed inside `"use cache"`.
+ * The resolved list is passed in as an argument, so it joins the cache key.
  */
 export async function ChatServer() {
-  const suggestions = await getChatSuggestions();
+  const suggestions = await getChatSuggestions(await landingSuggestions());
   return <ChatClientLazy suggestions={suggestions} />;
 }

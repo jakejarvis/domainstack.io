@@ -5,40 +5,13 @@
  * Uses React's cache() for request-level deduplication.
  */
 
-import { createClient, get } from "@vercel/edge-config";
+import { get } from "@vercel/edge-config";
 import { cache } from "react";
 
 import { createLogger } from "@domainstack/logger";
 import { type ProviderCatalog, safeParseProviderCatalog } from "@domainstack/utils/providers";
 
 const logger = createLogger({ source: "edge-config" });
-
-/**
- * Fetches the default domain suggestions from Vercel Edge Config.
- *
- * Falls back to an empty array if Edge Config is not configured or the key doesn't exist,
- * which shows only user search history without default suggestions.
- *
- * Edge Config key: `domain_suggestions`
- *
- * @returns Array of suggested domain names (empty array if unavailable)
- */
-export const getDefaultSuggestions = cache(async (): Promise<string[]> => {
-  if (!process.env.EDGE_CONFIG) {
-    return [];
-  }
-
-  try {
-    // Uses `force-cache` so Cache Components can include the list in the static shell.
-    // The default Edge Config client uses `no-store`, which hangs during prerender.
-    const edgeConfig = createClient(process.env.EDGE_CONFIG, { cache: "force-cache" });
-    const suggestions = await edgeConfig.get<string[]>("domain_suggestions");
-    return suggestions ?? [];
-  } catch (err) {
-    logger.warn(err, "failed to fetch domain suggestions");
-    return [];
-  }
-});
 
 /**
  * Fetches the provider catalog from Vercel Edge Config.
@@ -76,51 +49,3 @@ export const getProviderCatalog = cache(async (): Promise<ProviderCatalog | null
     return null;
   }
 });
-
-/**
- * Fetches the screenshot blocklist source URLs from Vercel Edge Config.
- *
- * Returns an empty array if Edge Config is not configured or the key doesn't exist,
- * which disables blocklist syncing (all domains allowed).
- *
- * Edge Config key: `screenshot_blocklist_sources`
- *
- * @returns Array of blocklist source URLs (empty array if unavailable)
- */
-export async function getBlocklistSources(): Promise<string[]> {
-  if (!process.env.EDGE_CONFIG) {
-    return [];
-  }
-
-  try {
-    const sources = await get<string[]>("screenshot_blocklist_sources");
-    return sources ?? [];
-  } catch (err) {
-    logger.warn(err, "failed to fetch screenshot blocklist sources");
-    return [];
-  }
-}
-
-/**
- * Fetches the AI chat model identifier from Vercel Edge Config.
- *
- * Returns null if Edge Config is not configured or the key doesn't exist.
- * The caller should fall back to a default model when null is returned.
- *
- * Edge Config key: `ai_chat_model`
- *
- * @returns AI Gateway model identifier, or null if unavailable
- */
-export async function getAiChatModel(): Promise<string | null> {
-  if (!process.env.EDGE_CONFIG) {
-    return null;
-  }
-
-  try {
-    const model = await get<string>("ai_chat_model");
-    return model ?? null;
-  } catch (err) {
-    logger.warn(err, "failed to fetch AI chat model");
-    return null;
-  }
-}

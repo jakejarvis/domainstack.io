@@ -1,4 +1,5 @@
 import { withPostHogConfig } from "@posthog/nextjs-config";
+import createWithVercelToolbar from "@vercel/toolbar/plugins/next";
 import type { NextConfig } from "next";
 import { withWorkflow } from "workflow/next";
 
@@ -92,4 +93,4 @@ if (process.env.POSTHOG_API_KEY && process.env.POSTHOG_ENV_ID) {
   });
 }
 
-export default withWorkflow(nextConfig);
+export default withWorkflow(createWithVercelToolbar()(nextConfig));

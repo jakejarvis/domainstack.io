@@ -17,7 +17,6 @@ import { getWorkflowMetadata, getWritable } from "workflow";
 
 import { MAX_OUTPUT_TOKENS, MAX_TOOL_STEPS } from "@domainstack/constants";
 
-import { getModelStep } from "./gateway";
 import { buildSystemPromptStep } from "./prompt";
 import { captureChatTelemetryStep, toChatTelemetryPayload } from "./telemetry";
 import { createDomainToolset, createDomainToolsContext } from "./tools";
@@ -31,6 +30,8 @@ export interface ChatWorkflowInput {
   userId: string | null;
   /** Groups turns of one conversation for AI observability - must be serializable */
   sessionId: string | null;
+  /** AI Gateway model ID resolved from the `ai-model` flag - must be serializable */
+  model: string;
 }
 
 /**
@@ -40,16 +41,14 @@ export interface ChatWorkflowInput {
 export async function chatWorkflow(input: ChatWorkflowInput) {
   "use workflow";
 
-  const { messages, domain, ip, userId, sessionId } = input;
+  const { messages, domain, ip, userId, sessionId, model } = input;
 
   const domainTools = createDomainToolset();
   const modelMessages = await convertToModelMessages(messages, {
     tools: domainTools,
     ignoreIncompleteToolCalls: true,
   });
-  // Independent steps: the prompt is built locally while the model ID is
-  // resolved from Edge Config, so run them concurrently.
-  const [systemPrompt, model] = await Promise.all([buildSystemPromptStep(domain), getModelStep()]);
+  const systemPrompt = await buildSystemPromptStep(domain);
   const { workflowRunId } = getWorkflowMetadata();
 
   const agent = new WorkflowAgent({

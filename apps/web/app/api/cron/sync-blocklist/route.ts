@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { blocklistSources } from "@/lib/flags";
 import { syncBlockedDomains } from "@domainstack/db/queries/blocked-domains";
-import { getBlocklistSources } from "@domainstack/edge-config";
 import { createLogger } from "@domainstack/logger";
 
 const logger = createLogger({ source: "cron/sync-blocklist" });
@@ -9,7 +9,7 @@ const logger = createLogger({ source: "cron/sync-blocklist" });
 /**
  * Cron job to sync the screenshot blocklist from external sources.
  *
- * Fetches blocklist URLs from Edge Config, downloads each list,
+ * Fetches blocklist URLs from the `blocklist-sources` flag, downloads each list,
  * parses domains, and syncs to the blocked_domains table.
  */
 export async function GET(request: Request) {
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
   try {
     logger.info("Starting sync blocklist cron job");
 
-    const sources = await getBlocklistSources();
+    const sources = await blocklistSources();
 
     if (sources.length === 0) {
       logger.info("No blocklist sources configured");

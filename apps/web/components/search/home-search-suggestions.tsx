@@ -2,12 +2,12 @@ import {
   HomeSearchSuggestionsClient,
   type HomeSearchSuggestionsClientProps,
 } from "@/components/search/home-search-suggestions-client";
-import { getDefaultSuggestions } from "@domainstack/edge-config";
+import { landingSuggestions } from "@/lib/flags";
 
 export async function DomainSuggestions(
   props: Omit<HomeSearchSuggestionsClientProps, "defaultSuggestions">,
 ) {
-  const defaultSuggestions = await getDefaultSuggestions();
+  const defaultSuggestions = await landingSuggestions();
 
   return <HomeSearchSuggestionsClient defaultSuggestions={defaultSuggestions} {...props} />;
 }

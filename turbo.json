@@ -16,6 +16,7 @@
         "DYNADOT_API_KEY",
         "EDGE_CONFIG",
         "EXTERNAL_USER_AGENT",
+        "FLAGS_SECRET",
         "GITHUB_CLIENT_ID",
         "GITHUB_CLIENT_SECRET",
         "GITLAB_CLIENT_ID",
