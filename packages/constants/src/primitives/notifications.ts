@@ -15,6 +15,9 @@ export const NOTIFICATION_CATEGORIES = [
   "certificateChanges",
 ] as const;
 
+/** Consecutive matching observations required before a provider or registration change notifies. */
+export const CHANGE_CONFIRMATIONS = 2;
+
 // Notification thresholds (days before expiration)
 export const DOMAIN_EXPIRY_THRESHOLDS = [30, 14, 7, 1] as const;
 export const CERTIFICATE_EXPIRY_THRESHOLDS = [14, 7, 3, 1] as const;

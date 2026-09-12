@@ -4,10 +4,13 @@ import type { CertificateSnapshotData } from "@domainstack/types";
 
 import {
   applyCertificateDampening,
+  confirmChange,
   detectCertificateChange,
   detectProviderChange,
   detectRegistrationChange,
   evaluateCertificateChange,
+  providerObservationKey,
+  registrationObservationKey,
 } from "./detection";
 
 describe("detectRegistrationChange", () => {
@@ -711,5 +714,138 @@ describe("certificate authority remapping", () => {
       serialNumber: "02",
     };
     expect(detectCertificateChange(cert, rotated).kind).toBe("authority");
+  });
+});
+
+describe("confirmChange", () => {
+  it("holds the first sighting of a change as pending", () => {
+    const now = new Date("2026-01-01T00:00:00.000Z");
+    const result = confirmChange(null, "key-a", now);
+
+    expect(result.confirmed).toBe(false);
+    expect(result.pending).toEqual({
+      key: "key-a",
+      firstSeenAt: now.toISOString(),
+      observations: 1,
+    });
+  });
+
+  it("confirms once the same key is observed CHANGE_CONFIRMATIONS times in a row", () => {
+    const firstSeenAt = "2026-01-01T00:00:00.000Z";
+    const pending = { key: "key-a", firstSeenAt, observations: 1 };
+    const result = confirmChange(pending, "key-a", new Date("2026-01-01T01:00:00.000Z"));
+
+    expect(result.confirmed).toBe(true);
+    expect(result.pending).toBeNull();
+  });
+
+  it("resets the count when a different key is observed", () => {
+    const pending = { key: "key-a", firstSeenAt: "2026-01-01T00:00:00.000Z", observations: 1 };
+    const now = new Date("2026-01-01T01:00:00.000Z");
+    const result = confirmChange(pending, "key-b", now);
+
+    expect(result.confirmed).toBe(false);
+    expect(result.pending).toEqual({
+      key: "key-b",
+      firstSeenAt: now.toISOString(),
+      observations: 1,
+    });
+  });
+
+  it("preserves firstSeenAt across a matching observation that doesn't yet confirm", () => {
+    const firstSeenAt = "2026-01-01T00:00:00.000Z";
+    // A synthetic low observation count so the matching call stays under
+    // CHANGE_CONFIRMATIONS, isolating the firstSeenAt-preservation branch.
+    const pending = { key: "key-a", firstSeenAt, observations: 0 };
+    const result = confirmChange(pending, "key-a", new Date("2026-01-02T00:00:00.000Z"));
+
+    expect(result.confirmed).toBe(false);
+    expect(result.pending).toEqual({ key: "key-a", firstSeenAt, observations: 1 });
+  });
+});
+
+describe("providerObservationKey", () => {
+  it("is stable for identical provider IDs", () => {
+    const a = { dnsProviderId: "dns-1", hostingProviderId: "hosting-1", emailProviderId: null };
+    const b = { dnsProviderId: "dns-1", hostingProviderId: "hosting-1", emailProviderId: null };
+    expect(providerObservationKey(a)).toBe(providerObservationKey(b));
+  });
+
+  it("differs when any provider ID differs", () => {
+    const a = { dnsProviderId: "dns-1", hostingProviderId: "hosting-1", emailProviderId: null };
+    const b = { dnsProviderId: "dns-2", hostingProviderId: "hosting-1", emailProviderId: null };
+    expect(providerObservationKey(a)).not.toBe(providerObservationKey(b));
+  });
+});
+
+describe("registrationObservationKey", () => {
+  const baseSnapshot = {
+    registrarProviderId: "registrar-1",
+    nameservers: [{ host: "ns1.example.com" }, { host: "ns2.example.com" }],
+    transferLock: true,
+    statuses: ["active", "clientTransferProhibited"],
+  };
+
+  it("is identical regardless of nameserver order and case", () => {
+    const reordered = {
+      ...baseSnapshot,
+      nameservers: [{ host: "NS2.EXAMPLE.COM" }, { host: "ns1.example.com" }],
+    };
+    expect(registrationObservationKey(baseSnapshot)).toBe(registrationObservationKey(reordered));
+  });
+
+  it("is identical for statuses that differ only in formatting", () => {
+    const reformatted = {
+      ...baseSnapshot,
+      statuses: ["Active", "client transfer prohibited"],
+    };
+    expect(registrationObservationKey(baseSnapshot)).toBe(registrationObservationKey(reformatted));
+  });
+
+  it("differs when the registrar changes", () => {
+    const current = { ...baseSnapshot, registrarProviderId: "registrar-2" };
+    expect(registrationObservationKey(baseSnapshot)).not.toBe(registrationObservationKey(current));
+  });
+
+  it("matches detectRegistrationChange's null-change fixtures", () => {
+    // Every pair here is asserted elsewhere to make detectRegistrationChange
+    // return null; the invariant is that they produce the same key too.
+    const nullPairs: [
+      Parameters<typeof registrationObservationKey>[0],
+      Parameters<typeof registrationObservationKey>[0],
+    ][] = [
+      [baseSnapshot, { ...baseSnapshot }],
+      [
+        baseSnapshot,
+        {
+          ...baseSnapshot,
+          nameservers: [{ host: "ns2.example.com" }, { host: "ns1.example.com" }],
+        },
+      ],
+      [
+        baseSnapshot,
+        {
+          ...baseSnapshot,
+          nameservers: [{ host: "NS1.EXAMPLE.COM" }, { host: "NS2.EXAMPLE.COM" }],
+        },
+      ],
+      [baseSnapshot, { ...baseSnapshot, statuses: ["active", "client transfer prohibited"] }],
+      [
+        { registrarProviderId: null, nameservers: [], transferLock: null, statuses: [] },
+        { registrarProviderId: null, nameservers: [], transferLock: null, statuses: [] },
+      ],
+      [
+        baseSnapshot,
+        {
+          ...baseSnapshot,
+          nameservers: [{ host: "ns1.example.com." }, { host: "NS2.example.com." }],
+        },
+      ],
+    ];
+
+    for (const [previous, current] of nullPairs) {
+      expect(detectRegistrationChange(previous, current)).toBeNull();
+      expect(registrationObservationKey(previous)).toBe(registrationObservationKey(current));
+    }
   });
 });

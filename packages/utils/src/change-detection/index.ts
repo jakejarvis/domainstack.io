@@ -8,9 +8,12 @@
 
 export {
   applyCertificateDampening,
+  confirmChange,
   detectCertificateChange,
   detectProviderChange,
   detectRegistrationChange,
   evaluateCertificateChange,
+  providerObservationKey,
+  registrationObservationKey,
 } from "./detection";
 export { normalizeStatus, statusesAreEqual } from "./status";

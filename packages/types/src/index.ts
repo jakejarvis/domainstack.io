@@ -34,6 +34,7 @@ export type {
   CertificateChangeEvaluation,
   CertificateChangeWithNames,
   CertificateDampeningResult,
+  PendingChangeObservation,
   ProviderChange,
   ProviderChangeWithNames,
   ProviderSnapshotData,

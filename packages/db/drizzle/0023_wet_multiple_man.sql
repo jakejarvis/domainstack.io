@@ -1,0 +1,1 @@
+ALTER TABLE "domain_snapshots" ADD COLUMN "provider_pending" jsonb;

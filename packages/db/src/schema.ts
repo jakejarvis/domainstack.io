@@ -31,6 +31,7 @@ import type {
   NotificationChannel,
   NotificationType,
   OpenGraphMeta,
+  PendingChangeObservation,
   RegistrationContact,
   RegistrationNameserver,
   RegistrationSnapshotData,
@@ -625,6 +626,8 @@ export const domainSnapshots = pgTable("domain_snapshots", {
   dnsProviderId: uuid("dns_provider_id").references(() => providers.id),
   hostingProviderId: uuid("hosting_provider_id").references(() => providers.id),
   emailProviderId: uuid("email_provider_id").references(() => providers.id),
+  // Unconfirmed provider change awaiting a repeat observation (see confirmChange).
+  providerPending: jsonb("provider_pending").$type<PendingChangeObservation>(),
   // Certificate snapshot (JSONB)
   certificate: jsonb("certificate")
     .$type<CertificateSnapshotData>()

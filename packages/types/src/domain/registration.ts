@@ -2,6 +2,7 @@
  * Registration types - Plain TypeScript interfaces.
  */
 
+import type { PendingChangeObservation } from "../monitoring";
 import type {
   RegistrationAvailability,
   RegistrationContactType,
@@ -116,4 +117,6 @@ export interface RegistrationSnapshotData {
   nameservers: { host: string }[];
   transferLock: boolean | null;
   statuses: string[];
+  /** Unconfirmed change awaiting a repeat observation (see confirmChange). */
+  pending?: PendingChangeObservation | null;
 }

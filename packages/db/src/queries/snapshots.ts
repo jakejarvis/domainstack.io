@@ -1,6 +1,10 @@
 import { and, eq, isNull } from "drizzle-orm";
 
-import type { CertificateSnapshotData, RegistrationSnapshotData } from "@domainstack/types";
+import type {
+  CertificateSnapshotData,
+  PendingChangeObservation,
+  RegistrationSnapshotData,
+} from "@domainstack/types";
 
 import { db } from "../client";
 import { domainSnapshots, domains, users, userTrackedDomains } from "../schema";
@@ -26,6 +30,7 @@ export interface UpdateSnapshotParams {
   dnsProviderId?: string | null;
   hostingProviderId?: string | null;
   emailProviderId?: string | null;
+  providerPending?: PendingChangeObservation | null;
 }
 
 /**
@@ -42,6 +47,7 @@ export interface SnapshotForMonitoring {
   dnsProviderId: string | null;
   hostingProviderId: string | null;
   emailProviderId: string | null;
+  providerPending: PendingChangeObservation | null;
   userEmail: string;
   userName: string;
 }
@@ -143,6 +149,9 @@ export async function updateSnapshot(trackedDomainId: string, params: UpdateSnap
   if (params.emailProviderId !== undefined) {
     updates.emailProviderId = params.emailProviderId;
   }
+  if (params.providerPending !== undefined) {
+    updates.providerPending = params.providerPending;
+  }
 
   const updated = await db
     .update(domainSnapshots)
@@ -210,6 +219,7 @@ export async function getSnapshot(trackedDomainId: string): Promise<SnapshotForM
       dnsProviderId: domainSnapshots.dnsProviderId,
       hostingProviderId: domainSnapshots.hostingProviderId,
       emailProviderId: domainSnapshots.emailProviderId,
+      providerPending: domainSnapshots.providerPending,
       userEmail: users.email,
       userName: users.name,
     })

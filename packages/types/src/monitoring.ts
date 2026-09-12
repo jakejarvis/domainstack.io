@@ -81,6 +81,16 @@ export interface ProviderSnapshotData {
 }
 
 /**
+ * A candidate change seen but not yet confirmed. `key` identifies the observed
+ * state; a later observation confirms it only if its key matches.
+ */
+export interface PendingChangeObservation {
+  key: string;
+  firstSeenAt: string;
+  observations: number;
+}
+
+/**
  * Result of applying confirmation + flap-memory dampening.
  *
  * `snapshot` is null when the stored snapshot should be left untouched.

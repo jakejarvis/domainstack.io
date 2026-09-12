@@ -9,6 +9,7 @@ import {
   CERT_CHANGE_CONFIRMATIONS,
   CERT_FLAP_MEMORY_SIZE,
   CERT_FLAP_MEMORY_WINDOW_DAYS,
+  CHANGE_CONFIRMATIONS,
   NOTIFIABLE_CERTIFICATE_CHANGE_KINDS,
 } from "@domainstack/constants";
 import type {
@@ -19,6 +20,7 @@ import type {
   CertificatePendingObservation,
   CertificateRecentIdentity,
   CertificateSnapshotData,
+  PendingChangeObservation,
   ProviderChange,
   ProviderSnapshotData,
   RegistrationChange,
@@ -27,7 +29,7 @@ import type {
 
 import { normalizeCertificateHex } from "../certificate-hex";
 import { normalizeDnsHost } from "../providers/detection";
-import { statusesAreEqual } from "./status";
+import { normalizeStatus, statusesAreEqual } from "./status";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -132,6 +134,55 @@ export function detectProviderChange(
     newHostingProviderId: current.hostingProviderId,
     newEmailProviderId: current.emailProviderId,
   };
+}
+
+/**
+ * Decide whether an observed change is confirmed.
+ *
+ * Mirrors certificate dampening without flap memory: the first sighting of a new
+ * state is held as pending; it notifies only when the same state is observed
+ * CHANGE_CONFIRMATIONS times in a row. A different state resets the count.
+ */
+export function confirmChange(
+  pending: PendingChangeObservation | null | undefined,
+  observedKey: string,
+  now: Date = new Date(),
+): { confirmed: boolean; pending: PendingChangeObservation | null } {
+  const observations = pending?.key === observedKey ? pending.observations + 1 : 1;
+  if (observations >= CHANGE_CONFIRMATIONS) {
+    return { confirmed: true, pending: null };
+  }
+  return {
+    confirmed: false,
+    pending: {
+      key: observedKey,
+      firstSeenAt: pending?.key === observedKey ? pending.firstSeenAt : now.toISOString(),
+      observations,
+    },
+  };
+}
+
+/** Stable identity of a provider observation. */
+export function providerObservationKey(current: ProviderSnapshotData): string {
+  return JSON.stringify([
+    current.dnsProviderId,
+    current.hostingProviderId,
+    current.emailProviderId,
+  ]);
+}
+
+/**
+ * Stable identity of a registration observation, normalized exactly as
+ * `detectRegistrationChange` compares: nameservers via `normalizeDnsHost` +
+ * sort, statuses via `normalizeStatus` + sort. Two observations that
+ * `detectRegistrationChange` considers equal always produce the same key.
+ */
+export function registrationObservationKey(current: RegistrationSnapshotData): string {
+  const nsHosts = (current.nameservers ?? [])
+    .map((ns) => normalizeDnsHost(ns.host))
+    .sort((a, b) => a.localeCompare(b));
+  const statuses = (current.statuses ?? []).map(normalizeStatus).sort();
+  return JSON.stringify([current.registrarProviderId, nsHosts, current.transferLock, statuses]);
 }
 
 /**
