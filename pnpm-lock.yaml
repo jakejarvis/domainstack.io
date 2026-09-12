@@ -586,10 +586,10 @@ importers:
         version: link:../utils
       '@polar-sh/better-auth':
         specifier: ^1.8.4
-        version: 1.8.4(@polar-sh/sdk@0.47.1)(@stripe/react-stripe-js@4.0.2(@stripe/stripe-js@7.10.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@stripe/stripe-js@7.10.0)(better-auth@1.7.4(@opentelemetry/api@1.9.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(@upstash/redis@1.38.4)(kysely@0.29.5)(pg@8.23.0))(next@16.3.5(@opentelemetry/api@1.9.1)(@types/node@24.13.4)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(pg@8.23.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vitest@5.0.0))(react@19.3.0)(zod@4.6.2)
+        version: 1.8.4(@polar-sh/sdk@0.49.0)(@stripe/react-stripe-js@4.0.2(@stripe/stripe-js@7.10.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@stripe/stripe-js@7.10.0)(better-auth@1.7.4(@opentelemetry/api@1.9.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(@upstash/redis@1.38.4)(kysely@0.29.5)(pg@8.23.0))(next@16.3.5(@opentelemetry/api@1.9.1)(@types/node@24.13.4)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(pg@8.23.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vitest@5.0.0))(react@19.3.0)(zod@4.6.2)
       '@polar-sh/sdk':
-        specifier: ^0.47.1
-        version: 0.47.1
+        specifier: ^0.49.0
+        version: 0.49.0
       '@vercel/functions':
         specifier: ^3.9.7
         version: 3.9.7(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.21.3(bufferutil@4.1.0))
@@ -2527,8 +2527,8 @@ packages:
       '@stripe/stripe-js': ^7.1.0
       react: ^18 || ^19
 
-  '@polar-sh/sdk@0.47.1':
-    resolution: {integrity: sha512-fkz7wPLbqfuDmY9LxuXpE2uP2TAV6J0q/YN5hJ4UBxpjbkB0hKM6c4R35N89t83dfzMlG6EOlqOn+Rd1T6XrJQ==}
+  '@polar-sh/sdk@0.49.0':
+    resolution: {integrity: sha512-9UYb70iKjJCtWYlu0OF5HLYBLmkxHwqr2RlXwuxXQgRGqq56IQWlVG+NO7e1YJ7I5GW0CBHhGIjRbQ9hYM6ycQ==}
 
   '@polka/url@1.0.0-next.29':
     resolution: {integrity: sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww==}
@@ -9043,10 +9043,10 @@ snapshots:
 
   '@pinojs/redact@0.4.0': {}
 
-  '@polar-sh/better-auth@1.8.4(@polar-sh/sdk@0.47.1)(@stripe/react-stripe-js@4.0.2(@stripe/stripe-js@7.10.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@stripe/stripe-js@7.10.0)(better-auth@1.7.4(@opentelemetry/api@1.9.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(@upstash/redis@1.38.4)(kysely@0.29.5)(pg@8.23.0))(next@16.3.5(@opentelemetry/api@1.9.1)(@types/node@24.13.4)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(pg@8.23.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vitest@5.0.0))(react@19.3.0)(zod@4.6.2)':
+  '@polar-sh/better-auth@1.8.4(@polar-sh/sdk@0.49.0)(@stripe/react-stripe-js@4.0.2(@stripe/stripe-js@7.10.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@stripe/stripe-js@7.10.0)(better-auth@1.7.4(@opentelemetry/api@1.9.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(@upstash/redis@1.38.4)(kysely@0.29.5)(pg@8.23.0))(next@16.3.5(@opentelemetry/api@1.9.1)(@types/node@24.13.4)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(pg@8.23.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vitest@5.0.0))(react@19.3.0)(zod@4.6.2)':
     dependencies:
       '@polar-sh/checkout': 0.2.1(@stripe/react-stripe-js@4.0.2(@stripe/stripe-js@7.10.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@stripe/stripe-js@7.10.0)(react@19.3.0)
-      '@polar-sh/sdk': 0.47.1
+      '@polar-sh/sdk': 0.49.0
       better-auth: 1.7.4(@opentelemetry/api@1.9.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(@upstash/redis@1.38.4)(kysely@0.29.5)(pg@8.23.0))(next@16.3.5(@opentelemetry/api@1.9.1)(@types/node@24.13.4)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(pg@8.23.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vitest@5.0.0)
       zod: 4.6.2
     transitivePeerDependencies:
@@ -9061,7 +9061,7 @@ snapshots:
       date-fns: 4.4.0
       react: 19.3.0
 
-  '@polar-sh/sdk@0.47.1':
+  '@polar-sh/sdk@0.49.0':
     dependencies:
       standardwebhooks: 1.1.1
       zod: 4.6.2
