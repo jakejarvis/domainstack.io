@@ -50,7 +50,10 @@ export type HeadersResult =
  * @throws Error on transient failures (network issues) - TanStack Query retries these
  */
 export function fetchHeaders(domain: string): Promise<HeadersResult> {
-  return shareInFlight(`headers:${domain.toLowerCase()}`, () => fetchAndPersistHeaders(domain));
+  const normalizedDomain = domain.toLowerCase();
+  return shareInFlight(`headers:${normalizedDomain}`, () =>
+    fetchAndPersistHeaders(normalizedDomain),
+  );
 }
 
 async function fetchAndPersistHeaders(domain: string): Promise<HeadersResult> {

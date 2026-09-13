@@ -38,7 +38,8 @@ export type DnsResult = { success: true; data: DnsRecordsResponse };
  * @throws Error on all failures - TanStack Query retries these
  */
 export function fetchDns(domain: string): Promise<DnsResult> {
-  return shareInFlight(`dns:${domain.toLowerCase()}`, () => fetchAndPersistDns(domain));
+  const normalizedDomain = domain.toLowerCase();
+  return shareInFlight(`dns:${normalizedDomain}`, () => fetchAndPersistDns(normalizedDomain));
 }
 
 async function fetchAndPersistDns(domain: string): Promise<DnsResult> {

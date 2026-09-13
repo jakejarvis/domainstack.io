@@ -16,6 +16,7 @@ describe("shareInFlight", () => {
 
     const first = shareInFlight("same", run);
     const second = shareInFlight("same", run);
+    await Promise.resolve();
     resolve("result");
 
     await expect(Promise.all([first, second])).resolves.toEqual(["result", "result"]);
@@ -40,6 +41,31 @@ describe("shareInFlight", () => {
     expect(run).toHaveBeenCalledTimes(2);
   });
 
+  it("converts a synchronous throw into a rejected promise", async () => {
+    const error = new Error("synchronous failure");
+    const run = vi.fn<() => Promise<string>>(() => {
+      throw error;
+    });
+
+    await expect(shareInFlight("synchronous-throw", run)).rejects.toBe(error);
+    await expect(shareInFlight("synchronous-throw", run)).rejects.toBe(error);
+    expect(run).toHaveBeenCalledTimes(2);
+  });
+
+  it("registers the promise before running synchronous re-entry", async () => {
+    let reentrant: Promise<string> | undefined;
+    const run = vi.fn<() => Promise<string>>(() => {
+      reentrant = shareInFlight("reentrant", run);
+      return Promise.resolve("result");
+    });
+
+    const first = shareInFlight("reentrant", run);
+
+    await expect(first).resolves.toBe("result");
+    expect(reentrant).toBe(first);
+    expect(run).toHaveBeenCalledOnce();
+  });
+
   it("shares rejections and runs fresh work after rejection", async () => {
     const error = new Error("failed");
     let reject!: (reason: Error) => void;
@@ -53,6 +79,7 @@ describe("shareInFlight", () => {
     const first = shareInFlight("reject", run);
     const second = shareInFlight("reject", run);
     const sharedResults = Promise.allSettled([first, second]);
+    await Promise.resolve();
     reject(error);
 
     await expect(sharedResults).resolves.toEqual([
@@ -63,6 +90,7 @@ describe("shareInFlight", () => {
 
     const next = shareInFlight("reject", run);
     const nextResult = Promise.allSettled([next]);
+    await Promise.resolve();
     reject(error);
 
     await expect(nextResult).resolves.toEqual([{ status: "rejected", reason: error }]);

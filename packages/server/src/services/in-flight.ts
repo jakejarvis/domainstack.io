@@ -14,9 +14,13 @@ export function shareInFlight<T>(key: string, run: () => Promise<T>): Promise<T>
     return existing as Promise<T>;
   }
 
-  const promise = run().finally(() => {
-    inFlight.delete(key);
-  });
+  const promise = Promise.resolve()
+    .then(run)
+    .finally(() => {
+      if (inFlight.get(key) === promise) {
+        inFlight.delete(key);
+      }
+    });
   inFlight.set(key, promise);
   return promise;
 }
