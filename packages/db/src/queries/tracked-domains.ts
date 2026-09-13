@@ -1,5 +1,5 @@
 import type { SQL } from "drizzle-orm";
-import { and, asc, count, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
+import { and, asc, count, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import type {

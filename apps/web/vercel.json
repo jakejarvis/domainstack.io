@@ -31,7 +31,7 @@
       "schedule": "25 * * * *"
     },
     {
-      "path": "/api/cron/warm-cache",
+      "path": "/api/cron/warm-domains",
       "schedule": "45 */4 * * *"
     },
     {

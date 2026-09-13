@@ -132,7 +132,7 @@ export async function updateLastAccessed(name: string): Promise<boolean> {
 
 /**
  * Get domains that were accessed within the specified time window.
- * Used by the warm-cache cron to refresh data for recently-accessed domains.
+ * Used by the warm-domains cron to refresh data for recently-accessed domains.
  *
  * @param hoursAgo - How many hours back to look (default: 24)
  * @returns Array of domain names ordered by most recently accessed, capped at 500
