@@ -1,5 +1,3 @@
-import { FatalError } from "workflow";
-
 import { verifyDomainOwnershipByMethod } from "@/workflows/shared/verify-domain";
 import type { TrackedDomainForReverification } from "@domainstack/db/queries/tracked-domains";
 import type { VerificationMethod } from "@domainstack/types";
@@ -202,62 +200,49 @@ type DomainForEmail = Pick<
 /**
  * Step: Send verification failing notification email.
  *
- * Sends before recording. The whole step body re-runs on retry, so writing the
- * notification row first would make the `hasRecentNotification` guard match the
- * row from the failed attempt and swallow the email for the next 30 days while
- * the database claimed it was sent. Resend's idempotency key (the enclosing
- * step id) keeps a retry from delivering the mail twice.
+ * Sends before recording; the idempotency contract for that is in
+ * `sendNotification` (shared/notifications.ts).
  */
-async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<void> {
+async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boolean> {
   "use step";
 
   const { default: VerificationFailingEmail } =
     await import("@domainstack/email/templates/verification-failing");
   const { VERIFICATION_GRACE_PERIOD_DAYS } = await import("@domainstack/constants");
-  const { hasRecentNotification, createNotification, updateNotificationResendId } =
-    await import("@domainstack/db/queries/notifications");
-  const { getEmailBaseUrl, sendEmail } = await import("@/workflows/shared/send-email");
+  const { hasRecentNotification } = await import("@domainstack/db/queries/notifications");
+  const { sendNotification } = await import("@/workflows/shared/notifications");
 
   const alreadySent = await hasRecentNotification(domain.id, "verification_failing");
-  if (alreadySent) return;
+  if (alreadySent) return false;
 
   const title = `Verification failing for ${domain.domainName}`;
   const subject = `⚠️ ${title}`;
   const message = `Verification for ${domain.domainName} is failing. You have ${VERIFICATION_GRACE_PERIOD_DAYS} days to fix it before access is revoked.`;
 
-  const baseUrl = getEmailBaseUrl();
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
 
-  // Send email through the shared in-step helper (handles error classification).
-  const result = await sendEmail({
-    to: domain.userEmail,
-    subject,
-    react: VerificationFailingEmail({
-      userName: domain.userName.split(" ")[0] || "there",
+  // Account-critical: sent regardless of mute and notification preferences.
+  return await sendNotification(
+    {
+      userId: domain.userId,
+      userEmail: domain.userEmail,
+      trackedDomainId: domain.id,
       domainName: domain.domainName,
-      verificationMethod: domain.verificationMethod,
-      gracePeriodDays: VERIFICATION_GRACE_PERIOD_DAYS,
-      baseUrl,
-    }),
-  });
-
-  // Record the delivery. `updateNotificationResendId` swallows its own errors,
-  // so nothing after the send can fail the step and trigger a re-send.
-  const notification = await createNotification({
-    userId: domain.userId,
-    trackedDomainId: domain.id,
-    type: "verification_failing",
-    title,
-    message,
-    data: { domainName: domain.domainName },
-  });
-
-  if (!notification) {
-    throw new FatalError(
-      `Failed to create notification record: verification_failing for ${domain.domainName}`,
-    );
-  }
-
-  await updateNotificationResendId(notification.id, result.emailId);
+      notificationType: "verification_failing",
+      title,
+      message,
+      emailSubject: subject,
+      emailComponent: VerificationFailingEmail({
+        userName: domain.userName.split(" ")[0] || "there",
+        domainName: domain.domainName,
+        verificationMethod: domain.verificationMethod,
+        gracePeriodDays: VERIFICATION_GRACE_PERIOD_DAYS,
+        baseUrl,
+      }),
+    },
+    true,
+    true,
+  );
 }
 
 /**
@@ -266,49 +251,41 @@ async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<voi
  * Sends before recording, for the same reason as
  * {@link sendVerificationFailingEmail}.
  */
-async function sendVerificationRevokedEmail(domain: DomainForEmail): Promise<void> {
+async function sendVerificationRevokedEmail(domain: DomainForEmail): Promise<boolean> {
   "use step";
 
   const { default: VerificationRevokedEmail } =
     await import("@domainstack/email/templates/verification-revoked");
-  const { hasRecentNotification, createNotification, updateNotificationResendId } =
-    await import("@domainstack/db/queries/notifications");
-  const { getEmailBaseUrl, sendEmail } = await import("@/workflows/shared/send-email");
+  const { hasRecentNotification } = await import("@domainstack/db/queries/notifications");
+  const { sendNotification } = await import("@/workflows/shared/notifications");
 
   const alreadySent = await hasRecentNotification(domain.id, "verification_revoked");
-  if (alreadySent) return;
+  if (alreadySent) return false;
 
   const title = `Verification revoked for ${domain.domainName}`;
   const subject = `❌ ${title}`;
   const message = `Verification for ${domain.domainName} has been revoked. The grace period has expired without successful re-verification.`;
 
-  const baseUrl = getEmailBaseUrl();
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
 
-  // Send email through the shared in-step helper (handles error classification).
-  const result = await sendEmail({
-    to: domain.userEmail,
-    subject,
-    react: VerificationRevokedEmail({
-      userName: domain.userName.split(" ")[0] || "there",
+  // Account-critical: sent regardless of mute and notification preferences.
+  return await sendNotification(
+    {
+      userId: domain.userId,
+      userEmail: domain.userEmail,
+      trackedDomainId: domain.id,
       domainName: domain.domainName,
-      baseUrl,
-    }),
-  });
-
-  const notification = await createNotification({
-    userId: domain.userId,
-    trackedDomainId: domain.id,
-    type: "verification_revoked",
-    title,
-    message,
-    data: { domainName: domain.domainName },
-  });
-
-  if (!notification) {
-    throw new FatalError(
-      `Failed to create notification record: verification_revoked for ${domain.domainName}`,
-    );
-  }
-
-  await updateNotificationResendId(notification.id, result.emailId);
+      notificationType: "verification_revoked",
+      title,
+      message,
+      emailSubject: subject,
+      emailComponent: VerificationRevokedEmail({
+        userName: domain.userName.split(" ")[0] || "there",
+        domainName: domain.domainName,
+        baseUrl,
+      }),
+    },
+    true,
+    true,
+  );
 }

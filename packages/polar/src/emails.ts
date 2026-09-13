@@ -20,7 +20,7 @@ export async function sendProUpgradeEmail(userId: string): Promise<void> {
     return;
   }
 
-  await sendEmail(
+  const { error } = await sendEmail(
     {
       to: user.email,
       subject: "Welcome to Domainstack Pro!",
@@ -31,6 +31,9 @@ export async function sendProUpgradeEmail(userId: string): Promise<void> {
     },
     { baseUrl },
   );
+  if (error) {
+    throw new Error(`Resend error sending pro upgrade email: ${error.name} - ${error.message}`);
+  }
 }
 
 /**
@@ -46,7 +49,7 @@ export async function sendSubscriptionCancelingEmail(
     return;
   }
 
-  await sendEmail(
+  const { error } = await sendEmail(
     {
       to: user.email,
       subject: "Your Pro subscription is ending",
@@ -58,6 +61,11 @@ export async function sendSubscriptionCancelingEmail(
     },
     { baseUrl },
   );
+  if (error) {
+    throw new Error(
+      `Resend error sending subscription canceling email: ${error.name} - ${error.message}`,
+    );
+  }
 }
 
 /**
@@ -73,7 +81,7 @@ export async function sendSubscriptionExpiredEmail(
     return;
   }
 
-  await sendEmail(
+  const { error } = await sendEmail(
     {
       to: user.email,
       subject: "Your Pro subscription has ended",
@@ -85,4 +93,9 @@ export async function sendSubscriptionExpiredEmail(
     },
     { baseUrl },
   );
+  if (error) {
+    throw new Error(
+      `Resend error sending subscription expired email: ${error.name} - ${error.message}`,
+    );
+  }
 }

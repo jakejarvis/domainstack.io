@@ -138,12 +138,15 @@ export async function checkAlreadySentStep(
 }
 
 // ============================================================================
-// Shared notification sending logic (used by send*NotificationStep functions)
+// Shared notification sending logic (used by every tracked-domain notification step)
 // ============================================================================
 
 /**
  * Consolidated logic for creating a notification record and optionally sending an email.
  * Used by all domain monitoring notification steps to ensure consistent behavior.
+ *
+ * Not a step — call it from inside a `"use step"` function so the email
+ * idempotency key is that step's id.
  *
  * ## Idempotency Strategy
  *
@@ -170,7 +173,7 @@ export async function checkAlreadySentStep(
  *
  * @throws {Error} If notification record creation fails or email sending fails
  */
-async function sendNotificationInternal(
+export async function sendNotification(
   options: {
     userId: string;
     userEmail: string;
@@ -304,7 +307,7 @@ export async function sendRegistrationChangeNotificationStep(
     });
   }
 
-  return await sendNotificationInternal(
+  return await sendNotification(
     {
       userId: params.userId,
       userEmail: params.userEmail,
@@ -356,7 +359,7 @@ export async function sendProviderChangeNotificationStep(
     });
   }
 
-  return await sendNotificationInternal(
+  return await sendNotification(
     {
       userId: params.userId,
       userEmail: params.userEmail,
@@ -412,7 +415,7 @@ export async function sendCertificateChangeNotificationStep(
     });
   }
 
-  return await sendNotificationInternal(
+  return await sendNotification(
     {
       userId: params.userId,
       userEmail: params.userEmail,
