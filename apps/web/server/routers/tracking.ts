@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { TRPCError } from "@trpc/server";
 import { start } from "workflow/api";
 import { z } from "zod";
@@ -26,8 +28,15 @@ import { getUserSubscription } from "@domainstack/db/queries/user-subscription";
 import { sendEmail } from "@domainstack/email";
 import VerificationInstructionsEmail from "@domainstack/email/templates/verification-instructions";
 import { createLogger } from "@domainstack/logger";
+import { getRateLimiter } from "@domainstack/redis/ratelimit";
 
 const logger = createLogger({ source: "routers/tracking" });
+
+/**
+ * Cross-account cap on verification-instruction emails to one address. The
+ * per-user daily limit doesn't stop many accounts mailing the same person.
+ */
+const VERIFICATION_INSTRUCTIONS_PER_RECIPIENT = { requests: 3, window: "1 d" } as const;
 
 import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
@@ -590,14 +599,35 @@ export const trackingRouter = createTRPCRouter({
         });
       }
 
+      // Fails open like the other limits: no Redis or a Redis error allows the send.
+      const recipientLimiter =
+        process.env.NODE_ENV === "development"
+          ? null
+          : getRateLimiter(VERIFICATION_INSTRUCTIONS_PER_RECIPIENT);
+      if (recipientLimiter) {
+        const recipientKey = createHash("sha256")
+          .update(recipientEmail.trim().toLowerCase())
+          .digest("hex")
+          .slice(0, 32);
+        const result = await recipientLimiter
+          .limit(`tracking.sendVerificationInstructions:recipient:${recipientKey}`)
+          .catch(() => null);
+        if (result && !result.success) {
+          const retryAfter = Math.max(1, Math.ceil((result.reset - Date.now()) / 1000));
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message: `Rate limit exceeded. Try again in ${retryAfter}s`,
+            cause: { retryAfter },
+          });
+        }
+      }
+
       // Build verification instructions for all methods
       const instructions = buildVerificationInstructions(
         tracked.domainName,
         tracked.verificationToken,
       );
 
-      // Get sender info
-      const senderName = ctx.user.name || "A Domainstack user";
       const senderEmail = ctx.user.email;
 
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
@@ -607,9 +637,9 @@ export const trackingRouter = createTRPCRouter({
           {
             to: recipientEmail,
             subject: `Domain verification instructions for ${tracked.domainName}`,
+            replyTo: senderEmail,
             react: VerificationInstructionsEmail({
               domain: tracked.domainName,
-              senderName,
               senderEmail,
               dnsHostname: instructions.dns_txt.hostname,
               dnsRecordType: instructions.dns_txt.recordType,

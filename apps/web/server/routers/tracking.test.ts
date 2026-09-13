@@ -50,6 +50,9 @@ const { eq } = await import("@domainstack/db/drizzle");
 const { countActiveTrackedDomainsForUser } =
   await import("@domainstack/db/queries/tracked-domains");
 const { sendEmail } = await import("@domainstack/email");
+const { default: VerificationInstructionsEmail } =
+  await import("@domainstack/email/templates/verification-instructions");
+const { getRateLimiter } = await import("@domainstack/redis/ratelimit");
 const { start } = await import("workflow/api");
 const { createCaller } = await import("@/server/routers/_app");
 
@@ -1122,12 +1125,55 @@ describe("tracking router", () => {
       expect(sendEmail).toHaveBeenCalledWith(
         expect.objectContaining({
           to: "admin@example.com",
+          replyTo: "test@example.com",
           subject: expect.stringContaining(TEST_DOMAIN),
         }),
         expect.objectContaining({
           baseUrl: expect.any(String),
         }),
       );
+      expect(vi.mocked(VerificationInstructionsEmail).mock.calls[0][0]).not.toHaveProperty(
+        "senderName",
+      );
+    });
+
+    it("rejects when the recipient has hit the cross-account limit", async () => {
+      const caller = createAuthenticatedCaller();
+      const limiterMock = vi.mocked(getRateLimiter);
+      const originalImplementation = limiterMock.getMockImplementation();
+
+      limiterMock.mockImplementation(
+        (config) =>
+          ({
+            limit: vi.fn<(identifier: string) => Promise<unknown>>().mockResolvedValue({
+              success: config.requests !== 3,
+              limit: config.requests,
+              remaining: 0,
+              reset: Date.now() + 60_000,
+              pending: Promise.resolve(),
+            }),
+          }) as never,
+      );
+
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "test-token",
+        verified: false,
+      });
+
+      try {
+        await expect(
+          caller.tracking.sendVerificationInstructions({
+            trackedDomainId: TEST_TRACKED_ID,
+            recipientEmail: "admin@example.com",
+          }),
+        ).rejects.toMatchObject({ code: "TOO_MANY_REQUESTS" });
+        expect(sendEmail).not.toHaveBeenCalled();
+      } finally {
+        limiterMock.mockImplementation(originalImplementation!);
+      }
     });
 
     it("returns NOT_FOUND for domain owned by another user", async () => {

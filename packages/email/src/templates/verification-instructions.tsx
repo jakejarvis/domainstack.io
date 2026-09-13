@@ -14,7 +14,6 @@ import {
 
 export type VerificationInstructionsEmailProps = {
   domain: string;
-  senderName: string;
   senderEmail: string;
   dnsHostname: string;
   dnsRecordType: string;
@@ -30,7 +29,6 @@ export type VerificationInstructionsEmailProps = {
 
 function VerificationInstructionsEmail({
   domain,
-  senderName,
   senderEmail,
   dnsHostname,
   dnsRecordType,
@@ -50,7 +48,7 @@ function VerificationInstructionsEmail({
       <EmailHeading>Domain Verification Instructions</EmailHeading>
 
       <EmailText>
-        {senderName} ({senderEmail}) has requested help verifying ownership of{" "}
+        A Domainstack user ({senderEmail}) has requested help verifying ownership of{" "}
         <strong>{domain}</strong> on Domainstack.
       </EmailText>
 
@@ -113,16 +111,16 @@ function VerificationInstructionsEmail({
       <EmailHr />
 
       <EmailText>
-        Once completed, {senderName} can return to{" "}
+        Once completed, the requester can return to{" "}
         <EmailLink href={`${baseUrl}/dashboard`}>Domainstack</EmailLink> to verify ownership.
       </EmailText>
 
       <EmailHr />
 
       <EmailFooter>
-        This email was sent on behalf of {senderName} via{" "}
-        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. If you didn&apos;t expect
-        this email, you can safely ignore it.
+        This email was sent on behalf of {senderEmail} via{" "}
+        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. You can reply to this
+        email to contact them. If you didn&apos;t expect this email, you can safely ignore it.
       </EmailFooter>
     </EmailLayout>
   );
@@ -131,7 +129,6 @@ function VerificationInstructionsEmail({
 // Preview props for email development
 VerificationInstructionsEmail.PreviewProps = {
   domain: "example.com",
-  senderName: "Jake",
   senderEmail: "jake@example.com",
   dnsHostname: "@",
   dnsRecordType: "TXT",
