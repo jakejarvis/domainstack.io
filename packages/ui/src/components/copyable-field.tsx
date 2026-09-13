@@ -50,7 +50,10 @@ export function CopyableField({
         {label}
       </FieldTitle>
       <InputGroup className="h-10 min-w-0">
-        <ScrollArea className="w-full min-w-0 flex-1" hideScrollbar>
+        <ScrollArea
+          className="w-full min-w-0 flex-1 [&_[data-slot=scroll-area-viewport]]:overscroll-y-none"
+          hideScrollbar
+        >
           <button
             type="button"
             onClick={handleSelect}

@@ -9,7 +9,11 @@ import { cn } from "@domainstack/ui/utils";
 export type SuggestionsProps = ComponentProps<typeof ScrollArea>;
 
 export const Suggestions = ({ className, children, ...props }: SuggestionsProps) => (
-  <ScrollArea className="w-full" hideScrollbar {...props}>
+  <ScrollArea
+    className="w-full [&_[data-slot=scroll-area-viewport]]:overscroll-y-none"
+    hideScrollbar
+    {...props}
+  >
     <div className={cn("flex w-max items-center gap-2", className)}>{children}</div>
   </ScrollArea>
 );
