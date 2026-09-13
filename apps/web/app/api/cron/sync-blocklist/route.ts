@@ -40,8 +40,7 @@ export async function GET(request: Request) {
         const response = await fetch(sourceUrl, { cache: "no-store" });
 
         if (!response.ok) {
-          logger.warn({ sourceUrl, status: response.status }, "Failed to fetch blocklist");
-          return [];
+          throw new Error(`Failed to fetch blocklist: HTTP ${response.status}`);
         }
 
         const text = await response.text();
@@ -108,16 +107,31 @@ export async function GET(request: Request) {
       }),
     );
 
-    // Collect all domains from successful fetches
-    const allDomains: string[] = [];
-    for (let i = 0; i < fetchResults.length; i++) {
-      const result = fetchResults[i];
-      if (result.status === "fulfilled") {
-        allDomains.push(...result.value);
-      } else {
-        logger.warn({ err: result.reason, sourceUrl: sources[i] }, "Error fetching blocklist");
+    const failedSources = fetchResults.flatMap((result, i) =>
+      result.status === "rejected" ? [{ sourceUrl: sources[i], err: result.reason }] : [],
+    );
+
+    if (failedSources.length > 0) {
+      // A partial download is not the desired state: syncing it would delete every
+      // domain unique to the failed source. Keep last week's list and retry next run.
+      for (const { sourceUrl, err } of failedSources) {
+        logger.warn({ err, sourceUrl }, "Blocklist source failed; skipping sync");
       }
+      return NextResponse.json(
+        {
+          sources: sources.length,
+          failed: failedSources.length,
+          added: 0,
+          removed: 0,
+          skipped: true,
+        },
+        { status: 502 },
+      );
     }
+
+    const allDomains = fetchResults.flatMap((result) =>
+      result.status === "fulfilled" ? result.value : [],
+    );
 
     // Deduplicate and sync
     const uniqueDomains = [...new Set(allDomains)];

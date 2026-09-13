@@ -1,7 +1,16 @@
-import { eq, notInArray } from "drizzle-orm";
+import { eq, notExists, sql } from "drizzle-orm";
+import { pgTable, text } from "drizzle-orm/pg-core";
 
 import { db } from "../client";
 import { blockedDomains } from "../schema";
+
+// Shape-only reference to the per-transaction temporary staging table created in
+// syncBlockedDomains below. It's not part of the app schema/migrations — Drizzle has
+// no migration-free way to declare a session-scoped temp table, so its DDL is raw SQL
+// — but this lets the rest of the sync use type-safe query builder methods against it.
+const blocklistIncoming = pgTable("blocklist_incoming", {
+  domain: text("domain").primaryKey(),
+});
 
 /**
  * Check if a domain is on the blocklist.
@@ -42,26 +51,46 @@ export async function syncBlockedDomains(domainList: string[]): Promise<{
   let removedCount = 0;
 
   await db.transaction(async (tx) => {
-    // Upsert all domains in batches
+    await tx.execute(sql`
+      create temporary table blocklist_incoming (domain text primary key) on commit drop
+    `);
+
+    // Stage all incoming domains in batches (temp table sidesteps the bind-parameter
+    // limit that a single "WHERE domain NOT IN (...)" delete would hit at scale).
     const BATCH_SIZE = 1000;
     for (let i = 0; i < uniqueDomains.length; i += BATCH_SIZE) {
       const batch = uniqueDomains.slice(i, i + BATCH_SIZE);
-      const result = await tx
-        .insert(blockedDomains)
+      await tx
+        .insert(blocklistIncoming)
         .values(batch.map((domain) => ({ domain })))
-        .onConflictDoNothing()
-        .returning();
-
-      addedCount += result.length;
+        .onConflictDoNothing();
     }
+
+    const inserted = await tx
+      .insert(blockedDomains)
+      .select(
+        tx
+          .select({
+            domain: blocklistIncoming.domain,
+            addedAt: sql<Date>`now()`.as("added_at"),
+          })
+          .from(blocklistIncoming),
+      )
+      .onConflictDoNothing();
+    addedCount = inserted.rowCount ?? 0;
 
     // Delete domains that are no longer in the source list
     const deleted = await tx
       .delete(blockedDomains)
-      .where(notInArray(blockedDomains.domain, uniqueDomains))
-      .returning();
-
-    removedCount = deleted.length;
+      .where(
+        notExists(
+          tx
+            .select({ domain: blocklistIncoming.domain })
+            .from(blocklistIncoming)
+            .where(eq(blocklistIncoming.domain, blockedDomains.domain)),
+        ),
+      );
+    removedCount = deleted.rowCount ?? 0;
   });
 
   return {
