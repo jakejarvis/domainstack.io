@@ -33,49 +33,20 @@ export async function verifyByHtmlFile(
 ): Promise<VerificationResult> {
   const expectedContent = `${HTML_FILE_CONTENT_PREFIX}${token}`;
 
-  // Build URL lists for both methods, trying HTTPS first then HTTP
-  const perTokenUrls = [
+  // HTTPS only — see the note in meta.ts. DNS TXT is the fallback for
+  // domains that cannot serve HTTPS. Per-token file first (new multi-user
+  // method), then the legacy single file.
+  const urls = [
     `https://${domain}${HTML_FILE_DIR}/${token}.html`,
-    `http://${domain}${HTML_FILE_DIR}/${token}.html`,
-  ];
-  const legacyUrls = [
     `https://${domain}${HTML_FILE_PATH_LEGACY}`,
-    `http://${domain}${HTML_FILE_PATH_LEGACY}`,
   ];
 
-  // Try per-token file first (new multi-user method)
-  for (const urlStr of perTokenUrls) {
+  for (const urlStr of urls) {
     try {
       const result = await safeFetch({
         url: urlStr,
         userAgent: options?.userAgent,
-        allowHttp: true,
-        allowedHosts: [domain, `www.${domain}`],
-        timeoutMs: 5000,
-        maxBytes: 1024,
-        maxRedirects: 3,
-      });
-
-      if (!result.ok) {
-        continue;
-      }
-
-      const content = result.buffer.toString("utf-8").trim();
-      if (content === expectedContent) {
-        return { verified: true, method: "html_file" };
-      }
-    } catch {
-      // Continue to next URL on failure
-    }
-  }
-
-  // Fall back to legacy single file method
-  for (const urlStr of legacyUrls) {
-    try {
-      const result = await safeFetch({
-        url: urlStr,
-        userAgent: options?.userAgent,
-        allowHttp: true,
+        allowHttp: false,
         allowedHosts: [domain, `www.${domain}`],
         timeoutMs: 5000,
         maxBytes: 1024,

@@ -239,26 +239,57 @@ describe("verifyByHtmlFile", () => {
     expect(result.method).toBe("html_file");
   });
 
-  it("falls back to HTTP when HTTPS fails for per-token file", async () => {
+  // Regression test: this method used to fall back to HTTP when HTTPS failed,
+  // which let anyone on the network path forge an ownership proof. Ownership
+  // verification is HTTPS-only now, so an HTTP-only token must fail.
+  it("returns not verified when per-token file is only served over HTTP", async () => {
+    let httpRequested = false;
+    server.use(
+      http.get(
+        `https://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
+        () => new HttpResponse(null, { status: 404 }),
+      ),
+      http.get(`http://verified-dns.test/.well-known/domainstack-verify/${token}.html`, () => {
+        httpRequested = true;
+        return new HttpResponse(expectedContent, {
+          headers: { "Content-Type": "text/html" },
+        });
+      }),
+    );
+
+    const { verifyByHtmlFile } = await import("./index");
+    const result = await verifyByHtmlFile("verified-dns.test", token);
+
+    expect(result.verified).toBe(false);
+    expect(result.method).toBeNull();
+    expect(httpRequested).toBe(false);
+  });
+
+  it("returns not verified when legacy file is only served over HTTP", async () => {
+    let httpRequested = false;
     server.use(
       http.get(
         `https://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
         () => new HttpResponse(null, { status: 404 }),
       ),
       http.get(
-        `http://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
-        () =>
-          new HttpResponse(expectedContent, {
-            headers: { "Content-Type": "text/html" },
-          }),
+        "https://verified-dns.test/.well-known/domainstack-verify.html",
+        () => new HttpResponse(null, { status: 404 }),
       ),
+      http.get("http://verified-dns.test/.well-known/domainstack-verify.html", () => {
+        httpRequested = true;
+        return new HttpResponse(expectedContent, {
+          headers: { "Content-Type": "text/html" },
+        });
+      }),
     );
 
     const { verifyByHtmlFile } = await import("./index");
     const result = await verifyByHtmlFile("verified-dns.test", token);
 
-    expect(result.verified).toBe(true);
-    expect(result.method).toBe("html_file");
+    expect(result.verified).toBe(false);
+    expect(result.method).toBeNull();
+    expect(httpRequested).toBe(false);
   });
 
   it("returns not verified when all files not found", async () => {
@@ -391,6 +422,29 @@ describe("verifyByMetaTag", () => {
 
     expect(result.verified).toBe(true);
     expect(result.method).toBe("meta_tag");
+  });
+
+  // Regression test: this method used to try HTTP as well as HTTPS, which let
+  // anyone on the network path forge the meta tag response. Ownership
+  // verification is HTTPS-only now, so a token served only over HTTP must fail.
+  it("returns not verified when meta tag is only served over HTTP", async () => {
+    let httpRequested = false;
+    server.use(
+      http.get("http://verified-dns.test/", () => {
+        httpRequested = true;
+        return new HttpResponse(
+          `<html><head><meta name="domainstack-verify" content="${token}"></head></html>`,
+          { headers: { "Content-Type": "text/html" } },
+        );
+      }),
+    );
+
+    const { verifyByMetaTag } = await import("./index");
+    const result = await verifyByMetaTag("verified-dns.test", token);
+
+    expect(result.verified).toBe(false);
+    expect(result.method).toBeNull();
+    expect(httpRequested).toBe(false);
   });
 
   it("returns not verified when meta tag is missing", async () => {

@@ -29,15 +29,17 @@ export async function verifyByMetaTag(
   token: string,
   options?: VerificationHttpOptions,
 ): Promise<VerificationResult> {
-  // Try both HTTPS and HTTP
-  const urls = [`https://${domain}/`, `http://${domain}/`];
+  // Ownership proofs are a trust boundary: a plaintext response can be forged by
+  // anyone on the network path. HTTPS only. Domains that cannot serve HTTPS
+  // should verify with the DNS TXT method instead.
+  const urls = [`https://${domain}/`];
 
   for (const urlStr of urls) {
     try {
       const result = await safeFetch({
         url: urlStr,
         userAgent: options?.userAgent,
-        allowHttp: true,
+        allowHttp: false,
         allowedHosts: [domain, `www.${domain}`],
         timeoutMs: 10_000,
         maxBytes: MAX_HTML_BYTES,
