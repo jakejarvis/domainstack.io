@@ -9,7 +9,11 @@ import {
   META_TAG_NAME,
 } from "@domainstack/constants";
 
-import { buildVerificationInstructions, isValidVerificationMethod } from "./verification";
+import {
+  buildVerificationInstructions,
+  generateVerificationToken,
+  isValidVerificationMethod,
+} from "./verification";
 
 const domain = "example.com";
 const token = "abc123";
@@ -63,5 +67,15 @@ describe("isValidVerificationMethod", () => {
     expect(isValidVerificationMethod("")).toBe(false);
     expect(isValidVerificationMethod(null)).toBe(false);
     expect(isValidVerificationMethod(1)).toBe(false);
+  });
+});
+
+describe("generateVerificationToken", () => {
+  it("generates a 32-character hex token", () => {
+    expect(generateVerificationToken()).toMatch(/^[0-9a-f]{32}$/);
+  });
+
+  it("generates different tokens on each call", () => {
+    expect(generateVerificationToken()).not.toBe(generateVerificationToken());
   });
 });

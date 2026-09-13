@@ -237,21 +237,27 @@ Concise rules for building accessible, fast, delightful UIs. Use MUST/SHOULD/NEV
 
 ### Workflow Steps
 
-Use `lib/workflow/errors.ts` utilities for proper error classification:
+Errors thrown inside a `"use step"` function decide whether the step retries:
+
+- A plain `Error` retries the step (up to 3 retries by default).
+- `RetryableError` (from `workflow`) retries after an explicit `retryAfter` delay.
+- `FatalError` (from `workflow`) fails the step without retrying — use it only when a retry cannot succeed.
+
+For database writes, `classifyDatabaseError` maps connection, timeout, and deadlock errors to `RetryableError` and constraint or schema errors to `FatalError`:
 
 ```typescript
-import { classifyFetchError, withFetchErrorHandling } from "@/lib/workflow";
-
-async function fetchDataStep(domain: string): Promise<Data> {
+async function persistDataStep(domain: string, data: Data): Promise<void> {
   "use step";
-  return await withFetchErrorHandling(() => fetchData(domain), { context: `fetching ${domain}` });
+  try {
+    await persistData(domain, data);
+  } catch (err) {
+    const { classifyDatabaseError } = await import("@/lib/workflow/errors");
+    throw classifyDatabaseError(err, { context: `persisting data for ${domain}` });
+  }
 }
 ```
 
-Error classification:
-
-- **FatalError** (don't retry): DNS errors, TLS errors, invalid URLs, blocked hosts
-- **RetryableError** (retry with backoff): Timeouts, network errors, server errors
+Exemplar: `apps/web/workflows/shared/dns/persist.ts`. When a step is optional and its failure must not fail the run, wrap the call with `optionalCall` (or unwrap `Promise.allSettled` results with `optionalSettled`) from `@/workflows/shared/settled`.
 
 ### Custom Error Classes
 
@@ -333,7 +339,10 @@ Client-side: Use `analytics.trackException(error, context)` for errors.
 
 - Analytics and logger are globally mocked in `vitest.setup.node.ts`
 - Use `vi.hoisted` for ESM module mocks
-- Use PGlite (`@/lib/db/pglite`) for isolated database testing
+- Use PGlite for isolated database testing: `makePGliteDb` / `closePGliteDb`
+  from `@domainstack/db/testing`. Initialize the DB *before* importing any
+  module that uses it — see `packages/polar/src/user-subscription.test.ts`
+  for the required dynamic-import ordering.
 - Mock `@vercel/blob` for storage tests
 
 ### Example Test
@@ -363,28 +372,36 @@ domainstack.io/
 │       ├── components/         # App-specific components
 │       │   └── ui/             # App-specific UI wrappers (Next.js-aware)
 │       ├── hooks/              # App-specific React hooks
-│       ├── lib/                # Domain utilities and shared modules
-│       │   ├── db/             # Drizzle schema and repository layer
-│       │   └── workflow/       # Workflow utilities (deduplication, SWR, errors)
+│       ├── lib/                # App-local utilities (atoms, stores, chat, ratelimit, workflow/errors)
 │       ├── server/routers/     # tRPC router definitions
 │       ├── workflows/          # Vercel Workflow definitions
 │       ├── emails/             # React Email templates
 │       └── trpc/               # tRPC client setup
 ├── packages/
-│   ├── constants/              # Shared constants (@domainstack/constants)
-│   │   └── src/
-│   │       ├── primitives/     # Enum arrays (DNS types, plans, providers, etc.)
-│   │       ├── cache/          # TTL constants
-│   │       └── validation/     # Domain validation constants
+│   ├── api/                    # tRPC init, procedures, middleware (@domainstack/api)
+│   ├── auth/                   # Better Auth server/client config
+│   ├── blob/                   # Vercel Blob storage wrapper
+│   ├── constants/               # Shared constants; primitives/ holds enum arrays
+│   ├── db/                     # Drizzle schema, client, and query layer
+│   ├── edge-config/             # Vercel Edge Config reader
+│   ├── email/                  # React Email templates + Resend
+│   ├── image/                   # Favicon/logo processing (sharp)
+│   ├── logger/                  # Pino logger factory
+│   ├── polar/                   # Polar billing SDK, webhooks, reconciliation
+│   ├── redis/                   # Upstash Redis client + rate limiter
+│   ├── safe-fetch/               # SSRF-hardened fetch (DNS pinning, private-IP blocks)
+│   ├── screenshot/              # Puppeteer screenshot capture
+│   ├── server/                  # Domain data services: dns, tls, whois, seo, headers, verification
 │   ├── types/                  # Shared TypeScript types (@domainstack/types)
 │   │   └── src/
 │   │       └── domain/         # Domain-related types (DNS, certs, headers, etc.)
+│   ├── typescript-config/       # Shared tsconfig bases
 │   ├── ui/                     # Shared UI component library (@domainstack/ui)
 │   │   └── src/
 │   │       ├── components/     # Framework-agnostic UI primitives
 │   │       ├── hooks/          # Shared React hooks
 │   │       └── lib/            # Utilities (cn, etc.)
-│   └── typescript-config/      # Shared TypeScript configs (@domainstack/typescript-config)
+│   └── utils/                   # Pure helpers: dates, domains, providers, change detection
 ├── turbo.json                  # Turborepo task configuration
 ├── pnpm-workspace.yaml         # pnpm workspace definition
 └── package.json                # Root workspace config
@@ -407,6 +424,28 @@ import { DNS_RECORD_TYPES, PLANS, REPOSITORY_SLUG } from "@domainstack/constants
 import type { DnsRecord, RegistrationResponse, Certificate } from "@domainstack/types";
 ```
 
+**Database** (`@domainstack/db`):
+
+```typescript
+import { db } from "@domainstack/db/client";
+import { domains, userTrackedDomains } from "@domainstack/db/schema";
+import { getCachedRegistration } from "@domainstack/db/queries/registrations";
+```
+
+All database access goes through `packages/db/src/queries/*` — do not write
+Drizzle queries directly in `apps/web`. Cached read functions are named
+`getCached*` and return `CacheResult<T>` with staleness metadata.
+
+**Domain services** (`@domainstack/server`):
+
+```typescript
+import { fetchDns } from "@domainstack/server/services/dns";
+import { lookupWhois } from "@domainstack/server/whois";
+```
+
+Outbound domain lookups (DNS, TLS, WHOIS/RDAP, SEO, headers) live here, not in
+`apps/web`. They already handle caching, retries, and SSRF-safe fetching.
+
 **UI Components** (`@domainstack/ui`):
 
 ```typescript
@@ -427,7 +466,7 @@ import { useMediaQuery } from "@domainstack/ui/hooks";
 Repository functions return `CacheResult<T>` with staleness metadata:
 
 ```typescript
-const { data, stale } = await getRegistration("example.com");
+const { data, stale } = await getCachedRegistration("example.com");
 if (stale) {
   // Trigger background revalidation
 }
@@ -435,20 +474,26 @@ if (stale) {
 
 ### Workflow Concurrency
 
-Use deduplication for concurrent requests:
+The hourly `monitor-domains` cron must not start a second `detectChangesWorkflow`
+for a domain whose previous run is still in flight. Use the per-domain Redis lock
+in `@/lib/workflow/monitor-dedup`:
 
 ```typescript
-import { startWithDeduplication, getDeduplicationKey } from "@/lib/workflow";
-import { start } from "workflow/api";
+import { acquireMonitorLock, releaseMonitorLock } from "@/lib/workflow/monitor-dedup";
 
-const key = getDeduplicationKey("registration", domain);
-const { result, deduplicated, source } = await startWithDeduplication(key, () =>
-  start(registrationWorkflow, [{ domain }]),
-);
-// result: T - the workflow return value
-// deduplicated: boolean - true if attached to existing run
-// source: "memory" | "redis" | "new" - where deduplication occurred
+const ownerToken = await acquireMonitorLock(trackedDomainId);
+if (!ownerToken) {
+  // Another run holds the lock — skip this domain this tick.
+  return;
+}
+// ...start the workflow, passing ownerToken so the workflow can release it...
+await releaseMonitorLock(trackedDomainId, ownerToken);
 ```
+
+The lock is acquired by the cron and released by the workflow on successful
+completion. It fails open: if Redis is unconfigured or unreachable, work proceeds
+without dedup rather than halting monitoring. Release is an owner-token
+compare-and-delete, so a run can never release a lock it does not hold.
 
 ### Protected tRPC Procedures
 

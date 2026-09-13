@@ -45,11 +45,6 @@ vi.mock("@domainstack/edge-config", () => ({
     .mockResolvedValue(mockCatalog),
 }));
 
-// Mock schedule revalidation
-vi.mock("@/lib/revalidation", () => ({
-  scheduleRevalidation: vi.fn<(...args: unknown[]) => Promise<void>>().mockResolvedValue(undefined),
-}));
-
 beforeAll(() => {
   // Stub the API key for tests
   vi.stubEnv("IPLOCATE_API_KEY", "test-api-key");

@@ -31,8 +31,14 @@ const logger = createLogger({ source: "routers/tracking" });
 
 import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
-import { generateVerificationToken, verificationWorkflow } from "@/workflows/verification";
-import { buildVerificationInstructions } from "@domainstack/utils/verification";
+import {
+  verifyDomain as verifyDomainAll,
+  verifyDomainByMethod,
+} from "@domainstack/server/verification";
+import {
+  buildVerificationInstructions,
+  generateVerificationToken,
+} from "@domainstack/utils/verification";
 
 const DomainInputSchema = z.object({ domain: z.string().min(1) }).transform(({ domain }) => {
   const registrable = toRegistrableDomain(domain);
@@ -227,19 +233,21 @@ export const trackingRouter = createTRPCRouter({
         return { verified: true, method: tracked.verificationMethod };
       }
 
-      // Run verification workflow and wait for result
-      const run = await start(verificationWorkflow, [
-        {
-          domain: tracked.domainName,
-          token: tracked.verificationToken,
-          method: method ?? undefined,
-        },
-      ]);
-      const result = await run.returnValue;
+      // Synchronous: the user is waiting on this request. Each HTTP check has
+      // its own timeout (see packages/server/src/verification).
+      const httpOptions = { userAgent: process.env.EXTERNAL_USER_AGENT };
+      const result = method
+        ? await verifyDomainByMethod(
+            tracked.domainName,
+            tracked.verificationToken,
+            method,
+            httpOptions,
+          )
+        : await verifyDomainAll(tracked.domainName, tracked.verificationToken, httpOptions);
 
-      if (result.success && result.data.verified && result.data.method) {
+      if (result.verified && result.method) {
         // Update the tracked domain as verified
-        const updated = await verifyTrackedDomain(trackedDomainId, result.data.method);
+        const updated = await verifyTrackedDomain(trackedDomainId, result.method);
 
         if (!updated) {
           throw new TRPCError({
@@ -267,13 +275,9 @@ export const trackingRouter = createTRPCRouter({
           );
         });
 
-        analytics.track(
-          "domain_verification_succeeded",
-          { method: result.data.method },
-          ctx.user.id,
-        );
+        analytics.track("domain_verification_succeeded", { method: result.method }, ctx.user.id);
 
-        return { verified: true, method: result.data.method };
+        return { verified: true, method: result.method };
       }
 
       analytics.track("domain_verification_failed", { reason: "not_verified" }, ctx.user.id);

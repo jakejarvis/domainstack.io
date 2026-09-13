@@ -1,6 +1,6 @@
 /**
  * Shared step for checking if a domain is on the blocklist.
- * Used by screenshot and SEO workflows.
+ * Used by the screenshot workflow.
  */
 export async function checkBlocklist(domain: string): Promise<boolean> {
   "use step";

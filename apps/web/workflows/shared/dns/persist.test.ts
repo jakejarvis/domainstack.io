@@ -5,11 +5,6 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 const { makePGliteDb, closePGliteDb, resetPGliteDb } = await import("@domainstack/db/testing");
 const { db } = await makePGliteDb();
 
-// Mock schedule revalidation
-vi.mock("@/lib/revalidation", () => ({
-  scheduleRevalidation: vi.fn<(...args: unknown[]) => Promise<void>>().mockResolvedValue(undefined),
-}));
-
 describe("persistDnsRecordsStep", () => {
   beforeEach(async () => {
     await resetPGliteDb();

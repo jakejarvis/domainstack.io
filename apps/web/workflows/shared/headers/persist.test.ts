@@ -16,13 +16,6 @@ describe("persistHeadersStep", () => {
   });
 
   it("persists headers to database", async () => {
-    // Mock schedule revalidation for this test
-    vi.doMock("@/lib/revalidation", () => ({
-      scheduleRevalidation: vi
-        .fn<(...args: unknown[]) => Promise<void>>()
-        .mockResolvedValue(undefined),
-    }));
-
     const { persistHeadersStep } = await import("./persist");
     await persistHeadersStep("persist.test", {
       headers: [

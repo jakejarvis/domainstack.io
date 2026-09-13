@@ -13,6 +13,14 @@ vi.mock("workflow/api", () => ({
   }),
 }));
 
+// Mock the verification module verifyDomain calls now hit directly
+const verificationMock = vi.hoisted(() => ({
+  verifyDomain: vi.fn<typeof import("@domainstack/server/verification").verifyDomain>(),
+  verifyDomainByMethod:
+    vi.fn<typeof import("@domainstack/server/verification").verifyDomainByMethod>(),
+}));
+vi.mock("@domainstack/server/verification", () => verificationMock);
+
 // Mock next/headers to avoid errors outside request context
 vi.mock("next/headers", () => ({
   headers: vi.fn<() => Promise<Map<string, string>>>().mockResolvedValue(new Map()),
@@ -598,7 +606,7 @@ describe("tracking router", () => {
   });
 
   describe("verifyDomain", () => {
-    it("runs verification workflow", async () => {
+    it("verifies ownership directly", async () => {
       const caller = createAuthenticatedCaller();
 
       // Create an unverified domain
@@ -610,20 +618,20 @@ describe("tracking router", () => {
         verified: false,
       });
 
-      vi.mocked(start).mockResolvedValue({
-        returnValue: Promise.resolve({
-          success: true,
-          data: { verified: true, method: "dns_txt" },
-        }),
-      } as never);
+      verificationMock.verifyDomain.mockResolvedValue({ verified: true, method: "dns_txt" });
 
       const result = await caller.tracking.verifyDomain({
         trackedDomainId: TEST_TRACKED_ID,
       });
 
-      expect(result.verified).toBe(true);
-      expect(result.method).toBe("dns_txt");
-      expect(start).toHaveBeenCalled();
+      expect(result).toEqual({ verified: true, method: "dns_txt" });
+      expect(verificationMock.verifyDomain).toHaveBeenCalledWith(
+        "example.com",
+        "test-token",
+        expect.objectContaining({}),
+      );
+      // Only the snapshot-initialization workflow should have been started.
+      expect(vi.mocked(start).mock.calls.length).toBe(1);
     });
 
     it("returns verified status for already verified domain", async () => {
@@ -645,10 +653,12 @@ describe("tracking router", () => {
 
       expect(result.verified).toBe(true);
       expect(result.method).toBe("meta_tag");
-      expect(start).not.toHaveBeenCalled(); // Should not re-run workflow
+      expect(verificationMock.verifyDomain).not.toHaveBeenCalled();
+      expect(verificationMock.verifyDomainByMethod).not.toHaveBeenCalled();
+      expect(start).not.toHaveBeenCalled();
     });
 
-    it("returns not verified when workflow fails", async () => {
+    it("returns not verified when no method succeeds", async () => {
       const caller = createAuthenticatedCaller();
 
       // Create an unverified domain
@@ -660,12 +670,7 @@ describe("tracking router", () => {
         verified: false,
       });
 
-      vi.mocked(start).mockResolvedValue({
-        returnValue: Promise.resolve({
-          success: false,
-          data: { verified: false },
-        }),
-      } as never);
+      verificationMock.verifyDomain.mockResolvedValue({ verified: false, method: null });
 
       const result = await caller.tracking.verifyDomain({
         trackedDomainId: TEST_TRACKED_ID,
@@ -673,6 +678,63 @@ describe("tracking router", () => {
 
       expect(result.verified).toBe(false);
       expect(result.method).toBeNull();
+      expect(start).not.toHaveBeenCalled();
+    });
+
+    it("uses only the requested method", async () => {
+      const caller = createAuthenticatedCaller();
+
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "test-token",
+        verified: false,
+      });
+
+      verificationMock.verifyDomainByMethod.mockResolvedValue({
+        verified: true,
+        method: "meta_tag",
+      });
+
+      const result = await caller.tracking.verifyDomain({
+        trackedDomainId: TEST_TRACKED_ID,
+        method: "meta_tag",
+      });
+
+      expect(result).toEqual({ verified: true, method: "meta_tag" });
+      expect(verificationMock.verifyDomainByMethod).toHaveBeenCalledWith(
+        "example.com",
+        "test-token",
+        "meta_tag",
+        expect.anything(),
+      );
+      expect(verificationMock.verifyDomain).not.toHaveBeenCalled();
+    });
+
+    it("propagates a verifier crash as an error", async () => {
+      const caller = createAuthenticatedCaller();
+
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "test-token",
+        verified: false,
+      });
+
+      verificationMock.verifyDomain.mockRejectedValue(new Error("boom"));
+
+      await expect(
+        caller.tracking.verifyDomain({ trackedDomainId: TEST_TRACKED_ID }),
+      ).rejects.toThrow("boom");
+
+      const [tracked] = await db
+        .select()
+        .from(userTrackedDomains)
+        .where(eq(userTrackedDomains.id, TEST_TRACKED_ID));
+
+      expect(tracked?.verified).toBe(false);
     });
 
     it("discards a snapshot from a previous verified period", async () => {
@@ -688,12 +750,7 @@ describe("tracking router", () => {
       });
       await db.insert(domainSnapshots).values({ trackedDomainId: TEST_TRACKED_ID });
 
-      vi.mocked(start).mockResolvedValue({
-        returnValue: Promise.resolve({
-          success: true,
-          data: { verified: true, method: "dns_txt" },
-        }),
-      } as never);
+      verificationMock.verifyDomain.mockResolvedValue({ verified: true, method: "dns_txt" });
 
       await caller.tracking.verifyDomain({ trackedDomainId: TEST_TRACKED_ID });
 

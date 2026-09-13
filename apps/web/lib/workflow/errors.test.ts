@@ -1,199 +1,63 @@
 import { describe, expect, it } from "vitest";
 import { FatalError, RetryableError } from "workflow";
 
-import { classifyFetchError, getErrorClassification, withFetchErrorHandling } from "./errors";
+import { classifyDatabaseError } from "./errors";
 
-// Mock SafeFetchError
-class SafeFetchError extends Error {
-  constructor(
-    public code: string,
-    message: string,
-  ) {
-    super(message);
-    this.name = "SafeFetchError";
-  }
-}
-
-describe("classifyFetchError", () => {
-  describe("DNS errors", () => {
-    it("returns FatalError for ENOTFOUND", () => {
-      const err = new Error("getaddrinfo ENOTFOUND test.invalid");
-      (err as NodeJS.ErrnoException).code = "ENOTFOUND";
-      const result = classifyFetchError(err);
-      expect(FatalError.is(result)).toBe(true);
-      expect(result.message).toContain("DNS resolution failed");
-    });
-
-    it("returns FatalError for ENODATA when A/AAAA records are missing", () => {
-      const err = new Error("queryA ENODATA test.invalid");
-      (err as NodeJS.ErrnoException).code = "ENODATA";
-      const result = classifyFetchError(err);
-      expect(FatalError.is(result)).toBe(true);
-      expect(result.message).toContain("DNS resolution failed");
-    });
+describe("classifyDatabaseError", () => {
+  it("passes through an existing FatalError", () => {
+    const err = new FatalError("already fatal");
+    expect(classifyDatabaseError(err)).toBe(err);
   });
 
-  describe("SafeFetchError", () => {
-    it("returns FatalError for permanent codes", () => {
-      const err = new SafeFetchError("invalid_url", "Invalid URL");
-      const result = classifyFetchError(err);
-      expect(FatalError.is(result)).toBe(true);
-      expect(result.message).toContain("invalid_url");
-    });
-
-    it("returns FatalError for host_blocked", () => {
-      const err = new SafeFetchError("host_blocked", "Host blocked");
-      const result = classifyFetchError(err);
-      expect(FatalError.is(result)).toBe(true);
-    });
-
-    it("returns FatalError for private_ip", () => {
-      const err = new SafeFetchError("private_ip", "Private IP");
-      const result = classifyFetchError(err);
-      expect(FatalError.is(result)).toBe(true);
-    });
-
-    it("returns FatalError for dns_error (domain doesn't resolve)", () => {
-      // DNS errors from SafeFetchError are permanent - the domain doesn't exist
-      const err = new SafeFetchError("dns_error", "DNS lookup failed");
-      const result = classifyFetchError(err);
-      expect(FatalError.is(result)).toBe(true);
-    });
-
-    it("returns RetryableError for invalid_response", () => {
-      const err = new SafeFetchError("invalid_response", "Invalid response");
-      const result = classifyFetchError(err);
-      expect(RetryableError.is(result)).toBe(true);
-    });
+  it("passes through an existing RetryableError", () => {
+    const err = new RetryableError("already retryable");
+    expect(classifyDatabaseError(err)).toBe(err);
   });
 
-  describe("Timeout errors", () => {
-    it("returns RetryableError for timeout errors", () => {
-      const err = new Error("Request timeout");
-      const result = classifyFetchError(err);
-      expect(RetryableError.is(result)).toBe(true);
-      expect(result.message).toContain("timeout");
-    });
-
-    it("returns RetryableError for aborted requests", () => {
-      const err = new Error("The operation was aborted");
-      const result = classifyFetchError(err);
-      expect(RetryableError.is(result)).toBe(true);
-    });
+  it("classifies connection errors as retryable", () => {
+    const result = classifyDatabaseError(new Error("Connection terminated unexpectedly"));
+    expect(RetryableError.is(result)).toBe(true);
+    expect(result.message).toBe("database operation: connection error");
   });
 
-  describe("Network errors", () => {
-    it("returns RetryableError for ECONNREFUSED", () => {
-      const err = new Error("connect ECONNREFUSED 127.0.0.1:443");
-      const result = classifyFetchError(err);
-      expect(RetryableError.is(result)).toBe(true);
-      expect(result.message).toContain("network error");
+  it("classifies deadlocks as retryable with the given context", () => {
+    const result = classifyDatabaseError(new Error("deadlock detected"), {
+      context: "persisting x",
     });
-
-    it("returns RetryableError for ECONNRESET", () => {
-      const err = new Error("read ECONNRESET");
-      const result = classifyFetchError(err);
-      expect(RetryableError.is(result)).toBe(true);
-    });
-
-    it("returns RetryableError for socket hang up", () => {
-      const err = new Error("socket hang up");
-      const result = classifyFetchError(err);
-      expect(RetryableError.is(result)).toBe(true);
-    });
+    expect(RetryableError.is(result)).toBe(true);
+    expect(result.message).toBe("persisting x: deadlock");
   });
 
-  describe("Unknown errors", () => {
-    it("returns RetryableError for unknown errors by default", () => {
-      const err = new Error("Something weird happened");
-      const result = classifyFetchError(err);
-      expect(RetryableError.is(result)).toBe(true);
-    });
-
-    it("returns FatalError for unknown errors when retryUnknown is false", () => {
-      const err = new Error("Something weird happened");
-      const result = classifyFetchError(err, { retryUnknown: false });
-      expect(FatalError.is(result)).toBe(true);
-    });
+  it("classifies constraint violations as fatal", () => {
+    const result = classifyDatabaseError(
+      new Error('duplicate key value violates unique constraint "pk"'),
+    );
+    expect(FatalError.is(result)).toBe(true);
+    expect(result.message).toMatch(/^database operation: constraint violation/);
   });
 
-  describe("Options", () => {
-    it("includes context in error message", () => {
-      const err = new Error("timeout");
-      const result = classifyFetchError(err, {
-        context: "fetching test.invalid",
-      });
-      expect(result.message).toContain("fetching test.invalid");
-    });
-  });
-});
-
-describe("getErrorClassification", () => {
-  it("returns fatal for DNS errors", () => {
-    const err = new Error("ENOTFOUND");
-    (err as NodeJS.ErrnoException).code = "ENOTFOUND";
-    expect(getErrorClassification(err)).toEqual({
-      type: "fatal",
-      reason: "dns_error",
-    });
+  it("classifies schema errors as fatal", () => {
+    const result = classifyDatabaseError(new Error('relation "foo" does not exist'));
+    expect(FatalError.is(result)).toBe(true);
+    expect(result.message).toContain("schema error");
   });
 
-  it("returns fatal for permanent SafeFetchErrors", () => {
-    const err = new SafeFetchError("host_blocked", "Host blocked");
-    expect(getErrorClassification(err)).toEqual({
-      type: "fatal",
-      reason: "host_blocked",
-    });
+  it("classifies other errors as retryable", () => {
+    const result = classifyDatabaseError(new Error("something odd"));
+    expect(RetryableError.is(result)).toBe(true);
+    expect(result.message).toBe("database operation: something odd");
   });
 
-  it("returns retryable for network errors", () => {
-    const err = new Error("ECONNREFUSED");
-    expect(getErrorClassification(err)).toEqual({
-      type: "retryable",
-      reason: "network",
-    });
+  it("classifies a non-Error value as retryable", () => {
+    const result = classifyDatabaseError("boom");
+    expect(RetryableError.is(result)).toBe(true);
+    expect(result.message).toBe("database operation: boom");
   });
 
-  it("returns unknown for unrecognized errors", () => {
-    const err = new Error("Something else");
-    expect(getErrorClassification(err)).toEqual({ type: "unknown" });
-  });
-});
-
-describe("withFetchErrorHandling", () => {
-  it("returns result on success", async () => {
-    const result = await withFetchErrorHandling(async () => ({
-      data: "success",
-    }));
-    expect(result).toEqual({ data: "success" });
-  });
-
-  it("throws RetryableError for network errors", async () => {
-    await expect(
-      withFetchErrorHandling(async () => {
-        throw new Error("ECONNREFUSED");
-      }),
-    ).rejects.toThrow(RetryableError);
-  });
-
-  it("throws FatalError for permanent errors", async () => {
-    await expect(
-      withFetchErrorHandling(async () => {
-        const err = new Error("ENOTFOUND");
-        (err as NodeJS.ErrnoException).code = "ENOTFOUND";
-        throw err;
-      }),
-    ).rejects.toThrow(FatalError);
-  });
-
-  it("includes context in error", async () => {
-    await expect(
-      withFetchErrorHandling(
-        async () => {
-          throw new Error("timeout");
-        },
-        { context: "test operation" },
-      ),
-    ).rejects.toThrow("test operation");
+  it("checks the connection rule before the constraint rule", () => {
+    const result = classifyDatabaseError(
+      new Error("connection lost during unique constraint check"),
+    );
+    expect(RetryableError.is(result)).toBe(true);
   });
 });
