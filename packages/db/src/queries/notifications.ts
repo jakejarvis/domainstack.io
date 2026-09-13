@@ -199,7 +199,8 @@ export async function markAllAsRead(userId: string): Promise<number> {
 }
 
 /**
- * Check if a notification of this type has been sent recently.
+ * Check if a notification of this type was sent after `since` (default: the
+ * last 30 days).
  *
  * Row existence is the dedup signal. A missing `resendId` must not re-open the
  * window — a failed Resend ID write would otherwise make the hourly cron
@@ -208,10 +209,13 @@ export async function markAllAsRead(userId: string): Promise<number> {
 export async function hasRecentNotification(
   trackedDomainId: string,
   type: NotificationType,
-  days = 30,
+  since?: Date,
 ): Promise<boolean> {
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - days);
+  let cutoff = since;
+  if (!cutoff) {
+    cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 30);
+  }
 
   const rows = await db
     .select({ id: notifications.id })

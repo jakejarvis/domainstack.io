@@ -53,27 +53,31 @@ export async function reverifyOwnershipWorkflow(
     verificationFailedAt: domain.verificationFailedAt,
   });
 
-  // Step 4: Send notification email based on the action (separate steps for retry isolation)
-  if (failureResult.shouldSendEmail) {
-    if (failureResult.emailType === "failing") {
-      await sendVerificationFailingEmail({
-        id: domain.id,
-        domainName: domain.domainName,
-        userId: domain.userId,
-        userName: domain.userName,
-        userEmail: domain.userEmail,
-        verificationMethod: domain.verificationMethod,
-      });
-    } else {
-      await sendVerificationRevokedEmail({
-        id: domain.id,
-        domainName: domain.domainName,
-        userId: domain.userId,
-        userName: domain.userName,
-        userEmail: domain.userEmail,
-        verificationMethod: domain.verificationMethod,
-      });
-    }
+  // Step 4: Notify. Each email step skips itself if this failure episode
+  // already has that notification, so re-running is safe.
+  if (failureResult.email === "failing") {
+    await sendVerificationFailingEmail({
+      id: domain.id,
+      domainName: domain.domainName,
+      userId: domain.userId,
+      userName: domain.userName,
+      userEmail: domain.userEmail,
+      verificationMethod: domain.verificationMethod,
+      failedAt: failureResult.failedAt,
+    });
+  } else if (failureResult.email === "revoked") {
+    await sendVerificationRevokedEmail({
+      id: domain.id,
+      domainName: domain.domainName,
+      userId: domain.userId,
+      userName: domain.userName,
+      userEmail: domain.userEmail,
+      verificationMethod: domain.verificationMethod,
+      failedAt: failureResult.failedAt,
+    });
+    // Revoke only after the email is recorded: a revoked domain leaves the
+    // re-verification cron, so a lost email could never be retried.
+    await revokeVerificationStep(domain.id);
   }
 
   return { verified: false, action: failureResult.action };
@@ -125,83 +129,77 @@ async function markSuccess(trackedDomainId: string): Promise<void> {
 type DomainForFailureCheck = Pick<DomainData, "id" | "verificationStatus" | "verificationFailedAt">;
 
 type FailureActionResult =
-  | { action: "marked_failing"; shouldSendEmail: boolean; emailType: "failing" }
-  | { action: "revoked"; shouldSendEmail: true; emailType: "revoked" }
-  | { action: "in_grace_period"; shouldSendEmail: false; emailType: "failing" };
+  | { action: "marked_failing" | "in_grace_period"; email: "failing"; failedAt: Date }
+  | { action: "revoked"; email: "revoked"; failedAt: Date }
+  | { action: "in_grace_period"; email: null; failedAt: null };
 
 /**
- * Determines the failure action and updates database state.
- * Does NOT send emails - that's handled in a separate step for proper isolation.
+ * Decides what a failed check means for this domain and records the `failing`
+ * state. Revocation is written later, after the revoked email is sent (a
+ * revoked domain is no longer re-checked, so its email could never be retried).
  */
 async function determineFailureAction(domain: DomainForFailureCheck): Promise<FailureActionResult> {
   "use step";
 
   const { calculateDaysElapsed } = await import("@domainstack/utils/expiry");
   const { VERIFICATION_GRACE_PERIOD_DAYS } = await import("@domainstack/constants");
-  const { markVerificationFailing, revokeVerification } =
-    await import("@domainstack/db/queries/tracked-domains");
+  const { markVerificationFailing } = await import("@domainstack/db/queries/tracked-domains");
 
-  const now = new Date();
+  const failedAt = domain.verificationFailedAt ? new Date(domain.verificationFailedAt) : null;
 
-  if (domain.verificationStatus === "verified") {
-    // First failure - mark as failing
-    await markVerificationFailing(domain.id);
+  if (
+    domain.verificationStatus === "verified" ||
+    (domain.verificationStatus === "failing" && !failedAt)
+  ) {
+    // First failure of this episode (or a failing row missing its timestamp).
+    const updated = await markVerificationFailing(domain.id);
     return {
       action: "marked_failing",
-      shouldSendEmail: true,
-      emailType: "failing",
+      email: "failing",
+      failedAt: updated?.verificationFailedAt ? new Date(updated.verificationFailedAt) : new Date(),
     };
   }
 
-  if (domain.verificationStatus === "failing") {
-    // Already failing - check if grace period exceeded
-    const failedAt = domain.verificationFailedAt;
-    if (!failedAt) {
-      // Shouldn't happen, but mark failing time now
-      await markVerificationFailing(domain.id);
-      return {
-        action: "marked_failing",
-        shouldSendEmail: false,
-        emailType: "failing",
-      };
+  if (domain.verificationStatus === "failing" && failedAt) {
+    if (calculateDaysElapsed(failedAt, new Date()) >= VERIFICATION_GRACE_PERIOD_DAYS) {
+      return { action: "revoked", email: "revoked", failedAt };
     }
-
-    const daysFailing = calculateDaysElapsed(failedAt, now);
-
-    if (daysFailing >= VERIFICATION_GRACE_PERIOD_DAYS) {
-      // Grace period exceeded - revoke verification
-      await revokeVerification(domain.id);
-      return {
-        action: "revoked",
-        shouldSendEmail: true,
-        emailType: "revoked",
-      };
-    }
-
-    return {
-      action: "in_grace_period",
-      shouldSendEmail: false,
-      emailType: "failing",
-    };
+    // Still in grace: the email step sends only if this episode has no warning
+    // yet, which recovers a warning lost to an earlier failed run.
+    return { action: "in_grace_period", email: "failing", failedAt };
   }
 
-  return {
-    action: "in_grace_period",
-    shouldSendEmail: false,
-    emailType: "failing",
-  };
+  return { action: "in_grace_period", email: null, failedAt: null };
+}
+
+async function revokeVerificationStep(trackedDomainId: string): Promise<void> {
+  "use step";
+
+  const { revokeVerification } = await import("@domainstack/db/queries/tracked-domains");
+  await revokeVerification(trackedDomainId);
 }
 
 type DomainForEmail = Pick<
   DomainData,
   "id" | "domainName" | "userId" | "userName" | "userEmail" | "verificationMethod"
->;
+> & { failedAt: Date };
+
+/**
+ * Start of the duplicate-send window for a failure episode. An hour of slack
+ * absorbs clock skew between the database (which stamps
+ * `verificationFailedAt`) and the app (which stamps `sentAt`). Episodes are
+ * at least 12 hours apart, so the slack can never reach a previous episode.
+ */
+function episodeStart(failedAt: Date): Date {
+  return new Date(new Date(failedAt).getTime() - 60 * 60 * 1000);
+}
 
 /**
  * Step: Send verification failing notification email.
  *
  * Sends before recording; the idempotency contract for that is in
- * `sendNotification` (shared/notifications.ts).
+ * `sendNotification` (shared/notifications.ts). Skips if this failure episode
+ * already has this notification.
  */
 async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boolean> {
   "use step";
@@ -209,15 +207,26 @@ async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boo
   const { default: VerificationFailingEmail } =
     await import("@domainstack/email/templates/verification-failing");
   const { VERIFICATION_GRACE_PERIOD_DAYS } = await import("@domainstack/constants");
+  const { calculateDaysElapsed } = await import("@domainstack/utils/expiry");
   const { hasRecentNotification } = await import("@domainstack/db/queries/notifications");
   const { sendNotification } = await import("@/workflows/shared/notifications");
 
-  const alreadySent = await hasRecentNotification(domain.id, "verification_failing");
+  const alreadySent = await hasRecentNotification(
+    domain.id,
+    "verification_failing",
+    episodeStart(domain.failedAt),
+  );
   if (alreadySent) return false;
+
+  // A catch-up email may go out mid-grace, so tell the user the days actually left.
+  const daysLeft = Math.max(
+    1,
+    VERIFICATION_GRACE_PERIOD_DAYS - calculateDaysElapsed(domain.failedAt, new Date()),
+  );
 
   const title = `Verification failing for ${domain.domainName}`;
   const subject = `⚠️ ${title}`;
-  const message = `Verification for ${domain.domainName} is failing. You have ${VERIFICATION_GRACE_PERIOD_DAYS} days to fix it before access is revoked.`;
+  const message = `Verification for ${domain.domainName} is failing. You have ${daysLeft} days to fix it before access is revoked.`;
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
 
@@ -236,7 +245,7 @@ async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boo
         userName: domain.userName.split(" ")[0] || "there",
         domainName: domain.domainName,
         verificationMethod: domain.verificationMethod,
-        gracePeriodDays: VERIFICATION_GRACE_PERIOD_DAYS,
+        gracePeriodDays: daysLeft,
         baseUrl,
       }),
     },
@@ -249,7 +258,8 @@ async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boo
  * Step: Send verification revoked notification email.
  *
  * Sends before recording, for the same reason as
- * {@link sendVerificationFailingEmail}.
+ * {@link sendVerificationFailingEmail}. Skips if this failure episode already
+ * has this notification.
  */
 async function sendVerificationRevokedEmail(domain: DomainForEmail): Promise<boolean> {
   "use step";
@@ -259,7 +269,11 @@ async function sendVerificationRevokedEmail(domain: DomainForEmail): Promise<boo
   const { hasRecentNotification } = await import("@domainstack/db/queries/notifications");
   const { sendNotification } = await import("@/workflows/shared/notifications");
 
-  const alreadySent = await hasRecentNotification(domain.id, "verification_revoked");
+  const alreadySent = await hasRecentNotification(
+    domain.id,
+    "verification_revoked",
+    episodeStart(domain.failedAt),
+  );
   if (alreadySent) return false;
 
   const title = `Verification revoked for ${domain.domainName}`;
