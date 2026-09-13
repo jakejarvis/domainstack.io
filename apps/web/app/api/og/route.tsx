@@ -6,6 +6,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { Logo } from "@/components/logo";
 import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { hexToRGBA, loadGoogleFont, OG_BACKGROUND_IMAGE, OG_IMAGE_SIZE } from "@/lib/og-utils";
+import { checkRateLimit } from "@/lib/ratelimit/api";
 import { createCaller } from "@/server/routers/_app";
 import { createLogger } from "@domainstack/logger";
 import type { ProviderRef } from "@domainstack/types";
@@ -40,7 +41,9 @@ async function fetchProviderData(domain: string): Promise<ProviderData> {
   cacheLife("weeks"); // Cache provider data for 1 week
 
   try {
-    // Create a lightweight caller for the API, we don't need auth context
+    // Anonymous caller: this path is metered at the route level (see the
+    // checkRateLimit call in GET), not per-procedure, because "use cache"
+    // would otherwise fragment the cache per client IP.
     const caller = createCaller({ req: undefined, ip: null, session: null });
 
     // Fetch registration, hosting, and certificates in parallel
@@ -138,6 +141,18 @@ export async function GET(request: NextRequest) {
   const registrable = toRegistrableDomain(normalized);
   if (!registrable) {
     return new NextResponse("Invalid domain", { status: 400 });
+  }
+
+  // Each distinct domain costs three live upstream lookups (RDAP/WHOIS, hosting,
+  // certificates), so this route must be metered even though it is public.
+  const rateLimit = await checkRateLimit(request, {
+    name: "api:og:get",
+    requests: 30,
+    window: "1 m",
+  });
+
+  if (!rateLimit.success) {
+    return rateLimit.error;
   }
 
   // Fetch fonts and provider data in parallel
