@@ -170,9 +170,13 @@ export async function updateNotificationEmailIdStep(
  *    Sending first means a failed attempt leaves no trace to duplicate, and the
  *    row is only written once delivery is confirmed.
  *
- * 2. **Email-level idempotency**: Resend's idempotency key (format: `{stepId}`)
- *    is stable across retries, so a retry after a partial failure re-sends the
- *    same mail without delivering it twice (~24-48 hour window).
+ * 2. **Email-level idempotency**: the send goes through `shared/send-email.ts`,
+ *    which uses the enclosing step's id as the Resend idempotency key, so a
+ *    retry after a partial failure re-sends the same mail without delivering
+ *    it twice (~24-48 hour window).
+ *
+ * 3. **Permanent email failures degrade to in-app only; transient ones throw
+ *    for step retry.**
  *
  * Nothing after the send can throw: `updateNotificationResendId` swallows its
  * own errors, and a failed insert raises a non-retryable error rather than
@@ -189,7 +193,6 @@ async function sendNotificationInternal(
     notificationType: NotificationType;
     title: string;
     message: string;
-    idempotencyKey?: string;
     emailComponent?: React.ReactElement;
     emailSubject?: string;
   },
@@ -198,7 +201,9 @@ async function sendNotificationInternal(
 ): Promise<boolean> {
   const { createNotification, updateNotificationResendId } =
     await import("@domainstack/db/queries/notifications");
-  const { sendEmail } = await import("@domainstack/email");
+  const { createLogger } = await import("@domainstack/logger");
+
+  const logger = createLogger({ source: "workflows/notifications" });
 
   const {
     userId,
@@ -208,7 +213,6 @@ async function sendNotificationInternal(
     notificationType,
     title,
     message,
-    idempotencyKey,
     emailComponent,
     emailSubject,
   } = options;
@@ -220,7 +224,7 @@ async function sendNotificationInternal(
       ? { react: emailComponent, subject: emailSubject }
       : null;
 
-  const channels: NotificationChannel[] = [];
+  let channels: NotificationChannel[] = [];
   if (email) channels.push("email");
   if (shouldSendInApp) channels.push("in-app");
 
@@ -228,16 +232,28 @@ async function sendNotificationInternal(
   // row to duplicate. Resend dedupes the delivery via the idempotency key.
   let emailId: string | null = null;
   if (email) {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
-    const { data, error } = await sendEmail(
-      { to: userEmail, subject: email.subject, react: email.react },
-      { baseUrl, ...(idempotencyKey ? { idempotencyKey } : {}) },
-    );
+    const { sendEmail } = await import("@/workflows/shared/send-email");
+    try {
+      // Classifies Resend errors and uses the enclosing step id as the
+      // idempotency key, so a retry never delivers twice.
+      const sent = await sendEmail({ to: userEmail, subject: email.subject, react: email.react });
+      emailId = sent.emailId;
+    } catch (err) {
+      // Transient failures: let the step retry.
+      if (!FatalError.is(err)) throw err;
 
-    if (error) throw new Error(`Resend error: ${error.message}`);
-
-    emailId = data?.id ?? null;
+      // Permanent failures (bad address, quota): retrying cannot succeed and
+      // failing the run would stall monitoring for this domain. Deliver
+      // in-app only and let the caller advance its snapshot.
+      logger.error(
+        { err, trackedDomainId, notificationType },
+        "change alert email failed permanently; recording in-app only",
+      );
+      channels = channels.filter((c) => c !== "email");
+    }
   }
+
+  if (channels.length === 0) return false;
 
   // Record the notification only once delivery is settled.
   const notification = await createNotification({
@@ -270,7 +286,7 @@ async function sendNotificationInternal(
 /**
  * Step: Send registration change notification via email and/or in-app.
  *
- * Uses step ID as idempotency key.
+ * Email idempotency is handled by shared/send-email.ts.
  */
 export async function sendRegistrationChangeNotificationStep(
   params: {
@@ -289,11 +305,9 @@ export async function sendRegistrationChangeNotificationStep(
 ): Promise<boolean> {
   "use step";
 
-  const { getStepMetadata } = await import("workflow");
   const { default: RegistrationChangeEmail } =
     await import("@domainstack/email/templates/registration-change");
 
-  const { stepId } = getStepMetadata();
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
 
   const emailComponent = RegistrationChangeEmail({
@@ -314,7 +328,6 @@ export async function sendRegistrationChangeNotificationStep(
       message: params.message,
       emailSubject: params.emailSubject,
       emailComponent,
-      idempotencyKey: stepId,
     },
     shouldSendEmail,
     shouldSendInApp,
@@ -324,7 +337,7 @@ export async function sendRegistrationChangeNotificationStep(
 /**
  * Step: Send provider change notification via email and/or in-app.
  *
- * Uses step ID as idempotency key.
+ * Email idempotency is handled by shared/send-email.ts.
  */
 export async function sendProviderChangeNotificationStep(
   params: {
@@ -343,11 +356,9 @@ export async function sendProviderChangeNotificationStep(
 ): Promise<boolean> {
   "use step";
 
-  const { getStepMetadata } = await import("workflow");
   const { default: ProviderChangeEmail } =
     await import("@domainstack/email/templates/provider-change");
 
-  const { stepId } = getStepMetadata();
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
 
   const emailComponent = ProviderChangeEmail({
@@ -368,7 +379,6 @@ export async function sendProviderChangeNotificationStep(
       message: params.message,
       emailSubject: params.emailSubject,
       emailComponent,
-      idempotencyKey: stepId,
     },
     shouldSendEmail,
     shouldSendInApp,
@@ -378,7 +388,7 @@ export async function sendProviderChangeNotificationStep(
 /**
  * Step: Send certificate change notification via email and/or in-app.
  *
- * Uses step ID as idempotency key.
+ * Email idempotency is handled by shared/send-email.ts.
  */
 export async function sendCertificateChangeNotificationStep(
   params: {
@@ -399,11 +409,9 @@ export async function sendCertificateChangeNotificationStep(
 ): Promise<boolean> {
   "use step";
 
-  const { getStepMetadata } = await import("workflow");
   const { default: CertificateChangeEmail } =
     await import("@domainstack/email/templates/certificate-change");
 
-  const { stepId } = getStepMetadata();
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
 
   const emailComponent = CertificateChangeEmail({
@@ -426,7 +434,6 @@ export async function sendCertificateChangeNotificationStep(
       message: params.message,
       emailSubject: params.emailSubject,
       emailComponent,
-      idempotencyKey: stepId,
     },
     shouldSendEmail,
     shouldSendInApp,
