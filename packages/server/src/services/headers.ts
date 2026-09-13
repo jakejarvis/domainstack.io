@@ -19,6 +19,7 @@ import {
 } from "../headers";
 import { ttlForHeaders } from "../ttl";
 import { RemoteDataUnavailableError } from "./fetch-errors";
+import { shareInFlight } from "./in-flight";
 
 export { getHttpStatusMessage } from "../headers";
 
@@ -39,12 +40,23 @@ export type HeadersResult =
 /**
  * Fetch and persist HTTP headers for a domain.
  *
+ * Concurrent calls for the same domain in this process share one fetch and one
+ * write (e.g. a report batch where `getHeaders` and `getHosting` both need HTTP
+ * headers). Every call that doesn't overlap an in-flight one fetches fresh data.
+ *
  * @param domain - The domain to probe
  * @returns Headers result with data or error
  *
  * @throws Error on transient failures (network issues) - TanStack Query retries these
  */
-export async function fetchHeaders(domain: string): Promise<HeadersResult> {
+export function fetchHeaders(domain: string): Promise<HeadersResult> {
+  const normalizedDomain = domain.toLowerCase();
+  return shareInFlight(`headers:${normalizedDomain}`, () =>
+    fetchAndPersistHeaders(normalizedDomain),
+  );
+}
+
+async function fetchAndPersistHeaders(domain: string): Promise<HeadersResult> {
   // 1. Fetch headers from domain (throws HeadersFetchError on transient failure)
   let fetchResult;
   try {
