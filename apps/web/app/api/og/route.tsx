@@ -37,8 +37,7 @@ interface ProviderData {
 }
 
 async function fetchProviderData(domain: string): Promise<ProviderData> {
-  "use cache";
-  cacheLife("weeks"); // Cache provider data for 1 week
+  "use cache: remote";
 
   try {
     // Anonymous caller: this path is metered at the route level (see the
@@ -119,10 +118,16 @@ async function fetchProviderData(domain: string): Promise<ProviderData> {
       color: p.color,
     }));
 
+    // Cache successful data for 1 day
+    cacheLife("days");
+
     return { providers };
   } catch (err) {
     logger.debug({ err, domain }, "provider data unavailable for OG image");
   }
+
+  // Cache failure briefly
+  cacheLife("minutes");
 
   return { providers: [] };
 }

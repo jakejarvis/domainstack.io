@@ -1,5 +1,3 @@
-import { cacheLife } from "next/cache";
-
 import { landingSuggestions } from "@/lib/flags";
 
 import { ChatClientLazy } from "./chat-client-lazy";
@@ -26,12 +24,10 @@ function shuffle<T>(array: T[]): T[] {
 }
 
 /**
- * Shared suggestion list for the cache window. Shuffle is legal inside
- * `"use cache"` because the result is captured and reused across visitors.
+ * Shared suggestion list for the cache window.
  */
 async function getChatSuggestions(domains: string[]): Promise<string[]> {
   "use cache";
-  cacheLife("hours");
 
   // No domains configured means no suggestions; also avoids a modulo by zero below.
   if (domains.length === 0) return [];

@@ -1,5 +1,3 @@
-import { cacheLife } from "next/cache";
-
 export const OG_IMAGE_SIZE = { width: 1200, height: 630 } as const;
 
 /** Dark geometric background used by default and per-domain OG images. */
@@ -9,8 +7,6 @@ export const OG_BACKGROUND_IMAGE =
 // Load a Google Font from the Google Fonts API
 // Adapted from https://github.com/brianlovin/briOS/blob/f72dc33a11194de45c80337b22be4560da62ad7e/src/lib/og-utils.tsx#L32
 export async function loadGoogleFont(font: string, weight: number): Promise<ArrayBuffer> {
-  "use cache";
-
   const url = `https://fonts.googleapis.com/css2?family=${font}:wght@${weight}`;
 
   const cssResponse = await fetch(url, {
@@ -31,7 +27,6 @@ export async function loadGoogleFont(font: string, weight: number): Promise<Arra
       },
     });
     if (fontResponse.status === 200) {
-      cacheLife("max"); // cache indefinitely if successful
       return fontResponse.arrayBuffer();
     }
   }
