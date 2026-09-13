@@ -12,7 +12,7 @@
  * - Differentiated rate limits (anonymous vs authenticated)
  * - Input validation with Zod
  * - Message count and length limits
- * - Conversation history truncation
+ * - Conversation history truncation (message count and size)
  */
 
 import { createModelCallToUIChunkTransform } from "@ai-sdk/workflow";
@@ -22,6 +22,7 @@ import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 
 import { chatRequestSchema } from "@/lib/chat/request-schema";
+import { trimChatHistory } from "@/lib/chat/trim-history";
 import { validateChatMessages } from "@/lib/chat/validate-messages";
 import { aiModel } from "@/lib/flags";
 import { checkRateLimit } from "@/lib/ratelimit/api";
@@ -29,7 +30,6 @@ import { chatWorkflow } from "@/workflows/chat";
 import { auth } from "@domainstack/auth/server";
 import {
   MAX_CHAT_REQUEST_BYTES,
-  MAX_CONVERSATION_MESSAGES,
   RATE_LIMIT_ANONYMOUS,
   RATE_LIMIT_AUTHENTICATED,
 } from "@domainstack/constants";
@@ -120,9 +120,18 @@ export async function POST(request: Request) {
 
   const { messages: rawMessages, domain, sessionId } = parseResult.data;
 
-  // Truncate conversation history to prevent abuse
-  // Keep the most recent messages within limit
-  const truncatedMessages = rawMessages.slice(-MAX_CONVERSATION_MESSAGES);
+  // Trim to the shared message-count and size budget. Assistant history is
+  // client-supplied, so this also bounds what a forged history can cost.
+  const truncatedMessages = trimChatHistory(rawMessages);
+  if (truncatedMessages.length === 0) {
+    return NextResponse.json(
+      {
+        error: "Validation failed",
+        details: [{ path: "messages", message: "At least one user message is required" }],
+      },
+      { status: 400, headers: { ...rateLimit.headers } },
+    );
+  }
   const validatedMessages = await validateChatMessages(truncatedMessages);
   if (!validatedMessages.success) {
     logger.debug({ err: validatedMessages.error }, "chat history failed tool validation");

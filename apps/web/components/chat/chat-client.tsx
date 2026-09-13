@@ -18,6 +18,7 @@ import { analytics } from "@/lib/analytics/client";
 import { chatOpenAtom } from "@/lib/atoms/chat-atoms";
 import { createClientDomainTools } from "@/lib/chat/client-tools";
 import { buildSystemPrompt } from "@/lib/chat/system-prompt";
+import { trimChatHistory } from "@/lib/chat/trim-history";
 import type { DomainChatUIMessage } from "@/lib/chat/ui-message";
 import { safeDecodeURIComponent } from "@/lib/safe-parse";
 import { useChatHydrated, useChatStore } from "@/lib/stores/chat-store";
@@ -171,7 +172,11 @@ function CloudChatSession({
       new WorkflowChatTransport({
         api: "/api/chat",
         prepareSendMessagesRequest: ({ messages }) => ({
-          body: { messages, domain: domainRef.current, sessionId: ensureSessionId() },
+          body: {
+            messages: trimChatHistory(messages),
+            domain: domainRef.current,
+            sessionId: ensureSessionId(),
+          },
         }),
         prepareReconnectToStreamRequest: ({ api: _api, ...rest }) => {
           const currentRunId = runIdRef.current;

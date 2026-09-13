@@ -31,6 +31,14 @@ export const MAX_MESSAGE_LENGTH = 500;
 export const MAX_CONVERSATION_MESSAGES = 10;
 
 /**
+ * Maximum JSON-serialized size of the conversation history sent to the model.
+ * Oldest messages are dropped until the history fits. Bounds per-request model
+ * input (which is re-sent on every agent step) independently of the request
+ * body cap, since assistant history is client-supplied.
+ */
+export const MAX_CONVERSATION_HISTORY_CHARS = 64_000;
+
+/**
  * Maximum output tokens the model can generate per response.
  * Prevents runaway responses and controls costs.
  */
