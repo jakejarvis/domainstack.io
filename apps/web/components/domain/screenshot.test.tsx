@@ -16,7 +16,10 @@ import { createTestQueryClient, render, renderHook } from "@/mocks/react";
 
 import { Screenshot, useScreenshot } from "./screenshot";
 
-const screenshotUrl = "https://example.public.blob.vercel-storage.com/screenshot.webp";
+// A same-origin static asset keeps this test fully offline: the test server
+// serves it locally, so nothing depends on
+// example.public.blob.vercel-storage.com or any other external host.
+const screenshotUrl = "/web-app-manifest-192x192.png";
 
 function jsonResponse(body: unknown, init?: ResponseInit) {
   const headers = new Headers(init?.headers);
