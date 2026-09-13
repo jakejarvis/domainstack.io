@@ -123,8 +123,9 @@ export async function detectChangesWorkflow(
     await optionalCall(persistRegistrationStep(domainName, registrationData));
   }
 
-  // Persist DNS (always succeeds or throws)
-  await persistDnsRecordsStep(domainName, dnsResult);
+  // The DNS cache is a side effect here: detection uses dnsResult directly, so a
+  // failed write must not abort the run (same rule as the other persists).
+  await optionalCall(persistDnsRecordsStep(domainName, dnsResult));
 
   if (headersResult?.success) {
     await optionalCall(persistHeadersStep(domainName, headersResult.data));
