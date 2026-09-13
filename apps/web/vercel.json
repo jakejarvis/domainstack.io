@@ -15,20 +15,12 @@
   },
   "crons": [
     {
-      "path": "/api/cron/cleanup-stale-domains",
-      "schedule": "0 3 * * 0"
-    },
-    {
       "path": "/api/cron/reverify-domains",
       "schedule": "0 4,16 * * *"
     },
     {
-      "path": "/api/cron/check-domain-expiry",
+      "path": "/api/cron/check-expiry",
       "schedule": "0 9 * * *"
-    },
-    {
-      "path": "/api/cron/check-certificate-expiry",
-      "schedule": "15 9 * * *"
     },
     {
       "path": "/api/cron/check-subscription-expiry",

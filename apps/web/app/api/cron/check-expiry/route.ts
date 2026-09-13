@@ -2,17 +2,17 @@ import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 
 import { settleInBatches } from "@/lib/settle-in-batches";
-import { domainExpiryWorkflow } from "@/workflows/domain-expiry";
+import { expiryWorkflow } from "@/workflows/expiry";
 import { getVerifiedTrackedDomainIds } from "@domainstack/db/queries/tracked-domains";
 import { createLogger } from "@domainstack/logger";
 
-const logger = createLogger({ source: "cron/check-domain-expiry" });
+const logger = createLogger({ source: "cron/check-expiry" });
 
 /** Max concurrent workflow starts per invocation. */
 const START_BATCH_SIZE = 50;
 
 /**
- * Cron job to check domain expiry and send notifications.
+ * Cron job to check domain and certificate expiry and send notifications.
  */
 export async function GET(request: Request) {
   if (request.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -23,7 +23,7 @@ export async function GET(request: Request) {
   try {
     const ids = await getVerifiedTrackedDomainIds();
     const results = await settleInBatches(ids, START_BATCH_SIZE, (id) =>
-      start(domainExpiryWorkflow, [{ trackedDomainId: id }]),
+      start(expiryWorkflow, [{ trackedDomainId: id }]),
     );
     const started = results.filter((r) => r.status === "fulfilled").length;
 
@@ -37,10 +37,10 @@ export async function GET(request: Request) {
       );
     }
 
-    logger.info({ started, total: ids.length }, "Check domain expiry completed");
+    logger.info({ started, total: ids.length }, "Check expiry completed");
     return NextResponse.json({ started });
   } catch (err) {
-    logger.error({ err }, "Check domain expiry failed");
-    return NextResponse.json({ error: "Failed to check domain expiry" }, { status: 500 });
+    logger.error({ err }, "Check expiry failed");
+    return NextResponse.json({ error: "Failed to check expiry" }, { status: 500 });
   }
 }

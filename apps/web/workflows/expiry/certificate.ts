@@ -4,16 +4,16 @@ import {
   checkExpiryPreferencesStep,
   getThresholdNotificationType,
 } from "@/workflows/shared/notifications";
-import { DOMAIN_EXPIRY_THRESHOLDS } from "@domainstack/constants";
-import type { TrackedDomainForNotification } from "@domainstack/db/queries/tracked-domains";
+import { CERTIFICATE_EXPIRY_THRESHOLDS } from "@domainstack/constants";
+import type { TrackedDomainCertificate } from "@domainstack/db/queries/certificates";
 import type { NotificationType } from "@domainstack/types";
 import { formatDateLong } from "@domainstack/utils/date";
 
-interface DomainExpiryWorkflowInput {
+export interface CertificateExpiryWorkflowInput {
   trackedDomainId: string;
 }
 
-type DomainExpiryWorkflowResult =
+export type CertificateExpiryWorkflowResult =
   | {
       skipped: true;
       reason: "renewed";
@@ -24,8 +24,6 @@ type DomainExpiryWorkflowResult =
       skipped: true;
       reason:
         | "not_found"
-        | "no_expiration_date"
-        | "invalid_expiration_date"
         | "already_expired"
         | "no_threshold_met"
         | "notifications_disabled"
@@ -34,48 +32,41 @@ type DomainExpiryWorkflowResult =
   | { skipped: false; sent: true };
 
 /**
- * Durable workflow to check domain expiry and send notifications.
+ * Certificate expiry branch: checks if a tracked domain's leaf TLS
+ * certificate is approaching expiration and sends notifications based on
+ * user preferences.
  *
- * Checks if a tracked domain is approaching expiration and sends
- * notifications based on user preferences.
+ * Not a workflow entrypoint itself — composed into `expiryWorkflow` in
+ * `./workflow`, which owns the single durable-workflow boundary.
  */
-export async function domainExpiryWorkflow(
-  input: DomainExpiryWorkflowInput,
-): Promise<DomainExpiryWorkflowResult> {
-  "use workflow";
-
+export async function checkCertificateExpiry(
+  input: CertificateExpiryWorkflowInput,
+): Promise<CertificateExpiryWorkflowResult> {
   const { trackedDomainId } = input;
 
-  // Step 1: Fetch domain data
-  const domain = await fetchDomain(trackedDomainId);
+  // Step 1: Fetch certificate data
+  const cert = await fetchCertificate(trackedDomainId);
 
-  if (!domain) {
+  if (!cert) {
     return { skipped: true, reason: "not_found" };
   }
 
-  if (!domain.expirationDate) {
-    return { skipped: true, reason: "no_expiration_date" };
-  }
+  // Step 2: Calculate days remaining
+  const validTo = cert.validTo;
 
-  // Step 2: Calculate days remaining and check for renewal
-  const daysRemaining = await calculateDaysRemainingStep(domain.expirationDate);
-  const MAX_THRESHOLD_DAYS = Math.max(...DOMAIN_EXPIRY_THRESHOLDS);
+  const daysRemaining = await calculateDaysRemainingStep(validTo);
+  const MAX_THRESHOLD_DAYS = Math.max(...CERTIFICATE_EXPIRY_THRESHOLDS);
 
-  // The cron starts this workflow for every verified tracked domain, so an
-  // already-expired (or unparseable) date reaches us here. The thresholds only
+  // The cron starts this workflow for every verified tracked domain holding a
+  // certificate, so an already-expired one reaches us here. The thresholds only
   // describe an approaching expiry and getThresholdNotificationType maps
   // anything at or below the smallest one, so without this guard an expired
-  // domain alerts "expires in -12 days" and re-alerts every time the 30-day
-  // already-sent window lapses.
-  if (!Number.isFinite(daysRemaining)) {
-    return { skipped: true, reason: "invalid_expiration_date" };
-  }
+  // certificate alerts "expires in -12 days".
   if (daysRemaining < 0) {
     return { skipped: true, reason: "already_expired" };
   }
 
-  // Detect renewal: If expiration is now beyond our notification window,
-  // clear previous notifications so they can be re-sent when approaching expiry again.
+  // Detect renewal: If certificate is renewed beyond our notification window
   if (daysRemaining > MAX_THRESHOLD_DAYS) {
     const cleared = await clearRenewedNotifications(trackedDomainId);
     return {
@@ -89,15 +80,15 @@ export async function domainExpiryWorkflow(
   // Step 3: Determine notification type
   const notificationType = getThresholdNotificationType(
     daysRemaining,
-    DOMAIN_EXPIRY_THRESHOLDS,
-    "domain_expiry",
+    CERTIFICATE_EXPIRY_THRESHOLDS,
+    "certificate_expiry",
   );
   if (!notificationType) {
     return { skipped: true, reason: "no_threshold_met" };
   }
 
   // Step 4: Check notification preferences
-  const prefs = await checkExpiryPreferencesStep(domain.userId, domain.muted, "domainExpiry");
+  const prefs = await checkExpiryPreferencesStep(cert.userId, cert.muted, "certificateExpiry");
   if (!prefs.shouldSendEmail && !prefs.shouldSendInApp) {
     return { skipped: true, reason: "notifications_disabled" };
   }
@@ -109,30 +100,29 @@ export async function domainExpiryWorkflow(
   }
 
   // Step 6: Build the notification content (pure — no I/O, safe to recompute)
-  const expirationDate = new Date(domain.expirationDate);
-  const { title, subject, message } = buildDomainExpiryContent({
-    domainName: domain.domainName,
-    expirationDate,
+  const { title, subject, message } = buildCertificateExpiryContent({
+    domainName: cert.domainName,
+    validTo,
+    issuer: cert.issuer,
     daysRemaining,
-    registrar: domain.registrar ?? undefined,
   });
 
   // Step 7: Send and record. Email goes first inside the step so a failed send
   // leaves no dedup row behind (see sendNotification in shared/notifications.ts).
-  await sendDomainExpiryNotification(
+  await sendCertificateExpiryNotification(
     {
-      userId: domain.userId,
-      userEmail: domain.userEmail,
-      userName: domain.userName,
+      userId: cert.userId,
+      userEmail: cert.userEmail,
+      userName: cert.userName,
       trackedDomainId,
-      domainName: domain.domainName,
+      domainName: cert.domainName,
       notificationType,
       title,
       message,
       subject,
-      expirationDate,
+      validTo,
+      issuer: cert.issuer,
       daysRemaining,
-      registrar: domain.registrar ?? undefined,
     },
     prefs.shouldSendEmail,
     prefs.shouldSendInApp,
@@ -141,39 +131,39 @@ export async function domainExpiryWorkflow(
   return { skipped: false, sent: true };
 }
 
-async function fetchDomain(trackedDomainId: string): Promise<TrackedDomainForNotification | null> {
+async function fetchCertificate(trackedDomainId: string): Promise<TrackedDomainCertificate | null> {
   "use step";
 
-  const { getTrackedDomainForNotification } =
-    await import("@domainstack/db/queries/tracked-domains");
+  const { getEarliestCertificate } = await import("@domainstack/db/queries/certificates");
 
-  return await getTrackedDomainForNotification(trackedDomainId);
+  return await getEarliestCertificate(trackedDomainId);
 }
 
 async function clearRenewedNotifications(trackedDomainId: string): Promise<number> {
   "use step";
 
-  const { clearDomainExpiryNotifications } = await import("@domainstack/db/queries/notifications");
+  const { clearCertificateExpiryNotifications } =
+    await import("@domainstack/db/queries/notifications");
 
-  return await clearDomainExpiryNotifications(trackedDomainId);
+  return await clearCertificateExpiryNotifications(trackedDomainId);
 }
 
-function buildDomainExpiryContent(params: {
+function buildCertificateExpiryContent(params: {
   domainName: string;
-  expirationDate: Date;
+  validTo: Date;
+  issuer: string;
   daysRemaining: number;
-  registrar?: string;
 }): { title: string; subject: string; message: string } {
-  const { domainName, expirationDate, daysRemaining, registrar } = params;
+  const { domainName, validTo, issuer, daysRemaining } = params;
 
-  const title = `${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;
-  const subject = `${daysRemaining <= 7 ? "⚠️ " : ""}${title}`;
-  const message = `Your domain ${domainName} will expire on ${formatDateLong(expirationDate)}${registrar ? ` (registered with ${registrar})` : ""}.`;
+  const title = `SSL certificate for ${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;
+  const subject = `${daysRemaining <= 3 ? "🔒⚠️ " : "🔒 "}${title}`;
+  const message = `The SSL certificate for ${domainName} (issued by ${issuer}) will expire on ${formatDateLong(validTo)}.`;
 
   return { title, subject, message };
 }
 
-async function sendDomainExpiryNotification(
+async function sendCertificateExpiryNotification(
   params: {
     userId: string;
     userEmail: string;
@@ -184,16 +174,17 @@ async function sendDomainExpiryNotification(
     title: string;
     message: string;
     subject: string;
-    expirationDate: Date;
+    validTo: Date;
+    issuer: string;
     daysRemaining: number;
-    registrar?: string;
   },
   shouldSendEmail: boolean,
   shouldSendInApp: boolean,
 ): Promise<boolean> {
   "use step";
 
-  const { default: DomainExpiryEmail } = await import("@domainstack/email/templates/domain-expiry");
+  const { default: CertificateExpiryEmail } =
+    await import("@domainstack/email/templates/certificate-expiry");
   const { sendNotification } = await import("@/workflows/shared/notifications");
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
@@ -208,12 +199,12 @@ async function sendDomainExpiryNotification(
       title: params.title,
       message: params.message,
       emailSubject: params.subject,
-      emailComponent: DomainExpiryEmail({
+      emailComponent: CertificateExpiryEmail({
         userName: params.userName.split(" ")[0] || "there",
         domainName: params.domainName,
-        expirationDate: formatDateLong(params.expirationDate),
+        expirationDate: formatDateLong(params.validTo),
         daysRemaining: params.daysRemaining,
-        registrar: params.registrar,
+        issuer: params.issuer,
         baseUrl,
       }),
     },

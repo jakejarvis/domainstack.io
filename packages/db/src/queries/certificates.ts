@@ -198,30 +198,6 @@ export async function getCachedCertificates(
 }
 
 /**
- * Get tracked domain IDs that have a current certificate check.
- * Used by the certificate expiry scheduler.
- */
-export async function getVerifiedTrackedDomainIdsWithCertificates(): Promise<string[]> {
-  const rows = await db
-    .selectDistinct({
-      trackedDomainId: userTrackedDomains.id,
-    })
-    .from(userTrackedDomains)
-    .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
-    .innerJoin(certificateChecks, eq(domains.id, certificateChecks.domainId))
-    .innerJoin(certificates, eq(domains.id, certificates.domainId))
-    .where(
-      and(
-        eq(userTrackedDomains.verified, true),
-        isNull(userTrackedDomains.archivedAt),
-        leafOrLegacyCertificate,
-      ),
-    );
-
-  return rows.map((r) => r.trackedDomainId);
-}
-
-/**
  * Get the leaf certificate for a tracked domain.
  * Used by the certificate expiry worker — alerts describe the site certificate.
  */
