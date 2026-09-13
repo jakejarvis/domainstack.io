@@ -18,6 +18,7 @@ import {
   certificates,
   dnsRecords,
   domains,
+  domainSnapshots,
   hosting,
   providers,
   registrations,
@@ -730,20 +731,26 @@ export async function countTrackedDomainsByStatus(userId: string): Promise<Track
  */
 export async function verifyTrackedDomain(id: string, method: VerificationMethod) {
   const now = new Date();
-  const updated = await db
-    .update(userTrackedDomains)
-    .set({
-      verified: true,
-      verificationMethod: method,
-      verificationStatus: "verified",
-      verificationFailedAt: null,
-      lastVerifiedAt: now,
-      verifiedAt: now,
-    })
-    .where(eq(userTrackedDomains.id, id))
-    .returning();
+  return await db.transaction(async (tx) => {
+    // A domain becoming verified (again) may carry a snapshot from a previous
+    // verified period; drop it so monitoring starts from a fresh baseline.
+    await tx.delete(domainSnapshots).where(eq(domainSnapshots.trackedDomainId, id));
 
-  return updated[0] ?? null;
+    const updated = await tx
+      .update(userTrackedDomains)
+      .set({
+        verified: true,
+        verificationMethod: method,
+        verificationStatus: "verified",
+        verificationFailedAt: null,
+        lastVerifiedAt: now,
+        verifiedAt: now,
+      })
+      .where(eq(userTrackedDomains.id, id))
+      .returning();
+
+    return updated[0] ?? null;
+  });
 }
 
 /**
@@ -921,17 +928,24 @@ export async function archiveTrackedDomain(id: string) {
  * Unarchive (reactivate) a tracked domain.
  */
 export async function unarchiveTrackedDomain(id: string) {
-  const updated = await db
-    .update(userTrackedDomains)
-    .set({ archivedAt: null })
-    .where(eq(userTrackedDomains.id, id))
-    .returning();
+  return await db.transaction(async (tx) => {
+    // The snapshot predates the archive; comparing against it would report every
+    // change made while unmonitored as new. Drop it so the monitor cron writes a
+    // fresh baseline.
+    await tx.delete(domainSnapshots).where(eq(domainSnapshots.trackedDomainId, id));
 
-  if (updated.length === 0) {
-    return null;
-  }
+    const updated = await tx
+      .update(userTrackedDomains)
+      .set({ archivedAt: null })
+      .where(eq(userTrackedDomains.id, id))
+      .returning();
 
-  return updated[0];
+    if (updated.length === 0) {
+      return null;
+    }
+
+    return updated[0];
+  });
 }
 
 /**
@@ -974,6 +988,11 @@ export async function unarchiveTrackedDomainWithLimitCheck(
     if (currentCount >= maxDomains) {
       return { success: false, reason: "limit_exceeded" } as const;
     }
+
+    // The snapshot predates the archive; comparing against it would report every
+    // change made while unmonitored as new. Drop it so the monitor cron writes a
+    // fresh baseline.
+    await tx.delete(domainSnapshots).where(eq(domainSnapshots.trackedDomainId, id));
 
     const [updated] = await tx
       .update(userTrackedDomains)

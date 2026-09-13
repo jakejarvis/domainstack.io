@@ -36,8 +36,9 @@ vi.mock("@domainstack/email/templates/verification-instructions", () => ({
 }));
 
 // Now import modules that depend on the db
-const { domains, userSubscriptions, users, userTrackedDomains } =
+const { domains, domainSnapshots, userSubscriptions, users, userTrackedDomains } =
   await import("@domainstack/db/schema");
+const { eq } = await import("@domainstack/db/drizzle");
 const { countActiveTrackedDomainsForUser } =
   await import("@domainstack/db/queries/tracked-domains");
 const { sendEmail } = await import("@domainstack/email");
@@ -545,6 +546,55 @@ describe("tracking router", () => {
         caller.tracking.unarchiveDomain({ trackedDomainId: TEST_TRACKED_ID }),
       ).rejects.toThrow("not archived");
     });
+
+    it("discards the stale monitoring snapshot", async () => {
+      const caller = createAuthenticatedCaller();
+
+      // Create an archived domain with a stale snapshot
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "test-token",
+        verified: true,
+        archivedAt: new Date(),
+      });
+      await db.insert(domainSnapshots).values({ trackedDomainId: TEST_TRACKED_ID });
+
+      await caller.tracking.unarchiveDomain({ trackedDomainId: TEST_TRACKED_ID });
+
+      const remaining = await db
+        .select()
+        .from(domainSnapshots)
+        .where(eq(domainSnapshots.trackedDomainId, TEST_TRACKED_ID));
+
+      expect(remaining).toHaveLength(0);
+    });
+
+    it("keeps the snapshot when unarchive is rejected", async () => {
+      const caller = createAuthenticatedCaller();
+
+      // Create an active (non-archived) domain with a snapshot
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "test-token",
+        verified: true,
+      });
+      await db.insert(domainSnapshots).values({ trackedDomainId: TEST_TRACKED_ID });
+
+      await expect(
+        caller.tracking.unarchiveDomain({ trackedDomainId: TEST_TRACKED_ID }),
+      ).rejects.toThrow("not archived");
+
+      const remaining = await db
+        .select()
+        .from(domainSnapshots)
+        .where(eq(domainSnapshots.trackedDomainId, TEST_TRACKED_ID));
+
+      expect(remaining).toHaveLength(1);
+    });
   });
 
   describe("verifyDomain", () => {
@@ -623,6 +673,36 @@ describe("tracking router", () => {
 
       expect(result.verified).toBe(false);
       expect(result.method).toBeNull();
+    });
+
+    it("discards a snapshot from a previous verified period", async () => {
+      const caller = createAuthenticatedCaller();
+
+      // Create an unverified domain with a leftover snapshot
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "test-token",
+        verified: false,
+      });
+      await db.insert(domainSnapshots).values({ trackedDomainId: TEST_TRACKED_ID });
+
+      vi.mocked(start).mockResolvedValue({
+        returnValue: Promise.resolve({
+          success: true,
+          data: { verified: true, method: "dns_txt" },
+        }),
+      } as never);
+
+      await caller.tracking.verifyDomain({ trackedDomainId: TEST_TRACKED_ID });
+
+      const remaining = await db
+        .select()
+        .from(domainSnapshots)
+        .where(eq(domainSnapshots.trackedDomainId, TEST_TRACKED_ID));
+
+      expect(remaining).toHaveLength(0);
     });
   });
 
