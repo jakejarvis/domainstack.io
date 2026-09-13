@@ -38,11 +38,6 @@ export function AnnouncementPill() {
           className="absolute right-0 bottom-full left-0 z-10 mb-8 flex items-center justify-center"
         >
           <div className="relative inline-flex items-center rounded-full border border-black/10 bg-gradient-to-r from-black/[0.02] to-black/[0.04] text-sm backdrop-blur-sm transition-colors hover:border-black/20 hover:from-black/[0.04] hover:to-black/[0.06] dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04] dark:hover:border-white/20 dark:hover:from-white/[0.04] dark:hover:to-white/[0.06]">
-            {/* Shimmer effect */}
-            <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-full">
-              <div className="absolute inset-0 animate-shimmer bg-gradient-to-r from-transparent via-white/5 to-transparent" />
-            </div>
-
             <Link
               href="/dashboard"
               className="group inline-flex items-center gap-2 py-1.5 pr-2 pl-3"

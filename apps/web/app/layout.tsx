@@ -41,7 +41,7 @@ export default function RootLayout({ children, modal }: LayoutProps<"/">) {
           title="Domainstack"
         />
       </head>
-      <body className="relative min-h-svh overscroll-none bg-background font-sans text-foreground tabular-nums antialiased [--header-height:72px]">
+      <body className="relative min-h-svh overscroll-none bg-background font-sans text-foreground tabular-nums antialiased [--header-height:72px] [font-synthesis-weight:none]">
         <Providers>
           {/* Skip to main content link for keyboard navigation */}
           <a
@@ -52,7 +52,7 @@ export default function RootLayout({ children, modal }: LayoutProps<"/">) {
           </a>
 
           {/* App Shell */}
-          <div data-slot="layout" className="isolate flex min-h-svh flex-col">
+          <div data-slot="layout" className="isolate flex min-h-svh flex-col overscroll-none">
             <AppHeader />
             <main id="main-content" className="flex min-h-0 flex-1 flex-col">
               {children}

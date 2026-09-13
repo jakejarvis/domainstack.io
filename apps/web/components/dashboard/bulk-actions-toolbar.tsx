@@ -74,7 +74,7 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
         <ResponsiveTooltipTrigger
           nativeButton={false}
           render={
-            <label className="extend-touch-target flex min-h-8 min-w-0 cursor-pointer items-center gap-2 select-none">
+            <label className="flex min-h-8 min-w-0 cursor-pointer items-center gap-2 select-none">
               <Checkbox
                 checked={isAllSelected}
                 indeterminate={isPartiallySelected}
@@ -103,7 +103,7 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
                 <Button
                   variant="outline"
                   size="sm"
-                  className={cn("extend-touch-target text-[13px]", toolbarOutlineClassName)}
+                  className={cn("text-[13px]", toolbarOutlineClassName)}
                 >
                   {isLoading ? <Spinner /> : null}
                   Actions…
@@ -187,7 +187,6 @@ export function BulkActionsToolbar({ totalCount, className }: BulkActionsToolbar
           size="icon-sm"
           onClick={clearSelection}
           disabled={isLoading}
-          className="extend-touch-target"
           aria-label="Cancel selection"
         >
           <IconX aria-hidden />

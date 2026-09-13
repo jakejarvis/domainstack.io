@@ -1,47 +1,12 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "@domainstack/ui/tailwind.css";
 @plugin "@tailwindcss/typography";
-@source "../node_modules/@domainstack/ui/src/**/*.tsx";
 @source "../node_modules/streamdown/dist/*.js";
-
-@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-danger: var(--danger);
-  --color-danger-foreground: var(--danger-foreground);
-  --color-danger-border: var(--danger-border);
-  --color-warning: var(--warning);
-  --color-warning-foreground: var(--warning-foreground);
-  --color-warning-border: var(--warning-border);
-  --color-info: var(--info);
-  --color-info-foreground: var(--info-foreground);
-  --color-info-border: var(--info-border);
-  --color-success: var(--success);
-  --color-success-foreground: var(--success-foreground);
-  --color-success-border: var(--success-border);
-  --color-selection: var(--selection);
-  --color-selection-foreground: var(--selection-foreground);
   --color-accent-blue: var(--accent-blue);
   --color-accent-indigo: var(--accent-indigo);
   --color-accent-green: var(--accent-green);
@@ -52,18 +17,10 @@
   --color-accent-red: var(--accent-red);
   --color-accent-gold: var(--accent-gold);
   --color-accent-gold-muted: var(--accent-gold-muted);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
 }
 
 :root {
   --radius: 0.625rem;
-
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -97,7 +54,6 @@
   --success-border: oklch(81.86% 0.107 157.92);
   --selection: oklch(0.145 0 0);
   --selection-foreground: oklch(1 0 0);
-
   --accent-blue: oklch(62% 0.2 255);
   --accent-indigo: oklch(60% 0.19 275);
   --accent-green: oklch(70% 0.16 150);
@@ -145,7 +101,6 @@
   --success-border: oklch(31.6% 0.082 152.3);
   --selection: oklch(0.922 0 0);
   --selection-foreground: oklch(0.205 0 0);
-
   --accent-blue: oklch(72% 0.16 255);
   --accent-indigo: oklch(70% 0.16 275);
   --accent-green: oklch(82% 0.14 150);
@@ -159,36 +114,9 @@
   --accent-gold-muted: oklch(70% 0.08 65);
 }
 
-@theme {
-  /* Shimmer animation for announcement pill - shimmers quickly then pauses */
-  --animate-shimmer: shimmer 6s ease-in-out infinite;
-
-  @keyframes shimmer {
-    0% {
-      transform: translateX(-100%);
-    }
-    40% {
-      transform: translateX(100%);
-    }
-    100% {
-      transform: translateX(100%);
-    }
-  }
-}
-
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
   ::selection {
     @apply bg-selection text-selection-foreground;
-  }
-  body {
-    font-synthesis-weight: none;
-    text-rendering: optimizeLegibility;
-  }
-  [data-slot="layout"] {
-    @apply overscroll-none;
   }
 }
 
@@ -205,80 +133,4 @@
 
 @utility accent-glow {
   @apply bg-[radial-gradient(closest-side,var(--glow-color,var(--accent-slate)),transparent)];
-}
-
-@utility extend-touch-target {
-  @media (pointer: coarse) {
-    @apply relative touch-manipulation after:absolute after:-inset-2;
-  }
-}
-
-@utility no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
-}
-
-/* Custom variants: https://github.com/shadcn-ui/ui/blob/main/packages/shadcn/src/tailwind.css */
-@custom-variant data-open {
-  &:where([data-state="open"]),
-  &:where([data-open]:not([data-open="false"])) {
-    @slot;
-  }
-}
-
-@custom-variant data-closed {
-  &:where([data-state="closed"]),
-  &:where([data-closed]:not([data-closed="false"])) {
-    @slot;
-  }
-}
-
-@custom-variant data-checked {
-  &:where([data-state="checked"]),
-  &:where([data-checked]:not([data-checked="false"])) {
-    @slot;
-  }
-}
-
-@custom-variant data-unchecked {
-  &:where([data-state="unchecked"]),
-  &:where([data-unchecked]:not([data-unchecked="false"])) {
-    @slot;
-  }
-}
-
-@custom-variant data-selected {
-  &:where([data-selected="true"]) {
-    @slot;
-  }
-}
-
-@custom-variant data-disabled {
-  &:where([data-disabled="true"]),
-  &:where([data-disabled]:not([data-disabled="false"])) {
-    @slot;
-  }
-}
-
-@custom-variant data-active {
-  &:where([data-state="active"]),
-  &:where([data-active]:not([data-active="false"])) {
-    @slot;
-  }
-}
-
-@custom-variant data-horizontal {
-  &:where([data-orientation="horizontal"]) {
-    @slot;
-  }
-}
-
-@custom-variant data-vertical {
-  &:where([data-orientation="vertical"]) {
-    @slot;
-  }
 }
