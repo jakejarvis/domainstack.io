@@ -536,7 +536,7 @@ async function queryTrackedDomainsWithDetails(
  * transaction-scoped advisory lock keyed on the user makes the count-then-write
  * sequence exclusive per user. Released automatically at commit/rollback.
  */
-async function lockUserDomainQuota(
+export async function lockUserDomainQuota(
   tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
   userId: string,
 ) {

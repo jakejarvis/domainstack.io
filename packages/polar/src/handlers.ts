@@ -98,14 +98,30 @@ export async function handleSubscriptionActive(payload: SubscriptionActivePayloa
     );
   }
 
+  // Reconcile against Polar: a redelivered `active` that lands after the
+  // subscription was revoked must not re-grant pro, and one that lands after a
+  // cancellation must not erase the pending end date.
+  const state = await getCustomerSubscriptionState(userId);
+  if (state.status === "ok" && !state.hasActiveSubscription) {
+    logger.info(
+      { subscriptionId: data.id, userId },
+      "Customer has no active subscription; ignoring stale active event",
+    );
+    return;
+  }
+
   const previous = await getUserSubscription(userId);
   const wasPro = previous.plan === "pro";
 
   // Upgrade user tier
   await updateUserTier(userId, "pro");
 
-  // Clear any pending subscription end date (in case they re-subscribed)
-  await clearSubscriptionEndsAt(userId);
+  // Only a non-canceling subscription cancels a pending end date. When Polar
+  // can't be reached, leave endsAt alone: the downgrade cron re-checks Polar
+  // before acting and clears a genuinely stale end date itself.
+  if (state.status === "ok" && state.hasNonCancelingActive) {
+    await clearSubscriptionEndsAt(userId);
+  }
 
   // Polar delivers webhooks at-least-once. Only send the welcome email on a
   // real free→pro transition: a redelivered `subscription.active` that finds
@@ -177,7 +193,21 @@ export async function handleSubscriptionCanceled(
     return;
   }
 
+  if (state.status === "ok" && !state.hasActiveSubscription) {
+    // The subscription already ended (e.g. `revoked` was delivered first).
+    // Setting endsAt now would send countdown emails to a free user.
+    logger.info(
+      { subscriptionId: data.id, userId },
+      "Customer has no active subscription; ignoring late canceled event",
+    );
+    return;
+  }
+
   const previous = await getUserSubscription(userId);
+  if (previous.plan !== "pro") {
+    logger.info({ subscriptionId: data.id, userId }, "User is not pro; ignoring canceled event");
+    return;
+  }
   const previousEndsAtMs = previous.endsAt?.getTime() ?? null;
   const nextEndsAtMs = data.currentPeriodEnd.getTime();
   const endsAtChanged = previousEndsAtMs !== nextEndsAtMs;
@@ -242,11 +272,17 @@ export async function handleSubscriptionRevoked(
     return;
   }
 
-  // Downgrade user to free tier (may archive domains if over limit)
-  const archivedCount = await downgradeToFree(userId);
-
-  // Clear the subscription end date
-  await clearSubscriptionEndsAt(userId);
+  // Downgrade (clears endsAt in the same transaction). Idempotent: a duplicate
+  // or late `revoked`, or one that races the downgrade cron, finds the user
+  // already free and must not re-send the expiry email.
+  const { wasPro, archivedCount } = await downgradeToFree(userId);
+  if (!wasPro) {
+    logger.info(
+      { subscriptionId: data.id, userId },
+      "User already on free tier; skipping expired email",
+    );
+    return;
+  }
 
   // Send expiration email (don't fail webhook if email fails)
   try {

@@ -5,6 +5,7 @@ import type { Plan } from "@domainstack/types";
 
 import { db } from "../client";
 import { userSubscriptions, users, userTrackedDomains } from "../schema";
+import { lockUserDomainQuota } from "./tracked-domains";
 
 export interface UserSubscriptionData {
   userId: string;
@@ -19,6 +20,13 @@ export interface UserWithEndingSubscription {
   userEmail: string;
   endsAt: Date;
   lastExpiryNotification: number | null;
+}
+
+export interface DowngradeToFreeResult {
+  /** True only when this call moved the user from pro to free. */
+  wasPro: boolean;
+  /** Tracked domains archived by this call to fit the free quota. */
+  archivedCount: number;
 }
 
 /**
@@ -140,7 +148,13 @@ export async function getUserIdsWithEndingSubscriptions(): Promise<string[]> {
   const rows = await db
     .select({ userId: userSubscriptions.userId })
     .from(userSubscriptions)
-    .where(and(isNotNull(userSubscriptions.endsAt), gt(userSubscriptions.endsAt, now)));
+    .where(
+      and(
+        eq(userSubscriptions.tier, "pro"),
+        isNotNull(userSubscriptions.endsAt),
+        gt(userSubscriptions.endsAt, now),
+      ),
+    );
 
   return rows.map((row) => row.userId);
 }
@@ -191,6 +205,7 @@ export async function getUserWithEndingSubscription(
     .where(
       and(
         eq(userSubscriptions.userId, userId),
+        eq(userSubscriptions.tier, "pro"),
         isNotNull(userSubscriptions.endsAt),
         gt(userSubscriptions.endsAt, now),
       ),
@@ -224,19 +239,37 @@ export async function setLastExpiryNotification(userId: string, threshold: numbe
 }
 
 /**
- * Downgrade user from Pro to Free tier.
+ * Downgrade a user to free, clear their pending end date, and archive the
+ * oldest domains over the free quota. Serialized with plan-limit checks via
+ * the per-user quota lock. Safe to call repeatedly: `wasPro` is true only on
+ * the call that performed the pro→free transition.
  */
-export async function downgradeToFree(userId: string): Promise<number> {
+export async function downgradeToFree(userId: string): Promise<DowngradeToFreeResult> {
   const freeLimit = PLAN_QUOTAS.free;
 
   return await db.transaction(async (tx) => {
-    const updated = await tx
-      .update(userSubscriptions)
-      .set({ tier: "free", updatedAt: new Date() })
-      .where(eq(userSubscriptions.userId, userId))
-      .returning({ userId: userSubscriptions.userId });
+    await lockUserDomainQuota(tx, userId);
 
-    if (updated.length === 0) {
+    const [current] = await tx
+      .select({ tier: userSubscriptions.tier })
+      .from(userSubscriptions)
+      .where(eq(userSubscriptions.userId, userId))
+      .for("update")
+      .limit(1);
+
+    const wasPro = current?.tier === "pro";
+
+    if (current) {
+      await tx
+        .update(userSubscriptions)
+        .set({
+          tier: "free",
+          endsAt: null,
+          lastExpiryNotification: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(userSubscriptions.userId, userId));
+    } else {
       await tx.insert(userSubscriptions).values({ userId, tier: "free" });
     }
 
@@ -248,7 +281,7 @@ export async function downgradeToFree(userId: string): Promise<number> {
     const activeCount = countResult?.count ?? 0;
 
     if (activeCount <= freeLimit) {
-      return 0;
+      return { wasPro, archivedCount: 0 };
     }
 
     const toArchive = activeCount - freeLimit;
@@ -261,7 +294,7 @@ export async function downgradeToFree(userId: string): Promise<number> {
       .limit(toArchive);
 
     if (domainsToArchive.length === 0) {
-      return 0;
+      return { wasPro, archivedCount: 0 };
     }
 
     const idsToArchive = domainsToArchive.map((d) => d.id);
@@ -272,6 +305,6 @@ export async function downgradeToFree(userId: string): Promise<number> {
       .where(inArray(userTrackedDomains.id, idsToArchive))
       .returning({ id: userTrackedDomains.id });
 
-    return result.length;
+    return { wasPro, archivedCount: result.length };
   });
 }

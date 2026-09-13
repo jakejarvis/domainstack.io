@@ -6,8 +6,13 @@ const { makePGliteDb, closePGliteDb } = await import("@domainstack/db/testing");
 const { db } = await makePGliteDb();
 
 // Now import modules that depend on the db (they'll use the test db via lazy init)
-const { downgradeToFree, getUserIdsPastDue, getUserSubscription } =
-  await import("@domainstack/db/queries/user-subscription");
+const {
+  downgradeToFree,
+  getUserIdsPastDue,
+  getUserIdsWithEndingSubscriptions,
+  getUserSubscription,
+  getUserWithEndingSubscription,
+} = await import("@domainstack/db/queries/user-subscription");
 const { domains, userSubscriptions, users, userTrackedDomains } =
   await import("@domainstack/db/schema");
 const { asc, eq } = await import("@domainstack/db/drizzle");
@@ -56,7 +61,9 @@ beforeEach(async () => {
   // Clear tracked domains before each test
   await db.delete(userTrackedDomains);
   // Reset subscription tier to Pro
-  await db.update(userSubscriptions).set({ tier: "pro" });
+  await db
+    .update(userSubscriptions)
+    .set({ tier: "pro", endsAt: null, lastExpiryNotification: null });
 });
 
 describe("downgradeToFree", () => {
@@ -91,7 +98,7 @@ describe("downgradeToFree", () => {
 
     const result = await downgradeToFree(testUserId);
 
-    expect(result).toBe(0);
+    expect(result.archivedCount).toBe(0);
 
     // Verify no domains were archived
     const trackedDomains = await db.select().from(userTrackedDomains);
@@ -111,7 +118,7 @@ describe("downgradeToFree", () => {
 
     const result = await downgradeToFree(testUserId);
 
-    expect(result).toBe(0);
+    expect(result.archivedCount).toBe(0);
 
     // Verify no domains were archived
     const trackedDomains = await db.select().from(userTrackedDomains);
@@ -131,7 +138,7 @@ describe("downgradeToFree", () => {
 
     const result = await downgradeToFree(testUserId);
 
-    expect(result).toBe(3);
+    expect(result.archivedCount).toBe(3);
 
     // Verify 3 domains were archived
     const trackedDomains = await db.select().from(userTrackedDomains);
@@ -157,7 +164,7 @@ describe("downgradeToFree", () => {
 
     const result = await downgradeToFree(testUserId);
 
-    expect(result).toBe(2);
+    expect(result.archivedCount).toBe(2);
 
     // The 2 oldest domains (indices 0 and 1) should be archived
     const trackedDomains = await db
@@ -196,7 +203,7 @@ describe("downgradeToFree", () => {
 
     const result = await downgradeToFree(newUser.id);
 
-    expect(result).toBe(0);
+    expect(result.archivedCount).toBe(0);
 
     // Verify subscription was created
     const [subscription] = await db
@@ -205,6 +212,35 @@ describe("downgradeToFree", () => {
       .where(eq(userSubscriptions.userId, newUser.id));
     expect(subscription).toBeDefined();
     expect(subscription.tier).toBe("free");
+  });
+
+  it("reports a pro transition and clears expiry state", async () => {
+    await db
+      .update(userSubscriptions)
+      .set({
+        tier: "pro",
+        endsAt: new Date("2030-01-01T00:00:00Z"),
+        lastExpiryNotification: 7,
+      })
+      .where(eq(userSubscriptions.userId, testUserId));
+
+    const result = await downgradeToFree(testUserId);
+
+    expect(result).toEqual({ wasPro: true, archivedCount: 0 });
+    const [subscription] = await db
+      .select()
+      .from(userSubscriptions)
+      .where(eq(userSubscriptions.userId, testUserId));
+    expect(subscription).toMatchObject({
+      tier: "free",
+      endsAt: null,
+      lastExpiryNotification: null,
+    });
+  });
+
+  it("reports no pro transition when called repeatedly", async () => {
+    expect(await downgradeToFree(testUserId)).toEqual({ wasPro: true, archivedCount: 0 });
+    expect(await downgradeToFree(testUserId)).toEqual({ wasPro: false, archivedCount: 0 });
   });
 });
 
@@ -272,5 +308,54 @@ describe("getUserIdsPastDue", () => {
     expect(ids).toContain(pastDueId);
     expect(ids).not.toContain(futureId);
     expect(ids).not.toContain(noEndId);
+  });
+});
+
+describe("ending subscription queries", () => {
+  it("lists only pro users with a future endsAt", async () => {
+    const freeUserId = "future-end-free-user";
+    const proUserId = "future-ending-pro-user";
+    const endsAt = new Date(Date.now() + 86_400_000);
+
+    await db.insert(users).values([
+      {
+        id: freeUserId,
+        name: "Free Future End",
+        email: "future-end-free@example.test",
+        emailVerified: true,
+      },
+      {
+        id: proUserId,
+        name: "Pro Future End",
+        email: "future-ending-pro@example.test",
+        emailVerified: true,
+      },
+    ]);
+    await db.insert(userSubscriptions).values([
+      { userId: freeUserId, tier: "free", endsAt },
+      { userId: proUserId, tier: "pro", endsAt },
+    ]);
+
+    const ids = await getUserIdsWithEndingSubscriptions();
+
+    expect(ids).not.toContain(freeUserId);
+    expect(ids).toContain(proUserId);
+  });
+
+  it("does not load a free user with a future endsAt", async () => {
+    const freeUserId = "ending-details-free-user";
+    await db.insert(users).values({
+      id: freeUserId,
+      name: "Free Ending Details",
+      email: "ending-details-free@example.test",
+      emailVerified: true,
+    });
+    await db.insert(userSubscriptions).values({
+      userId: freeUserId,
+      tier: "free",
+      endsAt: new Date(Date.now() + 86_400_000),
+    });
+
+    expect(await getUserWithEndingSubscription(freeUserId)).toBeNull();
   });
 });

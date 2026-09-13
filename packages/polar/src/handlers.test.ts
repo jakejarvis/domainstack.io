@@ -61,7 +61,8 @@ const {
     updateUserTier: vi.fn<(userId: string, tier: "free" | "pro") => Promise<void>>(),
     setSubscriptionEndsAt: vi.fn<(userId: string, endsAt: Date) => Promise<void>>(),
     clearSubscriptionEndsAt: vi.fn<(userId: string) => Promise<void>>(),
-    downgradeToFree: vi.fn<(userId: string) => Promise<number>>(),
+    downgradeToFree:
+      vi.fn<(userId: string) => Promise<{ wasPro: boolean; archivedCount: number }>>(),
     getUserSubscription: vi.fn<(userId: string) => Promise<UserSubscriptionFixture>>(),
     getCustomerSubscriptionState: vi.fn<(userId: string) => Promise<CustomerStateFixture>>(),
     createMockLogger: buildMockLogger,
@@ -252,6 +253,9 @@ describe("handleSubscriptionActive", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     vi.mocked(getUserSubscription).mockResolvedValue(freeSubscription());
+    vi.mocked(getCustomerSubscriptionState).mockResolvedValue(
+      okPolarState({ hasActiveSubscription: true, hasNonCancelingActive: true }),
+    );
   });
 
   it("upgrades user tier when product ID is recognized", async () => {
@@ -279,6 +283,39 @@ describe("handleSubscriptionActive", () => {
     expect(getTierForProductId).toHaveBeenCalledWith("unknown-product");
     expect(updateUserTier).toHaveBeenCalledWith("user-456", "pro");
     expect(clearSubscriptionEndsAt).toHaveBeenCalledWith("user-456");
+  });
+
+  it("ignores stale active event when customer has no active subscription", async () => {
+    vi.mocked(getTierForProductId).mockReturnValue("pro");
+    vi.mocked(getCustomerSubscriptionState).mockResolvedValue(okPolarState());
+
+    await handleSubscriptionActive(createActivePayload());
+
+    expect(updateUserTier).not.toHaveBeenCalled();
+    expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
+    expect(sendProUpgradeEmail).not.toHaveBeenCalled();
+  });
+
+  it("does not clear endsAt when the only active subscription is canceling", async () => {
+    vi.mocked(getTierForProductId).mockReturnValue("pro");
+    vi.mocked(getCustomerSubscriptionState).mockResolvedValue(
+      okPolarState({ hasActiveSubscription: true, hasNonCancelingActive: false }),
+    );
+
+    await handleSubscriptionActive(createActivePayload());
+
+    expect(updateUserTier).toHaveBeenCalledWith("user-456", "pro");
+    expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
+  });
+
+  it("upgrades but keeps endsAt when Polar state is unknown", async () => {
+    vi.mocked(getTierForProductId).mockReturnValue("pro");
+    vi.mocked(getCustomerSubscriptionState).mockResolvedValue({ status: "unknown" });
+
+    await handleSubscriptionActive(createActivePayload());
+
+    expect(updateUserTier).toHaveBeenCalledWith("user-456", "pro");
+    expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
   });
 
   it("does not upgrade tier when externalId (userId) is missing", async () => {
@@ -335,7 +372,9 @@ describe("handleSubscriptionCanceled", () => {
     vi.mocked(getUserSubscription).mockResolvedValue(
       freeSubscription({ plan: "pro", planQuota: 100 }),
     );
-    vi.mocked(getCustomerSubscriptionState).mockResolvedValue(okPolarState());
+    vi.mocked(getCustomerSubscriptionState).mockResolvedValue(
+      okPolarState({ hasActiveSubscription: true }),
+    );
   });
 
   it("sets subscription end date when currentPeriodEnd is provided", async () => {
@@ -389,6 +428,28 @@ describe("handleSubscriptionCanceled", () => {
 
     expect(setSubscriptionEndsAt).not.toHaveBeenCalled();
     expect(sendSubscriptionCancelingEmail).not.toHaveBeenCalled();
+  });
+
+  it("ignores canceled event when customer has no active subscription", async () => {
+    vi.mocked(getCustomerSubscriptionState).mockResolvedValue(okPolarState());
+
+    await handleSubscriptionCanceled(
+      createCanceledPayload({ currentPeriodEnd: new Date("2025-02-01T00:00:00Z") }),
+    );
+
+    expect(setSubscriptionEndsAt).not.toHaveBeenCalled();
+    expect(sendSubscriptionCancelingEmail).not.toHaveBeenCalled();
+  });
+
+  it("ignores canceled event when local plan is free", async () => {
+    vi.mocked(getCustomerSubscriptionState).mockResolvedValue({ status: "unknown" });
+    vi.mocked(getUserSubscription).mockResolvedValue(freeSubscription());
+
+    await handleSubscriptionCanceled(
+      createCanceledPayload({ currentPeriodEnd: new Date("2025-02-01T00:00:00Z") }),
+    );
+
+    expect(setSubscriptionEndsAt).not.toHaveBeenCalled();
   });
 
   it("re-throws errors from setSubscriptionEndsAt for webhook retry", async () => {
@@ -450,8 +511,8 @@ describe("handleSubscriptionCanceled", () => {
 describe("handleSubscriptionRevoked", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    // Default: downgradeToFree returns 0 archived domains
-    vi.mocked(downgradeToFree).mockResolvedValue(0);
+    // Default: downgradeToFree performs the transition with 0 archived domains
+    vi.mocked(downgradeToFree).mockResolvedValue({ wasPro: true, archivedCount: 0 });
     vi.mocked(getCustomerSubscriptionState).mockResolvedValue(okPolarState());
   });
 
@@ -461,18 +522,26 @@ describe("handleSubscriptionRevoked", () => {
     expect(downgradeToFree).toHaveBeenCalledWith("user-456");
   });
 
-  it("clears subscription end date after downgrade", async () => {
+  it("does not call clearSubscriptionEndsAt (downgradeToFree clears it)", async () => {
     await handleSubscriptionRevoked(createRevokedPayload());
 
-    expect(clearSubscriptionEndsAt).toHaveBeenCalledWith("user-456");
+    expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
   });
 
   it("sends subscription expired email with archived count", async () => {
-    vi.mocked(downgradeToFree).mockResolvedValue(3);
+    vi.mocked(downgradeToFree).mockResolvedValue({ wasPro: true, archivedCount: 3 });
 
     await handleSubscriptionRevoked(createRevokedPayload());
 
     expect(sendSubscriptionExpiredEmail).toHaveBeenCalledWith("user-456", 3);
+  });
+
+  it("does not send expired email when user was already free", async () => {
+    vi.mocked(downgradeToFree).mockResolvedValue({ wasPro: false, archivedCount: 0 });
+
+    await handleSubscriptionRevoked(createRevokedPayload());
+
+    expect(sendSubscriptionExpiredEmail).not.toHaveBeenCalled();
   });
 
   it("does not fail webhook if email sending fails", async () => {
@@ -482,7 +551,7 @@ describe("handleSubscriptionRevoked", () => {
     await expect(handleSubscriptionRevoked(createRevokedPayload())).resolves.not.toThrow();
 
     expect(downgradeToFree).toHaveBeenCalled();
-    expect(clearSubscriptionEndsAt).toHaveBeenCalled();
+    expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
   });
 
   it("does not downgrade when externalId (userId) is missing", async () => {

@@ -7,7 +7,7 @@ interface SubscriptionDowngradeWorkflowInput {
 type SubscriptionDowngradeWorkflowResult =
   | {
       skipped: true;
-      reason: "not_pro" | "no_end_date" | "not_yet_due" | "polar_unverified";
+      reason: "not_pro" | "no_end_date" | "not_yet_due" | "polar_unverified" | "polar_pending";
     }
   | { downgraded: true; archivedCount: number }
   | { downgraded: false; reason: "still_active" };
@@ -48,15 +48,20 @@ export async function subscriptionDowngradeWorkflow(
     // Couldn't verify — do nothing; the next cron run retries.
     return { skipped: true, reason: "polar_unverified" };
   }
-  if (state.hasActiveSubscription) {
+  if (state.hasNonCancelingActive) {
     // User actually renewed; a missed uncanceled/active webhook left a stale
     // end date. Self-heal by clearing it instead of downgrading.
     await clearEndsAt(userId);
     return { downgraded: false, reason: "still_active" };
   }
+  if (state.hasActiveSubscription) {
+    // Only a canceling subscription remains and Polar hasn't ended it yet.
+    // Keep endsAt so the next cron run re-checks instead of losing the backstop.
+    return { skipped: true, reason: "polar_pending" };
+  }
 
   // Step 3: Genuinely expired with no active Polar subscription — downgrade.
-  const archivedCount = await downgrade(userId);
+  const { archivedCount } = await downgrade(userId);
   return { downgraded: true, archivedCount };
 }
 
@@ -84,23 +89,24 @@ async function clearEndsAt(userId: string): Promise<void> {
   await clearSubscriptionEndsAt(userId);
 }
 
-async function downgrade(userId: string): Promise<number> {
+async function downgrade(userId: string): Promise<{ wasPro: boolean; archivedCount: number }> {
   "use step";
 
-  const [{ clearSubscriptionEndsAt, downgradeToFree }, { sendSubscriptionExpiredEmail }] =
-    await Promise.all([
-      import("@domainstack/db/queries/user-subscription"),
-      import("@domainstack/polar/emails"),
-    ]);
+  const [{ downgradeToFree }, { sendSubscriptionExpiredEmail }] = await Promise.all([
+    import("@domainstack/db/queries/user-subscription"),
+    import("@domainstack/polar/emails"),
+  ]);
 
-  const archivedCount = await downgradeToFree(userId);
-  await clearSubscriptionEndsAt(userId);
-
-  try {
-    await sendSubscriptionExpiredEmail(userId, archivedCount);
-  } catch {
-    // Best-effort: don't fail the downgrade if the email send fails.
+  // Clears endsAt in the same transaction. A retry after the commit (or a
+  // webhook that got there first) sees wasPro=false and sends nothing.
+  const result = await downgradeToFree(userId);
+  if (result.wasPro) {
+    try {
+      await sendSubscriptionExpiredEmail(userId, result.archivedCount);
+    } catch {
+      // Best-effort: don't fail the downgrade if the email send fails.
+    }
   }
 
-  return archivedCount;
+  return result;
 }
