@@ -40,6 +40,19 @@ export async function GET(request: Request) {
     const remindersStarted = reminderResults.filter((r) => r.status === "fulfilled").length;
     const downgradesStarted = downgradeResults.filter((r) => r.status === "fulfilled").length;
 
+    for (const [label, results, total] of [
+      ["reminders", reminderResults, endingIds.length],
+      ["downgrades", downgradeResults, pastDueIds.length],
+    ] as const) {
+      const failures = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
+      if (failures.length > 0) {
+        logger.warn(
+          { kind: label, failed: failures.length, total, err: failures[0].reason },
+          "Some workflow starts failed",
+        );
+      }
+    }
+
     logger.info(
       {
         remindersStarted,

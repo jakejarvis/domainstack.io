@@ -55,4 +55,33 @@ describe("monitor domains cron", () => {
     });
     expect(mocks.releaseMonitorLock).toHaveBeenCalledWith("tracked-1", "owner-1");
   });
+
+  it("starts all monitors while never exceeding the batch concurrency limit", async () => {
+    const ids = Array.from({ length: 120 }, (_, i) => `tracked-${i}`);
+    mocks.getMonitoredSnapshotIds.mockResolvedValue(ids);
+
+    let inFlight = 0;
+    let maxInFlight = 0;
+    mocks.start.mockImplementation(async () => {
+      inFlight++;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+      await Promise.resolve();
+      inFlight--;
+      return undefined;
+    });
+
+    const response = await GET(
+      new Request("https://domainstack.io/api/cron/monitor-domains", {
+        headers: { Authorization: "Bearer test-secret" },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      baselines: { started: 0, total: 0 },
+      monitoring: { started: 120, total: 120, skippedInFlight: 0 },
+    });
+    expect(mocks.start).toHaveBeenCalledTimes(120);
+    expect(maxInFlight).toBeLessThanOrEqual(50);
+  });
 });
