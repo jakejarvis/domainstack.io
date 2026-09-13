@@ -105,15 +105,10 @@ export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonP
   const mounted = useIsClient();
 
   const isAuthenticated = !!session?.user;
-  const { data: trackedDomains, isLoading: isLoadingDomains } = useQuery(
-    trpc.tracking.listDomains.queryOptions(
-      isAuthenticated ? { includeArchived: false } : skipToken,
-    ),
+  const { data: trackedDomain, isLoading: isLoadingStatus } = useQuery(
+    trpc.tracking.getTrackingStatus.queryOptions(isAuthenticated ? { domain } : skipToken),
   );
 
-  const trackedDomain = trackedDomains?.find(
-    (d) => d.domainName.toLowerCase() === domain.toLowerCase(),
-  );
   const isTracked = !!trackedDomain;
   const isVerified = trackedDomain?.verified ?? false;
   const isPendingVerification = isTracked && !isVerified;
@@ -146,7 +141,7 @@ export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonP
     );
   }, [session?.user, isPendingVerification, trackedDomain, domain, router, startNavigation]);
 
-  if (!mounted || isSessionPending || !enabled || (session?.user && isLoadingDomains)) {
+  if (!mounted || isSessionPending || !enabled || (session?.user && isLoadingStatus)) {
     return (
       <Button variant="outline" disabled aria-label="Track domain">
         <IconBellPlus className="sm:text-muted-foreground" aria-hidden="true" />

@@ -24,7 +24,7 @@ vi.mock("@/lib/trpc/client", async () => {
 import { makeTrackedDomain } from "@/components/dashboard/test-fixtures";
 import { TrackDomainButton } from "@/components/domain/track-domain-button";
 import { render } from "@/mocks/react";
-import { resetTrpcMocks, setDomainsState } from "@/mocks/trpc";
+import { listDomainsQuery, resetTrpcMocks, setDomainsState } from "@/mocks/trpc";
 import { TooltipProvider } from "@domainstack/ui/tooltip";
 
 async function renderButton(domain = "example.com") {
@@ -113,5 +113,22 @@ describe("TrackDomainButton", () => {
 
     finishNavigation?.();
     await expect.element(page.getByRole("button", { name: "Verify domain" })).toBeEnabled();
+  });
+
+  it("shows the tracked-and-verified link for a verified domain", async () => {
+    setDomainsState([
+      makeTrackedDomain({
+        domainName: "example.com",
+        verified: true,
+        verificationStatus: "verified",
+      }),
+    ]);
+
+    await renderButton();
+
+    await expect
+      .element(page.getByRole("button", { name: "View in dashboard" }))
+      .toBeInTheDocument();
+    expect(listDomainsQuery).not.toHaveBeenCalled();
   });
 });

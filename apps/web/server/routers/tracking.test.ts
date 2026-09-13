@@ -802,6 +802,103 @@ describe("tracking router", () => {
     });
   });
 
+  describe("getTrackingStatus", () => {
+    it("returns the status of an unverified tracked domain", async () => {
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "test-token",
+        verified: false,
+        verificationMethod: "dns_txt",
+      });
+
+      const result = await createAuthenticatedCaller().tracking.getTrackingStatus({
+        domain: TEST_DOMAIN,
+      });
+
+      expect(result).toEqual({
+        id: TEST_TRACKED_ID,
+        verified: false,
+        verificationMethod: "dns_txt",
+      });
+    });
+
+    it("returns the status of a verified tracked domain", async () => {
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "test-token",
+        verified: true,
+        verificationMethod: "dns_txt",
+      });
+
+      const result = await createAuthenticatedCaller().tracking.getTrackingStatus({
+        domain: TEST_DOMAIN,
+      });
+
+      expect(result?.verified).toBe(true);
+    });
+
+    it("returns null when the domain is not tracked", async () => {
+      const result = await createAuthenticatedCaller().tracking.getTrackingStatus({
+        domain: TEST_DOMAIN,
+      });
+
+      expect(result).toBeNull();
+    });
+
+    it("does not expose another user's tracked domain", async () => {
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_2_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "test-token",
+      });
+
+      const result = await createAuthenticatedCaller().tracking.getTrackingStatus({
+        domain: TEST_DOMAIN,
+      });
+
+      expect(result).toBeNull();
+    });
+
+    it("returns null for an archived tracked domain", async () => {
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "test-token",
+        archivedAt: new Date(),
+      });
+
+      const result = await createAuthenticatedCaller().tracking.getTrackingStatus({
+        domain: TEST_DOMAIN,
+      });
+
+      expect(result).toBeNull();
+    });
+
+    it("does not create a domain record for an unknown domain", async () => {
+      const before = await db.select().from(domains);
+
+      const result = await createAuthenticatedCaller().tracking.getTrackingStatus({
+        domain: "never-seen-before.com",
+      });
+
+      const after = await db.select().from(domains);
+      expect(result).toBeNull();
+      expect(after).toHaveLength(before.length);
+    });
+
+    it("rejects unauthenticated requests", async () => {
+      await expect(
+        createUnauthenticatedCaller().tracking.getTrackingStatus({ domain: TEST_DOMAIN }),
+      ).rejects.toThrow("must be logged in");
+    });
+  });
+
   describe("getVerificationData", () => {
     it("returns verification data for owned domain", async () => {
       const caller = createAuthenticatedCaller();

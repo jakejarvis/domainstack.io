@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { toast } from "sonner";
 
 import { useTRPC } from "@/lib/trpc/client";
@@ -102,8 +102,9 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
 
   const invalidateDomainQueries = useCallback(() => {
     void queryClient.invalidateQueries(domainsFilter);
+    void queryClient.invalidateQueries(trpc.tracking.getTrackingStatus.queryFilter());
     void queryClient.invalidateQueries(subscriptionFilter);
-  }, [queryClient, domainsFilter, subscriptionFilter]);
+  }, [queryClient, domainsFilter, subscriptionFilter, trpc]);
 
   // Helper to rollback domain queries
   const rollbackDomains = (previousDomains: [unknown, unknown][]) => {
@@ -434,75 +435,109 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
   // Wrapped Handlers
   // ---------------------------------------------------------------------------
 
+  const { mutate: removeDomain } = removeMutation;
+  const { mutate: archiveDomain } = archiveMutation;
+  const { mutate: unarchiveDomain } = unarchiveMutation;
+  const { mutate: muteDomain } = muteMutation;
+  const { mutateAsync: archiveDomains } = bulkArchiveMutation;
+  const { mutateAsync: deleteDomains } = bulkDeleteMutation;
+  const { mutateAsync: muteDomains } = bulkSetMutedMutation;
+
   const remove = useCallback(
     (trackedDomainId: string) => {
-      removeMutation.mutate({ trackedDomainId });
+      removeDomain({ trackedDomainId });
     },
-    [removeMutation],
+    [removeDomain],
   );
 
   const archive = useCallback(
     (trackedDomainId: string) => {
-      archiveMutation.mutate({ trackedDomainId });
+      archiveDomain({ trackedDomainId });
     },
-    [archiveMutation],
+    [archiveDomain],
   );
 
   const unarchive = useCallback(
     (trackedDomainId: string) => {
-      unarchiveMutation.mutate({ trackedDomainId });
+      unarchiveDomain({ trackedDomainId });
     },
-    [unarchiveMutation],
+    [unarchiveDomain],
   );
 
   const setMuted = useCallback(
     (trackedDomainId: string, muted: boolean) => {
-      muteMutation.mutate({ trackedDomainId, muted });
+      muteDomain({ trackedDomainId, muted });
     },
-    [muteMutation],
+    [muteDomain],
   );
 
   const bulkArchive = useCallback(
     async (trackedDomainIds: string[]): Promise<BulkMutationResult> => {
-      const result = await bulkArchiveMutation.mutateAsync({ trackedDomainIds });
+      const result = await archiveDomains({ trackedDomainIds });
       toastBulkResult("Archived", result, trackedDomainIds.length);
       return result;
     },
-    [bulkArchiveMutation],
+    [archiveDomains],
   );
 
   const bulkDelete = useCallback(
     async (trackedDomainIds: string[]): Promise<BulkMutationResult> => {
-      const result = await bulkDeleteMutation.mutateAsync({ trackedDomainIds });
+      const result = await deleteDomains({ trackedDomainIds });
       toastBulkResult("Deleted", result, trackedDomainIds.length);
       return result;
     },
-    [bulkDeleteMutation],
+    [deleteDomains],
   );
 
   const bulkSetMuted = useCallback(
     async (trackedDomainIds: string[], muted: boolean): Promise<BulkMutationResult> => {
-      const result = await bulkSetMutedMutation.mutateAsync({ trackedDomainIds, muted });
+      const result = await muteDomains({ trackedDomainIds, muted });
       toastBulkResult(muted ? "Muted" : "Unmuted", result, trackedDomainIds.length);
       return result;
     },
-    [bulkSetMutedMutation],
+    [muteDomains],
   );
 
-  return {
-    remove,
-    archive,
-    unarchive,
-    setMuted,
-    bulkArchive,
-    bulkDelete,
-    bulkSetMuted,
-    isRemoving: removeMutation.isPending,
-    isArchiving: archiveMutation.isPending,
-    isUnarchiving: unarchiveMutation.isPending,
-    isMuting: muteMutation.isPending,
-    isBulkArchiving: bulkArchiveMutation.isPending,
-    isBulkDeleting: bulkDeleteMutation.isPending,
-    isBulkMuting: bulkSetMutedMutation.isPending,
-  };
+  const isRemoving = removeMutation.isPending;
+  const isArchiving = archiveMutation.isPending;
+  const isUnarchiving = unarchiveMutation.isPending;
+  const isMuting = muteMutation.isPending;
+  const isBulkArchiving = bulkArchiveMutation.isPending;
+  const isBulkDeleting = bulkDeleteMutation.isPending;
+  const isBulkMuting = bulkSetMutedMutation.isPending;
+
+  return useMemo(
+    () => ({
+      remove,
+      archive,
+      unarchive,
+      setMuted,
+      bulkArchive,
+      bulkDelete,
+      bulkSetMuted,
+      isRemoving,
+      isArchiving,
+      isUnarchiving,
+      isMuting,
+      isBulkArchiving,
+      isBulkDeleting,
+      isBulkMuting,
+    }),
+    [
+      remove,
+      archive,
+      unarchive,
+      setMuted,
+      bulkArchive,
+      bulkDelete,
+      bulkSetMuted,
+      isRemoving,
+      isArchiving,
+      isUnarchiving,
+      isMuting,
+      isBulkArchiving,
+      isBulkDeleting,
+      isBulkMuting,
+    ],
+  );
 }

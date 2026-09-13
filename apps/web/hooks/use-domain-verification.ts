@@ -38,6 +38,7 @@ export function useDomainVerification({
 
   const invalidateQueries = useCallback(() => {
     void queryClient.invalidateQueries(trpc.tracking.listDomains.queryFilter());
+    void queryClient.invalidateQueries(trpc.tracking.getTrackingStatus.queryFilter());
     void queryClient.invalidateQueries(trpc.user.getSubscription.queryFilter());
   }, [queryClient, trpc]);
 

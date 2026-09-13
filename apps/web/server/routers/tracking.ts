@@ -6,7 +6,7 @@ import { analytics } from "@/lib/analytics/server";
 import { autoVerifyWorkflow } from "@/workflows/auto-verify";
 import { initializeSnapshotWorkflow } from "@/workflows/initialize-snapshot";
 import { VERIFICATION_METHODS } from "@domainstack/constants";
-import { ensureDomainRecord } from "@domainstack/db/queries/domains";
+import { ensureDomainRecord, findDomainByName } from "@domainstack/db/queries/domains";
 import {
   archiveTrackedDomain,
   bulkArchiveTrackedDomains,
@@ -77,6 +77,30 @@ export const trackingRouter = createTRPCRouter({
 
       return items;
     }),
+
+  /**
+   * Tracking status of one domain for the current user.
+   * Used by the report page's Track button, which only needs this one row.
+   *
+   * @returns null when the domain isn't tracked by this user or is archived
+   */
+  getTrackingStatus: protectedProcedure.input(DomainInputSchema).query(async ({ ctx, input }) => {
+    const domainRecord = await findDomainByName(input.domain);
+    if (!domainRecord) {
+      return null;
+    }
+
+    const tracked = await findTrackedDomain(ctx.user.id, domainRecord.id);
+    if (!tracked || tracked.archivedAt) {
+      return null;
+    }
+
+    return {
+      id: tracked.id,
+      verified: tracked.verified,
+      verificationMethod: tracked.verificationMethod,
+    };
+  }),
 
   /**
    * Get full details for a tracked domain including DNS records.

@@ -27,11 +27,9 @@ import {
 } from "@/lib/dashboard-utils";
 import { useDashboardViewMode } from "@/lib/stores/preferences-store";
 import { useTRPC } from "@/lib/trpc/client";
-import { useSession } from "@domainstack/auth/client";
 import type { VerificationMethod } from "@domainstack/types";
 
 export function useDashboardClient() {
-  const { data: session, isPending: isSessionPending } = useSession();
   const router = useRouter();
   const trpc = useTRPC();
   const [isVerifyPending, startVerifyNavigation] = useTransition();
@@ -43,6 +41,7 @@ export function useDashboardClient() {
     refetchSubscription,
   } = useSubscription();
   const mutations = useDashboardMutations();
+  const { remove, archive, unarchive, setMuted, bulkArchive, bulkDelete, bulkSetMuted } = mutations;
 
   const [activeTab, setActiveTab] = useQueryState(
     "view",
@@ -106,37 +105,37 @@ export function useDashboardClient() {
   const doBulkArchive = useCallback(
     async (domainIds: string[]) => {
       try {
-        await mutations.bulkArchive(domainIds);
+        await bulkArchive(domainIds);
         clearSelection();
       } catch {
         // Error handled in mutation onError
       }
     },
-    [mutations, clearSelection],
+    [bulkArchive, clearSelection],
   );
 
   const doBulkDelete = useCallback(
     async (domainIds: string[]) => {
       try {
-        await mutations.bulkDelete(domainIds);
+        await bulkDelete(domainIds);
         clearSelection();
       } catch {
         // Error handled in mutation onError
       }
     },
-    [mutations, clearSelection],
+    [bulkDelete, clearSelection],
   );
 
   const doBulkMute = useCallback(
     async (domainIds: string[], muted: boolean) => {
       try {
-        await mutations.bulkSetMuted(domainIds, muted);
+        await bulkSetMuted(domainIds, muted);
         clearSelection();
       } catch {
         // Error handled in mutation onError
       }
     },
-    [mutations, clearSelection],
+    [bulkSetMuted, clearSelection],
   );
 
   const [pendingAction, setPendingAction] = useState<ConfirmAction | null>(null);
@@ -145,16 +144,16 @@ export function useDashboardClient() {
   const handleConfirm = useCallback(() => {
     if (!pendingAction) return;
     if (pendingAction.type === "remove") {
-      mutations.remove(pendingAction.domainId);
+      remove(pendingAction.domainId);
     } else if (pendingAction.type === "archive") {
-      mutations.archive(pendingAction.domainId);
+      archive(pendingAction.domainId);
     } else if (pendingAction.type === "bulk-archive") {
       void doBulkArchive(pendingAction.domainIds);
     } else if (pendingAction.type === "bulk-delete") {
       void doBulkDelete(pendingAction.domainIds);
     }
     setPendingAction(null);
-  }, [pendingAction, mutations, doBulkArchive, doBulkDelete]);
+  }, [pendingAction, remove, archive, doBulkArchive, doBulkDelete]);
 
   const searchParams = useSearchParams();
   const upgradedParam = searchParams?.get("upgraded") === "true";
@@ -242,19 +241,19 @@ export function useDashboardClient() {
 
   const handleUnarchive = useCallback(
     (id: string) => {
-      mutations.unarchive(id);
+      unarchive(id);
     },
-    [mutations],
+    [unarchive],
   );
 
   const handleMute = useCallback(
     (id: string, muted: boolean) => {
-      mutations.setMuted(id, muted);
+      setMuted(id, muted);
     },
-    [mutations],
+    [setMuted],
   );
 
-  const isLoading = subscriptionLoading || domainsQuery.isLoading || isSessionPending;
+  const isLoading = subscriptionLoading || domainsQuery.isLoading;
   const hasError = subscriptionError || domainsQuery.isError;
 
   const handleRetry = useCallback(() => {
@@ -263,7 +262,6 @@ export function useDashboardClient() {
   }, [refetchSubscription, domainsQuery]);
 
   return {
-    session,
     isLoading,
     hasError,
     handleRetry,

@@ -77,11 +77,11 @@ function DashboardArchivedView({
   );
 }
 
-export function DashboardClient() {
+export function DashboardClient({ userName }: { userName: string }) {
   const dashboard = useDashboardClient();
   const mounted = useIsClient();
 
-  if (!mounted || dashboard.isLoading || !dashboard.session) {
+  if (!mounted || dashboard.isLoading) {
     return <DashboardSkeleton />;
   }
 
@@ -91,7 +91,7 @@ export function DashboardClient() {
 
   return (
     <div className="space-y-6">
-      <DashboardHeader userName={dashboard.session.user?.name ?? ""} />
+      <DashboardHeader userName={userName} />
 
       {dashboard.showUpgradedBanner ? (
         <DashboardBannerDismissable

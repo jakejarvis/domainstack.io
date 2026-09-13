@@ -76,18 +76,16 @@ export interface PaginationActions {
   resetPage: () => void;
 }
 
-interface DashboardContextValue {
-  actions: DomainActions;
-  bulk: BulkState;
-  filters: FilterState & FilterActions;
-  pagination: PaginationState & PaginationActions;
-}
-
 // ---------------------------------------------------------------------------
 // Context
 // ---------------------------------------------------------------------------
 
-const DashboardContext = createContext<DashboardContextValue | null>(null);
+const DashboardActionsContext = createContext<DomainActions | null>(null);
+const DashboardBulkContext = createContext<BulkState | null>(null);
+const DashboardFiltersContext = createContext<(FilterState & FilterActions) | null>(null);
+const DashboardPaginationContext = createContext<(PaginationState & PaginationActions) | null>(
+  null,
+);
 
 // ---------------------------------------------------------------------------
 // Provider
@@ -144,86 +142,86 @@ export function DashboardProvider({
   setSortOption,
   paginationHook,
 }: DashboardProviderProps) {
-  const value = useMemo<DashboardContextValue>(
+  const actions = useMemo<DomainActions>(
     () => ({
-      actions: {
-        onVerify,
-        onRemove,
-        onArchive,
-        onUnarchive,
-        onMute,
-        verifyingDomainId,
-      },
-      bulk: {
-        onBulkArchive,
-        onBulkDelete,
-        onBulkMute,
-        isBulkArchiving,
-        isBulkDeleting,
-        isBulkMuting,
-      },
-      filters: {
-        ...filterHook.state,
-        ...filterHook.actions,
-        sortOption,
-        setSortOption,
-      },
-      pagination: {
-        ...paginationHook.state,
-        ...paginationHook.actions,
-      },
-    }),
-    [
       onVerify,
       onRemove,
       onArchive,
       onUnarchive,
       onMute,
       verifyingDomainId,
+    }),
+    [onVerify, onRemove, onArchive, onUnarchive, onMute, verifyingDomainId],
+  );
+  const bulk = useMemo<BulkState>(
+    () => ({
       onBulkArchive,
       onBulkDelete,
       onBulkMute,
       isBulkArchiving,
       isBulkDeleting,
       isBulkMuting,
-      filterHook,
+    }),
+    [onBulkArchive, onBulkDelete, onBulkMute, isBulkArchiving, isBulkDeleting, isBulkMuting],
+  );
+  const filters = useMemo<FilterState & FilterActions>(
+    () => ({
+      ...filterHook.state,
+      ...filterHook.actions,
       sortOption,
       setSortOption,
-      paginationHook,
-    ],
+    }),
+    [filterHook.state, filterHook.actions, sortOption, setSortOption],
+  );
+  const pagination = useMemo<PaginationState & PaginationActions>(
+    () => ({
+      ...paginationHook.state,
+      ...paginationHook.actions,
+    }),
+    [paginationHook.state, paginationHook.actions],
   );
 
-  return <DashboardContext.Provider value={value}>{children}</DashboardContext.Provider>;
+  return (
+    <DashboardActionsContext.Provider value={actions}>
+      <DashboardBulkContext.Provider value={bulk}>
+        <DashboardFiltersContext.Provider value={filters}>
+          <DashboardPaginationContext.Provider value={pagination}>
+            {children}
+          </DashboardPaginationContext.Provider>
+        </DashboardFiltersContext.Provider>
+      </DashboardBulkContext.Provider>
+    </DashboardActionsContext.Provider>
+  );
 }
 
 // ---------------------------------------------------------------------------
 // Hooks
 // ---------------------------------------------------------------------------
 
-function useDashboardContext() {
-  const context = useContext(DashboardContext);
-  if (!context) {
+function useRequiredContext<T>(context: React.Context<T | null>): T {
+  const value = useContext(context);
+  if (!value) {
     throw new Error("useDashboardContext must be used within a DashboardProvider");
   }
-  return context;
+  return value;
 }
 
 /** Access domain action callbacks */
 export function useDashboardActions() {
-  return useDashboardContext().actions;
+  return useRequiredContext(DashboardActionsContext);
 }
 
 /** Access bulk action callbacks and loading states */
 export function useDashboardBulkActions() {
-  return useDashboardContext().bulk;
+  return useRequiredContext(DashboardBulkContext);
 }
 
 /** Access filter state and actions */
 export function useDashboardFiltersContext() {
-  return useDashboardContext().filters;
+  return useRequiredContext(DashboardFiltersContext);
 }
 
 /** Access pagination state and actions */
 export function useDashboardPaginationContext() {
-  return useDashboardContext().pagination;
+  return useRequiredContext(DashboardPaginationContext);
 }

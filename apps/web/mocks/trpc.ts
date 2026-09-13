@@ -37,6 +37,12 @@ export const DOMAINS_QUERY_KEY = ["tracking", "listDomains"] as const;
 export const SUBSCRIPTION_QUERY_KEY = ["user", "getSubscription"] as const;
 
 type ListDomainsInput = { includeArchived?: boolean } | undefined;
+type TrackingStatusInput = { domain: string };
+type TrackingStatusResult = {
+  id: string;
+  verified: boolean;
+  verificationMethod: VerificationMethod | null;
+} | null;
 
 function listDomainsQueryKey(input?: ListDomainsInput) {
   return input === undefined ? DOMAINS_QUERY_KEY : ([...DOMAINS_QUERY_KEY, input] as const);
@@ -70,6 +76,20 @@ function defaultListDomains(input?: ListDomainsInput): Promise<TrackedDomainWith
 
 export const listDomainsQuery =
   vi.fn<(input?: ListDomainsInput) => Promise<TrackedDomainWithDetails[]>>(defaultListDomains);
+
+function defaultTrackingStatus({ domain }: TrackingStatusInput): Promise<TrackingStatusResult> {
+  const match = domainsState.find(
+    (item) => item.archivedAt == null && item.domainName.toLowerCase() === domain.toLowerCase(),
+  );
+  return Promise.resolve(
+    match
+      ? { id: match.id, verified: match.verified, verificationMethod: match.verificationMethod }
+      : null,
+  );
+}
+
+export const getTrackingStatusQuery =
+  vi.fn<(input: TrackingStatusInput) => Promise<TrackingStatusResult>>(defaultTrackingStatus);
 
 const DEFAULT_SUBSCRIPTION: SubscriptionQuota = {
   plan: "pro",
@@ -306,6 +326,8 @@ export function resetTrpcMocks() {
   domainsState = [];
   listDomainsQuery.mockReset();
   listDomainsQuery.mockImplementation(defaultListDomains);
+  getTrackingStatusQuery.mockReset();
+  getTrackingStatusQuery.mockImplementation(defaultTrackingStatus);
 
   subscriptionState = { ...DEFAULT_SUBSCRIPTION };
   getSubscriptionQuery.mockReset();
@@ -473,6 +495,21 @@ export function useTRPC() {
           };
         },
         queryFilter: (input?: ListDomainsInput) => queryFilterFor(listDomainsQueryKey(input)),
+      },
+      getTrackingStatus: {
+        queryOptions: (input: TrackingStatusInput | typeof skipToken) => {
+          if (input === skipToken) {
+            return {
+              queryKey: ["tracking", "getTrackingStatus"] as const,
+              queryFn: skipToken,
+            };
+          }
+          return {
+            queryKey: ["tracking", "getTrackingStatus", input] as const,
+            queryFn: () => getTrackingStatusQuery(input),
+          };
+        },
+        queryFilter: () => queryFilterFor(["tracking", "getTrackingStatus"] as const),
       },
       removeDomain: {
         mutationOptions: mutationOptionsFor(removeDomainMutation),
