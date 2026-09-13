@@ -1,28 +1,20 @@
-/**
- * DNS fetch step.
- *
- * Fetches DNS records from DoH providers with fallback.
- * This step is shared between the dedicated dnsWorkflow and internal workflows.
- */
-
 import { RetryableError } from "workflow";
 
-import type { FetchDnsResult } from "./types";
+import type { DnsFetchData } from "@domainstack/server/dns";
 
 /**
  * Step: Fetch DNS records from DoH providers with fallback.
  *
  * @param domain - The domain to resolve
- * @returns FetchDnsResult with typed error on failure
+ * @returns Resolved DNS data; provider failures are retried
  */
-export async function fetchDnsRecordsStep(domain: string): Promise<FetchDnsResult> {
+export async function fetchDnsRecordsStep(domain: string): Promise<DnsFetchData> {
   "use step";
 
   const { DnsProviderError, fetchDnsRecords } = await import("@domainstack/server/dns");
 
   try {
-    const data = await fetchDnsRecords(domain);
-    return { success: true, data };
+    return await fetchDnsRecords(domain);
   } catch (err) {
     if (err instanceof DnsProviderError) {
       throw new RetryableError("All DoH providers failed", {

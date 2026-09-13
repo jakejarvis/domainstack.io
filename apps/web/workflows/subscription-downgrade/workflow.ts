@@ -1,9 +1,14 @@
-export interface SubscriptionDowngradeWorkflowInput {
+import type { UserSubscriptionData } from "@domainstack/db/queries/user-subscription";
+
+interface SubscriptionDowngradeWorkflowInput {
   userId: string;
 }
 
-export type SubscriptionDowngradeWorkflowResult =
-  | { skipped: true; reason: string }
+type SubscriptionDowngradeWorkflowResult =
+  | {
+      skipped: true;
+      reason: "not_pro" | "no_end_date" | "not_yet_due" | "polar_unverified";
+    }
   | { downgraded: true; archivedCount: number }
   | { downgraded: false; reason: "still_active" };
 
@@ -55,10 +60,7 @@ export async function subscriptionDowngradeWorkflow(
   return { downgraded: true, archivedCount };
 }
 
-interface LocalSubscription {
-  plan: "free" | "pro";
-  endsAt: Date | null;
-}
+type LocalSubscription = Pick<UserSubscriptionData, "plan" | "endsAt">;
 
 async function fetchLocalSubscription(userId: string): Promise<LocalSubscription> {
   "use step";

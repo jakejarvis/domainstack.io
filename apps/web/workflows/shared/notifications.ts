@@ -20,7 +20,7 @@ import type {
 // Re-export expiry utilities from utils
 export { getThresholdNotificationType } from "@domainstack/utils/expiry";
 
-export interface NotificationChannels {
+interface NotificationChannels {
   shouldSendEmail: boolean;
   shouldSendInApp: boolean;
 }
@@ -137,20 +137,6 @@ export async function checkAlreadySentStep(
   return await hasRecentNotification(trackedDomainId, notificationType);
 }
 
-/**
- * Step: Link a Resend email ID to an existing notification record.
- */
-export async function updateNotificationEmailIdStep(
-  notificationId: string,
-  emailId: string,
-): Promise<void> {
-  "use step";
-
-  const { updateNotificationResendId } = await import("@domainstack/db/queries/notifications");
-
-  await updateNotificationResendId(notificationId, emailId);
-}
-
 // ============================================================================
 // Shared notification sending logic (used by send*NotificationStep functions)
 // ============================================================================
@@ -178,9 +164,9 @@ export async function updateNotificationEmailIdStep(
  * 3. **Permanent email failures degrade to in-app only; transient ones throw
  *    for step retry.**
  *
- * Nothing after the send can throw: `updateNotificationResendId` swallows its
- * own errors, and a failed insert raises a non-retryable error rather than
- * looping the send.
+ * After the send, the notification row is recorded. Resend idempotency keeps a
+ * retry safe if that insert throws, a falsy insert result is fatal, and
+ * `updateNotificationResendId` swallows its own errors.
  *
  * @throws {Error} If notification record creation fails or email sending fails
  */
@@ -305,17 +291,18 @@ export async function sendRegistrationChangeNotificationStep(
 ): Promise<boolean> {
   "use step";
 
-  const { default: RegistrationChangeEmail } =
-    await import("@domainstack/email/templates/registration-change");
-
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
-
-  const emailComponent = RegistrationChangeEmail({
-    userName: params.userName.split(" ")[0] || "there",
-    domainName: params.domainName,
-    changes: params.changes,
-    baseUrl,
-  });
+  let emailComponent: React.ReactElement | undefined;
+  if (shouldSendEmail) {
+    const { default: RegistrationChangeEmail } =
+      await import("@domainstack/email/templates/registration-change");
+    const { getEmailBaseUrl } = await import("@/workflows/shared/send-email");
+    emailComponent = RegistrationChangeEmail({
+      userName: params.userName.split(" ")[0] || "there",
+      domainName: params.domainName,
+      changes: params.changes,
+      baseUrl: getEmailBaseUrl(),
+    });
+  }
 
   return await sendNotificationInternal(
     {
@@ -356,17 +343,18 @@ export async function sendProviderChangeNotificationStep(
 ): Promise<boolean> {
   "use step";
 
-  const { default: ProviderChangeEmail } =
-    await import("@domainstack/email/templates/provider-change");
-
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
-
-  const emailComponent = ProviderChangeEmail({
-    userName: params.userName.split(" ")[0] || "there",
-    domainName: params.domainName,
-    changes: params.changes,
-    baseUrl,
-  });
+  let emailComponent: React.ReactElement | undefined;
+  if (shouldSendEmail) {
+    const { default: ProviderChangeEmail } =
+      await import("@domainstack/email/templates/provider-change");
+    const { getEmailBaseUrl } = await import("@/workflows/shared/send-email");
+    emailComponent = ProviderChangeEmail({
+      userName: params.userName.split(" ")[0] || "there",
+      domainName: params.domainName,
+      changes: params.changes,
+      baseUrl: getEmailBaseUrl(),
+    });
+  }
 
   return await sendNotificationInternal(
     {
@@ -409,19 +397,20 @@ export async function sendCertificateChangeNotificationStep(
 ): Promise<boolean> {
   "use step";
 
-  const { default: CertificateChangeEmail } =
-    await import("@domainstack/email/templates/certificate-change");
-
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
-
-  const emailComponent = CertificateChangeEmail({
-    userName: params.userName.split(" ")[0] || "there",
-    domainName: params.domainName,
-    kind: params.kind,
-    changes: params.changes,
-    newValidTo: params.newValidTo,
-    baseUrl,
-  });
+  let emailComponent: React.ReactElement | undefined;
+  if (shouldSendEmail) {
+    const { default: CertificateChangeEmail } =
+      await import("@domainstack/email/templates/certificate-change");
+    const { getEmailBaseUrl } = await import("@/workflows/shared/send-email");
+    emailComponent = CertificateChangeEmail({
+      userName: params.userName.split(" ")[0] || "there",
+      domainName: params.domainName,
+      kind: params.kind,
+      changes: params.changes,
+      newValidTo: params.newValidTo,
+      baseUrl: getEmailBaseUrl(),
+    });
+  }
 
   return await sendNotificationInternal(
     {

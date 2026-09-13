@@ -1,5 +1,1 @@
-export {
-  type AutoVerifyWorkflowInput,
-  type AutoVerifyWorkflowResult,
-  autoVerifyWorkflow,
-} from "./workflow";
+export { autoVerifyWorkflow } from "./workflow";

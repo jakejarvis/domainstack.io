@@ -1,7 +1,8 @@
 /**
  * Registration service - fetches, normalizes, and persists WHOIS/RDAP data.
  *
- * Replaces the workflow-based implementation with a simple async function.
+ * Its internal helpers are also called by the monitoring workflow steps in
+ * apps/web/workflows/shared.
  * Transient errors throw (for TanStack Query to retry).
  * Permanent errors return { success: false, error }.
  */
@@ -103,7 +104,7 @@ interface NormalizeOptions {
   catalog: ProviderCatalog | null;
 }
 
-async function normalizeRegistration(
+export async function normalizeRegistration(
   recordJson: string,
   options: NormalizeOptions,
 ): Promise<RegistrationResponse> {
@@ -187,7 +188,10 @@ async function normalizeRegistration(
 // Internal: Persist Registration
 // ============================================================================
 
-async function persistRegistration(domain: string, response: RegistrationResponse): Promise<void> {
+export async function persistRegistration(
+  domain: string,
+  response: RegistrationResponse,
+): Promise<void> {
   const now = new Date();
   const domainRecord = await upsertDomain({
     name: domain,

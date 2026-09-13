@@ -1,6 +1,7 @@
-import { createHook, FatalError, RetryableError } from "workflow";
+import { createHook, RetryableError } from "workflow";
 
 import { checkBlocklist } from "@/workflows/shared/check-blocklist";
+import type { ScreenshotData } from "@domainstack/types";
 
 const VIEWPORT_WIDTH = 1200;
 const VIEWPORT_HEIGHT = 630;
@@ -9,38 +10,23 @@ export function getScreenshotWorkflowToken(domainId: string): string {
   return `screenshot:${domainId}`;
 }
 
-export interface ScreenshotWorkflowInput {
+interface ScreenshotWorkflowInput {
   domain: string;
   domainId: string;
-}
-
-export interface ScreenshotWorkflowData {
-  url: string | null;
-  blocked?: boolean;
 }
 
 export type ScreenshotWorkflowResult =
   | {
       success: true;
-      data: ScreenshotWorkflowData;
+      data: ScreenshotData;
     }
   | {
       success: false;
       error: "capture_error";
-      data: ScreenshotWorkflowData | null;
+      data: { url: null };
     };
 
-// Internal types for capture result
-interface CaptureSuccess {
-  success: true;
-  imageBuffer: string; // base64 encoded for serialization
-}
-
-interface CaptureFailure {
-  success: false;
-}
-
-type CaptureResult = CaptureSuccess | CaptureFailure;
+type CaptureResult = { success: true; imageBytes: Uint8Array } | { success: false };
 
 /**
  * Durable screenshot workflow that breaks down screenshot generation into
@@ -90,14 +76,14 @@ export async function screenshotWorkflow(
   }
 
   // Step 3b: Process and store image to Vercel Blob
-  const storageResult = await storeScreenshot(domain, captureResult.imageBuffer);
+  const storageResult = await storeScreenshot(domain, captureResult.imageBytes);
 
   // Step 4: Persist to database
   await persistSuccess(domain, storageResult.url, storageResult.pathname);
 
   return {
     success: true,
-    data: { url: storageResult.url },
+    data: { url: storageResult.url, blocked: false },
   };
 }
 
@@ -116,7 +102,7 @@ export async function screenshotWorkflow(
 async function captureScreenshot(domain: string): Promise<CaptureResult> {
   "use step";
 
-  const { captureScreenshotBase64, getBrowser } = await import("@domainstack/screenshot");
+  const { captureScreenshot: capture, getBrowser } = await import("@domainstack/screenshot");
   const { createLogger } = await import("@domainstack/logger");
   const logger = createLogger({ source: "screenshot/workflow" });
 
@@ -130,7 +116,7 @@ async function captureScreenshot(domain: string): Promise<CaptureResult> {
   }
 
   try {
-    const result = await captureScreenshotBase64(`https://${domain}`, {
+    const result = await capture(`https://${domain}`, {
       width: VIEWPORT_WIDTH,
       height: VIEWPORT_HEIGHT,
       format: "webp",
@@ -139,7 +125,7 @@ async function captureScreenshot(domain: string): Promise<CaptureResult> {
 
     return {
       success: true,
-      imageBuffer: result.imageBase64,
+      imageBytes: Uint8Array.from(result.buffer),
     };
   } catch (err) {
     logger.debug({ err, domain }, "screenshot unavailable, caching miss");
@@ -152,7 +138,7 @@ async function captureScreenshot(domain: string): Promise<CaptureResult> {
  */
 async function storeScreenshot(
   domain: string,
-  imageBufferBase64: string,
+  imageBytes: Uint8Array,
 ): Promise<{
   url: string;
   pathname: string | null;
@@ -161,14 +147,11 @@ async function storeScreenshot(
 
   const { storeImage } = await import("@domainstack/image");
 
-  // Decode base64 back to Buffer
-  const imageBuffer = Buffer.from(imageBufferBase64, "base64");
-
   // Store to Vercel Blob
   const { url, pathname } = await storeImage({
     kind: "screenshot",
     domain,
-    buffer: imageBuffer,
+    buffer: Buffer.from(imageBytes),
     width: VIEWPORT_WIDTH,
     height: VIEWPORT_HEIGHT,
   });
@@ -186,20 +169,25 @@ async function persistSuccess(domain: string, url: string, pathname: string | nu
   const { upsertScreenshot } = await import("@domainstack/db/queries/screenshots");
   const { ttlForScreenshot } = await import("@domainstack/server/ttl");
 
-  const domainRecord = await ensureDomainRecord(domain);
-  const now = new Date();
-  const expiresAt = ttlForScreenshot(now);
+  try {
+    const domainRecord = await ensureDomainRecord(domain);
+    const now = new Date();
+    const expiresAt = ttlForScreenshot(now);
 
-  await upsertScreenshot({
-    domainId: domainRecord.id,
-    url,
-    pathname,
-    width: VIEWPORT_WIDTH,
-    height: VIEWPORT_HEIGHT,
-    notFound: false,
-    fetchedAt: now,
-    expiresAt,
-  });
+    await upsertScreenshot({
+      domainId: domainRecord.id,
+      url,
+      pathname,
+      width: VIEWPORT_WIDTH,
+      height: VIEWPORT_HEIGHT,
+      notFound: false,
+      fetchedAt: now,
+      expiresAt,
+    });
+  } catch (err) {
+    const { classifyDatabaseError } = await import("@/lib/workflow/errors");
+    throw classifyDatabaseError(err, { context: `persisting screenshot for ${domain}` });
+  }
 }
 
 /**
@@ -228,8 +216,9 @@ async function persistFailure(domain: string): Promise<void> {
       expiresAt,
     });
   } catch (err) {
-    throw new FatalError(
-      `Failed to persist screenshot failure for domain ${domain}: ${err instanceof Error ? err.message : String(err)}`,
-    );
+    const { classifyDatabaseError } = await import("@/lib/workflow/errors");
+    throw classifyDatabaseError(err, {
+      context: `persisting screenshot failure for ${domain}`,
+    });
   }
 }

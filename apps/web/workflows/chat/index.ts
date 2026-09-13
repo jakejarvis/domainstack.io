@@ -1,1 +1,1 @@
-export { type ChatWorkflowInput, chatWorkflow } from "./workflow";
+export { chatWorkflow } from "./workflow";

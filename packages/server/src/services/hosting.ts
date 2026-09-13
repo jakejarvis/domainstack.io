@@ -1,7 +1,8 @@
 /**
  * Hosting service - orchestrates DNS + headers fetching, GeoIP lookup, and provider detection.
  *
- * Replaces the workflow-based implementation with a simple async function.
+ * Its internal helpers are also called by the monitoring workflow steps in
+ * apps/web/workflows/shared.
  * Transient errors throw (for TanStack Query to retry).
  * This service always succeeds (no typed errors) - DNS failures would throw,
  * headers failures are handled gracefully.
@@ -141,7 +142,7 @@ function transformApiResponse(data: IplocateApiResponse): GeoIpData {
  * Caches raw API response in Redis - transformation happens on read.
  * This ensures cached data remains valid if transformation logic changes.
  */
-async function lookupGeoIp(ip: string): Promise<GeoIpData | null> {
+export async function lookupGeoIp(ip: string): Promise<GeoIpData | null> {
   const redis = getRedis();
   const cacheKey = `geoip:${ip}`;
 
@@ -213,7 +214,7 @@ async function lookupGeoIp(ip: string): Promise<GeoIpData | null> {
 // Internal: Provider Detection
 // ============================================================================
 
-async function detectAndResolveProviders(
+export async function detectAndResolveProviders(
   dnsRecords: DnsRecord[],
   headers: Header[],
   geoData: GeoIpData | null,
@@ -329,7 +330,7 @@ async function detectAndResolveProviders(
 // Internal: Persist Hosting
 // ============================================================================
 
-async function persistHosting(
+export async function persistHosting(
   domain: string,
   providers: ProviderDetectionData,
   geo: GeoIpData["geo"],

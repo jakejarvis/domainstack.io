@@ -5,23 +5,23 @@ import {
   verifyDomainOwnershipByMethod,
 } from "@/workflows/shared/verify-domain";
 import { VERIFICATION_METHODS } from "@domainstack/constants";
-import type { VerificationMethod } from "@domainstack/types";
+import type { VerificationMethod, VerificationResult } from "@domainstack/types";
 
-export interface VerificationWorkflowInput {
+interface VerificationWorkflowInput {
   domain: string;
   token: string;
   /** If specified, only try this method. Otherwise try all methods. */
   method?: VerificationMethod;
 }
 
-export type VerificationWorkflowResult =
+type VerificationWorkflowResult =
   | {
       success: true;
-      data: { verified: boolean; method: VerificationMethod | null };
+      data: VerificationResult;
     }
   | {
       success: false;
-      error?: string;
+      error: "Unknown method";
       data: { verified: false; method: null };
     };
 

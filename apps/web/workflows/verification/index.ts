@@ -1,6 +1,1 @@
-export {
-  generateVerificationToken,
-  type VerificationWorkflowInput,
-  type VerificationWorkflowResult,
-  verificationWorkflow,
-} from "./workflow";
+export { generateVerificationToken, verificationWorkflow } from "./workflow";

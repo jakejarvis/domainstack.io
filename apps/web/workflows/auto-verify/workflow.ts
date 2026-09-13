@@ -5,15 +5,13 @@ import {
   verifyDomainByHtmlFile,
   verifyDomainByMetaTag,
 } from "@/workflows/shared/verify-domain";
-import type { VerificationMethod } from "@domainstack/types";
+import type { VerificationMethod, VerificationResult } from "@domainstack/types";
 
-export interface AutoVerifyWorkflowInput {
+interface AutoVerifyWorkflowInput {
   trackedDomainId: string;
-  /** @deprecated Not used - domain name is fetched from database */
-  domainName?: string;
 }
 
-export type AutoVerifyWorkflowResult =
+type AutoVerifyWorkflowResult =
   | {
       result: "verified";
       trackedDomainId: string;
@@ -23,7 +21,10 @@ export type AutoVerifyWorkflowResult =
       attempt: number;
     }
   | { result: "cancelled"; reason: "domain_deleted" | "already_verified" }
-  | { result: "exhausted"; message: string };
+  | {
+      result: "exhausted";
+      message: "Verification schedule complete after 30 days. Domain remains unverified.";
+    };
 
 /**
  * Retry schedule for auto-verification attempts.
@@ -122,7 +123,7 @@ export async function autoVerifyWorkflow(
 
 type DomainStatus =
   | { status: "deleted" }
-  | { status: "already-verified"; domainName: string }
+  | { status: "already-verified" }
   | { status: "pending"; domainName: string; verificationToken: string };
 
 async function checkDomainStatus(trackedDomainId: string): Promise<DomainStatus> {
@@ -138,7 +139,7 @@ async function checkDomainStatus(trackedDomainId: string): Promise<DomainStatus>
   }
 
   if (domain.verified) {
-    return { status: "already-verified", domainName: domain.domainName };
+    return { status: "already-verified" };
   }
 
   return {
@@ -156,10 +157,7 @@ async function checkDomainStatus(trackedDomainId: string): Promise<DomainStatus>
  * retryable. Marking it `"use step"` would collapse them into one unit and
  * re-run DNS, HTML, and meta-tag checks together on any single retry.
  */
-async function attemptVerification(
-  domainName: string,
-  token: string,
-): Promise<{ verified: boolean; method: VerificationMethod | null }> {
+async function attemptVerification(domainName: string, token: string): Promise<VerificationResult> {
   // Try DNS first (most reliable)
   const dnsResult = await verifyDomainByDns(domainName, token);
   if (dnsResult.verified) return dnsResult;

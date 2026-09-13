@@ -21,7 +21,7 @@ import { buildSystemPromptStep } from "./prompt";
 import { captureChatTelemetryStep, toChatTelemetryPayload } from "./telemetry";
 import { createDomainToolset, createDomainToolsContext } from "./tools";
 
-export interface ChatWorkflowInput {
+interface ChatWorkflowInput {
   messages: UIMessage[];
   domain?: string;
   /** IP address for rate limiting - must be serializable */

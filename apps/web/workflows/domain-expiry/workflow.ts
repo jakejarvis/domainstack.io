@@ -7,16 +7,33 @@ import {
   getThresholdNotificationType,
 } from "@/workflows/shared/notifications";
 import { DOMAIN_EXPIRY_THRESHOLDS } from "@domainstack/constants";
+import type { TrackedDomainForNotification } from "@domainstack/db/queries/tracked-domains";
 import type { NotificationChannel, NotificationType } from "@domainstack/types";
 import { formatDateLong } from "@domainstack/utils/date";
 
-export interface DomainExpiryWorkflowInput {
+interface DomainExpiryWorkflowInput {
   trackedDomainId: string;
 }
 
-export type DomainExpiryWorkflowResult =
-  | { skipped: true; reason: string; clearedCount?: number; renewed?: boolean }
-  | { skipped: false; sent: boolean };
+type DomainExpiryWorkflowResult =
+  | {
+      skipped: true;
+      reason: "renewed";
+      renewed: true;
+      clearedCount: number;
+    }
+  | {
+      skipped: true;
+      reason:
+        | "not_found"
+        | "no_expiration_date"
+        | "invalid_expiration_date"
+        | "already_expired"
+        | "no_threshold_met"
+        | "notifications_disabled"
+        | "already_sent";
+    }
+  | { skipped: false; sent: true };
 
 /**
  * Durable workflow to check domain expiry and send notifications.
@@ -136,17 +153,7 @@ export async function domainExpiryWorkflow(
   return { skipped: false, sent: true };
 }
 
-interface DomainData {
-  userId: string;
-  userName: string;
-  userEmail: string;
-  domainName: string;
-  expirationDate: Date | string | null;
-  registrar: string | null;
-  muted: boolean;
-}
-
-async function fetchDomain(trackedDomainId: string): Promise<DomainData | null> {
+async function fetchDomain(trackedDomainId: string): Promise<TrackedDomainForNotification | null> {
   "use step";
 
   const { getTrackedDomainForNotification } =
@@ -188,7 +195,7 @@ async function createNotificationRecord(params: {
   shouldSendEmail: boolean;
   shouldSendInApp: boolean;
   resendId?: string;
-}): Promise<{ notificationId: string }> {
+}): Promise<void> {
   "use step";
 
   const { createNotification, updateNotificationResendId } =
@@ -229,8 +236,6 @@ async function createNotificationRecord(params: {
   if (resendId) {
     await updateNotificationResendId(notification.id, resendId);
   }
-
-  return { notificationId: notification.id };
 }
 
 async function sendDomainExpiryEmail(params: {
@@ -245,12 +250,12 @@ async function sendDomainExpiryEmail(params: {
   "use step";
 
   const { default: DomainExpiryEmail } = await import("@domainstack/email/templates/domain-expiry");
-  const { sendEmail } = await import("@/workflows/shared/send-email");
+  const { getEmailBaseUrl, sendEmail } = await import("@/workflows/shared/send-email");
 
   const { userEmail, userName, domainName, expirationDate, daysRemaining, registrar, subject } =
     params;
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
+  const baseUrl = getEmailBaseUrl();
 
   const result = await sendEmail({
     to: userEmail,

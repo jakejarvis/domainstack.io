@@ -1,7 +1,8 @@
 /**
  * Certificates service - fetches and persists TLS certificates.
  *
- * Replaces the workflow-based implementation with a simple async function.
+ * Its internal helpers are also called by the monitoring workflow steps in
+ * apps/web/workflows/shared.
  * Transient errors throw (for TanStack Query to retry).
  * Permanent errors return { success: false, error }.
  */
@@ -27,7 +28,7 @@ export type CertificatesResult =
   | { success: true; data: CertificatesResponse }
   | { success: false; error: CertificatesError };
 
-interface CertificatesProcessedData {
+export interface CertificatesProcessedData {
   certificates: Certificate[];
   providerIds: (string | null)[];
   earliestValidTo: Date;
@@ -106,7 +107,9 @@ async function fetchCertificateChainInternal(domain: string): Promise<FetchResul
 // Internal: Process Chain
 // ============================================================================
 
-async function processChain(observation: TlsFetchSuccess): Promise<CertificatesProcessedData> {
+export async function processChain(
+  observation: TlsFetchSuccess,
+): Promise<CertificatesProcessedData> {
   const catalog = await getProviderCatalog();
   const caProviders = catalog ? getProvidersFromCatalog(catalog, "ca") : [];
   const chain: RawCertificate[] = observation.chain;
@@ -188,7 +191,7 @@ async function processChain(observation: TlsFetchSuccess): Promise<CertificatesP
 // Internal: Persist Certificates
 // ============================================================================
 
-async function persistCertificates(
+export async function persistCertificates(
   domain: string,
   processedData: CertificatesProcessedData,
 ): Promise<void> {

@@ -17,21 +17,21 @@ import {
 } from "@/workflows/shared/registration";
 import { optionalCall, optionalSettled, requireSettled } from "@/workflows/shared/settled";
 import type {
+  Certificate,
   CertificateSnapshotData,
-  CertificatesResponse,
-  HostingResponse,
   RegistrationResponse,
+  RegistrationSnapshotData,
 } from "@domainstack/types";
 import { findLeafCertificate } from "@domainstack/utils/tls";
 
-export interface InitializeSnapshotWorkflowInput {
+interface InitializeSnapshotWorkflowInput {
   trackedDomainId: string;
   domainId: string;
 }
 
-export type InitializeSnapshotWorkflowResult =
+type InitializeSnapshotWorkflowResult =
   | { success: true; snapshotId: string }
-  | { success: false; error: string };
+  | { success: false; error: "domain_not_found" | "dns_unobserved" };
 
 /**
  * Durable workflow to create a baseline snapshot for a newly verified tracked domain.
@@ -81,55 +81,35 @@ export async function initializeSnapshotWorkflow(
   }
 
   // Persist DNS (always succeeds or throws)
-  await persistDnsRecordsStep(domainName, dnsResult.data);
+  await persistDnsRecordsStep(domainName, dnsResult);
 
   if (headersResult?.success) {
     await optionalCall(persistHeadersStep(domainName, headersResult.data));
   }
 
   // Process and persist certificates
-  let certificatesData: CertificatesResponse | null = null;
+  let certificates: Certificate[] = [];
   if (certificatesResult?.success) {
-    const processed = await optionalCall(processChainStep(certificatesResult.data));
+    const processed = await optionalCall(processChainStep(certificatesResult));
     if (processed) {
       await optionalCall(persistCertificatesStep(domainName, processed));
-      certificatesData = {
-        certificates: processed.certificates,
-        valid: processed.valid,
-        validationError: processed.validationError,
-        protocol: processed.protocol,
-        cipher: processed.cipher,
-        publicKeyBits: processed.publicKeyBits,
-        chainComplete: processed.chainComplete,
-      };
+      certificates = processed.certificates;
     }
   }
 
   // Hosting detection uses DNS even when headers fail (no A/AAAA, etc.)
-  const a = dnsResult.data.records.find((d) => d.type === "A");
-  const aaaa = dnsResult.data.records.find((d) => d.type === "AAAA");
+  const a = dnsResult.records.find((d) => d.type === "A");
+  const aaaa = dnsResult.records.find((d) => d.type === "AAAA");
   const ip = (a?.value || aaaa?.value) ?? null;
   const geoResult = ip ? await optionalCall(lookupGeoIpStep(ip)) : null;
   const headers = headersResult?.success ? headersResult.data.headers : [];
 
-  const providers = await detectAndResolveProvidersStep(dnsResult.data.records, headers, geoResult);
+  const providers = await detectAndResolveProvidersStep(dnsResult.records, headers, geoResult);
 
   await optionalCall(persistHostingStep(domainName, providers, geoResult?.geo ?? null));
 
-  const hostingData: HostingResponse = {
-    hostingProvider: providers.hostingProvider,
-    emailProvider: providers.emailProvider,
-    dnsProvider: providers.dnsProvider,
-    geo: geoResult?.geo ?? null,
-  };
-
   // Build registration snapshot
-  let registrationSnapshot: {
-    registrarProviderId: string | null;
-    nameservers: { host: string }[];
-    transferLock: boolean | null;
-    statuses: string[];
-  } = {
+  let registrationSnapshot: RegistrationSnapshotData = {
     registrarProviderId: null,
     nameservers: [],
     transferLock: null,
@@ -141,9 +121,7 @@ export async function initializeSnapshotWorkflow(
       registrarProviderId: registrationData.registrarProvider.id ?? null,
       nameservers: registrationData.nameservers || [],
       transferLock: registrationData.transferLock ?? null,
-      statuses: (registrationData.statuses || []).map((s: string | { status: string }) =>
-        typeof s === "string" ? s : s.status,
-      ),
+      statuses: (registrationData.statuses ?? []).map((status) => status.status),
     };
   }
 
@@ -156,8 +134,8 @@ export async function initializeSnapshotWorkflow(
     serialNumber: null,
   };
 
-  if (certificatesData && certificatesData.certificates.length > 0) {
-    const leafCert = findLeafCertificate(certificatesData.certificates);
+  if (certificates.length > 0) {
+    const leafCert = findLeafCertificate(certificates);
 
     if (leafCert) {
       certificateSnapshot = {
@@ -170,13 +148,6 @@ export async function initializeSnapshotWorkflow(
     }
   }
 
-  // Resolve provider IDs from hosting data
-  const providerIds = {
-    dns: hostingData?.dnsProvider?.id ?? null,
-    hosting: hostingData?.hostingProvider?.id ?? null,
-    email: hostingData?.emailProvider?.id ?? null,
-  };
-
   // An empty DNS record set means we could not observe the domain's providers —
   // either every resolver failed or the domain resolves to nothing right now.
   // Writing that as the baseline would lock in an all-null provider snapshot,
@@ -184,7 +155,7 @@ export async function initializeSnapshotWorkflow(
   // would read that as "provider added" and send a false alert. Skip creating
   // a snapshot this run; the domain stays in getVerifiedDomainsWithoutSnapshots()
   // and the next cron cycle retries it.
-  const dnsObserved = dnsResult.data.records.length > 0;
+  const dnsObserved = dnsResult.records.length > 0;
 
   if (!dnsObserved) {
     return { success: false, error: "dns_unobserved" };
@@ -195,9 +166,9 @@ export async function initializeSnapshotWorkflow(
     trackedDomainId,
     registration: registrationSnapshot,
     certificate: certificateSnapshot,
-    dnsProviderId: providerIds.dns,
-    hostingProviderId: providerIds.hosting,
-    emailProviderId: providerIds.email,
+    dnsProviderId: providers.dnsProvider?.id ?? null,
+    hostingProviderId: providers.hostingProvider?.id ?? null,
+    emailProviderId: providers.emailProvider?.id ?? null,
   });
 
   return { success: true, snapshotId: snapshot.id };
@@ -212,12 +183,7 @@ async function fetchDomainStep(domainId: string): Promise<{ name: string } | nul
 
 async function createSnapshotStep(params: {
   trackedDomainId: string;
-  registration: {
-    registrarProviderId: string | null;
-    nameservers: { host: string }[];
-    transferLock: boolean | null;
-    statuses: string[];
-  };
+  registration: RegistrationSnapshotData;
   certificate: CertificateSnapshotData;
   dnsProviderId: string | null;
   hostingProviderId: string | null;

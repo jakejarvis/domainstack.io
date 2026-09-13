@@ -1,11 +1,6 @@
-/**
- * Headers fetch step.
- *
- * Fetches HTTP headers from a domain.
- * This step is shared between the dedicated headersWorkflow and internal workflows.
- */
+import type { HeadersFetchResult as ServerHeadersFetchResult } from "@domainstack/server/headers";
 
-import type { FetchHeadersResult } from "./types";
+type FetchHeadersResult = ServerHeadersFetchResult | { success: false; error: "fetch_error" };
 
 /**
  * Step: Fetch HTTP headers from the domain.

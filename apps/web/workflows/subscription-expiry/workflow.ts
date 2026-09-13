@@ -1,15 +1,30 @@
-export interface SubscriptionExpiryWorkflowInput {
+import type { UserWithEndingSubscription } from "@domainstack/db/queries/user-subscription";
+
+interface SubscriptionExpiryWorkflowInput {
   userId: string;
 }
 
-export type SubscriptionExpiryWorkflowResult =
+type SubscriptionExpiryWorkflowResult =
   | {
       skipped: true;
-      reason: string;
-      daysRemaining?: number;
-      lastSent?: number | null;
+      reason: "not_found";
     }
-  | { skipped: false; sent: boolean; threshold: number; daysRemaining: number };
+  | {
+      skipped: true;
+      reason: "out_of_range" | "no_threshold_met";
+      daysRemaining: number;
+    }
+  | {
+      skipped: true;
+      reason: "already_sent";
+      lastSent: number | null;
+    }
+  | {
+      skipped: false;
+      sent: true;
+      threshold: SubscriptionExpiryThreshold;
+      daysRemaining: number;
+    };
 
 // Thresholds for subscription expiry reminders (days before expiration)
 const SUBSCRIPTION_EXPIRY_THRESHOLDS = [7, 3, 1] as const;
@@ -91,31 +106,19 @@ export async function subscriptionExpiryWorkflow(
   }
 
   // Send notification email
-  const sent = await sendSubscriptionExpiryNotification({
-    userId: user.userId,
+  await sendSubscriptionExpiryNotification({
     userName: user.userName,
     userEmail: user.userEmail,
-    endsAt: new Date(user.endsAt),
+    endsAt: user.endsAt,
     daysRemaining,
-    threshold,
   });
 
-  if (sent) {
-    await updateExpiryTracking(userId, threshold);
-  }
+  await updateExpiryTracking(userId, threshold);
 
-  return { skipped: false, sent, threshold, daysRemaining };
+  return { skipped: false, sent: true, threshold, daysRemaining };
 }
 
-interface UserSubscriptionData {
-  userId: string;
-  userName: string;
-  userEmail: string;
-  endsAt: Date;
-  lastExpiryNotification: number | null;
-}
-
-async function fetchUserSubscription(userId: string): Promise<UserSubscriptionData | null> {
+async function fetchUserSubscription(userId: string): Promise<UserWithEndingSubscription | null> {
   "use step";
 
   const { getUserWithEndingSubscription } =
@@ -152,25 +155,23 @@ function getFirstName(name: string | null | undefined): string {
 }
 
 async function sendSubscriptionExpiryNotification(params: {
-  userId: string;
   userName: string;
   userEmail: string;
   endsAt: Date;
   daysRemaining: number;
-  threshold: SubscriptionExpiryThreshold;
-}): Promise<boolean> {
+}): Promise<void> {
   "use step";
 
   const { formatDateLong } = await import("@domainstack/utils/date");
   const { default: SubscriptionCancelingEmail } =
     await import("@domainstack/email/templates/subscription-canceling");
-  const { sendEmail } = await import("@/workflows/shared/send-email");
+  const { getEmailBaseUrl, sendEmail } = await import("@/workflows/shared/send-email");
 
-  const { userName, userEmail, endsAt, daysRemaining, threshold: _ } = params;
+  const { userName, userEmail, endsAt, daysRemaining } = params;
 
   const firstName = getFirstName(userName);
   const endDate = formatDateLong(endsAt);
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
+  const baseUrl = getEmailBaseUrl();
 
   // Determine urgency for subject line
   const isUrgent = daysRemaining <= 3;
@@ -179,7 +180,7 @@ async function sendSubscriptionExpiryNotification(params: {
     : `Pro subscription ends on ${endDate}`;
   const subject = isUrgent ? `⚠️ Your ${title}` : `Your ${title}`;
 
-  // Send email using shared step (handles error classification)
+  // Send email through the shared in-step helper (handles error classification).
   await sendEmail({
     to: userEmail,
     subject,
@@ -189,6 +190,4 @@ async function sendSubscriptionExpiryNotification(params: {
       baseUrl,
     }),
   });
-
-  return true;
 }

@@ -1,78 +1,22 @@
-/**
- * Certificates persist step.
- *
- * Persists certificates to the database.
- * This step is shared between the dedicated certificatesWorkflow and internal workflows.
- *
- * Note: This step only handles database persistence. Revalidation scheduling
- * should be done at the workflow level using scheduleRevalidationBatchStep.
- */
-
-import type { PersistResult } from "@/lib/workflow/types";
-
-import type { CertificatesProcessedData } from "./types";
+import type { CertificatesProcessedData } from "@domainstack/server/services/certificates";
 
 /**
  * Step: Persist certificates to database.
  *
- * Creates domain record if needed. Returns lastAccessedAt for use in
- * scheduling revalidation at the workflow level.
- *
  * @param domain - The domain name
  * @param processedData - The processed certificates with provider IDs and expiry metadata
- * @returns Object with lastAccessedAt for scheduling
  */
 export async function persistCertificatesStep(
   domain: string,
   processedData: CertificatesProcessedData,
-): Promise<PersistResult> {
+): Promise<void> {
   "use step";
 
-  // Dynamic imports for Node.js modules and database operations
-  const { replaceCertificates } = await import("@domainstack/db/queries/certificates");
-  const { ensureDomainRecord } = await import("@domainstack/db/queries/domains");
-  const { ttlForCertificates } = await import("@domainstack/server/ttl");
-
-  const now = new Date();
-
+  const { persistCertificates } = await import("@domainstack/server/services/certificates");
   try {
-    // Ensure domain record exists (creates if needed)
-    const domainRecord = await ensureDomainRecord(domain);
-
-    const chainWithIds = processedData.certificates.map((c, i) => ({
-      issuer: c.issuer,
-      subject: c.subject,
-      altNames: c.altNames,
-      validFrom: new Date(c.validFrom),
-      validTo: new Date(c.validTo),
-      fingerprint256: c.fingerprint256,
-      serialNumber: c.serialNumber,
-      caProviderId: processedData.providerIds[i],
-      chainPosition: c.chainPosition,
-    }));
-
-    const expiresAt = ttlForCertificates(now, processedData.earliestValidTo);
-
-    await replaceCertificates({
-      domainId: domainRecord.id,
-      chain: chainWithIds,
-      check: {
-        valid: processedData.valid,
-        validationError: processedData.validationError,
-        protocol: processedData.protocol,
-        cipher: processedData.cipher,
-        publicKeyBits: processedData.publicKeyBits,
-        chainComplete: processedData.chainComplete,
-      },
-      fetchedAt: now,
-      expiresAt,
-    });
-
-    return { lastAccessedAt: domainRecord.lastAccessedAt ?? null };
+    await persistCertificates(domain, processedData);
   } catch (err) {
     const { classifyDatabaseError } = await import("@/lib/workflow/errors");
-    throw classifyDatabaseError(err, {
-      context: `persisting certificates for ${domain}`,
-    });
+    throw classifyDatabaseError(err, { context: `persisting certificates for ${domain}` });
   }
 }

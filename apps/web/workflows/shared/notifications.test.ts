@@ -6,6 +6,9 @@ import type { ProviderChangeWithNames } from "@domainstack/types";
 
 // Hoist mocks for the dependencies sendNotificationInternal pulls in via dynamic import.
 const sendEmailMock = vi.hoisted(() => ({
+  getEmailBaseUrl: vi
+    .fn<typeof import("./send-email").getEmailBaseUrl>()
+    .mockReturnValue("https://test.domainstack.io"),
   sendEmail: vi.fn<typeof import("./send-email").sendEmail>(),
 }));
 const notificationsMock = vi.hoisted(() => ({
@@ -48,7 +51,7 @@ describe("sendProviderChangeNotificationStep", () => {
   });
 
   it("sends email and in-app, then records the notification with both channels", async () => {
-    sendEmailMock.sendEmail.mockResolvedValue({ success: true, emailId: "em_1" });
+    sendEmailMock.sendEmail.mockResolvedValue({ emailId: "em_1" });
 
     const { sendProviderChangeNotificationStep } = await import("./notifications");
     const result = await sendProviderChangeNotificationStep(baseParams, true, true);
@@ -99,6 +102,19 @@ describe("sendProviderChangeNotificationStep", () => {
     const result = await sendProviderChangeNotificationStep(baseParams, false, false);
 
     expect(result).toBe(false);
+    expect(sendEmailMock.getEmailBaseUrl).not.toHaveBeenCalled();
     expect(sendEmailMock.sendEmail).not.toHaveBeenCalled();
+  });
+
+  it("records an in-app-only notification without rendering email content", async () => {
+    const { sendProviderChangeNotificationStep } = await import("./notifications");
+    const result = await sendProviderChangeNotificationStep(baseParams, false, true);
+
+    expect(result).toBe(true);
+    expect(sendEmailMock.getEmailBaseUrl).not.toHaveBeenCalled();
+    expect(sendEmailMock.sendEmail).not.toHaveBeenCalled();
+    expect(notificationsMock.createNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ channels: ["in-app"] }),
+    );
   });
 });

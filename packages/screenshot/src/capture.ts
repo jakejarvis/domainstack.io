@@ -81,19 +81,3 @@ export async function captureScreenshot(
     void page?.close();
   }
 }
-
-/**
- * Capture a screenshot and return as base64.
- * Useful for serialization between workflow steps.
- */
-export async function captureScreenshotBase64(
-  url: string,
-  options: CaptureOptions = {},
-): Promise<{ imageBase64: string; width: number; height: number }> {
-  const result = await captureScreenshot(url, options);
-  return {
-    imageBase64: result.buffer.toString("base64"),
-    width: result.width,
-    height: result.height,
-  };
-}

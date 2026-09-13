@@ -12,16 +12,6 @@ vi.mock("@domainstack/utils/providers", () => ({
   getProvidersFromCatalog: vi.fn<(...args: unknown[]) => unknown[]>().mockReturnValue([]),
 }));
 
-// Mock providers repo functions
-vi.mock("@domainstack/db/queries/providers", () => ({
-  resolveOrCreateProviderId: vi
-    .fn<(...args: unknown[]) => Promise<unknown>>()
-    .mockResolvedValue(null),
-  upsertCatalogProvider: vi
-    .fn<(...args: unknown[]) => Promise<{ id: string }>>()
-    .mockResolvedValue({ id: "test-id" }),
-}));
-
 describe("normalizeAndBuildResponseStep", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -37,7 +27,6 @@ describe("normalizeAndBuildResponseStep", () => {
       tld: "invalid",
       isRegistered: true,
       source: "rdap",
-      registrar: { name: "Namecheap", url: "https://namecheap.com" },
       creationDate: "2020-01-01T00:00:00Z",
       expirationDate: "2025-01-01T00:00:00Z",
       nameservers: [{ host: "ns1.test.invalid" }],

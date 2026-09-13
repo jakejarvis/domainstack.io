@@ -1,10 +1,10 @@
 /* @vitest-environment node */
+
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { server } from "@/mocks/server";
-
-import { lookupGeoIp } from "./geoip";
+import { lookupGeoIp } from "@domainstack/server/services/hosting";
 
 beforeAll(() => {
   // Stub the API key for tests

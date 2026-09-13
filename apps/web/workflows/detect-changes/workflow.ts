@@ -23,11 +23,11 @@ import {
   persistRegistrationStep,
 } from "@/workflows/shared/registration";
 import { optionalCall, optionalSettled, requireSettled } from "@/workflows/shared/settled";
+import type { SnapshotForMonitoring } from "@domainstack/db/queries/snapshots";
 import type {
+  Certificate,
   CertificateChangeWithNames,
   CertificateSnapshotData,
-  CertificatesResponse,
-  HostingResponse,
   PendingChangeObservation,
   ProviderChangeWithNames,
   RegistrationResponse,
@@ -48,18 +48,25 @@ import { findLeafCertificate } from "@domainstack/utils/tls";
 // Workflow Types
 // =============================================================================
 
-export interface DetectChangesWorkflowInput {
+interface DetectChangesWorkflowInput {
   trackedDomainId: string;
   monitorLockOwnerToken: string;
 }
 
-export interface DetectChangesWorkflowResult {
-  skipped?: boolean;
-  reason?: string;
-  registrationChanges: boolean;
-  providerChanges: boolean;
-  certificateChanges: boolean;
-}
+type DetectChangesWorkflowResult =
+  | {
+      skipped: true;
+      reason: "snapshot_not_found";
+      registrationChanges: false;
+      providerChanges: false;
+      certificateChanges: false;
+    }
+  | {
+      skipped: false;
+      registrationChanges: boolean;
+      providerChanges: boolean;
+      certificateChanges: boolean;
+    };
 
 /**
  * Durable workflow to detect changes in a tracked domain.
@@ -117,49 +124,35 @@ export async function detectChangesWorkflow(
   }
 
   // Persist DNS (always succeeds or throws)
-  await persistDnsRecordsStep(domainName, dnsResult.data);
+  await persistDnsRecordsStep(domainName, dnsResult);
 
   if (headersResult?.success) {
     await optionalCall(persistHeadersStep(domainName, headersResult.data));
   }
 
   // Process and persist certificates
-  let certificatesData: CertificatesResponse | null = null;
+  let certificates: Certificate[] = [];
   if (certificatesResult?.success) {
-    const processed = await optionalCall(processChainStep(certificatesResult.data));
+    const processed = await optionalCall(processChainStep(certificatesResult));
     if (processed) {
       await optionalCall(persistCertificatesStep(domainName, processed));
-      certificatesData = {
-        certificates: processed.certificates,
-        valid: processed.valid,
-        validationError: processed.validationError,
-        protocol: processed.protocol,
-        cipher: processed.cipher,
-        publicKeyBits: processed.publicKeyBits,
-        chainComplete: processed.chainComplete,
-      };
+      certificates = processed.certificates;
     }
   }
 
   // Hosting detection uses DNS even when headers fail (no A/AAAA, etc.)
-  const a = dnsResult.data.records.find((d) => d.type === "A");
-  const aaaa = dnsResult.data.records.find((d) => d.type === "AAAA");
+  const a = dnsResult.records.find((d) => d.type === "A");
+  const aaaa = dnsResult.records.find((d) => d.type === "AAAA");
   const ip = (a?.value || aaaa?.value) ?? null;
   const geoResult = ip ? await optionalCall(lookupGeoIpStep(ip)) : null;
   const headers = headersResult?.success ? headersResult.data.headers : [];
 
-  const providers = await detectAndResolveProvidersStep(dnsResult.data.records, headers, geoResult);
+  const providers = await detectAndResolveProvidersStep(dnsResult.records, headers, geoResult);
 
   await optionalCall(persistHostingStep(domainName, providers, geoResult?.geo ?? null));
 
-  const hostingData: HostingResponse = {
-    hostingProvider: providers.hostingProvider,
-    emailProvider: providers.emailProvider,
-    dnsProvider: providers.dnsProvider,
-    geo: geoResult?.geo ?? null,
-  };
-
   const results = {
+    skipped: false as const,
     registrationChanges: false,
     providerChanges: false,
     certificateChanges: false,
@@ -171,9 +164,7 @@ export async function detectChangesWorkflow(
       registrarProviderId: registrationData.registrarProvider?.id ?? null,
       nameservers: registrationData.nameservers || [],
       transferLock: registrationData.transferLock ?? null,
-      statuses: (registrationData.statuses || []).map((s: string | { status: string }) =>
-        typeof s === "string" ? s : s.status,
-      ),
+      statuses: (registrationData.statuses ?? []).map((status) => status.status),
     };
 
     if (isUninitializedRegistration(snapshot.registration)) {
@@ -318,9 +309,10 @@ export async function detectChangesWorkflow(
                 ? `${changeDetails.join(". ")}.`
                 : `Registration details updated for ${domainName}.`;
 
-            // Step 3c: Send notification (imports email component in step)
-            // The step only returns false when both channels are off, which this
-            // branch already excludes, so reaching the next line means it sent.
+            // Step 3c: Settle notification delivery. A permanent email failure
+            // can degrade to in-app-only (or no delivery when email was the only
+            // channel), but the snapshot still advances so the workflow does not
+            // retry an address that cannot accept mail forever.
             await sendRegistrationChangeNotificationStep(
               {
                 userId,
@@ -441,7 +433,7 @@ export async function detectChangesWorkflow(
   // Either way it is not evidence that the providers were removed, and treating
   // it as such emails users a false "provider removed" alert and then advances
   // the snapshot so the recovery looks like a second change.
-  const dnsObserved = dnsResult.data.records.length > 0;
+  const dnsObserved = dnsResult.records.length > 0;
 
   // Hosting is derived from HTTP headers (catalog match), falling back to the
   // IP owner from GeoIP. When the domain has an address but either input was
@@ -452,11 +444,11 @@ export async function detectChangesWorkflow(
   // Step 4: Check provider changes
   if (dnsObserved) {
     const currentProviderIds = {
-      dns: hostingData.dnsProvider?.id ?? null,
+      dns: providers.dnsProvider?.id ?? null,
       hosting: hostingObserved
-        ? (hostingData.hostingProvider?.id ?? null)
+        ? (providers.hostingProvider?.id ?? null)
         : snapshot.hostingProviderId,
-      email: hostingData.emailProvider?.id ?? null,
+      email: providers.emailProvider?.id ?? null,
     };
 
     const currentProviderSnapshot = {
@@ -619,8 +611,8 @@ export async function detectChangesWorkflow(
   }
 
   // Step 5: Check certificate changes
-  if (certificatesData && certificatesData.certificates.length > 0) {
-    const leafCert = findLeafCertificate(certificatesData.certificates);
+  if (certificates.length > 0) {
+    const leafCert = findLeafCertificate(certificates);
 
     if (leafCert) {
       const currentCertificate: CertificateSnapshotData = {
@@ -770,12 +762,7 @@ async function releaseMonitorLockStep(
   await releaseMonitorLock(trackedDomainId, monitorLockOwnerToken);
 }
 
-// Import SnapshotForMonitoring type for proper typing
-type SnapshotData = Awaited<
-  ReturnType<typeof import("@domainstack/db/queries/snapshots").getSnapshot>
->;
-
-async function fetchSnapshot(trackedDomainId: string): Promise<SnapshotData> {
+async function fetchSnapshot(trackedDomainId: string): Promise<SnapshotForMonitoring | null> {
   "use step";
 
   const { getSnapshot } = await import("@domainstack/db/queries/snapshots");

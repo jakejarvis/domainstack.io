@@ -1,5 +1,1 @@
-export {
-  type DomainExpiryWorkflowInput,
-  type DomainExpiryWorkflowResult,
-  domainExpiryWorkflow,
-} from "./workflow";
+export { domainExpiryWorkflow } from "./workflow";

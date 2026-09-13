@@ -1,5 +1,1 @@
-export {
-  type InitializeSnapshotWorkflowInput,
-  type InitializeSnapshotWorkflowResult,
-  initializeSnapshotWorkflow,
-} from "./workflow";
+export { initializeSnapshotWorkflow } from "./workflow";

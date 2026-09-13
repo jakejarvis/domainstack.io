@@ -1,5 +1,1 @@
-export {
-  type SubscriptionExpiryWorkflowInput,
-  type SubscriptionExpiryWorkflowResult,
-  subscriptionExpiryWorkflow,
-} from "./workflow";
+export { subscriptionExpiryWorkflow } from "./workflow";

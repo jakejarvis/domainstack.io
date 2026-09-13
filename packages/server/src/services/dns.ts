@@ -1,7 +1,8 @@
 /**
  * DNS service - fetches and persists DNS records.
  *
- * Replaces the workflow-based implementation with a simple async function.
+ * Its internal helpers are also called by the monitoring workflow steps in
+ * apps/web/workflows/shared.
  * All errors throw (for TanStack Query to retry) - there are no permanent failures.
  */
 
@@ -59,7 +60,7 @@ export async function fetchDns(domain: string): Promise<DnsResult> {
 // Internal: Persist DNS Records
 // ============================================================================
 
-async function persistDnsRecords(domain: string, fetchData: DnsFetchData): Promise<void> {
+export async function persistDnsRecords(domain: string, fetchData: DnsFetchData): Promise<void> {
   const types = DNS_RECORD_TYPES;
   const now = new Date();
 

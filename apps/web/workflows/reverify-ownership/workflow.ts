@@ -1,16 +1,17 @@
 import { FatalError } from "workflow";
 
 import { verifyDomainOwnershipByMethod } from "@/workflows/shared/verify-domain";
+import type { TrackedDomainForReverification } from "@domainstack/db/queries/tracked-domains";
 import type { VerificationMethod } from "@domainstack/types";
 
-export interface ReverifyOwnershipWorkflowInput {
+interface ReverifyOwnershipWorkflowInput {
   trackedDomainId: string;
 }
 
 type VerificationFailureAction = "marked_failing" | "revoked" | "in_grace_period";
 
-export type ReverifyOwnershipWorkflowResult =
-  | { skipped: true; reason: string }
+type ReverifyOwnershipWorkflowResult =
+  | { skipped: true; reason: "invalid_state" }
   | { verified: true; method: VerificationMethod }
   | { verified: false; action: VerificationFailureAction };
 
@@ -51,9 +52,7 @@ export async function reverifyOwnershipWorkflow(
   const failureResult = await determineFailureAction({
     id: domain.id,
     verificationStatus: domain.verificationStatus,
-    verificationFailedAt: domain.verificationFailedAt
-      ? new Date(domain.verificationFailedAt)
-      : null,
+    verificationFailedAt: domain.verificationFailedAt,
   });
 
   // Step 4: Send notification email based on the action (separate steps for retry isolation)
@@ -82,17 +81,18 @@ export async function reverifyOwnershipWorkflow(
   return { verified: false, action: failureResult.action };
 }
 
-interface DomainData {
-  id: string;
-  domainName: string;
-  userId: string;
-  userName: string;
-  userEmail: string;
-  verificationToken: string;
-  verificationMethod: VerificationMethod;
-  verificationStatus: "verified" | "failing" | "unverified";
-  verificationFailedAt: Date | null;
-}
+type DomainData = Pick<
+  TrackedDomainForReverification,
+  | "id"
+  | "domainName"
+  | "userId"
+  | "userName"
+  | "userEmail"
+  | "verificationToken"
+  | "verificationMethod"
+  | "verificationStatus"
+  | "verificationFailedAt"
+>;
 
 async function fetchDomain(trackedDomainId: string): Promise<DomainData | null> {
   "use step";
@@ -100,7 +100,20 @@ async function fetchDomain(trackedDomainId: string): Promise<DomainData | null> 
   const { getTrackedDomainForReverification } =
     await import("@domainstack/db/queries/tracked-domains");
 
-  return await getTrackedDomainForReverification(trackedDomainId);
+  const domain = await getTrackedDomainForReverification(trackedDomainId);
+  if (!domain) return null;
+
+  return {
+    id: domain.id,
+    domainName: domain.domainName,
+    userId: domain.userId,
+    userName: domain.userName,
+    userEmail: domain.userEmail,
+    verificationToken: domain.verificationToken,
+    verificationMethod: domain.verificationMethod,
+    verificationStatus: domain.verificationStatus,
+    verificationFailedAt: domain.verificationFailedAt,
+  };
 }
 
 async function markSuccess(trackedDomainId: string): Promise<void> {
@@ -111,17 +124,12 @@ async function markSuccess(trackedDomainId: string): Promise<void> {
   await markVerificationSuccessful(trackedDomainId);
 }
 
-interface DomainForFailureCheck {
-  id: string;
-  verificationStatus: "verified" | "failing" | "unverified";
-  verificationFailedAt: Date | null;
-}
+type DomainForFailureCheck = Pick<DomainData, "id" | "verificationStatus" | "verificationFailedAt">;
 
-interface FailureActionResult {
-  action: VerificationFailureAction;
-  shouldSendEmail: boolean;
-  emailType: "failing" | "revoked";
-}
+type FailureActionResult =
+  | { action: "marked_failing"; shouldSendEmail: boolean; emailType: "failing" }
+  | { action: "revoked"; shouldSendEmail: true; emailType: "revoked" }
+  | { action: "in_grace_period"; shouldSendEmail: false; emailType: "failing" };
 
 /**
  * Determines the failure action and updates database state.
@@ -186,14 +194,10 @@ async function determineFailureAction(domain: DomainForFailureCheck): Promise<Fa
   };
 }
 
-interface DomainForEmail {
-  id: string;
-  domainName: string;
-  userId: string;
-  userName: string;
-  userEmail: string;
-  verificationMethod: VerificationMethod;
-}
+type DomainForEmail = Pick<
+  DomainData,
+  "id" | "domainName" | "userId" | "userName" | "userEmail" | "verificationMethod"
+>;
 
 /**
  * Step: Send verification failing notification email.
@@ -201,10 +205,10 @@ interface DomainForEmail {
  * Sends before recording. The whole step body re-runs on retry, so writing the
  * notification row first would make the `hasRecentNotification` guard match the
  * row from the failed attempt and swallow the email for the next 30 days while
- * the database claimed it was sent. Resend's idempotency key (the inner step
- * id) keeps a retry from delivering the mail twice.
+ * the database claimed it was sent. Resend's idempotency key (the enclosing
+ * step id) keeps a retry from delivering the mail twice.
  */
-async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boolean> {
+async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<void> {
   "use step";
 
   const { default: VerificationFailingEmail } =
@@ -212,18 +216,18 @@ async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boo
   const { VERIFICATION_GRACE_PERIOD_DAYS } = await import("@domainstack/constants");
   const { hasRecentNotification, createNotification, updateNotificationResendId } =
     await import("@domainstack/db/queries/notifications");
-  const { sendEmail } = await import("@/workflows/shared/send-email");
+  const { getEmailBaseUrl, sendEmail } = await import("@/workflows/shared/send-email");
 
   const alreadySent = await hasRecentNotification(domain.id, "verification_failing");
-  if (alreadySent) return false;
+  if (alreadySent) return;
 
   const title = `Verification failing for ${domain.domainName}`;
   const subject = `⚠️ ${title}`;
   const message = `Verification for ${domain.domainName} is failing. You have ${VERIFICATION_GRACE_PERIOD_DAYS} days to fix it before access is revoked.`;
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
+  const baseUrl = getEmailBaseUrl();
 
-  // Send email notification using shared step (handles error classification)
+  // Send email through the shared in-step helper (handles error classification).
   const result = await sendEmail({
     to: domain.userEmail,
     subject,
@@ -254,8 +258,6 @@ async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boo
   }
 
   await updateNotificationResendId(notification.id, result.emailId);
-
-  return true;
 }
 
 /**
@@ -264,25 +266,25 @@ async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boo
  * Sends before recording, for the same reason as
  * {@link sendVerificationFailingEmail}.
  */
-async function sendVerificationRevokedEmail(domain: DomainForEmail): Promise<boolean> {
+async function sendVerificationRevokedEmail(domain: DomainForEmail): Promise<void> {
   "use step";
 
   const { default: VerificationRevokedEmail } =
     await import("@domainstack/email/templates/verification-revoked");
   const { hasRecentNotification, createNotification, updateNotificationResendId } =
     await import("@domainstack/db/queries/notifications");
-  const { sendEmail } = await import("@/workflows/shared/send-email");
+  const { getEmailBaseUrl, sendEmail } = await import("@/workflows/shared/send-email");
 
   const alreadySent = await hasRecentNotification(domain.id, "verification_revoked");
-  if (alreadySent) return false;
+  if (alreadySent) return;
 
   const title = `Verification revoked for ${domain.domainName}`;
   const subject = `❌ ${title}`;
   const message = `Verification for ${domain.domainName} has been revoked. The grace period has expired without successful re-verification.`;
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
+  const baseUrl = getEmailBaseUrl();
 
-  // Send email notification using shared step (handles error classification)
+  // Send email through the shared in-step helper (handles error classification).
   const result = await sendEmail({
     to: domain.userEmail,
     subject,
@@ -309,6 +311,4 @@ async function sendVerificationRevokedEmail(domain: DomainForEmail): Promise<boo
   }
 
   await updateNotificationResendId(notification.id, result.emailId);
-
-  return true;
 }

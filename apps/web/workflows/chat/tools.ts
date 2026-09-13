@@ -21,7 +21,7 @@ import {
 } from "@/lib/chat/domain-tools";
 import { isExpectedTrpcError } from "@/lib/trpc/errors";
 
-export interface ToolContext {
+interface ToolContext {
   ip: string | null;
 }
 

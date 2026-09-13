@@ -1,57 +1,22 @@
-/**
- * Headers persist step.
- *
- * Persists HTTP headers to the database.
- * This step is shared between the dedicated headersWorkflow and internal workflows.
- *
- * Note: This step only handles database persistence. Revalidation scheduling
- * should be done at the workflow level using scheduleRevalidationBatchStep.
- */
-
-import type { PersistResult } from "@/lib/workflow/types";
 import type { HeadersFetchData } from "@domainstack/server/headers";
 
 /**
  * Step: Persist headers to database.
  *
- * Creates domain record if needed. Returns lastAccessedAt for use in
- * scheduling revalidation at the workflow level.
- *
  * @param domain - The domain name
  * @param fetchData - The headers fetch result
- * @returns Object with lastAccessedAt for scheduling
  */
 export async function persistHeadersStep(
   domain: string,
   fetchData: HeadersFetchData,
-): Promise<PersistResult> {
+): Promise<void> {
   "use step";
 
-  // Dynamic imports for Node.js modules and database operations
-  const { ttlForHeaders } = await import("@domainstack/server/ttl");
-  const { ensureDomainRecord } = await import("@domainstack/db/queries/domains");
-  const { replaceHeaders } = await import("@domainstack/db/queries/headers");
-
-  const now = new Date();
-  const expiresAt = ttlForHeaders(now);
-
+  const { persistHeaders } = await import("@domainstack/server/services/headers");
   try {
-    // Ensure domain record exists (creates if needed)
-    const domainRecord = await ensureDomainRecord(domain);
-
-    await replaceHeaders({
-      domainId: domainRecord.id,
-      headers: fetchData.headers,
-      status: fetchData.status,
-      fetchedAt: now,
-      expiresAt,
-    });
-
-    return { lastAccessedAt: domainRecord.lastAccessedAt ?? null };
+    await persistHeaders(domain, fetchData);
   } catch (err) {
     const { classifyDatabaseError } = await import("@/lib/workflow/errors");
-    throw classifyDatabaseError(err, {
-      context: `persisting headers for ${domain}`,
-    });
+    throw classifyDatabaseError(err, { context: `persisting headers for ${domain}` });
   }
 }

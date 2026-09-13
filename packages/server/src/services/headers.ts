@@ -1,7 +1,8 @@
 /**
  * Headers service - fetches and persists HTTP headers.
  *
- * Replaces the workflow-based implementation with a simple async function.
+ * Its internal helpers are also called by the monitoring workflow steps in
+ * apps/web/workflows/shared.
  * Transient errors throw (for TanStack Query to retry).
  * Permanent errors return { success: false, error }.
  */
@@ -76,7 +77,7 @@ export async function fetchHeaders(domain: string): Promise<HeadersResult> {
 // Internal: Persist Headers
 // ============================================================================
 
-async function persistHeaders(domain: string, fetchData: HeadersFetchData): Promise<void> {
+export async function persistHeaders(domain: string, fetchData: HeadersFetchData): Promise<void> {
   const now = new Date();
   const expiresAt = ttlForHeaders(now);
 

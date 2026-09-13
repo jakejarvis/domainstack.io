@@ -39,9 +39,7 @@ describe("persistRegistrationStep", () => {
     };
 
     const { persistRegistrationStep } = await import("./persist");
-    const domainId = await persistRegistrationStep("persist.com", response);
-
-    expect(domainId).toBeTruthy();
+    await persistRegistrationStep("persist.com", response);
 
     // Use the PGlite db instance (already set as the singleton)
     const { domains, registrations } = await import("@domainstack/db/schema");

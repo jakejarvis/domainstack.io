@@ -201,14 +201,26 @@ export async function GET(
     if (status === "completed") {
       const result = (await run.returnValue) as ScreenshotWorkflowResult;
 
-      return NextResponse.json(
+      if (result.success) {
+        return NextResponse.json<ScreenshotStatusResponse>(
+          {
+            status: "completed",
+            cached: false,
+            success: true,
+            data: result.data,
+          },
+          { headers: withNoStore(rateLimit.headers) },
+        );
+      }
+
+      return NextResponse.json<ScreenshotStatusResponse>(
         {
           status: "completed",
           cached: false,
-          success: result.success,
+          success: false,
+          error: result.error,
           data: result.data,
-          ...(!result.success && { error: result.error }),
-        } as ScreenshotStatusResponse,
+        },
         { headers: withNoStore(rateLimit.headers) },
       );
     }

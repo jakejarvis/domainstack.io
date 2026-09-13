@@ -1,6 +1,6 @@
 import { FatalError, getStepMetadata, RetryableError } from "workflow";
 
-export interface SendEmailParams {
+interface SendEmailParams {
   /** Recipient email address */
   to: string;
   /** Email subject line */
@@ -9,15 +9,20 @@ export interface SendEmailParams {
   react: React.ReactElement;
 }
 
-export interface SendEmailResult {
-  success: true;
-  emailId: string;
+export function getEmailBaseUrl(): string {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  if (!baseUrl) {
+    throw new FatalError("NEXT_PUBLIC_BASE_URL is required to send workflow emails");
+  }
+  return baseUrl;
 }
 
 /**
- * Shared step for sending emails via Resend with proper error classification.
+ * Step-internal helper for sending emails via Resend with proper error classification.
  *
- * Uses stepId as idempotency key - stable across retries and unique per step.
+ * It must be called from a `"use step"` function because React elements are not
+ * serializable workflow values. It uses the enclosing step's ID as an
+ * idempotency key, which is stable across retries and unique per step.
  * See: https://useworkflow.dev/docs/foundations/idempotency
  *
  * Error handling:
@@ -26,16 +31,14 @@ export interface SendEmailResult {
  * - Server errors (5xx) → RetryableError with backoff
  * - Idempotency conflicts → FatalError or RetryableError depending on type
  */
-export async function sendEmail(params: SendEmailParams): Promise<SendEmailResult> {
-  "use step";
-
+export async function sendEmail(params: SendEmailParams): Promise<{ emailId: string }> {
   const { sendEmail: sendResendEmail } = await import("@domainstack/email");
 
   const { to, subject, react } = params;
 
   // Use stepId as idempotency key - stable across retries and unique per step
   const { stepId } = getStepMetadata();
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
+  const baseUrl = getEmailBaseUrl();
 
   const { data, error } = await sendResendEmail(
     { to, subject, react },
@@ -43,7 +46,7 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
   );
 
   if (!error && data?.id) {
-    return { success: true, emailId: data.id };
+    return { emailId: data.id };
   }
 
   if (!error) {

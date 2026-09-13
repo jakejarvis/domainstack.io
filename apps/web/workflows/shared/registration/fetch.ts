@@ -1,18 +1,13 @@
-/**
- * Registration fetch step.
- *
- * Performs WHOIS/RDAP lookup for a domain.
- * This step is shared between the dedicated registrationWorkflow and internal workflows.
- */
-
 import { RetryableError } from "workflow";
 
-import type { FetchRegistrationResult } from "./types";
+type FetchRegistrationResult =
+  | { success: true; data: { recordJson: string } }
+  | { success: false; error: "unsupported_tld" };
 
 /**
  * Step: Lookup domain registration via rdapper (WHOIS/RDAP).
  *
- * Unsupported TLD and lookup_failed are permanent failures.
+ * Unsupported TLD is a permanent failure.
  * Retry and timeout errors are thrown as RetryableError for automatic retry.
  *
  * @param domain - The domain to lookup

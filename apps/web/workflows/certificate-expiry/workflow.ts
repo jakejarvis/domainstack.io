@@ -7,16 +7,31 @@ import {
   getThresholdNotificationType,
 } from "@/workflows/shared/notifications";
 import { CERTIFICATE_EXPIRY_THRESHOLDS } from "@domainstack/constants";
+import type { TrackedDomainCertificate } from "@domainstack/db/queries/certificates";
 import type { NotificationChannel, NotificationType } from "@domainstack/types";
 import { formatDateLong } from "@domainstack/utils/date";
 
-export interface CertificateExpiryWorkflowInput {
+interface CertificateExpiryWorkflowInput {
   trackedDomainId: string;
 }
 
-export type CertificateExpiryWorkflowResult =
-  | { skipped: true; reason: string; clearedCount?: number; renewed?: boolean }
-  | { skipped: false; sent: boolean };
+type CertificateExpiryWorkflowResult =
+  | {
+      skipped: true;
+      reason: "renewed";
+      renewed: true;
+      clearedCount: number;
+    }
+  | {
+      skipped: true;
+      reason:
+        | "not_found"
+        | "already_expired"
+        | "no_threshold_met"
+        | "notifications_disabled"
+        | "already_sent";
+    }
+  | { skipped: false; sent: true };
 
 /**
  * Durable workflow to check certificate expiry and send notifications.
@@ -39,15 +54,7 @@ export async function certificateExpiryWorkflow(
   }
 
   // Step 2: Calculate days remaining
-  // Validate validTo exists and is a valid date before proceeding
-  if (!cert.validTo) {
-    return { skipped: true, reason: "no_valid_to_date" };
-  }
-
-  const validTo = new Date(cert.validTo);
-  if (Number.isNaN(validTo.getTime())) {
-    return { skipped: true, reason: "invalid_valid_to_date" };
-  }
+  const validTo = cert.validTo;
 
   const daysRemaining = await calculateDaysRemainingStep(validTo);
   const MAX_THRESHOLD_DAYS = Math.max(...CERTIFICATE_EXPIRY_THRESHOLDS);
@@ -136,17 +143,7 @@ export async function certificateExpiryWorkflow(
   return { skipped: false, sent: true };
 }
 
-interface CertificateData {
-  userId: string;
-  userName: string;
-  userEmail: string;
-  domainName: string;
-  validTo: Date | string | null;
-  issuer: string;
-  muted: boolean;
-}
-
-async function fetchCertificate(trackedDomainId: string): Promise<CertificateData | null> {
+async function fetchCertificate(trackedDomainId: string): Promise<TrackedDomainCertificate | null> {
   "use step";
 
   const { getEarliestCertificate } = await import("@domainstack/db/queries/certificates");
@@ -188,7 +185,7 @@ async function createNotificationRecord(params: {
   shouldSendEmail: boolean;
   shouldSendInApp: boolean;
   resendId?: string;
-}): Promise<{ notificationId: string }> {
+}): Promise<void> {
   "use step";
 
   const { createNotification, updateNotificationResendId } =
@@ -229,8 +226,6 @@ async function createNotificationRecord(params: {
   if (resendId) {
     await updateNotificationResendId(notification.id, resendId);
   }
-
-  return { notificationId: notification.id };
 }
 
 async function sendCertificateExpiryEmail(params: {
@@ -246,11 +241,11 @@ async function sendCertificateExpiryEmail(params: {
 
   const { default: CertificateExpiryEmail } =
     await import("@domainstack/email/templates/certificate-expiry");
-  const { sendEmail } = await import("@/workflows/shared/send-email");
+  const { getEmailBaseUrl, sendEmail } = await import("@/workflows/shared/send-email");
 
   const { userEmail, userName, domainName, validTo, issuer, daysRemaining, subject } = params;
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
+  const baseUrl = getEmailBaseUrl();
 
   const result = await sendEmail({
     to: userEmail,

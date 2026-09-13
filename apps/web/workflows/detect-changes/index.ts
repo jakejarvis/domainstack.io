@@ -1,5 +1,1 @@
-export {
-  type DetectChangesWorkflowInput,
-  type DetectChangesWorkflowResult,
-  detectChangesWorkflow,
-} from "./workflow";
+export { detectChangesWorkflow } from "./workflow";
