@@ -13,6 +13,7 @@ import type { DnsRecordType, DnsRecordsResponse } from "@domainstack/types";
 
 import { DnsProviderError, type DnsFetchData, fetchDnsRecords } from "../dns";
 import { RemoteDataUnavailableError } from "./fetch-errors";
+import { shareInFlight } from "./in-flight";
 
 // ============================================================================
 // Types
@@ -27,12 +28,20 @@ export type DnsResult = { success: true; data: DnsRecordsResponse };
 /**
  * Fetch and persist DNS records for a domain.
  *
+ * Concurrent calls for the same domain in this process share one fetch and one
+ * write (e.g. a report batch where `getDnsRecords` and `getHosting` both need
+ * DNS). Every call that doesn't overlap an in-flight one fetches fresh data.
+ *
  * @param domain - The domain to look up
  * @returns DNS result with records
  *
  * @throws Error on all failures - TanStack Query retries these
  */
-export async function fetchDns(domain: string): Promise<DnsResult> {
+export function fetchDns(domain: string): Promise<DnsResult> {
+  return shareInFlight(`dns:${domain.toLowerCase()}`, () => fetchAndPersistDns(domain));
+}
+
+async function fetchAndPersistDns(domain: string): Promise<DnsResult> {
   // 1. Fetch from DoH providers (throws DnsProviderError on failure)
   let fetchData: DnsFetchData;
   try {
