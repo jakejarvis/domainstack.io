@@ -69,11 +69,14 @@ const EMPTY_CERTIFICATE: CertificateSnapshotData = {
 };
 
 /**
- * Create a new snapshot with initial data.
+ * Create the baseline snapshot for a tracked domain.
+ *
+ * Insert-only: returns `null` when a snapshot already exists. A baseline must
+ * never replace a snapshot that change detection may already have advanced —
+ * that would roll it back and re-alert changes the user was already told about.
  */
 export async function createSnapshot(
   params: CreateSnapshotParams,
-  updateExisting = true,
 ): Promise<typeof domainSnapshots.$inferSelect | null> {
   const {
     trackedDomainId,
@@ -84,46 +87,20 @@ export async function createSnapshot(
     emailProviderId = null,
   } = params;
 
-  const values = {
-    trackedDomainId,
-    registration,
-    certificate,
-    dnsProviderId,
-    hostingProviderId,
-    emailProviderId,
-  };
-
-  if (!updateExisting) {
-    const inserted = await db
-      .insert(domainSnapshots)
-      .values(values)
-      .onConflictDoNothing()
-      .returning();
-
-    return inserted.length > 0 ? inserted[0] : null;
-  }
-
   const inserted = await db
     .insert(domainSnapshots)
-    .values(values)
-    .onConflictDoUpdate({
-      target: domainSnapshots.trackedDomainId,
-      set: {
-        registration,
-        certificate,
-        dnsProviderId,
-        hostingProviderId,
-        emailProviderId,
-        updatedAt: new Date(),
-      },
+    .values({
+      trackedDomainId,
+      registration,
+      certificate,
+      dnsProviderId,
+      hostingProviderId,
+      emailProviderId,
     })
+    .onConflictDoNothing({ target: domainSnapshots.trackedDomainId })
     .returning();
 
-  if (!inserted || inserted.length === 0) {
-    throw new Error("Failed to create snapshot");
-  }
-
-  return inserted[0];
+  return inserted[0] ?? null;
 }
 
 /**

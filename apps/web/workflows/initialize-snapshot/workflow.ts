@@ -31,7 +31,7 @@ interface InitializeSnapshotWorkflowInput {
 
 type InitializeSnapshotWorkflowResult =
   | { success: true; snapshotId: string }
-  | { success: false; error: "domain_not_found" | "dns_unobserved" };
+  | { success: false; error: "domain_not_found" | "dns_unobserved" | "snapshot_exists" };
 
 /**
  * Durable workflow to create a baseline snapshot for a newly verified tracked domain.
@@ -80,8 +80,9 @@ export async function initializeSnapshotWorkflow(
     await optionalCall(persistRegistrationStep(domainName, registrationData));
   }
 
-  // Persist DNS (always succeeds or throws)
-  await persistDnsRecordsStep(domainName, dnsResult);
+  // The DNS cache is a side effect here: detection uses dnsResult directly, so a
+  // failed write must not abort the run (same rule as the other persists).
+  await optionalCall(persistDnsRecordsStep(domainName, dnsResult));
 
   if (headersResult?.success) {
     await optionalCall(persistHeadersStep(domainName, headersResult.data));
@@ -171,6 +172,10 @@ export async function initializeSnapshotWorkflow(
     emailProviderId: providers.emailProvider?.id ?? null,
   });
 
+  if (!snapshot) {
+    return { success: false, error: "snapshot_exists" };
+  }
+
   return { success: true, snapshotId: snapshot.id };
 }
 
@@ -188,7 +193,7 @@ async function createSnapshotStep(params: {
   dnsProviderId: string | null;
   hostingProviderId: string | null;
   emailProviderId: string | null;
-}): Promise<{ id: string }> {
+}): Promise<{ id: string } | null> {
   "use step";
 
   const { createSnapshot } = await import("@domainstack/db/queries/snapshots");
@@ -202,9 +207,6 @@ async function createSnapshotStep(params: {
     emailProviderId: params.emailProviderId,
   });
 
-  if (!snapshot) {
-    throw new Error(`Failed to create snapshot for trackedDomainId: ${params.trackedDomainId}`);
-  }
-
-  return { id: snapshot.id };
+  // null: a snapshot already exists (another baseline or the monitor got there first).
+  return snapshot ? { id: snapshot.id } : null;
 }
