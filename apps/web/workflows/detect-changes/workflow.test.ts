@@ -1,8 +1,10 @@
 /* @vitest-environment node */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { CHANGE_CONFIRMATIONS } from "@domainstack/constants";
 import type { SnapshotForMonitoring } from "@domainstack/db/queries/snapshots";
 import type { DnsFetchData } from "@domainstack/server/dns";
+import { providerObservationKey } from "@domainstack/utils/change-detection";
 
 // Hoisted mocks for every module the workflow imports (dynamically or statically).
 const registrationMock = vi.hoisted(() => ({
@@ -190,5 +192,80 @@ describe("detectChangesWorkflow", () => {
       detectChangesWorkflow({ trackedDomainId: "td-1", monitorLockOwnerToken: "tok" }),
     ).rejects.toThrow("dns fetch failed");
     expect(monitorDedupMock.releaseMonitorLock).not.toHaveBeenCalled();
+  });
+});
+
+describe("change alert idempotency", () => {
+  beforeEach(() => {
+    snapshotsMock.getSnapshot.mockResolvedValue(
+      makeSnapshot({
+        dnsProviderId: "p-old",
+        providerPending: {
+          key: providerObservationKey({
+            dnsProviderId: "p-dns",
+            hostingProviderId: null,
+            emailProviderId: null,
+          }),
+          firstSeenAt: "2026-09-13T00:00:00.000Z",
+          observations: CHANGE_CONFIRMATIONS - 1,
+        },
+      }),
+    );
+  });
+
+  it("keys the same confirmed change with an identical idempotencyKey across runs, even when the first run fails", async () => {
+    notificationsMock.sendProviderChangeNotificationStep
+      .mockRejectedValueOnce(new Error("insert failed"))
+      .mockResolvedValueOnce(true);
+
+    const { detectChangesWorkflow } = await import("./workflow");
+
+    await expect(
+      detectChangesWorkflow({ trackedDomainId: "td-1", monitorLockOwnerToken: "tok" }),
+    ).rejects.toThrow("insert failed");
+    expect(snapshotsMock.updateSnapshot).not.toHaveBeenCalledWith(
+      "td-1",
+      expect.objectContaining({ providerPending: null }),
+    );
+
+    const result = await detectChangesWorkflow({
+      trackedDomainId: "td-1",
+      monitorLockOwnerToken: "tok",
+    });
+    expect(result.providerChanges).toBe(true);
+
+    const expectedKey = `provider:td-1:${providerObservationKey({ dnsProviderId: "p-old", hostingProviderId: null, emailProviderId: null })}>${providerObservationKey({ dnsProviderId: "p-dns", hostingProviderId: null, emailProviderId: null })}`;
+    expect(notificationsMock.sendProviderChangeNotificationStep).toHaveBeenCalledTimes(2);
+    for (const call of notificationsMock.sendProviderChangeNotificationStep.mock.calls) {
+      expect(call[0]).toEqual(expect.objectContaining({ idempotencyKey: expectedKey }));
+    }
+  });
+
+  it("keys a different stored provider with a different idempotencyKey", async () => {
+    snapshotsMock.getSnapshot.mockResolvedValue(
+      makeSnapshot({
+        dnsProviderId: "p-older",
+        providerPending: {
+          key: providerObservationKey({
+            dnsProviderId: "p-dns",
+            hostingProviderId: null,
+            emailProviderId: null,
+          }),
+          firstSeenAt: "2026-09-13T00:00:00.000Z",
+          observations: CHANGE_CONFIRMATIONS - 1,
+        },
+      }),
+    );
+    notificationsMock.sendProviderChangeNotificationStep.mockResolvedValue(true);
+
+    const { detectChangesWorkflow } = await import("./workflow");
+    await detectChangesWorkflow({ trackedDomainId: "td-1", monitorLockOwnerToken: "tok" });
+
+    const expectedKey = `provider:td-1:${providerObservationKey({ dnsProviderId: "p-older", hostingProviderId: null, emailProviderId: null })}>${providerObservationKey({ dnsProviderId: "p-dns", hostingProviderId: null, emailProviderId: null })}`;
+    expect(notificationsMock.sendProviderChangeNotificationStep).toHaveBeenCalledWith(
+      expect.objectContaining({ idempotencyKey: expectedKey }),
+      true,
+      true,
+    );
   });
 });

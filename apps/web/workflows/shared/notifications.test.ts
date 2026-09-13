@@ -37,6 +37,7 @@ const baseParams = {
   message: "Your DNS provider changed.",
   emailSubject: "Provider change for example.com",
   changes: {} as ProviderChangeWithNames,
+  idempotencyKey: 'provider:tracked-1:["a",null,null]>["b",null,null]',
 };
 
 describe("sendProviderChangeNotificationStep", () => {
@@ -115,6 +116,32 @@ describe("sendProviderChangeNotificationStep", () => {
     expect(sendEmailMock.sendEmail).not.toHaveBeenCalled();
     expect(notificationsMock.createNotification).toHaveBeenCalledWith(
       expect.objectContaining({ channels: ["in-app"] }),
+    );
+  });
+
+  it("rejects with a plain error (not FatalError) when createNotification fails", async () => {
+    sendEmailMock.sendEmail.mockResolvedValue({ emailId: "em_1" });
+    notificationsMock.createNotification.mockRejectedValue(new Error("connection terminated"));
+
+    const { sendProviderChangeNotificationStep } = await import("./notifications");
+
+    const rejection = await sendProviderChangeNotificationStep(baseParams, true, true).catch(
+      (err) => err,
+    );
+    expect(rejection).toBeInstanceOf(Error);
+    expect((rejection as Error).message).toBe("connection terminated");
+    expect(FatalError.is(rejection)).toBe(false);
+    expect(notificationsMock.updateNotificationResendId).not.toHaveBeenCalled();
+  });
+
+  it("forwards the idempotency key to sendEmail", async () => {
+    sendEmailMock.sendEmail.mockResolvedValue({ emailId: "em_1" });
+
+    const { sendProviderChangeNotificationStep } = await import("./notifications");
+    await sendProviderChangeNotificationStep(baseParams, true, true);
+
+    expect(sendEmailMock.sendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ idempotencyKey: baseParams.idempotencyKey }),
     );
   });
 });

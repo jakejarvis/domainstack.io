@@ -314,6 +314,9 @@ export async function detectChangesWorkflow(
             // can degrade to in-app-only (or no delivery when email was the only
             // channel), but the snapshot still advances so the workflow does not
             // retry an address that cannot accept mail forever.
+            // Keyed by the change (before > after), not the step: if this run fails
+            // after sending, the next hourly run re-detects the same change and
+            // Resend dedupes the email instead of delivering it twice.
             await sendRegistrationChangeNotificationStep(
               {
                 userId,
@@ -325,6 +328,7 @@ export async function detectChangesWorkflow(
                 message,
                 emailSubject,
                 changes: { ...registrationChange, previousRegistrar, newRegistrar },
+                idempotencyKey: `registration:${trackedDomainId}:${registrationObservationKey(snapshot.registration)}>${registrationObservationKey(currentRegistration)}`,
               },
               channels.shouldSendEmail,
               channels.shouldSendInApp,
@@ -413,6 +417,7 @@ export async function detectChangesWorkflow(
               newTransferLock: null,
               newStatuses: [],
             },
+            idempotencyKey: `registration:${trackedDomainId}:${registrationObservationKey(snapshot.registration)}>unregistered`,
           },
           channels.shouldSendEmail,
           channels.shouldSendInApp,
@@ -597,6 +602,7 @@ export async function detectChangesWorkflow(
               message,
               emailSubject,
               changes: enrichedChange,
+              idempotencyKey: `provider:${trackedDomainId}:${providerObservationKey({ dnsProviderId: snapshot.dnsProviderId, hostingProviderId: snapshot.hostingProviderId, emailProviderId: snapshot.emailProviderId })}>${providerObservationKey(currentProviderSnapshot)}`,
             },
             channels.shouldSendEmail,
             channels.shouldSendInApp,
@@ -709,6 +715,7 @@ export async function detectChangesWorkflow(
               newValidTo: currentCertificate.validTo,
               kind: evaluation.kind,
               changes: enrichedChange,
+              idempotencyKey: `certificate:${trackedDomainId}:${snapshot.certificate.fingerprint ?? snapshot.certificate.serialNumber ?? ""}>${currentCertificate.fingerprint ?? currentCertificate.serialNumber ?? ""}`,
             },
             channels.shouldSendEmail,
             channels.shouldSendInApp,

@@ -167,8 +167,9 @@ export async function checkAlreadySentStep(
  * 3. **Permanent email failures degrade to in-app only; transient ones throw
  *    for step retry.**
  *
- * After the send, the notification row is recorded. Resend idempotency keeps a
- * retry safe if that insert throws, a falsy insert result is fatal, and
+ * After the send, the notification row is recorded. Database errors from that
+ * insert propagate and retry the step; the retried send is deduped by its
+ * idempotency key. A falsy insert result without an error is fatal, and
  * `updateNotificationResendId` swallows its own errors.
  *
  * @throws {Error} If notification record creation fails or email sending fails
@@ -184,6 +185,7 @@ export async function sendNotification(
     message: string;
     emailComponent?: React.ReactElement;
     emailSubject?: string;
+    idempotencyKey?: string;
   },
   shouldSendEmail: boolean,
   shouldSendInApp: boolean,
@@ -204,6 +206,7 @@ export async function sendNotification(
     message,
     emailComponent,
     emailSubject,
+    idempotencyKey,
   } = options;
 
   if (!shouldSendEmail && !shouldSendInApp) return false;
@@ -225,7 +228,12 @@ export async function sendNotification(
     try {
       // Classifies Resend errors and uses the enclosing step id as the
       // idempotency key, so a retry never delivers twice.
-      const sent = await sendEmail({ to: userEmail, subject: email.subject, react: email.react });
+      const sent = await sendEmail({
+        to: userEmail,
+        subject: email.subject,
+        react: email.react,
+        idempotencyKey,
+      });
       emailId = sent.emailId;
     } catch (err) {
       // Transient failures: let the step retry.
@@ -256,8 +264,7 @@ export async function sendNotification(
   });
 
   if (!notification) {
-    // Retrying would re-send the email without ever succeeding here, so fail
-    // the run instead of looping.
+    // An insert that returns no row without raising is not retryable.
     throw new FatalError("Failed to create notification record in database");
   }
 
@@ -275,7 +282,7 @@ export async function sendNotification(
 /**
  * Step: Send registration change notification via email and/or in-app.
  *
- * Email idempotency is handled by shared/send-email.ts.
+ * The email is deduped by `params.idempotencyKey`, which identifies the change.
  */
 export async function sendRegistrationChangeNotificationStep(
   params: {
@@ -288,6 +295,7 @@ export async function sendRegistrationChangeNotificationStep(
     message: string;
     emailSubject: string;
     changes: RegistrationChange;
+    idempotencyKey: string;
   },
   shouldSendEmail: boolean,
   shouldSendInApp: boolean,
@@ -318,6 +326,7 @@ export async function sendRegistrationChangeNotificationStep(
       message: params.message,
       emailSubject: params.emailSubject,
       emailComponent,
+      idempotencyKey: params.idempotencyKey,
     },
     shouldSendEmail,
     shouldSendInApp,
@@ -327,7 +336,7 @@ export async function sendRegistrationChangeNotificationStep(
 /**
  * Step: Send provider change notification via email and/or in-app.
  *
- * Email idempotency is handled by shared/send-email.ts.
+ * The email is deduped by `params.idempotencyKey`, which identifies the change.
  */
 export async function sendProviderChangeNotificationStep(
   params: {
@@ -340,6 +349,7 @@ export async function sendProviderChangeNotificationStep(
     message: string;
     emailSubject: string;
     changes: ProviderChangeWithNames;
+    idempotencyKey: string;
   },
   shouldSendEmail: boolean,
   shouldSendInApp: boolean,
@@ -370,6 +380,7 @@ export async function sendProviderChangeNotificationStep(
       message: params.message,
       emailSubject: params.emailSubject,
       emailComponent,
+      idempotencyKey: params.idempotencyKey,
     },
     shouldSendEmail,
     shouldSendInApp,
@@ -379,7 +390,7 @@ export async function sendProviderChangeNotificationStep(
 /**
  * Step: Send certificate change notification via email and/or in-app.
  *
- * Email idempotency is handled by shared/send-email.ts.
+ * The email is deduped by `params.idempotencyKey`, which identifies the change.
  */
 export async function sendCertificateChangeNotificationStep(
   params: {
@@ -394,6 +405,7 @@ export async function sendCertificateChangeNotificationStep(
     newValidTo: string;
     kind: CertificateChangeKind;
     changes: CertificateChangeWithNames;
+    idempotencyKey: string;
   },
   shouldSendEmail: boolean,
   shouldSendInApp: boolean,
@@ -426,6 +438,7 @@ export async function sendCertificateChangeNotificationStep(
       message: params.message,
       emailSubject: params.emailSubject,
       emailComponent,
+      idempotencyKey: params.idempotencyKey,
     },
     shouldSendEmail,
     shouldSendInApp,

@@ -20,29 +20,29 @@ export type NotificationFilter = "unread" | "read" | "all";
 
 /**
  * Create a new notification record.
+ *
+ * Throws on database errors. Callers run inside workflow steps, where a throw
+ * retries the step; swallowing the error would turn a transient blip into a
+ * failed run and a duplicate email on the next run.
  */
 export async function createNotification(params: CreateNotificationParams) {
   const { userId, trackedDomainId, type, title, message, data, channels } = params;
 
-  try {
-    const [notification] = await db
-      .insert(notifications)
-      .values({
-        userId,
-        trackedDomainId: trackedDomainId ?? null,
-        type,
-        title,
-        message,
-        data: data ?? {},
-        channels: channels ?? ["in-app", "email"],
-        sentAt: new Date(),
-      })
-      .returning();
+  const [notification] = await db
+    .insert(notifications)
+    .values({
+      userId,
+      trackedDomainId: trackedDomainId ?? null,
+      type,
+      title,
+      message,
+      data: data ?? {},
+      channels: channels ?? ["in-app", "email"],
+      sentAt: new Date(),
+    })
+    .returning();
 
-    return notification;
-  } catch {
-    return null;
-  }
+  return notification;
 }
 
 /**

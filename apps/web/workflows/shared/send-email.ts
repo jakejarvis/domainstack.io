@@ -7,6 +7,11 @@ interface SendEmailParams {
   subject: string;
   /** React Email component to render */
   react: React.ReactElement;
+  /**
+   * Identity of this logical email across workflow runs. When omitted, the
+   * enclosing step id is used, which dedupes retries of that step only.
+   */
+  idempotencyKey?: string;
 }
 
 export function getEmailBaseUrl(): string {
@@ -22,7 +27,9 @@ export function getEmailBaseUrl(): string {
  *
  * It must be called from a `"use step"` function because React elements are not
  * serializable workflow values. It uses the enclosing step's ID as an
- * idempotency key, which is stable across retries and unique per step.
+ * idempotency key, which is stable across retries and unique per step. Pass
+ * `idempotencyKey` to identify the email by its logical content instead, so a
+ * later run that re-sends the same email is deduped by Resend as well.
  * See: https://useworkflow.dev/docs/foundations/idempotency
  *
  * Error handling:
@@ -36,13 +43,20 @@ export async function sendEmail(params: SendEmailParams): Promise<{ emailId: str
 
   const { to, subject, react } = params;
 
-  // Use stepId as idempotency key - stable across retries and unique per step
-  const { stepId } = getStepMetadata();
+  // Resend keys are length-limited, so hash caller-provided keys.
+  let idempotencyKey: string;
+  if (params.idempotencyKey) {
+    const { createHash } = await import("node:crypto");
+    idempotencyKey = `k:${createHash("sha256").update(params.idempotencyKey).digest("hex")}`;
+  } else {
+    // Use stepId as idempotency key - stable across retries and unique per step
+    idempotencyKey = getStepMetadata().stepId;
+  }
   const baseUrl = getEmailBaseUrl();
 
   const { data, error } = await sendResendEmail(
     { to, subject, react },
-    { baseUrl, idempotencyKey: stepId },
+    { baseUrl, idempotencyKey },
   );
 
   if (!error && data?.id) {
