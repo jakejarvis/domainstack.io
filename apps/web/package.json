@@ -84,7 +84,7 @@
     "superjson": "^2.2.6",
     "ts-ics": "^2.4.6",
     "use-stick-to-bottom": "^1.1.6",
-    "workflow": "5.0.0-beta.50",
+    "workflow": "catalog:",
     "ws": "^8.21.3",
     "zod": "catalog:",
     "zustand": "^5.0.15"

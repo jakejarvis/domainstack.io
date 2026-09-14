@@ -21,6 +21,9 @@ catalogs:
     vitest:
       specifier: ^5.0.0
       version: 5.0.0
+    workflow:
+      specifier: 5.0.0-beta.50
+      version: 5.0.0-beta.50
     zod:
       specifier: ^4.6.2
       version: 4.6.2
@@ -255,7 +258,7 @@ importers:
         specifier: ^1.1.6
         version: 1.1.6(react@19.3.0)
       workflow:
-        specifier: 5.0.0-beta.50
+        specifier: 'catalog:'
         version: 5.0.0-beta.50(@aws-sdk/credential-provider-web-identity@3.972.49)(@nestjs/common@12.0.1(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(@nestjs/core@12.0.1(@nestjs/common@12.0.1(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@opentelemetry/api@1.9.1)(@swc/cli@0.8.1(@swc/core@1.15.3(@swc/helpers@0.5.23))(chokidar@5.0.0)(supports-color@8.1.1))(@swc/core@1.15.3(@swc/helpers@0.5.23))(@swc/helpers@0.5.23)(bufferutil@4.1.0)(magicast@0.5.4)(next@16.3.5(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@24.13.4)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)(supports-color@8.1.1)(typescript@7.0.2)(ws@8.21.3(bufferutil@4.1.0))
       ws:
         specifier: ^8.21.3
