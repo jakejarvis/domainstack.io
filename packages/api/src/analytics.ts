@@ -69,15 +69,18 @@ export const analytics = {
       return;
     }
 
-    const posthog = client;
     waitUntil(
-      posthog.identifyImmediate({
-        distinctId: userId,
-        properties: {
-          $set: properties,
-          $set_once: setOnceProperties,
-        },
-      }),
+      client
+        .identifyImmediate({
+          distinctId: userId,
+          properties: {
+            $set: properties,
+            $set_once: setOnceProperties,
+          },
+        })
+        .catch(() => {
+          // Analytics must never fail the request
+        }),
     );
   },
 
@@ -86,17 +89,18 @@ export const analytics = {
       return;
     }
 
-    const posthog = client;
     waitUntil(
-      posthog.captureImmediate({
-        event,
-        distinctId: userId,
-        properties,
+      client.captureImmediate({ event, distinctId: userId, properties }).catch(() => {
+        // Analytics must never fail the request
       }),
     );
   },
 
-  trackException: (error: unknown, properties?: Record<string, unknown>, userId?: string) => {
-    waitUntil(captureException(error, userId, properties));
+  trackException: (exception: unknown, properties?: Record<string, unknown>, userId?: string) => {
+    waitUntil(
+      captureException(exception, userId, properties).catch(() => {
+        // Analytics must never fail the request
+      }),
+    );
   },
 };

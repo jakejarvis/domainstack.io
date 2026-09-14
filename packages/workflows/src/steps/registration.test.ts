@@ -5,6 +5,12 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vites
 const { makePGliteDb, closePGliteDb, resetPGliteDb } = await import("@domainstack/db/testing");
 const { db } = await makePGliteDb();
 
+// Module-level (not nested in a single describe) so the PGlite client closes
+// even when a test filter or watch mode only runs a subset of describes.
+afterAll(async () => {
+  await closePGliteDb();
+});
+
 // Hoist mock for @domainstack/core/whois
 const whoisMock = vi.hoisted(() => ({
   lookupWhois: vi.fn<typeof import("@domainstack/core/whois").lookupWhois>(),
@@ -26,6 +32,10 @@ vi.mock("@domainstack/utils/providers", () => ({
 describe("lookupWhoisStep", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // clearAllMocks only clears call history; mockResolvedValue set by a
+    // previous test would otherwise leak into a test that forgets to set
+    // its own, so reset the implementation too.
+    whoisMock.lookupWhois.mockReset();
   });
 
   afterEach(() => {
@@ -140,10 +150,6 @@ describe("persistRegistrationStep", () => {
   beforeEach(async () => {
     await resetPGliteDb();
     vi.clearAllMocks();
-  });
-
-  afterAll(async () => {
-    await closePGliteDb();
   });
 
   it("persists registered domain to database", async () => {

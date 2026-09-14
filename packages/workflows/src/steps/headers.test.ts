@@ -177,10 +177,13 @@ describe("persistHeadersStep", () => {
 
   it("persists headers to database", async () => {
     const { persistHeadersStep } = await import("./headers");
+    // Mixed-case, padded names exercise replaceHeaders' own normalization
+    // (trim + lowercase) rather than passing it input already in the shape
+    // we assert on.
     await persistHeadersStep("persist.test", {
       headers: [
-        { name: "server", value: "nginx" },
-        { name: "content-type", value: "text/html" },
+        { name: "SERVER", value: "nginx" },
+        { name: " Content-Type ", value: "text/html" },
       ],
       status: 200,
       statusMessage: "OK",

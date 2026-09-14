@@ -1,5 +1,7 @@
 import { vi } from "vitest";
 
+import { getRedis } from "@domainstack/redis";
+
 // Mock Redis client to return undefined by default in tests
 // This makes code fall back to non-distributed behavior
 // Tests that need Redis can override with vi.mocked(getRedis).mockReturnValue(...)
@@ -7,38 +9,33 @@ vi.mock("@domainstack/redis", () => ({
   getRedis: vi.fn<() => undefined>(() => undefined),
 }));
 
-// Mock rate limiter to avoid Redis timeouts in tests
-// The Upstash Ratelimit has a 2s timeout which causes slow tests
+type FakeLimiter = {
+  limit: (...args: unknown[]) => Promise<{
+    success: true;
+    limit: number;
+    remaining: number;
+    reset: number;
+    pending: Promise<void>;
+  }>;
+};
+
+// Mock rate limiter to avoid Redis timeouts in tests. Mirrors the real
+// getRateLimiter's null-when-no-Redis check so overriding getRedis (above)
+// also flips this mock's behavior, instead of the two mocks disagreeing.
 vi.mock("@domainstack/redis/ratelimit", () => ({
-  getRateLimiter: vi.fn<
-    (...args: unknown[]) => {
-      limit: (...args: unknown[]) => Promise<{
-        success: true;
-        limit: number;
-        remaining: number;
-        reset: number;
-        pending: Promise<void>;
-      }>;
-    }
-  >(() => ({
-    limit: vi
-      .fn<
-        (...args: unknown[]) => Promise<{
-          success: true;
-          limit: number;
-          remaining: number;
-          reset: number;
-          pending: Promise<void>;
-        }>
-      >()
-      .mockResolvedValue({
+  getRateLimiter: vi.fn<(...args: unknown[]) => FakeLimiter | null>(() => {
+    if (!getRedis()) return null;
+
+    return {
+      limit: vi.fn<FakeLimiter["limit"]>().mockResolvedValue({
         success: true,
         limit: 60,
         remaining: 59,
         reset: Date.now() + 60000,
         pending: Promise.resolve(),
       }),
-  })),
+    };
+  }),
   DEFAULT_RATE_LIMIT: { requests: 60, window: "1 m" },
 }));
 

@@ -8,8 +8,5 @@ export default defineConfig({
     include: ["src/**/*.test.ts"],
     environment: "node",
     setupFiles: ["./vitest.setup.ts"],
-    // Some tests share an MSW server instance, so run files serially to
-    // avoid resetHandlers() races with in-flight fetches.
-    fileParallelism: false,
   },
 });
