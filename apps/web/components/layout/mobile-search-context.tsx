@@ -3,6 +3,8 @@
 import { createContext, use, useCallback, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
+import { useIsHomeRoute } from "@/hooks/use-is-home-route";
+
 /**
  * Coordinates the collapsible mobile header search between the toggle button
  * (which lives in the right-hand icon cluster) and the search input (which lives
@@ -31,23 +33,34 @@ export function MobileSearchProvider({ children }: { children: React.ReactNode }
   const inputRef = useRef<HTMLInputElement>(null);
 
   const open = useCallback(() => {
-    // flushSync so the collapsed wrapper drops its `inert` attribute before we
-    // focus — focus is blocked inside an inert subtree. Staying synchronous keeps
-    // the focus call inside the user gesture, which is what raises the iOS keyboard.
+    // flushSync so the collapsed wrapper is visible before we focus — focus is
+    // blocked while it is `visibility: hidden`. Staying synchronous keeps the
+    // focus call inside the user gesture, which is what raises the iOS keyboard.
     flushSync(() => setIsOpen(true));
     inputRef.current?.focus();
   }, []);
 
   const close = useCallback((options?: { returnFocus?: boolean }) => {
-    // Same reason as `open`: while the search is expanded the icon cluster holding
-    // the toggle is inert, so the collapse has to be committed before focus can
-    // land back on it.
-    flushSync(() => setIsOpen(false));
-    inputRef.current?.blur();
     if (options?.returnFocus) {
+      // The icon cluster holding the toggle is inert while the search is open, so
+      // the collapse has to commit before focus can land back on it.
+      flushSync(() => setIsOpen(false));
       toggleRef.current?.focus();
+      return;
     }
+    setIsOpen(false);
   }, []);
+
+  // The toggle is not rendered on the landing page, so an open search that
+  // survives navigation there would leave the action cluster hidden and inert
+  // with no control left to reopen it. Adjust during render rather than in an
+  // effect, the same way `useSearchClient` reacts to a new route prefill.
+  const isHome = useIsHomeRoute();
+  const [wasHome, setWasHome] = useState(isHome);
+  if (isHome !== wasHome) {
+    setWasHome(isHome);
+    if (isHome) setIsOpen(false);
+  }
 
   const value = useMemo(
     () => ({ isOpen, open, close, toggleRef, inputRef }),

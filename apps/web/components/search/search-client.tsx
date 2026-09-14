@@ -93,18 +93,23 @@ function SearchInputAddons({
         ) : (
           <>
             {/* The Kbd hint is desktop-only, so the close button takes the slot it
-                leaves empty on mobile and no desktop layout changes. */}
+                leaves empty on mobile and no desktop layout changes. Both use the
+                `md` breakpoint so they never overlap. */}
             {onDismissAction ? (
               <InputGroupButton
                 size="icon-xs"
                 className="md:hidden"
                 aria-label="Close search"
+                // Hold focus on the input through pointer-down, otherwise the blur
+                // collapses the search and makes this button inert before its
+                // click can land.
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => onDismissAction()}
               >
                 <IconX />
               </InputGroupButton>
             ) : null}
-            <Kbd className="hidden border bg-muted/80 px-1.5 py-0.5 sm:inline-flex">
+            <Kbd className="hidden border bg-muted/80 px-1.5 py-0.5 md:inline-flex">
               {isFocused ? "Esc" : formatForDisplay(SEARCH_HOTKEY, { separatorToken: "\u00A0" })}
             </Kbd>
           </>
@@ -272,11 +277,10 @@ function useSearchClient({
   );
 
   const handleSubmit = useCallback(() => {
-    setIsFocused(false);
-    inputRef.current?.blur();
-
     const normalized = normalizeDomainInput(value);
 
+    // Validate before blurring: on mobile the blur collapses the search, and the
+    // collapsed subtree cannot take focus back to show the user their mistake.
     if (!isValidDomain(normalized)) {
       analytics.track("search_invalid_input", { input: value });
       toast.error("Please enter a valid domain.", {
@@ -287,6 +291,8 @@ function useSearchClient({
       return;
     }
 
+    setIsFocused(false);
+    inputRef.current?.blur();
     navigateRef.current(normalized);
     onCloseAction?.();
   }, [value, onCloseAction]);

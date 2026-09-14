@@ -30,7 +30,8 @@ const MOBILE = { width: 390, height: 844 };
 /**
  * Mirrors `AppHeader`'s structure so the real grid collapse is under test: the
  * toggle sits in the icon cluster, the input in the middle column that shrinks
- * to 0px while collapsed.
+ * to 0px while collapsed. The extra "Dashboard" button stands in for the rest of
+ * the action cluster, so tests can tell whether the cluster is reachable.
  */
 function Header() {
   return (
@@ -40,6 +41,7 @@ function Header() {
         <HeaderSearchClient />
         <AppHeaderSlideOver>
           <MobileSearchToggle />
+          <button type="button">Dashboard</button>
         </AppHeaderSlideOver>
       </AppHeaderGrid>
     </MobileSearchProvider>
@@ -54,9 +56,18 @@ function searchInput() {
   return page.getByRole("textbox", { name: "Domain" });
 }
 
-/** The collapsed search column is clipped to 0px, so `inert` is what actually gates access. */
-function isSearchInert() {
-  return document.getElementById("header-search")?.hasAttribute("inert") ?? null;
+/** Raw DOM lookup — unlike `getByRole` this also finds CSS-hidden elements. */
+function toggleElement() {
+  return document.querySelector<HTMLButtonElement>('button[aria-label="Search"]');
+}
+
+function searchWrapper() {
+  return document.getElementById("header-search");
+}
+
+function searchVisibility() {
+  const el = searchWrapper();
+  return el ? getComputedStyle(el).visibility : null;
 }
 
 describe("mobile header search", () => {
@@ -76,14 +87,28 @@ describe("mobile header search", () => {
 
     await expect.element(toggle()).toHaveAttribute("aria-expanded", "false");
     // The input stays mounted while collapsed so `open()` can focus it inside the
-    // tap gesture; `inert` is what keeps it off-limits until then.
-    await expect.poll(isSearchInert).toBe(true);
+    // tap gesture; `visibility` is what keeps it off-limits until then.
+    await expect.poll(searchVisibility).toBe("hidden");
 
     await toggle().click();
 
     await expect.element(toggle()).toHaveAttribute("aria-expanded", "true");
     await expect.element(searchInput()).toHaveFocus();
-    expect(isSearchInert()).toBe(false);
+    expect(searchVisibility()).toBe("visible");
+  });
+
+  it("gates the collapsed search in CSS, not JS", async () => {
+    await page.viewport(MOBILE.width, MOBILE.height);
+    await render(<Header />);
+
+    // `useIsMobile()` reports false until after the first paint, while the
+    // collapsed grid template is already in the SSR markup. Gating on a JS
+    // breakpoint would leave the input tabbable for that whole window, so the
+    // hidden state must come from the stylesheet and carry no `inert`.
+    const wrapper = searchWrapper();
+    expect(wrapper?.hasAttribute("inert")).toBe(false);
+    expect(wrapper?.className).toContain("invisible");
+    expect(wrapper?.className).toContain("md:visible");
   });
 
   it("collapses on Escape and returns focus to the toggle", async () => {
@@ -99,7 +124,7 @@ describe("mobile header search", () => {
     await expect.element(toggle()).toHaveFocus();
   });
 
-  it("collapses via the close button", async () => {
+  it("collapses via the close button and returns focus to the toggle", async () => {
     await page.viewport(MOBILE.width, MOBILE.height);
     await render(<Header />);
 
@@ -109,6 +134,9 @@ describe("mobile header search", () => {
     await page.getByRole("button", { name: "Close search" }).click();
 
     await expect.element(toggle()).toHaveAttribute("aria-expanded", "false");
+    // The button must outlive the input's blur-close, or the dismissal downgrades
+    // to a plain close and focus is stranded on the body.
+    await expect.element(toggle()).toHaveFocus();
   });
 
   it("stays expanded when blurred with a typed query, and collapses when untouched", async () => {
@@ -139,19 +167,62 @@ describe("mobile header search", () => {
     await expect.element(toggle()).toHaveAttribute("aria-expanded", "false");
   });
 
-  it("hides the toggle on the landing page", async () => {
+  it("keeps the search open and focused when an empty query is submitted", async () => {
+    await page.viewport(MOBILE.width, MOBILE.height);
+    await render(<Header />);
+
+    await toggle().click();
+    await userEvent.keyboard("{Enter}");
+
+    expect(nav.push).not.toHaveBeenCalled();
+    // Validation has to surface somewhere the user can act on it, so the search
+    // must not collapse out from under the toast.
+    await expect.element(toggle()).toHaveAttribute("aria-expanded", "true");
+    await expect.element(searchInput()).toHaveFocus();
+  });
+
+  it("closes an open search when navigating to the landing page", async () => {
+    await page.viewport(MOBILE.width, MOBILE.height);
+    const { rerender } = await render(<Header />);
+
+    await toggle().click();
+    await expect.element(toggle()).toHaveAttribute("aria-expanded", "true");
+
+    // The toggle is not rendered on the landing page, so an open search that
+    // survived the navigation would leave the action cluster hidden and inert
+    // with nothing left to reopen it.
+    nav.segment = null;
+    await rerender(<Header />);
+
+    // Assert the mechanism, not `toBeVisible()`: Playwright treats `inert` and
+    // `opacity: 0` elements as visible, so a weaker check passes even when the
+    // cluster is unreachable.
+    const dashboard = document.querySelector<HTMLElement>("button:not([aria-label])");
+    await expect.poll(() => dashboard?.closest("[inert]")).toBeNull();
+    // Polled, not sampled — the cluster springs back from opacity 0.
+    await expect
+      .poll(() => Number(getComputedStyle(dashboard!.parentElement!).opacity))
+      .toBeGreaterThan(0.99);
+  });
+
+  it("does not render the toggle at all on the landing page", async () => {
     await page.viewport(MOBILE.width, MOBILE.height);
     nav.segment = null;
     await render(<Header />);
 
-    await expect.element(toggle()).not.toBeInTheDocument();
+    // Genuinely absent — `MobileSearchToggle` returns null here.
+    expect(toggleElement()).toBeNull();
   });
 
-  it("exposes the input directly on desktop, with no toggle", async () => {
+  it("exposes the input directly on desktop, with the toggle CSS-hidden", async () => {
     await page.viewport(DESKTOP.width, DESKTOP.height);
     await render(<Header />);
 
     await expect.element(searchInput()).toBeEnabled();
-    await expect.element(toggle()).not.toBeInTheDocument();
+    expect(searchVisibility()).toBe("visible");
+    // Mounted but hidden by `md:hidden` — distinct from the landing page above,
+    // and this assertion fails if that class is ever dropped.
+    expect(toggleElement()).not.toBeNull();
+    expect(getComputedStyle(toggleElement()!).display).toBe("none");
   });
 });
