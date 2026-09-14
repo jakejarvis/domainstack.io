@@ -102,8 +102,11 @@ function SearchInputAddons({
                 aria-label="Close search"
                 // Hold focus on the input through pointer-down, otherwise the blur
                 // collapses the search and makes this button inert before its
-                // click can land.
-                onMouseDown={(e) => e.preventDefault()}
+                // click can land. `onPointerDown` (not `onMouseDown`) is required
+                // for this to work on touch — this button only renders on mobile,
+                // and touch activation fires `pointerdown`/`touchstart` before any
+                // synthesized mouse event, so a mouse-only handler never runs.
+                onPointerDown={(e) => e.preventDefault()}
                 onClick={() => onDismissAction()}
               >
                 <IconX />
