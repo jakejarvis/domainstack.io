@@ -77,6 +77,11 @@ export const MAX_CHAT_REQUEST_BYTES = 512_000;
  */
 export const MAX_TOOL_STEPS = 5;
 
+/**
+ * Maximum age of a chat history in milliseconds (loosely enforced on the client).
+ */
+export const MAX_CLIENT_CHAT_HISTORY_AGE_MS = 24 * 60 * 60 * 1000; // 1 day
+
 // =============================================================================
 // Rate Limits
 // =============================================================================

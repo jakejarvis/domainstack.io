@@ -1,6 +1,6 @@
 "use client";
 
-import { IconLego, IconMessageCircleFilled } from "@tabler/icons-react";
+import { IconLoader2, IconLego, IconMessageCircleFilled } from "@tabler/icons-react";
 import {
   type MotionValue,
   useAnimationFrame,
@@ -16,6 +16,7 @@ import { Button } from "@domainstack/ui/button";
 const MotionButton = m.create(Button);
 
 interface ChatFabProps {
+  loading?: boolean;
   onClick: () => void;
 }
 
@@ -45,7 +46,7 @@ function MeshGradientBackground({
   );
 }
 
-export function ChatFab({ onClick }: ChatFabProps) {
+export function ChatFab({ loading = false, onClick }: ChatFabProps) {
   const prefersReducedMotion = useReducedMotion();
 
   // Animated gradient positions for mesh-like effect
@@ -101,12 +102,18 @@ export function ChatFab({ onClick }: ChatFabProps) {
         variant="default"
         size="icon-lg"
         aria-label={`Chat with ${CHATBOT_NAME}`}
+        aria-busy={loading}
+        disabled={loading}
         className="group fixed right-6 bottom-6 z-40 overflow-hidden rounded-full shadow-lg transition-none md:hidden"
         {...motionProps}
       >
         <MeshGradientBackground alwaysVisible meshGradient={meshGradient} />
         <span className="relative z-10 flex items-center justify-center">
-          <IconMessageCircleFilled className="size-5 text-background/95" />
+          {loading ? (
+            <IconLoader2 className="size-5 animate-spin text-background/95" />
+          ) : (
+            <IconMessageCircleFilled className="size-5 text-background/95" />
+          )}
         </span>
       </MotionButton>
 
@@ -115,12 +122,18 @@ export function ChatFab({ onClick }: ChatFabProps) {
         variant="outline"
         size="default"
         aria-label={`Chat with ${CHATBOT_NAME}`}
+        aria-busy={loading}
+        disabled={loading}
         className="group fixed right-6 bottom-6 z-40 hidden overflow-hidden px-2 shadow-lg backdrop-blur-md transition-none md:flex"
         {...motionProps}
       >
         <MeshGradientBackground alwaysVisible={false} meshGradient={meshGradient} />
         <span className="relative z-10 flex items-center gap-1.5 pr-0.5 text-[13px] leading-none font-semibold tracking-tight">
-          <IconLego className="size-4 text-muted-foreground group-hover:text-foreground" />
+          {loading ? (
+            <IconLoader2 className="size-4 animate-spin text-muted-foreground" />
+          ) : (
+            <IconLego className="size-4 text-muted-foreground group-hover:text-foreground" />
+          )}
           Ask {CHATBOT_NAME}
         </span>
       </MotionButton>

@@ -4,8 +4,6 @@ import { useChat } from "@ai-sdk/react";
 import { WorkflowChatTransport } from "@ai-sdk/workflow";
 import { IconLayoutSidebarRightCollapse, IconLego } from "@tabler/icons-react";
 import type { UIMessage } from "ai";
-import { useAtom } from "jotai";
-import { AnimatePresence } from "motion/react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -15,7 +13,6 @@ import { useChatPersistence } from "@/hooks/use-chat-persistence";
 import { useLocalChat } from "@/hooks/use-local-chat";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { analytics } from "@/lib/analytics/client";
-import { chatOpenAtom } from "@/lib/atoms/chat-atoms";
 import { createClientDomainTools } from "@/lib/chat/client-tools";
 import { buildSystemPrompt } from "@/lib/chat/system-prompt";
 import { trimChatHistory } from "@/lib/chat/trim-history";
@@ -28,7 +25,6 @@ import { CHATBOT_NAME } from "@domainstack/constants";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@domainstack/ui/drawer";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@domainstack/ui/sheet";
 
-import { ChatFab } from "./chat-fab";
 import { ChatHeaderActions } from "./chat-header-actions";
 import { ChatPanel } from "./chat-panel";
 import { ChatSettingsDialog } from "./chat-settings-dialog";
@@ -36,6 +32,9 @@ import { getUserFriendlyError } from "./utils";
 
 interface ChatClientProps {
   suggestions?: string[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onReady: () => void;
 }
 
 const EMPTY_SUGGESTIONS: string[] = [];
@@ -50,16 +49,23 @@ interface ChatController {
   error: string | null;
 }
 
-export function ChatClient({ suggestions = EMPTY_SUGGESTIONS }: ChatClientProps) {
-  const [open, setOpen] = useAtom(chatOpenAtom);
+export function ChatClient({
+  suggestions = EMPTY_SUGGESTIONS,
+  open,
+  onOpenChange,
+  onReady,
+}: ChatClientProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const params = useParams<{ domain?: string }>();
   const isMobile = useIsMobile();
-  const hideAiFeatures = usePreferencesStore((s) => s.hideAiFeatures);
   const aiMode = usePreferencesStore((s) => s.aiMode);
   const browserAI = useBrowserAI();
   const chatHydrated = useChatHydrated();
   const storedMessageCount = useChatStore((s) => s.messages.length);
+
+  useEffect(() => {
+    if (chatHydrated) onReady();
+  }, [chatHydrated, onReady]);
 
   const domain = params.domain ? safeDecodeURIComponent(params.domain) : undefined;
 
@@ -80,18 +86,8 @@ export function ChatClient({ suggestions = EMPTY_SUGGESTIONS }: ChatClientProps)
     [preferredMode],
   );
 
-  const handleChatClick = () => {
-    setOpen(!open);
-  };
-
-  if (hideAiFeatures && !settingsOpen) {
-    return null;
-  }
-
   return (
     <>
-      <AnimatePresence>{!hideAiFeatures && <ChatFab onClick={handleChatClick} />}</AnimatePresence>
-
       {chatHydrated &&
         (mode === "local" ? (
           <LocalChatSession
@@ -101,7 +97,7 @@ export function ChatClient({ suggestions = EMPTY_SUGGESTIONS }: ChatClientProps)
             browserAI={browserAI}
             isMobile={isMobile}
             open={open}
-            onOpenChange={setOpen}
+            onOpenChange={onOpenChange}
             settingsOpen={settingsOpen}
             onSettingsOpenChange={setSettingsOpen}
             onActiveChange={handleActiveChange}
@@ -113,7 +109,7 @@ export function ChatClient({ suggestions = EMPTY_SUGGESTIONS }: ChatClientProps)
             browserAI={browserAI}
             isMobile={isMobile}
             open={open}
-            onOpenChange={setOpen}
+            onOpenChange={onOpenChange}
             settingsOpen={settingsOpen}
             onSettingsOpenChange={setSettingsOpen}
             onActiveChange={handleActiveChange}
