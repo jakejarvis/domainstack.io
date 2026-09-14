@@ -1,6 +1,6 @@
 "use client";
 
-import { IconArrowRight, IconCircleX, IconSearch } from "@tabler/icons-react";
+import { IconArrowRight, IconCircleX, IconSearch, IconX } from "@tabler/icons-react";
 import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
 import { useAtom } from "jotai";
 import { useParams } from "next/navigation";
@@ -34,6 +34,17 @@ export type SearchClientProps = {
   variant?: SearchClientVariant;
   initialValue?: string;
   onFocusChangeAction?: (isFocused: boolean) => void;
+  /**
+   * Lets a parent focus the input imperatively (see `MobileSearchProvider`).
+   * Falls back to an internal ref when omitted.
+   */
+  inputRef?: React.RefObject<HTMLInputElement | null>;
+  /** Collapse without moving focus — used after submit and on an idle blur. */
+  onCloseAction?: () => void;
+  /** Collapse and return focus to the control that opened the search. */
+  onDismissAction?: () => void;
+  /** Invoked before the search hotkey focuses the input, so a collapsed parent can expand first. */
+  onHotkeyAction?: () => void;
 };
 
 function getRoutePrefill(routeDomain: string | undefined): string {
@@ -66,11 +77,13 @@ function SearchInputAddons({
   loading,
   mounted,
   isFocused,
+  onDismissAction,
 }: {
   variant: SearchClientVariant;
   loading: boolean;
   mounted: boolean;
   isFocused: boolean;
+  onDismissAction?: () => void;
 }) {
   if (variant === "sm" && (loading || mounted)) {
     return (
@@ -78,9 +91,23 @@ function SearchInputAddons({
         {loading ? (
           <Spinner />
         ) : (
-          <Kbd className="hidden border bg-muted/80 px-1.5 py-0.5 sm:inline-flex">
-            {isFocused ? "Esc" : formatForDisplay(SEARCH_HOTKEY, { separatorToken: "\u00A0" })}
-          </Kbd>
+          <>
+            {/* The Kbd hint is desktop-only, so the close button takes the slot it
+                leaves empty on mobile and no desktop layout changes. */}
+            {onDismissAction ? (
+              <InputGroupButton
+                size="icon-xs"
+                className="md:hidden"
+                aria-label="Close search"
+                onClick={() => onDismissAction()}
+              >
+                <IconX />
+              </InputGroupButton>
+            ) : null}
+            <Kbd className="hidden border bg-muted/80 px-1.5 py-0.5 sm:inline-flex">
+              {isFocused ? "Esc" : formatForDisplay(SEARCH_HOTKEY, { separatorToken: "\u00A0" })}
+            </Kbd>
+          </>
         )}
       </InputGroupAddon>
     );
@@ -116,8 +143,15 @@ function useSearchClient({
   variant,
   initialValue,
   onFocusChangeAction,
+  inputRef: externalInputRef,
+  onCloseAction,
+  onDismissAction,
+  onHotkeyAction,
 }: Required<Pick<SearchClientProps, "variant" | "initialValue">> &
-  Pick<SearchClientProps, "onFocusChangeAction">) {
+  Pick<
+    SearchClientProps,
+    "onFocusChangeAction" | "inputRef" | "onCloseAction" | "onDismissAction" | "onHotkeyAction"
+  >) {
   const router = useRouter();
   const params = useParams<{ domain?: string }>();
   const isMobile = useIsMobile();
@@ -129,7 +163,17 @@ function useSearchClient({
   const [loading, startNavigation] = useTransition();
   const mounted = useIsClient();
   const [isFocused, setIsFocused] = useState(false);
+  // Keep a real `useRef` here so React Compiler still recognizes ref access, and
+  // mirror the node onto the caller's ref via a callback ref instead of swapping
+  // the ref object out.
   const inputRef = useRef<HTMLInputElement>(null);
+  const attachInputRef = useCallback(
+    (node: HTMLInputElement | null) => {
+      inputRef.current = node;
+      if (externalInputRef) externalInputRef.current = node;
+    },
+    [externalInputRef],
+  );
 
   if (derivedInitial !== prevDerivedInitial) {
     setPrevDerivedInitial(derivedInitial);
@@ -139,6 +183,8 @@ function useSearchClient({
   useHotkey(
     SEARCH_HOTKEY,
     () => {
+      // Expand first when collapsed, otherwise focusing an inert input is a no-op.
+      onHotkeyAction?.();
       inputRef.current?.focus();
     },
     { conflictBehavior: "allow" },
@@ -191,7 +237,13 @@ function useSearchClient({
   const handleBlur = useCallback(() => {
     setIsFocused(false);
     onFocusChangeAction?.(false);
-  }, [onFocusChangeAction]);
+    // Collapse only when nothing would be lost. A domain report page prefills the
+    // input, so "unchanged from the initial value" counts as dismissable too —
+    // otherwise the search could never auto-collapse there.
+    if (value.trim() === "" || value === derivedInitial) {
+      onCloseAction?.();
+    }
+  }, [onFocusChangeAction, onCloseAction, value, derivedInitial]);
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLInputElement>) => {
     if (e.detail === 3) {
@@ -213,9 +265,10 @@ function useSearchClient({
         e.currentTarget.blur();
         setIsFocused(false);
         onFocusChangeAction?.(false);
+        onDismissAction?.();
       }
     },
-    [onFocusChangeAction],
+    [onFocusChangeAction, onDismissAction],
   );
 
   const handleSubmit = useCallback(() => {
@@ -235,7 +288,8 @@ function useSearchClient({
     }
 
     navigateRef.current(normalized);
-  }, [value]);
+    onCloseAction?.();
+  }, [value, onCloseAction]);
 
   return {
     variant,
@@ -245,7 +299,7 @@ function useSearchClient({
     mounted,
     isMobile,
     isFocused,
-    inputRef,
+    attachInputRef,
     handlePointerDown,
     handleFocus,
     handleBlur,
@@ -259,6 +313,10 @@ export function SearchClient({
   variant = "lg",
   initialValue = "",
   onFocusChangeAction,
+  inputRef: externalInputRef,
+  onCloseAction,
+  onDismissAction,
+  onHotkeyAction,
 }: SearchClientProps) {
   const {
     value,
@@ -267,14 +325,22 @@ export function SearchClient({
     mounted,
     isMobile,
     isFocused,
-    inputRef,
+    attachInputRef,
     handlePointerDown,
     handleFocus,
     handleBlur,
     handleClick,
     handleKeyDown,
     handleSubmit,
-  } = useSearchClient({ variant, initialValue, onFocusChangeAction });
+  } = useSearchClient({
+    variant,
+    initialValue,
+    onFocusChangeAction,
+    inputRef: externalInputRef,
+    onCloseAction,
+    onDismissAction,
+    onHotkeyAction,
+  });
 
   return (
     <div className="flex w-full flex-col gap-5">
@@ -294,7 +360,7 @@ export function SearchClient({
           <div className="relative w-full flex-1">
             <InputGroup className={cn(variant === "lg" ? "h-12" : "h-10")}>
               <InputGroupInput
-                ref={inputRef}
+                ref={attachInputRef}
                 name="q"
                 {...{ "tool-param-description": "Domain name to look up, e.g. example.com" }}
                 autoFocus={variant === "lg" && mounted && !isMobile}
@@ -325,6 +391,7 @@ export function SearchClient({
                 loading={loading}
                 mounted={mounted}
                 isFocused={isFocused}
+                onDismissAction={onDismissAction}
               />
             </InputGroup>
           </div>

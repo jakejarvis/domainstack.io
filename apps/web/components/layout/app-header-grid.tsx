@@ -1,16 +1,21 @@
 "use client";
 
-import { useAtomValue } from "jotai";
 import * as m from "motion/react-m";
 
+import { useMobileSearch } from "@/components/layout/mobile-search-context";
+import { useIsClient } from "@/hooks/use-is-client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useScrollDirection } from "@/hooks/use-scroll-direction";
-import { isSearchFocusedAtom } from "@/lib/atoms/search-atoms";
 import { cn } from "@domainstack/ui/utils";
 
+const DESKTOP_COLUMNS = "1fr minmax(0, var(--container-2xl)) 1fr";
+const MOBILE_COLUMNS_COLLAPSED = "auto 0px 1fr";
+const MOBILE_COLUMNS_EXPANDED = "auto 1fr 0px";
+
 export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
-  const isSearchFocused = useAtomValue(isSearchFocusedAtom);
+  const { isOpen: isSearchOpen } = useMobileSearch();
   const isMobile = useIsMobile();
+  const mounted = useIsClient();
   const { direction, isPastThreshold } = useScrollDirection({
     threshold: 15,
   });
@@ -22,7 +27,10 @@ export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
     <>
       <m.header
         className={cn(
-          "top-0 right-0 left-0 z-100 grid h-[var(--header-height)] grid-cols-[1fr_minmax(0,var(--container-2xl))_1fr] items-center gap-4 border-b border-black/15 bg-background/80 px-4 backdrop-blur dark:border-white/10",
+          // Mobile collapsed state lives in CSS, not JS: `useIsMobile()` is false
+          // until client-ready, so a JS-only template would paint a full-width
+          // search bar for one frame and then snap it away.
+          "top-0 right-0 left-0 z-100 grid h-[var(--header-height)] grid-cols-[auto_0px_1fr] items-center gap-4 border-b border-black/15 bg-background/80 px-4 backdrop-blur md:grid-cols-[1fr_minmax(0,var(--container-2xl))_1fr] dark:border-white/10",
           "md:sticky md:right-auto md:left-auto",
           // Mobile transform logic:
           // - Before threshold: behave like a normal element (scrolls away with the page)
@@ -35,9 +43,21 @@ export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
                 : "fixed translate-y-0 transition-transform duration-300 ease-out" // Visible (animate reveal)
               : "absolute translate-y-0"), // Natural scroll (no scroll-linked transforms)
         )}
-        animate={{
-          gridTemplateColumns: isMobile ? (isSearchFocused ? "auto 1fr 0px" : "auto 1fr auto") : "",
-        }}
+        // Until the client knows the viewport, omit the key entirely so no inline
+        // style is emitted and the classes above govern the first paint. Once
+        // mounted, the value handed to motion matches what the class already
+        // resolved to, so taking over causes no visual jump.
+        animate={
+          mounted
+            ? {
+                gridTemplateColumns: isMobile
+                  ? isSearchOpen
+                    ? MOBILE_COLUMNS_EXPANDED
+                    : MOBILE_COLUMNS_COLLAPSED
+                  : DESKTOP_COLUMNS,
+              }
+            : {}
+        }
         transition={{
           gridTemplateColumns: { type: "spring", stiffness: 400, damping: 40 },
         }}

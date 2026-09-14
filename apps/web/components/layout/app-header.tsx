@@ -7,38 +7,43 @@ import { AppHeaderGrid } from "@/components/layout/app-header-grid";
 import { AppHeaderSeparator } from "@/components/layout/app-header-separator";
 import { AppHeaderSlideOver } from "@/components/layout/app-header-slideover";
 import { GithubStars } from "@/components/layout/github-stars";
+import { MobileSearchProvider } from "@/components/layout/mobile-search-context";
 import { Logo } from "@/components/logo";
 import { HeaderSearchClient } from "@/components/search/header-search-client";
 import { HeaderSearchSkeleton } from "@/components/search/header-search-skeleton";
+import { MobileSearchToggle } from "@/components/search/mobile-search-toggle";
 import { Skeleton } from "@domainstack/ui/skeleton";
 
 export function AppHeader() {
   return (
-    <AppHeaderGrid>
-      <Link
-        href="/"
-        className="mr-1 flex items-center justify-self-start rounded-md p-1 text-foreground transition-[color,transform] duration-200 hover:text-muted-foreground active:scale-95"
-        aria-label="Go to homepage"
-      >
-        <Logo className="size-8" />
-      </Link>
-      <Suspense fallback={<HeaderSearchSkeleton />}>
-        <HeaderSearchClient />
-      </Suspense>
-      <AppHeaderSlideOver>
-        <Suspense
-          fallback={
-            <div className="inline-flex h-8 shrink-0 items-center gap-2 px-2.5">
-              <SiGithub className="flex size-3.5 shrink-0" aria-hidden="true" />
-              <Skeleton className="hidden h-[13px] w-[28px] sm:block" />
-            </div>
-          }
+    <MobileSearchProvider>
+      <AppHeaderGrid>
+        <Link
+          href="/"
+          className="mr-1 flex items-center justify-self-start rounded-md p-1 text-foreground transition-[color,transform] duration-200 hover:text-muted-foreground active:scale-95"
+          aria-label="Go to homepage"
         >
-          <GithubStars />
+          <Logo className="size-8" />
+        </Link>
+        <Suspense fallback={<HeaderSearchSkeleton />}>
+          <HeaderSearchClient />
         </Suspense>
-        <AppHeaderSeparator />
-        <AppHeaderClientButtons />
-      </AppHeaderSlideOver>
-    </AppHeaderGrid>
+        <AppHeaderSlideOver>
+          <MobileSearchToggle />
+          <Suspense
+            fallback={
+              <div className="inline-flex h-8 shrink-0 items-center gap-2 px-2.5">
+                <SiGithub className="flex size-3.5 shrink-0" aria-hidden="true" />
+                <Skeleton className="hidden h-[13px] w-[28px] sm:block" />
+              </div>
+            }
+          >
+            <GithubStars />
+          </Suspense>
+          <AppHeaderSeparator />
+          <AppHeaderClientButtons />
+        </AppHeaderSlideOver>
+      </AppHeaderGrid>
+    </MobileSearchProvider>
   );
 }
