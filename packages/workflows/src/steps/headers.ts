@@ -1,7 +1,7 @@
 import type {
   HeadersFetchData,
   HeadersFetchResult as ServerHeadersFetchResult,
-} from "@domainstack/server/headers";
+} from "@domainstack/core/headers";
 
 type FetchHeadersResult = ServerHeadersFetchResult | { success: false; error: "fetch_error" };
 
@@ -18,7 +18,7 @@ type FetchHeadersResult = ServerHeadersFetchResult | { success: false; error: "f
 export async function fetchHeadersStep(domain: string): Promise<FetchHeadersResult> {
   "use step";
 
-  const { HeadersFetchError, fetchHttpHeaders } = await import("@domainstack/server/headers");
+  const { HeadersFetchError, fetchHttpHeaders } = await import("@domainstack/core/headers");
 
   try {
     const result = await fetchHttpHeaders(domain);
@@ -52,7 +52,7 @@ export async function persistHeadersStep(
 ): Promise<void> {
   "use step";
 
-  const { persistHeaders } = await import("@domainstack/server/services/headers");
+  const { persistHeaders } = await import("@domainstack/core/services/headers");
   try {
     await persistHeaders(domain, fetchData);
   } catch (err) {

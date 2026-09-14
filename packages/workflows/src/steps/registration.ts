@@ -19,7 +19,7 @@ export async function lookupWhoisStep(domain: string): Promise<FetchRegistration
   "use step";
 
   // Dynamic import to keep step bundle small
-  const { lookupWhois } = await import("@domainstack/server/whois");
+  const { lookupWhois } = await import("@domainstack/core/whois");
 
   const result = await lookupWhois(domain, {
     userAgent: process.env.EXTERNAL_USER_AGENT,
@@ -55,7 +55,7 @@ export async function normalizeAndBuildResponseStep(
   "use step";
 
   const { getProviderCatalog } = await import("@domainstack/edge-config");
-  const { normalizeRegistration } = await import("@domainstack/server/services/registration");
+  const { normalizeRegistration } = await import("@domainstack/core/services/registration");
   return await normalizeRegistration(recordJson, { catalog: await getProviderCatalog() });
 }
 
@@ -71,7 +71,7 @@ export async function persistRegistrationStep(
 ): Promise<void> {
   "use step";
 
-  const { persistRegistration } = await import("@domainstack/server/services/registration");
+  const { persistRegistration } = await import("@domainstack/core/services/registration");
   try {
     await persistRegistration(domain, response);
   } catch (err) {

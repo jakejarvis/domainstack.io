@@ -13,7 +13,7 @@ vi.mock("workflow/api", () => ({
   }),
 }));
 
-vi.mock("@domainstack/server/services/registration", () => ({
+vi.mock("@domainstack/core/services/registration", () => ({
   fetchRegistration: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue({
     success: true,
     data: {
@@ -26,7 +26,7 @@ vi.mock("@domainstack/server/services/registration", () => ({
   }),
 }));
 
-vi.mock("@domainstack/server/services/dns", () => ({
+vi.mock("@domainstack/core/services/dns", () => ({
   fetchDns: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue({
     success: true,
     data: {
@@ -36,8 +36,8 @@ vi.mock("@domainstack/server/services/dns", () => ({
   }),
 }));
 
-vi.mock("@domainstack/server/services/headers", async (importOriginal) => {
-  const original = await importOriginal<typeof import("@domainstack/server/services/headers")>();
+vi.mock("@domainstack/core/services/headers", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@domainstack/core/services/headers")>();
   return {
     ...original,
     fetchHeaders: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue({
@@ -51,14 +51,14 @@ vi.mock("@domainstack/server/services/headers", async (importOriginal) => {
   };
 });
 
-vi.mock("@domainstack/server/services/favicon", () => ({
+vi.mock("@domainstack/core/services/favicon", () => ({
   fetchFavicon: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue({
     success: true,
     data: { url: "https://example.com/favicon.ico" },
   }),
 }));
 
-vi.mock("@domainstack/server/services/certificates", () => ({
+vi.mock("@domainstack/core/services/certificates", () => ({
   fetchCertificates: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue({
     success: true,
     data: {
@@ -90,11 +90,11 @@ const {
   registrations,
 } = await import("@domainstack/db/schema");
 const { start } = await import("workflow/api");
-const { fetchCertificates } = await import("@domainstack/server/services/certificates");
-const { fetchDns } = await import("@domainstack/server/services/dns");
-const { fetchFavicon } = await import("@domainstack/server/services/favicon");
-const { fetchHeaders } = await import("@domainstack/server/services/headers");
-const { fetchRegistration } = await import("@domainstack/server/services/registration");
+const { fetchCertificates } = await import("@domainstack/core/services/certificates");
+const { fetchDns } = await import("@domainstack/core/services/dns");
+const { fetchFavicon } = await import("@domainstack/core/services/favicon");
+const { fetchHeaders } = await import("@domainstack/core/services/headers");
+const { fetchRegistration } = await import("@domainstack/core/services/registration");
 const { getRateLimiter } = await import("@domainstack/redis/ratelimit");
 const { createCaller } = await import("../router");
 const { eq } = await import("@domainstack/db/drizzle");

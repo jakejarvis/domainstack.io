@@ -5,12 +5,12 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vites
 const { makePGliteDb, closePGliteDb, resetPGliteDb } = await import("@domainstack/db/testing");
 const { db } = await makePGliteDb();
 
-// Hoist mock for @domainstack/server/whois
+// Hoist mock for @domainstack/core/whois
 const whoisMock = vi.hoisted(() => ({
-  lookupWhois: vi.fn<typeof import("@domainstack/server/whois").lookupWhois>(),
+  lookupWhois: vi.fn<typeof import("@domainstack/core/whois").lookupWhois>(),
 }));
 
-vi.mock("@domainstack/server/whois", () => whoisMock);
+vi.mock("@domainstack/core/whois", () => whoisMock);
 
 // Mock Edge Config
 vi.mock("@domainstack/edge-config", () => ({

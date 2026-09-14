@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@domainstack/constants": "workspace:*",
+    "@domainstack/core": "workspace:*",
     "@domainstack/db": "workspace:*",
     "@domainstack/edge-config": "workspace:*",
     "@domainstack/email": "workspace:*",
@@ -33,7 +34,6 @@
     "@domainstack/polar": "workspace:*",
     "@domainstack/redis": "workspace:*",
     "@domainstack/screenshot": "workspace:*",
-    "@domainstack/server": "workspace:*",
     "@domainstack/types": "workspace:*",
     "@domainstack/utils": "workspace:*",
     "workflow": "catalog:"

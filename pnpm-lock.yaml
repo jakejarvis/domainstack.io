@@ -77,6 +77,9 @@ importers:
       '@domainstack/constants':
         specifier: workspace:*
         version: link:../../packages/constants
+      '@domainstack/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@domainstack/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -104,9 +107,6 @@ importers:
       '@domainstack/screenshot':
         specifier: workspace:*
         version: link:../../packages/screenshot
-      '@domainstack/server':
-        specifier: workspace:*
-        version: link:../../packages/server
       '@domainstack/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -339,6 +339,9 @@ importers:
       '@domainstack/constants':
         specifier: workspace:*
         version: link:../constants
+      '@domainstack/core':
+        specifier: workspace:*
+        version: link:../core
       '@domainstack/db':
         specifier: workspace:*
         version: link:../db
@@ -351,9 +354,6 @@ importers:
       '@domainstack/redis':
         specifier: workspace:*
         version: link:../redis
-      '@domainstack/server':
-        specifier: workspace:*
-        version: link:../server
       '@domainstack/types':
         specifier: workspace:*
         version: link:../types
@@ -459,6 +459,64 @@ importers:
       '@domainstack/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
+
+  packages/core:
+    dependencies:
+      '@domainstack/constants':
+        specifier: workspace:*
+        version: link:../constants
+      '@domainstack/db':
+        specifier: workspace:*
+        version: link:../db
+      '@domainstack/edge-config':
+        specifier: workspace:*
+        version: link:../edge-config
+      '@domainstack/image':
+        specifier: workspace:*
+        version: link:../image
+      '@domainstack/logger':
+        specifier: workspace:*
+        version: link:../logger
+      '@domainstack/redis':
+        specifier: workspace:*
+        version: link:../redis
+      '@domainstack/safe-fetch':
+        specifier: workspace:*
+        version: link:../safe-fetch
+      '@domainstack/types':
+        specifier: workspace:*
+        version: link:../types
+      '@domainstack/utils':
+        specifier: workspace:*
+        version: link:../utils
+      '@readme/http-status-codes':
+        specifier: ^9.0.6
+        version: 9.0.6
+      cheerio:
+        specifier: ^1.2.0
+        version: 1.2.0
+      ipaddr.js:
+        specifier: ^2.5.0
+        version: 2.5.0
+      lru-cache:
+        specifier: ^11.5.2
+        version: 11.5.2
+      rdapper:
+        specifier: ^0.13.0
+        version: 0.13.0
+    devDependencies:
+      '@domainstack/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.4
+      msw:
+        specifier: ^2.15.0
+        version: 2.15.0(@types/node@24.13.4)(typescript@7.0.2)
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.0(@opentelemetry/api@1.9.1)(@types/node@24.13.4)(@vitest/browser-playwright@5.0.0)(@vitest/coverage-v8@5.0.0)(@vitest/ui@5.0.0)(msw@2.15.0(@types/node@24.13.4)(typescript@7.0.2))(vite@8.3.0(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.13))
 
   packages/db:
     dependencies:
@@ -700,64 +758,6 @@ importers:
         specifier: 25.1.0
         version: 25.1.0(bufferutil@4.1.0)
 
-  packages/server:
-    dependencies:
-      '@domainstack/constants':
-        specifier: workspace:*
-        version: link:../constants
-      '@domainstack/db':
-        specifier: workspace:*
-        version: link:../db
-      '@domainstack/edge-config':
-        specifier: workspace:*
-        version: link:../edge-config
-      '@domainstack/image':
-        specifier: workspace:*
-        version: link:../image
-      '@domainstack/logger':
-        specifier: workspace:*
-        version: link:../logger
-      '@domainstack/redis':
-        specifier: workspace:*
-        version: link:../redis
-      '@domainstack/safe-fetch':
-        specifier: workspace:*
-        version: link:../safe-fetch
-      '@domainstack/types':
-        specifier: workspace:*
-        version: link:../types
-      '@domainstack/utils':
-        specifier: workspace:*
-        version: link:../utils
-      '@readme/http-status-codes':
-        specifier: ^9.0.6
-        version: 9.0.6
-      cheerio:
-        specifier: ^1.2.0
-        version: 1.2.0
-      ipaddr.js:
-        specifier: ^2.5.0
-        version: 2.5.0
-      lru-cache:
-        specifier: ^11.5.2
-        version: 11.5.2
-      rdapper:
-        specifier: ^0.13.0
-        version: 0.13.0
-    devDependencies:
-      '@domainstack/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
-      '@types/node':
-        specifier: 'catalog:'
-        version: 24.13.4
-      msw:
-        specifier: ^2.15.0
-        version: 2.15.0(@types/node@24.13.4)(typescript@7.0.2)
-      vitest:
-        specifier: 'catalog:'
-        version: 5.0.0(@opentelemetry/api@1.9.1)(@types/node@24.13.4)(@vitest/browser-playwright@5.0.0)(@vitest/coverage-v8@5.0.0)(@vitest/ui@5.0.0)(msw@2.15.0(@types/node@24.13.4)(typescript@7.0.2))(vite@8.3.0(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.13))
-
   packages/types:
     dependencies:
       '@domainstack/constants':
@@ -846,6 +846,9 @@ importers:
       '@domainstack/constants':
         specifier: workspace:*
         version: link:../constants
+      '@domainstack/core':
+        specifier: workspace:*
+        version: link:../core
       '@domainstack/db':
         specifier: workspace:*
         version: link:../db
@@ -870,9 +873,6 @@ importers:
       '@domainstack/screenshot':
         specifier: workspace:*
         version: link:../screenshot
-      '@domainstack/server':
-        specifier: workspace:*
-        version: link:../server
       '@domainstack/types':
         specifier: workspace:*
         version: link:../types

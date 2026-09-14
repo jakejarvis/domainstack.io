@@ -1,6 +1,6 @@
 import { RetryableError } from "workflow";
 
-import type { DnsFetchData } from "@domainstack/server/dns";
+import type { DnsFetchData } from "@domainstack/core/dns";
 
 /**
  * Step: Fetch DNS records from DoH providers with fallback.
@@ -11,7 +11,7 @@ import type { DnsFetchData } from "@domainstack/server/dns";
 export async function fetchDnsRecordsStep(domain: string): Promise<DnsFetchData> {
   "use step";
 
-  const { DnsProviderError, fetchDnsRecords } = await import("@domainstack/server/dns");
+  const { DnsProviderError, fetchDnsRecords } = await import("@domainstack/core/dns");
 
   try {
     return await fetchDnsRecords(domain);
@@ -37,7 +37,7 @@ export async function persistDnsRecordsStep(
 ): Promise<void> {
   "use step";
 
-  const { persistDnsRecords } = await import("@domainstack/server/services/dns");
+  const { persistDnsRecords } = await import("@domainstack/core/services/dns");
   try {
     await persistDnsRecords(domain, fetchData);
   } catch (err) {

@@ -15,11 +15,11 @@ vi.mock("workflow/api", () => ({
 
 // Mock the verification module verifyDomain calls now hit directly
 const verificationMock = vi.hoisted(() => ({
-  verifyDomain: vi.fn<typeof import("@domainstack/server/verification").verifyDomain>(),
+  verifyDomain: vi.fn<typeof import("@domainstack/core/verification").verifyDomain>(),
   verifyDomainByMethod:
-    vi.fn<typeof import("@domainstack/server/verification").verifyDomainByMethod>(),
+    vi.fn<typeof import("@domainstack/core/verification").verifyDomainByMethod>(),
 }));
-vi.mock("@domainstack/server/verification", () => verificationMock);
+vi.mock("@domainstack/core/verification", () => verificationMock);
 
 // Mock email package to avoid sending real emails
 vi.mock("@domainstack/email", () => ({

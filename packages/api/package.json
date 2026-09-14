@@ -19,11 +19,11 @@
   "dependencies": {
     "@domainstack/auth": "workspace:*",
     "@domainstack/constants": "workspace:*",
+    "@domainstack/core": "workspace:*",
     "@domainstack/db": "workspace:*",
     "@domainstack/email": "workspace:*",
     "@domainstack/logger": "workspace:*",
     "@domainstack/redis": "workspace:*",
-    "@domainstack/server": "workspace:*",
     "@domainstack/types": "workspace:*",
     "@domainstack/utils": "workspace:*",
     "@domainstack/workflows": "workspace:*",

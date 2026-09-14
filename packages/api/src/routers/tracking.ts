@@ -42,7 +42,7 @@ const VERIFICATION_INSTRUCTIONS_PER_RECIPIENT = { requests: 3, window: "1 d" } a
 import {
   verifyDomain as verifyDomainAll,
   verifyDomainByMethod,
-} from "@domainstack/server/verification";
+} from "@domainstack/core/verification";
 import { toRegistrableDomain } from "@domainstack/utils/domain";
 import {
   buildVerificationInstructions,

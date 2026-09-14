@@ -82,7 +82,7 @@ async function refreshSectionStep(
 ): Promise<"refreshed" | "unavailable"> {
   "use step";
 
-  const { RemoteDataUnavailableError } = await import("@domainstack/server/services/fetch-errors");
+  const { RemoteDataUnavailableError } = await import("@domainstack/core/services/fetch-errors");
 
   try {
     const result = await fetchSection(domain, section);
@@ -100,23 +100,23 @@ async function refreshSectionStep(
 async function fetchSection(domain: string, section: WarmSection): Promise<{ success: boolean }> {
   switch (section) {
     case "registration": {
-      const { fetchRegistration } = await import("@domainstack/server/services/registration");
+      const { fetchRegistration } = await import("@domainstack/core/services/registration");
       return fetchRegistration(domain);
     }
     case "hosting": {
-      const { fetchHosting } = await import("@domainstack/server/services/hosting");
+      const { fetchHosting } = await import("@domainstack/core/services/hosting");
       return fetchHosting(domain);
     }
     case "certificates": {
-      const { fetchCertificates } = await import("@domainstack/server/services/certificates");
+      const { fetchCertificates } = await import("@domainstack/core/services/certificates");
       return fetchCertificates(domain);
     }
     case "headers": {
-      const { fetchHeaders } = await import("@domainstack/server/services/headers");
+      const { fetchHeaders } = await import("@domainstack/core/services/headers");
       return fetchHeaders(domain);
     }
     case "seo": {
-      const { fetchSeo } = await import("@domainstack/server/services/seo");
+      const { fetchSeo } = await import("@domainstack/core/services/seo");
       return fetchSeo(domain);
     }
     default: {

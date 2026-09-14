@@ -1,7 +1,7 @@
 /* @vitest-environment node */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { DnsFetchData } from "@domainstack/server/dns";
+import type { DnsFetchData } from "@domainstack/core/dns";
 
 // Hoisted mocks for every module the workflow imports (dynamically or statically).
 const registrationMock = vi.hoisted(() => ({

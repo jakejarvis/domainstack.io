@@ -2,8 +2,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CHANGE_CONFIRMATIONS } from "@domainstack/constants";
+import type { DnsFetchData } from "@domainstack/core/dns";
 import type { SnapshotForMonitoring } from "@domainstack/db/queries/snapshots";
-import type { DnsFetchData } from "@domainstack/server/dns";
 import { providerObservationKey } from "@domainstack/utils/change-detection";
 
 // Hoisted mocks for every module the workflow imports (dynamically or statically).
