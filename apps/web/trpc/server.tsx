@@ -3,9 +3,9 @@ import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { cache } from "react";
 
-import { appRouter } from "@/server/routers/_app";
 import { createContext } from "@/trpc/init";
 import { makeQueryClient } from "@/trpc/query-client";
+import { appRouter } from "@domainstack/api";
 
 // Create a stable getter for the query client that will return the same client during
 // the same request. This ensures consistent query client behavior across multiple tRPC

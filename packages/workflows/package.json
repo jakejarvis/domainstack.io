@@ -1,0 +1,47 @@
+{
+  "name": "@domainstack/workflows",
+  "version": "0.0.0-beta.1",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./auto-verify": "./src/auto-verify/workflow.ts",
+    "./detect-changes": "./src/detect-changes/workflow.ts",
+    "./expiry": "./src/expiry/workflow.ts",
+    "./initialize-snapshot": "./src/initialize-snapshot/workflow.ts",
+    "./monitor-lock": "./src/lib/monitor-lock.ts",
+    "./reverify-ownership": "./src/reverify-ownership/workflow.ts",
+    "./screenshot": "./src/screenshot/workflow.ts",
+    "./subscription-downgrade": "./src/subscription-downgrade/workflow.ts",
+    "./subscription-expiry": "./src/subscription-expiry/workflow.ts",
+    "./warm-domains": "./src/warm-domains/workflow.ts"
+  },
+  "scripts": {
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "fmt": "oxfmt --config ../../.oxfmtrc.json",
+    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@domainstack/constants": "workspace:*",
+    "@domainstack/core": "workspace:*",
+    "@domainstack/db": "workspace:*",
+    "@domainstack/edge-config": "workspace:*",
+    "@domainstack/email": "workspace:*",
+    "@domainstack/image": "workspace:*",
+    "@domainstack/logger": "workspace:*",
+    "@domainstack/polar": "workspace:*",
+    "@domainstack/redis": "workspace:*",
+    "@domainstack/screenshot": "workspace:*",
+    "@domainstack/types": "workspace:*",
+    "@domainstack/utils": "workspace:*",
+    "workflow": "catalog:"
+  },
+  "devDependencies": {
+    "@domainstack/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "msw": "^2.15.0",
+    "vitest": "catalog:"
+  }
+}

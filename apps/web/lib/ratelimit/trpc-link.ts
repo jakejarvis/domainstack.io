@@ -3,7 +3,7 @@
 import type { TRPCLink } from "@trpc/client";
 import { observable } from "@trpc/server/observable";
 
-import type { AppRouter } from "@/server/routers/_app";
+import type { AppRouter } from "@domainstack/api";
 
 import { showRateLimitError } from "./client";
 

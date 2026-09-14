@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 
-import { subscriptionDowngradeWorkflow } from "@/workflows/subscription-downgrade";
-import { subscriptionExpiryWorkflow } from "@/workflows/subscription-expiry";
 import {
   getUserIdsPastDue,
   getUserIdsWithEndingSubscriptions,
 } from "@domainstack/db/queries/user-subscription";
 import { createLogger } from "@domainstack/logger";
+import { subscriptionDowngradeWorkflow } from "@domainstack/workflows/subscription-downgrade";
+import { subscriptionExpiryWorkflow } from "@domainstack/workflows/subscription-expiry";
 
 const logger = createLogger({ source: "cron/check-subscription-expiry" });
 

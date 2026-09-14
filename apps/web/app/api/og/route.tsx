@@ -4,13 +4,12 @@ import { ImageResponse } from "next/og";
 import { type NextRequest, NextResponse } from "next/server";
 
 import { Logo } from "@/components/logo";
-import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { hexToRGBA, loadGoogleFont, OG_BACKGROUND_IMAGE, OG_IMAGE_SIZE } from "@/lib/og-utils";
 import { checkRateLimit } from "@/lib/ratelimit/api";
-import { createCaller } from "@/server/routers/_app";
+import { createCaller } from "@domainstack/api";
 import { createLogger } from "@domainstack/logger";
 import type { ProviderRef } from "@domainstack/types";
-import { normalizeDomainInput } from "@domainstack/utils/domain";
+import { normalizeDomainInput, toRegistrableDomain } from "@domainstack/utils/domain";
 
 const SIZE = OG_IMAGE_SIZE;
 

@@ -9,7 +9,7 @@ import type { TRPCClient } from "@trpc/client";
 import { tool, type Tool } from "ai";
 
 import { analytics } from "@/lib/analytics/client";
-import type { AppRouter } from "@/server/routers/_app";
+import type { AppRouter } from "@domainstack/api";
 
 import {
   DOMAIN_TOOL_DEFS,

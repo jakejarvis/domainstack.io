@@ -17,7 +17,7 @@ vi.mock("@/lib/ratelimit/api", () => ({
   checkRateLimit: mocks.checkRateLimit,
 }));
 
-vi.mock("@/server/routers/_app", () => ({
+vi.mock("@domainstack/api", () => ({
   createCaller: mocks.createCaller,
 }));
 

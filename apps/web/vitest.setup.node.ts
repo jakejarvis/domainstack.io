@@ -8,7 +8,7 @@ afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
 // Global mocks for analytics to avoid network/log noise in tests
-vi.mock("@/lib/analytics/server", () => ({
+vi.mock("@domainstack/api/analytics", () => ({
   analytics: {
     track: vi.fn<(...args: unknown[]) => Promise<void>>(async () => undefined),
     trackException: vi.fn<(...args: unknown[]) => Promise<void>>(async () => undefined),

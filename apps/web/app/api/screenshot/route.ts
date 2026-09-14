@@ -4,16 +4,16 @@ import { getHookByToken, getRun, start } from "workflow/api";
 import { HookNotFoundError, WorkflowRunNotFoundError } from "workflow/errors";
 
 import { checkRateLimit } from "@/lib/ratelimit/api";
-import {
-  getScreenshotWorkflowToken,
-  type ScreenshotWorkflowResult,
-  screenshotWorkflow,
-} from "@/workflows/screenshot";
 import { isDomainBlocked } from "@domainstack/db/queries/blocked-domains";
 import { getDomainById } from "@domainstack/db/queries/domains";
 import { getScreenshotByDomainId } from "@domainstack/db/queries/screenshots";
 import { createLogger } from "@domainstack/logger";
 import type { ScreenshotData } from "@domainstack/types";
+import {
+  getScreenshotWorkflowToken,
+  type ScreenshotWorkflowResult,
+  screenshotWorkflow,
+} from "@domainstack/workflows/screenshot";
 
 const logger = createLogger({ source: "api/screenshot" });
 

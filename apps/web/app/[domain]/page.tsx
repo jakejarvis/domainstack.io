@@ -6,11 +6,11 @@ import { Suspense } from "react";
 
 import { DomainReportClient } from "@/components/domain/report-client";
 import { DomainReportSkeleton } from "@/components/domain/report-skeleton";
-import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { OG_IMAGE_SIZE } from "@/lib/og-utils";
 import { safeDecodeURIComponent } from "@/lib/safe-parse";
 import { createMetadata, notFoundMetadata } from "@/lib/seo";
 import { getQueryClient, HydrateClient, trpc } from "@/trpc/server";
+import { toRegistrableDomain } from "@domainstack/utils/domain";
 
 export async function generateMetadata({ params }: PageProps<"/[domain]">): Promise<Metadata> {
   const { domain: raw } = await params;

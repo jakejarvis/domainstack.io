@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 
 import { settleInBatches } from "@/lib/settle-in-batches";
-import { warmDomainWorkflow } from "@/workflows/warm-domains";
 import { getRecentlyAccessedDomains } from "@domainstack/db/queries/domains";
 import { createLogger } from "@domainstack/logger";
+import { warmDomainWorkflow } from "@domainstack/workflows/warm-domains";
 
 const logger = createLogger({ source: "cron/warm-domains" });
 

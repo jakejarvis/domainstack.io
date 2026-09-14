@@ -7,25 +7,16 @@ import {
   IconShare,
 } from "@tabler/icons-react";
 
-/**
- * Section types and metadata for domain report UI.
- */
+import { SECTION_IDS } from "@domainstack/constants";
+import type { Section } from "@domainstack/constants";
 
 /**
- * Every report section, in the order the report renders them. The `Section`
- * union and the `sections` record below both derive from this, so anything that
- * needs the full list at runtime can import it instead of retyping it.
+ * UI metadata for domain report sections. The section ids and `Section` type
+ * live in `@domainstack/constants` so non-UI code (workflows, MCP tools) can
+ * use them without pulling in icons.
  */
-export const SECTION_IDS = [
-  "registration",
-  "hosting",
-  "dns",
-  "certificates",
-  "headers",
-  "seo",
-] as const;
-
-export type Section = (typeof SECTION_IDS)[number];
+export { SECTION_IDS };
+export type { Section };
 
 export type SectionAccent = "blue" | "purple" | "green" | "orange" | "pink" | "cyan";
 

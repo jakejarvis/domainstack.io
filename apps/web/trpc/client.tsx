@@ -14,8 +14,8 @@ import superjson from "superjson";
 
 import { rateLimitLink } from "@/lib/ratelimit/trpc-link";
 import { TRPCProvider as Provider } from "@/lib/trpc/client";
-import type { AppRouter } from "@/server/routers/_app";
 import { makeQueryClient } from "@/trpc/query-client";
+import type { AppRouter } from "@domainstack/api";
 
 let browserQueryClient: ReturnType<typeof makeQueryClient> | undefined;
 

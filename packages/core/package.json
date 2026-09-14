@@ -1,0 +1,47 @@
+{
+  "name": "@domainstack/core",
+  "version": "0.0.0-beta.1",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./cloudflare": "./src/cloudflare.ts",
+    "./dns": "./src/dns/index.ts",
+    "./headers": "./src/headers/index.ts",
+    "./seo": "./src/seo/index.ts",
+    "./services/*": "./src/services/*.ts",
+    "./tls": "./src/tls/index.ts",
+    "./ttl": "./src/ttl.ts",
+    "./verification": "./src/verification/index.ts",
+    "./whois": "./src/whois/index.ts"
+  },
+  "scripts": {
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "fmt": "oxfmt --config ../../.oxfmtrc.json",
+    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@domainstack/constants": "workspace:*",
+    "@domainstack/db": "workspace:*",
+    "@domainstack/edge-config": "workspace:*",
+    "@domainstack/image": "workspace:*",
+    "@domainstack/logger": "workspace:*",
+    "@domainstack/redis": "workspace:*",
+    "@domainstack/safe-fetch": "workspace:*",
+    "@domainstack/types": "workspace:*",
+    "@domainstack/utils": "workspace:*",
+    "@readme/http-status-codes": "^9.0.6",
+    "cheerio": "^1.2.0",
+    "ipaddr.js": "^2.5.0",
+    "lru-cache": "^11.5.2",
+    "rdapper": "^0.13.0"
+  },
+  "devDependencies": {
+    "@domainstack/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "msw": "^2.15.0",
+    "vitest": "catalog:"
+  }
+}

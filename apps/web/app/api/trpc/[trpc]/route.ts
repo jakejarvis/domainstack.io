@@ -1,7 +1,7 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 
-import { appRouter } from "@/server/routers/_app";
 import { createContext } from "@/trpc/init";
+import { appRouter } from "@domainstack/api";
 
 const handler = async (req: Request) => {
   const ctx = await createContext({ req });

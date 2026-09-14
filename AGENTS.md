@@ -251,13 +251,13 @@ async function persistDataStep(domain: string, data: Data): Promise<void> {
   try {
     await persistData(domain, data);
   } catch (err) {
-    const { classifyDatabaseError } = await import("@/lib/workflow/errors");
+    const { classifyDatabaseError } = await import("../lib/errors");
     throw classifyDatabaseError(err, { context: `persisting data for ${domain}` });
   }
 }
 ```
 
-Exemplar: `apps/web/workflows/shared/dns/persist.ts`. When a step is optional and its failure must not fail the run, wrap the call with `optionalCall` (or unwrap `Promise.allSettled` results with `optionalSettled`) from `@/workflows/shared/settled`.
+Exemplar: `packages/workflows/src/steps/dns.ts`. When a step is optional and its failure must not fail the run, wrap the call with `optionalCall` (or unwrap `Promise.allSettled` results with `optionalSettled`) from `packages/workflows/src/lib/settled.ts`.
 
 ### Custom Error Classes
 
@@ -289,7 +289,7 @@ throw new TRPCError({ code: "NOT_FOUND", message: "Domain not found" });
 `protectedProcedure` runs `withRateLimit` before the resolver (override with `.meta({ rateLimit })`). Public procedures call `rateLimit` in the resolver so cache hits and cheap bail-outs do not consume the budget.
 
 ```typescript
-import { rateLimit, publicProcedure } from "@/trpc/init";
+import { rateLimit, publicProcedure } from "@domainstack/api";
 
 expensiveOperation: publicProcedure.mutation(async ({ ctx, input, path }) => {
   await rateLimit({ ctx, path, config: { requests: 10, window: "1 m" } });
@@ -372,16 +372,15 @@ domainstack.io/
 │       ├── components/         # App-specific components
 │       │   └── ui/             # App-specific UI wrappers (Next.js-aware)
 │       ├── hooks/              # App-specific React hooks
-│       ├── lib/                # App-local utilities (atoms, stores, chat, ratelimit, workflow/errors)
-│       ├── server/routers/     # tRPC router definitions
-│       ├── workflows/          # Vercel Workflow definitions
+│       ├── lib/                # App-local utilities (atoms, stores, chat, ratelimit)
 │       ├── emails/             # React Email templates
-│       └── trpc/               # tRPC client setup
+│       └── trpc/               # tRPC client setup + the RSC headers() context wrapper
 ├── packages/
-│   ├── api/                    # tRPC init, procedures, middleware (@domainstack/api)
+│   ├── api/                    # tRPC init, procedures, middleware, routers, appRouter (@domainstack/api)
 │   ├── auth/                   # Better Auth server/client config
 │   ├── blob/                   # Vercel Blob storage wrapper
 │   ├── constants/               # Shared constants; primitives/ holds enum arrays
+│   ├── core/                    # Domain data services: dns, tls, whois, seo, headers, verification (@domainstack/core)
 │   ├── db/                     # Drizzle schema, client, and query layer
 │   ├── edge-config/             # Vercel Edge Config reader
 │   ├── email/                  # React Email templates + Resend
@@ -391,7 +390,6 @@ domainstack.io/
 │   ├── redis/                   # Upstash Redis client + rate limiter
 │   ├── safe-fetch/               # SSRF-hardened fetch (DNS pinning, private-IP blocks)
 │   ├── screenshot/              # Puppeteer screenshot capture
-│   ├── server/                  # Domain data services: dns, tls, whois, seo, headers, verification
 │   ├── types/                  # Shared TypeScript types (@domainstack/types)
 │   │   └── src/
 │   │       └── domain/         # Domain-related types (DNS, certs, headers, etc.)
@@ -401,13 +399,37 @@ domainstack.io/
 │   │       ├── components/     # Framework-agnostic UI primitives
 │   │       ├── hooks/          # Shared React hooks
 │   │       └── lib/            # Utilities (cn, etc.)
-│   └── utils/                   # Pure helpers: dates, domains, providers, change detection
+│   ├── utils/                   # Pure helpers: dates, domains, providers, change detection
+│   └── workflows/               # Every "use workflow"/"use step" but chat (@domainstack/workflows)
+│       └── src/
+│           ├── steps/          # Shared step wrappers (dns, headers, certificates, hosting, registration, …)
+│           └── lib/            # Workflow infra: errors.ts (classifyDatabaseError), monitor-lock.ts, settled.ts
 ├── turbo.json                  # Turborepo task configuration
 ├── pnpm-workspace.yaml         # pnpm workspace definition
 └── package.json                # Root workspace config
 ```
 
 All commands run from the **monorepo root** via Turborepo.
+
+### Package boundaries
+
+The backend is layered strictly one-way: `apps/web` → `@domainstack/api` →
+`@domainstack/workflows` → `@domainstack/core` → `db`, `redis`, `safe-fetch`,
+`edge-config`, `image`, `utils`, etc. (`api` may also call `core` directly, and
+`apps/web`'s cron/screenshot routes call `start()` on workflows directly.)
+
+1. **`@domainstack/core`**: plain async domain services (fetch, normalize,
+   persist). Never imports `workflow`, `@trpc/*`, or `next/*`.
+2. **`@domainstack/workflows`**: every `"use workflow"`/`"use step"` function
+   except chat, plus the step wrappers and workflow infrastructure. Never
+   imports `@trpc/*`, `next/*`, or `@domainstack/api`.
+3. **`@domainstack/api`**: tRPC init, middleware, all routers, `appRouter`,
+   `AppRouter`, `RouterInputs`/`RouterOutputs`, `createCaller`. May `start()`
+   workflows directly, no dependency injection. No `next/*` imports.
+4. **`apps/web`**: route handlers, the RSC context wrapper (`trpc/init.ts`),
+   UI, and the chat workflow (the one exception that stays in the Next app).
+5. No package cycles, and no one-line `index.ts` barrels — `package.json`
+   `exports` point straight at the implementation files.
 
 ### Package Imports
 
@@ -436,11 +458,11 @@ All database access goes through `packages/db/src/queries/*` — do not write
 Drizzle queries directly in `apps/web`. Cached read functions are named
 `getCached*` and return `CacheResult<T>` with staleness metadata.
 
-**Domain services** (`@domainstack/server`):
+**Domain services** (`@domainstack/core`):
 
 ```typescript
-import { fetchDns } from "@domainstack/server/services/dns";
-import { lookupWhois } from "@domainstack/server/whois";
+import { fetchDns } from "@domainstack/core/services/dns";
+import { lookupWhois } from "@domainstack/core/whois";
 ```
 
 Outbound domain lookups (DNS, TLS, WHOIS/RDAP, SEO, headers) live here, not in
@@ -476,10 +498,10 @@ if (stale) {
 
 The hourly `monitor-domains` cron must not start a second `detectChangesWorkflow`
 for a domain whose previous run is still in flight. Use the per-domain Redis lock
-in `@/lib/workflow/monitor-dedup`:
+in `@domainstack/workflows/monitor-lock`:
 
 ```typescript
-import { acquireMonitorLock, releaseMonitorLock } from "@/lib/workflow/monitor-dedup";
+import { acquireMonitorLock, releaseMonitorLock } from "@domainstack/workflows/monitor-lock";
 
 const ownerToken = await acquireMonitorLock(trackedDomainId);
 if (!ownerToken) {
@@ -498,7 +520,7 @@ compare-and-delete, so a run can never release a lock it does not hold.
 ### Protected tRPC Procedures
 
 ```typescript
-import { protectedProcedure } from "@/trpc/init";
+import { protectedProcedure } from "@domainstack/api";
 
 export const myRouter = createTRPCRouter({
   myProcedure: protectedProcedure.mutation(async ({ ctx }) => {
@@ -590,8 +612,8 @@ The AI chat assistant (`components/chat/`) provides natural language domain look
 
 - **Client**: `useChat` + `WorkflowChatTransport` (`@ai-sdk/workflow`) with Zustand session persistence
 - **API**: `POST /api/chat` starts workflow, returns streaming response; `GET /api/chat/:runId/stream` reconnects
-- **Workflow**: `workflows/chat/workflow.ts` uses `WorkflowAgent` from `@ai-sdk/workflow` for durable tool execution
-- **Tools**: `workflows/chat/tools.ts` defines domain lookup tools (WHOIS, DNS, SSL, etc.)
+- **Workflow**: `apps/web/lib/chat/workflow.ts` uses `WorkflowAgent` from `@ai-sdk/workflow` for durable tool execution
+- **Tools**: `apps/web/lib/chat/tools.ts` defines domain lookup tools (WHOIS, DNS, SSL, etc.)
 
 ### Constants (`packages/constants/src/ai.ts`)
 
@@ -610,6 +632,6 @@ Differentiated by auth status and endpoint.
 
 ### Adding New Tools
 
-1. Define tool in `workflows/chat/tools.ts` using `createDomainToolset()`
+1. Define tool in `apps/web/lib/chat/tools.ts` using `createDomainToolset()`
 2. Add human-readable title in `components/chat/utils.ts` (`TOOL_TITLES`)
 3. Tools call tRPC procedures which have their own rate limits

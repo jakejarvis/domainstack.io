@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("workflow/api", () => ({ start: mocks.start }));
-vi.mock("@/workflows/expiry", () => ({
+vi.mock("@domainstack/workflows/expiry", () => ({
   expiryWorkflow: vi.fn<(input: unknown) => Promise<unknown>>(),
 }));
 vi.mock("@domainstack/db/queries/tracked-domains", () => ({
@@ -14,7 +14,7 @@ vi.mock("@domainstack/db/queries/tracked-domains", () => ({
 }));
 
 import { GET } from "@/app/api/cron/check-expiry/route";
-import { expiryWorkflow } from "@/workflows/expiry";
+import { expiryWorkflow } from "@domainstack/workflows/expiry";
 
 describe("check expiry cron", () => {
   beforeEach(() => {

@@ -24,9 +24,9 @@ import { start } from "workflow/api";
 import { chatRequestSchema } from "@/lib/chat/request-schema";
 import { trimChatHistory } from "@/lib/chat/trim-history";
 import { validateChatMessages } from "@/lib/chat/validate-messages";
+import { chatWorkflow } from "@/lib/chat/workflow";
 import { aiModel } from "@/lib/flags";
 import { checkRateLimit } from "@/lib/ratelimit/api";
-import { chatWorkflow } from "@/workflows/chat";
 import { auth } from "@domainstack/auth/server";
 import {
   MAX_CHAT_REQUEST_BYTES,

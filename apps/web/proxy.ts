@@ -1,8 +1,8 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { getSessionCookie } from "@domainstack/auth/server";
+import { toRegistrableDomain } from "@domainstack/utils/domain";
 
 // Routes that require authentication (pre-check for faster redirects)
 const PROTECTED_ROUTES = ["/dashboard", "/settings"];

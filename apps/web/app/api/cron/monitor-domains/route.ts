@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 
 import { settleInBatches } from "@/lib/settle-in-batches";
-import { acquireMonitorLock, releaseMonitorLock } from "@/lib/workflow/monitor-dedup";
-import { detectChangesWorkflow } from "@/workflows/detect-changes";
-import { initializeSnapshotWorkflow } from "@/workflows/initialize-snapshot";
 import {
   getMonitoredSnapshotIds,
   getVerifiedDomainsWithoutSnapshots,
 } from "@domainstack/db/queries/snapshots";
 import { createLogger } from "@domainstack/logger";
+import { detectChangesWorkflow } from "@domainstack/workflows/detect-changes";
+import { initializeSnapshotWorkflow } from "@domainstack/workflows/initialize-snapshot";
+import { acquireMonitorLock, releaseMonitorLock } from "@domainstack/workflows/monitor-lock";
 
 const logger = createLogger({ source: "cron/monitor-domains" });
 
