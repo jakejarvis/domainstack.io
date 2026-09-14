@@ -17,7 +17,7 @@ import { getWorkflowMetadata, getWritable } from "workflow";
 
 import { MAX_OUTPUT_TOKENS, MAX_TOOL_STEPS } from "@domainstack/constants";
 
-import { buildSystemPromptStep } from "./prompt";
+import { buildSystemPromptStep } from "./system-prompt";
 import { captureChatTelemetryStep, toChatTelemetryPayload } from "./telemetry";
 import { createDomainToolset, createDomainToolsContext } from "./tools";
 

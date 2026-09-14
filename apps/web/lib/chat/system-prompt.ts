@@ -97,3 +97,12 @@ export function buildSystemPrompt({
     ? buildCloudSystemPrompt(validatedDomain, today)
     : buildOnDeviceSystemPrompt(validatedDomain, today);
 }
+
+/**
+ * Step: build the system prompt with domain context, for the chat workflow.
+ */
+export async function buildSystemPromptStep(domain?: string): Promise<string> {
+  "use step";
+
+  return buildSystemPrompt({ variant: "cloud", domain });
+}
