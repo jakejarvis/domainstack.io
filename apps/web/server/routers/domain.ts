@@ -2,7 +2,12 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { toRegistrableDomain } from "@/lib/normalize-domain";
-import { createTRPCRouter, rateLimit, publicProcedure, withDomainAccessUpdate } from "@/trpc/init";
+import {
+  createTRPCRouter,
+  rateLimit,
+  publicProcedure,
+  withDomainAccessUpdate,
+} from "@domainstack/api";
 import { createLogger } from "@domainstack/logger";
 import type { RateLimitConfig } from "@domainstack/redis/ratelimit";
 import { fetchCertificates } from "@domainstack/server/services/certificates";

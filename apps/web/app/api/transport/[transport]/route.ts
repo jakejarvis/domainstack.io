@@ -7,7 +7,7 @@ import { z } from "zod";
 import { type Section, SECTION_IDS } from "@/lib/constants/sections";
 import { checkRateLimit } from "@/lib/ratelimit/api";
 import { createCaller } from "@/server/routers/_app";
-import type { Context } from "@/trpc/init";
+import type { Context } from "@domainstack/api";
 
 export const maxDuration = 800;
 

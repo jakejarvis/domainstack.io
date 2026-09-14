@@ -19,7 +19,7 @@ vi.mock("next/server", () => ({
 const { notifications, users } = await import("@domainstack/db/schema");
 const { createCaller } = await import("@/server/routers/_app");
 
-import type { Context } from "@/trpc/init";
+import type { Context } from "@domainstack/api";
 
 // Test fixtures
 const TEST_USER_ID = "test-user-id-notifications";

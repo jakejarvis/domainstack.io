@@ -41,13 +41,7 @@
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@types/node": "catalog:",
-    "@types/react": "19.3.0",
     "msw": "^2.15.0",
-    "vitest": "catalog:",
-    "zod": "catalog:"
-  },
-  "peerDependencies": {
-    "react": ">=19",
-    "zod": "^4"
+    "vitest": "catalog:"
   }
 }

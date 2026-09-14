@@ -109,7 +109,7 @@ const { getRateLimiter } = await import("@domainstack/redis/ratelimit");
 const { createCaller } = await import("@/server/routers/_app");
 const { eq } = await import("@domainstack/db/drizzle");
 
-import type { Context } from "@/trpc/init";
+import type { Context } from "@domainstack/api";
 
 // Test fixtures - use valid UUIDs
 const TEST_DOMAIN = "example.com";

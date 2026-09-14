@@ -39,7 +39,7 @@ const logger = createLogger({ source: "routers/tracking" });
 const VERIFICATION_INSTRUCTIONS_PER_RECIPIENT = { requests: 3, window: "1 d" } as const;
 
 import { toRegistrableDomain } from "@/lib/normalize-domain";
-import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import { createTRPCRouter, protectedProcedure } from "@domainstack/api";
 import {
   verifyDomain as verifyDomainAll,
   verifyDomainByMethod,

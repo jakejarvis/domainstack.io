@@ -15,9 +15,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@domainstack/constants": "workspace:*",
     "@domainstack/logger": "workspace:*",
-    "@domainstack/utils": "workspace:*",
     "ipaddr.js": "^2.5.0",
     "undici": "^7.29.1"
   },

@@ -4,7 +4,7 @@ import { providerRouter } from "@/server/routers/provider";
 import { registrarRouter } from "@/server/routers/registrar";
 import { trackingRouter } from "@/server/routers/tracking";
 import { userRouter } from "@/server/routers/user";
-import { createCallerFactory, createTRPCRouter } from "@/trpc/init";
+import { createCallerFactory, createTRPCRouter } from "@domainstack/api";
 
 export const appRouter = createTRPCRouter({
   domain: domainRouter,

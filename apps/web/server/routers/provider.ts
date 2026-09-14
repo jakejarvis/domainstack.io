@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { createTRPCRouter, rateLimit, publicProcedure } from "@/trpc/init";
+import { createTRPCRouter, rateLimit, publicProcedure } from "@domainstack/api";
 import { getProviderLogo } from "@domainstack/db/queries/provider-logos";
 import { getProviderById } from "@domainstack/db/queries/providers";
 import { createLogger } from "@domainstack/logger";

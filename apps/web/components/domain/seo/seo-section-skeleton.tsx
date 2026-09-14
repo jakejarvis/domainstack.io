@@ -29,28 +29,26 @@ export function SeoSectionSkeleton() {
             Open Graph
           </div>
           {/* Tabs row skeleton — TabsList is h-11 w-full with default variant chrome */}
-          <div className="flex h-11 w-full items-center rounded-lg border border-black/8 bg-muted/40 p-1 backdrop-blur-sm dark:border-white/10">
+          <div className="flex h-11 w-full items-center gap-1 rounded-lg border border-black/8 bg-muted/40 p-1 backdrop-blur-sm dark:border-white/10">
             {[1, 2, 3, 4, 5].map((id) => (
               <Skeleton key={`og-tab-${id}`} className="h-full flex-1 basis-0 rounded-md" />
             ))}
           </div>
-          {/* Preview skeleton */}
+          {/* Preview skeleton — a neutral card, not a specific provider's chrome/colors */}
           <div className="mx-auto mt-4 mb-2 w-full max-w-[480px] md:max-w-[640px]">
-            <div className="overflow-hidden rounded-2xl border border-[#eff3f4] bg-white text-black dark:border-[#2f3336] dark:bg-black dark:text-white">
-              <div className="relative w-full overflow-hidden bg-[#f1f5f9] dark:bg-[#0f1419]">
-                <div className="aspect-[16/9] min-h-[160px] w-full">
-                  <Skeleton className="h-full w-full rounded-none" />
-                </div>
+            <div className="overflow-hidden rounded-2xl border border-border bg-background/60 backdrop-blur-lg">
+              <div className="aspect-[16/9] min-h-[160px] w-full">
+                <Skeleton className="h-full w-full rounded-none" />
               </div>
-              <div className="p-3">
-                {/* hostname / title / description line boxes from TwitterPreview */}
+              <div className="space-y-1.5 p-3">
+                {/* hostname / title / description line boxes shared by every provider preview */}
                 <div className="flex h-[1lh] items-center text-[11px]">
                   <Skeleton className="h-[11px] w-24" />
                 </div>
-                <div className="mt-0.5 flex h-[1lh] items-center text-[15px]">
+                <div className="flex h-[1lh] items-center text-[15px]">
                   <Skeleton className="h-[15px] w-3/4" />
                 </div>
-                <div className="mt-0.5 flex h-[1lh] items-center text-[13px]">
+                <div className="flex h-[1lh] items-center text-[13px]">
                   <Skeleton className="h-[13px] w-full" />
                 </div>
               </div>

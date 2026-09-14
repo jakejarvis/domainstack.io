@@ -16,18 +16,3 @@ export const createContext = cache(async (opts?: { req?: Request }) => {
   const hdrs = opts?.req?.headers ?? (await headers());
   return createBaseContext({ req: opts?.req, headers: hdrs });
 });
-
-export type { Context, ProcedureMeta, Session } from "@domainstack/api";
-// Re-export everything else from the API package
-export {
-  createCallerFactory,
-  createTRPCRouter,
-  rateLimit,
-  protectedProcedure,
-  publicProcedure,
-  t,
-  TRPCError,
-  withAuth,
-  withDomainAccessUpdate,
-  withLogging,
-} from "@domainstack/api";

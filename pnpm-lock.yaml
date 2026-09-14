@@ -625,15 +625,9 @@ importers:
 
   packages/safe-fetch:
     dependencies:
-      '@domainstack/constants':
-        specifier: workspace:*
-        version: link:../constants
       '@domainstack/logger':
         specifier: workspace:*
         version: link:../logger
-      '@domainstack/utils':
-        specifier: workspace:*
-        version: link:../utils
       ipaddr.js:
         specifier: ^2.5.0
         version: 2.5.0
@@ -720,9 +714,6 @@ importers:
       rdapper:
         specifier: ^0.13.0
         version: 0.13.0
-      react:
-        specifier: '>=19'
-        version: 19.3.0
     devDependencies:
       '@domainstack/typescript-config':
         specifier: workspace:*
@@ -730,18 +721,12 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.4
-      '@types/react':
-        specifier: 19.3.0
-        version: 19.3.0
       msw:
         specifier: ^2.15.0
         version: 2.15.0(@types/node@24.13.4)(typescript@7.0.2)
       vitest:
         specifier: 'catalog:'
         version: 5.0.0(@opentelemetry/api@1.9.1)(@types/node@24.13.4)(@vitest/browser-playwright@5.0.0)(@vitest/coverage-v8@5.0.0)(@vitest/ui@5.0.0)(msw@2.15.0(@types/node@24.13.4)(typescript@7.0.2))(vite@8.3.0(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.13))
-      zod:
-        specifier: 'catalog:'
-        version: 4.6.2
 
   packages/types:
     dependencies:
@@ -10452,7 +10437,7 @@ snapshots:
 
   '@types/pg@8.23.1':
     dependencies:
-      '@types/node': 22.20.2
+      '@types/node': 24.13.4
       pg-protocol: 1.16.0
       pg-types: 2.2.0
 
@@ -12938,7 +12923,7 @@ snapshots:
 
   jest-worker@27.5.1:
     dependencies:
-      '@types/node': 22.20.2
+      '@types/node': 24.13.4
       merge-stream: 2.0.0
       supports-color: 8.1.1
 

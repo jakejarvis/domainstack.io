@@ -56,7 +56,7 @@ const { getRateLimiter } = await import("@domainstack/redis/ratelimit");
 const { start } = await import("workflow/api");
 const { createCaller } = await import("@/server/routers/_app");
 
-import type { Context } from "@/trpc/init";
+import type { Context } from "@domainstack/api";
 
 // Test fixtures - use valid RFC 4122 UUIDs (version 1, variant 1)
 const TEST_USER_ID = "test-user-id-12345";
