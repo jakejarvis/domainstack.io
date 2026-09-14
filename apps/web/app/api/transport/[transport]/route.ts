@@ -5,7 +5,7 @@ import { PostHog } from "posthog-node";
 import { z } from "zod";
 
 import { checkRateLimit } from "@/lib/ratelimit/api";
-import { createCaller } from "@/server/routers/_app";
+import { createCaller } from "@domainstack/api";
 import type { Context } from "@domainstack/api";
 import { type Section, SECTION_IDS } from "@domainstack/constants";
 

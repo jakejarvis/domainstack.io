@@ -21,16 +21,6 @@ const verificationMock = vi.hoisted(() => ({
 }));
 vi.mock("@domainstack/server/verification", () => verificationMock);
 
-// Mock next/headers to avoid errors outside request context
-vi.mock("next/headers", () => ({
-  headers: vi.fn<() => Promise<Map<string, string>>>().mockResolvedValue(new Map()),
-}));
-
-// Mock next/server after() to be a no-op
-vi.mock("next/server", () => ({
-  after: vi.fn<(fn: () => unknown) => unknown>((fn) => fn()),
-}));
-
 // Mock email package to avoid sending real emails
 vi.mock("@domainstack/email", () => ({
   sendEmail: vi.fn<(...args: unknown[]) => Promise<{ error: null }>>().mockResolvedValue({
@@ -54,9 +44,9 @@ const { default: VerificationInstructionsEmail } =
   await import("@domainstack/email/templates/verification-instructions");
 const { getRateLimiter } = await import("@domainstack/redis/ratelimit");
 const { start } = await import("workflow/api");
-const { createCaller } = await import("@/server/routers/_app");
+const { createCaller } = await import("../router");
 
-import type { Context } from "@domainstack/api";
+import type { Context } from "../context";
 
 // Test fixtures - use valid RFC 4122 UUIDs (version 1, variant 1)
 const TEST_USER_ID = "test-user-id-12345";

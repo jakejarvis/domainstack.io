@@ -40,7 +40,7 @@ type DomainToolSet = {
 async function domainLookupStep(procedure: DomainToolProcedure, domain: string, ctx: ToolContext) {
   "use step";
   try {
-    const { createCaller } = await import("@/server/routers/_app");
+    const { createCaller } = await import("@domainstack/api");
     const trpc = createCaller({ req: undefined, ip: ctx.ip, session: null });
     const result = await trpc.domain[procedure]({ domain });
     if (!result.success) {

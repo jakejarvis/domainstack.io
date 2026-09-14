@@ -6,6 +6,7 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
+    "./analytics": "./src/analytics.ts",
     "./middleware": "./src/middleware/index.ts"
   },
   "scripts": {
@@ -17,12 +18,20 @@
   },
   "dependencies": {
     "@domainstack/auth": "workspace:*",
+    "@domainstack/constants": "workspace:*",
     "@domainstack/db": "workspace:*",
+    "@domainstack/email": "workspace:*",
     "@domainstack/logger": "workspace:*",
     "@domainstack/redis": "workspace:*",
+    "@domainstack/server": "workspace:*",
+    "@domainstack/types": "workspace:*",
+    "@domainstack/utils": "workspace:*",
+    "@domainstack/workflows": "workspace:*",
     "@trpc/server": "^11.18.0",
     "@vercel/functions": "^3.9.7",
+    "posthog-node": "^5.52.1",
     "superjson": "^2.2.6",
+    "workflow": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

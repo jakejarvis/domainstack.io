@@ -3,9 +3,7 @@
 import posthogClient from "posthog-js";
 import { useMemo } from "react";
 
-import type { IdentifyProperties, IdentifySetOnceProperties } from "./types";
-
-export type { IdentifyProperties, IdentifySetOnceProperties };
+import type { IdentifyProperties, IdentifySetOnceProperties } from "@domainstack/types";
 
 function track(event: string, properties?: Record<string, unknown>) {
   try {

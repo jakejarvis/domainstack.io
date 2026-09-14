@@ -4,7 +4,6 @@ import { TRPCError } from "@trpc/server";
 import { start } from "workflow/api";
 import { z } from "zod";
 
-import { analytics } from "@/lib/analytics/server";
 import { VERIFICATION_METHODS } from "@domainstack/constants";
 import { ensureDomainRecord, findDomainByName } from "@domainstack/db/queries/domains";
 import {
@@ -30,6 +29,8 @@ import { getRateLimiter } from "@domainstack/redis/ratelimit";
 import { autoVerifyWorkflow } from "@domainstack/workflows/auto-verify";
 import { initializeSnapshotWorkflow } from "@domainstack/workflows/initialize-snapshot";
 
+import { analytics } from "../analytics";
+
 const logger = createLogger({ source: "routers/tracking" });
 
 /**
@@ -38,16 +39,18 @@ const logger = createLogger({ source: "routers/tracking" });
  */
 const VERIFICATION_INSTRUCTIONS_PER_RECIPIENT = { requests: 3, window: "1 d" } as const;
 
-import { toRegistrableDomain } from "@/lib/normalize-domain";
-import { createTRPCRouter, protectedProcedure } from "@domainstack/api";
 import {
   verifyDomain as verifyDomainAll,
   verifyDomainByMethod,
 } from "@domainstack/server/verification";
+import { toRegistrableDomain } from "@domainstack/utils/domain";
 import {
   buildVerificationInstructions,
   generateVerificationToken,
 } from "@domainstack/utils/verification";
+
+import { protectedProcedure } from "../procedures";
+import { createTRPCRouter } from "../trpc";
 
 const DomainInputSchema = z.object({ domain: z.string().min(1) }).transform(({ domain }) => {
   const registrable = toRegistrableDomain(domain);

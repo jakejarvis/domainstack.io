@@ -4,6 +4,7 @@
  * Shared TypeScript interfaces for the Domainstack platform.
  */
 
+export * from "./analytics";
 export * from "./domain";
 
 export type {

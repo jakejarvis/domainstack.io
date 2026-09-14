@@ -13,6 +13,10 @@ const logger = createLogger({ source: "pricing" });
  * - No manual cron jobs needed - Next.js handles revalidation automatically
  * - Gracefully handles slow/failed API responses by returning null
  *
+ * The `next: { revalidate, tags }` fetch option is Next.js-specific but inert
+ * outside a Next.js request — it's typed locally (not imported from `next/*`)
+ * so this service has no Next.js dependency.
+ *
  * When registrar APIs are slow (common), users see cached pricing immediately
  * while fresh data fetches in the background. This provides the best UX.
  *
@@ -21,6 +25,11 @@ const logger = createLogger({ source: "pricing" });
  * - Configure timeout, cache TTL, and enabled state via the config parameter
  * - Add the provider to the `providers` array
  */
+
+/** `fetch`'s `RequestInit`, plus the Next.js Data Cache options it recognizes. */
+type NextRequestInit = RequestInit & {
+  next?: { revalidate?: number; tags?: string[] };
+};
 
 /**
  * Normalized pricing response shape that all registrars conform to.
@@ -73,10 +82,11 @@ function createPricingProvider(
   const enabled = config.enabled ?? true;
 
   const providerFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
-    const res = await fetch(url, {
+    const requestInit: NextRequestInit = {
       ...options,
       next: { revalidate, tags: ["pricing", `pricing:${name}`] },
-    });
+    };
+    const res = await fetch(url, requestInit);
 
     if (!res.ok) {
       logger.warn({ provider: name, status: res.status }, "upstream error");

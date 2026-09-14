@@ -5,21 +5,11 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 const { makePGliteDb, closePGliteDb } = await import("@domainstack/db/testing");
 const { db } = await makePGliteDb();
 
-// Mock next/headers to avoid errors outside request context
-vi.mock("next/headers", () => ({
-  headers: vi.fn<() => Promise<Map<string, string>>>().mockResolvedValue(new Map()),
-}));
-
-// Mock next/server after() to be a no-op
-vi.mock("next/server", () => ({
-  after: vi.fn<(fn: () => unknown) => unknown>((fn) => fn()),
-}));
-
 // Now import modules that depend on the db
 const { notifications, users } = await import("@domainstack/db/schema");
-const { createCaller } = await import("@/server/routers/_app");
+const { createCaller } = await import("../router");
 
-import type { Context } from "@domainstack/api";
+import type { Context } from "../context";
 
 // Test fixtures
 const TEST_USER_ID = "test-user-id-notifications";

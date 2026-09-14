@@ -1,4 +1,4 @@
-import type { Plan } from "@domainstack/types";
+import type { Plan } from "./primitives";
 
 export interface IdentifyProperties {
   email?: string;

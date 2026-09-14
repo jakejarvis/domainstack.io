@@ -123,7 +123,7 @@ export const onRequestError: Instrumentation.onRequestError = async (error, requ
   }
 
   try {
-    const { captureException } = await import("@/lib/analytics/server");
+    const { captureException } = await import("@domainstack/api/analytics");
     await captureException(error, undefined, {
       path: request.path,
       method: request.method,

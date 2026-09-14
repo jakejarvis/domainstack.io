@@ -1,13 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { toRegistrableDomain } from "@/lib/normalize-domain";
-import {
-  createTRPCRouter,
-  rateLimit,
-  publicProcedure,
-  withDomainAccessUpdate,
-} from "@domainstack/api";
 import { createLogger } from "@domainstack/logger";
 import type { RateLimitConfig } from "@domainstack/redis/ratelimit";
 import { fetchCertificates } from "@domainstack/server/services/certificates";
@@ -18,6 +11,12 @@ import { fetchHeaders, getHttpStatusMessage } from "@domainstack/server/services
 import { fetchHosting } from "@domainstack/server/services/hosting";
 import { fetchRegistration } from "@domainstack/server/services/registration";
 import { fetchSeo } from "@domainstack/server/services/seo";
+import { toRegistrableDomain } from "@domainstack/utils/domain";
+
+import { withDomainAccessUpdate } from "../middleware";
+import { publicProcedure } from "../procedures";
+import { rateLimit } from "../rate-limit";
+import { createTRPCRouter } from "../trpc";
 
 const logger = createLogger({ source: "routers/domain" });
 

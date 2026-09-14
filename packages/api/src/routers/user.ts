@@ -1,8 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { analytics } from "@/lib/analytics/server";
-import { createTRPCRouter, protectedProcedure } from "@domainstack/api";
 import {
   deleteCalendarFeed,
   disableCalendarFeed,
@@ -22,6 +20,10 @@ import {
 import { getUserSubscription } from "@domainstack/db/queries/user-subscription";
 import { getLinkedAccounts } from "@domainstack/db/queries/users";
 import type { SubscriptionQuota } from "@domainstack/types";
+
+import { analytics } from "../analytics";
+import { protectedProcedure } from "../procedures";
+import { createTRPCRouter } from "../trpc";
 
 const NotificationChannelsSchema = z.object({
   inApp: z.boolean(),

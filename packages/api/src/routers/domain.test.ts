@@ -78,16 +78,6 @@ vi.mock("@domainstack/edge-config", () => ({
   getProviderCatalog: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue(null),
 }));
 
-// Mock next/headers to avoid errors outside request context
-vi.mock("next/headers", () => ({
-  headers: vi.fn<() => Promise<Map<string, string>>>().mockResolvedValue(new Map()),
-}));
-
-// Mock next/server after() to be a no-op
-vi.mock("next/server", () => ({
-  after: vi.fn<(fn: () => unknown) => unknown>((fn) => fn()),
-}));
-
 // Now import modules that depend on the db
 const {
   certificateChecks,
@@ -106,10 +96,10 @@ const { fetchFavicon } = await import("@domainstack/server/services/favicon");
 const { fetchHeaders } = await import("@domainstack/server/services/headers");
 const { fetchRegistration } = await import("@domainstack/server/services/registration");
 const { getRateLimiter } = await import("@domainstack/redis/ratelimit");
-const { createCaller } = await import("@/server/routers/_app");
+const { createCaller } = await import("../router");
 const { eq } = await import("@domainstack/db/drizzle");
 
-import type { Context } from "@domainstack/api";
+import type { Context } from "../context";
 
 // Test fixtures - use valid UUIDs
 const TEST_DOMAIN = "example.com";

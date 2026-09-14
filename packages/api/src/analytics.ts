@@ -1,8 +1,7 @@
-import "server-only";
-import { after } from "next/server";
+import { waitUntil } from "@vercel/functions";
 import { PostHog } from "posthog-node";
 
-import type { IdentifyProperties, IdentifySetOnceProperties } from "./types";
+import type { IdentifyProperties, IdentifySetOnceProperties } from "@domainstack/types";
 
 const client = process.env.NEXT_PUBLIC_POSTHOG_KEY
   ? new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
@@ -56,7 +55,7 @@ export async function captureException(
   });
 
   // Deferring past the response is the caller's job — `trackException` already
-  // wraps this in `after()`, and `onRequestError` runs off the response path.
+  // wraps this in `waitUntil()`, and `onRequestError` runs off the response path.
   await client.flush();
 }
 
@@ -71,7 +70,7 @@ export const analytics = {
     }
 
     const posthog = client;
-    after(() =>
+    waitUntil(
       posthog.identifyImmediate({
         distinctId: userId,
         properties: {
@@ -88,7 +87,7 @@ export const analytics = {
     }
 
     const posthog = client;
-    after(() =>
+    waitUntil(
       posthog.captureImmediate({
         event,
         distinctId: userId,
@@ -98,6 +97,6 @@ export const analytics = {
   },
 
   trackException: (error: unknown, properties?: Record<string, unknown>, userId?: string) => {
-    after(() => captureException(error, userId, properties));
+    waitUntil(captureException(error, userId, properties));
   },
 };

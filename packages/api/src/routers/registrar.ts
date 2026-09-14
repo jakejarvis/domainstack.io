@@ -1,7 +1,10 @@
 import { z } from "zod";
 
-import { providers } from "@/lib/pricing";
-import { createTRPCRouter, rateLimit, publicProcedure } from "@domainstack/api";
+import { providers } from "@domainstack/server/services/pricing";
+
+import { publicProcedure } from "../procedures";
+import { rateLimit } from "../rate-limit";
+import { createTRPCRouter } from "../trpc";
 
 export const registrarRouter = createTRPCRouter({
   /**
