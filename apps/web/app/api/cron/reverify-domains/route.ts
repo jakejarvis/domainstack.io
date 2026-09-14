@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 
 import { settleInBatches } from "@/lib/settle-in-batches";
-import { reverifyOwnershipWorkflow } from "@/workflows/reverify-ownership";
 import { getVerifiedTrackedDomainIds } from "@domainstack/db/queries/tracked-domains";
 import { createLogger } from "@domainstack/logger";
+import { reverifyOwnershipWorkflow } from "@domainstack/workflows/reverify-ownership";
 
 const logger = createLogger({ source: "cron/reverify-domains" });
 

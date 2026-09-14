@@ -13,4 +13,5 @@ export * from "./gdpr";
 export * from "./http-headers";
 export * from "./primitives";
 export * from "./registrars";
+export * from "./sections";
 export * from "./ttl";

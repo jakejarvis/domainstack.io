@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("workflow/api", () => ({ start: mocks.start }));
-vi.mock("@/workflows/warm-domains", () => ({
+vi.mock("@domainstack/workflows/warm-domains", () => ({
   warmDomainWorkflow: vi.fn<(input: unknown) => Promise<unknown>>(),
 }));
 vi.mock("@domainstack/db/queries/domains", () => ({
@@ -14,7 +14,7 @@ vi.mock("@domainstack/db/queries/domains", () => ({
 }));
 
 import { GET } from "@/app/api/cron/warm-domains/route";
-import { warmDomainWorkflow } from "@/workflows/warm-domains";
+import { warmDomainWorkflow } from "@domainstack/workflows/warm-domains";
 
 describe("warm domains cron", () => {
   beforeEach(() => {

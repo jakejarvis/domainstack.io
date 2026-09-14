@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 
 import { settleInBatches } from "@/lib/settle-in-batches";
-import { expiryWorkflow } from "@/workflows/expiry";
 import { getVerifiedTrackedDomainIds } from "@domainstack/db/queries/tracked-domains";
 import { createLogger } from "@domainstack/logger";
+import { expiryWorkflow } from "@domainstack/workflows/expiry";
 
 const logger = createLogger({ source: "cron/check-expiry" });
 

@@ -2,7 +2,7 @@
  * Registration service - fetches, normalizes, and persists WHOIS/RDAP data.
  *
  * Its internal helpers are also called by the monitoring workflow steps in
- * apps/web/workflows/shared.
+ * packages/workflows/src/steps.
  * Transient errors throw (for TanStack Query to retry).
  * Permanent errors return { success: false, error }.
  */

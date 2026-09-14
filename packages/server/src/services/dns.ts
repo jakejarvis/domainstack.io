@@ -2,7 +2,7 @@
  * DNS service - fetches and persists DNS records.
  *
  * Its internal helpers are also called by the monitoring workflow steps in
- * apps/web/workflows/shared.
+ * packages/workflows/src/steps.
  * All errors throw (for TanStack Query to retry) - there are no permanent failures.
  */
 

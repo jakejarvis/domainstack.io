@@ -5,8 +5,6 @@ import { start } from "workflow/api";
 import { z } from "zod";
 
 import { analytics } from "@/lib/analytics/server";
-import { autoVerifyWorkflow } from "@/workflows/auto-verify";
-import { initializeSnapshotWorkflow } from "@/workflows/initialize-snapshot";
 import { VERIFICATION_METHODS } from "@domainstack/constants";
 import { ensureDomainRecord, findDomainByName } from "@domainstack/db/queries/domains";
 import {
@@ -29,6 +27,8 @@ import { sendEmail } from "@domainstack/email";
 import VerificationInstructionsEmail from "@domainstack/email/templates/verification-instructions";
 import { createLogger } from "@domainstack/logger";
 import { getRateLimiter } from "@domainstack/redis/ratelimit";
+import { autoVerifyWorkflow } from "@domainstack/workflows/auto-verify";
+import { initializeSnapshotWorkflow } from "@domainstack/workflows/initialize-snapshot";
 
 const logger = createLogger({ source: "routers/tracking" });
 

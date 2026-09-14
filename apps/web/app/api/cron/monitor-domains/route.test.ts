@@ -9,14 +9,14 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("workflow/api", () => ({ start: mocks.start }));
-vi.mock("@/lib/workflow/monitor-dedup", () => ({
+vi.mock("@domainstack/workflows/monitor-lock", () => ({
   acquireMonitorLock: mocks.acquireMonitorLock,
   releaseMonitorLock: mocks.releaseMonitorLock,
 }));
-vi.mock("@/workflows/detect-changes", () => ({
+vi.mock("@domainstack/workflows/detect-changes", () => ({
   detectChangesWorkflow: vi.fn<(input: unknown) => Promise<unknown>>(),
 }));
-vi.mock("@/workflows/initialize-snapshot", () => ({
+vi.mock("@domainstack/workflows/initialize-snapshot", () => ({
   initializeSnapshotWorkflow: vi.fn<(input: unknown) => Promise<unknown>>(),
 }));
 vi.mock("@domainstack/db/queries/snapshots", () => ({
