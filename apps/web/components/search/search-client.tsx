@@ -234,15 +234,23 @@ function useSearchClient({
     [onFocusChangeAction],
   );
 
-  const handleBlur = useCallback(() => {
-    setIsFocused(false);
-    onFocusChangeAction?.(false);
-    // Collapse only when nothing would be lost. Report pages prefill the input,
-    // so "unchanged" counts as dismissable or it could never auto-collapse.
-    if (value.trim() === "" || value === derivedInitial) {
-      onCloseAction?.();
-    }
-  }, [onFocusChangeAction, onCloseAction, value, derivedInitial]);
+  const handleBlur = useCallback(
+    (e: React.FocusEvent<HTMLInputElement>) => {
+      setIsFocused(false);
+      onFocusChangeAction?.(false);
+      // Focus staying inside the form means the user is Tabbing to the close
+      // button; collapsing here would hide it before they can activate it.
+      // (Pointer activation is already covered by its preventDefault.)
+      const next = e.relatedTarget;
+      if (next instanceof Node && e.currentTarget.form?.contains(next)) return;
+      // Collapse only when nothing would be lost. Report pages prefill the input,
+      // so "unchanged" counts as dismissable or it could never auto-collapse.
+      if (value.trim() === "" || value === derivedInitial) {
+        onCloseAction?.();
+      }
+    },
+    [onFocusChangeAction, onCloseAction, value, derivedInitial],
+  );
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLInputElement>) => {
     if (e.detail === 3) {
