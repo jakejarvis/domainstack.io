@@ -35,10 +35,13 @@ concurrency:
 
 jobs:
   # Proves the image still builds. The apt font pin and the build-time
-  # ad-blocking engine both fail loudly here rather than after a merge.
+  # ad-blocking engine both fail loudly here rather than after a merge. Also
+  # covers a manual dispatch from a non-main branch: publish is restricted to
+  # main below, so a dispatch elsewhere still gets a build-only check instead
+  # of silently doing nothing.
   build:
     name: Build
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -65,7 +68,12 @@ jobs:
 
   publish:
     name: Publish
-    if: github.event_name != 'pull_request'
+    # workflow_dispatch can be run against any branch from the Actions UI, and
+    # `on.push.branches` only scopes automatic pushes, not manual runs — so
+    # this must check the ref itself. Without it, a manual dispatch from a
+    # feature branch would push that branch's Dockerfile to the shared
+    # `:latest` tag using the OIDC-derived publish credential.
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:

@@ -21,9 +21,9 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         chromium \
         chromium-sandbox \
-        fonts-freefont-ttf \
-        fonts-liberation \
-        fonts-noto-cjk \
+        fonts-freefont-ttf=20120503-10 \
+        fonts-liberation=1:1.07.4-11 \
+        fonts-noto-cjk=1:20220127+repack1-1 \
         fonts-noto-color-emoji=2.042-0+deb12u1 \
     && rm -rf /var/lib/apt/lists/*
 
@@ -44,9 +44,16 @@ COPY packages/screenshot-runner packages/screenshot-runner
 
 # The ad-blocking engine is compiled here so a capture never downloads and
 # parses filter lists at runtime. This pins the lists to the image digest.
+#
+# `pnpm prune --prod` has no --filter equivalent and only prunes the root
+# workspace's own devDependencies, not this package's (tsx, vitest,
+# typescript stay installed). The build output lives in dist/, outside
+# node_modules, so it survives removing and reinstalling node_modules
+# prod-only.
 RUN pnpm --filter @domainstack/screenshot-runner build \
     && pnpm --filter @domainstack/screenshot-runner build:blocklist \
-    && pnpm prune --prod
+    && rm -rf node_modules packages/screenshot-runner/node_modules \
+    && pnpm install --prod --frozen-lockfile --filter @domainstack/screenshot-runner
 
 # Chromium's sandbox refuses to start as root and the runner never disables it,
 # so captures have to run unprivileged.

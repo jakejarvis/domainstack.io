@@ -5,7 +5,7 @@ import {
 } from "@domainstack/safe-fetch";
 
 import { ScreenshotError } from "./errors";
-import { runSandboxCapture } from "./sandbox";
+import { requireSandboxImage, runSandboxCapture } from "./sandbox";
 
 const DEFAULT_VIEWPORT_WIDTH = 1200;
 const DEFAULT_VIEWPORT_HEIGHT = 630;
@@ -113,9 +113,16 @@ export async function captureScreenshot(
   options: CaptureOptions = {},
 ): Promise<CaptureResult> {
   const target = validateTarget(url);
+  // Checked before the DNS lookup below: a genuinely bad target and a broken
+  // deployment are different failures, and DNS resolving first would let an
+  // unrelated (and possibly permanent) target problem mask a misconfigured
+  // deployment as "this domain has no screenshot" instead of surfacing the
+  // regression.
+  const image = requireSandboxImage();
   await validatePublicTarget(target);
 
   return runSandboxCapture(target.href, {
+    image,
     width: options.width ?? DEFAULT_VIEWPORT_WIDTH,
     height: options.height ?? DEFAULT_VIEWPORT_HEIGHT,
     format: options.format ?? "webp",
