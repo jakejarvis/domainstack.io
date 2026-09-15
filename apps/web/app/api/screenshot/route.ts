@@ -24,7 +24,15 @@ type ScreenshotStartResponse =
 type ScreenshotStatusResponse =
   | { status: "running" }
   | { status: "completed"; cached: false; success: true; data: ScreenshotData }
-  | { status: "completed"; cached: false; success: false; error: string; data: { url: null } }
+  | {
+      status: "completed";
+      cached: false;
+      success: false;
+      error: string;
+      /** Specific capture failure, e.g. `dns_error` or `target_blocked`. */
+      errorCode?: string;
+      data: { url: null };
+    }
   | { status: "failed"; error: string };
 
 const NO_STORE_HEADERS = {
@@ -219,6 +227,7 @@ export async function GET(
           cached: false,
           success: false,
           error: result.error,
+          errorCode: result.errorCode,
           data: result.data,
         },
         { headers: withNoStore(rateLimit.headers) },
