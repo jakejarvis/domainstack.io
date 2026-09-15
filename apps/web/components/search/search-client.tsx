@@ -234,15 +234,16 @@ function useSearchClient({
     [onFocusChangeAction],
   );
 
+  // Bound to the whole input group rather than the input, so Tabbing between the
+  // input and the close button doesn't read as leaving the search — and so focus
+  // leaving from either one still does.
   const handleBlur = useCallback(
-    (e: React.FocusEvent<HTMLInputElement>) => {
+    (e: React.FocusEvent<HTMLDivElement>) => {
+      const next = e.relatedTarget;
+      if (next instanceof Node && e.currentTarget.contains(next)) return;
+
       setIsFocused(false);
       onFocusChangeAction?.(false);
-      // Focus staying inside the form means the user is Tabbing to the close
-      // button; collapsing here would hide it before they can activate it.
-      // (Pointer activation is already covered by its preventDefault.)
-      const next = e.relatedTarget;
-      if (next instanceof Node && e.currentTarget.form?.contains(next)) return;
       // Collapse only when nothing would be lost. Report pages prefill the input,
       // so "unchanged" counts as dismissable or it could never auto-collapse.
       if (value.trim() === "" || value === derivedInitial) {
@@ -366,7 +367,7 @@ export function SearchClient({
         <Field>
           <FieldLabel className="sr-only">Domain</FieldLabel>
           <div className="relative w-full flex-1">
-            <InputGroup className={cn(variant === "lg" ? "h-12" : "h-10")}>
+            <InputGroup className={cn(variant === "lg" ? "h-12" : "h-10")} onBlur={handleBlur}>
               <InputGroupInput
                 ref={attachInputRef}
                 name="q"
@@ -384,7 +385,6 @@ export function SearchClient({
                 onChange={(e) => setValue(e.target.value)}
                 onPointerDown={handlePointerDown}
                 onFocus={handleFocus}
-                onBlur={handleBlur}
                 onClick={handleClick}
                 onKeyDown={handleKeyDown}
                 className="relative truncate sm:translate-y-[1px]"
