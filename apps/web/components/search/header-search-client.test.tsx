@@ -1,9 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
+import { MobileSearchProvider } from "@/components/layout/mobile-search-context";
 import { render } from "@/mocks/react";
 
 import { HeaderSearchClient } from "./header-search-client";
+
+function HeaderSearch() {
+  return (
+    <MobileSearchProvider>
+      <HeaderSearchClient />
+    </MobileSearchProvider>
+  );
+}
 
 const nav = vi.hoisted(() => ({
   push: vi.fn<(href: string) => void | Promise<void>>(),
@@ -30,7 +39,7 @@ describe("HeaderSearch", () => {
 
   it("prefills normalized domain from params and navigates on Enter", async () => {
     nav.params = { domain: "Sub.Test.INVALID" };
-    await render(<HeaderSearchClient />);
+    await render(<HeaderSearch />);
     const input = domainSearchInput();
     await expect.element(input).toHaveValue("sub.test.invalid");
     await userEvent.type(input, "{Enter}");
@@ -39,7 +48,7 @@ describe("HeaderSearch", () => {
 
   it("does nothing on invalid domain", async () => {
     nav.params = { domain: "invalid domain" };
-    await render(<HeaderSearchClient />);
+    await render(<HeaderSearch />);
     const input = domainSearchInput();
     await userEvent.type(input, "{Enter}");
     expect(nav.push).not.toHaveBeenCalled();
@@ -55,14 +64,14 @@ describe("HeaderSearch", () => {
     );
 
     nav.params = { domain: "foo.invalid" };
-    const { rerender } = await render(<HeaderSearchClient />);
+    const { rerender } = await render(<HeaderSearch />);
     const input = domainSearchInput();
     // Submit to trigger loading state (disables input)
     await userEvent.type(input, "{Enter}");
     await expect.element(input).toBeDisabled();
     // Simulate navigation by changing route params and re-rendering
     nav.params = { domain: "bar.invalid" };
-    await rerender(<HeaderSearchClient />);
+    await rerender(<HeaderSearch />);
     finishNavigation?.();
     await expect.element(domainSearchInput()).toBeEnabled();
   });

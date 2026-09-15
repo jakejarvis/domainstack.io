@@ -52,7 +52,6 @@ export function AppHeaderClientButtons() {
               <Button
                 variant="ghost"
                 size="icon-sm"
-                className="hidden sm:inline-flex"
                 nativeButton={false}
                 render={
                   <Link href="/dashboard">
@@ -65,7 +64,7 @@ export function AppHeaderClientButtons() {
           />
           <TooltipContent>Dashboard</TooltipContent>
         </Tooltip>
-        <AppHeaderSeparator className="hidden sm:inline-flex" />
+        <AppHeaderSeparator />
         <NotificationsPopover />
         <AppHeaderSeparator className="mr-2" />
         <UserMenu />

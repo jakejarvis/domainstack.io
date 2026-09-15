@@ -1,24 +1,24 @@
 "use client";
 
-import { useAtomValue } from "jotai";
 import { useReducedMotion } from "motion/react";
 import * as m from "motion/react-m";
 
+import { useMobileSearch } from "@/components/layout/mobile-search-context";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { isSearchFocusedAtom } from "@/lib/atoms/search-atoms";
 
 export function AppHeaderSlideOver({ children }: { children: React.ReactNode }) {
-  const isSearchFocused = useAtomValue(isSearchFocusedAtom);
+  const { isOpen: isSearchOpen } = useMobileSearch();
   const isMobile = useIsMobile();
   const shouldReduceMotion = useReducedMotion();
+  const isHidden = isMobile && isSearchOpen;
 
   return (
     <m.div
       className="flex h-full items-center gap-1.5 justify-self-end"
       animate={{
         // Only animate on mobile; on desktop keep fully visible
-        opacity: isMobile ? (isSearchFocused ? 0 : 1) : 1,
-        x: isMobile && !shouldReduceMotion ? (isSearchFocused ? 16 : 0) : 0,
+        opacity: isHidden ? 0 : 1,
+        x: isHidden && !shouldReduceMotion ? 16 : 0,
       }}
       transition={
         shouldReduceMotion
@@ -30,7 +30,8 @@ export function AppHeaderSlideOver({ children }: { children: React.ReactNode }) 
             }
       }
       initial={false}
-      style={{ pointerEvents: isSearchFocused && isMobile ? "none" : "auto" }}
+      // `inert` also drops the hidden cluster from the tab order and a11y tree.
+      inert={isHidden || undefined}
     >
       {children}
     </m.div>
