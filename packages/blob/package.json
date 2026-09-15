@@ -5,21 +5,23 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/files.ts"
   },
   "scripts": {
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt --config ../../.oxfmtrc.json",
-    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json"
+    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json",
+    "test": "vitest run"
   },
   "dependencies": {
     "@domainstack/logger": "workspace:*",
     "@vercel/blob": "^2.8.0",
-    "file-type": "^22.1.0"
+    "files-sdk": "^2.4.1"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
-    "@types/node": "catalog:"
+    "@types/node": "catalog:",
+    "vitest": "catalog:"
   }
 }

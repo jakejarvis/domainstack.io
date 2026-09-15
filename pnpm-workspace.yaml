@@ -4,11 +4,11 @@ packages:
 catalog:
   '@tabler/icons-react': ^3.46.0
   '@types/node': ^24.13.4
-  motion: ^13.2.0
+  motion: ^13.3.0
   sonner: ^2.0.8
   vitest: ^5.0.0
-  workflow: 5.0.0-beta.50
-  zod: ^4.6.2
+  workflow: 5.0.0-beta.51
+  zod: ^4.6.5
 publicHoistPattern:
   - '@sparticuz/chromium'
   - puppeteer-core

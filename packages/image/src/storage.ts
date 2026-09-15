@@ -1,4 +1,6 @@
-import { storeBlob } from "@domainstack/blob";
+import { blobKey, getFiles } from "@domainstack/blob";
+
+import type { OptimizeImageOptions } from "./optimize";
 
 export interface StoreImageOptions {
   /** Storage category (e.g., "favicon", "screenshot", "opengraph") */
@@ -11,33 +13,25 @@ export interface StoreImageOptions {
   width: number;
   /** Image height in pixels */
   height: number;
-  /** Optional content type override */
-  contentType?: string;
-  /** Optional file extension override */
-  extension?: string;
-  /** Optional cache control max age in seconds */
-  cacheControlMaxAge?: number;
+  /** Image format, used as the file extension (defaults to "webp") */
+  format?: OptimizeImageOptions["format"];
 }
 
 /**
  * Store an image to blob storage with dimension-based naming.
  *
  * Creates a deterministic pathname using the domain, kind, and dimensions.
- * The filename follows the pattern `{width}x{height}.{ext}`.
+ * The filename follows the pattern `{width}x{height}.{format}`.
  */
 export async function storeImage(
   options: StoreImageOptions,
 ): Promise<{ url: string; pathname: string }> {
-  const { kind, domain, buffer, width, height, contentType, extension, cacheControlMaxAge } =
-    options;
+  const { kind, domain, buffer, width, height, format = "webp" } = options;
 
-  return storeBlob({
-    kind,
-    buffer,
-    filename: `${width}x${height}`,
-    extraParts: [domain, kind, `${width}x${height}`],
-    contentType,
-    extension,
-    cacheControlMaxAge,
-  });
+  const size = `${width}x${height}`;
+  const key = blobKey(kind, [domain, kind, size], `${size}.${format}`);
+  const files = getFiles();
+  await files.upload(key, buffer);
+
+  return { url: await files.url(key), pathname: key };
 }
