@@ -108,6 +108,8 @@ export interface SandboxCaptureResult {
 }
 
 export interface SandboxCaptureOptions {
+  /** Already validated by `requireSandboxImage()`. */
+  image: string;
   width: number;
   height: number;
   format: "webp" | "png" | "jpeg";
@@ -177,7 +179,15 @@ function getSandboxRegion(): string | undefined {
   return process.env.SCREENSHOT_SANDBOX_REGION?.trim() || undefined;
 }
 
-function requireSandboxImage(): string {
+/**
+ * Called by `capture.ts` before any DNS work, so a misconfigured deployment
+ * is never masked by an unrelated (and possibly genuine) target failure, and
+ * so it never reaches this module: `runSandboxCapture` below receives the
+ * already-validated image and has nothing left to throw before its own
+ * try/finally, keeping this function's structured logging and error context
+ * uniform across every failure path.
+ */
+export function requireSandboxImage(): string {
   const image = process.env.SCREENSHOT_SANDBOX_IMAGE?.trim();
   if (!image) {
     throw new ScreenshotError(
@@ -199,7 +209,7 @@ export async function runSandboxCapture(
   options: SandboxCaptureOptions,
 ): Promise<SandboxCaptureResult> {
   const startedAt = Date.now();
-  const image = requireSandboxImage();
+  const { image } = options;
   let sandbox: Awaited<ReturnType<typeof Sandbox.create>> | null = null;
   let sandboxId: string | null = null;
   let exitCode: number | null = null;

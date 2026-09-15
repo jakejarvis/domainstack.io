@@ -66,9 +66,11 @@ function createSandboxMock(options?: {
       stdout,
       stderr,
     });
+  // `??` would treat an explicit `buffer: null` the same as "not provided",
+  // so presence is checked instead — that's exactly the empty_output case.
   const readFileToBuffer = vi
     .fn<() => Promise<Buffer | null>>()
-    .mockResolvedValue(options?.buffer ?? Buffer.from("webp"));
+    .mockResolvedValue(options && "buffer" in options ? options.buffer! : Buffer.from("webp"));
   return { name: "sbx_test", runCommand, readFileToBuffer, stop };
 }
 
@@ -256,5 +258,104 @@ describe("captureScreenshot", () => {
     // A broken deployment is neither retried nor cached against the domain.
     expect(classifyScreenshotError(error)).toBe("permanent_configuration");
     expect(mocks.createSandbox).not.toHaveBeenCalled();
+  });
+
+  it("checks the sandbox image before DNS, so an unset image never gets masked by a bad target", async () => {
+    delete process.env.SCREENSHOT_SANDBOX_IMAGE;
+
+    const error = await captureScreenshot("https://example.com").catch((caught) => caught);
+    expect(error).toMatchObject({ code: "configuration_error" });
+    expect(classifyScreenshotError(error)).toBe("permanent_configuration");
+    expect(mocks.resolvePublicHost).not.toHaveBeenCalled();
+    expect(mocks.createSandbox).not.toHaveBeenCalled();
+  });
+
+  it("surfaces a broken deployment instead of caching a domain that also fails DNS", async () => {
+    delete process.env.SCREENSHOT_SANDBOX_IMAGE;
+    const { SafeFetchError } = await import("@domainstack/safe-fetch");
+    mocks.resolvePublicHost.mockRejectedValue(
+      new SafeFetchError("dns_error", "getaddrinfo ENOTFOUND example.com"),
+    );
+
+    const error = await captureScreenshot("https://example.com").catch((caught) => caught);
+    // Without the ordering fix this would resolve DNS first and report
+    // dns_error / permanent_target instead, hiding that nothing can capture.
+    expect(error).toMatchObject({ code: "configuration_error" });
+    expect(classifyScreenshotError(error)).toBe("permanent_configuration");
+    expect(mocks.resolvePublicHost).not.toHaveBeenCalled();
+  });
+
+  it("classifies runner-rejected invocations as a configuration failure, not a bad target", async () => {
+    const sandbox = createSandboxMock({ exitCode: 1, stdout: runnerFailure("invalid_arguments") });
+    mocks.createSandbox.mockResolvedValue(sandbox);
+
+    const error = await captureScreenshot("https://example.com").catch((caught) => caught);
+    expect(error).toMatchObject({ code: "invalid_arguments" });
+    // The same invocation is built for every target, so this can never be a
+    // property of the domain — caching it as "missing" would be wrong for
+    // every domain captured until the regression is fixed.
+    expect(classifyScreenshotError(error)).toBe("permanent_configuration");
+  });
+
+  it("throws empty_output when the sandbox produces no image", async () => {
+    const sandbox = createSandboxMock({ buffer: null });
+    mocks.createSandbox.mockResolvedValue(sandbox);
+
+    const error = await captureScreenshot("https://example.com").catch((caught) => caught);
+    expect(error).toMatchObject({ code: "empty_output" });
+    expect(classifyScreenshotError(error)).toBe("retryable_infrastructure");
+  });
+
+  it("rejects a captured image over the size limit", async () => {
+    const sandbox = createSandboxMock({ buffer: Buffer.alloc(10 * 1024 * 1024 + 1) });
+    mocks.createSandbox.mockResolvedValue(sandbox);
+
+    const error = await captureScreenshot("https://example.com").catch((caught) => caught);
+    expect(error).toMatchObject({ code: "output_too_large" });
+    expect(classifyScreenshotError(error)).toBe("permanent_target");
+  });
+
+  it("treats malformed runner output as retryable infrastructure", async () => {
+    const sandbox = createSandboxMock({ stdout: "not json" });
+    mocks.createSandbox.mockResolvedValue(sandbox);
+
+    const error = await captureScreenshot("https://example.com").catch((caught) => caught);
+    expect(error).toMatchObject({ code: "invalid_output" });
+    expect(classifyScreenshotError(error)).toBe("retryable_infrastructure");
+  });
+
+  it("treats multi-line runner output as retryable infrastructure", async () => {
+    const sandbox = createSandboxMock({ stdout: "one\ntwo\n" });
+    mocks.createSandbox.mockResolvedValue(sandbox);
+
+    const error = await captureScreenshot("https://example.com").catch((caught) => caught);
+    expect(error).toMatchObject({ code: "invalid_output" });
+  });
+
+  it("passes fullPage and custom dimensions through to the runner invocation", async () => {
+    const sandbox = createSandboxMock();
+    mocks.createSandbox.mockResolvedValue(sandbox);
+
+    await captureScreenshot("https://example.com", {
+      width: 1920,
+      height: 1080,
+      format: "png",
+      fullPage: true,
+    });
+
+    expect(sandbox.runCommand).toHaveBeenCalledWith(
+      "node",
+      expect.arrayContaining([
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--format",
+        "png",
+        "--full-page",
+        "true",
+      ]),
+      { timeoutMs: 30_000 },
+    );
   });
 });
