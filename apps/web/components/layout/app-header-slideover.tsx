@@ -30,8 +30,7 @@ export function AppHeaderSlideOver({ children }: { children: React.ReactNode }) 
             }
       }
       initial={false}
-      // `inert` (rather than pointer-events) also drops the hidden cluster out of
-      // the tab order and the accessibility tree.
+      // `inert` also drops the hidden cluster from the tab order and a11y tree.
       inert={isHidden || undefined}
     >
       {children}

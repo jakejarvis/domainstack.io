@@ -34,16 +34,13 @@ export type SearchClientProps = {
   variant?: SearchClientVariant;
   initialValue?: string;
   onFocusChangeAction?: (isFocused: boolean) => void;
-  /**
-   * Lets a parent focus the input imperatively (see `MobileSearchProvider`).
-   * Falls back to an internal ref when omitted.
-   */
+  /** Lets a parent focus the input imperatively; internal ref when omitted. */
   inputRef?: React.RefObject<HTMLInputElement | null>;
   /** Collapse without moving focus — used after submit and on an idle blur. */
   onCloseAction?: () => void;
   /** Collapse and return focus to the control that opened the search. */
   onDismissAction?: () => void;
-  /** Invoked before the search hotkey focuses the input, so a collapsed parent can expand first. */
+  /** Runs before the hotkey focuses the input, so a collapsed parent can expand. */
   onHotkeyAction?: () => void;
 };
 
@@ -92,20 +89,16 @@ function SearchInputAddons({
           <Spinner />
         ) : (
           <>
-            {/* The Kbd hint is desktop-only, so the close button takes the slot it
-                leaves empty on mobile and no desktop layout changes. Both use the
-                `md` breakpoint so they never overlap. */}
+            {/* The Kbd hint is desktop-only, so the close button takes the slot
+                it leaves empty on mobile. Both use `md` so they never overlap. */}
             {onDismissAction ? (
               <InputGroupButton
                 size="icon-xs"
                 className="md:hidden"
                 aria-label="Close search"
-                // Hold focus on the input through pointer-down, otherwise the blur
-                // collapses the search and makes this button inert before its
-                // click can land. `onPointerDown` (not `onMouseDown`) is required
-                // for this to work on touch — this button only renders on mobile,
-                // and touch activation fires `pointerdown`/`touchstart` before any
-                // synthesized mouse event, so a mouse-only handler never runs.
+                // Hold focus through pointer-down, or the blur collapses the
+                // search before this click lands. Must be `pointerdown`: touch
+                // fires it before any synthesized mousedown.
                 onPointerDown={(e) => e.preventDefault()}
                 onClick={() => onDismissAction()}
               >
@@ -171,9 +164,8 @@ function useSearchClient({
   const [loading, startNavigation] = useTransition();
   const mounted = useIsClient();
   const [isFocused, setIsFocused] = useState(false);
-  // Keep a real `useRef` here so React Compiler still recognizes ref access, and
-  // mirror the node onto the caller's ref via a callback ref instead of swapping
-  // the ref object out.
+  // A real `useRef` so React Compiler still recognizes ref access; the caller's
+  // ref is mirrored via callback rather than swapped in.
   const inputRef = useRef<HTMLInputElement>(null);
   const attachInputRef = useCallback(
     (node: HTMLInputElement | null) => {
@@ -191,7 +183,7 @@ function useSearchClient({
   useHotkey(
     SEARCH_HOTKEY,
     () => {
-      // Expand first when collapsed, otherwise focusing an inert input is a no-op.
+      // Expand first, or focusing a collapsed input is a no-op.
       onHotkeyAction?.();
       inputRef.current?.focus();
     },
@@ -245,9 +237,8 @@ function useSearchClient({
   const handleBlur = useCallback(() => {
     setIsFocused(false);
     onFocusChangeAction?.(false);
-    // Collapse only when nothing would be lost. A domain report page prefills the
-    // input, so "unchanged from the initial value" counts as dismissable too —
-    // otherwise the search could never auto-collapse there.
+    // Collapse only when nothing would be lost. Report pages prefill the input,
+    // so "unchanged" counts as dismissable or it could never auto-collapse.
     if (value.trim() === "" || value === derivedInitial) {
       onCloseAction?.();
     }
@@ -282,8 +273,8 @@ function useSearchClient({
   const handleSubmit = useCallback(() => {
     const normalized = normalizeDomainInput(value);
 
-    // Validate before blurring: on mobile the blur collapses the search, and the
-    // collapsed subtree cannot take focus back to show the user their mistake.
+    // Validate before blurring: on mobile the blur collapses the search, and a
+    // collapsed input can't take focus back to show the error.
     if (!isValidDomain(normalized)) {
       analytics.track("search_invalid_input", { input: value });
       toast.error("Please enter a valid domain.", {

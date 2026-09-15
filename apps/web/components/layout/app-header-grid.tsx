@@ -27,9 +27,8 @@ export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
     <>
       <m.header
         className={cn(
-          // Mobile collapsed state lives in CSS, not JS: `useIsMobile()` is false
-          // until client-ready, so a JS-only template would paint a full-width
-          // search bar for one frame and then snap it away.
+          // Collapsed columns live in CSS so the first paint is right: a
+          // JS-only template would flash a full-width search bar on mobile.
           "top-0 right-0 left-0 z-100 grid h-[var(--header-height)] grid-cols-[auto_0px_1fr] items-center gap-4 border-b border-black/15 bg-background/80 px-4 backdrop-blur md:grid-cols-[1fr_minmax(0,var(--container-2xl))_1fr] dark:border-white/10",
           "md:sticky md:right-auto md:left-auto",
           // Mobile transform logic:
@@ -43,10 +42,7 @@ export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
                 : "fixed translate-y-0 transition-transform duration-300 ease-out" // Visible (animate reveal)
               : "absolute translate-y-0"), // Natural scroll (no scroll-linked transforms)
         )}
-        // Until the client knows the viewport, omit the key entirely so no inline
-        // style is emitted and the classes above govern the first paint. Once
-        // mounted, the value handed to motion matches what the class already
-        // resolved to, so taking over causes no visual jump.
+        // Omit the key pre-mount so no inline style overrides those classes.
         animate={
           mounted
             ? {

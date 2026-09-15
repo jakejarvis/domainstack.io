@@ -8,10 +8,9 @@ import { useIsHomeRoute } from "@/hooks/use-is-home-route";
 import { Button } from "@domainstack/ui/button";
 
 /**
- * Expands the header search on mobile. Hidden from `md` up, where the search
- * input is always visible, and hidden on the landing page, which has its own
- * large search field. Carries its own trailing separator so both disappear
- * together.
+ * Expands the header search on mobile. Hidden from `md` up, where the input is
+ * always visible, and on the landing page, which has its own search field.
+ * Carries its trailing separator so both disappear together.
  */
 export function MobileSearchToggle() {
   const { isOpen, open, toggleRef } = useMobileSearch();

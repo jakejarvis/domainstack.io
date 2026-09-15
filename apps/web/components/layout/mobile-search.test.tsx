@@ -28,10 +28,8 @@ const DESKTOP = { width: 1280, height: 720 };
 const MOBILE = { width: 390, height: 844 };
 
 /**
- * Mirrors `AppHeader`'s structure so the real grid collapse is under test: the
- * toggle sits in the icon cluster, the input in the middle column that shrinks
- * to 0px while collapsed. The extra "Dashboard" button stands in for the rest of
- * the action cluster, so tests can tell whether the cluster is reachable.
+ * Mirrors `AppHeader` so the real grid collapse is under test. The "Dashboard"
+ * button stands in for the action cluster, so tests can tell it is reachable.
  */
 function Header() {
   return (
@@ -86,8 +84,8 @@ describe("mobile header search", () => {
     await render(<Header />);
 
     await expect.element(toggle()).toHaveAttribute("aria-expanded", "false");
-    // The input stays mounted while collapsed so `open()` can focus it inside the
-    // tap gesture; `visibility` is what keeps it off-limits until then.
+    // Stays mounted so `open()` can focus it in the tap gesture; `visibility`
+    // is what keeps it off-limits until then.
     await expect.poll(searchVisibility).toBe("hidden");
 
     await toggle().click();
@@ -101,10 +99,9 @@ describe("mobile header search", () => {
     await page.viewport(MOBILE.width, MOBILE.height);
     await render(<Header />);
 
-    // `useIsMobile()` reports false until after the first paint, while the
-    // collapsed grid template is already in the SSR markup. Gating on a JS
-    // breakpoint would leave the input tabbable for that whole window, so the
-    // hidden state must come from the stylesheet and carry no `inert`.
+    // `useIsMobile()` is false until after the first paint, but the SSR markup
+    // is already collapsed — gating on JS would leave the input tabbable for
+    // that whole window.
     const wrapper = searchWrapper();
     expect(wrapper?.hasAttribute("inert")).toBe(false);
     expect(wrapper?.className).toContain("invisible");
@@ -134,8 +131,8 @@ describe("mobile header search", () => {
     await page.getByRole("button", { name: "Close search" }).click();
 
     await expect.element(toggle()).toHaveAttribute("aria-expanded", "false");
-    // The button must outlive the input's blur-close, or the dismissal downgrades
-    // to a plain close and focus is stranded on the body.
+    // The button must outlive the input's blur-close, or the dismissal
+    // downgrades to a plain close and focus is stranded on the body.
     await expect.element(toggle()).toHaveFocus();
   });
 
@@ -175,8 +172,7 @@ describe("mobile header search", () => {
     await userEvent.keyboard("{Enter}");
 
     expect(nav.push).not.toHaveBeenCalled();
-    // Validation has to surface somewhere the user can act on it, so the search
-    // must not collapse out from under the toast.
+    // The search must not collapse out from under its own validation toast.
     await expect.element(toggle()).toHaveAttribute("aria-expanded", "true");
     await expect.element(searchInput()).toHaveFocus();
   });
@@ -188,15 +184,13 @@ describe("mobile header search", () => {
     await toggle().click();
     await expect.element(toggle()).toHaveAttribute("aria-expanded", "true");
 
-    // The toggle is not rendered on the landing page, so an open search that
-    // survived the navigation would leave the action cluster hidden and inert
-    // with nothing left to reopen it.
+    // No toggle on the landing page, so a search surviving the navigation
+    // would strand the action cluster hidden and inert.
     nav.segment = null;
     await rerender(<Header />);
 
-    // Assert the mechanism, not `toBeVisible()`: Playwright treats `inert` and
-    // `opacity: 0` elements as visible, so a weaker check passes even when the
-    // cluster is unreachable.
+    // Assert the mechanism: Playwright counts `inert` and `opacity: 0`
+    // elements as visible, so `toBeVisible()` would pass either way.
     const dashboard = document.querySelector<HTMLElement>("button:not([aria-label])");
     await expect.poll(() => dashboard?.closest("[inert]")).toBeNull();
     // Polled, not sampled — the cluster springs back from opacity 0.
@@ -220,8 +214,7 @@ describe("mobile header search", () => {
 
     await expect.element(searchInput()).toBeEnabled();
     expect(searchVisibility()).toBe("visible");
-    // Mounted but hidden by `md:hidden` — distinct from the landing page above,
-    // and this assertion fails if that class is ever dropped.
+    // Mounted but hidden by `md:hidden` — unlike the landing page above.
     expect(toggleElement()).not.toBeNull();
     expect(getComputedStyle(toggleElement()!).display).toBe("none");
   });
