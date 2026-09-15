@@ -33,12 +33,12 @@ export const withLogging = t.middleware(async ({ path, type, ctx, next }) => {
   const outcome = result.ok ? "ok" : "error";
   const posthogDistinctId = ctx.session?.user.id;
 
-  const fields: Record<string, unknown> = {
+  const fields = {
     path,
     type,
     durationMs,
     outcome,
-    ...(posthogDistinctId ? { posthogDistinctId } : {}),
+    posthogDistinctId,
   };
 
   if (result.ok) {

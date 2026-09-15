@@ -30,7 +30,11 @@ function isVerificationMethod(value: string): value is VerificationMethod {
   return (VERIFICATION_METHODS as readonly string[]).includes(value);
 }
 
-function downloadVerificationFile(filename: string, content: string): { success: boolean } {
+interface DownloadResult {
+  success: boolean;
+}
+
+function downloadVerificationFile(filename: string, content: string): DownloadResult {
   try {
     const blob = new Blob([content], { type: "text/plain" });
     const url = URL.createObjectURL(blob);

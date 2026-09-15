@@ -98,11 +98,13 @@ export function isPagePastEnd(itemCount: number, pageIndex: number, pageSize: nu
   return pageIndex >= pageCount;
 }
 
-export const DASHBOARD_PREFERENCES_DEFAULT: {
+export interface DashboardPreferencesDefault {
   viewMode: DashboardViewModeOptions;
   pageSize: DashboardPageSizeOptions;
   columnVisibility: Record<string, boolean>;
-} = {
+}
+
+export const DASHBOARD_PREFERENCES_DEFAULT: DashboardPreferencesDefault = {
   viewMode: "grid",
   pageSize: 10,
   columnVisibility: {}, // Empty means all columns visible (default)

@@ -3,6 +3,15 @@ import pretty from "pino-pretty";
 
 import { emitLogRecord } from "./otel";
 
+export type LogRecordValue =
+  | boolean
+  | number
+  | string
+  | LogRecordValue[]
+  | { [key: string]: LogRecordValue }
+  | null;
+export type ParsedLogRecord = { [key: string]: LogRecordValue };
+
 const isDev = process.env.NODE_ENV === "development";
 const isTest = process.env.NODE_ENV === "test";
 
@@ -28,7 +37,7 @@ function createDestination(): pino.DestinationStream {
       const trimmed = msg.trimEnd();
 
       try {
-        const parsed = JSON.parse(trimmed) as Record<string, unknown>;
+        const parsed = JSON.parse(trimmed) as ParsedLogRecord;
         emitLogRecord(parsed);
 
         if (prettyStream) {
@@ -109,5 +118,4 @@ export const logger: pino.Logger = pino(baseOptions, createDestination());
  * // Output: {"level":"debug","source":"dns","domain":"example.com","msg":"Resolving domain"}
  * ```
  */
-export const createLogger = (bindings: Record<string, unknown>): pino.Logger =>
-  logger.child(bindings);
+export const createLogger = (bindings: pino.Bindings): pino.Logger => logger.child(bindings);

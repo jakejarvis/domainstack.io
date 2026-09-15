@@ -1,7 +1,11 @@
 import { waitUntil } from "@vercel/functions";
 import { PostHog } from "posthog-node";
 
-import type { IdentifyProperties, IdentifySetOnceProperties } from "@domainstack/types";
+import type {
+  AnalyticsProperties,
+  IdentifyProperties,
+  IdentifySetOnceProperties,
+} from "@domainstack/types";
 
 const client = process.env.NEXT_PUBLIC_POSTHOG_KEY
   ? new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
@@ -34,7 +38,7 @@ function exceptionFingerprint(error: unknown): string {
 export async function captureException(
   error: unknown,
   userId?: string,
-  properties?: Record<string, unknown>,
+  properties?: AnalyticsProperties,
 ) {
   if (!client) {
     return;
@@ -84,7 +88,7 @@ export const analytics = {
     );
   },
 
-  track: (event: string, properties: Record<string, unknown>, userId: string) => {
+  track: (event: string, properties: AnalyticsProperties, userId: string) => {
     if (!client) {
       return;
     }
@@ -96,7 +100,7 @@ export const analytics = {
     );
   },
 
-  trackException: (exception: unknown, properties?: Record<string, unknown>, userId?: string) => {
+  trackException: (exception: unknown, properties?: AnalyticsProperties, userId?: string) => {
     waitUntil(
       captureException(exception, userId, properties).catch(() => {
         // Analytics must never fail the request

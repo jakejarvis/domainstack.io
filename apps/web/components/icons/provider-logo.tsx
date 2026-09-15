@@ -21,18 +21,17 @@ export function ProviderLogo({
   }
 
   const fallbackIdentifier = providerName || "?";
+  const { queryKey, queryFn } = trpc.provider.getProviderIcon.queryOptions(
+    { providerId },
+    {
+      // Keep in cache indefinitely during session
+      staleTime: Number.POSITIVE_INFINITY,
+    },
+  );
 
   return (
     <RemoteIcon
-      queryOptions={{
-        ...trpc.provider.getProviderIcon.queryOptions(
-          { providerId },
-          {
-            // Keep in cache indefinitely during session
-            staleTime: Number.POSITIVE_INFINITY,
-          },
-        ),
-      }}
+      queryOptions={{ queryKey, queryFn }}
       fallbackIdentifier={fallbackIdentifier}
       size={size}
       className={className}

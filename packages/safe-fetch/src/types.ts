@@ -3,10 +3,14 @@
  * Compatible with pino, console, and custom loggers.
  */
 export interface SafeFetchLogger {
-  debug: (obj: Record<string, unknown>, msg: string) => void;
-  info: (obj: Record<string, unknown>, msg: string) => void;
-  warn: (obj: Record<string, unknown>, msg: string) => void;
-  error: (obj: Record<string, unknown>, msg: string) => void;
+  debug: (obj: SafeFetchLogFields, msg: string) => void;
+  info: (obj: SafeFetchLogFields, msg: string) => void;
+  warn: (obj: SafeFetchLogFields, msg: string) => void;
+  error: (obj: SafeFetchLogFields, msg: string) => void;
+}
+
+export interface SafeFetchLogFields {
+  [key: string]: boolean | number | string | Error | undefined;
 }
 
 /**

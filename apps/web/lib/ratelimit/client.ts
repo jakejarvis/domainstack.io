@@ -20,6 +20,17 @@ export type RateLimitError = {
  * - Fetch Response objects with status 429
  * - Error objects with message containing rate limit indicators
  */
+interface RateLimitCause {
+  retryAfter?: unknown;
+}
+
+interface RateLimitErrorEnvelope {
+  cause?: RateLimitCause;
+  code?: unknown;
+  data?: { code?: unknown };
+  message?: unknown;
+}
+
 function isRateLimitError(error: unknown): boolean {
   if (!error) return false;
 
@@ -29,13 +40,12 @@ function isRateLimitError(error: unknown): boolean {
   }
 
   // tRPC error shape
-  if (typeof error === "object" && error !== null) {
-    const err = error as Record<string, unknown>;
+  if (typeof error === "object") {
+    const err = error as RateLimitErrorEnvelope;
 
     // Check tRPC error code
-    if (err.data && typeof err.data === "object") {
-      const data = err.data as Record<string, unknown>;
-      if (data.code === "TOO_MANY_REQUESTS") return true;
+    if (err.data?.code === "TOO_MANY_REQUESTS") {
+      return true;
     }
 
     // Check for TRPCClientError shape
@@ -68,7 +78,9 @@ function extractRateLimitError(error: unknown): RateLimitError | null {
   let message = "Too many requests. Please try again later.";
 
   if (typeof error === "object" && error !== null) {
-    const { message: errMessage, cause: errCause } = error as Record<string, unknown>;
+    const err = error as RateLimitErrorEnvelope;
+    const errMessage = err.message;
+    const errCause = err.cause;
 
     // Extract message
     if (typeof errMessage === "string") {
@@ -82,8 +94,8 @@ function extractRateLimitError(error: unknown): RateLimitError | null {
     }
 
     // Check cause for structured retry info
-    if (errCause && typeof errCause === "object") {
-      const { retryAfter: causeRetryAfter } = errCause as Record<string, unknown>;
+    if (errCause) {
+      const { retryAfter: causeRetryAfter } = errCause;
       if (typeof causeRetryAfter === "number") {
         retryAfter = causeRetryAfter;
       }

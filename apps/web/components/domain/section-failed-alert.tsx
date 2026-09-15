@@ -9,7 +9,11 @@ import { Alert, AlertDescription, AlertTitle } from "@domainstack/ui/alert";
 /**
  * Map error codes to user-friendly messages.
  */
-const errorMessages: Record<string, string> = {
+interface ErrorMessages {
+  [errorCode: string]: string;
+}
+
+const errorMessages: ErrorMessages = {
   dns_error: "The domain could not be resolved. It may not exist or DNS is misconfigured.",
   tls_error: "The SSL certificate is invalid or could not be verified.",
   fetch_failed: "Failed to fetch data. Please try again later.",

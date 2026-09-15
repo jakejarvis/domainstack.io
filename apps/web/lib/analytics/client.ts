@@ -3,9 +3,13 @@
 import posthogClient from "posthog-js";
 import { useMemo } from "react";
 
-import type { IdentifyProperties, IdentifySetOnceProperties } from "@domainstack/types";
+import type {
+  AnalyticsProperties,
+  IdentifyProperties,
+  IdentifySetOnceProperties,
+} from "@domainstack/types";
 
-function track(event: string, properties?: Record<string, unknown>) {
+function track(event: string, properties?: AnalyticsProperties) {
   try {
     posthogClient.capture(event, properties);
   } catch {
@@ -13,7 +17,7 @@ function track(event: string, properties?: Record<string, unknown>) {
   }
 }
 
-function trackException(error: unknown, properties?: Record<string, unknown>) {
+function trackException(error: unknown, properties?: AnalyticsProperties) {
   try {
     posthogClient.captureException(error, properties);
   } catch {

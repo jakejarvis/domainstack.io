@@ -93,6 +93,14 @@ export interface PendingChangeObservation {
 }
 
 /**
+ * Result of applying confirmation dampening to an observed change.
+ */
+export interface ChangeConfirmationResult {
+  confirmed: boolean;
+  pending: PendingChangeObservation | null;
+}
+
+/**
  * Result of applying confirmation + flap-memory dampening.
  *
  * `snapshot` is null when the stored snapshot should be left untouched.

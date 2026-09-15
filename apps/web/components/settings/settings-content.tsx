@@ -32,7 +32,7 @@ const SETTINGS_TABS = [
 
 type SettingsTabValue = (typeof SETTINGS_TABS)[number]["value"];
 
-function isSettingsTabValue(value: unknown): value is SettingsTabValue {
+function isSettingsTabValue(value: string | null | undefined): value is SettingsTabValue {
   return value === "subscription" || value === "notifications" || value === "account";
 }
 

@@ -32,7 +32,7 @@ export type ToolHeaderProps = {
 };
 
 const getStatusBadge = (status: ToolUIPart["state"]) => {
-  const labels: Record<string, string> = {
+  const labels = {
     "input-streaming": "Pending",
     "input-available": "Running",
     "approval-requested": "Awaiting Approval",
@@ -40,9 +40,9 @@ const getStatusBadge = (status: ToolUIPart["state"]) => {
     "output-available": "Completed",
     "output-error": "Error",
     "output-denied": "Denied",
-  };
+  } satisfies Record<ToolUIPart["state"], string>;
 
-  const icons: Record<string, ReactNode> = {
+  const icons = {
     "input-streaming": <IconCircle className="size-4" />,
     "input-available": <Spinner className="size-4" />,
     "approval-requested": <IconClock className="size-4 text-yellow-600" />,
@@ -50,7 +50,7 @@ const getStatusBadge = (status: ToolUIPart["state"]) => {
     "output-available": <IconCheck className="size-4 text-green-600" />,
     "output-error": <IconX className="size-4 text-red-600" />,
     "output-denied": <IconX className="size-4 text-orange-600" />,
-  };
+  } satisfies Record<ToolUIPart["state"], ReactNode>;
 
   return (
     <Badge className="gap-1.5 rounded-full py-1 text-xs leading-none" variant="secondary">
@@ -103,7 +103,7 @@ export type ToolOutputProps = ComponentProps<"div"> & {
  * Handles: { type: "tool-result", output: { type: "text", value: "..." } }
  * Returns the innermost value string, or null if not found.
  */
-function extractTextValue(value: unknown): string | null {
+function extractTextValue(value: ToolUIPart["output"]): string | null {
   if (typeof value !== "object" || value === null || isValidElement(value)) {
     return null;
   }

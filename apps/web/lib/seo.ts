@@ -54,32 +54,35 @@ export function createMetadata({
   const canonical = alternates?.canonical ?? path;
   const ogTitle = socialTitle(title);
 
-  return {
-    ...rest,
-    ...(title !== undefined ? { title } : {}),
-    ...(description !== undefined ? { description } : {}),
-    ...(canonical || alternates
-      ? {
-          alternates: {
-            ...alternates,
-            ...(canonical ? { canonical } : {}),
-          },
-        }
-      : {}),
-    openGraph: {
-      ...openGraphDefaults,
-      ...(path ? { url: path } : {}),
-      ...(ogTitle ? { title: ogTitle } : {}),
-      ...(description ? { description } : {}),
-      ...openGraph,
-    },
-    twitter: {
-      ...twitterDefaults,
-      ...(ogTitle ? { title: ogTitle } : {}),
-      ...(description ? { description } : {}),
-      ...twitter,
-    },
+  const resolvedOpenGraph: NonNullable<Metadata["openGraph"]> = {
+    ...openGraphDefaults,
+    ...openGraph,
   };
+  if (path) resolvedOpenGraph.url = path;
+  if (ogTitle && !openGraph?.title) resolvedOpenGraph.title = ogTitle;
+  if (description && !openGraph?.description) resolvedOpenGraph.description = description;
+
+  const resolvedTwitter: NonNullable<Metadata["twitter"]> = {
+    ...twitterDefaults,
+    ...twitter,
+  };
+  if (ogTitle && !twitter?.title) resolvedTwitter.title = ogTitle;
+  if (description && !twitter?.description) resolvedTwitter.description = description;
+
+  const metadata: Metadata = {
+    ...rest,
+    openGraph: resolvedOpenGraph,
+    twitter: resolvedTwitter,
+  };
+
+  if (title !== undefined) metadata.title = title;
+  if (description !== undefined) metadata.description = description;
+  if (canonical || alternates) {
+    metadata.alternates = { ...alternates };
+    if (canonical) metadata.alternates.canonical = canonical;
+  }
+
+  return metadata;
 }
 
 export const notFoundMetadata = createMetadata({

@@ -322,7 +322,7 @@ function buildSeoResponse(
   robotsData: RobotsFetchData,
   uploadedImageUrl: string | null,
 ): SeoResponse {
-  return {
+  const response: SeoResponse = {
     meta: htmlData.meta,
     robots: robotsData.robots,
     preview: htmlData.preview
@@ -335,15 +335,16 @@ function buildSeoResponse(
       finalUrl: htmlData.finalUrl,
       status: htmlData.status,
     },
-    ...(htmlData.error || robotsData.error
-      ? {
-          errors: {
-            ...(htmlData.error ? { html: htmlData.error } : {}),
-            ...(robotsData.error ? { robots: robotsData.error } : {}),
-          },
-        }
-      : {}),
   };
+
+  if (htmlData.error || robotsData.error) {
+    const errors: NonNullable<SeoResponse["errors"]> = {};
+    if (htmlData.error) errors.html = htmlData.error;
+    if (robotsData.error) errors.robots = robotsData.error;
+    response.errors = errors;
+  }
+
+  return response;
 }
 
 // ============================================================================

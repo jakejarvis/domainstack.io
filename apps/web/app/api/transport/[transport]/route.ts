@@ -8,6 +8,23 @@ import { checkRateLimit } from "@/lib/ratelimit/api";
 import { createCaller } from "@domainstack/api";
 import type { Context } from "@domainstack/api";
 import { type Section, SECTION_IDS } from "@domainstack/constants";
+import type {
+  CertificatesResponse,
+  DnsRecordsResponse,
+  HeadersResponse,
+  HostingResponse,
+  RegistrationResponse,
+  SeoResponse,
+} from "@domainstack/types";
+
+/** Data shape returned by any `domain_report` section fetcher. */
+type SectionData =
+  | RegistrationResponse
+  | DnsRecordsResponse
+  | HostingResponse
+  | CertificatesResponse
+  | HeadersResponse
+  | SeoResponse;
 
 export const maxDuration = 800;
 
@@ -218,7 +235,7 @@ function createMcpHandlerWithContext(request: Request) {
           // Define section fetchers
           const sectionFetchers: Record<
             Section,
-            () => Promise<{ success: boolean; data?: unknown; error?: string }>
+            () => Promise<{ success: boolean; data?: SectionData | null; error?: string }>
           > = {
             registration: () => trpc.domain.getRegistration({ domain }),
             dns: () => trpc.domain.getDnsRecords({ domain }),
@@ -235,7 +252,7 @@ function createMcpHandlerWithContext(request: Request) {
                 const result = await sectionFetchers[section]();
                 if (result.success) {
                   // `cached`/`stale` sit beside `data` on the result, not in it
-                  return { section, success: true, data: result.data ?? {} };
+                  return { section, success: true, data: result.data ?? null };
                 }
                 return { section, success: false, error: result.error };
               } catch (err) {
@@ -249,7 +266,18 @@ function createMcpHandlerWithContext(request: Request) {
           );
 
           // Build response object
-          const report: Record<string, unknown> = { domain };
+          interface TransportReport {
+            domain: string;
+            errors?: { section: string; error: string }[];
+            [section: string]:
+              | SectionData
+              | string
+              | { section: string; error: string }[]
+              | null
+              | undefined;
+          }
+
+          const report: TransportReport = { domain };
           const errors: { section: string; error: string }[] = [];
 
           for (const result of results) {

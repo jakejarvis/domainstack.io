@@ -248,6 +248,7 @@ function StepperItem({
 StepperItem.displayName = "StepperItem";
 
 interface StepperTriggerState {
+  [key: string]: boolean | StepState;
   state: StepState;
   isLoading: boolean;
   isSelected: boolean;
@@ -347,9 +348,9 @@ function StepperTrigger({ render, className, children, tabIndex, ...props }: Ste
 
   return useRender({
     defaultTagName: "button",
-    render: render as useRender.RenderProp | undefined,
+    render,
     ref: btnRef,
-    state: triggerState as unknown as Record<string, unknown>,
+    state: triggerState,
     props: mergeProps(defaultProps, props),
   });
 }

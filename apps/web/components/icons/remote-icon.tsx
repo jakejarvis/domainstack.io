@@ -4,26 +4,27 @@ import { useQuery, type QueryFunction, type QueryKey } from "@tanstack/react-que
 import Image from "next/image";
 import { useState } from "react";
 
+import type { IconResponse } from "@domainstack/types";
 import { Skeleton } from "@domainstack/ui/skeleton";
 import { cn } from "@domainstack/ui/utils";
 import { simpleHash } from "@domainstack/utils/simple-hash";
 
-type IconQueryOptions = {
-  queryKey: QueryKey;
-  queryFn?: (...args: never[]) => unknown;
+type IconQueryOptions<TQueryKey extends QueryKey = QueryKey> = {
+  queryKey: TQueryKey;
+  queryFn?: QueryFunction<IconQueryResult, TQueryKey>;
 };
 
 type IconQueryResult = {
   success: boolean;
-  data: { url: string | null } | null;
+  data: IconResponse | null;
 };
 
-export type RemoteIconProps = {
+export type RemoteIconProps<TQueryKey extends QueryKey = QueryKey> = {
   /**
    * TanStack Query options from tRPC's queryOptions() method.
    * Expected to resolve to a result with { data: { url: string | null } }.
    */
-  queryOptions: IconQueryOptions;
+  queryOptions: IconQueryOptions<TQueryKey>;
   /** Identifier for fallback avatar (e.g., domain name, provider name) */
   fallbackIdentifier: string;
   /** Size in pixels (default: 16) */
@@ -102,7 +103,7 @@ function FallbackIcon({
  * Shared component for rendering remote icons (favicons, logos, etc.)
  * with loading states, error handling, and letter avatar fallback.
  */
-export function RemoteIcon({
+export function RemoteIcon<TQueryKey extends QueryKey>({
   size = 32,
   className,
   style,
@@ -110,7 +111,7 @@ export function RemoteIcon({
   fallbackIdentifier,
   alt,
   dataAttribute,
-}: RemoteIconProps) {
+}: RemoteIconProps<TQueryKey>) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
 
   const {
@@ -119,7 +120,7 @@ export function RemoteIcon({
     isError,
   } = useQuery({
     queryKey: queryOptions.queryKey,
-    queryFn: queryOptions.queryFn as QueryFunction<IconQueryResult>,
+    queryFn: queryOptions.queryFn,
     // Disable retries - icons should fail fast to fallback
     retry: false,
     retryOnMount: false,

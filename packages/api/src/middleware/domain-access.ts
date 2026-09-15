@@ -7,9 +7,13 @@ import { t } from "../trpc";
 
 const logger = createLogger({ source: "trpc/domain-access" });
 
-function extractDomain(value: unknown): string | null {
-  if (value && typeof value === "object" && "domain" in value && typeof value.domain === "string") {
-    return value.domain;
+interface DomainCandidate {
+  domain?: unknown;
+}
+
+function extractDomain(candidate: DomainCandidate | null | undefined): string | null {
+  if (typeof candidate?.domain === "string") {
+    return candidate.domain;
   }
   return null;
 }
@@ -31,7 +35,11 @@ export const withDomainAccessUpdate = t.middleware(async ({ input, next, getRawI
     return result;
   }
 
-  const domain = extractDomain(input) ?? extractDomain(await getRawInput());
+  const rawInput = await getRawInput();
+  const parsedInput = input && typeof input === "object" ? (input as DomainCandidate) : undefined;
+  const parsedRawInput =
+    rawInput && typeof rawInput === "object" ? (rawInput as DomainCandidate) : undefined;
+  const domain = extractDomain(parsedInput) ?? extractDomain(parsedRawInput);
   if (domain) {
     // `waitUntil` hands the promise to the platform rather than awaiting it, so a
     // rejection escaping here would surface as an unhandled rejection.

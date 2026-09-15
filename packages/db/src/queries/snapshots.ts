@@ -107,7 +107,7 @@ export async function createSnapshot(
  * Update an existing snapshot with new data.
  */
 export async function updateSnapshot(trackedDomainId: string, params: UpdateSnapshotParams) {
-  const updates: Record<string, unknown> = {
+  const updates: Partial<typeof domainSnapshots.$inferInsert> = {
     updatedAt: new Date(),
   };
 

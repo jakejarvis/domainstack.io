@@ -11,7 +11,12 @@ let missingProductIdsWarned = false;
  * 500 every authenticated route. Missing IDs simply disable checkout (logged
  * once) instead of taking the app down.
  */
-function getProductIds(): { monthlyId?: string; yearlyId?: string } {
+interface ProductIds {
+  monthlyId?: string;
+  yearlyId?: string;
+}
+
+function getProductIds(): ProductIds {
   const monthlyId = process.env.NEXT_PUBLIC_POLAR_MONTHLY_PRODUCT_ID;
   const yearlyId = process.env.NEXT_PUBLIC_POLAR_YEARLY_PRODUCT_ID;
 

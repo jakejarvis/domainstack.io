@@ -65,15 +65,19 @@ export function getTrpcErrorCode(err: unknown): string | undefined {
     return undefined;
   }
 
-  if ("code" in err) {
-    const code = asTrpcErrorCode(err.code);
-    if (code) {
-      return code;
-    }
+  if ("code" in err && typeof err.code === "string" && TRPC_ERROR_CODES.has(err.code)) {
+    return err.code;
   }
 
-  if ("data" in err && typeof err.data === "object" && err.data !== null && "code" in err.data) {
-    return asTrpcErrorCode(err.data.code);
+  if (
+    "data" in err &&
+    typeof err.data === "object" &&
+    err.data !== null &&
+    "code" in err.data &&
+    typeof err.data.code === "string" &&
+    TRPC_ERROR_CODES.has(err.data.code)
+  ) {
+    return err.data.code;
   }
 
   return undefined;
@@ -88,8 +92,4 @@ export function getTrpcErrorCode(err: unknown): string | undefined {
 export function isExpectedTrpcError(err: unknown): boolean {
   const code = getTrpcErrorCode(err);
   return code !== undefined && !RETRYABLE_TRPC_ERROR_CODES.has(code);
-}
-
-function asTrpcErrorCode(code: unknown): string | undefined {
-  return typeof code === "string" && TRPC_ERROR_CODES.has(code) ? code : undefined;
 }

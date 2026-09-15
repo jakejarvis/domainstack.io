@@ -1,11 +1,11 @@
 /* @vitest-environment node */
 import { describe, expect, it } from "vitest";
 
-import { getProvidersFromCatalog, parseProviderCatalog, safeParseProviderCatalog } from "./parser";
+import { getProvidersFromCatalog, ProviderCatalogSchema } from "./parser";
 
-describe("parseProviderCatalog", () => {
+describe("ProviderCatalogSchema.parse", () => {
   it("parses a valid minimal catalog", () => {
-    const catalog = parseProviderCatalog({});
+    const catalog = ProviderCatalogSchema.parse({});
 
     expect(catalog.hosting).toEqual([]);
     expect(catalog.email).toEqual([]);
@@ -15,7 +15,7 @@ describe("parseProviderCatalog", () => {
   });
 
   it("parses a catalog with providers", () => {
-    const catalog = parseProviderCatalog({
+    const catalog = ProviderCatalogSchema.parse({
       hosting: [
         {
           name: "Vercel",
@@ -31,7 +31,7 @@ describe("parseProviderCatalog", () => {
 
   it("rejects provider with empty name", () => {
     expect(() =>
-      parseProviderCatalog({
+      ProviderCatalogSchema.parse({
         hosting: [
           {
             name: "",
@@ -45,7 +45,7 @@ describe("parseProviderCatalog", () => {
 
   it("rejects provider with empty domain", () => {
     expect(() =>
-      parseProviderCatalog({
+      ProviderCatalogSchema.parse({
         hosting: [
           {
             name: "Test",
@@ -58,20 +58,20 @@ describe("parseProviderCatalog", () => {
   });
 
   it("rejects null input", () => {
-    expect(() => parseProviderCatalog(null)).toThrow(/object|invalid/i);
+    expect(() => ProviderCatalogSchema.parse(null)).toThrow(/object|invalid/i);
   });
 
   it("rejects array input", () => {
-    expect(() => parseProviderCatalog([])).toThrow(/object|invalid/i);
+    expect(() => ProviderCatalogSchema.parse([])).toThrow(/object|invalid/i);
   });
 
   it("rejects string input", () => {
-    expect(() => parseProviderCatalog("not an object")).toThrow(/object|invalid/i);
+    expect(() => ProviderCatalogSchema.parse("not an object")).toThrow(/object|invalid/i);
   });
 
   it("rejects invalid regex pattern at parse time", () => {
     expect(() =>
-      parseProviderCatalog({
+      ProviderCatalogSchema.parse({
         email: [
           {
             name: "Bad Regex Provider",
@@ -85,7 +85,7 @@ describe("parseProviderCatalog", () => {
 
   it("rejects invalid nsRegex pattern at parse time", () => {
     expect(() =>
-      parseProviderCatalog({
+      ProviderCatalogSchema.parse({
         dns: [
           {
             name: "Bad NS Regex",
@@ -99,7 +99,7 @@ describe("parseProviderCatalog", () => {
 
   it("validates nested regex in 'all' combinator", () => {
     expect(() =>
-      parseProviderCatalog({
+      ProviderCatalogSchema.parse({
         hosting: [
           {
             name: "Nested Bad Regex",
@@ -118,7 +118,7 @@ describe("parseProviderCatalog", () => {
 
   it("validates nested regex in 'any' combinator", () => {
     expect(() =>
-      parseProviderCatalog({
+      ProviderCatalogSchema.parse({
         hosting: [
           {
             name: "Nested Any Bad Regex",
@@ -134,7 +134,7 @@ describe("parseProviderCatalog", () => {
 
   it("validates deeply nested regex in 'not' combinator", () => {
     expect(() =>
-      parseProviderCatalog({
+      ProviderCatalogSchema.parse({
         hosting: [
           {
             name: "Nested Not Bad Regex",
@@ -149,7 +149,7 @@ describe("parseProviderCatalog", () => {
   });
 
   it("accepts valid regex patterns", () => {
-    const catalog = parseProviderCatalog({
+    const catalog = ProviderCatalogSchema.parse({
       dns: [
         {
           name: "Route 53",
@@ -175,9 +175,9 @@ describe("parseProviderCatalog", () => {
   });
 });
 
-describe("safeParseProviderCatalog", () => {
+describe("ProviderCatalogSchema.safeParse", () => {
   it("returns success for valid catalog", () => {
-    const result = safeParseProviderCatalog({
+    const result = ProviderCatalogSchema.safeParse({
       hosting: [
         {
           name: "Vercel",
@@ -195,7 +195,7 @@ describe("safeParseProviderCatalog", () => {
   });
 
   it("returns error for invalid catalog", () => {
-    const result = safeParseProviderCatalog(null);
+    const result = ProviderCatalogSchema.safeParse(null);
 
     expect(result.success).toBe(false);
     if (result.success) {
@@ -205,7 +205,7 @@ describe("safeParseProviderCatalog", () => {
   });
 
   it("returns error object for empty name", () => {
-    const result = safeParseProviderCatalog({
+    const result = ProviderCatalogSchema.safeParse({
       hosting: [
         {
           name: "",
@@ -219,7 +219,7 @@ describe("safeParseProviderCatalog", () => {
   });
 
   it("returns error object for invalid regex", () => {
-    const result = safeParseProviderCatalog({
+    const result = ProviderCatalogSchema.safeParse({
       email: [
         {
           name: "Bad",

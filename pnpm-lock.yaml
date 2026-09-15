@@ -415,6 +415,9 @@ importers:
       '@domainstack/redis':
         specifier: workspace:*
         version: link:../redis
+      '@domainstack/types':
+        specifier: workspace:*
+        version: link:../types
       '@vercel/functions':
         specifier: ^3.9.7
         version: 3.9.7(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.21.3(bufferutil@4.1.0))
@@ -669,6 +672,9 @@ importers:
       '@domainstack/logger':
         specifier: workspace:*
         version: link:../logger
+      '@domainstack/types':
+        specifier: workspace:*
+        version: link:../types
       '@domainstack/utils':
         specifier: workspace:*
         version: link:../utils

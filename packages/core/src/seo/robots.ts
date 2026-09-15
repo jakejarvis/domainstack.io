@@ -161,21 +161,21 @@ export function parseRobotsTxt(text: string, opts?: ParseRobotsTxtOptions): Robo
         existing.rules.push(...g.rules);
       }
     }
-    const mergedGroups: RobotsGroup[] = order
-      .map((k) => mergedByKey.get(k))
-      .filter((x): x is RobotsGroup => Boolean(x))
-      .map((g) => {
-        // Deduplicate identical rules while preserving first occurrence order
-        const seen = new Set<string>();
-        const dedupedRules: RobotsRule[] = [];
-        for (const r of g.rules) {
-          const key = `${r.type}\n${r.value}`;
-          if (seen.has(key)) continue;
-          seen.add(key);
-          dedupedRules.push(r);
-        }
-        return { userAgents: g.userAgents, rules: dedupedRules };
-      });
+    const mergedGroups: RobotsGroup[] = order.flatMap((key) => {
+      const group = mergedByKey.get(key);
+      if (!group) return [];
+
+      // Deduplicate identical rules while preserving first occurrence order
+      const seen = new Set<string>();
+      const dedupedRules: RobotsRule[] = [];
+      for (const r of group.rules) {
+        const ruleKey = `${r.type}\n${r.value}`;
+        if (seen.has(ruleKey)) continue;
+        seen.add(ruleKey);
+        dedupedRules.push(r);
+      }
+      return [{ userAgents: group.userAgents, rules: dedupedRules }];
+    });
     return { fetched: true, groups: mergedGroups, sitemaps };
   }
 

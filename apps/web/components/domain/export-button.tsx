@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { analytics } from "@/lib/analytics/client";
 import { exportDomainData } from "@/lib/json-export";
 import { useTRPC } from "@/lib/trpc/client";
+import type { DomainResponse } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 import { cn } from "@domainstack/ui/utils";
@@ -47,12 +48,12 @@ export function ExportButton({ domain, enabled = true }: { domain: string; enabl
     analytics.track("export_json_clicked", { domain });
 
     try {
-      const exportData: Record<string, unknown> = {};
+      const exportData: Partial<DomainResponse> = {};
       for (const key of Object.keys(queryKeys)) {
         const response = queryClient.getQueryData(queryKeys[key as keyof typeof queryKeys]);
 
         if (response?.data) {
-          exportData[key] = response.data;
+          Object.assign(exportData, { [key]: response.data });
         }
       }
 

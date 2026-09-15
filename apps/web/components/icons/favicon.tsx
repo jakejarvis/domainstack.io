@@ -13,18 +13,17 @@ export function Favicon({
   style?: React.CSSProperties;
 }) {
   const trpc = useTRPC();
+  const { queryKey, queryFn } = trpc.domain.getFavicon.queryOptions(
+    { domain },
+    {
+      // Keep in cache indefinitely during session
+      staleTime: Number.POSITIVE_INFINITY,
+    },
+  );
 
   return (
     <RemoteIcon
-      queryOptions={{
-        ...trpc.domain.getFavicon.queryOptions(
-          { domain },
-          {
-            // Keep in cache indefinitely during session
-            staleTime: Number.POSITIVE_INFINITY,
-          },
-        ),
-      }}
+      queryOptions={{ queryKey, queryFn }}
       fallbackIdentifier={domain}
       size={size}
       className={className}

@@ -32,18 +32,14 @@ export function parseAltNames(subjectAltName: string | undefined): string[] {
   if (typeof subjectAltName !== "string" || subjectAltName.length === 0) {
     return [];
   }
-  return subjectAltName
-    .split(",")
-    .map((segment) => segment.trim())
-    .map((segment) => {
-      const idx = segment.indexOf(":");
-      if (idx === -1) return ["", segment] as const;
-      const kind = segment.slice(0, idx).trim().toUpperCase();
-      const value = segment.slice(idx + 1).trim();
-      return [kind, value] as const;
-    })
-    .filter(([kind, value]) => !!value && (kind === "DNS" || kind === "IP ADDRESS"))
-    .map(([, value]) => value);
+  return subjectAltName.split(",").flatMap((rawSegment) => {
+    const segment = rawSegment.trim();
+    const idx = segment.indexOf(":");
+    if (idx === -1) return [];
+    const kind = segment.slice(0, idx).trim().toUpperCase();
+    const value = segment.slice(idx + 1).trim();
+    return value && (kind === "DNS" || kind === "IP ADDRESS") ? [value] : [];
+  });
 }
 
 /**
@@ -51,13 +47,12 @@ export function parseAltNames(subjectAltName: string | undefined): string[] {
  */
 export function isExpectedTlsError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
-  const anyErr = err as unknown as {
+  const tlsError = err as Error & {
     cause?: { code?: string; message?: string };
     code?: string;
-    message?: string;
   };
-  const code = anyErr?.cause?.code || anyErr?.code;
-  const message = (anyErr?.cause?.message || anyErr?.message || "").toLowerCase();
+  const code = tlsError.cause?.code || tlsError.code;
+  const message = (tlsError.cause?.message || tlsError.message).toLowerCase();
 
   return (
     code === "ERR_TLS_CERT_ALTNAME_INVALID" ||
@@ -88,7 +83,7 @@ export class InvalidCertificateDateError extends Error {
 /**
  * Parse a certificate date before calling `toISOString()`.
  */
-export function parseCertificateDate(value: unknown): Date | null {
+export function parseCertificateDate(value: string | undefined): Date | null {
   if (typeof value !== "string" || value.length === 0) return null;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
@@ -98,7 +93,11 @@ export function parseCertificateDate(value: unknown): Date | null {
 /**
  * Node returns `{}` when the peer presented no certificate.
  */
-export function isEmptyPeerCertificate(peer: object | null | undefined): boolean {
+type PeerCertificateEvidence = Partial<
+  Pick<DetailedPeerCertificate, "issuer" | "raw" | "subject" | "valid_from">
+>;
+
+export function isEmptyPeerCertificate(peer: PeerCertificateEvidence | null | undefined): boolean {
   if (!peer || typeof peer !== "object") return true;
   const cert = peer as Partial<DetailedPeerCertificate>;
   return !cert.raw && !cert.valid_from && !cert.subject && !cert.issuer;
@@ -108,7 +107,9 @@ function fingerprintOf(cert: DetailedPeerCertificate): string {
   return normalizeCertificateHex(cert.fingerprint256) ?? "";
 }
 
-function dnAttributeEquals(left: unknown, right: unknown): boolean {
+type DistinguishedNameValue = string | string[] | undefined;
+
+function dnAttributeEquals(left: DistinguishedNameValue, right: DistinguishedNameValue): boolean {
   if (left === right) return true;
   if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) {
     return false;
@@ -121,8 +122,8 @@ function distinguishedNameEquals(
   right: TlsCertificate | undefined,
 ): boolean {
   if (!left || !right) return false;
-  const leftRecord = left as Record<string, unknown>;
-  const rightRecord = right as Record<string, unknown>;
+  const leftRecord = left as Record<string, DistinguishedNameValue>;
+  const rightRecord = right as Record<string, DistinguishedNameValue>;
   const keys = new Set([...Object.keys(leftRecord), ...Object.keys(rightRecord)]);
   if (keys.size === 0) return false;
   for (const key of keys) {
@@ -139,10 +140,12 @@ function isSelfIssued(cert: DetailedPeerCertificate): boolean {
  * Walk the issuer chain from the leaf, assigning `chainPosition` and
  * stopping on self-signed roots or fingerprint cycles.
  */
-export function walkCertificateChain(peer: DetailedPeerCertificate): {
+export interface CertificateChainWalk {
   chain: RawCertificate[];
   chainComplete: boolean;
-} {
+}
+
+export function walkCertificateChain(peer: DetailedPeerCertificate): CertificateChainWalk {
   const chain: RawCertificate[] = [];
   const seenFingerprints = new Set<string>();
   const seenObjects = new WeakSet<object>();
@@ -202,10 +205,12 @@ export function walkCertificateChain(peer: DetailedPeerCertificate): {
 /**
  * Read Node's authorization result without treating it as a fetch failure.
  */
-export function readTlsAuthorization(socket: TLSSocket): {
+export interface TlsAuthorization {
   valid: boolean;
   validationError: string | null;
-} {
+}
+
+export function readTlsAuthorization(socket: TLSSocket): TlsAuthorization {
   if (socket.authorized) {
     return { valid: true, validationError: null };
   }

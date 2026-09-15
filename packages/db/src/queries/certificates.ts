@@ -227,7 +227,7 @@ export async function getEarliestCertificate(
   return rows[0] ?? null;
 }
 
-function safeAltNamesArray(value: unknown): string[] {
+function safeAltNamesArray(value: string[] | null): string[] {
   if (Array.isArray(value)) {
     return value.filter((item): item is string => typeof item === "string");
   }

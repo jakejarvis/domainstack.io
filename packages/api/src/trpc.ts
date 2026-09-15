@@ -29,11 +29,11 @@ export const t = initTRPC
   .meta<ProcedureMeta>()
   .create({
     transformer: superjson,
-    errorFormatter({ shape, error }) {
+    errorFormatter({ shape: errorResponse, error }) {
       return {
-        ...shape,
+        ...errorResponse,
         data: {
-          ...shape.data,
+          ...errorResponse.data,
           zodError:
             error.code === "BAD_REQUEST" && error.cause instanceof ZodError
               ? flattenError(error.cause)

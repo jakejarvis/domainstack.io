@@ -19,7 +19,7 @@ function createDomainToolSchemas() {
  * Size limits are enforced separately by `chatRequestSchema`.
  */
 export async function validateChatMessages(
-  messages: unknown,
+  messages: object[],
 ): Promise<{ success: true; data: UIMessage[] } | { success: false; error: Error }> {
   const result = await safeValidateUIMessages({
     messages,

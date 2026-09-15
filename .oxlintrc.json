@@ -51,6 +51,7 @@
     "no-new": "off",
     "no-unused-vars": "off",
     "oxc/no-barrel-file": "off",
+    "oxc/no-accumulating-spread": "error",
     "react/no-unknown-property": "off",
     "react/react-in-jsx-scope": "off",
     "react/style-prop-object": "off",

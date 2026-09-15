@@ -38,7 +38,12 @@ function normalizeProvider(name: string): string {
  * Split a Vercel AI Gateway model id (`provider/model`) so PostHog can price
  * tokens. Do not report `gateway` as the provider.
  */
-export function parseGatewayModelId(modelId: string): { provider: string; model: string } {
+export interface GatewayModelId {
+  provider: string;
+  model: string;
+}
+
+export function parseGatewayModelId(modelId: string): GatewayModelId {
   const slash = modelId.indexOf("/");
   if (slash <= 0 || slash === modelId.length - 1) {
     return { provider: "unknown", model: modelId };
@@ -107,29 +112,32 @@ export function toChatTelemetryPayload<TOOLS extends ToolSet>(input: {
 
 export type ChatTelemetryPayload = ReturnType<typeof toChatTelemetryPayload>;
 
-function sessionProperties(payload: ChatTelemetryPayload): Record<string, unknown> {
-  return {
+function sessionProperties(payload: ChatTelemetryPayload) {
+  const properties = {
     $ai_trace_id: payload.workflowRunId,
-    ...(payload.sessionId ? { $ai_session_id: payload.sessionId } : {}),
-    ...(payload.domain ? { domain: payload.domain } : {}),
   };
+  if (payload.sessionId) Object.assign(properties, { $ai_session_id: payload.sessionId });
+  if (payload.domain) Object.assign(properties, { domain: payload.domain });
+  return properties;
 }
 
-function generationOutput(step: ChatTelemetryPayload["steps"][number]): Record<string, unknown> {
-  const content: Record<string, unknown> = {
+function generationOutput(step: ChatTelemetryPayload["steps"][number]) {
+  const content = {
     role: "assistant",
     content: step.text || null,
   };
 
   if (step.toolCalls.length > 0) {
-    content.tool_calls = step.toolCalls.map((call) => ({
-      id: call.toolCallId,
-      type: "function",
-      function: {
-        name: call.toolName,
-        arguments: call.input,
-      },
-    }));
+    Object.assign(content, {
+      tool_calls: step.toolCalls.map((call) => ({
+        id: call.toolCallId,
+        type: "function",
+        function: {
+          name: call.toolName,
+          arguments: call.input,
+        },
+      })),
+    });
   }
 
   return content;
@@ -166,50 +174,59 @@ export function buildAiObservabilityEvents(
     const info = step.generationId ? generations.get(step.generationId) : undefined;
     const generation = overlayGeneration(step, payload, info);
 
+    const generationProperties = {
+      ...shared,
+      $ai_span_id: step.callId,
+      $ai_span_name: "chatWorkflow",
+      $ai_model: generation.model,
+      $ai_provider: generation.provider,
+      $ai_input: payload.input,
+      $ai_output_choices: [generationOutput(step)],
+      $ai_tools: payload.tools,
+      $ai_input_tokens: generation.inputTokens,
+      $ai_output_tokens: generation.outputTokens,
+      $ai_latency: step.latencySeconds,
+      $ai_stop_reason: step.finishReason,
+      $ai_stream: true,
+    };
+    if (generation.reasoningTokens != null)
+      Object.assign(generationProperties, { $ai_reasoning_tokens: generation.reasoningTokens });
+    if (generation.cacheReadTokens != null)
+      Object.assign(generationProperties, {
+        $ai_cache_read_input_tokens: generation.cacheReadTokens,
+      });
+    if (generation.cacheWriteTokens != null)
+      Object.assign(generationProperties, {
+        $ai_cache_creation_input_tokens: generation.cacheWriteTokens,
+      });
+    if (generation.totalCostUsd != null)
+      Object.assign(generationProperties, { $ai_total_cost_usd: generation.totalCostUsd });
+    if (generation.webSearchCount)
+      Object.assign(generationProperties, { $ai_web_search_count: generation.webSearchCount });
+    if (step.timeToFirstTokenSeconds != null)
+      Object.assign(generationProperties, {
+        $ai_time_to_first_token: step.timeToFirstTokenSeconds,
+      });
+
     events.push({
       event: "$ai_generation" as const,
-      properties: {
-        ...shared,
-        $ai_span_id: step.callId,
-        $ai_span_name: "chatWorkflow",
-        $ai_model: generation.model,
-        $ai_provider: generation.provider,
-        $ai_input: payload.input,
-        $ai_output_choices: [generationOutput(step)],
-        $ai_tools: payload.tools,
-        $ai_input_tokens: generation.inputTokens,
-        $ai_output_tokens: generation.outputTokens,
-        ...(generation.reasoningTokens != null
-          ? { $ai_reasoning_tokens: generation.reasoningTokens }
-          : {}),
-        ...(generation.cacheReadTokens != null
-          ? { $ai_cache_read_input_tokens: generation.cacheReadTokens }
-          : {}),
-        ...(generation.cacheWriteTokens != null
-          ? { $ai_cache_creation_input_tokens: generation.cacheWriteTokens }
-          : {}),
-        ...(generation.totalCostUsd != null ? { $ai_total_cost_usd: generation.totalCostUsd } : {}),
-        ...(generation.webSearchCount ? { $ai_web_search_count: generation.webSearchCount } : {}),
-        $ai_latency: step.latencySeconds,
-        ...(step.timeToFirstTokenSeconds != null
-          ? { $ai_time_to_first_token: step.timeToFirstTokenSeconds }
-          : {}),
-        $ai_stop_reason: step.finishReason,
-        $ai_stream: true,
-      },
+      properties: generationProperties,
     });
 
     for (const result of step.toolResults) {
+      const spanProperties = {
+        ...shared,
+        $ai_span_id: result.toolCallId,
+        $ai_span_name: result.toolName,
+        $ai_parent_id: step.callId,
+      };
+      if (result.latencySeconds != null)
+        Object.assign(spanProperties, { $ai_latency: result.latencySeconds });
+      if (result.isError) Object.assign(spanProperties, { $ai_is_error: true });
+
       events.push({
         event: "$ai_span" as const,
-        properties: {
-          ...shared,
-          $ai_span_id: result.toolCallId,
-          $ai_span_name: result.toolName,
-          $ai_parent_id: step.callId,
-          ...(result.latencySeconds != null ? { $ai_latency: result.latencySeconds } : {}),
-          ...(result.isError ? { $ai_is_error: true } : {}),
-        },
+        properties: spanProperties,
       });
     }
   }

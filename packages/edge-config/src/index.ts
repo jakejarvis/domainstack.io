@@ -9,7 +9,7 @@ import { get } from "@vercel/edge-config";
 import { cache } from "react";
 
 import { createLogger } from "@domainstack/logger";
-import { type ProviderCatalog, safeParseProviderCatalog } from "@domainstack/utils/providers";
+import { type ProviderCatalog, ProviderCatalogSchema } from "@domainstack/utils/providers";
 
 const logger = createLogger({ source: "edge-config" });
 
@@ -36,7 +36,7 @@ export const getProviderCatalog = cache(async (): Promise<ProviderCatalog | null
       return null;
     }
 
-    const result = safeParseProviderCatalog(raw);
+    const result = ProviderCatalogSchema.safeParse(raw);
 
     if (!result.success) {
       logger.error(result.error, "failed to parse provider catalog");

@@ -149,12 +149,20 @@ async function clearRenewedNotifications(trackedDomainId: string): Promise<numbe
   return await clearCertificateExpiryNotifications(trackedDomainId);
 }
 
-function buildCertificateExpiryContent(params: {
+interface CertificateExpiryContentInput {
   domainName: string;
   validTo: Date;
   issuer: string;
   daysRemaining: number;
-}): { title: string; subject: string; message: string } {
+}
+
+interface ExpiryContent {
+  title: string;
+  subject: string;
+  message: string;
+}
+
+function buildCertificateExpiryContent(params: CertificateExpiryContentInput): ExpiryContent {
   const { domainName, validTo, issuer, daysRemaining } = params;
 
   const title = `SSL certificate for ${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;

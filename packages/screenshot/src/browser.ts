@@ -38,9 +38,7 @@ async function createBrowser(): Promise<import("puppeteer-core").Browser> {
     const { launch } = await import("puppeteer-core");
     const executablePath = await chromium.executablePath();
 
-    const baseArgs = Array.isArray((chromium as unknown as { args?: unknown }).args)
-      ? chromium.args
-      : [];
+    const baseArgs = Array.isArray(chromium.args) ? chromium.args : [];
 
     return launch({
       headless: true,

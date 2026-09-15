@@ -117,8 +117,9 @@ export async function resolvePublicHost(
   try {
     records = await lookupWithTimeout(normalized, timeoutMs);
   } catch (err) {
-    logger?.warn({ hostname: normalized, err }, "DNS lookup failed");
-    const message = err instanceof Error ? err.message : "DNS lookup failed";
+    const error = err instanceof Error ? err : new Error("DNS lookup failed");
+    logger?.warn({ hostname: normalized, err: error }, "DNS lookup failed");
+    const message = error.message;
     throw new SafeFetchError("dns_error", message);
   }
 

@@ -158,12 +158,20 @@ async function clearRenewedNotifications(trackedDomainId: string): Promise<numbe
   return await clearDomainExpiryNotifications(trackedDomainId);
 }
 
-function buildDomainExpiryContent(params: {
+interface DomainExpiryContentInput {
   domainName: string;
   expirationDate: Date;
   daysRemaining: number;
   registrar?: string;
-}): { title: string; subject: string; message: string } {
+}
+
+interface DomainExpiryContent {
+  title: string;
+  subject: string;
+  message: string;
+}
+
+function buildDomainExpiryContent(params: DomainExpiryContentInput): DomainExpiryContent {
   const { domainName, expirationDate, daysRemaining, registrar } = params;
 
   const title = `${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;

@@ -53,11 +53,13 @@ export function DomainHealthBadge({ expirationDate, verified, className }: Domai
   );
 }
 
-function getStatusConfig(status: HealthSeverity): {
+interface HealthStatusConfig {
   label: string;
   colorClass: string;
   icon: TablerIcon;
-} {
+}
+
+function getStatusConfig(status: HealthSeverity): HealthStatusConfig {
   switch (status) {
     case "healthy":
       return {

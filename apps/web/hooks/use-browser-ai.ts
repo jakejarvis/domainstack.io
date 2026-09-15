@@ -12,9 +12,13 @@ type BrowserAIModel = ReturnType<typeof browserAI>;
 let sharedModel: BrowserAIModel | null = null;
 let sharedAvailability: Promise<string> | null = null;
 
-function getLanguageModelGlobal(): { availability?: unknown } | undefined {
+interface LanguageModelGlobal {
+  availability?: CallableFunction;
+}
+
+function getLanguageModelGlobal(): LanguageModelGlobal | undefined {
   try {
-    return (globalThis as { LanguageModel?: { availability?: unknown } }).LanguageModel;
+    return (globalThis as { LanguageModel?: LanguageModelGlobal }).LanguageModel;
   } catch {
     return undefined;
   }

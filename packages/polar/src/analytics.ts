@@ -1,11 +1,13 @@
 import { waitUntil } from "@vercel/functions";
 
+import type { AnalyticsProperties } from "@domainstack/types";
+
 /**
  * Fire-and-forget PostHog capture for Polar webhook handlers.
  * Never throws — billing side effects must not fail because analytics is down.
  */
 export const analytics = {
-  track: (event: string, properties: Record<string, unknown>, userId: string): void => {
+  track: (event: string, properties: AnalyticsProperties, userId: string): void => {
     const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
     if (!apiKey) {
       return;

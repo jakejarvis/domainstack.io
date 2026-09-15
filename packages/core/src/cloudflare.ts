@@ -75,7 +75,11 @@ function parseCidrs(ranges: CloudflareIpRanges): ParsedCloudflareRanges {
   return { ipv4, ipv6 };
 }
 
-function toCidrArray(value: unknown): string[] {
+function toCidrArray(
+  payload: { result?: { ipv4_cidrs?: unknown; ipv6_cidrs?: unknown } },
+  family: "ipv4_cidrs" | "ipv6_cidrs",
+): string[] {
+  const value = payload.result?.[family];
   return Array.isArray(value)
     ? value.filter((entry): entry is string => typeof entry === "string")
     : [];
@@ -100,8 +104,8 @@ async function fetchParsedRanges(): Promise<ParsedCloudflareRanges> {
 
   const data = (await res.json()) as { result?: { ipv4_cidrs?: unknown; ipv6_cidrs?: unknown } };
   const parsed = parseCidrs({
-    ipv4Cidrs: toCidrArray(data?.result?.ipv4_cidrs),
-    ipv6Cidrs: toCidrArray(data?.result?.ipv6_cidrs),
+    ipv4Cidrs: toCidrArray(data, "ipv4_cidrs"),
+    ipv6Cidrs: toCidrArray(data, "ipv6_cidrs"),
   });
 
   if (parsed.ipv4.length === 0 && parsed.ipv6.length === 0) {

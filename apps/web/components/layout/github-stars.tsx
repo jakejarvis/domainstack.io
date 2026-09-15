@@ -10,17 +10,16 @@ const STAR_COUNT_FORMATTER = new Intl.NumberFormat("en-US", {
 
 async function fetchRepoStars(): Promise<number | null> {
   try {
+    const headers = new Headers({ Accept: "application/vnd.github+json" });
+    if (process.env.EXTERNAL_USER_AGENT) {
+      headers.set("User-Agent", process.env.EXTERNAL_USER_AGENT);
+    }
+    if (process.env.GITHUB_TOKEN) {
+      headers.set("Authorization", `Bearer ${process.env.GITHUB_TOKEN}`);
+    }
+
     const res = await fetch(`https://api.github.com/repos/${REPOSITORY_SLUG}`, {
-      headers: {
-        Accept: "application/vnd.github+json",
-        ...(process.env.EXTERNAL_USER_AGENT
-          ? { "User-Agent": process.env.EXTERNAL_USER_AGENT }
-          : {}),
-        // token is optional but allows for more frequent/reliable API calls
-        ...(process.env.GITHUB_TOKEN
-          ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }
-          : {}),
-      },
+      headers,
       next: {
         revalidate: 3600, // 1 hour
       },

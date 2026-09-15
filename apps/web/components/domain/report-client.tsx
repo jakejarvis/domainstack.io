@@ -64,7 +64,11 @@ const staticQueryOptions = {
   refetchOnReconnect: false,
 } as const;
 
-const REGISTRATION_LOOKUP_MESSAGES: Record<string, string> = {
+interface RegistrationLookupMessages {
+  [errorCode: string]: string;
+}
+
+const REGISTRATION_LOOKUP_MESSAGES: RegistrationLookupMessages = {
   unsupported_tld: "This TLD is not supported for registration lookups.",
   timeout: "The registration lookup timed out. Please try again.",
   retry: "The registration lookup timed out. Please try again.",

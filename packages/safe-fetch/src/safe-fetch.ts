@@ -54,10 +54,8 @@ export async function safeFetch(opts: SafeFetchOptions): Promise<SafeFetchResult
   let method: "GET" | "HEAD" = opts.method ?? "GET";
   let retryingWithGet = false;
 
-  const baseHeaders: Record<string, string> = {
-    ...(userAgent ? { "User-Agent": userAgent } : {}),
-    ...opts.headers,
-  };
+  const baseHeaders = { ...opts.headers };
+  if (userAgent) baseHeaders["User-Agent"] = userAgent;
 
   const normalizedAllowedHosts =
     allowedHosts?.map((h) => h.trim().toLowerCase()).filter(Boolean) ?? [];
@@ -168,11 +166,7 @@ function toUrl(input: string | URL, base?: string | URL): URL {
 /**
  * Drop credential headers once a redirect has taken us off the original origin.
  */
-function headersForHop(
-  baseHeaders: Record<string, string>,
-  initialUrl: URL,
-  currentUrl: URL,
-): Record<string, string> {
+function headersForHop(baseHeaders: Record<string, string>, initialUrl: URL, currentUrl: URL) {
   if (currentUrl.origin === initialUrl.origin) return baseHeaders;
 
   const safe: Record<string, string> = {};

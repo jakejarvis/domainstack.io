@@ -26,82 +26,97 @@ type TerminalScreenshotQueryState = Extract<
   { status: "completed" | "failed" }
 >;
 
+interface ScreenshotDataPayload {
+  blocked?: unknown;
+  url?: unknown;
+}
+
+interface ScreenshotResponsePayload {
+  data?: ScreenshotDataPayload;
+  error?: unknown;
+  runId?: unknown;
+  status?: unknown;
+  success?: unknown;
+}
+
 function getScreenshotQueryKey(domain: string, domainId?: string) {
   return ["screenshot", domainId ?? domain] as const;
 }
 
-function parseScreenshotData(raw: unknown): ScreenshotData {
-  if (!raw || typeof raw !== "object") {
+function parseScreenshotData(payload: ScreenshotDataPayload | null): ScreenshotData {
+  if (!payload) {
     throw new Error("Screenshot response is missing data");
   }
 
-  const data = raw as Record<string, unknown>;
   return {
-    url: typeof data.url === "string" ? data.url : null,
-    blocked: data.blocked === true,
+    url: typeof payload.url === "string" ? payload.url : null,
+    blocked: payload.blocked === true,
   };
 }
 
-function parseStartResponse(raw: unknown): ScreenshotQueryState {
-  if (!raw || typeof raw !== "object") {
+function parseStartResponse(payload: ScreenshotResponsePayload | null): ScreenshotQueryState {
+  if (!payload) {
     throw new Error("Invalid screenshot response");
   }
 
-  const obj = raw as Record<string, unknown>;
-
-  if ("error" in obj && !("status" in obj)) {
-    throw new Error(typeof obj.error === "string" ? obj.error : "Screenshot request failed");
+  if ("error" in payload && !("status" in payload)) {
+    throw new Error(
+      typeof payload.error === "string" ? payload.error : "Screenshot request failed",
+    );
   }
 
-  if (obj.status === "running" && typeof obj.runId === "string") {
-    return { status: "running", runId: obj.runId };
+  if (payload.status === "running" && typeof payload.runId === "string") {
+    return { status: "running", runId: payload.runId };
   }
 
-  if (obj.status === "completed" && obj.success === false) {
+  if (payload.status === "completed" && payload.success === false) {
     return {
       status: "failed",
-      error: typeof obj.error === "string" ? obj.error : "Screenshot capture failed",
+      error: typeof payload.error === "string" ? payload.error : "Screenshot capture failed",
     };
   }
 
-  if (obj.status === "completed" && obj.data) {
+  if (payload.status === "completed" && payload.data) {
     return {
       status: "completed",
       source: "cache",
-      data: parseScreenshotData(obj.data),
+      data: parseScreenshotData(payload.data),
     };
   }
 
   throw new Error("Unknown screenshot response format");
 }
 
-function parseStatusResponse(raw: unknown, runId: string): ScreenshotQueryState {
-  if (!raw || typeof raw !== "object") {
+function parseStatusResponse(
+  payload: ScreenshotResponsePayload | null,
+  runId: string,
+): ScreenshotQueryState {
+  if (!payload) {
     throw new Error("Invalid screenshot status response");
   }
 
-  const obj = raw as Record<string, unknown>;
-
-  if ("error" in obj && !("status" in obj)) {
-    throw new Error(typeof obj.error === "string" ? obj.error : "Screenshot status unavailable");
+  if ("error" in payload && !("status" in payload)) {
+    throw new Error(
+      typeof payload.error === "string" ? payload.error : "Screenshot status unavailable",
+    );
   }
 
-  if (obj.status === "running") {
+  if (payload.status === "running") {
     return { status: "running", runId };
   }
 
-  if (obj.status === "failed") {
+  if (payload.status === "failed") {
     return {
       status: "failed",
-      error: typeof obj.error === "string" ? obj.error : "Workflow failed",
+      error: typeof payload.error === "string" ? payload.error : "Workflow failed",
     };
   }
 
-  if (obj.status === "completed" && obj.data) {
+  if (payload.status === "completed" && payload.data) {
     return {
       status: "completed",
       source: "workflow",
-      data: parseScreenshotData(obj.data),
+      data: parseScreenshotData(payload.data),
     };
   }
 
@@ -136,7 +151,7 @@ async function startScreenshot(domainId: string): Promise<ScreenshotQueryState> 
     throw new Error(error);
   }
 
-  return parseStartResponse(await response.json());
+  return parseStartResponse((await response.json()) as ScreenshotResponsePayload);
 }
 
 async function pollScreenshot(runId: string): Promise<ScreenshotQueryState> {
@@ -158,7 +173,7 @@ async function pollScreenshot(runId: string): Promise<ScreenshotQueryState> {
     );
   }
 
-  return parseStatusResponse(await response.json(), runId);
+  return parseStatusResponse((await response.json()) as ScreenshotResponsePayload, runId);
 }
 
 function isTerminalState(

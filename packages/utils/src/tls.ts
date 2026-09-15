@@ -14,7 +14,7 @@ const DEFAULT_COPY: TlsValidationCopy = {
   description: "The security certificate for this site could not be validated.",
 };
 
-const TLS_VALIDATION_COPY: Record<string, TlsValidationCopy> = {
+const TLS_VALIDATION_COPY = {
   CERT_HAS_EXPIRED: {
     title: "Certificate expired",
     description: "The site certificate is past its expiration date and is no longer trusted.",
@@ -62,15 +62,15 @@ const TLS_VALIDATION_COPY: Record<string, TlsValidationCopy> = {
     title: "Certificate revoked",
     description: "The certificate has been revoked by its issuer.",
   },
-};
+} satisfies Record<string, TlsValidationCopy>;
 
 /**
  * Map a Node TLS authorization error code to user-facing title and description.
  * Unknown codes fall back to generic copy; the original code is left unchanged.
  */
 export function describeTlsValidationError(code: string | null | undefined): TlsValidationCopy {
-  if (!code) return DEFAULT_COPY;
-  return TLS_VALIDATION_COPY[code] ?? DEFAULT_COPY;
+  if (!code || !(code in TLS_VALIDATION_COPY)) return DEFAULT_COPY;
+  return TLS_VALIDATION_COPY[code as keyof typeof TLS_VALIDATION_COPY];
 }
 
 /**

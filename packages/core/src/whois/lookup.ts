@@ -94,7 +94,7 @@ export async function lookupWhois(
     const { ok, record, error } = await lookup(domain, {
       timeoutMs,
       includeRaw,
-      ...(bootstrapData ? { customBootstrapData: bootstrapData } : {}),
+      customBootstrapData: bootstrapData ?? undefined,
     });
 
     if (!ok || !record) {

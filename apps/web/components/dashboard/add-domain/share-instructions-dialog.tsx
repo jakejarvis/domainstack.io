@@ -132,7 +132,14 @@ function shareDialogReducer(state: ShareDialogState, action: ShareDialogAction):
 /**
  * Downloads the instructions as a text file.
  */
-function downloadInstructionsFile(domain: string, verificationToken: string): { success: boolean } {
+interface DownloadInstructionsResult {
+  success: boolean;
+}
+
+function downloadInstructionsFile(
+  domain: string,
+  verificationToken: string,
+): DownloadInstructionsResult {
   try {
     const content = formatInstructionsForSharing(domain, verificationToken);
     const filename = `${domain}-verification-instructions.txt`;

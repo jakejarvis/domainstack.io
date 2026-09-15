@@ -705,12 +705,14 @@ function MapControls({
           setWaitingForLocation(false);
 
           // Map error codes to user-friendly messages
-          const messages: Record<number, string> = {
-            1: "Location access denied. Please enable location permissions.",
-            2: "Unable to determine your location. Please try again.",
-            3: "Location request timed out. Please try again.",
-          };
-          const message = messages[error.code] ?? "Unable to get your location";
+          const message =
+            error.code === 1
+              ? "Location access denied. Please enable location permissions."
+              : error.code === 2
+                ? "Unable to determine your location. Please try again."
+                : error.code === 3
+                  ? "Location request timed out. Please try again."
+                  : "Unable to get your location";
           toast.error(message);
 
           // Track non-permission errors (permission denied is expected user behavior)

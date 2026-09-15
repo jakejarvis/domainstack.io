@@ -41,7 +41,7 @@ export interface Provider extends ProviderEntry {
 // Typed as a Record over ProviderCategory so a category added to
 // PROVIDER_CATEGORIES fails to compile here until the catalog gains a key for
 // it, rather than silently parsing to a catalog that is missing the section.
-const catalogShape: Record<
+const providerCatalogFields: Record<
   ProviderCategory,
   z.ZodDefault<z.ZodArray<typeof ProviderEntrySchema>>
 > = {
@@ -52,7 +52,7 @@ const catalogShape: Record<
   registrar: z.array(ProviderEntrySchema).default([]),
 };
 
-const ProviderCatalogSchema = z.object(catalogShape).superRefine((catalog, ctx) => {
+export const ProviderCatalogSchema = z.object(providerCatalogFields).superRefine((catalog, ctx) => {
   // Validate all regex patterns at parse time
   const validateRegexInRule = (
     rule: Rule,
@@ -100,29 +100,6 @@ const ProviderCatalogSchema = z.object(catalogShape).superRefine((catalog, ctx) 
 });
 
 export type ProviderCatalog = z.infer<typeof ProviderCatalogSchema>;
-
-/**
- * Parse and validate a raw provider catalog.
- *
- * @param raw - Raw JSON object
- * @returns Validated ProviderCatalog
- * @throws ZodError if validation fails
- */
-export function parseProviderCatalog(raw: unknown): ProviderCatalog {
-  return ProviderCatalogSchema.parse(raw);
-}
-
-/**
- * Safely parse a provider catalog, returning a result object.
- *
- * @param raw - Raw JSON object
- * @returns Validated ProviderCatalog or error
- */
-export function safeParseProviderCatalog(
-  raw: unknown,
-): { success: true; data: ProviderCatalog } | { success: false; error: z.ZodError } {
-  return ProviderCatalogSchema.safeParse(raw);
-}
 
 /**
  * Extract providers of a specific category from a parsed catalog.

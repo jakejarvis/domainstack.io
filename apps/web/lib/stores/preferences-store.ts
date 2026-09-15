@@ -63,15 +63,21 @@ function validateOption<T>(value: T | undefined, validOptions: readonly T[], def
   return defaultValue;
 }
 
-function parseColumnVisibility(value: unknown): Record<string, boolean> {
+interface ColumnVisibility {
+  [columnId: string]: boolean;
+}
+
+function parseColumnVisibility(value: unknown): ColumnVisibility {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return { ...DEFAULT_PREFERENCES.columnVisibility };
   }
-  const entries = Object.entries(value).filter(([, flag]) => typeof flag === "boolean");
-  return {
-    ...DEFAULT_PREFERENCES.columnVisibility,
-    ...Object.fromEntries(entries),
-  };
+  const columnVisibility: ColumnVisibility = { ...DEFAULT_PREFERENCES.columnVisibility };
+  for (const [columnId, flag] of Object.entries(value)) {
+    if (typeof flag === "boolean") {
+      columnVisibility[columnId] = flag;
+    }
+  }
+  return columnVisibility;
 }
 
 const preferencesStore = create<PreferencesStore>()(

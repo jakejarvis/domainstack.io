@@ -20,6 +20,7 @@ import type {
   CertificatePendingObservation,
   CertificateRecentIdentity,
   CertificateSnapshotData,
+  ChangeConfirmationResult,
   PendingChangeObservation,
   ProviderChange,
   ProviderSnapshotData,
@@ -147,7 +148,7 @@ export function confirmChange(
   pending: PendingChangeObservation | null | undefined,
   observedKey: string,
   now: Date = new Date(),
-): { confirmed: boolean; pending: PendingChangeObservation | null } {
+): ChangeConfirmationResult {
   const observations = pending?.key === observedKey ? pending.observations + 1 : 1;
   if (observations >= CHANGE_CONFIRMATIONS) {
     return { confirmed: true, pending: null };

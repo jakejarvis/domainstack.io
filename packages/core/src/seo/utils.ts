@@ -6,8 +6,8 @@
  * Sanitize text by removing control characters, collapsing whitespace,
  * and stripping invisible formatting characters.
  */
-export function sanitizeText(input: unknown): string {
-  let out = typeof input === "string" ? input : "";
+export function sanitizeText(input: string): string {
+  let out = input;
   out = out.trim().replace(/\s+/g, " ");
   let res = "";
   for (let i = 0; i < out.length; i++) {
