@@ -1,15 +1,13 @@
 "use client";
 
 import { IconAlertTriangle, IconCalendarClock, IconRefresh, IconX } from "@tabler/icons-react";
-import { useQueryErrorResetBoundary } from "@tanstack/react-query";
-import { Suspense, useState } from "react";
+import { useQueryClient, useQueryErrorResetBoundary } from "@tanstack/react-query";
+import { Suspense, useRef, useState } from "react";
 import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
 
-import {
-  CalendarInstructions,
-  CalendarInstructionsSkeleton,
-} from "@/components/calendar-instructions";
+import { CalendarInstructions } from "@/components/calendar-instructions";
 import { CreateIssueButton } from "@/components/create-issue-button";
+import { useTRPC } from "@/lib/trpc/client";
 import { Button } from "@domainstack/ui/button";
 import {
   Popover,
@@ -17,8 +15,8 @@ import {
   PopoverDescription,
   PopoverHeader,
   PopoverTitle,
-  PopoverTrigger,
 } from "@domainstack/ui/popover";
+import { Spinner } from "@domainstack/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 
 /**
@@ -44,26 +42,53 @@ function PopoverErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
 
 export function CalendarFeedPopover() {
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { reset } = useQueryErrorResetBoundary();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  const handleTriggerClick = async () => {
+    if (open) {
+      setOpen(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await queryClient.query({
+        ...trpc.user.getCalendarFeed.queryOptions(),
+        staleTime: "static",
+      });
+    } catch {
+      // Errors surface once the popover opens, via the ErrorBoundary below.
+    } finally {
+      setLoading(false);
+      setOpen(true);
+    }
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <Tooltip>
         <TooltipTrigger
           render={
-            <PopoverTrigger
-              render={
-                <Button variant="outline" size="icon">
-                  <IconCalendarClock />
-                  <span className="sr-only">Subscribe</span>
-                </Button>
-              }
-            />
+            <Button
+              ref={triggerRef}
+              variant="outline"
+              size="icon"
+              onClick={handleTriggerClick}
+              disabled={loading}
+            >
+              {loading ? <Spinner /> : <IconCalendarClock />}
+              <span className="sr-only">Subscribe</span>
+            </Button>
           }
         />
         <TooltipContent>Subscribe to updates</TooltipContent>
       </Tooltip>
       <PopoverContent
+        anchor={triggerRef}
         className="overflow-hidden bg-background p-0 max-sm:!right-0 max-sm:!left-0 max-sm:!mx-auto max-sm:w-[calc(100vw-1rem)] max-sm:!translate-x-0 sm:w-[400px]"
         align="end"
         side="bottom"
@@ -91,7 +116,7 @@ export function CalendarFeedPopover() {
         </PopoverHeader>
 
         <ErrorBoundary FallbackComponent={PopoverErrorFallback} onReset={reset}>
-          <Suspense fallback={<CalendarInstructionsSkeleton className="p-4" />}>
+          <Suspense fallback={null}>
             <CalendarInstructions className="bg-popover/10 p-4" />
           </Suspense>
         </ErrorBoundary>
