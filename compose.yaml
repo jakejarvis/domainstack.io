@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: domainstack
+      POSTGRES_PASSWORD: domainstack
+      POSTGRES_USER: domainstack
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U domainstack -d domainstack"]
+      interval: 1s
+      timeout: 5s
+      retries: 30
+    ports:
+      - "127.0.0.1:54329:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+
+volumes:
+  postgres-data:

@@ -13,6 +13,8 @@
   "type": "module",
   "scripts": {
     "dev": "turbo run dev",
+    "dev:prepare": "node scripts/dev.mjs prepare",
+    "dev:doctor": "node scripts/dev.mjs doctor",
     "build": "turbo run build",
     "start": "turbo run start",
     "lint": "turbo run lint",
@@ -21,10 +23,13 @@
     "fmt:check": "turbo run fmt:check",
     "test": "turbo run test",
     "test:coverage": "turbo run test:coverage",
-    "db:generate": "turbo run db:generate",
-    "db:push": "turbo run db:push",
-    "db:migrate": "turbo run db:migrate",
-    "db:studio": "turbo run db:studio",
+    "db:start": "node scripts/dev.mjs db:start",
+    "db:stop": "node scripts/dev.mjs db:stop",
+    "db:reset": "node scripts/dev.mjs db:reset",
+    "db:generate": "turbo run db:generate --filter=@domainstack/db",
+    "db:push": "node scripts/dev.mjs db:push",
+    "db:migrate": "node scripts/dev.mjs db:migrate",
+    "db:studio": "node scripts/dev.mjs db:studio",
     "clean": "shx rm -rf .turbo \"apps/*/.turbo\" \"apps/*/node_modules\" \"apps/*/*.tsbuildinfo\" apps/web/.next \"packages/*/.turbo\" \"packages/*/node_modules\" \"packages/*/*.tsbuildinfo\" node_modules pnpm-lock.yaml"
   },
   "devDependencies": {

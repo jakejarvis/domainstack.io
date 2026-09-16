@@ -45,6 +45,15 @@
       "persistent": true,
       "cache": false
     },
+    "@domainstack/web#dev": {
+      "dependsOn": ["^build", "//#dev:prepare"],
+      "persistent": true,
+      "cache": false
+    },
+    "//#dev:prepare": {
+      "cache": false,
+      "env": ["DATABASE_URL", "LOCAL_BACKEND"]
+    },
     "lint": {
       "dependsOn": ["^lint"],
       "outputs": []
@@ -71,16 +80,6 @@
       "env": ["CI"]
     },
     "db:generate": {
-      "cache": false
-    },
-    "db:push": {
-      "cache": false
-    },
-    "db:migrate": {
-      "cache": false
-    },
-    "db:studio": {
-      "persistent": true,
       "cache": false
     }
   },

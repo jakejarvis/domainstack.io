@@ -12,6 +12,7 @@ __screenshots__
 test-results
 .vitest
 .vitest-attachments
+.tmp/
 
 # Turbo
 .turbo
@@ -54,6 +55,3 @@ next-env.d.ts
 # Workflow SDK
 .workflow-data
 **/.well-known/workflow
-
-# next-agents-md
-.next-docs/

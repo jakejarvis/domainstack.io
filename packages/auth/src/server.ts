@@ -97,7 +97,7 @@ const { providers: socialProviders, enabledProviders } = buildOAuthProviders({
 });
 
 // Ensure at least one OAuth provider is configured
-if (enabledProviders.length === 0) {
+if (enabledProviders.length === 0 && process.env.NODE_ENV !== "development") {
   throw new Error(
     "At least one OAuth provider must be configured (GitHub, GitLab, Google, or Vercel)",
   );
@@ -113,6 +113,9 @@ export const auth = betterAuth({
   secondaryStorage: createRedisStorage(redis ?? null),
   baseURL: process.env.NEXT_PUBLIC_BASE_URL,
   secret: process.env.BETTER_AUTH_SECRET,
+  emailAndPassword: {
+    enabled: process.env.NODE_ENV === "development",
+  },
   logger: {
     log: (level, message, ...args) => {
       const logFn = logger[level].bind(logger);
@@ -129,11 +132,13 @@ export const auth = betterAuth({
           // Create Resend contact for marketing communications. `waitUntil`
           // never awaits the promise itself, so a rejection escaping here is an
           // unhandled rejection that takes down the invocation.
-          waitUntil(
-            addContact(user.email, user.name).catch((err: unknown) =>
-              logger.error({ err, userId: user.id }, "failed to add Resend contact"),
-            ),
-          );
+          if (process.env.NODE_ENV !== "development" && process.env.RESEND_API_KEY) {
+            waitUntil(
+              addContact(user.email, user.name).catch((err: unknown) =>
+                logger.error({ err, userId: user.id }, "failed to add Resend contact"),
+              ),
+            );
+          }
 
           analytics.track(
             "signed_up",
@@ -156,21 +161,25 @@ export const auth = betterAuth({
         // Cancel Polar subscription if user has one
         // This deletes the Polar customer, which automatically cancels any active
         // subscriptions and revokes benefits
-        try {
-          await polarClient?.customers.deleteExternal({
-            externalId: user.id,
-          });
-        } catch (err) {
-          // Don't block account deletion if Polar cleanup fails
-          logger.error({ err, userId: user.id }, "failed to delete Polar customer");
+        if (process.env.NODE_ENV !== "development") {
+          try {
+            await polarClient?.customers.deleteExternal({
+              externalId: user.id,
+            });
+          } catch (err) {
+            // Don't block account deletion if Polar cleanup fails
+            logger.error({ err, userId: user.id }, "failed to delete Polar customer");
+          }
         }
 
         // Delete Resend contact
-        waitUntil(
-          removeContact(user.email).catch((err: unknown) =>
-            logger.error({ err, userId: user.id }, "failed to remove Resend contact"),
-          ),
-        );
+        if (process.env.NODE_ENV !== "development" && process.env.RESEND_API_KEY) {
+          waitUntil(
+            removeContact(user.email).catch((err: unknown) =>
+              logger.error({ err, userId: user.id }, "failed to remove Resend contact"),
+            ),
+          );
+        }
       },
       sendDeleteAccountVerification: async ({ user, url }) => {
         waitUntil(
@@ -229,7 +238,7 @@ export const auth = betterAuth({
     },
   },
   plugins: [
-    ...(polarClient
+    ...(polarClient && process.env.NODE_ENV !== "development"
       ? [
           polar({
             client: polarClient,

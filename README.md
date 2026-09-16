@@ -53,39 +53,62 @@
 
 This is a **[Turborepo](https://turborepo.dev/docs) monorepo**.
 
-### 1. Clone & install
+### Local setup
+
+Install Node.js 24.21.0, pnpm, and Docker, then:
 
 ```bash
 git clone https://github.com/jakejarvis/domainstack.io.git
 cd domainstack.io
 pnpm install
-```
-
-### 2. Configure environment variables
-
-Create `.env.local` in the `apps/web` directory and populate [required variables](apps/web/.env.example):
-
-```bash
-cp apps/web/.env.example apps/web/.env.local
-```
-
-At minimum, you'll need `DATABASE_URL` pointing to a Postgres database.
-
-### 3. Set up the database
-
-Apply Drizzle migrations to initialize the database schema:
-
-```bash
-pnpm db:migrate
-```
-
-### 4. Start development
-
-```bash
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+`pnpm dev` starts PostgreSQL 18 in Docker on `127.0.0.1:54329`, waits for it to become healthy, applies migrations, and starts the Turborepo development processes. Open [http://localhost:3000](http://localhost:3000). Authenticated pages are available through **Continue as local developer**; the local account is created on first use.
+
+The first run safely appends missing defaults to the ignored `apps/web/.env.development.local`. Existing values are never replaced, and diagnostics report only whether integrations are configured:
+
+```bash
+pnpm dev:doctor
+```
+
+Redis, Polar, Blob, Resend, analytics, Edge Config, AI, and OAuth providers are optional for core local development. Add any integrations you want to `apps/web/.env.local`. To use Vercel Development variables, pull them manually:
+
+```bash
+cd apps/web
+vercel env pull .env.local --environment=development
+```
+
+The generated development-local database URL has higher file precedence than a pulled Vercel URL. The process environment still has highest precedence.
+
+### Database commands
+
+The default backend is `docker`. Its named volume is scoped to the checkout, so data survives restarts and different checkouts do not share data. The fixed host port means only one checkout-local database can run at a time.
+
+```bash
+pnpm db:start
+pnpm db:stop
+pnpm db:migrate
+pnpm db:push
+pnpm db:studio
+pnpm db:reset
+```
+
+`pnpm db:reset` removes only the current checkout's Docker volume or ignored native data directory. It refuses to run for an external database.
+
+Set `LOCAL_BACKEND=native` to use locally installed PostgreSQL server tools, with data stored under the ignored `.domainstack/` directory. To use a database that Domainstack does not manage, put `LOCAL_BACKEND=external` and an explicit `DATABASE_URL` in `apps/web/.env.development.local`. You can instead export both variables when running an individual database command.
+
+### Codex and Claude cloud environments
+
+Cloud agents should use native PostgreSQL and no hosted secrets. Configure either platform's setup command as:
+
+```bash
+bash scripts/cloud-setup.sh
+```
+
+The setup script selects the Node.js version in `.nvmrc`, enables Corepack so it uses the pnpm version declared by `packageManager`, installs dependencies with the frozen lockfile, installs Ubuntu PostgreSQL only when server tools are missing, and records the native backend. Database initialization and migrations remain part of `pnpm dev` and the root database commands.
+
+See the platform documentation for persistent environment and setup-script configuration: [Codex cloud environments](https://learn.chatgpt.com/docs/environments/cloud-environment) and [Claude cloud environments](https://code.claude.com/docs/en/cloud-environments). Do not add Vercel or production secrets to these environments.
 
 ## License
 

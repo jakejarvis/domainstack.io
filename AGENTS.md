@@ -25,7 +25,8 @@ Before editing files for a substantial task:
 
 ### Development
 
-- `pnpm dev` — Start Next.js dev server at http://localhost:3000
+- `pnpm dev` — Prepare the local database, apply migrations, and start development at http://localhost:3000
+- `pnpm dev:doctor` — Report local tooling and optional integration availability without printing credentials
 - `pnpm build` — Compile production bundle
 
 ### Linting & Formatting
@@ -42,10 +43,15 @@ Before editing files for a substantial task:
 
 ### Database
 
+- `pnpm db:start` — Start the configured checkout-local database
+- `pnpm db:stop` — Stop the configured checkout-local database
+- `pnpm db:reset` — Reset only the disposable checkout-local database; never use with an external database
 - `pnpm db:generate` — Generate Drizzle migrations
 - `pnpm db:push` — Push schema to database
 - `pnpm db:migrate` — Apply migrations
 - `pnpm db:studio` — Open Drizzle Studio
+
+Use these root commands rather than invoking the `@domainstack/db` package primitives directly. The default backend is Docker; cloud agents should set `LOCAL_BACKEND=native`. Never pull Vercel environment variables or other hosted secrets by default, and never attempt to reset an external database.
 
 ## Code Style
 
