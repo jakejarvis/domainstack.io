@@ -1,27 +1,32 @@
 {
-  "name": "@domainstack/edge-config",
+  "name": "@domainstack/catalog",
   "version": "0.0.0-beta.1",
   "private": true,
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/edge-config.ts",
+    "./providers": "./src/providers/index.ts"
   },
   "scripts": {
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt --config ../../.oxfmtrc.json",
-    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json"
+    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@domainstack/constants": "workspace:*",
     "@domainstack/logger": "workspace:*",
-    "@domainstack/utils": "workspace:*",
-    "@vercel/edge-config": "^1.5.1"
+    "@domainstack/types": "workspace:*",
+    "@vercel/edge-config": "^1.5.1",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@types/node": "catalog:",
-    "@types/react": "catalog:"
+    "@types/react": "catalog:",
+    "vitest": "catalog:"
   },
   "peerDependencies": {
     "react": ">=19"

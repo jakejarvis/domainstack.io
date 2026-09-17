@@ -19,12 +19,12 @@ const whoisMock = vi.hoisted(() => ({
 vi.mock("@domainstack/core/whois", () => whoisMock);
 
 // Mock Edge Config
-vi.mock("@domainstack/edge-config", () => ({
+vi.mock("@domainstack/catalog", () => ({
   getProviderCatalog: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue(null),
 }));
 
 // Mock provider detection
-vi.mock("@domainstack/utils/providers", () => ({
+vi.mock("@domainstack/catalog/providers", () => ({
   detectRegistrar: vi.fn<(...args: unknown[]) => unknown>().mockReturnValue(null),
   getProvidersFromCatalog: vi.fn<(...args: unknown[]) => unknown[]>().mockReturnValue([]),
 }));

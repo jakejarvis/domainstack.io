@@ -9,9 +9,10 @@ import { get } from "@vercel/edge-config";
 import { cache } from "react";
 
 import { createLogger } from "@domainstack/logger";
-import { type ProviderCatalog, ProviderCatalogSchema } from "@domainstack/utils/providers";
 
-const logger = createLogger({ source: "edge-config" });
+import { type ProviderCatalog, ProviderCatalogSchema } from "./providers";
+
+const logger = createLogger({ source: "catalog" });
 
 /**
  * Fetches the provider catalog from Vercel Edge Config.

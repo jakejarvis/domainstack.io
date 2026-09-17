@@ -7,21 +7,21 @@
  * Permanent errors return { success: false, error }.
  */
 
+import { getProviderCatalog } from "@domainstack/catalog";
+import {
+  detectRegistrar,
+  getProvidersFromCatalog,
+  type Provider,
+  type ProviderCatalog,
+} from "@domainstack/catalog/providers";
 import { upsertDomain } from "@domainstack/db/queries/domains";
 import {
   resolveOrCreateProviderId,
   upsertCatalogProvider,
 } from "@domainstack/db/queries/providers";
 import { upsertRegistration } from "@domainstack/db/queries/registrations";
-import { getProviderCatalog } from "@domainstack/edge-config";
 import type { RegistrationContact, RegistrationResponse } from "@domainstack/types";
 import { getDomainTld } from "@domainstack/utils/domain";
-import {
-  detectRegistrar,
-  getProvidersFromCatalog,
-  type Provider,
-  type ProviderCatalog,
-} from "@domainstack/utils/providers";
 
 import { ttlForRegistration } from "../ttl";
 import { lookupWhois as lookup } from "../whois";

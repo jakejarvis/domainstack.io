@@ -379,10 +379,10 @@ domainstack.io/
 │   ├── api/                    # tRPC init, procedures, middleware, routers, appRouter (@domainstack/api)
 │   ├── auth/                   # Better Auth server/client config
 │   ├── blob/                   # Vercel Blob storage wrapper
+│   ├── catalog/                 # Provider + technology catalogs: schemas, rule engines, Edge Config loaders
 │   ├── constants/               # Shared constants; primitives/ holds enum arrays
 │   ├── core/                    # Domain data services: dns, tls, whois, seo, headers, verification (@domainstack/core)
 │   ├── db/                     # Drizzle schema, client, and query layer
-│   ├── edge-config/             # Vercel Edge Config reader
 │   ├── email/                  # React Email templates + Resend
 │   ├── image/                   # Favicon/logo processing (sharp)
 │   ├── logger/                  # Pino logger factory
@@ -415,8 +415,11 @@ All commands run from the **monorepo root** via Turborepo.
 
 The backend is layered strictly one-way: `apps/web` → `@domainstack/api` →
 `@domainstack/workflows` → `@domainstack/core` → `db`, `redis`, `safe-fetch`,
-`edge-config`, `image`, `utils`, etc. (`api` may also call `core` directly, and
+`catalog`, `image`, `utils`, etc. (`api` may also call `core` directly, and
 `apps/web`'s cron/screenshot routes call `start()` on workflows directly.)
+`db` also depends on `catalog` (for `catalogRuleMatchesDiscovered`, used when
+merging a discovered provider into a catalog one). `catalog` depends only on
+`constants`, `types`, `utils`, and `logger`, so this adds no cycle.
 
 1. **`@domainstack/core`**: plain async domain services (fetch, normalize,
    persist). Never imports `workflow`, `@trpc/*`, or `next/*`.
