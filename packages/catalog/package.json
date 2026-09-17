@@ -6,7 +6,8 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/edge-config.ts",
-    "./providers": "./src/providers/index.ts"
+    "./providers": "./src/providers/index.ts",
+    "./technologies": "./src/technologies/index.ts"
   },
   "scripts": {
     "lint": "oxlint",
@@ -19,6 +20,7 @@
     "@domainstack/constants": "workspace:*",
     "@domainstack/logger": "workspace:*",
     "@domainstack/types": "workspace:*",
+    "@domainstack/utils": "workspace:*",
     "@vercel/edge-config": "^1.5.1",
     "zod": "catalog:"
   },

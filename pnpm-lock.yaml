@@ -525,6 +525,9 @@ importers:
       '@domainstack/types':
         specifier: workspace:*
         version: link:../types
+      '@domainstack/utils':
+        specifier: workspace:*
+        version: link:../utils
       '@vercel/edge-config':
         specifier: ^1.5.1
         version: 1.5.1(@opentelemetry/api@1.9.1)(next@16.3.5(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@types/node@24.13.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))
