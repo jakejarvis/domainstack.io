@@ -360,6 +360,7 @@ export function ChatPanel({
           "min-h-0 flex-1 bg-popover/10 [&_[data-slot=scroll-area-content]]:flex [&_[data-slot=scroll-area-content]]:min-h-full [&_[data-slot=scroll-area-content]]:flex-col",
           conversationClassName,
         )}
+        data-base-ui-swipe-ignore
       >
         <ConversationContent
           className={cn(isEmpty ? "items-center justify-center" : "gap-4 px-3 py-4")}
@@ -383,7 +384,7 @@ export function ChatPanel({
         className={cn("shrink-0 space-y-3 border-t border-border bg-card/60 !pt-3", inputClassName)}
       >
         {messages.length === 0 && suggestions.length > 0 ? (
-          <Suggestions className="justify-center">
+          <Suggestions className="justify-center" data-base-ui-swipe-ignore>
             {suggestions.map((suggestion) => (
               <Suggestion
                 key={suggestion}

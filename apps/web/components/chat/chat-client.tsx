@@ -21,7 +21,6 @@ import { useChatHydrated, useChatStore } from "@/lib/stores/chat-store";
 import { type ChatMode, usePreferencesStore } from "@/lib/stores/preferences-store";
 import { useTRPCClient } from "@/lib/trpc/client";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@domainstack/ui/drawer";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@domainstack/ui/sheet";
 
 import { ChatHeaderActions } from "./chat-header-actions";
 import { ChatPanel } from "./chat-panel";
@@ -55,7 +54,6 @@ export function ChatClient({
 }: ChatClientProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const params = useParams<{ domain?: string }>();
-  const isMobile = useIsMobile();
   const aiMode = usePreferencesStore((s) => s.aiMode);
   const browserAI = useBrowserAI();
   const chatHydrated = useChatHydrated();
@@ -84,36 +82,31 @@ export function ChatClient({
     [preferredMode],
   );
 
-  return (
-    <>
-      {chatHydrated &&
-        (mode === "local" ? (
-          <LocalChatSession
-            domain={domain}
-            suggestions={suggestions}
-            model={browserAI.model}
-            browserAI={browserAI}
-            isMobile={isMobile}
-            open={open}
-            onOpenChange={onOpenChange}
-            settingsOpen={settingsOpen}
-            onSettingsOpenChange={setSettingsOpen}
-            onActiveChange={handleActiveChange}
-          />
-        ) : (
-          <CloudChatSession
-            domain={domain}
-            suggestions={suggestions}
-            browserAI={browserAI}
-            isMobile={isMobile}
-            open={open}
-            onOpenChange={onOpenChange}
-            settingsOpen={settingsOpen}
-            onSettingsOpenChange={setSettingsOpen}
-            onActiveChange={handleActiveChange}
-          />
-        ))}
-    </>
+  if (!chatHydrated) return null;
+
+  return mode === "local" ? (
+    <LocalChatSession
+      domain={domain}
+      suggestions={suggestions}
+      model={browserAI.model}
+      browserAI={browserAI}
+      open={open}
+      onOpenChange={onOpenChange}
+      settingsOpen={settingsOpen}
+      onSettingsOpenChange={setSettingsOpen}
+      onActiveChange={handleActiveChange}
+    />
+  ) : (
+    <CloudChatSession
+      domain={domain}
+      suggestions={suggestions}
+      browserAI={browserAI}
+      open={open}
+      onOpenChange={onOpenChange}
+      settingsOpen={settingsOpen}
+      onSettingsOpenChange={setSettingsOpen}
+      onActiveChange={handleActiveChange}
+    />
   );
 }
 
@@ -121,7 +114,6 @@ interface ChatSessionProps {
   domain?: string;
   suggestions: string[];
   browserAI: UseBrowserAIResult;
-  isMobile: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   settingsOpen: boolean;
@@ -133,7 +125,6 @@ function CloudChatSession({
   domain,
   suggestions,
   browserAI,
-  isMobile,
   open,
   onOpenChange,
   settingsOpen,
@@ -251,7 +242,6 @@ function CloudChatSession({
       domain={domain}
       suggestions={suggestions}
       browserAI={browserAI}
-      isMobile={isMobile}
       open={open}
       onOpenChange={onOpenChange}
       settingsOpen={settingsOpen}
@@ -265,7 +255,6 @@ function LocalChatSession({
   suggestions,
   model,
   browserAI,
-  isMobile,
   open,
   onOpenChange,
   settingsOpen,
@@ -325,7 +314,6 @@ function LocalChatSession({
       domain={domain}
       suggestions={suggestions}
       browserAI={browserAI}
-      isMobile={isMobile}
       open={open}
       onOpenChange={onOpenChange}
       settingsOpen={settingsOpen}
@@ -339,7 +327,6 @@ function ChatShell({
   domain,
   suggestions,
   browserAI,
-  isMobile,
   open,
   onOpenChange,
   settingsOpen,
@@ -349,12 +336,13 @@ function ChatShell({
   domain?: string;
   suggestions: string[];
   browserAI: UseBrowserAIResult;
-  isMobile: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   settingsOpen: boolean;
   onSettingsOpenChange: (open: boolean) => void;
 }) {
+  const isMobile = useIsMobile();
+
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
       onSettingsOpenChange(false);
@@ -362,69 +350,43 @@ function ChatShell({
     onOpenChange(nextOpen);
   };
 
-  const headerActions = (
-    <ChatHeaderActions
-      messages={chat.messages}
-      onClear={chat.clearMessages}
-      onSettingsClick={() => onSettingsOpenChange(true)}
-      onCloseClick={() => handleOpenChange(false)}
-    />
-  );
-
-  const panel = (
-    <ChatPanel
-      messages={chat.messages}
-      sendMessage={chat.sendMessage}
-      clearMessages={chat.clearMessages}
-      status={chat.status}
-      error={chat.error}
-      onRetry={chat.retry}
-      onClearError={chat.clearError}
-      domain={domain}
-      homeSuggestions={suggestions}
-      browserAI={browserAI}
-      conversationClassName={isMobile ? "px-4" : undefined}
-      inputClassName={isMobile ? "p-4" : "p-3"}
-    />
-  );
-
-  const settings = <ChatSettingsDialog open={settingsOpen} onOpenChange={onSettingsOpenChange} />;
-
-  if (isMobile) {
-    return (
-      <Drawer open={open} onOpenChange={handleOpenChange}>
-        <DrawerContent className="data-[swipe-direction=down]:mt-0 data-[swipe-direction=down]:h-[calc(100dvh---spacing(16))] data-[swipe-direction=down]:max-h-[calc(100dvh---spacing(16))]">
-          <DrawerHeader className="flex flex-row items-center justify-between">
-            <DrawerTitle className="flex items-center gap-2">
-              <span className="text-[15px] leading-none font-semibold tracking-tight">Ask AI</span>
-              <BetaBadge />
-            </DrawerTitle>
-            <div className="flex items-center gap-2">{headerActions}</div>
-          </DrawerHeader>
-          {panel}
-        </DrawerContent>
-        {settings}
-      </Drawer>
-    );
-  }
-
   return (
-    <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent
-        side="right"
-        className="flex w-[420px] flex-col gap-0 p-0"
-        showCloseButton={false}
-      >
-        <SheetHeader className="flex shrink-0 flex-row items-center justify-between border-b bg-card/60 px-3.5 py-2">
-          <SheetTitle className="flex items-center gap-2">
+    <Drawer
+      open={open}
+      onOpenChange={handleOpenChange}
+      swipeDirection={isMobile ? "down" : "right"}
+    >
+      <DrawerContent className="data-[swipe-direction=down]:mt-0 data-[swipe-direction=down]:h-[calc(100%---spacing(16))] data-[swipe-direction=down]:max-h-[calc(100%---spacing(16))]">
+        <DrawerHeader className="flex-row items-center justify-between group-data-[swipe-direction=right]/drawer-content:border-b group-data-[swipe-direction=right]/drawer-content:bg-card/60 group-data-[swipe-direction=right]/drawer-content:px-3.5 group-data-[swipe-direction=right]/drawer-content:py-2">
+          <DrawerTitle className="flex items-center gap-2">
             <span className="text-[15px] leading-none font-semibold tracking-tight">Ask AI</span>
             <BetaBadge />
-          </SheetTitle>
-          <div className="-mr-1.5 flex items-center gap-1.5">{headerActions}</div>
-        </SheetHeader>
-        {panel}
-      </SheetContent>
-      {settings}
-    </Sheet>
+          </DrawerTitle>
+          <div className="flex items-center gap-2 group-data-[swipe-direction=right]/drawer-content:-mr-1.5 group-data-[swipe-direction=right]/drawer-content:gap-1.5">
+            <ChatHeaderActions
+              messages={chat.messages}
+              onClear={chat.clearMessages}
+              onSettingsClick={() => onSettingsOpenChange(true)}
+              onCloseClick={() => handleOpenChange(false)}
+            />
+          </div>
+        </DrawerHeader>
+        <ChatPanel
+          messages={chat.messages}
+          sendMessage={chat.sendMessage}
+          clearMessages={chat.clearMessages}
+          status={chat.status}
+          error={chat.error}
+          onRetry={chat.retry}
+          onClearError={chat.clearError}
+          domain={domain}
+          homeSuggestions={suggestions}
+          browserAI={browserAI}
+          conversationClassName="px-4 md:px-0"
+          inputClassName="p-4 md:p-3"
+        />
+      </DrawerContent>
+      <ChatSettingsDialog open={settingsOpen} onOpenChange={onSettingsOpenChange} />
+    </Drawer>
   );
 }

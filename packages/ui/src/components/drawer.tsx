@@ -50,9 +50,9 @@ function DrawerContent({ className, children, ...props }: DrawerPrimitive.Popup.
               "data-[swipe-direction=down]:inset-x-0 data-[swipe-direction=down]:bottom-0 data-[swipe-direction=left]:inset-y-0 data-[swipe-direction=left]:left-0 data-[swipe-direction=right]:inset-y-0 data-[swipe-direction=right]:right-0 data-[swipe-direction=up]:inset-x-0 data-[swipe-direction=up]:top-0",
               "data-[swipe-direction=down]:mt-24 data-[swipe-direction=down]:max-h-[80vh] data-[swipe-direction=left]:h-full data-[swipe-direction=left]:w-3/4 data-[swipe-direction=right]:h-full data-[swipe-direction=right]:w-3/4 data-[swipe-direction=up]:mb-24 data-[swipe-direction=up]:max-h-[80vh]",
               "data-[swipe-direction=down]:rounded-t-xl data-[swipe-direction=down]:border-t data-[swipe-direction=left]:rounded-r-xl data-[swipe-direction=left]:border-r data-[swipe-direction=right]:rounded-l-xl data-[swipe-direction=right]:border-l data-[swipe-direction=up]:rounded-b-xl data-[swipe-direction=up]:border-b data-[swipe-direction=left]:sm:max-w-sm data-[swipe-direction=right]:sm:max-w-sm",
-              // Lift bottom sheets above the software keyboard / home indicator.
-              // `--drawer-keyboard-inset` is set by VirtualKeyboardProvider; always include the 0px fallback.
-              "data-[swipe-direction=down]:pb-[max(env(safe-area-inset-bottom,0px),var(--drawer-keyboard-inset,0px))]",
+              // Lift bottom and side drawer content above both the home indicator and software keyboard.
+              // VirtualKeyboardProvider sets the inset on the viewport only while the keyboard is aligned.
+              "data-[swipe-direction=down]:pb-[calc(env(safe-area-inset-bottom,0px)+var(--drawer-keyboard-inset,0px))] data-[swipe-direction=left]:pb-[calc(env(safe-area-inset-bottom,0px)+var(--drawer-keyboard-inset,0px))] data-[swipe-direction=right]:pb-[calc(env(safe-area-inset-bottom,0px)+var(--drawer-keyboard-inset,0px))]",
               className,
             )}
             {...props}
