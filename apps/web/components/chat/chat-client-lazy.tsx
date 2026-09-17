@@ -1,5 +1,6 @@
 "use client";
 
+import { useHotkey } from "@tanstack/react-hotkeys";
 import { useAtom } from "jotai";
 import { AnimatePresence } from "motion/react";
 import { type ComponentType, useCallback, useEffect, useRef, useState } from "react";
@@ -7,7 +8,7 @@ import { type ComponentType, useCallback, useEffect, useRef, useState } from "re
 import { chatOpenAtom } from "@/lib/atoms/chat-atoms";
 import { usePreferencesHydrated, usePreferencesStore } from "@/lib/stores/preferences-store";
 
-import { ChatFab } from "./chat-fab";
+import { CHAT_HOTKEY, ChatFab } from "./chat-fab";
 
 interface LoadedChatClientProps {
   suggestions?: string[];
@@ -57,9 +58,9 @@ export function ChatClientLazy({
     if (hideAiFeatures) setOpen(false);
   }, [hideAiFeatures, setOpen]);
 
-  const handleActivation = useCallback(() => {
+  const handleOpen = useCallback(() => {
     if (ChatClient) {
-      setOpen((current) => !current);
+      setOpen(true);
       return;
     }
     if (loadingRef.current) return;
@@ -81,6 +82,19 @@ export function ChatClientLazy({
         setOpen(false);
       });
   }, [ChatClient, loader, setOpen]);
+
+  const handleActivation = useCallback(() => {
+    if (ChatClient) {
+      setOpen((current) => !current);
+      return;
+    }
+    handleOpen();
+  }, [ChatClient, handleOpen, setOpen]);
+
+  useHotkey(CHAT_HOTKEY, handleActivation, {
+    conflictBehavior: "allow",
+    enabled: hydrated && !hideAiFeatures,
+  });
 
   const handleReady = useCallback(() => {
     loadingRef.current = false;

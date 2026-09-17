@@ -1,6 +1,7 @@
 "use client";
 
-import { IconLoader2, IconLego, IconMessageCircleFilled } from "@tabler/icons-react";
+import { IconLoader2, IconMessageCircleFilled } from "@tabler/icons-react";
+import { formatForDisplay } from "@tanstack/react-hotkeys";
 import {
   type MotionValue,
   useAnimationFrame,
@@ -10,10 +11,13 @@ import {
 } from "motion/react";
 import * as m from "motion/react-m";
 
-import { CHATBOT_NAME } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
+import { Kbd } from "@domainstack/ui/kbd";
+import { Separator } from "@domainstack/ui/separator";
 
 const MotionButton = m.create(Button);
+
+export const CHAT_HOTKEY = "Mod+I";
 
 interface ChatFabProps {
   loading?: boolean;
@@ -101,7 +105,7 @@ export function ChatFab({ loading = false, onClick }: ChatFabProps) {
       <MotionButton
         variant="default"
         size="icon-lg"
-        aria-label={`Chat with ${CHATBOT_NAME}`}
+        aria-label="Ask AI"
         aria-busy={loading}
         disabled={loading}
         className="group fixed right-6 bottom-6 z-40 overflow-hidden rounded-full shadow-lg transition-none md:hidden"
@@ -121,20 +125,22 @@ export function ChatFab({ loading = false, onClick }: ChatFabProps) {
       <MotionButton
         variant="outline"
         size="default"
-        aria-label={`Chat with ${CHATBOT_NAME}`}
+        aria-label="Ask AI"
         aria-busy={loading}
         disabled={loading}
         className="group fixed right-6 bottom-6 z-40 hidden overflow-hidden px-2 shadow-lg backdrop-blur-md transition-none md:flex"
         {...motionProps}
       >
         <MeshGradientBackground alwaysVisible={false} meshGradient={meshGradient} />
-        <span className="relative z-10 flex items-center gap-1.5 pr-0.5 text-[13px] leading-none font-semibold tracking-tight">
-          {loading ? (
-            <IconLoader2 className="size-4 animate-spin text-muted-foreground" />
-          ) : (
-            <IconLego className="size-4 text-muted-foreground group-hover:text-foreground" />
-          )}
-          Ask {CHATBOT_NAME}
+        <span className="relative z-10 flex items-center gap-1.5">
+          <span className="text-[13px] leading-none font-semibold tracking-tight">Ask AI</span>
+          <Separator
+            orientation="vertical"
+            className="bg-border/70 data-[orientation=vertical]:h-3.5"
+          />
+          <Kbd className="border bg-muted/80 px-1.5 py-0.5">
+            {formatForDisplay(CHAT_HOTKEY, { separatorToken: "\u00A0" })}
+          </Kbd>
         </span>
       </MotionButton>
     </>

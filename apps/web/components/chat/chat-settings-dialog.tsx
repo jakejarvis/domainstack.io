@@ -2,9 +2,7 @@
 
 import { IconBiohazard, IconBrain, IconInfoCircle, IconTool } from "@tabler/icons-react";
 
-import { BetaBadge } from "@/components/beta-badge";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
-import { CHATBOT_NAME } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
 import {
   Dialog,
@@ -79,10 +77,7 @@ export function ChatSettingsDialog({ open, onOpenChange }: ChatSettingsDialogPro
     <Dialog open={open} onOpenChange={onOpenChange} modal>
       <DialogContent className="sm:max-w-md">
         <DialogHeader className="gap-0.5">
-          <DialogTitle className="flex items-center gap-2">
-            <span className="leading-none">Chat Settings</span>
-            <BetaBadge className="translate-y-[-1px]" />
-          </DialogTitle>
+          <DialogTitle>Chat Settings</DialogTitle>
           <DialogDescription>Personalize your AI experience.</DialogDescription>
         </DialogHeader>
         <ItemGroup className="space-y-1 pb-1">
@@ -96,7 +91,7 @@ export function ChatSettingsDialog({ open, onOpenChange }: ChatSettingsDialogPro
           <SettingsSwitchRow
             icon={<IconBrain aria-hidden />}
             title="Show Reasoning"
-            description={`Reveals ${CHATBOT_NAME}\u2019s thought process`}
+            description="Reveals the model's thought process"
             checked={showReasoning}
             onCheckedChange={setShowReasoning}
           />

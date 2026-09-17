@@ -2,7 +2,6 @@
 
 import { useChat } from "@ai-sdk/react";
 import { WorkflowChatTransport } from "@ai-sdk/workflow";
-import { IconLayoutSidebarRightCollapse, IconLego } from "@tabler/icons-react";
 import type { UIMessage } from "ai";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -21,7 +20,6 @@ import { safeDecodeURIComponent } from "@/lib/safe-parse";
 import { useChatHydrated, useChatStore } from "@/lib/stores/chat-store";
 import { type ChatMode, usePreferencesStore } from "@/lib/stores/preferences-store";
 import { useTRPCClient } from "@/lib/trpc/client";
-import { CHATBOT_NAME } from "@domainstack/constants";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@domainstack/ui/drawer";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@domainstack/ui/sheet";
 
@@ -370,7 +368,6 @@ function ChatShell({
       onClear={chat.clearMessages}
       onSettingsClick={() => onSettingsOpenChange(true)}
       onCloseClick={() => handleOpenChange(false)}
-      closeIcon={isMobile ? undefined : IconLayoutSidebarRightCollapse}
     />
   );
 
@@ -399,10 +396,7 @@ function ChatShell({
         <DrawerContent className="data-[swipe-direction=down]:mt-0 data-[swipe-direction=down]:h-[calc(100dvh---spacing(16))] data-[swipe-direction=down]:max-h-[calc(100dvh---spacing(16))]">
           <DrawerHeader className="flex flex-row items-center justify-between">
             <DrawerTitle className="flex items-center gap-2">
-              <IconLego className="size-4" />
-              <span className="text-[15px] leading-none font-semibold tracking-tight">
-                {CHATBOT_NAME}
-              </span>
+              <span className="text-[15px] leading-none font-semibold tracking-tight">Ask AI</span>
               <BetaBadge />
             </DrawerTitle>
             <div className="flex items-center gap-2">{headerActions}</div>
@@ -423,10 +417,7 @@ function ChatShell({
       >
         <SheetHeader className="flex shrink-0 flex-row items-center justify-between border-b bg-card/60 px-3.5 py-2">
           <SheetTitle className="flex items-center gap-2">
-            <IconLego className="size-4" />
-            <span className="text-[15px] leading-none font-semibold tracking-tight">
-              {CHATBOT_NAME}
-            </span>
+            <span className="text-[15px] leading-none font-semibold tracking-tight">Ask AI</span>
             <BetaBadge />
           </SheetTitle>
           <div className="-mr-1.5 flex items-center gap-1.5">{headerActions}</div>
