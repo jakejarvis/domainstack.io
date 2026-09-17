@@ -251,6 +251,8 @@ async function buildResult(
   response.headers.forEach((value, name) => {
     headers[name] = value;
   });
+  const setCookie =
+    typeof response.headers.getSetCookie === "function" ? response.headers.getSetCookie() : [];
 
   return {
     buffer,
@@ -259,6 +261,7 @@ async function buildResult(
     status: response.status,
     ok: response.ok,
     headers,
+    setCookie,
   };
 }
 

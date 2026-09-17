@@ -21,7 +21,7 @@ import type {
 import { parseHtmlMeta, parseRobotsTxt, selectPreview } from "../seo";
 import { isExpectedTlsError } from "../tls";
 import { ttlForSeo } from "../ttl";
-import { RemoteDataUnavailableError } from "./fetch-errors";
+import { fetchHtmlDocument } from "./html-document";
 
 // ============================================================================
 // Types
@@ -125,98 +125,40 @@ export async function fetchSeo(domain: string): Promise<SeoResult> {
 // ============================================================================
 
 async function fetchHtml(domain: string): Promise<HtmlFetchData> {
-  let finalUrl = `https://${domain}/`;
-  let status: number | null = null;
+  const doc = await fetchHtmlDocument(domain);
 
-  try {
-    const htmlResult = await safeFetch({
-      url: finalUrl,
-      userAgent: process.env.EXTERNAL_USER_AGENT,
-      allowHttp: true,
-      timeoutMs: 10_000,
-      maxBytes: 512 * 1024,
-      maxRedirects: 5,
-      truncateOnLimit: true,
-      headers: {
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en",
-      },
-    });
-
-    status = htmlResult.status;
-    finalUrl = htmlResult.finalUrl;
-
-    if (!htmlResult.ok) {
-      return {
-        success: false,
-        finalUrl,
-        status,
-        meta: null,
-        preview: null,
-        error: `HTTP ${htmlResult.status}`,
-      };
-    }
-
-    const contentType = htmlResult.contentType ?? "";
-    if (!/^(text\/html|application\/xhtml\+xml)\b/i.test(contentType)) {
-      return {
-        success: false,
-        finalUrl,
-        status,
-        meta: null,
-        preview: null,
-        error: `Non-HTML content-type: ${contentType}`,
-      };
-    }
-
-    const html = htmlResult.buffer.toString("utf-8");
-    const meta = parseHtmlMeta(html, finalUrl);
-    const preview = selectPreview(meta, finalUrl);
-
+  if (!doc.ok || doc.html === null) {
     return {
-      success: true,
-      finalUrl,
-      status,
-      meta: {
-        openGraph: meta.openGraph,
-        twitter: meta.twitter,
-        general: meta.general,
-      },
-      preview: preview
-        ? {
-            title: preview.title,
-            description: preview.description,
-            image: preview.image,
-            canonicalUrl: preview.canonicalUrl,
-          }
-        : null,
+      success: false,
+      finalUrl: doc.finalUrl,
+      status: doc.status,
+      meta: null,
+      preview: null,
+      error: doc.error,
     };
-  } catch (err) {
-    if (isExpectedDnsError(err)) {
-      return {
-        success: false,
-        finalUrl,
-        status,
-        meta: null,
-        preview: null,
-        error: "DNS resolution failed",
-      };
-    }
-
-    if (isExpectedTlsError(err)) {
-      return {
-        success: false,
-        finalUrl,
-        status,
-        meta: null,
-        preview: null,
-        error: "Invalid SSL certificate",
-      };
-    }
-
-    // Transient failure - throw for TanStack Query to retry
-    throw new RemoteDataUnavailableError("HTML data unavailable", { cause: err });
   }
+
+  const meta = parseHtmlMeta(doc.html, doc.finalUrl);
+  const preview = selectPreview(meta, doc.finalUrl);
+
+  return {
+    success: true,
+    finalUrl: doc.finalUrl,
+    status: doc.status,
+    meta: {
+      openGraph: meta.openGraph,
+      twitter: meta.twitter,
+      general: meta.general,
+    },
+    preview: preview
+      ? {
+          title: preview.title,
+          description: preview.description,
+          image: preview.image,
+          canonicalUrl: preview.canonicalUrl,
+        }
+      : null,
+  };
 }
 
 // ============================================================================

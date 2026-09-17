@@ -805,5 +805,34 @@ describe("safeFetch", () => {
 
       expect(result.contentType).toBe("application/json; charset=utf-8");
     });
+
+    it("collects multiple Set-Cookie headers into setCookie", async () => {
+      const headers = new Headers();
+      headers.append("Set-Cookie", "sid=abc; Path=/; HttpOnly");
+      headers.append("Set-Cookie", "theme=dark; Path=/");
+      const mockFetch = createMockFetch(new Response("OK", { status: 200, headers }));
+
+      const result = await safeFetch({
+        url: "https://example.com",
+        userAgent: "TestBot/1.0",
+        fetch: mockFetch,
+        logger: silentLogger,
+      });
+
+      expect(result.setCookie).toEqual(["sid=abc; Path=/; HttpOnly", "theme=dark; Path=/"]);
+    });
+
+    it("returns an empty setCookie array when no Set-Cookie header is present", async () => {
+      const mockFetch = createMockFetch(mockResponse("OK", { status: 200 }));
+
+      const result = await safeFetch({
+        url: "https://example.com",
+        userAgent: "TestBot/1.0",
+        fetch: mockFetch,
+        logger: silentLogger,
+      });
+
+      expect(result.setCookie).toEqual([]);
+    });
   });
 });
