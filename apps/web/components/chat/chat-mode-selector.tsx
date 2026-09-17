@@ -125,12 +125,11 @@ export function ChatModeSelector({ className, disabled, browserAI }: ChatModeSel
         className={cn(
           "group cursor-pointer justify-center gap-1.5 border-transparent px-2.5 py-0 font-medium shadow-none transition-all select-none not-data-[disabled]:hover:bg-muted not-data-[disabled]:hover:text-foreground",
           "dark:bg-transparent dark:not-data-[disabled]:hover:bg-muted/50",
-          "[&>[data-slot=select-icon]>svg]:size-3 [&>[data-slot=select-icon]>svg]:text-muted-foreground [&>[data-slot=select-icon]>svg]:opacity-100 [&>[data-slot=select-icon]>svg]:transition-transform [&>[data-slot=select-icon]>svg]:duration-200 [&[data-popup-open]>[data-slot=select-icon]>svg]:rotate-180",
-          "[&>[data-slot=select-value]]:gap-1.5",
+          "[&>[data-slot=select-icon]>svg]:size-3 [&>[data-slot=select-icon]>svg]:text-muted-foreground [&>[data-slot=select-icon]>svg]:transition-transform [&>[data-slot=select-icon]>svg]:duration-200 [&[data-popup-open]>[data-slot=select-icon]>svg]:rotate-180",
           className,
         )}
       >
-        <SelectValue>
+        <SelectValue className="gap-1.5">
           {(option: ChatModeOption) => {
             const TriggerIcon = option.getTriggerIcon(browserAI);
             return (

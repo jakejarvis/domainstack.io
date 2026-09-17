@@ -45,10 +45,9 @@ function SelectTrigger({
       {...props}
     >
       {children}
-      <SelectPrimitive.Icon
-        data-slot="select-icon"
-        render={<IconChevronDown className="opacity-50" aria-hidden="true" />}
-      />
+      <SelectPrimitive.Icon data-slot="select-icon">
+        <IconChevronDown aria-hidden="true" />
+      </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   );
 }
