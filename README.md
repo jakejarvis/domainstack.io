@@ -96,7 +96,7 @@ pnpm db:reset
 
 `pnpm db:reset` removes only the current checkout's Docker volume or ignored native data directory. It refuses to run for an external database.
 
-Set `LOCAL_BACKEND=native` to use locally installed PostgreSQL server tools, with data stored under the ignored `.domainstack/` directory. To use a database that Domainstack does not manage, put `LOCAL_BACKEND=external` and an explicit `DATABASE_URL` in `apps/web/.env.development.local`. You can instead export both variables when running an individual database command.
+Set `LOCAL_BACKEND=native` to use locally installed PostgreSQL server tools, with data stored under the ignored `.tmp/` directory. To use a database that Domainstack does not manage, put `LOCAL_BACKEND=external` and an explicit `DATABASE_URL` in `apps/web/.env.development.local`. You can instead export both variables when running an individual database command.
 
 ### Codex and Claude cloud environments
 

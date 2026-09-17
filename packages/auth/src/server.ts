@@ -156,7 +156,10 @@ export const auth = betterAuth({
   },
   user: {
     deleteUser: {
-      enabled: true,
+      // Production sends a verification email before deletion. Development has
+      // no email transport by default, so enabling this would create a flow the
+      // user can start but can never finish.
+      enabled: process.env.NODE_ENV !== "development",
       beforeDelete: async (user) => {
         // Cancel Polar subscription if user has one
         // This deletes the Polar customer, which automatically cancels any active

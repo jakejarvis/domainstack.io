@@ -12,7 +12,7 @@
   "repository": "jakejarvis/domainstack.io",
   "type": "module",
   "scripts": {
-    "dev": "turbo run dev",
+    "dev": "node scripts/dev.mjs dev",
     "dev:prepare": "node scripts/dev.mjs prepare",
     "dev:doctor": "node scripts/dev.mjs doctor",
     "build": "turbo run build",
@@ -26,7 +26,7 @@
     "db:start": "node scripts/dev.mjs db:start",
     "db:stop": "node scripts/dev.mjs db:stop",
     "db:reset": "node scripts/dev.mjs db:reset",
-    "db:generate": "turbo run db:generate --filter=@domainstack/db",
+    "db:generate": "node scripts/dev.mjs db:generate",
     "db:push": "node scripts/dev.mjs db:push",
     "db:migrate": "node scripts/dev.mjs db:migrate",
     "db:studio": "node scripts/dev.mjs db:studio",

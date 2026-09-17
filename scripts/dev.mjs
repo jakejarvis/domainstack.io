@@ -3,7 +3,7 @@
 import { spawn } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
-import { appendFile, mkdir, readFile, rm } from "node:fs/promises";
+import { appendFile, chmod, mkdir, readFile, rm } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseEnv } from "node:util";
@@ -18,6 +18,7 @@ const nativeLogPath = path.join(stateDirectory, "postgres.log");
 const composeProject = `domainstack-${createHash("sha256").update(root).digest("hex").slice(0, 12)}`;
 const command = process.argv[2] ?? "prepare";
 const postgresPort = 54329;
+const generatedDatabaseUrl = `postgresql://domainstack:domainstack@127.0.0.1:${postgresPort}/domainstack`;
 
 const defaults = {
   BETTER_AUTH_SECRET: () => randomBytes(32).toString("base64url"),
@@ -65,6 +66,7 @@ async function ensureDevelopmentDefaults(extraDefaults = {}, developmentOverride
     `${prefix}# Generated development defaults (safe to edit)\n${lines.join("\n")}\n`,
     { mode: 0o600 },
   );
+  await chmod(developmentEnvPath, 0o600);
   log(`added ${missing.length} missing development default(s)`);
 }
 
@@ -112,7 +114,9 @@ function composeArgs(...args) {
 }
 
 async function startDocker(environment) {
-  if (!(await commandExists("docker"))) fail("Docker is required for the docker database backend");
+  if (!(await dockerComposeAvailable())) {
+    fail("Docker with the Compose plugin is required for the docker database backend");
+  }
   log("starting checkout-local PostgreSQL 18 with Docker");
   await run("docker", composeArgs("up", "-d", "--wait", "postgres"), { env: environment });
   return `postgresql://domainstack:domainstack@127.0.0.1:${postgresPort}/domainstack`;
@@ -171,7 +175,7 @@ async function startNative(environment) {
     await run(
       createdb,
       ["-h", "127.0.0.1", "-p", String(postgresPort), "-U", "domainstack", "domainstack"],
-      { capture: true, env: environment },
+      { capture: true, env: { ...environment, LC_ALL: "C" } },
     );
   } catch (error) {
     if (!String(error.message).includes("already exists")) throw error;
@@ -183,6 +187,11 @@ async function environmentWithDatabase(environment) {
   const backend = backendFor(environment);
   if (backend === "external") {
     if (!environment.DATABASE_URL) fail("DATABASE_URL is required in external database mode");
+    if (environment.DATABASE_URL === generatedDatabaseUrl) {
+      fail(
+        "external database mode requires an explicit DATABASE_URL, not the generated checkout-local URL",
+      );
+    }
     return { environment, backend };
   }
   const databaseUrl =
@@ -231,10 +240,10 @@ async function doctor(environment) {
   const backend = backendFor(environment);
   log(`database backend: ${backend}`);
   if (backend === "docker") {
-    log(`Docker: ${(await commandExists("docker")) ? "available" : "unavailable"}`);
+    log(`Docker Compose: ${(await dockerComposeAvailable()) ? "available" : "unavailable"}`);
   }
   if (backend === "native") {
-    const available = (await commandExists("pg_ctl")) || (await commandExists("pg_config"));
+    const available = await nativePostgresAvailable();
     log(`native PostgreSQL server tools: ${available ? "available" : "unavailable"}`);
   }
   if (backend === "external") {
@@ -258,6 +267,24 @@ async function doctor(environment) {
   }
 }
 
+async function dockerComposeAvailable() {
+  try {
+    await run("docker", ["compose", "version"], { capture: true });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function nativePostgresAvailable() {
+  try {
+    await Promise.all([postgresBinary("pg_ctl"), postgresBinary("initdb"), postgresBinary("createdb")]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function main() {
   const initialEnvironment = await loadEnvironment();
   const initialBackend = command === "cloud-prepare" ? "native" : backendFor(initialEnvironment);
@@ -266,8 +293,7 @@ async function main() {
     ...(initialBackend === "external"
       ? {}
       : {
-          DATABASE_URL: () =>
-            `postgresql://domainstack:domainstack@127.0.0.1:${postgresPort}/domainstack`,
+          DATABASE_URL: () => generatedDatabaseUrl,
         }),
   };
   await ensureDevelopmentDefaults(developmentDefaults, Object.keys(developmentDefaults));
@@ -283,10 +309,13 @@ async function main() {
   if (["db:generate", "db:migrate", "db:push", "db:studio"].includes(command)) {
     return runDatabasePrimitive(command, databaseEnvironment);
   }
-  if (command !== "prepare") fail(`unknown development command: ${command}`);
+  if (!["prepare", "dev"].includes(command)) fail(`unknown development command: ${command}`);
 
   log("applying database migrations");
   await runDatabasePrimitive("db:migrate", databaseEnvironment);
+  if (command === "dev") {
+    return run("pnpm", ["exec", "turbo", "run", "dev"], { env: databaseEnvironment });
+  }
 }
 
 main().catch((error) => {

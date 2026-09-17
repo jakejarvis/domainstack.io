@@ -9,7 +9,8 @@ services:
       test: ["CMD-SHELL", "pg_isready -U domainstack -d domainstack"]
       interval: 1s
       timeout: 5s
-      retries: 30
+      retries: 60
+      start_period: 30s
     ports:
       - "127.0.0.1:54329:5432"
     volumes:

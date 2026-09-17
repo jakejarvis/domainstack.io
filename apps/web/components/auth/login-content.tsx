@@ -1,10 +1,10 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { DevButton } from "@/components/auth/dev-button";
 import { OAuthButton } from "@/components/auth/oauth-button";
 import { Logo } from "@/components/logo";
 import { useAuthCallback } from "@/hooks/use-auth-callback";
@@ -13,13 +13,6 @@ import { getEnabledProviders } from "@/lib/oauth";
 import { useSession } from "@domainstack/auth/client";
 import { Icon } from "@domainstack/ui/icon";
 import { cn } from "@domainstack/ui/utils";
-
-const DevButton =
-  process.env.NODE_ENV === "development"
-    ? dynamic(() => import("@/components/auth/dev-button").then((module) => module.DevButton), {
-        ssr: false,
-      })
-    : null;
 
 interface LoginContentProps {
   /** Additional classes for the wrapper */
@@ -66,7 +59,7 @@ export function LoginContent({ className, onNavigate, callbackURL }: LoginConten
         Sign in to track your domains and receive health alerts.
       </p>
       <div className="flex w-full flex-col gap-3">
-        {DevButton ? (
+        {process.env.NODE_ENV === "development" ? (
           <DevButton callbackURL={effectiveCallbackURL} onNavigate={onNavigate} />
         ) : null}
         {getEnabledProviders().map((provider) => (
