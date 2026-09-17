@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@domainstack/logger": "workspace:*",
-    "ipaddr.js": "^2.5.0",
+    "ipaddr.js": "catalog:",
     "undici": "^7.29.1"
   },
   "devDependencies": {

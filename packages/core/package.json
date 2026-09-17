@@ -34,14 +34,14 @@
     "@domainstack/utils": "workspace:*",
     "@readme/http-status-codes": "^9.0.6",
     "cheerio": "^1.2.0",
-    "ipaddr.js": "^2.5.0",
-    "lru-cache": "^11.5.2",
-    "rdapper": "^0.13.0"
+    "ipaddr.js": "catalog:",
+    "lru-cache": "catalog:",
+    "rdapper": "catalog:"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@types/node": "catalog:",
-    "msw": "^2.15.0",
+    "msw": "catalog:",
     "vitest": "catalog:"
   }
 }

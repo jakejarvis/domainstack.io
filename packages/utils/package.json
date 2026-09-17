@@ -32,7 +32,7 @@
   "dependencies": {
     "@domainstack/constants": "workspace:*",
     "@domainstack/types": "workspace:*",
-    "rdapper": "^0.13.0"
+    "rdapper": "catalog:"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
