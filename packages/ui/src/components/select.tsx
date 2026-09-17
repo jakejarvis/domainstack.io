@@ -45,9 +45,10 @@ function SelectTrigger({
       {...props}
     >
       {children}
-      <SelectPrimitive.Icon data-slot="select-icon">
-        <IconChevronDown className="size-4 opacity-50" aria-hidden="true" />
-      </SelectPrimitive.Icon>
+      <SelectPrimitive.Icon
+        data-slot="select-icon"
+        render={<IconChevronDown className="opacity-50" aria-hidden="true" />}
+      />
     </SelectPrimitive.Trigger>
   );
 }
@@ -123,18 +124,24 @@ function SelectItem({ className, children, ...props }: SelectPrimitive.Item.Prop
         "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground",
-        // Ensure the last span child (typically the text wrapper) lays out nicely.
-        "[&>span:last-child]:flex [&>span:last-child]:items-center [&>span:last-child]:gap-2",
         className,
       )}
       {...props}
     >
-      <span className="absolute right-2 flex size-3.5 items-center justify-center">
-        <SelectPrimitive.ItemIndicator>
-          <IconCheck className="size-4" aria-hidden="true" />
-        </SelectPrimitive.ItemIndicator>
-      </span>
-      <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+      <SelectPrimitive.ItemText
+        data-slot="select-item-text"
+        className="flex flex-1 shrink-0 items-center gap-2 whitespace-nowrap"
+      >
+        {children}
+      </SelectPrimitive.ItemText>
+      <SelectPrimitive.ItemIndicator
+        data-slot="select-item-indicator"
+        render={
+          <span className="pointer-events-none absolute right-2 flex size-3.5 items-center justify-center">
+            <IconCheck aria-hidden="true" />
+          </span>
+        }
+      />
     </SelectPrimitive.Item>
   );
 }
@@ -153,10 +160,13 @@ function SelectScrollUpButton({ className, ...props }: SelectPrimitive.ScrollUpA
   return (
     <SelectPrimitive.ScrollUpArrow
       data-slot="select-scroll-up-button"
-      className={cn("flex cursor-pointer items-center justify-center py-1", className)}
+      className={cn(
+        "flex cursor-pointer items-center justify-center py-1 [&_svg:not([class*='size-'])]:size-4",
+        className,
+      )}
       {...props}
     >
-      <IconChevronUp className="size-4" aria-hidden="true" />
+      <IconChevronUp aria-hidden="true" />
     </SelectPrimitive.ScrollUpArrow>
   );
 }
@@ -165,10 +175,13 @@ function SelectScrollDownButton({ className, ...props }: SelectPrimitive.ScrollD
   return (
     <SelectPrimitive.ScrollDownArrow
       data-slot="select-scroll-down-button"
-      className={cn("flex cursor-pointer items-center justify-center py-1", className)}
+      className={cn(
+        "flex cursor-pointer items-center justify-center py-1 [&_svg:not([class*='size-'])]:size-4",
+        className,
+      )}
       {...props}
     >
-      <IconChevronDown className="size-4" aria-hidden="true" />
+      <IconChevronDown aria-hidden="true" />
     </SelectPrimitive.ScrollDownArrow>
   );
 }

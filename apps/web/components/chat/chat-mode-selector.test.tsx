@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { page, userEvent } from "vitest/browser";
+import { page } from "vitest/browser";
 
 import type { UseBrowserAIResult } from "@/hooks/use-browser-ai";
 import { render } from "@/mocks/react";
@@ -39,7 +39,7 @@ describe("ChatModeSelector", () => {
     await render(<ChatModeSelector browserAI={browserAI} />);
 
     const trigger = page.getByRole("combobox", { name: "AI Provider" });
-    await expect.element(trigger).toHaveTextContent("Cloud");
+    await expect.element(trigger.getByText("Cloud", { exact: true })).toBeVisible();
 
     await trigger.click();
 
@@ -61,5 +61,14 @@ describe("ChatModeSelector", () => {
     expect(browserAI.initialize).toHaveBeenCalledOnce();
     expect(preferences.setAiMode).not.toHaveBeenCalled();
     await expect.element(page.getByRole("listbox")).toBeVisible();
+  });
+
+  it("shows availability help when the disabled local option is hovered", async () => {
+    await render(<ChatModeSelector browserAI={{ ...browserAI, status: "unavailable" }} />);
+
+    await page.getByRole("combobox", { name: "AI Provider" }).click();
+    await page.getByRole("option", { name: /Local/ }).hover();
+
+    await expect.element(page.getByText(/Requires latest/)).toBeVisible();
   });
 });

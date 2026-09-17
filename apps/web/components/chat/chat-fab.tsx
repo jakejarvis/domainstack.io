@@ -12,7 +12,6 @@ import {
 import * as m from "motion/react-m";
 
 import { Button } from "@domainstack/ui/button";
-import { Kbd } from "@domainstack/ui/kbd";
 import { Separator } from "@domainstack/ui/separator";
 
 const MotionButton = m.create(Button);
@@ -132,15 +131,15 @@ export function ChatFab({ loading = false, onClick }: ChatFabProps) {
         {...motionProps}
       >
         <MeshGradientBackground alwaysVisible={false} meshGradient={meshGradient} />
-        <span className="relative z-10 flex items-center gap-1.5">
+        <span className="relative z-10 flex items-center gap-2">
           <span className="text-[13px] leading-none font-semibold tracking-tight">Ask AI</span>
           <Separator
             orientation="vertical"
-            className="bg-border/70 data-[orientation=vertical]:h-3.5"
+            className="bg-border/80 data-[orientation=vertical]:h-4"
           />
-          <Kbd className="border bg-muted/80 px-1.5 py-0.5">
+          <kbd className="pointer-events-none font-sans text-xs leading-none font-medium text-muted-foreground select-none">
             {formatForDisplay(CHAT_HOTKEY, { separatorToken: "\u00A0" })}
-          </Kbd>
+          </kbd>
         </span>
       </MotionButton>
     </>

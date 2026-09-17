@@ -158,12 +158,12 @@ export function ChatModeSelector({ className, disabled, browserAI }: ChatModeSel
                 disabled={option.isDisabled(browserAI)}
                 className={cn(
                   "data-[highlighted]:**:text-accent-foreground",
-                  option.value === "local" && "[&>span:last-child]:flex-1",
+                  "data-[disabled]:pointer-events-auto data-[disabled]:cursor-not-allowed",
                 )}
               >
                 <OptionIcon className="translate-y-[2px] self-start text-muted-foreground" />
                 <div className="flex flex-1 flex-col">
-                  <span>{option.label}</span>
+                  <span className="text-[13px] font-medium">{option.label}</span>
                   <span className="text-xs text-muted-foreground">
                     {option.getDescription(browserAI)}
                   </span>
