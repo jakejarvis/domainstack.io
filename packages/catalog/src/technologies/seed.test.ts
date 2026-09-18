@@ -89,4 +89,75 @@ describe("seed technology catalog", () => {
 
     expect(result).toEqual([]);
   });
+
+  it("detects versioned generator metadata and resolves implications", () => {
+    const parsed = TechnologyCatalogSchema.parse(seed);
+    const ctx: TechDetectionContext = {
+      ...emptyContext,
+      meta: { generator: ["Docusaurus v3.8.1", "Hugo 0.148.2"] },
+    };
+
+    const result = detectTechnologies(parsed, ctx);
+
+    expect(result.map(({ slug, version, implied }) => ({ slug, version, implied }))).toEqual([
+      { slug: "docusaurus", version: "3.8.1", implied: false },
+      { slug: "hugo", version: "0.148.2", implied: false },
+      { slug: "react", version: null, implied: true },
+    ]);
+  });
+
+  it("matches exact vendor assets without confusing lookalike hosts or paths", () => {
+    const parsed = TechnologyCatalogSchema.parse(seed);
+    const positive: TechDetectionContext = {
+      ...emptyContext,
+      headers: { "x-powered-by": "Express" },
+      html: [
+        's.src="https://www.clarity.ms/tag/project-id"',
+        "})(window,document,'//static.hotjar.com/c/hotjar-','.js?sv=')",
+        't.src="https://cdn.segment.com/analytics.js/v1/WRITE_KEY/analytics.min.js"',
+        'a.src="https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js"',
+        "s.src='//client.crisp.chat/l.js'",
+        "tidioScript.src = '//code.tidio.co/PUBLICKEY.js'",
+      ].join("\n"),
+      scriptSrc: [
+        "https://assets.adobedtm.com/launch-ENabc123.min.js",
+        "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit",
+        "https://js.hcaptcha.com/1/api.js",
+        "https://static.klaviyo.com/onsite/js/ABC123/klaviyo.js",
+        "https://www.paypal.com/web-sdk/v6/core",
+        "https://web.squarecdn.com/v1/square.js",
+        "https://static.zdassets.com/ekr/snippet.js?key=example",
+      ],
+    };
+    const negative: TechDetectionContext = {
+      ...emptyContext,
+      html: [
+        's.src="https://clarity.ms.example.com/tag/project-id"',
+        "s.src='//client.crisp.chat.example.com/l.js'",
+      ].join("\n"),
+      scriptSrc: [
+        "https://example.com/turnstile/v0/api.js",
+        "https://paypal.example.com/web-sdk/v6/core",
+        "https://static.zdassets.example.com/ekr/snippet.js?key=example",
+      ],
+    };
+
+    expect(detectTechnologies(parsed, positive).map((entry) => entry.slug)).toEqual([
+      "adobe-experience-platform-tags",
+      "cloudflare-turnstile",
+      "crisp",
+      "express",
+      "hcaptcha",
+      "hotjar",
+      "klaviyo",
+      "microsoft-clarity",
+      "mixpanel",
+      "paypal",
+      "square-web-payments",
+      "tidio",
+      "segment",
+      "zendesk-web-widget",
+    ]);
+    expect(detectTechnologies(parsed, negative)).toEqual([]);
+  });
 });
