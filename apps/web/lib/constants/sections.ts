@@ -5,6 +5,7 @@ import {
   IconList,
   IconRoute,
   IconShare,
+  IconStack2,
 } from "@tabler/icons-react";
 
 import { SECTION_IDS } from "@domainstack/constants";
@@ -18,7 +19,7 @@ import type { Section } from "@domainstack/constants";
 export { SECTION_IDS };
 export type { Section };
 
-export type SectionAccent = "blue" | "purple" | "green" | "orange" | "pink" | "cyan";
+export type SectionAccent = "blue" | "purple" | "green" | "orange" | "pink" | "cyan" | "indigo";
 
 export interface SectionDef {
   title: string;
@@ -45,6 +46,14 @@ export const sections: Record<Section, SectionDef> = {
     description: "Providers and IP geolocation",
     help: "Hosting provider serves a site; email provider handles a domain's email.",
     slug: "hosting",
+  },
+  technologies: {
+    title: "Technology",
+    accent: "indigo",
+    icon: IconStack2,
+    description: "Frameworks, CMS, analytics, and scripts",
+    help: "Technologies are inferred from the page's HTML, scripts, response headers, cookies, and DNS records.",
+    slug: "technologies",
   },
   dns: {
     title: "DNS Records",

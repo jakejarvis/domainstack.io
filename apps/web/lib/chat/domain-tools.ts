@@ -8,6 +8,7 @@ import type {
   HostingResponse,
   RegistrationResponse,
   SeoResponse,
+  TechnologiesResponse,
 } from "@domainstack/types";
 
 /**
@@ -34,6 +35,13 @@ export const DOMAIN_TOOL_DEFS = [
     status: "Detecting hosting provider",
     description:
       "Detect hosting, DNS, CDN, and email providers for a domain by analyzing DNS records and HTTP headers. Use this tool when users ask where a site is hosted, what CDN they use, or who provides their email.",
+  },
+  {
+    name: "get_technologies",
+    procedure: "getTechnologies",
+    status: "Detecting technologies",
+    description:
+      "Detect the technologies a site is built with, including CMS, framework, web server, programming language, CDN, analytics, payment and marketing scripts, with versions where detectable. Use this tool when users ask what a site is built with, what CMS or framework it uses, what analytics or tracking it runs, or whether it uses a specific technology.",
   },
   {
     name: "get_certificates",
@@ -65,6 +73,7 @@ type DomainToolSuccess = {
   getRegistration: RegistrationResponse;
   getDnsRecords: DnsRecordsResponse;
   getHosting: HostingResponse;
+  getTechnologies: TechnologiesResponse;
   getCertificates: CertificatesResponse;
   getHeaders: HeadersResponse;
   getSeo: SeoResponse;

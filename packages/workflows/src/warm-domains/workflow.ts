@@ -47,27 +47,30 @@ async function getSectionsToRefreshStep(domain: string): Promise<WarmSection[]> 
   const [
     { getCachedRegistration },
     { getCachedHosting },
+    { getCachedTechnologies },
     { getCachedCertificates },
     { getCachedHeaders },
     { getCachedSeo },
   ] = await Promise.all([
     import("@domainstack/db/queries/registrations"),
     import("@domainstack/db/queries/hosting"),
+    import("@domainstack/db/queries/technologies"),
     import("@domainstack/db/queries/certificates"),
     import("@domainstack/db/queries/headers"),
     import("@domainstack/db/queries/seo"),
   ]);
 
   try {
-    const [registration, hosting, certificates, headers, seo] = await Promise.all([
+    const [registration, hosting, technologies, certificates, headers, seo] = await Promise.all([
       getCachedRegistration(domain),
       getCachedHosting(domain),
+      getCachedTechnologies(domain),
       getCachedCertificates(domain),
       getCachedHeaders(domain),
       getCachedSeo(domain),
     ]);
     return selectSectionsToRefresh(
-      { registration, hosting, certificates, headers, seo },
+      { registration, hosting, technologies, certificates, headers, seo },
       Date.now(),
     );
   } catch (err) {
@@ -106,6 +109,10 @@ async function fetchSection(domain: string, section: WarmSection): Promise<{ suc
     case "hosting": {
       const { fetchHosting } = await import("@domainstack/core/services/hosting");
       return fetchHosting(domain);
+    }
+    case "technologies": {
+      const { fetchTechnologies } = await import("@domainstack/core/services/technologies");
+      return fetchTechnologies(domain);
     }
     case "certificates": {
       const { fetchCertificates } = await import("@domainstack/core/services/certificates");

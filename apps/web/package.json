@@ -26,7 +26,6 @@
     "@domainstack/constants": "workspace:*",
     "@domainstack/core": "workspace:*",
     "@domainstack/db": "workspace:*",
-    "@domainstack/edge-config": "workspace:*",
     "@domainstack/email": "workspace:*",
     "@domainstack/image": "workspace:*",
     "@domainstack/logger": "workspace:*",

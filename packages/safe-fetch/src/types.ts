@@ -92,4 +92,13 @@ export interface SafeFetchResult {
 
   /** All response headers */
   headers: Record<string, string>;
+
+  /**
+   * Raw `Set-Cookie` header values, one entry per header.
+   *
+   * `headers` cannot carry these: iterating a `Headers` object collapses
+   * repeated `Set-Cookie` values into one comma-joined string, and cookie
+   * values may themselves contain commas, so the join is not reversible.
+   */
+  setCookie: string[];
 }

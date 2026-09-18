@@ -26,6 +26,7 @@ import {
 } from "@domainstack/constants";
 import type {
   CertificateSnapshotData,
+  DetectedTechnology,
   GeneralMeta,
   Header,
   NotificationChannel,
@@ -550,6 +551,26 @@ export const seo = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   },
   (t) => [index("i_seo_expires").on(t.expiresAt)],
+);
+
+// Detected technologies (latest)
+export const technologies = pgTable(
+  "technologies",
+  {
+    domainId: uuid("domain_id")
+      .primaryKey()
+      .references(() => domains.id, { onDelete: "cascade" }),
+    detected: jsonb("detected")
+      .$type<DetectedTechnology[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    sourceFinalUrl: text("source_final_url"),
+    sourceStatus: integer("source_status"),
+    error: text("error"),
+    fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [index("i_technologies_expires").on(t.expiresAt)],
 );
 
 // Favicons

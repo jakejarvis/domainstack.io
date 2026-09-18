@@ -7,6 +7,8 @@ const cacheMocks = vi.hoisted(() => ({
   getCachedRegistration:
     vi.fn<typeof import("@domainstack/db/queries/registrations").getCachedRegistration>(),
   getCachedHosting: vi.fn<typeof import("@domainstack/db/queries/hosting").getCachedHosting>(),
+  getCachedTechnologies:
+    vi.fn<typeof import("@domainstack/db/queries/technologies").getCachedTechnologies>(),
   getCachedCertificates:
     vi.fn<typeof import("@domainstack/db/queries/certificates").getCachedCertificates>(),
   getCachedHeaders: vi.fn<typeof import("@domainstack/db/queries/headers").getCachedHeaders>(),
@@ -17,6 +19,8 @@ const fetchMocks = vi.hoisted(() => ({
   fetchRegistration:
     vi.fn<typeof import("@domainstack/core/services/registration").fetchRegistration>(),
   fetchHosting: vi.fn<typeof import("@domainstack/core/services/hosting").fetchHosting>(),
+  fetchTechnologies:
+    vi.fn<typeof import("@domainstack/core/services/technologies").fetchTechnologies>(),
   fetchCertificates:
     vi.fn<typeof import("@domainstack/core/services/certificates").fetchCertificates>(),
   fetchHeaders: vi.fn<typeof import("@domainstack/core/services/headers").fetchHeaders>(),
@@ -29,6 +33,9 @@ vi.mock("@domainstack/db/queries/registrations", () => ({
 }));
 vi.mock("@domainstack/db/queries/hosting", () => ({
   getCachedHosting: cacheMocks.getCachedHosting,
+}));
+vi.mock("@domainstack/db/queries/technologies", () => ({
+  getCachedTechnologies: cacheMocks.getCachedTechnologies,
 }));
 vi.mock("@domainstack/db/queries/certificates", () => ({
   getCachedCertificates: cacheMocks.getCachedCertificates,
@@ -44,6 +51,9 @@ vi.mock("@domainstack/core/services/registration", () => ({
 }));
 vi.mock("@domainstack/core/services/hosting", () => ({
   fetchHosting: fetchMocks.fetchHosting,
+}));
+vi.mock("@domainstack/core/services/technologies", () => ({
+  fetchTechnologies: fetchMocks.fetchTechnologies,
 }));
 vi.mock("@domainstack/core/services/certificates", () => ({
   fetchCertificates: fetchMocks.fetchCertificates,
@@ -69,12 +79,14 @@ beforeEach(() => {
   };
   cacheMocks.getCachedRegistration.mockResolvedValue(cached as never);
   cacheMocks.getCachedHosting.mockResolvedValue(cached as never);
+  cacheMocks.getCachedTechnologies.mockResolvedValue(cached as never);
   cacheMocks.getCachedCertificates.mockResolvedValue(cached as never);
   cacheMocks.getCachedHeaders.mockResolvedValue(cached as never);
   cacheMocks.getCachedSeo.mockResolvedValue(cached as never);
 
   fetchMocks.fetchRegistration.mockResolvedValue({ success: true, data: {} } as never);
   fetchMocks.fetchHosting.mockResolvedValue({ success: true, data: {} } as never);
+  fetchMocks.fetchTechnologies.mockResolvedValue({ success: true, data: {} } as never);
   fetchMocks.fetchCertificates.mockResolvedValue({ success: true, data: {} } as never);
   fetchMocks.fetchHeaders.mockResolvedValue({ success: true, data: {} } as never);
   fetchMocks.fetchSeo.mockResolvedValue({ success: true, data: {} } as never);
@@ -88,6 +100,7 @@ describe("warmDomainWorkflow", () => {
     expect(result).toEqual({ refreshed: [], unavailable: [] });
     expect(fetchMocks.fetchRegistration).not.toHaveBeenCalled();
     expect(fetchMocks.fetchHosting).not.toHaveBeenCalled();
+    expect(fetchMocks.fetchTechnologies).not.toHaveBeenCalled();
     expect(fetchMocks.fetchCertificates).not.toHaveBeenCalled();
     expect(fetchMocks.fetchHeaders).not.toHaveBeenCalled();
     expect(fetchMocks.fetchSeo).not.toHaveBeenCalled();
@@ -197,6 +210,7 @@ describe("warmDomainWorkflow", () => {
     await expect(warmDomainWorkflow({ domain: "example.com" })).rejects.toThrow("connection error");
     expect(fetchMocks.fetchRegistration).not.toHaveBeenCalled();
     expect(fetchMocks.fetchHosting).not.toHaveBeenCalled();
+    expect(fetchMocks.fetchTechnologies).not.toHaveBeenCalled();
     expect(fetchMocks.fetchCertificates).not.toHaveBeenCalled();
     expect(fetchMocks.fetchHeaders).not.toHaveBeenCalled();
     expect(fetchMocks.fetchSeo).not.toHaveBeenCalled();

@@ -169,6 +169,13 @@
       "when": 1789250108662,
       "tag": "0023_wet_multiple_man",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1789688977904,
+      "tag": "0024_cold_arclight",
+      "breakpoints": true
     }
   ]
 }

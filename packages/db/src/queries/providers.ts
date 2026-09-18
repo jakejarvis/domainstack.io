@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 
-import { catalogRuleMatchesDiscovered, type Provider } from "@domainstack/utils/providers";
+import { catalogRuleMatchesDiscovered, type Provider } from "@domainstack/catalog/providers";
 import { slugify } from "@domainstack/utils/slugify";
 
 import { db } from "../client";

@@ -29,10 +29,21 @@ import type {
 } from "@domainstack/types";
 
 import { normalizeCertificateHex } from "../certificate-hex";
-import { normalizeDnsHost } from "../providers/detection";
 import { normalizeStatus, statusesAreEqual } from "./status";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Normalize a DNS hostname for comparison: lowercase, trimmed, no root label.
+ *
+ * Duplicated from `@domainstack/catalog/providers` (`normalizeDnsHost`)
+ * rather than imported, to avoid a package cycle: `@domainstack/catalog`
+ * depends on `@domainstack/utils`, so `utils` cannot depend back on
+ * `catalog`. Both copies must stay in sync if the normalization changes.
+ */
+function normalizeDnsHost(host: string): string {
+  return host.trim().toLowerCase().replace(/\.$/, "");
+}
 
 const NOTIFIABLE_KINDS: ReadonlySet<CertificateChangeKind> = new Set(
   NOTIFIABLE_CERTIFICATE_CHANGE_KINDS,

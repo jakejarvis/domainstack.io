@@ -19,6 +19,7 @@ import {
   TTL_REGISTRATION_REGISTERED,
   TTL_SCREENSHOT,
   TTL_SEO,
+  TTL_TECHNOLOGIES,
 } from "@domainstack/constants";
 
 function addSeconds(base: Date, seconds: number): Date {
@@ -77,6 +78,10 @@ export function ttlForHosting(now: Date): Date {
 
 export function ttlForSeo(now: Date): Date {
   return addSeconds(now, TTL_SEO);
+}
+
+export function ttlForTechnologies(now: Date): Date {
+  return addSeconds(now, TTL_TECHNOLOGIES);
 }
 
 export function ttlForFavicon(now: Date): Date {

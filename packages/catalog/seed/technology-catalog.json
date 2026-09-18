@@ -1,0 +1,1623 @@
+[
+  {
+    "slug": "wordpress",
+    "name": "WordPress",
+    "categories": ["cms"],
+    "website": "https://wordpress.org",
+    "implies": ["php"],
+    "rule": {
+      "any": [
+        {
+          "kind": "metaRegex",
+          "name": "generator",
+          "pattern": "^WordPress(?:\\s+([\\d.]+))?",
+          "version": 1
+        },
+        { "kind": "htmlRegex", "pattern": "/wp-(?:content|includes)/" }
+      ]
+    }
+  },
+  {
+    "slug": "drupal",
+    "name": "Drupal",
+    "categories": ["cms"],
+    "website": "https://www.drupal.org",
+    "implies": ["php"],
+    "rule": {
+      "any": [
+        {
+          "kind": "metaRegex",
+          "name": "generator",
+          "pattern": "^Drupal\\s+([\\d.]+)",
+          "version": 1
+        },
+        {
+          "kind": "headerRegex",
+          "name": "x-generator",
+          "pattern": "^Drupal\\s+([\\d.]+)",
+          "version": 1
+        },
+        { "kind": "metaRegex", "name": "generator", "pattern": "^Drupal" }
+      ]
+    }
+  },
+  {
+    "slug": "joomla",
+    "name": "Joomla",
+    "categories": ["cms"],
+    "website": "https://www.joomla.org",
+    "implies": ["php"],
+    "rule": {
+      "kind": "metaRegex",
+      "name": "generator",
+      "pattern": "^Joomla!(?:\\s+([\\d.]+))?",
+      "version": 1
+    }
+  },
+  {
+    "slug": "ghost",
+    "name": "Ghost",
+    "categories": ["cms"],
+    "website": "https://ghost.org",
+    "rule": {
+      "kind": "metaRegex",
+      "name": "generator",
+      "pattern": "^Ghost(?:\\s+([\\d.]+))?",
+      "version": 1
+    }
+  },
+  {
+    "slug": "squarespace",
+    "name": "Squarespace",
+    "categories": ["cms", "hosting"],
+    "website": "https://www.squarespace.com",
+    "rule": {
+      "any": [
+        { "kind": "headerRegex", "name": "server", "pattern": "^Squarespace" },
+        { "kind": "htmlRegex", "pattern": "static1\\.squarespace\\.com" }
+      ]
+    }
+  },
+  {
+    "slug": "wix",
+    "name": "Wix",
+    "categories": ["cms", "hosting"],
+    "website": "https://www.wix.com",
+    "rule": {
+      "any": [
+        { "kind": "headerPresent", "name": "x-wix-request-id" },
+        { "kind": "metaRegex", "name": "generator", "pattern": "^Wix\\.com" }
+      ]
+    }
+  },
+  {
+    "slug": "webflow",
+    "name": "Webflow",
+    "categories": ["cms", "hosting"],
+    "website": "https://webflow.com",
+    "rule": { "kind": "metaRegex", "name": "generator", "pattern": "^Webflow" }
+  },
+  {
+    "slug": "shopify",
+    "name": "Shopify",
+    "categories": ["ecommerce", "hosting"],
+    "website": "https://www.shopify.com",
+    "rule": {
+      "any": [
+        { "kind": "headerPresent", "name": "x-shopid" },
+        { "kind": "headerPresent", "name": "x-shopify-stage" },
+        { "kind": "htmlRegex", "pattern": "cdn\\.shopify\\.com" }
+      ]
+    }
+  },
+  {
+    "slug": "woocommerce",
+    "name": "WooCommerce",
+    "categories": ["ecommerce"],
+    "website": "https://woocommerce.com",
+    "implies": ["wordpress"],
+    "rule": {
+      "any": [
+        {
+          "kind": "metaRegex",
+          "name": "generator",
+          "pattern": "^WooCommerce\\s+([\\d.]+)",
+          "version": 1
+        },
+        { "kind": "htmlRegex", "pattern": "/plugins/woocommerce/" }
+      ]
+    }
+  },
+  {
+    "slug": "nextjs",
+    "name": "Next.js",
+    "categories": ["framework"],
+    "website": "https://nextjs.org",
+    "implies": ["react"],
+    "rule": {
+      "any": [
+        { "kind": "headerPresent", "name": "x-nextjs-cache" },
+        { "kind": "headerPresent", "name": "x-nextjs-prerender" },
+        { "kind": "htmlRegex", "pattern": "/_next/static/" }
+      ]
+    }
+  },
+  {
+    "slug": "nuxt",
+    "name": "Nuxt",
+    "categories": ["framework"],
+    "website": "https://nuxt.com",
+    "implies": ["vue"],
+    "rule": {
+      "any": [
+        { "kind": "htmlRegex", "pattern": "<div[^>]+id=\"__nuxt\"" },
+        { "kind": "htmlRegex", "pattern": "/_nuxt/" }
+      ]
+    }
+  },
+  {
+    "slug": "sveltekit",
+    "name": "SvelteKit",
+    "categories": ["framework"],
+    "website": "https://svelte.dev",
+    "rule": { "kind": "htmlRegex", "pattern": "/_app/immutable/" }
+  },
+  {
+    "slug": "astro",
+    "name": "Astro",
+    "categories": ["framework"],
+    "website": "https://astro.build",
+    "rule": {
+      "kind": "metaRegex",
+      "name": "generator",
+      "pattern": "^Astro\\s+v?([\\d.]+)",
+      "version": 1
+    }
+  },
+  {
+    "slug": "gatsby",
+    "name": "Gatsby",
+    "categories": ["framework"],
+    "website": "https://www.gatsbyjs.com",
+    "implies": ["react"],
+    "rule": { "kind": "htmlRegex", "pattern": "id=\"___gatsby\"" }
+  },
+  {
+    "slug": "angular",
+    "name": "Angular",
+    "categories": ["framework"],
+    "website": "https://angular.dev",
+    "rule": { "kind": "htmlRegex", "pattern": "ng-version=\"([\\d.]+)\"", "version": 1 }
+  },
+  {
+    "slug": "react",
+    "name": "React",
+    "categories": ["javascript-library"],
+    "website": "https://react.dev",
+    "rule": {
+      "any": [
+        { "kind": "htmlRegex", "pattern": "data-reactroot" },
+        { "kind": "jsGlobal", "path": "React.version", "pattern": "^(.+)$", "version": 1 }
+      ]
+    }
+  },
+  {
+    "slug": "vue",
+    "name": "Vue.js",
+    "categories": ["javascript-library"],
+    "website": "https://vuejs.org",
+    "rule": {
+      "any": [
+        { "kind": "htmlRegex", "pattern": "<div[^>]+data-v-app" },
+        { "kind": "jsGlobal", "path": "Vue.version", "pattern": "^(.+)$", "version": 1 }
+      ]
+    }
+  },
+  {
+    "slug": "jquery",
+    "name": "jQuery",
+    "categories": ["javascript-library"],
+    "website": "https://jquery.com",
+    "rule": {
+      "any": [
+        {
+          "kind": "scriptSrcRegex",
+          "pattern": "jquery[.-]([\\d.]+)(?:\\.min)?\\.js",
+          "version": 1
+        },
+        { "kind": "scriptSrcRegex", "pattern": "jquery(?:\\.min)?\\.js" }
+      ]
+    }
+  },
+  {
+    "slug": "bootstrap",
+    "name": "Bootstrap",
+    "categories": ["javascript-library"],
+    "website": "https://getbootstrap.com",
+    "rule": {
+      "any": [
+        { "kind": "scriptSrcRegex", "pattern": "bootstrap[@/-]([\\d.]+)", "version": 1 },
+        { "kind": "scriptSrcRegex", "pattern": "bootstrap(?:\\.bundle)?(?:\\.min)?\\.js" }
+      ]
+    }
+  },
+  {
+    "slug": "nginx",
+    "name": "Nginx",
+    "categories": ["web-server"],
+    "website": "https://nginx.org",
+    "rule": {
+      "kind": "headerRegex",
+      "name": "server",
+      "pattern": "^nginx(?:/([\\d.]+))?",
+      "version": 1
+    }
+  },
+  {
+    "slug": "apache",
+    "name": "Apache HTTP Server",
+    "categories": ["web-server"],
+    "website": "https://httpd.apache.org",
+    "rule": {
+      "kind": "headerRegex",
+      "name": "server",
+      "pattern": "^Apache(?:/([\\d.]+))?",
+      "version": 1
+    }
+  },
+  {
+    "slug": "caddy",
+    "name": "Caddy",
+    "categories": ["web-server"],
+    "website": "https://caddyserver.com",
+    "rule": { "kind": "headerRegex", "name": "server", "pattern": "^Caddy" }
+  },
+  {
+    "slug": "php",
+    "name": "PHP",
+    "categories": ["programming-language"],
+    "website": "https://www.php.net",
+    "rule": {
+      "any": [
+        {
+          "kind": "headerRegex",
+          "name": "x-powered-by",
+          "pattern": "^PHP/([\\d.]+)",
+          "version": 1
+        },
+        { "kind": "cookiePresent", "name": "phpsessid" }
+      ]
+    }
+  },
+  {
+    "slug": "aspnet",
+    "name": "ASP.NET",
+    "categories": ["framework", "programming-language"],
+    "website": "https://dotnet.microsoft.com/apps/aspnet",
+    "rule": {
+      "any": [
+        {
+          "kind": "headerRegex",
+          "name": "x-aspnet-version",
+          "pattern": "^([\\d.]+)",
+          "version": 1
+        },
+        { "kind": "headerRegex", "name": "x-powered-by", "pattern": "^ASP\\.NET" }
+      ]
+    }
+  },
+  {
+    "slug": "cloudflare",
+    "name": "Cloudflare",
+    "categories": ["cdn", "security"],
+    "website": "https://www.cloudflare.com",
+    "rule": {
+      "any": [
+        { "kind": "headerPresent", "name": "cf-ray" },
+        { "kind": "headerRegex", "name": "server", "pattern": "^cloudflare$" }
+      ]
+    }
+  },
+  {
+    "slug": "vercel",
+    "name": "Vercel",
+    "categories": ["hosting", "cdn"],
+    "website": "https://vercel.com",
+    "rule": {
+      "any": [
+        { "kind": "headerPresent", "name": "x-vercel-id" },
+        { "kind": "headerRegex", "name": "server", "pattern": "^Vercel$" }
+      ]
+    }
+  },
+  {
+    "slug": "netlify",
+    "name": "Netlify",
+    "categories": ["hosting", "cdn"],
+    "website": "https://www.netlify.com",
+    "rule": {
+      "any": [
+        { "kind": "headerPresent", "name": "x-nf-request-id" },
+        { "kind": "headerRegex", "name": "server", "pattern": "^Netlify" }
+      ]
+    }
+  },
+  {
+    "slug": "google-tag-manager",
+    "name": "Google Tag Manager",
+    "categories": ["tag-manager"],
+    "website": "https://tagmanager.google.com",
+    "rule": {
+      "any": [
+        { "kind": "scriptSrcRegex", "pattern": "googletagmanager\\.com/gtm\\.js" },
+        { "kind": "htmlRegex", "pattern": "googletagmanager\\.com/ns\\.html" }
+      ]
+    }
+  },
+  {
+    "slug": "google-analytics",
+    "name": "Google Analytics",
+    "categories": ["analytics"],
+    "website": "https://marketingplatform.google.com/about/analytics/",
+    "rule": {
+      "any": [
+        { "kind": "scriptSrcRegex", "pattern": "googletagmanager\\.com/gtag/js" },
+        { "kind": "scriptSrcRegex", "pattern": "google-analytics\\.com/(?:ga|analytics)\\.js" }
+      ]
+    }
+  },
+  {
+    "slug": "plausible",
+    "name": "Plausible Analytics",
+    "categories": ["analytics"],
+    "website": "https://plausible.io",
+    "rule": { "kind": "scriptSrcRegex", "pattern": "plausible\\.io/js/" }
+  },
+  {
+    "slug": "posthog",
+    "name": "PostHog",
+    "categories": ["analytics"],
+    "website": "https://posthog.com",
+    "rule": { "kind": "htmlRegex", "pattern": "posthog\\.com/static/array\\.js" }
+  },
+  {
+    "slug": "hubspot",
+    "name": "HubSpot",
+    "categories": ["marketing"],
+    "website": "https://www.hubspot.com",
+    "rule": { "kind": "scriptSrcRegex", "pattern": "js\\.hs-(?:scripts|analytics)\\.com" }
+  },
+  {
+    "slug": "intercom",
+    "name": "Intercom",
+    "categories": ["live-chat"],
+    "website": "https://www.intercom.com",
+    "rule": { "kind": "htmlRegex", "pattern": "widget\\.intercom\\.io" }
+  },
+  {
+    "slug": "stripe",
+    "name": "Stripe",
+    "categories": ["payment"],
+    "website": "https://stripe.com",
+    "rule": { "kind": "scriptSrcRegex", "pattern": "js\\.stripe\\.com" }
+  },
+  {
+    "slug": "recaptcha",
+    "name": "reCAPTCHA",
+    "categories": ["security"],
+    "website": "https://www.google.com/recaptcha/about/",
+    "rule": { "kind": "scriptSrcRegex", "pattern": "(?:google\\.com|gstatic\\.com)/recaptcha" }
+  },
+  {
+    "slug": "google-fonts",
+    "name": "Google Fonts",
+    "categories": ["font-script"],
+    "website": "https://fonts.google.com",
+    "rule": { "kind": "htmlRegex", "pattern": "fonts\\.(?:googleapis|gstatic)\\.com" }
+  },
+  {
+    "slug": "sentry",
+    "name": "Sentry",
+    "categories": ["error-tracking"],
+    "website": "https://sentry.io",
+    "rule": { "kind": "htmlRegex", "pattern": "browser\\.sentry-cdn\\.com" }
+  },
+  {
+    "slug": "google-search-console",
+    "name": "Google Search Console",
+    "categories": ["verification"],
+    "website": "https://search.google.com/search-console/about",
+    "rule": { "kind": "dnsTxtRegex", "pattern": "^google-site-verification=" }
+  },
+  {
+    "slug": "microsoft-365",
+    "name": "Microsoft 365",
+    "categories": ["verification"],
+    "website": "https://www.microsoft.com/microsoft-365",
+    "rule": { "kind": "dnsTxtRegex", "pattern": "^MS=ms\\d+" }
+  },
+  {
+    "slug": "docusaurus",
+    "name": "Docusaurus",
+    "categories": ["cms", "framework"],
+    "website": "https://docusaurus.io",
+    "implies": ["react"],
+    "rule": {
+      "kind": "metaRegex",
+      "name": "generator",
+      "pattern": "^Docusaurus v([\\d.]+)$",
+      "version": 1
+    }
+  },
+  {
+    "slug": "hugo",
+    "name": "Hugo",
+    "categories": ["cms"],
+    "website": "https://gohugo.io",
+    "rule": {
+      "kind": "metaRegex",
+      "name": "generator",
+      "pattern": "^Hugo ([\\d.]+)$",
+      "version": 1
+    }
+  },
+  {
+    "slug": "express",
+    "name": "Express",
+    "categories": ["framework", "web-server"],
+    "website": "https://expressjs.com",
+    "rule": { "kind": "headerRegex", "name": "x-powered-by", "pattern": "^Express$" }
+  },
+  {
+    "slug": "adobe-experience-platform-tags",
+    "name": "Adobe Experience Platform Tags",
+    "categories": ["tag-manager"],
+    "website": "https://business.adobe.com/products/experience-platform/tags.html",
+    "rule": {
+      "kind": "scriptSrcRegex",
+      "pattern": "^https?:\\/\\/assets\\.adobedtm\\.com\\/launch-[a-z0-9-]+\\.min\\.js(?:\\?.*)?$"
+    }
+  },
+  {
+    "slug": "microsoft-clarity",
+    "name": "Microsoft Clarity",
+    "categories": ["analytics"],
+    "website": "https://clarity.microsoft.com",
+    "rule": { "kind": "htmlRegex", "pattern": "https?:\\/\\/www\\.clarity\\.ms\\/tag\\/" }
+  },
+  {
+    "slug": "hotjar",
+    "name": "Hotjar",
+    "categories": ["analytics"],
+    "website": "https://www.hotjar.com",
+    "rule": {
+      "kind": "htmlRegex",
+      "pattern": "(?:https?:)?\\/\\/static\\.hotjar\\.com\\/c\\/hotjar-"
+    }
+  },
+  {
+    "slug": "segment",
+    "name": "Twilio Segment",
+    "categories": ["analytics"],
+    "website": "https://segment.com",
+    "rule": {
+      "kind": "htmlRegex",
+      "pattern": "https?:\\/\\/cdn\\.segment\\.com\\/analytics\\.js\\/v1\\/"
+    }
+  },
+  {
+    "slug": "mixpanel",
+    "name": "Mixpanel",
+    "categories": ["analytics"],
+    "website": "https://mixpanel.com",
+    "rule": {
+      "kind": "htmlRegex",
+      "pattern": "https?:\\/\\/cdn\\.mxpnl\\.com\\/libs\\/mixpanel(?:-[a-z0-9.-]+)?\\.js"
+    }
+  },
+  {
+    "slug": "klaviyo",
+    "name": "Klaviyo",
+    "categories": ["marketing"],
+    "website": "https://www.klaviyo.com",
+    "rule": {
+      "kind": "scriptSrcRegex",
+      "pattern": "^https?:\\/\\/static\\.klaviyo\\.com\\/onsite\\/js\\/(?:[a-z0-9]+\\/)?klaviyo\\.js(?:\\?.*)?$"
+    }
+  },
+  {
+    "slug": "paypal",
+    "name": "PayPal",
+    "categories": ["payment"],
+    "website": "https://www.paypal.com",
+    "rule": {
+      "kind": "scriptSrcRegex",
+      "pattern": "^https?:\\/\\/(?:www\\.)?(?:sandbox\\.)?paypal\\.com\\/(?:sdk\\/js|web-sdk\\/v6\\/core)(?:\\?.*)?$"
+    }
+  },
+  {
+    "slug": "square-web-payments",
+    "name": "Square Web Payments",
+    "categories": ["payment"],
+    "website": "https://squareup.com",
+    "rule": {
+      "kind": "scriptSrcRegex",
+      "pattern": "^https?:\\/\\/(?:sandbox\\.)?web\\.squarecdn\\.com\\/v1\\/square\\.js(?:\\?.*)?$"
+    }
+  },
+  {
+    "slug": "cloudflare-turnstile",
+    "name": "Cloudflare Turnstile",
+    "categories": ["security"],
+    "website": "https://www.cloudflare.com/products/turnstile/",
+    "rule": {
+      "kind": "scriptSrcRegex",
+      "pattern": "^https?:\\/\\/challenges\\.cloudflare\\.com\\/turnstile\\/v0\\/api\\.js(?:\\?.*)?$"
+    }
+  },
+  {
+    "slug": "hcaptcha",
+    "name": "hCaptcha",
+    "categories": ["security"],
+    "website": "https://www.hcaptcha.com",
+    "rule": {
+      "kind": "scriptSrcRegex",
+      "pattern": "^https?:\\/\\/js\\.hcaptcha\\.com\\/1\\/api\\.js(?:\\?.*)?$"
+    }
+  },
+  {
+    "slug": "zendesk-web-widget",
+    "name": "Zendesk Web Widget",
+    "categories": ["live-chat"],
+    "website": "https://www.zendesk.com/service/messaging/",
+    "rule": {
+      "kind": "scriptSrcRegex",
+      "pattern": "^https?:\\/\\/static\\.zdassets\\.com\\/ekr\\/snippet\\.js(?:\\?.*)?$"
+    }
+  },
+  {
+    "slug": "crisp",
+    "name": "Crisp",
+    "categories": ["live-chat"],
+    "website": "https://crisp.chat",
+    "rule": {
+      "kind": "htmlRegex",
+      "pattern": "(?:https?:)?\\/\\/client\\.crisp\\.chat\\/l\\.js"
+    }
+  },
+  {
+    "slug": "tidio",
+    "name": "Tidio",
+    "categories": ["live-chat"],
+    "website": "https://www.tidio.com",
+    "rule": {
+      "kind": "htmlRegex",
+      "pattern": "(?:https?:)?\\/\\/code\\.tidio\\.co\\/[a-z0-9]+\\.js"
+    }
+  },
+  {
+    "slug": "amplitude",
+    "name": "Amplitude",
+    "categories": ["analytics"],
+    "website": "https://amplitude.com",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.amplitude\\.com" }
+  },
+  {
+    "slug": "heap",
+    "name": "Heap",
+    "categories": ["analytics"],
+    "website": "https://heap.io",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.heapanalytics\\.com" }
+  },
+  {
+    "slug": "fullstory",
+    "name": "FullStory",
+    "categories": ["analytics"],
+    "website": "https://www.fullstory.com",
+    "rule": { "kind": "htmlRegex", "pattern": "edge\\.fullstory\\.com" }
+  },
+  {
+    "slug": "mouseflow",
+    "name": "Mouseflow",
+    "categories": ["analytics"],
+    "website": "https://mouseflow.com",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.mouseflow\\.com" }
+  },
+  {
+    "slug": "lucky-orange",
+    "name": "Lucky Orange",
+    "categories": ["analytics"],
+    "website": "https://www.luckyorange.com",
+    "rule": { "kind": "htmlRegex", "pattern": "tools\\.luckyorange\\.com" }
+  },
+  {
+    "slug": "crazy-egg",
+    "name": "Crazy Egg",
+    "categories": ["analytics"],
+    "website": "https://www.crazyegg.com",
+    "rule": { "kind": "htmlRegex", "pattern": "script\\.crazyegg\\.com" }
+  },
+  {
+    "slug": "inspectlet",
+    "name": "Inspectlet",
+    "categories": ["analytics"],
+    "website": "https://www.inspectlet.com",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.inspectlet\\.com" }
+  },
+  {
+    "slug": "smartlook",
+    "name": "Smartlook",
+    "categories": ["analytics"],
+    "website": "https://www.smartlook.com",
+    "rule": { "kind": "htmlRegex", "pattern": "web-sdk\\.smartlook\\.com" }
+  },
+  {
+    "slug": "logrocket",
+    "name": "LogRocket",
+    "categories": ["analytics"],
+    "website": "https://logrocket.com",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.lr-ingest\\.io" }
+  },
+  {
+    "slug": "pendo",
+    "name": "Pendo",
+    "categories": ["analytics"],
+    "website": "https://www.pendo.io",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.pendo\\.io" }
+  },
+  {
+    "slug": "appcues",
+    "name": "Appcues",
+    "categories": ["analytics"],
+    "website": "https://www.appcues.com",
+    "rule": { "kind": "htmlRegex", "pattern": "fast\\.appcues\\.com" }
+  },
+  {
+    "slug": "contentsquare",
+    "name": "Contentsquare",
+    "categories": ["analytics"],
+    "website": "https://contentsquare.com",
+    "rule": { "kind": "htmlRegex", "pattern": "tcontentsquare\\.com" }
+  },
+  {
+    "slug": "chartbeat",
+    "name": "Chartbeat",
+    "categories": ["analytics"],
+    "website": "https://chartbeat.com",
+    "rule": { "kind": "htmlRegex", "pattern": "static\\.chartbeat\\.com" }
+  },
+  {
+    "slug": "clicky",
+    "name": "Clicky",
+    "categories": ["analytics"],
+    "website": "https://clicky.com",
+    "rule": { "kind": "htmlRegex", "pattern": "static\\.getclicky\\.com" }
+  },
+  {
+    "slug": "statcounter",
+    "name": "Statcounter",
+    "categories": ["analytics"],
+    "website": "https://statcounter.com",
+    "rule": { "kind": "htmlRegex", "pattern": "statcounter\\.com/counter" }
+  },
+  {
+    "slug": "snowplow",
+    "name": "Snowplow",
+    "categories": ["analytics"],
+    "website": "https://snowplow.io",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.snowplowanalytics\\.com" }
+  },
+  {
+    "slug": "rudderstack",
+    "name": "RudderStack",
+    "categories": ["analytics"],
+    "website": "https://www.rudderstack.com",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.rudderlabs\\.com" }
+  },
+  {
+    "slug": "fathom",
+    "name": "Fathom Analytics",
+    "categories": ["analytics"],
+    "website": "https://usefathom.com",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.usefathom\\.com" }
+  },
+  {
+    "slug": "simple-analytics",
+    "name": "Simple Analytics",
+    "categories": ["analytics"],
+    "website": "https://simpleanalytics.com",
+    "rule": { "kind": "htmlRegex", "pattern": "scripts\\.simpleanalyticscdn\\.com" }
+  },
+  {
+    "slug": "pirsch",
+    "name": "Pirsch",
+    "categories": ["analytics"],
+    "website": "https://pirsch.io",
+    "rule": { "kind": "htmlRegex", "pattern": "api\\.pirsch\\.io" }
+  },
+  {
+    "slug": "quantcast",
+    "name": "Quantcast",
+    "categories": ["analytics"],
+    "website": "https://www.quantcast.com",
+    "rule": { "kind": "htmlRegex", "pattern": "static\\.quantcast\\.mp" }
+  },
+  {
+    "slug": "new-relic-browser",
+    "name": "New Relic Browser",
+    "categories": ["analytics"],
+    "website": "https://newrelic.com",
+    "rule": { "kind": "htmlRegex", "pattern": "js-agent\\.newrelic\\.com" }
+  },
+  {
+    "slug": "datadog-rum",
+    "name": "Datadog RUM",
+    "categories": ["analytics"],
+    "website": "https://www.datadoghq.com",
+    "rule": { "kind": "htmlRegex", "pattern": "www\\.datadoghq-browser-agent\\.com" }
+  },
+  {
+    "slug": "dynatrace",
+    "name": "Dynatrace",
+    "categories": ["analytics"],
+    "website": "https://www.dynatrace.com",
+    "rule": { "kind": "htmlRegex", "pattern": "js-cdn\\.dynatrace\\.com" }
+  },
+  {
+    "slug": "speedcurve",
+    "name": "SpeedCurve",
+    "categories": ["analytics"],
+    "website": "https://www.speedcurve.com",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.speedcurve\\.com" }
+  },
+  {
+    "slug": "atatus",
+    "name": "Atatus",
+    "categories": ["analytics"],
+    "website": "https://www.atatus.com",
+    "rule": { "kind": "htmlRegex", "pattern": "atatus\\.js" }
+  },
+  {
+    "slug": "marketo",
+    "name": "Marketo",
+    "categories": ["marketing"],
+    "website": "https://www.marketo.com",
+    "rule": { "kind": "htmlRegex", "pattern": "munchkin\\.marketo\\.net" }
+  },
+  {
+    "slug": "mailchimp",
+    "name": "Mailchimp",
+    "categories": ["marketing"],
+    "website": "https://mailchimp.com",
+    "rule": { "kind": "htmlRegex", "pattern": "chimpstatic\\.com/mcjs-connected" }
+  },
+  {
+    "slug": "braze",
+    "name": "Braze",
+    "categories": ["marketing"],
+    "website": "https://www.braze.com",
+    "rule": { "kind": "htmlRegex", "pattern": "js\\.appboycdn\\.com" }
+  },
+  {
+    "slug": "iterable",
+    "name": "Iterable",
+    "categories": ["marketing"],
+    "website": "https://iterable.com",
+    "rule": { "kind": "htmlRegex", "pattern": "js\\.iterable\\.com" }
+  },
+  {
+    "slug": "customer-io",
+    "name": "Customer.io",
+    "categories": ["marketing"],
+    "website": "https://customer.io",
+    "rule": { "kind": "htmlRegex", "pattern": "assets\\.customer\\.io" }
+  },
+  {
+    "slug": "activecampaign",
+    "name": "ActiveCampaign",
+    "categories": ["marketing"],
+    "website": "https://www.activecampaign.com",
+    "rule": { "kind": "htmlRegex", "pattern": "trackcmp\\.net" }
+  },
+  {
+    "slug": "attentive",
+    "name": "Attentive",
+    "categories": ["marketing"],
+    "website": "https://www.attentivemobile.com",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.attn\\.tv" }
+  },
+  {
+    "slug": "yotpo",
+    "name": "Yotpo",
+    "categories": ["marketing"],
+    "website": "https://www.yotpo.com",
+    "rule": { "kind": "htmlRegex", "pattern": "staticw2\\.yotpo\\.com" }
+  },
+  {
+    "slug": "privy",
+    "name": "Privy",
+    "categories": ["marketing"],
+    "website": "https://www.privy.com",
+    "rule": { "kind": "htmlRegex", "pattern": "widget\\.privy\\.com" }
+  },
+  {
+    "slug": "sumo",
+    "name": "Sumo",
+    "categories": ["marketing"],
+    "website": "https://sumo.com",
+    "rule": { "kind": "htmlRegex", "pattern": "load\\.sumo\\.com" }
+  },
+  {
+    "slug": "optinmonster",
+    "name": "OptinMonster",
+    "categories": ["marketing"],
+    "website": "https://optinmonster.com",
+    "rule": { "kind": "htmlRegex", "pattern": "a\\.omtstatic\\.com" }
+  },
+  {
+    "slug": "justuno",
+    "name": "Justuno",
+    "categories": ["marketing"],
+    "website": "https://www.justuno.com",
+    "rule": { "kind": "htmlRegex", "pattern": "justuno\\.com" }
+  },
+  {
+    "slug": "unbounce",
+    "name": "Unbounce",
+    "categories": ["marketing"],
+    "website": "https://unbounce.com",
+    "rule": { "kind": "htmlRegex", "pattern": "d3pkntwtp2ukl5\\.cloudfront\\.net" }
+  },
+  {
+    "slug": "sleeknote",
+    "name": "Sleeknote",
+    "categories": ["marketing"],
+    "website": "https://sleeknote.com",
+    "rule": { "kind": "htmlRegex", "pattern": "sleeknotecustomerscripts\\.com" }
+  },
+  {
+    "slug": "wisepops",
+    "name": "Wisepops",
+    "categories": ["marketing"],
+    "website": "https://wisepops.com",
+    "rule": { "kind": "htmlRegex", "pattern": "wisepops\\.com" }
+  },
+  {
+    "slug": "getresponse",
+    "name": "GetResponse",
+    "categories": ["marketing"],
+    "website": "https://www.getresponse.com",
+    "rule": { "kind": "htmlRegex", "pattern": "app\\.getresponse\\.com" }
+  },
+  {
+    "slug": "drip",
+    "name": "Drip",
+    "categories": ["marketing"],
+    "website": "https://www.drip.com",
+    "rule": { "kind": "htmlRegex", "pattern": "tag\\.getdrip\\.com" }
+  },
+  {
+    "slug": "aweber",
+    "name": "AWeber",
+    "categories": ["marketing"],
+    "website": "https://www.aweber.com",
+    "rule": { "kind": "htmlRegex", "pattern": "forms\\.aweber\\.com" }
+  },
+  {
+    "slug": "omnisend",
+    "name": "Omnisend",
+    "categories": ["marketing"],
+    "website": "https://www.omnisend.com",
+    "rule": { "kind": "htmlRegex", "pattern": "omnisnippet1\\.com" }
+  },
+  {
+    "slug": "mailerlite",
+    "name": "MailerLite",
+    "categories": ["marketing"],
+    "website": "https://www.mailerlite.com",
+    "rule": { "kind": "htmlRegex", "pattern": "static\\.mailerlite\\.com" }
+  },
+  {
+    "slug": "optimizely",
+    "name": "Optimizely",
+    "categories": ["marketing"],
+    "website": "https://www.optimizely.com",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.optimizely\\.com" }
+  },
+  {
+    "slug": "vwo",
+    "name": "VWO",
+    "categories": ["marketing"],
+    "website": "https://vwo.com",
+    "rule": { "kind": "htmlRegex", "pattern": "dev\\.visualwebsiteoptimizer\\.com" }
+  },
+  {
+    "slug": "ab-tasty",
+    "name": "AB Tasty",
+    "categories": ["marketing"],
+    "website": "https://www.abtasty.com",
+    "rule": { "kind": "htmlRegex", "pattern": "try\\.abtasty\\.com" }
+  },
+  {
+    "slug": "kameleoon",
+    "name": "Kameleoon",
+    "categories": ["marketing"],
+    "website": "https://www.kameleoon.com",
+    "rule": { "kind": "htmlRegex", "pattern": "static\\.kameleoon\\.com" }
+  },
+  {
+    "slug": "launchdarkly",
+    "name": "LaunchDarkly",
+    "categories": ["marketing"],
+    "website": "https://launchdarkly.com",
+    "rule": { "kind": "htmlRegex", "pattern": "launchdarkly\\.com/sdk" }
+  },
+  {
+    "slug": "drift",
+    "name": "Drift",
+    "categories": ["live-chat"],
+    "website": "https://www.drift.com",
+    "rule": { "kind": "htmlRegex", "pattern": "js\\.driftt\\.com" }
+  },
+  {
+    "slug": "livechat",
+    "name": "LiveChat",
+    "categories": ["live-chat"],
+    "website": "https://www.livechat.com",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.livechatinc\\.com" }
+  },
+  {
+    "slug": "tawk-to",
+    "name": "Tawk.to",
+    "categories": ["live-chat"],
+    "website": "https://www.tawk.to",
+    "rule": { "kind": "htmlRegex", "pattern": "embed\\.tawk\\.to" }
+  },
+  {
+    "slug": "olark",
+    "name": "Olark",
+    "categories": ["live-chat"],
+    "website": "https://www.olark.com",
+    "rule": { "kind": "htmlRegex", "pattern": "static\\.olark\\.com" }
+  },
+  {
+    "slug": "smartsupp",
+    "name": "Smartsupp",
+    "categories": ["live-chat"],
+    "website": "https://www.smartsupp.com",
+    "rule": { "kind": "htmlRegex", "pattern": "www\\.smartsuppchat\\.com" }
+  },
+  {
+    "slug": "userlike",
+    "name": "Userlike",
+    "categories": ["live-chat"],
+    "website": "https://www.userlike.com",
+    "rule": {
+      "kind": "htmlRegex",
+      "pattern": "userlike-cdn-widgets\\.s3-eu-west-1\\.amazonaws\\.com"
+    }
+  },
+  {
+    "slug": "helpscout-beacon",
+    "name": "Help Scout Beacon",
+    "categories": ["live-chat"],
+    "website": "https://www.helpscout.com",
+    "rule": { "kind": "htmlRegex", "pattern": "beacon-v2\\.helpscout\\.net" }
+  },
+  {
+    "slug": "gorgias",
+    "name": "Gorgias",
+    "categories": ["live-chat"],
+    "website": "https://www.gorgias.com",
+    "rule": { "kind": "htmlRegex", "pattern": "config\\.gorgias\\.chat" }
+  },
+  {
+    "slug": "freshchat",
+    "name": "Freshchat",
+    "categories": ["live-chat"],
+    "website": "https://www.freshworks.com/live-chat-software/",
+    "rule": { "kind": "htmlRegex", "pattern": "wchat\\.freshchat\\.com" }
+  },
+  {
+    "slug": "kustomer",
+    "name": "Kustomer",
+    "categories": ["live-chat"],
+    "website": "https://www.kustomer.com",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.kustomerapp\\.com" }
+  },
+  {
+    "slug": "ada",
+    "name": "Ada",
+    "categories": ["live-chat"],
+    "website": "https://www.ada.cx",
+    "rule": { "kind": "htmlRegex", "pattern": "static\\.ada\\.support" }
+  },
+  {
+    "slug": "qualified",
+    "name": "Qualified",
+    "categories": ["live-chat"],
+    "website": "https://www.qualified.com",
+    "rule": { "kind": "htmlRegex", "pattern": "js\\.qualified\\.com" }
+  },
+  {
+    "slug": "kommunicate",
+    "name": "Kommunicate",
+    "categories": ["live-chat"],
+    "website": "https://www.kommunicate.io",
+    "rule": { "kind": "htmlRegex", "pattern": "widget\\.kommunicate\\.io" }
+  },
+  {
+    "slug": "podium",
+    "name": "Podium",
+    "categories": ["live-chat"],
+    "website": "https://www.podium.com",
+    "rule": { "kind": "htmlRegex", "pattern": "connect\\.podium\\.com" }
+  },
+  {
+    "slug": "birdeye",
+    "name": "Birdeye",
+    "categories": ["live-chat"],
+    "website": "https://birdeye.com",
+    "rule": { "kind": "htmlRegex", "pattern": "birdeye\\.com/embed" }
+  },
+  {
+    "slug": "chatra",
+    "name": "Chatra",
+    "categories": ["live-chat"],
+    "website": "https://chatra.com",
+    "rule": { "kind": "htmlRegex", "pattern": "call\\.chatra\\.io" }
+  },
+  {
+    "slug": "chaport",
+    "name": "Chaport",
+    "categories": ["live-chat"],
+    "website": "https://www.chaport.com",
+    "rule": { "kind": "htmlRegex", "pattern": "app\\.chaport\\.com" }
+  },
+  {
+    "slug": "reamaze",
+    "name": "Re:amaze",
+    "categories": ["live-chat"],
+    "website": "https://www.reamaze.com",
+    "rule": { "kind": "htmlRegex", "pattern": "reamaze\\.com/assets/reamaze" }
+  },
+  {
+    "slug": "jivochat",
+    "name": "JivoChat",
+    "categories": ["live-chat"],
+    "website": "https://www.jivochat.com",
+    "rule": { "kind": "htmlRegex", "pattern": "code\\.jivosite\\.com" }
+  },
+  {
+    "slug": "comm100",
+    "name": "Comm100",
+    "categories": ["live-chat"],
+    "website": "https://www.comm100.com",
+    "rule": { "kind": "htmlRegex", "pattern": "static\\.comm100\\.com" }
+  },
+  {
+    "slug": "braintree",
+    "name": "Braintree",
+    "categories": ["payment"],
+    "website": "https://www.braintreepayments.com",
+    "rule": { "kind": "htmlRegex", "pattern": "js\\.braintreegateway\\.com" }
+  },
+  {
+    "slug": "paddle",
+    "name": "Paddle",
+    "categories": ["payment"],
+    "website": "https://www.paddle.com",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.paddle\\.com" }
+  },
+  {
+    "slug": "klarna",
+    "name": "Klarna",
+    "categories": ["payment"],
+    "website": "https://www.klarna.com",
+    "rule": { "kind": "htmlRegex", "pattern": "x\\.klarna\\.com" }
+  },
+  {
+    "slug": "affirm",
+    "name": "Affirm",
+    "categories": ["payment"],
+    "website": "https://www.affirm.com",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn1\\.affirm\\.com" }
+  },
+  {
+    "slug": "afterpay",
+    "name": "Afterpay",
+    "categories": ["payment"],
+    "website": "https://www.afterpay.com",
+    "rule": { "kind": "htmlRegex", "pattern": "static\\.afterpay\\.com" }
+  },
+  {
+    "slug": "mollie",
+    "name": "Mollie",
+    "categories": ["payment"],
+    "website": "https://www.mollie.com",
+    "rule": { "kind": "htmlRegex", "pattern": "js\\.mollie\\.com" }
+  },
+  {
+    "slug": "razorpay",
+    "name": "Razorpay",
+    "categories": ["payment"],
+    "website": "https://razorpay.com",
+    "rule": { "kind": "htmlRegex", "pattern": "checkout\\.razorpay\\.com" }
+  },
+  {
+    "slug": "checkout-com",
+    "name": "Checkout.com",
+    "categories": ["payment"],
+    "website": "https://www.checkout.com",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.checkout\\.com" }
+  },
+  {
+    "slug": "amazon-pay",
+    "name": "Amazon Pay",
+    "categories": ["payment"],
+    "website": "https://pay.amazon.com",
+    "rule": { "kind": "htmlRegex", "pattern": "static-na\\.payments-amazon\\.com" }
+  },
+  {
+    "slug": "coinbase-commerce",
+    "name": "Coinbase Commerce",
+    "categories": ["payment"],
+    "website": "https://commerce.coinbase.com",
+    "rule": { "kind": "htmlRegex", "pattern": "commerce\\.coinbase\\.com/v1/checkout" }
+  },
+  {
+    "slug": "authorize-net",
+    "name": "Authorize.net",
+    "categories": ["payment"],
+    "website": "https://www.authorize.net",
+    "rule": { "kind": "htmlRegex", "pattern": "js\\.authorize\\.net" }
+  },
+  {
+    "slug": "recurly",
+    "name": "Recurly",
+    "categories": ["payment"],
+    "website": "https://recurly.com",
+    "rule": { "kind": "htmlRegex", "pattern": "js\\.recurly\\.com" }
+  },
+  {
+    "slug": "chargebee",
+    "name": "Chargebee",
+    "categories": ["payment"],
+    "website": "https://www.chargebee.com",
+    "rule": { "kind": "htmlRegex", "pattern": "js\\.chargebee\\.com" }
+  },
+  {
+    "slug": "fastspring",
+    "name": "FastSpring",
+    "categories": ["payment"],
+    "website": "https://fastspring.com",
+    "rule": { "kind": "htmlRegex", "pattern": "d1f8f9xcsvx3ha\\.cloudfront\\.net" }
+  },
+  {
+    "slug": "sezzle",
+    "name": "Sezzle",
+    "categories": ["payment"],
+    "website": "https://sezzle.com",
+    "rule": { "kind": "htmlRegex", "pattern": "widget\\.sezzle\\.com" }
+  },
+  {
+    "slug": "zip",
+    "name": "Zip",
+    "categories": ["payment"],
+    "website": "https://zip.co",
+    "rule": { "kind": "htmlRegex", "pattern": "static\\.zip\\.co" }
+  },
+  {
+    "slug": "worldpay",
+    "name": "Worldpay",
+    "categories": ["payment"],
+    "website": "https://www.worldpay.com",
+    "rule": { "kind": "htmlRegex", "pattern": "worldpay\\.com" }
+  },
+  {
+    "slug": "adyen",
+    "name": "Adyen",
+    "categories": ["payment"],
+    "website": "https://www.adyen.com",
+    "rule": { "kind": "htmlRegex", "pattern": "checkoutshopper-(?:live|test)\\.adyen\\.com" }
+  },
+  {
+    "slug": "2checkout",
+    "name": "2Checkout",
+    "categories": ["payment"],
+    "website": "https://www.2checkout.com",
+    "rule": { "kind": "htmlRegex", "pattern": "secure\\.2checkout\\.com" }
+  },
+  {
+    "slug": "paystack",
+    "name": "Paystack",
+    "categories": ["payment"],
+    "website": "https://paystack.com",
+    "rule": { "kind": "htmlRegex", "pattern": "js\\.paystack\\.co" }
+  },
+  {
+    "slug": "flutterwave",
+    "name": "Flutterwave",
+    "categories": ["payment"],
+    "website": "https://flutterwave.com",
+    "rule": { "kind": "htmlRegex", "pattern": "checkout\\.flutterwave\\.com" }
+  },
+  {
+    "slug": "mercado-pago",
+    "name": "Mercado Pago",
+    "categories": ["payment"],
+    "website": "https://www.mercadopago.com",
+    "rule": { "kind": "htmlRegex", "pattern": "sdk\\.mercadopago\\.com" }
+  },
+  {
+    "slug": "fingerprintjs",
+    "name": "FingerprintJS",
+    "categories": ["security"],
+    "website": "https://fingerprint.com",
+    "rule": { "kind": "htmlRegex", "pattern": "fpjscdn\\.net" }
+  },
+  {
+    "slug": "arkose-labs",
+    "name": "Arkose Labs",
+    "categories": ["security"],
+    "website": "https://www.arkoselabs.com",
+    "rule": { "kind": "htmlRegex", "pattern": "client-api\\.arkoselabs\\.com" }
+  },
+  {
+    "slug": "friendly-captcha",
+    "name": "Friendly Captcha",
+    "categories": ["security"],
+    "website": "https://friendlycaptcha.com",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.friendlycaptcha\\.com" }
+  },
+  {
+    "slug": "aws-waf-captcha",
+    "name": "AWS WAF CAPTCHA",
+    "categories": ["security"],
+    "website": "https://aws.amazon.com/waf/",
+    "rule": { "kind": "htmlRegex", "pattern": "captcha\\.awswaf\\.com" }
+  },
+  {
+    "slug": "sucuri",
+    "name": "Sucuri",
+    "categories": ["security"],
+    "website": "https://sucuri.net",
+    "rule": { "kind": "headerPresent", "name": "x-sucuri-id" }
+  },
+  {
+    "slug": "adobe-fonts",
+    "name": "Adobe Fonts",
+    "categories": ["font-script"],
+    "website": "https://fonts.adobe.com",
+    "rule": { "kind": "htmlRegex", "pattern": "use\\.typekit\\.net" }
+  },
+  {
+    "slug": "font-awesome",
+    "name": "Font Awesome",
+    "categories": ["font-script"],
+    "website": "https://fontawesome.com",
+    "rule": { "kind": "htmlRegex", "pattern": "kit\\.fontawesome\\.com" }
+  },
+  {
+    "slug": "bunny-fonts",
+    "name": "Bunny Fonts",
+    "categories": ["font-script"],
+    "website": "https://fonts.bunny.net",
+    "rule": { "kind": "htmlRegex", "pattern": "fonts\\.bunny\\.net" }
+  },
+  {
+    "slug": "monotype-fonts",
+    "name": "Monotype Fonts",
+    "categories": ["font-script"],
+    "website": "https://www.monotype.com",
+    "rule": { "kind": "htmlRegex", "pattern": "fast\\.fonts\\.net" }
+  },
+  {
+    "slug": "rollbar",
+    "name": "Rollbar",
+    "categories": ["error-tracking"],
+    "website": "https://rollbar.com",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.rollbar\\.com" }
+  },
+  {
+    "slug": "bugsnag",
+    "name": "Bugsnag",
+    "categories": ["error-tracking"],
+    "website": "https://www.bugsnag.com",
+    "rule": { "kind": "htmlRegex", "pattern": "d2wy8f7a9ursnm\\.cloudfront\\.net" }
+  },
+  {
+    "slug": "raygun",
+    "name": "Raygun",
+    "categories": ["error-tracking"],
+    "website": "https://raygun.com",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.raygun\\.io" }
+  },
+  {
+    "slug": "trackjs",
+    "name": "TrackJS",
+    "categories": ["error-tracking"],
+    "website": "https://trackjs.com",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.trackjs\\.com" }
+  },
+  {
+    "slug": "airbrake",
+    "name": "Airbrake",
+    "categories": ["error-tracking"],
+    "website": "https://airbrake.io",
+    "rule": { "kind": "htmlRegex", "pattern": "airbrake\\.io" }
+  },
+  {
+    "slug": "honeybadger",
+    "name": "Honeybadger",
+    "categories": ["error-tracking"],
+    "website": "https://www.honeybadger.io",
+    "rule": { "kind": "htmlRegex", "pattern": "js\\.honeybadger\\.io" }
+  },
+  {
+    "slug": "bugherd",
+    "name": "BugHerd",
+    "categories": ["other"],
+    "website": "https://bugherd.com",
+    "rule": { "kind": "htmlRegex", "pattern": "www\\.bugherd\\.com/sidebarv2" }
+  },
+  {
+    "slug": "hotjar-surveys",
+    "name": "Hotjar Surveys",
+    "categories": ["other"],
+    "website": "https://www.hotjar.com",
+    "rule": { "kind": "htmlRegex", "pattern": "surveys\\.hotjar\\.com" }
+  },
+  {
+    "slug": "accessibe",
+    "name": "accessiBe",
+    "categories": ["other"],
+    "website": "https://accessibe.com",
+    "rule": { "kind": "htmlRegex", "pattern": "acsbapp\\.com" }
+  },
+  {
+    "slug": "audioeye",
+    "name": "AudioEye",
+    "categories": ["other"],
+    "website": "https://www.audioeye.com",
+    "rule": { "kind": "htmlRegex", "pattern": "audioeye\\.com" }
+  },
+  {
+    "slug": "userway",
+    "name": "UserWay",
+    "categories": ["other"],
+    "website": "https://userway.org",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.userway\\.org" }
+  },
+  {
+    "slug": "addthis",
+    "name": "AddThis",
+    "categories": ["other"],
+    "website": "https://www.addthis.com",
+    "rule": { "kind": "htmlRegex", "pattern": "s7\\.addthis\\.com" }
+  },
+  {
+    "slug": "addtoany",
+    "name": "AddToAny",
+    "categories": ["other"],
+    "website": "https://www.addtoany.com",
+    "rule": { "kind": "htmlRegex", "pattern": "static\\.addtoany\\.com" }
+  },
+  {
+    "slug": "disqus",
+    "name": "Disqus",
+    "categories": ["other"],
+    "website": "https://disqus.com",
+    "rule": { "kind": "htmlRegex", "pattern": "disqus\\.com/embed\\.js" }
+  },
+  {
+    "slug": "algolia",
+    "name": "Algolia",
+    "categories": ["other"],
+    "website": "https://www.algolia.com",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.jsdelivr\\.net/npm/algoliasearch" }
+  },
+  {
+    "slug": "mapbox",
+    "name": "Mapbox",
+    "categories": ["other"],
+    "website": "https://www.mapbox.com",
+    "rule": { "kind": "htmlRegex", "pattern": "api\\.mapbox\\.com" }
+  },
+  {
+    "slug": "google-maps",
+    "name": "Google Maps",
+    "categories": ["other"],
+    "website": "https://maps.google.com",
+    "rule": { "kind": "htmlRegex", "pattern": "maps\\.googleapis\\.com/maps/api/js" }
+  },
+  {
+    "slug": "youtube",
+    "name": "YouTube",
+    "categories": ["other"],
+    "website": "https://www.youtube.com",
+    "rule": { "kind": "htmlRegex", "pattern": "www\\.youtube\\.com/iframe_api" }
+  },
+  {
+    "slug": "vimeo",
+    "name": "Vimeo",
+    "categories": ["other"],
+    "website": "https://vimeo.com",
+    "rule": { "kind": "htmlRegex", "pattern": "player\\.vimeo\\.com/api/player\\.js" }
+  },
+  {
+    "slug": "typeform",
+    "name": "Typeform",
+    "categories": ["other"],
+    "website": "https://www.typeform.com",
+    "rule": { "kind": "htmlRegex", "pattern": "embed\\.typeform\\.com" }
+  },
+  {
+    "slug": "jotform",
+    "name": "Jotform",
+    "categories": ["other"],
+    "website": "https://www.jotform.com",
+    "rule": { "kind": "htmlRegex", "pattern": "js\\.jotform\\.com" }
+  },
+  {
+    "slug": "wufoo",
+    "name": "Wufoo",
+    "categories": ["other"],
+    "website": "https://www.wufoo.com",
+    "rule": { "kind": "htmlRegex", "pattern": "wufoo\\.com/scripts/embed" }
+  },
+  {
+    "slug": "calendly",
+    "name": "Calendly",
+    "categories": ["other"],
+    "website": "https://calendly.com",
+    "rule": { "kind": "htmlRegex", "pattern": "assets\\.calendly\\.com" }
+  },
+  {
+    "slug": "acuity-scheduling",
+    "name": "Acuity Scheduling",
+    "categories": ["other"],
+    "website": "https://acuityscheduling.com",
+    "rule": { "kind": "htmlRegex", "pattern": "embed\\.acuityscheduling\\.com" }
+  },
+  {
+    "slug": "loom",
+    "name": "Loom",
+    "categories": ["other"],
+    "website": "https://www.loom.com",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.loom\\.com" }
+  },
+  {
+    "slug": "wistia",
+    "name": "Wistia",
+    "categories": ["other"],
+    "website": "https://wistia.com",
+    "rule": { "kind": "htmlRegex", "pattern": "fast\\.wistia\\.com" }
+  },
+  {
+    "slug": "vidyard",
+    "name": "Vidyard",
+    "categories": ["other"],
+    "website": "https://www.vidyard.com",
+    "rule": { "kind": "htmlRegex", "pattern": "play\\.vidyard\\.com" }
+  },
+  {
+    "slug": "spotify",
+    "name": "Spotify",
+    "categories": ["other"],
+    "website": "https://www.spotify.com",
+    "rule": { "kind": "htmlRegex", "pattern": "open\\.spotify\\.com/embed" }
+  },
+  {
+    "slug": "soundcloud",
+    "name": "SoundCloud",
+    "categories": ["other"],
+    "website": "https://soundcloud.com",
+    "rule": { "kind": "htmlRegex", "pattern": "w\\.soundcloud\\.com/player" }
+  },
+  {
+    "slug": "facebook-pixel",
+    "name": "Meta Pixel",
+    "categories": ["analytics"],
+    "website": "https://www.facebook.com/business/tools/meta-pixel",
+    "rule": { "kind": "htmlRegex", "pattern": "connect\\.facebook\\.net/.+/fbevents\\.js" }
+  },
+  {
+    "slug": "linkedin-insight-tag",
+    "name": "LinkedIn Insight Tag",
+    "categories": ["analytics"],
+    "website": "https://www.linkedin.com/help/lms/answer/a420536",
+    "rule": { "kind": "htmlRegex", "pattern": "snap\\.licdn\\.com/li\\.lms-analytics" }
+  },
+  {
+    "slug": "tiktok-pixel",
+    "name": "TikTok Pixel",
+    "categories": ["analytics"],
+    "website": "https://ads.tiktok.com",
+    "rule": { "kind": "htmlRegex", "pattern": "analytics\\.tiktok\\.com/i18n/pixel" }
+  },
+  {
+    "slug": "pinterest-tag",
+    "name": "Pinterest Tag",
+    "categories": ["analytics"],
+    "website": "https://business.pinterest.com",
+    "rule": { "kind": "htmlRegex", "pattern": "s\\.pinimg\\.com/ct/core\\.js" }
+  },
+  {
+    "slug": "snap-pixel",
+    "name": "Snap Pixel",
+    "categories": ["analytics"],
+    "website": "https://forbusiness.snapchat.com",
+    "rule": { "kind": "htmlRegex", "pattern": "sc-static\\.net/scevent" }
+  },
+  {
+    "slug": "reddit-pixel",
+    "name": "Reddit Pixel",
+    "categories": ["analytics"],
+    "website": "https://business.reddithelp.com",
+    "rule": { "kind": "htmlRegex", "pattern": "events\\.reddit\\.com/gtm\\.js" }
+  },
+  {
+    "slug": "tealium",
+    "name": "Tealium",
+    "categories": ["tag-manager"],
+    "website": "https://tealium.com",
+    "rule": { "kind": "htmlRegex", "pattern": "tags\\.tiqcdn\\.com/utag" }
+  },
+  {
+    "slug": "ensighten",
+    "name": "Ensighten",
+    "categories": ["tag-manager"],
+    "website": "https://www.ensighten.com",
+    "rule": { "kind": "htmlRegex", "pattern": "nexus\\.ensighten\\.com" }
+  },
+  {
+    "slug": "commanders-act",
+    "name": "Commanders Act",
+    "categories": ["tag-manager"],
+    "website": "https://www.commandersact.com",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.tagcommander\\.com" }
+  },
+  {
+    "slug": "cloudflare-zaraz",
+    "name": "Cloudflare Zaraz",
+    "categories": ["tag-manager"],
+    "website": "https://www.cloudflare.com/application-services/products/zaraz/",
+    "rule": { "kind": "htmlRegex", "pattern": "static\\.cloudflareinsights\\.com/zaraz" }
+  },
+  {
+    "slug": "one-signal",
+    "name": "OneSignal",
+    "categories": ["marketing"],
+    "website": "https://onesignal.com",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.onesignal\\.com" }
+  },
+  {
+    "slug": "pushengage",
+    "name": "PushEngage",
+    "categories": ["marketing"],
+    "website": "https://www.pushengage.com",
+    "rule": { "kind": "htmlRegex", "pattern": "client\\.pushengage\\.com" }
+  },
+  {
+    "slug": "webengage",
+    "name": "WebEngage",
+    "categories": ["marketing"],
+    "website": "https://webengage.com",
+    "rule": { "kind": "htmlRegex", "pattern": "ssl\\.widgets\\.webengage\\.com" }
+  },
+  {
+    "slug": "moengage",
+    "name": "MoEngage",
+    "categories": ["marketing"],
+    "website": "https://www.moengage.com",
+    "rule": { "kind": "htmlRegex", "pattern": "cdn\\.moengage\\.com" }
+  },
+  {
+    "slug": "webflow-optimize",
+    "name": "Webflow Optimize",
+    "categories": ["marketing"],
+    "website": "https://webflow.com/optimize",
+    "rule": { "kind": "htmlRegex", "pattern": "webflow\\.com/optimize" }
+  }
+]

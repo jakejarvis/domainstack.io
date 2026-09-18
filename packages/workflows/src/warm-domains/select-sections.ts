@@ -1,20 +1,23 @@
+import { SECTION_IDS } from "@domainstack/constants";
 import type { Section } from "@domainstack/constants";
 
 /**
- * Sections the warm-domains workflow refreshes. DNS is deliberately absent: its
- * cache lifetime follows record TTLs (often minutes), so a 4-hourly refresh is
- * stale again long before the next visit. Refreshing hosting refreshes DNS as a
- * side effect anyway (`fetchHosting` calls `fetchDns`).
+ * Sections the warm-domains workflow refreshes: every section except DNS.
+ * DNS is deliberately absent: its cache lifetime follows record TTLs (often
+ * minutes), so a 4-hourly refresh is stale again long before the next visit.
+ * Refreshing hosting refreshes DNS as a side effect anyway (`fetchHosting`
+ * calls `fetchDns`).
+ *
+ * Technologies and SEO both warm: they share one in-flight HTML fetch when they
+ * run concurrently (see fetchHtmlDocument), so warming both costs one request,
+ * not two. Unlike headers-with-hosting, neither one persists the other's row, so
+ * neither can be dropped when the other is selected.
  */
-export const WARM_SECTIONS = [
-  "registration",
-  "hosting",
-  "certificates",
-  "headers",
-  "seo",
-] as const satisfies readonly Section[];
+export const WARM_SECTIONS = SECTION_IDS.filter(
+  (section): section is WarmSection => section !== "dns",
+);
 
-export type WarmSection = (typeof WARM_SECTIONS)[number];
+export type WarmSection = Exclude<Section, "dns">;
 
 /**
  * Refresh anything that expires before the next warm-domains run. Must match

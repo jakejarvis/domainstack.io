@@ -34,3 +34,9 @@ export type {
   SeoResponse,
   TwitterMeta,
 } from "./seo";
+export type {
+  DetectedTechnology,
+  TechnologiesResponse,
+  TechnologyCategory,
+  TechnologySignal,
+} from "./technologies";

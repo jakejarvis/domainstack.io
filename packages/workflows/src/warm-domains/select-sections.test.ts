@@ -13,6 +13,7 @@ function cacheOf(
   return {
     registration: fresh,
     hosting: fresh,
+    technologies: fresh,
     certificates: fresh,
     headers: fresh,
     seo: fresh,
@@ -68,6 +69,7 @@ describe("selectSectionsToRefresh", () => {
     const allDue = cacheOf({
       registration: due,
       hosting: due,
+      technologies: due,
       certificates: due,
       headers: due,
       seo: due,
@@ -75,8 +77,20 @@ describe("selectSectionsToRefresh", () => {
     expect(selectSectionsToRefresh(allDue, now)).toEqual([
       "registration",
       "hosting",
+      "technologies",
       "certificates",
       "seo",
     ]);
+  });
+
+  it("refreshes technologies when its cache is missing", () => {
+    const cache = cacheOf({ technologies: { data: null, expiresAt: null } });
+    expect(selectSectionsToRefresh(cache, now)).toEqual(["technologies"]);
+  });
+
+  it("does not drop technologies when seo is also due", () => {
+    const due = { data: {}, expiresAt: at(0) };
+    const cache = cacheOf({ technologies: due, seo: due });
+    expect(selectSectionsToRefresh(cache, now)).toEqual(["technologies", "seo"]);
   });
 });

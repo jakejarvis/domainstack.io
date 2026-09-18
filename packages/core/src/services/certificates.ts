@@ -7,12 +7,15 @@
  * Permanent errors return { success: false, error }.
  */
 
+import { getProviderCatalog } from "@domainstack/catalog";
+import {
+  detectCertificateAuthority,
+  getProvidersFromCatalog,
+} from "@domainstack/catalog/providers";
 import { replaceCertificates } from "@domainstack/db/queries/certificates";
 import { ensureDomainRecord } from "@domainstack/db/queries/domains";
 import { upsertCatalogProvider } from "@domainstack/db/queries/providers";
-import { getProviderCatalog } from "@domainstack/edge-config";
 import type { Certificate, CertificatesResponse } from "@domainstack/types";
-import { detectCertificateAuthority, getProvidersFromCatalog } from "@domainstack/utils/providers";
 
 import { fetchCertificateChain, type RawCertificate, type TlsFetchSuccess } from "../tls";
 import { ttlForCertificates } from "../ttl";

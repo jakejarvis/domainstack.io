@@ -38,10 +38,11 @@ export const TTL_CERTIFICATES_WINDOW = ONE_DAY; // 24 hours (normal refresh wind
 export const TTL_CERTIFICATES_MIN = ONE_HOUR; // 1 hour (minimum check interval)
 export const TTL_CERTIFICATES_EXPIRY_BUFFER = 2 * ONE_DAY; // 48 hours (start aggressive checking before expiry)
 
-// HTTP headers, hosting, SEO
+// HTTP headers, hosting, SEO, technologies
 export const TTL_HEADERS = 12 * ONE_HOUR; // 12 hours
 export const TTL_HOSTING = ONE_DAY; // 24 hours
 export const TTL_SEO = ONE_DAY; // 24 hours
+export const TTL_TECHNOLOGIES = ONE_DAY; // 24 hours
 
 // ===== Maximum Data Age (in milliseconds) =====
 // Absolute maximum age before refusing to return stale data.

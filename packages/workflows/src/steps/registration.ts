@@ -54,7 +54,7 @@ export async function normalizeAndBuildResponseStep(
 ): Promise<RegistrationResponse> {
   "use step";
 
-  const { getProviderCatalog } = await import("@domainstack/edge-config");
+  const { getProviderCatalog } = await import("@domainstack/catalog");
   const { normalizeRegistration } = await import("@domainstack/core/services/registration");
   return await normalizeRegistration(recordJson, { catalog: await getProviderCatalog() });
 }

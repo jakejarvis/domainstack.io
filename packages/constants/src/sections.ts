@@ -8,6 +8,7 @@
 export const SECTION_IDS = [
   "registration",
   "hosting",
+  "technologies",
   "dns",
   "certificates",
   "headers",

@@ -22,6 +22,7 @@ export function ExportButton({ domain, enabled = true }: { domain: string; enabl
       registration: trpc.domain.getRegistration.queryOptions({ domain }).queryKey,
       dns: trpc.domain.getDnsRecords.queryOptions({ domain }).queryKey,
       hosting: trpc.domain.getHosting.queryOptions({ domain }).queryKey,
+      technologies: trpc.domain.getTechnologies.queryOptions({ domain }).queryKey,
       certificates: trpc.domain.getCertificates.queryOptions({ domain }).queryKey,
       headers: trpc.domain.getHeaders.queryOptions({ domain }).queryKey,
       seo: trpc.domain.getSeo.queryOptions({ domain }).queryKey,

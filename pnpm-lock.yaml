@@ -140,9 +140,6 @@ importers:
       '@domainstack/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@domainstack/edge-config':
-        specifier: workspace:*
-        version: link:../../packages/edge-config
       '@domainstack/email':
         specifier: workspace:*
         version: link:../../packages/email
@@ -517,6 +514,43 @@ importers:
         specifier: 'catalog:'
         version: 5.0.1(@opentelemetry/api@1.9.1)(@types/node@24.13.5)(@vitest/browser-playwright@5.0.1)(@vitest/coverage-v8@5.0.1)(@vitest/ui@5.0.1)(msw@2.15.0(@types/node@24.13.5)(typescript@7.0.2))(vite@8.3.0(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.13))
 
+  packages/catalog:
+    dependencies:
+      '@domainstack/constants':
+        specifier: workspace:*
+        version: link:../constants
+      '@domainstack/logger':
+        specifier: workspace:*
+        version: link:../logger
+      '@domainstack/types':
+        specifier: workspace:*
+        version: link:../types
+      '@domainstack/utils':
+        specifier: workspace:*
+        version: link:../utils
+      '@vercel/edge-config':
+        specifier: ^1.5.1
+        version: 1.5.1(@opentelemetry/api@1.9.1)(next@16.3.5(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@types/node@24.13.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))
+      react:
+        specifier: '>=19'
+        version: 19.3.0
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.5
+    devDependencies:
+      '@domainstack/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.5
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.3.0
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.1(@opentelemetry/api@1.9.1)(@types/node@24.13.5)(@vitest/browser-playwright@5.0.1)(@vitest/coverage-v8@5.0.1)(@vitest/ui@5.0.1)(msw@2.15.0(@types/node@24.13.5)(typescript@7.0.2))(vite@8.3.0(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.13))
+
   packages/constants:
     devDependencies:
       '@domainstack/typescript-config':
@@ -525,15 +559,15 @@ importers:
 
   packages/core:
     dependencies:
+      '@domainstack/catalog':
+        specifier: workspace:*
+        version: link:../catalog
       '@domainstack/constants':
         specifier: workspace:*
         version: link:../constants
       '@domainstack/db':
         specifier: workspace:*
         version: link:../db
-      '@domainstack/edge-config':
-        specifier: workspace:*
-        version: link:../edge-config
       '@domainstack/image':
         specifier: workspace:*
         version: link:../image
@@ -583,6 +617,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@domainstack/catalog':
+        specifier: workspace:*
+        version: link:../catalog
       '@domainstack/constants':
         specifier: workspace:*
         version: link:../constants
@@ -620,31 +657,6 @@ importers:
       drizzle-kit:
         specifier: ^0.31.10
         version: 0.31.10
-
-  packages/edge-config:
-    dependencies:
-      '@domainstack/logger':
-        specifier: workspace:*
-        version: link:../logger
-      '@domainstack/utils':
-        specifier: workspace:*
-        version: link:../utils
-      '@vercel/edge-config':
-        specifier: ^1.5.1
-        version: 1.5.1(@opentelemetry/api@1.9.1)(next@16.3.5(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@types/node@24.13.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))
-      react:
-        specifier: '>=19'
-        version: 19.3.0
-    devDependencies:
-      '@domainstack/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
-      '@types/node':
-        specifier: 'catalog:'
-        version: 24.13.5
-      '@types/react':
-        specifier: 'catalog:'
-        version: 19.3.0
 
   packages/email:
     dependencies:
@@ -893,6 +905,9 @@ importers:
       rdapper:
         specifier: 'catalog:'
         version: 0.13.0
+      zod:
+        specifier: ^4
+        version: 4.6.5
     devDependencies:
       '@domainstack/typescript-config':
         specifier: workspace:*
@@ -900,12 +915,12 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 5.0.1(@opentelemetry/api@1.9.1)(@types/node@24.13.5)(@vitest/browser-playwright@5.0.1)(@vitest/coverage-v8@5.0.1)(@vitest/ui@5.0.1)(msw@2.15.0(@types/node@24.13.5)(typescript@7.0.2))(vite@8.3.0(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.13))
-      zod:
-        specifier: 'catalog:'
-        version: 4.6.5
 
   packages/workflows:
     dependencies:
+      '@domainstack/catalog':
+        specifier: workspace:*
+        version: link:../catalog
       '@domainstack/constants':
         specifier: workspace:*
         version: link:../constants
@@ -915,9 +930,6 @@ importers:
       '@domainstack/db':
         specifier: workspace:*
         version: link:../db
-      '@domainstack/edge-config':
-        specifier: workspace:*
-        version: link:../edge-config
       '@domainstack/email':
         specifier: workspace:*
         version: link:../email

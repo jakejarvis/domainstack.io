@@ -8,13 +8,19 @@
  * headers failures are handled gracefully.
  */
 
+import { getProviderCatalog } from "@domainstack/catalog";
+import {
+  detectDnsProvider,
+  detectEmailProvider,
+  detectHostingProvider,
+  getProvidersFromCatalog,
+} from "@domainstack/catalog/providers";
 import { ensureDomainRecord } from "@domainstack/db/queries/domains";
 import { upsertHosting } from "@domainstack/db/queries/hosting";
 import {
   resolveOrCreateProviderId,
   upsertCatalogProvider,
 } from "@domainstack/db/queries/providers";
-import { getProviderCatalog } from "@domainstack/edge-config";
 import { createLogger } from "@domainstack/logger";
 import { getRedis } from "@domainstack/redis";
 import type {
@@ -25,12 +31,6 @@ import type {
   ProviderDetectionData,
 } from "@domainstack/types";
 import { toRegistrableDomain } from "@domainstack/utils/domain";
-import {
-  detectDnsProvider,
-  detectEmailProvider,
-  detectHostingProvider,
-  getProvidersFromCatalog,
-} from "@domainstack/utils/providers";
 
 import { ttlForHosting } from "../ttl";
 import { fetchDns } from "./dns";

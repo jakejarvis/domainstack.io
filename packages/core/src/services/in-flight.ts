@@ -1,3 +1,5 @@
+import { LRUCache } from "lru-cache";
+
 /**
  * Share one in-flight promise per key within this process.
  *
@@ -6,7 +8,7 @@
  * the promise settles, so later calls always run fresh. This deduplicates
  * concurrent work only; it is not a cache.
  */
-const inFlight = new Map<string, Promise<unknown>>();
+const inFlight = new LRUCache<string, Promise<unknown>>({ max: 1000 });
 
 export function shareInFlight<T>(key: string, run: () => Promise<T>): Promise<T> {
   const existing = inFlight.get(key);

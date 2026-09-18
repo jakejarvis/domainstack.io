@@ -23,9 +23,9 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@domainstack/catalog": "workspace:*",
     "@domainstack/constants": "workspace:*",
     "@domainstack/db": "workspace:*",
-    "@domainstack/edge-config": "workspace:*",
     "@domainstack/image": "workspace:*",
     "@domainstack/logger": "workspace:*",
     "@domainstack/redis": "workspace:*",
