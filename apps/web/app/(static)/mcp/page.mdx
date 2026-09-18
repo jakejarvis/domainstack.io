@@ -1,0 +1,204 @@
+import { BetaBadge } from "@/components/beta-badge";
+import {
+  ClineIcon,
+  CursorIcon,
+  VSCodeIcon,
+  ClaudeIcon,
+  GoogleGeminiIcon,
+  ModelContextProtocolIcon,
+  WindsurfIcon,
+  OpenAIIcon,
+} from "@/components/mcp/brand-icons";
+import { CursorInstallButton, VSCodeInstallButton } from "@/components/mcp/install-buttons";
+import { SetupAccordion, SetupItem } from "@/components/mcp/setup-accordion";
+import { McpToolList } from "@/components/mcp/tool-list";
+import { tools } from "@/components/mcp/tools";
+import { CLINE_JSON, MCP_SERVERS_JSON, MCP_URL, VSCODE_JSON, WINDSURF_JSON } from "@/lib/mcp";
+import { createMetadata } from "@/lib/seo";
+
+export const metadata = createMetadata({
+  path: "/mcp",
+  title: "MCP (Beta)",
+  description: "Connect AI assistants like Claude to Domainstack for domain intelligence lookups.",
+});
+
+<PageHeader
+  title="MCP Server"
+  description="Connect AI assistants to Domainstack for instant domain intelligence."
+  icon={<ModelContextProtocolIcon className="text-foreground/70" />}
+  badge={<BetaBadge className="ml-0.5 text-sm font-semibold tracking-normal" />}
+/>
+
+Domainstack exposes a [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that allows AI assistants to look up domain information directly. This enables natural language queries about domains without leaving your conversation.
+
+## Setup
+
+<SetupAccordion>
+
+<SetupItem
+  id="claude-code"
+  icon={<ClaudeIcon />}
+  label="Claude Code"
+  docsUrl="https://code.claude.com/docs/en/mcp"
+  docsLabel="View Claude Code docs"
+>
+
+Run this command to add Domainstack to Claude Code:
+
+<CodeBlock>{`claude mcp add domainstack --transport http ${MCP_URL}`}</CodeBlock>
+
+Or add this snippet to your project's `.mcp.json` file:
+
+<CodeBlock>{MCP_SERVERS_JSON}</CodeBlock>
+
+</SetupItem>
+
+<SetupItem
+  id="claude-desktop"
+  icon={<ClaudeIcon />}
+  label="Claude.ai / Claude Desktop"
+  docsUrl="https://modelcontextprotocol.io/docs/develop/connect-remote-servers"
+  docsLabel="View Claude docs"
+>
+
+Open Claude Desktop and navigate to **Settings → Connectors → Add Custom Connector**. Set the server URL to:
+
+<CodeBlock>{MCP_URL}</CodeBlock>
+
+Alternatively, edit your `claude_desktop_config.json` (on macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`):
+
+<CodeBlock>{MCP_SERVERS_JSON}</CodeBlock>
+
+</SetupItem>
+
+<SetupItem
+  id="cursor"
+  icon={<CursorIcon />}
+  label="Cursor"
+  docsUrl="https://docs.cursor.com/context/mcp"
+  docsLabel="View Cursor docs"
+>
+
+<CursorInstallButton />
+
+Click the button above to install automatically, or add this snippet to `~/.cursor/mcp.json`:
+
+<CodeBlock>{MCP_SERVERS_JSON}</CodeBlock>
+
+</SetupItem>
+
+<SetupItem
+  id="vscode"
+  icon={<VSCodeIcon />}
+  label="VS Code"
+  docsUrl="https://code.visualstudio.com/docs/copilot/chat/mcp-servers"
+  docsLabel="View VS Code docs"
+>
+
+<VSCodeInstallButton />
+
+Click the button above to install automatically, or add this snippet to your VS Code settings:
+
+<CodeBlock>{VSCODE_JSON}</CodeBlock>
+
+</SetupItem>
+
+<SetupItem
+  id="codex"
+  icon={<OpenAIIcon />}
+  label="Codex CLI"
+  docsUrl="https://developers.openai.com/codex/mcp/"
+  docsLabel="View Codex docs"
+>
+
+Run this command to add Domainstack to Codex:
+
+<CodeBlock>{`codex mcp add domainstack --url ${MCP_URL}`}</CodeBlock>
+
+Enable remote MCP client support by adding this to your `~/.codex/config.toml`:
+
+```toml
+[features]
+rmcp_client = true
+```
+
+</SetupItem>
+
+<SetupItem
+  id="gemini"
+  icon={<GoogleGeminiIcon />}
+  label="Gemini CLI"
+  docsUrl="https://geminicli.com/docs/tools/mcp-server/"
+  docsLabel="View Gemini CLI docs"
+>
+
+Run this command to add Domainstack to Gemini CLI:
+
+<CodeBlock>{`gemini mcp add domainstack --transport http ${MCP_URL}`}</CodeBlock>
+
+</SetupItem>
+
+<SetupItem
+  id="windsurf"
+  icon={<WindsurfIcon />}
+  label="Windsurf"
+  docsUrl="https://docs.windsurf.com/windsurf/cascade/mcp"
+  docsLabel="View Windsurf docs"
+>
+
+Add this snippet to your Windsurf MCP config (`~/.windsurf/mcp.json`):
+
+<CodeBlock>{WINDSURF_JSON}</CodeBlock>
+
+</SetupItem>
+
+<SetupItem
+  id="cline"
+  icon={<ClineIcon />}
+  label="Cline"
+  docsUrl="https://docs.cline.bot/mcp/configuring-mcp-servers"
+  docsLabel="View Cline docs"
+>
+
+Open Cline, click the hamburger menu, go to **MCP Servers → Remote Servers**, and add this snippet:
+
+<CodeBlock>{CLINE_JSON}</CodeBlock>
+
+</SetupItem>
+
+</SetupAccordion>
+
+<h2 id="tools">Available Tools</h2>
+
+The MCP server provides {tools.length} tools for domain intelligence:
+
+<McpToolList />
+
+<h2 id="examples">Example Prompts</h2>
+
+Once configured, you can ask questions like:
+
+- “Which hosting provider does stripe.com use?”
+- “When does the github.com domain expire?”
+- “Show me the DNS records for vercel.com”
+- “What SSL certificate does nytimes.com have?”
+- “Give me a full report on linear.app including DNS and hosting.”
+- “Check the SEO metadata for nextjs.org.”
+
+## Rate Limits
+
+The MCP server is dynamically rate limited to meet demand. This applies across all tool calls. If you exceed the limit, requests will return a 429 error with a `Retry-After` header.
+
+The `domain_report` tool is useful for reducing the number of calls when you need multiple data types.
+
+## Data Freshness
+
+Domain data is cached and refreshed automatically. Different data types have different refresh intervals:
+
+- **DNS records** — Refreshed frequently (minutes to hours)
+- **HTTP headers** — Refreshed frequently (minutes to hours)
+- **Registration data** — Refreshed less frequently (hours to days)
+- **SSL certificates** — Refreshed based on expiry proximity
+- **SEO metadata** — Refreshed periodically (hours)
+
+If data appears stale, a background refresh was likely triggered automatically and fresh data will be available soon.

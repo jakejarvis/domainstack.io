@@ -1,9 +1,11 @@
+import createMDX from "@next/mdx";
 import { withPostHogConfig } from "@posthog/nextjs-config";
 import createWithVercelToolbar from "@vercel/toolbar/plugins/next";
 import type { NextConfig } from "next";
 import { withWorkflow } from "workflow/next";
 
 let nextConfig: NextConfig = {
+  pageExtensions: ["ts", "tsx", "md", "mdx"],
   reactCompiler: true,
   cacheComponents: true,
   partialPrefetching: true,
@@ -93,4 +95,13 @@ if (process.env.POSTHOG_API_KEY && process.env.POSTHOG_ENV_ID) {
   });
 }
 
-export default withWorkflow(createWithVercelToolbar()(nextConfig));
+const withVercelToolbar = createWithVercelToolbar();
+
+const withMDX = createMDX({
+  options: {
+    remarkPlugins: ["remark-gfm"],
+    rehypePlugins: ["rehype-slug"],
+  },
+});
+
+export default withWorkflow(withVercelToolbar(withMDX(nextConfig)));
