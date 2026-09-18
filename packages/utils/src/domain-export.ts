@@ -41,6 +41,14 @@ export function serializeDomainExport(domain: string, data: Partial<DomainRespon
     };
   }
 
+  let technologies = null;
+  if (data.technologies) {
+    technologies = data.technologies.technologies.map((tech) => {
+      const { iconDomain: _icon, ...rest } = tech;
+      return rest;
+    });
+  }
+
   let certificates = null;
   if (data.certificates?.certificates) {
     const { certificates: chain, error: _error, ...observation } = data.certificates;
@@ -66,6 +74,7 @@ export function serializeDomainExport(domain: string, data: Partial<DomainRespon
     registration,
     dns,
     hosting,
+    technologies,
     certificates,
     headers,
     seo,

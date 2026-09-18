@@ -13,6 +13,7 @@ describe("serializeDomainExport", () => {
       registration: null,
       dns: null,
       hosting: null,
+      technologies: null,
       certificates: null,
       headers: null,
       seo: null,
@@ -42,6 +43,21 @@ describe("serializeDomainExport", () => {
         hostingProvider: { id: "hp_1", name: "Vercel" },
         emailProvider: { id: "ep_1", name: "Google Workspace" },
         geo: { country: "US", city: "Ashburn" },
+      },
+      technologies: {
+        technologies: [
+          {
+            slug: "wordpress",
+            name: "WordPress",
+            categories: ["cms"],
+            website: "https://wordpress.org",
+            iconDomain: "wordpress.org",
+            version: "6.5",
+            implied: false,
+            detectedBy: ["html"],
+          },
+        ],
+        source: { finalUrl: "https://example.com", status: 200 },
       },
       certificates: {
         certificates: [
@@ -93,6 +109,15 @@ describe("serializeDomainExport", () => {
       hosting: "Vercel",
       email: "Google Workspace",
       geo: { country: "US", city: "Ashburn" },
+    });
+
+    expect(result.technologies).not.toBeNull();
+    expect(result.technologies?.[0]).not.toHaveProperty("iconDomain");
+    expect(result.technologies?.[0]).toMatchObject({
+      slug: "wordpress",
+      name: "WordPress",
+      version: "6.5",
+      implied: false,
     });
 
     expect(result.certificates).toMatchObject({

@@ -15,7 +15,7 @@ interface ReportSectionProps {
   help?: string;
   icon?: React.ElementType;
   slug?: string;
-  accent?: "blue" | "purple" | "green" | "orange" | "pink" | "cyan" | "slate";
+  accent?: "blue" | "purple" | "green" | "orange" | "pink" | "cyan" | "indigo" | "slate";
   isLoading?: boolean;
   /** Optional actions to render in the top-right of the section header */
   headerActions?: React.ReactNode;

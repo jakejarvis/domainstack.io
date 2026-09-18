@@ -76,6 +76,17 @@ vi.mock("@domainstack/core/services/certificates", () => ({
 // Mock catalog
 vi.mock("@domainstack/catalog", () => ({
   getProviderCatalog: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue(null),
+  getTechnologyCatalog: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue(null),
+}));
+
+vi.mock("@domainstack/core/services/technologies", () => ({
+  fetchTechnologies: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue({
+    success: true,
+    data: {
+      technologies: [],
+      source: { finalUrl: "https://example.com", status: 200 },
+    },
+  }),
 }));
 
 // Now import modules that depend on the db
@@ -88,6 +99,7 @@ const {
   httpHeaders,
   providers,
   registrations,
+  technologies,
 } = await import("@domainstack/db/schema");
 const { start } = await import("workflow/api");
 const { fetchCertificates } = await import("@domainstack/core/services/certificates");
@@ -95,6 +107,7 @@ const { fetchDns } = await import("@domainstack/core/services/dns");
 const { fetchFavicon } = await import("@domainstack/core/services/favicon");
 const { fetchHeaders } = await import("@domainstack/core/services/headers");
 const { fetchRegistration } = await import("@domainstack/core/services/registration");
+const { fetchTechnologies } = await import("@domainstack/core/services/technologies");
 const { getRateLimiter } = await import("@domainstack/redis/ratelimit");
 const { createCaller } = await import("../router");
 const { eq } = await import("@domainstack/db/drizzle");
@@ -714,6 +727,64 @@ describe("domain router", () => {
         data: freshData,
       });
       expect(fetchCertificates).toHaveBeenCalledWith(TEST_DOMAIN);
+    });
+  });
+
+  describe("getTechnologies", () => {
+    async function clearTechnologiesCache() {
+      await db.delete(technologies).where(eq(technologies.domainId, TEST_DOMAIN_ID));
+    }
+
+    beforeEach(async () => {
+      await clearTechnologiesCache();
+      vi.mocked(fetchTechnologies).mockResolvedValue({
+        success: true,
+        data: {
+          technologies: [],
+          source: { finalUrl: "https://example.com", status: 200 },
+        },
+      });
+    });
+
+    it("returns cached data without calling the service or consuming rate limit", async () => {
+      const caller = createTestCaller();
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + 60 * 60 * 1000);
+
+      await db.insert(technologies).values({
+        domainId: TEST_DOMAIN_ID,
+        detected: [],
+        sourceFinalUrl: "https://example.com",
+        sourceStatus: 200,
+        error: null,
+        fetchedAt: now,
+        expiresAt,
+      });
+
+      const result = await caller.domain.getTechnologies({ domain: TEST_DOMAIN });
+
+      expect(result).toMatchObject({ success: true, cached: true });
+      expect(fetchTechnologies).not.toHaveBeenCalled();
+      expect(getRateLimiter).not.toHaveBeenCalled();
+    });
+
+    it("fetches fresh data when no cache exists", async () => {
+      const caller = createTestCaller();
+
+      const result = await caller.domain.getTechnologies({ domain: TEST_DOMAIN });
+
+      expect(result).toMatchObject({ success: true, cached: false });
+      expect(fetchTechnologies).toHaveBeenCalledWith(TEST_DOMAIN);
+      expect(getRateLimiter).toHaveBeenCalled();
+    });
+
+    it("returns a fetch_failed error when the service throws", async () => {
+      const caller = createTestCaller();
+      vi.mocked(fetchTechnologies).mockRejectedValue(new Error("boom"));
+
+      const result = await caller.domain.getTechnologies({ domain: TEST_DOMAIN });
+
+      expect(result).toMatchObject({ success: false, cached: false, error: "fetch_failed" });
     });
   });
 });

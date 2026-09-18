@@ -21,6 +21,8 @@ import { SectionErrorBoundary } from "@/components/domain/report-section-error-b
 import { SectionFailedAlert } from "@/components/domain/section-failed-alert";
 import { SeoSection } from "@/components/domain/seo/seo-section";
 import { SeoSectionSkeleton } from "@/components/domain/seo/seo-section-skeleton";
+import { TechnologiesSection } from "@/components/domain/technologies/technologies-section";
+import { TechnologiesSectionSkeleton } from "@/components/domain/technologies/technologies-section-skeleton";
 import { DomainUnregisteredCard } from "@/components/domain/unregistered-card";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSectionTracking } from "@/hooks/use-section-tracking";
@@ -48,6 +50,7 @@ function AllSkeletonsExceptRegistration() {
   return (
     <>
       <HostingSectionSkeleton />
+      <TechnologiesSectionSkeleton />
       <DnsSectionSkeleton />
       <CertificatesSectionSkeleton />
       <HeadersSectionSkeleton />
@@ -92,6 +95,18 @@ function SuspendedHostingSection({ domain }: { domain: string }) {
     return <SectionFailedAlert section={sections.hosting} error={data.error} />;
   }
   return <HostingSection domain={domain} data={data.data} />;
+}
+
+function SuspendedTechnologiesSection({ domain }: { domain: string }) {
+  const trpc = useTRPC();
+  const { data } = useSuspenseQuery(
+    trpc.domain.getTechnologies.queryOptions({ domain }, staticQueryOptions),
+  );
+
+  if (!data.success) {
+    return <SectionFailedAlert section={sections.technologies} error={data.error} />;
+  }
+  return <TechnologiesSection domain={domain} data={data.data} />;
 }
 
 function SuspendedDnsSection({ domain }: { domain: string }) {
@@ -261,6 +276,12 @@ function RegisteredReportSections({ domain }: { domain: string }) {
       <SectionErrorBoundary sectionName="Hosting">
         <Suspense fallback={<HostingSectionSkeleton />}>
           <SuspendedHostingSection domain={domain} />
+        </Suspense>
+      </SectionErrorBoundary>
+
+      <SectionErrorBoundary sectionName="Technology">
+        <Suspense fallback={<TechnologiesSectionSkeleton />}>
+          <SuspendedTechnologiesSection domain={domain} />
         </Suspense>
       </SectionErrorBoundary>
 

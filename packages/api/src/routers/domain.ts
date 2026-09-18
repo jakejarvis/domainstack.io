@@ -9,6 +9,7 @@ import { fetchHeaders, getHttpStatusMessage } from "@domainstack/core/services/h
 import { fetchHosting } from "@domainstack/core/services/hosting";
 import { fetchRegistration } from "@domainstack/core/services/registration";
 import { fetchSeo } from "@domainstack/core/services/seo";
+import { fetchTechnologies } from "@domainstack/core/services/technologies";
 import { createLogger } from "@domainstack/logger";
 import type { RateLimitConfig } from "@domainstack/redis/ratelimit";
 import { toRegistrableDomain } from "@domainstack/utils/domain";
@@ -24,6 +25,7 @@ const LOOKUP_RATE_LIMITS = {
   getRegistration: { requests: 30, window: "1 m" },
   getDnsRecords: { requests: 60, window: "1 m" },
   getHosting: { requests: 30, window: "1 m" },
+  getTechnologies: { requests: 30, window: "1 m" },
   getCertificates: { requests: 30, window: "1 m" },
   getHeaders: { requests: 60, window: "1 m" },
   getSeo: { requests: 30, window: "1 m" },
@@ -159,6 +161,37 @@ export const domainRouter = createTRPCRouter({
           data: null,
           error: "fetch_failed",
         };
+      }
+    }),
+
+  /**
+   * Get detected technologies for a domain.
+   * Matches a curated fingerprint catalog against the page HTML, scripts,
+   * headers, cookies, and DNS TXT records.
+   */
+  getTechnologies: publicProcedure
+    .input(DomainInputSchema)
+    .use(withDomainAccessUpdate)
+    .query(async ({ ctx, input, path }) => {
+      const { getCachedTechnologies } = await import("@domainstack/db/queries/technologies");
+
+      // Check cache first — cached reads must not consume the rate-limit budget
+      const cached = await getCachedTechnologies(input.domain);
+      if (cached.data && !cached.stale) {
+        return { success: true, cached: true, data: cached.data };
+      }
+
+      await rateLimit({ ctx, path, config: LOOKUP_RATE_LIMITS.getTechnologies });
+
+      try {
+        const result = await fetchTechnologies(input.domain);
+        if (!result.success) {
+          return { success: false, cached: false, data: null, error: result.error };
+        }
+        return { success: true, cached: false, data: result.data };
+      } catch (err) {
+        logFlex(input.domain, "technologies", err);
+        return { success: false, cached: false, data: null, error: "fetch_failed" };
       }
     }),
 

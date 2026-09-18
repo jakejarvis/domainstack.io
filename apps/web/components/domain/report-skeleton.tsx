@@ -4,6 +4,7 @@ import { HeadersSectionSkeleton } from "@/components/domain/headers/headers-sect
 import { HostingSectionSkeleton } from "@/components/domain/hosting/hosting-section-skeleton";
 import { RegistrationSectionSkeleton } from "@/components/domain/registration/registration-section-skeleton";
 import { SeoSectionSkeleton } from "@/components/domain/seo/seo-section-skeleton";
+import { TechnologiesSectionSkeleton } from "@/components/domain/technologies/technologies-section-skeleton";
 import { Skeleton } from "@domainstack/ui/skeleton";
 import { cn } from "@domainstack/ui/utils";
 
@@ -69,6 +70,7 @@ function SectionNavSkeleton() {
           {[
             { key: "registration", w: 117 },
             { key: "hosting", w: 139 },
+            { key: "technologies", w: 130 },
             { key: "dns", w: 124 },
             { key: "certificates", w: 142 },
             { key: "headers", w: 129 },
@@ -91,6 +93,7 @@ function SectionsSkeleton() {
     <div className="space-y-4">
       <RegistrationSectionSkeleton />
       <HostingSectionSkeleton />
+      <TechnologiesSectionSkeleton />
       <DnsSectionSkeleton />
       <CertificatesSectionSkeleton />
       <HeadersSectionSkeleton />

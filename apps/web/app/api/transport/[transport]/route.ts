@@ -15,6 +15,7 @@ import type {
   HostingResponse,
   RegistrationResponse,
   SeoResponse,
+  TechnologiesResponse,
 } from "@domainstack/types";
 
 /** Data shape returned by any `domain_report` section fetcher. */
@@ -22,6 +23,7 @@ type SectionData =
   | RegistrationResponse
   | DnsRecordsResponse
   | HostingResponse
+  | TechnologiesResponse
   | CertificatesResponse
   | HeadersResponse
   | SeoResponse;
@@ -148,6 +150,24 @@ function createMcpHandlerWithContext(request: Request) {
       );
 
       // ─────────────────────────────────────────────────────────────────────
+      // Technologies Detection Tool
+      // ─────────────────────────────────────────────────────────────────────
+      server.registerTool(
+        "domain_technologies",
+        {
+          title: "Technologies",
+          description:
+            "Detect the technologies a site is built with — CMS, framework, web server, analytics, payment and marketing scripts — by fingerprinting its HTML, scripts, response headers, cookies, and DNS records. Each result may include a version and which signals it was detected from.",
+          inputSchema: domainSchema,
+          annotations: { readOnlyHint: true, idempotentHint: true },
+        },
+        async ({ domain }) => {
+          const result = await trpc.domain.getTechnologies({ domain });
+          return formatToolResponse(result);
+        },
+      );
+
+      // ─────────────────────────────────────────────────────────────────────
       // SSL Certificates Tool
       // ─────────────────────────────────────────────────────────────────────
       server.registerTool(
@@ -218,7 +238,7 @@ function createMcpHandlerWithContext(request: Request) {
         {
           title: "Full Report",
           description:
-            "Get a comprehensive domain report combining multiple data sources. Returns registration, DNS, hosting, certificates, headers, and SEO data in a single call. Use the sections parameter to request only specific data.",
+            "Get a comprehensive domain report combining multiple data sources. Returns registration, hosting, technologies, DNS, certificates, headers, and SEO data in a single call. Use the sections parameter to request only specific data.",
           inputSchema: domainSchema.extend({
             sections: sectionsSchema,
           }),
@@ -240,6 +260,7 @@ function createMcpHandlerWithContext(request: Request) {
             registration: () => trpc.domain.getRegistration({ domain }),
             dns: () => trpc.domain.getDnsRecords({ domain }),
             hosting: () => trpc.domain.getHosting({ domain }),
+            technologies: () => trpc.domain.getTechnologies({ domain }),
             certificates: () => trpc.domain.getCertificates({ domain }),
             headers: () => trpc.domain.getHeaders({ domain }),
             seo: () => trpc.domain.getSeo({ domain }),

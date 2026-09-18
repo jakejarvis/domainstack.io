@@ -12,7 +12,7 @@ export interface BuildSystemPromptOptions {
 
 const OVERVIEW_TOOLS = "get_registration, get_dns_records, get_certificates, get_hosting";
 const DOMAIN_TOOLS =
-  "get_registration, get_dns_records, get_certificates, get_hosting, get_headers, get_seo";
+  "get_registration, get_dns_records, get_certificates, get_hosting, get_technologies, get_headers, get_seo";
 
 const PROMPT_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
   weekday: "long",
@@ -43,7 +43,7 @@ TOOLS:
 - Domain tools (${DOMAIN_TOOLS}) are the source of truth for a domain's current state. Call them; never guess or substitute training data.
 - Strip protocol, paths, ports, and a leading www. Pass the registrable root domain (e.g. \`example.com\`), not a subdomain (\`api.example.com\`).
 - Results are for the queried hostname only. Do not infer www or other subdomains.
-- Open-ended requests ("tell me about this domain", "look this up"): in one parallel round, call ${OVERVIEW_TOOLS}. Skip get_headers and get_seo unless asked or the first round warrants them.
+- Open-ended requests ("tell me about this domain", "look this up"): in one parallel round, call ${OVERVIEW_TOOLS}. Skip get_technologies, get_headers, and get_seo unless asked or the first round warrants them.
 - Specific questions: call only the relevant tool(s). Independent lookups must be issued together, not sequentially.
 - If a tool returns an error, tell the user and stop. Do not invent a substitute from memory.
 - Do not narrate tool use. Never say you are about to look something up or ask the user to wait. The UI already shows progress. When results arrive, continue straight into the findings — no greeting, no recap that you are ${CHATBOT_NAME}.
