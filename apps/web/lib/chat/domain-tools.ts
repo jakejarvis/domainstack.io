@@ -21,7 +21,7 @@ export const DOMAIN_TOOL_DEFS = [
     section: "dns",
     status: "Fetching DNS records",
     description:
-      "Get DNS records for a domain including A, AAAA, CNAME, MX, TXT, NS, and SOA records. Use this tool when users ask about DNS configuration, IP addresses, mail servers, or nameservers.",
+      "Get DNS records for a domain including A, AAAA, MX, TXT, and NS records. Use this tool when users ask about DNS configuration, IP addresses, mail servers, or nameservers.",
   },
   {
     name: "get_hosting",

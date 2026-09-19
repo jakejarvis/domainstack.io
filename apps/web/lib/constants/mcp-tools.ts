@@ -16,8 +16,7 @@ export const MCP_SECTION_TOOLS = [
     section: "dns",
     name: "domain_dns",
     title: "DNS Records",
-    description:
-      "Get DNS records for a domain including A, AAAA, CNAME, MX, TXT, NS, and SOA records",
+    description: "Get DNS records for a domain including A, AAAA, MX, TXT, and NS records",
   },
   {
     section: "hosting",
