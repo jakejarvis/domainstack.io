@@ -5,7 +5,7 @@ import type { NextConfig } from "next";
 import { withWorkflow } from "workflow/next";
 
 let nextConfig: NextConfig = {
-  pageExtensions: ["ts", "tsx", "md", "mdx"],
+  pageExtensions: ["ts", "tsx", "js", "jsx", "md", "mdx"],
   reactCompiler: true,
   cacheComponents: true,
   partialPrefetching: true,
