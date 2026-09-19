@@ -34,7 +34,7 @@
     "@types/node": "catalog:",
     "@types/pg": "^8.23.1",
     "@vercel/functions": "catalog:",
-    "dotenv": "^17.4.2",
+    "dotenv": "^18.0.0",
     "drizzle-kit": "^0.31.10"
   },
   "peerDependencies": {

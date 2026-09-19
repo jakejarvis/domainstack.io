@@ -15,7 +15,7 @@ import { type ModelCallStreamPart, WorkflowAgent } from "@ai-sdk/workflow";
 import { convertToModelMessages, isStepCount, type UIMessage } from "ai";
 import { getWorkflowMetadata, getWritable } from "workflow";
 
-import { MAX_OUTPUT_TOKENS, MAX_TOOL_STEPS } from "@domainstack/constants";
+import { CHAT_RUN_TIMEOUT_MS, MAX_OUTPUT_TOKENS, MAX_TOOL_STEPS } from "@domainstack/constants";
 
 import { buildSystemPromptStep } from "./system-prompt";
 import { captureChatTelemetryStep, toChatTelemetryPayload } from "./telemetry";
@@ -77,6 +77,7 @@ export async function chatWorkflow(input: ChatWorkflowInput) {
     writable,
     stopWhen: isStepCount(MAX_TOOL_STEPS),
     maxOutputTokens: MAX_OUTPUT_TOKENS,
+    timeout: CHAT_RUN_TIMEOUT_MS,
     onError: async ({ error }) => {
       await logChatAgentErrorStep({
         name: error instanceof Error ? error.name : "Error",

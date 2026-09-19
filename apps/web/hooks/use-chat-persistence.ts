@@ -38,10 +38,12 @@ export function useChatPersistence({ messages, status }: UseChatPersistenceOptio
 
   const prevStatusRef = useRef(status);
   useEffect(() => {
-    const wasStreaming = prevStatusRef.current === "streaming";
+    // "submitted" counts too: aborting before the first chunk goes straight
+    // back to "ready" and would otherwise leave a stale runId to resume.
+    const wasBusy = prevStatusRef.current === "streaming" || prevStatusRef.current === "submitted";
     prevStatusRef.current = status;
 
-    if (wasStreaming && (status === "ready" || status === "error") && runId) {
+    if (wasBusy && (status === "ready" || status === "error") && runId) {
       setRunId(null);
     }
   }, [status, runId, setRunId]);

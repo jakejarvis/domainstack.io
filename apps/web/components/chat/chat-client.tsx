@@ -20,6 +20,7 @@ import { safeDecodeURIComponent } from "@/lib/safe-parse";
 import { useChatHydrated, useChatStore } from "@/lib/stores/chat-store";
 import { type ChatMode, usePreferencesStore } from "@/lib/stores/preferences-store";
 import { useTRPCClient } from "@/lib/trpc/client";
+import { CHAT_STALL_TIMEOUT_MS } from "@domainstack/constants";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@domainstack/ui/drawer";
 
 import { ChatHeaderActions } from "./chat-header-actions";
@@ -201,16 +202,42 @@ function CloudChatSession({
     status: chat.status,
   });
 
+  const { stop, status } = chat;
+  const isBusy = status === "submitted" || status === "streaming";
+
+  // Watchdog: abort if no chunk arrives for CHAT_STALL_TIMEOUT_MS. Each chunk
+  // produces a new `messages` array, which restarts the timer.
+  const [stalled, setStalled] = useState(false);
+  useEffect(() => {
+    if (!isBusy) return;
+    const timer = setTimeout(() => {
+      void stop();
+      setStalled(true);
+      analytics.trackException(new Error("Chat stream timed out"), {
+        context: "chat-stall",
+        domain: domainRef.current,
+      });
+    }, CHAT_STALL_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- messages is a restart trigger, not a value read by the effect
+  }, [isBusy, stop, chat.messages]);
+
   const clearMessages = useCallback(() => {
+    // Abort the in-flight request first: otherwise the transport keeps
+    // streaming (or reconnecting) into the message list we're about to empty,
+    // and status stays "submitted"/"streaming".
+    void stop();
     chat.setMessages([]);
     clearSession();
+    setStalled(false);
     onActiveChange(false);
-  }, [chat, clearSession, onActiveChange]);
+  }, [chat, stop, clearSession, onActiveChange]);
 
   const sendMessage = useCallback(
     (msgParams: { text: string }) => {
       const text = msgParams.text.trim();
       if (!text) return;
+      setStalled(false);
       void chat.sendMessage({ text });
       onActiveChange(true);
     },
@@ -218,14 +245,21 @@ function CloudChatSession({
   );
 
   const retry = useCallback(() => {
+    setStalled(false);
     void chat.regenerate();
   }, [chat]);
 
-  const error =
-    chat.status === "submitted" || chat.status === "streaming"
-      ? null
-      : chat.error
-        ? getUserFriendlyError(chat.error)
+  const clearError = useCallback(() => {
+    setStalled(false);
+    chat.clearError();
+  }, [chat]);
+
+  const error = isBusy
+    ? null
+    : chat.error
+      ? getUserFriendlyError(chat.error)
+      : stalled
+        ? getUserFriendlyError(new Error("Chat stream timed out"))
         : null;
 
   return (
@@ -235,7 +269,7 @@ function CloudChatSession({
         sendMessage,
         clearMessages,
         retry,
-        clearError: chat.clearError,
+        clearError,
         status: chat.status,
         error,
       }}
@@ -274,10 +308,12 @@ function LocalChatSession({
     },
   });
 
+  const { stop: stopLocal } = chat;
   const clearMessages = useCallback(() => {
+    stopLocal();
     chat.setMessages([]);
     onActiveChange(false);
-  }, [chat, onActiveChange]);
+  }, [chat, stopLocal, onActiveChange]);
 
   const sendMessage = useCallback(
     (msgParams: { text: string }) => {

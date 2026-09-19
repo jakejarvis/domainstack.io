@@ -78,6 +78,25 @@ export const MAX_CHAT_REQUEST_BYTES = 512_000;
 export const MAX_TOOL_STEPS = 5;
 
 /**
+ * Total time budget for one chat run. Inside a workflow this is only checked
+ * between steps, so it bounds multi-step runs but cannot interrupt a hung
+ * model call or tool (see CHAT_TOOL_TIMEOUT_MS and CHAT_STALL_TIMEOUT_MS).
+ */
+export const CHAT_RUN_TIMEOUT_MS = 90_000;
+
+/**
+ * Maximum time a single domain lookup tool may run before it reports a
+ * timeout to the model instead of blocking the run.
+ */
+export const CHAT_TOOL_TIMEOUT_MS = 30_000;
+
+/**
+ * Maximum time the client waits without receiving any stream chunk before it
+ * aborts the request and offers a retry.
+ */
+export const CHAT_STALL_TIMEOUT_MS = 45_000;
+
+/**
  * Maximum age of a chat history in milliseconds (loosely enforced on the client).
  */
 export const MAX_CLIENT_CHAT_HISTORY_AGE_MS = 24 * 60 * 60 * 1000; // 1 day

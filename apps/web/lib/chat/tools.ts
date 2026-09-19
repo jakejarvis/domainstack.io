@@ -20,6 +20,7 @@ import {
   type DomainToolResult,
 } from "@/lib/chat/domain-tools";
 import { isExpectedTrpcError } from "@/lib/trpc/errors";
+import { CHAT_TOOL_TIMEOUT_MS } from "@domainstack/constants";
 
 interface ToolContext {
   ip: string | null;
@@ -37,12 +38,36 @@ type DomainToolSet = {
   >;
 };
 
+const TOOL_TIMEOUT_MESSAGE = "The lookup timed out. Try again in a moment.";
+
+/** Resolves to `null` if `promise` has not settled within `ms`. */
+async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<null>((resolve) => {
+        timer = setTimeout(() => resolve(null), ms);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function domainLookupStep(procedure: DomainToolProcedure, domain: string, ctx: ToolContext) {
   "use step";
   try {
     const { createCaller } = await import("@domainstack/api");
     const trpc = createCaller({ req: undefined, ip: ctx.ip, session: null });
-    const result = await trpc.domain[procedure]({ domain });
+    const lookup = (async () => trpc.domain[procedure]({ domain }))();
+    // A hung lookup would otherwise block the whole run; the abandoned promise
+    // is left to settle on its own.
+    void lookup.catch(() => undefined);
+    const result = await withTimeout(lookup, CHAT_TOOL_TIMEOUT_MS);
+    if (!result) {
+      return { error: TOOL_TIMEOUT_MESSAGE };
+    }
     if (!result.success) {
       return { error: result.error };
     }

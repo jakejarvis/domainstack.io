@@ -32,6 +32,11 @@ export function getUserFriendlyError(error: Error): string {
     return "Too many requests. Please wait a moment and try again.";
   }
 
+  // Watchdog/agent timeouts (see CHAT_STALL_TIMEOUT_MS, CHAT_RUN_TIMEOUT_MS)
+  if (message.includes("timed out") || error.name === "TimeoutError") {
+    return "This is taking longer than expected. Please try again.";
+  }
+
   // Check for server errors (5xx status codes from "Failed to fetch chat: 5xx")
   if (message.includes("500") || message.includes("internal server")) {
     return "Something went wrong on our end. Please try again.";

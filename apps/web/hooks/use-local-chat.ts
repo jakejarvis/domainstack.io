@@ -12,7 +12,12 @@ import {
 } from "ai";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { MAX_OUTPUT_TOKENS, MAX_TOOL_STEPS } from "@domainstack/constants";
+import {
+  CHAT_RUN_TIMEOUT_MS,
+  CHAT_STALL_TIMEOUT_MS,
+  MAX_OUTPUT_TOKENS,
+  MAX_TOOL_STEPS,
+} from "@domainstack/constants";
 
 /**
  * Chat status matching the useChat hook from @ai-sdk/react.
@@ -45,6 +50,8 @@ export interface UseLocalChatReturn {
   clearError: () => void;
   /** Set messages directly (for persistence restore) */
   setMessages: (messages: UIMessage[]) => void;
+  /** Abort the in-flight turn, if any */
+  stop: () => void;
 }
 
 /**
@@ -102,7 +109,10 @@ export function useLocalChat({
       setError(null);
 
       abortControllerRef.current?.abort();
-      abortControllerRef.current = new AbortController();
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+      // A stopped turn may settle after a newer one has started.
+      const isCurrent = () => abortControllerRef.current === controller;
 
       const assistantMessageId = generateId();
       const assistantMessage: UIMessage = {
@@ -129,7 +139,8 @@ export function useLocalChat({
         });
         const result = await agent.stream({
           messages: modelMessages,
-          abortSignal: abortControllerRef.current.signal,
+          abortSignal: controller.signal,
+          timeout: { totalMs: CHAT_RUN_TIMEOUT_MS, chunkMs: CHAT_STALL_TIMEOUT_MS },
         });
 
         for await (const uiMessage of readUIMessageStream({
@@ -142,24 +153,39 @@ export function useLocalChat({
           );
         }
 
-        setStatus("ready");
+        if (isCurrent()) setStatus("ready");
       } catch (err) {
-        if (err instanceof Error && err.name === "AbortError") {
+        if (!isCurrent()) return;
+        // An abort we didn't trigger ourselves came from the SDK's timeout.
+        const abortedByUs = controller.signal.aborted;
+        if (abortedByUs && err instanceof Error && err.name === "AbortError") {
           setStatus("ready");
           return;
         }
 
-        const nextError = err instanceof Error ? err : new Error("Unknown error");
+        const nextError =
+          err instanceof Error && err.name === "AbortError"
+            ? new Error("Local chat timed out")
+            : err instanceof Error
+              ? err
+              : new Error("Unknown error");
         setError(nextError);
         setStatus("error");
         onError?.(nextError);
         setMessages((prev) => prev.filter((msg) => msg.id !== assistantMessageId));
       } finally {
-        processingRef.current = false;
+        if (isCurrent()) processingRef.current = false;
       }
     },
     [model, tools, systemPrompt, onError],
   );
+
+  const stop = useCallback(() => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    processingRef.current = false;
+    setStatus((prev) => (prev === "submitted" || prev === "streaming" ? "ready" : prev));
+  }, []);
 
   const sendMessage = useCallback(
     (params: { text: string }) => {
@@ -196,5 +222,6 @@ export function useLocalChat({
     regenerate,
     clearError,
     setMessages,
+    stop,
   };
 }

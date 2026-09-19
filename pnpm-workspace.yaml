@@ -11,9 +11,9 @@ catalog:
   '@opentelemetry/sdk-metrics': ^2.11.0
   '@opentelemetry/sdk-trace-base': ^2.11.0
   '@tabler/icons-react': ^3.46.0
-  '@trpc/client': ^11.18.0
-  '@trpc/server': ^11.18.0
-  '@trpc/tanstack-react-query': ^11.18.0
+  '@trpc/client': ^11.19.0
+  '@trpc/server': ^11.19.0
+  '@trpc/tanstack-react-query': ^11.19.0
   '@types/node': ^24.13.5
   '@types/react': 19.3.0
   '@types/react-dom': 19.3.0
