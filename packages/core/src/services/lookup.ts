@@ -1,12 +1,12 @@
 /**
- * Domain section lookup — the one place that decides "cached, or rate-limit
- * and fetch" for a report section.
+ * Domain lookups — the one place that decides "cached, or rate-limit and fetch".
  *
- * Shared by the tRPC domain router and the chat tools. Callers pass an
- * already-normalized registrable domain and an identifier to meter (user id or
- * IP); everything else — cache read, per-section rate limit, fetch, error
- * normalization — lives here. The warm-domains workflow uses {@link fetchSection}
- * to refresh a section regardless of cache state.
+ * Shared by the tRPC routers and the chat tools. Callers pass an
+ * already-normalized identifier to look up and an identifier to meter (user id
+ * or IP); everything else — cache read, rate limit, fetch, error normalization,
+ * and recording that a domain was looked up — lives here. The warm-domains
+ * workflow uses {@link fetchSection} to refresh a section regardless of cache
+ * state.
  *
  * Every import of a db query or service is dynamic: this module is reached from
  * workflow code, where Node-only dependencies must stay out of the sandbox bundle.
@@ -19,14 +19,16 @@ import type { RateLimitConfig } from "@domainstack/redis/ratelimit";
 import type {
   CertificatesResponse,
   DnsRecordsResponse,
+  FaviconResponse,
   HeadersResponse,
   HostingResponse,
+  ProviderLogoResponse,
   RegistrationResponse,
   SeoResponse,
 } from "@domainstack/types";
 
 import type { CertificatesError } from "./certificates";
-import { logLookupFailure } from "./fetch-errors";
+import { RemoteDataUnavailableError } from "./fetch-errors";
 import type { HeadersError } from "./headers";
 import type { RegistrationError } from "./registration";
 import type { SeoError } from "./seo";
@@ -50,13 +52,13 @@ export type LookupError =
   | SeoError
   | "fetch_failed";
 
-export type LookupResult<S extends Section> =
-  | { success: true; cached: boolean; data: SectionDataMap[S] }
+export type LookupOutcome<T> =
+  | { success: true; cached: boolean; data: T }
   | { success: false; error: LookupError };
 
-type FetchOutcome<S extends Section> =
-  | { success: true; data: SectionDataMap[S] }
-  | { success: false; error: LookupError };
+export type LookupResult<S extends Section> = LookupOutcome<SectionDataMap[S]>;
+
+type FetchOutcome<T> = { success: true; data: T } | { success: false; error: LookupError };
 
 /** The slice of the db layer's `CacheResult` this module reads. */
 interface Cached<T> {
@@ -69,7 +71,7 @@ interface SectionSpec<S extends Section> {
   limit: RateLimitConfig;
   getCached: (domain: string) => Promise<Cached<SectionDataMap[S]>>;
   /** Fetch fresh data and persist it. Services either return a typed failure or throw. */
-  fetch: (domain: string) => Promise<FetchOutcome<S>>;
+  fetch: (domain: string) => Promise<FetchOutcome<SectionDataMap[S]>>;
 }
 
 const SECTIONS: { [S in Section]: SectionSpec<S> } = {
@@ -128,39 +130,119 @@ const SECTIONS: { [S in Section]: SectionSpec<S> } = {
 export function fetchSection<S extends Section>(
   section: S,
   domain: string,
-): Promise<FetchOutcome<S>> {
+): Promise<FetchOutcome<SectionDataMap[S]>> {
   return SECTIONS[section].fetch(domain);
 }
 
-/**
- * Look up one report section for a registrable domain.
- *
- * Fresh cache hits are returned without consuming the rate limit. Otherwise the
- * section's limit is enforced for `identifier` (fail-open when it's missing) and
- * fresh data is fetched. Failures come back as `{ success: false, error }`;
- * only rate-limit rejections throw (`RateLimitError` from `@domainstack/redis/enforce`).
- */
-export async function lookupSection<S extends Section>(
-  section: S,
-  domain: string,
-  { identifier }: { identifier?: string | null } = {},
-): Promise<LookupResult<S>> {
-  const { limit, getCached, fetch } = SECTIONS[section];
+interface LookupOptions {
+  /** Who to meter (user id or IP). Unmetered when missing (fail-open). */
+  identifier?: string | null;
+}
 
-  const cached = await getCached(domain);
+/**
+ * Serve `cached` when it's fresh; otherwise enforce the rate limit and fetch.
+ *
+ * A fresh hit never consumes the limit. Fetch failures come back as
+ * `{ success: false, error }`; only rate-limit rejections throw
+ * (`RateLimitError` from `@domainstack/redis/enforce`).
+ */
+async function resolveLookup<T>({
+  cached,
+  meter,
+  fetch,
+  log,
+}: {
+  cached: { data: T | null; stale: boolean };
+  meter: { key: string; identifier?: string | null; config: RateLimitConfig };
+  fetch: () => Promise<FetchOutcome<T>>;
+  log: { label: string; fields: Record<string, unknown>; unavailableLevel?: "warn" | "debug" };
+}): Promise<LookupOutcome<T>> {
   if (cached.data && !cached.stale) {
     return { success: true, cached: true, data: cached.data };
   }
 
-  await enforceRateLimit({ key: `lookup.${section}`, identifier, config: limit });
+  await enforceRateLimit(meter);
 
   try {
-    const result = await fetch(domain);
+    const result = await fetch();
     return result.success
       ? { success: true, cached: false, data: result.data }
       : { success: false, error: result.error };
   } catch (err) {
-    logLookupFailure(logger, { domain, section, err }, section);
+    // A remote that can't supply data is routine; anything else is a bug.
+    if (err instanceof RemoteDataUnavailableError) {
+      logger[log.unavailableLevel ?? "warn"]({ ...log.fields, err }, `${log.label} unavailable`);
+    } else {
+      logger.error({ ...log.fields, err }, `${log.label} failed unexpectedly`);
+    }
     return { success: false, error: "fetch_failed" };
   }
+}
+
+/**
+ * Look up one report section for a registrable domain, and record that the
+ * domain was accessed (it feeds the warm-domains recency window).
+ */
+export async function lookupSection<S extends Section>(
+  section: S,
+  domain: string,
+  { identifier }: LookupOptions = {},
+): Promise<LookupResult<S>> {
+  const { limit, getCached, fetch } = SECTIONS[section];
+
+  // Fire-and-forget: `updateLastAccessed` never throws, and `waitUntil` keeps
+  // the write alive after the response on Vercel.
+  const { waitUntil } = await import("@vercel/functions");
+  const { updateLastAccessed } = await import("@domainstack/db/queries/domains");
+  waitUntil(updateLastAccessed(domain));
+
+  return resolveLookup({
+    cached: await getCached(domain),
+    meter: { key: `lookup.${section}`, identifier, config: limit },
+    fetch: () => fetch(domain),
+    log: { label: section, fields: { domain, section } },
+  });
+}
+
+/** Look up a domain's favicon. Unlike sections, this does not record access. */
+export async function lookupFavicon(
+  domain: string,
+  { identifier }: LookupOptions = {},
+): Promise<LookupOutcome<FaviconResponse>> {
+  const { getFavicon } = await import("@domainstack/db/queries/favicons");
+  const { fetchFavicon } = await import("./favicon");
+
+  return resolveLookup({
+    cached: await getFavicon(domain),
+    meter: { key: "lookup.favicon", identifier, config: { requests: 100, window: "1 m" } },
+    fetch: () => fetchFavicon(domain),
+    log: { label: "favicon", fields: { domain }, unavailableLevel: "debug" },
+  });
+}
+
+/** Look up a provider's logo. Fails without metering when the provider has no domain. */
+export async function lookupProviderLogo(
+  providerId: string,
+  { identifier }: LookupOptions = {},
+): Promise<LookupOutcome<ProviderLogoResponse>> {
+  const { getProviderById } = await import("@domainstack/db/queries/providers");
+  const { getProviderLogo } = await import("@domainstack/db/queries/provider-logos");
+  const { fetchProviderLogo } = await import("./provider-logo");
+
+  const [provider, cached] = await Promise.all([
+    getProviderById(providerId),
+    getProviderLogo(providerId),
+  ]);
+  const providerDomain = provider?.domain;
+  if (!providerDomain) {
+    // Missing icons are expected, so this bails before touching the rate limit.
+    return { success: false, error: "fetch_failed" };
+  }
+
+  return resolveLookup({
+    cached,
+    meter: { key: "lookup.providerLogo", identifier, config: { requests: 60, window: "1 m" } },
+    fetch: () => fetchProviderLogo(providerId, providerDomain),
+    log: { label: "provider logo", fields: { providerId }, unavailableLevel: "debug" },
+  });
 }

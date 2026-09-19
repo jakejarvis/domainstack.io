@@ -10,6 +10,14 @@ import {
 import type { Context } from "./context";
 
 /**
+ * Who a call is metered as: the signed-in user's id, else the client IP.
+ * Missing means the call is unmetered (fail-open).
+ */
+export function rateLimitIdentifier(ctx: Context): string | null {
+  return ctx.session?.user?.id ?? ctx.ip;
+}
+
+/**
  * Enforce rate limiting for a procedure call.
  *
  * Use this from a resolver when the check must run after other work
@@ -42,7 +50,7 @@ export async function rateLimit({
     enforceRateLimit({
       // Each procedure has its own rate limit bucket, keyed by its path
       key: path,
-      identifier: ctx.session?.user?.id ?? ctx.ip,
+      identifier: rateLimitIdentifier(ctx),
       config,
     }),
   );

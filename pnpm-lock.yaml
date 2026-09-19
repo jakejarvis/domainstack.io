@@ -555,6 +555,9 @@ importers:
       '@readme/http-status-codes':
         specifier: ^9.0.6
         version: 9.0.6
+      '@vercel/functions':
+        specifier: 'catalog:'
+        version: 3.9.8(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.21.3(bufferutil@4.1.0))
       cheerio:
         specifier: ^1.2.0
         version: 1.2.0

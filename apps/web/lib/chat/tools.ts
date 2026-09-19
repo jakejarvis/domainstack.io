@@ -57,20 +57,15 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null
 
 async function domainLookupStep(section: DomainToolSection, domain: string, ctx: ToolContext) {
   "use step";
-  const { waitUntil } = await import("@vercel/functions");
+
   const { lookupSection } = await import("@domainstack/core/services/lookup");
   const { RateLimitError } = await import("@domainstack/redis/enforce");
-  const { updateLastAccessed } = await import("@domainstack/db/queries/domains");
   const { toRegistrableDomain } = await import("@domainstack/utils/domain");
 
   const registrable = toRegistrableDomain(domain);
   if (!registrable) {
     return { error: INVALID_DOMAIN_MESSAGE };
   }
-
-  // Same as the tRPC domain procedures: record the access so warm-domains keeps
-  // recently discussed domains fresh. `updateLastAccessed` never throws.
-  waitUntil(updateLastAccessed(registrable));
 
   try {
     const lookup = lookupSection(section, registrable, { identifier: ctx.ip });

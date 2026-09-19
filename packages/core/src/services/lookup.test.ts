@@ -8,6 +8,13 @@ const mocks = vi.hoisted(() => ({
   fetchHeaders: vi.fn<(domain: string) => Promise<unknown>>(),
   fetchCertificates: vi.fn<(domain: string) => Promise<unknown>>(),
   enforceRateLimit: vi.fn<(args: unknown) => Promise<unknown>>(),
+  updateLastAccessed: vi.fn<(domain: string) => Promise<boolean>>(),
+  waitUntil: vi.fn<(work: Promise<unknown>) => void>(),
+  getFavicon: vi.fn<(domain: string) => Promise<unknown>>(),
+  fetchFavicon: vi.fn<(domain: string) => Promise<unknown>>(),
+  getProviderById: vi.fn<(id: string) => Promise<unknown>>(),
+  getProviderLogo: vi.fn<(id: string) => Promise<unknown>>(),
+  fetchProviderLogo: vi.fn<(id: string, domain: string) => Promise<unknown>>(),
 }));
 
 vi.mock("@domainstack/logger", () => ({
@@ -18,6 +25,17 @@ vi.mock("@domainstack/logger", () => ({
     error: vi.fn<() => void>(),
   }),
 }));
+vi.mock("@vercel/functions", () => ({ waitUntil: mocks.waitUntil }));
+vi.mock("@domainstack/db/queries/domains", () => ({
+  updateLastAccessed: mocks.updateLastAccessed,
+}));
+vi.mock("@domainstack/db/queries/favicons", () => ({ getFavicon: mocks.getFavicon }));
+vi.mock("@domainstack/db/queries/providers", () => ({ getProviderById: mocks.getProviderById }));
+vi.mock("@domainstack/db/queries/provider-logos", () => ({
+  getProviderLogo: mocks.getProviderLogo,
+}));
+vi.mock("./favicon", () => ({ fetchFavicon: mocks.fetchFavicon }));
+vi.mock("./provider-logo", () => ({ fetchProviderLogo: mocks.fetchProviderLogo }));
 vi.mock("@domainstack/db/queries/dns", () => ({ getCachedDns: mocks.getCachedDns }));
 vi.mock("@domainstack/db/queries/headers", () => ({ getCachedHeaders: mocks.getCachedHeaders }));
 vi.mock("./dns", () => ({ fetchDns: mocks.fetchDns }));
@@ -34,7 +52,7 @@ vi.mock("@domainstack/redis/enforce", async (importOriginal) => ({
 import { RateLimitError } from "@domainstack/redis/enforce";
 
 import { RemoteDataUnavailableError } from "./fetch-errors";
-import { fetchSection, lookupSection } from "./lookup";
+import { fetchSection, lookupFavicon, lookupProviderLogo, lookupSection } from "./lookup";
 
 const DNS_DATA = { records: [], resolver: "cloudflare" };
 const notCached = { data: null, stale: false, fetchedAt: null, expiresAt: null };
@@ -43,7 +61,21 @@ describe("lookupSection", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mocks.enforceRateLimit.mockResolvedValue(undefined);
+    mocks.updateLastAccessed.mockResolvedValue(true);
     mocks.getCachedDns.mockResolvedValue(notCached);
+  });
+
+  it("records the access whether or not the cache answers", async () => {
+    mocks.getCachedDns.mockResolvedValue({ ...notCached, data: DNS_DATA });
+    await lookupSection("dns", "example.com");
+
+    mocks.getCachedDns.mockResolvedValue(notCached);
+    mocks.fetchDns.mockResolvedValue({ success: true, data: DNS_DATA });
+    await lookupSection("dns", "example.com");
+
+    expect(mocks.updateLastAccessed).toHaveBeenCalledTimes(2);
+    expect(mocks.updateLastAccessed).toHaveBeenCalledWith("example.com");
+    expect(mocks.waitUntil).toHaveBeenCalledTimes(2);
   });
 
   it("serves a fresh cache hit without metering or fetching", async () => {
@@ -148,6 +180,7 @@ describe("fetchSection", () => {
     });
     expect(mocks.enforceRateLimit).not.toHaveBeenCalled();
     expect(mocks.getCachedDns).not.toHaveBeenCalled();
+    expect(mocks.updateLastAccessed).not.toHaveBeenCalled();
   });
 
   it("lets transient failures throw", async () => {
@@ -156,5 +189,100 @@ describe("fetchSection", () => {
     await expect(fetchSection("dns", "example.com")).rejects.toBeInstanceOf(
       RemoteDataUnavailableError,
     );
+  });
+});
+
+const ICON = { url: "https://example.com/favicon.ico" };
+
+describe("lookupFavicon", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.enforceRateLimit.mockResolvedValue(undefined);
+    mocks.getFavicon.mockResolvedValue(notCached);
+  });
+
+  it("serves a fresh hit without metering, and does not record access", async () => {
+    mocks.getFavicon.mockResolvedValue({ ...notCached, data: ICON });
+
+    await expect(lookupFavicon("example.com", { identifier: "1.2.3.4" })).resolves.toEqual({
+      success: true,
+      cached: true,
+      data: ICON,
+    });
+    expect(mocks.enforceRateLimit).not.toHaveBeenCalled();
+    expect(mocks.updateLastAccessed).not.toHaveBeenCalled();
+  });
+
+  it("meters the favicon limit, then fetches, on a miss", async () => {
+    mocks.fetchFavicon.mockResolvedValue({ success: true, data: ICON });
+
+    await expect(lookupFavicon("example.com", { identifier: "1.2.3.4" })).resolves.toEqual({
+      success: true,
+      cached: false,
+      data: ICON,
+    });
+    expect(mocks.enforceRateLimit).toHaveBeenCalledWith({
+      key: "lookup.favicon",
+      identifier: "1.2.3.4",
+      config: { requests: 100, window: "1 m" },
+    });
+  });
+
+  it("maps a remote failure to fetch_failed", async () => {
+    mocks.fetchFavicon.mockRejectedValue(new RemoteDataUnavailableError("down"));
+
+    await expect(lookupFavicon("example.com")).resolves.toEqual({
+      success: false,
+      error: "fetch_failed",
+    });
+  });
+});
+
+describe("lookupProviderLogo", () => {
+  const PROVIDER_ID = "00000000-0000-0000-0000-000000000002";
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.enforceRateLimit.mockResolvedValue(undefined);
+    mocks.getProviderById.mockResolvedValue({ id: PROVIDER_ID, domain: "provider.example" });
+    mocks.getProviderLogo.mockResolvedValue(notCached);
+  });
+
+  it("fails without metering when the provider has no domain", async () => {
+    mocks.getProviderById.mockResolvedValue({ id: PROVIDER_ID, domain: null });
+
+    await expect(lookupProviderLogo(PROVIDER_ID, { identifier: "1.2.3.4" })).resolves.toEqual({
+      success: false,
+      error: "fetch_failed",
+    });
+    expect(mocks.enforceRateLimit).not.toHaveBeenCalled();
+    expect(mocks.fetchProviderLogo).not.toHaveBeenCalled();
+  });
+
+  it("serves a fresh hit without metering", async () => {
+    mocks.getProviderLogo.mockResolvedValue({ ...notCached, data: ICON });
+
+    await expect(lookupProviderLogo(PROVIDER_ID)).resolves.toEqual({
+      success: true,
+      cached: true,
+      data: ICON,
+    });
+    expect(mocks.enforceRateLimit).not.toHaveBeenCalled();
+  });
+
+  it("meters the provider-logo limit, then fetches with the provider's domain", async () => {
+    mocks.fetchProviderLogo.mockResolvedValue({ success: true, data: ICON });
+
+    await expect(lookupProviderLogo(PROVIDER_ID, { identifier: "1.2.3.4" })).resolves.toEqual({
+      success: true,
+      cached: false,
+      data: ICON,
+    });
+    expect(mocks.enforceRateLimit).toHaveBeenCalledWith({
+      key: "lookup.providerLogo",
+      identifier: "1.2.3.4",
+      config: { requests: 60, window: "1 m" },
+    });
+    expect(mocks.fetchProviderLogo).toHaveBeenCalledWith(PROVIDER_ID, "provider.example");
   });
 });

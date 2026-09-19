@@ -1,4 +1,3 @@
-import type { createLogger } from "@domainstack/logger";
 import {
   isExpectedDnsError,
   SafeFetchError,
@@ -47,21 +46,4 @@ export function isDefinitiveNotFoundError(err: unknown): boolean {
   if (err.code === "dns_error") return isExpectedDnsError(err);
 
   return DEFINITIVE_CODES.has(err.code);
-}
-
-/**
- * Log a lookup that produced no data. A remote that can't supply it is routine
- * (logged at `unavailableLevel`); anything else is a bug and logs an error.
- */
-export function logLookupFailure(
-  logger: ReturnType<typeof createLogger>,
-  fields: { err: unknown } & Record<string, unknown>,
-  label: string,
-  unavailableLevel: "warn" | "debug" = "warn",
-): void {
-  if (fields.err instanceof RemoteDataUnavailableError) {
-    logger[unavailableLevel](fields, `${label} unavailable`);
-  } else {
-    logger.error(fields, `${label} failed unexpectedly`);
-  }
 }

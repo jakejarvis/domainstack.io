@@ -33,6 +33,7 @@
     "@domainstack/types": "workspace:*",
     "@domainstack/utils": "workspace:*",
     "@readme/http-status-codes": "^9.0.6",
+    "@vercel/functions": "catalog:",
     "cheerio": "^1.2.0",
     "ipaddr.js": "catalog:",
     "lru-cache": "^11.5.2",

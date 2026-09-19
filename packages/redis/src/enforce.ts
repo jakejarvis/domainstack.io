@@ -40,7 +40,7 @@ export async function enforceRateLimit({
 }: {
   /** Bucket name; each distinct key gets its own budget per identifier. */
   key: string;
-  identifier: string | null | undefined;
+  identifier?: string | null;
   config?: RateLimitConfig | false;
 }): Promise<RateLimitInfo | undefined> {
   if (config === false || process.env.NODE_ENV === "development") {

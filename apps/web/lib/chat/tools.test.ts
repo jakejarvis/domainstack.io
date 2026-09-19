@@ -3,15 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   lookupSection: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
-  updateLastAccessed: vi.fn<(domain: string) => Promise<boolean>>(),
-  waitUntil: vi.fn<(work: Promise<unknown>) => void>(),
 }));
 
 vi.mock("@domainstack/core/services/lookup", () => ({ lookupSection: mocks.lookupSection }));
-vi.mock("@domainstack/db/queries/domains", () => ({
-  updateLastAccessed: mocks.updateLastAccessed,
-}));
-vi.mock("@vercel/functions", () => ({ waitUntil: mocks.waitUntil }));
 
 import { RateLimitError } from "@domainstack/redis/enforce";
 
@@ -32,7 +26,6 @@ function runTool(
 describe("domain chat tools", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mocks.updateLastAccessed.mockResolvedValue(true);
   });
 
   it("looks up the tool's section for the normalized domain, metered by IP", async () => {
@@ -42,8 +35,6 @@ describe("domain chat tools", () => {
     expect(mocks.lookupSection).toHaveBeenCalledWith("dns", "example.com", {
       identifier: "1.2.3.4",
     });
-    expect(mocks.updateLastAccessed).toHaveBeenCalledWith("example.com");
-    expect(mocks.waitUntil).toHaveBeenCalledOnce();
   });
 
   it("routes each tool to its own section", async () => {
@@ -63,7 +54,6 @@ describe("domain chat tools", () => {
       error: INVALID_DOMAIN_MESSAGE,
     });
     expect(mocks.lookupSection).not.toHaveBeenCalled();
-    expect(mocks.updateLastAccessed).not.toHaveBeenCalled();
   });
 
   it("returns a readable message for a typed lookup failure", async () => {

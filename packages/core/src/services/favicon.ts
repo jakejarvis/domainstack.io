@@ -60,7 +60,7 @@ const TIMEOUT_MS = 1500;
  * @param domain - The domain to fetch favicon for
  * @returns Favicon result with URL or null
  *
- * @throws Error on transient failures - TanStack Query retries these
+ * @throws Error on transient failures - the lookup reports these as `fetch_failed`
  */
 export async function fetchFavicon(domain: string): Promise<FaviconResult> {
   // Step 1: Fetch from sources
@@ -68,7 +68,7 @@ export async function fetchFavicon(domain: string): Promise<FaviconResult> {
 
   if (!fetchResult.success) {
     // If at least one source failed with a transient error (not 404/400),
-    // throw so TanStack Query can retry instead of caching failure
+    // throw so the failure is reported instead of cached
     if (!fetchResult.allNotFound) {
       throw new RemoteDataUnavailableError(`Favicon unavailable for ${domain}`);
     }
