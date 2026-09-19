@@ -164,7 +164,7 @@ describe("resolvePublicHost resolver failures", () => {
     expect(((error as SafeFetchError).cause as { code?: string }).code).toBe("EAI_FAIL");
   });
 
-  it("classifies a temporary resolver failure as retryable and NXDOMAIN as permanent", async () => {
+  it("classifies non-permanent resolver codes (EAI_AGAIN, EAI_FAIL) as retryable and NXDOMAIN as permanent", async () => {
     expect(isExpectedDnsError(await failWith("EAI_FAIL"))).toBe(false);
     expect(isExpectedDnsError(await failWith("EAI_AGAIN"))).toBe(false);
     expect(isExpectedDnsError(await failWith("ENOTFOUND"))).toBe(true);

@@ -23,8 +23,9 @@ export function isExpectedDnsError(err: unknown): boolean {
   // retryable.
   if (err instanceof SafeFetchError && err.code === "dns_error") {
     // A wrapped resolver error carries its errno code as the cause: only the
-    // known-permanent codes are permanent, so any other (EAI_AGAIN, EAI_FAIL,
-    // ETIMEDOUT, ...) is retryable without needing to list each one.
+    // known-permanent codes are permanent. Anything else is retryable, whether
+    // temporary (EAI_AGAIN, ETIMEDOUT) or unrecognized (EAI_FAIL): retrying is
+    // cheap, while caching a wrong permanent verdict is not.
     const causeCode = (err.cause as { code?: unknown } | undefined)?.code;
     if (typeof causeCode === "string") {
       return PERMANENT_DNS_CODES.has(causeCode);

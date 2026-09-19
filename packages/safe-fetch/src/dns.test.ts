@@ -41,7 +41,7 @@ describe("isExpectedDnsError", () => {
   };
 
   it.each(["EAI_AGAIN", "EAI_FAIL", "ETIMEDOUT", "ESERVFAIL"])(
-    "treats a wrapped %s as retryable, without listing each temporary code",
+    "treats a wrapped %s as retryable, since only known-permanent codes are permanent",
     (code) => {
       expect(isExpectedDnsError(wrapped(code))).toBe(false);
     },
