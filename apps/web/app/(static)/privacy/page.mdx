@@ -1,0 +1,178 @@
+import { createMetadata } from "@/lib/seo";
+
+export const metadata = createMetadata({
+  path: "/privacy",
+  title: "Privacy Policy",
+  description: "Learn how Domainstack collects, uses, and protects your personal information.",
+});
+
+<PageHeader title="Privacy Policy" description="Last updated: January 20, 2026" />
+
+## Introduction
+
+Domainstack ("we," "our," or "us") respects your privacy and is committed to protecting your personal data. This privacy policy explains how we collect, use, and safeguard your information when you use our domain intelligence platform.
+
+## Information We Collect
+
+### Account Information
+
+When you create an account, we collect the following details from the login provider you choose:
+
+- Name
+- Email address (with verification status)
+- Profile picture (optional)
+
+### Domain Data
+
+When you use our service, we collect and display the following publicly available information:
+
+- Domain registration and WHOIS information
+- DNS records
+- SSL/TLS certificate information
+- HTTP headers and hosting information
+- SEO metadata and screenshots of websites
+
+### Usage Data
+
+We automatically collect:
+
+- Pages viewed and features used
+- Device and browser information
+- IP address and approximate location
+
+## How We Use Your Information
+
+We use your information to:
+
+- Provide and maintain our service
+- Send domain and certificate expiration notifications
+- Improve and personalize your experience
+- Communicate important updates about our service
+- Detect and prevent fraud or abuse
+
+## Data Retention
+
+We retain your account information for as long as your account is active. Domain data is cached temporarily to improve performance and is refreshed periodically.
+
+You can delete your account at any time through the self-service option in your dashboard settings. Account deletion is permanent and will remove all your personal data, tracked domains, notification preferences, and subscription information from our systems.
+
+## Payment Information
+
+When you subscribe to our Pro plan, payment processing is handled by our third-party partners:
+
+- **[Polar](https://polar.sh)** — Our merchant of record for subscription management. Polar collects and processes your payment information, including billing address and payment method. See [Polar's Privacy Policy](https://polar.sh/legal/privacy).
+- **[Stripe](https://stripe.com)** — Payment processing infrastructure. Stripe handles your payment card data securely. See [Stripe's Privacy Policy](https://stripe.com/privacy).
+
+We do not store your full payment card details. We receive only limited information from our payment partners, such as subscription status, billing email, and the last four digits of your card for display purposes.
+
+## Email Communications
+
+We use [Resend](https://resend.com) to send transactional emails, including:
+
+- Domain and certificate expiration alerts
+- Domain verification status notifications
+- Subscription and account-related emails
+- Account deletion confirmation emails
+
+When we send you an email, your email address is shared with Resend for delivery purposes. See [Resend's Privacy Policy](https://resend.com/legal/privacy-policy).
+
+## AI Assistant
+
+We offer an optional AI-powered chat assistant ("Stacky") to help you look up domain information using natural language.
+
+### How It Works
+
+The AI assistant is powered by [Vercel AI Gateway](https://vercel.com/docs/ai-gateway), which routes Domainstack's requests to large language model (LLM) providers. When you send a message:
+
+- Your message and recent conversation history (up to 10 messages) are sent to the AI service
+- The domain you're currently viewing may be included as context
+- The AI may use our domain lookup tools to fetch publicly available information
+
+### Conversation Storage
+
+We do not store your conversations on our servers. This means:
+
+- Conversations are private to your device and browser
+- Clearing your browser data will delete your chat history
+- Conversations do not sync across devices or browsers
+- You can clear your chat history at any time using the clear button
+
+### Data Shared with AI Providers
+
+When you use the AI assistant, your messages are processed by third-party AI providers through Vercel AI Gateway. These providers have their own privacy policies:
+
+- [OpenAI Privacy Policy](https://openai.com/policies/privacy-policy/) (for OpenAI models)
+- [Google Privacy Policy](https://policies.google.com/privacy) (for Gemini models)
+- [Anthropic Privacy Policy](https://www.anthropic.com/privacy) (for Claude models)
+- [Vercel Privacy Policy](https://vercel.com/legal/privacy-policy)
+
+We do not share your personal account information with AI providers. Messages are processed without your identity attached.
+
+The provider(s) used to process your conversations will vary.
+
+## Analytics
+
+We use [PostHog](https://posthog.com) for product analytics and error tracking to understand how our service is used and to improve the user experience. PostHog collects:
+
+- Pages viewed and features used
+- Device and browser information
+- IP address (used for approximate location, then discarded)
+- Error reports and performance metrics
+
+Analytics data is used in aggregate to improve our service and is not sold to third parties. See [PostHog's Privacy Policy](https://posthog.com/privacy).
+
+## Data Sharing
+
+We do not sell your personal information. We may share data with:
+
+- **Service providers:** Companies that help us operate our service (hosting)
+- **Analytics:** PostHog for product analytics (see Analytics section above)
+- **Email delivery:** Resend for transactional email (see Email Communications section above)
+- **Payment processors:** Polar and Stripe for subscription billing (see Payment Information section above)
+- **Legal requirements:** When required by law or to protect our rights
+
+## Your Rights
+
+You have the right to:
+
+- Access your personal data
+- Correct inaccurate data
+- Delete your account and data — You can permanently delete your account at any time from your dashboard settings. This will remove all your personal data, tracked domains, and notification preferences. If you have an active subscription, it will be automatically canceled.
+- Export your data
+- Opt out of marketing communications
+
+## Cookies
+
+We use cookies to provide and improve our service. Our approach to cookies depends on your location:
+
+### For EU/EEA Visitors
+
+If you visit from a country covered by GDPR (EU member states, EEA countries, and the UK), you'll see a cookie consent banner on your first visit. You can choose to:
+
+- **Accept:** We'll use analytics cookies to understand how you use our service and improve your experience.
+- **Decline:** We'll switch to cookieless tracking mode, collecting only anonymized usage data without storing any cookies on your device.
+
+### For Visitors Outside the EU/EEA
+
+If you visit from outside the EU/EEA, analytics cookies are enabled by default to provide the best experience. You can still opt out using your browser's built-in cookie controls.
+
+### Types of Cookies We Use
+
+- **Essential cookies:** Required for basic functionality like authentication and session management. These are always active regardless of your consent choice.
+- **Analytics cookies:** Used by PostHog to understand how you use our service, track errors, and improve the user experience. For EU/EEA visitors, these require your consent.
+
+### Changing Your Preferences
+
+To change your cookie preferences, you can clear your browser's cookies and local storage for this site, then revisit to see the consent banner again (EU/EEA visitors only).
+
+## Security
+
+We implement industry-standard security measures to protect your data, including encryption in transit and at rest, secure authentication, and regular security audits.
+
+## Changes to This Policy
+
+We may update this privacy policy from time to time. We will notify you of significant changes by email or through our service.
+
+## Contact Us
+
+If you have questions about this privacy policy or your data, please contact us at [privacy@domainstack.io](mailto:privacy@domainstack.io).

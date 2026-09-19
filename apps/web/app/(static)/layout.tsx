@@ -14,11 +14,10 @@ export default function StaticLayout({ children }: { children: React.ReactNode }
               "prose prose-sm max-w-none dark:prose-invert",
               "prose-headings:font-semibold prose-strong:font-semibold",
               "prose-a:decoration-muted-foreground/90 prose-a:hover:text-foreground/70",
-              // External link icons
-              "prose-a:[&_svg]:mr-0.5 prose-a:[&_svg]:ml-1 prose-a:[&_svg]:inline-block prose-a:[&_svg]:size-3.5 prose-a:[&_svg]:-translate-y-0.5 prose-a:[&_svg]:text-foreground/70",
+              "[&_h2]:scroll-mt-24 [&_h3]:scroll-mt-24",
               "[&_[data-slot=code-block]]:my-4",
-              "[&>header]:mt-1 [&>header]:mb-6 [&>header]:border-b [&>header]:border-border [&>header]:pb-6",
-              "[&>section]:scroll-mt-24",
+              // Inline code (fenced blocks render through CodeBlock)
+              "[&_:not(pre)>code]:rounded [&_:not(pre)>code]:bg-muted [&_:not(pre)>code]:px-1.5 [&_:not(pre)>code]:py-0.5",
             )}
           >
             {children}

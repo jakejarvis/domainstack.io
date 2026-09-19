@@ -1,0 +1,227 @@
+import { FaqItem, FaqSection } from "@/components/mdx/faq";
+import { createMetadata } from "@/lib/seo";
+import { PLAN_QUOTAS } from "@domainstack/constants";
+import { PRO_TIER_INFO } from "@domainstack/polar/products";
+
+export const metadata = createMetadata({
+  path: "/help",
+  title: "Help & FAQ",
+  description:
+    "Get answers to common questions about Domainstack, domain tracking, notifications, and more.",
+});
+
+<PageHeader title="Help & FAQ" description="Everything you need to know about using Domainstack." />
+
+Domainstack helps you understand and monitor your domains. Look up any domain to see registration details, DNS records, SSL certificates, and more — all in one place. Track domains you own to get notified about critical changes and get a heads up before they're due to expire.
+
+<FaqSection title="Getting Started">
+
+<FaqItem question="What is Domainstack?">
+
+Domainstack is a domain intelligence platform that lets you look up detailed information about any domain — registration details, DNS records, SSL certificates, hosting information, and more.
+
+Sign up for free to track domains you own and receive notifications about critical changes and upcoming expirations.
+
+</FaqItem>
+
+<FaqItem question="Do I need an account to use Domainstack?">
+
+Nope! You can look up any domain and view its full report without signing in. An account is only required if you want to track domains you own and receive expiration notifications. Sign up is free and uses GitHub for authentication.
+
+</FaqItem>
+
+</FaqSection>
+
+<FaqSection title="Domain Reports">
+
+<FaqItem question="What information is shown on a domain report?">
+
+Each domain report includes:
+
+- **Registration data** — Registrar, creation date, expiration date, and WHOIS/RDAP information
+- **DNS records** — A, AAAA, MX, TXT, NS, CNAME, and other record types
+- **SSL/TLS certificates** — Issuer, validity period, and certificate chain
+- **HTTP headers** — Server type, security headers, and caching policies
+- **Hosting provider** — Who's serving the website based on IP and infrastructure
+- **SEO metadata** — Title, description, and Open Graph tags
+- **Live screenshot** — A visual preview of the website
+
+</FaqItem>
+
+<FaqItem question="Where does the domain data come from?">
+
+All domain data comes from publicly available sources:
+
+- RDAP and WHOIS servers for registration info
+- Public DNS resolvers for DNS records
+- TLS handshakes for certificate inspection
+- HTTP requests for headers and screenshots
+
+We don't access any private data.
+
+</FaqItem>
+
+<FaqItem question="How often is domain data refreshed?">
+
+Domain data is cached to ensure fast load times. Different data types have different refresh intervals — DNS records update more frequently than registration data, for example.
+
+</FaqItem>
+
+<FaqItem question="Can I share a domain report?">
+
+Yes! Every domain has its own public URL (like `domainstack.io/example.com`) that you can share with anyone. No account is required to view reports.
+
+</FaqItem>
+
+</FaqSection>
+
+<FaqSection title="Domain Tracking">
+
+<FaqItem question="How do I track a domain?">
+
+From your dashboard, click "Add Domain" and enter the domain name you want to track. You'll need to verify ownership before tracking becomes active.
+
+Once verified, we'll monitor the domain and notify you about critical changes and upcoming expirations.
+
+</FaqItem>
+
+<FaqItem question="How do I verify domain ownership?">
+
+We offer three verification methods — use whichever is easiest for you:
+
+- **DNS TXT record** — Add a TXT record to your apex domain
+- **HTML file** — Upload a verification file to `/.well-known/domainstack-verify.html`
+- **Meta tag** — Add a `domainstack-verify` meta tag to your homepage
+
+Detailed instructions with your unique verification token are shown when you add a domain.
+
+</FaqItem>
+
+<FaqItem question="How long do I have to verify a domain?">
+
+You have 30&nbsp;days to verify a domain after adding it. We'll automatically attempt to verify your domain periodically, so once you've set up verification, it should be detected within minutes.
+
+</FaqItem>
+
+<FaqItem question="What happens if my verification fails?">
+
+If you've already verified a domain but we can no longer detect your verification record, you'll receive an email and have a 7&#8209;day grace period to fix it.
+
+If verification isn't restored within that window, tracking will be revoked and you'll need to re-verify.
+
+</FaqItem>
+
+<FaqItem question="What is the difference between active and archived domains?">
+
+Active domains count toward your tracking limit and receive notifications. Archived domains are paused — they don't count against your limit and won't trigger notifications. You can archive domains you're not actively managing and reactivate them anytime.
+
+</FaqItem>
+
+</FaqSection>
+
+<FaqSection title="Notifications">
+
+<FaqItem question="What notifications will I receive?">
+
+We send email notifications for:
+
+- **Domain expiration** — 30, 14, 7, and 1&nbsp;day before your domain expires
+- **Certificate expiration** — 14, 7, 3, and 1&nbsp;day before your SSL certificate expires
+- **Change detection** — Updates to registration details, DNS providers, hosting, or email providers
+- **Verification status** — When verification starts failing or is revoked
+
+</FaqItem>
+
+<FaqItem question="Can I customize notifications for specific domains?">
+
+Yes! Each tracked domain has its own notification settings. You can override global preferences on a per-domain basis — for example, disable certificate alerts for a domain that handles its own renewal while keeping domain expiry and change alerts enabled.
+
+</FaqItem>
+
+<FaqItem question="How do I disable notifications?">
+
+Go to [your settings](/settings) to toggle notification categories on or off globally. You can disable domain expiration alerts, certificate expiration alerts, or verification status alerts independently.
+
+</FaqItem>
+
+</FaqSection>
+
+<FaqSection title="Pricing & Limits">
+
+<FaqItem question="How many domains can I track?">
+
+Free accounts can track up to {PLAN_QUOTAS.free} domains. Pro subscribers can track up to {PLAN_QUOTAS.pro} domains. Archived domains don't count toward these limits.
+
+</FaqItem>
+
+<FaqItem question="What's included in Pro?">
+
+The Pro plan includes the following benefits:
+
+- Track up to {PLAN_QUOTAS.pro} domains (increased from {PLAN_QUOTAS.free})
+- Priority email notifications
+- Support ongoing development of Domainstack
+
+Pro is available for {PRO_TIER_INFO.monthly.label} or {PRO_TIER_INFO.yearly.label} ({PRO_TIER_INFO.yearly.savings}).
+
+</FaqItem>
+
+<FaqItem question="What happens if I downgrade from Pro?">
+
+If you cancel your Pro subscription, you'll keep Pro access until the end of your billing period.
+
+After that, if you have more than {PLAN_QUOTAS.free} active domains, the oldest ones will be automatically archived to fit within the free tier limit. You can manually choose which domains to archive before the downgrade takes effect.
+
+</FaqItem>
+
+<FaqItem question="Can I cancel my subscription anytime?">
+
+Yes, you can cancel anytime from your dashboard settings. You'll continue to have Pro access until the end of your current billing period.
+
+We don't prorate or issue partial refunds, but you won't be charged again.
+
+</FaqItem>
+
+</FaqSection>
+
+<FaqSection title="Privacy & Security">
+
+<FaqItem question="What data does Domainstack collect?">
+
+We collect:
+
+- Your account information (name and email via your login provider)
+- The domains you choose to track
+- Basic usage analytics
+
+Domain data shown in reports is all publicly available — we don't access anything private. See our [Privacy Policy](/privacy) for full details.
+
+</FaqItem>
+
+<FaqItem question="Is my data shared with third parties?">
+
+We never sell your personal information. We only share data with service providers necessary to operate Domainstack (hosting, email delivery, payment processing). See our [Privacy Policy](/privacy) for a complete list of our partners.
+
+</FaqItem>
+
+</FaqSection>
+
+<FaqSection title="Account">
+
+<FaqItem question="How do I sign up?">
+
+Click "Sign in" in the header (or [click here](/login)) and authenticate with one of the supported services. We use OAuth so you don't need to worry about a password. You can always change your linked account later in Settings.
+
+</FaqItem>
+
+<FaqItem question="How do I delete my account?">
+
+Go to your dashboard settings and scroll to the "Danger Zone" section. Click "Delete Account" and confirm to permanently remove your account and all associated data. This action cannot be undone.
+
+</FaqItem>
+
+</FaqSection>
+
+<h2 id="contact">Still have questions?</h2>
+
+If you couldn't find what you're looking for, reach out to [support@domainstack.io](mailto:support@domainstack.io).
