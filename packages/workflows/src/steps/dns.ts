@@ -37,7 +37,7 @@ export async function persistDnsRecordsStep(
 ): Promise<void> {
   "use step";
 
-  const { persistDnsRecords } = await import("@domainstack/core/services/dns");
+  const { persistDnsRecords } = await import("@domainstack/core/dns");
   try {
     await persistDnsRecords(domain, fetchData);
   } catch (err) {

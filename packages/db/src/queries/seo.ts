@@ -21,7 +21,7 @@ export async function upsertSeo(params: SeoInsert) {
  * Returns data even if expired, with `stale: true` flag.
  *
  * Note: This queries the database cache. For fetching fresh data,
- * use `fetchSeoStep` from workflows/shared/seo.
+ * use `lookupSection` / `fetchSection` from `@domainstack/core/lookup`.
  *
  * Optimized: Uses a single query with JOINs to fetch domain, SEO data,
  * and blocklist status, reducing from 3 round trips to 1.

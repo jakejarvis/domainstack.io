@@ -82,10 +82,11 @@ async function refreshSectionStep(
 ): Promise<"refreshed" | "unavailable"> {
   "use step";
 
-  const { RemoteDataUnavailableError } = await import("@domainstack/core/services/fetch-errors");
+  const { RemoteDataUnavailableError } = await import("@domainstack/core/lib/fetch-errors");
+  const { fetchSection } = await import("@domainstack/core/lookup");
 
   try {
-    const result = await fetchSection(domain, section);
+    const result = await fetchSection(section, domain);
     return result.success ? "refreshed" : "unavailable";
   } catch (err) {
     // The remote target couldn't supply data (unreachable host, WHOIS timeout).
@@ -94,34 +95,5 @@ async function refreshSectionStep(
       return "unavailable";
     }
     throw err;
-  }
-}
-
-async function fetchSection(domain: string, section: WarmSection): Promise<{ success: boolean }> {
-  switch (section) {
-    case "registration": {
-      const { fetchRegistration } = await import("@domainstack/core/services/registration");
-      return fetchRegistration(domain);
-    }
-    case "hosting": {
-      const { fetchHosting } = await import("@domainstack/core/services/hosting");
-      return fetchHosting(domain);
-    }
-    case "certificates": {
-      const { fetchCertificates } = await import("@domainstack/core/services/certificates");
-      return fetchCertificates(domain);
-    }
-    case "headers": {
-      const { fetchHeaders } = await import("@domainstack/core/services/headers");
-      return fetchHeaders(domain);
-    }
-    case "seo": {
-      const { fetchSeo } = await import("@domainstack/core/services/seo");
-      return fetchSeo(domain);
-    }
-    default: {
-      const unreachable: never = section;
-      throw new Error(`Unknown section: ${String(unreachable)}`);
-    }
   }
 }

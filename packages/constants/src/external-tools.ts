@@ -1,11 +1,11 @@
 /**
- * Third-party domain inspection tools surfaced by the "Open in…" menus
- * on web and native. Entries are sorted alphabetically (case-insensitive)
- * so callers can iterate in source order.
+ * Third-party domain inspection tools surfaced by the "Open in…" menus.
+ * Entries are sorted alphabetically (case-insensitive) so callers can
+ * iterate in source order.
  */
 export interface ExternalTool {
   name: string;
-  /** Domain used to fetch a favicon for the web UI; native ignores this. */
+  /** Domain used to fetch this tool's favicon for the menu. */
   faviconDomain: string;
   buildUrl: (domain: string) => string;
 }

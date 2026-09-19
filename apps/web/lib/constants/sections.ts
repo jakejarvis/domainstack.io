@@ -7,16 +7,7 @@ import {
   IconShare,
 } from "@tabler/icons-react";
 
-import { SECTION_IDS } from "@domainstack/constants";
 import type { Section } from "@domainstack/constants";
-
-/**
- * UI metadata for domain report sections. The section ids and `Section` type
- * live in `@domainstack/constants` so non-UI code (workflows, MCP tools) can
- * use them without pulling in icons.
- */
-export { SECTION_IDS };
-export type { Section };
 
 export type SectionAccent = "blue" | "purple" | "green" | "orange" | "pink" | "cyan";
 
@@ -50,7 +41,7 @@ export const sections: Record<Section, SectionDef> = {
     title: "DNS Records",
     accent: "green",
     icon: IconRoute,
-    description: "A, AAAA, MX, CNAME, TXT, NS",
+    description: "A, AAAA, MX, TXT, NS",
     help: "DNS records map the domain to services like web (A/AAAA), mail (MX), and aliases (CNAME).",
     slug: "dns",
   },

@@ -19,6 +19,7 @@ import {
   TTL_REGISTRATION_REGISTERED,
   TTL_SCREENSHOT,
   TTL_SEO,
+  TTL_SEO_IMAGE_RETRY,
 } from "@domainstack/constants";
 
 function addSeconds(base: Date, seconds: number): Date {
@@ -75,8 +76,13 @@ export function ttlForHosting(now: Date): Date {
   return addSeconds(now, TTL_HOSTING);
 }
 
-export function ttlForSeo(now: Date): Date {
-  return addSeconds(now, TTL_SEO);
+/**
+ * TTL for SEO data. A preview image that failed for a transient reason (timeout,
+ * 5xx, storage outage) shortens it so the image is retried soon, instead of
+ * caching "no image" for the full day.
+ */
+export function ttlForSeo(now: Date, options: { imageRetry?: boolean } = {}): Date {
+  return addSeconds(now, options.imageRetry ? TTL_SEO_IMAGE_RETRY : TTL_SEO);
 }
 
 export function ttlForFavicon(now: Date): Date {

@@ -8,6 +8,31 @@ import { SafeFetchError } from "./errors";
  */
 const PERMANENT_DNS_CODES = new Set(["ENOTFOUND", "ENODATA", "ENOENT"]);
 
+/** Definitive empty-answer messages, permanent without an errno code. */
+const PERMANENT_DNS_PHRASES = ["no dns records found", "dns lookup returned no records"];
+
+/**
+ * True when `code` appears as its own token. A hostname in the message can look
+ * like a code ("enoent.example.com"), so a code that is part of a longer
+ * hostname-like run of letters, digits, dots or hyphens doesn't count.
+ */
+function hasCodeToken(message: string, code: string): boolean {
+  return new RegExp(`(?<![\\w.-])${code}(?![\\w-]|\\.[\\w-])`).test(message);
+}
+
+/**
+ * Message-only fallback for errors that carry no errno code. Permanent only for
+ * a known permanent code (as a standalone token) or a definitive empty answer;
+ * anything else, including an unrecognized message, stays retryable.
+ */
+function isPermanentDnsMessage(message: string): boolean {
+  if (message.includes("timed out") || hasCodeToken(message, "eai_again")) return false;
+  return (
+    [...PERMANENT_DNS_CODES].some((code) => hasCodeToken(message, code.toLowerCase())) ||
+    PERMANENT_DNS_PHRASES.some((phrase) => message.includes(phrase))
+  );
+}
+
 /**
  * Check if an error is an expected DNS failure (NXDOMAIN, missing A/AAAA, etc).
  *
@@ -19,9 +44,19 @@ export function isExpectedDnsError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
 
   // SafeFetchError uses code "dns_error" for NXDOMAIN, empty answers, and
-  // wrapped resolver failures. Timeouts stay retryable.
+  // wrapped resolver failures. Timeouts and temporary resolver failures stay
+  // retryable.
   if (err instanceof SafeFetchError && err.code === "dns_error") {
-    return !err.message.toLowerCase().includes("timed out");
+    // A wrapped resolver error carries its errno code as the cause: only the
+    // known-permanent codes are permanent. Anything else is retryable, whether
+    // temporary (EAI_AGAIN, ETIMEDOUT) or unrecognized (EAI_FAIL): retrying is
+    // cheap, while caching a wrong permanent verdict is not.
+    const causeCode = (err.cause as { code?: unknown } | undefined)?.code;
+    if (typeof causeCode === "string") {
+      return PERMANENT_DNS_CODES.has(causeCode);
+    }
+    // No errno (our own timeout, empty answers): fall back to the message.
+    return isPermanentDnsMessage(err.message.toLowerCase());
   }
 
   const errorWithCode = err as Error & {
@@ -36,15 +71,7 @@ export function isExpectedDnsError(err: unknown): boolean {
     return true;
   }
 
-  const message = `${err.message} ${errorWithCode.cause?.message ?? ""}`.toLowerCase();
-  if (message.includes("eai_again")) {
-    return false;
-  }
-  return (
-    message.includes("enotfound") ||
-    message.includes("getaddrinfo") ||
-    message.includes("dns lookup failed") ||
-    message.includes("no dns records found") ||
-    message.includes("dns lookup returned no records")
+  return isPermanentDnsMessage(
+    `${err.message} ${errorWithCode.cause?.message ?? ""}`.toLowerCase(),
   );
 }

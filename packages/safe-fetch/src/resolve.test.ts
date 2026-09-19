@@ -9,6 +9,7 @@ vi.mock("node:dns/promises", () => ({
 
 import { lookup } from "node:dns/promises";
 
+import { isExpectedDnsError } from "./dns";
 import { SafeFetchError } from "./errors";
 import { createPinnedLookup, resolvePublicHost } from "./resolve";
 
@@ -140,5 +141,32 @@ describe("createPinnedLookup", () => {
     const callback = vi.fn<Parameters<LookupFunction>[2]>();
     lookupFn("example.com", { all: false, family: 6 }, callback);
     expect(callback).toHaveBeenCalledWith(expect.objectContaining({ code: "ENOTFOUND" }), "", 4);
+  });
+});
+
+describe("resolvePublicHost resolver failures", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  async function failWith(code: string) {
+    mockLookup.mockRejectedValue(
+      Object.assign(new Error(`getaddrinfo ${code} example.com`), { code }),
+    );
+    return resolvePublicHost("example.com").catch((err: unknown) => err);
+  }
+
+  it("keeps the resolver's error as the cause of the dns_error", async () => {
+    const error = await failWith("EAI_FAIL");
+
+    expect(error).toBeInstanceOf(SafeFetchError);
+    expect((error as SafeFetchError).code).toBe("dns_error");
+    expect(((error as SafeFetchError).cause as { code?: string }).code).toBe("EAI_FAIL");
+  });
+
+  it("classifies non-permanent resolver codes (EAI_AGAIN, EAI_FAIL) as retryable and NXDOMAIN as permanent", async () => {
+    expect(isExpectedDnsError(await failWith("EAI_FAIL"))).toBe(false);
+    expect(isExpectedDnsError(await failWith("EAI_AGAIN"))).toBe(false);
+    expect(isExpectedDnsError(await failWith("ENOTFOUND"))).toBe(true);
   });
 });

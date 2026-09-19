@@ -1,13 +1,234 @@
 /**
- * TLS certificate module.
+ * Certificates service - fetches and persists TLS certificates.
  *
- * Provides utilities for fetching TLS certificate chains via handshake
- * and processing certificate data.
+ * Its internal helpers are also called by the monitoring workflow steps in
+ * packages/workflows/src/steps.
+ * Transient errors throw; `lookupSection` reports them as `fetch_failed`.
+ * Permanent errors return { success: false, error }.
  */
 
-// Fetch function
+import { replaceCertificates } from "@domainstack/db/queries/certificates";
+import { ensureDomainRecord } from "@domainstack/db/queries/domains";
+import { upsertCatalogProvider } from "@domainstack/db/queries/providers";
+import { getProviderCatalog } from "@domainstack/edge-config";
+import type { Certificate, CertificatesResponse } from "@domainstack/types";
+import { detectCertificateAuthority, getProvidersFromCatalog } from "@domainstack/utils/providers";
+
+import { RemoteDataUnavailableError } from "../lib/fetch-errors";
+import { ttlForCertificates } from "../lib/ttl";
+import { fetchCertificateChain } from "./fetch";
+import type { RawCertificate, TlsFetchSuccess } from "./types";
+
 export * from "./fetch";
-// Types
 export * from "./types";
-// Utility functions
 export * from "./utils";
+
+// ============================================================================
+// Types
+// ============================================================================
+
+export type CertificatesError = "dns_error" | "tls_error";
+
+export type CertificatesResult =
+  | { success: true; data: CertificatesResponse }
+  | { success: false; error: CertificatesError };
+
+export interface CertificatesProcessedData {
+  certificates: Certificate[];
+  providerIds: (string | null)[];
+  earliestValidTo: Date;
+  valid: boolean;
+  validationError: string | null;
+  protocol: string | null;
+  cipher: string | null;
+  publicKeyBits: number | null;
+  chainComplete: boolean;
+}
+
+// ============================================================================
+// Main Service Function
+// ============================================================================
+
+/**
+ * Fetch and persist TLS certificates for a domain.
+ *
+ * @param domain - The domain to probe
+ * @returns Certificates result with data or error
+ *
+ * @throws Error on transient failures (timeout, fetch_error) - `lookupSection` reports these as `fetch_failed`
+ */
+export async function fetchCertificates(domain: string): Promise<CertificatesResult> {
+  const fetchResult = await fetchCertificateChainInternal(domain);
+
+  if (!fetchResult.success) {
+    return { success: false, error: fetchResult.error };
+  }
+
+  const processedData = await processChain(fetchResult);
+
+  await persistCertificates(domain, processedData);
+
+  return {
+    success: true,
+    data: toCertificatesResponse(processedData),
+  };
+}
+
+function toCertificatesResponse(processedData: CertificatesProcessedData): CertificatesResponse {
+  return {
+    certificates: processedData.certificates,
+    valid: processedData.valid,
+    validationError: processedData.validationError,
+    protocol: processedData.protocol,
+    cipher: processedData.cipher,
+    publicKeyBits: processedData.publicKeyBits,
+    chainComplete: processedData.chainComplete,
+  };
+}
+
+// ============================================================================
+// Internal: Fetch Certificate Chain
+// ============================================================================
+
+type FetchResult = TlsFetchSuccess | { success: false; error: CertificatesError };
+
+async function fetchCertificateChainInternal(domain: string): Promise<FetchResult> {
+  const result = await fetchCertificateChain(domain);
+
+  if (!result.success) {
+    // Transient failures - throw (see `lookupSection`)
+    if (result.error === "fetch_error" || result.error === "timeout") {
+      throw new RemoteDataUnavailableError("Certificate data unavailable");
+    }
+
+    // Permanent failures (dns_error, tls_error) - return error result
+    return { success: false, error: result.error };
+  }
+
+  return result;
+}
+
+// ============================================================================
+// Internal: Process Chain
+// ============================================================================
+
+export async function processChain(
+  observation: TlsFetchSuccess,
+): Promise<CertificatesProcessedData> {
+  const catalog = await getProviderCatalog();
+  const caProviders = catalog ? getProvidersFromCatalog(catalog, "ca") : [];
+  const chain: RawCertificate[] = observation.chain;
+
+  const certificatesWithMatches = chain.map((c) => {
+    const matched = detectCertificateAuthority(c.issuer, caProviders);
+    return {
+      cert: {
+        issuer: c.issuer,
+        subject: c.subject,
+        altNames: c.altNames,
+        validFrom: c.validFrom,
+        validTo: c.validTo,
+        fingerprint256: c.fingerprint256 || null,
+        serialNumber: c.serialNumber || null,
+        chainPosition: c.chainPosition,
+        caProvider: {
+          id: null,
+          name: matched?.name ?? null,
+          domain: matched?.domain ?? null,
+        },
+      },
+      catalogProvider: matched,
+    };
+  });
+
+  // A chain usually repeats the same authority, so upsert each one once.
+  const upsertsByProvider = new Map<string, Promise<string>>();
+  const providerIds = await Promise.all(
+    certificatesWithMatches.map(async ({ catalogProvider }) => {
+      if (!catalogProvider) return null;
+
+      const key = `${catalogProvider.category}|${catalogProvider.name}|${catalogProvider.domain}`;
+      let pending = upsertsByProvider.get(key);
+      if (!pending) {
+        pending = upsertCatalogProvider(catalogProvider).then((ref) => ref.id);
+        upsertsByProvider.set(key, pending);
+      }
+      return pending;
+    }),
+  );
+
+  const certificates: Certificate[] = certificatesWithMatches.map(({ cert }, i) => ({
+    issuer: cert.issuer,
+    subject: cert.subject,
+    altNames: cert.altNames,
+    validFrom: cert.validFrom,
+    validTo: cert.validTo,
+    fingerprint256: cert.fingerprint256,
+    serialNumber: cert.serialNumber,
+    chainPosition: cert.chainPosition,
+    caProvider: {
+      id: providerIds[i],
+      name: cert.caProvider.name,
+      domain: cert.caProvider.domain,
+    },
+  }));
+
+  // Cache freshness is driven by the earliest expiration anywhere in the chain.
+  const earliestValidTo =
+    certificates.length > 0
+      ? new Date(Math.min(...certificates.map((c) => new Date(c.validTo).getTime())))
+      : new Date(Date.now() + 3_600_000);
+
+  return {
+    certificates,
+    providerIds,
+    earliestValidTo,
+    valid: observation.valid,
+    validationError: observation.validationError,
+    protocol: observation.protocol,
+    cipher: observation.cipher,
+    publicKeyBits: observation.publicKeyBits,
+    chainComplete: observation.chainComplete,
+  };
+}
+
+// ============================================================================
+// Internal: Persist Certificates
+// ============================================================================
+
+export async function persistCertificates(
+  domain: string,
+  processedData: CertificatesProcessedData,
+): Promise<void> {
+  const now = new Date();
+  const expiresAt = ttlForCertificates(now, processedData.earliestValidTo);
+
+  const domainRecord = await ensureDomainRecord(domain);
+
+  const chainWithIds = processedData.certificates.map((c, i) => ({
+    issuer: c.issuer,
+    subject: c.subject,
+    altNames: c.altNames,
+    validFrom: new Date(c.validFrom),
+    validTo: new Date(c.validTo),
+    fingerprint256: c.fingerprint256,
+    serialNumber: c.serialNumber,
+    caProviderId: processedData.providerIds[i],
+    chainPosition: c.chainPosition,
+  }));
+
+  await replaceCertificates({
+    domainId: domainRecord.id,
+    chain: chainWithIds,
+    check: {
+      valid: processedData.valid,
+      validationError: processedData.validationError,
+      protocol: processedData.protocol,
+      cipher: processedData.cipher,
+      publicKeyBits: processedData.publicKeyBits,
+      chainComplete: processedData.chainComplete,
+    },
+    fetchedAt: now,
+    expiresAt,
+  });
+}

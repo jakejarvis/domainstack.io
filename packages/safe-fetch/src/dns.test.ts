@@ -34,6 +34,32 @@ describe("isExpectedDnsError", () => {
     expect(isExpectedDnsError(err)).toBe(false);
   });
 
+  // resolvePublicHost wraps the resolver's error, keeping it as the cause
+  const wrapped = (code: string) => {
+    const cause = Object.assign(new Error(`getaddrinfo ${code} example.com`), { code });
+    return new SafeFetchError("dns_error", cause.message, undefined, { cause });
+  };
+
+  it.each(["EAI_AGAIN", "EAI_FAIL", "ETIMEDOUT", "ESERVFAIL"])(
+    "treats a wrapped %s as retryable, since only known-permanent codes are permanent",
+    (code) => {
+      expect(isExpectedDnsError(wrapped(code))).toBe(false);
+    },
+  );
+
+  it.each(["ENOTFOUND", "ENODATA", "ENOENT"])("treats a wrapped %s as permanent", (code) => {
+    expect(isExpectedDnsError(wrapped(code))).toBe(true);
+  });
+
+  it("falls back to the message when there is no errno code", () => {
+    expect(
+      isExpectedDnsError(new SafeFetchError("dns_error", "getaddrinfo EAI_AGAIN example.com")),
+    ).toBe(false);
+    expect(
+      isExpectedDnsError(new SafeFetchError("dns_error", "getaddrinfo ENOTFOUND example.com")),
+    ).toBe(true);
+  });
+
   it("detects nested cause codes", () => {
     const err = new Error("fetch failed", {
       cause: Object.assign(new Error("queryA ENODATA example.com"), { code: "ENODATA" }),
@@ -49,6 +75,43 @@ describe("isExpectedDnsError", () => {
   it("detects SafeFetchError wrapping a resolver failure", () => {
     const err = new SafeFetchError("dns_error", "queryA ENODATA example.com");
     expect(isExpectedDnsError(err)).toBe(true);
+  });
+
+  it.each([
+    ["an unrecognized message", new SafeFetchError("dns_error", "resolver exploded")],
+    [
+      "a getaddrinfo failure that is not a permanent code",
+      new Error("getaddrinfo EAI_FAIL example.com"),
+    ],
+    [
+      "a wrapped failure with no errno and an unrecognized message",
+      new SafeFetchError("dns_error", "getaddrinfo EAI_FAIL example.com"),
+    ],
+  ])("does not treat %s as permanent", (_label, err) => {
+    expect(isExpectedDnsError(err)).toBe(false);
+  });
+
+  it.each([
+    ["a SafeFetchError", new SafeFetchError("dns_error", "lookup failed for enoent.example.com")],
+    ["a generic error", new Error("failed to reach enotfound.example.com")],
+    ["a hyphenated hostname", new Error("failed to reach my-enodata.example.com")],
+    ["a subdomain label", new Error("failed to reach www.enoent")],
+  ])("does not read a code-like hostname in %s as a permanent code", (_label, err) => {
+    expect(isExpectedDnsError(err)).toBe(false);
+  });
+
+  it.each([
+    "getaddrinfo ENOTFOUND example.com",
+    "queryA ENODATA example.com",
+    "resolution failed: ENOTFOUND.",
+    "(ENOENT)",
+  ])("still reads a standalone code as permanent: %s", (message) => {
+    expect(isExpectedDnsError(new Error(message))).toBe(true);
+  });
+
+  it("does not let a hostname that looks like a code turn a timeout permanent", () => {
+    const err = new SafeFetchError("dns_error", "DNS lookup timed out for enoent.example.com");
+    expect(isExpectedDnsError(err)).toBe(false);
   });
 
   it("does not treat DNS lookup timeouts as permanent", () => {

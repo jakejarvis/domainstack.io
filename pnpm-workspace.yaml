@@ -19,7 +19,6 @@ catalog:
   '@types/react-dom': 19.3.0
   '@vercel/functions': ^3.9.8
   ipaddr.js: ^2.5.0
-  lru-cache: ^11.5.2
   motion: ^13.4.0
   msw: ^2.15.0
   rdapper: ^0.15.1

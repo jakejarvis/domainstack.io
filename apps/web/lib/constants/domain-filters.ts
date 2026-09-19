@@ -1,13 +1,17 @@
-import type { HealthFilter } from "@/lib/dashboard-utils";
+import { HEALTH_FILTERS, type HealthFilter } from "@/lib/dashboard-utils";
 
 /**
  * Domain filter constants for dashboard.
- * Types are in @domainstack/types
  */
 
+const HEALTH_LABELS: Record<HealthFilter, string> = {
+  healthy: "Healthy",
+  expiring: "Expiring Soon",
+  expired: "Expired",
+};
+
 /** Filter options for domain health status */
-export const HEALTH_OPTIONS: { value: HealthFilter; label: string }[] = [
-  { value: "healthy", label: "Healthy" },
-  { value: "expiring", label: "Expiring Soon" },
-  { value: "expired", label: "Expired" },
-];
+export const HEALTH_OPTIONS = HEALTH_FILTERS.map((value) => ({
+  value,
+  label: HEALTH_LABELS[value],
+}));

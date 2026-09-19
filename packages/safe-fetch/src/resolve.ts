@@ -119,8 +119,8 @@ export async function resolvePublicHost(
   } catch (err) {
     const error = err instanceof Error ? err : new Error("DNS lookup failed");
     logger?.warn({ hostname: normalized, err: error }, "DNS lookup failed");
-    const message = error.message;
-    throw new SafeFetchError("dns_error", message);
+    // Keep the resolver's error: its errno code is what tells permanent from temporary
+    throw new SafeFetchError("dns_error", error.message, undefined, { cause: error });
   }
 
   if (records.length === 0) {

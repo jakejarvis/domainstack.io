@@ -1,9 +1,9 @@
-import { ipAddress, waitUntil } from "@vercel/functions";
+import { ipAddress } from "@vercel/functions";
 
 import { createLogger } from "@domainstack/logger";
+import { enforceRateLimit, RateLimitError } from "@domainstack/redis/enforce";
 import {
   DEFAULT_RATE_LIMIT,
-  getRateLimiter,
   type RateLimitConfig,
   type RateLimitInfo,
 } from "@domainstack/redis/ratelimit";
@@ -130,57 +130,32 @@ export async function checkRateLimit(
       ? (providedIdentifier ?? ipAddress(request) ?? null)
       : await resolveIdentifier(request);
 
-  // Fail open: no Redis or no identifier = allow request without rate limiting
-  const limiter = getRateLimiter(rateLimitConfig);
-  if (!limiter || !baseIdentifier) {
-    return { success: true };
-  }
-
-  // Include endpoint name in identifier for per-endpoint isolation
-  const identifier = rateLimitConfig.name
-    ? `${rateLimitConfig.name}:${baseIdentifier}`
-    : baseIdentifier;
-
-  // Fail open: if Redis errors, allow the request through
+  // `name` isolates per-endpoint buckets; unnamed callers share the "api" bucket
   try {
-    const { success, limit, remaining, reset, pending } = await limiter.limit(identifier);
-
-    // Analytics write lands after the response; `waitUntil` no-ops off-platform
-    // (local dev, tests) and drops it, which is fine for analytics. Swallow
-    // failures either way so they can't become an unhandled rejection.
-    waitUntil(pending.catch(() => undefined));
-
-    const info = { limit, remaining, reset };
-
-    if (!success) {
-      // Ensure minimum 1 second to prevent tight retry loops from clock skew
-      const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
+    const info = await enforceRateLimit({
+      key: rateLimitConfig.name || "api",
+      identifier: baseIdentifier,
+      config: rateLimitConfig,
+    });
+    return info ? { success: true, headers: buildHeaders(info), info } : { success: true };
+  } catch (err) {
+    if (err instanceof RateLimitError) {
       return {
         success: false,
         error: new Response(
-          JSON.stringify({
-            error: "Rate limit exceeded",
-            retryAfter,
-          }),
+          JSON.stringify({ error: "Rate limit exceeded", retryAfter: err.retryAfter }),
           {
             status: 429,
             headers: {
               "Content-Type": "application/json",
-              ...buildHeaders(info),
-              "Retry-After": retryAfter.toString(),
+              ...buildHeaders(err.rateLimit),
+              "Retry-After": err.retryAfter.toString(),
             },
           },
         ),
       };
     }
-
-    return {
-      success: true,
-      headers: buildHeaders(info),
-      info,
-    };
-  } catch (err) {
-    // Redis error - fail open to prevent blocking requests
+    // Fail open: an unexpected error must not block the request
     logger.error({ err }, "rate limit check failed, allowing request");
     return { success: true };
   }

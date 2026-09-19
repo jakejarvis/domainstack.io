@@ -367,9 +367,57 @@ describe("fetchCertificateChain", () => {
   });
 
   it("returns dns_error for ENODATA when A records are missing", async () => {
+    mockLookup.mockRejectedValue(
+      Object.assign(new Error("queryA ENODATA example.com"), { code: "ENODATA" }),
+    );
+
+    const result = await fetchCertificateChain("example.com");
+
+    expect(result).toEqual({ success: false, error: "dns_error" });
+    expect(mockConnect).not.toHaveBeenCalled();
+  });
+
+  it("returns fetch_error for EAI_AGAIN, a temporary resolver failure worth retrying", async () => {
+    mockLookup.mockRejectedValue(
+      Object.assign(new Error("getaddrinfo EAI_AGAIN example.com"), { code: "EAI_AGAIN" }),
+    );
+
+    const result = await fetchCertificateChain("example.com");
+
+    expect(result).toEqual({ success: false, error: "fetch_error" });
+    expect(mockConnect).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      "a reset during the handshake",
+      "Client network socket disconnected before secure TLS connection was established",
+      "ECONNRESET",
+    ],
+    ["a socket hang up", "socket hang up", "ECONNRESET"],
+    ["a connection timeout", "connect ETIMEDOUT 93.184.216.34:443", "ETIMEDOUT"],
+  ])(
+    "returns fetch_error for %s, not a verdict on the certificate",
+    async (_label, message, code) => {
+      const socket = createMockSocket({});
+      const error = Object.assign(new Error(message), { code });
+
+      mockConnect.mockImplementation(() => {
+        setImmediate(() => socket.emit("error", error));
+        return socket;
+      });
+
+      const result = await fetchCertificateChain("example.com");
+
+      expect(result).toEqual({ success: false, error: "fetch_error" });
+    },
+  );
+
+  it("does not report a DNS error for a failure after the host was already resolved", async () => {
     const socket = createMockSocket({});
-    const error = new Error("queryA ENODATA example.com");
-    (error as NodeJS.ErrnoException).code = "ENODATA";
+    const error = Object.assign(new Error("getaddrinfo ENOTFOUND example.com"), {
+      code: "ENOTFOUND",
+    });
 
     mockConnect.mockImplementation(() => {
       setImmediate(() => socket.emit("error", error));
@@ -378,17 +426,7 @@ describe("fetchCertificateChain", () => {
 
     const result = await fetchCertificateChain("example.com");
 
-    expect(result).toEqual({ success: false, error: "dns_error" });
-  });
-
-  it("returns dns_error for EAI_AGAIN", async () => {
-    mockLookup.mockRejectedValue(
-      Object.assign(new Error("getaddrinfo EAI_AGAIN example.com"), { code: "EAI_AGAIN" }),
-    );
-
-    const result = await fetchCertificateChain("example.com");
-
-    expect(result).toEqual({ success: false, error: "dns_error" });
+    expect(result).toEqual({ success: false, error: "fetch_error" });
   });
 
   it("returns tls_error for handshake certificate errors", async () => {
