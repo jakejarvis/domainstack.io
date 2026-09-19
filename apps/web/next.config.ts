@@ -82,8 +82,26 @@ let nextConfig: NextConfig = {
   skipTrailingSlashRedirect: true,
 };
 
+const withVercelToolbar = createWithVercelToolbar();
+
+const withMDX = createMDX({
+  options: {
+    remarkPlugins: ["remark-gfm"],
+    rehypePlugins: ["rehype-slug"],
+  },
+});
+
+type ConfigOrFn =
+  | NextConfig
+  | ((phase: string, ctx: { defaultConfig: NextConfig }) => Promise<NextConfig>);
+
+let composedConfig: ConfigOrFn = withWorkflow(withVercelToolbar(withMDX(nextConfig)));
+
+// withPostHogConfig returns an async config function that Next.js must invoke directly;
+// it has to be the outermost wrapper or the other plugins above will object-spread that
+// function (which has no own enumerable properties) and silently drop the whole config.
 if (process.env.POSTHOG_API_KEY && process.env.POSTHOG_ENV_ID) {
-  nextConfig = withPostHogConfig(nextConfig, {
+  composedConfig = withPostHogConfig(composedConfig, {
     personalApiKey: process.env.POSTHOG_API_KEY,
     envId: process.env.POSTHOG_ENV_ID,
     host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
@@ -95,13 +113,4 @@ if (process.env.POSTHOG_API_KEY && process.env.POSTHOG_ENV_ID) {
   });
 }
 
-const withVercelToolbar = createWithVercelToolbar();
-
-const withMDX = createMDX({
-  options: {
-    remarkPlugins: ["remark-gfm"],
-    rehypePlugins: ["rehype-slug"],
-  },
-});
-
-export default withWorkflow(withVercelToolbar(withMDX(nextConfig)));
+export default composedConfig;
