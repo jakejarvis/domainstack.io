@@ -91,26 +91,20 @@ const withMDX = createMDX({
   },
 });
 
-type ConfigOrFn =
-  | NextConfig
-  | ((phase: string, ctx: { defaultConfig: NextConfig }) => Promise<NextConfig>);
-
-let composedConfig: ConfigOrFn = withWorkflow(withVercelToolbar(withMDX(nextConfig)));
+const configWithPlugins = withWorkflow(withVercelToolbar(withMDX(nextConfig)));
 
 // withPostHogConfig returns an async config function that Next.js must invoke directly;
 // it has to be the outermost wrapper or the other plugins above will object-spread that
 // function (which has no own enumerable properties) and silently drop the whole config.
-if (process.env.POSTHOG_API_KEY && process.env.POSTHOG_ENV_ID) {
-  composedConfig = withPostHogConfig(composedConfig, {
-    personalApiKey: process.env.POSTHOG_API_KEY,
-    envId: process.env.POSTHOG_ENV_ID,
-    host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
-    logLevel: "error",
-    sourcemaps: {
-      enabled: true,
-      deleteAfterUpload: false,
-    },
-  });
-}
-
-export default composedConfig;
+export default process.env.POSTHOG_API_KEY && process.env.POSTHOG_ENV_ID
+  ? withPostHogConfig(configWithPlugins, {
+      personalApiKey: process.env.POSTHOG_API_KEY,
+      envId: process.env.POSTHOG_ENV_ID,
+      host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
+      logLevel: "error",
+      sourcemaps: {
+        enabled: true,
+        deleteAfterUpload: false,
+      },
+    })
+  : configWithPlugins;
