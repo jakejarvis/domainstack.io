@@ -58,7 +58,7 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null
 async function domainLookupStep(section: DomainToolSection, domain: string, ctx: ToolContext) {
   "use step";
 
-  const { lookupSection } = await import("@domainstack/core/services/lookup");
+  const { lookupSection } = await import("@domainstack/core/lookup");
   const { RateLimitError } = await import("@domainstack/redis/enforce");
   const { toRegistrableDomain } = await import("@domainstack/utils/domain");
 

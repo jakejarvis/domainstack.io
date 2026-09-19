@@ -82,8 +82,8 @@ async function refreshSectionStep(
 ): Promise<"refreshed" | "unavailable"> {
   "use step";
 
-  const { RemoteDataUnavailableError } = await import("@domainstack/core/services/fetch-errors");
-  const { fetchSection } = await import("@domainstack/core/services/lookup");
+  const { RemoteDataUnavailableError } = await import("@domainstack/core/lib/fetch-errors");
+  const { fetchSection } = await import("@domainstack/core/lookup");
 
   try {
     const result = await fetchSection(section, domain);

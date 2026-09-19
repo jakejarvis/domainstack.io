@@ -50,7 +50,7 @@ export async function upsertRegistration(params: RegistrationInsert) {
  * Returns data even if expired, with `stale: true` flag.
  *
  * Note: This queries the database cache. For fetching fresh data,
- * use `lookupSection` / `fetchSection` from `@domainstack/core/services/lookup`.
+ * use `lookupSection` / `fetchSection` from `@domainstack/core/lookup`.
  */
 export async function getCachedRegistration(
   domain: string,

@@ -30,7 +30,7 @@ import { LOOKUP_ERROR_MESSAGES } from "@/lib/constants/lookup-errors";
 import { sections } from "@/lib/constants/sections";
 import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
 import { useTRPC } from "@/lib/trpc/client";
-import type { LookupError } from "@domainstack/core/services/lookup";
+import type { LookupError } from "@domainstack/core/lookup";
 import { Button } from "@domainstack/ui/button";
 import {
   Empty,

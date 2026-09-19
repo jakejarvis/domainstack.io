@@ -1,4 +1,4 @@
-import type { LookupError } from "@domainstack/core/services/lookup";
+import type { LookupError } from "@domainstack/core/lookup";
 
 /**
  * User-facing message for each lookup error, shared by the report UI and the

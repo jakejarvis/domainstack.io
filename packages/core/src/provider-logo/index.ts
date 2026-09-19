@@ -9,8 +9,8 @@ import { optimizeImage, storeImage } from "@domainstack/image";
 import { safeFetch } from "@domainstack/safe-fetch";
 import type { ProviderLogoResponse } from "@domainstack/types";
 
-import { ttlForProviderIcon } from "../ttl";
-import { isDefinitiveNotFoundError, RemoteDataUnavailableError } from "./fetch-errors";
+import { isDefinitiveNotFoundError, RemoteDataUnavailableError } from "../lib/fetch-errors";
+import { ttlForProviderIcon } from "../lib/ttl";
 
 // ============================================================================
 // Types

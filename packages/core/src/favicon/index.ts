@@ -11,8 +11,8 @@ import { optimizeImage, storeImage } from "@domainstack/image";
 import { safeFetch } from "@domainstack/safe-fetch";
 import type { FaviconResponse } from "@domainstack/types";
 
-import { ttlForFavicon } from "../ttl";
-import { isDefinitiveNotFoundError, RemoteDataUnavailableError } from "./fetch-errors";
+import { isDefinitiveNotFoundError, RemoteDataUnavailableError } from "../lib/fetch-errors";
+import { ttlForFavicon } from "../lib/ttl";
 
 // ============================================================================
 // Types

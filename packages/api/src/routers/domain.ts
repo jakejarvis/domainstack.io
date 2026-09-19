@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import type { Section } from "@domainstack/constants";
-import { lookupFavicon, lookupSection } from "@domainstack/core/services/lookup";
+import { lookupFavicon, lookupSection } from "@domainstack/core/lookup";
 import { toRegistrableDomain } from "@domainstack/utils/domain";
 
 import { publicProcedure } from "../procedures";

@@ -50,7 +50,7 @@ export async function replaceHeaders(params: ReplaceHeadersParams) {
  * (e.g. 400 → "Bad Request") before it reaches clients.
  *
  * Note: This queries the database cache. For fetching fresh data,
- * use `lookupSection` / `fetchSection` from `@domainstack/core/services/lookup`.
+ * use `lookupSection` / `fetchSection` from `@domainstack/core/lookup`.
  *
  * Optimized: Uses a single query with JOIN to fetch domain and headers,
  * reducing from 2 round trips to 1.

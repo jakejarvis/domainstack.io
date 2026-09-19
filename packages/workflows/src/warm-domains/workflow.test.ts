@@ -1,7 +1,7 @@
 /* @vitest-environment node */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { RemoteDataUnavailableError } from "@domainstack/core/services/fetch-errors";
+import { RemoteDataUnavailableError } from "@domainstack/core/lib/fetch-errors";
 
 const cacheMocks = vi.hoisted(() => ({
   getCachedRegistration:
@@ -14,14 +14,12 @@ const cacheMocks = vi.hoisted(() => ({
 }));
 
 const fetchMocks = vi.hoisted(() => ({
-  fetchRegistration:
-    vi.fn<typeof import("@domainstack/core/services/registration").fetchRegistration>(),
-  fetchHosting: vi.fn<typeof import("@domainstack/core/services/hosting").fetchHosting>(),
-  fetchCertificates:
-    vi.fn<typeof import("@domainstack/core/services/certificates").fetchCertificates>(),
-  fetchHeaders: vi.fn<typeof import("@domainstack/core/services/headers").fetchHeaders>(),
-  fetchSeo: vi.fn<typeof import("@domainstack/core/services/seo").fetchSeo>(),
-  fetchDns: vi.fn<typeof import("@domainstack/core/services/dns").fetchDns>(),
+  fetchRegistration: vi.fn<typeof import("@domainstack/core/whois").fetchRegistration>(),
+  fetchHosting: vi.fn<typeof import("@domainstack/core/hosting").fetchHosting>(),
+  fetchCertificates: vi.fn<typeof import("@domainstack/core/tls").fetchCertificates>(),
+  fetchHeaders: vi.fn<typeof import("@domainstack/core/headers").fetchHeaders>(),
+  fetchSeo: vi.fn<typeof import("@domainstack/core/seo").fetchSeo>(),
+  fetchDns: vi.fn<typeof import("@domainstack/core/dns").fetchDns>(),
 }));
 
 vi.mock("@domainstack/db/queries/registrations", () => ({
@@ -39,22 +37,22 @@ vi.mock("@domainstack/db/queries/headers", () => ({
 vi.mock("@domainstack/db/queries/seo", () => ({
   getCachedSeo: cacheMocks.getCachedSeo,
 }));
-vi.mock("@domainstack/core/services/registration", () => ({
+vi.mock("@domainstack/core/whois", () => ({
   fetchRegistration: fetchMocks.fetchRegistration,
 }));
-vi.mock("@domainstack/core/services/hosting", () => ({
+vi.mock("@domainstack/core/hosting", () => ({
   fetchHosting: fetchMocks.fetchHosting,
 }));
-vi.mock("@domainstack/core/services/certificates", () => ({
+vi.mock("@domainstack/core/tls", () => ({
   fetchCertificates: fetchMocks.fetchCertificates,
 }));
-vi.mock("@domainstack/core/services/headers", () => ({
+vi.mock("@domainstack/core/headers", () => ({
   fetchHeaders: fetchMocks.fetchHeaders,
 }));
-vi.mock("@domainstack/core/services/seo", () => ({
+vi.mock("@domainstack/core/seo", () => ({
   fetchSeo: fetchMocks.fetchSeo,
 }));
-vi.mock("@domainstack/core/services/dns", () => ({
+vi.mock("@domainstack/core/dns", () => ({
   fetchDns: fetchMocks.fetchDns,
 }));
 

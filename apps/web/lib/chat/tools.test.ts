@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({
   lookupSection: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
 }));
 
-vi.mock("@domainstack/core/services/lookup", () => ({ lookupSection: mocks.lookupSection }));
+vi.mock("@domainstack/core/lookup", () => ({ lookupSection: mocks.lookupSection }));
 
 import { RateLimitError } from "@domainstack/redis/enforce";
 

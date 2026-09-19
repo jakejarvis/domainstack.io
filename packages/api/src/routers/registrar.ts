@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { providers } from "@domainstack/core/services/pricing";
+import { providers } from "@domainstack/core/pricing";
 
 import { publicProcedure } from "../procedures";
 import { rateLimit } from "../rate-limit";

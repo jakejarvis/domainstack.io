@@ -32,9 +32,9 @@ import {
   getProvidersFromCatalog,
 } from "@domainstack/utils/providers";
 
-import { ttlForHosting } from "../ttl";
-import { fetchDns } from "./dns";
-import { fetchHeaders } from "./headers";
+import { fetchDns } from "../dns";
+import { fetchHeaders } from "../headers";
+import { ttlForHosting } from "../lib/ttl";
 
 // ============================================================================
 // Types

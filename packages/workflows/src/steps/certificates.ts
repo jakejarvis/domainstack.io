@@ -6,8 +6,11 @@
  * so tracking workflows can continue without certificate data.
  */
 
-import type { CertificatesProcessedData } from "@domainstack/core/services/certificates";
-import type { TlsFetchResult, TlsFetchSuccess } from "@domainstack/core/tls";
+import type {
+  CertificatesProcessedData,
+  TlsFetchResult,
+  TlsFetchSuccess,
+} from "@domainstack/core/tls";
 
 /**
  * Step: Fetch certificate chain via TLS handshake.
@@ -38,7 +41,7 @@ export async function processChainStep(
 ): Promise<CertificatesProcessedData> {
   "use step";
 
-  const { processChain } = await import("@domainstack/core/services/certificates");
+  const { processChain } = await import("@domainstack/core/tls");
   return await processChain(fetchData);
 }
 
@@ -54,7 +57,7 @@ export async function persistCertificatesStep(
 ): Promise<void> {
   "use step";
 
-  const { persistCertificates } = await import("@domainstack/core/services/certificates");
+  const { persistCertificates } = await import("@domainstack/core/tls");
   try {
     await persistCertificates(domain, processedData);
   } catch (err) {

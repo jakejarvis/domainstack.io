@@ -5,7 +5,7 @@ import { IconAlertTriangle } from "@tabler/icons-react";
 import { ReportSection } from "@/components/domain/report-section";
 import { LOOKUP_ERROR_MESSAGES } from "@/lib/constants/lookup-errors";
 import type { SectionDef } from "@/lib/constants/sections";
-import type { LookupError } from "@domainstack/core/services/lookup";
+import type { LookupError } from "@domainstack/core/lookup";
 import { Alert, AlertDescription, AlertTitle } from "@domainstack/ui/alert";
 
 function getErrorMessage(error?: LookupError): string {

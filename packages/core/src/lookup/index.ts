@@ -27,11 +27,11 @@ import type {
   SeoResponse,
 } from "@domainstack/types";
 
-import type { CertificatesError } from "./certificates";
-import { RemoteDataUnavailableError } from "./fetch-errors";
-import type { HeadersError } from "./headers";
-import type { RegistrationError } from "./registration";
-import type { SeoError } from "./seo";
+import type { HeadersError } from "../headers/types";
+import { RemoteDataUnavailableError } from "../lib/fetch-errors";
+import type { SeoError } from "../seo";
+import type { CertificatesError } from "../tls";
+import type { RegistrationError } from "../whois";
 
 const logger = createLogger({ source: "lookup" });
 
@@ -79,30 +79,30 @@ const SECTIONS: { [S in Section]: SectionSpec<S> } = {
     limit: { requests: 30, window: "1 m" },
     getCached: async (domain) =>
       (await import("@domainstack/db/queries/registrations")).getCachedRegistration(domain),
-    fetch: async (domain) => (await import("./registration")).fetchRegistration(domain),
+    fetch: async (domain) => (await import("../whois")).fetchRegistration(domain),
   },
   dns: {
     limit: { requests: 60, window: "1 m" },
     getCached: async (domain) => (await import("@domainstack/db/queries/dns")).getCachedDns(domain),
-    fetch: async (domain) => (await import("./dns")).fetchDns(domain),
+    fetch: async (domain) => (await import("../dns")).fetchDns(domain),
   },
   hosting: {
     limit: { requests: 30, window: "1 m" },
     getCached: async (domain) =>
       (await import("@domainstack/db/queries/hosting")).getCachedHosting(domain),
-    fetch: async (domain) => (await import("./hosting")).fetchHosting(domain),
+    fetch: async (domain) => (await import("../hosting")).fetchHosting(domain),
   },
   certificates: {
     limit: { requests: 30, window: "1 m" },
     getCached: async (domain) =>
       (await import("@domainstack/db/queries/certificates")).getCachedCertificates(domain),
-    fetch: async (domain) => (await import("./certificates")).fetchCertificates(domain),
+    fetch: async (domain) => (await import("../tls")).fetchCertificates(domain),
   },
   headers: {
     limit: { requests: 60, window: "1 m" },
     getCached: async (domain) => {
       const { getCachedHeaders } = await import("@domainstack/db/queries/headers");
-      const { getHttpStatusMessage } = await import("./headers");
+      const { getHttpStatusMessage } = await import("../headers/status-message");
       // The db layer stores only the numeric status; attach the reason phrase here.
       const cached = await getCachedHeaders(domain);
       return {
@@ -113,12 +113,12 @@ const SECTIONS: { [S in Section]: SectionSpec<S> } = {
         },
       };
     },
-    fetch: async (domain) => (await import("./headers")).fetchHeaders(domain),
+    fetch: async (domain) => (await import("../headers")).fetchHeaders(domain),
   },
   seo: {
     limit: { requests: 30, window: "1 m" },
     getCached: async (domain) => (await import("@domainstack/db/queries/seo")).getCachedSeo(domain),
-    fetch: async (domain) => (await import("./seo")).fetchSeo(domain),
+    fetch: async (domain) => (await import("../seo")).fetchSeo(domain),
   },
 };
 
@@ -210,7 +210,7 @@ export async function lookupFavicon(
   { identifier }: LookupOptions = {},
 ): Promise<LookupOutcome<FaviconResponse>> {
   const { getFavicon } = await import("@domainstack/db/queries/favicons");
-  const { fetchFavicon } = await import("./favicon");
+  const { fetchFavicon } = await import("../favicon");
 
   return resolveLookup({
     cached: await getFavicon(domain),
@@ -227,7 +227,7 @@ export async function lookupProviderLogo(
 ): Promise<LookupOutcome<ProviderLogoResponse>> {
   const { getProviderById } = await import("@domainstack/db/queries/providers");
   const { getProviderLogo } = await import("@domainstack/db/queries/provider-logos");
-  const { fetchProviderLogo } = await import("./provider-logo");
+  const { fetchProviderLogo } = await import("../provider-logo");
 
   const [provider, cached] = await Promise.all([
     getProviderById(providerId),

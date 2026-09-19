@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { lookupProviderLogo } from "@domainstack/core/services/lookup";
+import { lookupProviderLogo } from "@domainstack/core/lookup";
 
 import { publicProcedure } from "../procedures";
 import { rateLimitIdentifier, withTrpcRateLimitErrors } from "../rate-limit";

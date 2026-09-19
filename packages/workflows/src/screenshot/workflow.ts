@@ -168,7 +168,7 @@ async function persistSuccess(domain: string, url: string, pathname: string | nu
 
   const { ensureDomainRecord } = await import("@domainstack/db/queries/domains");
   const { upsertScreenshot } = await import("@domainstack/db/queries/screenshots");
-  const { ttlForScreenshot } = await import("@domainstack/core/ttl");
+  const { ttlForScreenshot } = await import("@domainstack/core/lib/ttl");
 
   try {
     const domainRecord = await ensureDomainRecord(domain);
@@ -199,7 +199,7 @@ async function persistFailure(domain: string): Promise<void> {
 
   const { ensureDomainRecord } = await import("@domainstack/db/queries/domains");
   const { upsertScreenshot } = await import("@domainstack/db/queries/screenshots");
-  const { ttlForScreenshot } = await import("@domainstack/core/ttl");
+  const { ttlForScreenshot } = await import("@domainstack/core/lib/ttl");
 
   try {
     const domainRecord = await ensureDomainRecord(domain);

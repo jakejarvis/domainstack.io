@@ -34,16 +34,13 @@ vi.mock("@domainstack/db/queries/providers", () => ({ getProviderById: mocks.get
 vi.mock("@domainstack/db/queries/provider-logos", () => ({
   getProviderLogo: mocks.getProviderLogo,
 }));
-vi.mock("./favicon", () => ({ fetchFavicon: mocks.fetchFavicon }));
-vi.mock("./provider-logo", () => ({ fetchProviderLogo: mocks.fetchProviderLogo }));
+vi.mock("../favicon", () => ({ fetchFavicon: mocks.fetchFavicon }));
+vi.mock("../provider-logo", () => ({ fetchProviderLogo: mocks.fetchProviderLogo }));
 vi.mock("@domainstack/db/queries/dns", () => ({ getCachedDns: mocks.getCachedDns }));
 vi.mock("@domainstack/db/queries/headers", () => ({ getCachedHeaders: mocks.getCachedHeaders }));
-vi.mock("./dns", () => ({ fetchDns: mocks.fetchDns }));
-vi.mock("./certificates", () => ({ fetchCertificates: mocks.fetchCertificates }));
-vi.mock("./headers", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("./headers")>()),
-  fetchHeaders: mocks.fetchHeaders,
-}));
+vi.mock("../dns", () => ({ fetchDns: mocks.fetchDns }));
+vi.mock("../tls", () => ({ fetchCertificates: mocks.fetchCertificates }));
+vi.mock("../headers", () => ({ fetchHeaders: mocks.fetchHeaders }));
 vi.mock("@domainstack/redis/enforce", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@domainstack/redis/enforce")>()),
   enforceRateLimit: mocks.enforceRateLimit,
@@ -51,8 +48,8 @@ vi.mock("@domainstack/redis/enforce", async (importOriginal) => ({
 
 import { RateLimitError } from "@domainstack/redis/enforce";
 
-import { RemoteDataUnavailableError } from "./fetch-errors";
-import { fetchSection, lookupFavicon, lookupProviderLogo, lookupSection } from "./lookup";
+import { RemoteDataUnavailableError } from "../lib/fetch-errors";
+import { fetchSection, lookupFavicon, lookupProviderLogo, lookupSection } from "./index";
 
 const DNS_DATA = { records: [], resolver: "cloudflare" };
 const notCached = { data: null, stale: false, fetchedAt: null, expiresAt: null };

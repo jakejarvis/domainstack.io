@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { LOOKUP_ERROR_MESSAGES } from "@/lib/constants/lookup-errors";
 import { getTrpcErrorCode } from "@/lib/trpc/errors";
-import type { LookupResult } from "@domainstack/core/services/lookup";
+import type { LookupResult } from "@domainstack/core/lookup";
 
 /**
  * Shared domain-tool definitions used by the cloud workflow and browser chat.
