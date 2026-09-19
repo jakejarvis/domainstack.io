@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import type { Section } from "@domainstack/constants";
 import { fetchFavicon } from "@domainstack/core/services/favicon";
-import { RemoteDataUnavailableError } from "@domainstack/core/services/fetch-errors";
+import { logLookupFailure } from "@domainstack/core/services/fetch-errors";
 import { lookupSection } from "@domainstack/core/services/lookup";
 import { createLogger } from "@domainstack/logger";
 import { toRegistrableDomain } from "@domainstack/utils/domain";
@@ -70,12 +70,7 @@ export const domainRouter = createTRPCRouter({
       const result = await fetchFavicon(input.domain);
       return { success: true, cached: false, data: result.data };
     } catch (err) {
-      const fields = { domain: input.domain, section: "favicon", err };
-      if (err instanceof RemoteDataUnavailableError) {
-        logger.debug(fields, "favicon unavailable");
-      } else {
-        logger.error(fields, "favicon failed unexpectedly");
-      }
+      logLookupFailure(logger, { domain: input.domain, err }, "favicon", "debug");
       return {
         success: false,
         cached: false,

@@ -94,7 +94,7 @@ describe("lib/ratelimit/api", () => {
         const request = createMockRequest();
         await checkRateLimit(request);
 
-        expect(mockLimit).toHaveBeenCalledWith("user-123");
+        expect(mockLimit).toHaveBeenCalledWith("api:user-123");
       });
 
       it("falls back to IP address when not authenticated", async () => {
@@ -111,7 +111,7 @@ describe("lib/ratelimit/api", () => {
         const request = createMockRequest();
         await checkRateLimit(request);
 
-        expect(mockLimit).toHaveBeenCalledWith("192.168.1.1");
+        expect(mockLimit).toHaveBeenCalledWith("api:192.168.1.1");
       });
 
       it("falls back to IP address when auth throws error", async () => {
@@ -128,7 +128,7 @@ describe("lib/ratelimit/api", () => {
         const request = createMockRequest();
         await checkRateLimit(request);
 
-        expect(mockLimit).toHaveBeenCalledWith("10.0.0.1");
+        expect(mockLimit).toHaveBeenCalledWith("api:10.0.0.1");
       });
 
       it("uses a provided identifier and skips the session lookup", async () => {
@@ -149,7 +149,7 @@ describe("lib/ratelimit/api", () => {
         });
 
         expect(mockGetSession).not.toHaveBeenCalled();
-        expect(mockLimit).toHaveBeenCalledWith("user-456");
+        expect(mockLimit).toHaveBeenCalledWith("api:user-456");
       });
 
       it("falls back to IP when a provided identifier is null", async () => {
@@ -170,7 +170,7 @@ describe("lib/ratelimit/api", () => {
         });
 
         expect(mockGetSession).not.toHaveBeenCalled();
-        expect(mockLimit).toHaveBeenCalledWith("10.0.0.1");
+        expect(mockLimit).toHaveBeenCalledWith("api:10.0.0.1");
       });
 
       it("allows request without rate limiting when no identifier available (fail-open)", async () => {

@@ -26,7 +26,7 @@ import type {
 } from "@domainstack/types";
 
 import type { CertificatesError } from "./certificates";
-import { RemoteDataUnavailableError } from "./fetch-errors";
+import { logLookupFailure } from "./fetch-errors";
 import type { HeadersError } from "./headers";
 import type { RegistrationError } from "./registration";
 import type { SeoError } from "./seo";
@@ -160,12 +160,7 @@ export async function lookupSection<S extends Section>(
       ? { success: true, cached: false, data: result.data }
       : { success: false, error: result.error };
   } catch (err) {
-    // A remote target that can't supply data is routine; anything else is a bug.
-    if (err instanceof RemoteDataUnavailableError) {
-      logger.warn({ domain, section, err }, "section unavailable");
-    } else {
-      logger.error({ domain, section, err }, "section failed unexpectedly");
-    }
+    logLookupFailure(logger, { domain, section, err }, section);
     return { success: false, error: "fetch_failed" };
   }
 }

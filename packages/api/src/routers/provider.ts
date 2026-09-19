@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { RemoteDataUnavailableError } from "@domainstack/core/services/fetch-errors";
+import { logLookupFailure } from "@domainstack/core/services/fetch-errors";
 import { fetchProviderLogo } from "@domainstack/core/services/provider-logo";
 import { getProviderLogo } from "@domainstack/db/queries/provider-logos";
 import { getProviderById } from "@domainstack/db/queries/providers";
@@ -40,11 +40,7 @@ export const providerRouter = createTRPCRouter({
         const result = await fetchProviderLogo(input.providerId, providerDomain);
         return { success: true, cached: false, data: result.data };
       } catch (err) {
-        if (err instanceof RemoteDataUnavailableError) {
-          logger.debug({ providerId: input.providerId, err }, "provider logo unavailable");
-        } else {
-          logger.error({ providerId: input.providerId, err }, "provider logo failed unexpectedly");
-        }
+        logLookupFailure(logger, { providerId: input.providerId, err }, "provider logo", "debug");
         return {
           success: false,
           cached: false,

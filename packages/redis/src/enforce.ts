@@ -1,11 +1,15 @@
 import { waitUntil } from "@vercel/functions";
 
+import { createLogger } from "@domainstack/logger";
+
 import {
   DEFAULT_RATE_LIMIT,
   getRateLimiter,
   type RateLimitConfig,
   type RateLimitInfo,
 } from "./ratelimit";
+
+const logger = createLogger({ source: "ratelimit" });
 
 /**
  * Thrown by {@link enforceRateLimit} when the caller is over budget.
@@ -48,7 +52,10 @@ export async function enforceRateLimit({
     return undefined;
   }
 
-  const result = await limiter.limit(`${key}:${identifier}`).catch(() => null);
+  const result = await limiter.limit(`${key}:${identifier}`).catch((err: unknown) => {
+    logger.error({ err, key }, "rate limit check failed, allowing request");
+    return null;
+  });
   if (!result) {
     return undefined;
   }

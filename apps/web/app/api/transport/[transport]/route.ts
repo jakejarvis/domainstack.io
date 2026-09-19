@@ -4,27 +4,12 @@ import { createMcpHandler } from "mcp-handler";
 import { PostHog } from "posthog-node";
 import { z } from "zod";
 
+import { LOOKUP_PROCEDURES } from "@/lib/constants/lookup-procedures";
+import { MCP_SECTION_TOOLS } from "@/lib/constants/mcp-tools";
 import { checkRateLimit } from "@/lib/ratelimit/api";
 import { createCaller } from "@domainstack/api";
 import type { Context } from "@domainstack/api";
 import { type Section, SECTION_IDS } from "@domainstack/constants";
-import type {
-  CertificatesResponse,
-  DnsRecordsResponse,
-  HeadersResponse,
-  HostingResponse,
-  RegistrationResponse,
-  SeoResponse,
-} from "@domainstack/types";
-
-/** Data shape returned by any `domain_report` section fetcher. */
-type SectionData =
-  | RegistrationResponse
-  | DnsRecordsResponse
-  | HostingResponse
-  | CertificatesResponse
-  | HeadersResponse
-  | SeoResponse;
 
 export const maxDuration = 800;
 
@@ -84,131 +69,22 @@ function createMcpHandlerWithContext(request: Request) {
     (server) => {
       if (posthog) instrument(server, posthog);
 
-      // ─────────────────────────────────────────────────────────────────────
-      // Domain Registration Tool
-      // ─────────────────────────────────────────────────────────────────────
-      server.registerTool(
-        "domain_registration",
-        {
-          title: "Registration",
-          description:
-            "Get WHOIS/RDAP registration data for a domain including registrar, creation date, expiration date, nameservers, and registrant information",
-          inputSchema: domainSchema,
-          annotations: {
-            readOnlyHint: true,
-            idempotentHint: true,
+      for (const { section, name, title, description } of MCP_SECTION_TOOLS) {
+        server.registerTool(
+          name,
+          {
+            title,
+            description,
+            inputSchema: domainSchema,
+            annotations: {
+              readOnlyHint: true,
+              idempotentHint: true,
+            },
           },
-        },
-        async ({ domain }) => {
-          const result = await trpc.domain.getRegistration({ domain });
-          return formatToolResponse(result);
-        },
-      );
-
-      // ─────────────────────────────────────────────────────────────────────
-      // DNS Records Tool
-      // ─────────────────────────────────────────────────────────────────────
-      server.registerTool(
-        "domain_dns",
-        {
-          title: "DNS Records",
-          description:
-            "Get DNS records for a domain including A, AAAA, CNAME, MX, TXT, NS, and SOA records",
-          inputSchema: domainSchema,
-          annotations: {
-            readOnlyHint: true,
-            idempotentHint: true,
-          },
-        },
-        async ({ domain }) => {
-          const result = await trpc.domain.getDnsRecords({ domain });
-          return formatToolResponse(result);
-        },
-      );
-
-      // ─────────────────────────────────────────────────────────────────────
-      // Hosting Detection Tool
-      // ─────────────────────────────────────────────────────────────────────
-      server.registerTool(
-        "domain_hosting",
-        {
-          title: "Hosting",
-          description:
-            "Detect hosting, DNS, CDN, and email providers for a domain by analyzing DNS records and HTTP headers",
-          inputSchema: domainSchema,
-          annotations: {
-            readOnlyHint: true,
-            idempotentHint: true,
-          },
-        },
-        async ({ domain }) => {
-          const result = await trpc.domain.getHosting({ domain });
-          return formatToolResponse(result);
-        },
-      );
-
-      // ─────────────────────────────────────────────────────────────────────
-      // SSL Certificates Tool
-      // ─────────────────────────────────────────────────────────────────────
-      server.registerTool(
-        "domain_certificates",
-        {
-          title: "Certificates",
-          description:
-            "Get SSL/TLS certificate information for a domain including issuer, validity dates, and certificate chain",
-          inputSchema: domainSchema,
-          annotations: {
-            readOnlyHint: true,
-            idempotentHint: true,
-          },
-        },
-        async ({ domain }) => {
-          const result = await trpc.domain.getCertificates({ domain });
-          return formatToolResponse(result);
-        },
-      );
-
-      // ─────────────────────────────────────────────────────────────────────
-      // HTTP Headers Tool
-      // ─────────────────────────────────────────────────────────────────────
-      server.registerTool(
-        "domain_headers",
-        {
-          title: "Headers",
-          description:
-            "Get HTTP response headers for a domain including security headers, caching headers, and server information",
-          inputSchema: domainSchema,
-          annotations: {
-            readOnlyHint: true,
-            idempotentHint: true,
-          },
-        },
-        async ({ domain }) => {
-          const result = await trpc.domain.getHeaders({ domain });
-          return formatToolResponse(result);
-        },
-      );
-
-      // ─────────────────────────────────────────────────────────────────────
-      // SEO Data Tool
-      // ─────────────────────────────────────────────────────────────────────
-      server.registerTool(
-        "domain_seo",
-        {
-          title: "SEO",
-          description:
-            "Get SEO metadata for a domain including title, description, Open Graph tags, Twitter cards, and robots.txt rules",
-          inputSchema: domainSchema,
-          annotations: {
-            readOnlyHint: true,
-            idempotentHint: true,
-          },
-        },
-        async ({ domain }) => {
-          const result = await trpc.domain.getSeo({ domain });
-          return formatToolResponse(result);
-        },
-      );
+          async ({ domain }) =>
+            formatToolResponse(await trpc.domain[LOOKUP_PROCEDURES[section]]({ domain })),
+        );
+      }
 
       // ─────────────────────────────────────────────────────────────────────
       // Domain Report Bundle Tool
@@ -232,24 +108,11 @@ function createMcpHandlerWithContext(request: Request) {
           const requestedSections: Section[] =
             sections && sections.length > 0 ? sections : [...SECTION_IDS];
 
-          // Define section fetchers
-          const sectionFetchers: Record<
-            Section,
-            () => Promise<{ success: boolean; data?: SectionData | null; error?: string }>
-          > = {
-            registration: () => trpc.domain.getRegistration({ domain }),
-            dns: () => trpc.domain.getDnsRecords({ domain }),
-            hosting: () => trpc.domain.getHosting({ domain }),
-            certificates: () => trpc.domain.getCertificates({ domain }),
-            headers: () => trpc.domain.getHeaders({ domain }),
-            seo: () => trpc.domain.getSeo({ domain }),
-          };
-
           // Execute requested sections in parallel
           const results = await Promise.all(
             requestedSections.map(async (section) => {
               try {
-                const result = await sectionFetchers[section]();
+                const result = await trpc.domain[LOOKUP_PROCEDURES[section]]({ domain });
                 if (result.success) {
                   // `cached`/`stale` sit beside `data` on the result, not in it
                   return { section, success: true, data: result.data ?? null };
@@ -266,18 +129,7 @@ function createMcpHandlerWithContext(request: Request) {
           );
 
           // Build response object
-          interface TransportReport {
-            domain: string;
-            errors?: { section: string; error: string }[];
-            [section: string]:
-              | SectionData
-              | string
-              | { section: string; error: string }[]
-              | null
-              | undefined;
-          }
-
-          const report: TransportReport = { domain };
+          const report: Record<string, unknown> = { domain };
           const errors: { section: string; error: string }[] = [];
 
           for (const result of results) {
