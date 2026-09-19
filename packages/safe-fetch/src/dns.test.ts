@@ -34,6 +34,17 @@ describe("isExpectedDnsError", () => {
     expect(isExpectedDnsError(err)).toBe(false);
   });
 
+  it("treats a wrapped EAI_AGAIN as retryable", () => {
+    // resolvePublicHost keeps only the message when it wraps a resolver failure
+    const err = new SafeFetchError("dns_error", "getaddrinfo EAI_AGAIN example.com");
+    expect(isExpectedDnsError(err)).toBe(false);
+  });
+
+  it("treats a wrapped NXDOMAIN as permanent", () => {
+    const err = new SafeFetchError("dns_error", "getaddrinfo ENOTFOUND example.invalid");
+    expect(isExpectedDnsError(err)).toBe(true);
+  });
+
   it("detects nested cause codes", () => {
     const err = new Error("fetch failed", {
       cause: Object.assign(new Error("queryA ENODATA example.com"), { code: "ENODATA" }),

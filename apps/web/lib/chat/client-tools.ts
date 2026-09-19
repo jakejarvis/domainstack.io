@@ -9,6 +9,8 @@ import type { TRPCClient } from "@trpc/client";
 import { tool, type Tool } from "ai";
 
 import { analytics } from "@/lib/analytics/client";
+import { getLookupErrorMessage } from "@/lib/constants/lookup-errors";
+import { LOOKUP_PROCEDURES } from "@/lib/constants/lookup-procedures";
 import type { AppRouter } from "@domainstack/api";
 
 import {
@@ -24,7 +26,7 @@ type TRPCClientType = TRPCClient<AppRouter>;
 type ClientDomainToolSet = {
   [Def in (typeof DOMAIN_TOOL_DEFS)[number] as Def["name"]]: Tool<
     DomainToolInput,
-    DomainToolResult<Def["procedure"]>
+    DomainToolResult<Def["section"]>
   >;
 };
 
@@ -38,9 +40,11 @@ function makeClientDomainTool<TDef extends (typeof DOMAIN_TOOL_DEFS)[number]>(
     strict: true,
     execute: async ({ domain }: DomainToolInput) => {
       try {
-        const result = await trpc.domain[def.procedure].query({ domain });
+        const result = await trpc.domain[LOOKUP_PROCEDURES[def.section]].query({ domain });
         if (!result.success) {
-          return { error: result.error };
+          return {
+            error: getLookupErrorMessage(result.error),
+          };
         }
         return result.data;
       } catch (err) {

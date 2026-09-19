@@ -17,7 +17,11 @@ const whoisMock = vi.hoisted(() => ({
   lookupWhois: vi.fn<typeof import("@domainstack/core/whois").lookupWhois>(),
 }));
 
-vi.mock("@domainstack/core/whois", () => whoisMock);
+// Only the WHOIS lookup is faked; normalize/persist come from the real module.
+vi.mock("@domainstack/core/whois", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@domainstack/core/whois")>()),
+  ...whoisMock,
+}));
 
 // Mock Edge Config
 vi.mock("@domainstack/edge-config", () => ({

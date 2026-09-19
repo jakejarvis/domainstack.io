@@ -2,10 +2,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const whoisMock = vi.hoisted(() => ({
-  lookupWhois: vi.fn<typeof import("../whois").lookupWhois>(),
+  lookupWhois: vi.fn<typeof import("./lookup").lookupWhois>(),
 }));
 
-vi.mock("../whois", () => whoisMock);
+vi.mock("./lookup", () => whoisMock);
 vi.mock("@domainstack/db/queries/domains", () => ({ upsertDomain: vi.fn<() => unknown>() }));
 vi.mock("@domainstack/db/queries/providers", () => ({
   resolveOrCreateProviderId: vi.fn<() => unknown>(),
@@ -18,8 +18,8 @@ vi.mock("@domainstack/edge-config", () => ({
   getProviderCatalog: vi.fn<() => unknown>().mockResolvedValue(null),
 }));
 
-import { RemoteDataUnavailableError } from "./fetch-errors";
-import { fetchRegistration } from "./registration";
+import { RemoteDataUnavailableError } from "../lib/fetch-errors";
+import { fetchRegistration } from "./index";
 
 describe("fetchRegistration", () => {
   beforeEach(() => {

@@ -9,8 +9,8 @@ import { optimizeImage, storeImage } from "@domainstack/image";
 import { safeFetch } from "@domainstack/safe-fetch";
 import type { ProviderLogoResponse } from "@domainstack/types";
 
-import { ttlForProviderIcon } from "../ttl";
-import { isDefinitiveNotFoundError, RemoteDataUnavailableError } from "./fetch-errors";
+import { isDefinitiveNotFoundError, RemoteDataUnavailableError } from "../lib/fetch-errors";
+import { ttlForProviderIcon } from "../lib/ttl";
 
 // ============================================================================
 // Types
@@ -57,7 +57,7 @@ const TIMEOUT_MS = 2000;
  * @param providerDomain - The provider's domain for fetching the logo
  * @returns Provider logo result with URL or null
  *
- * @throws Error on transient failures - TanStack Query retries these
+ * @throws Error on transient failures - the lookup reports these as `fetch_failed`
  */
 export async function fetchProviderLogo(
   providerId: string,
@@ -68,7 +68,7 @@ export async function fetchProviderLogo(
 
   if (!fetchResult.success) {
     // If at least one source failed with a transient error (not 404/400),
-    // throw so TanStack Query can retry instead of caching failure
+    // throw so the failure is reported instead of cached
     if (!fetchResult.allNotFound) {
       throw new RemoteDataUnavailableError(`Provider logo unavailable for ${providerDomain}`);
     }

@@ -14,15 +14,12 @@ type IconQueryOptions<TQueryKey extends QueryKey = QueryKey> = {
   queryFn?: QueryFunction<IconQueryResult, TQueryKey>;
 };
 
-type IconQueryResult = {
-  success: boolean;
-  data: IconResponse | null;
-};
+type IconQueryResult = { success: true; data: IconResponse } | { success: false };
 
 export type RemoteIconProps<TQueryKey extends QueryKey = QueryKey> = {
   /**
    * TanStack Query options from tRPC's queryOptions() method.
-   * Expected to resolve to a result with { data: { url: string | null } }.
+   * Expected to resolve to `{ success: true, data: { url: string | null } }` or `{ success: false }`.
    */
   queryOptions: IconQueryOptions<TQueryKey>;
   /** Identifier for fallback avatar (e.g., domain name, provider name) */
@@ -135,7 +132,7 @@ export function RemoteIcon<TQueryKey extends QueryKey>({
     return <IconSkeleton className={className} style={style} />;
   }
 
-  const url = result?.data?.url;
+  const url = result?.success ? result.data.url : undefined;
 
   // Error or no URL: show letter avatar fallback
   if (isError || !url || failedUrl === url) {

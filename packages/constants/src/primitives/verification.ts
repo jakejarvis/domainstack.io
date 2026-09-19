@@ -38,15 +38,20 @@ export const DNS_VERIFICATION_PREFIX = "domainstack-verify=";
 export const DNS_VERIFICATION_HOST_LEGACY = "_domainstack-verify";
 
 /**
- * Recommended TTL for DNS verification records (in seconds).
+ * Recommended TTL for DNS verification records.
  * 1 minute allows for reasonable propagation testing without excessive caching.
  */
-export const DNS_VERIFICATION_TTL = 60;
+const DNS_VERIFICATION_TTL_MINUTES = 1;
+
+/** Recommended TTL for DNS verification records, in seconds. */
+export const DNS_VERIFICATION_TTL = DNS_VERIFICATION_TTL_MINUTES * 60;
 
 /**
  * Human-readable label for the recommended TTL.
  */
-export const DNS_VERIFICATION_TTL_LABEL = "1 minute";
+export const DNS_VERIFICATION_TTL_LABEL = `${DNS_VERIFICATION_TTL_MINUTES} ${
+  DNS_VERIFICATION_TTL_MINUTES === 1 ? "minute" : "minutes"
+}`;
 
 // ============================================================================
 // HTML File Verification

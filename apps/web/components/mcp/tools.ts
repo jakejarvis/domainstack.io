@@ -1,39 +1,12 @@
+import { MCP_SECTION_TOOLS } from "@/lib/constants/mcp-tools";
+import { SECTION_IDS } from "@domainstack/constants";
+
 export const tools = [
-  {
-    name: "domain_registration",
-    description:
-      "Get WHOIS/RDAP registration data including registrar, creation date, expiration date, nameservers, and registrant information.",
+  ...SECTION_IDS.map((section) => ({
+    name: MCP_SECTION_TOOLS[section].name,
+    description: MCP_SECTION_TOOLS[section].description,
     parameters: [{ name: "domain", type: "string", required: true }],
-  },
-  {
-    name: "domain_dns",
-    description: "Get DNS records including A, AAAA, CNAME, MX, TXT, NS, and SOA records.",
-    parameters: [{ name: "domain", type: "string", required: true }],
-  },
-  {
-    name: "domain_hosting",
-    description:
-      "Detect hosting, DNS, CDN, and email providers by analyzing DNS records and HTTP headers.",
-    parameters: [{ name: "domain", type: "string", required: true }],
-  },
-  {
-    name: "domain_certificates",
-    description:
-      "Get SSL/TLS certificate information including issuer, validity dates, and certificate chain.",
-    parameters: [{ name: "domain", type: "string", required: true }],
-  },
-  {
-    name: "domain_headers",
-    description:
-      "Get HTTP response headers including security headers, caching headers, and server information.",
-    parameters: [{ name: "domain", type: "string", required: true }],
-  },
-  {
-    name: "domain_seo",
-    description:
-      "Get SEO metadata including title, description, Open Graph tags, Twitter cards, and robots.txt rules.",
-    parameters: [{ name: "domain", type: "string", required: true }],
-  },
+  })),
   {
     name: "domain_report",
     description:

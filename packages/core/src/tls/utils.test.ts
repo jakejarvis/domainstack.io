@@ -15,6 +15,7 @@ import {
 import {
   isEmptyPeerCertificate,
   isExpectedTlsError,
+  isTransientSocketError,
   parseAltNames,
   parseCertificateDate,
   toName,
@@ -70,6 +71,29 @@ describe("parseAltNames", () => {
   it("is case-insensitive for type prefix", () => {
     const result = parseAltNames("dns:example.com, Dns:www.example.com");
     expect(result).toEqual(["example.com", "www.example.com"]);
+  });
+});
+
+describe("isTransientSocketError", () => {
+  it("returns false for non-Error values", () => {
+    expect(isTransientSocketError("ECONNRESET")).toBe(false);
+    expect(isTransientSocketError(null)).toBe(false);
+  });
+
+  it.each(["ECONNRESET", "ECONNABORTED", "EPIPE", "ETIMEDOUT"])("detects the %s code", (code) => {
+    expect(isTransientSocketError(Object.assign(new Error("boom"), { code }))).toBe(true);
+  });
+
+  it("detects a handshake disconnect by message even without a code", () => {
+    const err = new Error(
+      "Client network socket disconnected before secure TLS connection was established",
+    );
+    expect(isTransientSocketError(err)).toBe(true);
+  });
+
+  it("does not flag genuine certificate failures", () => {
+    const err = Object.assign(new Error("certificate has expired"), { code: "CERT_HAS_EXPIRED" });
+    expect(isTransientSocketError(err)).toBe(false);
   });
 });
 

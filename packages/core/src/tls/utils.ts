@@ -69,6 +69,23 @@ export function isExpectedTlsError(err: unknown): boolean {
   );
 }
 
+const TRANSIENT_SOCKET_CODES = new Set(["ECONNRESET", "ECONNABORTED", "EPIPE", "ETIMEDOUT"]);
+
+/**
+ * Check if an error is a dropped or reset connection. These say nothing about
+ * the target's certificate, even when the message mentions TLS (for example
+ * "Client network socket disconnected before secure TLS connection was
+ * established"), so callers should retry rather than report a TLS failure.
+ */
+export function isTransientSocketError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const code = (err as Error & { code?: string }).code;
+  if (code && TRANSIENT_SOCKET_CODES.has(code)) return true;
+
+  const message = err.message.toLowerCase();
+  return message.includes("socket disconnected") || message.includes("socket hang up");
+}
+
 /**
  * Thrown when a peer certificate contains a date that cannot be parsed.
  */

@@ -14,8 +14,8 @@ import {
   sortDnsRecordsByType,
 } from "@domainstack/utils/dns";
 
-import { isCloudflareIp } from "../cloudflare";
-import { ttlForDnsRecord } from "../ttl";
+import { isCloudflareIp } from "../lib/cloudflare";
+import { ttlForDnsRecord } from "../lib/ttl";
 import type { DnsFetchData } from "./types";
 
 /**

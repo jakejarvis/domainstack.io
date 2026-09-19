@@ -1,14 +1,21 @@
 import { TRPCError } from "@trpc/server";
-import { waitUntil } from "@vercel/functions";
 
+import { enforceRateLimit, RateLimitError } from "@domainstack/redis/enforce";
 import {
   DEFAULT_RATE_LIMIT,
-  getRateLimiter,
   type RateLimitConfig,
   type RateLimitInfo,
 } from "@domainstack/redis/ratelimit";
 
 import type { Context } from "./context";
+
+/**
+ * Who a call is metered as: the signed-in user's id, else the client IP.
+ * Missing means the call is unmetered (fail-open).
+ */
+export function rateLimitIdentifier(ctx: Context): string | null {
+  return ctx.session?.user?.id ?? ctx.ip;
+}
 
 /**
  * Enforce rate limiting for a procedure call.
@@ -39,51 +46,32 @@ export async function rateLimit({
   path: string;
   config?: RateLimitConfig | false;
 }): Promise<RateLimitInfo | undefined> {
-  if (config === false || process.env.NODE_ENV === "development") {
-    return undefined;
+  return withTrpcRateLimitErrors(() =>
+    enforceRateLimit({
+      // Each procedure has its own rate limit bucket, keyed by its path
+      key: path,
+      identifier: rateLimitIdentifier(ctx),
+      config,
+    }),
+  );
+}
+
+/**
+ * Run `work`, translating a `RateLimitError` from `@domainstack/redis/enforce`
+ * (which core lookups throw) into a TOO_MANY_REQUESTS `TRPCError`.
+ */
+export async function withTrpcRateLimitErrors<T>(work: () => Promise<T>): Promise<T> {
+  try {
+    return await work();
+  } catch (err) {
+    if (err instanceof RateLimitError) {
+      throw new TRPCError({
+        code: "TOO_MANY_REQUESTS",
+        message: err.message,
+        // Include structured data in cause for client-side parsing
+        cause: { retryAfter: err.retryAfter, rateLimit: err.rateLimit },
+      });
+    }
+    throw err;
   }
-
-  const limiter = getRateLimiter(config);
-
-  // Fail open: no Redis or no identifier = skip rate limiting entirely
-  if (!limiter) {
-    return undefined;
-  }
-
-  // Build rate limiter with procedure path as the id prefix
-  // This ensures each procedure has its own rate limit bucket in Redis
-  const identifier = ctx.session?.user?.id ?? ctx.ip;
-
-  // Fail open: no identifier = skip rate limiting
-  if (!identifier) {
-    return undefined;
-  }
-
-  const rateLimitResult = await limiter.limit(`${path}:${identifier}`).catch(() => null);
-
-  // Fail open: Redis errors allow the request through
-  if (!rateLimitResult) {
-    return undefined;
-  }
-
-  const { success, limit, remaining, reset, pending } = rateLimitResult;
-
-  // Analytics write lands after the response; `waitUntil` no-ops off-platform
-  // (local dev, tests) and drops it, which is fine for analytics. Swallow
-  // failures either way so they can't become an unhandled rejection.
-  waitUntil(pending.catch(() => undefined));
-
-  const rateLimitInfo = { limit, remaining, reset } satisfies RateLimitInfo;
-
-  if (!success) {
-    const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
-    throw new TRPCError({
-      code: "TOO_MANY_REQUESTS",
-      message: `Rate limit exceeded. Try again in ${retryAfter}s`,
-      // Include structured data in cause for client-side parsing
-      cause: { retryAfter, rateLimit: rateLimitInfo },
-    });
-  }
-
-  return rateLimitInfo;
 }

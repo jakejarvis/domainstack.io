@@ -6,7 +6,7 @@ import { META_TAG_NAME } from "@domainstack/constants";
 import { safeFetch } from "@domainstack/safe-fetch";
 import type { VerificationResult } from "@domainstack/types";
 
-import { extractMetaTagValues } from "../seo";
+import { extractMetaTagValues } from "../seo/parse";
 import type { VerificationHttpOptions } from "./types";
 
 /** Maximum HTML size to fetch for meta tag verification */

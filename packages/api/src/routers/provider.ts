@@ -1,16 +1,10 @@
 import { z } from "zod";
 
-import { RemoteDataUnavailableError } from "@domainstack/core/services/fetch-errors";
-import { fetchProviderLogo } from "@domainstack/core/services/provider-logo";
-import { getProviderLogo } from "@domainstack/db/queries/provider-logos";
-import { getProviderById } from "@domainstack/db/queries/providers";
-import { createLogger } from "@domainstack/logger";
+import { lookupProviderLogo } from "@domainstack/core/lookup";
 
 import { publicProcedure } from "../procedures";
-import { rateLimit } from "../rate-limit";
+import { rateLimitIdentifier, withTrpcRateLimitErrors } from "../rate-limit";
 import { createTRPCRouter } from "../trpc";
-
-const logger = createLogger({ source: "routers/provider" });
 
 export const providerRouter = createTRPCRouter({
   /**
@@ -19,38 +13,9 @@ export const providerRouter = createTRPCRouter({
    */
   getProviderIcon: publicProcedure
     .input(z.object({ providerId: z.uuid() }))
-    .query(async ({ ctx, input, path }) => {
-      const [provider, cached] = await Promise.all([
-        getProviderById(input.providerId),
-        getProviderLogo(input.providerId),
-      ]);
-      const providerDomain = provider?.domain;
-      if (!providerDomain) {
-        // Return null instead of throwing to avoid logging errors for missing icons
-        return { success: false, cached: false, data: null };
-      }
-      if (cached.data && !cached.stale) {
-        return { success: true, cached: true, data: cached.data };
-      }
-
-      await rateLimit({ ctx, path, config: { requests: 60, window: "1 m" } });
-
-      // Fetch fresh data
-      try {
-        const result = await fetchProviderLogo(input.providerId, providerDomain);
-        return { success: true, cached: false, data: result.data };
-      } catch (err) {
-        if (err instanceof RemoteDataUnavailableError) {
-          logger.debug({ providerId: input.providerId, err }, "provider logo unavailable");
-        } else {
-          logger.error({ providerId: input.providerId, err }, "provider logo failed unexpectedly");
-        }
-        return {
-          success: false,
-          cached: false,
-          data: null,
-          error: "fetch_failed",
-        };
-      }
-    }),
+    .query(({ ctx, input }) =>
+      withTrpcRateLimitErrors(() =>
+        lookupProviderLogo(input.providerId, { identifier: rateLimitIdentifier(ctx) }),
+      ),
+    ),
 });

@@ -22,6 +22,7 @@ import {
   InvalidCertificateDateError,
   isEmptyPeerCertificate,
   isExpectedTlsError,
+  isTransientSocketError,
   readTlsAuthorization,
   walkCertificateChain,
 } from "./utils";
@@ -110,8 +111,10 @@ export async function fetchCertificateChain(
       return { success: false, error: "timeout" };
     }
 
-    if (isExpectedDnsError(err)) {
-      return { success: false, error: "dns_error" };
+    // DNS was resolved and pinned before dialing, so nothing here is a DNS
+    // failure. A dropped socket says nothing about the certificate either.
+    if (isTransientSocketError(err)) {
+      return { success: false, error: "fetch_error" };
     }
 
     if (isExpectedTlsError(err)) {
@@ -159,7 +162,8 @@ function mapResolutionError(err: unknown): TlsFetchResult {
       return { success: false, error: "timeout" };
     }
     if (err.code === "dns_error") {
-      return { success: false, error: "dns_error" };
+      // A temporary resolver failure (EAI_AGAIN) is retryable, not a verdict.
+      return { success: false, error: isExpectedDnsError(err) ? "dns_error" : "fetch_error" };
     }
   }
 

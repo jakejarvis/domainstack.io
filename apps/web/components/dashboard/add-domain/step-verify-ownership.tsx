@@ -2,6 +2,7 @@ import { IconDownload, IconInfoCircle } from "@tabler/icons-react";
 import { toast } from "sonner";
 
 import { VerificationFailed } from "@/components/dashboard/add-domain/verification-failed";
+import { META_TAG_NAME } from "@domainstack/constants";
 import type { VerificationMethod, VerificationState } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { CopyableField } from "@domainstack/ui/copyable-field";
@@ -208,7 +209,7 @@ export function StepVerifyOwnership({
                 <span className="text-rose-600 dark:text-rose-400">meta</span>
                 <span className="text-sky-600 dark:text-sky-400"> name</span>
                 <span className="text-zinc-500 dark:text-zinc-400">=</span>
-                <span className="text-emerald-600 dark:text-emerald-400">"domainstack-verify"</span>
+                <span className="text-emerald-600 dark:text-emerald-400">"{META_TAG_NAME}"</span>
                 <span className="text-sky-600 dark:text-sky-400"> content</span>
                 <span className="text-zinc-500 dark:text-zinc-400">=</span>
                 <span className="text-emerald-600 dark:text-emerald-400">

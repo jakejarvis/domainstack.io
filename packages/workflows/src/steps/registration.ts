@@ -82,7 +82,7 @@ export async function normalizeAndBuildResponseStep(
   "use step";
 
   const { getProviderCatalog } = await import("@domainstack/edge-config");
-  const { normalizeRegistration } = await import("@domainstack/core/services/registration");
+  const { normalizeRegistration } = await import("@domainstack/core/whois");
   return await normalizeRegistration(recordJson, { catalog: await getProviderCatalog() });
 }
 
@@ -98,7 +98,7 @@ export async function persistRegistrationStep(
 ): Promise<void> {
   "use step";
 
-  const { persistRegistration } = await import("@domainstack/core/services/registration");
+  const { persistRegistration } = await import("@domainstack/core/whois");
   try {
     await persistRegistration(domain, response);
   } catch (err) {

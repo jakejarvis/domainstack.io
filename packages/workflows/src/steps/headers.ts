@@ -52,7 +52,7 @@ export async function persistHeadersStep(
 ): Promise<void> {
   "use step";
 
-  const { persistHeaders } = await import("@domainstack/core/services/headers");
+  const { persistHeaders } = await import("@domainstack/core/headers");
   try {
     await persistHeaders(domain, fetchData);
   } catch (err) {

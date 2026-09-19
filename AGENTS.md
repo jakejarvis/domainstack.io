@@ -380,7 +380,11 @@ domainstack.io/
 │   ├── auth/                   # Better Auth server/client config
 │   ├── blob/                   # Vercel Blob storage wrapper
 │   ├── constants/               # Shared constants; primitives/ holds enum arrays
-│   ├── core/                    # Domain data services: dns, tls, whois, seo, headers, verification (@domainstack/core)
+│   ├── core/                    # Domain data services (@domainstack/core), one folder per data source
+│   │   └── src/                 #   one folder per data source; `index.ts` is its persisting service
+│   │                            #   (dns/ headers/ tls/ seo/ whois/ also keep low-level fetch/parse files beside it)
+│   │                            #   hosting/ favicon/ provider-logo/ pricing/ verification/
+│   │                            #   lookup/ (cache → rate limit → fetch orchestrator), lib/ (ttl, cloudflare, in-flight, fetch-errors)
 │   ├── db/                     # Drizzle schema, client, and query layer
 │   ├── edge-config/             # Vercel Edge Config reader
 │   ├── email/                  # React Email templates + Resend
@@ -461,7 +465,7 @@ Drizzle queries directly in `apps/web`. Cached read functions are named
 **Domain services** (`@domainstack/core`):
 
 ```typescript
-import { fetchDns } from "@domainstack/core/services/dns";
+import { fetchDns } from "@domainstack/core/dns";
 import { lookupWhois } from "@domainstack/core/whois";
 ```
 
@@ -632,6 +636,6 @@ Differentiated by auth status and endpoint.
 
 ### Adding New Tools
 
-1. Define tool in `apps/web/lib/chat/tools.ts` using `createDomainToolset()`
-2. Add human-readable title in `components/chat/utils.ts` (`TOOL_TITLES`)
-3. Tools call tRPC procedures which have their own rate limits
+1. Add the tool's `name`, `section`, `status` label, and `description` to `DOMAIN_TOOL_DEFS` in `apps/web/lib/chat/domain-tools.ts`; `createDomainToolset()` (`tools.ts`) and the browser client tools build from it
+2. Mention the tool in the system prompt (`apps/web/lib/chat/system-prompt.ts`) if the model needs guidance on when to call it
+3. Tools call `lookupSection` from `@domainstack/core/lookup`, which applies the same per-section cache and rate limits as the tRPC domain procedures

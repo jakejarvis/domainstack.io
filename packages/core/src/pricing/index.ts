@@ -1,4 +1,5 @@
 import { createLogger } from "@domainstack/logger";
+import type { RegistrarKey } from "@domainstack/types";
 
 const logger = createLogger({ source: "pricing" });
 
@@ -70,7 +71,7 @@ export interface PricingProvider {
  * Factory function to create a pricing provider with default configuration.
  */
 function createPricingProvider(
-  name: string,
+  name: RegistrarKey,
   implementation: {
     fetchPricing: (
       fetchFn: (url: string, options?: RequestInit) => Promise<Response>,

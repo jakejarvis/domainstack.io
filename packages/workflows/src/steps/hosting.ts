@@ -9,7 +9,7 @@ import type { DnsRecord, GeoIpData, Header, ProviderDetectionData } from "@domai
 export async function lookupGeoIpStep(ip: string): Promise<GeoIpData | null> {
   "use step";
 
-  const { lookupGeoIp } = await import("@domainstack/core/services/hosting");
+  const { lookupGeoIp } = await import("@domainstack/core/hosting");
   return await lookupGeoIp(ip);
 }
 
@@ -28,7 +28,7 @@ export async function detectAndResolveProvidersStep(
 ): Promise<ProviderDetectionData> {
   "use step";
 
-  const { detectAndResolveProviders } = await import("@domainstack/core/services/hosting");
+  const { detectAndResolveProviders } = await import("@domainstack/core/hosting");
   return await detectAndResolveProviders(dnsRecords, headers, geoData);
 }
 
@@ -46,7 +46,7 @@ export async function persistHostingStep(
 ): Promise<void> {
   "use step";
 
-  const { persistHosting } = await import("@domainstack/core/services/hosting");
+  const { persistHosting } = await import("@domainstack/core/hosting");
   try {
     await persistHosting(domain, providers, geo);
   } catch (err) {

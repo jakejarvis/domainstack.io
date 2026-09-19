@@ -16,17 +16,19 @@ export interface AvailableProvider {
 
 export type AvailableProvidersByCategory = Record<ProviderCategory, AvailableProvider[]>;
 
-/** Filter types for domain verification status */
-export type StatusFilter = "verified" | "pending";
+/** Filter values for domain verification status */
+export const STATUS_FILTERS = ["verified", "pending"] as const;
+export type StatusFilter = (typeof STATUS_FILTERS)[number];
 
-/** Filter types for domain health status */
-export type HealthFilter = "healthy" | "expiring" | "expired";
+/** Filter values for domain health status */
+export const HEALTH_FILTERS = ["healthy", "expiring", "expired"] as const;
+export type HealthFilter = (typeof HEALTH_FILTERS)[number];
 
 /** Valid filter values for runtime validation of URL params */
-const VALID_STATUS_FILTERS = new Set<StatusFilter>(["verified", "pending"]);
+const VALID_STATUS_FILTERS = new Set<StatusFilter>(STATUS_FILTERS);
 
 /** Valid health filter values for runtime validation of URL params */
-const VALID_HEALTH_FILTERS = new Set<HealthFilter>(["healthy", "expiring", "expired"]);
+const VALID_HEALTH_FILTERS = new Set<HealthFilter>(HEALTH_FILTERS);
 
 /** Severity shown on a domain's health badge. */
 export type HealthSeverity = "healthy" | "warning" | "critical" | "unknown";

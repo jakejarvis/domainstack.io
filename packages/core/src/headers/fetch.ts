@@ -8,7 +8,7 @@
 import { isExpectedDnsError, safeFetch } from "@domainstack/safe-fetch";
 import type { Header } from "@domainstack/types";
 
-import { isExpectedTlsError } from "../tls";
+import { isExpectedTlsError } from "../tls/utils";
 import { getHttpStatusMessage } from "./status-message";
 import type { HeadersFetchResult } from "./types";
 

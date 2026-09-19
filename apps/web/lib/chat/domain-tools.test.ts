@@ -1,6 +1,7 @@
 /* @vitest-environment node */
 import { describe, expect, it } from "vitest";
 
+import type { Section } from "@domainstack/constants";
 import type { RegistrationResponse } from "@domainstack/types";
 
 import {
@@ -8,13 +9,17 @@ import {
   getDomainToolStatus,
   getToolPartType,
   type DomainToolResult,
+  type DomainToolSection,
 } from "./domain-tools";
 
 type Equals<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 type AssertTrue<T extends true> = T;
 
-type RegistrationSuccess = Exclude<DomainToolResult<"getRegistration">, { error: string }>;
-type DnsSuccess = Exclude<DomainToolResult<"getDnsRecords">, { error: string }>;
+// Fails if a report section has no chat tool, or a tool targets an unknown section.
+type _EverySectionHasATool = AssertTrue<Equals<Section, DomainToolSection>>;
+
+type RegistrationSuccess = Exclude<DomainToolResult<"registration">, { error: string }>;
+type DnsSuccess = Exclude<DomainToolResult<"dns">, { error: string }>;
 
 // Fails if DomainToolResult collapses to `{ error: string }` or includes `data: null`.
 type _KeepsRegistrationData = AssertTrue<Equals<RegistrationSuccess, RegistrationResponse>>;

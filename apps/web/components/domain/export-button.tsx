@@ -52,7 +52,7 @@ export function ExportButton({ domain, enabled = true }: { domain: string; enabl
       for (const key of Object.keys(queryKeys)) {
         const response = queryClient.getQueryData(queryKeys[key as keyof typeof queryKeys]);
 
-        if (response?.data) {
+        if (response?.success) {
           Object.assign(exportData, { [key]: response.data });
         }
       }
