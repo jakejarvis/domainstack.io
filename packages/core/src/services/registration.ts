@@ -3,7 +3,7 @@
  *
  * Its internal helpers are also called by the monitoring workflow steps in
  * packages/workflows/src/steps.
- * Transient errors throw (for TanStack Query to retry).
+ * Transient errors throw; `lookupSection` reports them as `fetch_failed`.
  * Permanent errors return { success: false, error }.
  */
 
@@ -47,7 +47,7 @@ export type RegistrationResult =
  * @param domain - The domain to look up
  * @returns Registration result with data or error
  *
- * @throws Error on transient failures (timeout, network) - TanStack Query retries these
+ * @throws Error on transient failures (timeout, network) - `lookupSection` reports these as `fetch_failed`
  */
 export async function fetchRegistration(domain: string): Promise<RegistrationResult> {
   // 1. Fetch WHOIS/RDAP
@@ -85,7 +85,7 @@ async function lookupWhois(domain: string): Promise<LookupResult> {
   });
 
   if (!result.success) {
-    // Transient errors throw - let TanStack Query retry
+    // Transient errors throw (see `lookupSection`)
     if (result.error === "retry" || result.error === "timeout") {
       const { message, code, phase, server, retryAfterMs, attempts } = result.detail;
       throw new RemoteDataUnavailableError(

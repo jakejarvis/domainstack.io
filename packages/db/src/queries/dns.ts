@@ -139,7 +139,7 @@ export async function replaceDns(params: UpsertDnsParams) {
  * Returns data even if expired, with `stale: true` flag.
  *
  * Note: This queries the database cache. For fetching fresh data from
- * external DNS providers, use `fetchDnsRecordsStep` from workflows/shared/dns.
+ * external DNS providers, use `lookupSection` / `fetchSection` from `@domainstack/core/services/lookup`.
  *
  * Optimized: Uses a single query with JOIN to fetch domain and DNS records,
  * reducing from 2 round trips to 1.

@@ -3,7 +3,7 @@
  *
  * Its internal helpers are also called by the monitoring workflow steps in
  * packages/workflows/src/steps.
- * All errors throw (for TanStack Query to retry) - there are no permanent failures.
+ * All errors throw (`lookupSection` reports them as `fetch_failed`) - there are no permanent failures.
  */
 
 import { DNS_RECORD_TYPES } from "@domainstack/constants";
@@ -35,7 +35,7 @@ export type DnsResult = { success: true; data: DnsRecordsResponse };
  * @param domain - The domain to look up
  * @returns DNS result with records
  *
- * @throws Error on all failures - TanStack Query retries these
+ * @throws Error on all failures - `lookupSection` reports these as `fetch_failed`
  */
 export function fetchDns(domain: string): Promise<DnsResult> {
   const normalizedDomain = domain.toLowerCase();

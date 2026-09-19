@@ -634,4 +634,4 @@ Differentiated by auth status and endpoint.
 
 1. Define tool in `apps/web/lib/chat/tools.ts` using `createDomainToolset()`
 2. Add human-readable title in `components/chat/utils.ts` (`TOOL_TITLES`)
-3. Tools call tRPC procedures which have their own rate limits
+3. Tools call `lookupSection` from `@domainstack/core/services/lookup`, which applies the same per-section cache and rate limits as the tRPC domain procedures

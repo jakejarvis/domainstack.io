@@ -3,32 +3,21 @@
 import { IconAlertTriangle } from "@tabler/icons-react";
 
 import { ReportSection } from "@/components/domain/report-section";
+import { LOOKUP_ERROR_MESSAGES } from "@/lib/constants/lookup-errors";
 import type { SectionDef } from "@/lib/constants/sections";
+import type { LookupError } from "@domainstack/core/services/lookup";
 import { Alert, AlertDescription, AlertTitle } from "@domainstack/ui/alert";
 
-/**
- * Map error codes to user-friendly messages.
- */
-interface ErrorMessages {
-  [errorCode: string]: string;
-}
-
-const errorMessages: ErrorMessages = {
-  dns_error: "The domain could not be resolved. It may not exist or DNS is misconfigured.",
-  tls_error: "The SSL certificate is invalid or could not be verified.",
-  fetch_failed: "Failed to fetch data. Please try again later.",
-};
-
-function getErrorMessage(error?: string): string {
+function getErrorMessage(error?: LookupError): string {
   if (!error) {
     return "This section couldn't be loaded. Please try refreshing the page.";
   }
-  return errorMessages[error] ?? error;
+  return LOOKUP_ERROR_MESSAGES[error];
 }
 
 interface SectionFailedAlertProps {
   section: SectionDef;
-  error?: string;
+  error?: LookupError;
 }
 
 /**

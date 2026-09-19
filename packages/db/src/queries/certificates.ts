@@ -116,7 +116,7 @@ export async function replaceCertificates(params: UpsertCertificatesParams) {
  * are a cache miss so the next lookup persists a real chain and observation.
  *
  * Note: This queries the database cache. For fetching fresh data,
- * use `fetchCertificateChainStep` from workflows/shared/certificates.
+ * use `lookupSection` / `fetchSection` from `@domainstack/core/services/lookup`.
  */
 export async function getCachedCertificates(
   domain: string,

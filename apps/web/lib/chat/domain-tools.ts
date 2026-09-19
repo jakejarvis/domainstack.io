@@ -1,57 +1,52 @@
 import { z } from "zod";
 
+import { LOOKUP_ERROR_MESSAGES } from "@/lib/constants/lookup-errors";
 import { getTrpcErrorCode } from "@/lib/trpc/errors";
-import type {
-  CertificatesResponse,
-  DnsRecordsResponse,
-  HeadersResponse,
-  HostingResponse,
-  RegistrationResponse,
-  SeoResponse,
-} from "@domainstack/types";
+import type { LookupResult } from "@domainstack/core/services/lookup";
 
 /**
  * Shared domain-tool definitions used by the cloud workflow and browser chat.
+ * `section` names the report section the tool looks up.
  */
 export const DOMAIN_TOOL_DEFS = [
   {
     name: "get_registration",
-    procedure: "getRegistration",
+    section: "registration",
     status: "Looking up WHOIS data",
     description:
       "Get WHOIS/RDAP registration data for a domain including registrar, creation date, expiration date, nameservers, and registrant information. Use this tool when users ask about domain ownership, registration, expiry, or who owns a domain.",
   },
   {
     name: "get_dns_records",
-    procedure: "getDnsRecords",
+    section: "dns",
     status: "Fetching DNS records",
     description:
       "Get DNS records for a domain including A, AAAA, CNAME, MX, TXT, NS, and SOA records. Use this tool when users ask about DNS configuration, IP addresses, mail servers, or nameservers.",
   },
   {
     name: "get_hosting",
-    procedure: "getHosting",
+    section: "hosting",
     status: "Detecting hosting provider",
     description:
       "Detect hosting, DNS, CDN, and email providers for a domain by analyzing DNS records and HTTP headers. Use this tool when users ask where a site is hosted, what CDN they use, or who provides their email.",
   },
   {
     name: "get_certificates",
-    procedure: "getCertificates",
+    section: "certificates",
     status: "Checking SSL certificate",
     description:
       "Get SSL/TLS certificate information for a domain including issuer, validity, TLS protocol, and certificate chain. Use this tool when users ask about HTTPS, SSL certificates, security, or certificate expiry.",
   },
   {
     name: "get_headers",
-    procedure: "getHeaders",
+    section: "headers",
     status: "Analyzing HTTP headers",
     description:
       "Get HTTP response headers for a domain including security headers, caching headers, and server information. Use this tool when users ask about security headers, server software, caching, or HTTP configuration.",
   },
   {
     name: "get_seo",
-    procedure: "getSeo",
+    section: "seo",
     status: "Fetching SEO metadata",
     description:
       "Get SEO metadata for a domain including title, description, Open Graph tags, Twitter cards, and robots.txt rules. Use this tool when users ask about SEO, meta tags, social sharing, or how a site appears in search.",
@@ -59,19 +54,10 @@ export const DOMAIN_TOOL_DEFS = [
 ] as const;
 
 export type DomainToolName = (typeof DOMAIN_TOOL_DEFS)[number]["name"];
-export type DomainToolProcedure = (typeof DOMAIN_TOOL_DEFS)[number]["procedure"];
+export type DomainToolSection = (typeof DOMAIN_TOOL_DEFS)[number]["section"];
 
-type DomainToolSuccess = {
-  getRegistration: RegistrationResponse;
-  getDnsRecords: DnsRecordsResponse;
-  getHosting: HostingResponse;
-  getCertificates: CertificatesResponse;
-  getHeaders: HeadersResponse;
-  getSeo: SeoResponse;
-};
-
-export type DomainToolResult<P extends DomainToolProcedure> =
-  | DomainToolSuccess[P]
+export type DomainToolResult<S extends DomainToolSection> =
+  | Extract<LookupResult<S>, { success: true }>["data"]
   | { error: string };
 
 export const domainToolInputSchema = z.object({
@@ -110,15 +96,21 @@ export function getDomainToolStatus(type: string): string {
   return DOMAIN_TOOL_STATUS[toolName as DomainToolName] ?? toolName;
 }
 
+/** Messages returned to the model when a tool call completes without data. */
+export const INVALID_DOMAIN_MESSAGE = "Please provide a valid root domain (e.g., example.com).";
+export const RATE_LIMIT_MESSAGE = "Rate limit exceeded. Please wait a moment and try again.";
+export const TOOL_TIMEOUT_MESSAGE = "The lookup timed out. Try again in a moment.";
+
+/** Message for a failed tRPC call from the browser chat's client tools. */
 export function getDomainToolErrorMessage(err: unknown): string {
   const code = getTrpcErrorCode(err);
   if (code === "TOO_MANY_REQUESTS") {
-    return "Rate limit exceeded. Please wait a moment and try again.";
+    return RATE_LIMIT_MESSAGE;
   }
   if (code === "BAD_REQUEST") {
-    return "Please provide a valid root domain (e.g., example.com).";
+    return INVALID_DOMAIN_MESSAGE;
   }
-  return "Unable to fetch data. Please try again.";
+  return LOOKUP_ERROR_MESSAGES.fetch_failed;
 }
 
 export function createDomainToolsContext<T>(context: T): Record<DomainToolName, T> {

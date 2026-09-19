@@ -2,8 +2,8 @@
  * Headers service - fetches and persists HTTP headers.
  *
  * Its internal helpers are also called by the monitoring workflow steps in
- * apps/web/workflows/shared.
- * Transient errors throw (for TanStack Query to retry).
+ * packages/workflows/src/steps.
+ * Transient errors throw; `lookupSection` reports them as `fetch_failed`.
  * Permanent errors return { success: false, error }.
  */
 
@@ -47,7 +47,7 @@ export type HeadersResult =
  * @param domain - The domain to probe
  * @returns Headers result with data or error
  *
- * @throws Error on transient failures (network issues) - TanStack Query retries these
+ * @throws Error on transient failures (network issues) - `lookupSection` reports these as `fetch_failed`
  */
 export function fetchHeaders(domain: string): Promise<HeadersResult> {
   const normalizedDomain = domain.toLowerCase();

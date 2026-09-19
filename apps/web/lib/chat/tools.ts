@@ -14,12 +14,14 @@ import {
   createDomainToolsContext,
   DOMAIN_TOOL_DEFS,
   domainToolInputSchema,
-  getDomainToolErrorMessage,
+  INVALID_DOMAIN_MESSAGE,
+  RATE_LIMIT_MESSAGE,
+  TOOL_TIMEOUT_MESSAGE,
   type DomainToolInput,
-  type DomainToolProcedure,
   type DomainToolResult,
+  type DomainToolSection,
 } from "@/lib/chat/domain-tools";
-import { isExpectedTrpcError } from "@/lib/trpc/errors";
+import { LOOKUP_ERROR_MESSAGES } from "@/lib/constants/lookup-errors";
 import { CHAT_TOOL_TIMEOUT_MS } from "@domainstack/constants";
 
 interface ToolContext {
@@ -33,12 +35,10 @@ const toolContextSchema = z.object({
 type DomainToolSet = {
   [Def in (typeof DOMAIN_TOOL_DEFS)[number] as Def["name"]]: Tool<
     DomainToolInput,
-    DomainToolResult<Def["procedure"]>,
+    DomainToolResult<Def["section"]>,
     ToolContext
   >;
 };
-
-const TOOL_TIMEOUT_MESSAGE = "The lookup timed out. Try again in a moment.";
 
 /** Resolves to `null` if `promise` has not settled within `ms`. */
 async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
@@ -55,12 +55,25 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null
   }
 }
 
-async function domainLookupStep(procedure: DomainToolProcedure, domain: string, ctx: ToolContext) {
+async function domainLookupStep(section: DomainToolSection, domain: string, ctx: ToolContext) {
   "use step";
+  const { waitUntil } = await import("@vercel/functions");
+  const { lookupSection } = await import("@domainstack/core/services/lookup");
+  const { RateLimitError } = await import("@domainstack/redis/enforce");
+  const { updateLastAccessed } = await import("@domainstack/db/queries/domains");
+  const { toRegistrableDomain } = await import("@domainstack/utils/domain");
+
+  const registrable = toRegistrableDomain(domain);
+  if (!registrable) {
+    return { error: INVALID_DOMAIN_MESSAGE };
+  }
+
+  // Same as the tRPC domain procedures: record the access so warm-domains keeps
+  // recently discussed domains fresh. `updateLastAccessed` never throws.
+  waitUntil(updateLastAccessed(registrable));
+
   try {
-    const { createCaller } = await import("@domainstack/api");
-    const trpc = createCaller({ req: undefined, ip: ctx.ip, session: null });
-    const lookup = (async () => trpc.domain[procedure]({ domain }))();
+    const lookup = lookupSection(section, registrable, { identifier: ctx.ip });
     // A hung lookup would otherwise block the whole run; the abandoned promise
     // is left to settle on its own.
     void lookup.catch(() => undefined);
@@ -68,18 +81,15 @@ async function domainLookupStep(procedure: DomainToolProcedure, domain: string, 
     if (!result) {
       return { error: TOOL_TIMEOUT_MESSAGE };
     }
-    if (!result.success) {
-      return { error: result.error };
-    }
-    return result.data;
+    return result.success ? result.data : { error: LOOKUP_ERROR_MESSAGES[result.error] };
   } catch (err) {
-    // Domain lookups return `{ success: false }` instead of throwing.
-    // Throws here are tRPC validation/rate-limit errors, or unexpected bugs.
-    if (isExpectedTrpcError(err)) {
-      return { error: getDomainToolErrorMessage(err) };
+    // Lookups report failures as `{ success: false }`; the only expected throw
+    // is the rate limit. Anything else is a cache/db failure worth retrying.
+    if (err instanceof RateLimitError) {
+      return { error: RATE_LIMIT_MESSAGE };
     }
     const reason = err instanceof Error ? err.message : String(err);
-    throw new RetryableError(`domain tool ${procedure} failed: ${reason}`, { retryAfter: "5s" });
+    throw new RetryableError(`domain tool ${section} failed: ${reason}`, { retryAfter: "5s" });
   }
 }
 
@@ -93,7 +103,7 @@ function makeDomainTool(def: (typeof DOMAIN_TOOL_DEFS)[number]) {
     inputSchema: domainToolInputSchema,
     contextSchema: toolContextSchema,
     strict: true,
-    execute: async ({ domain }, { context }) => domainLookupStep(def.procedure, domain, context),
+    execute: async ({ domain }, { context }) => domainLookupStep(def.section, domain, context),
   });
 }
 

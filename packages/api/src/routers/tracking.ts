@@ -25,7 +25,7 @@ import { getUserSubscription } from "@domainstack/db/queries/user-subscription";
 import { sendEmail } from "@domainstack/email";
 import VerificationInstructionsEmail from "@domainstack/email/templates/verification-instructions";
 import { createLogger } from "@domainstack/logger";
-import { getRateLimiter } from "@domainstack/redis/ratelimit";
+import { enforceRateLimit } from "@domainstack/redis/enforce";
 import { autoVerifyWorkflow } from "@domainstack/workflows/auto-verify";
 import { initializeSnapshotWorkflow } from "@domainstack/workflows/initialize-snapshot";
 
@@ -50,6 +50,7 @@ import {
 } from "@domainstack/utils/verification";
 
 import { protectedProcedure } from "../procedures";
+import { withTrpcRateLimitErrors } from "../rate-limit";
 import { createTRPCRouter } from "../trpc";
 
 const DomainInputSchema = z.object({ domain: z.string().min(1) }).transform(({ domain }) => {
@@ -603,27 +604,17 @@ export const trackingRouter = createTRPCRouter({
       }
 
       // Fails open like the other limits: no Redis or a Redis error allows the send.
-      const recipientLimiter =
-        process.env.NODE_ENV === "development"
-          ? null
-          : getRateLimiter(VERIFICATION_INSTRUCTIONS_PER_RECIPIENT);
-      if (recipientLimiter) {
-        const recipientKey = createHash("sha256")
-          .update(recipientEmail.trim().toLowerCase())
-          .digest("hex")
-          .slice(0, 32);
-        const result = await recipientLimiter
-          .limit(`tracking.sendVerificationInstructions:recipient:${recipientKey}`)
-          .catch(() => null);
-        if (result && !result.success) {
-          const retryAfter = Math.max(1, Math.ceil((result.reset - Date.now()) / 1000));
-          throw new TRPCError({
-            code: "TOO_MANY_REQUESTS",
-            message: `Rate limit exceeded. Try again in ${retryAfter}s`,
-            cause: { retryAfter },
-          });
-        }
-      }
+      const recipientKey = createHash("sha256")
+        .update(recipientEmail.trim().toLowerCase())
+        .digest("hex")
+        .slice(0, 32);
+      await withTrpcRateLimitErrors(() =>
+        enforceRateLimit({
+          key: "tracking.sendVerificationInstructions:recipient",
+          identifier: recipientKey,
+          config: VERIFICATION_INSTRUCTIONS_PER_RECIPIENT,
+        }),
+      );
 
       // Build verification instructions for all methods
       const instructions = buildVerificationInstructions(

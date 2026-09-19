@@ -2,8 +2,8 @@
  * Certificates service - fetches and persists TLS certificates.
  *
  * Its internal helpers are also called by the monitoring workflow steps in
- * apps/web/workflows/shared.
- * Transient errors throw (for TanStack Query to retry).
+ * packages/workflows/src/steps.
+ * Transient errors throw; `lookupSection` reports them as `fetch_failed`.
  * Permanent errors return { success: false, error }.
  */
 
@@ -50,7 +50,7 @@ export interface CertificatesProcessedData {
  * @param domain - The domain to probe
  * @returns Certificates result with data or error
  *
- * @throws Error on transient failures (timeout, fetch_error) - TanStack Query retries these
+ * @throws Error on transient failures (timeout, fetch_error) - `lookupSection` reports these as `fetch_failed`
  */
 export async function fetchCertificates(domain: string): Promise<CertificatesResult> {
   const fetchResult = await fetchCertificateChainInternal(domain);
@@ -91,7 +91,7 @@ async function fetchCertificateChainInternal(domain: string): Promise<FetchResul
   const result = await fetchCertificateChain(domain);
 
   if (!result.success) {
-    // Transient failures - throw for TanStack Query to retry
+    // Transient failures - throw (see `lookupSection`)
     if (result.error === "fetch_error" || result.error === "timeout") {
       throw new RemoteDataUnavailableError("Certificate data unavailable");
     }

@@ -46,11 +46,11 @@ export async function replaceHeaders(params: ReplaceHeadersParams) {
 
 /**
  * Get cached headers for a domain with staleness metadata.
- * Returns raw data — callers should attach a status reason phrase
- * (e.g. 400 → "Bad Request") when returning this to clients.
+ * Returns raw data — `lookupSection` attaches the status reason phrase
+ * (e.g. 400 → "Bad Request") before it reaches clients.
  *
  * Note: This queries the database cache. For fetching fresh data,
- * use `fetchHeadersStep` from workflows/shared/headers.
+ * use `lookupSection` / `fetchSection` from `@domainstack/core/services/lookup`.
  *
  * Optimized: Uses a single query with JOIN to fetch domain and headers,
  * reducing from 2 round trips to 1.

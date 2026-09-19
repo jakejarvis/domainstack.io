@@ -5,7 +5,7 @@ import type { DOMAIN_TOOL_DEFS, DomainToolInput, DomainToolResult } from "./doma
 export type DomainToolSet = {
   [Def in (typeof DOMAIN_TOOL_DEFS)[number] as Def["name"]]: Tool<
     DomainToolInput,
-    DomainToolResult<Def["procedure"]>
+    DomainToolResult<Def["section"]>
   >;
 };
 

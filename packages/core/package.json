@@ -35,7 +35,7 @@
     "@readme/http-status-codes": "^9.0.6",
     "cheerio": "^1.2.0",
     "ipaddr.js": "catalog:",
-    "lru-cache": "catalog:",
+    "lru-cache": "^11.5.2",
     "rdapper": "catalog:"
   },
   "devDependencies": {

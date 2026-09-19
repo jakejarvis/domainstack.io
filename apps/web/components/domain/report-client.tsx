@@ -26,9 +26,11 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSectionTracking } from "@/hooks/use-section-tracking";
 import { analytics } from "@/lib/analytics/client";
 import { HEADER_HEIGHT, SCROLL_PADDING, SECTION_NAV_HEIGHT } from "@/lib/constants/layout";
+import { LOOKUP_ERROR_MESSAGES } from "@/lib/constants/lookup-errors";
 import { sections } from "@/lib/constants/sections";
 import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
 import { useTRPC } from "@/lib/trpc/client";
+import type { LookupError } from "@domainstack/core/services/lookup";
 import { Button } from "@domainstack/ui/button";
 import {
   Empty,
@@ -63,24 +65,6 @@ const staticQueryOptions = {
   refetchOnWindowFocus: false,
   refetchOnReconnect: false,
 } as const;
-
-interface RegistrationLookupMessages {
-  [errorCode: string]: string;
-}
-
-const REGISTRATION_LOOKUP_MESSAGES: RegistrationLookupMessages = {
-  unsupported_tld: "This TLD is not supported for registration lookups.",
-  timeout: "The registration lookup timed out. Please try again.",
-  retry: "The registration lookup timed out. Please try again.",
-  lookup_failed: "We couldn't fetch registration data for this domain. Please try again.",
-};
-
-function registrationLookupMessage(error?: string): string {
-  if (error && error in REGISTRATION_LOOKUP_MESSAGES) {
-    return REGISTRATION_LOOKUP_MESSAGES[error];
-  }
-  return "We couldn't fetch registration data for this domain. Please try again.";
-}
 
 function SuspendedHostingSection({ domain }: { domain: string }) {
   const trpc = useTRPC();
@@ -197,7 +181,7 @@ function getReportErrorDescription({
   isRegistrationError: boolean;
   registrationError: unknown;
   lookupFailed: boolean;
-  registration: { success: false; error?: string } | { success: true } | null | undefined;
+  registration: { success: false; error: LookupError } | { success: true } | null | undefined;
 }) {
   if (
     process.env.NODE_ENV === "development" &&
@@ -207,7 +191,7 @@ function getReportErrorDescription({
     return registrationError.message;
   }
   if (lookupFailed && registration && !registration.success) {
-    return registrationLookupMessage(registration.error);
+    return LOOKUP_ERROR_MESSAGES[registration.error];
   }
   return "We couldn't fetch registration data for this domain. Please try again.";
 }
@@ -303,10 +287,10 @@ export function DomainReportClient({ domain }: { domain: string }) {
     isError: isRegistrationError,
     error: registrationError,
   } = useQuery(trpc.domain.getRegistration.queryOptions({ domain }, staticQueryOptions));
+  const registrationData = registration?.success ? registration.data : undefined;
   const lookupFailed = Boolean(registration && !registration.success);
-  const isRegistered = registration?.success === true && registration.data?.isRegistered === true;
-  const isUnregistered =
-    registration?.success === true && registration.data?.isRegistered === false;
+  const isRegistered = registrationData?.isRegistered === true;
+  const isUnregistered = registrationData?.isRegistered === false;
   const { headerRef, isHeaderVisible, activeSection, scrollToSection } = useDomainReportTracking(
     domain,
     isRegistered,
@@ -335,7 +319,7 @@ export function DomainReportClient({ domain }: { domain: string }) {
     <>
       <DomainReportHeader
         domain={domain}
-        domainId={registration?.data?.domainId}
+        domainId={registrationData?.domainId}
         isRegistered={isRegistered}
         ref={headerRef}
       />
@@ -352,7 +336,7 @@ export function DomainReportClient({ domain }: { domain: string }) {
         {isRegistrationLoading ? (
           <RegistrationSectionSkeleton />
         ) : (
-          <RegistrationSection domain={domain} data={registration?.data} />
+          <RegistrationSection domain={domain} data={registrationData} />
         )}
         {isRegistered ? (
           <RegisteredReportSections domain={domain} />

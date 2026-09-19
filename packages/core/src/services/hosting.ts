@@ -2,8 +2,8 @@
  * Hosting service - orchestrates DNS + headers fetching, GeoIP lookup, and provider detection.
  *
  * Its internal helpers are also called by the monitoring workflow steps in
- * apps/web/workflows/shared.
- * Transient errors throw (for TanStack Query to retry).
+ * packages/workflows/src/steps.
+ * Transient errors throw; `lookupSection` reports them as `fetch_failed`.
  * This service always succeeds (no typed errors) - DNS failures would throw,
  * headers failures are handled gracefully.
  */
@@ -59,7 +59,7 @@ export type HostingResult = { success: true; data: HostingResponse };
  * @param domain - The domain to analyze
  * @returns Hosting result with provider data
  *
- * @throws Error on transient failures (network issues) - TanStack Query retries these
+ * @throws Error on transient failures (network issues) - `lookupSection` reports these as `fetch_failed`
  */
 export async function fetchHosting(domain: string): Promise<HostingResult> {
   // Step 1 & 2: Fetch DNS and headers in parallel

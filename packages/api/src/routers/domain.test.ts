@@ -384,6 +384,25 @@ describe("domain router", () => {
       expect(result.success).toBe(true);
       expect(fetchDns).toHaveBeenCalled();
     });
+
+    it("rejects with TOO_MANY_REQUESTS when the limit is exceeded on a cache miss", async () => {
+      const caller = createTestCaller();
+      const limit = vi.fn<(identifier: string) => Promise<unknown>>().mockResolvedValue({
+        success: false,
+        limit: 60,
+        remaining: 0,
+        reset: Date.now() + 30_000,
+        pending: Promise.resolve(),
+      });
+      vi.mocked(getRateLimiter).mockReturnValueOnce({ limit } as never);
+
+      await expect(caller.domain.getDnsRecords({ domain: "limited.com" })).rejects.toMatchObject({
+        code: "TOO_MANY_REQUESTS",
+        cause: { retryAfter: expect.any(Number) as number },
+      });
+      expect(limit).toHaveBeenCalledWith("lookup.dns:127.0.0.1");
+      expect(fetchDns).not.toHaveBeenCalled();
+    });
   });
 
   describe("getHeaders", () => {
@@ -669,6 +688,9 @@ describe("domain router", () => {
         data: freshData,
       });
       expect(fetchCertificates).toHaveBeenCalledWith(TEST_DOMAIN);
+      if (!cached.success || !fresh.success) {
+        throw new Error("Expected both certificate lookups to succeed");
+      }
       expect(fresh.data).toEqual(cached.data);
     });
 

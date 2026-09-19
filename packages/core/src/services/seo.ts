@@ -2,7 +2,7 @@
  * SEO service - fetches and persists SEO data.
  *
  * Replaces the workflow-based implementation with a simple async function.
- * Transient errors throw (for TanStack Query to retry).
+ * Transient errors throw; `lookupSection` reports them as `fetch_failed`.
  */
 
 import { isDomainBlocked } from "@domainstack/db/queries/blocked-domains";
@@ -71,7 +71,7 @@ const SOCIAL_HEIGHT = 630;
  * @param domain - The domain to analyze
  * @returns SEO result with data or error
  *
- * @throws Error on transient failures (network issues) - TanStack Query retries these
+ * @throws Error on transient failures (network issues) - `lookupSection` reports these as `fetch_failed`
  */
 export async function fetchSeo(domain: string): Promise<SeoResult> {
   // Step 1 & 2: Fetch HTML and robots.txt in parallel
@@ -214,7 +214,7 @@ async function fetchHtml(domain: string): Promise<HtmlFetchData> {
       };
     }
 
-    // Transient failure - throw for TanStack Query to retry
+    // Transient failure - throw (see `lookupSection`)
     throw new RemoteDataUnavailableError("HTML data unavailable", { cause: err });
   }
 }

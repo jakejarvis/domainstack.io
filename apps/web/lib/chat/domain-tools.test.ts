@@ -13,8 +13,8 @@ import {
 type Equals<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 type AssertTrue<T extends true> = T;
 
-type RegistrationSuccess = Exclude<DomainToolResult<"getRegistration">, { error: string }>;
-type DnsSuccess = Exclude<DomainToolResult<"getDnsRecords">, { error: string }>;
+type RegistrationSuccess = Exclude<DomainToolResult<"registration">, { error: string }>;
+type DnsSuccess = Exclude<DomainToolResult<"dns">, { error: string }>;
 
 // Fails if DomainToolResult collapses to `{ error: string }` or includes `data: null`.
 type _KeepsRegistrationData = AssertTrue<Equals<RegistrationSuccess, RegistrationResponse>>;
