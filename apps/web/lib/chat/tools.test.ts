@@ -56,11 +56,16 @@ describe("domain chat tools", () => {
     expect(mocks.lookupSection).not.toHaveBeenCalled();
   });
 
-  it("returns a readable message for a typed lookup failure", async () => {
-    mocks.lookupSection.mockResolvedValue({ success: false, error: "dns_error" });
+  it.each([
+    ["get_headers", "dns_error", "could not be resolved"],
+    ["get_certificates", "tls_error", "secure connection"],
+    ["get_registration", "unsupported_tld", "aren't supported for this TLD"],
+    ["get_dns_records", "fetch_failed", "Unable to fetch data"],
+  ] as const)("%s reports %s with its own message", async (tool, error, expected) => {
+    mocks.lookupSection.mockResolvedValue({ success: false, error });
 
-    await expect(runTool("get_headers", "example.com")).resolves.toEqual({
-      error: expect.stringContaining("could not be resolved") as string,
+    await expect(runTool(tool, "example.com")).resolves.toEqual({
+      error: expect.stringContaining(expected) as string,
     });
   });
 

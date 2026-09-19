@@ -1,9 +1,10 @@
 import { MCP_SECTION_TOOLS } from "@/lib/constants/mcp-tools";
+import { SECTION_IDS } from "@domainstack/constants";
 
 export const tools = [
-  ...MCP_SECTION_TOOLS.map(({ name, description }) => ({
-    name,
-    description,
+  ...SECTION_IDS.map((section) => ({
+    name: MCP_SECTION_TOOLS[section].name,
+    description: MCP_SECTION_TOOLS[section].description,
     parameters: [{ name: "domain", type: "string", required: true }],
   })),
   {

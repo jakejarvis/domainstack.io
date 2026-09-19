@@ -42,7 +42,9 @@ function makeClientDomainTool<TDef extends (typeof DOMAIN_TOOL_DEFS)[number]>(
       try {
         const result = await trpc.domain[LOOKUP_PROCEDURES[def.section]].query({ domain });
         if (!result.success) {
-          return { error: LOOKUP_ERROR_MESSAGES[result.error] };
+          return {
+            error: LOOKUP_ERROR_MESSAGES[result.error] ?? LOOKUP_ERROR_MESSAGES.fetch_failed,
+          };
         }
         return result.data;
       } catch (err) {

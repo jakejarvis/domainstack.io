@@ -12,7 +12,8 @@ function getErrorMessage(error?: LookupError): string {
   if (!error) {
     return "This section couldn't be loaded. Please try refreshing the page.";
   }
-  return LOOKUP_ERROR_MESSAGES[error];
+  // An older client can receive a code added by a newer server; never render blank.
+  return LOOKUP_ERROR_MESSAGES[error] ?? LOOKUP_ERROR_MESSAGES.fetch_failed;
 }
 
 interface SectionFailedAlertProps {

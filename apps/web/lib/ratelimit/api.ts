@@ -133,7 +133,7 @@ export async function checkRateLimit(
   // `name` isolates per-endpoint buckets; unnamed callers share the "api" bucket
   try {
     const info = await enforceRateLimit({
-      key: rateLimitConfig.name ?? "api",
+      key: rateLimitConfig.name || "api",
       identifier: baseIdentifier,
       config: rateLimitConfig,
     });

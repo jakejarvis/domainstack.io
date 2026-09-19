@@ -637,5 +637,5 @@ Differentiated by auth status and endpoint.
 ### Adding New Tools
 
 1. Add the tool's `name`, `section`, `status` label, and `description` to `DOMAIN_TOOL_DEFS` in `apps/web/lib/chat/domain-tools.ts`; `createDomainToolset()` (`tools.ts`) and the browser client tools build from it
-2. Mention the tool in the system prompt (`lib/chat/system-prompt.ts`) if the model needs guidance on when to call it
+2. Mention the tool in the system prompt (`apps/web/lib/chat/system-prompt.ts`) if the model needs guidance on when to call it
 3. Tools call `lookupSection` from `@domainstack/core/lookup`, which applies the same per-section cache and rate limits as the tRPC domain procedures

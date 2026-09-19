@@ -245,12 +245,13 @@ describe("lookupProviderLogo", () => {
     mocks.getProviderLogo.mockResolvedValue(notCached);
   });
 
-  it("fails without metering when the provider has no domain", async () => {
+  it("resolves to no logo, without metering, when the provider has no domain", async () => {
     mocks.getProviderById.mockResolvedValue({ id: PROVIDER_ID, domain: null });
 
     await expect(lookupProviderLogo(PROVIDER_ID, { identifier: "1.2.3.4" })).resolves.toEqual({
-      success: false,
-      error: "fetch_failed",
+      success: true,
+      cached: false,
+      data: { url: null },
     });
     expect(mocks.enforceRateLimit).not.toHaveBeenCalled();
     expect(mocks.fetchProviderLogo).not.toHaveBeenCalled();

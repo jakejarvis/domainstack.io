@@ -69,7 +69,8 @@ function createMcpHandlerWithContext(request: Request) {
     (server) => {
       if (posthog) instrument(server, posthog);
 
-      for (const { section, name, title, description } of MCP_SECTION_TOOLS) {
+      for (const section of SECTION_IDS) {
+        const { name, title, description } = MCP_SECTION_TOOLS[section];
         server.registerTool(
           name,
           {

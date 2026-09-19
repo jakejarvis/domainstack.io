@@ -191,7 +191,7 @@ function getReportErrorDescription({
     return registrationError.message;
   }
   if (lookupFailed && registration && !registration.success) {
-    return LOOKUP_ERROR_MESSAGES[registration.error];
+    return LOOKUP_ERROR_MESSAGES[registration.error] ?? LOOKUP_ERROR_MESSAGES.fetch_failed;
   }
   return "We couldn't fetch registration data for this domain. Please try again.";
 }

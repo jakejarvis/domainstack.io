@@ -220,7 +220,7 @@ export async function lookupFavicon(
   });
 }
 
-/** Look up a provider's logo. Fails without metering when the provider has no domain. */
+/** Look up a provider's logo. A provider without a domain has no logo, without metering. */
 export async function lookupProviderLogo(
   providerId: string,
   { identifier }: LookupOptions = {},
@@ -235,8 +235,8 @@ export async function lookupProviderLogo(
   ]);
   const providerDomain = provider?.domain;
   if (!providerDomain) {
-    // Missing icons are expected, so this bails before touching the rate limit.
-    return { success: false, error: "fetch_failed" };
+    // Same shape as the service's "no logo found" result; bails before the rate limit.
+    return { success: true, cached: false, data: { url: null } };
   }
 
   return resolveLookup({
