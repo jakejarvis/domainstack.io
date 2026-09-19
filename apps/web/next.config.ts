@@ -82,19 +82,6 @@ let nextConfig: NextConfig = {
   skipTrailingSlashRedirect: true,
 };
 
-if (process.env.POSTHOG_API_KEY && process.env.POSTHOG_ENV_ID) {
-  nextConfig = withPostHogConfig(nextConfig, {
-    personalApiKey: process.env.POSTHOG_API_KEY,
-    envId: process.env.POSTHOG_ENV_ID,
-    host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
-    logLevel: "error",
-    sourcemaps: {
-      enabled: true,
-      deleteAfterUpload: false,
-    },
-  });
-}
-
 const withVercelToolbar = createWithVercelToolbar();
 
 const withMDX = createMDX({
@@ -104,4 +91,18 @@ const withMDX = createMDX({
   },
 });
 
-export default withWorkflow(withVercelToolbar(withMDX(nextConfig)));
+const configWithPlugins = withWorkflow(withVercelToolbar(withMDX(nextConfig)));
+
+// withPostHogConfig must be the outermost wrapper, or the other plugins strip its hooks.
+export default process.env.POSTHOG_API_KEY && process.env.POSTHOG_ENV_ID
+  ? withPostHogConfig(configWithPlugins, {
+      personalApiKey: process.env.POSTHOG_API_KEY,
+      envId: process.env.POSTHOG_ENV_ID,
+      host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
+      logLevel: "error",
+      sourcemaps: {
+        enabled: true,
+        deleteAfterUpload: false,
+      },
+    })
+  : configWithPlugins;
