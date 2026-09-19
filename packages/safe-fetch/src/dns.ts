@@ -8,22 +8,29 @@ import { SafeFetchError } from "./errors";
  */
 const PERMANENT_DNS_CODES = new Set(["ENOTFOUND", "ENODATA", "ENOENT"]);
 
-/** What a message must contain to be read as permanent when there is no errno code. */
-const PERMANENT_DNS_MESSAGE_SIGNALS = [
-  ...[...PERMANENT_DNS_CODES].map((code) => code.toLowerCase()),
-  "no dns records found",
-  "dns lookup returned no records",
-];
+/** Definitive empty-answer messages, permanent without an errno code. */
+const PERMANENT_DNS_PHRASES = ["no dns records found", "dns lookup returned no records"];
+
+/**
+ * True when `code` appears as its own token. A hostname in the message can look
+ * like a code ("enoent.example.com"), so a code that is part of a longer
+ * hostname-like run of letters, digits, dots or hyphens doesn't count.
+ */
+function hasCodeToken(message: string, code: string): boolean {
+  return new RegExp(`(?<![\\w.-])${code}(?![\\w-]|\\.[\\w-])`).test(message);
+}
 
 /**
  * Message-only fallback for errors that carry no errno code. Permanent only for
- * a known permanent code or a definitive empty answer; anything else, including
- * an unrecognized message, stays retryable. The timeout and EAI_AGAIN guards
- * come first because a hostname in the message could look like a code.
+ * a known permanent code (as a standalone token) or a definitive empty answer;
+ * anything else, including an unrecognized message, stays retryable.
  */
 function isPermanentDnsMessage(message: string): boolean {
-  if (message.includes("timed out") || message.includes("eai_again")) return false;
-  return PERMANENT_DNS_MESSAGE_SIGNALS.some((signal) => message.includes(signal));
+  if (message.includes("timed out") || hasCodeToken(message, "eai_again")) return false;
+  return (
+    [...PERMANENT_DNS_CODES].some((code) => hasCodeToken(message, code.toLowerCase())) ||
+    PERMANENT_DNS_PHRASES.some((phrase) => message.includes(phrase))
+  );
 }
 
 /**

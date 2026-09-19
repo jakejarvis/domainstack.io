@@ -91,6 +91,24 @@ describe("isExpectedDnsError", () => {
     expect(isExpectedDnsError(err)).toBe(false);
   });
 
+  it.each([
+    ["a SafeFetchError", new SafeFetchError("dns_error", "lookup failed for enoent.example.com")],
+    ["a generic error", new Error("failed to reach enotfound.example.com")],
+    ["a hyphenated hostname", new Error("failed to reach my-enodata.example.com")],
+    ["a subdomain label", new Error("failed to reach www.enoent")],
+  ])("does not read a code-like hostname in %s as a permanent code", (_label, err) => {
+    expect(isExpectedDnsError(err)).toBe(false);
+  });
+
+  it.each([
+    "getaddrinfo ENOTFOUND example.com",
+    "queryA ENODATA example.com",
+    "resolution failed: ENOTFOUND.",
+    "(ENOENT)",
+  ])("still reads a standalone code as permanent: %s", (message) => {
+    expect(isExpectedDnsError(new Error(message))).toBe(true);
+  });
+
   it("does not let a hostname that looks like a code turn a timeout permanent", () => {
     const err = new SafeFetchError("dns_error", "DNS lookup timed out for enoent.example.com");
     expect(isExpectedDnsError(err)).toBe(false);

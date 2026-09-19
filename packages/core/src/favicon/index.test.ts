@@ -73,8 +73,10 @@ function persisted(): FaviconRow {
   return mocks.upsertFavicon.mock.calls[0][0];
 }
 
-afterEach(() => {
-  // The fetch loop swallows errors, so surface an extra call here instead
+afterEach(({ task }) => {
+  // The fetch loop swallows errors, so surface an extra call here instead. Skip
+  // it when the test already failed, so the real failure isn't muddied.
+  if (task.result?.errors?.length) return;
   if (unexpectedCalls.length > 0) {
     throw new Error(`unexpected safeFetch calls: ${unexpectedCalls.join(", ")}`);
   }
