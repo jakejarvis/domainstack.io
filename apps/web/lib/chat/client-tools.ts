@@ -9,7 +9,7 @@ import type { TRPCClient } from "@trpc/client";
 import { tool, type Tool } from "ai";
 
 import { analytics } from "@/lib/analytics/client";
-import { LOOKUP_ERROR_MESSAGES } from "@/lib/constants/lookup-errors";
+import { getLookupErrorMessage } from "@/lib/constants/lookup-errors";
 import { LOOKUP_PROCEDURES } from "@/lib/constants/lookup-procedures";
 import type { AppRouter } from "@domainstack/api";
 
@@ -43,7 +43,7 @@ function makeClientDomainTool<TDef extends (typeof DOMAIN_TOOL_DEFS)[number]>(
         const result = await trpc.domain[LOOKUP_PROCEDURES[def.section]].query({ domain });
         if (!result.success) {
           return {
-            error: LOOKUP_ERROR_MESSAGES[result.error] ?? LOOKUP_ERROR_MESSAGES.fetch_failed,
+            error: getLookupErrorMessage(result.error),
           };
         }
         return result.data;

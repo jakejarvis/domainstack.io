@@ -21,7 +21,7 @@ import {
   type DomainToolResult,
   type DomainToolSection,
 } from "@/lib/chat/domain-tools";
-import { LOOKUP_ERROR_MESSAGES } from "@/lib/constants/lookup-errors";
+import { getLookupErrorMessage } from "@/lib/constants/lookup-errors";
 import { CHAT_TOOL_TIMEOUT_MS } from "@domainstack/constants";
 
 interface ToolContext {
@@ -76,7 +76,7 @@ async function domainLookupStep(section: DomainToolSection, domain: string, ctx:
     if (!result) {
       return { error: TOOL_TIMEOUT_MESSAGE };
     }
-    return result.success ? result.data : { error: LOOKUP_ERROR_MESSAGES[result.error] };
+    return result.success ? result.data : { error: getLookupErrorMessage(result.error) };
   } catch (err) {
     // Lookups report failures as `{ success: false }`; the only expected throw
     // is the rate limit. Anything else is a cache/db failure worth retrying.

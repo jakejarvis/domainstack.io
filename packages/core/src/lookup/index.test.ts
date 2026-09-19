@@ -62,6 +62,16 @@ describe("lookupSection", () => {
     mocks.getCachedDns.mockResolvedValue(notCached);
   });
 
+  it("uses the lowercased domain for the cache read, the fetch, and the access record", async () => {
+    mocks.fetchDns.mockResolvedValue({ success: true, data: DNS_DATA });
+
+    await lookupSection("dns", "Example.COM");
+
+    expect(mocks.getCachedDns).toHaveBeenCalledWith("example.com");
+    expect(mocks.fetchDns).toHaveBeenCalledWith("example.com");
+    expect(mocks.updateLastAccessed).toHaveBeenCalledWith("example.com");
+  });
+
   it("records the access whether or not the cache answers", async () => {
     mocks.getCachedDns.mockResolvedValue({ ...notCached, data: DNS_DATA });
     await lookupSection("dns", "example.com");

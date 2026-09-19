@@ -42,3 +42,4 @@ export const TTL_CERTIFICATES_EXPIRY_BUFFER = 2 * ONE_DAY; // 48 hours (start ag
 export const TTL_HEADERS = 12 * ONE_HOUR; // 12 hours
 export const TTL_HOSTING = ONE_DAY; // 24 hours
 export const TTL_SEO = ONE_DAY; // 24 hours
+export const TTL_SEO_IMAGE_RETRY = 15 * ONE_MINUTE; // 15 minutes (preview image failed transiently)

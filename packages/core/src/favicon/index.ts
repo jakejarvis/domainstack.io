@@ -144,6 +144,9 @@ async function fetchIconFromSources(domain: string): Promise<IconFetchResult> {
         continue;
       }
 
+      // A 200 with an empty body means "no icon here", same as a 404
+      if (asset.buffer.length === 0) continue;
+
       allNotFound = false;
 
       return {

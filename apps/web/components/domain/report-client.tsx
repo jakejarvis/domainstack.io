@@ -26,7 +26,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSectionTracking } from "@/hooks/use-section-tracking";
 import { analytics } from "@/lib/analytics/client";
 import { HEADER_HEIGHT, SCROLL_PADDING, SECTION_NAV_HEIGHT } from "@/lib/constants/layout";
-import { LOOKUP_ERROR_MESSAGES } from "@/lib/constants/lookup-errors";
+import { getLookupErrorMessage } from "@/lib/constants/lookup-errors";
 import { sections } from "@/lib/constants/sections";
 import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
 import { useTRPC } from "@/lib/trpc/client";
@@ -191,7 +191,7 @@ function getReportErrorDescription({
     return registrationError.message;
   }
   if (lookupFailed && registration && !registration.success) {
-    return LOOKUP_ERROR_MESSAGES[registration.error] ?? LOOKUP_ERROR_MESSAGES.fetch_failed;
+    return getLookupErrorMessage(registration.error);
   }
   return "We couldn't fetch registration data for this domain. Please try again.";
 }

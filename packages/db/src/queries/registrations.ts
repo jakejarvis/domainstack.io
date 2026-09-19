@@ -1,5 +1,6 @@
 import type { InferInsertModel } from "drizzle-orm";
 import { eq } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import type {
   ProviderRef,
@@ -56,6 +57,7 @@ export async function getCachedRegistration(
   domain: string,
 ): Promise<CacheResult<RegistrationResponse>> {
   const now = new Date();
+  const resellerProvider = alias(providers, "reseller_provider");
 
   const [row] = await db
     .select({
@@ -67,10 +69,12 @@ export async function getCachedRegistration(
       providerId: providers.id,
       providerName: providers.name,
       providerDomain: providers.domain,
+      resellerName: resellerProvider.name,
     })
     .from(domains)
     .innerJoin(registrations, eq(registrations.domainId, domains.id))
     .leftJoin(providers, eq(registrations.registrarProviderId, providers.id))
+    .leftJoin(resellerProvider, eq(registrations.resellerProviderId, resellerProvider.id))
     .where(eq(domains.name, domain))
     .limit(1);
 
@@ -107,6 +111,7 @@ export async function getCachedRegistration(
     unicodeName: row.domainUnicodeName,
     punycodeName: row.domainName,
     registry: row.registration.registry ?? undefined,
+    reseller: row.resellerName ?? undefined,
     statuses: row.registration.statuses ?? undefined,
     creationDate: row.registration.creationDate?.toISOString(),
     updatedDate: row.registration.updatedDate?.toISOString(),

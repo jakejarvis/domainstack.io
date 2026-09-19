@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { LOOKUP_ERROR_MESSAGES } from "@/lib/constants/lookup-errors";
+import { getLookupErrorMessage } from "@/lib/constants/lookup-errors";
 import { getTrpcErrorCode } from "@/lib/trpc/errors";
 import type { LookupResult } from "@domainstack/core/lookup";
 
@@ -110,7 +110,7 @@ export function getDomainToolErrorMessage(err: unknown): string {
   if (code === "BAD_REQUEST") {
     return INVALID_DOMAIN_MESSAGE;
   }
-  return LOOKUP_ERROR_MESSAGES.fetch_failed;
+  return getLookupErrorMessage("fetch_failed");
 }
 
 export function createDomainToolsContext<T>(context: T): Record<DomainToolName, T> {

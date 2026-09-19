@@ -18,7 +18,7 @@ import type {
   TwitterMeta,
 } from "@domainstack/types";
 
-import { RemoteDataUnavailableError } from "../lib/fetch-errors";
+import { isDefinitiveNotFoundError, RemoteDataUnavailableError } from "../lib/fetch-errors";
 import { ttlForSeo } from "../lib/ttl";
 import { isExpectedTlsError } from "../tls/utils";
 import { parseHtmlMeta, selectPreview } from "./parse";
@@ -92,7 +92,7 @@ export async function fetchSeo(domain: string): Promise<SeoResult> {
       htmlResult.error === "Invalid SSL certificate"
     ) {
       const errorResponse = buildSeoResponse(htmlResult, robotsResult, null);
-      await persistSeo(domain, errorResponse, null);
+      await persistSeo(domain, errorResponse, null, false);
 
       const errorCode = htmlResult.error === "DNS resolution failed" ? "dns_error" : "tls_error";
       return { success: false, error: errorCode };
@@ -102,15 +102,14 @@ export async function fetchSeo(domain: string): Promise<SeoResult> {
 
   // Step 3: Process OG image (if present and not blocked)
   let uploadedImageUrl: string | null = null;
+  let retryImage = false;
   if (htmlResult.preview?.image) {
     const isBlocked = await isDomainBlocked(domain);
 
     if (!isBlocked) {
-      uploadedImageUrl = await processOgImage(
-        domain,
-        htmlResult.preview.image,
-        htmlResult.finalUrl,
-      );
+      const image = await processOgImage(domain, htmlResult.preview.image, htmlResult.finalUrl);
+      uploadedImageUrl = image.url;
+      retryImage = image.retryable;
     }
   }
 
@@ -118,7 +117,7 @@ export async function fetchSeo(domain: string): Promise<SeoResult> {
   const response = buildSeoResponse(htmlResult, robotsResult, uploadedImageUrl);
 
   // Step 5: Persist to database
-  await persistSeo(domain, response, uploadedImageUrl);
+  await persistSeo(domain, response, uploadedImageUrl, retryImage);
 
   return {
     success: true,
@@ -249,7 +248,7 @@ async function fetchRobots(domain: string): Promise<RobotsFetchData> {
       const ct = robotsResult.contentType ?? "";
       if (/^text\/(plain|html|xml)?($|;|,)/i.test(ct)) {
         const txt = robotsResult.buffer.toString("utf-8");
-        const robots = parseRobotsTxt(txt, { baseUrl: robotsUrl });
+        const robots = parseRobotsTxt(txt, { baseUrl: robotsResult.finalUrl });
         return { robots };
       }
       return { robots: null, error: `Unexpected robots content-type: ${ct}` };
@@ -274,16 +273,27 @@ async function fetchRobots(domain: string): Promise<RobotsFetchData> {
 // Internal: Process OG Image
 // ============================================================================
 
+/**
+ * Fetch, optimize, and store a page's og:image.
+ *
+ * `retryable` distinguishes a transient failure (timeout, 5xx, storage outage)
+ * from a definitive absence (blocked host, 404, undecodable image), so a flaky
+ * moment doesn't cache "no image" for a full day.
+ */
 async function processOgImage(
   domain: string,
   imageUrl: string,
   currentUrl: string,
-): Promise<string | null> {
+): Promise<{ url: string | null; retryable: boolean }> {
+  let asset;
   try {
-    const asset = await safeFetch({
+    asset = await safeFetch({
       url: imageUrl,
       userAgent: process.env.EXTERNAL_USER_AGENT,
       currentUrl,
+      // Pages served over plain http reference plain-http images; the SSRF
+      // checks still apply to every hop.
+      allowHttp: true,
       headers: {
         Accept: "image/avif,image/webp,image/png,image/jpeg,image/*;q=0.9,*/*;q=0.8",
       },
@@ -291,20 +301,30 @@ async function processOgImage(
       timeoutMs: 8000,
       maxRedirects: 3,
     });
+  } catch (err) {
+    return { url: null, retryable: !isDefinitiveNotFoundError(err) };
+  }
 
-    if (!asset.ok) {
-      return null;
-    }
+  if (!asset.ok) {
+    return { url: null, retryable: asset.status >= 500 || asset.status === 429 };
+  }
 
-    const optimized = await optimizeImage(asset.buffer, {
+  let optimized;
+  try {
+    optimized = await optimizeImage(asset.buffer, {
       width: SOCIAL_WIDTH,
       height: SOCIAL_HEIGHT,
     });
+  } catch {
+    // The bytes aren't a usable image; fetching them again won't change that.
+    return { url: null, retryable: false };
+  }
 
-    if (optimized.length === 0) {
-      return null;
-    }
+  if (optimized.length === 0) {
+    return { url: null, retryable: false };
+  }
 
+  try {
     const { url } = await storeImage({
       kind: "opengraph",
       domain,
@@ -312,10 +332,10 @@ async function processOgImage(
       width: SOCIAL_WIDTH,
       height: SOCIAL_HEIGHT,
     });
-
-    return url;
+    return { url, retryable: false };
   } catch {
-    return null;
+    // A storage outage is ours, not the site's.
+    return { url: null, retryable: true };
   }
 }
 
@@ -361,9 +381,10 @@ async function persistSeo(
   domain: string,
   response: SeoResponse,
   uploadedImageUrl: string | null,
+  retryImage: boolean,
 ): Promise<void> {
   const now = new Date();
-  const expiresAt = ttlForSeo(now);
+  const expiresAt = ttlForSeo(now, { imageRetry: retryImage });
 
   const domainRecord = await ensureDomainRecord(domain);
 

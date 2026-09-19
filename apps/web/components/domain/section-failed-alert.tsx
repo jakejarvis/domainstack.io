@@ -3,7 +3,7 @@
 import { IconAlertTriangle } from "@tabler/icons-react";
 
 import { ReportSection } from "@/components/domain/report-section";
-import { LOOKUP_ERROR_MESSAGES } from "@/lib/constants/lookup-errors";
+import { getLookupErrorMessage } from "@/lib/constants/lookup-errors";
 import type { SectionDef } from "@/lib/constants/sections";
 import type { LookupError } from "@domainstack/core/lookup";
 import { Alert, AlertDescription, AlertTitle } from "@domainstack/ui/alert";
@@ -12,8 +12,7 @@ function getErrorMessage(error?: LookupError): string {
   if (!error) {
     return "This section couldn't be loaded. Please try refreshing the page.";
   }
-  // An older client can receive a code added by a newer server; never render blank.
-  return LOOKUP_ERROR_MESSAGES[error] ?? LOOKUP_ERROR_MESSAGES.fetch_failed;
+  return getLookupErrorMessage(error);
 }
 
 interface SectionFailedAlertProps {

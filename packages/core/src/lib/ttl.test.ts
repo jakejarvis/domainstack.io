@@ -1,9 +1,15 @@
 /* @vitest-environment node */
 import { describe, expect, it } from "vitest";
 
-import { ttlForCertificates, ttlForDnsRecord, ttlForRegistration } from "./ttl";
+import { ttlForCertificates, ttlForDnsRecord, ttlForRegistration, ttlForSeo } from "./ttl";
 
 describe("TTL policy", () => {
+  it("seo: 24h normally, 15m when the preview image should be retried", () => {
+    const now = new Date("2024-01-01T00:00:00.000Z");
+    expect(ttlForSeo(now).getTime() - now.getTime()).toBe(24 * 60 * 60 * 1000);
+    expect(ttlForSeo(now, { imageRetry: true }).getTime() - now.getTime()).toBe(15 * 60 * 1000);
+  });
+
   it("registration: 24h when far from expiry", () => {
     const now = new Date("2024-01-01T00:00:00.000Z");
     const exp = new Date("2024-02-01T00:00:00.000Z");

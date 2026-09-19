@@ -185,10 +185,12 @@ async function resolveLookup<T>({
  */
 export async function lookupSection<S extends Section>(
   section: S,
-  domain: string,
+  rawDomain: string,
   { identifier }: LookupOptions = {},
 ): Promise<LookupResult<S>> {
   const { limit, getCached, fetch } = SECTIONS[section];
+  // Rows are stored under the lowercased name, so read and fetch with that key.
+  const domain = rawDomain.toLowerCase();
 
   // Fire-and-forget: `updateLastAccessed` never throws, and `waitUntil` keeps
   // the write alive after the response on Vercel.
@@ -206,9 +208,10 @@ export async function lookupSection<S extends Section>(
 
 /** Look up a domain's favicon. Unlike sections, this does not record access. */
 export async function lookupFavicon(
-  domain: string,
+  rawDomain: string,
   { identifier }: LookupOptions = {},
 ): Promise<LookupOutcome<FaviconResponse>> {
+  const domain = rawDomain.toLowerCase();
   const { getFavicon } = await import("@domainstack/db/queries/favicons");
   const { fetchFavicon } = await import("../favicon");
 

@@ -219,6 +219,11 @@ export async function persistRegistration(
     response.expirationDate ? new Date(response.expirationDate) : null,
   );
 
+  const resellerName = response.reseller?.trim();
+  const resellerProviderId = resellerName
+    ? await resolveOrCreateProviderId({ category: "registrar", domain: null, name: resellerName })
+    : null;
+
   await upsertRegistration({
     domainId: domainRecord.id,
     isRegistered: response.isRegistered,
@@ -235,7 +240,7 @@ export async function persistRegistration(
     rdapServers: response.rdapServers ?? [],
     source: response.source ?? "rdap",
     registrarProviderId: response.registrarProvider.id,
-    resellerProviderId: null,
+    resellerProviderId,
     fetchedAt: now,
     expiresAt,
     nameservers: (response.nameservers ?? []).map((n) => ({

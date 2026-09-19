@@ -165,6 +165,10 @@ export async function getCachedDns(domain: string): Promise<CacheResult<DnsRecor
     .innerJoin(dnsRecords, eq(dnsRecords.domainId, domains.id))
     .where(eq(domains.name, domain));
 
+  // Records are stored per row, so a lookup that found none leaves nothing to
+  // carry its freshness: an empty answer reads as a cache miss and is refetched
+  // (and metered) each time. Accepted because a registered domain with none of
+  // the probed record types is rare; caching it would need a schema change.
   if (rows.length === 0) {
     return { data: null, stale: false, fetchedAt: null, expiresAt: null };
   }
