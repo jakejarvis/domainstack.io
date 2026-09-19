@@ -2,46 +2,49 @@
  * WHOIS/RDAP lookup using rdapper.
  */
 
-import { type BootstrapData, lookup } from "rdapper";
+import { type BootstrapData, type LookupResult, lookup } from "rdapper";
 
-import type { RdapLookupResult, WhoisLookupOptions } from "./types";
+import type { RdapLookupFailure, RdapLookupResult, WhoisLookupOptions } from "./types";
 import { RDAP_BOOTSTRAP_URL } from "./types";
 
-function errorText(error: unknown): string {
-  if (typeof error === "string") return error;
-  if (error instanceof Error) return error.message;
-  return "";
-}
+const DEFAULT_TIMEOUT_MS = 5000;
+const DEFAULT_DEADLINE_MS = 10_000;
 
 /**
- * Check if error indicates an unsupported TLD.
+ * Map an rdapper failure onto our result codes using its `errorCode`.
+ *
+ * `no_server` (IANA answered, no WHOIS server exists) and `blocked` (the WHOIS
+ * server refuses this client outright) are permanent: neither will succeed on
+ * retry, so both surface as `unsupported_tld`. A failed IANA query surfaces
+ * as `timeout` or `connect_failed`, so it retries instead of being mistaken
+ * for an unsupported TLD. `rate_limited` (throttle notice or RDAP 429) and
+ * `unparseable` (a reply with no recognizable record) are treated as
+ * transient, so they are retried rather than persisted.
  */
-function isExpectedRegistrationError(error: unknown): boolean {
-  if (!error) return false;
-
-  const errorStr = errorText(error).toLowerCase();
-
-  return (
-    errorStr.includes("no whois server discovered") ||
-    errorStr.includes("no rdap server found") ||
-    errorStr.includes("registry may not publish public whois") ||
-    errorStr.includes("tld is not supported") ||
-    errorStr.includes("no whois server configured")
-  );
-}
-
-/**
- * Check if error is a timeout.
- */
-function isTimeoutError(error: unknown): boolean {
-  if (!error) return false;
-
-  const errorStr = errorText(error).toLowerCase();
-  return (
-    errorStr.includes("whois socket timeout") ||
-    errorStr.includes("whois timeout") ||
-    errorStr.includes("rdap timeout")
-  );
+function toFailure(
+  res: Pick<
+    LookupResult,
+    "error" | "errorCode" | "errorPhase" | "errorServer" | "retryAfterMs" | "attempts"
+  >,
+): RdapLookupFailure {
+  const error =
+    res.errorCode === "no_server" || res.errorCode === "blocked"
+      ? "unsupported_tld"
+      : res.errorCode === "timeout"
+        ? "timeout"
+        : "retry";
+  return {
+    success: false,
+    error,
+    detail: {
+      message: res.error,
+      code: res.errorCode,
+      phase: res.errorPhase,
+      server: res.errorServer,
+      retryAfterMs: res.retryAfterMs,
+      attempts: res.attempts,
+    },
+  };
 }
 
 /**
@@ -53,10 +56,15 @@ function isTimeoutError(error: unknown): boolean {
  * @param userAgent - User agent for the request
  * @returns Bootstrap data or undefined if fetch fails
  */
-export async function fetchBootstrapData(userAgent?: string): Promise<BootstrapData | undefined> {
+export async function fetchBootstrapData(
+  userAgent?: string,
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+): Promise<BootstrapData | undefined> {
   try {
     const res = await fetch(RDAP_BOOTSTRAP_URL, {
       headers: userAgent ? { "User-Agent": userAgent } : undefined,
+      // Runs before rdapper's own timers start, so it needs its own bound
+      signal: AbortSignal.timeout(timeoutMs),
       // Next.js Data Cache - 1 week TTL (ignored in non-Next.js environments)
       next: { revalidate: 604_800 },
     } as RequestInit);
@@ -65,7 +73,9 @@ export async function fetchBootstrapData(userAgent?: string): Promise<BootstrapD
       return undefined;
     }
 
-    return (await res.json()) as BootstrapData;
+    // rdapper throws on malformed bootstrap data, so treat a bad shape like a failed fetch
+    const json = (await res.json()) as Partial<BootstrapData> | null;
+    return Array.isArray(json?.services) ? (json as BootstrapData) : undefined;
   } catch {
     return undefined;
   }
@@ -82,38 +92,34 @@ export async function lookupWhois(
   domain: string,
   options: WhoisLookupOptions = {},
 ): Promise<RdapLookupResult> {
-  const timeoutMs = options.timeoutMs ?? 5000;
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const deadlineMs = options.deadlineMs ?? DEFAULT_DEADLINE_MS;
   const includeRaw = options.includeRaw ?? true;
 
   // Use provided bootstrap data or fetch it
   const bootstrapData =
     (options.customBootstrapData as BootstrapData | undefined) ??
-    (await fetchBootstrapData(options.userAgent));
+    (await fetchBootstrapData(options.userAgent, timeoutMs));
 
   try {
-    const { ok, record, error } = await lookup(domain, {
+    const res = await lookup(domain, {
       timeoutMs,
+      deadlineMs,
       includeRaw,
-      customBootstrapData: bootstrapData ?? undefined,
+      // rdapper throws on the mere presence of this key, even when undefined, so omit it when our
+      // fetch failed and let rdapper load its own bootstrap (or fall back to WHOIS).
+      ...(bootstrapData ? { customBootstrapData: bootstrapData } : {}),
     });
 
-    if (!ok || !record) {
-      const isUnsupported = isExpectedRegistrationError(error);
-      const isTimeout = isTimeoutError(error);
-
-      if (isUnsupported) {
-        return { success: false, error: "unsupported_tld" };
-      }
-
-      if (isTimeout) {
-        return { success: false, error: "timeout" };
-      }
-
-      return { success: false, error: "retry" };
+    if (!res.ok || !res.record) {
+      return toFailure(res);
     }
 
-    return { success: true, recordJson: JSON.stringify(record) };
-  } catch {
-    return { success: false, error: "retry" };
+    return { success: true, recordJson: JSON.stringify(res.record) };
+  } catch (err) {
+    return toFailure({
+      error: err instanceof Error ? err.message : String(err),
+      attempts: [],
+    });
   }
 }

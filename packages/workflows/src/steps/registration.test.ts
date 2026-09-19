@@ -1,5 +1,6 @@
-/* @vitest-environment node */
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+/* @vitest-environment node */
+import { RetryableError } from "workflow";
 
 // Initialize PGlite before importing anything that uses the db
 const { makePGliteDb, closePGliteDb, resetPGliteDb } = await import("@domainstack/db/testing");
@@ -28,6 +29,17 @@ vi.mock("@domainstack/utils/providers", () => ({
   detectRegistrar: vi.fn<(...args: unknown[]) => unknown>().mockReturnValue(null),
   getProvidersFromCatalog: vi.fn<(...args: unknown[]) => unknown[]>().mockReturnValue([]),
 }));
+
+/** How long from now a thrown RetryableError asks to wait, in ms. */
+async function retryDelayMs(domain: string): Promise<number> {
+  const { lookupWhoisStep } = await import("./registration");
+  const err = await lookupWhoisStep(domain).then(
+    () => undefined,
+    (e: unknown) => e,
+  );
+  if (!RetryableError.is(err)) throw new Error("Expected a RetryableError");
+  return err.retryAfter.getTime() - Date.now();
+}
 
 describe("lookupWhoisStep", () => {
   beforeEach(() => {
@@ -70,6 +82,7 @@ describe("lookupWhoisStep", () => {
     whoisMock.lookupWhois.mockResolvedValue({
       success: false,
       error: "unsupported_tld",
+      detail: { code: "no_server", attempts: [] },
     });
 
     const { lookupWhoisStep } = await import("./registration");
@@ -82,6 +95,7 @@ describe("lookupWhoisStep", () => {
     whoisMock.lookupWhois.mockResolvedValue({
       success: false,
       error: "timeout",
+      detail: { code: "timeout", phase: "whois", server: "whois.nic.sh", attempts: [] },
     });
 
     const { lookupWhoisStep } = await import("./registration");
@@ -93,6 +107,7 @@ describe("lookupWhoisStep", () => {
     whoisMock.lookupWhois.mockResolvedValue({
       success: false,
       error: "retry",
+      detail: { code: "connect_failed", attempts: [] },
     });
 
     const { lookupWhoisStep } = await import("./registration");
@@ -188,5 +203,47 @@ describe("persistRegistrationStep", () => {
 
     expect(regRows).toHaveLength(1);
     expect(regRows[0].isRegistered).toBe(true);
+  });
+});
+
+describe("lookupWhoisStep retry delay", () => {
+  beforeEach(() => {
+    whoisMock.lookupWhois.mockReset();
+  });
+
+  const failure = (
+    error: "retry" | "timeout",
+    retryAfterMs?: number,
+  ): Awaited<ReturnType<typeof import("@domainstack/core/whois").lookupWhois>> => ({
+    success: false,
+    error,
+    detail: { code: "rate_limited", retryAfterMs, attempts: [] },
+  });
+
+  it.each([
+    ["retry", 5_000],
+    ["timeout", 10_000],
+  ] as const)("uses the default delay for %s without a Retry-After", async (error, expected) => {
+    whoisMock.lookupWhois.mockResolvedValue(failure(error));
+
+    expect(await retryDelayMs("a.com")).toBeCloseTo(expected, -3);
+  });
+
+  it("honors a server-requested delay above the default", async () => {
+    whoisMock.lookupWhois.mockResolvedValue(failure("retry", 30_000));
+
+    expect(await retryDelayMs("a.com")).toBeCloseTo(30_000, -3);
+  });
+
+  it("never waits less than the default", async () => {
+    whoisMock.lookupWhois.mockResolvedValue(failure("timeout", 1_000));
+
+    expect(await retryDelayMs("a.com")).toBeCloseTo(10_000, -3);
+  });
+
+  it("caps an excessive server-requested delay at five minutes", async () => {
+    whoisMock.lookupWhois.mockResolvedValue(failure("retry", 3_600_000));
+
+    expect(await retryDelayMs("a.com")).toBeCloseTo(300_000, -3);
   });
 });

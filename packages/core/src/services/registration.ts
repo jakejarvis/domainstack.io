@@ -87,7 +87,19 @@ async function lookupWhois(domain: string): Promise<LookupResult> {
   if (!result.success) {
     // Transient errors throw - let TanStack Query retry
     if (result.error === "retry" || result.error === "timeout") {
-      throw new RemoteDataUnavailableError(`WHOIS lookup failed: ${result.error}`);
+      const { message, code, phase, server, retryAfterMs, attempts } = result.detail;
+      throw new RemoteDataUnavailableError(
+        `WHOIS lookup failed: ${result.error}${message ? ` (${message})` : ""}`,
+        {
+          details: {
+            errorCode: code,
+            errorPhase: phase,
+            errorServer: server,
+            retryAfterMs,
+            attempts,
+          },
+        },
+      );
     }
     // Permanent errors return as result
     return { success: false, error: result.error };

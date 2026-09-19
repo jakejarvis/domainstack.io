@@ -11,6 +11,13 @@ import {
  */
 export class RemoteDataUnavailableError extends Error {
   readonly name = "RemoteDataUnavailableError";
+  /** Structured diagnostics for logs (serialized with the error) */
+  readonly details?: Record<string, unknown>;
+
+  constructor(message: string, options?: ErrorOptions & { details?: Record<string, unknown> }) {
+    super(message, options);
+    this.details = options?.details;
+  }
 }
 
 /**

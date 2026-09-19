@@ -67,8 +67,8 @@ catalogs:
       specifier: ^2.15.0
       version: 2.15.0
     rdapper:
-      specifier: ^0.13.0
-      version: 0.13.0
+      specifier: ^0.15.1
+      version: 0.15.1
     sonner:
       specifier: ^2.0.8
       version: 2.0.8
@@ -584,7 +584,7 @@ importers:
         version: 11.5.2
       rdapper:
         specifier: 'catalog:'
-        version: 0.13.0
+        version: 0.15.1
     devDependencies:
       '@domainstack/typescript-config':
         specifier: workspace:*
@@ -910,7 +910,7 @@ importers:
         version: link:../types
       rdapper:
         specifier: 'catalog:'
-        version: 0.13.0
+        version: 0.15.1
     devDependencies:
       '@domainstack/typescript-config':
         specifier: workspace:*
@@ -7336,9 +7336,9 @@ packages:
   rc9@3.1.0:
     resolution: {integrity: sha512-ufjkNVzbRHKcCOmTahZkmVsyc3W+MSk3jY03m+a7tGHkIsdVMG9l10/3HvFbWkkKzY5VFp3pkRsIo/UYgmFL7Q==}
 
-  rdapper@0.13.0:
-    resolution: {integrity: sha512-oaNNMNMzGQf2w1hePWsSrIAzleQjExMN/O+TOFole/7XfVPPCNavWhZ/TadjxQKDcFlgK9/P8CUI/gKV4oU7Lw==}
-    engines: {node: '>=18.17'}
+  rdapper@0.15.1:
+    resolution: {integrity: sha512-xvUgWnSlVrxUZgjhQbV6V+iBno1UKsq/XgdLikTAT9nH9Yq6kx0NF+6vtsCDwspkCMF7w1Emqp/NuFho4/c9DQ==}
+    engines: {node: '>=20'}
     hasBin: true
 
   react-dom@19.3.0:
@@ -8026,15 +8026,14 @@ packages:
   tldts-core@7.4.12:
     resolution: {integrity: sha512-nYNzS2WRf4QJmjzFFgAxLOBjyBxAGRbCy9PVBPaglcYyYajh40VBn+v5Ngr96ZMc7oM0+aCJdtQnNejvdBnXMQ==}
 
+  tldts-core@7.4.13:
+    resolution: {integrity: sha512-mbYsrih5FRtGxs3Usvl/PqwJsNpp+jsmrdFviiK02teHDG0/HebBG/pqCylje3kzgXYzuLoHJF/0mz9W53t8Xg==}
+
   tldts-experimental@7.4.12:
     resolution: {integrity: sha512-9ekSzO1PiwKHPS+WfA4EIXj49c8hFLi5TeEnW1xAlc6EufOX4Owp1rSC6HoSWq34z3cFLa7Ov2wUQm4fy+31xA==}
 
-  tldts@7.0.19:
-    resolution: {integrity: sha512-8PWx8tvC4jDB39BQw1m4x8y5MH1BcQ5xHeL2n7UVFulMPH/3Q0uiamahFJ3lXA0zO2SUyRXuVVbWSDmstlt9YA==}
-    hasBin: true
-
-  tldts@7.4.12:
-    resolution: {integrity: sha512-WylhSDKVeYnWXL3a+vKTaOxjnOeEGw938hImY8zoRWJjRRK/Jp1K+IihBzIONpUmW4e3WmXT6q5FW6vlESVZCA==}
+  tldts@7.4.13:
+    resolution: {integrity: sha512-iHtaIWWIbMDkCeJdTBzZFGgbluE5J+oHlb2g7+oAz1S1gpuVpabRZdQyd471Vl8UUkcz2vXSL8xZH2kyCe8tfA==}
     hasBin: true
 
   to-data-view@1.1.0:
@@ -15517,9 +15516,9 @@ snapshots:
       defu: 6.1.7
       destr: 2.0.5
 
-  rdapper@0.13.0:
+  rdapper@0.15.1:
     dependencies:
-      tldts: 7.0.19
+      tldts: 7.4.13
 
   react-dom@19.3.0(react@19.3.0):
     dependencies:
@@ -16410,17 +16409,15 @@ snapshots:
 
   tldts-core@7.4.12: {}
 
+  tldts-core@7.4.13: {}
+
   tldts-experimental@7.4.12:
     dependencies:
       tldts-core: 7.4.12
 
-  tldts@7.0.19:
+  tldts@7.4.13:
     dependencies:
-      tldts-core: 7.4.12
-
-  tldts@7.4.12:
-    dependencies:
-      tldts-core: 7.4.12
+      tldts-core: 7.4.13
 
   to-data-view@1.1.0: {}
 
@@ -16440,7 +16437,7 @@ snapshots:
 
   tough-cookie@6.0.2:
     dependencies:
-      tldts: 7.4.12
+      tldts: 7.4.13
 
   trim-lines@3.0.1: {}
 
