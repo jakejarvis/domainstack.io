@@ -77,6 +77,25 @@ describe("isExpectedDnsError", () => {
     expect(isExpectedDnsError(err)).toBe(true);
   });
 
+  it.each([
+    ["an unrecognized message", new SafeFetchError("dns_error", "resolver exploded")],
+    [
+      "a getaddrinfo failure that is not a permanent code",
+      new Error("getaddrinfo EAI_FAIL example.com"),
+    ],
+    [
+      "a wrapped failure with no errno and an unrecognized message",
+      new SafeFetchError("dns_error", "getaddrinfo EAI_FAIL example.com"),
+    ],
+  ])("does not treat %s as permanent", (_label, err) => {
+    expect(isExpectedDnsError(err)).toBe(false);
+  });
+
+  it("does not let a hostname that looks like a code turn a timeout permanent", () => {
+    const err = new SafeFetchError("dns_error", "DNS lookup timed out for enoent.example.com");
+    expect(isExpectedDnsError(err)).toBe(false);
+  });
+
   it("does not treat DNS lookup timeouts as permanent", () => {
     const err = new SafeFetchError("dns_error", "DNS lookup timed out after 25ms");
     expect(isExpectedDnsError(err)).toBe(false);

@@ -8,6 +8,24 @@ import { SafeFetchError } from "./errors";
  */
 const PERMANENT_DNS_CODES = new Set(["ENOTFOUND", "ENODATA", "ENOENT"]);
 
+/** What a message must contain to be read as permanent when there is no errno code. */
+const PERMANENT_DNS_MESSAGE_SIGNALS = [
+  ...[...PERMANENT_DNS_CODES].map((code) => code.toLowerCase()),
+  "no dns records found",
+  "dns lookup returned no records",
+];
+
+/**
+ * Message-only fallback for errors that carry no errno code. Permanent only for
+ * a known permanent code or a definitive empty answer; anything else, including
+ * an unrecognized message, stays retryable. The timeout and EAI_AGAIN guards
+ * come first because a hostname in the message could look like a code.
+ */
+function isPermanentDnsMessage(message: string): boolean {
+  if (message.includes("timed out") || message.includes("eai_again")) return false;
+  return PERMANENT_DNS_MESSAGE_SIGNALS.some((signal) => message.includes(signal));
+}
+
 /**
  * Check if an error is an expected DNS failure (NXDOMAIN, missing A/AAAA, etc).
  *
@@ -31,8 +49,7 @@ export function isExpectedDnsError(err: unknown): boolean {
       return PERMANENT_DNS_CODES.has(causeCode);
     }
     // No errno (our own timeout, empty answers): fall back to the message.
-    const message = err.message.toLowerCase();
-    return !message.includes("timed out") && !message.includes("eai_again");
+    return isPermanentDnsMessage(err.message.toLowerCase());
   }
 
   const errorWithCode = err as Error & {
@@ -47,15 +64,7 @@ export function isExpectedDnsError(err: unknown): boolean {
     return true;
   }
 
-  const message = `${err.message} ${errorWithCode.cause?.message ?? ""}`.toLowerCase();
-  if (message.includes("eai_again")) {
-    return false;
-  }
-  return (
-    message.includes("enotfound") ||
-    message.includes("getaddrinfo") ||
-    message.includes("dns lookup failed") ||
-    message.includes("no dns records found") ||
-    message.includes("dns lookup returned no records")
+  return isPermanentDnsMessage(
+    `${err.message} ${errorWithCode.cause?.message ?? ""}`.toLowerCase(),
   );
 }

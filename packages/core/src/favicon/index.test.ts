@@ -1,5 +1,5 @@
 /* @vitest-environment node */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SafeFetchError } from "@domainstack/safe-fetch";
 
@@ -48,11 +48,21 @@ function response(status: number, body = "", contentType = "image/x-icon") {
   };
 }
 
-/** Answer each icon source in order (google, duckduckgo, direct https, direct http). */
+let unexpectedCalls: string[] = [];
+
+/**
+ * Answer each icon source in order (google, duckduckgo, direct https, direct
+ * http). A call beyond the steps given is recorded and fails the test, so an
+ * extra fetch can't silently reuse an earlier response.
+ */
 function sourcesRespond(...steps: Array<ReturnType<typeof response> | Error>) {
   let call = 0;
-  mocks.safeFetch.mockImplementation(async () => {
-    const step = steps[call++ % steps.length];
+  mocks.safeFetch.mockImplementation(async ({ url }) => {
+    const step = steps[call++];
+    if (!step) {
+      unexpectedCalls.push(url);
+      throw new Error(`unexpected safeFetch call ${call}: ${url}`);
+    }
     if (step instanceof Error) throw step;
     return step;
   });
@@ -63,7 +73,15 @@ function persisted(): FaviconRow {
   return mocks.upsertFavicon.mock.calls[0][0];
 }
 
+afterEach(() => {
+  // The fetch loop swallows errors, so surface an extra call here instead
+  if (unexpectedCalls.length > 0) {
+    throw new Error(`unexpected safeFetch calls: ${unexpectedCalls.join(", ")}`);
+  }
+});
+
 beforeEach(() => {
+  unexpectedCalls = [];
   vi.resetAllMocks();
   mocks.ensureDomainRecord.mockResolvedValue({ id: "domain-id" });
   mocks.upsertFavicon.mockResolvedValue(undefined);
