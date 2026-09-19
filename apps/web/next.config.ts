@@ -93,9 +93,7 @@ const withMDX = createMDX({
 
 const configWithPlugins = withWorkflow(withVercelToolbar(withMDX(nextConfig)));
 
-// withPostHogConfig returns an async config function that Next.js must invoke directly;
-// it has to be the outermost wrapper or the other plugins above will object-spread that
-// function (which has no own enumerable properties) and silently drop the whole config.
+// withPostHogConfig must be the outermost wrapper, or the other plugins strip its hooks.
 export default process.env.POSTHOG_API_KEY && process.env.POSTHOG_ENV_ID
   ? withPostHogConfig(configWithPlugins, {
       personalApiKey: process.env.POSTHOG_API_KEY,
