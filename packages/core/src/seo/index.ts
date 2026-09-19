@@ -306,7 +306,10 @@ async function processOgImage(
   }
 
   if (!asset.ok) {
-    return { url: null, retryable: asset.status >= 500 || asset.status === 429 };
+    return {
+      url: null,
+      retryable: asset.status >= 500 || asset.status === 429 || asset.status === 408,
+    };
   }
 
   let optimized;

@@ -190,6 +190,14 @@ describe("fetchSection", () => {
     expect(mocks.updateLastAccessed).not.toHaveBeenCalled();
   });
 
+  it("fetches under the lowercased domain, matching what lookupSection reads", async () => {
+    mocks.fetchDns.mockResolvedValue({ success: true, data: DNS_DATA });
+
+    await fetchSection("dns", "Example.COM");
+
+    expect(mocks.fetchDns).toHaveBeenCalledWith("example.com");
+  });
+
   it("lets transient failures throw", async () => {
     mocks.fetchDns.mockRejectedValue(new RemoteDataUnavailableError("down"));
 

@@ -79,10 +79,14 @@ const TRANSIENT_SOCKET_CODES = new Set(["ECONNRESET", "ECONNABORTED", "EPIPE", "
  */
 export function isTransientSocketError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
-  const code = (err as Error & { code?: string }).code;
+  const socketError = err as Error & {
+    cause?: { code?: string; message?: string };
+    code?: string;
+  };
+  const code = socketError.cause?.code || socketError.code;
   if (code && TRANSIENT_SOCKET_CODES.has(code)) return true;
 
-  const message = err.message.toLowerCase();
+  const message = `${socketError.message} ${socketError.cause?.message ?? ""}`.toLowerCase();
   return message.includes("socket disconnected") || message.includes("socket hang up");
 }
 

@@ -91,6 +91,20 @@ describe("isTransientSocketError", () => {
     expect(isTransientSocketError(err)).toBe(true);
   });
 
+  it("detects a socket hang up by message even without a code", () => {
+    expect(isTransientSocketError(new Error("socket hang up"))).toBe(true);
+  });
+
+  it("looks through a wrapped cause like the sibling classifiers", () => {
+    const byCode = new Error("fetch failed", {
+      cause: Object.assign(new Error("read ECONNRESET"), { code: "ECONNRESET" }),
+    });
+    const byMessage = new Error("fetch failed", { cause: new Error("socket hang up") });
+
+    expect(isTransientSocketError(byCode)).toBe(true);
+    expect(isTransientSocketError(byMessage)).toBe(true);
+  });
+
   it("does not flag genuine certificate failures", () => {
     const err = Object.assign(new Error("certificate has expired"), { code: "CERT_HAS_EXPIRED" });
     expect(isTransientSocketError(err)).toBe(false);

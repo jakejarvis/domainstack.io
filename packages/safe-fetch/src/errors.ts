@@ -27,7 +27,8 @@ export class SafeFetchError extends Error {
     readonly code: SafeFetchErrorCode,
     message: string,
     readonly status?: number,
+    options?: ErrorOptions,
   ) {
-    super(message);
+    super(message, options);
   }
 }

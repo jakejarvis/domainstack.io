@@ -19,9 +19,17 @@ export function isExpectedDnsError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
 
   // SafeFetchError uses code "dns_error" for NXDOMAIN, empty answers, and
-  // wrapped resolver failures (which keep only the message, not the errno code).
-  // Timeouts and temporary resolver failures stay retryable.
+  // wrapped resolver failures. Timeouts and temporary resolver failures stay
+  // retryable.
   if (err instanceof SafeFetchError && err.code === "dns_error") {
+    // A wrapped resolver error carries its errno code as the cause: only the
+    // known-permanent codes are permanent, so any other (EAI_AGAIN, EAI_FAIL,
+    // ETIMEDOUT, ...) is retryable without needing to list each one.
+    const causeCode = (err.cause as { code?: unknown } | undefined)?.code;
+    if (typeof causeCode === "string") {
+      return PERMANENT_DNS_CODES.has(causeCode);
+    }
+    // No errno (our own timeout, empty answers): fall back to the message.
     const message = err.message.toLowerCase();
     return !message.includes("timed out") && !message.includes("eai_again");
   }

@@ -10,6 +10,7 @@
 import { upsertDomain } from "@domainstack/db/queries/domains";
 import {
   resolveOrCreateProviderId,
+  resolveProviderId,
   upsertCatalogProvider,
 } from "@domainstack/db/queries/providers";
 import { upsertRegistration } from "@domainstack/db/queries/registrations";
@@ -219,9 +220,12 @@ export async function persistRegistration(
     response.expirationDate ? new Date(response.expirationDate) : null,
   );
 
+  // Link the reseller only when it is already a known registrar. Creating rows
+  // for reseller names would pass them off as registrars in later resolution
+  // and listings (there is no separate provider category for resellers).
   const resellerName = response.reseller?.trim();
   const resellerProviderId = resellerName
-    ? await resolveOrCreateProviderId({ category: "registrar", domain: null, name: resellerName })
+    ? await resolveProviderId({ category: "registrar", domain: null, name: resellerName })
     : null;
 
   await upsertRegistration({

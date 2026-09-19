@@ -131,7 +131,8 @@ export function fetchSection<S extends Section>(
   section: S,
   domain: string,
 ): Promise<FetchOutcome<SectionDataMap[S]>> {
-  return SECTIONS[section].fetch(domain);
+  // Same key `lookupSection` reads, so what's stored here is what's found there.
+  return SECTIONS[section].fetch(domain.toLowerCase());
 }
 
 interface LookupOptions {

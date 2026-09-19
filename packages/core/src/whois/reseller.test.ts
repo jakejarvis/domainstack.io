@@ -1,14 +1,15 @@
 /* @vitest-environment node */
-import { afterAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Initialize PGlite before importing anything that uses the db
-const { makePGliteDb, closePGliteDb } = await import("@domainstack/db/testing");
-await makePGliteDb();
+const { makePGliteDb, closePGliteDb, resetPGliteDb } = await import("@domainstack/db/testing");
+const { db } = await makePGliteDb();
 
 vi.mock("@domainstack/edge-config", () => ({
   getProviderCatalog: vi.fn<() => Promise<null>>().mockResolvedValue(null),
 }));
 
+const { providers } = await import("@domainstack/db/schema");
 const { getCachedRegistration } = await import("@domainstack/db/queries/registrations");
 const { persistRegistration } = await import("./index");
 
@@ -16,9 +17,13 @@ afterAll(async () => {
   await closePGliteDb();
 });
 
+beforeEach(async () => {
+  await resetPGliteDb();
+});
+
 function registration(overrides: { reseller?: string } = {}) {
   return {
-    domain: "reseller.test",
+    domain: "example.test",
     tld: "test",
     isRegistered: true,
     status: "registered" as const,
@@ -29,20 +34,32 @@ function registration(overrides: { reseller?: string } = {}) {
 }
 
 describe("persistRegistration reseller", () => {
-  it("survives a round trip through the cache", async () => {
-    await persistRegistration("reseller.test", registration({ reseller: "Example Reseller LLC" }));
+  it("links a reseller that is already a known registrar, and returns it from the cache", async () => {
+    await db.insert(providers).values({
+      category: "registrar",
+      name: "Example Reseller LLC",
+      slug: "example-reseller-llc",
+    });
 
-    const cached = await getCachedRegistration("reseller.test");
+    await persistRegistration("example.test", registration({ reseller: "example reseller llc" }));
 
+    const cached = await getCachedRegistration("example.test");
     expect(cached.data?.reseller).toBe("Example Reseller LLC");
   });
 
-  it("is absent from the cached response when the record has none", async () => {
-    await persistRegistration("no-reseller.test", registration());
+  it("does not invent registrar providers from an unknown reseller name", async () => {
+    await persistRegistration("example.test", registration({ reseller: "Unknown Reseller Inc" }));
 
-    const cached = await getCachedRegistration("no-reseller.test");
-
+    expect(await db.select().from(providers)).toHaveLength(0);
+    const cached = await getCachedRegistration("example.test");
     expect(cached.data).not.toBeNull();
+    expect(cached.data?.reseller).toBeUndefined();
+  });
+
+  it("has no reseller when the record has none", async () => {
+    await persistRegistration("example.test", registration());
+
+    const cached = await getCachedRegistration("example.test");
     expect(cached.data?.reseller).toBeUndefined();
   });
 });

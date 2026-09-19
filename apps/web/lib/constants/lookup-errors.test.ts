@@ -14,6 +14,6 @@ describe("getLookupErrorMessage", () => {
   it("falls back to the generic message for a code from a newer server", () => {
     const fromNewerServer = "rate_limited" as LookupError;
 
-    expect(getLookupErrorMessage(fromNewerServer)).toBe(getLookupErrorMessage("fetch_failed"));
+    expect(getLookupErrorMessage(fromNewerServer)).toBe("Unable to fetch data. Please try again.");
   });
 });

@@ -1,6 +1,6 @@
+/* @vitest-environment node */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-/* @vitest-environment node */
 import { SafeFetchError } from "@domainstack/safe-fetch";
 
 const mocks = vi.hoisted(() => ({
@@ -172,6 +172,7 @@ describe("fetchSeo", () => {
     it.each([
       ["a 503", async () => imageResponse(503)],
       ["a 429", async () => imageResponse(429)],
+      ["a 408", async () => imageResponse(408)],
       ["a timeout", async () => Promise.reject(new SafeFetchError("timeout", "timed out"))],
     ])("retries soon instead of caching 'no image' for a day after %s", async (_label, image) => {
       respondWith({ image });

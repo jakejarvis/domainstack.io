@@ -34,15 +34,30 @@ describe("isExpectedDnsError", () => {
     expect(isExpectedDnsError(err)).toBe(false);
   });
 
-  it("treats a wrapped EAI_AGAIN as retryable", () => {
-    // resolvePublicHost keeps only the message when it wraps a resolver failure
-    const err = new SafeFetchError("dns_error", "getaddrinfo EAI_AGAIN example.com");
-    expect(isExpectedDnsError(err)).toBe(false);
+  // resolvePublicHost wraps the resolver's error, keeping it as the cause
+  const wrapped = (code: string) => {
+    const cause = Object.assign(new Error(`getaddrinfo ${code} example.com`), { code });
+    return new SafeFetchError("dns_error", cause.message, undefined, { cause });
+  };
+
+  it.each(["EAI_AGAIN", "EAI_FAIL", "ETIMEDOUT", "ESERVFAIL"])(
+    "treats a wrapped %s as retryable, without listing each temporary code",
+    (code) => {
+      expect(isExpectedDnsError(wrapped(code))).toBe(false);
+    },
+  );
+
+  it.each(["ENOTFOUND", "ENODATA", "ENOENT"])("treats a wrapped %s as permanent", (code) => {
+    expect(isExpectedDnsError(wrapped(code))).toBe(true);
   });
 
-  it("treats a wrapped NXDOMAIN as permanent", () => {
-    const err = new SafeFetchError("dns_error", "getaddrinfo ENOTFOUND example.invalid");
-    expect(isExpectedDnsError(err)).toBe(true);
+  it("falls back to the message when there is no errno code", () => {
+    expect(
+      isExpectedDnsError(new SafeFetchError("dns_error", "getaddrinfo EAI_AGAIN example.com")),
+    ).toBe(false);
+    expect(
+      isExpectedDnsError(new SafeFetchError("dns_error", "getaddrinfo ENOTFOUND example.com")),
+    ).toBe(true);
   });
 
   it("detects nested cause codes", () => {
