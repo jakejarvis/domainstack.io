@@ -22,6 +22,7 @@
         "GITHUB_CLIENT_SECRET",
         "GITLAB_CLIENT_ID",
         "GITLAB_CLIENT_SECRET",
+        "GLOBAL_CONFIG",
         "GOOGLE_CLIENT_ID",
         "GOOGLE_CLIENT_SECRET",
         "IPLOCATE_API_KEY",
