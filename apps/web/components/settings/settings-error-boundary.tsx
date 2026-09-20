@@ -2,7 +2,8 @@
 
 import { IconAlertTriangle, IconRefresh } from "@tabler/icons-react";
 import { useQueryErrorResetBoundary } from "@tanstack/react-query";
-import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
+import { catchError, type ErrorInfo } from "next/error";
+import { useEffect } from "react";
 
 import { CreateIssueButton } from "@/components/create-issue-button";
 import { analytics } from "@/lib/analytics/client";
@@ -10,7 +11,6 @@ import { Button } from "@domainstack/ui/button";
 import { CardDescription, CardHeader, CardTitle } from "@domainstack/ui/card";
 
 interface Props {
-  children: React.ReactNode;
   /** Display name for the settings section (e.g., "Account", "Notifications") */
   sectionName: string;
 }
@@ -19,9 +19,14 @@ interface Props {
  * Compact error fallback for settings panels.
  * Shows inline error with retry button - matches settings UI style.
  */
-function SettingsErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
+function SettingsErrorFallback({ sectionName, error, retry }: Props & ErrorInfo) {
+  const { reset: resetQueryErrors } = useQueryErrorResetBoundary();
   const isDev = process.env.NODE_ENV === "development";
   const errorObj = error instanceof Error ? error : undefined;
+
+  useEffect(() => {
+    if (errorObj) analytics.trackException(errorObj, { section: sectionName, context: "settings" });
+  }, [errorObj, sectionName]);
 
   return (
     <CardHeader className="px-0 pt-0 pb-2">
@@ -33,7 +38,13 @@ function SettingsErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
         {isDev && errorObj ? errorObj.message : "Something went wrong."}
       </CardDescription>
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        <Button size="sm" onClick={resetErrorBoundary}>
+        <Button
+          size="sm"
+          onClick={() => {
+            resetQueryErrors();
+            retry();
+          }}
+        >
           <IconRefresh />
           Retry
         </Button>
@@ -46,26 +57,8 @@ function SettingsErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
 /**
  * Error boundary for settings panels.
  * Provides a compact inline error state that matches settings UI.
- * Integrates with React Query to reset cached errors on retry.
+ * Resets React Query's cached errors on retry.
  */
-export function SettingsErrorBoundary({ children, sectionName }: Props) {
-  const { reset } = useQueryErrorResetBoundary();
-
-  return (
-    <ErrorBoundary
-      FallbackComponent={SettingsErrorFallback}
-      onReset={reset}
-      onError={(error, errorInfo) => {
-        if (error instanceof Error) {
-          analytics.trackException(error, {
-            section: sectionName,
-            context: "settings",
-            componentStack: errorInfo.componentStack,
-          });
-        }
-      }}
-    >
-      {children}
-    </ErrorBoundary>
-  );
-}
+export const SettingsErrorBoundary = catchError((props: Props, errorInfo: ErrorInfo) => (
+  <SettingsErrorFallback {...props} {...errorInfo} />
+));

@@ -30,7 +30,7 @@
         "POLAR_ACCESS_TOKEN",
         "POLAR_WEBHOOK_SECRET",
         "POSTHOG_API_KEY",
-        "POSTHOG_ENV_ID",
+        "POSTHOG_PROJECT_ID",
         "REDIS_URL",
         "RESEND_API_KEY",
         "RESEND_FROM_EMAIL",

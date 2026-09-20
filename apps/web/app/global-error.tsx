@@ -7,10 +7,10 @@ import { analytics } from "@/lib/analytics/client";
 
 export default function GlobalError({
   error,
-  reset: _reset,
+  retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  retry: () => void;
 }) {
   useEffect(() => {
     analytics.trackException(error);
@@ -22,6 +22,11 @@ export default function GlobalError({
       <body>
         {/* `NextError` is the default Next.js error page component */}
         <NextError statusCode={0} />
+        <div style={{ textAlign: "center" }}>
+          <button type="button" onClick={() => retry()}>
+            Try again
+          </button>
+        </div>
       </body>
     </html>
   );

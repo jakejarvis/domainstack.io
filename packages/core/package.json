@@ -40,7 +40,7 @@
     "@vercel/functions": "catalog:",
     "cheerio": "^1.2.0",
     "ipaddr.js": "catalog:",
-    "lru-cache": "^11.5.2",
+    "lru-cache": "^11.5.3",
     "rdapper": "catalog:"
   },
   "devDependencies": {

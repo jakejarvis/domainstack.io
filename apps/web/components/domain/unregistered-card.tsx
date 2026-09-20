@@ -1,11 +1,14 @@
 "use client";
 
+import { catchError } from "next/error";
 import { Suspense } from "react";
-import { ErrorBoundary } from "react-error-boundary";
 
 import { RegistrarLinks, RegistrarLinksSkeleton } from "@/components/domain/registrar-links";
 import { NONPUBLIC_TLDS } from "@domainstack/constants";
 import { extractTldClient } from "@domainstack/utils/domain/client";
+
+// Renders nothing on error; used for supplementary info like pricing.
+const SilentErrorBoundary = catchError(() => null);
 
 interface DomainUnregisteredCardProps {
   domain: string;
@@ -38,11 +41,11 @@ export function DomainUnregisteredCard({ domain }: DomainUnregisteredCardProps) 
 
         {canShowRegistrarLinks && (
           // Silently fail on pricing errors - this is supplementary info
-          <ErrorBoundary fallback={null}>
+          <SilentErrorBoundary>
             <Suspense fallback={<RegistrarLinksSkeleton />}>
               <RegistrarLinks domain={domain} tld={tld} />
             </Suspense>
-          </ErrorBoundary>
+          </SilentErrorBoundary>
         )}
       </div>
     </div>

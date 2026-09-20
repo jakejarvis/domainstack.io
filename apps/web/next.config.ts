@@ -4,7 +4,7 @@ import createWithVercelToolbar from "@vercel/toolbar/plugins/next";
 import type { NextConfig } from "next";
 import { withWorkflow } from "workflow/next";
 
-let nextConfig: NextConfig = {
+const nextConfig: NextConfig = {
   pageExtensions: ["ts", "tsx", "js", "jsx", "md", "mdx"],
   reactCompiler: true,
   cacheComponents: true,
@@ -35,10 +35,10 @@ let nextConfig: NextConfig = {
     },
   },
   experimental: {
+    globalNotFound: true,
     optimizePackageImports: [
       "@icons-pack/react-simple-icons",
       "@tabler/icons-react",
-      "date-fns",
       "motion/react",
     ],
     staleTimes: {
@@ -91,18 +91,13 @@ const withMDX = createMDX({
   },
 });
 
-const configWithPlugins = withWorkflow(withVercelToolbar(withMDX(nextConfig)));
-
-// withPostHogConfig must be the outermost wrapper, or the other plugins strip its hooks.
-export default process.env.POSTHOG_API_KEY && process.env.POSTHOG_ENV_ID
-  ? withPostHogConfig(configWithPlugins, {
-      personalApiKey: process.env.POSTHOG_API_KEY,
-      envId: process.env.POSTHOG_ENV_ID,
-      host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
-      logLevel: "error",
-      sourcemaps: {
-        enabled: true,
-        deleteAfterUpload: false,
-      },
-    })
-  : configWithPlugins;
+export default withPostHogConfig(withWorkflow(withVercelToolbar(withMDX(nextConfig))), {
+  personalApiKey: process.env.POSTHOG_API_KEY!,
+  projectId: process.env.POSTHOG_PROJECT_ID,
+  host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
+  logLevel: "error",
+  sourcemaps: {
+    enabled: Boolean(process.env.POSTHOG_API_KEY && process.env.POSTHOG_PROJECT_ID),
+    deleteAfterUpload: false,
+  },
+});

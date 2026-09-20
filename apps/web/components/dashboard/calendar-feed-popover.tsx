@@ -2,8 +2,8 @@
 
 import { IconAlertTriangle, IconCalendarClock, IconRefresh, IconX } from "@tabler/icons-react";
 import { useQueryClient, useQueryErrorResetBoundary } from "@tanstack/react-query";
+import { catchError, type ErrorInfo } from "next/error";
 import { Suspense, useRef, useState } from "react";
-import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
 
 import { CalendarInstructions } from "@/components/calendar-instructions";
 import { CreateIssueButton } from "@/components/create-issue-button";
@@ -20,25 +20,33 @@ import { Spinner } from "@domainstack/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 
 /**
- * Compact error fallback for popover content.
+ * Compact error boundary for popover content.
  */
-function PopoverErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
-  const errorObj = error instanceof Error ? error : undefined;
+const PopoverErrorBoundary = catchError(
+  ({ onRetry }: { onRetry: () => void }, { error, retry }: ErrorInfo) => {
+    const errorObj = error instanceof Error ? error : undefined;
 
-  return (
-    <div className="flex flex-col items-center gap-2 p-4 text-center">
-      <IconAlertTriangle className="size-5 text-destructive" />
-      <p className="text-sm text-muted-foreground">Failed to load</p>
-      <div className="flex flex-wrap items-center justify-center gap-2">
-        <Button size="sm" onClick={resetErrorBoundary}>
-          <IconRefresh />
-          Retry
-        </Button>
-        <CreateIssueButton error={errorObj} variant="outline" size="sm" />
+    return (
+      <div className="flex flex-col items-center gap-2 p-4 text-center">
+        <IconAlertTriangle className="size-5 text-destructive" />
+        <p className="text-sm text-muted-foreground">Failed to load</p>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Button
+            size="sm"
+            onClick={() => {
+              onRetry();
+              retry();
+            }}
+          >
+            <IconRefresh />
+            Retry
+          </Button>
+          <CreateIssueButton error={errorObj} variant="outline" size="sm" />
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  },
+);
 
 export function CalendarFeedPopover() {
   const [open, setOpen] = useState(false);
@@ -115,11 +123,11 @@ export function CalendarFeedPopover() {
           </Button>
         </PopoverHeader>
 
-        <ErrorBoundary FallbackComponent={PopoverErrorFallback} onReset={reset}>
+        <PopoverErrorBoundary onRetry={reset}>
           <Suspense fallback={null}>
             <CalendarInstructions className="bg-popover/10 p-4" />
           </Suspense>
-        </ErrorBoundary>
+        </PopoverErrorBoundary>
       </PopoverContent>
     </Popover>
   );
