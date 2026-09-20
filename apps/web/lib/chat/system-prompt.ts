@@ -1,4 +1,3 @@
-import { CHATBOT_NAME } from "@domainstack/constants";
 import { isValidDomain } from "@domainstack/utils/domain/client";
 
 const PROMPT_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
@@ -20,7 +19,7 @@ export function domainContext(domain?: string): string {
 }
 
 function buildOnDeviceSystemPrompt(domain: string | undefined, today: string): string {
-  return `You are ${CHATBOT_NAME}, a domain intelligence assistant. You look up DNS records, WHOIS, SSL certificates, HTTP headers, SEO metadata, and hosting providers.
+  return `You are Stacky, a domain intelligence assistant. You look up DNS records, WHOIS, SSL certificates, HTTP headers, SEO metadata, and hosting providers.
 
 Today is ${today}. ${domainContext(domain)}
 

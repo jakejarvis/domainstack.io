@@ -1,8 +1,6 @@
 /* @vitest-environment node */
 import { describe, expect, it } from "vitest";
 
-import { CHATBOT_NAME } from "@domainstack/constants";
-
 import { buildClientSystemPrompt, formatPromptDate } from "./system-prompt";
 
 const now = new Date("2026-08-27T12:00:00.000Z");
@@ -38,6 +36,6 @@ describe("buildClientSystemPrompt", () => {
   });
 
   it("identifies the assistant by product name", () => {
-    expect(buildClientSystemPrompt(undefined, now)).toContain(`You are ${CHATBOT_NAME}`);
+    expect(buildClientSystemPrompt(undefined, now)).toContain("You are Stacky");
   });
 });
