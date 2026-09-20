@@ -40,6 +40,9 @@ const CONTACT_LABELS: Record<ContactDetails["type"], string> = {
   unknown: "Other",
 };
 
+// Registries often repeat values; dedupe so they can serve as React keys.
+const unique = <T,>(values: T[]): T[] => [...new Set(values)];
+
 /** Dial string for a `tel:` link: drops formatting and any trailing extension. */
 function toTelHref(phone: string): string {
   return phone.split(/\s*(?:ext\.?|x)\s*\d+$/i)[0].replace(/[^\d+]/g, "");
@@ -63,7 +66,7 @@ function ContactFields({ contact }: { contact: ContactDetails }) {
     <dl>
       {person.length > 0 && (
         <ContactRow label="Identity">
-          {person.map((p) => (
+          {unique(person).map((p) => (
             <span key={p} className="block font-medium break-words">
               {p}
             </span>
@@ -73,7 +76,7 @@ function ContactFields({ contact }: { contact: ContactDetails }) {
       {kind && <ContactRow label="Type">{kind}</ContactRow>}
       {roles.length > 0 && (
         <ContactRow label="Role">
-          {roles.map((role) => (
+          {unique(roles).map((role) => (
             <span key={role} className="block break-words">
               {role}
             </span>
@@ -91,7 +94,7 @@ function ContactFields({ contact }: { contact: ContactDetails }) {
       )}
       {contact.email.length > 0 && (
         <ContactRow label="Email">
-          {contact.email.map((email) => (
+          {unique(contact.email).map((email) => (
             <a
               key={email}
               href={`mailto:${email}`}
@@ -104,7 +107,7 @@ function ContactFields({ contact }: { contact: ContactDetails }) {
       )}
       {contact.phone.length > 0 && (
         <ContactRow label="Phone">
-          {contact.phone.map((phone) => (
+          {unique(contact.phone).map((phone) => (
             <a
               key={phone}
               href={`tel:${toTelHref(phone)}`}
@@ -117,7 +120,7 @@ function ContactFields({ contact }: { contact: ContactDetails }) {
       )}
       {contact.fax.length > 0 && (
         <ContactRow label="Fax">
-          {contact.fax.map((fax) => (
+          {unique(contact.fax).map((fax) => (
             <span key={fax} className="block break-all">
               {fax}
             </span>

@@ -158,6 +158,7 @@ beforeEach(async () => {
 
   // Clean up tracked domains between tests
   await db.delete(userTrackedDomains);
+  await db.delete(registrations);
 });
 
 describe("tracking router", () => {
