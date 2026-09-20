@@ -17,7 +17,7 @@ import { getWorkflowMetadata, getWritable } from "workflow";
 
 import { CHAT_RUN_TIMEOUT_MS, MAX_OUTPUT_TOKENS, MAX_TOOL_STEPS } from "@domainstack/constants";
 
-import { buildSystemPromptStep } from "./system-prompt";
+import { resolveCloudPromptStep } from "./cloud-prompt";
 import { captureChatTelemetryStep, toChatTelemetryPayload } from "./telemetry";
 import { createDomainToolset, createDomainToolsContext } from "./tools";
 
@@ -30,8 +30,6 @@ interface ChatWorkflowInput {
   userId: string | null;
   /** Groups turns of one conversation for AI observability - must be serializable */
   sessionId: string | null;
-  /** AI Gateway model ID resolved from the `ai-model` flag - must be serializable */
-  model: string;
 }
 
 /**
@@ -41,14 +39,19 @@ interface ChatWorkflowInput {
 export async function chatWorkflow(input: ChatWorkflowInput) {
   "use workflow";
 
-  const { messages, domain, ip, userId, sessionId, model } = input;
+  const { messages, domain, ip, userId, sessionId } = input;
 
   const domainTools = createDomainToolset();
   const modelMessages = await convertToModelMessages(messages, {
     tools: domainTools,
     ignoreIncompleteToolCalls: true,
   });
-  const systemPrompt = await buildSystemPromptStep(domain);
+  const {
+    prompt: systemPrompt,
+    model,
+    promptName,
+    promptVersion,
+  } = await resolveCloudPromptStep(domain);
   const { workflowRunId } = getWorkflowMetadata();
 
   const agent = new WorkflowAgent({
@@ -93,6 +96,8 @@ export async function chatWorkflow(input: ChatWorkflowInput) {
       workflowRunId,
       domain,
       modelId: model,
+      promptName,
+      promptVersion,
       tools: Object.keys(domainTools),
       messages: modelMessages,
       systemPrompt,

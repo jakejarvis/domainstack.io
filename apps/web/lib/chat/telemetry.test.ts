@@ -40,6 +40,8 @@ function payload(overrides?: Partial<ChatTelemetryPayload>): ChatTelemetryPayloa
     workflowRunId: "run-1",
     domain: "example.com",
     modelId: "google/gemini-2.5-flash",
+    promptName: "cloud-chat-system-prompt",
+    promptVersion: 1,
     tools: ["get_registration"],
     input: [{ role: "user", content: "who owns example.com?" }],
     steps: [

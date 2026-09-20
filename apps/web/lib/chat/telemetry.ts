@@ -61,6 +61,8 @@ export function toChatTelemetryPayload<TOOLS extends ToolSet>(input: {
   workflowRunId: string;
   domain?: string;
   modelId: string;
+  promptName?: string;
+  promptVersion?: number;
   tools: string[];
   messages: ModelMessage[];
   systemPrompt: string;
@@ -72,6 +74,8 @@ export function toChatTelemetryPayload<TOOLS extends ToolSet>(input: {
     workflowRunId: input.workflowRunId,
     domain: input.domain,
     modelId: input.modelId,
+    promptName: input.promptName,
+    promptVersion: input.promptVersion,
     tools: input.tools,
     input: [{ role: "system" as const, content: input.systemPrompt }, ...input.messages],
     steps: input.steps.map((step) => ({
@@ -207,6 +211,10 @@ export function buildAiObservabilityEvents(
       Object.assign(generationProperties, {
         $ai_time_to_first_token: step.timeToFirstTokenSeconds,
       });
+    if (payload.promptName)
+      Object.assign(generationProperties, { $ai_prompt_name: payload.promptName });
+    if (payload.promptVersion != null)
+      Object.assign(generationProperties, { $ai_prompt_version: payload.promptVersion });
 
     events.push({
       event: "$ai_generation" as const,

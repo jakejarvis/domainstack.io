@@ -48,6 +48,7 @@
     "@opentelemetry/sdk-logs": "catalog:",
     "@opentelemetry/sdk-metrics": "catalog:",
     "@opentelemetry/sdk-trace-base": "catalog:",
+    "@posthog/ai": "^8.13.0",
     "@posthog/mcp": "^0.17.0",
     "@posthog/nextjs-config": "^1.11.1",
     "@tabler/icons-react": "catalog:",
