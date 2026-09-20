@@ -16,6 +16,12 @@ type KeyValueProps = {
   trailing?: React.ReactNode;
   suffix?: React.ReactNode;
   valueTooltip?: React.ReactNode;
+  /**
+   * Stand-in for `value` inside the truncation tooltip, for values that contain
+   * interactive elements (which must not be rendered inside a tooltip). Unlike
+   * `valueTooltip`, it does not force the tooltip on when nothing is truncated.
+   */
+  truncatedValue?: React.ReactNode;
 };
 
 export function KeyValue({
@@ -27,6 +33,7 @@ export function KeyValue({
   trailing,
   suffix,
   valueTooltip,
+  truncatedValue,
 }: KeyValueProps) {
   const { valueRef, isTruncated } = useTruncation();
   const copyText = typeof value === "string" ? value : undefined;
@@ -74,7 +81,7 @@ export function KeyValue({
                   : "hidden",
               )}
             >
-              {valueTooltip ?? value}
+              {valueTooltip ?? truncatedValue ?? value}
             </ResponsiveTooltipContent>
           </ResponsiveTooltip>
 

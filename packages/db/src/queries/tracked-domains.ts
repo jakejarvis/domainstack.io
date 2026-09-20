@@ -11,6 +11,7 @@ import type {
   VerificationMethod,
   VerificationStatus,
 } from "@domainstack/types";
+import { upgradeContacts } from "@domainstack/utils/contacts";
 import { deduplicateDnsRecordsByValue } from "@domainstack/utils/dns";
 
 import { db } from "../client";
@@ -679,7 +680,21 @@ export async function getTrackedDomainDetails(
     { includeDnsRecords: true },
   );
 
-  return results[0] ?? null;
+  const details = results[0];
+  if (!details) return null;
+
+  // This single-domain query is the only one whose contacts reach the client (the
+  // dashboard tooltip), so stored rows are brought up to date here rather than in
+  // the shared row mapper, which would redo it for every row of every list query.
+  const { registrantInfo } = details.registrar;
+  if (!registrantInfo) return details;
+  return {
+    ...details,
+    registrar: {
+      ...details.registrar,
+      registrantInfo: { ...registrantInfo, contacts: upgradeContacts(registrantInfo.contacts) },
+    },
+  };
 }
 
 /**

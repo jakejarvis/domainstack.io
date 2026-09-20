@@ -8,6 +8,7 @@ import {
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { RawDataDialog } from "@/components/domain/registration/raw-data-dialog";
+import { RegistrantTooltip } from "@/components/domain/registration/registrant-tooltip";
 import { RelativeAgeString } from "@/components/domain/relative-age";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { ReportSection } from "@/components/domain/report-section";
@@ -20,8 +21,7 @@ import {
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
 import { formatDate, formatDateTimeUtc, toDateTimeAttr } from "@domainstack/utils/date";
-
-type RegistrantView = { organization: string; country: string; state?: string };
+import { describeRegistrant, type RegistrantView } from "@domainstack/utils/registrant";
 
 function getUnavailableMessage(data: RegistrationResponse): string {
   if (data.unavailableReason === "timeout") {
@@ -120,9 +120,8 @@ function RegistrarVerifiedBy({
 }
 
 function RegistrationDetailsGrid({ data }: { data: RegistrationResponse }) {
-  const registrant = extractRegistrantView(data);
+  const registrant = describeRegistrant(data.contacts, data.privacyEnabled);
   const { serverUrl, serverName, learnUrl } = getRegistrationSource(data);
-  const isHidden = data.privacyEnabled || !registrant;
 
   return (
     <KeyValueGrid colsDesktop={2}>
@@ -147,13 +146,7 @@ function RegistrationDetailsGrid({ data }: { data: RegistrationResponse }) {
         }
       />
 
-      <KeyValue
-        label="Registrant"
-        value={registrant && !data.privacyEnabled ? formatRegistrant(registrant) : "Hidden"}
-        leading={
-          isHidden ? <IconSpy className="text-muted-foreground" aria-hidden="true" /> : undefined
-        }
-      />
+      <RegistrantKeyValue view={registrant} />
 
       <KeyValue
         label="Created"
@@ -247,25 +240,42 @@ export function RegistrationSection({
   );
 }
 
-export function formatRegistrant(reg: { organization: string; country: string; state?: string }) {
-  const org = (reg.organization || "").trim();
-  const country = (reg.country || "").trim();
-  const state = (reg.state || "").trim();
-  const parts = [] as string[];
-  if (org) parts.push(org);
-  const loc = [state, country].filter(Boolean).join(", ");
-  if (loc) parts.push(loc);
-  if (parts.length === 0) return "Unavailable";
-  return parts.join(" — ");
-}
+function RegistrantKeyValue({ view }: { view: RegistrantView | null }) {
+  const redacted = view?.state === "redacted";
+  const named = view?.state === "named";
+  const primary = redacted
+    ? "Hidden"
+    : (view?.name ?? (view?.state === "location-only" ? view.location : undefined)) ||
+      "Not published";
+  const summary = named && view?.location ? `${view.name} — ${view.location}` : primary;
+  const hasPopover = Boolean(view?.hasDetails);
 
-function extractRegistrantView(record: RegistrationResponse): RegistrantView | null {
-  const registrant = record.contacts?.find((c) => c.type === "registrant");
-  if (!registrant) return null;
-  const organization = (registrant.organization || registrant.name || "").trim() || "Unknown";
-  const country = registrant.country || registrant.countryCode || "";
-  const state = registrant.state || "" || undefined;
-  return { organization, country, state };
+  return (
+    <KeyValue
+      label="Registrant"
+      value={
+        view && hasPopover ? <RegistrantTooltip view={view}>{primary}</RegistrantTooltip> : primary
+      }
+      // Without a popover, explain redaction in the tooltip; with one, the popover
+      // does that and the tooltip only needs plain text for truncated values.
+      valueTooltip={
+        !hasPopover && redacted
+          ? "Registrant details are redacted by the registry or registrar"
+          : undefined
+      }
+      truncatedValue={summary}
+      leading={
+        redacted ? <IconSpy className="text-muted-foreground" aria-hidden="true" /> : undefined
+      }
+      suffix={
+        named && view?.location ? (
+          <span className="truncate text-[11px] leading-none text-muted-foreground">
+            {view.location}
+          </span>
+        ) : null
+      }
+    />
+  );
 }
 
 function extractSourceDomain(input: string | undefined | null): string | undefined {

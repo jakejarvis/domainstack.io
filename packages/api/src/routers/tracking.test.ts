@@ -34,7 +34,7 @@ vi.mock("@domainstack/email/templates/verification-instructions", () => ({
 }));
 
 // Now import modules that depend on the db
-const { domains, domainSnapshots, userSubscriptions, users, userTrackedDomains } =
+const { domains, domainSnapshots, registrations, userSubscriptions, users, userTrackedDomains } =
   await import("@domainstack/db/schema");
 const { eq } = await import("@domainstack/db/drizzle");
 const { countActiveTrackedDomainsForUser } =
@@ -158,6 +158,7 @@ beforeEach(async () => {
 
   // Clean up tracked domains between tests
   await db.delete(userTrackedDomains);
+  await db.delete(registrations);
 });
 
 describe("tracking router", () => {
@@ -753,6 +754,59 @@ describe("tracking router", () => {
         .where(eq(domainSnapshots.trackedDomainId, TEST_TRACKED_ID));
 
       expect(remaining).toHaveLength(0);
+    });
+  });
+
+  describe("registrant contacts", () => {
+    const legacyContact = {
+      type: "registrant" as const,
+      name: "REDACTED FOR PRIVACY",
+      email: "Please query the RDDS service of the Registrar of Record",
+      country: "US",
+    };
+
+    async function trackDomainWithLegacyRegistration() {
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "test-token-123",
+        verified: true,
+        verificationMethod: "dns_txt",
+      });
+      await db
+        .insert(registrations)
+        .values({
+          domainId: TEST_DOMAIN_ID,
+          isRegistered: true,
+          source: "rdap",
+          contacts: [legacyContact],
+          fetchedAt: new Date(),
+          expiresAt: new Date(Date.now() + 86_400_000),
+        })
+        .onConflictDoNothing();
+    }
+
+    it("getDomainDetails brings contacts stored by older rdapper versions up to date", async () => {
+      await trackDomainWithLegacyRegistration();
+
+      const result = await createAuthenticatedCaller().tracking.getDomainDetails({
+        trackedDomainId: TEST_TRACKED_ID,
+      });
+
+      const [registrant] = result.registrar.registrantInfo?.contacts ?? [];
+      expect(registrant?.name).toBeUndefined();
+      expect(registrant?.email).toBeUndefined();
+      expect(registrant).toMatchObject({ redacted: true, countryCode: "US" });
+      expect(registrant?.redactedFields).toEqual(expect.arrayContaining(["name", "email"]));
+    });
+
+    it("listDomains does not return contacts at all", async () => {
+      await trackDomainWithLegacyRegistration();
+
+      const [item] = await createAuthenticatedCaller().tracking.listDomains();
+
+      expect(item?.registrar).not.toHaveProperty("registrantInfo");
     });
   });
 

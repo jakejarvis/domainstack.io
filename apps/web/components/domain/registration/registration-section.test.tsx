@@ -63,4 +63,127 @@ describe("RegistrationSection", () => {
     );
     await expect.element(page.getByText(/Registration Data Unavailable/i)).toBeInTheDocument();
   });
+
+  describe("registrant row", () => {
+    const base = {
+      domain: "test.invalid",
+      tld: "invalid",
+      isRegistered: true,
+      status: "registered",
+      unavailableReason: null,
+      source: "rdap",
+      registrarProvider: { name: "Namecheap", domain: "namecheap.com" },
+    };
+    const renderWith = (extra: Record<string, unknown>) =>
+      render(
+        <RegistrationSection
+          data={
+            { ...base, ...extra } as unknown as import("@domainstack/types").RegistrationResponse
+          }
+        />,
+      );
+
+    it("shows location only instead of 'Unknown' when no name is published", async () => {
+      await renderWith({ contacts: [{ type: "registrant", country: "United States of America" }] });
+      await expect.element(page.getByText("United States of America").first()).toBeInTheDocument();
+      expect(page.getByText(/Unknown —/).length).toBe(0);
+    });
+
+    it("shows name with location and opens a details popover", async () => {
+      await renderWith({
+        contacts: [
+          {
+            type: "registrant",
+            organization: "Acme Corp",
+            state: "CA",
+            country: "US",
+            email: "hi@acme.test",
+          },
+        ],
+      });
+      await expect.element(page.getByText("Acme Corp").first()).toBeInTheDocument();
+      await page.getByRole("button", { name: /Acme Corp/ }).click();
+      await expect.element(page.getByText("hi@acme.test")).toBeInTheDocument();
+    });
+
+    it("shows kind, title, other contacts and a dialable phone in the popover", async () => {
+      await renderWith({
+        contacts: [
+          {
+            type: "registrant",
+            name: "Jane Doe",
+            kind: "individual",
+            title: "CTO",
+            phone: "+1.555.123.4567 x89",
+          },
+          { type: "abuse", email: "abuse@registrar.test" },
+        ],
+      });
+      await page.getByRole("button", { name: /Jane Doe/ }).click();
+      await expect.element(page.getByRole("heading", { name: "Registrant details" })).toBeVisible();
+      await expect.element(page.getByText("Individual")).toBeInTheDocument();
+      await expect.element(page.getByText("CTO")).toBeInTheDocument();
+      await expect.element(page.getByText("abuse@registrar.test")).toBeInTheDocument();
+      await expect
+        .element(page.getByRole("link", { name: "+1.555.123.4567 x89" }))
+        .toHaveAttribute("href", "tel:+15551234567");
+    });
+
+    it("shows other contacts when the registrant is redacted", async () => {
+      await renderWith({
+        privacyEnabled: true,
+        contacts: [
+          { type: "registrant", redacted: true, redactedFields: ["name"] },
+          { type: "abuse", email: "abuse@registrar.test" },
+        ],
+      });
+      await page.getByRole("button", { name: /Hidden/ }).click();
+      await expect.element(page.getByText("abuse@registrar.test")).toBeInTheDocument();
+    });
+
+    it("does not add a popover when it would only repeat the summary", async () => {
+      await renderWith({
+        contacts: [{ type: "registrant", name: "Jane Doe", state: "CA", country: "US" }],
+      });
+      await expect.element(page.getByText("Jane Doe").first()).toBeInTheDocument();
+      await expect.element(page.getByText(/CA, United States/).first()).toBeInTheDocument();
+      expect(page.getByRole("button", { name: /Jane Doe/ }).length).toBe(0);
+    });
+
+    it("keeps other contacts reachable when the registrant itself is empty", async () => {
+      await renderWith({
+        contacts: [{ type: "registrant" }, { type: "abuse", email: "abuse@registrar.test" }],
+      });
+      await page.getByRole("button", { name: /Not published/ }).click();
+      await expect.element(page.getByText("abuse@registrar.test")).toBeInTheDocument();
+    });
+
+    it("shows Not published, not Hidden, when only the country was redacted", async () => {
+      await renderWith({
+        contacts: [{ type: "registrant", redacted: true, redactedFields: ["country"] }],
+      });
+      await expect.element(page.getByText("Not published").first()).toBeInTheDocument();
+    });
+
+    it("shows Hidden when privacy is enabled and the name is a placeholder", async () => {
+      await renderWith({
+        privacyEnabled: true,
+        contacts: [{ type: "registrant", redacted: true, redactedFields: ["name"] }],
+      });
+      await expect.element(page.getByText("Hidden").first()).toBeInTheDocument();
+    });
+
+    it("still shows a visible name when privacy is enabled by an email-only redaction", async () => {
+      await renderWith({
+        privacyEnabled: true,
+        contacts: [{ type: "registrant", name: "Jane Doe", redacted: true }],
+      });
+      await expect.element(page.getByText("Jane Doe").first()).toBeInTheDocument();
+    });
+
+    it("shows Not published when the contact is empty", async () => {
+      await renderWith({ contacts: [{ type: "registrant" }] });
+      await expect.element(page.getByText("Not published").first()).toBeInTheDocument();
+    });
+  });
 });
