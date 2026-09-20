@@ -60,16 +60,19 @@ describe("DomainSearch (form variant)", () => {
     await render(<SearchClient variant="lg" />);
 
     const form = page.getByRole("form", { name: "Domain search" });
-    await expect.element(form).toHaveAttribute("tool-name", "domain-search");
+    await expect.element(form).toHaveAttribute("toolname", "open-domain-report");
     await expect
       .element(form)
       .toHaveAttribute(
-        "tool-description",
-        "Look up WHOIS, DNS, SSL, hosting, HTTP headers, and SEO for any domain",
+        "tooldescription",
+        "Open the full report for a domain, covering WHOIS, DNS, SSL, hosting, HTTP headers, and SEO",
       );
     await expect.element(form).toHaveAttribute("action", "/");
     await expect.element(form).toHaveAttribute("method", "GET");
     await expect.element(domainSearchInput()).toHaveAttribute("name", "q");
+    await expect
+      .element(domainSearchInput())
+      .toHaveAttribute("toolparamdescription", "Domain name to look up, e.g. example.com");
   });
 
   it("submits valid domain and navigates", async () => {

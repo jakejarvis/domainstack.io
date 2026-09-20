@@ -358,9 +358,9 @@ export function SearchClient({
         action="/"
         method="GET"
         {...{
-          "tool-name": "domain-search",
-          "tool-description":
-            "Look up WHOIS, DNS, SSL, hosting, HTTP headers, and SEO for any domain",
+          toolname: "open-domain-report",
+          tooldescription:
+            "Open the full report for a domain, covering WHOIS, DNS, SSL, hosting, HTTP headers, and SEO",
         }}
         onFormSubmit={handleSubmit}
       >
@@ -371,7 +371,7 @@ export function SearchClient({
               <InputGroupInput
                 ref={attachInputRef}
                 name="q"
-                {...{ "tool-param-description": "Domain name to look up, e.g. example.com" }}
+                {...{ toolparamdescription: "Domain name to look up, e.g. example.com" }}
                 autoFocus={variant === "lg" && mounted && !isMobile}
                 inputMode="url"
                 autoComplete="off"

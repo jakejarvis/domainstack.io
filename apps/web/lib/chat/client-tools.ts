@@ -8,15 +8,12 @@
 import type { TRPCClient } from "@trpc/client";
 import { tool, type Tool } from "ai";
 
-import { analytics } from "@/lib/analytics/client";
-import { getLookupErrorMessage } from "@/lib/constants/lookup-errors";
-import { LOOKUP_PROCEDURES } from "@/lib/constants/lookup-procedures";
 import type { AppRouter } from "@domainstack/api";
 
+import { runClientDomainLookup } from "./client-lookup";
 import {
   DOMAIN_TOOL_DEFS,
   domainToolInputSchema,
-  getDomainToolErrorMessage,
   type DomainToolInput,
   type DomainToolResult,
 } from "./domain-tools";
@@ -30,32 +27,12 @@ type ClientDomainToolSet = {
   >;
 };
 
-function makeClientDomainTool<TDef extends (typeof DOMAIN_TOOL_DEFS)[number]>(
-  trpc: TRPCClientType,
-  def: TDef,
-) {
+function makeClientDomainTool(trpc: TRPCClientType, def: (typeof DOMAIN_TOOL_DEFS)[number]) {
   return tool({
     description: def.description,
     inputSchema: domainToolInputSchema,
     strict: true,
-    execute: async ({ domain }: DomainToolInput) => {
-      try {
-        const result = await trpc.domain[LOOKUP_PROCEDURES[def.section]].query({ domain });
-        if (!result.success) {
-          return {
-            error: getLookupErrorMessage(result.error),
-          };
-        }
-        return result.data;
-      } catch (err) {
-        analytics.trackException(err, {
-          context: "client-domain-tool",
-          tool: def.name,
-          domain,
-        });
-        return { error: getDomainToolErrorMessage(err) };
-      }
-    },
+    execute: ({ domain }: DomainToolInput) => runClientDomainLookup(trpc, def, domain),
   });
 }
 

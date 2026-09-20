@@ -6,6 +6,9 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: ["/", "/api/og"],
+        // https://contentsignals.org — public lookups may power search and live AI answers,
+        // but not model training.
+        other: { "Content-Signal": "search=yes, ai-input=yes, ai-train=no" },
       },
     ],
     sitemap: new URL(

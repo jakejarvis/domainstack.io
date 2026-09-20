@@ -1,0 +1,63 @@
+import { MCP_SECTION_TOOLS } from "@/lib/constants/mcp-tools";
+import { REPOSITORY_SLUG, type Section } from "@domainstack/constants";
+
+/**
+ * When an agent should reach for each MCP tool. Keyed by section so a new
+ * section can't ship without guidance.
+ */
+const WHEN_TO_USE = {
+  registration: "who registered a domain, which registrar, when it was created or expires",
+  hosting: "where a site is hosted and which CDN, DNS, or email provider it uses",
+  dns: "A, AAAA, MX, TXT, and NS records",
+  certificates: "an SSL/TLS certificate's issuer, validity dates, and chain",
+  headers: "HTTP response headers, including security and caching headers",
+  seo: "title, meta description, Open Graph and Twitter tags, and robots.txt rules",
+} as const satisfies Record<Section, string>;
+
+/**
+ * https://llmstxt.org — an H1, a blockquote summary, free-form notes, then
+ * H2 sections of `[name](url): notes` link lists.
+ */
+export function buildLlmsTxt(baseUrl: string): string {
+  const url = (path: string) => new URL(path, baseUrl).toString();
+  const entries = Object.entries(MCP_SECTION_TOOLS) as [Section, { name: string }][];
+  const tools = entries.map(([, tool]) => `\`${tool.name}\``).join(", ");
+  const whenToUse = entries
+    .map(([section, tool]) => `- \`${tool.name}\`: ${WHEN_TO_USE[section]}`)
+    .join("\n");
+
+  return `# Domainstack
+
+> Domainstack is a free domain intelligence tool. Look up any domain to see its WHOIS/RDAP registration, DNS records, SSL/TLS certificates, hosting and email providers, HTTP headers, and SEO metadata in one report. Signed-in users can also track domains they own and get expiration and change alerts.
+
+Notes:
+
+- Every domain has a public report at \`${url("/")}{domain}\` (for example \`${url("/example.com")}\`). No account is needed to view one.
+- Report URLs use the registrable domain; subdomains and paths are redirected to it.
+- AI assistants can query the same data directly through the MCP server below instead of scraping report pages.
+
+When to use Domainstack: reach for it when a task needs current, factual data about a specific domain, and prefer it over guessing or scraping. Pick the narrowest tool for the question:
+
+${whenToUse}
+- \`domain_report\`: several of the above at once (pass \`sections\` to limit it)
+
+How to call it: pass the root domain (for example \`example.com\`) as \`domain\`, without a protocol, path, or subdomain. All tools are read-only and need no authentication. Results can be cached and requests are rate limited, so don't bulk-scrape.
+
+## Product
+
+- [Home](${url("/")}): Search for a domain
+- [Help & FAQ](${url("/help")}): What each report section means, domain tracking, notifications, and plans
+
+## Agent access
+
+- [MCP server](${url("/mcp")}): Setup instructions for Claude, Cursor, VS Code, Windsurf, and other MCP clients
+- [MCP endpoint](${url("/api/transport/mcp")}): Streamable HTTP endpoint exposing ${tools}, and \`domain_report\` (all sections in one call); all read-only
+- [MCP server card](${url("/.well-known/mcp/server-card.json")}): Machine-readable server metadata
+
+## Optional
+
+- [Privacy Policy](${url("/privacy")})
+- [Terms of Service](${url("/terms")})
+- [Source code](https://github.com/${REPOSITORY_SLUG}): Domainstack is open source
+`;
+}
