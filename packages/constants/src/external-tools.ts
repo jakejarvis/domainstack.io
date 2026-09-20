@@ -12,6 +12,11 @@ export interface ExternalTool {
 
 export const EXTERNAL_TOOLS: readonly ExternalTool[] = [
   {
+    name: "BuiltWith",
+    faviconDomain: "builtwith.com",
+    buildUrl: (domain) => `https://builtwith.com/${encodeURIComponent(domain)}`,
+  },
+  {
     name: "Censys",
     faviconDomain: "censys.io",
     buildUrl: (domain) =>
@@ -44,9 +49,25 @@ export const EXTERNAL_TOOLS: readonly ExternalTool[] = [
     buildUrl: (domain) => `https://exchange.xforce.ibmcloud.com/url/${encodeURIComponent(domain)}`,
   },
   {
+    name: "Internet.nl",
+    faviconDomain: "internet.nl",
+    buildUrl: (domain) => `https://internet.nl/site/${encodeURIComponent(domain)}/`,
+  },
+  {
     name: "intoDNS",
     faviconDomain: "intodns.com",
     buildUrl: (domain) => `https://intodns.com/${encodeURIComponent(domain)}`,
+  },
+  {
+    name: "Is Agentic",
+    faviconDomain: "is-agentic.com",
+    buildUrl: (domain) => `https://is-agentic.com/scan/${encodeURIComponent(domain)}`,
+  },
+  {
+    name: "Mozilla Observatory",
+    faviconDomain: "mozilla.org",
+    buildUrl: (domain) =>
+      `https://developer.mozilla.org/en-US/observatory/analyze?host=${encodeURIComponent(domain)}`,
   },
   {
     name: "MxToolbox",
@@ -59,6 +80,12 @@ export const EXTERNAL_TOOLS: readonly ExternalTool[] = [
     faviconDomain: "levelblue.com",
     buildUrl: (domain) =>
       `https://otx.alienvault.com/indicator/domain/${encodeURIComponent(domain)}`,
+  },
+  {
+    name: "PageSpeed Insights",
+    faviconDomain: "pagespeed.web.dev",
+    buildUrl: (domain) =>
+      `https://pagespeed.web.dev/analysis?url=${encodeURIComponent(`https://${domain}/`)}`,
   },
   {
     name: "Security Headers",
@@ -95,6 +122,11 @@ export const EXTERNAL_TOOLS: readonly ExternalTool[] = [
     buildUrl: (domain) => `https://traffic.cv/${encodeURIComponent(domain)}`,
   },
   {
+    name: "urlscan.io",
+    faviconDomain: "urlscan.io",
+    buildUrl: (domain) => `https://urlscan.io/search/#domain:${encodeURIComponent(domain)}`,
+  },
+  {
     name: "VirusTotal",
     faviconDomain: "virustotal.com",
     buildUrl: (domain) =>
@@ -109,10 +141,5 @@ export const EXTERNAL_TOOLS: readonly ExternalTool[] = [
     name: "What's My DNS?",
     faviconDomain: "whatsmydns.net",
     buildUrl: (domain) => `https://www.whatsmydns.net/#A/${encodeURIComponent(domain)}`,
-  },
-  {
-    name: "who.is",
-    faviconDomain: "who.is",
-    buildUrl: (domain) => `https://who.is/whois/${encodeURIComponent(domain)}`,
   },
 ];
