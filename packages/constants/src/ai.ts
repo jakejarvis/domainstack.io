@@ -5,11 +5,6 @@
  * consistent validation and limits.
  */
 
-/**
- * Friendly chatbot name.
- */
-export const CHATBOT_NAME = "Stacky";
-
 // =============================================================================
 // Chat Limits
 // =============================================================================

@@ -13,7 +13,7 @@ import { useLocalChat } from "@/hooks/use-local-chat";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { analytics } from "@/lib/analytics/client";
 import { createClientDomainTools } from "@/lib/chat/client-tools";
-import { buildSystemPrompt } from "@/lib/chat/system-prompt";
+import { buildClientSystemPrompt } from "@/lib/chat/system-prompt";
 import { trimChatHistory } from "@/lib/chat/trim-history";
 import type { DomainChatUIMessage } from "@/lib/chat/ui-message";
 import { safeDecodeURIComponent } from "@/lib/safe-parse";
@@ -297,7 +297,7 @@ function LocalChatSession({
 }: ChatSessionProps & { model: UseBrowserAIResult["model"] }) {
   const trpcClient = useTRPCClient();
   const clientTools = useMemo(() => createClientDomainTools(trpcClient), [trpcClient]);
-  const systemPrompt = useMemo(() => buildSystemPrompt({ variant: "client", domain }), [domain]);
+  const systemPrompt = useMemo(() => buildClientSystemPrompt(domain), [domain]);
 
   const chat = useLocalChat({
     model,

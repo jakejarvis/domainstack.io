@@ -40,6 +40,8 @@ function payload(overrides?: Partial<ChatTelemetryPayload>): ChatTelemetryPayloa
     workflowRunId: "run-1",
     domain: "example.com",
     modelId: "google/gemini-2.5-flash",
+    promptName: "cloud-chat-system-prompt",
+    promptVersion: 1,
     tools: ["get_registration"],
     input: [{ role: "user", content: "who owns example.com?" }],
     steps: [
@@ -199,6 +201,8 @@ describe("buildAiObservabilityEvents", () => {
         $ai_stream: true,
         $ai_tools: ["get_registration"],
         domain: "example.com",
+        $ai_prompt_name: "cloud-chat-system-prompt",
+        $ai_prompt_version: 1,
       },
     });
 
@@ -242,6 +246,8 @@ describe("buildAiObservabilityEvents", () => {
       payload({
         sessionId: null,
         domain: undefined,
+        promptName: undefined,
+        promptVersion: undefined,
         steps: [
           {
             callId: "call-1",
@@ -269,6 +275,8 @@ describe("buildAiObservabilityEvents", () => {
     expect(events[0]?.properties).not.toHaveProperty("$ai_cache_read_input_tokens");
     expect(events[0]?.properties).not.toHaveProperty("$ai_total_cost_usd");
     expect(events[0]?.properties).not.toHaveProperty("domain");
+    expect(events[0]?.properties).not.toHaveProperty("$ai_prompt_name");
+    expect(events[0]?.properties).not.toHaveProperty("$ai_prompt_version");
     expect(events[0]).toMatchObject({
       event: "$ai_generation",
       properties: {
