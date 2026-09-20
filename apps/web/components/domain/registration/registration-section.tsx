@@ -146,7 +146,7 @@ function RegistrationDetailsGrid({ data }: { data: RegistrationResponse }) {
         }
       />
 
-      <RegistrantKeyValue view={registrant} source={data.source} />
+      <RegistrantKeyValue view={registrant} />
 
       <KeyValue
         label="Created"
@@ -240,13 +240,7 @@ export function RegistrationSection({
   );
 }
 
-function RegistrantKeyValue({
-  view,
-  source,
-}: {
-  view: RegistrantView | null;
-  source: RegistrationResponse["source"];
-}) {
+function RegistrantKeyValue({ view }: { view: RegistrantView | null }) {
   const redacted = view?.state === "redacted";
   const named = view?.state === "named";
   const primary = redacted
@@ -261,9 +255,7 @@ function RegistrantKeyValue({
       label="Registrant"
       value={
         view && hasPopover ? (
-          <RegistrantDetailsPopover view={view} source={source}>
-            {primary}
-          </RegistrantDetailsPopover>
+          <RegistrantDetailsPopover view={view}>{primary}</RegistrantDetailsPopover>
         ) : (
           primary
         )

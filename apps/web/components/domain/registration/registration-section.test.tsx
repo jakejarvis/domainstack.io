@@ -120,7 +120,9 @@ describe("RegistrationSection", () => {
         ],
       });
       await page.getByRole("button", { name: /Jane Doe/ }).click();
-      await expect.element(page.getByText("Individual · CTO")).toBeInTheDocument();
+      await expect.element(page.getByRole("heading", { name: "Registrant details" })).toBeVisible();
+      await expect.element(page.getByText("Individual")).toBeInTheDocument();
+      await expect.element(page.getByText("CTO")).toBeInTheDocument();
       await expect.element(page.getByText("abuse@registrar.test")).toBeInTheDocument();
       await expect
         .element(page.getByRole("link", { name: "+1.555.123.4567 x89" }))
@@ -140,9 +142,8 @@ describe("RegistrationSection", () => {
         ],
       });
       await page.getByRole("button", { name: /Jane Doe/ }).click();
-      await expect
-        .element(page.getByText("Withheld by registry: email, postal code"))
-        .toBeInTheDocument();
+      await expect.element(page.getByText("Withheld")).toBeInTheDocument();
+      await expect.element(page.getByText("email, postal code")).toBeInTheDocument();
     });
 
     it("labels privacy-service registrants", async () => {
@@ -170,7 +171,7 @@ describe("RegistrationSection", () => {
         ],
       });
       await page.getByRole("button", { name: /Hidden/ }).click();
-      await expect.element(page.getByText(/redacted by the registry/i)).toBeInTheDocument();
+      await expect.element(page.getByText("Redacted")).toBeInTheDocument();
     });
 
     it("does not add a popover when it would only repeat the summary", async () => {
@@ -189,7 +190,7 @@ describe("RegistrationSection", () => {
       });
       await page.getByRole("button", { name: /Hidden/ }).click();
       await expect.element(page.getByText("Privacy service")).toBeInTheDocument();
-      expect(page.getByText(/redacted by the registry/i).length).toBe(0);
+      expect(page.getByText("Redacted").length).toBe(0);
     });
 
     it("keeps other contacts reachable when the registrant itself is empty", async () => {
