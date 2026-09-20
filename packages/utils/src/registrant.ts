@@ -32,6 +32,10 @@ export type ContactDetails = {
   phone: string[];
   fax: string[];
   redacted: boolean;
+  /** Fields the registry withheld, as reported by rdapper >= 0.16.1. */
+  redactedFields: NonNullable<RegistrationContact["redactedFields"]>;
+  /** Name/organization belongs to a privacy or proxy service. */
+  privacyService: boolean;
 };
 
 export type RegistrantView = {
@@ -133,8 +137,10 @@ function formatLocation(c: RegistrationContact): string | undefined {
 }
 
 function describeContact(c: RegistrationContact): ContactDetails {
-  const name = usableName(c.name);
-  const organization = usableName(c.organization);
+  // A proxy service's name is not the registrant's.
+  const privacyService = Boolean(c.privacyService);
+  const name = privacyService ? undefined : usableName(c.name);
+  const organization = privacyService ? undefined : usableName(c.organization);
   const street = (c.street ?? []).map((s) => s.trim()).filter((s) => s && !isPlaceholderValue(s));
   const cityLine = [c.city, c.state, c.postalCode]
     .map((s) => s?.trim())
@@ -165,9 +171,18 @@ function describeContact(c: RegistrationContact): ContactDetails {
     email: toList(c.email),
     phone: toList(c.phone),
     fax: toList(c.fax),
-    // rdapper >= 0.16 sets `redacted` and strips placeholders; the pattern check
-    // covers contacts persisted by older versions.
-    redacted: Boolean(c.redacted) || isRedactedValue(c.name) || isRedactedValue(c.organization),
+    // rdapper >= 0.16.1 reports `redactedFields`/`privacyService` and drops
+    // placeholder fields itself. The pattern checks (here and in `usableName`) only
+    // cover contacts persisted by older versions and can go once those refresh; they
+    // are duplicated because rdapper's entry point isn't safe for client bundles.
+    redacted:
+      Boolean(c.redacted) ||
+      Boolean(c.redactedFields?.length) ||
+      privacyService ||
+      isRedactedValue(c.name) ||
+      isRedactedValue(c.organization),
+    redactedFields: c.redactedFields ?? [],
+    privacyService,
   };
 }
 
@@ -196,9 +211,10 @@ export function describeRegistrant(
     .filter(hasContent);
 
   const name = registrant.organization ?? registrant.name;
-  // A contact-level flag only means identity is hidden when no name survived;
-  // a redacted email next to a visible name is still a named registrant.
-  const redacted = Boolean(privacyEnabled) || (registrant.redacted && !name);
+  // Both flags are coarse: rdapper sets them for any redacted registrant field
+  // (an email-only redaction is the usual GDPR shape). Identity is only hidden
+  // when no usable name survived, so a visible name stays a named registrant.
+  const redacted = !name && (Boolean(privacyEnabled) || registrant.redacted);
 
   // Redaction wins even when a stray country is published.
   const state: RegistrantState = redacted
@@ -213,7 +229,13 @@ export function describeRegistrant(
     state,
     name: redacted ? undefined : name,
     location: registrant.location,
-    registrant: hasContent(registrant) || registrant.location ? registrant : undefined,
+    registrant:
+      hasContent(registrant) ||
+      registrant.location ||
+      registrant.privacyService ||
+      registrant.redactedFields.length > 0
+        ? registrant
+        : undefined,
     others,
   };
 }

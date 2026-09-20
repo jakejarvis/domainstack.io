@@ -127,6 +127,40 @@ describe("RegistrationSection", () => {
         .toHaveAttribute("href", "tel:+15551234567");
     });
 
+    it("lists which fields the registry withheld", async () => {
+      await renderWith({
+        privacyEnabled: true,
+        contacts: [
+          {
+            type: "registrant",
+            name: "Jane Doe",
+            redacted: true,
+            redactedFields: ["email", "postalCode"],
+          },
+        ],
+      });
+      await page.getByRole("button", { name: /Jane Doe/ }).click();
+      await expect
+        .element(page.getByText("Withheld by registry: email, postal code"))
+        .toBeInTheDocument();
+    });
+
+    it("labels privacy-service registrants", async () => {
+      await renderWith({
+        privacyEnabled: true,
+        contacts: [
+          {
+            type: "registrant",
+            organization: "Acme Proxy Services",
+            privacyService: true,
+            country: "US",
+          },
+        ],
+      });
+      await page.getByRole("button", { name: /Hidden/ }).click();
+      await expect.element(page.getByText("Privacy service")).toBeInTheDocument();
+    });
+
     it("explains redaction inside the popover when other contacts exist", async () => {
       await renderWith({
         privacyEnabled: true,
@@ -139,9 +173,20 @@ describe("RegistrationSection", () => {
       await expect.element(page.getByText(/redacted by the registry/i)).toBeInTheDocument();
     });
 
-    it("shows Hidden when privacy is enabled", async () => {
-      await renderWith({ privacyEnabled: true, contacts: [{ type: "registrant", name: "Jane" }] });
+    it("shows Hidden when privacy is enabled and the name is a placeholder", async () => {
+      await renderWith({
+        privacyEnabled: true,
+        contacts: [{ type: "registrant", name: "REDACTED FOR PRIVACY" }],
+      });
       await expect.element(page.getByText("Hidden").first()).toBeInTheDocument();
+    });
+
+    it("still shows a visible name when privacy is enabled by an email-only redaction", async () => {
+      await renderWith({
+        privacyEnabled: true,
+        contacts: [{ type: "registrant", name: "Jane Doe", redacted: true }],
+      });
+      await expect.element(page.getByText("Jane Doe").first()).toBeInTheDocument();
     });
 
     it("shows Not published when the contact is empty", async () => {

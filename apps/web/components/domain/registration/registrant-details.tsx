@@ -8,6 +8,19 @@ const KIND_LABELS: Partial<Record<NonNullable<ContactDetails["kind"]>, string>> 
   group: "Group",
 };
 
+const FIELD_LABELS: Record<NonNullable<ContactDetails["redactedFields"]>[number], string> = {
+  name: "name",
+  organization: "organization",
+  email: "email",
+  phone: "phone",
+  fax: "fax",
+  street: "street",
+  city: "city",
+  state: "state",
+  postalCode: "postal code",
+  poBox: "PO box",
+};
+
 const CONTACT_LABELS: Record<ContactDetails["type"], string> = {
   registrant: "Registrant",
   admin: "Administrative",
@@ -84,6 +97,14 @@ function ContactFields({ contact }: { contact: ContactDetails }) {
           <dd className="text-muted-foreground">Fax: {f}</dd>
         </div>
       ))}
+      {contact.redactedFields.length > 0 && (
+        <div>
+          <dt className="sr-only">Withheld</dt>
+          <dd className="text-[12px] text-muted-foreground">
+            Withheld by registry: {contact.redactedFields.map((f) => FIELD_LABELS[f]).join(", ")}
+          </dd>
+        </div>
+      )}
     </dl>
   );
 }
@@ -126,7 +147,11 @@ export function RegistrantDetailsPopover({
               <h3 className="text-[10px] tracking-[0.08em] text-muted-foreground uppercase">
                 Registrant
               </h3>
-              {view.state === "redacted" && <Badge variant="secondary">Redacted</Badge>}
+              {view.registrant.privacyService ? (
+                <Badge variant="secondary">Privacy service</Badge>
+              ) : (
+                view.state === "redacted" && <Badge variant="secondary">Redacted</Badge>
+              )}
             </div>
             <ContactFields contact={view.registrant} />
           </section>

@@ -73,9 +73,18 @@ describe("describeRegistrant", () => {
     expect(v?.name).toBeUndefined();
   });
 
-  it("honors privacyEnabled", () => {
-    const v = describeRegistrant([{ type: "registrant", name: "Jane" }], true);
+  it("honors privacyEnabled when no usable name is left", () => {
+    const v = describeRegistrant([{ type: "registrant", name: "REDACTED FOR PRIVACY" }], true);
     expect(v?.state).toBe("redacted");
+    expect(describeRegistrant([{ type: "registrant" }], true)?.state).toBe("redacted");
+  });
+
+  it("keeps a visible name named even when privacyEnabled is set (email-only redaction)", () => {
+    const v = describeRegistrant(
+      [{ type: "registrant", name: "Jane Doe", country: "US", redacted: true }],
+      true,
+    );
+    expect(v).toMatchObject({ state: "named", name: "Jane Doe", location: "United States" });
   });
 
   it("is empty when nothing usable is published", () => {
@@ -137,5 +146,35 @@ describe("describeRegistrant", () => {
       organizationUnits: ["Platform"],
       address: ["PO Box 12", "Reykjavik", "Iceland"],
     });
+  });
+
+  it("treats a privacy-service name as hidden but keeps the flag for the popover", () => {
+    const v = describeRegistrant([
+      { type: "registrant", organization: "Acme Proxy Services", privacyService: true },
+    ]);
+    expect(v).toMatchObject({ state: "redacted" });
+    expect(v?.name).toBeUndefined();
+    expect(v?.registrant?.privacyService).toBe(true);
+  });
+
+  it("reports which fields the registry withheld", () => {
+    const v = describeRegistrant([
+      {
+        type: "registrant",
+        name: "Jane Doe",
+        redacted: true,
+        redactedFields: ["email", "phone"],
+      },
+    ]);
+    expect(v).toMatchObject({ state: "named", name: "Jane Doe" });
+    expect(v?.registrant?.redactedFields).toEqual(["email", "phone"]);
+  });
+
+  it("hides identity when rdapper dropped the name field", () => {
+    const v = describeRegistrant(
+      [{ type: "registrant", country: "US", redactedFields: ["name", "organization"] }],
+      true,
+    );
+    expect(v?.state).toBe("redacted");
   });
 });

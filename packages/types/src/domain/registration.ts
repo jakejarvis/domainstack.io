@@ -36,7 +36,23 @@ export interface RegistrationContact {
   countryCode?: string;
   /** True when any of this contact's data was redacted or replaced by a placeholder. */
   redacted?: boolean;
+  /** Fields the registry withheld or replaced with placeholder text (the field is then absent). */
+  redactedFields?: RegistrationContactField[];
+  /** True when `name`/`organization` names a privacy or proxy service, not the registrant. */
+  privacyService?: boolean;
 }
+
+export type RegistrationContactField =
+  | "name"
+  | "organization"
+  | "email"
+  | "phone"
+  | "fax"
+  | "street"
+  | "city"
+  | "state"
+  | "postalCode"
+  | "poBox";
 
 /**
  * Nameserver information.
