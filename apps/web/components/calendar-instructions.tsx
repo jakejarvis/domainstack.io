@@ -178,6 +178,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
                         return (
                           <DropdownMenuItem
                             key={id}
+                            closeOnClick={false}
                             render={
                               <a
                                 href={href}
@@ -198,6 +199,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
                     </div>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
+                      closeOnClick={false}
                       render={
                         <a
                           href={`https://chatgpt.com/?${new URLSearchParams({

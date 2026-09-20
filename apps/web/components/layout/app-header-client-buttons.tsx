@@ -84,7 +84,7 @@ export function AppHeaderClientButtons() {
           }
         />
         <DropdownMenuContent align="end" className="min-w-48">
-          <DropdownMenuItem onClick={toggleTheme}>
+          <DropdownMenuItem onClick={toggleTheme} closeOnClick={false}>
             {theme === "dark" ? <IconSun /> : <IconMoon />}
             {theme === "dark" ? "Light mode" : "Dark mode"}
           </DropdownMenuItem>

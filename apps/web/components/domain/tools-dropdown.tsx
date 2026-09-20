@@ -46,6 +46,7 @@ export function ToolsDropdown({ domain, enabled = true }: ToolsDropdownProps) {
             {EXTERNAL_TOOLS.map((tool) => (
               <DropdownMenuItem
                 key={tool.name}
+                closeOnClick={false}
                 nativeButton={false}
                 render={
                   <a href={tool.buildUrl(domain)} target="_blank" rel="noopener noreferrer">
@@ -57,6 +58,7 @@ export function ToolsDropdown({ domain, enabled = true }: ToolsDropdownProps) {
             ))}
             <DropdownMenuSeparator />
             <DropdownMenuItem
+              closeOnClick={false}
               nativeButton={false}
               render={
                 <a

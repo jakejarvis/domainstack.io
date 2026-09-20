@@ -120,7 +120,7 @@ export function UserMenu() {
           }
         />
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={toggleTheme}>
+        <DropdownMenuItem onClick={toggleTheme} closeOnClick={false}>
           {theme === "dark" ? <IconSun /> : <IconMoon />}
           {theme === "dark" ? "Light mode" : "Dark mode"}
         </DropdownMenuItem>
