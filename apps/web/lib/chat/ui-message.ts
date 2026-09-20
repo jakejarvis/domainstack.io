@@ -2,7 +2,7 @@ import type { InferUITools, Tool, UIMessage } from "ai";
 
 import type { DOMAIN_TOOL_DEFS, DomainToolInput, DomainToolResult } from "./domain-tools";
 
-export type DomainToolSet = {
+type DomainToolSet = {
   [Def in (typeof DOMAIN_TOOL_DEFS)[number] as Def["name"]]: Tool<
     DomainToolInput,
     DomainToolResult<Def["section"]>

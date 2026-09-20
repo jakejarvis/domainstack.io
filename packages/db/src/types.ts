@@ -1,13 +1,3 @@
-import type { PgDatabase } from "drizzle-orm/pg-core";
-
-import type * as schema from "./schema";
-
-/**
- * Database client type for dependency injection.
- * This is the drizzle instance with our schema.
- */
-export type DbClient = PgDatabase<any, typeof schema>;
-
 /**
  * Cache result type for stale-while-revalidate pattern.
  * Used by repo functions to return data with staleness metadata.

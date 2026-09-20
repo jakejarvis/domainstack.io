@@ -41,5 +41,3 @@ export function createClientDomainTools(trpc: TRPCClientType): ClientDomainToolS
     DOMAIN_TOOL_DEFS.map((def) => [def.name, makeClientDomainTool(trpc, def)]),
   ) as ClientDomainToolSet;
 }
-
-export type ClientDomainTools = ReturnType<typeof createClientDomainTools>;

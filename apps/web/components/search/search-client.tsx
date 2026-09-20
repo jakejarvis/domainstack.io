@@ -28,7 +28,7 @@ import { isValidDomain, normalizeDomainInput } from "@domainstack/utils/domain/c
 
 const SEARCH_HOTKEY = "Mod+K";
 
-export type SearchClientVariant = "sm" | "lg";
+type SearchClientVariant = "sm" | "lg";
 
 export type SearchClientProps = {
   variant?: SearchClientVariant;

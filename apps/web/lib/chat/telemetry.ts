@@ -242,7 +242,7 @@ export function buildAiObservabilityEvents(
   return events;
 }
 
-export async function lookupGatewayGenerations(
+async function lookupGatewayGenerations(
   ids: ReadonlyArray<string | undefined>,
 ): Promise<Map<string, GatewayGenerationSnapshot>> {
   const unique = [...new Set(ids.filter((id): id is string => Boolean(id)))];

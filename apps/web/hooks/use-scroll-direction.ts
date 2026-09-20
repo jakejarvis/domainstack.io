@@ -4,7 +4,7 @@ import { startTransition, useEffect, useRef, useState } from "react";
 
 import { HEADER_HEIGHT } from "@/lib/constants/layout";
 
-export type ScrollDirection = "up" | "down" | null;
+type ScrollDirection = "up" | "down" | null;
 
 interface UseScrollDirectionOptions {
   /** Minimum scroll delta to trigger direction change (prevents jitter) */

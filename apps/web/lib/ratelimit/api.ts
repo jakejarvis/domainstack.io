@@ -13,7 +13,7 @@ const logger = createLogger({ source: "ratelimit/api" });
 /**
  * Rate limit headers to include in responses.
  */
-export type RateLimitHeaders = {
+type RateLimitHeaders = {
   "X-RateLimit-Limit": string;
   "X-RateLimit-Remaining": string;
   "X-RateLimit-Reset": string;

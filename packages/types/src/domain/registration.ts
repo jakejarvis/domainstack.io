@@ -42,7 +42,7 @@ export interface RegistrationContact {
   privacyService?: boolean;
 }
 
-export type RegistrationContactField =
+type RegistrationContactField =
   | "name"
   | "organization"
   | "email"

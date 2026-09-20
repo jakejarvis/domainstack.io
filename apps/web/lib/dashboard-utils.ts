@@ -8,7 +8,7 @@ import { calculateDaysRemaining } from "@domainstack/utils/expiry";
 // Provider Types
 // ---------------------------------------------------------------------------
 
-export interface AvailableProvider {
+interface AvailableProvider {
   id: string;
   name: string;
   domain: string | null;
@@ -42,7 +42,7 @@ export type HealthSeverity = "healthy" | "warning" | "critical" | "unknown";
  * way. `calculateDaysRemaining` is the same helper the expiry notifications
  * use, so the dashboard and the emails agree on the day count too.
  */
-export function getDaysUntilExpiry(
+function getDaysUntilExpiry(
   expirationDate: Date | null,
   verified: boolean,
   now: Date,

@@ -9,7 +9,7 @@ import {
 
 import type { Section } from "@domainstack/constants";
 
-export type SectionAccent = "blue" | "purple" | "green" | "orange" | "pink" | "cyan";
+type SectionAccent = "blue" | "purple" | "green" | "orange" | "pink" | "cyan";
 
 export interface SectionDef {
   title: string;

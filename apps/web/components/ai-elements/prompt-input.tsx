@@ -24,11 +24,11 @@ import { cn } from "@domainstack/ui/utils";
 // PromptInput
 // ============================================================================
 
-export type PromptInputMessage = {
+type PromptInputMessage = {
   text: string;
 };
 
-export type PromptInputProps = Omit<HTMLAttributes<HTMLFormElement>, "onSubmit"> & {
+type PromptInputProps = Omit<HTMLAttributes<HTMLFormElement>, "onSubmit"> & {
   onSubmit: (
     message: PromptInputMessage,
     event: FormEvent<HTMLFormElement>,

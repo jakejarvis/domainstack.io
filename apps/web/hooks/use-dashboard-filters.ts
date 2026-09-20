@@ -21,7 +21,7 @@ import type { TrackedDomainWithDetails } from "@domainstack/types";
 // Types
 // ---------------------------------------------------------------------------
 
-export interface DashboardFilterState {
+interface DashboardFilterState {
   search: string;
   status: StatusFilter[];
   health: HealthFilter[];
@@ -36,7 +36,7 @@ export interface DashboardFilterState {
   filteredDomains: TrackedDomainWithDetails[];
 }
 
-export interface DashboardFilterActions {
+interface DashboardFilterActions {
   setSearch: (value: string) => void;
   setStatus: (values: StatusFilter[]) => void;
   setHealth: (values: HealthFilter[]) => void;

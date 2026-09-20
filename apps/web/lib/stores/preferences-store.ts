@@ -13,7 +13,7 @@ import {
 import { usePersistHydration } from "@/lib/stores/persist-hydration";
 
 /** cloud = Vercel AI Gateway; local = browser model; auto = local with cloud fallback. */
-export const AI_MODE_OPTIONS = ["cloud", "local", "auto"] as const;
+const AI_MODE_OPTIONS = ["cloud", "local", "auto"] as const;
 
 export type AiModePreference = (typeof AI_MODE_OPTIONS)[number];
 export type ChatMode = Exclude<AiModePreference, "auto">;

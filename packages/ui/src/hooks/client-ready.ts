@@ -64,13 +64,3 @@ export function getClientReadySnapshot(): boolean {
 export function getClientReadyServerSnapshot(): boolean {
   return false;
 }
-
-/** Test-only: pin or clear the shared ready flag. */
-export function resetClientReady(value = false): void {
-  cancelScheduled?.();
-  cancelScheduled = null;
-  ready = value;
-  for (const listener of listeners) {
-    listener();
-  }
-}

@@ -27,7 +27,7 @@ const RETRYABLE_TRPC_ERROR_CODES = new Set([
 ]);
 
 /** Every code tRPC can put on an error, used to validate an unknown value. */
-export const TRPC_ERROR_CODES = new Set([
+const TRPC_ERROR_CODES = new Set([
   "PARSE_ERROR",
   "BAD_REQUEST",
   "INTERNAL_SERVER_ERROR",

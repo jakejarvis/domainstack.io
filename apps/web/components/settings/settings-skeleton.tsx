@@ -231,7 +231,7 @@ export function LinkedAccountsSkeleton({ className }: { className?: string }) {
  * Skeleton for the tabs navigation.
  * Shows placeholders for tab triggers (line variant with full-width border).
  */
-export function SettingsSkeletonTabsList({ className }: { className?: string }) {
+function SettingsSkeletonTabsList({ className }: { className?: string }) {
   return (
     <div className={cn("w-full", className)}>
       <div className="flex h-10 w-full items-center gap-1.5 border-b border-muted">

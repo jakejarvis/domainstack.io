@@ -5,7 +5,7 @@ import { toast } from "sonner";
 /**
  * Rate limit error details extracted from tRPC or API errors.
  */
-export type RateLimitError = {
+type RateLimitError = {
   /** Seconds until the rate limit resets */
   retryAfter: number;
   /** Human-readable message */

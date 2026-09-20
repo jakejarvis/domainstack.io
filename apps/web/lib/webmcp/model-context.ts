@@ -3,7 +3,7 @@
  * The browser API is not in `lib.dom` yet.
  */
 
-export type WebMcpToolAnnotations = {
+type WebMcpToolAnnotations = {
   readOnlyHint?: boolean;
   untrustedContentHint?: boolean;
   consequentialHint?: boolean;

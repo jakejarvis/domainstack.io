@@ -62,10 +62,6 @@ export function setDomainsState(items: TrackedDomainWithDetails[]) {
   domainsState = items.map((item) => ({ ...item }));
 }
 
-export function getDomainsState() {
-  return domainsState;
-}
-
 function defaultListDomains(input?: ListDomainsInput): Promise<TrackedDomainWithDetails[]> {
   const includeArchived = input?.includeArchived ?? false;
   if (includeArchived) {
@@ -101,14 +97,6 @@ const DEFAULT_SUBSCRIPTION: SubscriptionQuota = {
 };
 
 let subscriptionState: SubscriptionQuota = { ...DEFAULT_SUBSCRIPTION };
-
-export function setSubscriptionState(data: SubscriptionQuota) {
-  subscriptionState = { ...data };
-}
-
-export function getSubscriptionState() {
-  return subscriptionState;
-}
 
 export const getSubscriptionQuery = vi.fn<() => Promise<SubscriptionQuota>>(
   async () => subscriptionState,
@@ -194,13 +182,7 @@ export function setCalendarFeedState(data: CalendarFeedData) {
   calendarFeedState = data;
 }
 
-export function getCalendarFeedState() {
-  return calendarFeedState;
-}
-
-export const getCalendarFeedQuery = vi.fn<() => Promise<CalendarFeedData>>(
-  async () => calendarFeedState,
-);
+const getCalendarFeedQuery = vi.fn<() => Promise<CalendarFeedData>>(async () => calendarFeedState);
 
 export const enableCalendarFeedMutation = vi.fn<
   () => Promise<{ feedUrl: string; createdAt: Date }>
@@ -237,7 +219,7 @@ export const deleteCalendarFeedMutation = vi.fn<() => Promise<{ success: true }>
 });
 
 export const NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY = ["notifications", "unreadCount"] as const;
-export const NOTIFICATIONS_PAGE_SIZE = 20;
+const NOTIFICATIONS_PAGE_SIZE = 20;
 
 type NotificationFilter = "unread" | "read" | "all";
 type NotificationsListInput = {
@@ -258,10 +240,6 @@ let notificationsState: NotificationData[] = [];
 
 export function setNotificationsState(items: NotificationData[]) {
   notificationsState = items.map((item) => ({ ...item }));
-}
-
-export function getNotificationsState() {
-  return notificationsState;
 }
 
 function markNotificationRead(item: NotificationData, now: Date): NotificationData {

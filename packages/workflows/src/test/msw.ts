@@ -83,7 +83,7 @@ const ipLocateHandler = ({ params }: { params: { ip: string } }) => {
   return HttpResponse.json(response);
 };
 
-export const handlers = [
+const handlers = [
   // IP Lookup (iplocate.io)
   http.get("https://www.iplocate.io/api/lookup/:ip", ipLocateHandler),
 ];

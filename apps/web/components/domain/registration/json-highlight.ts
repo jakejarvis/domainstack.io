@@ -1,4 +1,4 @@
-export type JsonTokenType = "key" | "string" | "number" | "boolean" | "null" | "punctuation";
+type JsonTokenType = "key" | "string" | "number" | "boolean" | "null" | "punctuation";
 
 export interface JsonToken {
   type: JsonTokenType;

@@ -145,7 +145,7 @@ function toAttributes(record: ParsedLogRecord): LogAttributes {
 /**
  * Maps a parsed Pino JSON record to an OpenTelemetry log record.
  */
-export function toLogRecord(record: ParsedLogRecord): LogRecord {
+function toLogRecord(record: ParsedLogRecord): LogRecord {
   const timestamp = toTimestamp(record.time);
   const severityText = toSeverityText(record.level);
 

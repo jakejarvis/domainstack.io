@@ -8,12 +8,12 @@ import { useDashboardPageSize, usePreferencesStore } from "@/lib/stores/preferen
 // Types
 // ---------------------------------------------------------------------------
 
-export interface DashboardPaginationState {
+interface DashboardPaginationState {
   pageIndex: number;
   pageSize: DashboardPageSizeOptions;
 }
 
-export interface DashboardPaginationActions {
+interface DashboardPaginationActions {
   setPageIndex: (pageIndex: number) => void;
   setPageSize: (pageSize: DashboardPageSizeOptions) => void;
   resetPage: () => void;

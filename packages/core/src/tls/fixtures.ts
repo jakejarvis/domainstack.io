@@ -34,12 +34,12 @@ function colonate(hex: string): string {
   return hex.match(/.{2}/g)?.join(":").toUpperCase() ?? hex;
 }
 
-export const VALID_FROM = "Jan  1 00:00:00 2024 GMT";
-export const VALID_TO = "Jan  1 00:00:00 2026 GMT";
-export const EXPIRED_TO = "Jan  1 00:00:00 2020 GMT";
-export const EXPIRED_FROM = "Jan  1 00:00:00 2018 GMT";
+const VALID_FROM = "Jan  1 00:00:00 2024 GMT";
+const VALID_TO = "Jan  1 00:00:00 2026 GMT";
+const EXPIRED_TO = "Jan  1 00:00:00 2020 GMT";
+const EXPIRED_FROM = "Jan  1 00:00:00 2018 GMT";
 
-export function createRootCertificate(
+function createRootCertificate(
   overrides: Partial<PeerCertificateFixture> = {},
 ): PeerCertificateFixture {
   const root: PeerCertificateFixture = {
@@ -56,7 +56,7 @@ export function createRootCertificate(
   return root;
 }
 
-export function createIntermediateCertificate(
+function createIntermediateCertificate(
   root: PeerCertificateFixture = createRootCertificate(),
   overrides: Partial<PeerCertificateFixture> = {},
 ): PeerCertificateFixture {
@@ -73,7 +73,7 @@ export function createIntermediateCertificate(
   };
 }
 
-export function createLeafCertificate(
+function createLeafCertificate(
   intermediate: PeerCertificateFixture = createIntermediateCertificate(),
   overrides: Partial<PeerCertificateFixture> = {},
 ): PeerCertificateFixture {

@@ -14,7 +14,7 @@ import {
 // Types
 // ---------------------------------------------------------------------------
 
-export interface DashboardSelectionState {
+interface DashboardSelectionState {
   selectedIds: Set<string>;
   selectedCount: number;
   hasSelection: boolean;
@@ -22,7 +22,7 @@ export interface DashboardSelectionState {
   isPartiallySelected: boolean;
 }
 
-export interface DashboardSelectionActions {
+interface DashboardSelectionActions {
   toggle: (id: string) => void;
   isSelected: (id: string) => boolean;
   selectAll: () => void;

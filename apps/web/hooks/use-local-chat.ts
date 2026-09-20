@@ -22,7 +22,7 @@ import {
 /**
  * Chat status matching the useChat hook from @ai-sdk/react.
  */
-export type LocalChatStatus = "ready" | "submitted" | "streaming" | "error";
+type LocalChatStatus = "ready" | "submitted" | "streaming" | "error";
 
 export interface UseLocalChatOptions {
   /** Browser AI model instance from useBrowserAI (null when not ready) */
