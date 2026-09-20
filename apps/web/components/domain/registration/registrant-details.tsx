@@ -110,13 +110,6 @@ function ContactFields({ contact }: { contact: ContactDetails }) {
 }
 
 /**
- * Whether the popover has anything to show beyond the row's summary text.
- */
-export function hasRegistrantDetails(view: RegistrantView): boolean {
-  return Boolean(view.registrant) || view.others.length > 0;
-}
-
-/**
  * Wraps the registrant summary in a popover with the full contact details.
  * Renders children unwrapped when there is nothing more to show.
  */
@@ -129,7 +122,7 @@ export function RegistrantDetailsPopover({
   source: "rdap" | "whois" | null | undefined;
   children: React.ReactNode;
 }) {
-  if (!hasRegistrantDetails(view)) return <>{children}</>;
+  if (!view.hasDetails) return <>{children}</>;
 
   return (
     <Popover>

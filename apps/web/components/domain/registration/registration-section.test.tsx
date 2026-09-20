@@ -173,6 +173,27 @@ describe("RegistrationSection", () => {
       await expect.element(page.getByText(/redacted by the registry/i)).toBeInTheDocument();
     });
 
+    it("does not add a popover when it would only repeat the summary", async () => {
+      await renderWith({
+        contacts: [{ type: "registrant", name: "Jane Doe", state: "CA", country: "US" }],
+      });
+      await expect.element(page.getByText("Jane Doe").first()).toBeInTheDocument();
+      expect(page.getByRole("button", { name: /Jane Doe/ }).length).toBe(0);
+    });
+
+    it("keeps other contacts reachable when the registrant itself is empty", async () => {
+      await renderWith({
+        contacts: [{ type: "registrant" }, { type: "abuse", email: "abuse@registrar.test" }],
+      });
+      await page.getByRole("button", { name: /Not published/ }).click();
+      await expect.element(page.getByText("abuse@registrar.test")).toBeInTheDocument();
+    });
+
+    it("shows Not published for a placeholder country", async () => {
+      await renderWith({ contacts: [{ type: "registrant", country: "N/A" }] });
+      await expect.element(page.getByText("Not published").first()).toBeInTheDocument();
+    });
+
     it("shows Hidden when privacy is enabled and the name is a placeholder", async () => {
       await renderWith({
         privacyEnabled: true,

@@ -36,6 +36,8 @@ export type ContactDetails = {
   redactedFields: NonNullable<RegistrationContact["redactedFields"]>;
   /** Name/organization belongs to a privacy or proxy service. */
   privacyService: boolean;
+  /** Anything to show beyond the row's summary (name and location). */
+  hasMore: boolean;
 };
 
 export type RegistrantView = {
@@ -47,6 +49,8 @@ export type RegistrantView = {
   registrant?: ContactDetails;
   /** Non-registrant contacts that have something worth showing. */
   others: ContactDetails[];
+  /** True when a details popover would add information beyond the summary row. */
+  hasDetails: boolean;
 };
 
 // Boilerplate a registry puts in place of real data. Safe to apply to any field.
@@ -112,6 +116,9 @@ function toList(value: string | string[] | undefined): string[] {
 function formatCountry(country?: string, countryCode?: string): string | undefined {
   const raw = (country || countryCode || "").trim();
   if (!raw) return undefined;
+  // Two letters are always a code ("NA" is Namibia, not "n/a"); anything else
+  // may be placeholder text such as "N/A" or "REDACTED".
+  if (!/^[A-Za-z]{2}$/.test(raw) && isPlaceholderValue(raw)) return undefined;
   if (/^[A-Za-z]{2}$/.test(raw)) {
     try {
       const name = new Intl.DisplayNames(["en"], { type: "region" }).of(raw.toUpperCase());
@@ -147,6 +154,8 @@ function describeContact(c: RegistrationContact): ContactDetails {
     .filter((s): s is string => Boolean(s) && !isPlaceholderValue(s));
   const country = formatCountry(c.country, c.countryCode);
   const poBox = c.poBox?.trim();
+  const city = c.city?.trim();
+  const postalCode = c.postalCode?.trim();
   const address = [
     ...(poBox && !isPlaceholderValue(poBox)
       ? [`PO Box ${poBox.replace(/^p\.?o\.?\s*box\s*/i, "")}`]
@@ -156,21 +165,30 @@ function describeContact(c: RegistrationContact): ContactDetails {
     country ?? "",
   ].filter(Boolean);
 
+  const organizationUnits = (c.organizationUnits ?? [])
+    .map((u) => u.trim())
+    .filter((u) => u && !isPlaceholderValue(u));
+  const title = usableName(c.title);
+  const role = usableName(c.role);
+  const email = toList(c.email);
+  const phone = toList(c.phone);
+  const fax = toList(c.fax);
+  const distinctOrganization = organization && organization !== name ? organization : undefined;
+  const redactedFields = c.redactedFields ?? [];
+
   return {
     type: c.type,
     name,
-    organization: organization && organization !== name ? organization : undefined,
-    organizationUnits: (c.organizationUnits ?? [])
-      .map((u) => u.trim())
-      .filter((u) => u && !isPlaceholderValue(u)),
+    organization: distinctOrganization,
+    organizationUnits,
     kind: c.kind,
-    title: usableName(c.title),
-    role: usableName(c.role),
+    title,
+    role,
     address,
     location: formatLocation(c),
-    email: toList(c.email),
-    phone: toList(c.phone),
-    fax: toList(c.fax),
+    email,
+    phone,
+    fax,
     // rdapper >= 0.16.1 reports `redactedFields`/`privacyService` and drops
     // placeholder fields itself. The pattern checks (here and in `usableName`) only
     // cover contacts persisted by older versions and can go once those refresh; they
@@ -181,8 +199,26 @@ function describeContact(c: RegistrationContact): ContactDetails {
       privacyService ||
       isRedactedValue(c.name) ||
       isRedactedValue(c.organization),
-    redactedFields: c.redactedFields ?? [],
+    redactedFields,
     privacyService,
+    // The summary row already shows the name (or organization) and the
+    // "State, Country" line, so those alone are not "more".
+    hasMore: Boolean(
+      (name && distinctOrganization) ||
+      organizationUnits.length ||
+      c.kind ||
+      title ||
+      role ||
+      email.length ||
+      phone.length ||
+      fax.length ||
+      street.length ||
+      (poBox && !isPlaceholderValue(poBox)) ||
+      (city && !isPlaceholderValue(city)) ||
+      (postalCode && !isPlaceholderValue(postalCode)) ||
+      redactedFields.length ||
+      privacyService,
+    ),
   };
 }
 
@@ -190,6 +226,9 @@ function hasContent(d: ContactDetails): boolean {
   return Boolean(
     d.name ||
     d.organization ||
+    d.organizationUnits.length ||
+    d.title ||
+    d.role ||
     d.address.length ||
     d.email.length ||
     d.phone.length ||
@@ -225,17 +264,20 @@ export function describeRegistrant(
         ? "location-only"
         : "empty";
 
+  const shown =
+    hasContent(registrant) ||
+    registrant.location ||
+    registrant.privacyService ||
+    registrant.redactedFields.length > 0
+      ? registrant
+      : undefined;
+
   return {
     state,
     name: redacted ? undefined : name,
     location: registrant.location,
-    registrant:
-      hasContent(registrant) ||
-      registrant.location ||
-      registrant.privacyService ||
-      registrant.redactedFields.length > 0
-        ? registrant
-        : undefined,
+    registrant: shown,
     others,
+    hasDetails: Boolean(shown?.hasMore) || others.length > 0,
   };
 }

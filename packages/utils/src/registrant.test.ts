@@ -177,4 +177,65 @@ describe("describeRegistrant", () => {
     );
     expect(v?.state).toBe("redacted");
   });
+
+  describe("hasDetails", () => {
+    it("is false for name-only and location-only registrants", () => {
+      expect(describeRegistrant([{ type: "registrant", name: "Jane Doe" }])?.hasDetails).toBe(
+        false,
+      );
+      expect(
+        describeRegistrant([{ type: "registrant", name: "Jane Doe", state: "CA", country: "US" }])
+          ?.hasDetails,
+      ).toBe(false);
+      expect(describeRegistrant([{ type: "registrant", country: "US" }])?.hasDetails).toBe(false);
+    });
+
+    it("is true when the registrant has contact info, an address, or a second name", () => {
+      const has = (c: object) =>
+        describeRegistrant([{ type: "registrant", name: "Jane Doe", ...c }])?.hasDetails;
+      expect(has({ email: "jane@example.com" })).toBe(true);
+      expect(has({ street: ["1 Main St"] })).toBe(true);
+      expect(has({ city: "Reykjavik" })).toBe(true);
+      expect(has({ organization: "Acme Corp" })).toBe(true);
+      expect(has({ title: "CTO" })).toBe(true);
+      expect(has({ redactedFields: ["email"] })).toBe(true);
+    });
+
+    it("is true when only another contact has content, even if the registrant is empty", () => {
+      const v = describeRegistrant([
+        { type: "registrant" },
+        { type: "abuse", email: "abuse@example.com" },
+      ]);
+      expect(v).toMatchObject({ state: "empty", hasDetails: true });
+    });
+  });
+
+  describe("placeholder countries", () => {
+    it.each(["N/A", "Unknown", "REDACTED FOR PRIVACY", "Not Disclosed"])(
+      "drops %s instead of showing it as a location",
+      (country) => {
+        const v = describeRegistrant([{ type: "registrant", country }]);
+        expect(v).toMatchObject({ state: "empty" });
+        expect(v?.location).toBeUndefined();
+      },
+    );
+
+    it("still treats two-letter NA as Namibia", () => {
+      expect(describeRegistrant([{ type: "registrant", country: "NA" }])).toMatchObject({
+        state: "location-only",
+        location: "Namibia",
+      });
+    });
+  });
+
+  it("counts org units, title and role as content for other contacts", () => {
+    const v = describeRegistrant([
+      { type: "registrant", name: "Jane Doe" },
+      { type: "tech", title: "Engineer" },
+      { type: "admin", organizationUnits: ["Platform"] },
+      { type: "billing", role: "Finance" },
+      { type: "abuse", kind: "org" },
+    ]);
+    expect(v?.others.map((o) => o.type)).toEqual(["tech", "admin", "billing"]);
+  });
 });

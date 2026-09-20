@@ -8,10 +8,7 @@ import {
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { RawDataDialog } from "@/components/domain/registration/raw-data-dialog";
-import {
-  hasRegistrantDetails,
-  RegistrantDetailsPopover,
-} from "@/components/domain/registration/registrant-details";
+import { RegistrantDetailsPopover } from "@/components/domain/registration/registrant-details";
 import { RelativeAgeString } from "@/components/domain/relative-age";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { ReportSection } from "@/components/domain/report-section";
@@ -250,54 +247,40 @@ function RegistrantKeyValue({
   view: RegistrantView | null;
   source: RegistrationResponse["source"];
 }) {
-  if (!view || view.state === "redacted" || view.state === "empty") {
-    const redacted = view?.state === "redacted";
-    const text = redacted ? "Hidden" : "Not published";
-    const hasDetails = Boolean(view && hasRegistrantDetails(view));
-    return (
-      <KeyValue
-        label="Registrant"
-        value={
-          view && redacted ? (
-            <RegistrantDetailsPopover view={view} source={source}>
-              {text}
-            </RegistrantDetailsPopover>
-          ) : (
-            text
-          )
-        }
-        valueTooltip={
-          redacted && !hasDetails
-            ? "Registrant details are redacted by the registry or registrar"
-            : undefined
-        }
-        leading={
-          redacted ? <IconSpy className="text-muted-foreground" aria-hidden="true" /> : undefined
-        }
-      />
-    );
-  }
+  const redacted = view?.state === "redacted";
+  const named = view?.state === "named";
+  const primary = redacted
+    ? "Hidden"
+    : (view?.name ?? (view?.state === "location-only" ? view.location : undefined)) ||
+      "Not published";
+  const summary = named && view?.location ? `${view.name} — ${view.location}` : primary;
+  const hasPopover = Boolean(view?.hasDetails);
 
-  const primary = view.name ?? view.location;
   return (
     <KeyValue
       label="Registrant"
       value={
-        <RegistrantDetailsPopover view={view} source={source}>
-          {primary}
-        </RegistrantDetailsPopover>
+        view && hasPopover ? (
+          <RegistrantDetailsPopover view={view} source={source}>
+            {primary}
+          </RegistrantDetailsPopover>
+        ) : (
+          primary
+        )
       }
-      // The popover trigger already covers touch and keyboard; only fall back to a
-      // tooltip for truncation when there is no popover.
+      // Without a popover, explain redaction in the tooltip; with one, the popover
+      // does that and the tooltip only needs plain text for truncated values.
       valueTooltip={
-        hasRegistrantDetails(view)
-          ? undefined
-          : view.name && view.location
-            ? `${view.name} — ${view.location}`
-            : primary
+        !hasPopover && redacted
+          ? "Registrant details are redacted by the registry or registrar"
+          : undefined
+      }
+      truncatedValue={summary}
+      leading={
+        redacted ? <IconSpy className="text-muted-foreground" aria-hidden="true" /> : undefined
       }
       suffix={
-        view.name && view.location ? (
+        named && view?.location ? (
           <span className="truncate text-[11px] leading-none text-muted-foreground">
             {view.location}
           </span>
