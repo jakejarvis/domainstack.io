@@ -358,9 +358,9 @@ export function SearchClient({
         action="/"
         method="GET"
         {...{
-          toolname: "open-domain-report",
+          toolname: "open_domain_report",
           tooldescription:
-            "Open the full report for a domain, covering WHOIS, DNS, SSL, hosting, HTTP headers, and SEO",
+            "Open the full report page for a domain in the browser, covering WHOIS, DNS, SSL, hosting, HTTP headers, and SEO. Use this tool when the user wants to view or navigate to a domain's report.",
         }}
         onFormSubmit={handleSubmit}
       >
@@ -371,7 +371,10 @@ export function SearchClient({
               <InputGroupInput
                 ref={attachInputRef}
                 name="q"
-                {...{ toolparamdescription: "Domain name to look up, e.g. example.com" }}
+                {...{
+                  toolparamdescription:
+                    "Root domain to look up, e.g. example.com (no protocol or subdomain).",
+                }}
                 autoFocus={variant === "lg" && mounted && !isMobile}
                 inputMode="url"
                 autoComplete="off"

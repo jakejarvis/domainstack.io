@@ -42,7 +42,10 @@ describe("WebMcpTools", () => {
     await vi.waitFor(() => expect(modelContext.registerTool).toHaveBeenCalled());
 
     const tools = modelContext.registerTool.mock.calls.map(([tool]) => tool);
-    expect(tools.map((tool) => tool.name)).toEqual(DOMAIN_TOOL_DEFS.map((def) => def.name));
+    expect(tools.map((tool) => tool.name)).toEqual([
+      ...DOMAIN_TOOL_DEFS.map((def) => def.name),
+      "get_domain_report",
+    ]);
     for (const tool of tools) {
       expect(tool.annotations).toEqual({ readOnlyHint: true, untrustedContentHint: true });
       expect(tool.inputSchema).toMatchObject({ required: ["domain"] });
@@ -53,7 +56,7 @@ describe("WebMcpTools", () => {
     const modelContext = installModelContext(navigator);
     await render(<WebMcpTools />);
     await vi.waitFor(() =>
-      expect(modelContext.registerTool).toHaveBeenCalledTimes(DOMAIN_TOOL_DEFS.length),
+      expect(modelContext.registerTool).toHaveBeenCalledTimes(DOMAIN_TOOL_DEFS.length + 1),
     );
   });
 
@@ -71,5 +74,33 @@ describe("WebMcpTools", () => {
 
     query.mockRejectedValueOnce(new Error("boom"));
     await expect(tool.execute({ domain: "example.com" }, {})).resolves.toHaveProperty("error");
+  });
+
+  it("get_domain_report combines sections and isolates per-section failures", async () => {
+    const modelContext = installModelContext(document);
+    await render(<WebMcpTools />);
+    await vi.waitFor(() => expect(modelContext.registerTool).toHaveBeenCalled());
+    const report = modelContext.registerTool.mock.calls
+      .map(([tool]) => tool)
+      .find((tool) => tool.name === "get_domain_report")!;
+
+    query.mockResolvedValueOnce({ success: true, data: { registrar: "Example" } });
+    query.mockRejectedValueOnce(new Error("boom"));
+    const partial = await report.execute(
+      { domain: "example.com", sections: ["registration", "dns"] },
+      {},
+    );
+    expect(partial).toEqual({
+      registration: { registrar: "Example" },
+      dns: { error: expect.any(String) },
+    });
+
+    query.mockResolvedValue({ success: true, data: {} });
+    const all = await report.execute({ domain: "example.com" }, {});
+    expect(Object.keys(all as object)).toEqual(DOMAIN_TOOL_DEFS.map((def) => def.section));
+
+    await expect(
+      report.execute({ domain: "example.com", sections: ["nope"] }, {}),
+    ).resolves.toHaveProperty("error");
   });
 });
