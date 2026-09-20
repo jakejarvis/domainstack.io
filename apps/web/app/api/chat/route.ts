@@ -21,6 +21,7 @@ import { createUIMessageStreamResponse } from "ai";
 import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 
+import { resolveCloudPrompt } from "@/lib/chat/cloud-prompt";
 import { chatRequestSchema } from "@/lib/chat/request-schema";
 import { trimChatHistory } from "@/lib/chat/trim-history";
 import { validateChatMessages } from "@/lib/chat/validate-messages";
@@ -148,10 +149,31 @@ export async function POST(request: Request) {
   // Get IP for rate limiting in tools
   const ip = ipAddress(request) ?? null;
 
-  // Start the chat workflow with serializable inputs only
+  // Resolve the prompt and model here rather than inside the workflow: a
+  // failure this way hits the try/catch below and returns a clean 500 —
+  // start() only awaits the run being enqueued, not finishing, so a step
+  // throwing inside the workflow body can't reach this response at all.
   try {
+    const {
+      prompt: systemPrompt,
+      model,
+      promptName,
+      promptVersion,
+    } = await resolveCloudPrompt(domain);
+
+    // Start the chat workflow with serializable inputs only
     const run = await start(chatWorkflow, [
-      { messages, domain, ip, userId, sessionId: sessionId ?? null },
+      {
+        messages,
+        domain,
+        ip,
+        userId,
+        sessionId: sessionId ?? null,
+        systemPrompt,
+        model,
+        promptName,
+        promptVersion,
+      },
     ]);
 
     // Convert raw ModelCallStreamPart chunks to UI message chunks for the client

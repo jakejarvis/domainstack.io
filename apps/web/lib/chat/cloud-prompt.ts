@@ -5,12 +5,15 @@
  * prompt version (`config.model`), so either can change without a deploy.
  * There is no local fallback: if PostHog can't be reached or the prompt is
  * misconfigured, the chat turn fails rather than running on stale text.
+ *
+ * Resolved once in the API route, before the workflow starts (not as a
+ * workflow step): a step's default retries would delay a fail-fast error,
+ * and a failure inside the workflow body can't reach the route's response
+ * (start() only awaits the run being enqueued, not the run finishing).
  */
 
-import { FatalError } from "workflow";
-
 import { DOMAIN_TOOL_DEFS, type DomainToolSection } from "@/lib/chat/domain-tools";
-import { domainContext, formatPromptDate } from "@/lib/chat/system-prompt";
+import { domainContext, formatPromptDate, sanitizeDomain } from "@/lib/chat/system-prompt";
 
 /**
  * Prompt name in PostHog. Immutable once created there (letters, numbers,
@@ -36,12 +39,10 @@ export interface CloudPrompt {
 }
 
 /**
- * Step: fetch and compile the cloud chat system prompt from PostHog, and
- * resolve the AI Gateway model id from its `config.model`.
+ * Fetch and compile the cloud chat system prompt from PostHog, and resolve
+ * the AI Gateway model id from its `config.model`.
  */
-export async function resolveCloudPromptStep(domain?: string): Promise<CloudPrompt> {
-  "use step";
-
+export async function resolveCloudPrompt(domain?: string): Promise<CloudPrompt> {
   const personalApiKey = process.env.POSTHOG_API_KEY;
   const projectApiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
   if (!personalApiKey || !projectApiKey) {
@@ -62,16 +63,16 @@ export async function resolveCloudPromptStep(domain?: string): Promise<CloudProm
     throw new Error(`PostHog prompt "${CLOUD_PROMPT_NAME}" could not be fetched`);
   }
 
-  const model = result.config?.model;
-  if (typeof model !== "string" || model.length === 0) {
-    throw new FatalError(
+  const model = typeof result.config?.model === "string" ? result.config.model.trim() : undefined;
+  if (!model) {
+    throw new Error(
       `PostHog prompt "${CLOUD_PROMPT_NAME}" is missing a string "model" in its config`,
     );
   }
 
   const prompt = prompts.compile(result.prompt, {
     today: formatPromptDate(),
-    domainContext: domainContext(domain),
+    domainContext: domainContext(sanitizeDomain(domain)),
     domainTools: DOMAIN_TOOLS,
     overviewTools: OVERVIEW_TOOLS,
   });

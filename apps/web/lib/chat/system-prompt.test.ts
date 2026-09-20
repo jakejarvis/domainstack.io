@@ -1,7 +1,7 @@
 /* @vitest-environment node */
 import { describe, expect, it } from "vitest";
 
-import { buildClientSystemPrompt, formatPromptDate } from "./system-prompt";
+import { buildClientSystemPrompt, formatPromptDate, sanitizeDomain } from "./system-prompt";
 
 const now = new Date("2026-08-27T12:00:00.000Z");
 const today = "Thursday, August 27, 2026";
@@ -9,6 +9,21 @@ const today = "Thursday, August 27, 2026";
 describe("formatPromptDate", () => {
   it("formats a UTC calendar date for the model", () => {
     expect(formatPromptDate(now)).toBe(today);
+  });
+});
+
+describe("sanitizeDomain", () => {
+  it("passes through a valid domain", () => {
+    expect(sanitizeDomain("example.com")).toBe("example.com");
+  });
+
+  it("drops a malformed domain", () => {
+    expect(sanitizeDomain("not a domain")).toBeUndefined();
+    expect(sanitizeDomain("not\na\ndomain")).toBeUndefined();
+  });
+
+  it("passes through undefined", () => {
+    expect(sanitizeDomain(undefined)).toBeUndefined();
   });
 });
 

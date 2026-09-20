@@ -18,6 +18,11 @@ export function domainContext(domain?: string): string {
     : "If no domain is specified, ask which one to look up.";
 }
 
+/** Drops domains that fail validation so they never reach a prompt. */
+export function sanitizeDomain(domain?: string): string | undefined {
+  return domain && isValidDomain(domain) ? domain : undefined;
+}
+
 function buildOnDeviceSystemPrompt(domain: string | undefined, today: string): string {
   return `You are Stacky, a domain intelligence assistant. You look up DNS records, WHOIS, SSL certificates, HTTP headers, SEO metadata, and hosting providers.
 
@@ -39,6 +44,5 @@ STYLE: Introduce yourself at most once, and only for a greeting with no lookup. 
  * The cloud chat's system prompt is managed in PostHog — see `cloud-prompt.ts`.
  */
 export function buildClientSystemPrompt(domain?: string, now: Date = new Date()): string {
-  const validatedDomain = domain && isValidDomain(domain) ? domain : undefined;
-  return buildOnDeviceSystemPrompt(validatedDomain, formatPromptDate(now));
+  return buildOnDeviceSystemPrompt(sanitizeDomain(domain), formatPromptDate(now));
 }
