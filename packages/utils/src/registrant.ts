@@ -232,7 +232,8 @@ function hasContent(d: ContactDetails): boolean {
     d.address.length ||
     d.email.length ||
     d.phone.length ||
-    d.fax.length,
+    d.fax.length ||
+    d.redactedFields.length,
   );
 }
 

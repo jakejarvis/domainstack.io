@@ -178,7 +178,18 @@ describe("RegistrationSection", () => {
         contacts: [{ type: "registrant", name: "Jane Doe", state: "CA", country: "US" }],
       });
       await expect.element(page.getByText("Jane Doe").first()).toBeInTheDocument();
+      await expect.element(page.getByText(/CA, United States/).first()).toBeInTheDocument();
       expect(page.getByRole("button", { name: /Jane Doe/ }).length).toBe(0);
+    });
+
+    it("does not claim a privacy service was redacted by the registry", async () => {
+      await renderWith({
+        privacyEnabled: true,
+        contacts: [{ type: "registrant", organization: "Acme Proxy", privacyService: true }],
+      });
+      await page.getByRole("button", { name: /Hidden/ }).click();
+      await expect.element(page.getByText("Privacy service")).toBeInTheDocument();
+      expect(page.getByText(/redacted by the registry/i).length).toBe(0);
     });
 
     it("keeps other contacts reachable when the registrant itself is empty", async () => {

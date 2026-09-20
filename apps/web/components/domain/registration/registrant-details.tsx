@@ -6,6 +6,7 @@ const KIND_LABELS: Partial<Record<NonNullable<ContactDetails["kind"]>, string>> 
   individual: "Individual",
   org: "Organization",
   group: "Group",
+  location: "Location",
 };
 
 const FIELD_LABELS: Record<NonNullable<ContactDetails["redactedFields"]>[number], string> = {
@@ -149,7 +150,7 @@ export function RegistrantDetailsPopover({
             <ContactFields contact={view.registrant} />
           </section>
         )}
-        {view.state === "redacted" && (
+        {view.state === "redacted" && !view.registrant?.privacyService && (
           <p className="text-[12px] text-muted-foreground">
             Registrant details are redacted by the registry or registrar.
           </p>
@@ -167,9 +168,11 @@ export function RegistrantDetailsPopover({
             <ContactFields contact={c} />
           </section>
         ))}
-        <p className="border-t pt-3 text-[11px] text-muted-foreground">
-          From {source === "rdap" ? "RDAP" : "WHOIS"}. See the raw data for the full record.
-        </p>
+        {(source === "rdap" || source === "whois") && (
+          <p className="border-t pt-3 text-[11px] text-muted-foreground">
+            From {source === "rdap" ? "RDAP" : "WHOIS"}. See the raw data for the full record.
+          </p>
+        )}
       </PopoverContent>
     </Popover>
   );
