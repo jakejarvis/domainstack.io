@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 
+import { startInBatches } from "@/lib/batch";
 import {
   getUserIdsPastDue,
   getUserIdsWithEndingSubscriptions,
@@ -10,6 +11,9 @@ import { subscriptionDowngradeWorkflow } from "@domainstack/workflows/subscripti
 import { subscriptionExpiryWorkflow } from "@domainstack/workflows/subscription-expiry";
 
 const logger = createLogger({ source: "cron/check-subscription-expiry" });
+
+/** Max concurrent workflow starts per invocation. */
+const START_BATCH_SIZE = 50;
 
 /**
  * Cron job to check subscription expiry and send notifications.
@@ -29,29 +33,19 @@ export async function GET(request: Request) {
     // Upcoming-expiry reminder emails (7/3/1 days before endsAt) plus a
     // server-side downgrade safety net for users whose paid period elapsed
     // but who are still on `pro` (Polar `subscription.revoked` missed/delayed).
-    const [reminderResults, downgradeResults] = await Promise.all([
-      Promise.allSettled(
-        endingIds.map((id) => start(subscriptionExpiryWorkflow, [{ userId: id }])),
-      ),
-      Promise.allSettled(
-        pastDueIds.map((id) => start(subscriptionDowngradeWorkflow, [{ userId: id }])),
-      ),
-    ]);
-    const remindersStarted = reminderResults.filter((r) => r.status === "fulfilled").length;
-    const downgradesStarted = downgradeResults.filter((r) => r.status === "fulfilled").length;
-
-    for (const [label, results, total] of [
-      ["reminders", reminderResults, endingIds.length],
-      ["downgrades", downgradeResults, pastDueIds.length],
-    ] as const) {
-      const failures = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
-      if (failures.length > 0) {
-        logger.warn(
-          { kind: label, failed: failures.length, total, err: failures[0].reason },
-          "Some workflow starts failed",
-        );
-      }
-    }
+    // Run in sequence so concurrency stays bounded to START_BATCH_SIZE.
+    const remindersStarted = await startInBatches(
+      endingIds,
+      START_BATCH_SIZE,
+      (id) => start(subscriptionExpiryWorkflow, [{ userId: id }]),
+      logger.child({ kind: "reminders" }),
+    );
+    const downgradesStarted = await startInBatches(
+      pastDueIds,
+      START_BATCH_SIZE,
+      (id) => start(subscriptionDowngradeWorkflow, [{ userId: id }]),
+      logger.child({ kind: "downgrades" }),
+    );
 
     logger.info(
       {

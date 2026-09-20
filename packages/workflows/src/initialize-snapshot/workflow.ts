@@ -1,29 +1,11 @@
-import type {
-  Certificate,
-  CertificateSnapshotData,
-  RegistrationResponse,
-  RegistrationSnapshotData,
-} from "@domainstack/types";
+import type { CertificateSnapshotData, RegistrationSnapshotData } from "@domainstack/types";
+import {
+  certificateSnapshotFrom,
+  registrationSnapshotFrom,
+} from "@domainstack/utils/change-detection";
 import { findLeafCertificate } from "@domainstack/utils/tls";
 
-import { optionalCall, optionalSettled, requireSettled } from "../lib/settled";
-import {
-  fetchCertificateChainStep,
-  persistCertificatesStep,
-  processChainStep,
-} from "../steps/certificates";
-import { fetchDnsRecordsStep, persistDnsRecordsStep } from "../steps/dns";
-import { fetchHeadersStep, persistHeadersStep } from "../steps/headers";
-import {
-  detectAndResolveProvidersStep,
-  lookupGeoIpStep,
-  persistHostingStep,
-} from "../steps/hosting";
-import {
-  lookupWhoisStep,
-  normalizeAndBuildResponseStep,
-  persistRegistrationStep,
-} from "../steps/registration";
+import { observeDomain } from "../steps/observe-domain";
 
 interface InitializeSnapshotWorkflowInput {
   trackedDomainId: string;
@@ -56,59 +38,8 @@ export async function initializeSnapshotWorkflow(
 
   const domainName = domainRecord.name;
 
-  // Step 2: Fetch fresh data. Headers/certs are enrichment — a domain with no
-  // A/AAAA (or an unreachable host) must still get a baseline snapshot.
-  const [registrationSettled, dnsSettled, headersSettled, certificatesSettled] =
-    await Promise.allSettled([
-      lookupWhoisStep(domainName),
-      fetchDnsRecordsStep(domainName),
-      fetchHeadersStep(domainName),
-      fetchCertificateChainStep(domainName),
-    ]);
-
-  // WHOIS/headers/certs are enrichment. RDAP timeouts and unreachable
-  // HTTP/TLS hosts must not prevent a baseline snapshot. DNS is required.
-  const registrationResult = optionalSettled(registrationSettled);
-  const dnsResult = requireSettled(dnsSettled);
-  const headersResult = optionalSettled(headersSettled);
-  const certificatesResult = optionalSettled(certificatesSettled);
-
-  // Process and persist registration
-  let registrationData: RegistrationResponse | null = null;
-  if (registrationResult?.success) {
-    registrationData = await normalizeAndBuildResponseStep(registrationResult.data.recordJson);
-    // Persist registered and unregistered alike, so a drop updates the cache
-    await optionalCall(persistRegistrationStep(domainName, registrationData));
-  }
-
-  // The DNS cache is a side effect here: detection uses dnsResult directly, so a
-  // failed write must not abort the run (same rule as the other persists).
-  await optionalCall(persistDnsRecordsStep(domainName, dnsResult));
-
-  if (headersResult?.success) {
-    await optionalCall(persistHeadersStep(domainName, headersResult.data));
-  }
-
-  // Process and persist certificates
-  let certificates: Certificate[] = [];
-  if (certificatesResult?.success) {
-    const processed = await optionalCall(processChainStep(certificatesResult));
-    if (processed) {
-      await optionalCall(persistCertificatesStep(domainName, processed));
-      certificates = processed.certificates;
-    }
-  }
-
-  // Hosting detection uses DNS even when headers fail (no A/AAAA, etc.)
-  const a = dnsResult.records.find((d) => d.type === "A");
-  const aaaa = dnsResult.records.find((d) => d.type === "AAAA");
-  const ip = (a?.value || aaaa?.value) ?? null;
-  const geoResult = ip ? await optionalCall(lookupGeoIpStep(ip)) : null;
-  const headers = headersResult?.success ? headersResult.data.headers : [];
-
-  const providers = await detectAndResolveProvidersStep(dnsResult.records, headers, geoResult);
-
-  await optionalCall(persistHostingStep(domainName, providers, geoResult?.geo ?? null));
+  // Step 2: Fetch and persist fresh data
+  const { registrationData, dnsResult, certificates, providers } = await observeDomain(domainName);
 
   // Build registration snapshot
   let registrationSnapshot: RegistrationSnapshotData = {
@@ -119,12 +50,7 @@ export async function initializeSnapshotWorkflow(
   };
 
   if (registrationData?.status === "registered") {
-    registrationSnapshot = {
-      registrarProviderId: registrationData.registrarProvider.id ?? null,
-      nameservers: registrationData.nameservers || [],
-      transferLock: registrationData.transferLock ?? null,
-      statuses: (registrationData.statuses ?? []).map((status) => status.status),
-    };
+    registrationSnapshot = registrationSnapshotFrom(registrationData);
   }
 
   // Build certificate snapshot
@@ -140,13 +66,7 @@ export async function initializeSnapshotWorkflow(
     const leafCert = findLeafCertificate(certificates);
 
     if (leafCert) {
-      certificateSnapshot = {
-        caProviderId: leafCert.caProvider.id ?? null,
-        issuer: leafCert.issuer,
-        validTo: new Date(leafCert.validTo).toISOString(),
-        fingerprint: leafCert.fingerprint256,
-        serialNumber: leafCert.serialNumber,
-      };
+      certificateSnapshot = certificateSnapshotFrom(leafCert);
     }
   }
 

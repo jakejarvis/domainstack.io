@@ -17,7 +17,7 @@ interface AvailableProvider {
 export type AvailableProvidersByCategory = Record<ProviderCategory, AvailableProvider[]>;
 
 /** Filter values for domain verification status */
-export const STATUS_FILTERS = ["verified", "pending"] as const;
+const STATUS_FILTERS = ["verified", "pending"] as const;
 export type StatusFilter = (typeof STATUS_FILTERS)[number];
 
 /** Filter values for domain health status */

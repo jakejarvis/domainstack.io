@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import type { CertificateSnapshotData, RegistrationSnapshotData } from "@domainstack/types";
+import type {
+  Certificate,
+  CertificateSnapshotData,
+  RegistrationResponse,
+  RegistrationSnapshotData,
+} from "@domainstack/types";
 
 import {
   applyCertificateDampening,
+  certificateSnapshotFrom,
   confirmChange,
   detectCertificateChange,
   detectProviderChange,
@@ -12,6 +18,7 @@ import {
   isUninitializedRegistration,
   providerObservationKey,
   registrationObservationKey,
+  registrationSnapshotFrom,
 } from "./detection";
 
 describe("detectRegistrationChange", () => {
@@ -904,5 +911,70 @@ describe("isUninitializedRegistration", () => {
       statuses: ["active"],
     };
     expect(isUninitializedRegistration(data)).toBe(false);
+  });
+});
+
+describe("registrationSnapshotFrom", () => {
+  it("maps the comparable registration fields", () => {
+    const registration = {
+      status: "registered",
+      registrarProvider: { id: "registrar-1", name: "Registrar", domain: "registrar.com" },
+      nameservers: [{ host: "ns1.example.com" }],
+      transferLock: true,
+      statuses: [{ status: "clientTransferProhibited" }],
+    } as unknown as RegistrationResponse;
+
+    expect(registrationSnapshotFrom(registration)).toEqual({
+      registrarProviderId: "registrar-1",
+      nameservers: [{ host: "ns1.example.com" }],
+      transferLock: true,
+      statuses: ["clientTransferProhibited"],
+    });
+  });
+
+  it("falls back to null/empty for missing optional fields", () => {
+    const registration = {
+      status: "registered",
+      registrarProvider: { id: null, name: null, domain: null },
+    } as unknown as RegistrationResponse;
+
+    expect(registrationSnapshotFrom(registration)).toEqual({
+      registrarProviderId: null,
+      nameservers: [],
+      transferLock: null,
+      statuses: [],
+    });
+  });
+});
+
+describe("certificateSnapshotFrom", () => {
+  it("maps the leaf certificate and normalizes validTo to ISO", () => {
+    const leaf = {
+      caProvider: { id: "ca-1", name: "CA", domain: "ca.com" },
+      issuer: "Example CA",
+      validTo: "2027-01-01T00:00:00Z",
+      fingerprint256: "AA:BB",
+      serialNumber: "01",
+    } as unknown as Certificate;
+
+    expect(certificateSnapshotFrom(leaf)).toEqual({
+      caProviderId: "ca-1",
+      issuer: "Example CA",
+      validTo: "2027-01-01T00:00:00.000Z",
+      fingerprint: "AA:BB",
+      serialNumber: "01",
+    });
+  });
+
+  it("uses a null caProviderId when the CA is not in the catalog", () => {
+    const leaf = {
+      caProvider: { id: null, name: null, domain: null },
+      issuer: "Unknown CA",
+      validTo: "2027-01-01T00:00:00Z",
+      fingerprint256: "CC:DD",
+      serialNumber: "02",
+    } as unknown as Certificate;
+
+    expect(certificateSnapshotFrom(leaf).caProviderId).toBeNull();
   });
 });

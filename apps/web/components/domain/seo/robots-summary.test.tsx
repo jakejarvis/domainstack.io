@@ -6,7 +6,7 @@ import type { SeoResponse } from "@domainstack/types";
 
 import { RobotsSummary } from "./robots-summary";
 
-vi.mock("@/components/ui/tooltip", () => ({
+vi.mock("@domainstack/ui/tooltip", () => ({
   Tooltip: ({ children }: { children: React.ReactNode }) => (
     <div data-slot="tooltip">{children}</div>
   ),
@@ -20,7 +20,7 @@ vi.mock("@/components/ui/tooltip", () => ({
   ),
 }));
 
-vi.mock("@/components/ui/accordion", () => ({
+vi.mock("@domainstack/ui/accordion", () => ({
   Accordion: ({ children }: { children: React.ReactNode }) => (
     <div data-slot="accordion">{children}</div>
   ),

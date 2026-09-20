@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 
-import { settleInBatches } from "@/lib/settle-in-batches";
+import { settleInBatches, startInBatches } from "@/lib/batch";
 import {
   getMonitoredSnapshotIds,
   getVerifiedDomainsWithoutSnapshots,
@@ -39,21 +39,12 @@ export async function GET(request: Request) {
       getMonitoredSnapshotIds(),
     ]);
 
-    const baselineResults = await settleInBatches(domains, START_BATCH_SIZE, (input) =>
-      start(initializeSnapshotWorkflow, [input]),
+    const baselinesStarted = await startInBatches(
+      domains,
+      START_BATCH_SIZE,
+      (input) => start(initializeSnapshotWorkflow, [input]),
+      logger,
     );
-    const baselinesStarted = baselineResults.filter((r) => r.status === "fulfilled").length;
-    {
-      const failures = baselineResults.filter(
-        (r): r is PromiseRejectedResult => r.status === "rejected",
-      );
-      if (failures.length > 0) {
-        logger.warn(
-          { failed: failures.length, total: domains.length, err: failures[0].reason },
-          "Some workflow starts failed",
-        );
-      }
-    }
 
     // A per-domain lock prevents starting a duplicate run while a prior run
     // (e.g. stuck in retry backoff) for the same domain is still in-flight.
@@ -65,7 +56,7 @@ export async function GET(request: Request) {
       if (result.status === "rejected" || !result.value.ownerToken) return [];
       return [{ id: result.value.id, ownerToken: result.value.ownerToken }];
     });
-    const monitorResults = await settleInBatches(
+    const monitoringStarted = await startInBatches(
       monitorsToStart,
       START_BATCH_SIZE,
       async ({ id, ownerToken }) => {
@@ -78,19 +69,8 @@ export async function GET(request: Request) {
           throw err;
         }
       },
+      logger,
     );
-    const monitoringStarted = monitorResults.filter((r) => r.status === "fulfilled").length;
-    {
-      const failures = monitorResults.filter(
-        (r): r is PromiseRejectedResult => r.status === "rejected",
-      );
-      if (failures.length > 0) {
-        logger.warn(
-          { failed: failures.length, total: monitorsToStart.length, err: failures[0].reason },
-          "Some workflow starts failed",
-        );
-      }
-    }
 
     const result = {
       baselines: { started: baselinesStarted, total: domains.length },

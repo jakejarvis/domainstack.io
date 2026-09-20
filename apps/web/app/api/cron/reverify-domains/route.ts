@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 
-import { settleInBatches } from "@/lib/settle-in-batches";
+import { startInBatches } from "@/lib/batch";
 import { getVerifiedTrackedDomainIds } from "@domainstack/db/queries/tracked-domains";
 import { createLogger } from "@domainstack/logger";
 import { reverifyOwnershipWorkflow } from "@domainstack/workflows/reverify-ownership";
@@ -23,20 +23,12 @@ export async function GET(request: Request) {
 
   try {
     const ids = await getVerifiedTrackedDomainIds();
-    const results = await settleInBatches(ids, START_BATCH_SIZE, (id) =>
-      start(reverifyOwnershipWorkflow, [{ trackedDomainId: id }]),
+    const started = await startInBatches(
+      ids,
+      START_BATCH_SIZE,
+      (id) => start(reverifyOwnershipWorkflow, [{ trackedDomainId: id }]),
+      logger,
     );
-    const started = results.filter((r) => r.status === "fulfilled").length;
-
-    const failures = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
-    if (failures.length > 0) {
-      // One representative error is enough to diagnose a systemic failure
-      // (auth, rate limit, outage) without logging thousands of entries.
-      logger.warn(
-        { failed: failures.length, total: ids.length, err: failures[0].reason },
-        "Some workflow starts failed",
-      );
-    }
 
     logger.info({ started, total: ids.length }, "Reverify domains completed");
     return NextResponse.json({ started });

@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { settleInBatches } from "@/lib/settle-in-batches";
+import { settleInBatches, startInBatches } from "@/lib/batch";
 
 describe("settleInBatches", () => {
   it("returns settled results in input order, including rejections", async () => {
@@ -44,5 +44,34 @@ describe("settleInBatches", () => {
 
     expect(results).toEqual([]);
     expect(called).toBe(false);
+  });
+});
+
+describe("startInBatches", () => {
+  it("returns the success count and warns once with a sample error on failures", async () => {
+    const logger = { warn: vi.fn<(obj: object, msg: string) => void>() };
+    const boom = new Error("boom");
+
+    const started = await startInBatches(
+      [1, 2, 3, 4],
+      2,
+      async (n) => {
+        if (n % 2 === 0) throw boom;
+      },
+      logger,
+    );
+
+    expect(started).toBe(2);
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+    expect(logger.warn).toHaveBeenCalledWith(
+      { failed: 2, total: 4, err: boom },
+      "Some workflow starts failed",
+    );
+  });
+
+  it("does not warn when every start succeeds", async () => {
+    const logger = { warn: vi.fn<(obj: object, msg: string) => void>() };
+    expect(await startInBatches([1, 2, 3], 2, async () => {}, logger)).toBe(3);
+    expect(logger.warn).not.toHaveBeenCalled();
   });
 });

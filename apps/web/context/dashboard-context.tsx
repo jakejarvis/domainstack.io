@@ -34,7 +34,7 @@ interface BulkState {
   isBulkMuting: boolean;
 }
 
-export interface FilterState {
+interface FilterState {
   search: string;
   status: StatusFilter[];
   health: HealthFilter[];
@@ -50,7 +50,7 @@ export interface FilterState {
   sortOption: SortOption;
 }
 
-export interface FilterActions {
+interface FilterActions {
   setSearch: (value: string) => void;
   setStatus: (values: StatusFilter[]) => void;
   setHealth: (values: HealthFilter[]) => void;
@@ -62,12 +62,12 @@ export interface FilterActions {
   setSortOption: (sort: SortOption) => void;
 }
 
-export interface PaginationState {
+interface PaginationState {
   pageIndex: number;
   pageSize: DashboardPageSizeOptions;
 }
 
-export interface PaginationActions {
+interface PaginationActions {
   setPageIndex: (pageIndex: number) => void;
   setPageSize: (pageSize: DashboardPageSizeOptions) => void;
   resetPage: () => void;

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 
-import { settleInBatches } from "@/lib/settle-in-batches";
+import { startInBatches } from "@/lib/batch";
 import { getRecentlyAccessedDomains } from "@domainstack/db/queries/domains";
 import { createLogger } from "@domainstack/logger";
 import { warmDomainWorkflow } from "@domainstack/workflows/warm-domains";
@@ -28,20 +28,12 @@ export async function GET(request: Request) {
 
   try {
     const domains = await getRecentlyAccessedDomains(LOOKBACK_HOURS);
-    const results = await settleInBatches(domains, START_BATCH_SIZE, (domain) =>
-      start(warmDomainWorkflow, [{ domain }]),
+    const started = await startInBatches(
+      domains,
+      START_BATCH_SIZE,
+      (domain) => start(warmDomainWorkflow, [{ domain }]),
+      logger,
     );
-    const started = results.filter((r) => r.status === "fulfilled").length;
-
-    const failures = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
-    if (failures.length > 0) {
-      // One representative error is enough to diagnose a systemic failure
-      // (auth, rate limit, outage) without logging thousands of entries.
-      logger.warn(
-        { failed: failures.length, total: domains.length, err: failures[0].reason },
-        "Some workflow starts failed",
-      );
-    }
 
     logger.info({ started, total: domains.length }, "Warm domains completed");
     return NextResponse.json({ started });

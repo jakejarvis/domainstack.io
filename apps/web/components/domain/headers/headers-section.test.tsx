@@ -6,7 +6,7 @@ import { render } from "@/mocks/react";
 import { HeadersSection } from "./headers-section";
 
 // Keep TooltipContent empty in unit tests to avoid text duplication issues.
-vi.mock("@/components/ui/tooltip", () => ({
+vi.mock("@domainstack/ui/tooltip", () => ({
   Tooltip: ({ children }: { children: React.ReactNode }) => (
     <div data-slot="tooltip">{children}</div>
   ),

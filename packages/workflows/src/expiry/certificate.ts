@@ -3,33 +3,16 @@ import type { TrackedDomainCertificate } from "@domainstack/db/queries/certifica
 import type { NotificationType } from "@domainstack/types";
 import { formatDateLong } from "@domainstack/utils/date";
 
-import {
-  calculateDaysRemainingStep,
-  checkAlreadySentStep,
-  checkExpiryPreferencesStep,
-  getThresholdNotificationType,
-} from "../steps/notifications";
+import { calculateDaysRemainingStep } from "../steps/notifications";
+import { type ExpirySkipResult, evaluateExpiryNotification } from "./thresholds";
 
 export interface CertificateExpiryWorkflowInput {
   trackedDomainId: string;
 }
 
 export type CertificateExpiryWorkflowResult =
-  | {
-      skipped: true;
-      reason: "renewed";
-      renewed: true;
-      clearedCount: number;
-    }
-  | {
-      skipped: true;
-      reason:
-        | "not_found"
-        | "already_expired"
-        | "no_threshold_met"
-        | "notifications_disabled"
-        | "already_sent";
-    }
+  | ExpirySkipResult
+  | { skipped: true; reason: "not_found" | "already_expired" }
   | { skipped: false; sent: true };
 
 /**
@@ -56,7 +39,6 @@ export async function checkCertificateExpiry(
   const validTo = cert.validTo;
 
   const daysRemaining = await calculateDaysRemainingStep(validTo);
-  const MAX_THRESHOLD_DAYS = Math.max(...CERTIFICATE_EXPIRY_THRESHOLDS);
 
   // The cron starts this workflow for every verified tracked domain holding a
   // certificate, so an already-expired one reaches us here. The thresholds only
@@ -67,38 +49,19 @@ export async function checkCertificateExpiry(
     return { skipped: true, reason: "already_expired" };
   }
 
-  // Detect renewal: If certificate is renewed beyond our notification window
-  if (daysRemaining > MAX_THRESHOLD_DAYS) {
-    const cleared = await clearRenewedNotifications(trackedDomainId);
-    return {
-      skipped: true,
-      reason: "renewed",
-      renewed: true,
-      clearedCount: cleared,
-    };
-  }
-
-  // Step 3: Determine notification type
-  const notificationType = getThresholdNotificationType(
+  // Steps 3-5: renewal, threshold, preferences, and already-sent checks
+  const check = await evaluateExpiryNotification({
+    trackedDomainId,
     daysRemaining,
-    CERTIFICATE_EXPIRY_THRESHOLDS,
-    "certificate_expiry",
-  );
-  if (!notificationType) {
-    return { skipped: true, reason: "no_threshold_met" };
-  }
-
-  // Step 4: Check notification preferences
-  const prefs = await checkExpiryPreferencesStep(cert.userId, cert.muted, "certificateExpiry");
-  if (!prefs.shouldSendEmail && !prefs.shouldSendInApp) {
-    return { skipped: true, reason: "notifications_disabled" };
-  }
-
-  // Step 5: Check if already sent
-  const alreadySent = await checkAlreadySentStep(trackedDomainId, notificationType);
-  if (alreadySent) {
-    return { skipped: true, reason: "already_sent" };
-  }
+    thresholds: CERTIFICATE_EXPIRY_THRESHOLDS,
+    prefix: "certificate_expiry",
+    preferenceKey: "certificateExpiry",
+    userId: cert.userId,
+    muted: cert.muted,
+    clearRenewed: clearRenewedNotifications,
+  });
+  if (check.skipped) return check;
+  const { notificationType, prefs } = check;
 
   // Step 6: Build the notification content (pure — no I/O, safe to recompute)
   const { title, subject, message } = buildCertificateExpiryContent({

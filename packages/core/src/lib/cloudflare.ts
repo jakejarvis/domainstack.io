@@ -25,7 +25,7 @@ const cache = new LRUCache<string, boolean>({
   ttl: 800_000, // 800 seconds
 });
 
-export interface CloudflareIpRanges {
+interface CloudflareIpRanges {
   ipv4Cidrs: string[];
   ipv6Cidrs: string[];
 }

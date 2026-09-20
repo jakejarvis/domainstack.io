@@ -13,6 +13,7 @@ import {
   NOTIFIABLE_CERTIFICATE_CHANGE_KINDS,
 } from "@domainstack/constants";
 import type {
+  Certificate,
   CertificateChange,
   CertificateChangeEvaluation,
   CertificateChangeKind,
@@ -25,6 +26,7 @@ import type {
   ProviderChange,
   ProviderSnapshotData,
   RegistrationChange,
+  RegistrationResponse,
   RegistrationSnapshotData,
 } from "@domainstack/types";
 
@@ -37,6 +39,33 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const NOTIFIABLE_KINDS: ReadonlySet<CertificateChangeKind> = new Set(
   NOTIFIABLE_CERTIFICATE_CHANGE_KINDS,
 );
+
+/**
+ * Snapshot the comparable fields of a registered domain's registration data.
+ */
+export function registrationSnapshotFrom(
+  registration: RegistrationResponse,
+): RegistrationSnapshotData {
+  return {
+    registrarProviderId: registration.registrarProvider.id ?? null,
+    nameservers: registration.nameservers || [],
+    transferLock: registration.transferLock ?? null,
+    statuses: (registration.statuses ?? []).map((status) => status.status),
+  };
+}
+
+/**
+ * Snapshot the comparable fields of a domain's leaf certificate.
+ */
+export function certificateSnapshotFrom(leafCert: Certificate): CertificateSnapshotData {
+  return {
+    caProviderId: leafCert.caProvider.id ?? null,
+    issuer: leafCert.issuer,
+    validTo: new Date(leafCert.validTo).toISOString(),
+    fingerprint: leafCert.fingerprint256,
+    serialNumber: leafCert.serialNumber,
+  };
+}
 
 /**
  * Detect changes between two registration snapshots.

@@ -8,6 +8,7 @@
 
 export {
   applyCertificateDampening,
+  certificateSnapshotFrom,
   confirmChange,
   detectCertificateChange,
   detectProviderChange,
@@ -16,5 +17,6 @@ export {
   isUninitializedRegistration,
   providerObservationKey,
   registrationObservationKey,
+  registrationSnapshotFrom,
 } from "./detection";
 export { normalizeStatus, statusesAreEqual } from "./status";

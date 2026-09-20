@@ -8,7 +8,7 @@ vi.mock("@/components/icons/favicon", () => ({
   Favicon: ({ domain }: { domain: string }) => <div>icon:{domain}</div>,
 }));
 
-vi.mock("@/components/ui/tooltip", () => ({
+vi.mock("@domainstack/ui/tooltip", () => ({
   Tooltip: ({ children }: { children: React.ReactNode }) => (
     <div data-slot="tooltip">{children}</div>
   ),

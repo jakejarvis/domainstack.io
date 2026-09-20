@@ -3,34 +3,18 @@ import type { TrackedDomainForNotification } from "@domainstack/db/queries/track
 import type { NotificationType } from "@domainstack/types";
 import { formatDateLong } from "@domainstack/utils/date";
 
-import {
-  calculateDaysRemainingStep,
-  checkAlreadySentStep,
-  checkExpiryPreferencesStep,
-  getThresholdNotificationType,
-} from "../steps/notifications";
+import { calculateDaysRemainingStep } from "../steps/notifications";
+import { type ExpirySkipResult, evaluateExpiryNotification } from "./thresholds";
 
 export interface DomainExpiryWorkflowInput {
   trackedDomainId: string;
 }
 
 export type DomainExpiryWorkflowResult =
+  | ExpirySkipResult
   | {
       skipped: true;
-      reason: "renewed";
-      renewed: true;
-      clearedCount: number;
-    }
-  | {
-      skipped: true;
-      reason:
-        | "not_found"
-        | "no_expiration_date"
-        | "invalid_expiration_date"
-        | "already_expired"
-        | "no_threshold_met"
-        | "notifications_disabled"
-        | "already_sent";
+      reason: "not_found" | "no_expiration_date" | "invalid_expiration_date" | "already_expired";
     }
   | { skipped: false; sent: true };
 
@@ -59,7 +43,6 @@ export async function checkDomainExpiry(
 
   // Step 2: Calculate days remaining and check for renewal
   const daysRemaining = await calculateDaysRemainingStep(domain.expirationDate);
-  const MAX_THRESHOLD_DAYS = Math.max(...DOMAIN_EXPIRY_THRESHOLDS);
 
   // The cron starts this workflow for every verified tracked domain, so an
   // already-expired (or unparseable) date reaches us here. The thresholds only
@@ -74,39 +57,19 @@ export async function checkDomainExpiry(
     return { skipped: true, reason: "already_expired" };
   }
 
-  // Detect renewal: If expiration is now beyond our notification window,
-  // clear previous notifications so they can be re-sent when approaching expiry again.
-  if (daysRemaining > MAX_THRESHOLD_DAYS) {
-    const cleared = await clearRenewedNotifications(trackedDomainId);
-    return {
-      skipped: true,
-      reason: "renewed",
-      renewed: true,
-      clearedCount: cleared,
-    };
-  }
-
-  // Step 3: Determine notification type
-  const notificationType = getThresholdNotificationType(
+  // Steps 3-5: renewal, threshold, preferences, and already-sent checks
+  const check = await evaluateExpiryNotification({
+    trackedDomainId,
     daysRemaining,
-    DOMAIN_EXPIRY_THRESHOLDS,
-    "domain_expiry",
-  );
-  if (!notificationType) {
-    return { skipped: true, reason: "no_threshold_met" };
-  }
-
-  // Step 4: Check notification preferences
-  const prefs = await checkExpiryPreferencesStep(domain.userId, domain.muted, "domainExpiry");
-  if (!prefs.shouldSendEmail && !prefs.shouldSendInApp) {
-    return { skipped: true, reason: "notifications_disabled" };
-  }
-
-  // Step 5: Check if already sent
-  const alreadySent = await checkAlreadySentStep(trackedDomainId, notificationType);
-  if (alreadySent) {
-    return { skipped: true, reason: "already_sent" };
-  }
+    thresholds: DOMAIN_EXPIRY_THRESHOLDS,
+    prefix: "domain_expiry",
+    preferenceKey: "domainExpiry",
+    userId: domain.userId,
+    muted: domain.muted,
+    clearRenewed: clearRenewedNotifications,
+  });
+  if (check.skipped) return check;
+  const { notificationType, prefs } = check;
 
   // Step 6: Build the notification content (pure — no I/O, safe to recompute)
   const expirationDate = new Date(domain.expirationDate);
