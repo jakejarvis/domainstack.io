@@ -8,10 +8,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useScrollDirection } from "@/hooks/use-scroll-direction";
 import { cn } from "@domainstack/ui/utils";
 
-const DESKTOP_COLUMNS = "1fr minmax(0, var(--container-2xl)) 1fr";
-const MOBILE_COLUMNS_COLLAPSED = "auto 0px 1fr";
-const MOBILE_COLUMNS_EXPANDED = "auto 1fr 0px";
-
 export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
   const { isOpen: isSearchOpen } = useMobileSearch();
   const isMobile = useIsMobile();
@@ -48,9 +44,9 @@ export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
             ? {
                 gridTemplateColumns: isMobile
                   ? isSearchOpen
-                    ? MOBILE_COLUMNS_EXPANDED
-                    : MOBILE_COLUMNS_COLLAPSED
-                  : DESKTOP_COLUMNS,
+                    ? "auto 1fr 0px"
+                    : "auto 0px 1fr"
+                  : "1fr minmax(0, var(--container-2xl)) 1fr",
               }
             : {}
         }

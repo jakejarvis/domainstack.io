@@ -20,7 +20,7 @@ export function AppHeader() {
       <AppHeaderGrid>
         <Link
           href="/"
-          className="mr-1 flex items-center justify-self-start rounded-md p-1 text-foreground transition-[color,transform] duration-200 hover:text-muted-foreground active:scale-95"
+          className="flex items-center justify-self-start rounded-md p-1 text-foreground transition-[color,transform] duration-200 hover:text-muted-foreground active:scale-95"
           aria-label="Go to homepage"
         >
           <Logo className="size-8" />
