@@ -178,7 +178,13 @@ describe("describeRegistrant", () => {
       expect(has({ city: "Reykjavik" })).toBe(true);
       expect(has({ organization: "Acme Corp" })).toBe(true);
       expect(has({ title: "CTO" })).toBe(true);
-      expect(has({ redactedFields: ["email"] })).toBe(true);
+    });
+
+    it("is false when the registrant only has redacted fields", () => {
+      const v = describeRegistrant([
+        { type: "registrant", name: "Jane Doe", redactedFields: ["email"] },
+      ]);
+      expect(v?.hasDetails).toBe(false);
     });
 
     it("is true when only another contact has content, even if the registrant is empty", () => {

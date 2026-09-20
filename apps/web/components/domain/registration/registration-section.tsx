@@ -8,7 +8,7 @@ import {
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { RawDataDialog } from "@/components/domain/registration/raw-data-dialog";
-import { RegistrantDetailsPopover } from "@/components/domain/registration/registrant-details";
+import { RegistrantTooltip } from "@/components/domain/registration/registrant-tooltip";
 import { RelativeAgeString } from "@/components/domain/relative-age";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { ReportSection } from "@/components/domain/report-section";
@@ -254,11 +254,7 @@ function RegistrantKeyValue({ view }: { view: RegistrantView | null }) {
     <KeyValue
       label="Registrant"
       value={
-        view && hasPopover ? (
-          <RegistrantDetailsPopover view={view}>{primary}</RegistrantDetailsPopover>
-        ) : (
-          primary
-        )
+        view && hasPopover ? <RegistrantTooltip view={view}>{primary}</RegistrantTooltip> : primary
       }
       // Without a popover, explain redaction in the tooltip; with one, the popover
       // does that and the tooltip only needs plain text for truncated values.

@@ -172,9 +172,7 @@ function describeContact(c: RegistrationContact): ContactDetails {
       street.length ||
       poBox ||
       city ||
-      postalCode ||
-      redactedFields.length ||
-      privacyService,
+      postalCode,
     ),
   };
 }

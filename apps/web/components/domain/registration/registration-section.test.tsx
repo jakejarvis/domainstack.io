@@ -129,40 +129,7 @@ describe("RegistrationSection", () => {
         .toHaveAttribute("href", "tel:+15551234567");
     });
 
-    it("lists which fields the registry withheld", async () => {
-      await renderWith({
-        privacyEnabled: true,
-        contacts: [
-          {
-            type: "registrant",
-            name: "Jane Doe",
-            redacted: true,
-            redactedFields: ["email", "postalCode"],
-          },
-        ],
-      });
-      await page.getByRole("button", { name: /Jane Doe/ }).click();
-      await expect.element(page.getByText("Withheld")).toBeInTheDocument();
-      await expect.element(page.getByText("email, postal code")).toBeInTheDocument();
-    });
-
-    it("labels privacy-service registrants", async () => {
-      await renderWith({
-        privacyEnabled: true,
-        contacts: [
-          {
-            type: "registrant",
-            organization: "Acme Proxy Services",
-            privacyService: true,
-            country: "US",
-          },
-        ],
-      });
-      await page.getByRole("button", { name: /Hidden/ }).click();
-      await expect.element(page.getByText("Privacy service")).toBeInTheDocument();
-    });
-
-    it("explains redaction inside the popover when other contacts exist", async () => {
+    it("shows other contacts when the registrant is redacted", async () => {
       await renderWith({
         privacyEnabled: true,
         contacts: [
@@ -171,7 +138,7 @@ describe("RegistrationSection", () => {
         ],
       });
       await page.getByRole("button", { name: /Hidden/ }).click();
-      await expect.element(page.getByText("Redacted")).toBeInTheDocument();
+      await expect.element(page.getByText("abuse@registrar.test")).toBeInTheDocument();
     });
 
     it("does not add a popover when it would only repeat the summary", async () => {
@@ -181,16 +148,6 @@ describe("RegistrationSection", () => {
       await expect.element(page.getByText("Jane Doe").first()).toBeInTheDocument();
       await expect.element(page.getByText(/CA, United States/).first()).toBeInTheDocument();
       expect(page.getByRole("button", { name: /Jane Doe/ }).length).toBe(0);
-    });
-
-    it("does not claim a privacy service was redacted by the registry", async () => {
-      await renderWith({
-        privacyEnabled: true,
-        contacts: [{ type: "registrant", organization: "Acme Proxy", privacyService: true }],
-      });
-      await page.getByRole("button", { name: /Hidden/ }).click();
-      await expect.element(page.getByText("Privacy service")).toBeInTheDocument();
-      expect(page.getByText("Redacted").length).toBe(0);
     });
 
     it("keeps other contacts reachable when the registrant itself is empty", async () => {
