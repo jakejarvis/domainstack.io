@@ -17,16 +17,25 @@ import type { ProviderRef } from "./provider-ref";
 export interface RegistrationContact {
   type: RegistrationContactType;
   name?: string;
+  /** vCard KIND (RDAP only). */
+  kind?: "individual" | "org" | "group" | "location";
   organization?: string;
+  /** vCard ORG levels below `organization` (RDAP only). */
+  organizationUnits?: string[];
+  title?: string;
+  role?: string;
   email?: string | string[];
   phone?: string | string[];
   fax?: string | string[];
+  poBox?: string;
   street?: string[];
   city?: string;
   state?: string;
   postalCode?: string;
   country?: string;
   countryCode?: string;
+  /** True when any of this contact's data was redacted or replaced by a placeholder. */
+  redacted?: boolean;
 }
 
 /**

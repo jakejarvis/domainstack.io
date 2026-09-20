@@ -8,6 +8,10 @@ import {
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { RawDataDialog } from "@/components/domain/registration/raw-data-dialog";
+import {
+  hasRegistrantDetails,
+  RegistrantDetailsPopover,
+} from "@/components/domain/registration/registrant-details";
 import { RelativeAgeString } from "@/components/domain/relative-age";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { ReportSection } from "@/components/domain/report-section";
@@ -20,8 +24,7 @@ import {
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
 import { formatDate, formatDateTimeUtc, toDateTimeAttr } from "@domainstack/utils/date";
-
-type RegistrantView = { organization: string; country: string; state?: string };
+import { describeRegistrant, type RegistrantView } from "@domainstack/utils/registrant";
 
 function getUnavailableMessage(data: RegistrationResponse): string {
   if (data.unavailableReason === "timeout") {
@@ -120,9 +123,8 @@ function RegistrarVerifiedBy({
 }
 
 function RegistrationDetailsGrid({ data }: { data: RegistrationResponse }) {
-  const registrant = extractRegistrantView(data);
+  const registrant = describeRegistrant(data.contacts, data.privacyEnabled);
   const { serverUrl, serverName, learnUrl } = getRegistrationSource(data);
-  const isHidden = data.privacyEnabled || !registrant;
 
   return (
     <KeyValueGrid colsDesktop={2}>
@@ -147,13 +149,7 @@ function RegistrationDetailsGrid({ data }: { data: RegistrationResponse }) {
         }
       />
 
-      <KeyValue
-        label="Registrant"
-        value={registrant && !data.privacyEnabled ? formatRegistrant(registrant) : "Hidden"}
-        leading={
-          isHidden ? <IconSpy className="text-muted-foreground" aria-hidden="true" /> : undefined
-        }
-      />
+      <RegistrantKeyValue view={registrant} source={data.source} />
 
       <KeyValue
         label="Created"
@@ -247,25 +243,68 @@ export function RegistrationSection({
   );
 }
 
-export function formatRegistrant(reg: { organization: string; country: string; state?: string }) {
-  const org = (reg.organization || "").trim();
-  const country = (reg.country || "").trim();
-  const state = (reg.state || "").trim();
-  const parts = [] as string[];
-  if (org) parts.push(org);
-  const loc = [state, country].filter(Boolean).join(", ");
-  if (loc) parts.push(loc);
-  if (parts.length === 0) return "Unavailable";
-  return parts.join(" — ");
-}
+function RegistrantKeyValue({
+  view,
+  source,
+}: {
+  view: RegistrantView | null;
+  source: RegistrationResponse["source"];
+}) {
+  if (!view || view.state === "redacted" || view.state === "empty") {
+    const redacted = view?.state === "redacted";
+    const text = redacted ? "Hidden" : "Not published";
+    const hasDetails = Boolean(view && hasRegistrantDetails(view));
+    return (
+      <KeyValue
+        label="Registrant"
+        value={
+          view && redacted ? (
+            <RegistrantDetailsPopover view={view} source={source}>
+              {text}
+            </RegistrantDetailsPopover>
+          ) : (
+            text
+          )
+        }
+        valueTooltip={
+          redacted && !hasDetails
+            ? "Registrant details are redacted by the registry or registrar"
+            : undefined
+        }
+        leading={
+          redacted ? <IconSpy className="text-muted-foreground" aria-hidden="true" /> : undefined
+        }
+      />
+    );
+  }
 
-function extractRegistrantView(record: RegistrationResponse): RegistrantView | null {
-  const registrant = record.contacts?.find((c) => c.type === "registrant");
-  if (!registrant) return null;
-  const organization = (registrant.organization || registrant.name || "").trim() || "Unknown";
-  const country = registrant.country || registrant.countryCode || "";
-  const state = registrant.state || "" || undefined;
-  return { organization, country, state };
+  const primary = view.name ?? view.location;
+  return (
+    <KeyValue
+      label="Registrant"
+      value={
+        <RegistrantDetailsPopover view={view} source={source}>
+          {primary}
+        </RegistrantDetailsPopover>
+      }
+      // The popover trigger already covers touch and keyboard; only fall back to a
+      // tooltip for truncation when there is no popover.
+      valueTooltip={
+        hasRegistrantDetails(view)
+          ? undefined
+          : view.name && view.location
+            ? `${view.name} — ${view.location}`
+            : primary
+      }
+      suffix={
+        view.name && view.location ? (
+          <span className="truncate text-[11px] leading-none text-muted-foreground">
+            {view.location}
+          </span>
+        ) : null
+      }
+    />
+  );
 }
 
 function extractSourceDomain(input: string | undefined | null): string | undefined {

@@ -21,7 +21,7 @@ catalog:
   ipaddr.js: ^2.5.0
   motion: ^13.4.0
   msw: ^2.15.0
-  rdapper: ^0.15.1
+  rdapper: ^0.16.0
   sonner: ^2.0.8
   superjson: ^2.2.6
   vitest: ^5.0.1
@@ -43,4 +43,4 @@ allowBuilds:
   sharp: true
   '@nestjs/core': false
 minimumReleaseAgeExclude:
-  - rdapper@0.15.1
+  - rdapper@0.16.0

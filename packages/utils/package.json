@@ -17,6 +17,7 @@
     "./expiry": "./src/expiry.ts",
     "./price": "./src/price.ts",
     "./providers": "./src/providers/index.ts",
+    "./registrant": "./src/registrant.ts",
     "./simple-hash": "./src/simple-hash.ts",
     "./slugify": "./src/slugify.ts",
     "./tls": "./src/tls.ts",

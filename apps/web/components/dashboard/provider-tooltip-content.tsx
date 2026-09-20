@@ -1,6 +1,5 @@
 import { IconLock, IconLockOpen, IconRosetteDiscountCheck, IconSpy } from "@tabler/icons-react";
 
-import { formatRegistrant } from "@/components/domain/registration/registration-section";
 import { ProviderLogo } from "@/components/icons/provider-logo";
 import type {
   DnsRecord,
@@ -10,6 +9,7 @@ import type {
 } from "@domainstack/types";
 import { Spinner } from "@domainstack/ui/spinner";
 import { formatDate, toDateTimeAttr } from "@domainstack/utils/date";
+import { describeRegistrant } from "@domainstack/utils/registrant";
 
 type ProviderTooltipContentProps = {
   providerId?: string | null;
@@ -43,19 +43,6 @@ function extractDomain(input: string | undefined | null): string | undefined {
   }
 }
 
-function getRegistrantDisplay(
-  registrantInfo: ProviderTooltipContentProps["registrantInfo"],
-): { organization: string; country: string; state?: string } | null {
-  if (!registrantInfo?.contacts || registrantInfo.privacyEnabled) return null;
-  const registrantContact = registrantInfo.contacts.find((c) => c.type === "registrant");
-  if (!registrantContact) return null;
-  const organization =
-    (registrantContact.organization || registrantContact.name || "").trim() || "Unknown";
-  const country = registrantContact.country || registrantContact.countryCode || "";
-  const state = registrantContact.state || undefined;
-  return { organization, country, state };
-}
-
 function getRegistrarSource(
   whoisServer?: string | null,
   rdapServers?: string[] | null,
@@ -80,8 +67,9 @@ function RegistrantRow({
   registrantInfo: ProviderTooltipContentProps["registrantInfo"];
 }) {
   if (!registrantInfo) return null;
-  const registrant = getRegistrantDisplay(registrantInfo);
-  const isPrivate = registrantInfo.privacyEnabled || !registrant;
+  const view = describeRegistrant(registrantInfo.contacts, registrantInfo.privacyEnabled);
+  const isPrivate = !view || view.state === "redacted";
+  const summary = [view?.name, view?.location].filter(Boolean).join(" — ");
 
   return (
     <div className="flex items-center gap-1.5">
@@ -91,7 +79,7 @@ function RegistrantRow({
           <span className="text-background/90">Privacy enabled</span>
         </>
       ) : (
-        <span className="text-background/90">{formatRegistrant(registrant)}</span>
+        <span className="text-background/90">{summary || "Not published"}</span>
       )}
     </div>
   );
