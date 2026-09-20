@@ -1,11 +1,15 @@
 import type { RegistrationContact } from "@domainstack/types";
 
 /**
- * Interpret raw WHOIS/RDAP registrant contacts for display.
+ * Interpret registrant contacts for display.
  *
- * Registries return wildly different shapes: names may be redacted placeholders,
- * NIC handles (e.g. `JJ1234-IS`), or missing entirely while the country is still
- * published. This normalizes all of that so the UI never has to invent "Unknown".
+ * Client-safe: this only reads what rdapper already decided (`redacted`,
+ * `redactedFields`, `privacyService`) and never imports rdapper itself. Stored
+ * contacts from older rdapper versions are brought up to date server-side by
+ * `upgradeContacts` (`@domainstack/utils/contacts`) before they reach the client.
+ *
+ * Registries can also return NIC handles (e.g. `JJ1234-IS`) in place of a name,
+ * which rdapper doesn't resolve yet, so that one check lives here.
  */
 
 export type RegistrantState =
@@ -31,8 +35,13 @@ export type ContactDetails = {
   email: string[];
   phone: string[];
   fax: string[];
-  redacted: boolean;
-  /** Fields the registry withheld, as reported by rdapper >= 0.16.1. */
+  /**
+   * The registrant's identity (name/organization) was withheld or belongs to a
+   * privacy service. Mirrors rdapper's `isPrivacyContact`; a bare `redacted` flag
+   * with no field list counts too, since we can't tell what was hidden.
+   */
+  identityRedacted: boolean;
+  /** Fields the registry withheld, as reported by rdapper. */
   redactedFields: NonNullable<RegistrationContact["redactedFields"]>;
   /** Name/organization belongs to a privacy or proxy service. */
   privacyService: boolean;
@@ -53,49 +62,11 @@ export type RegistrantView = {
   hasDetails: boolean;
 };
 
-// Boilerplate a registry puts in place of real data. Safe to apply to any field.
-const PLACEHOLDER_PATTERNS = [
-  /redacted/i,
-  /withheld/i,
-  /not\s+(?:disclosed|available|applicable|published|public)/i,
-  /data\s+protected/i,
-  /gdpr/i,
-  /statutory\s+masking/i,
-  /\bmasked\b/i,
-  /please\s+query\s+the\s+rdds/i,
-  /select\s+request\s+email/i,
-  /^(?:-|\.|n\/?a|no\s+data|none|unknown)$/i,
-];
-
-// Privacy-service names. Only meaningful for name/organization: "Private Equity
-// Partners" or a "Privacy Road" address must not match, so these are phrases.
-const PRIVACY_SERVICE_PATTERNS = [
-  /(?:whois|domain|contact|identity|registration)\s+(?:privacy|protection)/i,
-  /privacy\s+(?:service|protect|guard|shield)/i,
-  /private\s+registration/i,
-  /domains?\s+by\s+proxy/i,
-  /(?:privacy|identity)\s+protected/i,
-  /proxy\s+(?:service|registration)/i,
-];
-
 // NIC handles, e.g. "JJ1234-IS", "ABC123-RIPE", "AB1-NORID", "C12345678". Handles
 // without digits are only recognized with a known registry suffix, so all-caps
 // names like "ACME-CORP" survive.
 const NIC_HANDLE =
   /^(?:[A-Z]{1,6}\d{1,10}-[A-Z]{2,8}|[A-Z0-9]{2,10}-(?:IS|RIPE|APNIC|AP|ARIN|NORID|SE|NL|DK|FI)|[A-Z]{1,3}\d{5,})$/;
-
-/** Placeholder text in any field (email, phone, street, city, …). */
-export function isPlaceholderValue(value: string | undefined | null): boolean {
-  const v = value?.trim();
-  return Boolean(v) && PLACEHOLDER_PATTERNS.some((re) => re.test(v as string));
-}
-
-/** Placeholder text or a privacy-service name, for name/organization fields. */
-export function isRedactedValue(value: string | undefined | null): boolean {
-  const v = value?.trim();
-  if (!v) return false;
-  return isPlaceholderValue(v) || PRIVACY_SERVICE_PATTERNS.some((re) => re.test(v));
-}
 
 function isHandle(value: string): boolean {
   return NIC_HANDLE.test(value.trim());
@@ -104,21 +75,18 @@ function isHandle(value: string): boolean {
 /** A value that can be shown to a human as a name/organization. */
 function usableName(value: string | undefined | null): string | undefined {
   const v = value?.trim();
-  if (!v || isRedactedValue(v) || isHandle(v)) return undefined;
+  if (!v || isHandle(v)) return undefined;
   return v;
 }
 
 function toList(value: string | string[] | undefined): string[] {
   const list = Array.isArray(value) ? value : value ? [value] : [];
-  return list.map((v) => v.trim()).filter((v) => v && !isPlaceholderValue(v));
+  return list.map((v) => v.trim()).filter(Boolean);
 }
 
 function formatCountry(country?: string, countryCode?: string): string | undefined {
   const raw = (country || countryCode || "").trim();
   if (!raw) return undefined;
-  // Two letters are always a code ("NA" is Namibia, not "n/a"); anything else
-  // may be placeholder text such as "N/A" or "REDACTED".
-  if (!/^[A-Za-z]{2}$/.test(raw) && isPlaceholderValue(raw)) return undefined;
   if (/^[A-Za-z]{2}$/.test(raw)) {
     try {
       const name = new Intl.DisplayNames(["en"], { type: "region" }).of(raw.toUpperCase());
@@ -134,9 +102,7 @@ function formatCountry(country?: string, countryCode?: string): string | undefin
 function formatLocation(c: RegistrationContact): string | undefined {
   const country = formatCountry(c.country, c.countryCode);
   const state = c.state?.trim();
-  const parts = [state && !isPlaceholderValue(state) ? state : undefined, country].filter(
-    (p): p is string => Boolean(p),
-  );
+  const parts = [state || undefined, country].filter((p): p is string => Boolean(p));
   const unique = parts.filter(
     (p, i) => parts.findIndex((q) => q.toLowerCase() === p.toLowerCase()) === i,
   );
@@ -148,28 +114,24 @@ function describeContact(c: RegistrationContact): ContactDetails {
   const privacyService = Boolean(c.privacyService);
   const name = privacyService ? undefined : usableName(c.name);
   const organization = privacyService ? undefined : usableName(c.organization);
-  const street = (c.street ?? []).map((s) => s.trim()).filter((s) => s && !isPlaceholderValue(s));
+  const street = (c.street ?? []).map((s) => s.trim()).filter(Boolean);
   const cityLine = [c.city, c.state, c.postalCode]
     .map((s) => s?.trim())
-    .filter((s): s is string => Boolean(s) && !isPlaceholderValue(s));
+    .filter((s): s is string => Boolean(s));
   const country = formatCountry(c.country, c.countryCode);
   const poBox = c.poBox?.trim();
   const city = c.city?.trim();
   const postalCode = c.postalCode?.trim();
   const address = [
-    ...(poBox && !isPlaceholderValue(poBox)
-      ? [`PO Box ${poBox.replace(/^p\.?o\.?\s*box\s*/i, "")}`]
-      : []),
+    ...(poBox ? [`PO Box ${poBox.replace(/^p\.?o\.?\s*box\s*/i, "")}`] : []),
     ...street,
     cityLine.join(", "),
     country ?? "",
   ].filter(Boolean);
 
-  const organizationUnits = (c.organizationUnits ?? [])
-    .map((u) => u.trim())
-    .filter((u) => u && !isPlaceholderValue(u));
-  const title = usableName(c.title);
-  const role = usableName(c.role);
+  const organizationUnits = (c.organizationUnits ?? []).map((u) => u.trim()).filter(Boolean);
+  const title = c.title?.trim() || undefined;
+  const role = c.role?.trim() || undefined;
   const email = toList(c.email);
   const phone = toList(c.phone);
   const fax = toList(c.fax);
@@ -189,16 +151,11 @@ function describeContact(c: RegistrationContact): ContactDetails {
     email,
     phone,
     fax,
-    // rdapper >= 0.16.1 reports `redactedFields`/`privacyService` and drops
-    // placeholder fields itself. The pattern checks (here and in `usableName`) only
-    // cover contacts persisted by older versions and can go once those refresh; they
-    // are duplicated because rdapper's entry point isn't safe for client bundles.
-    redacted:
-      Boolean(c.redacted) ||
-      Boolean(c.redactedFields?.length) ||
+    identityRedacted:
       privacyService ||
-      isRedactedValue(c.name) ||
-      isRedactedValue(c.organization),
+      (redactedFields.length > 0
+        ? redactedFields.some((f) => f === "name" || f === "organization")
+        : Boolean(c.redacted)),
     redactedFields,
     privacyService,
     // The summary row already shows the name (or organization) and the
@@ -213,9 +170,9 @@ function describeContact(c: RegistrationContact): ContactDetails {
       phone.length ||
       fax.length ||
       street.length ||
-      (poBox && !isPlaceholderValue(poBox)) ||
-      (city && !isPlaceholderValue(city)) ||
-      (postalCode && !isPlaceholderValue(postalCode)) ||
+      poBox ||
+      city ||
+      postalCode ||
       redactedFields.length ||
       privacyService,
     ),
@@ -251,10 +208,11 @@ export function describeRegistrant(
     .filter(hasContent);
 
   const name = registrant.organization ?? registrant.name;
-  // Both flags are coarse: rdapper sets them for any redacted registrant field
+  // `privacyEnabled` is coarse: rdapper sets it for any redacted registrant field
   // (an email-only redaction is the usual GDPR shape). Identity is only hidden
-  // when no usable name survived, so a visible name stays a named registrant.
-  const redacted = !name && (Boolean(privacyEnabled) || registrant.redacted);
+  // when no usable name survived, so a visible name stays a named registrant, and
+  // a redacted country or email on its own doesn't hide anything.
+  const redacted = !name && (Boolean(privacyEnabled) || registrant.identityRedacted);
 
   // Redaction wins even when a stray country is published.
   const state: RegistrantState = redacted

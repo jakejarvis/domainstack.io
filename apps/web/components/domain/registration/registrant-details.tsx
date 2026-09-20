@@ -20,6 +20,7 @@ const FIELD_LABELS: Record<NonNullable<ContactDetails["redactedFields"]>[number]
   state: "state",
   postalCode: "postal code",
   poBox: "PO box",
+  country: "country",
 };
 
 const CONTACT_LABELS: Record<ContactDetails["type"], string> = {

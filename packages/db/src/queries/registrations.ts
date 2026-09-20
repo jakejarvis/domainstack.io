@@ -8,6 +8,7 @@ import type {
   RegistrationNameserver,
   RegistrationResponse,
 } from "@domainstack/types";
+import { upgradeContacts } from "@domainstack/utils/contacts";
 
 import { db } from "../client";
 import { domains, providers, registrations } from "../schema";
@@ -97,7 +98,7 @@ export async function getCachedRegistration(
         domain: null,
       };
 
-  const contactsArray: RegistrationContact[] = row.registration.contacts ?? [];
+  const contactsArray: RegistrationContact[] = upgradeContacts(row.registration.contacts ?? []);
   const nameserversArray = row.registration.nameservers ?? [];
 
   const response: RegistrationResponse = {

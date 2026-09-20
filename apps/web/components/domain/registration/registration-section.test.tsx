@@ -165,7 +165,7 @@ describe("RegistrationSection", () => {
       await renderWith({
         privacyEnabled: true,
         contacts: [
-          { type: "registrant", name: "REDACTED FOR PRIVACY" },
+          { type: "registrant", redacted: true, redactedFields: ["name"] },
           { type: "abuse", email: "abuse@registrar.test" },
         ],
       });
@@ -200,15 +200,17 @@ describe("RegistrationSection", () => {
       await expect.element(page.getByText("abuse@registrar.test")).toBeInTheDocument();
     });
 
-    it("shows Not published for a placeholder country", async () => {
-      await renderWith({ contacts: [{ type: "registrant", country: "N/A" }] });
+    it("shows Not published, not Hidden, when only the country was redacted", async () => {
+      await renderWith({
+        contacts: [{ type: "registrant", redacted: true, redactedFields: ["country"] }],
+      });
       await expect.element(page.getByText("Not published").first()).toBeInTheDocument();
     });
 
     it("shows Hidden when privacy is enabled and the name is a placeholder", async () => {
       await renderWith({
         privacyEnabled: true,
-        contacts: [{ type: "registrant", name: "REDACTED FOR PRIVACY" }],
+        contacts: [{ type: "registrant", redacted: true, redactedFields: ["name"] }],
       });
       await expect.element(page.getByText("Hidden").first()).toBeInTheDocument();
     });

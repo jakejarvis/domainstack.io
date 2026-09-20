@@ -8,6 +8,7 @@
     "./calendar": "./src/calendar.ts",
     "./certificate-hex": "./src/certificate-hex.ts",
     "./change-detection": "./src/change-detection/index.ts",
+    "./contacts": "./src/contacts.ts",
     "./country-emoji": "./src/country-emoji.ts",
     "./date": "./src/date.ts",
     "./dns": "./src/dns/index.ts",

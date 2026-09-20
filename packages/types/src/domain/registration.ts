@@ -52,7 +52,8 @@ export type RegistrationContactField =
   | "city"
   | "state"
   | "postalCode"
-  | "poBox";
+  | "poBox"
+  | "country";
 
 /**
  * Nameserver information.

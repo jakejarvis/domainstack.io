@@ -11,6 +11,7 @@ import type {
   VerificationMethod,
   VerificationStatus,
 } from "@domainstack/types";
+import { upgradeContacts } from "@domainstack/utils/contacts";
 import { deduplicateDnsRecordsByValue } from "@domainstack/utils/dns";
 
 import { db } from "../client";
@@ -177,7 +178,7 @@ function transformToTrackedDomainWithDetails(row: TrackedDomainRow): TrackedDoma
       transferLock: row.registrationTransferLock,
       registrantInfo: {
         privacyEnabled: row.registrationPrivacyEnabled,
-        contacts: row.registrationContacts,
+        contacts: upgradeContacts(row.registrationContacts),
       },
     },
     dns: { id: row.dnsId, name: row.dnsName, domain: row.dnsDomain },
