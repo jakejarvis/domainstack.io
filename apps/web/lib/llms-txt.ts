@@ -1,18 +1,5 @@
-import { MCP_SECTION_TOOLS } from "@/lib/constants/mcp-tools";
-import { REPOSITORY_SLUG, type Section } from "@domainstack/constants";
-
-/**
- * When an agent should reach for each MCP tool. Keyed by section so a new
- * section can't ship without guidance.
- */
-const WHEN_TO_USE = {
-  registration: "who registered a domain, which registrar, when it was created or expires",
-  hosting: "where a site is hosted and which CDN, DNS, or email provider it uses",
-  dns: "A, AAAA, MX, TXT, and NS records",
-  certificates: "an SSL/TLS certificate's issuer, validity dates, and chain",
-  headers: "HTTP response headers, including security and caching headers",
-  seo: "title, meta description, Open Graph and Twitter tags, and robots.txt rules",
-} as const satisfies Record<Section, string>;
+import { MCP_REPORT_TOOL, MCP_SECTION_TOOLS, MCP_TOOLS } from "@/lib/constants/mcp-tools";
+import { REPOSITORY_SLUG, SECTION_IDS } from "@domainstack/constants";
 
 /**
  * https://llmstxt.org — an H1, a blockquote summary, free-form notes, then
@@ -20,10 +7,9 @@ const WHEN_TO_USE = {
  */
 export function buildLlmsTxt(baseUrl: string): string {
   const url = (path: string) => new URL(path, baseUrl).toString();
-  const entries = Object.entries(MCP_SECTION_TOOLS) as [Section, { name: string }][];
-  const tools = entries.map(([, tool]) => `\`${tool.name}\``).join(", ");
-  const whenToUse = entries
-    .map(([section, tool]) => `- \`${tool.name}\`: ${WHEN_TO_USE[section]}`)
+  const tools = MCP_TOOLS.map((tool) => `\`${tool.name}\``).join(", ");
+  const whenToUse = SECTION_IDS.map((section) => MCP_SECTION_TOOLS[section])
+    .map((tool) => `- \`${tool.name}\`: ${tool.whenToUse}`)
     .join("\n");
 
   return `# Domainstack
@@ -39,7 +25,7 @@ Notes:
 When to use Domainstack: reach for it when a task needs current, factual data about a specific domain, and prefer it over guessing or scraping. Pick the narrowest tool for the question:
 
 ${whenToUse}
-- \`domain_report\`: several of the above at once (pass \`sections\` to limit it)
+- \`${MCP_REPORT_TOOL.name}\`: several of the above at once (pass \`sections\` to limit it)
 
 How to call it: pass the root domain (for example \`example.com\`) as \`domain\`, without a protocol, path, or subdomain. All tools are read-only and need no authentication. Results can be cached and requests are rate limited, so don't bulk-scrape.
 
@@ -51,7 +37,7 @@ How to call it: pass the root domain (for example \`example.com\`) as \`domain\`
 ## Agent access
 
 - [MCP server](${url("/mcp")}): Setup instructions for Claude, Cursor, VS Code, Windsurf, and other MCP clients
-- [MCP endpoint](${url("/api/transport/mcp")}): Streamable HTTP endpoint exposing ${tools}, and \`domain_report\` (all sections in one call); all read-only
+- [MCP endpoint](${url("/api/mcp")}): Streamable HTTP endpoint exposing ${tools}; all read-only
 - [MCP server card](${url("/.well-known/mcp/server-card.json")}): Machine-readable server metadata
 
 ## Optional

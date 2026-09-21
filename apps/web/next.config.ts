@@ -63,6 +63,10 @@ const nextConfig: NextConfig = {
       destination: "/api/calendar/user?token=:token",
     },
     {
+      source: "/api/transport/mcp",
+      destination: "/api/mcp",
+    },
+    {
       source: "/_proxy/ingest/static/:path*",
       destination: "https://us-assets.i.posthog.com/static/:path*",
     },

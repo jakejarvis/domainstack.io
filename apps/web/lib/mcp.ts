@@ -1,4 +1,4 @@
-export const MCP_URL = `${process.env.NEXT_PUBLIC_BASE_URL}/api/transport/mcp`;
+export const MCP_URL = `${process.env.NEXT_PUBLIC_BASE_URL}/api/mcp`;
 
 // Cursor deeplink: cursor://anysphere.cursor-deeplink/mcp/install?name=...&config=...
 // https://cursor.com/docs/context/mcp/install-links

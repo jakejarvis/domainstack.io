@@ -56,26 +56,13 @@ describe("DomainSearch (form variant)", () => {
     useIsMobile.mockReturnValue(false);
   });
 
-  it("exposes WebMCP tool attributes for domain search", async () => {
+  it("exposes a GET form for domain search", async () => {
     await render(<SearchClient variant="lg" />);
 
     const form = page.getByRole("form", { name: "Domain search" });
-    await expect.element(form).toHaveAttribute("toolname", "open_domain_report");
-    await expect
-      .element(form)
-      .toHaveAttribute(
-        "tooldescription",
-        "Open the full report page for a domain in the browser, covering WHOIS, DNS, SSL, hosting, HTTP headers, and SEO. Use this tool when the user wants to view or navigate to a domain's report.",
-      );
     await expect.element(form).toHaveAttribute("action", "/");
     await expect.element(form).toHaveAttribute("method", "GET");
     await expect.element(domainSearchInput()).toHaveAttribute("name", "q");
-    await expect
-      .element(domainSearchInput())
-      .toHaveAttribute(
-        "toolparamdescription",
-        "Root domain to look up, e.g. example.com (no protocol or subdomain).",
-      );
   });
 
   it("submits valid domain and navigates", async () => {

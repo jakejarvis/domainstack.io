@@ -12,7 +12,7 @@ import {
 import { CursorInstallButton, VSCodeInstallButton } from "@/components/mcp/install-buttons";
 import { SetupAccordion, SetupItem } from "@/components/mcp/setup-accordion";
 import { McpToolList } from "@/components/mcp/tool-list";
-import { tools } from "@/components/mcp/tools";
+import { MCP_TOOLS } from "@/lib/constants/mcp-tools";
 import { CLINE_JSON, MCP_SERVERS_JSON, MCP_URL, VSCODE_JSON, WINDSURF_JSON } from "@/lib/mcp";
 import { createMetadata } from "@/lib/seo";
 
@@ -170,7 +170,7 @@ Open Cline, click the hamburger menu, go to **MCP Servers → Remote Servers**, 
 
 <h2 id="tools">Available Tools</h2>
 
-The MCP server provides {tools.length} tools for domain intelligence:
+The MCP server provides {MCP_TOOLS.length} tools for domain intelligence:
 
 <McpToolList />
 

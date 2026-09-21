@@ -10,7 +10,6 @@ import { CookiePromptGeofenced } from "@/components/consent/cookie-prompt-geofen
 import { AppFooter } from "@/components/layout/app-footer";
 import { AppHeader } from "@/components/layout/app-header";
 import { Toaster } from "@/components/ui/sonner";
-import { WebMcpTools } from "@/components/webmcp/webmcp-tools";
 import { rootMetadata } from "@/lib/seo";
 
 import "./globals.css";
@@ -69,12 +68,14 @@ export default function RootLayout({ children, modal }: LayoutProps<"/">) {
             </Suspense>
           </div>
           <Toaster />
-          <WebMcpTools />
 
           {modal}
         </Providers>
 
         {process.env.NODE_ENV === "development" && <VercelToolbar />}
+
+        {/* https://github.com/vercel-labs/mcp-handler/blob/main/docs/WEBMCP.md */}
+        <script src="/api/mcp?webmcp-script" async />
       </body>
     </html>
   );

@@ -1,71 +1,55 @@
 import { instrument } from "@posthog/mcp";
 import { ipAddress } from "@vercel/functions";
 import { createMcpHandler } from "mcp-handler";
+import { after } from "next/server";
 import { PostHog } from "posthog-node";
-import { z } from "zod";
 
-import { LOOKUP_PROCEDURES } from "@/lib/constants/lookup-procedures";
-import { MCP_SECTION_TOOLS } from "@/lib/constants/mcp-tools";
+import {
+  domainSchema,
+  MCP_REPORT_TOOL,
+  MCP_SECTION_TOOLS,
+  MCP_TOOLS,
+  reportSchema,
+} from "@/lib/constants/mcp-tools";
 import { checkRateLimit } from "@/lib/ratelimit/api";
-import { createCaller } from "@domainstack/api";
-import type { Context } from "@domainstack/api";
 import { type Section, SECTION_IDS } from "@domainstack/constants";
+import { lookupSection } from "@domainstack/core/lookup";
+import { toRegistrableDomain } from "@domainstack/utils/domain";
 
 export const maxDuration = 800;
 
-const posthog = process.env.POSTHOG_PROJECT_TOKEN
-  ? new PostHog(process.env.POSTHOG_PROJECT_TOKEN, {
-      host: process.env.POSTHOG_HOST,
+const posthog = process.env.NEXT_PUBLIC_POSTHOG_KEY
+  ? new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
+      host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
       flushAt: 1,
       flushInterval: 0,
       enableExceptionAutocapture: true,
     })
   : null;
 
-/**
- * Domain input schema for MCP tools.
- * Uses simple string validation - normalization happens in tRPC layer.
- */
-const domainSchema = z.object({
-  domain: z.string().min(1, "Domain is required"),
-});
+/** Rate-limit MCP requests before creating tools bound to the client IP. */
+async function handler(request: Request): Promise<Response> {
+  const rateLimit = await checkRateLimit(request, {
+    name: "api:mcp-handler",
+    requests: 30,
+    window: "1 m",
+  });
 
-const sectionsSchema = z
-  .array(z.enum(SECTION_IDS))
-  .optional()
-  .describe("Sections to include in the report. If omitted, all sections are included.");
-
-/**
- * Helper to format SwrResult for MCP tool response.
- *
- * The router's internal metadata (`cached`, `stale`) sits alongside `data` on
- * the result rather than inside it, so serializing `data` on its own already
- * gives MCP consumers a clean payload.
- */
-function formatToolResponse(result: { success: boolean; data?: unknown; error?: string }) {
-  if (!result.success) {
-    return {
-      content: [{ type: "text" as const, text: result.error ?? "Unknown error" }],
-      isError: true,
-    };
+  if (!rateLimit.success) {
+    return rateLimit.error;
   }
 
-  return {
-    content: [{ type: "text" as const, text: JSON.stringify(result.data ?? {}, null, 2) }],
-  };
-}
+  const identifier = ipAddress(request) ?? null;
 
-/**
- * Creates MCP handler with tRPC caller bound to request context.
- * This ensures rate limiting and auth work correctly.
- */
-function createMcpHandlerWithContext(request: Request) {
-  // Create tRPC context from the incoming request
-  const ip = ipAddress(request) ?? null;
-  const ctx: Context = { req: request, ip, session: null };
-  const trpc = createCaller(ctx);
+  function lookupDomainSection(section: Section, rawDomain: string) {
+    const domain = toRegistrableDomain(rawDomain);
+    if (!domain) {
+      throw new Error('"domain" must be a valid registrable domain (e.g. example.com)');
+    }
+    return lookupSection(section, domain, { identifier });
+  }
 
-  return createMcpHandler(
+  const response = await createMcpHandler(
     (server) => {
       if (posthog) instrument(server, posthog);
 
@@ -82,8 +66,19 @@ function createMcpHandlerWithContext(request: Request) {
               idempotentHint: true,
             },
           },
-          async ({ domain }) =>
-            formatToolResponse(await trpc.domain[LOOKUP_PROCEDURES[section]]({ domain })),
+          async ({ domain }) => {
+            const result = await lookupDomainSection(section, domain);
+            return result.success
+              ? {
+                  content: [
+                    { type: "text" as const, text: JSON.stringify(result.data ?? {}, null, 2) },
+                  ],
+                }
+              : {
+                  content: [{ type: "text" as const, text: result.error ?? "Unknown error" }],
+                  isError: true,
+                };
+          },
         );
       }
 
@@ -91,14 +86,11 @@ function createMcpHandlerWithContext(request: Request) {
       // Domain Report Bundle Tool
       // ─────────────────────────────────────────────────────────────────────
       server.registerTool(
-        "domain_report",
+        MCP_REPORT_TOOL.name,
         {
-          title: "Full Report",
-          description:
-            "Get a comprehensive domain report combining multiple data sources. Returns registration, DNS, hosting, certificates, headers, and SEO data in a single call. Use the sections parameter to request only specific data.",
-          inputSchema: domainSchema.extend({
-            sections: sectionsSchema,
-          }),
+          title: MCP_REPORT_TOOL.title,
+          description: MCP_REPORT_TOOL.description,
+          inputSchema: reportSchema,
           annotations: {
             readOnlyHint: true,
             idempotentHint: true,
@@ -113,7 +105,7 @@ function createMcpHandlerWithContext(request: Request) {
           const results = await Promise.all(
             requestedSections.map(async (section) => {
               try {
-                const result = await trpc.domain[LOOKUP_PROCEDURES[section]]({ domain });
+                const result = await lookupDomainSection(section, domain);
                 if (result.success) {
                   // `cached`/`stale` sit beside `data` on the result, not in it
                   return { section, success: true, data: result.data ?? null };
@@ -167,32 +159,16 @@ function createMcpHandlerWithContext(request: Request) {
         tools: {},
       },
       verboseLogs: process.env.NODE_ENV === "development",
+      experimental_webMcp: {
+        tools: MCP_TOOLS.map((tool) => tool.name),
+      },
     },
-  );
-}
-
-/**
- * Rate-limited MCP handler wrapper.
- * Applies rate limiting (30 req/min per user/IP) before processing MCP requests.
- */
-async function handler(request: Request): Promise<Response> {
-  // Apply rate limiting before processing MCP requests
-  const rateLimit = await checkRateLimit(request, {
-    name: "api:mcp-handler",
-    requests: 30,
-    window: "1 m",
-  });
-
-  if (!rateLimit.success) {
-    return rateLimit.error;
-  }
-
-  // Create handler with request context and process
-  const mcpHandler = createMcpHandlerWithContext(request);
-  const response = await mcpHandler(request);
+  )(request);
 
   // Flush PostHog events captured during this invocation (serverless — SIGTERM unreliable)
-  if (posthog) await posthog.flush();
+  if (posthog) {
+    after(() => posthog.flush());
+  }
 
   // Add rate limit headers to successful responses
   if (rateLimit.headers) {

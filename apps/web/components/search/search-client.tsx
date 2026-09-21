@@ -353,17 +353,7 @@ export function SearchClient({
 
   return (
     <div className="flex w-full flex-col gap-5">
-      <Form
-        aria-label="Domain search"
-        action="/"
-        method="GET"
-        {...{
-          toolname: "open_domain_report",
-          tooldescription:
-            "Open the full report page for a domain in the browser, covering WHOIS, DNS, SSL, hosting, HTTP headers, and SEO. Use this tool when the user wants to view or navigate to a domain's report.",
-        }}
-        onFormSubmit={handleSubmit}
-      >
+      <Form aria-label="Domain search" action="/" method="GET" onFormSubmit={handleSubmit}>
         <Field>
           <FieldLabel className="sr-only">Domain</FieldLabel>
           <div className="relative w-full flex-1">
@@ -371,10 +361,6 @@ export function SearchClient({
               <InputGroupInput
                 ref={attachInputRef}
                 name="q"
-                {...{
-                  toolparamdescription:
-                    "Root domain to look up, e.g. example.com (no protocol or subdomain).",
-                }}
                 autoFocus={variant === "lg" && mounted && !isMobile}
                 inputMode="url"
                 autoComplete="off"

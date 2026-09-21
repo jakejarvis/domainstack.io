@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 
 import { GET } from "@/app/llms.txt/route";
-import { MCP_SECTION_TOOLS } from "@/lib/constants/mcp-tools";
+import { MCP_SECTION_TOOLS, MCP_TOOLS } from "@/lib/constants/mcp-tools";
 
 import { buildLlmsTxt } from "./llms-txt";
 
@@ -29,15 +29,14 @@ describe("llms.txt", () => {
     for (const href of urls) {
       expect(href).toMatch(/^https:\/\/(domainstack\.io|github\.com)\//);
     }
-    expect(urls).toContain("https://domainstack.io/api/transport/mcp");
+    expect(urls).toContain("https://domainstack.io/api/mcp");
     expect(urls).toContain("https://domainstack.io/.well-known/mcp/server-card.json");
   });
 
   it("mentions every MCP tool", () => {
-    for (const tool of Object.values(MCP_SECTION_TOOLS)) {
+    for (const tool of MCP_TOOLS) {
       expect(body).toContain(tool.name);
     }
-    expect(body).toContain("domain_report");
   });
 
   it("tells agents when to use each tool and how to call it", () => {
