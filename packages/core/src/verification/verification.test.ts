@@ -32,6 +32,32 @@ describe("verifyByDns", () => {
             name: "verified-dns.test.",
             type: 16,
             TTL: 300,
+            data: `"domainstack-verification=${token}"`,
+          },
+        ],
+      });
+
+    server.use(
+      http.get("https://cloudflare-dns.com/dns-query", dohHandler),
+      http.get("https://dns.google/resolve", dohHandler),
+    );
+
+    const { verifyByDns } = await import("./index");
+    const result = await verifyByDns("verified-dns.test", token);
+
+    expect(result.verified).toBe(true);
+    expect(result.method).toBe("dns_txt");
+  });
+
+  it("returns verified when TXT record matches the legacy value prefix", async () => {
+    const dohHandler = () =>
+      HttpResponse.json({
+        Status: 0,
+        Answer: [
+          {
+            name: "verified-dns.test.",
+            type: 16,
+            TTL: 300,
             data: `"domainstack-verify=${token}"`,
           },
         ],
@@ -69,7 +95,7 @@ describe("verifyByDns", () => {
               name: "_domainstack-verify.verified-dns.test.",
               type: 16,
               TTL: 300,
-              data: `"domainstack-verify=${token}"`,
+              data: `"domainstack-verification=${token}"`,
             },
           ],
         });
@@ -551,7 +577,7 @@ describe("verifyDomain (all methods)", () => {
             name: "verified-dns.test.",
             type: 16,
             TTL: 300,
-            data: `"domainstack-verify=${token}"`,
+            data: `"domainstack-verification=${token}"`,
           },
         ],
       });
@@ -764,7 +790,7 @@ describe("verifyDomainByMethod", () => {
             name: "verified-dns.test.",
             type: 16,
             TTL: 300,
-            data: `"domainstack-verify=${token}"`,
+            data: `"domainstack-verification=${token}"`,
           },
         ],
       });

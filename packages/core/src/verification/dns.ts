@@ -2,7 +2,11 @@
  * DNS TXT record verification for domain ownership.
  */
 
-import { DNS_VERIFICATION_HOST_LEGACY, DNS_VERIFICATION_PREFIX } from "@domainstack/constants";
+import {
+  DNS_VERIFICATION_HOST_LEGACY,
+  DNS_VERIFICATION_PREFIX,
+  DNS_VERIFICATION_PREFIX_LEGACY,
+} from "@domainstack/constants";
 import type { VerificationResult } from "@domainstack/types";
 import { providerOrderForLookup, queryDohProvider } from "@domainstack/utils/dns";
 
@@ -10,8 +14,10 @@ import { providerOrderForLookup, queryDohProvider } from "@domainstack/utils/dns
  * Verify domain ownership via DNS TXT record.
  *
  * Expected record formats:
- * - New: `example.com TXT "domainstack-verify=<token>"`
- * - Legacy: `_domainstack-verify.example.com TXT "domainstack-verify=<token>"`
+ * - New: `example.com TXT "domainstack-verification=<token>"`
+ * - Legacy value: `example.com TXT "domainstack-verify=<token>"` (domains
+ *   verified before the prefix was renamed)
+ * - Legacy host: `_domainstack-verify.example.com TXT "domainstack-verify=<token>"`
  *
  * Uses multiple DoH providers for reliability and cache busting.
  *
@@ -21,6 +27,7 @@ import { providerOrderForLookup, queryDohProvider } from "@domainstack/utils/dns
  */
 export async function verifyByDns(domain: string, token: string): Promise<VerificationResult> {
   const expectedValue = `${DNS_VERIFICATION_PREFIX}${token}`;
+  const expectedValueLegacy = `${DNS_VERIFICATION_PREFIX_LEGACY}${token}`;
 
   // Check both apex domain (new) and legacy subdomain format
   const hostsToCheck = [
@@ -41,7 +48,7 @@ export async function verifyByDns(domain: string, token: string): Promise<Verifi
 
             const matched = answers.some((answer) => {
               const value = answer.data.replace(/^"|"$/g, "").trim();
-              return value === expectedValue;
+              return value === expectedValue || value === expectedValueLegacy;
             });
             return matched ? "matched" : "no_match";
           } catch {
