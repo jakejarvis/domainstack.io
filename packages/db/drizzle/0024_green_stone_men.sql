@@ -1,0 +1,1 @@
+CREATE INDEX "i_providers_category_source" ON "providers" USING btree ("category","source");

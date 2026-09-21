@@ -743,10 +743,33 @@ export async function countTrackedDomainsByStatus(userId: string): Promise<Track
 
 /**
  * Mark a tracked domain as verified.
+ *
+ * Two independent callers can race for the same domain: the auto-verify
+ * workflow's own DNS/HTML/meta check, and the manual `verifyDomain`
+ * mutation (which also kicks off a snapshot-baseline workflow). A
+ * FOR-UPDATE row lock plus an already-verified no-op guard keeps a losing
+ * second call from wiping a snapshot the winner just established.
  */
 export async function verifyTrackedDomain(id: string, method: VerificationMethod) {
   const now = new Date();
   return await db.transaction(async (tx) => {
+    const [current] = await tx
+      .select({ verified: userTrackedDomains.verified })
+      .from(userTrackedDomains)
+      .where(eq(userTrackedDomains.id, id))
+      .for("update");
+
+    if (!current) return null;
+
+    if (current.verified) {
+      // Already verified by a concurrent call — don't wipe its snapshot.
+      const [existing] = await tx
+        .select()
+        .from(userTrackedDomains)
+        .where(eq(userTrackedDomains.id, id));
+      return existing ?? null;
+    }
+
     // A domain becoming verified (again) may carry a snapshot from a previous
     // verified period; drop it so monitoring starts from a fresh baseline.
     await tx.delete(domainSnapshots).where(eq(domainSnapshots.trackedDomainId, id));
@@ -771,11 +794,11 @@ export async function verifyTrackedDomain(id: string, method: VerificationMethod
 /**
  * Set the muted state for a tracked domain.
  */
-export async function setDomainMuted(id: string, muted: boolean) {
+export async function setDomainMuted(id: string, userId: string, muted: boolean) {
   const updated = await db
     .update(userTrackedDomains)
     .set({ muted })
-    .where(eq(userTrackedDomains.id, id))
+    .where(and(eq(userTrackedDomains.id, id), eq(userTrackedDomains.userId, userId)))
     .returning();
 
   if (updated.length === 0) {
@@ -788,9 +811,13 @@ export async function setDomainMuted(id: string, muted: boolean) {
 /**
  * Delete a tracked domain.
  */
-export async function deleteTrackedDomain(id: string): Promise<boolean> {
-  await db.delete(userTrackedDomains).where(eq(userTrackedDomains.id, id));
-  return true;
+export async function deleteTrackedDomain(id: string, userId: string): Promise<boolean> {
+  const deleted = await db
+    .delete(userTrackedDomains)
+    .where(and(eq(userTrackedDomains.id, id), eq(userTrackedDomains.userId, userId)))
+    .returning({ id: userTrackedDomains.id });
+
+  return deleted.length > 0;
 }
 
 /**
@@ -925,11 +952,11 @@ export async function revokeVerification(id: string) {
 /**
  * Archive a tracked domain.
  */
-export async function archiveTrackedDomain(id: string) {
+export async function archiveTrackedDomain(id: string, userId: string) {
   const updated = await db
     .update(userTrackedDomains)
     .set({ archivedAt: new Date() })
-    .where(eq(userTrackedDomains.id, id))
+    .where(and(eq(userTrackedDomains.id, id), eq(userTrackedDomains.userId, userId)))
     .returning();
 
   if (updated.length === 0) {

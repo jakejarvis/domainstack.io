@@ -37,7 +37,7 @@ vi.mock("@domainstack/email/templates/verification-instructions", () => ({
 const { domains, domainSnapshots, registrations, userSubscriptions, users, userTrackedDomains } =
   await import("@domainstack/db/schema");
 const { eq } = await import("@domainstack/db/drizzle");
-const { countActiveTrackedDomainsForUser } =
+const { countActiveTrackedDomainsForUser, verifyTrackedDomain } =
   await import("@domainstack/db/queries/tracked-domains");
 const { sendEmail } = await import("@domainstack/email");
 const { default: VerificationInstructionsEmail } =
@@ -650,6 +650,38 @@ describe("tracking router", () => {
       expect(verificationMock.verifyDomain).not.toHaveBeenCalled();
       expect(verificationMock.verifyDomainByMethod).not.toHaveBeenCalled();
       expect(start).not.toHaveBeenCalled();
+    });
+
+    it("verifyTrackedDomain does not wipe a snapshot created after it already verified (concurrent verify race)", async () => {
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "test-token",
+        verified: false,
+      });
+
+      // First call: genuinely verifies (no snapshot exists yet, nothing to wipe).
+      const first = await verifyTrackedDomain(TEST_TRACKED_ID, "dns_txt");
+      expect(first?.verified).toBe(true);
+
+      // A concurrent process (e.g. initializeSnapshotWorkflow) establishes the
+      // baseline snapshot right after.
+      await db.insert(domainSnapshots).values({ trackedDomainId: TEST_TRACKED_ID });
+
+      // Second call: a racing verifier (e.g. the auto-verify workflow's own
+      // independent check) reaches verifyTrackedDomain moments later. It must
+      // no-op instead of wiping the snapshot just established above.
+      const second = await verifyTrackedDomain(TEST_TRACKED_ID, "meta_tag");
+      expect(second?.verified).toBe(true);
+      // The losing call must not overwrite the winning method.
+      expect(second?.verificationMethod).toBe("dns_txt");
+
+      const snapshot = await db
+        .select()
+        .from(domainSnapshots)
+        .where(eq(domainSnapshots.trackedDomainId, TEST_TRACKED_ID));
+      expect(snapshot.length).toBe(1);
     });
 
     it("returns not verified when no method succeeds", async () => {

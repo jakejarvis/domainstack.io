@@ -10,7 +10,6 @@ import {
 } from "@domainstack/db/queries/calendar-feeds";
 import {
   countTrackedDomainsByStatus,
-  findTrackedDomainById,
   setDomainMuted,
 } from "@domainstack/db/queries/tracked-domains";
 import {
@@ -114,23 +113,15 @@ export const userRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { trackedDomainId, muted } = input;
 
-      // Get tracked domain and verify ownership in one check
-      // Return identical error for both "not found" and "wrong user"
-      // to prevent enumeration attacks via error differentiation
-      const tracked = await findTrackedDomainById(trackedDomainId);
-      if (!tracked || tracked.userId !== ctx.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Tracked domain not found",
-        });
-      }
+      const updated = await setDomainMuted(trackedDomainId, ctx.user.id, muted);
 
-      const updated = await setDomainMuted(trackedDomainId, muted);
-
+      // A null result covers both "not found" and "wrong user" — return
+      // identical errors for both to prevent enumeration attacks via error
+      // differentiation.
       if (!updated) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Failed to update domain - it may have been deleted",
+          message: "Tracked domain not found",
         });
       }
 

@@ -369,24 +369,15 @@ export const trackingRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { trackedDomainId } = input;
 
-      // Get tracked domain
-      const tracked = await findTrackedDomainById(trackedDomainId);
+      const deleted = await deleteTrackedDomain(trackedDomainId, ctx.user.id);
 
-      // Return identical error for both "not found" and "wrong user"
-      // to prevent enumeration attacks via error differentiation
-      if (!tracked || tracked.userId !== ctx.user.id) {
+      // A false result covers both "not found" and "wrong user" — return
+      // identical errors for both to prevent enumeration attacks via error
+      // differentiation.
+      if (!deleted) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Tracked domain not found",
-        });
-      }
-
-      const deleted = await deleteTrackedDomain(trackedDomainId);
-
-      if (!deleted) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to remove domain",
         });
       }
 
@@ -428,7 +419,7 @@ export const trackingRouter = createTRPCRouter({
         });
       }
 
-      const updated = await archiveTrackedDomain(trackedDomainId);
+      const updated = await archiveTrackedDomain(trackedDomainId, ctx.user.id);
 
       if (!updated) {
         throw new TRPCError({

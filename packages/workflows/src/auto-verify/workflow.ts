@@ -182,7 +182,14 @@ async function markVerified(
 
   const { verifyTrackedDomain } = await import("@domainstack/db/queries/tracked-domains");
 
-  const result = await verifyTrackedDomain(trackedDomainId, method);
+  let result: Awaited<ReturnType<typeof verifyTrackedDomain>>;
+  try {
+    result = await verifyTrackedDomain(trackedDomainId, method);
+  } catch (err) {
+    const { classifyDatabaseError } = await import("../lib/errors");
+    throw classifyDatabaseError(err, { context: `marking domain verified: ${trackedDomainId}` });
+  }
+
   if (!result) {
     // Domain doesn't exist or can't be updated - permanent failure, don't retry
     throw new FatalError(

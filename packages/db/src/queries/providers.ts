@@ -176,7 +176,7 @@ export async function upsertCatalogProvider(provider: Provider): Promise<Provide
   // Step 2: No direct match - check if any discovered provider matches via rules
   // This handles cases like discovered "mail.tutanota.de" matching catalog "Tuta"
   const discoveredProviders = await db
-    .select()
+    .select({ id: providers.id, name: providers.name, domain: providers.domain })
     .from(providers)
     .where(and(eq(providers.category, provider.category), eq(providers.source, "discovered")));
 
