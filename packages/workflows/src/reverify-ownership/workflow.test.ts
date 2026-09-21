@@ -197,12 +197,14 @@ describe("reverifyOwnershipWorkflow", () => {
     trackedDomainsMock.markVerificationFailing.mockResolvedValue({
       verificationFailedAt: new Date("2026-09-13T04:00:00Z"),
     } as never);
+    notificationsQueryMock.hasRecentNotification.mockResolvedValue(true);
 
     const { reverifyOwnershipWorkflow } = await import("./workflow");
     const result = await reverifyOwnershipWorkflow({ trackedDomainId: "td-1" });
 
     expect(result).toEqual({ verified: false, action: "marked_failing" });
     expect(trackedDomainsMock.markVerificationFailing).toHaveBeenCalledWith("td-1");
+    expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
   });
 
   it("first failure sends the warning", async () => {
