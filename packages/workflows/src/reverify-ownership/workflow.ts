@@ -47,7 +47,10 @@ export async function reverifyOwnershipWorkflow(
     return { verified: true, method: result.method };
   }
 
-  if (result.checkFailed && domain.verificationStatus !== "failing") {
+  if (
+    result.checkFailed &&
+    (domain.verificationStatus !== "failing" || !domain.verificationFailedAt)
+  ) {
     // The probe itself couldn't complete — not a confirmed absence — so
     // don't start a new grace-period episode on network noise. But once a
     // grace period is already running, don't let a chronically-broken probe
@@ -62,6 +65,9 @@ export async function reverifyOwnershipWorkflow(
     verificationStatus: domain.verificationStatus,
     verificationFailedAt: domain.verificationFailedAt,
   });
+  if (!failureResult) {
+    return { skipped: true, reason: "invalid_state" };
+  }
 
   // Step 4: Notify. Each email step skips itself if this failure episode
   // already has that notification, so re-running is safe.
@@ -163,12 +169,26 @@ type FailureActionResult =
  * state. Revocation is written later, after the revoked email is sent (a
  * revoked domain is no longer re-checked, so its email could never be retried).
  */
-async function determineFailureAction(domain: DomainForFailureCheck): Promise<FailureActionResult> {
+async function determineFailureAction(
+  domain: DomainForFailureCheck,
+): Promise<FailureActionResult | null> {
   "use step";
 
   const { calculateDaysElapsed } = await import("@domainstack/utils/expiry");
   const { VERIFICATION_GRACE_PERIOD_DAYS } = await import("@domainstack/constants");
-  const { markVerificationFailing } = await import("@domainstack/db/queries/tracked-domains");
+  const { getTrackedDomainForReverification, markVerificationFailing } =
+    await import("@domainstack/db/queries/tracked-domains");
+
+  // The ownership probe runs outside this step. A concurrent run may have
+  // recovered the domain or started a new failure episode in the meantime.
+  const current = await getTrackedDomainForReverification(domain.id);
+  if (
+    !current ||
+    current.verificationStatus !== domain.verificationStatus ||
+    current.verificationFailedAt?.getTime() !== domain.verificationFailedAt?.getTime()
+  ) {
+    return null;
+  }
 
   const failedAt = domain.verificationFailedAt ? new Date(domain.verificationFailedAt) : null;
 

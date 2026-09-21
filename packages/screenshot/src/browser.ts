@@ -89,25 +89,28 @@ async function createBrowser(): Promise<import("puppeteer-core").Browser> {
  */
 export async function getBrowser(): Promise<import("puppeteer-core").Browser> {
   if (browserPromise) {
+    const cachedPromise = browserPromise;
     try {
-      const browser = await browserPromise;
+      const browser = await cachedPromise;
+      if (browserPromise !== cachedPromise) return getBrowser();
       if (browser.connected) {
         return browser;
       }
       // Crashed/disconnected mid-use — relaunch instead of reusing it.
-      browserPromise = null;
     } catch {
-      browserPromise = null;
+      if (browserPromise !== cachedPromise) return getBrowser();
     }
+    browserPromise = null;
   }
 
-  browserPromise = createBrowser().catch((err) => {
+  const launchPromise = createBrowser().catch((err) => {
     logger.error(err, "failed to create browser");
     // Reset promise to allow retry on next call
-    browserPromise = null;
+    if (browserPromise === launchPromise) browserPromise = null;
     throw err;
   });
-  return browserPromise;
+  browserPromise = launchPromise;
+  return launchPromise;
 }
 
 /**
@@ -118,13 +121,14 @@ export async function closeBrowser(): Promise<void> {
     return;
   }
 
+  const cachedPromise = browserPromise;
   try {
-    const browser = await browserPromise;
+    const browser = await cachedPromise;
     await browser.close();
   } catch (err) {
     logger.warn(err, "failed to close browser");
   } finally {
-    browserPromise = null;
+    if (browserPromise === cachedPromise) browserPromise = null;
   }
 }
 

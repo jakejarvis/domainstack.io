@@ -42,18 +42,18 @@ export async function optionalCall<T>(promise: Promise<T>): Promise<T | null> {
     return await promise;
   } catch (err) {
     if (FatalError.is(err)) {
-      await logSwallowedFatalStep(err.message).catch(() => {});
+      await logSwallowedFatalStep(err).catch(() => {});
     }
     return null;
   }
 }
 
-async function logSwallowedFatalStep(errorMessage: string): Promise<void> {
+async function logSwallowedFatalStep(err: FatalError): Promise<void> {
   "use step";
 
   const { createLogger } = await import("@domainstack/logger");
   createLogger({ source: "workflows/settled" }).error(
-    { errorMessage },
+    { err },
     "optional workflow step failed fatally; continuing without it",
   );
 }

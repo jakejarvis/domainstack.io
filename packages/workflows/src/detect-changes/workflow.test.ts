@@ -177,6 +177,18 @@ describe("detectChangesWorkflow", () => {
     expect(monitorDedupMock.releaseMonitorLock).toHaveBeenCalledWith("td-1", "tok");
   });
 
+  it("releases the lock when fetching the snapshot fails fatally", async () => {
+    const { FatalError } = await import("workflow");
+    snapshotsMock.getSnapshot.mockRejectedValue(new FatalError("snapshot unavailable"));
+
+    const { detectChangesWorkflow } = await import("./workflow");
+
+    await expect(
+      detectChangesWorkflow({ trackedDomainId: "td-1", monitorLockOwnerToken: "tok" }),
+    ).rejects.toThrow("snapshot unavailable");
+    expect(monitorDedupMock.releaseMonitorLock).toHaveBeenCalledWith("td-1", "tok");
+  });
+
   it("fails the run and does not release the lock when the required DNS fetch fails", async () => {
     dnsMock.fetchDnsRecordsStep.mockRejectedValue(new Error("dns fetch failed"));
 

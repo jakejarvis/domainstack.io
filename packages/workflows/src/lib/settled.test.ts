@@ -60,7 +60,7 @@ describe("optionalCall", () => {
     expect(createLogger).toHaveBeenCalledWith({ source: "workflows/settled" });
     const loggerInstance = vi.mocked(createLogger).mock.results.at(-1)?.value;
     expect(loggerInstance?.error).toHaveBeenCalledWith(
-      { errorMessage: "constraint violation" },
+      { err: fatal },
       "optional workflow step failed fatally; continuing without it",
     );
   });

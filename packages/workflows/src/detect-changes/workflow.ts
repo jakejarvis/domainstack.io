@@ -68,21 +68,21 @@ export async function detectChangesWorkflow(
 
   const { trackedDomainId, monitorLockOwnerToken } = input;
 
-  // Step 1: Fetch snapshot data
-  const snapshot = await fetchSnapshot(trackedDomainId);
-
-  if (!snapshot) {
-    await releaseMonitorLockStep(trackedDomainId, monitorLockOwnerToken);
-    return {
-      skipped: true,
-      reason: "snapshot_not_found",
-      registrationChanges: false,
-      providerChanges: false,
-      certificateChanges: false,
-    };
-  }
-
   try {
+    // Step 1: Fetch snapshot data
+    const snapshot = await fetchSnapshot(trackedDomainId);
+
+    if (!snapshot) {
+      await releaseMonitorLockStep(trackedDomainId, monitorLockOwnerToken);
+      return {
+        skipped: true,
+        reason: "snapshot_not_found",
+        registrationChanges: false,
+        providerChanges: false,
+        certificateChanges: false,
+      };
+    }
+
     return await runChangeDetection(trackedDomainId, monitorLockOwnerToken, snapshot);
   } catch (err) {
     // A FatalError means nothing will retry this run, so the lock must be
