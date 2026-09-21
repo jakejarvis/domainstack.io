@@ -7,11 +7,13 @@ const { db } = await makePGliteDb();
 
 // Now import modules that depend on the db (they'll use the test db via lazy init)
 const {
+  createSubscription,
   downgradeToFree,
   getUserIdsPastDue,
   getUserIdsWithEndingSubscriptions,
   getUserSubscription,
   getUserWithEndingSubscription,
+  setSubscriptionEndsAt,
 } = await import("@domainstack/db/queries/user-subscription");
 const { domains, userSubscriptions, users, userTrackedDomains } =
   await import("@domainstack/db/schema");
@@ -242,6 +244,31 @@ describe("downgradeToFree", () => {
     expect(await downgradeToFree(testUserId)).toEqual({ wasPro: true, archivedCount: 0 });
     expect(await downgradeToFree(testUserId)).toEqual({ wasPro: false, archivedCount: 0 });
   });
+
+  it("does not throw when racing a concurrent free-row insert for a brand-new user", async () => {
+    const [racingUser] = await db
+      .insert(users)
+      .values({
+        id: "downgrade-race-user",
+        name: "Downgrade Race User",
+        email: "downgrade-race@example.test",
+        emailVerified: true,
+      })
+      .returning();
+
+    // No subscription row exists yet for this user. downgradeToFree's own
+    // fallback insert and createSubscription's insert both target the same
+    // conflict key — neither should throw an unhandled unique violation.
+    await expect(
+      Promise.all([downgradeToFree(racingUser.id), createSubscription(racingUser.id)]),
+    ).resolves.toBeDefined();
+
+    const [subscription] = await db
+      .select()
+      .from(userSubscriptions)
+      .where(eq(userSubscriptions.userId, racingUser.id));
+    expect(subscription?.tier).toBe("free");
+  });
 });
 
 describe("getUserSubscription", () => {
@@ -268,6 +295,55 @@ describe("getUserSubscription", () => {
       .from(userSubscriptions)
       .where(eq(userSubscriptions.userId, orphanUserId));
     expect(row?.tier).toBe("free");
+  });
+
+  it("returns the existing pro tier and end date", async () => {
+    const raceUserId = "self-heal-race-user";
+    await db.insert(users).values({
+      id: raceUserId,
+      name: "Self Heal Race User",
+      email: "self-heal-race@example.test",
+      emailVerified: true,
+    });
+    // An existing paid subscription should be returned as stored.
+    await db.insert(userSubscriptions).values({
+      userId: raceUserId,
+      tier: "pro",
+      endsAt: new Date("2030-01-01T00:00:00Z"),
+    });
+
+    const result = await getUserSubscription(raceUserId);
+
+    expect(result.plan).toBe("pro");
+    expect(result.endsAt).toEqual(new Date("2030-01-01T00:00:00Z"));
+  });
+});
+
+describe("setSubscriptionEndsAt", () => {
+  it("resets lastExpiryNotification only when asked to", async () => {
+    await db
+      .update(userSubscriptions)
+      .set({ lastExpiryNotification: 1 })
+      .where(eq(userSubscriptions.userId, testUserId));
+
+    await setSubscriptionEndsAt(testUserId, new Date("2030-06-01T00:00:00Z"));
+
+    let [subscription] = await db
+      .select()
+      .from(userSubscriptions)
+      .where(eq(userSubscriptions.userId, testUserId));
+    expect(subscription.lastExpiryNotification).toBe(1);
+
+    await setSubscriptionEndsAt(testUserId, new Date("2030-07-01T00:00:00Z"), {
+      resetNotificationTracking: true,
+    });
+
+    [subscription] = await db
+      .select()
+      .from(userSubscriptions)
+      .where(eq(userSubscriptions.userId, testUserId));
+    expect(subscription.lastExpiryNotification).toBeNull();
+    expect(subscription.endsAt).toEqual(new Date("2030-07-01T00:00:00Z"));
   });
 });
 

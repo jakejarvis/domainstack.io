@@ -177,6 +177,18 @@ describe("detectChangesWorkflow", () => {
     expect(monitorDedupMock.releaseMonitorLock).toHaveBeenCalledWith("td-1", "tok");
   });
 
+  it("releases the lock when fetching the snapshot fails fatally", async () => {
+    const { FatalError } = await import("workflow");
+    snapshotsMock.getSnapshot.mockRejectedValue(new FatalError("snapshot unavailable"));
+
+    const { detectChangesWorkflow } = await import("./workflow");
+
+    await expect(
+      detectChangesWorkflow({ trackedDomainId: "td-1", monitorLockOwnerToken: "tok" }),
+    ).rejects.toThrow("snapshot unavailable");
+    expect(monitorDedupMock.releaseMonitorLock).toHaveBeenCalledWith("td-1", "tok");
+  });
+
   it("fails the run and does not release the lock when the required DNS fetch fails", async () => {
     dnsMock.fetchDnsRecordsStep.mockRejectedValue(new Error("dns fetch failed"));
 
@@ -233,6 +245,20 @@ describe("change alert idempotency", () => {
     for (const call of notificationsMock.sendProviderChangeNotificationStep.mock.calls) {
       expect(call[0]).toEqual(expect.objectContaining({ idempotencyKey: expectedKey }));
     }
+  });
+
+  it("releases the monitor lock when a FatalError terminates the run, since nothing will retry it", async () => {
+    const { FatalError } = await import("workflow");
+    notificationsMock.sendProviderChangeNotificationStep.mockRejectedValue(
+      new FatalError("failed to create notification record"),
+    );
+
+    const { detectChangesWorkflow } = await import("./workflow");
+
+    await expect(
+      detectChangesWorkflow({ trackedDomainId: "td-1", monitorLockOwnerToken: "tok" }),
+    ).rejects.toThrow("failed to create notification record");
+    expect(monitorDedupMock.releaseMonitorLock).toHaveBeenCalledWith("td-1", "tok");
   });
 
   it("keys a different stored provider with a different idempotencyKey", async () => {

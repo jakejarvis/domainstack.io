@@ -29,30 +29,41 @@ export async function verifyByDns(domain: string, token: string): Promise<Verifi
   ];
 
   const providers = providerOrderForLookup(domain);
-  const lookups = hostsToCheck.flatMap((hostname) =>
-    providers.map((provider) => ({ hostname, provider })),
-  );
 
-  const matches = await Promise.all(
-    lookups.map(async ({ hostname, provider }) => {
-      try {
-        const answers = await queryDohProvider(provider, hostname, "TXT", {
-          cacheBust: true, // Bypass caches to check freshly added records
-        });
+  const outcomesByHost = await Promise.all(
+    hostsToCheck.map(async (hostname) => {
+      const outcomes = await Promise.all(
+        providers.map(async (provider) => {
+          try {
+            const answers = await queryDohProvider(provider, hostname, "TXT", {
+              cacheBust: true, // Bypass caches to check freshly added records
+            });
 
-        return answers.some((answer) => {
-          const value = answer.data.replace(/^"|"$/g, "").trim();
-          return value === expectedValue;
-        });
-      } catch {
-        return false;
-      }
+            const matched = answers.some((answer) => {
+              const value = answer.data.replace(/^"|"$/g, "").trim();
+              return value === expectedValue;
+            });
+            return matched ? "matched" : "no_match";
+          } catch {
+            // This provider/host lookup itself failed (network/timeout/DNS
+            // resolver error) — it neither confirms nor rules out the record.
+            return "failed";
+          }
+        }),
+      );
+      return outcomes;
     }),
   );
 
-  if (matches.some(Boolean)) {
+  if (outcomesByHost.some((outcomes) => outcomes.includes("matched"))) {
     return { verified: true, method: "dns_txt" };
   }
 
-  return { verified: false, method: null };
+  // checkFailed if any single host's lookups all failed — a clean answer
+  // from the other host (e.g. an unused legacy subdomain) shouldn't mask a
+  // resolver failure on the host that actually holds the proof.
+  const checkFailed = outcomesByHost.some((outcomes) =>
+    outcomes.every((outcome) => outcome === "failed"),
+  );
+  return { verified: false, method: null, checkFailed };
 }

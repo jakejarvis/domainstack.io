@@ -86,7 +86,12 @@ async function clearEndsAt(userId: string): Promise<void> {
   "use step";
 
   const { clearSubscriptionEndsAt } = await import("@domainstack/db/queries/user-subscription");
-  await clearSubscriptionEndsAt(userId);
+  try {
+    await clearSubscriptionEndsAt(userId);
+  } catch (err) {
+    const { classifyDatabaseError } = await import("../lib/errors");
+    throw classifyDatabaseError(err, { context: `clearing subscription end date for ${userId}` });
+  }
 }
 
 async function downgrade(userId: string): Promise<{ wasPro: boolean; archivedCount: number }> {
@@ -99,7 +104,14 @@ async function downgrade(userId: string): Promise<{ wasPro: boolean; archivedCou
 
   // Clears endsAt in the same transaction. A retry after the commit (or a
   // webhook that got there first) sees wasPro=false and sends nothing.
-  const result = await downgradeToFree(userId);
+  let result: Awaited<ReturnType<typeof downgradeToFree>>;
+  try {
+    result = await downgradeToFree(userId);
+  } catch (err) {
+    const { classifyDatabaseError } = await import("../lib/errors");
+    throw classifyDatabaseError(err, { context: `downgrading subscription for ${userId}` });
+  }
+
   if (result.wasPro) {
     try {
       await sendSubscriptionExpiredEmail(userId, result.archivedCount);

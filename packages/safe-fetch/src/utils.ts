@@ -13,45 +13,6 @@ export async function withTimeout<T>(
 }
 
 /**
- * Retry an async operation with exponential backoff.
- *
- * @param fn - Function to retry
- * @param options - Retry options
- * @throws The last error if all retries are exhausted
- */
-export async function withRetry<T>(
-  fn: () => Promise<T>,
-  options: {
-    /** Max retry attempts (default: 3) */
-    retries?: number;
-    /** Base delay in ms (default: 100) */
-    delayMs?: number;
-    /** Abort signal to cancel retries */
-    signal?: AbortSignal;
-  } = {},
-): Promise<T> {
-  const { retries = 3, delayMs = 100, signal } = options;
-  let lastError: unknown;
-
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    if (signal?.aborted) {
-      throw new Error("Aborted");
-    }
-
-    try {
-      return await fn();
-    } catch (err) {
-      lastError = err;
-      if (attempt < retries) {
-        await sleep(delayMs * 2 ** attempt, signal);
-      }
-    }
-  }
-
-  throw lastError;
-}
-
-/**
  * Sleep for a given duration.
  *
  * @param ms - Duration in milliseconds

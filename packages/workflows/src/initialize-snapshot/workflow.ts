@@ -119,14 +119,22 @@ async function createSnapshotStep(params: {
 
   const { createSnapshot } = await import("@domainstack/db/queries/snapshots");
 
-  const snapshot = await createSnapshot({
-    trackedDomainId: params.trackedDomainId,
-    registration: params.registration,
-    certificate: params.certificate,
-    dnsProviderId: params.dnsProviderId,
-    hostingProviderId: params.hostingProviderId,
-    emailProviderId: params.emailProviderId,
-  });
+  let snapshot: Awaited<ReturnType<typeof createSnapshot>>;
+  try {
+    snapshot = await createSnapshot({
+      trackedDomainId: params.trackedDomainId,
+      registration: params.registration,
+      certificate: params.certificate,
+      dnsProviderId: params.dnsProviderId,
+      hostingProviderId: params.hostingProviderId,
+      emailProviderId: params.emailProviderId,
+    });
+  } catch (err) {
+    const { classifyDatabaseError } = await import("../lib/errors");
+    throw classifyDatabaseError(err, {
+      context: `creating snapshot for ${params.trackedDomainId}`,
+    });
+  }
 
   // null: a snapshot already exists (another baseline or the monitor got there first).
   return snapshot ? { id: snapshot.id } : null;

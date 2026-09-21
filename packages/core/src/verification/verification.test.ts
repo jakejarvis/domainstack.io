@@ -149,6 +149,50 @@ describe("verifyByDns", () => {
 
     expect(result.verified).toBe(false);
     expect(result.method).toBeNull();
+    // Every provider/host lookup errored — this is a failed check, not a
+    // confirmed absence of the TXT record.
+    expect(result.checkFailed).toBe(true);
+  });
+
+  it("does not report checkFailed when at least one provider returns a clean (non-matching) answer", async () => {
+    server.use(
+      http.get("https://cloudflare-dns.com/dns-query", () =>
+        HttpResponse.json({ Status: 0, Answer: [] }),
+      ),
+      http.get("https://dns.google/resolve", () => new HttpResponse(null, { status: 500 })),
+    );
+
+    const { verifyByDns } = await import("./index");
+    const result = await verifyByDns("verified-dns.test", token);
+
+    expect(result.verified).toBe(false);
+    expect(result.checkFailed).toBeFalsy();
+  });
+
+  it("reports checkFailed when the apex host's lookups all fail, even though the unused legacy host resolves cleanly", async () => {
+    // Legacy resolves cleanly (never had a record); apex is the host that
+    // actually holds the proof and fails outright.
+    const dohHandler = ({ request }: { request: Request }) => {
+      const url = new URL(request.url);
+      const name = url.searchParams.get("name");
+
+      if (name === "apex-fail-legacy-clean.test") {
+        return new HttpResponse(null, { status: 500 });
+      }
+      // Legacy host (_domainstack-verify.apex-fail-legacy-clean.test): clean, empty.
+      return HttpResponse.json({ Status: 0, Answer: [] });
+    };
+
+    server.use(
+      http.get("https://cloudflare-dns.com/dns-query", dohHandler),
+      http.get("https://dns.google/resolve", dohHandler),
+    );
+
+    const { verifyByDns } = await import("./index");
+    const result = await verifyByDns("apex-fail-legacy-clean.test", token);
+
+    expect(result.verified).toBe(false);
+    expect(result.checkFailed).toBe(true);
   });
 });
 
@@ -303,6 +347,25 @@ describe("verifyByHtmlFile", () => {
 
     expect(result.verified).toBe(false);
     expect(result.method).toBeNull();
+    // A real 404 is a confirmed absence, not a failed check.
+    expect(result.checkFailed).toBeFalsy();
+  });
+
+  it("reports checkFailed when every URL is unreachable, not a confirmed absence", async () => {
+    server.use(
+      http.get(`https://verified-dns.test/.well-known/domainstack-verify/${token}.html`, () =>
+        HttpResponse.error(),
+      ),
+      http.get("https://verified-dns.test/.well-known/domainstack-verify.html", () =>
+        HttpResponse.error(),
+      ),
+    );
+
+    const { verifyByHtmlFile } = await import("./index");
+    const result = await verifyByHtmlFile("verified-dns.test", token);
+
+    expect(result.verified).toBe(false);
+    expect(result.checkFailed).toBe(true);
   });
 });
 
@@ -463,6 +526,16 @@ describe("verifyByMetaTag", () => {
 
     expect(result.verified).toBe(false);
     expect(result.method).toBeNull();
+  });
+
+  it("reports checkFailed when the page is unreachable, not a confirmed absence", async () => {
+    server.use(http.get("https://verified-dns.test/", () => HttpResponse.error()));
+
+    const { verifyByMetaTag } = await import("./index");
+    const result = await verifyByMetaTag("verified-dns.test", token);
+
+    expect(result.verified).toBe(false);
+    expect(result.checkFailed).toBe(true);
   });
 });
 
@@ -644,6 +717,38 @@ describe("verifyDomain (all methods)", () => {
 
     expect(result.verified).toBe(false);
     expect(result.method).toBeNull();
+  });
+
+  it("reports checkFailed only when every method's probe fails to complete", async () => {
+    // DNS confirms absence cleanly (no answer).
+    server.use(
+      http.get("https://cloudflare-dns.com/dns-query", () =>
+        HttpResponse.json({ Status: 0, Answer: [] }),
+      ),
+      http.get("https://dns.google/resolve", () => HttpResponse.json({ Status: 0, Answer: [] })),
+    );
+    // HTML and meta tag are both unreachable.
+    server.use(http.get("https://verified-dns.test/*", () => HttpResponse.error()));
+
+    const { verifyDomain } = await import("./index");
+    const result = await verifyDomain("verified-dns.test", token);
+
+    expect(result.verified).toBe(false);
+    // DNS's clean answer is a confirmed absence overall, even though the
+    // other two methods couldn't be checked.
+    expect(result.checkFailed).toBeFalsy();
+  });
+
+  it("reports checkFailed when all three methods' probes fail to complete", async () => {
+    server.use(http.get("https://cloudflare-dns.com/dns-query", () => HttpResponse.error()));
+    server.use(http.get("https://dns.google/resolve", () => HttpResponse.error()));
+    server.use(http.get("https://verified-dns.test/*", () => HttpResponse.error()));
+
+    const { verifyDomain } = await import("./index");
+    const result = await verifyDomain("verified-dns.test", token);
+
+    expect(result.verified).toBe(false);
+    expect(result.checkFailed).toBe(true);
   });
 });
 

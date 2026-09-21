@@ -116,17 +116,17 @@ describe("fetchHeadersStep", () => {
     expect(result).toEqual({ success: false, error: "dns_error" });
   });
 
-  it("returns fetch_error on network error", async () => {
+  it("throws (retryable) on network error instead of caching a permanent failure", async () => {
     mockDns("error.test");
     server.use(
       http.head("https://error.test/", () => HttpResponse.error()),
       http.get("https://error.test/", () => HttpResponse.error()),
     );
 
+    const { HeadersFetchError } = await import("@domainstack/core/headers");
     const { fetchHeadersStep } = await import("./headers");
-    const result = await fetchHeadersStep("error.test");
 
-    expect(result).toEqual({ success: false, error: "fetch_error" });
+    await expect(fetchHeadersStep("error.test")).rejects.toBeInstanceOf(HeadersFetchError);
   });
 
   it("normalizes headers correctly", async () => {

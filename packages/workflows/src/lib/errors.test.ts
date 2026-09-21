@@ -14,18 +14,20 @@ describe("classifyDatabaseError", () => {
     expect(classifyDatabaseError(err)).toBe(err);
   });
 
-  it("classifies connection errors as retryable", () => {
+  it("classifies connection errors as retryable, keeping the original message for diagnostics", () => {
     const result = classifyDatabaseError(new Error("Connection terminated unexpectedly"));
     expect(RetryableError.is(result)).toBe(true);
-    expect(result.message).toBe("database operation: connection error");
+    expect(result.message).toBe(
+      "database operation: connection error - Connection terminated unexpectedly",
+    );
   });
 
-  it("classifies deadlocks as retryable with the given context", () => {
+  it("classifies deadlocks as retryable with the given context, keeping the original message", () => {
     const result = classifyDatabaseError(new Error("deadlock detected"), {
       context: "persisting x",
     });
     expect(RetryableError.is(result)).toBe(true);
-    expect(result.message).toBe("persisting x: deadlock");
+    expect(result.message).toBe("persisting x: deadlock - deadlock detected");
   });
 
   it("classifies constraint violations as fatal", () => {

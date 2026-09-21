@@ -32,6 +32,7 @@ type SubscriptionExpiryThreshold = (typeof SUBSCRIPTION_EXPIRY_THRESHOLDS)[numbe
 
 // Pre-sorted ascending for threshold lookup (most urgent first)
 const SORTED_THRESHOLDS = [...SUBSCRIPTION_EXPIRY_THRESHOLDS].sort((a, b) => a - b);
+const MAX_THRESHOLD_DAYS = Math.max(...SUBSCRIPTION_EXPIRY_THRESHOLDS);
 
 /**
  * Get the subscription expiry notification threshold for a given number of days remaining.
@@ -84,7 +85,6 @@ export async function subscriptionExpiryWorkflow(
 
   // Note: We get current time in a step to ensure deterministic replay
   const daysRemaining = await calculateDaysRemaining(user.endsAt);
-  const MAX_THRESHOLD_DAYS = 7;
 
   // Skip if beyond max threshold or already expired
   if (daysRemaining > MAX_THRESHOLD_DAYS || daysRemaining < 0) {
@@ -141,7 +141,12 @@ async function updateExpiryTracking(userId: string, threshold: number): Promise<
 
   const { setLastExpiryNotification } = await import("@domainstack/db/queries/user-subscription");
 
-  await setLastExpiryNotification(userId, threshold);
+  try {
+    await setLastExpiryNotification(userId, threshold);
+  } catch (err) {
+    const { classifyDatabaseError } = await import("../lib/errors");
+    throw classifyDatabaseError(err, { context: `updating expiry tracking for ${userId}` });
+  }
 }
 
 /**

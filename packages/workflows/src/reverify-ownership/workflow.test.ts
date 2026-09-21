@@ -1,6 +1,8 @@
 /* @vitest-environment node */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createLogger } from "@domainstack/logger";
+
 // Hoist mocks for the dependencies the workflow's steps pull in via dynamic import.
 const verifyDomainMock = vi.hoisted(() => ({
   verifyDomainOwnershipByMethod:
@@ -82,6 +84,146 @@ describe("reverifyOwnershipWorkflow", () => {
 
     expect(result).toEqual({ verified: true, method: "dns_txt" });
     expect(trackedDomainsMock.markVerificationSuccessful).toHaveBeenCalledWith("td-1");
+    expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+  });
+
+  it("skips without touching grace-period state when the probe itself fails to complete", async () => {
+    verifyDomainMock.verifyDomainOwnershipByMethod.mockResolvedValue({
+      verified: false,
+      method: null,
+      checkFailed: true,
+    });
+
+    const { reverifyOwnershipWorkflow } = await import("./workflow");
+    const result = await reverifyOwnershipWorkflow({ trackedDomainId: "td-1" });
+
+    expect(result).toEqual({ skipped: true, reason: "check_failed" });
+    expect(trackedDomainsMock.markVerificationFailing).not.toHaveBeenCalled();
+    expect(trackedDomainsMock.revokeVerification).not.toHaveBeenCalled();
+    expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+  });
+
+  it("logs the check_failed skip so a chronic probe failure isn't silently invisible", async () => {
+    verifyDomainMock.verifyDomainOwnershipByMethod.mockResolvedValue({
+      verified: false,
+      method: null,
+      checkFailed: true,
+    });
+    vi.mocked(createLogger).mockClear();
+
+    const { reverifyOwnershipWorkflow } = await import("./workflow");
+    await reverifyOwnershipWorkflow({ trackedDomainId: "td-1" });
+
+    expect(createLogger).toHaveBeenCalledWith({ source: "workflows/reverify-ownership" });
+    const loggerInstance = vi.mocked(createLogger).mock.results.at(-1)?.value;
+    expect(loggerInstance?.warn).toHaveBeenCalledWith(
+      { trackedDomainId: "td-1", domainName: "example.com", method: "dns_txt" },
+      "reverification probe failed to complete; skipping this run",
+    );
+  });
+
+  it("does not let a chronically failing probe freeze an already-running grace period forever", async () => {
+    // A grace period is already in progress (a real failure was confirmed
+    // earlier); this run's probe couldn't complete (checkFailed), but the
+    // countdown must still progress instead of being skipped indefinitely.
+    trackedDomainsMock.getTrackedDomainForReverification.mockResolvedValue({
+      ...baseDomain,
+      verificationStatus: "failing",
+      verificationFailedAt: new Date("2026-09-10T04:00:00Z"), // 3 days before "now"
+    } as never);
+    verifyDomainMock.verifyDomainOwnershipByMethod.mockResolvedValue({
+      verified: false,
+      method: null,
+      checkFailed: true,
+    });
+    notificationsQueryMock.hasRecentNotification.mockResolvedValue(true);
+
+    const { reverifyOwnershipWorkflow } = await import("./workflow");
+    const result = await reverifyOwnershipWorkflow({ trackedDomainId: "td-1" });
+
+    expect(result).toEqual({ verified: false, action: "in_grace_period" });
+    expect(trackedDomainsMock.markVerificationFailing).not.toHaveBeenCalled();
+  });
+
+  it("skips a stale grace episode after another run records recovery", async () => {
+    const failedAt = new Date("2026-09-05T04:00:00Z");
+    trackedDomainsMock.getTrackedDomainForReverification
+      .mockResolvedValueOnce({
+        ...baseDomain,
+        verificationStatus: "failing",
+        verificationFailedAt: failedAt,
+      } as never)
+      .mockResolvedValueOnce(baseDomain as never);
+    verifyDomainMock.verifyDomainOwnershipByMethod.mockResolvedValue({
+      verified: false,
+      method: null,
+      checkFailed: true,
+    });
+
+    const { reverifyOwnershipWorkflow } = await import("./workflow");
+    const result = await reverifyOwnershipWorkflow({ trackedDomainId: "td-1" });
+
+    expect(result).toEqual({ skipped: true, reason: "invalid_state" });
+    expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+    expect(trackedDomainsMock.revokeVerification).not.toHaveBeenCalled();
+  });
+
+  it("does not start grace when a failing row has no timestamp and the probe fails", async () => {
+    trackedDomainsMock.getTrackedDomainForReverification.mockResolvedValue({
+      ...baseDomain,
+      verificationStatus: "failing",
+      verificationFailedAt: null,
+    } as never);
+    verifyDomainMock.verifyDomainOwnershipByMethod.mockResolvedValue({
+      verified: false,
+      method: null,
+      checkFailed: true,
+    });
+
+    const { reverifyOwnershipWorkflow } = await import("./workflow");
+    const result = await reverifyOwnershipWorkflow({ trackedDomainId: "td-1" });
+
+    expect(result).toEqual({ skipped: true, reason: "check_failed" });
+    expect(trackedDomainsMock.markVerificationFailing).not.toHaveBeenCalled();
+    expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+  });
+
+  it("repairs a missing failure timestamp after a confirmed ownership failure", async () => {
+    trackedDomainsMock.getTrackedDomainForReverification.mockResolvedValue({
+      ...baseDomain,
+      verificationStatus: "failing",
+      verificationFailedAt: null,
+    } as never);
+    trackedDomainsMock.markVerificationFailing.mockResolvedValue({
+      verificationFailedAt: new Date("2026-09-13T04:00:00Z"),
+    } as never);
+    notificationsQueryMock.hasRecentNotification.mockResolvedValue(true);
+
+    const { reverifyOwnershipWorkflow } = await import("./workflow");
+    const result = await reverifyOwnershipWorkflow({ trackedDomainId: "td-1" });
+
+    expect(result).toEqual({ verified: false, action: "marked_failing" });
+    expect(trackedDomainsMock.markVerificationFailing).toHaveBeenCalledWith(
+      "td-1",
+      "failing",
+      null,
+    );
+    expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+  });
+
+  it("skips when marking the failure loses a concurrent write race", async () => {
+    trackedDomainsMock.getTrackedDomainForReverification.mockResolvedValue(baseDomain as never);
+    trackedDomainsMock.markVerificationFailing.mockResolvedValue(null);
+
+    const { reverifyOwnershipWorkflow } = await import("./workflow");
+    const result = await reverifyOwnershipWorkflow({ trackedDomainId: "td-1" });
+
+    expect(trackedDomainsMock.markVerificationFailing).toHaveBeenCalledWith(
+      "td-1",
+      "verified",
+      null,
+    );
+    expect(result).toEqual({ skipped: true, reason: "invalid_state" });
     expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
   });
 

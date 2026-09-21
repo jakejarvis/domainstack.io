@@ -168,9 +168,11 @@ export async function checkAlreadySentStep(
  *    for step retry.**
  *
  * After the send, the notification row is recorded. Database errors from that
- * insert propagate and retry the step; the retried send is deduped by its
- * idempotency key. A falsy insert result without an error is fatal, and
- * `updateNotificationResendId` swallows its own errors.
+ * insert are classified via `classifyDatabaseError`: transient failures retry
+ * the step (the retried send is deduped by its idempotency key), constraint
+ * or schema failures fail fast as `FatalError`. A falsy insert result without
+ * an error is also fatal, and `updateNotificationResendId` swallows its own
+ * errors.
  *
  * @throws {Error} If notification record creation fails or email sending fails
  */
@@ -253,15 +255,21 @@ export async function sendNotification(
   if (channels.length === 0) return false;
 
   // Record the notification only once delivery is settled.
-  const notification = await createNotification({
-    userId,
-    trackedDomainId,
-    type: notificationType,
-    title,
-    message,
-    data: { domainName },
-    channels,
-  });
+  let notification: Awaited<ReturnType<typeof createNotification>>;
+  try {
+    notification = await createNotification({
+      userId,
+      trackedDomainId,
+      type: notificationType,
+      title,
+      message,
+      data: { domainName },
+      channels,
+    });
+  } catch (err) {
+    const { classifyDatabaseError } = await import("../lib/errors");
+    throw classifyDatabaseError(err, { context: `creating notification record for ${domainName}` });
+  }
 
   if (!notification) {
     // An insert that returns no row without raising is not retryable.

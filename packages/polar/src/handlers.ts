@@ -212,8 +212,13 @@ export async function handleSubscriptionCanceled(
   const nextEndsAtMs = data.currentPeriodEnd.getTime();
   const endsAtChanged = previousEndsAtMs !== nextEndsAtMs;
 
-  // Set the subscription end date
-  await setSubscriptionEndsAt(userId, data.currentPeriodEnd);
+  // Set the subscription end date. A new cancellation cycle (different end
+  // date) also resets expiry-reminder tracking, so the 7/3/1-day sequence
+  // can fire again for it — a redelivered event with the same end date must
+  // not reset it, or already-sent reminders would be forgotten and re-sent.
+  await setSubscriptionEndsAt(userId, data.currentPeriodEnd, {
+    resetNotificationTracking: endsAtChanged,
+  });
 
   // Only email when this established a new cancellation cycle. A redelivered
   // `canceled` event with an unchanged endsAt must not re-send the

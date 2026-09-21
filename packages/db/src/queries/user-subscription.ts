@@ -29,6 +29,19 @@ export interface DowngradeToFreeResult {
   archivedCount: number;
 }
 
+async function selectUserSubscriptionRow(userId: string) {
+  const [record] = await db
+    .select({
+      tier: userSubscriptions.tier,
+      endsAt: userSubscriptions.endsAt,
+    })
+    .from(userSubscriptions)
+    .where(eq(userSubscriptions.userId, userId))
+    .limit(1);
+
+  return record ?? null;
+}
+
 /**
  * Get user's subscription data.
  *
@@ -39,38 +52,34 @@ export interface DowngradeToFreeResult {
  * billing row.
  */
 export async function getUserSubscription(userId: string): Promise<UserSubscriptionData> {
-  const [record] = await db
-    .select({
-      userId: userSubscriptions.userId,
-      tier: userSubscriptions.tier,
-      endsAt: userSubscriptions.endsAt,
-    })
-    .from(userSubscriptions)
-    .where(eq(userSubscriptions.userId, userId))
-    .limit(1);
+  const record = await selectUserSubscriptionRow(userId);
 
   if (!record) {
     // Self-heal: create the missing free-tier row. onConflictDoNothing keeps
-    // this safe under a race with createSubscription / another request.
-    await db
+    // this safe under a race with createSubscription / another request, but
+    // a conflict means someone else's row won — re-read it instead of
+    // assuming it's the free default this call tried to insert (it could be
+    // a real "pro" row from a concurrent webhook/signup).
+    const inserted = await db
       .insert(userSubscriptions)
       .values({ userId, tier: "free" })
-      .onConflictDoNothing({ target: userSubscriptions.userId });
+      .onConflictDoNothing({ target: userSubscriptions.userId })
+      .returning({ tier: userSubscriptions.tier, endsAt: userSubscriptions.endsAt });
+
+    const row = inserted[0] ?? (await selectUserSubscriptionRow(userId));
 
     return {
       userId,
-      plan: "free",
-      planQuota: PLAN_QUOTAS.free,
-      endsAt: null,
+      plan: row?.tier ?? "free",
+      planQuota: PLAN_QUOTAS[row?.tier ?? "free"],
+      endsAt: row?.endsAt ?? null,
     };
   }
-
-  const planQuota = PLAN_QUOTAS[record.tier];
 
   return {
     userId,
     plan: record.tier,
-    planQuota,
+    planQuota: PLAN_QUOTAS[record.tier],
     endsAt: record.endsAt,
   };
 }
@@ -98,11 +107,26 @@ export async function updateUserTier(userId: string, tier: Plan): Promise<void> 
 
 /**
  * Set subscription end date.
+ *
+ * Pass `resetNotificationTracking: true` when this call establishes a new
+ * cancellation cycle (a different end date than before) — it clears
+ * `lastExpiryNotification` in the same update so the 7/3/1-day reminder
+ * sequence can fire again for the new cycle. Leave it false for a
+ * redelivered webhook carrying the same end date, or the reminders already
+ * sent this cycle would be forgotten and re-sent.
  */
-export async function setSubscriptionEndsAt(userId: string, endsAt: Date): Promise<void> {
+export async function setSubscriptionEndsAt(
+  userId: string,
+  endsAt: Date,
+  options: { resetNotificationTracking?: boolean } = {},
+): Promise<void> {
   const updated = await db
     .update(userSubscriptions)
-    .set({ endsAt, updatedAt: new Date() })
+    .set({
+      endsAt,
+      updatedAt: new Date(),
+      ...(options.resetNotificationTracking ? { lastExpiryNotification: null } : {}),
+    })
     .where(eq(userSubscriptions.userId, userId))
     .returning({ userId: userSubscriptions.userId });
 
@@ -257,7 +281,7 @@ export async function downgradeToFree(userId: string): Promise<DowngradeToFreeRe
       .for("update")
       .limit(1);
 
-    const wasPro = current?.tier === "pro";
+    let wasPro = current?.tier === "pro";
 
     if (current) {
       await tx
@@ -270,7 +294,34 @@ export async function downgradeToFree(userId: string): Promise<DowngradeToFreeRe
         })
         .where(eq(userSubscriptions.userId, userId));
     } else {
-      await tx.insert(userSubscriptions).values({ userId, tier: "free" });
+      // The quota lock does not serialize inserts by updateUserTier or the
+      // signup/self-heal paths. If another insert wins, lock and downgrade
+      // its row too; the winner may have inserted a Pro subscription.
+      const inserted = await tx
+        .insert(userSubscriptions)
+        .values({ userId, tier: "free" })
+        .onConflictDoNothing({ target: userSubscriptions.userId })
+        .returning({ userId: userSubscriptions.userId });
+
+      if (inserted.length === 0) {
+        const [winningRow] = await tx
+          .select({ tier: userSubscriptions.tier })
+          .from(userSubscriptions)
+          .where(eq(userSubscriptions.userId, userId))
+          .for("update")
+          .limit(1);
+
+        wasPro = winningRow?.tier === "pro";
+        await tx
+          .update(userSubscriptions)
+          .set({
+            tier: "free",
+            endsAt: null,
+            lastExpiryNotification: null,
+            updatedAt: new Date(),
+          })
+          .where(eq(userSubscriptions.userId, userId));
+      }
     }
 
     const [countResult] = await tx

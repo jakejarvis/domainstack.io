@@ -115,10 +115,12 @@ export async function sendEmail(params: SendEmailParams): Promise<{ emailId: str
 
   // Rate limit (2 req/s) - retry after a short delay
   // Note: Resend returns retry-after header but we don't have access to it via SDK
-  // Default to 1 second which is safe for 2 req/s limit
+  // Base 1s is safe for 2 req/s; jitter spreads out concurrent runs hitting
+  // the same limit so their retries don't resynchronize on the same tick.
   if (errorName === "rate_limit_exceeded") {
+    const jitterMs = Math.floor(Math.random() * 500);
     throw new RetryableError(`Email send failed: ${errorName}`, {
-      retryAfter: "1s",
+      retryAfter: 1000 + jitterMs,
     });
   }
 

@@ -10,7 +10,7 @@ interface ReverifyOwnershipWorkflowInput {
 type VerificationFailureAction = "marked_failing" | "revoked" | "in_grace_period";
 
 type ReverifyOwnershipWorkflowResult =
-  | { skipped: true; reason: "invalid_state" }
+  | { skipped: true; reason: "invalid_state" | "check_failed" }
   | { verified: true; method: VerificationMethod }
   | { verified: false; action: VerificationFailureAction };
 
@@ -47,12 +47,27 @@ export async function reverifyOwnershipWorkflow(
     return { verified: true, method: result.method };
   }
 
+  if (
+    result.checkFailed &&
+    (domain.verificationStatus !== "failing" || !domain.verificationFailedAt)
+  ) {
+    // The probe itself couldn't complete — not a confirmed absence — so
+    // don't start a new grace-period episode on network noise. But once a
+    // grace period is already running, don't let a chronically-broken probe
+    // freeze it forever either: fall through so it keeps progressing.
+    await logCheckFailedSkip(trackedDomainId, domain.domainName, domain.verificationMethod);
+    return { skipped: true, reason: "check_failed" };
+  }
+
   // Step 3b: Determine failure action (database update only)
   const failureResult = await determineFailureAction({
     id: domain.id,
     verificationStatus: domain.verificationStatus,
     verificationFailedAt: domain.verificationFailedAt,
   });
+  if (!failureResult) {
+    return { skipped: true, reason: "invalid_state" };
+  }
 
   // Step 4: Notify. Each email step skips itself if this failure episode
   // already has that notification, so re-running is safe.
@@ -82,6 +97,21 @@ export async function reverifyOwnershipWorkflow(
   }
 
   return { verified: false, action: failureResult.action };
+}
+
+/** Step: log a skipped reverification so chronic probe failures are visible. */
+async function logCheckFailedSkip(
+  trackedDomainId: string,
+  domainName: string,
+  method: VerificationMethod,
+): Promise<void> {
+  "use step";
+
+  const { createLogger } = await import("@domainstack/logger");
+  createLogger({ source: "workflows/reverify-ownership" }).warn(
+    { trackedDomainId, domainName, method },
+    "reverification probe failed to complete; skipping this run",
+  );
 }
 
 type DomainData = Pick<
@@ -139,12 +169,26 @@ type FailureActionResult =
  * state. Revocation is written later, after the revoked email is sent (a
  * revoked domain is no longer re-checked, so its email could never be retried).
  */
-async function determineFailureAction(domain: DomainForFailureCheck): Promise<FailureActionResult> {
+async function determineFailureAction(
+  domain: DomainForFailureCheck,
+): Promise<FailureActionResult | null> {
   "use step";
 
   const { calculateDaysElapsed } = await import("@domainstack/utils/expiry");
   const { VERIFICATION_GRACE_PERIOD_DAYS } = await import("@domainstack/constants");
-  const { markVerificationFailing } = await import("@domainstack/db/queries/tracked-domains");
+  const { getTrackedDomainForReverification, markVerificationFailing } =
+    await import("@domainstack/db/queries/tracked-domains");
+
+  // The ownership probe runs outside this step. A concurrent run may have
+  // recovered the domain or started a new failure episode in the meantime.
+  const current = await getTrackedDomainForReverification(domain.id);
+  if (
+    !current ||
+    current.verificationStatus !== domain.verificationStatus ||
+    current.verificationFailedAt?.getTime() !== domain.verificationFailedAt?.getTime()
+  ) {
+    return null;
+  }
 
   const failedAt = domain.verificationFailedAt ? new Date(domain.verificationFailedAt) : null;
 
@@ -153,11 +197,16 @@ async function determineFailureAction(domain: DomainForFailureCheck): Promise<Fa
     (domain.verificationStatus === "failing" && !failedAt)
   ) {
     // First failure of this episode (or a failing row missing its timestamp).
-    const updated = await markVerificationFailing(domain.id);
+    const updated = await markVerificationFailing(
+      domain.id,
+      current.verificationStatus,
+      current.verificationFailedAt,
+    );
+    if (!updated) return null;
     return {
       action: "marked_failing",
       email: "failing",
-      failedAt: updated?.verificationFailedAt ? new Date(updated.verificationFailedAt) : new Date(),
+      failedAt: updated.verificationFailedAt ? new Date(updated.verificationFailedAt) : new Date(),
     };
   }
 

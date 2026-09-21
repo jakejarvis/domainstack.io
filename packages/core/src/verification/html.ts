@@ -41,6 +41,11 @@ export async function verifyByHtmlFile(
     `https://${domain}${HTML_FILE_PATH_LEGACY}`,
   ];
 
+  // Whether any URL was reachable at all (an HTTP response, even a 404,
+  // counts) — distinguishes a confirmed-absent proof from a probe that
+  // never actually completed.
+  let anyReachable = false;
+
   for (const urlStr of urls) {
     try {
       const result = await safeFetch({
@@ -52,6 +57,7 @@ export async function verifyByHtmlFile(
         maxBytes: 1024,
         maxRedirects: 3,
       });
+      anyReachable = true;
 
       if (!result.ok) {
         continue;
@@ -61,9 +67,9 @@ export async function verifyByHtmlFile(
         return { verified: true, method: "html_file" };
       }
     } catch {
-      // Continue to next URL on failure
+      // Network/DNS/TLS/timeout failure for this URL — try the next one.
     }
   }
 
-  return { verified: false, method: null };
+  return { verified: false, method: null, checkFailed: !anyReachable };
 }

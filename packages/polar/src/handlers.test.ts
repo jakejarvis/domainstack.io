@@ -59,7 +59,14 @@ const {
 
   return {
     updateUserTier: vi.fn<(userId: string, tier: "free" | "pro") => Promise<void>>(),
-    setSubscriptionEndsAt: vi.fn<(userId: string, endsAt: Date) => Promise<void>>(),
+    setSubscriptionEndsAt:
+      vi.fn<
+        (
+          userId: string,
+          endsAt: Date,
+          options?: { resetNotificationTracking?: boolean },
+        ) => Promise<void>
+      >(),
     clearSubscriptionEndsAt: vi.fn<(userId: string) => Promise<void>>(),
     downgradeToFree:
       vi.fn<(userId: string) => Promise<{ wasPro: boolean; archivedCount: number }>>(),
@@ -388,7 +395,9 @@ describe("handleSubscriptionCanceled", () => {
       }),
     );
 
-    expect(setSubscriptionEndsAt).toHaveBeenCalledWith("user-456", periodEnd);
+    expect(setSubscriptionEndsAt).toHaveBeenCalledWith("user-456", periodEnd, {
+      resetNotificationTracking: true,
+    });
     // Should NOT change tier yet
     expect(updateUserTier).not.toHaveBeenCalled();
     expect(downgradeToFree).not.toHaveBeenCalled();
@@ -488,7 +497,9 @@ describe("handleSubscriptionCanceled", () => {
       }),
     );
 
-    expect(setSubscriptionEndsAt).toHaveBeenCalledWith("user-456", periodEnd);
+    expect(setSubscriptionEndsAt).toHaveBeenCalledWith("user-456", periodEnd, {
+      resetNotificationTracking: false,
+    });
     expect(sendSubscriptionCancelingEmail).not.toHaveBeenCalled();
   });
 

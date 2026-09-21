@@ -42,7 +42,12 @@ export async function processChainStep(
   "use step";
 
   const { processChain } = await import("@domainstack/core/tls");
-  return await processChain(fetchData);
+  try {
+    return await processChain(fetchData);
+  } catch (err) {
+    const { classifyDatabaseError } = await import("../lib/errors");
+    throw classifyDatabaseError(err, { context: "resolving certificate CA providers" });
+  }
 }
 
 /**

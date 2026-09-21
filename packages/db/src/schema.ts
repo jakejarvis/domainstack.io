@@ -313,6 +313,7 @@ export const providers = pgTable(
     unique("u_providers_category_slug").on(t.category, t.slug),
     index("i_providers_name_lower").using("btree", t.category, sql`lower(${t.name})`),
     index("i_providers_category_domain").on(t.category, t.domain),
+    index("i_providers_category_source").on(t.category, t.source),
   ],
 );
 

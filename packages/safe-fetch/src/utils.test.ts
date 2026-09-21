@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { sleep, withRetry, withTimeout } from "./utils";
+import { sleep, withTimeout } from "./utils";
 
 describe("withTimeout", () => {
   it("returns result when operation completes in time", async () => {
@@ -24,95 +24,6 @@ describe("withTimeout", () => {
     }, 1000);
     expect(signalReceived).toBeDefined();
     expect(signalReceived?.aborted).toBe(false);
-  });
-});
-
-describe("withRetry", () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it("returns result on first success", async () => {
-    let attempts = 0;
-    const promise = withRetry(async () => {
-      attempts++;
-      return "success";
-    });
-    const result = await promise;
-    expect(result).toBe("success");
-    expect(attempts).toBe(1);
-  });
-
-  it("retries on failure and succeeds", async () => {
-    let attempts = 0;
-    const promise = withRetry(
-      async () => {
-        attempts++;
-        if (attempts < 3) throw new Error("fail");
-        return "success";
-      },
-      { retries: 3, delayMs: 100 },
-    );
-
-    // First attempt fails immediately
-    await vi.advanceTimersByTimeAsync(0);
-    // Wait for first retry delay (100ms)
-    await vi.advanceTimersByTimeAsync(100);
-    // Wait for second retry delay (200ms)
-    await vi.advanceTimersByTimeAsync(200);
-
-    const result = await promise;
-    expect(result).toBe("success");
-    expect(attempts).toBe(3);
-  });
-
-  it("throws last error when all retries exhausted", async () => {
-    vi.useRealTimers(); // Real timers for rejection test
-    let attempts = 0;
-    await expect(
-      withRetry(
-        async () => {
-          attempts++;
-          throw new Error(`attempt ${attempts}`);
-        },
-        { retries: 2, delayMs: 1 },
-      ),
-    ).rejects.toThrow("attempt 3");
-    expect(attempts).toBe(3);
-  });
-
-  it("uses exponential backoff", async () => {
-    let attempts = 0;
-    const promise = withRetry(
-      async () => {
-        attempts++;
-        if (attempts < 4) throw new Error("fail");
-        return "done";
-      },
-      { retries: 3, delayMs: 100 },
-    );
-
-    // First attempt is immediate
-    await vi.advanceTimersByTimeAsync(0);
-    expect(attempts).toBe(1);
-
-    // First retry after 100ms (100 * 2^0)
-    await vi.advanceTimersByTimeAsync(100);
-    expect(attempts).toBe(2);
-
-    // Second retry after 200ms (100 * 2^1)
-    await vi.advanceTimersByTimeAsync(200);
-    expect(attempts).toBe(3);
-
-    // Third retry after 400ms (100 * 2^2)
-    await vi.advanceTimersByTimeAsync(400);
-    expect(attempts).toBe(4);
-
-    await promise;
   });
 });
 

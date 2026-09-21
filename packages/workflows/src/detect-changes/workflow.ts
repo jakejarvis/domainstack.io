@@ -1,3 +1,5 @@
+import { FatalError } from "workflow";
+
 import type { SnapshotForMonitoring } from "@domainstack/db/queries/snapshots";
 import type {
   CertificateChangeWithNames,
@@ -66,20 +68,40 @@ export async function detectChangesWorkflow(
 
   const { trackedDomainId, monitorLockOwnerToken } = input;
 
-  // Step 1: Fetch snapshot data
-  const snapshot = await fetchSnapshot(trackedDomainId);
+  try {
+    // Step 1: Fetch snapshot data
+    const snapshot = await fetchSnapshot(trackedDomainId);
 
-  if (!snapshot) {
-    await releaseMonitorLockStep(trackedDomainId, monitorLockOwnerToken);
-    return {
-      skipped: true,
-      reason: "snapshot_not_found",
-      registrationChanges: false,
-      providerChanges: false,
-      certificateChanges: false,
-    };
+    if (!snapshot) {
+      await releaseMonitorLockStep(trackedDomainId, monitorLockOwnerToken);
+      return {
+        skipped: true,
+        reason: "snapshot_not_found",
+        registrationChanges: false,
+        providerChanges: false,
+        certificateChanges: false,
+      };
+    }
+
+    return await runChangeDetection(trackedDomainId, monitorLockOwnerToken, snapshot);
+  } catch (err) {
+    // A FatalError means nothing will retry this run, so the lock must be
+    // released now or it blocks the cron for the full 90-minute TTL. A plain
+    // Error/RetryableError leaves it held: the SDK retries this same run.
+    // FatalError.is, not instanceof: this error crossed the step/workflow
+    // boundary and may be rehydrated without its original prototype.
+    if (FatalError.is(err)) {
+      await releaseMonitorLockStep(trackedDomainId, monitorLockOwnerToken);
+    }
+    throw err;
   }
+}
 
+async function runChangeDetection(
+  trackedDomainId: string,
+  monitorLockOwnerToken: string,
+  snapshot: SnapshotForMonitoring,
+): Promise<DetectChangesWorkflowResult> {
   const { domainName, userId, userName, userEmail } = snapshot;
 
   // Step 2: Fetch and persist fresh data
@@ -660,9 +682,10 @@ export async function detectChangesWorkflow(
   }
 
   // Release the per-domain monitor lock so the next hourly cron can re-run.
-  // Only runs on successful completion — if a step above threw, the SDK
-  // retries this same run and the lock is intentionally held (TTL safety net)
-  // so the cron doesn't start a duplicate.
+  // Only runs on successful completion — a retrying Error/RetryableError above
+  // propagates to the caller's catch, which leaves the lock held (TTL safety
+  // net) so the cron doesn't start a duplicate; a terminal FatalError is
+  // released there too, since nothing is going to retry it.
   await releaseMonitorLockStep(trackedDomainId, monitorLockOwnerToken);
 
   return results;

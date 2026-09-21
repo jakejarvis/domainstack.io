@@ -65,4 +65,13 @@ export type VerificationState = { status: "idle" } | { status: "verifying" } | {
 export interface VerificationResult {
   verified: boolean;
   method: VerificationMethod | null;
+  /**
+   * True when the probe itself could not complete (network/DNS/timeout
+   * error) rather than confirming the proof is absent. Always paired with
+   * `verified: false`. Callers that gate a state transition on a *confirmed*
+   * failure (e.g. a grace-period countdown before revoking verification)
+   * must treat this the same as "couldn't check, try again later" — never
+   * as evidence the domain actually removed its ownership proof.
+   */
+  checkFailed?: boolean;
 }

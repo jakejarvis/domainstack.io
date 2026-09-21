@@ -34,6 +34,11 @@ export async function verifyByMetaTag(
   // should verify with the DNS TXT method instead.
   const urls = [`https://${domain}/`];
 
+  // Whether any URL was reachable at all (an HTTP response, even a 404,
+  // counts) — distinguishes a confirmed-absent proof from a probe that
+  // never actually completed.
+  let anyReachable = false;
+
   for (const urlStr of urls) {
     try {
       const result = await safeFetch({
@@ -45,6 +50,7 @@ export async function verifyByMetaTag(
         maxBytes: MAX_HTML_BYTES,
         maxRedirects: 5,
       });
+      anyReachable = true;
 
       if (!result.ok) {
         continue;
@@ -57,9 +63,9 @@ export async function verifyByMetaTag(
         return { verified: true, method: "meta_tag" };
       }
     } catch {
-      // Continue to next URL on failure
+      // Network/DNS/TLS/timeout failure for this URL — try the next one.
     }
   }
 
-  return { verified: false, method: null };
+  return { verified: false, method: null, checkFailed: !anyReachable };
 }

@@ -17,7 +17,12 @@ export const registrarRouter = createTRPCRouter({
       const normalizedTld = (input.tld ?? "").trim().toLowerCase().replace(/^\./, "");
       if (!normalizedTld) return { success: false, data: { tld: null, providers: [] } };
 
-      await rateLimit({ ctx, path, config: { requests: 20, window: "1 m" } });
+      // Pricing responses are served from a 7-day Next.js Data Cache
+      // (packages/core/src/pricing), so the overwhelming majority of calls
+      // are near-free cache hits — this router has no CacheResult layer to
+      // check first (unlike lookupSection), so meter at the same rate as
+      // other cheap/cached lookups rather than the stricter default.
+      await rateLimit({ ctx, path, config: { requests: 60, window: "1 m" } });
 
       const fetches: Array<Promise<{ provider: string; price: string } | null>> = [];
       for (const provider of providers) {

@@ -3,6 +3,7 @@ import { createLogger } from "@domainstack/logger";
 const logger = createLogger({ source: "screenshot/browser" });
 
 let browserPromise: Promise<import("puppeteer-core").Browser> | null = null;
+let closingPromise: Promise<void> | null = null;
 
 // Stability flags always included for browser launch
 const STABILITY_ARGS = [
@@ -87,33 +88,59 @@ async function createBrowser(): Promise<import("puppeteer-core").Browser> {
  * Get a browser instance. Reuses existing instance if available.
  * Browser configuration is determined by environment (Vercel vs local).
  */
-export function getBrowser(): Promise<import("puppeteer-core").Browser> {
-  if (!browserPromise) {
-    browserPromise = createBrowser().catch((err) => {
-      logger.error(err, "failed to create browser");
-      // Reset promise to allow retry on next call
-      browserPromise = null;
-      throw err;
-    });
+export async function getBrowser(): Promise<import("puppeteer-core").Browser> {
+  if (closingPromise) await closingPromise;
+
+  if (browserPromise) {
+    const cachedPromise = browserPromise;
+    try {
+      const browser = await cachedPromise;
+      if (browserPromise !== cachedPromise) return getBrowser();
+      if (browser.connected) {
+        return browser;
+      }
+      // Crashed/disconnected mid-use — relaunch instead of reusing it.
+    } catch {
+      if (browserPromise !== cachedPromise) return getBrowser();
+    }
+    browserPromise = null;
   }
-  return browserPromise;
+
+  const launchPromise = createBrowser().catch((err) => {
+    logger.error(err, "failed to create browser");
+    // Reset promise to allow retry on next call
+    if (browserPromise === launchPromise) browserPromise = null;
+    throw err;
+  });
+  browserPromise = launchPromise;
+  return launchPromise;
 }
 
 /**
  * Close the browser instance
  */
 export async function closeBrowser(): Promise<void> {
+  if (closingPromise) return closingPromise;
   if (!browserPromise) {
     return;
   }
 
+  const cachedPromise = browserPromise;
+  browserPromise = null;
   try {
-    const browser = await browserPromise;
-    await browser.close();
-  } catch (err) {
-    logger.warn(err, "failed to close browser");
+    closingPromise = (async () => {
+      try {
+        const browser = await cachedPromise;
+        await browser.close();
+      } catch (err) {
+        logger.warn(err, "failed to close browser");
+      } finally {
+        if (browserPromise === cachedPromise) browserPromise = null;
+      }
+    })();
+    await closingPromise;
   } finally {
-    browserPromise = null;
+    closingPromise = null;
   }
 }
 

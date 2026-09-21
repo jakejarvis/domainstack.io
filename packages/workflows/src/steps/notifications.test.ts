@@ -119,7 +119,7 @@ describe("sendProviderChangeNotificationStep", () => {
     );
   });
 
-  it("rejects with a plain error (not FatalError) when createNotification fails", async () => {
+  it("classifies a transient createNotification failure as RetryableError, not FatalError", async () => {
     sendEmailMock.sendEmail.mockResolvedValue({ emailId: "em_1" });
     notificationsMock.createNotification.mockRejectedValue(new Error("connection terminated"));
 
@@ -128,9 +128,23 @@ describe("sendProviderChangeNotificationStep", () => {
     const rejection = await sendProviderChangeNotificationStep(baseParams, true, true).catch(
       (err) => err,
     );
-    expect(rejection).toBeInstanceOf(Error);
-    expect((rejection as Error).message).toBe("connection terminated");
+    expect(RetryableError.is(rejection)).toBe(true);
     expect(FatalError.is(rejection)).toBe(false);
+    expect(notificationsMock.updateNotificationResendId).not.toHaveBeenCalled();
+  });
+
+  it("classifies a constraint-violation createNotification failure as FatalError, not a dumb retry", async () => {
+    sendEmailMock.sendEmail.mockResolvedValue({ emailId: "em_1" });
+    notificationsMock.createNotification.mockRejectedValue(
+      new Error('unique constraint "notifications_pkey" violated'),
+    );
+
+    const { sendProviderChangeNotificationStep } = await import("./notifications");
+
+    const rejection = await sendProviderChangeNotificationStep(baseParams, true, true).catch(
+      (err) => err,
+    );
+    expect(FatalError.is(rejection)).toBe(true);
     expect(notificationsMock.updateNotificationResendId).not.toHaveBeenCalled();
   });
 
