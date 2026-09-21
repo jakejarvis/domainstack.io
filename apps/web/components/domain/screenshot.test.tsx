@@ -84,6 +84,64 @@ describe("useScreenshot", () => {
     expect(view.result.current.isLoading).toBe(false);
   });
 
+  it("backs off through repeated poll failures, then gives up instead of polling forever", async () => {
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValueOnce(jsonResponse({ status: "running", runId: "run-flaky" }));
+    // 5 consecutive poll failures (network/5xx) — one more than
+    // MAX_CONSECUTIVE_FAILURES's cap of 5 is never reached because the 5th
+    // failure itself is the one that gives up.
+    for (let i = 0; i < 5; i++) {
+      fetchMock.mockResolvedValueOnce(jsonResponse({ error: "boom" }, { status: 500 }));
+    }
+
+    const queryClient = createTestQueryClient();
+    const view = await renderHook(
+      () => useScreenshot({ domain: "example.com", domainId: "domain-1" }),
+      {
+        wrapper: ({ children }) => (
+          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        ),
+      },
+    );
+
+    await vi.waitFor(() =>
+      expect(queryClient.getQueryData(["screenshot", "domain-1"])).toEqual({
+        status: "running",
+        runId: "run-flaky",
+      }),
+    );
+
+    for (let attempt = 1; attempt <= 4; attempt++) {
+      await queryClient.refetchQueries({ queryKey: ["screenshot", "domain-1"] });
+      await vi.waitFor(() =>
+        expect(queryClient.getQueryData(["screenshot", "domain-1"])).toEqual({
+          status: "retrying",
+          attempt,
+          runId: "run-flaky",
+        }),
+      );
+      // Still shown as loading while quietly backing off, not as an error.
+      expect(view.result.current.isLoading).toBe(true);
+      expect(view.result.current.hasFailed).toBe(false);
+    }
+
+    // The 5th consecutive failure gives up rather than scheduling another retry.
+    await queryClient.refetchQueries({ queryKey: ["screenshot", "domain-1"] });
+    await vi.waitFor(() =>
+      expect(queryClient.getQueryData(["screenshot", "domain-1"])).toMatchObject({
+        status: "failed",
+      }),
+    );
+    expect(view.result.current.hasFailed).toBe(true);
+    expect(view.result.current.isLoading).toBe(false);
+
+    // No POST was re-issued: every retry after the initial start polled the
+    // same run instead of re-triggering the expensive Puppeteer capture.
+    const postRequests = fetchMock.mock.calls.filter(([, init]) => init?.method === "POST");
+    expect(postRequests).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledTimes(6);
+  });
+
   it("shares an active run across observers and remounts", async () => {
     const fetchMock = vi.mocked(fetch);
     fetchMock

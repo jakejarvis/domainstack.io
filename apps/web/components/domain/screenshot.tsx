@@ -13,18 +13,46 @@ import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
 
 const POLL_INTERVAL_MS = 2000;
-const POLL_RECOVERY_INTERVAL_MS = 5000;
+/** Base delay for the first backoff retry after a transient start/poll failure. */
+const POLL_RECOVERY_BASE_MS = 5000;
+/** Ceiling on the exponential backoff delay, so a sustained outage still polls occasionally. */
+const POLL_RECOVERY_MAX_MS = 60_000;
+/**
+ * Give up after this many consecutive transient failures (start or poll
+ * requests that threw — network errors, 5xx, malformed responses) rather
+ * than polling forever. A fixed-interval retry loop with no cap would
+ * otherwise re-invoke `startScreenshot` (a non-idempotent, expensive,
+ * headless-browser-starting POST) indefinitely against a persistently
+ * failing endpoint.
+ */
+const MAX_CONSECUTIVE_FAILURES = 5;
 
 type ScreenshotQueryState =
   | { status: "completed"; source: "cache" | "workflow"; data: ScreenshotData }
   | { status: "running"; runId: string }
   | { status: "failed"; error: string }
-  | { status: "rate_limited"; retryAfter: number; runId?: string };
+  | { status: "rate_limited"; retryAfter: number; runId?: string }
+  | { status: "retrying"; attempt: number; runId?: string };
 
 type TerminalScreenshotQueryState = Extract<
   ScreenshotQueryState,
   { status: "completed" | "failed" }
 >;
+
+/** Exponential backoff (capped, with jitter) for the Nth consecutive transient failure. */
+function backoffDelayMs(attempt: number): number {
+  const exponential = Math.min(POLL_RECOVERY_BASE_MS * 2 ** (attempt - 1), POLL_RECOVERY_MAX_MS);
+  const jitterMs = Math.floor(Math.random() * 500);
+  return exponential + jitterMs;
+}
+
+/** The run id to keep polling, carried over from any non-terminal state that has one. */
+function runIdFromState(state: ScreenshotQueryState | undefined): string | undefined {
+  if (state?.status === "running") return state.runId;
+  if (state?.status === "rate_limited") return state.runId;
+  if (state?.status === "retrying") return state.runId;
+  return undefined;
+}
 
 interface ScreenshotDataPayload {
   blocked?: unknown;
@@ -321,20 +349,30 @@ export function useScreenshot({
     queryFn: async () => {
       const current = queryClient.getQueryData<ScreenshotQueryState>(queryKey);
 
-      if (current?.status === "running") {
-        return pollScreenshot(current.runId);
-      }
-      if (current?.status === "rate_limited" && current.runId) {
-        return pollScreenshot(current.runId);
-      }
       if (isTerminalState(current)) {
         return current;
       }
 
-      if (!domainId) {
+      const runId = runIdFromState(current);
+      const attempt = current?.status === "retrying" ? current.attempt : 0;
+
+      if (!runId && !domainId) {
+        // Deterministic (the `enabled` guard already requires a domainId) —
+        // never retryable, so this throws instead of feeding the backoff loop.
         throw new Error("Screenshot domain ID is missing");
       }
-      return startScreenshot(domainId);
+
+      try {
+        return runId ? await pollScreenshot(runId) : await startScreenshot(domainId as string);
+      } catch (err) {
+        if (attempt + 1 >= MAX_CONSECUTIVE_FAILURES) {
+          return {
+            status: "failed" as const,
+            error: err instanceof Error ? err.message : "Screenshot request failed",
+          };
+        }
+        return { status: "retrying" as const, attempt: attempt + 1, runId };
+      }
     },
     enabled: enabled && !!domainId,
     retry: false,
@@ -348,7 +386,14 @@ export function useScreenshot({
       if (state?.status === "rate_limited") {
         return state.retryAfter * 1000;
       }
-      return state?.status === "running" ? POLL_INTERVAL_MS : POLL_RECOVERY_INTERVAL_MS;
+      if (state?.status === "running") {
+        return POLL_INTERVAL_MS;
+      }
+      if (state?.status === "retrying") {
+        return backoffDelayMs(state.attempt);
+      }
+      // No state yet: the very first attempt, poll soon.
+      return POLL_RECOVERY_BASE_MS;
     },
     refetchIntervalInBackground: true,
   });
@@ -358,14 +403,20 @@ export function useScreenshot({
     const state = screenshotQuery.data;
     if (!state) return;
 
-    const marker =
-      state.status === "running"
-        ? `running:${state.runId}`
-        : state.status === "completed"
-          ? `completed:${state.source}:${state.data.url ?? "none"}`
-          : state.status === "rate_limited"
-            ? `rate-limited:${state.runId ?? "start"}:${state.retryAfter}`
-            : `failed:${state.error}`;
+    const marker = ((): string => {
+      switch (state.status) {
+        case "running":
+          return `running:${state.runId}`;
+        case "completed":
+          return `completed:${state.source}:${state.data.url ?? "none"}`;
+        case "rate_limited":
+          return `rate-limited:${state.runId ?? "start"}:${state.retryAfter}`;
+        case "retrying":
+          return `retrying:${state.runId ?? "start"}:${state.attempt}`;
+        case "failed":
+          return `failed:${state.error}`;
+      }
+    })();
     if (reportedStateRef.current === marker) return;
     reportedStateRef.current = marker;
 
