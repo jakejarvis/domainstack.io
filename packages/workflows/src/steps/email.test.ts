@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 /* @vitest-environment node */
-import { FatalError, type getStepMetadata } from "workflow";
+import { FatalError, RetryableError, type getStepMetadata } from "workflow";
 
 const sendResendEmailMock = vi.hoisted(() =>
   vi
@@ -99,5 +99,29 @@ describe("sendEmail", () => {
 
     const err = await promise.catch((e) => e);
     expect(FatalError.is(err)).toBe(true);
+  });
+
+  it("jitters the rate_limit_exceeded retry delay so concurrent retries don't resynchronize", async () => {
+    sendResendEmailMock.mockResolvedValueOnce({
+      data: null,
+      error: { name: "rate_limit_exceeded", message: "x" },
+    } as never);
+
+    const { sendEmail } = await import("./email");
+
+    const before = Date.now();
+    const err = await sendEmail({
+      to: "user@example.com",
+      subject: "Subject",
+      react: {} as React.ReactElement,
+      idempotencyKey: "key-a",
+    }).catch((e) => e);
+    const after = Date.now();
+
+    expect(RetryableError.is(err)).toBe(true);
+    const delayMs = (err as RetryableError).retryAfter.getTime() - before;
+    // Base 1s plus 0-500ms of jitter, with slack for test execution time.
+    expect(delayMs).toBeGreaterThanOrEqual(1000);
+    expect(delayMs).toBeLessThanOrEqual(1500 + (after - before));
   });
 });

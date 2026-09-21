@@ -85,6 +85,22 @@ describe("reverifyOwnershipWorkflow", () => {
     expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
   });
 
+  it("skips without touching grace-period state when the probe itself fails to complete", async () => {
+    verifyDomainMock.verifyDomainOwnershipByMethod.mockResolvedValue({
+      verified: false,
+      method: null,
+      checkFailed: true,
+    });
+
+    const { reverifyOwnershipWorkflow } = await import("./workflow");
+    const result = await reverifyOwnershipWorkflow({ trackedDomainId: "td-1" });
+
+    expect(result).toEqual({ skipped: true, reason: "check_failed" });
+    expect(trackedDomainsMock.markVerificationFailing).not.toHaveBeenCalled();
+    expect(trackedDomainsMock.revokeVerification).not.toHaveBeenCalled();
+    expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+  });
+
   it("first failure sends the warning", async () => {
     trackedDomainsMock.getTrackedDomainForReverification.mockResolvedValue({
       ...baseDomain,

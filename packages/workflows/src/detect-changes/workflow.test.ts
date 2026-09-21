@@ -235,6 +235,20 @@ describe("change alert idempotency", () => {
     }
   });
 
+  it("releases the monitor lock when a FatalError terminates the run, since nothing will retry it", async () => {
+    const { FatalError } = await import("workflow");
+    notificationsMock.sendProviderChangeNotificationStep.mockRejectedValue(
+      new FatalError("failed to create notification record"),
+    );
+
+    const { detectChangesWorkflow } = await import("./workflow");
+
+    await expect(
+      detectChangesWorkflow({ trackedDomainId: "td-1", monitorLockOwnerToken: "tok" }),
+    ).rejects.toThrow("failed to create notification record");
+    expect(monitorDedupMock.releaseMonitorLock).toHaveBeenCalledWith("td-1", "tok");
+  });
+
   it("keys a different stored provider with a different idempotencyKey", async () => {
     snapshotsMock.getSnapshot.mockResolvedValue(
       makeSnapshot({

@@ -83,7 +83,12 @@ export async function normalizeAndBuildResponseStep(
 
   const { getProviderCatalog } = await import("@domainstack/edge-config");
   const { normalizeRegistration } = await import("@domainstack/core/whois");
-  return await normalizeRegistration(recordJson, { catalog: await getProviderCatalog() });
+  try {
+    return await normalizeRegistration(recordJson, { catalog: await getProviderCatalog() });
+  } catch (err) {
+    const { classifyDatabaseError } = await import("../lib/errors");
+    throw classifyDatabaseError(err, { context: "resolving registrar provider" });
+  }
 }
 
 /**

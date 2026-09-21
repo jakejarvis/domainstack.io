@@ -47,7 +47,11 @@ export async function verifyDomain(
   const metaResult = await verifyByMetaTag(domain, token, options);
   if (metaResult.verified) return metaResult;
 
-  return { verified: false, method: null };
+  // Only report checkFailed if every method's probe failed to complete: one
+  // clean (even non-matching) answer is a confirmed absence, not noise.
+  const checkFailed =
+    !!dnsResult.checkFailed && !!htmlResult.checkFailed && !!metaResult.checkFailed;
+  return { verified: false, method: null, checkFailed };
 }
 
 /**

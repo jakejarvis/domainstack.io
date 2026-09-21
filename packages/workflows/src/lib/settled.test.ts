@@ -1,4 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { FatalError } from "workflow";
+
+import { createLogger } from "@domainstack/logger";
 
 import { optionalCall, optionalSettled, requireSettled } from "./settled";
 
@@ -38,5 +41,27 @@ describe("optionalCall", () => {
 
   it("returns null when the promise rejects", async () => {
     await expect(optionalCall(Promise.reject(new Error("geo failed")))).resolves.toBeNull();
+  });
+
+  it("returns null without logging for a plain rejection", async () => {
+    vi.mocked(createLogger).mockClear();
+
+    await optionalCall(Promise.reject(new Error("transient blip")));
+
+    expect(createLogger).not.toHaveBeenCalled();
+  });
+
+  it("logs before returning null when the promise rejects with a FatalError", async () => {
+    vi.mocked(createLogger).mockClear();
+
+    const fatal = new FatalError("constraint violation");
+    await expect(optionalCall(Promise.reject(fatal))).resolves.toBeNull();
+
+    expect(createLogger).toHaveBeenCalledWith({ source: "workflows/settled" });
+    const loggerInstance = vi.mocked(createLogger).mock.results.at(-1)?.value;
+    expect(loggerInstance?.error).toHaveBeenCalledWith(
+      { errorMessage: "constraint violation" },
+      "optional workflow step failed fatally; continuing without it",
+    );
   });
 });

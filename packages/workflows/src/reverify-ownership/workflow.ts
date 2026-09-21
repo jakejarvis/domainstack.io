@@ -10,7 +10,7 @@ interface ReverifyOwnershipWorkflowInput {
 type VerificationFailureAction = "marked_failing" | "revoked" | "in_grace_period";
 
 type ReverifyOwnershipWorkflowResult =
-  | { skipped: true; reason: "invalid_state" }
+  | { skipped: true; reason: "invalid_state" | "check_failed" }
   | { verified: true; method: VerificationMethod }
   | { verified: false; action: VerificationFailureAction };
 
@@ -45,6 +45,15 @@ export async function reverifyOwnershipWorkflow(
     // Step 3a: Mark as successful
     await markSuccess(trackedDomainId);
     return { verified: true, method: result.method };
+  }
+
+  if (result.checkFailed) {
+    // The probe itself couldn't complete (network/DNS/timeout noise), not a
+    // confirmed absence of the ownership proof. Starting or advancing the
+    // grace-period countdown on infrastructure noise would eventually revoke
+    // a domain that never actually removed its proof — skip this run and
+    // let the next scheduled reverification check again.
+    return { skipped: true, reason: "check_failed" };
   }
 
   // Step 3b: Determine failure action (database update only)

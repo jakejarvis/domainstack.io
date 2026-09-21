@@ -29,7 +29,12 @@ export async function detectAndResolveProvidersStep(
   "use step";
 
   const { detectAndResolveProviders } = await import("@domainstack/core/hosting");
-  return await detectAndResolveProviders(dnsRecords, headers, geoData);
+  try {
+    return await detectAndResolveProviders(dnsRecords, headers, geoData);
+  } catch (err) {
+    const { classifyDatabaseError } = await import("../lib/errors");
+    throw classifyDatabaseError(err, { context: "resolving hosting providers" });
+  }
 }
 
 /**

@@ -30,6 +30,23 @@ export type ScreenshotWorkflowResult =
 type CaptureResult = { success: true; imageBytes: Uint8Array } | { success: false };
 
 /**
+ * Puppeteer/browser-crash errors, as opposed to a navigation failure caused
+ * by the target site itself (DNS, connection refused, TLS, timeout — all
+ * surfaced by Chromium as `net::ERR_*` or a navigation `TimeoutError`).
+ * These mean the browser process itself broke mid-capture, unrelated to the
+ * domain being captured, and must not be cached as "this domain can't be
+ * captured."
+ */
+const INFRA_CAPTURE_ERROR_PATTERN =
+  /protocol error|target closed|session closed|websocket is (not open|closed)|connection closed|browser (has )?disconnected/i;
+
+/** @internal exported for testing only */
+export function isInfraCaptureError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  return INFRA_CAPTURE_ERROR_PATTERN.test(message);
+}
+
+/**
  * Durable screenshot workflow that breaks down screenshot generation into
  * independently retryable steps:
  * 1. Check blocklist
@@ -92,10 +109,13 @@ export async function screenshotWorkflow(
  * Step: Capture screenshot using Puppeteer
  * This is the heavy operation that benefits from workflow durability
  *
- * Two failure classes are handled differently:
+ * Three failure classes are handled differently:
  * - Browser launch failures are an infrastructure problem, not a property of
  *   the domain, so they retry. Caching them would blank out every domain
  *   captured during the outage for a full screenshot TTL.
+ * - A crashed browser/page mid-capture (protocol error, target/session
+ *   closed) is also infrastructure, not evidence the domain is
+ *   uncapturable, so it retries too.
  * - Navigation, timeout, and TLS failures mean this site cannot be captured.
  *   They are returned so the caller can cache the miss instead of re-running
  *   Puppeteer against a dead host on every request.
@@ -129,6 +149,12 @@ async function captureScreenshot(domain: string): Promise<CaptureResult> {
       imageBytes: Uint8Array.from(result.buffer),
     };
   } catch (err) {
+    if (isInfraCaptureError(err)) {
+      throw new RetryableError(
+        `Screenshot capture infra failure: ${err instanceof Error ? err.message : String(err)}`,
+        { retryAfter: "10s" },
+      );
+    }
     logger.debug({ err, domain }, "screenshot unavailable, caching miss");
     return { success: false };
   }

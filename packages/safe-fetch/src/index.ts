@@ -12,4 +12,4 @@ export * from "./safe-fetch";
 export * from "./types";
 
 // Async utilities
-export { sleep, withRetry, withTimeout } from "./utils";
+export { sleep, withTimeout } from "./utils";

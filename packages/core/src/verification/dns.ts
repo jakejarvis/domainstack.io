@@ -33,26 +33,33 @@ export async function verifyByDns(domain: string, token: string): Promise<Verifi
     providers.map((provider) => ({ hostname, provider })),
   );
 
-  const matches = await Promise.all(
+  const outcomes = await Promise.all(
     lookups.map(async ({ hostname, provider }) => {
       try {
         const answers = await queryDohProvider(provider, hostname, "TXT", {
           cacheBust: true, // Bypass caches to check freshly added records
         });
 
-        return answers.some((answer) => {
+        const matched = answers.some((answer) => {
           const value = answer.data.replace(/^"|"$/g, "").trim();
           return value === expectedValue;
         });
+        return matched ? "matched" : "no_match";
       } catch {
-        return false;
+        // This provider/host lookup itself failed (network/timeout/DNS
+        // resolver error) — it neither confirms nor rules out the record.
+        return "failed";
       }
     }),
   );
 
-  if (matches.some(Boolean)) {
+  if (outcomes.includes("matched")) {
     return { verified: true, method: "dns_txt" };
   }
 
-  return { verified: false, method: null };
+  // checkFailed only when every lookup failed to complete: if at least one
+  // provider returned a clean answer (even a non-matching one), the check
+  // succeeded and this is a confirmed absence, not infrastructure noise.
+  const checkFailed = outcomes.every((outcome) => outcome === "failed");
+  return { verified: false, method: null, checkFailed };
 }
