@@ -1,6 +1,11 @@
-import type { CertificateSnapshotData, RegistrationSnapshotData } from "@domainstack/types";
+import type {
+  CertificateSnapshotData,
+  DnssecSnapshotData,
+  RegistrationSnapshotData,
+} from "@domainstack/types";
 import {
   certificateSnapshotFrom,
+  dnssecSnapshotFrom,
   registrationSnapshotFrom,
 } from "@domainstack/utils/change-detection";
 import { findLeafCertificate } from "@domainstack/utils/tls";
@@ -91,6 +96,8 @@ export async function initializeSnapshotWorkflow(
     dnsProviderId: providers.dnsProvider?.id ?? null,
     hostingProviderId: providers.hostingProvider?.id ?? null,
     emailProviderId: providers.emailProvider?.id ?? null,
+    // null when DNSSEC was unobservable: the first monitoring run adopts it silently
+    dnssec: dnssecSnapshotFrom(dnsResult.dnssec),
   });
 
   if (!snapshot) {
@@ -114,6 +121,7 @@ async function createSnapshotStep(params: {
   dnsProviderId: string | null;
   hostingProviderId: string | null;
   emailProviderId: string | null;
+  dnssec: DnssecSnapshotData | null;
 }): Promise<{ id: string } | null> {
   "use step";
 
@@ -128,6 +136,7 @@ async function createSnapshotStep(params: {
       dnsProviderId: params.dnsProviderId,
       hostingProviderId: params.hostingProviderId,
       emailProviderId: params.emailProviderId,
+      dnssec: params.dnssec,
     });
   } catch (err) {
     const { classifyDatabaseError } = await import("../lib/errors");

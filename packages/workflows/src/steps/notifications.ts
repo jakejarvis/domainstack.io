@@ -10,6 +10,7 @@ import { FatalError } from "workflow";
 import type {
   CertificateChangeKind,
   CertificateChangeWithNames,
+  DnssecChange,
   NotificationChannel,
   NotificationType,
   ProviderChangeWithNames,
@@ -384,6 +385,60 @@ export async function sendProviderChangeNotificationStep(
       trackedDomainId: params.trackedDomainId,
       domainName: params.domainName,
       notificationType: "provider_change",
+      title: params.title,
+      message: params.message,
+      emailSubject: params.emailSubject,
+      emailComponent,
+      idempotencyKey: params.idempotencyKey,
+    },
+    shouldSendEmail,
+    shouldSendInApp,
+  );
+}
+
+/**
+ * Step: Send DNSSEC change notification via email and/or in-app.
+ *
+ * The email is deduped by `params.idempotencyKey`, which identifies the change.
+ */
+export async function sendDnssecChangeNotificationStep(
+  params: {
+    userId: string;
+    userEmail: string;
+    trackedDomainId: string;
+    domainName: string;
+    userName: string;
+    title: string;
+    message: string;
+    emailSubject: string;
+    changes: DnssecChange;
+    idempotencyKey: string;
+  },
+  shouldSendEmail: boolean,
+  shouldSendInApp: boolean,
+): Promise<boolean> {
+  "use step";
+
+  let emailComponent: React.ReactElement | undefined;
+  if (shouldSendEmail) {
+    const { default: DnssecChangeEmail } =
+      await import("@domainstack/email/templates/dnssec-change");
+    const { getEmailBaseUrl } = await import("./email");
+    emailComponent = DnssecChangeEmail({
+      userName: params.userName.split(" ")[0] || "there",
+      domainName: params.domainName,
+      changes: params.changes,
+      baseUrl: getEmailBaseUrl(),
+    });
+  }
+
+  return await sendNotification(
+    {
+      userId: params.userId,
+      userEmail: params.userEmail,
+      trackedDomainId: params.trackedDomainId,
+      domainName: params.domainName,
+      notificationType: "dnssec_change",
       title: params.title,
       message: params.message,
       emailSubject: params.emailSubject,

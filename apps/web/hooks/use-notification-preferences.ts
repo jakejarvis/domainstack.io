@@ -16,6 +16,7 @@ const DEFAULT_PREFERENCES: UserNotificationPreferences = {
   registrationChanges: { inApp: true, email: true },
   providerChanges: { inApp: true, email: true },
   certificateChanges: { inApp: true, email: true },
+  dnssecChanges: { inApp: true, email: true },
 };
 
 export interface UseNotificationPreferencesReturn {

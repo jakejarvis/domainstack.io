@@ -13,6 +13,7 @@ export const NOTIFICATION_CATEGORIES = [
   "registrationChanges",
   "certificateExpiry",
   "certificateChanges",
+  "dnssecChanges",
 ] as const;
 
 /** Consecutive matching observations required before a provider or registration change notifies. */
@@ -32,7 +33,8 @@ type NotificationType =
   | "verification_revoked"
   | "registration_change"
   | "provider_change"
-  | "certificate_change";
+  | "certificate_change"
+  | "dnssec_change";
 
 // Dashboard "expiring soon" threshold (first notification threshold)
 export const EXPIRING_SOON_DAYS = DOMAIN_EXPIRY_THRESHOLDS[0];
@@ -66,6 +68,9 @@ export const CERTIFICATE_CHANGE_KINDS = [
 ] as const;
 
 export const NOTIFIABLE_CERTIFICATE_CHANGE_KINDS = ["renewal", "reissue", "authority"] as const;
+
+// DNSSEC change classification (used by monitoring workflows and email)
+export const DNSSEC_CHANGE_KINDS = ["enabled", "disabled", "broken", "recovered"] as const;
 
 // Dampening for certificate-change notifications (hourly monitor cron)
 export const CERT_CHANGE_CONFIRMATIONS = 2;

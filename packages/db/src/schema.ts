@@ -29,6 +29,7 @@ import type {
   CertificateSnapshotData,
   DnssecDsRecord,
   DnssecKey,
+  DnssecSnapshotData,
   GeneralMeta,
   Header,
   NotificationChannel,
@@ -290,6 +291,10 @@ export const userNotificationPreferences = pgTable("user_notification_preference
     .notNull()
     .default(sql`'{"inApp": true, "email": true}'::jsonb`),
   certificateChanges: jsonb("certificate_changes")
+    .$type<{ inApp: boolean; email: boolean }>()
+    .notNull()
+    .default(sql`'{"inApp": true, "email": true}'::jsonb`),
+  dnssecChanges: jsonb("dnssec_changes")
     .$type<{ inApp: boolean; email: boolean }>()
     .notNull()
     .default(sql`'{"inApp": true, "email": true}'::jsonb`),
@@ -659,6 +664,9 @@ export const domainSnapshots = pgTable("domain_snapshots", {
   emailProviderId: uuid("email_provider_id").references(() => providers.id),
   // Unconfirmed provider change awaiting a repeat observation (see confirmChange).
   providerPending: jsonb("provider_pending").$type<PendingChangeObservation>(),
+  // DNSSEC baseline. NULL = not yet observed: the first monitoring run adopts the
+  // current state silently instead of alerting (no default, on purpose).
+  dnssec: jsonb("dnssec").$type<DnssecSnapshotData>(),
   // Certificate snapshot (JSONB)
   certificate: jsonb("certificate")
     .$type<CertificateSnapshotData>()

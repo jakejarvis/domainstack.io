@@ -125,4 +125,38 @@ describe("initializeSnapshotWorkflow", () => {
     expect(result).toEqual({ success: false, error: "dns_unobserved" });
     expect(snapshotsMock.createSnapshot).not.toHaveBeenCalled();
   });
+
+  it.each(["secure", "insecure", "bogus"] as const)(
+    "writes a %s DNSSEC baseline when it was observed",
+    async (status) => {
+      dnsMock.fetchDnsRecordsStep.mockResolvedValue({
+        ...DNS_RESULT,
+        dnssec: { status, ds: [], dnskeys: [] },
+      });
+      snapshotsMock.createSnapshot.mockResolvedValue({ id: "snap-1" } as never);
+
+      const { initializeSnapshotWorkflow } = await import("./workflow");
+      await initializeSnapshotWorkflow({ trackedDomainId: "td-1", domainId: "d-1" });
+
+      expect(snapshotsMock.createSnapshot).toHaveBeenCalledWith(
+        expect.objectContaining({ dnssec: { status } }),
+      );
+    },
+  );
+
+  it("leaves the DNSSEC baseline null when DNSSEC was unobservable, so it is adopted silently later", async () => {
+    dnsMock.fetchDnsRecordsStep.mockResolvedValue({
+      ...DNS_RESULT,
+      dnssec: { status: "indeterminate", ds: [], dnskeys: [] },
+    });
+    snapshotsMock.createSnapshot.mockResolvedValue({ id: "snap-1" } as never);
+
+    const { initializeSnapshotWorkflow } = await import("./workflow");
+    const result = await initializeSnapshotWorkflow({ trackedDomainId: "td-1", domainId: "d-1" });
+
+    expect(result).toEqual({ success: true, snapshotId: "snap-1" });
+    expect(snapshotsMock.createSnapshot).toHaveBeenCalledWith(
+      expect.objectContaining({ dnssec: null }),
+    );
+  });
 });

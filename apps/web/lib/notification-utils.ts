@@ -6,6 +6,7 @@ import {
   IconFingerprint,
   IconIdBadge2,
   IconShieldExclamation,
+  IconShieldLock,
 } from "@tabler/icons-react";
 
 import {
@@ -97,6 +98,9 @@ export function getNotificationIcon(type: NotificationType) {
   if (type === "registration_change") {
     return IconIdBadge2;
   }
+  if (type === "dnssec_change") {
+    return IconShieldLock;
+  }
   if (type === "verification_failing" || type === "verification_revoked") {
     return IconAlertTriangle;
   }
@@ -120,12 +124,14 @@ export function getNotificationSeverity(type: NotificationType): NotificationSev
     type === "domain_expiry_7d" ||
     type === "certificate_expiry_3d" ||
     type === "certificate_expiry_7d" ||
-    type === "verification_failing"
+    type === "verification_failing" ||
+    // One type covers enabled/disabled/broken/recovered, so err on the side of the worst case
+    type === "dnssec_change"
   ) {
     return "warning";
   }
 
-  // Info: Everything else (changes, 14-30 day warnings)
+  // Info: Everything else (other changes, 14-30 day warnings)
   return "info";
 }
 

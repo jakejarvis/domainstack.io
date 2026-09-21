@@ -12,8 +12,11 @@ import {
   certificateSnapshotFrom,
   confirmChange,
   detectCertificateChange,
+  detectDnssecChange,
   detectProviderChange,
   detectRegistrationChange,
+  dnssecObservationKey,
+  dnssecSnapshotFrom,
   evaluateCertificateChange,
   isUninitializedRegistration,
   providerObservationKey,
@@ -976,5 +979,53 @@ describe("certificateSnapshotFrom", () => {
     } as unknown as Certificate;
 
     expect(certificateSnapshotFrom(leaf).caProviderId).toBeNull();
+  });
+});
+
+describe("dnssecSnapshotFrom", () => {
+  it.each(["secure", "insecure", "bogus"] as const)("stores a %s observation", (status) => {
+    expect(dnssecSnapshotFrom({ status, ds: [], dnskeys: [] })).toEqual({ status });
+  });
+
+  it("returns null for indeterminate: an unobservable state is never a baseline", () => {
+    expect(dnssecSnapshotFrom({ status: "indeterminate", ds: [], dnskeys: [] })).toBeNull();
+  });
+});
+
+describe("detectDnssecChange", () => {
+  it.each([
+    ["insecure", "secure", "enabled"],
+    ["secure", "insecure", "disabled"],
+    ["secure", "bogus", "broken"],
+    ["insecure", "bogus", "broken"],
+    ["bogus", "secure", "recovered"],
+    ["bogus", "insecure", "recovered"],
+  ] as const)("classifies %s → %s as %s", (previous, current, kind) => {
+    expect(detectDnssecChange({ status: previous }, { status: current })).toEqual({
+      kind,
+      previousStatus: previous,
+      newStatus: current,
+    });
+  });
+
+  it.each(["secure", "insecure", "bogus"] as const)(
+    "returns null when %s is unchanged",
+    (status) => {
+      expect(detectDnssecChange({ status }, { status })).toBeNull();
+    },
+  );
+
+  it("ignores pending state when comparing", () => {
+    const pending = { key: "secure", firstSeenAt: "2026-01-01T00:00:00.000Z", observations: 1 };
+    expect(detectDnssecChange({ status: "insecure", pending }, { status: "insecure" })).toBeNull();
+  });
+});
+
+describe("dnssecObservationKey", () => {
+  it("is the status, so a different state restarts confirmation", () => {
+    expect(dnssecObservationKey({ status: "secure" })).toBe("secure");
+    expect(dnssecObservationKey({ status: "secure" })).not.toBe(
+      dnssecObservationKey({ status: "bogus" }),
+    );
   });
 });

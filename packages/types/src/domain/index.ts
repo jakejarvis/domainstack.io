@@ -18,6 +18,7 @@ export type {
   DnssecRegistryCheck,
   DnssecRegistryMismatchReason,
   DnssecResult,
+  DnssecSnapshotData,
 } from "./dns";
 export type { DomainResponse } from "./domain-response";
 export type { Header, HeadersResponse } from "./headers";

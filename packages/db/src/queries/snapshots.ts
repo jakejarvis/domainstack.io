@@ -2,6 +2,7 @@ import { and, eq, isNull } from "drizzle-orm";
 
 import type {
   CertificateSnapshotData,
+  DnssecSnapshotData,
   PendingChangeObservation,
   RegistrationSnapshotData,
 } from "@domainstack/types";
@@ -19,6 +20,8 @@ export interface CreateSnapshotParams {
   dnsProviderId?: string | null;
   hostingProviderId?: string | null;
   emailProviderId?: string | null;
+  /** Omit or pass `null` when DNSSEC was not observed; monitoring adopts it silently later. */
+  dnssec?: DnssecSnapshotData | null;
 }
 
 /**
@@ -31,6 +34,7 @@ export interface UpdateSnapshotParams {
   hostingProviderId?: string | null;
   emailProviderId?: string | null;
   providerPending?: PendingChangeObservation | null;
+  dnssec?: DnssecSnapshotData | null;
 }
 
 /**
@@ -48,6 +52,8 @@ export interface SnapshotForMonitoring {
   hostingProviderId: string | null;
   emailProviderId: string | null;
   providerPending: PendingChangeObservation | null;
+  /** `null` until the first monitoring run (or baseline) observes DNSSEC. */
+  dnssec: DnssecSnapshotData | null;
   userEmail: string;
   userName: string;
 }
@@ -85,6 +91,7 @@ export async function createSnapshot(
     dnsProviderId = null,
     hostingProviderId = null,
     emailProviderId = null,
+    dnssec = null,
   } = params;
 
   const inserted = await db
@@ -96,6 +103,7 @@ export async function createSnapshot(
       dnsProviderId,
       hostingProviderId,
       emailProviderId,
+      dnssec,
     })
     .onConflictDoNothing({ target: domainSnapshots.trackedDomainId })
     .returning();
@@ -128,6 +136,9 @@ export async function updateSnapshot(trackedDomainId: string, params: UpdateSnap
   }
   if (params.providerPending !== undefined) {
     updates.providerPending = params.providerPending;
+  }
+  if (params.dnssec !== undefined) {
+    updates.dnssec = params.dnssec;
   }
 
   const updated = await db
@@ -197,6 +208,7 @@ export async function getSnapshot(trackedDomainId: string): Promise<SnapshotForM
       hostingProviderId: domainSnapshots.hostingProviderId,
       emailProviderId: domainSnapshots.emailProviderId,
       providerPending: domainSnapshots.providerPending,
+      dnssec: domainSnapshots.dnssec,
       userEmail: users.email,
       userName: users.name,
     })

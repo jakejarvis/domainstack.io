@@ -22,6 +22,9 @@ import type {
   CertificateRecentIdentity,
   CertificateSnapshotData,
   ChangeConfirmationResult,
+  DnssecChange,
+  DnssecResult,
+  DnssecSnapshotData,
   PendingChangeObservation,
   ProviderChange,
   ProviderSnapshotData,
@@ -190,6 +193,44 @@ export function confirmChange(
       observations,
     },
   };
+}
+
+/**
+ * DNSSEC baseline from a fresh observation. `null` when the status is
+ * `indeterminate`: that means "could not observe", never a state to store or
+ * compare against (a resolver hiccup must not read as DNSSEC being disabled).
+ */
+export function dnssecSnapshotFrom(dnssec: DnssecResult): DnssecSnapshotData | null {
+  return dnssec.status === "indeterminate" ? null : { status: dnssec.status };
+}
+
+/**
+ * Classify a DNSSEC state transition, or `null` when nothing notifiable changed.
+ *
+ * - any → bogus: `broken` (validation now fails; validating resolvers SERVFAIL)
+ * - bogus → secure/insecure: `recovered`
+ * - insecure → secure: `enabled`; secure → insecure: `disabled`
+ */
+export function detectDnssecChange(
+  previous: DnssecSnapshotData,
+  current: DnssecSnapshotData,
+): DnssecChange | null {
+  if (previous.status === current.status) return null;
+
+  const change = (kind: DnssecChange["kind"]): DnssecChange => ({
+    kind,
+    previousStatus: previous.status,
+    newStatus: current.status,
+  });
+
+  if (current.status === "bogus") return change("broken");
+  if (previous.status === "bogus") return change("recovered");
+  return change(current.status === "secure" ? "enabled" : "disabled");
+}
+
+/** Stable identity of a DNSSEC observation. */
+export function dnssecObservationKey(current: DnssecSnapshotData): string {
+  return current.status;
 }
 
 /** Stable identity of a provider observation. */

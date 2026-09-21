@@ -2,6 +2,7 @@
  * DNS types - Plain TypeScript interfaces.
  */
 
+import type { PendingChangeObservation } from "../monitoring";
 import type { DnsRecordType, DnssecStatus } from "../primitives";
 
 /**
@@ -37,6 +38,16 @@ export interface DnssecResult {
   dnskeys: DnssecKey[];
   /** Cross-check against registry (RDAP) data; absent when no registration data is known. */
   registry?: DnssecRegistryCheck;
+}
+
+/**
+ * DNSSEC snapshot data stored on `domain_snapshots.dnssec`. `indeterminate` is
+ * never stored: it means the state could not be observed.
+ */
+export interface DnssecSnapshotData {
+  status: Exclude<DnssecStatus, "indeterminate">;
+  /** Unconfirmed change awaiting a repeat observation (see confirmChange). */
+  pending?: PendingChangeObservation | null;
 }
 
 export interface DnssecDsRecord {

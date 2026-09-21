@@ -183,6 +183,13 @@
       "when": 1790025976454,
       "tag": "0025_spooky_angel",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1790026814114,
+      "tag": "0026_needy_eddie_brock",
+      "breakpoints": true
     }
   ]
 }

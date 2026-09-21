@@ -4,6 +4,7 @@ import {
   IconFingerprint,
   IconIdBadge2,
   IconShieldExclamation,
+  IconShieldLock,
   type TablerIcon,
 } from "@tabler/icons-react";
 
@@ -41,5 +42,10 @@ export const NOTIFICATION_CATEGORY_INFO: Record<
     label: "Certificate Changes",
     description: "Alerts when SSL certificate issuer or subject changes",
     icon: IconFingerprint,
+  },
+  dnssecChanges: {
+    label: "DNSSEC Changes",
+    description: "Alerts when DNSSEC is enabled, disabled, breaks, or recovers",
+    icon: IconShieldLock,
   },
 };

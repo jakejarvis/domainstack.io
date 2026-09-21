@@ -3,7 +3,7 @@
  */
 
 import type { CertificateSnapshotData } from "./domain/certificates";
-import type { CertificateChangeKind } from "./primitives";
+import type { CertificateChangeKind, DnssecChangeKind, DnssecStatus } from "./primitives";
 
 /**
  * Registration change details.
@@ -80,6 +80,15 @@ export interface ProviderSnapshotData {
   dnsProviderId: string | null;
   hostingProviderId: string | null;
   emailProviderId: string | null;
+}
+
+/**
+ * DNSSEC change details.
+ */
+export interface DnssecChange {
+  kind: DnssecChangeKind;
+  previousStatus: DnssecStatus;
+  newStatus: DnssecStatus;
 }
 
 /**

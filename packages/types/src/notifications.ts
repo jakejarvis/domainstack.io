@@ -33,4 +33,5 @@ export interface UserNotificationPreferences {
   registrationChanges: ChannelToggles;
   providerChanges: ChannelToggles;
   certificateChanges: ChannelToggles;
+  dnssecChanges: ChannelToggles;
 }
