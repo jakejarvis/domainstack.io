@@ -73,6 +73,8 @@ const DNS_RESULT: DnsFetchData = {
   records: [{ type: "A", name: "example.com", value: "192.0.2.1", ttl: 300 }] as never,
   resolver: "cloudflare",
   recordsWithExpiry: [],
+  dnssec: { status: "insecure", ds: [], dnskeys: [] },
+  dnssecExpiresAt: "2030-01-01T00:00:00.000Z",
 };
 
 const PROVIDERS = {

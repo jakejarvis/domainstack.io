@@ -8,6 +8,7 @@
 import type {
   CERTIFICATE_CHANGE_KINDS,
   DNS_RECORD_TYPES,
+  DNSSEC_STATUSES,
   DOH_PROVIDERS,
   DOMAIN_EXPIRY_THRESHOLDS,
   CERTIFICATE_EXPIRY_THRESHOLDS,
@@ -58,6 +59,7 @@ export type RegistrationUnavailableReason = (typeof REGISTRATION_UNAVAILABLE_REA
 
 export type DnsRecordType = (typeof DNS_RECORD_TYPES)[number];
 export type DohProvider = (typeof DOH_PROVIDERS)[number];
+export type DnssecStatus = (typeof DNSSEC_STATUSES)[number];
 
 export type CertificateChangeKind = (typeof CERTIFICATE_CHANGE_KINDS)[number];
 export type NotifiableCertificateChangeKind = (typeof NOTIFIABLE_CERTIFICATE_CHANGE_KINDS)[number];

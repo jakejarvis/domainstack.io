@@ -4,7 +4,7 @@
  * Shared types for DNS fetching operations.
  */
 
-import type { DnsRecord } from "@domainstack/types";
+import type { DnsRecord, DnssecResult } from "@domainstack/types";
 
 /**
  * Record with expiry metadata for persistence.
@@ -21,4 +21,8 @@ export interface DnsFetchData {
   records: DnsRecord[];
   resolver: string;
   recordsWithExpiry: DnsRecordWithExpiry[];
+  /** DNSSEC status observed by the same provider; `registry` is filled in at response time. */
+  dnssec: DnssecResult;
+  /** ISO timestamp after which `dnssec` should be refetched. */
+  dnssecExpiresAt: string;
 }

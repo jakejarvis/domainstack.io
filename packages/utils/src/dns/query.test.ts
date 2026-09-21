@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 /* @vitest-environment node */
 import type { DohProvider } from "@domainstack/types";
 
-import { providerOrderForLookup, queryDohProvider } from "./query";
+import { providerOrderForLookup, queryDoh, queryDohProvider } from "./query";
 
 // Use type assertion for mock provider since DohProvider is a literal union type
 const mockProvider = {
@@ -264,5 +264,75 @@ describe("queryDohProvider", () => {
     await queryDohProvider(mockProvider, "example.com", "A");
 
     expect(capturedHeaders.Accept).toBe("application/dns-json");
+  });
+});
+
+describe("queryDoh", () => {
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it("returns rcode, AD flag, and answers without interpreting the RCODE", async () => {
+    mockFetchResponse({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          Status: 0,
+          AD: true,
+          Answer: [{ name: "example.com", type: 6, TTL: 300, data: "ns. host. 1 2 3 4 5" }],
+        }),
+    });
+
+    const result = await queryDoh(mockProvider, "example.com", "SOA", { dnssec: true });
+
+    expect(result).toEqual({
+      rcode: 0,
+      ad: true,
+      answers: [{ name: "example.com", type: 6, TTL: 300, data: "ns. host. 1 2 3 4 5" }],
+    });
+  });
+
+  it("returns SERVFAIL as a result instead of throwing", async () => {
+    mockFetchResponse({ ok: true, json: () => Promise.resolve({ Status: 2 }) });
+
+    await expect(queryDoh(mockProvider, "example.com", "SOA")).resolves.toEqual({
+      rcode: 2,
+      ad: false,
+      answers: [],
+    });
+  });
+
+  it("treats a missing AD flag as false", async () => {
+    mockFetchResponse({ ok: true, json: () => Promise.resolve({ Status: 0 }) });
+
+    const result = await queryDoh(mockProvider, "example.com", "SOA");
+
+    expect(result.ad).toBe(false);
+  });
+
+  it("sets do=1 and cd=1 only when requested", async () => {
+    const urls: string[] = [];
+    mockFetchImplementation((input) => {
+      urls.push(typeof input === "string" ? input : input instanceof URL ? input.href : input.url);
+      return Promise.resolve({
+        ok: true,
+        headers: new Headers(),
+        json: () => Promise.resolve({ Status: 0 }),
+      } as Response);
+    });
+
+    await queryDoh(mockProvider, "example.com", "SOA");
+    await queryDoh(mockProvider, "example.com", "SOA", { dnssec: true, checkingDisabled: true });
+
+    expect(urls[0]).not.toContain("do=1");
+    expect(urls[0]).not.toContain("cd=1");
+    expect(urls[1]).toContain("do=1");
+    expect(urls[1]).toContain("cd=1");
   });
 });

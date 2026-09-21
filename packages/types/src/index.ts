@@ -11,6 +11,7 @@ export type {
   CertificateChangeKind,
   CertificateExpiryThreshold,
   DnsRecordType,
+  DnssecStatus,
   DohProvider,
   DomainExpiryThreshold,
   ExpiryNotificationPrefix,

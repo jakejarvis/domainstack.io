@@ -5,6 +5,8 @@
  * and manipulating DNS record data.
  */
 
+// DNSSEC helpers
+export * from "./dnssec";
 // Query functions
 export * from "./query";
 // Record utilities

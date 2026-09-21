@@ -2,15 +2,16 @@ import type { InferInsertModel } from "drizzle-orm";
 import { eq, inArray, sql } from "drizzle-orm";
 
 import { DNS_RECORD_TYPES } from "@domainstack/constants";
-import type { DnsRecord, DnsRecordsResponse } from "@domainstack/types";
+import type { DnsRecord, DnsRecordsResponse, DnssecResult } from "@domainstack/types";
 import {
   deduplicateDnsRecords,
   makeDnsRecordKey,
   sortDnsRecordsByType,
+  withRegistryCheck,
 } from "@domainstack/utils/dns";
 
 import { db } from "../client";
-import { dnsRecords, type dnsRecordType, domains } from "../schema";
+import { dnsRecords, type dnsRecordType, dnssecChecks, domains, registrations } from "../schema";
 import type { CacheResult } from "../types";
 
 type DnsRecordInsert = InferInsertModel<typeof dnsRecords>;
@@ -24,6 +25,8 @@ export interface UpsertDnsParams {
     (typeof dnsRecordType.enumValues)[number],
     Array<Omit<DnsRecordInsert, "id" | "domainId" | "type" | "resolver" | "fetchedAt">>
   >;
+  /** DNSSEC observation stored alongside the records (without the response-time `registry` check). */
+  dnssec?: { result: DnssecResult; expiresAt: Date };
 }
 
 export async function replaceDns(params: UpsertDnsParams) {
@@ -131,6 +134,22 @@ export async function replaceDns(params: UpsertDnsParams) {
           },
         });
     }
+
+    if (params.dnssec) {
+      const { result, expiresAt } = params.dnssec;
+      const values = {
+        status: result.status,
+        ds: result.ds,
+        dnskeys: result.dnskeys,
+        resolver: params.resolver,
+        fetchedAt: params.fetchedAt,
+        expiresAt,
+      };
+      await tx
+        .insert(dnssecChecks)
+        .values({ domainId, ...values })
+        .onConflictDoUpdate({ target: dnssecChecks.domainId, set: values });
+    }
   });
 }
 
@@ -160,9 +179,17 @@ export async function getCachedDns(domain: string): Promise<CacheResult<DnsRecor
       resolver: dnsRecords.resolver,
       fetchedAt: dnsRecords.fetchedAt,
       expiresAt: dnsRecords.expiresAt,
+      dnssecStatus: dnssecChecks.status,
+      dnssecDs: dnssecChecks.ds,
+      dnssecKeys: dnssecChecks.dnskeys,
+      dnssecFetchedAt: dnssecChecks.fetchedAt,
+      dnssecExpiresAt: dnssecChecks.expiresAt,
+      registryDnssec: registrations.dnssec,
     })
     .from(domains)
     .innerJoin(dnsRecords, eq(dnsRecords.domainId, domains.id))
+    .leftJoin(dnssecChecks, eq(dnssecChecks.domainId, domains.id))
+    .leftJoin(registrations, eq(registrations.domainId, domains.id))
     .where(eq(domains.name, domain));
 
   // Records are stored per row, so a lookup that found none leaves nothing to
@@ -173,22 +200,35 @@ export async function getCachedDns(domain: string): Promise<CacheResult<DnsRecor
     return { data: null, stale: false, fetchedAt: null, expiresAt: null };
   }
 
-  // Find the earliest fetchedAt (oldest data) across all records
-  const earliestFetchedAt = rows.reduce<Date | null>((earliest, r) => {
-    if (!r.fetchedAt) return earliest;
-    if (!earliest) return r.fetchedAt;
-    return r.fetchedAt < earliest ? r.fetchedAt : earliest;
-  }, null);
+  // Every row repeats the same (at most one) DNSSEC observation.
+  const first = rows[0];
+  const dnssecCheck =
+    first?.dnssecStatus && first.dnssecFetchedAt && first.dnssecExpiresAt
+      ? {
+          status: first.dnssecStatus,
+          ds: first.dnssecDs ?? [],
+          dnskeys: first.dnssecKeys ?? [],
+          fetchedAt: first.dnssecFetchedAt,
+          expiresAt: first.dnssecExpiresAt,
+        }
+      : null;
 
-  // Find the earliest expiration across all records
-  const earliestExpiresAt = rows.reduce<Date | null>((earliest, r) => {
-    if (!r.expiresAt) return earliest;
-    if (!earliest) return r.expiresAt;
-    return r.expiresAt < earliest ? r.expiresAt : earliest;
-  }, null);
+  // Earliest fetch and expiry across the records and the DNSSEC observation
+  const fetchedAts = rows.map((r) => r.fetchedAt);
+  const expiresAts = rows.map((r) => r.expiresAt);
+  if (dnssecCheck) {
+    fetchedAts.push(dnssecCheck.fetchedAt);
+    expiresAts.push(dnssecCheck.expiresAt);
+  }
+  const earliest = (dates: Array<Date | null>) =>
+    dates.reduce<Date | null>((min, d) => (d && (!min || d < min) ? d : min), null);
+  const earliestFetchedAt = earliest(fetchedAts);
+  const earliestExpiresAt = earliest(expiresAts);
 
-  // Check if ANY record is stale (if one is stale, we should revalidate all)
-  const stale = rows.some((r) => (r.expiresAt?.getTime?.() ?? 0) <= nowMs);
+  // Stale if ANY part is stale (if one is stale, we should revalidate all). A
+  // domain cached before DNSSEC tracking has no observation yet, so it is
+  // stale until the next fetch records one.
+  const stale = !dnssecCheck || expiresAts.some((d) => (d?.getTime?.() ?? 0) <= nowMs);
 
   // Assemble cached records
   const records: DnsRecord[] = rows.map((r) => ({
@@ -208,6 +248,12 @@ export async function getCachedDns(domain: string): Promise<CacheResult<DnsRecor
     data: {
       records: sorted,
       resolver: rows[0]?.resolver ?? null,
+      dnssec: dnssecCheck
+        ? withRegistryCheck(
+            { status: dnssecCheck.status, ds: dnssecCheck.ds, dnskeys: dnssecCheck.dnskeys },
+            first?.registryDnssec,
+          )
+        : undefined,
     },
     stale,
     fetchedAt: earliestFetchedAt,

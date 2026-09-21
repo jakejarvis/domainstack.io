@@ -176,6 +176,13 @@
       "when": 1790011927317,
       "tag": "0024_green_stone_men",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1790025976454,
+      "tag": "0025_spooky_angel",
+      "breakpoints": true
     }
   ]
 }

@@ -83,6 +83,7 @@ const {
   certificateChecks,
   certificates,
   dnsRecords,
+  dnssecChecks,
   domains,
   favicons,
   httpHeaders,
@@ -347,6 +348,16 @@ describe("domain router", () => {
           name: TEST_DOMAIN,
           value: "93.184.216.34",
           ttl: 300,
+          resolver: "cloudflare",
+          fetchedAt: now,
+          expiresAt,
+        })
+        .onConflictDoNothing();
+      await db
+        .insert(dnssecChecks)
+        .values({
+          domainId: TEST_DOMAIN_ID,
+          status: "insecure",
           resolver: "cloudflare",
           fetchedAt: now,
           expiresAt,

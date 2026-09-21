@@ -9,7 +9,9 @@
 import { DNS_RECORD_TYPES } from "@domainstack/constants";
 import { replaceDns } from "@domainstack/db/queries/dns";
 import { ensureDomainRecord } from "@domainstack/db/queries/domains";
+import { getRegistryDnssec } from "@domainstack/db/queries/registrations";
 import type { DnsRecordType, DnsRecordsResponse } from "@domainstack/types";
+import { withRegistryCheck } from "@domainstack/utils/dns";
 
 import { RemoteDataUnavailableError } from "../lib/fetch-errors";
 import { shareInFlight } from "../lib/in-flight";
@@ -61,11 +63,16 @@ async function fetchAndPersistDns(domain: string): Promise<DnsResult> {
   // 2. Persist to database
   await persistDnsRecords(domain, fetchData);
 
+  // 3. Cross-check against whatever the registry reported (persisted separately
+  // by the registration lookup, so it may not exist yet on a first lookup)
+  const registry = await getRegistryDnssec(domain);
+
   return {
     success: true,
     data: {
       records: fetchData.records,
       resolver: fetchData.resolver,
+      dnssec: withRegistryCheck(fetchData.dnssec, registry),
     },
   };
 }
@@ -109,5 +116,6 @@ export async function persistDnsRecords(domain: string, fetchData: DnsFetchData)
     resolver: fetchData.resolver,
     fetchedAt: now,
     recordsByType,
+    dnssec: { result: fetchData.dnssec, expiresAt: new Date(fetchData.dnssecExpiresAt) },
   });
 }

@@ -252,6 +252,7 @@ export async function persistRegistration(
       ipv4: n.ipv4 ?? [],
       ipv6: n.ipv6 ?? [],
     })),
+    dnssec: response.dnssec ?? null,
     rawResponse: response.rawResponse,
   });
 }
