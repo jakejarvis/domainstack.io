@@ -1,4 +1,4 @@
-import { RetryableError } from "workflow";
+import { FatalError, RetryableError } from "workflow";
 
 import type { RegistrationResponse } from "@domainstack/types";
 
@@ -86,6 +86,12 @@ export async function normalizeAndBuildResponseStep(
   try {
     return await normalizeRegistration(recordJson, { catalog: await getProviderCatalog() });
   } catch (err) {
+    // Malformed JSON will never parse on retry — fail fast instead of
+    // letting classifyDatabaseError's unmatched-message default (retryable)
+    // burn attempts on deterministically bad input.
+    if (err instanceof SyntaxError) {
+      throw new FatalError(`Malformed RDAP/WHOIS record JSON: ${err.message}`);
+    }
     const { classifyDatabaseError } = await import("../lib/errors");
     throw classifyDatabaseError(err, { context: "resolving registrar provider" });
   }

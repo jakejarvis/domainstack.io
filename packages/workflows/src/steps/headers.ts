@@ -5,7 +5,7 @@ import type { HeadersFetchData, HeadersFetchResult } from "@domainstack/core/hea
  *
  * DNS and TLS errors are returned as typed results so tracking workflows can
  * continue without HTTP data. Everything else (HeadersFetchError included)
- * is transient and throws so the workflow SDK retries it.
+ * is treated as transient and throws so the workflow SDK retries it.
  *
  * @param domain - The domain to probe
  * @returns HeadersFetchResult with typed error on failure

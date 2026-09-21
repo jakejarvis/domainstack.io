@@ -9,6 +9,8 @@ describe("isInfraCaptureError", () => {
     "Navigation failed because browser has disconnected!",
     "WebSocket is not open: readyState 3 (CLOSED)",
     "Connection closed.",
+    "Target page, context or browser has been closed",
+    "socket hang up",
   ])("treats %s as an infra failure, not a per-domain capture miss", (message) => {
     expect(isInfraCaptureError(new Error(message))).toBe(true);
   });
@@ -18,6 +20,9 @@ describe("isInfraCaptureError", () => {
     "net::ERR_CONNECTION_REFUSED at https://example.com/",
     "net::ERR_CERT_AUTHORITY_INVALID at https://example.com/",
     "Navigation timeout of 5000 ms exceeded",
+    // Differs from the matched infra phrase "connection closed" only by the
+    // underscore — pins the classification boundary against regex drift.
+    "net::ERR_CONNECTION_CLOSED at https://example.com/",
   ])("treats %s as a per-domain capture failure, not infra", (message) => {
     expect(isInfraCaptureError(new Error(message))).toBe(false);
   });

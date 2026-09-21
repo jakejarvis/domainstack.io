@@ -87,15 +87,26 @@ async function createBrowser(): Promise<import("puppeteer-core").Browser> {
  * Get a browser instance. Reuses existing instance if available.
  * Browser configuration is determined by environment (Vercel vs local).
  */
-export function getBrowser(): Promise<import("puppeteer-core").Browser> {
-  if (!browserPromise) {
-    browserPromise = createBrowser().catch((err) => {
-      logger.error(err, "failed to create browser");
-      // Reset promise to allow retry on next call
+export async function getBrowser(): Promise<import("puppeteer-core").Browser> {
+  if (browserPromise) {
+    try {
+      const browser = await browserPromise;
+      if (browser.connected) {
+        return browser;
+      }
+      // Crashed/disconnected mid-use — relaunch instead of reusing it.
       browserPromise = null;
-      throw err;
-    });
+    } catch {
+      browserPromise = null;
+    }
   }
+
+  browserPromise = createBrowser().catch((err) => {
+    logger.error(err, "failed to create browser");
+    // Reset promise to allow retry on next call
+    browserPromise = null;
+    throw err;
+  });
   return browserPromise;
 }
 

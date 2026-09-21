@@ -52,14 +52,14 @@ export function classifyDatabaseError(
       message.includes("econnreset") ||
       message.includes("socket hang up")
     ) {
-      return new RetryableError(`${context}: connection error`, {
+      return new RetryableError(`${context}: connection error - ${err.message}`, {
         retryAfter: retryAfter as `${number}s`,
       });
     }
 
     // Deadlock errors are retryable
     if (message.includes("deadlock") || message.includes("lock timeout")) {
-      return new RetryableError(`${context}: deadlock`, {
+      return new RetryableError(`${context}: deadlock - ${err.message}`, {
         retryAfter: "1s" as const, // Retry quickly for deadlocks
       });
     }

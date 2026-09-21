@@ -30,21 +30,19 @@ export function optionalSettled<T>(result: PromiseSettledResult<T>): T | null {
  * Await an optional sequential step. Thrown errors (including exhausted
  * retries) become `null` so enrichment cannot fail the parent workflow.
  *
- * A swallowed `FatalError` is logged first: it signals a structural bug
- * (e.g. a constraint/schema violation from `classifyDatabaseError`), not an
- * expected transient miss, so it must stay visible even though it can't be
- * allowed to fail the parent workflow. The logging itself runs in a step:
- * this function runs directly in the workflow body (it isn't itself a
- * step), which the workflow SDK bundles separately and forbids Node-only
- * dependencies like the pino-backed logger from reaching at all — even via
- * a dynamic import.
+ * A swallowed `FatalError` is logged (via a step, since this function isn't
+ * one itself and can't reach the Node-only logger directly) since it signals
+ * a real bug, not an expected transient miss. Uses `FatalError.is`, not
+ * `instanceof`, since the error crossed the step/workflow boundary and may
+ * be rehydrated without its prototype. The logging call is best-effort so it
+ * can never itself turn an optional failure into a run failure.
  */
 export async function optionalCall<T>(promise: Promise<T>): Promise<T | null> {
   try {
     return await promise;
   } catch (err) {
-    if (err instanceof FatalError) {
-      await logSwallowedFatalStep(err.message);
+    if (FatalError.is(err)) {
+      await logSwallowedFatalStep(err.message).catch(() => {});
     }
     return null;
   }

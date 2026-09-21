@@ -38,7 +38,7 @@ type CaptureResult = { success: true; imageBytes: Uint8Array } | { success: fals
  * captured."
  */
 const INFRA_CAPTURE_ERROR_PATTERN =
-  /protocol error|target closed|session closed|websocket is (not open|closed)|connection closed|browser (has )?disconnected/i;
+  /protocol error|target (closed|crashed)|session closed|page, context or browser (has )?been closed|websocket is (not open|closed)|connection closed|socket hang up|browser (has )?disconnected/i;
 
 /** @internal exported for testing only */
 export function isInfraCaptureError(err: unknown): boolean {

@@ -86,10 +86,11 @@ export async function detectChangesWorkflow(
     return await runChangeDetection(trackedDomainId, monitorLockOwnerToken, snapshot);
   } catch (err) {
     // A FatalError means nothing will retry this run, so the lock must be
-    // released now or it blocks the next hourly cron for the full 90-minute
-    // TTL. A plain Error/RetryableError leaves the lock held on purpose: the
-    // SDK retries this same run, and the lock prevents a duplicate cron start.
-    if (err instanceof FatalError) {
+    // released now or it blocks the cron for the full 90-minute TTL. A plain
+    // Error/RetryableError leaves it held: the SDK retries this same run.
+    // FatalError.is, not instanceof: this error crossed the step/workflow
+    // boundary and may be rehydrated without its original prototype.
+    if (FatalError.is(err)) {
       await releaseMonitorLockStep(trackedDomainId, monitorLockOwnerToken);
     }
     throw err;

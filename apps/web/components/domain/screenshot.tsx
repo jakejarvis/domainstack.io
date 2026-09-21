@@ -17,6 +17,8 @@ const POLL_INTERVAL_MS = 2000;
 const POLL_RECOVERY_BASE_MS = 5000;
 /** Ceiling on the exponential backoff delay, so a sustained outage still polls occasionally. */
 const POLL_RECOVERY_MAX_MS = 60_000;
+/** After giving up, how long before trying again on its own (self-heal, not hammering). */
+const GIVE_UP_RECOVERY_MS = 5 * 60_000;
 /**
  * Give up after this many consecutive transient failures (start or poll
  * requests that threw — network errors, 5xx, malformed responses) rather
@@ -30,7 +32,10 @@ const MAX_CONSECUTIVE_FAILURES = 5;
 type ScreenshotQueryState =
   | { status: "completed"; source: "cache" | "workflow"; data: ScreenshotData }
   | { status: "running"; runId: string }
-  | { status: "failed"; error: string }
+  // `recoverable`: reached by giving up on repeated transient errors, not a
+  // definitive server signal — retried again after a long cooldown instead
+  // of staying failed until the query is garbage-collected or reloaded.
+  | { status: "failed"; error: string; recoverable?: boolean }
   | { status: "rate_limited"; retryAfter: number; runId?: string }
   | { status: "retrying"; attempt: number; runId?: string };
 
@@ -196,18 +201,30 @@ async function pollScreenshot(runId: string): Promise<ScreenshotQueryState> {
   }
 
   if (!response.ok) {
-    throw new Error(
-      await readErrorMessage(response, `Screenshot status poll failed: ${response.status}`),
+    const error = await readErrorMessage(
+      response,
+      `Screenshot status poll failed: ${response.status}`,
     );
+    if (response.status >= 400 && response.status < 500) {
+      // A run id that's gone or invalid will never resolve — fail now
+      // instead of burning retries on a poll that can't succeed.
+      return { status: "failed", error };
+    }
+    throw new Error(error);
   }
 
   return parseStatusResponse((await response.json()) as ScreenshotResponsePayload, runId);
 }
 
+/** True for a state that won't resolve on its own without a scheduled retry — no immediate remount refetch. */
+function isAwaitingScheduledRetry(state: ScreenshotQueryState | undefined): boolean {
+  return state?.status === "retrying" || (state?.status === "failed" && !!state.recoverable);
+}
+
 function isTerminalState(
   state: ScreenshotQueryState | undefined,
 ): state is TerminalScreenshotQueryState {
-  return state?.status === "completed" || state?.status === "failed";
+  return state?.status === "completed" || (state?.status === "failed" && !state.recoverable);
 }
 
 export interface UseScreenshotResult {
@@ -366,9 +383,11 @@ export function useScreenshot({
         return runId ? await pollScreenshot(runId) : await startScreenshot(domainId as string);
       } catch (err) {
         if (attempt + 1 >= MAX_CONSECUTIVE_FAILURES) {
+          analytics.trackException(err, { domain });
           return {
             status: "failed" as const,
             error: err instanceof Error ? err.message : "Screenshot request failed",
+            recoverable: true,
           };
         }
         return { status: "retrying" as const, attempt: attempt + 1, runId };
@@ -377,9 +396,15 @@ export function useScreenshot({
     enabled: enabled && !!domainId,
     retry: false,
     staleTime: (query) => (isTerminalState(query.state.data) ? Number.POSITIVE_INFINITY : 0),
-    refetchOnMount: (query) => !isTerminalState(query.state.data),
+    refetchOnMount: (query) =>
+      !isTerminalState(query.state.data) && !isAwaitingScheduledRetry(query.state.data),
     refetchInterval: (query) => {
       const state = query.state.data;
+      // Checked before isTerminalState: its type predicate narrows "failed"
+      // out of the union entirely, which would make this branch unreachable.
+      if (state?.status === "failed" && state.recoverable) {
+        return GIVE_UP_RECOVERY_MS;
+      }
       if (isTerminalState(state)) {
         return false;
       }

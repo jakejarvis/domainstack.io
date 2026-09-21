@@ -168,6 +168,32 @@ describe("verifyByDns", () => {
     expect(result.verified).toBe(false);
     expect(result.checkFailed).toBeFalsy();
   });
+
+  it("reports checkFailed when the apex host's lookups all fail, even though the unused legacy host resolves cleanly", async () => {
+    // Legacy resolves cleanly (never had a record); apex is the host that
+    // actually holds the proof and fails outright.
+    const dohHandler = ({ request }: { request: Request }) => {
+      const url = new URL(request.url);
+      const name = url.searchParams.get("name");
+
+      if (name === "apex-fail-legacy-clean.test") {
+        return new HttpResponse(null, { status: 500 });
+      }
+      // Legacy host (_domainstack-verify.apex-fail-legacy-clean.test): clean, empty.
+      return HttpResponse.json({ Status: 0, Answer: [] });
+    };
+
+    server.use(
+      http.get("https://cloudflare-dns.com/dns-query", dohHandler),
+      http.get("https://dns.google/resolve", dohHandler),
+    );
+
+    const { verifyByDns } = await import("./index");
+    const result = await verifyByDns("apex-fail-legacy-clean.test", token);
+
+    expect(result.verified).toBe(false);
+    expect(result.checkFailed).toBe(true);
+  });
 });
 
 describe("verifyByHtmlFile", () => {

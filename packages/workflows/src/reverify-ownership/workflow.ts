@@ -47,12 +47,12 @@ export async function reverifyOwnershipWorkflow(
     return { verified: true, method: result.method };
   }
 
-  if (result.checkFailed) {
-    // The probe itself couldn't complete (network/DNS/timeout noise), not a
-    // confirmed absence of the ownership proof. Starting or advancing the
-    // grace-period countdown on infrastructure noise would eventually revoke
-    // a domain that never actually removed its proof — skip this run and
-    // let the next scheduled reverification check again.
+  if (result.checkFailed && domain.verificationStatus !== "failing") {
+    // The probe itself couldn't complete — not a confirmed absence — so
+    // don't start a new grace-period episode on network noise. But once a
+    // grace period is already running, don't let a chronically-broken probe
+    // freeze it forever either: fall through so it keeps progressing.
+    await logCheckFailedSkip(trackedDomainId, domain.domainName, domain.verificationMethod);
     return { skipped: true, reason: "check_failed" };
   }
 
@@ -91,6 +91,21 @@ export async function reverifyOwnershipWorkflow(
   }
 
   return { verified: false, action: failureResult.action };
+}
+
+/** Step: log a skipped reverification so chronic probe failures are visible. */
+async function logCheckFailedSkip(
+  trackedDomainId: string,
+  domainName: string,
+  method: VerificationMethod,
+): Promise<void> {
+  "use step";
+
+  const { createLogger } = await import("@domainstack/logger");
+  createLogger({ source: "workflows/reverify-ownership" }).warn(
+    { trackedDomainId, domainName, method },
+    "reverification probe failed to complete; skipping this run",
+  );
 }
 
 type DomainData = Pick<

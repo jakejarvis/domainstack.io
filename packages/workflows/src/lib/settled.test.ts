@@ -64,4 +64,27 @@ describe("optionalCall", () => {
       "optional workflow step failed fatally; continuing without it",
     );
   });
+
+  it("recognizes a FatalError-shaped rejection that lost its prototype (boundary rehydration)", async () => {
+    vi.mocked(createLogger).mockClear();
+
+    // A deserialized plain object, not a real Error instance — simulates a
+    // step error crossing the SDK's serialization boundary.
+    const rehydrated = Object.setPrototypeOf(
+      { name: "Error", message: "constraint violation", fatal: true },
+      null,
+    );
+
+    await expect(optionalCall(Promise.reject(rehydrated))).resolves.toBeNull();
+    expect(createLogger).toHaveBeenCalled();
+  });
+
+  it("still resolves null even if the logging step itself fails", async () => {
+    vi.mocked(createLogger).mockImplementationOnce(() => {
+      throw new Error("logger unavailable");
+    });
+
+    const fatal = new FatalError("constraint violation");
+    await expect(optionalCall(Promise.reject(fatal))).resolves.toBeNull();
+  });
 });

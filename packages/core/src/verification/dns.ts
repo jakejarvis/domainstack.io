@@ -29,37 +29,41 @@ export async function verifyByDns(domain: string, token: string): Promise<Verifi
   ];
 
   const providers = providerOrderForLookup(domain);
-  const lookups = hostsToCheck.flatMap((hostname) =>
-    providers.map((provider) => ({ hostname, provider })),
-  );
 
-  const outcomes = await Promise.all(
-    lookups.map(async ({ hostname, provider }) => {
-      try {
-        const answers = await queryDohProvider(provider, hostname, "TXT", {
-          cacheBust: true, // Bypass caches to check freshly added records
-        });
+  const outcomesByHost = await Promise.all(
+    hostsToCheck.map(async (hostname) => {
+      const outcomes = await Promise.all(
+        providers.map(async (provider) => {
+          try {
+            const answers = await queryDohProvider(provider, hostname, "TXT", {
+              cacheBust: true, // Bypass caches to check freshly added records
+            });
 
-        const matched = answers.some((answer) => {
-          const value = answer.data.replace(/^"|"$/g, "").trim();
-          return value === expectedValue;
-        });
-        return matched ? "matched" : "no_match";
-      } catch {
-        // This provider/host lookup itself failed (network/timeout/DNS
-        // resolver error) — it neither confirms nor rules out the record.
-        return "failed";
-      }
+            const matched = answers.some((answer) => {
+              const value = answer.data.replace(/^"|"$/g, "").trim();
+              return value === expectedValue;
+            });
+            return matched ? "matched" : "no_match";
+          } catch {
+            // This provider/host lookup itself failed (network/timeout/DNS
+            // resolver error) — it neither confirms nor rules out the record.
+            return "failed";
+          }
+        }),
+      );
+      return outcomes;
     }),
   );
 
-  if (outcomes.includes("matched")) {
+  if (outcomesByHost.some((outcomes) => outcomes.includes("matched"))) {
     return { verified: true, method: "dns_txt" };
   }
 
-  // checkFailed only when every lookup failed to complete: if at least one
-  // provider returned a clean answer (even a non-matching one), the check
-  // succeeded and this is a confirmed absence, not infrastructure noise.
-  const checkFailed = outcomes.every((outcome) => outcome === "failed");
+  // checkFailed if any single host's lookups all failed — a clean answer
+  // from the other host (e.g. an unused legacy subdomain) shouldn't mask a
+  // resolver failure on the host that actually holds the proof.
+  const checkFailed = outcomesByHost.some((outcomes) =>
+    outcomes.every((outcome) => outcome === "failed"),
+  );
   return { verified: false, method: null, checkFailed };
 }

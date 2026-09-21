@@ -124,4 +124,33 @@ describe("sendEmail", () => {
     expect(delayMs).toBeGreaterThanOrEqual(1000);
     expect(delayMs).toBeLessThanOrEqual(1500 + (after - before));
   });
+
+  it("actually varies the delay between calls (jitter isn't a no-op or a fixed constant)", async () => {
+    sendResendEmailMock.mockResolvedValue({
+      data: null,
+      error: { name: "rate_limit_exceeded", message: "x" },
+    } as never);
+    const { sendEmail } = await import("./email");
+    const randomSpy = vi.spyOn(Math, "random");
+
+    randomSpy.mockReturnValueOnce(0);
+    const low = (await sendEmail({
+      to: "user@example.com",
+      subject: "Subject",
+      react: {} as React.ReactElement,
+      idempotencyKey: "key-a",
+    }).catch((e) => e)) as RetryableError;
+
+    randomSpy.mockReturnValueOnce(0.999);
+    const high = (await sendEmail({
+      to: "user@example.com",
+      subject: "Subject",
+      react: {} as React.ReactElement,
+      idempotencyKey: "key-b",
+    }).catch((e) => e)) as RetryableError;
+
+    randomSpy.mockRestore();
+
+    expect(high.retryAfter.getTime()).toBeGreaterThan(low.retryAfter.getTime());
+  });
 });
