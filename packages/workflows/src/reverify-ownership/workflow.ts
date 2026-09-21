@@ -197,11 +197,16 @@ async function determineFailureAction(
     (domain.verificationStatus === "failing" && !failedAt)
   ) {
     // First failure of this episode (or a failing row missing its timestamp).
-    const updated = await markVerificationFailing(domain.id);
+    const updated = await markVerificationFailing(
+      domain.id,
+      current.verificationStatus,
+      current.verificationFailedAt,
+    );
+    if (!updated) return null;
     return {
       action: "marked_failing",
       email: "failing",
-      failedAt: updated?.verificationFailedAt ? new Date(updated.verificationFailedAt) : new Date(),
+      failedAt: updated.verificationFailedAt ? new Date(updated.verificationFailedAt) : new Date(),
     };
   }
 

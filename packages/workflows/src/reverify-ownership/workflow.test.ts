@@ -203,7 +203,27 @@ describe("reverifyOwnershipWorkflow", () => {
     const result = await reverifyOwnershipWorkflow({ trackedDomainId: "td-1" });
 
     expect(result).toEqual({ verified: false, action: "marked_failing" });
-    expect(trackedDomainsMock.markVerificationFailing).toHaveBeenCalledWith("td-1");
+    expect(trackedDomainsMock.markVerificationFailing).toHaveBeenCalledWith(
+      "td-1",
+      "failing",
+      null,
+    );
+    expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+  });
+
+  it("skips when recovery wins between re-reading and marking the failure", async () => {
+    trackedDomainsMock.getTrackedDomainForReverification.mockResolvedValue(baseDomain as never);
+    trackedDomainsMock.markVerificationFailing.mockResolvedValue(null);
+
+    const { reverifyOwnershipWorkflow } = await import("./workflow");
+    const result = await reverifyOwnershipWorkflow({ trackedDomainId: "td-1" });
+
+    expect(trackedDomainsMock.markVerificationFailing).toHaveBeenCalledWith(
+      "td-1",
+      "verified",
+      null,
+    );
+    expect(result).toEqual({ skipped: true, reason: "invalid_state" });
     expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
   });
 

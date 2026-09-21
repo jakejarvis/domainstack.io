@@ -122,6 +122,7 @@ export async function closeBrowser(): Promise<void> {
   }
 
   const cachedPromise = browserPromise;
+  browserPromise = null;
   try {
     const browser = await cachedPromise;
     await browser.close();

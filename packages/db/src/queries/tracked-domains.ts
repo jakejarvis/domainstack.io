@@ -915,14 +915,26 @@ export async function markVerificationSuccessful(id: string) {
 /**
  * Mark a domain's verification as failing.
  */
-export async function markVerificationFailing(id: string) {
+export async function markVerificationFailing(
+  id: string,
+  verificationStatus: VerificationStatus,
+  verificationFailedAt: Date | null,
+): Promise<typeof userTrackedDomains.$inferSelect | null> {
   const updated = await db
     .update(userTrackedDomains)
     .set({
       verificationStatus: "failing",
       verificationFailedAt: sql`COALESCE(${userTrackedDomains.verificationFailedAt}, NOW())`,
     })
-    .where(eq(userTrackedDomains.id, id))
+    .where(
+      and(
+        eq(userTrackedDomains.id, id),
+        eq(userTrackedDomains.verificationStatus, verificationStatus),
+        verificationFailedAt === null
+          ? isNull(userTrackedDomains.verificationFailedAt)
+          : sql`date_trunc('milliseconds', ${userTrackedDomains.verificationFailedAt}) = ${verificationFailedAt}`,
+      ),
+    )
     .returning();
 
   return updated[0] ?? null;
