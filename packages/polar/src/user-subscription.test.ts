@@ -297,7 +297,7 @@ describe("getUserSubscription", () => {
     expect(row?.tier).toBe("free");
   });
 
-  it("returns the real tier instead of a hardcoded free default when the self-heal insert conflicts", async () => {
+  it("returns the existing pro tier and end date", async () => {
     const raceUserId = "self-heal-race-user";
     await db.insert(users).values({
       id: raceUserId,
@@ -305,8 +305,7 @@ describe("getUserSubscription", () => {
       email: "self-heal-race@example.test",
       emailVerified: true,
     });
-    // Simulate a concurrent writer (e.g. a Polar webhook) winning the race
-    // and inserting a "pro" row just before this call's self-heal insert.
+    // An existing paid subscription should be returned as stored.
     await db.insert(userSubscriptions).values({
       userId: raceUserId,
       tier: "pro",

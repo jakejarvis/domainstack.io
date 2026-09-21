@@ -281,7 +281,7 @@ export async function downgradeToFree(userId: string): Promise<DowngradeToFreeRe
       .for("update")
       .limit(1);
 
-    const wasPro = current?.tier === "pro";
+    let wasPro = current?.tier === "pro";
 
     if (current) {
       await tx
@@ -294,19 +294,34 @@ export async function downgradeToFree(userId: string): Promise<DowngradeToFreeRe
         })
         .where(eq(userSubscriptions.userId, userId));
     } else {
-      // onConflictDoUpdate, not DoNothing: the advisory lock above only
-      // serializes against other lockUserDomainQuota callers. A concurrent
-      // updateUserTier("pro") insert could otherwise win the race and leave
-      // this user stuck on pro with endsAt: null — invisible to
-      // getUserIdsPastDue's isNotNull(endsAt) filter. Forcing free here
-      // matches this function's contract regardless of who wins the insert.
-      await tx
+      // The quota lock does not serialize inserts by updateUserTier or the
+      // signup/self-heal paths. If another insert wins, lock and downgrade
+      // its row too; the winner may have inserted a Pro subscription.
+      const inserted = await tx
         .insert(userSubscriptions)
         .values({ userId, tier: "free" })
-        .onConflictDoUpdate({
-          target: userSubscriptions.userId,
-          set: { tier: "free", endsAt: null, lastExpiryNotification: null, updatedAt: new Date() },
-        });
+        .onConflictDoNothing({ target: userSubscriptions.userId })
+        .returning({ userId: userSubscriptions.userId });
+
+      if (inserted.length === 0) {
+        const [winningRow] = await tx
+          .select({ tier: userSubscriptions.tier })
+          .from(userSubscriptions)
+          .where(eq(userSubscriptions.userId, userId))
+          .for("update")
+          .limit(1);
+
+        wasPro = winningRow?.tier === "pro";
+        await tx
+          .update(userSubscriptions)
+          .set({
+            tier: "free",
+            endsAt: null,
+            lastExpiryNotification: null,
+            updatedAt: new Date(),
+          })
+          .where(eq(userSubscriptions.userId, userId));
+      }
     }
 
     const [countResult] = await tx

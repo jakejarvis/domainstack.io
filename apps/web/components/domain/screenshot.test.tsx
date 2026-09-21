@@ -134,7 +134,7 @@ describe("useScreenshot", () => {
         status: "failed",
       }),
     );
-    expect(view.result.current.hasFailed).toBe(true);
+    await vi.waitFor(() => expect(view.result.current.hasFailed).toBe(true));
     expect(view.result.current.isLoading).toBe(false);
 
     // No POST was re-issued: every retry after the initial start polled the
@@ -257,7 +257,7 @@ describe("useScreenshot", () => {
         error: "Run not found",
       }),
     );
-    expect(view.result.current.hasFailed).toBe(true);
+    await vi.waitFor(() => expect(view.result.current.hasFailed).toBe(true));
   });
 
   it("shares an active run across observers and remounts", async () => {

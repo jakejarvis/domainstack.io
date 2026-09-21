@@ -1007,7 +1007,7 @@ export async function unarchiveTrackedDomainWithLimitCheck(
       .select()
       .from(userTrackedDomains)
       .where(eq(userTrackedDomains.id, id))
-      .limit(1);
+      .for("update");
 
     if (!tracked) {
       return { success: false, reason: "not_found" } as const;
@@ -1033,8 +1033,6 @@ export async function unarchiveTrackedDomainWithLimitCheck(
       return { success: false, reason: "limit_exceeded" } as const;
     }
 
-    // Lock userTrackedDomains before domainSnapshots — matches
-    // verifyTrackedDomain's order to avoid a deadlock against it.
     const [updated] = await tx
       .update(userTrackedDomains)
       .set({ archivedAt: null })
