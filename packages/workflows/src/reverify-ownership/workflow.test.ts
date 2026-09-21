@@ -211,7 +211,7 @@ describe("reverifyOwnershipWorkflow", () => {
     expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
   });
 
-  it("skips when recovery wins between re-reading and marking the failure", async () => {
+  it("skips when marking the failure loses a concurrent write race", async () => {
     trackedDomainsMock.getTrackedDomainForReverification.mockResolvedValue(baseDomain as never);
     trackedDomainsMock.markVerificationFailing.mockResolvedValue(null);
 
