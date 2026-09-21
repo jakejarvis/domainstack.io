@@ -294,15 +294,19 @@ export async function downgradeToFree(userId: string): Promise<DowngradeToFreeRe
         })
         .where(eq(userSubscriptions.userId, userId));
     } else {
-      // onConflictDoNothing: the per-user advisory lock above only
-      // serializes against other lockUserDomainQuota callers, not against a
-      // concurrent createSubscription (signup) or getUserSubscription's
-      // self-heal insert — both of which also insert tier "free", so a
-      // no-op conflict here is never wrong.
+      // onConflictDoUpdate, not DoNothing: the advisory lock above only
+      // serializes against other lockUserDomainQuota callers. A concurrent
+      // updateUserTier("pro") insert could otherwise win the race and leave
+      // this user stuck on pro with endsAt: null — invisible to
+      // getUserIdsPastDue's isNotNull(endsAt) filter. Forcing free here
+      // matches this function's contract regardless of who wins the insert.
       await tx
         .insert(userSubscriptions)
         .values({ userId, tier: "free" })
-        .onConflictDoNothing({ target: userSubscriptions.userId });
+        .onConflictDoUpdate({
+          target: userSubscriptions.userId,
+          set: { tier: "free", endsAt: null, lastExpiryNotification: null, updatedAt: new Date() },
+        });
     }
 
     const [countResult] = await tx
