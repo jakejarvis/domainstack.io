@@ -155,26 +155,38 @@ export async function replaceDns(params: UpsertDnsParams) {
         // preserve, so it's inserted as indeterminate — an honest "unknown".
         await tx
           .insert(dnssecChecks)
-          .values({ domainId, status: "indeterminate", ds: [], dnskeys: [], ...base })
+          .values({
+            domainId,
+            status: "indeterminate",
+            ds: [],
+            dnskeys: [],
+            dsAvailable: false,
+            dnskeysAvailable: false,
+            ...base,
+          })
           .onConflictDoUpdate({ target: dnssecChecks.domainId, set: base });
       } else {
         // The overall status is determinate (from the SOA query), but the DS
         // and/or DNSKEY queries are independent and each may have failed on
         // their own — an unavailable one contributes an empty array to
-        // `result` that must not overwrite a real stored set. Insert always
-        // writes both (there's nothing to preserve on a first row); update
-        // only touches the columns whose query actually succeeded.
+        // `result` that must not be read as a confirmed-empty set, even on a
+        // first-ever row (which is why `dsAvailable`/`dnskeysAvailable` are
+        // stored too, not just used to decide what to overwrite). Update only
+        // touches the columns whose query actually succeeded, so a previously
+        // real set (and its availability) survives an unavailable round.
         const insertValues = {
           status: result.status,
           ds: result.ds,
           dnskeys: result.dnskeys,
+          dsAvailable,
+          dnskeysAvailable,
           ...base,
         };
         const updateSet = {
           status: result.status,
           ...base,
-          ...(dsAvailable ? { ds: result.ds } : {}),
-          ...(dnskeysAvailable ? { dnskeys: result.dnskeys } : {}),
+          ...(dsAvailable ? { ds: result.ds, dsAvailable: true } : {}),
+          ...(dnskeysAvailable ? { dnskeys: result.dnskeys, dnskeysAvailable: true } : {}),
         };
         await tx
           .insert(dnssecChecks)
@@ -214,6 +226,7 @@ export async function getCachedDns(domain: string): Promise<CacheResult<DnsRecor
       dnssecStatus: dnssecChecks.status,
       dnssecDs: dnssecChecks.ds,
       dnssecKeys: dnssecChecks.dnskeys,
+      dnssecDsAvailable: dnssecChecks.dsAvailable,
       dnssecFetchedAt: dnssecChecks.fetchedAt,
       dnssecExpiresAt: dnssecChecks.expiresAt,
       registryDnssec: registrations.dnssec,
@@ -240,6 +253,7 @@ export async function getCachedDns(domain: string): Promise<CacheResult<DnsRecor
           status: first.dnssecStatus,
           ds: first.dnssecDs ?? [],
           dnskeys: first.dnssecKeys ?? [],
+          dsAvailable: first.dnssecDsAvailable ?? false,
           fetchedAt: first.dnssecFetchedAt,
           expiresAt: first.dnssecExpiresAt,
         }
@@ -284,6 +298,7 @@ export async function getCachedDns(domain: string): Promise<CacheResult<DnsRecor
         ? withRegistryCheck(
             { status: dnssecCheck.status, ds: dnssecCheck.ds, dnskeys: dnssecCheck.dnskeys },
             first?.registryDnssec,
+            { dsAvailable: dnssecCheck.dsAvailable },
           )
         : undefined,
     },

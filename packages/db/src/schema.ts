@@ -493,6 +493,12 @@ export const dnssecChecks = pgTable(
       .$type<DnssecKey[]>()
       .notNull()
       .default(sql`'[]'::jsonb`),
+    // Whether `ds`/`dnskeys` reflect a real NOERROR observation rather than an
+    // empty stand-in for a query that failed independently of the overall
+    // (SOA-derived) status. Defaults true: an empty set with no recorded
+    // failure is the ordinary "confirmed unsigned" case.
+    dsAvailable: boolean("ds_available").notNull().default(true),
+    dnskeysAvailable: boolean("dnskeys_available").notNull().default(true),
     resolver: text("resolver").notNull(),
     fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),

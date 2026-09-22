@@ -184,6 +184,51 @@ describe("persistDnsRecordsStep", () => {
       expect(cached.data?.dnssec).toEqual({ status: "secure", ds: [DS], dnskeys: [] });
     });
 
+    it("does not report a false registry mismatch on a first-ever determinate observation with unavailable DS", async () => {
+      // Genuinely never observed before (no prior row), and this round's DS
+      // query failed even though SOA still classified the zone as secure.
+      // Storing `ds: []` unqualified would be indistinguishable from "the
+      // registry says signed, but DNS confirms no DS records" — a bug, not a
+      // real mismatch.
+      await persist(
+        "first-observation-ds-unavailable.com",
+        { status: "secure", ds: [], dnskeys: [] },
+        undefined,
+        false,
+        true,
+      );
+      const { upsertDomain } = await import("@domainstack/db/queries/domains");
+      const { upsertRegistration } = await import("@domainstack/db/queries/registrations");
+      const domain = await upsertDomain({
+        name: "first-observation-ds-unavailable.com",
+        tld: "com",
+        unicodeName: "first-observation-ds-unavailable.com",
+      });
+      await upsertRegistration({
+        domainId: domain.id,
+        isRegistered: true,
+        source: "rdap",
+        fetchedAt: new Date(),
+        expiresAt: new Date(Date.now() + 300_000),
+        dnssec: { enabled: true, dsRecords: [DS] },
+      });
+
+      const { getCachedDns } = await import("@domainstack/db/queries/dns");
+      const cached = await getCachedDns("first-observation-ds-unavailable.com");
+
+      expect(cached.data?.dnssec?.registry).toBeUndefined();
+
+      // The next round's DS query succeeds: the row updates and registry
+      // comparison resumes normally.
+      await persist("first-observation-ds-unavailable.com", {
+        status: "secure",
+        ds: [DS],
+        dnskeys: [],
+      });
+      const resolved = await getCachedDns("first-observation-ds-unavailable.com");
+      expect(resolved.data?.dnssec?.registry).toEqual({ enabled: true, mismatch: false });
+    });
+
     it("still updates DS/DNSKEY when their queries succeed, even if the status is unchanged", async () => {
       const otherDs = { keyTag: 9999, algorithm: 13, digestType: 2, digest: "ffff" };
       await persist("rollover.com", { status: "secure", ds: [DS], dnskeys: [] });
