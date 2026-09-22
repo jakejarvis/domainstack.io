@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { MCP_TOOLS } from "@/lib/constants/mcp-tools";
+import { MCP_TOOLS } from "@/lib/chat/domain-tools";
 import { Badge } from "@domainstack/ui/badge";
 
 type ParameterSchema = {

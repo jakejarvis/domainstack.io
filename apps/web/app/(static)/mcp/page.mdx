@@ -12,7 +12,7 @@ import {
 import { CursorInstallButton, VSCodeInstallButton } from "@/components/mcp/install-buttons";
 import { SetupAccordion, SetupItem } from "@/components/mcp/setup-accordion";
 import { McpToolList } from "@/components/mcp/tool-list";
-import { MCP_TOOLS } from "@/lib/constants/mcp-tools";
+import { MCP_TOOLS } from "@/lib/chat/domain-tools";
 import { CLINE_JSON, MCP_SERVERS_JSON, MCP_URL, VSCODE_JSON, WINDSURF_JSON } from "@/lib/mcp";
 import { createMetadata } from "@/lib/seo";
 
@@ -189,7 +189,7 @@ Once configured, you can ask questions like:
 
 The MCP server is dynamically rate limited to meet demand. This applies across all tool calls. If you exceed the limit, requests will return a 429 error with a `Retry-After` header.
 
-The `domain_report` tool is useful for reducing the number of calls when you need multiple data types.
+The `get_domain_report` tool is useful for reducing the number of calls when you need multiple data types.
 
 ## Data Freshness
 

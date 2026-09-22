@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 
 import { GET } from "@/app/llms.txt/route";
-import { MCP_SECTION_TOOLS, MCP_TOOLS } from "@/lib/constants/mcp-tools";
+import { MCP_SECTION_TOOLS, MCP_TOOLS } from "@/lib/chat/domain-tools";
 
 import { buildLlmsTxt } from "./llms-txt";
 

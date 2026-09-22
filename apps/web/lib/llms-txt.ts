@@ -1,4 +1,4 @@
-import { MCP_REPORT_TOOL, MCP_SECTION_TOOLS, MCP_TOOLS } from "@/lib/constants/mcp-tools";
+import { MCP_REPORT_TOOL, MCP_SECTION_TOOLS, MCP_TOOLS } from "@/lib/chat/domain-tools";
 import { REPOSITORY_SLUG, SECTION_IDS } from "@domainstack/constants";
 
 /**

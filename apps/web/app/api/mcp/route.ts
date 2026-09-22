@@ -5,12 +5,12 @@ import { after } from "next/server";
 import { PostHog } from "posthog-node";
 
 import {
-  domainSchema,
+  domainToolInputSchema,
   MCP_REPORT_TOOL,
   MCP_SECTION_TOOLS,
   MCP_TOOLS,
   reportSchema,
-} from "@/lib/constants/mcp-tools";
+} from "@/lib/chat/domain-tools";
 import { checkRateLimit } from "@/lib/ratelimit/api";
 import { type Section, SECTION_IDS } from "@domainstack/constants";
 import { lookupSection } from "@domainstack/core/lookup";
@@ -60,7 +60,7 @@ async function handler(request: Request): Promise<Response> {
           {
             title,
             description,
-            inputSchema: domainSchema,
+            inputSchema: domainToolInputSchema,
             annotations: {
               readOnlyHint: true,
               idempotentHint: true,

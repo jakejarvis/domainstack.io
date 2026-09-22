@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { REPOSITORY_SLUG } from "@domainstack/constants";
 
-import { MCP_TOOLS } from "../../../../lib/constants/mcp-tools";
+import { MCP_TOOLS } from "../../../../lib/chat/domain-tools";
 
 const TOOLS = MCP_TOOLS.map((tool) => ({
   name: tool.name,

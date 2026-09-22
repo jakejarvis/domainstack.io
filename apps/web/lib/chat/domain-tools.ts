@@ -2,52 +2,81 @@ import { z } from "zod";
 
 import { getLookupErrorMessage } from "@/lib/constants/lookup-errors";
 import { getTrpcErrorCode } from "@/lib/trpc/errors";
+import { SECTION_IDS } from "@domainstack/constants";
 import type { LookupResult } from "@domainstack/core/lookup";
 
 /**
- * Shared domain-tool definitions used by the cloud workflow and browser chat.
- * `section` names the report section the tool looks up.
+ * Shared domain-tool definitions used by the cloud workflow, browser chat,
+ * and MCP server (including WebMCP, which reuses the MCP tool names) — the
+ * single place a new report section wires up a tool everywhere at once.
+ *
+ * - `section` names the report section the tool looks up.
+ * - `procedure` is the matching `trpc.domain.*` query the browser chat calls.
+ * - `description` is used verbatim as both the chat tool's and the MCP
+ *   tool's description, so the two surfaces can't describe the same lookup
+ *   in different words.
+ * - `title`/`whenToUse` are MCP-only: `title` labels the tool for MCP
+ *   clients and the docs page; `whenToUse` feeds the terse per-tool line in
+ *   llms.txt.
  */
 export const DOMAIN_TOOL_DEFS = [
   {
     name: "get_registration",
     section: "registration",
+    procedure: "getRegistration",
     status: "Looking up WHOIS data",
+    title: "Registration",
+    whenToUse: "who registered a domain, which registrar, when it was created or expires",
     description:
       "Get WHOIS/RDAP registration data for a domain including registrar, creation date, expiration date, nameservers, and registrant information. Use this tool when users ask about domain ownership, registration, expiry, or who owns a domain.",
   },
   {
     name: "get_dns_records",
     section: "dns",
+    procedure: "getDnsRecords",
     status: "Fetching DNS records",
+    title: "DNS Records",
+    whenToUse: "A, AAAA, MX, TXT, and NS records",
     description:
       "Get DNS records for a domain including A, AAAA, MX, TXT, and NS records. Use this tool when users ask about DNS configuration, IP addresses, mail servers, or nameservers.",
   },
   {
     name: "get_hosting",
     section: "hosting",
+    procedure: "getHosting",
     status: "Detecting hosting provider",
+    title: "Hosting",
+    whenToUse: "where a site is hosted and which CDN, DNS, or email provider it uses",
     description:
       "Detect hosting, DNS, CDN, and email providers for a domain by analyzing DNS records and HTTP headers. Use this tool when users ask where a site is hosted, what CDN they use, or who provides their email.",
   },
   {
     name: "get_certificates",
     section: "certificates",
+    procedure: "getCertificates",
     status: "Checking SSL certificate",
+    title: "Certificates",
+    whenToUse: "an SSL/TLS certificate's issuer, validity dates, and chain",
     description:
       "Get SSL/TLS certificate information for a domain including issuer, validity, TLS protocol, and certificate chain. Use this tool when users ask about HTTPS, SSL certificates, security, or certificate expiry.",
   },
   {
     name: "get_headers",
     section: "headers",
+    procedure: "getHeaders",
     status: "Analyzing HTTP headers",
+    title: "Headers",
+    whenToUse: "HTTP response headers, including security and caching headers",
     description:
       "Get HTTP response headers for a domain including security headers, caching headers, and server information. Use this tool when users ask about security headers, server software, caching, or HTTP configuration.",
   },
   {
     name: "get_seo",
     section: "seo",
+    procedure: "getSeo",
     status: "Fetching SEO metadata",
+    title: "SEO",
+    whenToUse: "title, meta description, Open Graph and Twitter tags, and robots.txt rules",
     description:
       "Get SEO metadata for a domain including title, description, Open Graph tags, Twitter cards, and robots.txt rules. Use this tool when users ask about SEO, meta tags, social sharing, or how a site appears in search.",
   },
@@ -119,3 +148,42 @@ export function createDomainToolsContext<T>(context: T): Record<DomainToolName, 
     T
   >;
 }
+
+// ───────────────────────────────────────────────────────────────────────────
+// MCP server (and WebMCP, and the /mcp docs page, and llms.txt)
+// ───────────────────────────────────────────────────────────────────────────
+
+export const reportSchema = domainToolInputSchema.extend({
+  sections: z
+    .array(z.enum(SECTION_IDS))
+    .optional()
+    .describe("Sections to include in the report. If omitted, all sections are included."),
+});
+
+/** `DOMAIN_TOOL_DEFS`, keyed by section for the MCP route's per-section registration loop. */
+export const MCP_SECTION_TOOLS = Object.fromEntries(
+  DOMAIN_TOOL_DEFS.map((def) => [
+    def.section,
+    { name: def.name, title: def.title, description: def.description, whenToUse: def.whenToUse },
+  ]),
+) as Record<
+  DomainToolSection,
+  { name: string; title: string; description: string; whenToUse: string }
+>;
+
+export const MCP_REPORT_TOOL = {
+  name: "get_domain_report",
+  title: "Full Report",
+  description:
+    "Get a comprehensive domain report combining registration, DNS, hosting, certificates, headers, and SEO data in a single call. Use the sections parameter to request only specific data.",
+} as const;
+
+export const MCP_TOOLS = [
+  ...SECTION_IDS.map((section) => ({
+    name: MCP_SECTION_TOOLS[section].name,
+    title: MCP_SECTION_TOOLS[section].title,
+    description: MCP_SECTION_TOOLS[section].description,
+    inputSchema: domainToolInputSchema,
+  })),
+  { ...MCP_REPORT_TOOL, inputSchema: reportSchema },
+];
