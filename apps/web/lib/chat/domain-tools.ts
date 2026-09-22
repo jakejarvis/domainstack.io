@@ -21,7 +21,7 @@ export const DOMAIN_TOOL_DEFS = [
     section: "dns",
     status: "Fetching DNS records",
     description:
-      "Get DNS records for a domain including A, AAAA, MX, TXT, and NS records, plus its DNSSEC status (secure, insecure, bogus, or indeterminate), DS/DNSKEY records, and whether the registry's DS data matches DNS. Use this tool when users ask about DNS configuration, IP addresses, mail servers, nameservers, or DNSSEC.",
+      "Get DNS records for a domain including A, AAAA, MX, TXT, and NS records, plus its DNSSEC status (secure, insecure, bogus, or indeterminate) and DS/DNSKEY records when available, along with whether the registry's DS data matches DNS when registry data is known. Use this tool when users ask about DNS configuration, IP addresses, mail servers, nameservers, or DNSSEC.",
   },
   {
     name: "get_hosting",

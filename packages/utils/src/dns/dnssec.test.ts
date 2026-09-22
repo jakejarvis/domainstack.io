@@ -1,7 +1,15 @@
 /* @vitest-environment node */
 import { describe, expect, it } from "vitest";
 
-import { classifyDnssec, compareRegistryDs, parseDnskey, parseDs } from "./dnssec";
+import type { DnssecResult } from "@domainstack/types";
+
+import {
+  classifyDnssec,
+  compareRegistryDs,
+  parseDnskey,
+  parseDs,
+  withRegistryCheck,
+} from "./dnssec";
 import type { DohResult } from "./types";
 
 const result = (rcode: number, ad = false): DohResult => ({ rcode, ad, answers: [] });
@@ -123,6 +131,33 @@ describe("compareRegistryDs", () => {
   it("ignores registry DS records with missing fields", () => {
     expect(compareRegistryDs([], { enabled: false, dsRecords: [{ keyTag: 1 }] }).mismatch).toBe(
       false,
+    );
+  });
+});
+
+describe("withRegistryCheck", () => {
+  const ds = { keyTag: 2371, algorithm: 13, digestType: 2, digest: "abcd" };
+  const secure: DnssecResult = { status: "secure", ds: [ds], dnskeys: [] };
+
+  it("passes the result through unchanged when the registry is unknown", () => {
+    expect(withRegistryCheck(secure, null)).toBe(secure);
+    expect(withRegistryCheck(secure, undefined)).toBe(secure);
+  });
+
+  it("attaches the registry cross-check when both sides are known", () => {
+    expect(withRegistryCheck(secure, { enabled: true, dsRecords: [ds] })).toEqual({
+      ...secure,
+      registry: { enabled: true, mismatch: false },
+    });
+  });
+
+  it("skips the comparison for an indeterminate result, even with a known registry", () => {
+    const indeterminate: DnssecResult = { status: "indeterminate", ds: [], dnskeys: [] };
+
+    // An indeterminate observation has no reliable (possibly empty) DS set, so
+    // comparing it would report a false "missing in DNS" mismatch.
+    expect(withRegistryCheck(indeterminate, { enabled: true, dsRecords: [ds] })).toBe(
+      indeterminate,
     );
   });
 });

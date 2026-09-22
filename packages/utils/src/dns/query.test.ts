@@ -199,6 +199,17 @@ describe("queryDohProvider", () => {
     );
   });
 
+  it("throws when Status is missing or not a number", async () => {
+    mockFetchResponse({
+      ok: true,
+      json: () => Promise.resolve({ Answer: [] }),
+    });
+
+    await expect(queryDohProvider(mockProvider, "example.com", "A")).rejects.toThrow(
+      "DoH invalid response: test (Status is not a number)",
+    );
+  });
+
   it("throws when Answer is not an array", async () => {
     mockFetchResponse({
       ok: true,
@@ -314,6 +325,14 @@ describe("queryDoh", () => {
     const result = await queryDoh(mockProvider, "example.com", "SOA");
 
     expect(result.ad).toBe(false);
+  });
+
+  it("rejects a response with a missing or non-numeric Status instead of returning a bogus rcode", async () => {
+    mockFetchResponse({ ok: true, json: () => Promise.resolve({ AD: true, Answer: [] }) });
+
+    await expect(queryDoh(mockProvider, "example.com", "SOA")).rejects.toThrow(
+      "DoH invalid response: test (Status is not a number)",
+    );
   });
 
   it("sets do=1 and cd=1 only when requested", async () => {

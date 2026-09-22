@@ -116,6 +116,12 @@ export async function persistDnsRecords(domain: string, fetchData: DnsFetchData)
     resolver: fetchData.resolver,
     fetchedAt: now,
     recordsByType,
-    dnssec: { result: fetchData.dnssec, expiresAt: new Date(fetchData.dnssecExpiresAt) },
+    // Never overwrite a good cached observation with "could not tell": leave
+    // the previous row (and its TTL) in place so it naturally goes stale and
+    // is retried, instead of the response flipping to indeterminate on a blip.
+    dnssec:
+      fetchData.dnssec.status === "indeterminate"
+        ? undefined
+        : { result: fetchData.dnssec, expiresAt: new Date(fetchData.dnssecExpiresAt) },
   });
 }

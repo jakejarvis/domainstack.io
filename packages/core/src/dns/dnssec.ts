@@ -39,32 +39,59 @@ function parseAnswers<T>(
 }
 
 /**
+ * TTLs of answers matching `typeNumber`. With `do=1` set, a resolver may
+ * bundle the covering RRSIG into the same answer section; its TTL must not
+ * be mistaken for the record's own, so this filters by type rather than
+ * using every answer's TTL indiscriminately.
+ */
+function ttlsOf(answers: DnsAnswer[], typeNumber: number): number[] {
+  return answers
+    .filter((a) => a.type === typeNumber)
+    .map((a) => a.TTL)
+    .filter((ttl) => Number.isFinite(ttl) && ttl > 0);
+}
+
+/** DNS RCODE 2 — server failure; a validating resolver's answer for a bogus zone. */
+const RCODE_SERVFAIL = 2;
+
+/**
  * Determine a domain's DNSSEC status and published DS/DNSKEY sets from one provider.
  * Throws on transport-level failures; callers decide the fallback.
  */
 export async function fetchDnssec(domain: string, provider: DohProvider): Promise<DnssecFetchData> {
-  const [validated, dsResult, dnskeyResult] = await Promise.all([
-    queryDoh(provider, domain, "SOA", { dnssec: true }),
+  // The SOA query establishes the status; it must not be discarded just because
+  // the (best-effort, supplementary) DS/DNSKEY metadata queries fail below.
+  const validated = await queryDoh(provider, domain, "SOA", { dnssec: true });
+
+  // Only a SERVFAIL needs the unchecked comparison to tell "bogus" from "broken".
+  const unchecked =
+    validated.rcode === RCODE_SERVFAIL
+      ? await queryDoh(provider, domain, "SOA", { dnssec: true, checkingDisabled: true })
+      : undefined;
+
+  const [dsSettled, dnskeySettled] = await Promise.allSettled([
     queryDoh(provider, domain, "DS", { dnssec: true, checkingDisabled: true }),
     queryDoh(provider, domain, "DNSKEY", { dnssec: true, checkingDisabled: true }),
   ]);
 
-  // Only a SERVFAIL needs the unchecked comparison to tell "bogus" from "broken".
-  const unchecked =
-    validated.rcode === 2
-      ? await queryDoh(provider, domain, "SOA", { dnssec: true, checkingDisabled: true })
-      : undefined;
-
-  const dsAnswers = dsResult.rcode === 0 ? dsResult.answers : [];
-  const dnskeyAnswers = dnskeyResult.rcode === 0 ? dnskeyResult.answers : [];
+  const dsAnswers =
+    dsSettled.status === "fulfilled" && dsSettled.value.rcode === 0 ? dsSettled.value.answers : [];
+  const dnskeyAnswers =
+    dnskeySettled.status === "fulfilled" && dnskeySettled.value.rcode === 0
+      ? dnskeySettled.value.answers
+      : [];
 
   const ds: DnssecDsRecord[] = parseAnswers(dsAnswers, DNS_TYPE_NUMBERS.DS, parseDs);
   const dnskeys: DnssecKey[] = parseAnswers(dnskeyAnswers, DNS_TYPE_NUMBERS.DNSKEY, parseDnskey);
 
-  const ttls = [...dsAnswers, ...dnskeyAnswers]
-    .filter((a) => a.type === DNS_TYPE_NUMBERS.DS || a.type === DNS_TYPE_NUMBERS.DNSKEY)
-    .map((a) => a.TTL)
-    .filter((ttl) => Number.isFinite(ttl) && ttl > 0);
+  // Include the SOA answers too: a short SOA TTL must not be outlived by a
+  // longer DS/DNSKEY TTL, or the cached status could survive past its source.
+  const ttls = [
+    ...ttlsOf(validated.answers, DNS_TYPE_NUMBERS.SOA),
+    ...ttlsOf(unchecked?.answers ?? [], DNS_TYPE_NUMBERS.SOA),
+    ...ttlsOf(dsAnswers, DNS_TYPE_NUMBERS.DS),
+    ...ttlsOf(dnskeyAnswers, DNS_TYPE_NUMBERS.DNSKEY),
+  ];
 
   return {
     dnssec: { status: classifyDnssec(validated, unchecked), ds, dnskeys },

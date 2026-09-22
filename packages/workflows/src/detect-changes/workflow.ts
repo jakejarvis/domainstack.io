@@ -695,7 +695,9 @@ async function runChangeDetection(
   //
   // `indeterminate` means DNSSEC could not be observed (resolver trouble), so it is
   // never compared or stored: a hiccup must not read as DNSSEC being disabled.
-  const currentDnssec = dnsObserved ? dnssecSnapshotFrom(dnsResult.dnssec) : null;
+  // DNSSEC is observed independently of the A/AAAA/MX/TXT/NS records `dnsObserved`
+  // guards, so it isn't gated on that: `dnssecSnapshotFrom` already excludes it.
+  const currentDnssec = dnssecSnapshotFrom(dnsResult.dnssec);
 
   if (currentDnssec && !snapshot.dnssec) {
     // No baseline yet: the snapshot predates DNSSEC tracking (or its baseline was

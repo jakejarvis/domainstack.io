@@ -65,12 +65,19 @@ describe("fetchDnssec", () => {
   });
 
   it("reports insecure for an unsigned zone", async () => {
-    mockDoh({ SOA: { Status: 0, AD: false } });
+    const calls = mockDoh({
+      SOA: { Status: 0, AD: false },
+      "DS:cd": { Status: 0 },
+      "DNSKEY:cd": { Status: 0 },
+    });
 
     const result = await fetchDnssec("example.com", provider);
 
     expect(result.dnssec).toEqual({ status: "insecure", ds: [], dnskeys: [] });
     expect(result.ttl).toBeUndefined();
+    // Pin the request set so a dropped DS/DNSKEY query (or a regressed `cd`
+    // param) fails this test instead of passing on the `{Status: 0}` fallback.
+    expect(calls).toEqual(expect.arrayContaining(["SOA", "DS:cd", "DNSKEY:cd"]));
   });
 
   it("reports bogus when the validating query SERVFAILs but resolves unchecked", async () => {
@@ -96,11 +103,17 @@ describe("fetchDnssec", () => {
   });
 
   it("reports indeterminate when SERVFAIL persists unchecked", async () => {
-    mockDoh({ SOA: { Status: 2 }, "SOA:cd": { Status: 2 } });
+    const calls = mockDoh({
+      SOA: { Status: 2 },
+      "SOA:cd": { Status: 2 },
+      "DS:cd": { Status: 0 },
+      "DNSKEY:cd": { Status: 0 },
+    });
 
     const result = await fetchDnssec("example.com", provider);
 
     expect(result.dnssec.status).toBe("indeterminate");
+    expect(calls).toEqual(expect.arrayContaining(["SOA", "SOA:cd", "DS:cd", "DNSKEY:cd"]));
   });
 
   it("ignores DS/DNSKEY answers from a non-NOERROR reply", async () => {
@@ -118,5 +131,46 @@ describe("fetchDnssec", () => {
     mockDoh({ SOA: new Error("network down") });
 
     await expect(fetchDnssec("example.com", provider)).rejects.toThrow("network down");
+  });
+
+  it("keeps the SOA-derived status when the DS and DNSKEY queries fail transiently", async () => {
+    const calls = mockDoh({
+      SOA: { Status: 0, AD: true },
+      "DS:cd": new Error("ds transport failure"),
+      "DNSKEY:cd": new Error("dnskey transport failure"),
+    });
+
+    const result = await fetchDnssec("example.com", provider);
+
+    // The SOA query alone already tells us the zone validates; losing the
+    // best-effort DS/DNSKEY metadata must not discard that.
+    expect(result.dnssec).toEqual({ status: "secure", ds: [], dnskeys: [] });
+    expect(calls).toEqual(expect.arrayContaining(["SOA", "DS:cd", "DNSKEY:cd"]));
+  });
+
+  it("uses a shorter SOA TTL over a longer DS/DNSKEY TTL", async () => {
+    const shortSoa = { name: "example.com.", type: 6, TTL: 120, data: "ns. host. 1 2 3 4 5" };
+    mockDoh({
+      SOA: { Status: 0, AD: true, Answer: [shortSoa] },
+      "DS:cd": { Status: 0, Answer: [DS_ANSWER] },
+      "DNSKEY:cd": { Status: 0, Answer: [DNSKEY_ANSWER] },
+    });
+
+    const result = await fetchDnssec("example.com", provider);
+
+    expect(result.ttl).toBe(120);
+  });
+
+  it("ignores an RRSIG bundled into the SOA answer section when computing TTL", async () => {
+    const soaAnswer = { name: "example.com.", type: 6, TTL: 900, data: "ns. host. 1 2 3 4 5" };
+    const soaRrsig = { name: "example.com.", type: 46, TTL: 30, data: "SOA 13 2 900 ..." };
+    mockDoh({
+      SOA: { Status: 0, AD: true, Answer: [soaAnswer, soaRrsig] },
+    });
+
+    const result = await fetchDnssec("example.com", provider);
+
+    // The RRSIG's shorter TTL must not win: it covers the SOA record, it isn't one.
+    expect(result.ttl).toBe(900);
   });
 });

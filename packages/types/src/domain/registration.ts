@@ -74,9 +74,6 @@ export interface RegistrationStatus {
 }
 
 /**
- * Full registration response from WHOIS/RDAP lookup.
- */
-/**
  * DNSSEC delegation data reported by the registry (RDAP `secureDNS`).
  * WHOIS fallbacks only know `enabled`.
  */
@@ -90,6 +87,9 @@ export interface RegistrationDnssec {
   }[];
 }
 
+/**
+ * Full registration response from WHOIS/RDAP lookup.
+ */
 export interface RegistrationResponse {
   /**
    * Internal domain ID from database. Only present for registered domains

@@ -87,8 +87,8 @@ export interface ProviderSnapshotData {
  */
 export interface DnssecChange {
   kind: DnssecChangeKind;
-  previousStatus: DnssecStatus;
-  newStatus: DnssecStatus;
+  previousStatus: Exclude<DnssecStatus, "indeterminate">;
+  newStatus: Exclude<DnssecStatus, "indeterminate">;
 }
 
 /**

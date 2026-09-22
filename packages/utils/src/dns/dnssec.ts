@@ -34,6 +34,7 @@ export function parseDs(data: string): DnssecDsRecord | null {
   };
   if (
     !digest ||
+    !/^[0-9a-f]+$/.test(digest) ||
     !Number.isInteger(parsed.keyTag) ||
     !Number.isInteger(parsed.algorithm) ||
     !Number.isInteger(parsed.digestType)
@@ -133,6 +134,9 @@ export function withRegistryCheck(
   dnssec: DnssecResult,
   registry: RegistrationDnssec | null | undefined,
 ): DnssecResult {
-  if (!registry) return dnssec;
+  // An indeterminate status carries no reliable DS set (a failed or incomplete
+  // observation, never "confirmed unsigned"), so comparing it against the
+  // registry would report a false ds_missing_in_dns mismatch.
+  if (!registry || dnssec.status === "indeterminate") return dnssec;
   return { ...dnssec, registry: compareRegistryDs(dnssec.ds, registry) };
 }

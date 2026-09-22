@@ -452,6 +452,55 @@ describe("DNSSEC change monitoring", () => {
     );
   });
 
+  it("alerts when DNSSEC is disabled", async () => {
+    snapshotsMock.getSnapshot.mockResolvedValue(
+      makeSnapshot({ dnssec: { status: "secure", pending: pending("insecure") } }),
+    );
+    dnssecResult("insecure");
+    notificationsMock.sendDnssecChangeNotificationStep.mockResolvedValue(true);
+
+    const result = await run();
+
+    expect(result).toMatchObject({ dnssecChanges: true });
+    expect(notificationsMock.sendDnssecChangeNotificationStep).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "DNSSEC disabled for example.com",
+        emailSubject: "⚠️ DNSSEC disabled for example.com",
+        changes: { kind: "disabled", previousStatus: "secure", newStatus: "insecure" },
+        idempotencyKey: "dnssec:td-1:secure>insecure",
+      }),
+      true,
+      true,
+    );
+    expect(dnssecWrites()).toEqual([["td-1", { dnssec: { status: "insecure", pending: null } }]]);
+  });
+
+  it.each([
+    ["secure", "is passing again"],
+    ["insecure", "no longer fails DNSSEC validation"],
+  ] as const)("alerts when validation recovers to %s", async (newStatus, messageFragment) => {
+    snapshotsMock.getSnapshot.mockResolvedValue(
+      makeSnapshot({ dnssec: { status: "bogus", pending: pending(newStatus) } }),
+    );
+    dnssecResult(newStatus);
+    notificationsMock.sendDnssecChangeNotificationStep.mockResolvedValue(true);
+
+    const result = await run();
+
+    expect(result).toMatchObject({ dnssecChanges: true });
+    expect(notificationsMock.sendDnssecChangeNotificationStep).toHaveBeenCalledWith(
+      expect.objectContaining({
+        emailSubject: "✅ DNSSEC validation recovered for example.com",
+        message: expect.stringContaining(messageFragment),
+        changes: { kind: "recovered", previousStatus: "bogus", newStatus },
+        idempotencyKey: `dnssec:td-1:bogus>${newStatus}`,
+      }),
+      true,
+      true,
+    );
+    expect(dnssecWrites()).toEqual([["td-1", { dnssec: { status: newStatus, pending: null } }]]);
+  });
+
   it("restarts confirmation when the observed state differs from the pending one", async () => {
     snapshotsMock.getSnapshot.mockResolvedValue(
       makeSnapshot({ dnssec: { status: "insecure", pending: pending("secure") } }),
@@ -499,6 +548,7 @@ describe("DNSSEC change monitoring", () => {
 
     await expect(run()).rejects.toThrow("insert failed");
     expect(dnssecWrites()).toEqual([]);
+    expect(monitorDedupMock.releaseMonitorLock).not.toHaveBeenCalled();
 
     const result = await run();
 

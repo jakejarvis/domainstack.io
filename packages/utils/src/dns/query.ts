@@ -87,6 +87,10 @@ export async function queryDoh(
     throw new Error(`DoH invalid response: ${provider.key} (not an object)`);
   }
 
+  if (typeof json.Status !== "number" || !Number.isInteger(json.Status)) {
+    throw new Error(`DoH invalid response: ${provider.key} (Status is not a number)`);
+  }
+
   // Only a NOERROR answer section is interpreted; other RCODEs carry none we use.
   if (json.Status === 0 && json.Answer && !Array.isArray(json.Answer)) {
     throw new Error(`DoH invalid response: ${provider.key} (Answer is not an array)`);
