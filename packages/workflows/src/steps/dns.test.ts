@@ -221,6 +221,10 @@ describe("persistDnsRecordsStep", () => {
       const { getCachedDns } = await import("@domainstack/db/queries/dns");
       const cached = await getCachedDns("first-observation-ds-unavailable.com");
 
+      // The row exists with the DS-unavailable observation stored — the
+      // absent `registry` below must be because of that, not because the
+      // whole observation (or the row) is missing.
+      expect(cached.data?.dnssec).toEqual({ status: "secure", ds: [], dnskeys: [] });
       expect(cached.data?.dnssec?.registry).toBeUndefined();
 
       // The next round's DS query succeeds: the row updates and registry
