@@ -65,6 +65,8 @@ describe("fetchDnsRecords DNSSEC", () => {
       ds: [{ keyTag: 2371, algorithm: 13, digestType: 2, digest: "abcdef0123" }],
       dnskeys: [{ flags: 257, protocol: 3, algorithm: 13, isKsk: true }],
     });
+    expect(data.dnssecDsAvailable).toBe(true);
+    expect(data.dnssecDnskeysAvailable).toBe(true);
     // The DNSKEY TTL (1800s) is shorter than the DS TTL (3600s) and the default
     // record TTL, so it drives expiry.
     expect(data.dnssecExpiresAt).toBe("2024-01-01T00:30:00.000Z");
@@ -92,6 +94,8 @@ describe("fetchDnsRecords DNSSEC", () => {
 
     expect(data.records).toHaveLength(1);
     expect(data.dnssec).toEqual({ status: "indeterminate", ds: [], dnskeys: [] });
+    expect(data.dnssecDsAvailable).toBe(false);
+    expect(data.dnssecDnskeysAvailable).toBe(false);
   });
 
   it("keeps the SOA-derived status when only the DS/DNSKEY metadata queries fail", async () => {
@@ -114,5 +118,7 @@ describe("fetchDnsRecords DNSSEC", () => {
     // A DS/DNSKEY transport failure is best-effort metadata loss, not a reason
     // to discard the validated SOA status.
     expect(data.dnssec).toEqual({ status: "secure", ds: [], dnskeys: [] });
+    expect(data.dnssecDsAvailable).toBe(false);
+    expect(data.dnssecDnskeysAvailable).toBe(false);
   });
 });

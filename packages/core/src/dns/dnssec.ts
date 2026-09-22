@@ -20,11 +20,22 @@ export interface DnssecFetchData {
   dnssec: DnssecResult;
   /** Smallest TTL among the SOA, DS, and DNSKEY answers that established `dnssec`, for cache expiry. */
   ttl?: number;
+  /**
+   * Whether `dnssec.ds`/`dnssec.dnskeys` reflect a real NOERROR observation
+   * this round, rather than an empty array standing in for a failed or
+   * non-NOERROR DS/DNSKEY query. False means `ds`/`dnskeys` must not be
+   * treated as "confirmed empty" — callers should keep whatever they
+   * previously knew instead of overwriting it with these empty sets.
+   */
+  dsAvailable: boolean;
+  dnskeysAvailable: boolean;
 }
 
 /** Result to store when DNSSEC could not be determined; the DNS records themselves are still valid. */
 export const INDETERMINATE_DNSSEC: DnssecFetchData = {
   dnssec: { status: "indeterminate", ds: [], dnskeys: [] },
+  dsAvailable: false,
+  dnskeysAvailable: false,
 };
 
 function parseAnswers<T>(
@@ -78,12 +89,15 @@ export async function fetchDnssec(domain: string, provider: DohProvider): Promis
 
   const [dsSettled, dnskeySettled] = await metadataSettled;
 
-  const dsAnswers =
-    dsSettled.status === "fulfilled" && dsSettled.value.rcode === 0 ? dsSettled.value.answers : [];
+  // Available only on a real NOERROR answer: a rejected promise or any other
+  // RCODE (SERVFAIL, REFUSED, …) means we don't actually know the DS/DNSKEY
+  // set, and must not report it as an observed-empty one.
+  const dsAvailable = dsSettled.status === "fulfilled" && dsSettled.value.rcode === 0;
+  const dnskeysAvailable = dnskeySettled.status === "fulfilled" && dnskeySettled.value.rcode === 0;
+
+  const dsAnswers = dsAvailable && dsSettled.status === "fulfilled" ? dsSettled.value.answers : [];
   const dnskeyAnswers =
-    dnskeySettled.status === "fulfilled" && dnskeySettled.value.rcode === 0
-      ? dnskeySettled.value.answers
-      : [];
+    dnskeysAvailable && dnskeySettled.status === "fulfilled" ? dnskeySettled.value.answers : [];
 
   const ds: DnssecDsRecord[] = parseAnswers(dsAnswers, DNS_TYPE_NUMBERS.DS, parseDs);
   const dnskeys: DnssecKey[] = parseAnswers(dnskeyAnswers, DNS_TYPE_NUMBERS.DNSKEY, parseDnskey);
@@ -100,5 +114,7 @@ export async function fetchDnssec(domain: string, provider: DohProvider): Promis
   return {
     dnssec: { status: classifyDnssec(validated, unchecked), ds, dnskeys },
     ttl: ttls.length > 0 ? Math.min(...ttls) : undefined,
+    dsAvailable,
+    dnskeysAvailable,
   };
 }

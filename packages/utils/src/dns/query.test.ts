@@ -221,7 +221,37 @@ describe("queryDohProvider", () => {
     });
 
     await expect(queryDohProvider(mockProvider, "example.com", "A")).rejects.toThrow(
-      "DoH invalid response: test (Answer is not an array)",
+      "DoH invalid response: test (Answer is not an array of records)",
+    );
+  });
+
+  it("throws when an Answer element is null", async () => {
+    mockFetchResponse({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          Status: 0,
+          Answer: [{ name: "example.com", type: 1, TTL: 300, data: "93.184.216.34" }, null],
+        }),
+    });
+
+    await expect(queryDohProvider(mockProvider, "example.com", "A")).rejects.toThrow(
+      "DoH invalid response: test (Answer is not an array of records)",
+    );
+  });
+
+  it("throws when an Answer element is missing a required field", async () => {
+    mockFetchResponse({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          Status: 0,
+          Answer: [{ name: "example.com", type: 1, TTL: 300 }],
+        }),
+    });
+
+    await expect(queryDohProvider(mockProvider, "example.com", "A")).rejects.toThrow(
+      "DoH invalid response: test (Answer is not an array of records)",
     );
   });
 

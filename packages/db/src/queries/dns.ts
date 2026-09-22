@@ -26,7 +26,13 @@ export interface UpsertDnsParams {
     Array<Omit<DnsRecordInsert, "id" | "domainId" | "type" | "resolver" | "fetchedAt">>
   >;
   /** DNSSEC observation stored alongside the records (without the response-time `registry` check). */
-  dnssec?: { result: DnssecResult; expiresAt: Date };
+  dnssec?: {
+    result: DnssecResult;
+    expiresAt: Date;
+    /** False means this round's `result.ds`/`result.dnskeys` is a stand-in for a failed query, not a confirmed-empty set — the corresponding stored column is preserved instead of overwritten. */
+    dsAvailable: boolean;
+    dnskeysAvailable: boolean;
+  };
 }
 
 export async function replaceDns(params: UpsertDnsParams) {
@@ -136,7 +142,7 @@ export async function replaceDns(params: UpsertDnsParams) {
     }
 
     if (params.dnssec) {
-      const { result, expiresAt } = params.dnssec;
+      const { result, expiresAt, dsAvailable, dnskeysAvailable } = params.dnssec;
       const base = { resolver: params.resolver, fetchedAt: params.fetchedAt, expiresAt };
 
       if (result.status === "indeterminate") {
@@ -152,11 +158,28 @@ export async function replaceDns(params: UpsertDnsParams) {
           .values({ domainId, status: "indeterminate", ds: [], dnskeys: [], ...base })
           .onConflictDoUpdate({ target: dnssecChecks.domainId, set: base });
       } else {
-        const values = { status: result.status, ds: result.ds, dnskeys: result.dnskeys, ...base };
+        // The overall status is determinate (from the SOA query), but the DS
+        // and/or DNSKEY queries are independent and each may have failed on
+        // their own — an unavailable one contributes an empty array to
+        // `result` that must not overwrite a real stored set. Insert always
+        // writes both (there's nothing to preserve on a first row); update
+        // only touches the columns whose query actually succeeded.
+        const insertValues = {
+          status: result.status,
+          ds: result.ds,
+          dnskeys: result.dnskeys,
+          ...base,
+        };
+        const updateSet = {
+          status: result.status,
+          ...base,
+          ...(dsAvailable ? { ds: result.ds } : {}),
+          ...(dnskeysAvailable ? { dnskeys: result.dnskeys } : {}),
+        };
         await tx
           .insert(dnssecChecks)
-          .values({ domainId, ...values })
-          .onConflictDoUpdate({ target: dnssecChecks.domainId, set: values });
+          .values({ domainId, ...insertValues })
+          .onConflictDoUpdate({ target: dnssecChecks.domainId, set: updateSet });
       }
     }
   });

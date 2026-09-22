@@ -18,6 +18,18 @@ const MAX_RESPONSE_BYTES = 1024 * 1024;
 /** DNS RCODE 3 — the name does not exist. A legitimate empty result. */
 const RCODE_NXDOMAIN = 3;
 
+/** Runtime shape check for one DoH answer element — providers are untrusted input. */
+function isDnsAnswer(a: unknown): a is DnsAnswer {
+  return (
+    typeof a === "object" &&
+    a !== null &&
+    typeof (a as DnsAnswer).name === "string" &&
+    typeof (a as DnsAnswer).type === "number" &&
+    typeof (a as DnsAnswer).TTL === "number" &&
+    typeof (a as DnsAnswer).data === "string"
+  );
+}
+
 /**
  * Build a DoH query URL for a given provider, domain, and record type.
  */
@@ -91,9 +103,15 @@ export async function queryDoh(
     throw new Error(`DoH invalid response: ${provider.key} (Status is not a number)`);
   }
 
-  // Only a NOERROR answer section is interpreted; other RCODEs carry none we use.
-  if (json.Status === 0 && json.Answer && !Array.isArray(json.Answer)) {
-    throw new Error(`DoH invalid response: ${provider.key} (Answer is not an array)`);
+  // A present Answer section must be a well-formed array of records: every
+  // consumer (record parsing, DNSSEC parsing/TTL selection) indexes straight
+  // into `.type`/`.data`/`.TTL`, so a malformed element must reject the whole
+  // response here rather than throw deeper in a caller that can't fall back.
+  if (
+    json.Answer !== undefined &&
+    (!Array.isArray(json.Answer) || !json.Answer.every(isDnsAnswer))
+  ) {
+    throw new Error(`DoH invalid response: ${provider.key} (Answer is not an array of records)`);
   }
 
   return {

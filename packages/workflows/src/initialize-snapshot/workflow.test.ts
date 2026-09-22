@@ -57,6 +57,8 @@ const DNS_RESULT: DnsFetchData = {
   recordsWithExpiry: [],
   dnssec: { status: "insecure", ds: [], dnskeys: [] },
   dnssecExpiresAt: "2030-01-01T00:00:00.000Z",
+  dnssecDsAvailable: true,
+  dnssecDnskeysAvailable: true,
 };
 
 const EMPTY_DNS_RESULT: DnsFetchData = {
@@ -65,6 +67,8 @@ const EMPTY_DNS_RESULT: DnsFetchData = {
   recordsWithExpiry: [],
   dnssec: { status: "insecure", ds: [], dnskeys: [] },
   dnssecExpiresAt: "2030-01-01T00:00:00.000Z",
+  dnssecDsAvailable: true,
+  dnssecDnskeysAvailable: true,
 };
 
 const PROVIDERS = {

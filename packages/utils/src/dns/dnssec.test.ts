@@ -165,4 +165,25 @@ describe("withRegistryCheck", () => {
       indeterminate,
     );
   });
+
+  it("skips the comparison when dsAvailable is false, even with a determinate status", () => {
+    // e.g. a determinate SOA result whose DS query specifically failed: `ds`
+    // here is a stand-in for "unknown", not a confirmed-empty set.
+    const secureButDsUnavailable: DnssecResult = { status: "secure", ds: [], dnskeys: [] };
+
+    expect(
+      withRegistryCheck(
+        secureButDsUnavailable,
+        { enabled: true, dsRecords: [ds] },
+        { dsAvailable: false },
+      ),
+    ).toBe(secureButDsUnavailable);
+  });
+
+  it("compares by default (dsAvailable defaults to true)", () => {
+    expect(withRegistryCheck(secure, { enabled: true, dsRecords: [ds] }, {})).toEqual({
+      ...secure,
+      registry: { enabled: true, mismatch: false },
+    });
+  });
 });

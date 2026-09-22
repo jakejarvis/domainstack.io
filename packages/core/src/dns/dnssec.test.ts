@@ -146,6 +146,35 @@ describe("fetchDnssec", () => {
     // best-effort DS/DNSKEY metadata must not discard that.
     expect(result.dnssec).toEqual({ status: "secure", ds: [], dnskeys: [] });
     expect(calls).toEqual(expect.arrayContaining(["SOA", "DS:cd", "DNSKEY:cd"]));
+    // But that empty ds/dnskeys must be flagged as unavailable, not confirmed
+    // empty, so a caller storing it never overwrites a real prior observation.
+    expect(result.dsAvailable).toBe(false);
+    expect(result.dnskeysAvailable).toBe(false);
+  });
+
+  it("flags DS/DNSKEY as available on a real NOERROR answer", async () => {
+    mockDoh({ SOA: { Status: 0, AD: true } });
+    // Everything else in the route table falls back to { Status: 0 }.
+
+    const result = await fetchDnssec("example.com", provider);
+
+    expect(result.dsAvailable).toBe(true);
+    expect(result.dnskeysAvailable).toBe(true);
+  });
+
+  it("flags an unavailable DS set even when the DNSKEY query succeeds", async () => {
+    mockDoh({
+      SOA: { Status: 0, AD: true },
+      "DS:cd": { Status: 2 }, // SERVFAIL, not NXDOMAIN: a real failure, not "no DS"
+      "DNSKEY:cd": { Status: 0, Answer: [DNSKEY_ANSWER] },
+    });
+
+    const result = await fetchDnssec("example.com", provider);
+
+    expect(result.dsAvailable).toBe(false);
+    expect(result.dnskeysAvailable).toBe(true);
+    expect(result.dnssec.ds).toEqual([]);
+    expect(result.dnssec.dnskeys).toHaveLength(1);
   });
 
   it("uses a shorter SOA TTL over a longer DS/DNSKEY TTL", async () => {

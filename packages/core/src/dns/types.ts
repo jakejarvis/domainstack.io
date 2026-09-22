@@ -25,4 +25,7 @@ export interface DnsFetchData {
   dnssec: DnssecResult;
   /** ISO timestamp after which `dnssec` should be refetched. */
   dnssecExpiresAt: string;
+  /** Whether `dnssec.ds`/`dnssec.dnskeys` are a real observation this round (see `DnssecFetchData`). */
+  dnssecDsAvailable: boolean;
+  dnssecDnskeysAvailable: boolean;
 }

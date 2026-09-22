@@ -38,6 +38,8 @@ describe("persistDnsRecordsStep", () => {
       ],
       dnssec: { status: "insecure", ds: [], dnskeys: [] },
       dnssecExpiresAt: new Date(Date.now() + 300_000).toISOString(),
+      dnssecDsAvailable: true,
+      dnssecDnskeysAvailable: true,
     });
 
     // Use the PGlite db instance (already set as the singleton)
@@ -61,6 +63,8 @@ describe("persistDnsRecordsStep", () => {
         dnskeys: [],
       },
       dnssecExpiresAt = new Date(Date.now() + 300_000).toISOString(),
+      dsAvailable = true,
+      dnskeysAvailable = true,
     ) {
       const { persistDnsRecordsStep } = await import("./dns");
       await persistDnsRecordsStep(domain, {
@@ -77,6 +81,8 @@ describe("persistDnsRecordsStep", () => {
         ],
         dnssec,
         dnssecExpiresAt,
+        dnssecDsAvailable: dsAvailable,
+        dnssecDnskeysAvailable: dnskeysAvailable,
       });
     }
 
@@ -157,6 +163,36 @@ describe("persistDnsRecordsStep", () => {
       // indeterminate, and the row isn't stuck stale from the first fetch.
       expect(cached.stale).toBe(false);
       expect(cached.data?.dnssec).toEqual({ status: "secure", ds: [DS], dnskeys: [] });
+    });
+
+    it("preserves the stored DS/DNSKEY sets when a later determinate observation's metadata queries failed", async () => {
+      await persist("metadata-blip.com", { status: "secure", ds: [DS], dnskeys: [] });
+      // Still secure (a real SOA observation), but this round's DS/DNSKEY
+      // queries themselves failed — their result is an empty stand-in, not a
+      // confirmed-empty observation, and must not erase the stored DS.
+      await persist(
+        "metadata-blip.com",
+        { status: "secure", ds: [], dnskeys: [] },
+        undefined,
+        false,
+        false,
+      );
+
+      const { getCachedDns } = await import("@domainstack/db/queries/dns");
+      const cached = await getCachedDns("metadata-blip.com");
+
+      expect(cached.data?.dnssec).toEqual({ status: "secure", ds: [DS], dnskeys: [] });
+    });
+
+    it("still updates DS/DNSKEY when their queries succeed, even if the status is unchanged", async () => {
+      const otherDs = { keyTag: 9999, algorithm: 13, digestType: 2, digest: "ffff" };
+      await persist("rollover.com", { status: "secure", ds: [DS], dnskeys: [] });
+      await persist("rollover.com", { status: "secure", ds: [otherDs], dnskeys: [] });
+
+      const { getCachedDns } = await import("@domainstack/db/queries/dns");
+      const cached = await getCachedDns("rollover.com");
+
+      expect(cached.data?.dnssec).toEqual({ status: "secure", ds: [otherDs], dnskeys: [] });
     });
 
     it("cross-checks against the registry's persisted DNSSEC data", async () => {

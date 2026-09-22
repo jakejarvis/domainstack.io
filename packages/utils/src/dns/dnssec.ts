@@ -128,15 +128,18 @@ export function compareRegistryDs(
 
 /**
  * Attach the registry cross-check to a DNSSEC result. Leaves the result
- * unchanged when the registry's view is unknown (no registration data yet).
+ * unchanged when the registry's view is unknown (no registration data yet),
+ * when the status is indeterminate, or when `dsAvailable` is false — meaning
+ * this observation's DS set is not trustworthy (e.g. the DS query itself
+ * failed while an independent SOA query still classified the zone), so `ds`
+ * must not be read as a confirmed-empty set.
  */
 export function withRegistryCheck(
   dnssec: DnssecResult,
   registry: RegistrationDnssec | null | undefined,
+  options: { dsAvailable?: boolean } = {},
 ): DnssecResult {
-  // An indeterminate status carries no reliable DS set (a failed or incomplete
-  // observation, never "confirmed unsigned"), so comparing it against the
-  // registry would report a false ds_missing_in_dns mismatch.
-  if (!registry || dnssec.status === "indeterminate") return dnssec;
+  const dsAvailable = options.dsAvailable ?? true;
+  if (!registry || dnssec.status === "indeterminate" || !dsAvailable) return dnssec;
   return { ...dnssec, registry: compareRegistryDs(dnssec.ds, registry) };
 }

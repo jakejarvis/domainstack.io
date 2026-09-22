@@ -72,7 +72,9 @@ async function fetchAndPersistDns(domain: string): Promise<DnsResult> {
     data: {
       records: fetchData.records,
       resolver: fetchData.resolver,
-      dnssec: withRegistryCheck(fetchData.dnssec, registry),
+      dnssec: withRegistryCheck(fetchData.dnssec, registry, {
+        dsAvailable: fetchData.dnssecDsAvailable,
+      }),
     },
   };
 }
@@ -120,6 +122,14 @@ export async function persistDnsRecords(domain: string, fetchData: DnsFetchData)
     // good status/DS/DNSKEY set rather than overwriting it with "could not
     // tell", but still advances freshness so staleness stays bounded by TTL
     // instead of forcing a full refetch on every request (see its comment).
-    dnssec: { result: fetchData.dnssec, expiresAt: new Date(fetchData.dnssecExpiresAt) },
+    // `dsAvailable`/`dnskeysAvailable` cover the narrower case where the
+    // overall status IS determinate but one metadata query specifically
+    // failed: its empty result must not overwrite a previously known set.
+    dnssec: {
+      result: fetchData.dnssec,
+      expiresAt: new Date(fetchData.dnssecExpiresAt),
+      dsAvailable: fetchData.dnssecDsAvailable,
+      dnskeysAvailable: fetchData.dnssecDnskeysAvailable,
+    },
   });
 }

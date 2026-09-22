@@ -131,7 +131,7 @@ export async function fetchDnsRecords(
       }));
 
       // Best-effort: DNSSEC trouble must never fail the DNS records themselves.
-      const { dnssec, ttl: dnssecTtl } = await dnssecPromise;
+      const { dnssec, ttl: dnssecTtl, dsAvailable, dnskeysAvailable } = await dnssecPromise;
 
       return {
         records: sorted,
@@ -139,6 +139,8 @@ export async function fetchDnsRecords(
         recordsWithExpiry,
         dnssec,
         dnssecExpiresAt: ttlForDnsRecord(now, dnssecTtl).toISOString(),
+        dnssecDsAvailable: dsAvailable,
+        dnssecDnskeysAvailable: dnskeysAvailable,
       };
     } catch {
       // Try next provider
