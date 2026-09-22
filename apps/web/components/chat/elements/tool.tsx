@@ -9,7 +9,6 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import type { ToolUIPart } from "ai";
-import type { ComponentProps, ReactNode } from "react";
 import { isValidElement } from "react";
 
 import { Badge } from "@domainstack/ui/badge";
@@ -18,7 +17,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@domainstac
 import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
 
-export type ToolProps = ComponentProps<typeof Collapsible>;
+export type ToolProps = React.ComponentProps<typeof Collapsible>;
 
 export const Tool = ({ className, ...props }: ToolProps) => (
   <Collapsible className={cn("w-full rounded-md border border-border", className)} {...props} />
@@ -50,7 +49,7 @@ const getStatusBadge = (status: ToolUIPart["state"]) => {
     "output-available": <IconCheck className="size-4 text-green-600" />,
     "output-error": <IconX className="size-4 text-red-600" />,
     "output-denied": <IconX className="size-4 text-orange-600" />,
-  } satisfies Record<ToolUIPart["state"], ReactNode>;
+  } satisfies Record<ToolUIPart["state"], React.ReactNode>;
 
   return (
     <Badge className="gap-1.5 rounded-full py-1 text-xs leading-none" variant="secondary">
@@ -74,13 +73,13 @@ export const ToolHeader = ({ className, title, type, state, ...props }: ToolHead
   </CollapsibleTrigger>
 );
 
-export type ToolContentProps = ComponentProps<typeof CollapsibleContent>;
+export type ToolContentProps = React.ComponentProps<typeof CollapsibleContent>;
 
 export const ToolContent = ({ className, ...props }: ToolContentProps) => (
   <CollapsibleContent className={cn(className)} {...props} />
 );
 
-export type ToolInputProps = ComponentProps<"div"> & {
+export type ToolInputProps = React.ComponentProps<"div"> & {
   input: ToolUIPart["input"];
 };
 
@@ -93,7 +92,7 @@ export const ToolInput = ({ className, input, ...props }: ToolInputProps) => (
   </div>
 );
 
-export type ToolOutputProps = ComponentProps<"div"> & {
+export type ToolOutputProps = React.ComponentProps<"div"> & {
   output: ToolUIPart["output"];
   errorText: ToolUIPart["errorText"];
 };

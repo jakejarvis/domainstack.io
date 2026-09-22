@@ -1,12 +1,10 @@
 "use client";
 
-import type { ComponentProps } from "react";
-
 import { Button } from "@domainstack/ui/button";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
 import { cn } from "@domainstack/ui/utils";
 
-export type SuggestionsProps = ComponentProps<typeof ScrollArea>;
+export type SuggestionsProps = React.ComponentProps<typeof ScrollArea>;
 
 export const Suggestions = ({ className, children, ...props }: SuggestionsProps) => (
   <ScrollArea
@@ -18,7 +16,7 @@ export const Suggestions = ({ className, children, ...props }: SuggestionsProps)
   </ScrollArea>
 );
 
-export type SuggestionProps = Omit<ComponentProps<typeof Button>, "onClick"> & {
+export type SuggestionProps = Omit<React.ComponentProps<typeof Button>, "onClick"> & {
   suggestion: string;
   onClick?: (suggestion: string) => void;
 };

@@ -1,14 +1,11 @@
 "use client";
 
 import { IconBrain, IconChevronDown } from "@tabler/icons-react";
-import type { ComponentProps, ReactNode } from "react";
 import { createContext, memo, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Streamdown } from "streamdown";
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@domainstack/ui/collapsible";
 import { cn } from "@domainstack/ui/utils";
-
-import { ShimmeringText } from "./shimmering-text";
 
 interface ReasoningContextValue {
   isStreaming: boolean;
@@ -28,7 +25,7 @@ const useReasoning = () => {
   return context;
 };
 
-export type ReasoningProps = ComponentProps<typeof Collapsible> & {
+export type ReasoningProps = React.ComponentProps<typeof Collapsible> & {
   isStreaming?: boolean;
   hasContent?: boolean;
 };
@@ -106,13 +103,13 @@ export const Reasoning = memo(
   },
 );
 
-export type ReasoningTriggerProps = ComponentProps<typeof CollapsibleTrigger> & {
-  getThinkingMessage?: (isStreaming: boolean, duration?: number) => ReactNode;
+export type ReasoningTriggerProps = React.ComponentProps<typeof CollapsibleTrigger> & {
+  getThinkingMessage?: (isStreaming: boolean, duration?: number) => React.ReactNode;
 };
 
 const defaultGetThinkingMessage = (isStreaming: boolean, duration?: number) => {
   if (isStreaming || duration === 0) {
-    return <ShimmeringText text="Thinking…" startOnView={false} />;
+    return <span className="shimmer">Thinking…</span>;
   }
   if (duration === undefined) {
     return <p>Thought for a few seconds</p>;
@@ -157,7 +154,7 @@ export const ReasoningTrigger = memo(
   },
 );
 
-export type ReasoningContentProps = ComponentProps<typeof CollapsibleContent> & {
+export type ReasoningContentProps = React.ComponentProps<typeof CollapsibleContent> & {
   children: string;
 };
 

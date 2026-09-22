@@ -2,14 +2,7 @@
 
 import { IconSend } from "@tabler/icons-react";
 import type { ChatStatus } from "ai";
-import {
-  type ComponentProps,
-  type FormEvent,
-  type FormEventHandler,
-  type HTMLAttributes,
-  type KeyboardEventHandler,
-  useRef,
-} from "react";
+import { useRef } from "react";
 
 import {
   InputGroup,
@@ -28,15 +21,15 @@ type PromptInputMessage = {
   text: string;
 };
 
-type PromptInputProps = Omit<HTMLAttributes<HTMLFormElement>, "onSubmit"> & {
+type PromptInputProps = Omit<React.HTMLAttributes<HTMLFormElement>, "onSubmit"> & {
   onSubmit: (
     message: PromptInputMessage,
-    event: FormEvent<HTMLFormElement>,
+    event: React.SubmitEvent<HTMLFormElement>,
   ) => void | Promise<void>;
 };
 
 export const PromptInput = ({ className, onSubmit, children, ...props }: PromptInputProps) => {
-  const handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
+  const handleSubmit: React.SubmitEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault();
 
     const form = event.currentTarget;
@@ -63,7 +56,7 @@ export const PromptInput = ({ className, onSubmit, children, ...props }: PromptI
 // PromptInputTextarea
 // ============================================================================
 
-export type PromptInputTextareaProps = ComponentProps<typeof InputGroupTextarea>;
+export type PromptInputTextareaProps = React.ComponentProps<typeof InputGroupTextarea>;
 
 export const PromptInputTextarea = ({
   onChange,
@@ -73,7 +66,7 @@ export const PromptInputTextarea = ({
 }: PromptInputTextareaProps) => {
   const isComposing = useRef(false);
 
-  const handleKeyDown: KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
+  const handleKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
     if (e.key === "Enter") {
       if (isComposing.current || e.nativeEvent.isComposing) {
         return;
@@ -118,7 +111,7 @@ export const PromptInputTextarea = ({
 // PromptInputFooter
 // ============================================================================
 
-export type PromptInputFooterProps = Omit<ComponentProps<typeof InputGroupAddon>, "align">;
+export type PromptInputFooterProps = Omit<React.ComponentProps<typeof InputGroupAddon>, "align">;
 
 export const PromptInputFooter = ({ className, ...props }: PromptInputFooterProps) => (
   <InputGroupAddon
@@ -132,7 +125,7 @@ export const PromptInputFooter = ({ className, ...props }: PromptInputFooterProp
 // PromptInputSubmit
 // ============================================================================
 
-export type PromptInputSubmitProps = ComponentProps<typeof InputGroupButton> & {
+export type PromptInputSubmitProps = React.ComponentProps<typeof InputGroupButton> & {
   status?: ChatStatus | "error";
 };
 
@@ -192,7 +185,7 @@ export const PromptInputSubmit = ({
 // PromptInputCharacterCount
 // ============================================================================
 
-export type PromptInputCharacterCountProps = HTMLAttributes<HTMLSpanElement> & {
+export type PromptInputCharacterCountProps = React.HTMLAttributes<HTMLSpanElement> & {
   current: number;
   max: number;
 };

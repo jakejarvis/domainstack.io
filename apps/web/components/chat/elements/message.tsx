@@ -1,12 +1,12 @@
 "use client";
 
 import type { UIMessage } from "ai";
-import { type ComponentProps, memo } from "react";
+import { memo } from "react";
 import { Streamdown } from "streamdown";
 
 import { cn } from "@domainstack/ui/utils";
 
-export type MessageProps = ComponentProps<"div"> & {
+export type MessageProps = React.ComponentProps<"div"> & {
   from: UIMessage["role"];
 };
 
@@ -21,7 +21,7 @@ export const Message = ({ className, from, ...props }: MessageProps) => (
   />
 );
 
-export type MessageContentProps = ComponentProps<"div">;
+export type MessageContentProps = React.ComponentProps<"div">;
 
 export const MessageContent = ({ children, className, ...props }: MessageContentProps) => (
   <div
@@ -37,7 +37,7 @@ export const MessageContent = ({ children, className, ...props }: MessageContent
   </div>
 );
 
-export type MessageResponseProps = ComponentProps<typeof Streamdown>;
+export type MessageResponseProps = React.ComponentProps<typeof Streamdown>;
 
 export const MessageResponse = memo(
   ({ className, caret, ...props }: MessageResponseProps) => (

@@ -3,7 +3,7 @@
 import { useHotkey } from "@tanstack/react-hotkeys";
 import { useAtom } from "jotai";
 import { AnimatePresence } from "motion/react";
-import { type ComponentType, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { chatOpenAtom } from "@/lib/atoms/chat-atoms";
 import { usePreferencesHydrated, usePreferencesStore } from "@/lib/stores/preferences-store";
@@ -17,7 +17,7 @@ interface LoadedChatClientProps {
   onReady: () => void;
 }
 
-type ChatClientModule = { ChatClient: ComponentType<LoadedChatClientProps> };
+type ChatClientModule = { ChatClient: React.ComponentType<LoadedChatClientProps> };
 type ChatClientLoader = () => Promise<ChatClientModule>;
 
 const loadChatClient: ChatClientLoader = () => import("./chat-client");
@@ -33,7 +33,9 @@ export function ChatClientLazy({
   const hideAiFeatures = usePreferencesStore((s) => s.hideAiFeatures);
   const setHideAiFeatures = usePreferencesStore((s) => s.setHideAiFeatures);
   const [open, setOpen] = useAtom(chatOpenAtom);
-  const [ChatClient, setChatClient] = useState<ComponentType<LoadedChatClientProps> | null>(null);
+  const [ChatClient, setChatClient] = useState<React.ComponentType<LoadedChatClientProps> | null>(
+    null,
+  );
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const loadingRef = useRef(false);

@@ -4,7 +4,7 @@ import { IconMessageCircleFilled } from "@tabler/icons-react";
 import { formatForDisplay } from "@tanstack/react-hotkeys";
 import { useAnimationFrame, useMotionValue, useReducedMotion } from "motion/react";
 import * as m from "motion/react-m";
-import { type ReactNode, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "@domainstack/ui/button";
 import { Separator } from "@domainstack/ui/separator";
@@ -20,7 +20,7 @@ interface ChatFabProps {
 }
 
 interface ChatFabButtonProps extends Required<ChatFabProps> {
-  children: ReactNode;
+  children: React.ReactNode;
   className: string;
   onHoverEnd?: () => void;
   onHoverStart?: () => void;

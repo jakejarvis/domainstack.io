@@ -1,35 +1,16 @@
 "use client";
 
-import { IconAlertCircle, IconBrain, IconMessages, IconRefresh, IconX } from "@tabler/icons-react";
+import {
+  IconAlertCircle,
+  IconArrowDown,
+  IconBrain,
+  IconMessages,
+  IconRefresh,
+  IconX,
+} from "@tabler/icons-react";
 import { type ChatStatus, isTextUIPart, isToolUIPart, type ToolUIPart, type UIMessage } from "ai";
-import { useCallback, useState } from "react";
-import { useStickToBottom } from "use-stick-to-bottom";
+import { memo, useCallback, useState } from "react";
 
-import {
-  Conversation,
-  ConversationContent,
-  ConversationEmptyState,
-  ConversationScrollButton,
-} from "@/components/ai-elements/conversation";
-import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
-import {
-  PromptInput,
-  PromptInputCharacterCount,
-  PromptInputFooter,
-  PromptInputSubmit,
-  PromptInputTextarea,
-} from "@/components/ai-elements/prompt-input";
-import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ai-elements/reasoning";
-import { ShimmeringText } from "@/components/ai-elements/shimmering-text";
-import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
-import {
-  Tool,
-  ToolContent,
-  ToolHeader,
-  ToolInput,
-  ToolOutput,
-} from "@/components/ai-elements/tool";
-import { ChatModeSelector } from "@/components/chat/chat-mode-selector";
 import { type UseBrowserAIResult } from "@/hooks/use-browser-ai";
 import { getDomainToolStatus, getToolPartType } from "@/lib/chat/domain-tools";
 import {
@@ -43,8 +24,30 @@ import {
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { MAX_MESSAGE_LENGTH } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
+import {
+  MessageScrollerContent,
+  MessageScrollerItem,
+  MessageScrollerProvider,
+  MessageScrollerRoot,
+  MessageScrollerViewport,
+  useMessageScroller,
+  useMessageScrollerScrollable,
+} from "@domainstack/ui/message-scroller";
 import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
+
+import { ChatModeSelector } from "./chat-mode-selector";
+import { Message, MessageContent, MessageResponse } from "./elements/message";
+import {
+  PromptInput,
+  PromptInputCharacterCount,
+  PromptInputFooter,
+  PromptInputSubmit,
+  PromptInputTextarea,
+} from "./elements/prompt-input";
+import { Reasoning, ReasoningContent, ReasoningTrigger } from "./elements/reasoning";
+import { Suggestion, Suggestions } from "./elements/suggestion";
+import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from "./elements/tool";
 
 const EMPTY_SUGGESTIONS: string[] = [];
 const LIVE_MESSAGE_STATUSES = new Set<ChatStatus>(["submitted", "streaming"]);
@@ -63,8 +66,44 @@ function AssistantWaitIndicator({ kind }: { kind: AssistantWaitKind }) {
       ) : (
         <Spinner className="size-3.5" />
       )}
-      <ShimmeringText text={isThinking ? "Thinking…" : "Working…"} startOnView={false} />
+      <span className="shimmer">{isThinking ? "Thinking…" : "Working…"}</span>
     </div>
+  );
+}
+
+function ChatEmptyState({
+  icon,
+  title,
+  description,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex size-full flex-col items-center justify-center gap-4 px-6 py-3 text-center">
+      <div className="text-muted-foreground">{icon}</div>
+      <div className="space-y-1">
+        <h3 className="text-sm font-medium text-pretty break-words">{title}</h3>
+        <p className="text-[13px] leading-normal text-pretty text-muted-foreground">
+          {description}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function ScrollToBottomButton({ onClick }: { onClick: () => void }) {
+  return (
+    <Button
+      aria-label="Scroll to bottom"
+      className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2 rounded-full bg-background/80 shadow-md backdrop-blur-sm"
+      size="icon"
+      variant="outline"
+      onClick={onClick}
+    >
+      <IconArrowDown className="size-4" />
+    </Button>
   );
 }
 
@@ -138,21 +177,49 @@ function ChatMessagePart({
   return null;
 }
 
-function ChatMessage({
-  message,
-  lastMessageId,
-  status,
-  waitStatus,
-  showReasoning,
-  showToolCalls,
-}: {
+interface ChatMessageProps {
   message: UIMessage;
   lastMessageId: string | undefined;
   status: ChatStatus;
   waitStatus: AssistantWaitStatus;
   showReasoning: boolean;
   showToolCalls: boolean;
-}) {
+}
+
+// Historical messages never change once streamed, so only the message
+// currently being streamed (`lastMessageId`) needs to react to `status`/
+// `waitStatus` — re-rendering every message on every streamed token turns an
+// O(1) update into an O(conversation length) one.
+function chatMessagePropsAreEqual(prev: ChatMessageProps, next: ChatMessageProps): boolean {
+  if (
+    prev.message !== next.message ||
+    prev.showReasoning !== next.showReasoning ||
+    prev.showToolCalls !== next.showToolCalls
+  ) {
+    return false;
+  }
+  const isLast = next.message.id === next.lastMessageId;
+  if (isLast !== (prev.message.id === prev.lastMessageId)) {
+    return false;
+  }
+  if (!isLast) {
+    return true;
+  }
+  return (
+    prev.status === next.status &&
+    prev.waitStatus.placement === next.waitStatus.placement &&
+    prev.waitStatus.kind === next.waitStatus.kind
+  );
+}
+
+const ChatMessage = memo(function ChatMessage({
+  message,
+  lastMessageId,
+  status,
+  waitStatus,
+  showReasoning,
+  showToolCalls,
+}: ChatMessageProps) {
   const visibility = { showReasoning, showToolCalls };
   if (message.role === "assistant" && !hasVisibleAssistantParts(message, visibility)) {
     return null;
@@ -184,7 +251,7 @@ function ChatMessage({
       </MessageContent>
     </Message>
   );
-}
+}, chatMessagePropsAreEqual);
 
 function ChatMessageList({
   messages,
@@ -205,7 +272,7 @@ function ChatMessageList({
 }) {
   if (messages.length === 0 && !showWait) {
     return (
-      <ConversationEmptyState
+      <ChatEmptyState
         icon={<IconMessages className="size-7" aria-hidden />}
         title={`Ask me anything about ${domain ?? "domains"}!`}
         description="I can look up DNS records, WHOIS data, SSL certificates, and more — just say the word."
@@ -218,22 +285,29 @@ function ChatMessageList({
   return (
     <>
       {messages.map((message) => (
-        <ChatMessage
+        <MessageScrollerItem
           key={message.id}
-          message={message}
-          lastMessageId={lastMessageId}
-          status={status}
-          waitStatus={waitStatus}
-          showReasoning={showReasoning}
-          showToolCalls={showToolCalls}
-        />
+          messageId={message.id}
+          scrollAnchor={message.role === "user"}
+        >
+          <ChatMessage
+            message={message}
+            lastMessageId={lastMessageId}
+            status={status}
+            waitStatus={waitStatus}
+            showReasoning={showReasoning}
+            showToolCalls={showToolCalls}
+          />
+        </MessageScrollerItem>
       ))}
       {waitStatus.placement === "standalone" && waitStatus.kind ? (
-        <Message key="wait" from="assistant">
-          <MessageContent>
-            <AssistantWaitIndicator kind={waitStatus.kind} />
-          </MessageContent>
-        </Message>
+        <MessageScrollerItem messageId="wait-indicator">
+          <Message key="wait" from="assistant">
+            <MessageContent>
+              <AssistantWaitIndicator kind={waitStatus.kind} />
+            </MessageContent>
+          </Message>
+        </MessageScrollerItem>
       ) : null}
     </>
   );
@@ -298,7 +372,15 @@ interface ChatPanelProps {
   inputClassName?: string;
 }
 
-export function ChatPanel({
+export function ChatPanel(props: ChatPanelProps) {
+  return (
+    <MessageScrollerProvider autoScroll defaultScrollPosition="end" scrollEdgeThreshold={48}>
+      <ChatPanelBody {...props} />
+    </MessageScrollerProvider>
+  );
+}
+
+function ChatPanelBody({
   messages,
   sendMessage,
   clearMessages,
@@ -318,17 +400,16 @@ export function ChatPanel({
   const visibility = { showReasoning, showToolCalls };
   const waitStatus = getAssistantWaitStatus(status, messages, visibility);
   const showWait = waitStatus.placement !== "none";
-  const stickyInstance = useStickToBottom();
   const suggestions = domain ? getReportSuggestions(domain) : homeSuggestions;
 
-  const { scrollToBottom } = stickyInstance;
+  const { scrollToEnd } = useMessageScroller();
+  const scrollable = useMessageScrollerScrollable();
   const handleScrollToBottom = useCallback(() => {
-    void scrollToBottom();
-  }, [scrollToBottom]);
+    scrollToEnd({ behavior: "smooth" });
+  }, [scrollToEnd]);
 
   const handleSubmit = (message: { text: string }) => {
     sendMessage(message);
-    handleScrollToBottom();
     setInputLength(0);
   };
 
@@ -340,7 +421,7 @@ export function ChatPanel({
 
   const handleRetry = () => {
     onRetry?.();
-    handleScrollToBottom();
+    scrollToEnd({ behavior: "smooth" });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -353,32 +434,28 @@ export function ChatPanel({
 
   return (
     <>
-      <Conversation
-        stickyInstance={stickyInstance}
+      <MessageScrollerRoot
         aria-busy={isBusy}
-        className={cn(
-          "min-h-0 flex-1 bg-popover/10 [&_[data-slot=scroll-area-content]]:flex [&_[data-slot=scroll-area-content]]:min-h-full [&_[data-slot=scroll-area-content]]:flex-col",
-          conversationClassName,
-        )}
+        className={cn("min-h-0 flex-1 bg-popover/10", conversationClassName)}
         data-base-ui-swipe-ignore
       >
-        <ConversationContent
-          className={cn(isEmpty ? "items-center justify-center" : "gap-4 px-3 py-4")}
-        >
-          <ChatMessageList
-            messages={messages}
-            domain={domain}
-            status={status}
-            waitStatus={waitStatus}
-            showWait={showWait}
-            showReasoning={showReasoning}
-            showToolCalls={showToolCalls}
-          />
-        </ConversationContent>
-        {stickyInstance.isNearBottom ? null : (
-          <ConversationScrollButton onClick={handleScrollToBottom} />
-        )}
-      </Conversation>
+        <MessageScrollerViewport>
+          <MessageScrollerContent
+            className={cn(isEmpty ? "items-center justify-center" : "gap-4 px-3 py-4")}
+          >
+            <ChatMessageList
+              messages={messages}
+              domain={domain}
+              status={status}
+              waitStatus={waitStatus}
+              showWait={showWait}
+              showReasoning={showReasoning}
+              showToolCalls={showToolCalls}
+            />
+          </MessageScrollerContent>
+        </MessageScrollerViewport>
+        {scrollable.end ? <ScrollToBottomButton onClick={handleScrollToBottom} /> : null}
+      </MessageScrollerRoot>
 
       <div
         className={cn("shrink-0 space-y-3 border-t border-border bg-card/60 !pt-3", inputClassName)}
