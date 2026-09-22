@@ -3,14 +3,12 @@ name: Screenshot runner image
 on:
   push:
     branches: [main]
-    # The Dockerfile copies the root manifests before installing, so a change
-    # to packageManager or workspace config changes the image too.
     paths:
       - "packages/screenshot-runner/**"
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
-      - ".github/workflows/screenshot-runner-image.yml"
+      - ".github/workflows/build-screenshot-runner.yml"
   pull_request:
     branches: [main]
     paths:
@@ -18,14 +16,11 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
-      - ".github/workflows/screenshot-runner-image.yml"
+      - ".github/workflows/build-screenshot-runner.yml"
   workflow_dispatch:
 
-# Publishing needs id-token: write to exchange the GitHub OIDC token. It is
-# granted on that job alone, so the job that builds a pull request's own
-# Dockerfile never holds a credential it could exfiltrate. Actions are pinned to
-# commit SHAs for the same reason: a retargeted tag must not be able to run
-# unreviewed code beside that token.
+# id-token: write is scoped to the publish job only, so a PR build never holds
+# a credential it could exfiltrate.
 permissions:
   contents: read
 
@@ -34,11 +29,6 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # Proves the image still builds. The apt font pin and the build-time
-  # ad-blocking engine both fail loudly here rather than after a merge. Also
-  # covers a manual dispatch from a non-main branch: publish is restricted to
-  # main below, so a dispatch elsewhere still gets a build-only check instead
-  # of silently doing nothing.
   build:
     name: Build
     if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main')
@@ -68,11 +58,8 @@ jobs:
 
   publish:
     name: Publish
-    # workflow_dispatch can be run against any branch from the Actions UI, and
-    # `on.push.branches` only scopes automatic pushes, not manual runs — so
-    # this must check the ref itself. Without it, a manual dispatch from a
-    # feature branch would push that branch's Dockerfile to the shared
-    # `:latest` tag using the OIDC-derived publish credential.
+    # workflow_dispatch ignores on.push.branches, so this has to check the ref
+    # itself or a manual run on any branch would publish.
     if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -90,9 +77,6 @@ jobs:
       - name: Setup Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
-      # Exchanges the GitHub OIDC token for a short-lived Vercel token, so
-      # there is no registry credential to store or rotate. Requires a VCR
-      # OIDC policy on the Vercel team that matches this repository.
       - name: Log in to Vercel Container Registry
         uses: vercel/vcr-action/login@3affda703d82e1d40e4407ceb2c3c2b4238266a8 # v1.0.2
         with:
@@ -111,14 +95,8 @@ jobs:
           tags: |
             ${{ env.IMAGE_REFERENCE }}:latest
             ${{ env.IMAGE_REFERENCE }}:${{ github.sha }}
-          # zstd with OCI media types is what VCR recommends; image
-          # decompression is on the Sandbox boot path for every capture.
           outputs: type=image,push=true,oci-mediatypes=true,compression=zstd,compression-level=3,force-compression=true
 
-      # SCREENSHOT_SANDBOX_IMAGE only accepts an immutable digest, so publishing
-      # is deliberately not the same as rolling out. Promoting the digest stays
-      # a human step. The reference is fully qualified so it resolves the same
-      # way regardless of which project the deployment authenticates as.
       - name: Summarize
         env:
           DIGEST: ${{ steps.push.outputs.digest }}

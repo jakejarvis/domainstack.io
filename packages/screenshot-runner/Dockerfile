@@ -1,30 +1,16 @@
-# node:24-slim, named explicitly: the Debian release decides the pinned font
-# version below, so it must not drift silently when the `24-slim` alias moves.
 FROM node:24-bookworm-slim@sha256:ba849c60be29959425b8734d57b8b4b7d56f98edd9504c9af091d5281095a71e
 
-# Chromium comes from Debian rather than a prebuilt browser image, and is
-# deliberately not version-pinned: it renders untrusted pages, so a rebuild
-# should pick up the distro's current security build. Reproducibility comes
-# from the published image digest instead, which SCREENSHOT_SANDBOX_IMAGE
-# requires.
-#
-# chromium-sandbox is not pulled in by --no-install-recommends, but it provides
-# the setuid helper Chromium falls back to when the host does not expose
-# unprivileged user namespaces. The runner never passes --no-sandbox, so this
-# is what keeps it working on a host that lacks them.
-#
-# The font packages are pinned: unlike the browser they are inert glyph data,
-# and drift would silently change what screenshots look like. Bump them with
-# the base image, since a Debian point release retires the exact version and
-# fails the build.
+# chromium-sandbox isn't pulled in by --no-install-recommends; it's the
+# setuid fallback for hosts without unprivileged user namespaces, since the
+# runner never passes --no-sandbox.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         chromium \
         chromium-sandbox \
-        fonts-freefont-ttf=20120503-10 \
-        fonts-liberation=1:1.07.4-11 \
-        fonts-noto-cjk=1:20220127+repack1-1 \
-        fonts-noto-color-emoji=2.042-0+deb12u1 \
+        fonts-freefont-ttf \
+        fonts-liberation \
+        fonts-noto-cjk \
+        fonts-noto-color-emoji \
     && rm -rf /var/lib/apt/lists/*
 
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
@@ -42,21 +28,14 @@ RUN pnpm install --frozen-lockfile --filter @domainstack/screenshot-runner
 
 COPY packages/screenshot-runner packages/screenshot-runner
 
-# The ad-blocking engine is compiled here so a capture never downloads and
-# parses filter lists at runtime. This pins the lists to the image digest.
-#
-# `pnpm prune --prod` has no --filter equivalent and only prunes the root
-# workspace's own devDependencies, not this package's (tsx, vitest,
-# typescript stay installed). The build output lives in dist/, outside
-# node_modules, so it survives removing and reinstalling node_modules
-# prod-only.
+# The ad-blocking engine is compiled here so a capture never downloads filter
+# lists at runtime. `pnpm prune --prod` has no --filter form, so reinstall
+# prod-only instead.
 RUN pnpm --filter @domainstack/screenshot-runner build \
     && pnpm --filter @domainstack/screenshot-runner build:blocklist \
     && rm -rf node_modules packages/screenshot-runner/node_modules \
     && pnpm install --prod --frozen-lockfile --filter @domainstack/screenshot-runner
 
-# Chromium's sandbox refuses to start as root and the runner never disables it,
-# so captures have to run unprivileged.
 RUN useradd --system --create-home --uid 10042 runner \
     && chown -R runner:runner /workspace
 

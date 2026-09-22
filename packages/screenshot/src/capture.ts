@@ -56,14 +56,10 @@ const PERMANENT_RESOLVE_CODES = new Set<SafeFetchErrorCode>([
 
 /**
  * `resolvePublicHost` reports every lookup failure as `dns_error`, including
- * its own timeout and the resolver's temporary failures. Only a definitive
- * answer means the domain has no address; anything else would cache a working
- * domain as missing for the whole TTL.
- *
- * Node phrases these as `getaddrinfo <STATUS> <hostname>`, and the hostname is
- * the untrusted part. The status is read as an uppercase token in its fixed
- * position so a domain that merely contains one (`thenotfound.com`) cannot be
- * mistaken for the resolver's answer.
+ * its own timeout, so only a definitive status counts as a dead domain.
+ * The status is read from its fixed position in `getaddrinfo <STATUS>
+ * <hostname>` rather than scanned for, since the hostname is untrusted and
+ * could otherwise spoof one (`thenotfound.com`).
  */
 const DNS_STATUS = /^\w+ ([A-Z_]+)\b/;
 const DEFINITIVE_DNS_STATUSES = new Set(["ENODATA", "ENOTFOUND", "NXDOMAIN"]);
@@ -113,11 +109,8 @@ export async function captureScreenshot(
   options: CaptureOptions = {},
 ): Promise<CaptureResult> {
   const target = validateTarget(url);
-  // Checked before the DNS lookup below: a genuinely bad target and a broken
-  // deployment are different failures, and DNS resolving first would let an
-  // unrelated (and possibly permanent) target problem mask a misconfigured
-  // deployment as "this domain has no screenshot" instead of surfacing the
-  // regression.
+  // Checked before DNS so a misconfigured deployment can't be masked by an
+  // unrelated target failure.
   const image = requireSandboxImage();
   await validatePublicTarget(target);
 

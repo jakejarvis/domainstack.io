@@ -49,15 +49,8 @@ const PERMANENT_TARGET_CODES = new Set<ScreenshotErrorCode>([
   "tls_error",
 ]);
 
-/**
- * `invalid_arguments` means the runner rejected its own CLI invocation — a
- * malformed flag, an unknown option, an out-of-range dimension. That is
- * always a bug in how `sandbox.ts` calls the runner (or a version mismatch
- * between the two), never a property of the domain being captured: the same
- * invocation is built identically for every target. Classifying it as a
- * target failure would cache an arbitrary, unlucky domain as "missing" while
- * masking a regression that actually breaks every capture.
- */
+// `invalid_arguments` means the runner rejected its own CLI invocation — a
+// bug in how sandbox.ts calls it, never a property of the target domain.
 const PERMANENT_CONFIGURATION_CODES = new Set<ScreenshotErrorCode>([
   "configuration_error",
   "invalid_arguments",

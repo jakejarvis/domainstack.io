@@ -25,13 +25,8 @@ const RUNNER_ERROR_CODES = new Set<ScreenshotErrorCode>([
   "upstream_temporary",
 ]);
 
-/**
- * `validatePublicTarget` already resolved this host over the public internet
- * moments earlier, so the same lookup failing inside the sandbox points at a
- * transient network or certificate problem rather than a permanently bad
- * target. Remapping keeps those out of the cached-as-missing path; the code the
- * runner reported is preserved in the error context.
- */
+// The target already resolved cleanly moments earlier in validatePublicTarget,
+// so a runner-reported dns_error/tls_error here is a flake, not a bad target.
 const RUNNER_TRANSIENT_CODES: Partial<Record<ScreenshotErrorCode, ScreenshotErrorCode>> = {
   dns_error: "upstream_temporary",
   tls_error: "upstream_temporary",
@@ -180,12 +175,9 @@ function getSandboxRegion(): string | undefined {
 }
 
 /**
- * Called by `capture.ts` before any DNS work, so a misconfigured deployment
- * is never masked by an unrelated (and possibly genuine) target failure, and
- * so it never reaches this module: `runSandboxCapture` below receives the
- * already-validated image and has nothing left to throw before its own
- * try/finally, keeping this function's structured logging and error context
- * uniform across every failure path.
+ * Called by `capture.ts` before DNS, so `runSandboxCapture` below always
+ * receives an already-validated image and never has to throw before its own
+ * try/finally.
  */
 export function requireSandboxImage(): string {
   const image = process.env.SCREENSHOT_SANDBOX_IMAGE?.trim();

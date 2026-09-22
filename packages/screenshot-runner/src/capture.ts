@@ -10,15 +10,13 @@ const NAVIGATION_TIMEOUT_MS = 15_000;
 const NETWORK_IDLE_TIMEOUT_MS = 2_000;
 const NETWORK_IDLE_TIME_MS = 500;
 const MAX_OUTPUT_BYTES = 10 * 1024 * 1024;
-// Chromium's own sandbox needs unprivileged user namespaces. It is never
-// disabled to work around a host that lacks them: the page being rendered is
-// attacker-supplied, so a launch failure must surface rather than silently
-// downgrade isolation.
+// --no-sandbox is never added: the page being rendered is attacker-supplied,
+// so a launch failure must surface rather than silently downgrade isolation.
 const LAUNCH_ARGS = ["--disable-dev-shm-usage", "--no-default-browser-check", "--no-first-run"];
 
-// A full-page capture allocates width x height x 4 bytes before any encoding,
-// so the pixel budget is checked before rendering; the byte limit below only
-// catches what compresses badly, which is too late to protect memory.
+// Checked before rendering, since a full-page capture allocates width x
+// height x 4 bytes up front — the byte limit below only catches this after
+// the fact.
 const MAX_OUTPUT_PIXELS = 64_000_000;
 
 async function closeResources(page: Page | null, browser: Browser | null): Promise<void> {
@@ -50,9 +48,7 @@ async function main(): Promise<void> {
     const url = validateUrl(args.url);
 
     browser = await puppeteer.launch({ headless: true, args: LAUNCH_ARGS });
-    // Reported rather than asserted: the browser comes from the image's distro
-    // packages, so its exact version is a property of the published image
-    // digest, not something a capture should refuse to run against.
+    // Reported, not asserted: the version is a property of the image digest.
     browserVersion = await browser.version();
 
     page = await browser.newPage();
@@ -80,13 +76,11 @@ async function main(): Promise<void> {
       });
     } catch {}
 
-    // The page may have navigated again while settling, so the scheme is
-    // re-checked against the URL that is actually about to be captured.
+    // Re-checked: the page may have navigated again while settling.
     finalUrl = safeFinalUrl(page.url()) ?? finalUrl;
     validateUrl(page.url());
 
-    // A full-page capture is as tall as the document, so reporting the viewport
-    // height would misdescribe the image.
+    // A full-page capture is taller than the viewport, so measure the document.
     dimensions = args.fullPage
       ? await page.evaluate(() => ({
           width: document.documentElement.scrollWidth,
@@ -107,8 +101,7 @@ async function main(): Promise<void> {
       path: args.output,
     });
 
-    // Checked here so an oversized image is never transferred out of the
-    // sandbox only to be rejected by the caller.
+    // Checked here so an oversized image is never transferred out of the sandbox.
     const { size } = await stat(args.output);
     if (size === 0) {
       throw new RunnerError("capture_failed", "Screenshot produced an empty file");
