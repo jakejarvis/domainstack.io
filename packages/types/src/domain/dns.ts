@@ -36,6 +36,13 @@ export interface DnssecResult {
   ds: DnssecDsRecord[];
   /** DNSKEY records published in the zone itself. */
   dnskeys: DnssecKey[];
+  /**
+   * Present and `false` when `dnskeys` is a stand-in for a query that failed
+   * independently of `status` (e.g. the DNSKEY lookup errored while the SOA
+   * query still classified the zone) rather than a confirmed-empty set.
+   * Absent otherwise — including on payloads cached before this existed.
+   */
+  dnskeysAvailable?: false;
   /** Cross-check against registry (RDAP) data; absent when no registration data is known. */
   registry?: DnssecRegistryCheck;
 }

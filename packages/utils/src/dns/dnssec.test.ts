@@ -186,4 +186,18 @@ describe("withRegistryCheck", () => {
       registry: { enabled: true, mismatch: false },
     });
   });
+
+  it("passes an input dnskeysAvailable flag through untouched — it doesn't factor into the DS comparison", () => {
+    const withUnavailableDnskeys: DnssecResult = {
+      status: "secure",
+      ds: [ds],
+      dnskeys: [],
+      dnskeysAvailable: false,
+    };
+
+    expect(withRegistryCheck(withUnavailableDnskeys, { enabled: true, dsRecords: [ds] })).toEqual({
+      ...withUnavailableDnskeys,
+      registry: { enabled: true, mismatch: false },
+    });
+  });
 });

@@ -145,7 +145,12 @@ describe("persistDnsRecordsStep", () => {
       // Present (not the "no row at all" case above) and fresh: a later request
       // won't force a full refetch just because DNSSEC has never succeeded yet.
       expect(cached.stale).toBe(false);
-      expect(cached.data?.dnssec).toEqual({ status: "indeterminate", ds: [], dnskeys: [] });
+      expect(cached.data?.dnssec).toEqual({
+        status: "indeterminate",
+        ds: [],
+        dnskeys: [],
+        dnskeysAvailable: false,
+      });
     });
 
     it("keeps a prior good status when a later observation is indeterminate, but still advances freshness", async () => {
@@ -227,6 +232,32 @@ describe("persistDnsRecordsStep", () => {
       });
       const resolved = await getCachedDns("first-observation-ds-unavailable.com");
       expect(resolved.data?.dnssec?.registry).toEqual({ enabled: true, mismatch: false });
+    });
+
+    it("flags a first-ever observation's unavailable DNSKEY set instead of presenting it as confirmed-empty", async () => {
+      await persist(
+        "first-observation-dnskey-unavailable.com",
+        { status: "secure", ds: [DS], dnskeys: [] },
+        undefined,
+        true,
+        false,
+      );
+
+      const { getCachedDns } = await import("@domainstack/db/queries/dns");
+      const cached = await getCachedDns("first-observation-dnskey-unavailable.com");
+
+      expect(cached.data?.dnssec?.dnskeysAvailable).toBe(false);
+
+      // The next round's DNSKEY query succeeds: the flag clears.
+      const key = { flags: 257, protocol: 3, algorithm: 13, isKsk: true };
+      await persist("first-observation-dnskey-unavailable.com", {
+        status: "secure",
+        ds: [DS],
+        dnskeys: [key],
+      });
+      const resolved = await getCachedDns("first-observation-dnskey-unavailable.com");
+      expect(resolved.data?.dnssec?.dnskeysAvailable).toBeUndefined();
+      expect(resolved.data?.dnssec?.dnskeys).toEqual([key]);
     });
 
     it("still updates DS/DNSKEY when their queries succeed, even if the status is unchanged", async () => {

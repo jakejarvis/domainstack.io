@@ -227,6 +227,7 @@ export async function getCachedDns(domain: string): Promise<CacheResult<DnsRecor
       dnssecDs: dnssecChecks.ds,
       dnssecKeys: dnssecChecks.dnskeys,
       dnssecDsAvailable: dnssecChecks.dsAvailable,
+      dnssecDnskeysAvailable: dnssecChecks.dnskeysAvailable,
       dnssecFetchedAt: dnssecChecks.fetchedAt,
       dnssecExpiresAt: dnssecChecks.expiresAt,
       registryDnssec: registrations.dnssec,
@@ -254,6 +255,7 @@ export async function getCachedDns(domain: string): Promise<CacheResult<DnsRecor
           ds: first.dnssecDs ?? [],
           dnskeys: first.dnssecKeys ?? [],
           dsAvailable: first.dnssecDsAvailable ?? false,
+          dnskeysAvailable: first.dnssecDnskeysAvailable ?? false,
           fetchedAt: first.dnssecFetchedAt,
           expiresAt: first.dnssecExpiresAt,
         }
@@ -296,7 +298,12 @@ export async function getCachedDns(domain: string): Promise<CacheResult<DnsRecor
       resolver: rows[0]?.resolver ?? null,
       dnssec: dnssecCheck
         ? withRegistryCheck(
-            { status: dnssecCheck.status, ds: dnssecCheck.ds, dnskeys: dnssecCheck.dnskeys },
+            {
+              status: dnssecCheck.status,
+              ds: dnssecCheck.ds,
+              dnskeys: dnssecCheck.dnskeys,
+              ...(dnssecCheck.dnskeysAvailable ? {} : { dnskeysAvailable: false }),
+            },
             first?.registryDnssec,
             { dsAvailable: dnssecCheck.dsAvailable },
           )

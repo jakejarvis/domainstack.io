@@ -72,9 +72,14 @@ async function fetchAndPersistDns(domain: string): Promise<DnsResult> {
     data: {
       records: fetchData.records,
       resolver: fetchData.resolver,
-      dnssec: withRegistryCheck(fetchData.dnssec, registry, {
-        dsAvailable: fetchData.dnssecDsAvailable,
-      }),
+      dnssec: withRegistryCheck(
+        {
+          ...fetchData.dnssec,
+          ...(fetchData.dnssecDnskeysAvailable ? {} : { dnskeysAvailable: false }),
+        },
+        registry,
+        { dsAvailable: fetchData.dnssecDsAvailable },
+      ),
     },
   };
 }
