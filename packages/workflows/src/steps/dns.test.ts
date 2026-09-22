@@ -126,6 +126,39 @@ describe("persistDnsRecordsStep", () => {
       expect(cached.data?.dnssec).toBeUndefined();
     });
 
+    it("records a genuinely first-ever indeterminate observation, bounded by TTL rather than permanently stale", async () => {
+      await persist(
+        "never-observed.com",
+        { status: "indeterminate", ds: [], dnskeys: [] },
+        new Date(Date.now() + 300_000).toISOString(),
+      );
+
+      const { getCachedDns } = await import("@domainstack/db/queries/dns");
+      const cached = await getCachedDns("never-observed.com");
+
+      // Present (not the "no row at all" case above) and fresh: a later request
+      // won't force a full refetch just because DNSSEC has never succeeded yet.
+      expect(cached.stale).toBe(false);
+      expect(cached.data?.dnssec).toEqual({ status: "indeterminate", ds: [], dnskeys: [] });
+    });
+
+    it("keeps a prior good status when a later observation is indeterminate, but still advances freshness", async () => {
+      await persist("blip.com", { status: "secure", ds: [DS], dnskeys: [] });
+      await persist(
+        "blip.com",
+        { status: "indeterminate", ds: [], dnskeys: [] },
+        new Date(Date.now() + 300_000).toISOString(),
+      );
+
+      const { getCachedDns } = await import("@domainstack/db/queries/dns");
+      const cached = await getCachedDns("blip.com");
+
+      // The known-good status/DS survive the blip instead of flipping to
+      // indeterminate, and the row isn't stuck stale from the first fetch.
+      expect(cached.stale).toBe(false);
+      expect(cached.data?.dnssec).toEqual({ status: "secure", ds: [DS], dnskeys: [] });
+    });
+
     it("cross-checks against the registry's persisted DNSSEC data", async () => {
       await persist("mismatch.com");
       const { upsertDomain } = await import("@domainstack/db/queries/domains");

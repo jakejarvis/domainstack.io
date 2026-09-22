@@ -33,6 +33,11 @@ describe("parseDs", () => {
     expect(parseDs("x 13 2 AB")).toBeNull();
     expect(parseDs("2371 13 2")).toBeNull();
   });
+
+  it("rejects a non-hex digest", () => {
+    expect(parseDs("2371 13 2 xyz")).toBeNull();
+    expect(parseDs("2371 13 2 CE0EB9E5 9E ZZ")).toBeNull();
+  });
 });
 
 describe("parseDnskey", () => {

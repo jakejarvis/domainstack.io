@@ -137,18 +137,27 @@ export async function replaceDns(params: UpsertDnsParams) {
 
     if (params.dnssec) {
       const { result, expiresAt } = params.dnssec;
-      const values = {
-        status: result.status,
-        ds: result.ds,
-        dnskeys: result.dnskeys,
-        resolver: params.resolver,
-        fetchedAt: params.fetchedAt,
-        expiresAt,
-      };
-      await tx
-        .insert(dnssecChecks)
-        .values({ domainId, ...values })
-        .onConflictDoUpdate({ target: dnssecChecks.domainId, set: values });
+      const base = { resolver: params.resolver, fetchedAt: params.fetchedAt, expiresAt };
+
+      if (result.status === "indeterminate") {
+        // A failed/incomplete observation. Never overwrite a prior good status
+        // with "could not tell" (and never fabricate a DS/DNSKEY set from it),
+        // but still bump fetchedAt/expiresAt: leaving them frozen would make
+        // the row (and per `getCachedDns`, the whole DNS cache) permanently
+        // stale, forcing a full refetch on every request until DNSSEC happens
+        // to succeed again. The first-ever observation has no prior status to
+        // preserve, so it's inserted as indeterminate — an honest "unknown".
+        await tx
+          .insert(dnssecChecks)
+          .values({ domainId, status: "indeterminate", ds: [], dnskeys: [], ...base })
+          .onConflictDoUpdate({ target: dnssecChecks.domainId, set: base });
+      } else {
+        const values = { status: result.status, ds: result.ds, dnskeys: result.dnskeys, ...base };
+        await tx
+          .insert(dnssecChecks)
+          .values({ domainId, ...values })
+          .onConflictDoUpdate({ target: dnssecChecks.domainId, set: values });
+      }
     }
   });
 }

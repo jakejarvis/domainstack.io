@@ -116,12 +116,10 @@ export async function persistDnsRecords(domain: string, fetchData: DnsFetchData)
     resolver: fetchData.resolver,
     fetchedAt: now,
     recordsByType,
-    // Never overwrite a good cached observation with "could not tell": leave
-    // the previous row (and its TTL) in place so it naturally goes stale and
-    // is retried, instead of the response flipping to indeterminate on a blip.
-    dnssec:
-      fetchData.dnssec.status === "indeterminate"
-        ? undefined
-        : { result: fetchData.dnssec, expiresAt: new Date(fetchData.dnssecExpiresAt) },
+    // Always recorded, even when indeterminate: `replaceDns` preserves a prior
+    // good status/DS/DNSKEY set rather than overwriting it with "could not
+    // tell", but still advances freshness so staleness stays bounded by TTL
+    // instead of forcing a full refetch on every request (see its comment).
+    dnssec: { result: fetchData.dnssec, expiresAt: new Date(fetchData.dnssecExpiresAt) },
   });
 }

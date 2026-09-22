@@ -18,7 +18,7 @@ import {
 
 export interface DnssecFetchData {
   dnssec: DnssecResult;
-  /** Smallest TTL among the DS and DNSKEY answers, for cache expiry. */
+  /** Smallest TTL among the SOA, DS, and DNSKEY answers that established `dnssec`, for cache expiry. */
   ttl?: number;
 }
 
@@ -59,8 +59,15 @@ const RCODE_SERVFAIL = 2;
  * Throws on transport-level failures; callers decide the fallback.
  */
 export async function fetchDnssec(domain: string, provider: DohProvider): Promise<DnssecFetchData> {
-  // The SOA query establishes the status; it must not be discarded just because
-  // the (best-effort, supplementary) DS/DNSKEY metadata queries fail below.
+  // Start the DS/DNSKEY metadata queries alongside the SOA query — they're
+  // independent, so awaiting SOA first would add an avoidable round trip.
+  // They're best-effort: `allSettled` so a transport failure here can't
+  // discard the SOA-derived status below.
+  const metadataSettled = Promise.allSettled([
+    queryDoh(provider, domain, "DS", { dnssec: true, checkingDisabled: true }),
+    queryDoh(provider, domain, "DNSKEY", { dnssec: true, checkingDisabled: true }),
+  ]);
+
   const validated = await queryDoh(provider, domain, "SOA", { dnssec: true });
 
   // Only a SERVFAIL needs the unchecked comparison to tell "bogus" from "broken".
@@ -69,10 +76,7 @@ export async function fetchDnssec(domain: string, provider: DohProvider): Promis
       ? await queryDoh(provider, domain, "SOA", { dnssec: true, checkingDisabled: true })
       : undefined;
 
-  const [dsSettled, dnskeySettled] = await Promise.allSettled([
-    queryDoh(provider, domain, "DS", { dnssec: true, checkingDisabled: true }),
-    queryDoh(provider, domain, "DNSKEY", { dnssec: true, checkingDisabled: true }),
-  ]);
+  const [dsSettled, dnskeySettled] = await metadataSettled;
 
   const dsAnswers =
     dsSettled.status === "fulfilled" && dsSettled.value.rcode === 0 ? dsSettled.value.answers : [];
