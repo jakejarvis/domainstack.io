@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
+import { AppHeaderActionCluster } from "@/components/layout/app-header-action-cluster";
 import { AppHeaderGrid } from "@/components/layout/app-header-grid";
-import { AppHeaderSlideOver } from "@/components/layout/app-header-slideover";
 import { MobileSearchProvider } from "@/components/layout/mobile-search-context";
 import { Logo } from "@/components/logo";
 import { HeaderSearchClient } from "@/components/search/header-search-client";
@@ -37,10 +37,10 @@ function Header() {
       <AppHeaderGrid>
         <Logo className="size-8" />
         <HeaderSearchClient />
-        <AppHeaderSlideOver>
+        <AppHeaderActionCluster>
           <MobileSearchToggle />
           <button type="button">Dashboard</button>
-        </AppHeaderSlideOver>
+        </AppHeaderActionCluster>
       </AppHeaderGrid>
     </MobileSearchProvider>
   );

@@ -134,3 +134,21 @@
 @utility accent-glow {
   @apply bg-[radial-gradient(closest-side,var(--glow-color,var(--accent-slate)),transparent)];
 }
+
+@keyframes heartbeat {
+  0%,
+  24%,
+  48%,
+  60%,
+  100% {
+    scale: 1;
+  }
+  12%,
+  36% {
+    scale: 1.15;
+  }
+}
+
+@utility animate-heartbeat {
+  animation: heartbeat 2s ease-in-out infinite;
+}

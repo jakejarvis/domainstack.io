@@ -9,7 +9,6 @@ import {
   IconTool,
   IconTrash,
 } from "@tabler/icons-react";
-import * as m from "motion/react-m";
 import Link from "next/link";
 import { memo, useCallback } from "react";
 
@@ -341,10 +340,11 @@ export const DashboardGridCard = memo(function DashboardGridCard({
   const isPending = !domain.verified;
 
   return (
-    <m.div
-      className="group relative h-full"
-      animate={{ scale: selected ? 1.01 : 1 }}
-      transition={{ duration: 0.1 }}
+    <div
+      className={cn(
+        "group relative h-full transition-transform duration-100",
+        selected && "scale-[1.01]",
+      )}
     >
       <div
         className={cn(
@@ -389,7 +389,7 @@ export const DashboardGridCard = memo(function DashboardGridCard({
           />
         </CardContent>
       </Card>
-    </m.div>
+    </div>
   );
 });
 

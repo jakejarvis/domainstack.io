@@ -14,7 +14,6 @@ import {
   IconPuzzle,
   IconWorld,
 } from "@tabler/icons-react";
-import * as m from "motion/react-m";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -130,17 +129,9 @@ export function AppFooter() {
         </div>
         <div>
           Made with{" "}
-          <m.div
-            className="inline-flex translate-y-[3px]"
-            animate={{ scale: [1, 1.15, 1, 1.15, 1, 1] }}
-            transition={{
-              duration: 1.2,
-              repeat: Number.POSITIVE_INFINITY,
-              repeatDelay: 0.8,
-            }}
-          >
+          <div className="inline-flex translate-y-[3px] animate-heartbeat motion-reduce:animate-none">
             <IconHeart className="fill-destructive stroke-destructive" />
-          </m.div>{" "}
+          </div>{" "}
           by{" "}
           <a href="https://jarv.is/" target="_blank" rel="noopener">
             @jakejarvis
