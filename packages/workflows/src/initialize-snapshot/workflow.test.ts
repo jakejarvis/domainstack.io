@@ -55,12 +55,20 @@ const DNS_RESULT: DnsFetchData = {
   records: [{ type: "A", name: "example.com", value: "192.0.2.1", ttl: 300 }] as never,
   resolver: "cloudflare",
   recordsWithExpiry: [],
+  dnssec: { status: "insecure", ds: [], dnskeys: [] },
+  dnssecExpiresAt: "2030-01-01T00:00:00.000Z",
+  dnssecDsAvailable: true,
+  dnssecDnskeysAvailable: true,
 };
 
 const EMPTY_DNS_RESULT: DnsFetchData = {
   records: [],
   resolver: "cloudflare",
   recordsWithExpiry: [],
+  dnssec: { status: "insecure", ds: [], dnskeys: [] },
+  dnssecExpiresAt: "2030-01-01T00:00:00.000Z",
+  dnssecDsAvailable: true,
+  dnssecDnskeysAvailable: true,
 };
 
 const PROVIDERS = {
@@ -120,5 +128,39 @@ describe("initializeSnapshotWorkflow", () => {
 
     expect(result).toEqual({ success: false, error: "dns_unobserved" });
     expect(snapshotsMock.createSnapshot).not.toHaveBeenCalled();
+  });
+
+  it.each(["secure", "insecure", "bogus"] as const)(
+    "writes a %s DNSSEC baseline when it was observed",
+    async (status) => {
+      dnsMock.fetchDnsRecordsStep.mockResolvedValue({
+        ...DNS_RESULT,
+        dnssec: { status, ds: [], dnskeys: [] },
+      });
+      snapshotsMock.createSnapshot.mockResolvedValue({ id: "snap-1" } as never);
+
+      const { initializeSnapshotWorkflow } = await import("./workflow");
+      await initializeSnapshotWorkflow({ trackedDomainId: "td-1", domainId: "d-1" });
+
+      expect(snapshotsMock.createSnapshot).toHaveBeenCalledWith(
+        expect.objectContaining({ dnssec: { status } }),
+      );
+    },
+  );
+
+  it("leaves the DNSSEC baseline null when DNSSEC was unobservable, so it is adopted silently later", async () => {
+    dnsMock.fetchDnsRecordsStep.mockResolvedValue({
+      ...DNS_RESULT,
+      dnssec: { status: "indeterminate", ds: [], dnskeys: [] },
+    });
+    snapshotsMock.createSnapshot.mockResolvedValue({ id: "snap-1" } as never);
+
+    const { initializeSnapshotWorkflow } = await import("./workflow");
+    const result = await initializeSnapshotWorkflow({ trackedDomainId: "td-1", domainId: "d-1" });
+
+    expect(result).toEqual({ success: true, snapshotId: "snap-1" });
+    expect(snapshotsMock.createSnapshot).toHaveBeenCalledWith(
+      expect.objectContaining({ dnssec: null }),
+    );
   });
 });

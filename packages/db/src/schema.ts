@@ -16,6 +16,7 @@ import {
 
 import {
   DNS_RECORD_TYPES,
+  DNSSEC_STATUSES,
   NOTIFICATION_CHANNELS,
   PLANS,
   PROVIDER_CATEGORIES,
@@ -26,6 +27,9 @@ import {
 } from "@domainstack/constants";
 import type {
   CertificateSnapshotData,
+  DnssecDsRecord,
+  DnssecKey,
+  DnssecSnapshotData,
   GeneralMeta,
   Header,
   NotificationChannel,
@@ -33,6 +37,7 @@ import type {
   OpenGraphMeta,
   PendingChangeObservation,
   RegistrationContact,
+  RegistrationDnssec,
   RegistrationNameserver,
   RegistrationSnapshotData,
   RegistrationStatus,
@@ -44,6 +49,7 @@ import type {
 export const providerCategory = pgEnum("provider_category", PROVIDER_CATEGORIES);
 export const providerSource = pgEnum("provider_source", PROVIDER_SOURCES);
 export const dnsRecordType = pgEnum("dns_record_type", DNS_RECORD_TYPES);
+export const dnssecStatus = pgEnum("dnssec_status", DNSSEC_STATUSES);
 export const registrationSource = pgEnum("registration_source", REGISTRATION_SOURCES);
 export const verificationMethod = pgEnum("verification_method", VERIFICATION_METHODS);
 export const verificationStatus = pgEnum("verification_status", VERIFICATION_STATUSES);
@@ -288,6 +294,10 @@ export const userNotificationPreferences = pgTable("user_notification_preference
     .$type<{ inApp: boolean; email: boolean }>()
     .notNull()
     .default(sql`'{"inApp": true, "email": true}'::jsonb`),
+  dnssecChanges: jsonb("dnssec_changes")
+    .$type<{ inApp: boolean; email: boolean }>()
+    .notNull()
+    .default(sql`'{"inApp": true, "email": true}'::jsonb`),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
@@ -373,6 +383,8 @@ export const registrations = pgTable(
     resellerProviderId: uuid("reseller_provider_id").references(() => providers.id),
     fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    // Registry-reported DNSSEC delegation data (RDAP secureDNS); null for pre-existing rows
+    dnssec: jsonb("dnssec").$type<RegistrationDnssec>(),
     // Raw RDAP/WHOIS response for debugging and advanced use cases
     rawResponse: jsonb("raw_response"),
   },
@@ -463,6 +475,35 @@ export const certificateChecks = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   },
   (t) => [index("i_certificate_checks_expires").on(t.expiresAt)],
+);
+
+// DNSSEC observation (one current row per domain)
+export const dnssecChecks = pgTable(
+  "dnssec_checks",
+  {
+    domainId: uuid("domain_id")
+      .primaryKey()
+      .references(() => domains.id, { onDelete: "cascade" }),
+    status: dnssecStatus("status").notNull(),
+    ds: jsonb("ds")
+      .$type<DnssecDsRecord[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    dnskeys: jsonb("dnskeys")
+      .$type<DnssecKey[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    // Whether `ds`/`dnskeys` reflect a real NOERROR observation rather than an
+    // empty stand-in for a query that failed independently of the overall
+    // (SOA-derived) status. Defaults true: an empty set with no recorded
+    // failure is the ordinary "confirmed unsigned" case.
+    dsAvailable: boolean("ds_available").notNull().default(true),
+    dnskeysAvailable: boolean("dnskeys_available").notNull().default(true),
+    resolver: text("resolver").notNull(),
+    fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [index("i_dnssec_checks_expires").on(t.expiresAt)],
 );
 
 // HTTP headers (latest set)
@@ -629,6 +670,9 @@ export const domainSnapshots = pgTable("domain_snapshots", {
   emailProviderId: uuid("email_provider_id").references(() => providers.id),
   // Unconfirmed provider change awaiting a repeat observation (see confirmChange).
   providerPending: jsonb("provider_pending").$type<PendingChangeObservation>(),
+  // DNSSEC baseline. NULL = not yet observed: the first monitoring run adopts the
+  // current state silently instead of alerting (no default, on purpose).
+  dnssec: jsonb("dnssec").$type<DnssecSnapshotData>(),
   // Certificate snapshot (JSONB)
   certificate: jsonb("certificate")
     .$type<CertificateSnapshotData>()

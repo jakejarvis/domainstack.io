@@ -252,6 +252,10 @@ export async function persistRegistration(
       ipv4: n.ipv4 ?? [],
       ipv6: n.ipv6 ?? [],
     })),
+    // Omit (rather than null) when this lookup reports nothing: a WHOIS-fallback
+    // or an RDAP response without secureDNS must not erase a previously
+    // observed registry DNSSEC baseline.
+    ...(response.dnssec !== undefined ? { dnssec: response.dnssec } : {}),
     rawResponse: response.rawResponse,
   });
 }

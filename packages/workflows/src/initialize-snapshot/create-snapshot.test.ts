@@ -111,4 +111,23 @@ describe("createSnapshot", () => {
     expect(row?.dnsProviderId).toBe(TEST_PROVIDER_ID);
     expect(row?.registration.nameservers).toEqual([{ host: "ns1.example.com" }]);
   });
+
+  it("stores the DNSSEC baseline, and leaves it null (adopted silently later) when unobserved", async () => {
+    const { updateSnapshot } = await import("@domainstack/db/queries/snapshots");
+
+    // The baseline above was created without DNSSEC data: null, never a default state.
+    const [before] = await db
+      .select()
+      .from(domainSnapshots)
+      .where(eq(domainSnapshots.trackedDomainId, TEST_TRACKED_ID));
+    expect(before?.dnssec).toBeNull();
+
+    await updateSnapshot(TEST_TRACKED_ID, { dnssec: { status: "secure", pending: null } });
+
+    const [after] = await db
+      .select()
+      .from(domainSnapshots)
+      .where(eq(domainSnapshots.trackedDomainId, TEST_TRACKED_ID));
+    expect(after?.dnssec).toEqual({ status: "secure", pending: null });
+  });
 });

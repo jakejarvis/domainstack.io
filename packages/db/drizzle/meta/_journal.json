@@ -176,6 +176,27 @@
       "when": 1790011927317,
       "tag": "0024_green_stone_men",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1790025976454,
+      "tag": "0025_spooky_angel",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1790026814114,
+      "tag": "0026_needy_eddie_brock",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1790047288287,
+      "tag": "0027_magical_harpoon",
+      "breakpoints": true
     }
   ]
 }

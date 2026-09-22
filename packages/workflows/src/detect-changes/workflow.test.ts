@@ -49,6 +49,8 @@ const notificationsMock = vi.hoisted(() => ({
     vi.fn<typeof import("../steps/notifications").sendProviderChangeNotificationStep>(),
   sendCertificateChangeNotificationStep:
     vi.fn<typeof import("../steps/notifications").sendCertificateChangeNotificationStep>(),
+  sendDnssecChangeNotificationStep:
+    vi.fn<typeof import("../steps/notifications").sendDnssecChangeNotificationStep>(),
 }));
 
 const snapshotsMock = vi.hoisted(() => ({
@@ -73,6 +75,10 @@ const DNS_RESULT: DnsFetchData = {
   records: [{ type: "A", name: "example.com", value: "192.0.2.1", ttl: 300 }] as never,
   resolver: "cloudflare",
   recordsWithExpiry: [],
+  dnssec: { status: "insecure", ds: [], dnskeys: [] },
+  dnssecExpiresAt: "2030-01-01T00:00:00.000Z",
+  dnssecDsAvailable: true,
+  dnssecDnskeysAvailable: true,
 };
 
 const PROVIDERS = {
@@ -111,6 +117,7 @@ export function makeSnapshot(
     hostingProviderId: null,
     emailProviderId: null,
     providerPending: null,
+    dnssec: { status: "insecure", pending: null },
     userEmail: "a@example.com",
     userName: "Alex",
     ...overrides,
@@ -154,6 +161,7 @@ describe("detectChangesWorkflow", () => {
       registrationChanges: false,
       providerChanges: false,
       certificateChanges: false,
+      dnssecChanges: false,
     });
     expect(monitorDedupMock.releaseMonitorLock).toHaveBeenCalledWith("td-1", "tok");
   });
@@ -173,6 +181,7 @@ describe("detectChangesWorkflow", () => {
       registrationChanges: false,
       providerChanges: false,
       certificateChanges: false,
+      dnssecChanges: false,
     });
     expect(monitorDedupMock.releaseMonitorLock).toHaveBeenCalledWith("td-1", "tok");
   });
@@ -287,5 +296,268 @@ describe("change alert idempotency", () => {
       true,
       true,
     );
+  });
+});
+
+describe("DNSSEC change monitoring", () => {
+  const dnssecResult = (status: "secure" | "insecure" | "bogus" | "indeterminate") =>
+    dnsMock.fetchDnsRecordsStep.mockResolvedValue({
+      ...DNS_RESULT,
+      dnssec: { status, ds: [], dnskeys: [] },
+    });
+
+  const pending = (key: string, observations = CHANGE_CONFIRMATIONS - 1) => ({
+    key,
+    firstSeenAt: "2026-09-13T00:00:00.000Z",
+    observations,
+  });
+
+  const dnssecWrites = () =>
+    snapshotsMock.updateSnapshot.mock.calls.filter(([, params]) => "dnssec" in params);
+
+  const run = async () => {
+    const { detectChangesWorkflow } = await import("./workflow");
+    return detectChangesWorkflow({ trackedDomainId: "td-1", monitorLockOwnerToken: "tok" });
+  };
+
+  describe("rollout: snapshots that predate DNSSEC tracking", () => {
+    it.each(["secure", "insecure", "bogus"] as const)(
+      "adopts a %s baseline silently instead of announcing a change",
+      async (status) => {
+        snapshotsMock.getSnapshot.mockResolvedValue(makeSnapshot({ dnssec: null }));
+        dnssecResult(status);
+
+        const result = await run();
+
+        expect(result).toMatchObject({ skipped: false, dnssecChanges: false });
+        expect(dnssecWrites()).toEqual([["td-1", { dnssec: { status, pending: null } }]]);
+        expect(notificationsMock.determineNotificationChannelsStep).not.toHaveBeenCalledWith(
+          expect.anything(),
+          expect.anything(),
+          "dnssecChanges",
+        );
+        expect(notificationsMock.sendDnssecChangeNotificationStep).not.toHaveBeenCalled();
+      },
+    );
+
+    it("does not store a baseline while DNSSEC is unobservable, and does not alert", async () => {
+      snapshotsMock.getSnapshot.mockResolvedValue(makeSnapshot({ dnssec: null }));
+      dnssecResult("indeterminate");
+
+      const result = await run();
+
+      expect(result).toMatchObject({ dnssecChanges: false });
+      expect(dnssecWrites()).toEqual([]);
+      expect(notificationsMock.sendDnssecChangeNotificationStep).not.toHaveBeenCalled();
+    });
+  });
+
+  it("skips the branch when DNSSEC is indeterminate, so a resolver hiccup can't look like it was disabled", async () => {
+    snapshotsMock.getSnapshot.mockResolvedValue(
+      makeSnapshot({ dnssec: { status: "secure", pending: null } }),
+    );
+    dnssecResult("indeterminate");
+
+    const result = await run();
+
+    expect(result).toMatchObject({ dnssecChanges: false });
+    expect(dnssecWrites()).toEqual([]);
+    expect(notificationsMock.sendDnssecChangeNotificationStep).not.toHaveBeenCalled();
+  });
+
+  it("writes nothing when the state matches the baseline", async () => {
+    dnssecResult("insecure");
+
+    await run();
+
+    expect(dnssecWrites()).toEqual([]);
+    expect(notificationsMock.sendDnssecChangeNotificationStep).not.toHaveBeenCalled();
+  });
+
+  it("holds a first sighting as pending without notifying", async () => {
+    dnssecResult("secure");
+
+    const result = await run();
+
+    expect(result).toMatchObject({ dnssecChanges: false });
+    expect(dnssecWrites()).toEqual([
+      [
+        "td-1",
+        {
+          dnssec: {
+            status: "insecure",
+            pending: expect.objectContaining({ key: "secure", observations: 1 }),
+          },
+        },
+      ],
+    ]);
+    expect(notificationsMock.sendDnssecChangeNotificationStep).not.toHaveBeenCalled();
+  });
+
+  it("clears a stale pending observation when the state goes back to the baseline", async () => {
+    snapshotsMock.getSnapshot.mockResolvedValue(
+      makeSnapshot({ dnssec: { status: "insecure", pending: pending("secure") } }),
+    );
+    dnssecResult("insecure");
+
+    await run();
+
+    expect(dnssecWrites()).toEqual([["td-1", { dnssec: { status: "insecure", pending: null } }]]);
+    expect(notificationsMock.sendDnssecChangeNotificationStep).not.toHaveBeenCalled();
+  });
+
+  it("notifies on a confirmed change, then advances the baseline", async () => {
+    snapshotsMock.getSnapshot.mockResolvedValue(
+      makeSnapshot({ dnssec: { status: "insecure", pending: pending("secure") } }),
+    );
+    dnssecResult("secure");
+    notificationsMock.sendDnssecChangeNotificationStep.mockResolvedValue(true);
+
+    const result = await run();
+
+    expect(result).toMatchObject({ dnssecChanges: true });
+    expect(notificationsMock.determineNotificationChannelsStep).toHaveBeenCalledWith(
+      "u1",
+      "td-1",
+      "dnssecChanges",
+    );
+    expect(notificationsMock.sendDnssecChangeNotificationStep).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "DNSSEC enabled for example.com",
+        emailSubject: "🔐 DNSSEC enabled for example.com",
+        changes: { kind: "enabled", previousStatus: "insecure", newStatus: "secure" },
+        idempotencyKey: "dnssec:td-1:insecure>secure",
+      }),
+      true,
+      true,
+    );
+    expect(dnssecWrites()).toEqual([["td-1", { dnssec: { status: "secure", pending: null } }]]);
+  });
+
+  it("alerts when validation breaks", async () => {
+    snapshotsMock.getSnapshot.mockResolvedValue(
+      makeSnapshot({ dnssec: { status: "secure", pending: pending("bogus") } }),
+    );
+    dnssecResult("bogus");
+    notificationsMock.sendDnssecChangeNotificationStep.mockResolvedValue(true);
+
+    await run();
+
+    expect(notificationsMock.sendDnssecChangeNotificationStep).toHaveBeenCalledWith(
+      expect.objectContaining({
+        emailSubject: "🚨 DNSSEC validation is failing for example.com",
+        changes: { kind: "broken", previousStatus: "secure", newStatus: "bogus" },
+        idempotencyKey: "dnssec:td-1:secure>bogus",
+      }),
+      true,
+      true,
+    );
+  });
+
+  it("alerts when DNSSEC is disabled", async () => {
+    snapshotsMock.getSnapshot.mockResolvedValue(
+      makeSnapshot({ dnssec: { status: "secure", pending: pending("insecure") } }),
+    );
+    dnssecResult("insecure");
+    notificationsMock.sendDnssecChangeNotificationStep.mockResolvedValue(true);
+
+    const result = await run();
+
+    expect(result).toMatchObject({ dnssecChanges: true });
+    expect(notificationsMock.sendDnssecChangeNotificationStep).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "DNSSEC disabled for example.com",
+        emailSubject: "⚠️ DNSSEC disabled for example.com",
+        changes: { kind: "disabled", previousStatus: "secure", newStatus: "insecure" },
+        idempotencyKey: "dnssec:td-1:secure>insecure",
+      }),
+      true,
+      true,
+    );
+    expect(dnssecWrites()).toEqual([["td-1", { dnssec: { status: "insecure", pending: null } }]]);
+  });
+
+  it.each([
+    ["secure", "is passing again"],
+    ["insecure", "no longer fails DNSSEC validation"],
+  ] as const)("alerts when validation recovers to %s", async (newStatus, messageFragment) => {
+    snapshotsMock.getSnapshot.mockResolvedValue(
+      makeSnapshot({ dnssec: { status: "bogus", pending: pending(newStatus) } }),
+    );
+    dnssecResult(newStatus);
+    notificationsMock.sendDnssecChangeNotificationStep.mockResolvedValue(true);
+
+    const result = await run();
+
+    expect(result).toMatchObject({ dnssecChanges: true });
+    expect(notificationsMock.sendDnssecChangeNotificationStep).toHaveBeenCalledWith(
+      expect.objectContaining({
+        emailSubject: "✅ DNSSEC validation recovered for example.com",
+        message: expect.stringContaining(messageFragment),
+        changes: { kind: "recovered", previousStatus: "bogus", newStatus },
+        idempotencyKey: `dnssec:td-1:bogus>${newStatus}`,
+      }),
+      true,
+      true,
+    );
+    expect(dnssecWrites()).toEqual([["td-1", { dnssec: { status: newStatus, pending: null } }]]);
+  });
+
+  it("restarts confirmation when the observed state differs from the pending one", async () => {
+    snapshotsMock.getSnapshot.mockResolvedValue(
+      makeSnapshot({ dnssec: { status: "insecure", pending: pending("secure") } }),
+    );
+    dnssecResult("bogus");
+
+    await run();
+
+    expect(notificationsMock.sendDnssecChangeNotificationStep).not.toHaveBeenCalled();
+    expect(dnssecWrites()).toEqual([
+      [
+        "td-1",
+        {
+          dnssec: {
+            status: "insecure",
+            pending: expect.objectContaining({ key: "bogus", observations: 1 }),
+          },
+        },
+      ],
+    ]);
+  });
+
+  it("advances silently, without notifying, when both channels are off", async () => {
+    notificationsMock.determineNotificationChannelsStep.mockResolvedValue({
+      shouldSendEmail: false,
+      shouldSendInApp: false,
+    });
+    dnssecResult("secure");
+
+    const result = await run();
+
+    expect(result).toMatchObject({ dnssecChanges: false });
+    expect(notificationsMock.sendDnssecChangeNotificationStep).not.toHaveBeenCalled();
+    expect(dnssecWrites()).toEqual([["td-1", { dnssec: { status: "secure", pending: null } }]]);
+  });
+
+  it("keeps the baseline and reuses the same idempotencyKey when delivery fails, so the retry re-sends", async () => {
+    snapshotsMock.getSnapshot.mockResolvedValue(
+      makeSnapshot({ dnssec: { status: "insecure", pending: pending("secure") } }),
+    );
+    dnssecResult("secure");
+    notificationsMock.sendDnssecChangeNotificationStep
+      .mockRejectedValueOnce(new Error("insert failed"))
+      .mockResolvedValueOnce(true);
+
+    await expect(run()).rejects.toThrow("insert failed");
+    expect(dnssecWrites()).toEqual([]);
+    expect(monitorDedupMock.releaseMonitorLock).not.toHaveBeenCalled();
+
+    const result = await run();
+
+    expect(result).toMatchObject({ dnssecChanges: true });
+    const keys = notificationsMock.sendDnssecChangeNotificationStep.mock.calls.map(
+      ([params]) => params.idempotencyKey,
+    );
+    expect(keys).toEqual(["dnssec:td-1:insecure>secure", "dnssec:td-1:insecure>secure"]);
   });
 });

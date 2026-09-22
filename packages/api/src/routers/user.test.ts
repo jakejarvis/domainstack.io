@@ -239,6 +239,7 @@ describe("user router", () => {
       expect(result).toBeDefined();
       expect(result.domainExpiry).toBeDefined();
       expect(result.certificateExpiry).toBeDefined();
+      expect(result.dnssecChanges).toEqual({ inApp: true, email: true });
     });
 
     it("returns existing preferences", async () => {
@@ -268,6 +269,21 @@ describe("user router", () => {
       });
 
       expect(result.domainExpiry).toEqual({ inApp: true, email: false });
+    });
+
+    it("persists the DNSSEC changes preference", async () => {
+      const caller = createAuthenticatedCaller();
+      await caller.user.getNotificationPreferences();
+
+      const result = await caller.user.updateGlobalNotificationPreferences({
+        dnssecChanges: { inApp: true, email: false },
+      });
+
+      expect(result.dnssecChanges).toEqual({ inApp: true, email: false });
+      expect((await caller.user.getNotificationPreferences()).dnssecChanges).toEqual({
+        inApp: true,
+        email: false,
+      });
     });
 
     it("supports partial updates", async () => {

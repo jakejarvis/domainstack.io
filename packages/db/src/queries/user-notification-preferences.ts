@@ -12,6 +12,7 @@ function mapPreferences(
     registrationChanges: row.registrationChanges,
     providerChanges: row.providerChanges,
     certificateChanges: row.certificateChanges,
+    dnssecChanges: row.dnssecChanges,
   };
 }
 
@@ -21,6 +22,7 @@ const DEFAULT_PREFERENCES = {
   registrationChanges: { inApp: true, email: true },
   providerChanges: { inApp: true, email: true },
   certificateChanges: { inApp: true, email: true },
+  dnssecChanges: { inApp: true, email: true },
 } as const;
 
 /**

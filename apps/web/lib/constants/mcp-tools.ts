@@ -41,8 +41,9 @@ export const MCP_SECTION_TOOLS = {
   dns: {
     name: "domain_dns",
     title: "DNS Records",
-    description: "Get DNS records for a domain including A, AAAA, MX, TXT, and NS records",
-    whenToUse: "A, AAAA, MX, TXT, and NS records",
+    description:
+      "Get DNS records for a domain including A, AAAA, MX, TXT, and NS records, plus DNSSEC status",
+    whenToUse: "A, AAAA, MX, TXT, and NS records, and DNSSEC status",
   },
   certificates: {
     name: "domain_certificates",

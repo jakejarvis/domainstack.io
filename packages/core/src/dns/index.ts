@@ -9,7 +9,9 @@
 import { DNS_RECORD_TYPES } from "@domainstack/constants";
 import { replaceDns } from "@domainstack/db/queries/dns";
 import { ensureDomainRecord } from "@domainstack/db/queries/domains";
+import { getRegistryDnssec } from "@domainstack/db/queries/registrations";
 import type { DnsRecordType, DnsRecordsResponse } from "@domainstack/types";
+import { withRegistryCheck } from "@domainstack/utils/dns";
 
 import { RemoteDataUnavailableError } from "../lib/fetch-errors";
 import { shareInFlight } from "../lib/in-flight";
@@ -61,11 +63,23 @@ async function fetchAndPersistDns(domain: string): Promise<DnsResult> {
   // 2. Persist to database
   await persistDnsRecords(domain, fetchData);
 
+  // 3. Cross-check against whatever the registry reported (persisted separately
+  // by the registration lookup, so it may not exist yet on a first lookup)
+  const registry = await getRegistryDnssec(domain);
+
   return {
     success: true,
     data: {
       records: fetchData.records,
       resolver: fetchData.resolver,
+      dnssec: withRegistryCheck(
+        {
+          ...fetchData.dnssec,
+          ...(fetchData.dnssecDnskeysAvailable ? {} : { dnskeysAvailable: false }),
+        },
+        registry,
+        { dsAvailable: fetchData.dnssecDsAvailable },
+      ),
     },
   };
 }
@@ -109,5 +123,18 @@ export async function persistDnsRecords(domain: string, fetchData: DnsFetchData)
     resolver: fetchData.resolver,
     fetchedAt: now,
     recordsByType,
+    // Always recorded, even when indeterminate: `replaceDns` preserves a prior
+    // good status/DS/DNSKEY set rather than overwriting it with "could not
+    // tell", but still advances freshness so staleness stays bounded by TTL
+    // instead of forcing a full refetch on every request (see its comment).
+    // `dsAvailable`/`dnskeysAvailable` cover the narrower case where the
+    // overall status IS determinate but one metadata query specifically
+    // failed: its empty result must not overwrite a previously known set.
+    dnssec: {
+      result: fetchData.dnssec,
+      expiresAt: new Date(fetchData.dnssecExpiresAt),
+      dsAvailable: fetchData.dnssecDsAvailable,
+      dnskeysAvailable: fetchData.dnssecDnskeysAvailable,
+    },
   });
 }

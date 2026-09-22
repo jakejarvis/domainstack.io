@@ -74,6 +74,20 @@ export interface RegistrationStatus {
 }
 
 /**
+ * DNSSEC delegation data reported by the registry (RDAP `secureDNS`).
+ * WHOIS fallbacks only know `enabled`.
+ */
+export interface RegistrationDnssec {
+  enabled: boolean;
+  dsRecords?: {
+    keyTag?: number;
+    algorithm?: number;
+    digestType?: number;
+    digest?: string;
+  }[];
+}
+
+/**
  * Full registration response from WHOIS/RDAP lookup.
  */
 export interface RegistrationResponse {
@@ -110,15 +124,7 @@ export interface RegistrationResponse {
   expirationDate?: string;
   deletionDate?: string;
   transferLock?: boolean;
-  dnssec?: {
-    enabled: boolean;
-    dsRecords?: {
-      keyTag?: number;
-      algorithm?: number;
-      digestType?: number;
-      digest?: string;
-    }[];
-  };
+  dnssec?: RegistrationDnssec;
   nameservers?: RegistrationNameserver[];
   contacts?: RegistrationContact[];
   privacyEnabled?: boolean;

@@ -10,7 +10,16 @@ export type {
   CertificatesResponse,
 } from "./certificates";
 
-export type { DnsRecord, DnsRecordsResponse } from "./dns";
+export type {
+  DnsRecord,
+  DnsRecordsResponse,
+  DnssecDsRecord,
+  DnssecKey,
+  DnssecRegistryCheck,
+  DnssecRegistryMismatchReason,
+  DnssecResult,
+  DnssecSnapshotData,
+} from "./dns";
 export type { DomainResponse } from "./domain-response";
 export type { Header, HeadersResponse } from "./headers";
 export type { GeoIpData, HostingGeo, HostingResponse, ProviderDetectionData } from "./hosting";
@@ -19,6 +28,7 @@ export type { ProviderRef } from "./provider-ref";
 export type {
   RegistrationContact,
   RegistrationNameserver,
+  RegistrationDnssec,
   RegistrationResponse,
   RegistrationSnapshotData,
   RegistrationStatus,

@@ -5,6 +5,7 @@ import { alias } from "drizzle-orm/pg-core";
 import type {
   ProviderRef,
   RegistrationContact,
+  RegistrationDnssec,
   RegistrationNameserver,
   RegistrationResponse,
 } from "@domainstack/types";
@@ -45,6 +46,20 @@ export async function upsertRegistration(params: RegistrationInsert) {
     target: registrations.domainId,
     set: updateRow,
   });
+}
+
+/**
+ * The registry-reported DNSSEC data persisted for a domain, or null when no
+ * registration (or no DNSSEC data) is known yet.
+ */
+export async function getRegistryDnssec(domain: string): Promise<RegistrationDnssec | null> {
+  const [row] = await db
+    .select({ dnssec: registrations.dnssec })
+    .from(domains)
+    .innerJoin(registrations, eq(registrations.domainId, domains.id))
+    .where(eq(domains.name, domain))
+    .limit(1);
+  return row?.dnssec ?? null;
 }
 
 /**
@@ -119,6 +134,7 @@ export async function getCachedRegistration(
     expirationDate: row.registration.expirationDate?.toISOString(),
     deletionDate: row.registration.deletionDate?.toISOString(),
     transferLock: row.registration.transferLock ?? undefined,
+    dnssec: row.registration.dnssec ?? undefined,
     nameservers: nameserversArray.length > 0 ? nameserversArray : undefined,
     contacts: contactsArray,
     whoisServer: row.registration.whoisServer ?? undefined,

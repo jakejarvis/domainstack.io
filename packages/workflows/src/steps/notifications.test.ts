@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 /* @vitest-environment node */
 import { FatalError, RetryableError } from "workflow";
 
-import type { ProviderChangeWithNames } from "@domainstack/types";
+import type { DnssecChange, ProviderChangeWithNames } from "@domainstack/types";
 
 // Hoist mocks for the dependencies sendNotificationInternal pulls in via dynamic import.
 const sendEmailMock = vi.hoisted(() => ({
@@ -24,6 +24,10 @@ vi.mock("@domainstack/db/queries/notifications", () => notificationsMock);
 // `emailComponent` being present, so a real `null` render would (incorrectly)
 // look identical to "no template" and skip the send entirely.
 vi.mock("@domainstack/email/templates/provider-change", () => ({
+  default: vi.fn<() => React.ReactElement>().mockReturnValue({} as React.ReactElement),
+}));
+
+vi.mock("@domainstack/email/templates/dnssec-change", () => ({
   default: vi.fn<() => React.ReactElement>().mockReturnValue({} as React.ReactElement),
 }));
 
@@ -156,6 +160,69 @@ describe("sendProviderChangeNotificationStep", () => {
 
     expect(sendEmailMock.sendEmail).toHaveBeenCalledWith(
       expect.objectContaining({ idempotencyKey: baseParams.idempotencyKey }),
+    );
+  });
+});
+
+describe("sendDnssecChangeNotificationStep", () => {
+  const dnssecParams = {
+    userId: "user-1",
+    userEmail: "user@example.com",
+    trackedDomainId: "tracked-1",
+    domainName: "example.com",
+    userName: "Alex Smith",
+    title: "DNSSEC disabled for example.com",
+    message: "example.com is no longer DNSSEC-signed.",
+    emailSubject: "⚠️ DNSSEC disabled for example.com",
+    changes: { kind: "disabled", previousStatus: "secure", newStatus: "insecure" } as DnssecChange,
+    idempotencyKey: "dnssec:tracked-1:secure>insecure",
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    notificationsMock.createNotification.mockResolvedValue({ id: "n_1" } as never);
+    notificationsMock.updateNotificationResendId.mockResolvedValue(true);
+    sendEmailMock.sendEmail.mockResolvedValue({ emailId: "em_1" });
+  });
+
+  it("renders the email with the first name and change, and records a dnssec_change notification", async () => {
+    const { default: DnssecChangeEmail } =
+      await import("@domainstack/email/templates/dnssec-change");
+    const { sendDnssecChangeNotificationStep } = await import("./notifications");
+
+    const result = await sendDnssecChangeNotificationStep(dnssecParams, true, true);
+
+    expect(result).toBe(true);
+    expect(DnssecChangeEmail).toHaveBeenCalledWith({
+      userName: "Alex",
+      domainName: "example.com",
+      changes: dnssecParams.changes,
+      baseUrl: "https://test.domainstack.io",
+    });
+    expect(sendEmailMock.sendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subject: dnssecParams.emailSubject,
+        idempotencyKey: dnssecParams.idempotencyKey,
+      }),
+    );
+    expect(notificationsMock.createNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "dnssec_change",
+        channels: ["email", "in-app"],
+      }),
+    );
+  });
+
+  it("records an in-app-only notification without rendering the email", async () => {
+    const { sendDnssecChangeNotificationStep } = await import("./notifications");
+
+    const result = await sendDnssecChangeNotificationStep(dnssecParams, false, true);
+
+    expect(result).toBe(true);
+    expect(sendEmailMock.sendEmail).not.toHaveBeenCalled();
+    expect(sendEmailMock.getEmailBaseUrl).not.toHaveBeenCalled();
+    expect(notificationsMock.createNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "dnssec_change", channels: ["in-app"] }),
     );
   });
 });

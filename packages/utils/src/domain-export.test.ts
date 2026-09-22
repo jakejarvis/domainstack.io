@@ -36,6 +36,7 @@ describe("serializeDomainExport", () => {
           { type: "MX", value: "mail.example.com", ttl: 600, isCloudflare: false },
         ],
         resolver: "1.1.1.1",
+        dnssec: { status: "secure", ds: [], dnskeys: [] },
       },
       hosting: {
         dnsProvider: { id: "dp_1", name: "Cloudflare DNS" },
@@ -87,6 +88,7 @@ describe("serializeDomainExport", () => {
     expect(result.dns?.records?.[0]).not.toHaveProperty("isCloudflare");
     expect(result.dns?.records?.[0]).toMatchObject({ type: "A", value: "1.2.3.4" });
     expect(result.dns?.resolver).toBe("1.1.1.1");
+    expect(result.dns?.dnssec).toEqual({ status: "secure", ds: [], dnskeys: [] });
 
     expect(result.hosting).toEqual({
       dns: "Cloudflare DNS",

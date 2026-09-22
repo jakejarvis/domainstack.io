@@ -6,6 +6,7 @@
  */
 
 import { DNS_RECORD_TYPES, DNS_TYPE_NUMBERS } from "@domainstack/constants";
+import { createLogger } from "@domainstack/logger";
 import type { DnsRecord } from "@domainstack/types";
 import {
   deduplicateDnsRecords,
@@ -16,7 +17,10 @@ import {
 
 import { isCloudflareIp } from "../lib/cloudflare";
 import { ttlForDnsRecord } from "../lib/ttl";
+import { fetchDnssec, INDETERMINATE_DNSSEC } from "./dnssec";
 import type { DnsFetchData } from "./types";
+
+const logger = createLogger({ source: "dns" });
 
 /**
  * Error thrown when all DoH providers fail.
@@ -47,9 +51,21 @@ export async function fetchDnsRecords(
 
   for (const provider of providers) {
     try {
+      // Kick off DNSSEC alongside the record queries rather than after them —
+      // it's an independent, best-effort request set, and awaiting it inline
+      // below would otherwise add its own latency on top of the records'.
+      const dnssecPromise = fetchDnssec(domain, provider).catch((err) => {
+        logger.warn({ err, domain, provider: provider.key }, "dnssec check failed");
+        return INDETERMINATE_DNSSEC;
+      });
+
       const results = await Promise.all(
         types.map(async (type) => {
-          const answers = await queryDohProvider(provider, domain, type);
+          // Checking disabled: a domain with broken DNSSEC must still yield its records
+          // (its status is reported by `fetchDnssec`) rather than fail every provider.
+          const answers = await queryDohProvider(provider, domain, type, {
+            checkingDisabled: true,
+          });
 
           const records = (
             await Promise.all(
@@ -114,10 +130,17 @@ export async function fetchDnsRecords(
         expiresAt: ttlForDnsRecord(now, r.ttl ?? undefined).toISOString(),
       }));
 
+      // Best-effort: DNSSEC trouble must never fail the DNS records themselves.
+      const { dnssec, ttl: dnssecTtl, dsAvailable, dnskeysAvailable } = await dnssecPromise;
+
       return {
         records: sorted,
         resolver: provider.key,
         recordsWithExpiry,
+        dnssec,
+        dnssecExpiresAt: ttlForDnsRecord(now, dnssecTtl).toISOString(),
+        dnssecDsAvailable: dsAvailable,
+        dnssecDnskeysAvailable: dnskeysAvailable,
       };
     } catch {
       // Try next provider

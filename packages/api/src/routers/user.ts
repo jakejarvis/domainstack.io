@@ -36,6 +36,7 @@ const UserNotificationPreferencesSchema = z
     registrationChanges: NotificationChannelsSchema,
     providerChanges: NotificationChannelsSchema,
     certificateChanges: NotificationChannelsSchema,
+    dnssecChanges: NotificationChannelsSchema,
   })
   .partial();
 

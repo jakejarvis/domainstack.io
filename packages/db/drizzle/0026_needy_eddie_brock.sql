@@ -1,0 +1,2 @@
+ALTER TABLE "domain_snapshots" ADD COLUMN "dnssec" jsonb;--> statement-breakpoint
+ALTER TABLE "user_notification_preferences" ADD COLUMN "dnssec_changes" jsonb DEFAULT '{"inApp": true, "email": true}'::jsonb NOT NULL;

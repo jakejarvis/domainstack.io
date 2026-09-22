@@ -28,6 +28,7 @@ export function serializeDomainExport(domain: string, data: Partial<DomainRespon
         return rest;
       }),
       resolver: data.dns.resolver,
+      dnssec: data.dns.dnssec,
     };
   }
 

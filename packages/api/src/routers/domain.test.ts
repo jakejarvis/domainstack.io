@@ -83,6 +83,7 @@ const {
   certificateChecks,
   certificates,
   dnsRecords,
+  dnssecChecks,
   domains,
   favicons,
   httpHeaders,
@@ -352,6 +353,16 @@ describe("domain router", () => {
           expiresAt,
         })
         .onConflictDoNothing();
+      await db
+        .insert(dnssecChecks)
+        .values({
+          domainId: TEST_DOMAIN_ID,
+          status: "insecure",
+          resolver: "cloudflare",
+          fetchedAt: now,
+          expiresAt,
+        })
+        .onConflictDoNothing();
 
       const result = await caller.domain.getDnsRecords({ domain: TEST_DOMAIN });
 
@@ -364,6 +375,58 @@ describe("domain router", () => {
       }
       expect(result.cached).toBe(true);
       expect(result.data.records).toBeDefined();
+      expect(result.data.dnssec).toMatchObject({
+        status: "insecure",
+        ds: [],
+        dnskeys: [],
+      });
+    });
+
+    it("treats DNS records cached before DNSSEC tracking existed as stale", async () => {
+      const caller = createTestCaller();
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + 60 * 60 * 1000);
+      const legacyDomainId = "00000000-0000-0000-0000-000000000099";
+      const legacyDomain = "legacy-pre-dnssec.com";
+
+      await db
+        .insert(domains)
+        .values({ id: legacyDomainId, name: legacyDomain, tld: "com", unicodeName: legacyDomain })
+        .onConflictDoNothing();
+
+      // DNS records exist, but there is no dnssec_checks row for this domain
+      // (as if cached before this feature shipped).
+      await db
+        .insert(dnsRecords)
+        .values({
+          domainId: legacyDomainId,
+          type: "A",
+          name: legacyDomain,
+          value: "93.184.216.34",
+          ttl: 300,
+          resolver: "cloudflare",
+          fetchedAt: now,
+          expiresAt,
+        })
+        .onConflictDoNothing();
+
+      vi.mocked(fetchDns).mockResolvedValue({
+        success: true,
+        data: {
+          records: [],
+          resolver: "cloudflare",
+          dnssec: { status: "insecure", ds: [], dnskeys: [] },
+        },
+      });
+
+      const result = await caller.domain.getDnsRecords({ domain: legacyDomain });
+
+      expect(result.success).toBe(true);
+      if (!result.success) {
+        throw new Error("Expected getDnsRecords to succeed");
+      }
+      expect(result.cached).toBe(false);
+      expect(fetchDns).toHaveBeenCalled();
     });
 
     it("fetches fresh DNS when no cached DNS exists", async () => {

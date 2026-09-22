@@ -4,6 +4,8 @@ import type { SnapshotForMonitoring } from "@domainstack/db/queries/snapshots";
 import type {
   CertificateChangeWithNames,
   CertificateSnapshotData,
+  DnssecChange,
+  DnssecSnapshotData,
   PendingChangeObservation,
   ProviderChangeWithNames,
   RegistrationSnapshotData,
@@ -11,8 +13,11 @@ import type {
 import {
   certificateSnapshotFrom,
   confirmChange,
+  detectDnssecChange,
   detectProviderChange,
   detectRegistrationChange,
+  dnssecObservationKey,
+  dnssecSnapshotFrom,
   evaluateCertificateChange,
   isUninitializedRegistration,
   providerObservationKey,
@@ -25,6 +30,7 @@ import {
   determineNotificationChannelsStep,
   resolveProviderNamesStep,
   sendCertificateChangeNotificationStep,
+  sendDnssecChangeNotificationStep,
   sendProviderChangeNotificationStep,
   sendRegistrationChangeNotificationStep,
 } from "../steps/notifications";
@@ -46,12 +52,14 @@ type DetectChangesWorkflowResult =
       registrationChanges: false;
       providerChanges: false;
       certificateChanges: false;
+      dnssecChanges: false;
     }
   | {
       skipped: false;
       registrationChanges: boolean;
       providerChanges: boolean;
       certificateChanges: boolean;
+      dnssecChanges: boolean;
     };
 
 /**
@@ -80,6 +88,7 @@ export async function detectChangesWorkflow(
         registrationChanges: false,
         providerChanges: false,
         certificateChanges: false,
+        dnssecChanges: false,
       };
     }
 
@@ -113,6 +122,7 @@ async function runChangeDetection(
     registrationChanges: false,
     providerChanges: false,
     certificateChanges: false,
+    dnssecChanges: false,
   };
 
   // Step 3: Check registration changes
@@ -681,6 +691,85 @@ async function runChangeDetection(
     }
   }
 
+  // Step 6: Check DNSSEC changes
+  //
+  // `indeterminate` means DNSSEC could not be observed (resolver trouble), so it is
+  // never compared or stored: a hiccup must not read as DNSSEC being disabled.
+  // DNSSEC is observed independently of the A/AAAA/MX/TXT/NS records `dnsObserved`
+  // guards, so it isn't gated on that: `dnssecSnapshotFrom` already excludes it.
+  const currentDnssec = dnssecSnapshotFrom(dnsResult.dnssec);
+
+  if (currentDnssec && !snapshot.dnssec) {
+    // No baseline yet: the snapshot predates DNSSEC tracking (or its baseline was
+    // taken while DNSSEC was unobservable). Adopt the current state silently, with
+    // no alert and no confirmation, so rolling this out never announces a "change"
+    // for every already-tracked domain.
+    await updateDnssecSnapshot(trackedDomainId, { ...currentDnssec, pending: null });
+  } else if (currentDnssec && snapshot.dnssec) {
+    const previousDnssec = snapshot.dnssec;
+    const dnssecChange = detectDnssecChange(previousDnssec, currentDnssec);
+
+    if (!dnssecChange) {
+      // Same as the stored baseline: clear a stale pending observation if one is
+      // set (the wobble went away).
+      if (previousDnssec.pending) {
+        await updateDnssecSnapshot(trackedDomainId, {
+          status: previousDnssec.status,
+          pending: null,
+        });
+      }
+    } else {
+      const channels = await determineNotificationChannelsStep(
+        userId,
+        trackedDomainId,
+        "dnssecChanges",
+      );
+
+      if (!channels.shouldSendEmail && !channels.shouldSendInApp) {
+        // Muted / disabled: advance on detection so we don't infinitely
+        // re-detect (see registration branch rationale).
+        await updateDnssecSnapshot(trackedDomainId, { ...currentDnssec, pending: null });
+      } else {
+        // Require a repeat observation before notifying (see confirmChange).
+        const confirmation = confirmChange(
+          previousDnssec.pending,
+          dnssecObservationKey(currentDnssec),
+        );
+
+        if (!confirmation.confirmed) {
+          await updateDnssecSnapshot(trackedDomainId, {
+            ...previousDnssec,
+            pending: confirmation.pending,
+          });
+        } else {
+          const { title, emoji, message } = describeDnssecChange(dnssecChange, domainName);
+
+          await sendDnssecChangeNotificationStep(
+            {
+              userId,
+              userEmail,
+              trackedDomainId,
+              domainName,
+              userName,
+              title,
+              message,
+              emailSubject: `${emoji} ${title}`,
+              changes: dnssecChange,
+              idempotencyKey: `dnssec:${trackedDomainId}:${previousDnssec.status}>${currentDnssec.status}`,
+            },
+            channels.shouldSendEmail,
+            channels.shouldSendInApp,
+          );
+
+          results.dnssecChanges = true;
+
+          // Advance only after delivery (see registration branch rationale).
+          await updateDnssecSnapshot(trackedDomainId, { ...currentDnssec, pending: null });
+        }
+      }
+    }
+  }
+
   // Release the per-domain monitor lock so the next hourly cron can re-run.
   // Only runs on successful completion — a retrying Error/RetryableError above
   // propagates to the caller's catch, which leaves the lock held (TTL safety
@@ -689,6 +778,41 @@ async function runChangeDetection(
   await releaseMonitorLockStep(trackedDomainId, monitorLockOwnerToken);
 
   return results;
+}
+
+function describeDnssecChange(
+  change: DnssecChange,
+  domainName: string,
+): { title: string; emoji: string; message: string } {
+  switch (change.kind) {
+    case "enabled":
+      return {
+        title: `DNSSEC enabled for ${domainName}`,
+        emoji: "🔐",
+        message: `DNSSEC validation is now active for ${domainName}.`,
+      };
+    case "disabled":
+      return {
+        title: `DNSSEC disabled for ${domainName}`,
+        emoji: "⚠️",
+        message: `${domainName} is no longer DNSSEC-signed. If you didn't expect this, check your registrar's DS records and your DNS host.`,
+      };
+    case "broken":
+      return {
+        title: `DNSSEC validation is failing for ${domainName}`,
+        emoji: "🚨",
+        message: `${domainName} has DNSSEC records, but validation fails. Validating resolvers may return errors and make the domain unreachable.`,
+      };
+    case "recovered":
+      return {
+        title: `DNSSEC validation recovered for ${domainName}`,
+        emoji: "✅",
+        message:
+          change.newStatus === "secure"
+            ? `DNSSEC validation for ${domainName} is passing again.`
+            : `${domainName} no longer fails DNSSEC validation, and is now unsigned.`,
+      };
+  }
 }
 
 const CERTIFICATE_VALID_UNTIL_FORMATTER = new Intl.DateTimeFormat("en-US", {
@@ -760,6 +884,16 @@ async function updateProviderPending(
 
   const { updateSnapshot } = await import("@domainstack/db/queries/snapshots");
   await updateSnapshot(trackedDomainId, { providerPending });
+}
+
+async function updateDnssecSnapshot(
+  trackedDomainId: string,
+  dnssec: DnssecSnapshotData,
+): Promise<void> {
+  "use step";
+
+  const { updateSnapshot } = await import("@domainstack/db/queries/snapshots");
+  await updateSnapshot(trackedDomainId, { dnssec });
 }
 
 async function updateCertificateSnapshot(
