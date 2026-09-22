@@ -26,14 +26,21 @@ export const VERIFICATION_GRACE_PERIOD_DAYS = 7;
 
 /**
  * Prefix for DNS TXT record verification value.
- * Format: "domainstack-verify=TOKEN"
+ * Format: "domainstack-verification=TOKEN"
  */
-export const DNS_VERIFICATION_PREFIX = "domainstack-verify=";
+export const DNS_VERIFICATION_PREFIX = "domainstack-verification=";
+
+/**
+ * Legacy DNS TXT record verification value prefix (backward compatibility).
+ * Domains verified before the switch to DNS_VERIFICATION_PREFIX still carry
+ * TXT records using this value and must keep matching on re-verification.
+ */
+export const DNS_VERIFICATION_PREFIX_LEGACY = "domainstack-verify=";
 
 /**
  * Legacy subdomain prefix for DNS verification (backward compatibility).
  * Old format: _domainstack-verify.example.com TXT "domainstack-verify=TOKEN"
- * New format: example.com TXT "domainstack-verify=TOKEN"
+ * New format: example.com TXT "domainstack-verification=TOKEN"
  */
 export const DNS_VERIFICATION_HOST_LEGACY = "_domainstack-verify";
 

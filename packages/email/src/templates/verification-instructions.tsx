@@ -132,7 +132,7 @@ VerificationInstructionsEmail.PreviewProps = {
   senderEmail: "jake@example.com",
   dnsHostname: "@",
   dnsRecordType: "TXT",
-  dnsValue: "domainstack-verify=abc123xyz",
+  dnsValue: "domainstack-verification=abc123xyz",
   dnsTTL: 300,
   dnsTTLLabel: "5 minutes",
   htmlFilePath: "/.well-known/domainstack-verify.html",

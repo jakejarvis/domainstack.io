@@ -63,7 +63,7 @@ describe("AddDomainContent", () => {
       .element(page.getByText("Recommended: Add a DNS record", { exact: true }))
       .toBeInTheDocument();
     await expect
-      .element(page.getByText("domainstack-verify=token-new", { exact: true }))
+      .element(page.getByText("domainstack-verification=token-new", { exact: true }))
       .toBeInTheDocument();
 
     await page.getByRole("button", { name: "Check Now" }).click();
@@ -107,7 +107,7 @@ describe("AddDomainContent", () => {
       .element(page.getByText("Recommended: Add a DNS record", { exact: true }))
       .toBeInTheDocument();
     await expect
-      .element(page.getByText("domainstack-verify=token-pending", { exact: true }))
+      .element(page.getByText("domainstack-verification=token-pending", { exact: true }))
       .toBeInTheDocument();
     expect(addDomainMutation).not.toHaveBeenCalled();
     expect(getVerificationDataQuery).not.toHaveBeenCalled();
@@ -121,7 +121,7 @@ describe("AddDomainContent", () => {
       expect(getVerificationDataQuery).toHaveBeenCalledWith({ trackedDomainId: "domain-pending" });
     });
     await expect
-      .element(page.getByText("domainstack-verify=token-pending", { exact: true }))
+      .element(page.getByText("domainstack-verification=token-pending", { exact: true }))
       .toBeInTheDocument();
     expect(addDomainMutation).not.toHaveBeenCalled();
   });
@@ -158,7 +158,7 @@ describe("AddDomainContent", () => {
     await waitForStep2();
     expect(addDomainMutation.mock.calls[0]?.[0]).toEqual({ domain: "example.com" });
     await expect
-      .element(page.getByText("domainstack-verify=token-new", { exact: true }))
+      .element(page.getByText("domainstack-verification=token-new", { exact: true }))
       .toBeInTheDocument();
   });
 
