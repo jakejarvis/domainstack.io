@@ -51,6 +51,14 @@ export async function fetchDnsRecords(
 
   for (const provider of providers) {
     try {
+      // Kick off DNSSEC alongside the record queries rather than after them —
+      // it's an independent, best-effort request set, and awaiting it inline
+      // below would otherwise add its own latency on top of the records'.
+      const dnssecPromise = fetchDnssec(domain, provider).catch((err) => {
+        logger.warn({ err, domain, provider: provider.key }, "dnssec check failed");
+        return INDETERMINATE_DNSSEC;
+      });
+
       const results = await Promise.all(
         types.map(async (type) => {
           // Checking disabled: a domain with broken DNSSEC must still yield its records
@@ -123,10 +131,7 @@ export async function fetchDnsRecords(
       }));
 
       // Best-effort: DNSSEC trouble must never fail the DNS records themselves.
-      const { dnssec, ttl: dnssecTtl } = await fetchDnssec(domain, provider).catch((err) => {
-        logger.warn({ err, domain, provider: provider.key }, "dnssec check failed");
-        return INDETERMINATE_DNSSEC;
-      });
+      const { dnssec, ttl: dnssecTtl } = await dnssecPromise;
 
       return {
         records: sorted,
