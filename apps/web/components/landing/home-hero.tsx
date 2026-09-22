@@ -30,11 +30,37 @@ export function HomeHero({ className }: { className?: string }) {
   const measureRef = useRef<HTMLSpanElement | null>(null);
   const [widths, setWidths] = useState<number[] | null>(null);
 
+  // paused while the tab is backgrounded, since rAF-driven animations don't advance there and
+  // a queued-up backlog of index changes would replay out of sync with the pill's width on return
   useEffect(() => {
-    const id = setInterval(() => {
-      setIndex((prev) => (prev + 1) % ROTATING_WORDS.length);
-    }, INTERVAL_MS);
-    return () => clearInterval(id);
+    let id: ReturnType<typeof setInterval> | undefined;
+
+    const start = () => {
+      if (id !== undefined) return;
+      id = setInterval(() => {
+        setIndex((prev) => (prev + 1) % ROTATING_WORDS.length);
+      }, INTERVAL_MS);
+    };
+    const stop = () => {
+      if (id === undefined) return;
+      clearInterval(id);
+      id = undefined;
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stop();
+      } else {
+        start();
+      }
+    };
+
+    if (!document.hidden) start();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
   // every word is measured up front so the pill's target width is available in the same render
