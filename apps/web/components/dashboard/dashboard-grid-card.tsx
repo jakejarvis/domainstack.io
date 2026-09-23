@@ -439,7 +439,7 @@ function InfoRow({
   );
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border bg-card/60 px-3 py-2 dark:bg-background/50">
+    <div className="flex items-center justify-between gap-3 rounded-lg border bg-card/60 px-3 py-2 dark:bg-foreground/4">
       <span className="flex shrink-0 items-center text-[10px] leading-[1.2] tracking-[0.08em] text-foreground/75 uppercase dark:text-foreground/80">
         {label}
       </span>

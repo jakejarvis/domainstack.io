@@ -31,7 +31,7 @@ export function DashboardGridCardSkeleton({ infoRows = 6 }: DashboardGridCardSke
           {Array.from({ length: infoRows }, (_, i) => (
             <div
               key={`info-row-${i}`}
-              className="flex items-center justify-between gap-3 rounded-lg border bg-card/60 px-3 py-2 text-[13px] leading-[1.2] dark:bg-background/50"
+              className="flex items-center justify-between gap-3 rounded-lg border bg-card/60 px-3 py-2 text-[13px] leading-[1.2] dark:bg-foreground/4"
             >
               {/* `h-[1lh]` reserves each side's real line box (12px label, 15.6px value) */}
               <div className="flex h-[1lh] items-center text-[10px] leading-[1.2]">
