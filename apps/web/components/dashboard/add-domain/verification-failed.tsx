@@ -60,7 +60,7 @@ export function VerificationFailed({
         </AlertDescription>
       </Alert>
 
-      <div className="rounded-lg border bg-foreground/2.5 p-4">
+      <div className="rounded-lg border bg-card/60 p-4">
         <h4 className="mb-2 text-sm font-medium">{troubleshooting.title}</h4>
         <ul className="space-y-1.5 text-sm text-muted-foreground">
           {troubleshooting.tips.map((tip) => (

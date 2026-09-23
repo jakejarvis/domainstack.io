@@ -76,7 +76,7 @@ function VerificationInstructionsLayout({
         <AlertDescription>{description}</AlertDescription>
       </Alert>
 
-      <div className="space-y-3 rounded-lg border bg-foreground/2.5 p-4">{children}</div>
+      <div className="space-y-3 rounded-lg border bg-card/60 p-4">{children}</div>
     </div>
   );
 }

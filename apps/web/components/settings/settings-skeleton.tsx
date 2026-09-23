@@ -29,7 +29,7 @@ export function SubscriptionSkeleton({ className }: { className?: string }) {
       <SettingsCardHeaderSkeleton titleClassName="w-12" descriptionClassName="w-64" />
       <CardContent className="space-y-4 px-0">
         {/* Current plan card — matches PlanStatusCard */}
-        <div className="flex items-center justify-between rounded-xl border bg-foreground/2.5 p-4">
+        <div className="flex items-center justify-between rounded-xl border bg-card/60 p-4">
           <div className="space-y-1.5">
             <Skeleton className="h-5 w-20" />
             <Skeleton className="h-4 w-36" />

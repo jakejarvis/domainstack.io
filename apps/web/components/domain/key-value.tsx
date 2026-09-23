@@ -34,10 +34,10 @@ export function KeyValue({
   return (
     <div
       className={cn(
-        "flex h-16 min-w-0 items-center justify-between gap-4 rounded-xl border bg-foreground/2.5 px-4 py-3",
+        "flex h-16 min-w-0 items-center justify-between gap-4 rounded-xl border px-4 py-3",
         highlight
           ? "border-accent-purple/20 bg-accent-purple/5 dark:border-accent-purple/12"
-          : "border-border",
+          : "border-border bg-card/60",
       )}
     >
       <div className="flex min-w-0 flex-col space-y-1.5">

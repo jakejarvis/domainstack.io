@@ -18,7 +18,7 @@ export function KeyValueSkeleton({
   trailingClassName?: string;
 }) {
   return (
-    <div className="flex h-16 min-w-0 items-center justify-between gap-4 rounded-xl border border-border bg-foreground/2.5 px-4 py-3">
+    <div className="flex h-16 min-w-0 items-center justify-between gap-4 rounded-xl border border-border bg-card/60 px-4 py-3">
       <div className="flex min-w-0 flex-col space-y-1.5">
         {label ? (
           <div className="pt-1 text-[10px] leading-none tracking-[0.08em] text-foreground/75 uppercase dark:text-foreground/80">
