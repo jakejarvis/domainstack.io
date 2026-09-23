@@ -30,11 +30,11 @@ function getQueryClient() {
   return browserQueryClient;
 }
 
-const getBaseUrl = () => {
+function getBaseUrl() {
   if (typeof window !== "undefined") return ""; // browser should use relative url
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`; // SSR should use vercel url
   return `http://localhost:${process.env.PORT ?? 3000}`; // dev SSR should use localhost
-};
+}
 
 function trpcHeaders() {
   const headers = new Headers();
@@ -53,11 +53,6 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
   const queryClient = getQueryClient();
   const [trpcClient] = useState(() => {
     const url = `${getBaseUrl()}/api/trpc`;
-    const jsonLinkOptions = {
-      url,
-      transformer: superjson,
-      headers: trpcHeaders,
-    };
 
     return createTRPCClient<AppRouter>({
       links: [
@@ -79,11 +74,15 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
         rateLimitLink,
         splitLink({
           condition: (op) => op.type === "mutation",
-          true: httpLink(jsonLinkOptions),
+          true: httpLink({
+            url,
+            transformer: superjson,
+            headers: trpcHeaders,
+          }),
           false: httpBatchStreamLink({
-            ...jsonLinkOptions,
-            maxItems: 10,
-            maxURLLength: 2083,
+            url,
+            transformer: superjson,
+            headers: trpcHeaders,
           }),
         }),
       ],
