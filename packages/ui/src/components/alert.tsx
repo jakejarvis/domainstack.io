@@ -28,7 +28,8 @@ function Alert({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
-      role: "alert",
+      // info is advisory, so it shouldn't interrupt a screen reader the way an alert does
+      role: variant === "info" ? "status" : "alert",
       className: cn(alertVariants({ variant }), className),
     }),
     state: {

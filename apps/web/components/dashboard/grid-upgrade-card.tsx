@@ -1,9 +1,9 @@
 import { IconCircleArrowUp, IconRocket } from "@tabler/icons-react";
 
+import { PRO_PRICE_SUMMARY } from "@/components/plan-cards";
 import { UpgradeButton } from "@/components/upgrade-button";
 import { useSubscription } from "@/hooks/use-subscription";
 import { PLAN_QUOTAS } from "@domainstack/constants";
-import { PRO_TIER_INFO } from "@domainstack/polar/products";
 import { Card, CardContent } from "@domainstack/ui/card";
 
 export function GridUpgradeCard() {
@@ -24,14 +24,10 @@ export function GridUpgradeCard() {
           <h3 className="mb-2 text-lg font-semibold">Upgrade to Pro</h3>
 
           <p className="mb-4 text-sm text-muted-foreground">
-            Track up to {PLAN_QUOTAS.pro} domains with priority notifications.
+            Track up to {PLAN_QUOTAS.pro} domains.
           </p>
 
-          <div className="flex items-center gap-1.5 text-sm">
-            <span className="font-medium text-accent-gold">{PRO_TIER_INFO.monthly.label}</span>
-            <span className="text-muted-foreground">or</span>
-            <span className="font-medium text-accent-gold">{PRO_TIER_INFO.yearly.label}</span>
-          </div>
+          <p className="text-sm text-muted-foreground">{PRO_PRICE_SUMMARY}</p>
         </div>
 
         <UpgradeButton variant="outline" className="w-full" icon={IconRocket}>

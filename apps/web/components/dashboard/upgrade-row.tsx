@@ -1,9 +1,9 @@
 import { IconCircleArrowUp, IconRocket } from "@tabler/icons-react";
 
+import { PRO_PRICE_SUMMARY } from "@/components/plan-cards";
 import { UpgradeButton } from "@/components/upgrade-button";
 import { useSubscription } from "@/hooks/use-subscription";
 import { PLAN_QUOTAS } from "@domainstack/constants";
-import { PRO_TIER_INFO } from "@domainstack/polar/products";
 
 export function UpgradeRow() {
   const { isPro, isSubscriptionLoading } = useSubscription();
@@ -24,10 +24,7 @@ export function UpgradeRow() {
             Track <span className="hidden sm:inline">up to </span>
             {PLAN_QUOTAS.pro} domains
             <span className="mx-1">•</span>
-            <span className="font-medium text-accent-gold">
-              {PRO_TIER_INFO.monthly.label}
-            </span> or{" "}
-            <span className="font-medium text-accent-gold">{PRO_TIER_INFO.yearly.label}</span>
+            {PRO_PRICE_SUMMARY}
           </span>
         </div>
       </div>

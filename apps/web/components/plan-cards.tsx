@@ -13,6 +13,12 @@ const usd = new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 0,
 });
 
+const PRO_MONTHLY_PRICE = usd.format(PRO_TIER_INFO.monthly.amount / 100);
+const PRO_YEARLY_NOTE = `or ${PRO_TIER_INFO.yearly.label} (${PRO_TIER_INFO.yearly.savings.toLowerCase()})`;
+
+/** Pro pricing as one line, for upgrade prompts outside the plan cards. */
+export const PRO_PRICE_SUMMARY = `${PRO_MONTHLY_PRICE}/month ${PRO_YEARLY_NOTE}`;
+
 // the plans differ only by quota, so everything else is listed once for both
 const PLAN_FEATURES = [
   "Domain and SSL certificate expiry alerts",
@@ -33,7 +39,7 @@ function PlanCard({
 }: {
   name: string;
   price: string;
-  period: string;
+  period?: string;
   note: string;
   quota: number;
   current?: boolean;
@@ -49,7 +55,7 @@ function PlanCard({
       <div className="space-y-1">
         <p className="flex items-baseline gap-1">
           <span className="text-2xl font-semibold tracking-tight tabular-nums">{price}</span>
-          <span className="text-sm text-muted-foreground">{period}</span>
+          {period ? <span className="text-sm text-muted-foreground">{period}</span> : null}
         </p>
         <p className="text-[13px] text-muted-foreground">{note}</p>
       </div>
@@ -66,7 +72,6 @@ export function FreePlanCard({ current }: { current?: boolean }) {
     <PlanCard
       name="Free"
       price={usd.format(0)}
-      period="/month"
       note="Free forever"
       quota={PLAN_QUOTAS.free}
       current={current}
@@ -75,14 +80,12 @@ export function FreePlanCard({ current }: { current?: boolean }) {
 }
 
 export function ProPlanCard({ current }: { current?: boolean }) {
-  const { monthly, yearly } = PRO_TIER_INFO;
-
   return (
     <PlanCard
       name={PRO_TIER_INFO.name}
-      price={usd.format(monthly.amount / 100)}
+      price={PRO_MONTHLY_PRICE}
       period="/month"
-      note={`or ${yearly.label} (${yearly.savings.toLowerCase()})`}
+      note={PRO_YEARLY_NOTE}
       quota={PLAN_QUOTAS.pro}
       current={current}
       className="border-accent-gold/25 bg-linear-to-bl from-accent-gold/10 to-transparent to-60%"

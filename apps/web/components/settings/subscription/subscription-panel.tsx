@@ -1,10 +1,12 @@
 import { IconAlertCircle, IconCreditCard } from "@tabler/icons-react";
+import { useQuery } from "@tanstack/react-query";
 
 import { FreePlanCard, PlanFeatures, ProPlanCard } from "@/components/plan-cards";
 import { PlanUsage } from "@/components/plan-usage";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { SubscriptionSkeleton } from "@/components/settings/settings-skeleton";
 import { useSubscription } from "@/hooks/use-subscription";
+import { customer } from "@domainstack/auth/client";
 import { PLAN_QUOTAS } from "@domainstack/constants";
 import { Alert, AlertDescription, AlertTitle } from "@domainstack/ui/alert";
 import { Button } from "@domainstack/ui/button";
@@ -50,6 +52,18 @@ export function SubscriptionPanel() {
           />
         ) : null}
 
+        {subscription && !subscription.canAddMore ? (
+          <Alert variant="warning">
+            <IconAlertCircle aria-hidden="true" />
+            <AlertTitle>You&apos;ve reached your domain limit</AlertTitle>
+            <AlertDescription>
+              {isPro
+                ? "Archive or remove a domain to track another."
+                : "Archive or remove a domain to track another, or upgrade to Pro for more."}
+            </AlertDescription>
+          </Alert>
+        ) : null}
+
         {isPro ? (
           <div className="space-y-3">
             {subscription?.endsAt ? (
@@ -63,8 +77,8 @@ export function SubscriptionPanel() {
                 </AlertTitle>
                 <AlertDescription>
                   <p>
-                    After that you can track up to {PLAN_QUOTAS.free} domains, and any beyond that
-                    are archived.
+                    After that, your {PLAN_QUOTAS.free} most recently added domains stay active and
+                    older ones are archived.
                   </p>
                   <Button
                     variant="outline"
@@ -87,7 +101,7 @@ export function SubscriptionPanel() {
                 <ItemContent>
                   <ItemTitle>Billing</ItemTitle>
                   <ItemDescription>
-                    Update your payment method, download invoices, or cancel.
+                    <BillingSummary />
                   </ItemDescription>
                 </ItemContent>
                 <ItemActions>
@@ -115,5 +129,43 @@ export function SubscriptionPanel() {
         )}
       </div>
     </SettingsCard>
+  );
+}
+
+// the tRPC subscription only knows the plan; the interval, price, and renewal date live in Polar
+function BillingSummary() {
+  const { data } = useQuery({
+    queryKey: ["polar", "customer-state"],
+    queryFn: async () => {
+      const result = await customer.state();
+      if (result.error) throw new Error(result.error.message ?? "Failed to load billing details");
+      return result.data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const active = data?.activeSubscriptions?.[0];
+  if (!active) {
+    return "Update your payment method, download invoices, or cancel.";
+  }
+
+  // the auth client hands back JSON, so dates arrive as strings despite the SDK types
+  const renewsAt = new Date(active.currentPeriodEnd);
+  const price = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: active.currency.toUpperCase(),
+    minimumFractionDigits: 0,
+  }).format(active.amount / 100);
+
+  return (
+    <>
+      <span className="tabular-nums">
+        {price}/{active.recurringInterval}
+      </span>{" "}
+      · Renews{" "}
+      <time dateTime={toDateTimeAttr(renewsAt)} suppressHydrationWarning>
+        {formatDate(renewsAt)}
+      </time>
+    </>
   );
 }
