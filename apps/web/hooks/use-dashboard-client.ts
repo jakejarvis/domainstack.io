@@ -140,6 +140,8 @@ export function useDashboardClient() {
 
   const [pendingAction, setPendingAction] = useState<ConfirmAction | null>(null);
   const [showUpgradedBanner, setShowUpgradedBanner] = useState(false);
+  // outlives the banner, so dismissing it doesn't stop the post-checkout sync
+  const [awaitingUpgrade, setAwaitingUpgrade] = useState(false);
 
   const handleConfirm = useCallback(() => {
     if (!pendingAction) return;
@@ -160,6 +162,9 @@ export function useDashboardClient() {
   if (upgradedParam && !showUpgradedBanner) {
     setShowUpgradedBanner(true);
   }
+  if (upgradedParam && !awaitingUpgrade) {
+    setAwaitingUpgrade(true);
+  }
   useEffect(() => {
     if (!upgradedParam || !searchParams) return;
     const params = new URLSearchParams(searchParams.toString());
@@ -171,7 +176,7 @@ export function useDashboardClient() {
 
   // checkout can redirect here before the webhook lands
   useSyncBilling({
-    enabled: showUpgradedBanner && subscription !== undefined && subscription.plan !== "pro",
+    enabled: awaitingUpgrade && subscription !== undefined && subscription.plan !== "pro",
     pollInterval: 3000,
   });
 

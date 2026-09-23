@@ -101,7 +101,7 @@ export function DashboardClient({ userName }: { userName: string }) {
           description={
             dashboard.subscription?.plan === "pro"
               ? `You now have access to track up to ${dashboard.subscription.planQuota} domains. Thank you for upgrading!`
-              : "Payment received. Your Pro limits will appear here in a moment…"
+              : "Payment received. Pro usually activates within a minute; refresh if your limits haven't updated."
           }
           dismissible
           onDismiss={() => dashboard.setShowUpgradedBanner(false)}

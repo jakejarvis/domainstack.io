@@ -22,6 +22,6 @@ export interface BillingDetails {
   /** Lowercase ISO 4217. */
   currency: string;
   interval: string;
-  currentPeriodEnd: Date;
+  currentPeriodEnd: Date | null;
   cancelAtPeriodEnd: boolean;
 }

@@ -75,7 +75,14 @@ export async function syncSubscriptionFromPolar(userId: string): Promise<Subscri
   if (!active?.length) return { plan: local.plan, changed: false, billing: null };
 
   const renewing = active.find((sub) => !sub.cancelAtPeriodEnd);
-  const current = renewing ?? active[0];
+  // Every active subscription is canceling otherwise; access runs to the latest period end.
+  const current =
+    renewing ??
+    active.reduce((latest, sub) =>
+      (sub.currentPeriodEnd?.getTime() ?? 0) > (latest.currentPeriodEnd?.getTime() ?? 0)
+        ? sub
+        : latest,
+    );
   const billing: BillingDetails = {
     amount: current.amount,
     currency: current.currency,
@@ -100,13 +107,12 @@ export async function syncSubscriptionFromPolar(userId: string): Promise<Subscri
 
   if (renewing) {
     if (local.endsAt) {
-      await clearSubscriptionEndsAt(userId);
+      await clearSubscriptionEndsAt(userId, local.endsAt);
       changed = true;
       logger.info({ userId }, "Cleared stale subscription end date from Polar state");
     }
-  } else {
-    // Every active subscription is canceling; access ends with the last period.
-    const endsAt = new Date(Math.max(...active.map((sub) => sub.currentPeriodEnd.getTime())));
+  } else if (current.currentPeriodEnd) {
+    const endsAt = current.currentPeriodEnd;
     if (local.endsAt?.getTime() !== endsAt.getTime()) {
       await setSubscriptionEndsAt(userId, endsAt, { resetNotificationTracking: true });
       changed = true;

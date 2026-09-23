@@ -187,11 +187,16 @@ function BillingSummary({
     <>
       <span className="tabular-nums">
         {price}/{billing.interval}
-      </span>{" "}
-      · {billing.cancelAtPeriodEnd ? "Ends" : "Renews"}{" "}
-      <time dateTime={toDateTimeAttr(periodEnd)} suppressHydrationWarning>
-        {formatDate(periodEnd)}
-      </time>
+      </span>
+      {periodEnd ? (
+        <>
+          {" "}
+          · {billing.cancelAtPeriodEnd ? "Ends" : "Renews"}{" "}
+          <time dateTime={toDateTimeAttr(periodEnd)} suppressHydrationWarning>
+            {formatDate(periodEnd)}
+          </time>
+        </>
+      ) : null}
     </>
   );
 }

@@ -5,7 +5,7 @@ type ActiveSubscriptionFixture = {
   amount: number;
   currency: string;
   recurringInterval: "month" | "year";
-  currentPeriodEnd: Date;
+  currentPeriodEnd: Date | null;
   cancelAtPeriodEnd: boolean;
 };
 
@@ -17,6 +17,7 @@ const {
   sendProUpgradeEmail,
   sendSubscriptionCancelingEmail,
   getStateExternal,
+  mockServer,
 } = vi.hoisted(() => ({
   getUserSubscription:
     vi.fn<
@@ -33,7 +34,7 @@ const {
         options?: { resetNotificationTracking?: boolean },
       ) => Promise<void>
     >(),
-  clearSubscriptionEndsAt: vi.fn<(userId: string) => Promise<void>>(),
+  clearSubscriptionEndsAt: vi.fn<(userId: string, expectedEndsAt?: Date) => Promise<void>>(),
   sendProUpgradeEmail: vi.fn<(userId: string) => Promise<void>>(),
   sendSubscriptionCancelingEmail: vi.fn<(userId: string, periodEnd: Date) => Promise<void>>(),
   getStateExternal: vi.fn<
@@ -41,6 +42,7 @@ const {
       activeSubscriptions: ActiveSubscriptionFixture[];
     }>
   >(),
+  mockServer: { enabled: true },
 }));
 
 vi.mock("@domainstack/db/queries/user-subscription", () => ({
@@ -56,7 +58,9 @@ vi.mock("./emails", () => ({
 }));
 
 vi.mock("./server", () => ({
-  polarClient: { customers: { getStateExternal } },
+  get polarClient() {
+    return mockServer.enabled ? { customers: { getStateExternal } } : null;
+  },
 }));
 
 import { getCustomerSubscriptionState, syncSubscriptionFromPolar } from "./reconcile";
@@ -83,6 +87,7 @@ function activeSubscription(
 describe("syncSubscriptionFromPolar", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    mockServer.enabled = true;
     getUserSubscription.mockResolvedValue(localSubscription("pro"));
     getStateExternal.mockResolvedValue({ activeSubscriptions: [activeSubscription()] });
   });
@@ -121,7 +126,7 @@ describe("syncSubscriptionFromPolar", () => {
 
     const result = await syncSubscriptionFromPolar("user-1");
 
-    expect(clearSubscriptionEndsAt).toHaveBeenCalledWith("user-1");
+    expect(clearSubscriptionEndsAt).toHaveBeenCalledWith("user-1", PERIOD_END);
     expect(result.changed).toBe(true);
   });
 
@@ -163,7 +168,7 @@ describe("syncSubscriptionFromPolar", () => {
 
     const result = await syncSubscriptionFromPolar("user-1");
 
-    expect(clearSubscriptionEndsAt).toHaveBeenCalledWith("user-1");
+    expect(clearSubscriptionEndsAt).toHaveBeenCalledWith("user-1", PERIOD_END);
     expect(result.billing).toMatchObject({ amount: 2000, interval: "year" });
   });
 
@@ -186,6 +191,60 @@ describe("syncSubscriptionFromPolar", () => {
     expect(updateUserTier).not.toHaveBeenCalled();
   });
 
+  it("records the latest end date when several subscriptions are canceling", async () => {
+    const later = new Date("2026-11-23T00:00:00Z");
+    getStateExternal.mockResolvedValue({
+      activeSubscriptions: [
+        activeSubscription({ cancelAtPeriodEnd: true }),
+        activeSubscription({ cancelAtPeriodEnd: true, currentPeriodEnd: later }),
+      ],
+    });
+
+    const result = await syncSubscriptionFromPolar("user-1");
+
+    expect(setSubscriptionEndsAt).toHaveBeenCalledWith("user-1", later, {
+      resetNotificationTracking: true,
+    });
+    expect(result.billing?.currentPeriodEnd).toEqual(later);
+  });
+
+  it("skips the end date when a canceling subscription has no period end", async () => {
+    getStateExternal.mockResolvedValue({
+      activeSubscriptions: [
+        activeSubscription({ cancelAtPeriodEnd: true, currentPeriodEnd: null }),
+      ],
+    });
+
+    const result = await syncSubscriptionFromPolar("user-1");
+
+    expect(setSubscriptionEndsAt).not.toHaveBeenCalled();
+    expect(result.billing?.currentPeriodEnd).toBeNull();
+  });
+
+  it("still records the cancellation when the canceling email fails", async () => {
+    getStateExternal.mockResolvedValue({
+      activeSubscriptions: [activeSubscription({ cancelAtPeriodEnd: true })],
+    });
+    sendSubscriptionCancelingEmail.mockRejectedValue(new Error("Resend down"));
+
+    const result = await syncSubscriptionFromPolar("user-1");
+
+    expect(setSubscriptionEndsAt).toHaveBeenCalledWith("user-1", PERIOD_END, {
+      resetNotificationTracking: true,
+    });
+    expect(result.changed).toBe(true);
+  });
+
+  it("returns the local plan without billing when Polar is disabled", async () => {
+    mockServer.enabled = false;
+    getUserSubscription.mockResolvedValue(localSubscription("free"));
+
+    const result = await syncSubscriptionFromPolar("user-1");
+
+    expect(getStateExternal).not.toHaveBeenCalled();
+    expect(result).toEqual({ plan: "free", changed: false, billing: null });
+  });
+
   it("still grants pro when the welcome email fails", async () => {
     getUserSubscription.mockResolvedValue(localSubscription("free"));
     sendProUpgradeEmail.mockRejectedValue(new Error("Resend down"));
@@ -200,6 +259,7 @@ describe("syncSubscriptionFromPolar", () => {
 describe("getCustomerSubscriptionState", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    mockServer.enabled = true;
   });
 
   it("reports a canceling-only customer as active but not renewing", async () => {
@@ -212,6 +272,13 @@ describe("getCustomerSubscriptionState", () => {
       hasActiveSubscription: true,
       hasNonCancelingActive: false,
     });
+  });
+
+  it("reports unknown without calling Polar when it is disabled", async () => {
+    mockServer.enabled = false;
+
+    await expect(getCustomerSubscriptionState("user-1")).resolves.toEqual({ status: "unknown" });
+    expect(getStateExternal).not.toHaveBeenCalled();
   });
 
   it("reports unknown when Polar is unreachable", async () => {
