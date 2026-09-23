@@ -109,7 +109,7 @@ export function ReportSection({
           </div>
         </div>
         {children && (
-          <div id={contentId}>
+          <div id={contentId} className="relative">
             <CardContent className="space-y-2 px-5 pt-0 pb-5">{children}</CardContent>
           </div>
         )}
