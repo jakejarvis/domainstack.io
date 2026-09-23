@@ -32,7 +32,7 @@ function SeoEmpty({
   description: string;
 }) {
   return (
-    <Empty className="border bg-card/60">
+    <Empty className="border border-solid bg-background/60">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <Icon />
