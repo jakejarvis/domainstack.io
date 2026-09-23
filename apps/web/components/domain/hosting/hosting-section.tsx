@@ -68,7 +68,7 @@ function HostingLocation({ geo, domain }: { geo: HostingGeo; domain?: string }) 
 
 function EmptyHosting() {
   return (
-    <Empty className="border border-dashed">
+    <Empty className="border bg-card/60">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <IconHelp />

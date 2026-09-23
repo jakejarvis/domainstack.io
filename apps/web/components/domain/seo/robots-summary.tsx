@@ -283,7 +283,7 @@ export function RobotsSummary({
           // Show groups with empty rules (e.g., "Disallow:" means allow all)
           <GroupsAccordion groups={displayGroups} query={query} only={only} />
         ) : robots?.sitemaps?.length ? (
-          <Empty className="border border-dashed">
+          <Empty className="border bg-card/60">
             <EmptyHeader>
               <EmptyMedia variant="icon">
                 <IconHelp aria-hidden />

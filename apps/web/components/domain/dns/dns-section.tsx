@@ -53,7 +53,7 @@ export function DnsSection({ data }: { domain?: string; data?: DnsRecordsRespons
           </DnsGroup>
         </div>
       ) : (
-        <Empty className="border border-dashed">
+        <Empty className="border bg-card/60">
           <EmptyHeader>
             <EmptyMedia variant="icon">
               <IconWorld />

@@ -118,7 +118,7 @@ export function HeadersSection({ data }: { domain?: string; data?: HeadersRespon
               <AlertDescription>{statusMessage}</AlertDescription>
             </Alert>
           ) : null}
-          <Empty className="border border-dashed">
+          <Empty className="border bg-card/60">
             <EmptyHeader>
               <EmptyMedia variant="icon">
                 <IconList />

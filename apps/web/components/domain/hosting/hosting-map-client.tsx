@@ -27,7 +27,7 @@ export function HostingMapClient({ lat, lon, domain }: HostingMapClientProps) {
       scrollZoom={false}
       touchPitch={false}
       touchZoomRotate={false}
-      className="rounded-lg border bg-card/60 dark:bg-foreground/4"
+      className="rounded-lg border bg-card/60"
     >
       <MapMarker longitude={lon} latitude={lat}>
         <MapMarkerContent>
