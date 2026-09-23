@@ -20,15 +20,14 @@ export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
         className={cn(
           "group/header top-0 right-0 left-0 z-100 grid h-[var(--header-height)] items-center gap-4 px-4 md:sticky md:right-auto md:left-auto",
           "border-b border-black/15 bg-background/80 backdrop-blur dark:border-white/10",
-          // CSS-driven (base + data-attribute variant) so first paint is
-          // right instead of flashing a full-width search bar on mobile.
-          "grid-cols-[auto_0px_1fr] duration-300 ease-out motion-reduce:transition-none max-md:data-[search-open=true]:grid-cols-[auto_1fr_0px] md:grid-cols-[1fr_minmax(0,var(--container-2xl))_1fr]",
+          // Mobile: the search and actions share the second column and
+          // crossfade (see HeaderSearchClient/AppHeaderActions). Animating the
+          // column widths instead relays out every frame, which stutters on iOS.
+          "grid-cols-[auto_1fr] duration-300 ease-out motion-reduce:transition-none md:grid-cols-[1fr_minmax(0,var(--container-2xl))_1fr]",
           // Mobile: scrolls with the page until past the threshold, then pins,
           // hiding instantly on scroll-down and animating back in on scroll-up.
           isPastThreshold ? "max-md:fixed" : "max-md:absolute",
-          isScrolledAway
-            ? "transition-[grid-template-columns] max-md:-translate-y-full"
-            : "transition-[grid-template-columns,translate]",
+          isScrolledAway ? "max-md:-translate-y-full" : "transition-[translate]",
         )}
       >
         {children}
@@ -49,12 +48,12 @@ export function AppHeaderActions({ children }: { children: React.ReactNode }) {
   return (
     <div
       className={cn(
-        // Mobile only: min-w-0 + overflow-hidden so this tracks its collapsing
-        // column instead of overflowing into the search box. On desktop the
-        // `1fr` track must size to the actions, or they get clipped.
-        "flex h-full items-center justify-end gap-1.5 max-md:min-w-0 max-md:overflow-hidden",
+        // Mobile: shares the second column with the header search.
+        "flex h-full items-center justify-end gap-1.5 max-md:col-start-2 max-md:row-start-1",
         // Fade reads the `group/header` + data-search-open set by AppHeaderGrid.
-        "transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none max-md:group-data-[search-open=true]/header:translate-x-4 max-md:group-data-[search-open=true]/header:opacity-0",
+        "transition-[opacity,translate] duration-200 ease-out motion-reduce:transition-none max-md:group-data-[search-open=true]/header:translate-x-4 max-md:group-data-[search-open=true]/header:opacity-0",
+        // Sits above the search in paint order; let taps fall through to it.
+        "max-md:group-data-[search-open=true]/header:pointer-events-none",
       )}
       // inert can't be expressed in CSS; drops the faded actions from focus.
       inert={isHidden || undefined}

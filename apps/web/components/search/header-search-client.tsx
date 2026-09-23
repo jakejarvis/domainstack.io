@@ -14,8 +14,8 @@ export function HeaderSearchClient() {
   const handleClose = useCallback(() => close(), [close]);
   const handleDismiss = useCallback(() => close({ returnFocus: true }), [close]);
 
-  // Return empty div to avoid messing up header grid layout
-  if (isHome) return <div className="flex flex-1" />;
+  // Return empty div to avoid messing up the desktop header grid layout
+  if (isHome) return <div className="flex flex-1 max-md:hidden" />;
 
   return (
     <div
@@ -23,12 +23,17 @@ export function HeaderSearchClient() {
       className={cn(
         "flex min-w-0 flex-1 justify-center overflow-hidden",
         // Inset the clip box so it doesn't cut the input's 3px focus ring.
-        "-mt-1 -mb-1 -ml-1 p-1",
-        // Reclaims the 0px column's grid gap so the expanded input centers.
-        isOpen ? "-mr-5 md:-mr-1" : "-mr-1",
+        "-m-1 p-1",
+        // Mobile: overlays the header actions in the second column and fades
+        // in over them — opacity/translate only, so it stays on the compositor.
+        "motion-reduce:transition-none max-md:col-start-2 max-md:row-start-1 max-md:duration-200 max-md:ease-out",
         // Reads `isOpen` directly so this class updates in the same
-        // synchronous commit `open()` focuses in.
-        !isOpen && "invisible transition-[visibility] duration-200 md:visible",
+        // synchronous commit `open()` focuses in. `visibility` only transitions
+        // on close: transitioning it on open keeps it hidden for the first
+        // frame, so the synchronous focus would miss.
+        isOpen
+          ? "max-md:transition-[opacity,translate]"
+          : "invisible max-md:translate-x-4 max-md:opacity-0 max-md:transition-[opacity,translate,visibility] md:visible",
       )}
     >
       {/* min-w-0 so the input group shrinks to the track instead of overflowing it */}
