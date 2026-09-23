@@ -76,8 +76,9 @@ export function CookiePrompt({ consentRequired }: { consentRequired: boolean }) 
             href="/privacy#cookies"
             className="text-foreground/80 underline underline-offset-2 hover:text-foreground"
           >
-            Learn more.
+            Read our policy
           </Link>
+          .
         </p>
         <div className="mt-2.5 flex items-center gap-1.5">
           <Button

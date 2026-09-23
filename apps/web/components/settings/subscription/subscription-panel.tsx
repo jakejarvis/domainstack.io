@@ -1,5 +1,6 @@
 import { IconAlertCircle, IconCreditCard } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 import { FreePlanCard, PlanFeatures, ProPlanCard } from "@/components/plan-cards";
 import { PlanUsage } from "@/components/plan-usage";
@@ -145,22 +146,27 @@ function BillingSummary() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const active = data?.activeSubscriptions?.[0];
+  const currency = active?.currency.toUpperCase();
+  const priceFormat = useMemo(
+    () =>
+      currency
+        ? new Intl.NumberFormat("en-US", { style: "currency", currency, minimumFractionDigits: 0 })
+        : null,
+    [currency],
+  );
+
   if (isPending) {
     return <Skeleton render={<span />} className="inline-block h-3.5 w-44 align-middle" />;
   }
 
-  const active = data?.activeSubscriptions?.[0];
-  if (!active) {
+  if (!active || !priceFormat) {
     return "Update your payment method, download invoices, or cancel.";
   }
 
   // the auth client hands back JSON, so dates arrive as strings despite the SDK types
   const renewsAt = new Date(active.currentPeriodEnd);
-  const price = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: active.currency.toUpperCase(),
-    minimumFractionDigits: 0,
-  }).format(active.amount / 100);
+  const price = priceFormat.format(active.amount / 100);
 
   return (
     <>

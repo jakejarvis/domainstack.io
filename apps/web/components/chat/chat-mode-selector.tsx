@@ -144,7 +144,7 @@ export function ChatModeSelector({ className, disabled, browserAI }: ChatModeSel
         </SelectValue>
       </SelectTrigger>
 
-      <SelectContent align="start" alignItemWithTrigger={false} className="w-56 duration-100">
+      <SelectContent align="start" alignItemWithTrigger={false} className="w-56">
         <SelectGroup>
           <SelectLabel className="sr-only">AI Provider</SelectLabel>
           {MODE_OPTION_LIST.map((option) => {
