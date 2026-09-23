@@ -7,7 +7,7 @@ import { useIsHomeRoute } from "@/hooks/use-is-home-route";
 
 /**
  * Coordinates the collapsible mobile header search between the toggle button (in
- * the icon cluster) and the search input (in the middle grid column). The refs
+ * the header actions) and the search input (in the middle grid column). The refs
  * are part of the contract: `inputRef` so `open()` can focus synchronously
  * inside the tap gesture, `toggleRef` so a dismissal can return focus to it.
  */
@@ -35,7 +35,7 @@ export function MobileSearchProvider({ children }: { children: React.ReactNode }
 
   const close = useCallback((options?: { returnFocus?: boolean }) => {
     if (options?.returnFocus) {
-      // The cluster holding the toggle is inert while open, so commit first.
+      // The header actions (holding the toggle) are inert while open, so commit first.
       flushSync(() => setIsOpen(false));
       toggleRef.current?.focus();
       return;
@@ -44,7 +44,7 @@ export function MobileSearchProvider({ children }: { children: React.ReactNode }
   }, []);
 
   // No toggle renders on the landing page, so an open search surviving
-  // navigation there would strand the action cluster hidden and inert.
+  // navigation there would strand the header actions hidden and inert.
   const isHome = useIsHomeRoute();
   const [wasHome, setWasHome] = useState(isHome);
   if (isHome !== wasHome) {

@@ -1,12 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
-import { AppHeaderActionCluster } from "@/components/layout/app-header-action-cluster";
-import { AppHeaderGrid } from "@/components/layout/app-header-grid";
+import { AppHeaderActions, AppHeaderGrid } from "@/components/layout/app-header-layout";
 import { MobileSearchProvider } from "@/components/layout/mobile-search-context";
+import { MobileSearchToggle } from "@/components/layout/mobile-search-toggle";
 import { Logo } from "@/components/logo";
 import { HeaderSearchClient } from "@/components/search/header-search-client";
-import { MobileSearchToggle } from "@/components/search/mobile-search-toggle";
 import { render } from "@/mocks/react";
 
 const nav = vi.hoisted(() => ({
@@ -29,7 +28,7 @@ const MOBILE = { width: 390, height: 844 };
 
 /**
  * Mirrors `AppHeader` so the real grid collapse is under test. The "Dashboard"
- * button stands in for the action cluster, so tests can tell it is reachable.
+ * button stands in for the header actions, so tests can tell it is reachable.
  */
 function Header() {
   return (
@@ -37,10 +36,10 @@ function Header() {
       <AppHeaderGrid>
         <Logo className="size-8" />
         <HeaderSearchClient />
-        <AppHeaderActionCluster>
+        <AppHeaderActions>
           <MobileSearchToggle />
           <button type="button">Dashboard</button>
-        </AppHeaderActionCluster>
+        </AppHeaderActions>
       </AppHeaderGrid>
     </MobileSearchProvider>
   );
@@ -185,7 +184,7 @@ describe("mobile header search", () => {
     await expect.element(toggle()).toHaveAttribute("aria-expanded", "true");
 
     // No toggle on the landing page, so a search surviving the navigation
-    // would strand the action cluster hidden and inert.
+    // would strand the header actions hidden and inert.
     nav.segment = null;
     await rerender(<Header />);
 
@@ -193,7 +192,7 @@ describe("mobile header search", () => {
     // elements as visible, so `toBeVisible()` would pass either way.
     const dashboard = document.querySelector<HTMLElement>("button:not([aria-label])");
     await expect.poll(() => dashboard?.closest("[inert]")).toBeNull();
-    // Polled, not sampled — the cluster springs back from opacity 0.
+    // Polled, not sampled — the actions spring back from opacity 0.
     await expect
       .poll(() => Number(getComputedStyle(dashboard!.parentElement!).opacity))
       .toBeGreaterThan(0.99);

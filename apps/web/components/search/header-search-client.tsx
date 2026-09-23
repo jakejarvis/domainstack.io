@@ -24,14 +24,10 @@ export function HeaderSearchClient() {
         "flex min-w-0 flex-1 justify-center overflow-hidden",
         // Inset the clip box so it doesn't cut the input's 3px focus ring.
         "-mt-1 -mb-1 -ml-1 p-1",
-        // The collapsed icon column is 0px wide but still takes a grid gap;
-        // reclaim it so the expanded input sits centered.
+        // Reclaims the 0px column's grid gap so the expanded input centers.
         isOpen ? "-mr-5 md:-mr-1" : "-mr-1",
-        // Hiding in CSS rather than on `useIsMobile()`, which stays false until
-        // after the first paint even though the SSR markup is already collapsed.
-        // `visibility` keeps the input mounted so `open()` can focus it
-        // synchronously; the transition only rides the closing class so content
-        // stays on screen while the column shrinks.
+        // Reads `isOpen` directly so this class updates in the same
+        // synchronous commit `open()` focuses in.
         !isOpen && "invisible transition-[visibility] duration-200 md:visible",
       )}
     >

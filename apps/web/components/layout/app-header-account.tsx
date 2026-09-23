@@ -7,7 +7,6 @@ import { AppHeaderSeparator } from "@/components/layout/app-header-separator";
 import { UserMenu } from "@/components/layout/user-menu";
 import { NotificationsPopover } from "@/components/notifications/notifications-popover";
 import { useIsClient } from "@/hooks/use-is-client";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/hooks/use-theme";
 import { useSession } from "@domainstack/auth/client";
 import { Button } from "@domainstack/ui/button";
@@ -25,9 +24,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip
  * Session-dependent header buttons that conditionally render based on auth state.
  * Client component that uses useSession hook to avoid turning pages into PPR.
  */
-export function AppHeaderClientButtons() {
+export function AppHeaderAccount() {
   const { data: session, isPending } = useSession();
-  const isMobile = useIsMobile();
   const { theme, toggleTheme } = useTheme();
   const mounted = useIsClient();
 
@@ -72,13 +70,14 @@ export function AppHeaderClientButtons() {
     );
   }
 
-  // Logged out on mobile: show MobileMenu with hamburger
-  if (isMobile) {
-    return (
+  // Logged out: hamburger on mobile, theme toggle + Sign In on desktop. Both
+  // render so the breakpoint stays CSS-driven instead of an isMobile flash.
+  return (
+    <>
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <Button variant="ghost" size="icon-sm" aria-label="Menu">
+            <Button variant="ghost" size="icon-sm" aria-label="Menu" className="md:hidden">
               <IconMenu2 />
             </Button>
           }
@@ -100,16 +99,17 @@ export function AppHeaderClientButtons() {
           />
         </DropdownMenuContent>
       </DropdownMenu>
-    );
-  }
 
-  // Logged out on desktop: show theme toggle and Sign In button
-  return (
-    <>
       <Tooltip>
         <TooltipTrigger
           render={
-            <Button aria-label="Toggle theme" variant="ghost" size="sm" onClick={toggleTheme}>
+            <Button
+              aria-label="Toggle theme"
+              variant="ghost"
+              size="sm"
+              onClick={toggleTheme}
+              className="hidden md:inline-flex"
+            >
               <IconSun className="scale-100 rotate-0 transition-[transform,opacity] dark:scale-95 dark:-rotate-90 dark:opacity-0" />
               <IconMoon className="absolute scale-95 rotate-90 opacity-0 transition-[transform,opacity] dark:scale-100 dark:rotate-0 dark:opacity-100" />
               <span className="sr-only">Toggle theme</span>
@@ -118,12 +118,13 @@ export function AppHeaderClientButtons() {
         />
         <TooltipContent>{theme === "dark" ? "Dark mode" : "Light mode"}</TooltipContent>
       </Tooltip>
-      <AppHeaderSeparator />
+      <AppHeaderSeparator className="hidden md:block" />
       <Button
         variant="ghost"
         size="sm"
         nativeButton={false}
         aria-label="Sign In"
+        className="hidden md:inline-flex"
         render={
           <Link href="/login" scroll={false}>
             Sign In

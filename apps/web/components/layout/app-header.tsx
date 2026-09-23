@@ -2,16 +2,15 @@ import { SiGithub } from "@icons-pack/react-simple-icons";
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { AppHeaderActionCluster } from "@/components/layout/app-header-action-cluster";
-import { AppHeaderClientButtons } from "@/components/layout/app-header-client-buttons";
-import { AppHeaderGrid } from "@/components/layout/app-header-grid";
+import { AppHeaderAccount } from "@/components/layout/app-header-account";
+import { AppHeaderActions, AppHeaderGrid } from "@/components/layout/app-header-layout";
 import { AppHeaderSeparator } from "@/components/layout/app-header-separator";
 import { GithubStars } from "@/components/layout/github-stars";
 import { MobileSearchProvider } from "@/components/layout/mobile-search-context";
+import { MobileSearchToggle } from "@/components/layout/mobile-search-toggle";
 import { Logo } from "@/components/logo";
 import { HeaderSearchClient } from "@/components/search/header-search-client";
 import { HeaderSearchSkeleton } from "@/components/search/header-search-skeleton";
-import { MobileSearchToggle } from "@/components/search/mobile-search-toggle";
 import { Skeleton } from "@domainstack/ui/skeleton";
 
 export function AppHeader() {
@@ -28,7 +27,7 @@ export function AppHeader() {
         <Suspense fallback={<HeaderSearchSkeleton />}>
           <HeaderSearchClient />
         </Suspense>
-        <AppHeaderActionCluster>
+        <AppHeaderActions>
           <MobileSearchToggle />
           <Suspense
             fallback={
@@ -41,8 +40,8 @@ export function AppHeader() {
             <GithubStars />
           </Suspense>
           <AppHeaderSeparator />
-          <AppHeaderClientButtons />
-        </AppHeaderActionCluster>
+          <AppHeaderAccount />
+        </AppHeaderActions>
       </AppHeaderGrid>
     </MobileSearchProvider>
   );
