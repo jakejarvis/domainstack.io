@@ -23,10 +23,15 @@ export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
           // Mobile: search and actions share column 2 and crossfade; animating
           // the column widths instead stutters on iOS.
           "grid-cols-[auto_1fr] duration-300 ease-out motion-reduce:transition-none md:grid-cols-[1fr_minmax(0,var(--container-2xl))_1fr]",
+          // The hidden search's translate-x offset pokes past the viewport and,
+          // while the header is absolute, widens the page's scroll area.
+          "max-md:overflow-x-clip",
           // Mobile: scrolls with the page until past the threshold, then pins,
           // hiding instantly on scroll-down and animating back in on scroll-up.
           isPastThreshold ? "max-md:fixed" : "max-md:absolute",
-          isScrolledAway ? "max-md:-translate-y-full" : "transition-[translate]",
+          // Explicit `transition-none`: with only `duration-*` set, the
+          // property falls back to `all` and the hide would animate.
+          isScrolledAway ? "transition-none max-md:-translate-y-full" : "transition-[translate]",
         )}
       >
         {children}
