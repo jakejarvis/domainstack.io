@@ -157,7 +157,7 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
 
             <div className="space-y-3">
               <Alert variant="destructive">
-                <AlertTitle>The following data will be permanently deleted:</AlertTitle>
+                <AlertTitle>This will permanently delete:</AlertTitle>
                 <AlertDescription>
                   <ul className="list-disc space-y-1 pl-4 marker:text-destructive">
                     <li>All your tracked domains</li>

@@ -11,6 +11,7 @@ import { PLAN_QUOTAS } from "@domainstack/constants";
 import { Alert, AlertDescription, AlertTitle } from "@domainstack/ui/alert";
 import { Button } from "@domainstack/ui/button";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@domainstack/ui/item";
+import { Skeleton } from "@domainstack/ui/skeleton";
 import { Spinner } from "@domainstack/ui/spinner";
 import { formatDate, toDateTimeAttr } from "@domainstack/utils/date";
 
@@ -88,7 +89,7 @@ export function SubscriptionPanel() {
                     className="mt-2"
                   >
                     {portalIcon}
-                    Resubscribe
+                    Manage billing
                   </Button>
                 </AlertDescription>
               </Alert>
@@ -134,7 +135,7 @@ export function SubscriptionPanel() {
 
 // the tRPC subscription only knows the plan; the interval, price, and renewal date live in Polar
 function BillingSummary() {
-  const { data } = useQuery({
+  const { data, isPending } = useQuery({
     queryKey: ["polar", "customer-state"],
     queryFn: async () => {
       const result = await customer.state();
@@ -143,6 +144,10 @@ function BillingSummary() {
     },
     staleTime: 5 * 60 * 1000,
   });
+
+  if (isPending) {
+    return <Skeleton render={<span />} className="inline-block h-3.5 w-44 align-middle" />;
+  }
 
   const active = data?.activeSubscriptions?.[0];
   if (!active) {

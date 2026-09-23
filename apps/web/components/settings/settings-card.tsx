@@ -15,7 +15,13 @@ function SettingsCard({
   return (
     <div data-slot="settings-card" className={cn("space-y-4", className)} {...props}>
       <CardHeader className="gap-1 px-0 pt-0">
-        <CardTitle className="text-[15px]">{title}</CardTitle>
+        <CardTitle
+          // oxlint-disable-next-line jsx-a11y/heading-has-content -- CardTitle passes its children into the h2
+          render={<h2 />}
+          className="text-[15px]"
+        >
+          {title}
+        </CardTitle>
         <CardDescription className="text-[13px]">{description}</CardDescription>
       </CardHeader>
       <CardContent className="px-0">{children}</CardContent>

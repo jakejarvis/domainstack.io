@@ -4,12 +4,12 @@ import { useRender } from "@base-ui/react/use-render";
 import { cn, cva, type VariantProps } from "../utils";
 
 const alertVariants = cva({
-  base: "relative grid w-full animate-in grid-cols-[0_1fr] items-start gap-y-0.5 rounded-lg border bg-card/40 px-4 py-3 text-sm duration-200 fade-in-0 slide-in-from-top-2 has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-[>svg]:gap-x-2 motion-reduce:animate-none motion-reduce:transition-none [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current",
+  base: "relative grid w-full grid-cols-[0_1fr] items-start gap-y-0.5 rounded-lg border bg-card/40 px-4 py-3 text-sm has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-[>svg]:gap-x-2 [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current",
   variants: {
     variant: {
       default: "text-card-foreground",
       destructive: "text-destructive",
-      warning: "text-warning-foreground",
+      warning: "text-card-foreground [&>svg]:text-warning-foreground",
       info: "text-info-foreground",
     },
   },
@@ -28,8 +28,8 @@ function Alert({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
-      // info is advisory, so it shouldn't interrupt a screen reader the way an alert does
-      role: variant === "info" ? "status" : "alert",
+      // only problems interrupt a screen reader; advisory alerts are announced politely
+      role: variant === "destructive" || variant === "warning" ? "alert" : "status",
       className: cn(alertVariants({ variant }), className),
     }),
     state: {

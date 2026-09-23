@@ -30,10 +30,9 @@ export function DomainUnregisteredCard({ domain }: DomainUnregisteredCardProps) 
         className="pointer-events-none absolute -inset-x-35 -top-35 h-85 glow-accent-indigo/15"
       />
 
-      <div className="space-y-4.5">
+      <div className="relative space-y-4.5">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{domain}</h2>
-
           <p className="mt-2 text-sm text-muted-foreground sm:text-base">
             appears to be unregistered…
           </p>
