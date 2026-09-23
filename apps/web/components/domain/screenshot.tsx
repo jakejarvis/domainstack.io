@@ -269,7 +269,12 @@ function ScreenshotPlaceholder({
             <IconCircleX />
             <span>Unable to take a screenshot.</span>
             {onReload ? (
-              <Button variant="link" size="xs" className="text-foreground" onClick={onReload}>
+              <Button
+                variant="link"
+                size="xs"
+                className="text-xs text-foreground"
+                onClick={onReload}
+              >
                 Reload preview
               </Button>
             ) : null}

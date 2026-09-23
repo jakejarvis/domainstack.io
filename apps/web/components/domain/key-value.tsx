@@ -36,7 +36,7 @@ export function KeyValue({
       className={cn(
         "flex h-16 min-w-0 items-center justify-between gap-4 rounded-lg border px-4 py-3",
         highlight
-          ? "border-accent-purple/20 bg-card/60 bg-linear-to-r from-accent-purple/5 to-accent-purple/5 dark:border-accent-purple/12"
+          ? "border-accent-purple/20 bg-card/60 bg-linear-to-r from-accent-purple/5 to-transparent dark:border-accent-purple/12"
           : "border-border bg-card/60",
       )}
     >

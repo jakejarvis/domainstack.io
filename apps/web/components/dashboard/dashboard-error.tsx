@@ -24,7 +24,12 @@ export function DashboardError({ onRetry }: DashboardErrorProps) {
             <IconAlertTriangle />
           </Icon>
         </EmptyMedia>
-        <EmptyTitle>Unable to load dashboard</EmptyTitle>
+        <EmptyTitle
+          // oxlint-disable-next-line jsx-a11y/heading-has-content -- EmptyTitle passes its children into the h2
+          render={<h2 />}
+        >
+          Unable to load dashboard
+        </EmptyTitle>
         <EmptyDescription>
           We couldn't load your dashboard data. This might be a temporary issue. Please try again.
         </EmptyDescription>

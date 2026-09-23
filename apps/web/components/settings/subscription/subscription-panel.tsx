@@ -107,6 +107,8 @@ export function SubscriptionPanel() {
                     <BillingSummary
                       billing={billingSync.data?.billing ?? null}
                       isPending={billingSync.isPending}
+                      isError={billingSync.isError}
+                      onRetry={() => void billingSync.refetch()}
                     />
                   </ItemDescription>
                 </ItemContent>
@@ -142,9 +144,13 @@ export function SubscriptionPanel() {
 function BillingSummary({
   billing,
   isPending,
+  isError,
+  onRetry,
 }: {
   billing: BillingDetails | null;
   isPending: boolean;
+  isError: boolean;
+  onRetry: () => void;
 }) {
   const currency = billing?.currency.toUpperCase();
   const priceFormat = useMemo(
@@ -157,6 +163,17 @@ function BillingSummary({
 
   if (isPending) {
     return <Skeleton render={<span />} className="inline-block h-3.5 w-44 align-middle" />;
+  }
+
+  if (isError && !billing) {
+    return (
+      <>
+        Couldn&apos;t load billing details.{" "}
+        <Button variant="link" size="xs" className="h-auto p-0" onClick={onRetry}>
+          Retry
+        </Button>
+      </>
+    );
   }
 
   if (!billing || !priceFormat) {

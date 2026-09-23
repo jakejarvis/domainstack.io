@@ -237,7 +237,7 @@ export function LinkedAccountsSkeleton({ className }: { className?: string }) {
  */
 function SettingsSkeletonTabsList({ className }: { className?: string }) {
   return (
-    <div className={cn("w-full", className)}>
+    <div className={cn("w-full overflow-hidden", className)}>
       <div className="flex h-10 w-full items-center gap-1.5 border-b border-muted">
         {/* active tab — indicator is the 2px `bg-foreground` underline */}
         <div className="relative flex h-full items-center gap-2 px-2">

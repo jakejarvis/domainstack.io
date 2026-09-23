@@ -239,7 +239,7 @@ export function NotificationsPopover() {
                         size="sm"
                         onClick={() => markAllRead.mutate()}
                         disabled={markAllRead.isPending}
-                        className="text-[13px] text-muted-foreground"
+                        className="h-full text-[13px] text-muted-foreground"
                         aria-label="Clear all notifications"
                       >
                         <IconChecks className="size-4" aria-hidden />
