@@ -17,7 +17,7 @@ import {
   useSyncVisibleDomainIds,
 } from "@/hooks/use-dashboard-selection";
 import { useRouter } from "@/hooks/use-router";
-import { useSubscription } from "@/hooks/use-subscription";
+import { useSubscription, useSyncBilling } from "@/hooks/use-subscription";
 import {
   type ConfirmAction,
   DEFAULT_SORT,
@@ -168,6 +168,12 @@ export function useDashboardClient() {
     const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
     router.replace(newUrl, { scroll: false });
   }, [upgradedParam, router, searchParams]);
+
+  // checkout can redirect here before the webhook lands
+  useSyncBilling({
+    enabled: showUpgradedBanner && subscription !== undefined && subscription.plan !== "pro",
+    pollInterval: 3000,
+  });
 
   const handleVerify = useCallback(
     (id: string, verificationMethod: VerificationMethod | null) => {

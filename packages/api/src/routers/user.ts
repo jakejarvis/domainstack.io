@@ -18,6 +18,7 @@ import {
 } from "@domainstack/db/queries/user-notification-preferences";
 import { getUserSubscription } from "@domainstack/db/queries/user-subscription";
 import { getLinkedAccounts } from "@domainstack/db/queries/users";
+import { syncSubscriptionFromPolar } from "@domainstack/polar/reconcile";
 import type { SubscriptionQuota } from "@domainstack/types";
 
 import { analytics } from "../analytics";
@@ -76,6 +77,11 @@ export const userRouter = createTRPCRouter({
     };
     return quota;
   }),
+
+  /**
+   * Reconcile the local plan with Polar and return live billing details.
+   */
+  syncBilling: protectedProcedure.query(async ({ ctx }) => syncSubscriptionFromPolar(ctx.user.id)),
 
   /**
    * Get global notification preferences for the current user.

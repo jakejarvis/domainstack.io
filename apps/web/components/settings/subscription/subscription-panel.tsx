@@ -1,14 +1,13 @@
 import { IconAlertCircle, IconCreditCard } from "@tabler/icons-react";
-import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
 import { FreePlanCard, PlanFeatures, ProPlanCard } from "@/components/plan-cards";
 import { PlanUsage } from "@/components/plan-usage";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { SubscriptionSkeleton } from "@/components/settings/settings-skeleton";
-import { useSubscription } from "@/hooks/use-subscription";
-import { customer } from "@domainstack/auth/client";
+import { useSubscription, useSyncBilling } from "@/hooks/use-subscription";
 import { PLAN_QUOTAS } from "@domainstack/constants";
+import type { BillingDetails } from "@domainstack/types";
 import { Alert, AlertDescription, AlertTitle } from "@domainstack/ui/alert";
 import { Button } from "@domainstack/ui/button";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@domainstack/ui/item";
@@ -25,6 +24,8 @@ export function SubscriptionPanel() {
     handleCustomerPortal,
     isCustomerPortalLoading,
   } = useSubscription();
+  // runs on every panel visit, including the return from the billing portal
+  const billingSync = useSyncBilling();
 
   if (isSubscriptionLoading) {
     return <SubscriptionSkeleton />;
@@ -103,7 +104,10 @@ export function SubscriptionPanel() {
                 <ItemContent>
                   <ItemTitle>Billing</ItemTitle>
                   <ItemDescription>
-                    <BillingSummary />
+                    <BillingSummary
+                      billing={billingSync.data?.billing ?? null}
+                      isPending={billingSync.isPending}
+                    />
                   </ItemDescription>
                 </ItemContent>
                 <ItemActions>
@@ -134,20 +138,15 @@ export function SubscriptionPanel() {
   );
 }
 
-// the tRPC subscription only knows the plan; the interval, price, and renewal date live in Polar
-function BillingSummary() {
-  const { data, isPending } = useQuery({
-    queryKey: ["polar", "customer-state"],
-    queryFn: async () => {
-      const result = await customer.state();
-      if (result.error) throw new Error(result.error.message ?? "Failed to load billing details");
-      return result.data;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const active = data?.activeSubscriptions?.[0];
-  const currency = active?.currency.toUpperCase();
+// the local subscription only knows the plan; the interval, price, and renewal date live in Polar
+function BillingSummary({
+  billing,
+  isPending,
+}: {
+  billing: BillingDetails | null;
+  isPending: boolean;
+}) {
+  const currency = billing?.currency.toUpperCase();
   const priceFormat = useMemo(
     () =>
       currency
@@ -160,22 +159,21 @@ function BillingSummary() {
     return <Skeleton render={<span />} className="inline-block h-3.5 w-44 align-middle" />;
   }
 
-  if (!active || !priceFormat) {
+  if (!billing || !priceFormat) {
     return "Update your payment method, download invoices, or cancel.";
   }
 
-  // the auth client hands back JSON, so dates arrive as strings despite the SDK types
-  const renewsAt = new Date(active.currentPeriodEnd);
-  const price = priceFormat.format(active.amount / 100);
+  const periodEnd = billing.currentPeriodEnd;
+  const price = priceFormat.format(billing.amount / 100);
 
   return (
     <>
       <span className="tabular-nums">
-        {price}/{active.recurringInterval}
+        {price}/{billing.interval}
       </span>{" "}
-      · Renews{" "}
-      <time dateTime={toDateTimeAttr(renewsAt)} suppressHydrationWarning>
-        {formatDate(renewsAt)}
+      · {billing.cancelAtPeriodEnd ? "Ends" : "Renews"}{" "}
+      <time dateTime={toDateTimeAttr(periodEnd)} suppressHydrationWarning>
+        {formatDate(periodEnd)}
       </time>
     </>
   );

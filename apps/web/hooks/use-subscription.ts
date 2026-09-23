@@ -1,7 +1,7 @@
 "use client";
 
 import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { analytics } from "@/lib/analytics/client";
@@ -168,4 +168,40 @@ export function useSubscription(options: UseSubscriptionOptions = {}): UseSubscr
     },
     isCustomerPortalLoading,
   };
+}
+
+interface UseSyncBillingOptions {
+  /** Whether to run the sync (defaults to true) */
+  enabled?: boolean;
+  /** Re-sync on this interval (ms), up to MAX_SYNC_POLLS times */
+  pollInterval?: number;
+}
+
+const MAX_SYNC_POLLS = 20;
+
+/**
+ * Reconcile the local plan with Polar; refetches `getSubscription` when it changed.
+ */
+export function useSyncBilling(options: UseSyncBillingOptions = {}) {
+  const { enabled = true, pollInterval } = options;
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
+    ...trpc.user.syncBilling.queryOptions(),
+    enabled,
+    refetchInterval: (q) =>
+      pollInterval && q.state.dataUpdateCount + q.state.errorUpdateCount < MAX_SYNC_POLLS
+        ? pollInterval
+        : false,
+  });
+
+  const { data } = query;
+  useEffect(() => {
+    if (data?.changed) {
+      void queryClient.invalidateQueries(trpc.user.getSubscription.queryFilter());
+    }
+  }, [data, queryClient, trpc]);
+
+  return query;
 }

@@ -7,7 +7,7 @@ interface SubscriptionExpiryWorkflowInput {
 type SubscriptionExpiryWorkflowResult =
   | {
       skipped: true;
-      reason: "not_found";
+      reason: "not_found" | "renewed";
     }
   | {
       skipped: true;
@@ -105,6 +105,13 @@ export async function subscriptionExpiryWorkflow(
     };
   }
 
+  // A missed `uncanceled` webhook leaves a stale end date; don't warn a renewed customer.
+  const state = await fetchPolarState(userId);
+  if (state.status === "ok" && state.hasNonCancelingActive) {
+    await clearEndsAt(userId);
+    return { skipped: true, reason: "renewed" };
+  }
+
   // Send notification email
   await sendSubscriptionExpiryNotification({
     userName: user.userName,
@@ -125,6 +132,25 @@ async function fetchUserSubscription(userId: string): Promise<UserWithEndingSubs
     await import("@domainstack/db/queries/user-subscription");
 
   return await getUserWithEndingSubscription(userId);
+}
+
+async function fetchPolarState(userId: string) {
+  "use step";
+
+  const { getCustomerSubscriptionState } = await import("@domainstack/polar/reconcile");
+  return await getCustomerSubscriptionState(userId);
+}
+
+async function clearEndsAt(userId: string): Promise<void> {
+  "use step";
+
+  const { clearSubscriptionEndsAt } = await import("@domainstack/db/queries/user-subscription");
+  try {
+    await clearSubscriptionEndsAt(userId);
+  } catch (err) {
+    const { classifyDatabaseError } = await import("../lib/errors");
+    throw classifyDatabaseError(err, { context: `clearing subscription end date for ${userId}` });
+  }
 }
 
 async function calculateDaysRemaining(endsAt: Date): Promise<number> {

@@ -53,7 +53,7 @@ export type { ProviderInfo } from "./provider";
 
 export type { ScreenshotData } from "./screenshot";
 
-export type { SubscriptionQuota } from "./subscription";
+export type { BillingDetails, SubscriptionQuota } from "./subscription";
 
 export type { TrackedDomainWithDetails } from "./tracked-domain";
 

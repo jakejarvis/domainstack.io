@@ -605,9 +605,40 @@ describe("handleSubscriptionRevoked", () => {
 describe("handleSubscriptionUncanceled", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    vi.mocked(getCustomerSubscriptionState).mockResolvedValue(
+      okPolarState({ hasActiveSubscription: true, hasNonCancelingActive: true }),
+    );
   });
 
   it("clears subscription end date when user uncancels", async () => {
+    await handleSubscriptionUncanceled(createUncanceledPayload());
+
+    expect(clearSubscriptionEndsAt).toHaveBeenCalledWith("user-456");
+  });
+
+  it("ignores stale uncanceled event when every active subscription is canceling", async () => {
+    vi.mocked(getCustomerSubscriptionState).mockResolvedValue(
+      okPolarState({ hasActiveSubscription: true, hasNonCancelingActive: false }),
+    );
+
+    await handleSubscriptionUncanceled(createUncanceledPayload());
+
+    expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
+  });
+
+  it("ignores stale uncanceled event when customer has no active subscription", async () => {
+    vi.mocked(getCustomerSubscriptionState).mockResolvedValue(
+      okPolarState({ hasActiveSubscription: false, hasNonCancelingActive: false }),
+    );
+
+    await handleSubscriptionUncanceled(createUncanceledPayload());
+
+    expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
+  });
+
+  it("clears end date when Polar state is unknown", async () => {
+    vi.mocked(getCustomerSubscriptionState).mockResolvedValue({ status: "unknown" });
+
     await handleSubscriptionUncanceled(createUncanceledPayload());
 
     expect(clearSubscriptionEndsAt).toHaveBeenCalledWith("user-456");
