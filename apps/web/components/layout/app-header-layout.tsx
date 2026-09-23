@@ -16,6 +16,7 @@ export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
     <>
       <header
         data-search-open={isSearchOpen}
+        data-scrolled-away={isScrolledAway}
         className={cn(
           "group/header top-0 right-0 left-0 z-100 grid h-[var(--header-height)] items-center gap-4 px-4 md:sticky md:right-auto md:left-auto",
           "border-b border-black/15 bg-background/80 backdrop-blur dark:border-white/10",
@@ -48,9 +49,10 @@ export function AppHeaderActions({ children }: { children: React.ReactNode }) {
   return (
     <div
       className={cn(
-        // min-w-0 + overflow-hidden so this tracks its column width instead
-        // of overflowing into the search box.
-        "flex h-full min-w-0 items-center justify-end gap-1.5 overflow-hidden",
+        // Mobile only: min-w-0 + overflow-hidden so this tracks its collapsing
+        // column instead of overflowing into the search box. On desktop the
+        // `1fr` track must size to the actions, or they get clipped.
+        "flex h-full items-center justify-end gap-1.5 max-md:min-w-0 max-md:overflow-hidden",
         // Fade reads the `group/header` + data-search-open set by AppHeaderGrid.
         "transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none max-md:group-data-[search-open=true]/header:translate-x-4 max-md:group-data-[search-open=true]/header:opacity-0",
       )}

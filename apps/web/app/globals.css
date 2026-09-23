@@ -152,3 +152,55 @@
 @utility animate-heartbeat {
   animation: heartbeat 2s ease-in-out infinite;
 }
+
+/* separate loops with mismatched periods so the drift never visibly repeats; paused until
+   something sets animation-play-state, and resumes where it left off */
+@keyframes mesh-drift-translate {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  25% {
+    translate: 10px -8px;
+  }
+  50% {
+    translate: -6px 12px;
+  }
+  75% {
+    translate: -12px -4px;
+  }
+}
+
+@keyframes mesh-drift-rotate {
+  0%,
+  100% {
+    rotate: 0deg;
+  }
+  25% {
+    rotate: 15deg;
+  }
+  75% {
+    rotate: -15deg;
+  }
+}
+
+@keyframes mesh-drift-scale {
+  0%,
+  100% {
+    scale: 1;
+  }
+  25% {
+    scale: 1.08;
+  }
+  75% {
+    scale: 0.92;
+  }
+}
+
+@utility animate-mesh-drift {
+  animation:
+    mesh-drift-translate 10s ease-in-out infinite,
+    mesh-drift-rotate 16s ease-in-out infinite,
+    mesh-drift-scale 6s ease-in-out infinite;
+  animation-play-state: paused;
+}

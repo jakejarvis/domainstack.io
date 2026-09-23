@@ -2,7 +2,6 @@
 
 import { useHotkey } from "@tanstack/react-hotkeys";
 import { useAtom } from "jotai";
-import { AnimatePresence } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { chatOpenAtom } from "@/lib/atoms/chat-atoms";
@@ -39,6 +38,21 @@ export function ChatClientLazy({
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const loadingRef = useRef(false);
+  // shared between hover/focus prefetch and the click, so the bundle is only requested once
+  const loadPromiseRef = useRef<Promise<ChatClientModule> | null>(null);
+  const load = useCallback(() => {
+    if (loadPromiseRef.current) return loadPromiseRef.current;
+    const promise = loader().catch((error: unknown) => {
+      loadPromiseRef.current = null;
+      throw error;
+    });
+    loadPromiseRef.current = promise;
+    return promise;
+  }, [loader]);
+
+  const handlePrefetch = useCallback(() => {
+    if (!ChatClient) load().catch(() => {});
+  }, [ChatClient, load]);
 
   // Check for ?show_ai=1 URL param to re-enable AI features
   // Must live here since ChatClient may not be loaded yet
@@ -72,7 +86,7 @@ export function ChatClientLazy({
     setLoadError(false);
     setOpen(true);
 
-    void loader()
+    void load()
       .then((module) => {
         setChatClient(() => module.ChatClient);
         return undefined;
@@ -83,7 +97,7 @@ export function ChatClientLazy({
         setLoadError(true);
         setOpen(false);
       });
-  }, [ChatClient, loader, setOpen]);
+  }, [ChatClient, load, setOpen]);
 
   const handleActivation = useCallback(() => {
     if (ChatClient) {
@@ -107,14 +121,13 @@ export function ChatClientLazy({
 
   return (
     <>
-      <AnimatePresence>
-        {!hideAiFeatures && <ChatFab loading={loading} onClick={handleActivation} />}
-      </AnimatePresence>
-      {loadError && (
-        <p className="sr-only" aria-live="polite">
-          Chat failed to load. Try again.
-        </p>
+      {!hideAiFeatures && (
+        <ChatFab loading={loading} onClick={handleActivation} onPrefetch={handlePrefetch} />
       )}
+      {/* stays mounted so screen readers are already watching when the message appears */}
+      <p className="sr-only" aria-live="polite">
+        {loadError ? "Chat failed to load. Try again." : ""}
+      </p>
       {ChatClient && (
         <ChatClient
           suggestions={suggestions}

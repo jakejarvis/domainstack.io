@@ -4,13 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 // Types
 // ---------------------------------------------------------------------------
 
-interface UseSectionTrackingOptions {
-  /** IDs of sections to track */
-  sectionIds: string[];
-  /** Distance from top where section is considered "active" */
-  scrollMarginPx: number;
-}
-
 interface UseSectionTrackingReturn {
   /** Currently active section ID */
   activeSection: string;
@@ -30,11 +23,12 @@ interface UseSectionTrackingReturn {
  * - Handles programmatic scrolling with lock period to prevent jitter
  * - Uses RAF for performance
  * - Handles resize events
+ * - Reads each section's CSS `scroll-margin-top` as its activation line, so the offset
+ *   always matches where `scrollIntoView` lands
+ *
+ * `sectionIds` must be referentially stable, or the listeners re-subscribe every render.
  */
-export function useSectionTracking({
-  sectionIds,
-  scrollMarginPx,
-}: UseSectionTrackingOptions): UseSectionTrackingReturn {
+export function useSectionTracking(sectionIds: string[]): UseSectionTrackingReturn {
   const [activeSection, setActiveSection] = useState(sectionIds[0] ?? "");
 
   // Refs for programmatic scroll tracking
@@ -48,7 +42,6 @@ export function useSectionTracking({
     let rafId: number | null = null;
 
     const updateActiveSection = () => {
-      const scrollMargin = scrollMarginPx;
       const targetId = programmaticTargetIdRef.current;
 
       // Check if we're in a programmatic scroll
@@ -62,7 +55,7 @@ export function useSectionTracking({
         } else {
           // Check if we've landed on the target
           const { top } = targetEl.getBoundingClientRect();
-          const isLanded = Math.abs(top - scrollMargin) <= 2;
+          const isLanded = Math.abs(top - getScrollMargin(targetEl)) <= 2;
           if (!isLanded) {
             // Still scrolling - keep target as active
             setActiveSection((prev) => (prev === targetId ? prev : targetId));
@@ -81,7 +74,7 @@ export function useSectionTracking({
       let nextActive = sectionEls[0]?.id ?? sectionIds[0] ?? "";
       for (const el of sectionEls) {
         const { top } = el.getBoundingClientRect();
-        if (top - scrollMargin <= 1) {
+        if (top - getScrollMargin(el) <= 1) {
           nextActive = el.id;
         } else {
           break;
@@ -110,7 +103,7 @@ export function useSectionTracking({
         window.cancelAnimationFrame(rafId);
       }
     };
-  }, [sectionIds, scrollMarginPx]);
+  }, [sectionIds]);
 
   // Scroll to section with programmatic tracking
   const scrollToSection = useCallback((id: string) => {
@@ -132,4 +125,8 @@ export function useSectionTracking({
     activeSection,
     scrollToSection,
   };
+}
+
+function getScrollMargin(el: HTMLElement): number {
+  return Number.parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
 }

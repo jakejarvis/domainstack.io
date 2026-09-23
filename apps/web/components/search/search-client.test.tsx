@@ -56,6 +56,17 @@ describe("DomainSearch (form variant)", () => {
     useIsMobile.mockReturnValue(false);
   });
 
+  it("autofocuses the large search on desktop once hydrated", async () => {
+    await render(<SearchClient variant="lg" />);
+    await expect.element(domainSearchInput()).toHaveFocus();
+  });
+
+  it("does not autofocus on mobile", async () => {
+    useIsMobile.mockReturnValue(true);
+    await render(<SearchClient variant="lg" />);
+    await expect.element(domainSearchInput()).not.toHaveFocus();
+  });
+
   it("exposes a GET form for domain search", async () => {
     await render(<SearchClient variant="lg" />);
 

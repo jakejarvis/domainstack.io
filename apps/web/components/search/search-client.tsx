@@ -175,6 +175,15 @@ function useSearchClient({
     [externalInputRef],
   );
 
+  // autoFocus only applies when the element is created, and `mounted`/`isMobile` settle after
+  // hydration, so focus once they do (desktop only, and never over something already focused)
+  const shouldAutoFocus = variant === "lg" && mounted && !isMobile;
+  useEffect(() => {
+    if (shouldAutoFocus && document.activeElement === document.body) {
+      inputRef.current?.focus();
+    }
+  }, [shouldAutoFocus]);
+
   if (derivedInitial !== prevDerivedInitial) {
     setPrevDerivedInitial(derivedInitial);
     setValue(derivedInitial);
@@ -287,6 +296,7 @@ function useSearchClient({
     if (!isValidDomain(normalized)) {
       analytics.track("search_invalid_input", { input: value });
       toast.error("Please enter a valid domain.", {
+        id: `search-invalid-input-${value}`,
         icon: <IconCircleX className="size-4" />,
         position: "bottom-center",
       });
@@ -361,7 +371,6 @@ export function SearchClient({
               <InputGroupInput
                 ref={attachInputRef}
                 name="q"
-                autoFocus={variant === "lg" && mounted && !isMobile}
                 inputMode="url"
                 autoComplete="off"
                 autoCorrect="off"
@@ -376,7 +385,7 @@ export function SearchClient({
                 onFocus={handleFocus}
                 onClick={handleClick}
                 onKeyDown={handleKeyDown}
-                className="relative truncate sm:translate-y-[1px]"
+                className="relative truncate"
               />
 
               <InputGroupAddon>

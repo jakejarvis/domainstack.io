@@ -22,10 +22,8 @@ import { SectionFailedAlert } from "@/components/domain/section-failed-alert";
 import { SeoSection } from "@/components/domain/seo/seo-section";
 import { SeoSectionSkeleton } from "@/components/domain/seo/seo-section-skeleton";
 import { DomainUnregisteredCard } from "@/components/domain/unregistered-card";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { useSectionTracking } from "@/hooks/use-section-tracking";
 import { analytics } from "@/lib/analytics/client";
-import { HEADER_HEIGHT, SCROLL_PADDING, SECTION_NAV_HEIGHT } from "@/lib/constants/layout";
 import { getLookupErrorMessage } from "@/lib/constants/lookup-errors";
 import { sections } from "@/lib/constants/sections";
 import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
@@ -41,10 +39,7 @@ import {
   EmptyTitle,
 } from "@domainstack/ui/empty";
 
-function resolveScrollMargin(isMobile: boolean) {
-  const headerHeight = !isMobile ? HEADER_HEIGHT : 0;
-  return headerHeight + SECTION_NAV_HEIGHT + SCROLL_PADDING;
-}
+const SECTION_IDS = Object.keys(sections);
 
 function AllSkeletonsExceptRegistration() {
   return (
@@ -145,11 +140,7 @@ function useDomainReportTracking(domain: string, isRegistered: boolean) {
 
   const headerRef = useRef<HTMLDivElement>(null);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-  const isMobile = useIsMobile();
-  const { activeSection, scrollToSection } = useSectionTracking({
-    sectionIds: Object.keys(sections),
-    scrollMarginPx: resolveScrollMargin(isMobile),
-  });
+  const { activeSection, scrollToSection } = useSectionTracking(SECTION_IDS);
 
   useEffect(() => {
     const headerElement = headerRef.current;

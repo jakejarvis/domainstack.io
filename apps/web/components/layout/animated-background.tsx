@@ -1,32 +1,27 @@
 "use client";
 
-import {
-  type MotionProps,
-  type TargetAndTransition,
-  type Transition,
-  useReducedMotion,
-} from "motion/react";
-import * as m from "motion/react-m";
 import { useId, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { StaticBackground } from "@/components/layout/static-background";
 import { useIsClient } from "@/hooks/use-is-client";
+import { useMediaQuery } from "@domainstack/ui/hooks";
 
 /**
  * Animated gradient background with organic, drifting motion.
  * Uses varying animation durations and phases for a less predictable feel.
- * Respects prefers-reduced-motion for accessibility.
+ * Each blob's random walk becomes a CSS @keyframes rule animating only transform and opacity,
+ * so it runs off the main thread. Respects prefers-reduced-motion for accessibility.
  */
 export function AnimatedBackground() {
-  const shouldReduceMotion = useReducedMotion();
+  const shouldReduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   const baseId = useId();
 
   const mounted = useIsClient();
-  const [blobParams, setBlobParams] = useState<BlobParams[] | null>(null);
+  const [blobs, setBlobs] = useState<Blob[] | null>(null);
   // Generate randomness only after hydration to keep SSR/prerender deterministic.
-  if (mounted && blobParams === null) {
-    setBlobParams(generateBlobParams(createClientRand(), baseId));
+  if (mounted && blobs === null) {
+    setBlobs(generateBlobs(createClientRand(), baseId));
   }
 
   if (!mounted) return null;
@@ -38,37 +33,24 @@ export function AnimatedBackground() {
       data-slot="portal-background"
       className="pointer-events-none fixed top-0 left-0 -z-10 h-[100lvh] w-full overflow-hidden"
     >
-      {/* Base gradient layer */}
       <div className="absolute inset-0 bg-gradient-to-br from-accent-blue/10 via-transparent to-accent-purple/10 dark:from-accent-blue/5 dark:to-accent-purple/5" />
-
-      {/* Lava-lamp blobs: randomized paths + irregular timing (stable within a mount). */}
-      {blobParams?.map((b) => (
-        <m.div
-          key={b.key}
-          className={b.className}
-          initial={b.initial}
-          animate={b.motion}
-          transition={b.transition}
-        />
-      )) ?? null}
+      {blobs && <style>{blobs.map((b) => b.keyframes).join("\n")}</style>}
+      {blobs?.map((b) => (
+        <div key={b.name} className={b.className} style={b.style} />
+      ))}
     </div>,
     document.body,
   );
 }
 
-type BlobParams = Readonly<{
-  key: string;
+type Blob = Readonly<{
+  name: string;
   className: string;
-  initial: MotionInitial;
-  motion: MotionAnimate;
-  transition: MotionTransition;
+  keyframes: string;
+  style: React.CSSProperties;
 }>;
 
-type MotionInitial = NonNullable<MotionProps["initial"]>;
-type MotionAnimate = TargetAndTransition;
-type MotionTransition = Transition;
-
-function generateBlobParams(rand: () => number, baseId: string): BlobParams[] {
+function generateBlobs(rand: () => number, baseId: string): Blob[] {
   const layerStyles = [
     "h-[28rem] w-[28rem] bg-accent-blue/16 dark:bg-accent-blue/10 blur-3xl mix-blend-multiply",
     "h-[26rem] w-[26rem] bg-accent-purple/16 dark:bg-accent-purple/10 blur-3xl mix-blend-multiply",
@@ -77,7 +59,8 @@ function generateBlobParams(rand: () => number, baseId: string): BlobParams[] {
     "h-[18rem] w-[18rem] bg-accent-blue/9 dark:bg-accent-blue/5 blur-3xl mix-blend-multiply",
   ] as const;
 
-  const keySuffixes = ["a", "b", "c", "d", "e"] as const;
+  // useId output isn't a valid CSS identifier
+  const idPrefix = `blob-${baseId.replace(/[^\w-]/g, "")}`;
 
   return layerStyles.map((layerClass, idx) => {
     const startX = randRange(rand, 12, 78);
@@ -85,8 +68,8 @@ function generateBlobParams(rand: () => number, baseId: string): BlobParams[] {
     const drift = randRange(rand, 10, 26);
     const steps = randInt(rand, 6, 10);
 
-    const x = randomWalkKeyframes(rand, startX, drift, steps, 6, 94).map((v) => `${v}vw`);
-    const y = randomWalkKeyframes(rand, startY, drift, steps, 6, 94).map((v) => `${v}vh`);
+    const x = randomWalkKeyframes(rand, startX, drift, steps, 6, 94);
+    const y = randomWalkKeyframes(rand, startY, drift, steps, 6, 94);
     const scale = randomWalkKeyframes(rand, 1, 0.18, steps, 0.82, 1.28);
     const rotate = randomWalkKeyframes(rand, randRange(rand, -6, 6), 12, steps, -18, 18);
     const opacityBase = 0.45 + idx * 0.06;
@@ -96,38 +79,23 @@ function generateBlobParams(rand: () => number, baseId: string): BlobParams[] {
     const duration = randRange(rand, 18, 42) + idx * randRange(rand, 1, 4);
     const delay = randRange(rand, 0, 6);
 
-    const motionTarget = {
-      x,
-      y,
-      scale,
-      rotate,
-      opacity,
-    } satisfies MotionAnimate;
-
-    const transition = {
-      duration,
-      delay,
-      ease: "easeInOut",
-      times,
-      repeat: Infinity,
-      repeatType: "mirror",
-    } satisfies MotionTransition;
-
-    const initial = {
-      x: `${startX}vw`,
-      y: `${startY}vh`,
-      scale: 1,
-      rotate: 0,
-      opacity: opacityBase,
-    } satisfies MotionInitial;
+    const name = `${idPrefix}-${idx}`;
+    const frames = times
+      .map(
+        (t, i) =>
+          `${(t * 100).toFixed(2)}%{transform:translate(${x[i]}vw,${y[i]}vh) scale(${scale[i]}) rotate(${rotate[i]}deg);opacity:${opacity[i]}}`,
+      )
+      .join("");
 
     return {
-      key: `${baseId}-${keySuffixes[idx] ?? idx}`,
-      className: `absolute rounded-full will-change-transform ${layerClass}`,
-      motion: motionTarget,
-      transition,
-      initial,
-    } satisfies BlobParams;
+      name,
+      className: `absolute top-0 left-0 rounded-full will-change-transform ${layerClass}`,
+      keyframes: `@keyframes ${name}{${frames}}`,
+      style: {
+        // before the delay elapses, the backwards fill holds the first keyframe (the start point)
+        animation: `${name} ${duration}s ease-in-out ${delay}s infinite alternate both`,
+      },
+    } satisfies Blob;
   });
 }
 

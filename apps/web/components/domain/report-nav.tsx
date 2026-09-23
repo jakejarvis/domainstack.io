@@ -3,7 +3,6 @@
 import { useEffect, useRef } from "react";
 
 import { Favicon } from "@/components/icons/favicon";
-import { useScrollDirection } from "@/hooks/use-scroll-direction";
 import type { SectionDef } from "@/lib/constants/sections";
 import { Button } from "@domainstack/ui/button";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
@@ -22,8 +21,8 @@ interface SectionNavProps {
  * When the page header scrolls out of view, the domain name and track button
  * fade into the left side of the nav bar.
  *
- * Desktop: Sticks below global header (always visible)
- * Mobile: Adjusts position based on global header visibility (scroll direction)
+ * Sticks below the global header. On mobile it follows the header's `data-scrolled-away`
+ * with the same timing: snaps up when the header hides, slides back down with it.
  */
 export function SectionNav({
   domain,
@@ -33,26 +32,23 @@ export function SectionNav({
   onSectionClick,
 }: SectionNavProps) {
   const navRef = useRef<HTMLElement>(null);
-  const { direction, isPastThreshold } = useScrollDirection({
-    threshold: 15,
-  });
 
-  // On mobile past threshold: header hidden when scrolling down, visible when up
-  const isGlobalHeaderHidden = isPastThreshold && direction === "down";
-
-  // Auto-scroll active tab into view
+  // scrolls only the tab strip; scrollIntoView would also touch the window and can cancel
+  // the smooth page scroll a tab click just started
   useEffect(() => {
-    const nav = navRef.current;
-    if (!nav) return;
+    const viewport = navRef.current?.querySelector("[data-slot=scroll-area-viewport]");
+    const activeTab = navRef.current?.querySelector(`[data-section="${activeSection}"]`);
+    if (!(viewport instanceof HTMLElement) || !(activeTab instanceof HTMLElement)) return;
 
-    const activeTab = nav.querySelector(`[data-section="${activeSection}"]`);
-    if (!(activeTab instanceof HTMLElement)) return;
-
-    // Simple: just scroll the button into view, centered
-    activeTab.scrollIntoView({
+    const tabRect = activeTab.getBoundingClientRect();
+    const viewportRect = viewport.getBoundingClientRect();
+    viewport.scrollTo({
+      left:
+        viewport.scrollLeft +
+        tabRect.left -
+        viewportRect.left -
+        (viewportRect.width - tabRect.width) / 2,
       behavior: "smooth",
-      block: "nearest",
-      inline: "center",
     });
   }, [activeSection]);
 
@@ -61,17 +57,9 @@ export function SectionNav({
       ref={navRef}
       aria-label="Section navigation"
       className={cn(
-        "sticky z-40 -mx-4 mt-4 mb-4 px-4",
-        // Mobile: position follows header visibility
-        // Before threshold: stick to top naturally (global header scrolls away)
-        // Past threshold: transition between top-0 (header hidden) and header height (header visible)
-        isPastThreshold
-          ? isGlobalHeaderHidden
-            ? "top-0 transition-[top] duration-300 ease-out"
-            : "top-[var(--header-height)] transition-[top] duration-300 ease-out"
-          : "top-0",
-        // Desktop: always below sticky global header (no mobile behavior)
-        "md:!top-[var(--header-height)] md:!transition-none",
+        "sticky top-[var(--header-height)] z-40 -mx-4 mt-4 mb-4 px-4",
+        "transition-[translate] duration-300 ease-out motion-reduce:transition-none md:transition-none",
+        "max-md:[:root:has(header[data-scrolled-away=true])_&]:-translate-y-[var(--header-height)] max-md:[:root:has(header[data-scrolled-away=true])_&]:transition-none",
       )}
     >
       <div
