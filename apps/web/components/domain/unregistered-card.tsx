@@ -24,7 +24,7 @@ export function DomainUnregisteredCard({ domain }: DomainUnregisteredCardProps) 
   const canShowRegistrarLinks = !isNonPublicTld && tld;
 
   return (
-    <Card className="relative overflow-hidden p-8 text-center">
+    <Card className="relative overflow-hidden px-6 text-center">
       <div
         aria-hidden
         className="pointer-events-none absolute -inset-x-35 -top-35 h-85 glow-accent-indigo/15"

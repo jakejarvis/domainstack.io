@@ -26,8 +26,8 @@ export function SeoSectionSkeleton() {
           <div className="text-[11px] tracking-[0.08em] text-foreground/70 uppercase dark:text-foreground/80">
             Open Graph
           </div>
-          {/* TabsList is h-11 w-full with default variant chrome */}
-          <div className="flex h-11 w-full items-center gap-1 rounded-lg border bg-muted/40 p-1">
+          {/* TabsList is h-9 w-full with default variant chrome */}
+          <div className="flex h-9 w-full items-center gap-1 rounded-lg border bg-muted/40 p-1">
             {[1, 2, 3, 4, 5].map((id) => (
               <Skeleton key={`og-tab-${id}`} className="h-full flex-1 basis-0 rounded-md" />
             ))}
@@ -54,7 +54,7 @@ export function SeoSectionSkeleton() {
           </div>
         </div>
 
-        <div className="space-y-4 rounded-xl">
+        <div className="space-y-4">
           <div className="mt-5 flex items-center gap-2 text-[11px] leading-none tracking-[0.08em] text-foreground/70 uppercase dark:text-foreground/80">
             robots.txt
             <PillCountSkeleton />
@@ -62,7 +62,7 @@ export function SeoSectionSkeleton() {
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <Skeleton className="h-9 w-full rounded-md sm:flex-1" />
-            <div className="flex h-9 w-full items-stretch gap-1 rounded-lg border bg-muted/50 p-1 sm:w-auto [&>*]:flex-1 sm:[&>*]:flex-none">
+            <div className="flex h-9 w-full items-stretch gap-1 rounded-lg border bg-muted/40 p-1 sm:w-auto [&>*]:flex-1 sm:[&>*]:flex-none">
               <Skeleton className="h-full rounded-md sm:w-[4.5rem]" />
               <Skeleton className="h-full rounded-md sm:w-[5.5rem]" />
               <Skeleton className="h-full rounded-md sm:w-[6.75rem]" />

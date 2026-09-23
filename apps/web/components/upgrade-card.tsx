@@ -13,7 +13,7 @@ export function UpgradeCard({ className }: UpgradeCardProps) {
   return (
     <div
       className={cn(
-        "space-y-3 rounded-xl border border-accent-gold/25 bg-background bg-linear-to-bl from-accent-gold/10 to-transparent to-60% p-4",
+        "space-y-3 rounded-lg border border-accent-gold/25 bg-background bg-linear-to-bl from-accent-gold/10 to-transparent to-60% p-4",
         className,
       )}
     >

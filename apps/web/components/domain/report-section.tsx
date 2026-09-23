@@ -59,7 +59,7 @@ export function ReportSection({
       // scroll-mt accounts for sticky headers: mobile (sub-nav only) / desktop (global + sub-nav)
       className="scroll-mt-[calc(var(--section-nav-height)+var(--scroll-padding))] border-none md:scroll-mt-[calc(var(--header-height)+var(--section-nav-height)+var(--scroll-padding))]"
     >
-      <Card className="relative gap-0 overflow-hidden rounded-xl py-0">
+      <Card className="relative gap-0 overflow-hidden py-0">
         <div
           aria-hidden
           className={cn(
@@ -68,7 +68,7 @@ export function ReportSection({
           )}
         />
         <div className="relative">
-          <div className="p-5" id={headerId}>
+          <div className="p-6" id={headerId}>
             <div className="flex w-full items-center gap-2 text-left">
               {IconComponent && (
                 <Icon size="sm" className="rounded-full">
@@ -110,7 +110,7 @@ export function ReportSection({
         </div>
         {children && (
           <div id={contentId}>
-            <CardContent className="space-y-2 px-5 pt-0 pb-5">{children}</CardContent>
+            <CardContent className="space-y-2 pb-6">{children}</CardContent>
           </div>
         )}
       </Card>

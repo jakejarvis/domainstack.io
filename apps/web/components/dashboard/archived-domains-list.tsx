@@ -37,7 +37,7 @@ export function ArchivedDomainsList({ domains }: ArchivedDomainsListProps) {
 
   if (domains.length === 0) {
     return (
-      <Empty className="rounded-xl border bg-background">
+      <Empty className="rounded-xl border bg-background shadow-sm">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <IconArchive className="size-6" />

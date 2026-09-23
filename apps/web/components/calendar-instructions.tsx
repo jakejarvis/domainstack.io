@@ -118,7 +118,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
         {feed.enabled ? (
           <div className="space-y-4">
             {/* Security warning */}
-            <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-amber-700 dark:text-amber-400">
+            <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-amber-700 dark:text-amber-400">
               <IconShieldLock className="size-4 shrink-0 translate-y-[4px]" />
               <div className="space-y-1 text-[13px]">
                 <p className="my-0.5 font-semibold">Treat this URL like a password!</p>

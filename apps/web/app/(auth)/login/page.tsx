@@ -12,7 +12,7 @@ export const metadata: Metadata = createMetadata({
 
 export default function LoginPage() {
   return (
-    <Card className="w-full max-w-md overflow-hidden rounded-xl px-6 py-8">
+    <Card className="w-full max-w-md overflow-hidden px-6">
       <LoginContent />
     </Card>
   );

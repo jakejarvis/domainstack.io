@@ -12,7 +12,7 @@ export function LoginModalClient() {
   const [open, setOpen] = useState(true);
   return (
     <Modal open={open}>
-      <ModalContent className="!max-w-md px-5 py-6">
+      <ModalContent className="!max-w-md p-6">
         <Suspense fallback={<LoginSkeleton />}>
           <AuthorizedLoginContent onNavigate={() => setOpen(false)} />
         </Suspense>

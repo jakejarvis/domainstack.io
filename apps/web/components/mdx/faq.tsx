@@ -9,7 +9,7 @@ export function FaqSection({ title, children }: { title: string; children: React
   return (
     <section>
       <h2>{title}</h2>
-      <Accordion className="w-full rounded-lg border bg-muted/20">{children}</Accordion>
+      <Accordion className="w-full rounded-lg border bg-card/60">{children}</Accordion>
     </section>
   );
 }

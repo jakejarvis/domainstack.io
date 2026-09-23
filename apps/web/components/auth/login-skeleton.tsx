@@ -33,7 +33,7 @@ export function LoginSkeleton() {
 
 export function LoginSkeletonWithCard() {
   return (
-    <Card className="w-full max-w-md overflow-hidden rounded-xl px-6 py-8">
+    <Card className="w-full max-w-md overflow-hidden px-6">
       <LoginSkeleton />
     </Card>
   );

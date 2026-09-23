@@ -361,7 +361,7 @@ export const DashboardGridCard = memo(function DashboardGridCard({
         aria-hidden
       />
 
-      <Card className="relative flex h-full flex-col overflow-hidden rounded-xl py-0">
+      <Card className="relative flex h-full flex-col overflow-hidden py-0">
         <div
           aria-hidden
           className={cn(
@@ -439,7 +439,7 @@ function InfoRow({
   );
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border bg-card/60 px-3 py-2">
+    <div className="flex items-center justify-between gap-3 rounded-lg border bg-card/60 px-3 py-2">
       <span className="flex shrink-0 items-center text-[10px] leading-[1.2] tracking-[0.08em] text-foreground/75 uppercase dark:text-foreground/80">
         {label}
       </span>

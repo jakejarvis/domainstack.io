@@ -29,7 +29,7 @@ export function SubscriptionSkeleton({ className }: { className?: string }) {
       <SettingsCardHeaderSkeleton titleClassName="w-12" descriptionClassName="w-64" />
       <CardContent className="space-y-4 px-0">
         {/* Current plan card — matches PlanStatusCard */}
-        <div className="flex items-center justify-between rounded-xl border bg-card/60 p-4">
+        <div className="flex items-center justify-between rounded-lg border bg-card/60 p-4">
           <div className="space-y-1.5">
             <Skeleton className="h-5 w-20" />
             <Skeleton className="h-4 w-36" />
@@ -38,7 +38,7 @@ export function SubscriptionSkeleton({ className }: { className?: string }) {
         </div>
 
         {/* Pro upgrade section — default Free-plan loaded UI */}
-        <div className="space-y-3 rounded-xl border border-accent-gold/25 bg-background bg-linear-to-bl from-accent-gold/10 to-transparent to-60% p-4">
+        <div className="space-y-3 rounded-lg border border-accent-gold/25 bg-background bg-linear-to-bl from-accent-gold/10 to-transparent to-60% p-4">
           <Skeleton className="h-5 w-12" />
           <div className="space-y-1.5">
             <Skeleton className="h-4 w-44" />
@@ -48,7 +48,7 @@ export function SubscriptionSkeleton({ className }: { className?: string }) {
           <div className="flex items-center gap-2 pt-1">
             <Skeleton className="h-4 w-30" />
           </div>
-          <Skeleton className="mt-1 h-10 w-full rounded-lg" />
+          <Skeleton className="mt-1 h-9 w-full" />
         </div>
       </CardContent>
     </div>
