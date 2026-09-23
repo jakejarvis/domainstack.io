@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
-import { StaticBackground } from "@/components/layout/static-background";
 import { SettingsPageSkeleton } from "@/components/settings/settings-skeleton";
 import { getServerSession } from "@/lib/auth/session";
 import { createMetadata } from "@/lib/seo";
@@ -29,13 +28,10 @@ async function ProtectedSettingsLayout({ children }: { children: React.ReactNode
 
 export default function SettingsLayout({ children }: LayoutProps<"/settings">) {
   return (
-    <>
-      <StaticBackground />
-      <div className="container mx-auto max-w-3xl px-4 py-8">
-        <Suspense fallback={<SettingsPageSkeleton />}>
-          <ProtectedSettingsLayout>{children}</ProtectedSettingsLayout>
-        </Suspense>
-      </div>
-    </>
+    <div className="container mx-auto max-w-3xl px-4 py-8">
+      <Suspense fallback={<SettingsPageSkeleton />}>
+        <ProtectedSettingsLayout>{children}</ProtectedSettingsLayout>
+      </Suspense>
+    </div>
   );
 }

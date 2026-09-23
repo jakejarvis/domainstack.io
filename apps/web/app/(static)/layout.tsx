@@ -1,11 +1,8 @@
-import { StaticBackground } from "@/components/layout/static-background";
 import { cn } from "@domainstack/ui/utils";
 
 export default function StaticLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative flex-1">
-      <StaticBackground />
-
       <div className="container mx-auto px-3 py-8 md:px-5 md:py-12">
         {/* Glassmorphism card container */}
         <div className="mx-auto max-w-3xl rounded-xl border border-black/10 bg-background/80 p-6 shadow-xl backdrop-blur-xl sm:p-8 md:p-10 dark:border-white/10">

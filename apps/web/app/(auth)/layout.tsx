@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { LoginSkeletonWithCard } from "@/components/auth/login-skeleton";
-import { AnimatedBackground } from "@/components/layout/animated-background";
 import { getServerSession } from "@/lib/auth/session";
 
 async function RedirectAuthenticatedLayout({ children }: { children: React.ReactNode }) {
@@ -17,13 +16,10 @@ async function RedirectAuthenticatedLayout({ children }: { children: React.React
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
-      <AnimatedBackground />
-      <div className="flex flex-1 items-center justify-center p-4">
-        <Suspense fallback={<LoginSkeletonWithCard />}>
-          <RedirectAuthenticatedLayout>{children}</RedirectAuthenticatedLayout>
-        </Suspense>
-      </div>
-    </>
+    <div className="flex flex-1 items-center justify-center p-4">
+      <Suspense fallback={<LoginSkeletonWithCard />}>
+        <RedirectAuthenticatedLayout>{children}</RedirectAuthenticatedLayout>
+      </Suspense>
+    </div>
   );
 }
