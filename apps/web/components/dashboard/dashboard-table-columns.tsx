@@ -141,7 +141,7 @@ function DateCell({ date }: { date: Date }) {
   }
 
   return (
-    <div className="text-[13px] whitespace-nowrap">
+    <div className="text-[13px] whitespace-nowrap tabular-nums">
       <ResponsiveTooltip>
         <ResponsiveTooltipTrigger
           nativeButton={false}

@@ -2,8 +2,6 @@
 
 import { IconCheck, IconCircleX, IconClipboardCheck, IconCopy } from "@tabler/icons-react";
 import clipboardCopy from "clipboard-copy";
-import { AnimatePresence, useReducedMotion } from "motion/react";
-import * as m from "motion/react-m";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -23,7 +21,6 @@ export function CopyButton({
   size = "icon-sm",
   className,
 }: CopyButtonProps) {
-  const shouldReduceMotion = useReducedMotion();
   const [copied, setCopied] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -79,31 +76,28 @@ export function CopyButton({
       aria-label={copied ? "Copied" : "Copy to clipboard"}
       onClick={handleCopy}
     >
-      <AnimatePresence mode="wait" initial={false}>
-        {copied ? (
-          <m.span
-            key="check"
-            initial={shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }}
-            transition={{ duration: shouldReduceMotion ? 0.1 : 0.15 }}
-            className="flex items-center justify-center"
-          >
-            <IconCheck className="text-accent-green" />
-          </m.span>
-        ) : (
-          <m.span
-            key="clipboard"
-            initial={shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }}
-            transition={{ duration: shouldReduceMotion ? 0.1 : 0.15 }}
-            className="flex items-center justify-center"
-          >
-            <IconCopy />
-          </m.span>
-        )}
-      </AnimatePresence>
+      <span className="grid place-items-center">
+        <span
+          className={cn(
+            "col-start-1 row-start-1 flex items-center justify-center transition-[opacity,scale] duration-150 ease-out motion-reduce:transition-opacity motion-reduce:duration-100",
+            copied
+              ? "scale-100 opacity-100 delay-150 motion-reduce:delay-100"
+              : "scale-50 opacity-0",
+          )}
+        >
+          <IconCheck className="text-accent-green" />
+        </span>
+        <span
+          className={cn(
+            "col-start-1 row-start-1 flex items-center justify-center transition-[opacity,scale] duration-150 ease-out motion-reduce:transition-opacity motion-reduce:duration-100",
+            copied
+              ? "scale-50 opacity-0"
+              : "scale-100 opacity-100 delay-150 motion-reduce:delay-100",
+          )}
+        >
+          <IconCopy />
+        </span>
+      </span>
       {showLabel && "Copy"}
     </Button>
   );

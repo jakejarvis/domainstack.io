@@ -11,15 +11,17 @@ export default function LandingLoading() {
             registration, DNS records, hosting, email, SEO, certificates, and more.
           </span>
           <span
-            className="ml-2.5 inline-flex items-center rounded-lg bg-muted/40 px-2 py-0.5 text-foreground shadow-sm ring-1 ring-ring/20 sm:rounded-md sm:px-3 sm:py-1"
+            className="relative inline-flex items-center px-2 py-0.5 text-foreground sm:ml-2.5 sm:px-3 sm:py-1"
             aria-hidden
           >
+            {/* the hero's three-sliced pill, at rest */}
+            <span className="absolute -inset-px rounded-lg border border-ring/20 bg-muted/40 shadow-[0_1px_0_rgb(0_0_0/0.05)] sm:rounded-md" />
             <span className="relative flex h-[1.15em] w-full items-center overflow-hidden whitespace-nowrap">
               <span className="inline-block before:content-['registration']" />
             </span>
           </span>
           <span
-            className="hidden whitespace-nowrap text-foreground/90 before:content-['.'] sm:inline"
+            className="hidden whitespace-nowrap text-foreground/90 before:content-['.'] sm:inline-block"
             aria-hidden
           />
         </h1>

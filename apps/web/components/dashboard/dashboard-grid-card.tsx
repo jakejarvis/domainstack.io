@@ -108,7 +108,7 @@ function ExpiresInfoRow({
           nativeButton={false}
           render={
             <time
-              className="truncate"
+              className="truncate tabular-nums"
               dateTime={toDateTimeAttr(expirationDate)}
               suppressHydrationWarning
             >
@@ -123,7 +123,7 @@ function ExpiresInfoRow({
         </ResponsiveTooltipContent>
       </ResponsiveTooltip>
       {showRelative ? (
-        <span className="shrink-0 text-[11px] leading-none text-muted-foreground">
+        <span className="shrink-0 text-[11px] leading-none text-muted-foreground tabular-nums">
           <RelativeExpiryString to={expirationDate} dangerDays={30} warnDays={45} />
         </span>
       ) : null}
@@ -439,7 +439,7 @@ function InfoRow({
   );
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border bg-muted/40 px-3 py-2">
+    <div className="flex items-center justify-between gap-3 rounded-xl border bg-foreground/2.5 px-3 py-2">
       <span className="flex shrink-0 items-center text-[10px] leading-[1.2] tracking-[0.08em] text-foreground/75 uppercase dark:text-foreground/80">
         {label}
       </span>

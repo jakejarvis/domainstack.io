@@ -10,7 +10,7 @@ catalog:
   '@opentelemetry/sdk-logs': ^0.222.0
   '@opentelemetry/sdk-metrics': ^2.11.0
   '@opentelemetry/sdk-trace-base': ^2.11.0
-  '@tabler/icons-react': ^3.47.0
+  '@tabler/icons-react': ^3.48.0
   '@trpc/client': ^11.19.0
   '@trpc/server': ^11.19.0
   '@trpc/tanstack-react-query': ^11.19.0
@@ -19,7 +19,6 @@ catalog:
   '@types/react-dom': 19.3.0
   '@vercel/functions': ^3.9.8
   ipaddr.js: ^2.5.0
-  motion: ^13.4.0
   msw: ^2.15.0
   rdapper: ^0.16.4
   sonner: ^2.0.8

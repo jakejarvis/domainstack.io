@@ -13,7 +13,10 @@ export function McpToolList() {
   return (
     <div className="mt-6 space-y-6">
       {MCP_TOOLS.map((tool) => (
-        <div key={tool.name} className="not-prose space-y-3 rounded-lg border bg-muted/20 p-4">
+        <div
+          key={tool.name}
+          className="not-prose space-y-3 rounded-lg border bg-foreground/2.5 p-4"
+        >
           <h3 className="font-mono text-[15px]">{tool.name}</h3>
           <p className="text-sm leading-relaxed text-muted-foreground">{tool.description}</p>
           <div>

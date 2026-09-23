@@ -6,6 +6,8 @@ import * as m from "motion/react-m";
 import Link from "next/link";
 
 import { useAnnouncement } from "@/lib/stores/ui-store";
+import { Button } from "@domainstack/ui/button";
+import { Separator } from "@domainstack/ui/separator";
 
 export function AnnouncementPill() {
   const shouldReduceMotion = useReducedMotion();
@@ -50,16 +52,17 @@ export function AnnouncementPill() {
               <IconArrowUpRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-[1px] group-hover:-translate-y-[1px]" />
             </Link>
 
-            <div className="h-4 w-px bg-black/10 dark:bg-white/10" />
+            <Separator orientation="vertical" className="data-[orientation=vertical]:h-4" />
 
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon-xs"
               onClick={handleDismiss}
-              className="cursor-pointer rounded-full p-1.5 pr-2.5 text-muted-foreground/50 transition-colors hover:text-muted-foreground"
+              className="mx-1 rounded-full text-muted-foreground/50 hover:text-muted-foreground"
               aria-label="Dismiss announcement"
             >
               <IconX className="size-3.5" />
-            </button>
+            </Button>
           </div>
         </m.div>
       )}

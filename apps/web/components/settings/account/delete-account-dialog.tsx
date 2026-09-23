@@ -1,8 +1,14 @@
-import { IconAlertTriangle, IconCheck, IconHeartBroken } from "@tabler/icons-react";
+import {
+  IconAlertCircle,
+  IconAlertTriangle,
+  IconCheck,
+  IconHeartBroken,
+} from "@tabler/icons-react";
 import { useCallback, useReducer } from "react";
 
 import { useAnalytics } from "@/lib/analytics/client";
 import { deleteUser } from "@domainstack/auth/client";
+import { Alert, AlertDescription, AlertTitle } from "@domainstack/ui/alert";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -150,30 +156,28 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
             </AlertDialogHeader>
 
             <div className="space-y-3">
-              <div className="space-y-2 rounded-lg border border-destructive/20 bg-destructive/5 p-4 text-sm">
-                <p className="mb-3">
-                  The following data will be{" "}
-                  <span className="font-medium">permanently deleted:</span>
-                </p>
-                <ul className="list-disc space-y-2 pl-4 text-foreground/80 marker:text-destructive">
-                  <li>All your tracked domains</li>
-                  <li>Notification preferences</li>
-                  <li>Subscription data</li>
-                  <li>Account information</li>
-                </ul>
-              </div>
+              <Alert variant="destructive">
+                <AlertTitle>The following data will be permanently deleted:</AlertTitle>
+                <AlertDescription>
+                  <ul className="list-disc space-y-1 pl-4 marker:text-destructive">
+                    <li>All your tracked domains</li>
+                    <li>Notification preferences</li>
+                    <li>Subscription data</li>
+                    <li>Account information</li>
+                  </ul>
+                </AlertDescription>
+              </Alert>
               <p className="text-center text-[13px] text-muted-foreground">
                 You will receive an email with a link to confirm this action.
               </p>
             </div>
 
             {errorMessage && (
-              <div
-                role="alert"
-                className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-              >
-                {errorMessage}
-              </div>
+              <Alert variant="destructive">
+                <IconAlertCircle aria-hidden="true" />
+                <AlertTitle>Couldn&apos;t delete your account</AlertTitle>
+                <AlertDescription>{errorMessage}</AlertDescription>
+              </Alert>
             )}
 
             <AlertDialogFooter>

@@ -6,10 +6,10 @@ import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
 
 const GLOW_COLORS = {
-  info: { primary: "glow-accent-blue/6", secondary: "glow-accent-blue/4" },
-  warning: { primary: "glow-accent-orange/6", secondary: "glow-accent-orange/4" },
-  success: { primary: "glow-accent-green/6", secondary: "glow-accent-green/4" },
-  danger: { primary: "glow-accent-red/6", secondary: "glow-accent-red/4" },
+  info: "glow-accent-blue/6",
+  warning: "glow-accent-orange/6",
+  success: "glow-accent-green/6",
+  danger: "glow-accent-red/6",
 };
 
 const ICON_COLORS = {
@@ -117,14 +117,14 @@ export function DashboardBanner({
         aria-hidden
         className={cn(
           "pointer-events-none absolute -top-54 -right-50 size-108",
-          GLOW_COLORS[variant].primary,
+          GLOW_COLORS[variant],
         )}
       />
       <div
         aria-hidden
         className={cn(
           "pointer-events-none absolute -bottom-50 -left-22 size-100",
-          GLOW_COLORS[variant].secondary,
+          GLOW_COLORS[variant],
         )}
       />
 

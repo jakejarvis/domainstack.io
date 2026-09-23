@@ -24,7 +24,7 @@ export function PlanStatusCard({
   return (
     <div
       className={cn(
-        "flex items-center justify-between rounded-xl border bg-muted/30 p-4",
+        "flex items-center justify-between rounded-xl border bg-foreground/2.5 p-4",
         className,
       )}
     >

@@ -21,6 +21,7 @@ import {
 import { DEFAULT_SORT, parseSortParam, serializeSortState } from "@/lib/dashboard-utils";
 import { useDashboardColumnVisibility, usePreferencesStore } from "@/lib/stores/preferences-store";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
+import { Card } from "@domainstack/ui/card";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
 import { cn } from "@domainstack/ui/utils";
 
@@ -116,7 +117,7 @@ export function DashboardTable({ domains }: DashboardTableProps) {
   const table = useTable<DashboardTableFeatures, TrackedDomainWithDetails>(tableOptions);
 
   return (
-    <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+    <Card className="gap-0 overflow-hidden py-0">
       <ScrollArea className="w-full">
         <table className="w-full text-[13px]" style={{ tableLayout: "fixed" }}>
           <colgroup>
@@ -237,6 +238,6 @@ export function DashboardTable({ domains }: DashboardTableProps) {
 
       {/* Upgrade CTA banner for free tier users */}
       {<UpgradeRow />}
-    </div>
+    </Card>
   );
 }

@@ -14,7 +14,7 @@ export function GridUpgradeCard() {
   }
 
   return (
-    <Card className="flex h-full flex-col rounded-xl border-accent-gold/25 bg-card bg-linear-to-bl from-accent-gold/10 to-transparent to-60% py-0">
+    <Card className="flex h-full flex-col rounded-xl border-accent-gold/25 bg-background bg-linear-to-bl from-accent-gold/10 to-transparent to-60% py-0">
       <CardContent className="flex h-full flex-1 flex-col items-center gap-6 p-6 text-center">
         <div className="flex h-full flex-1 flex-col items-center justify-center">
           <div className="mb-4 flex size-14 items-center justify-center rounded-xl bg-accent-gold/10 ring-1 ring-accent-gold/20 ring-inset">

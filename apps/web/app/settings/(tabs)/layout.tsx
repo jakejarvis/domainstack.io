@@ -26,7 +26,7 @@ export default async function SettingsTabsLayout() {
         </div>
 
         {/* chromeless on phones, where a card inside the page gutter is just a nested frame */}
-        <div className="sm:overflow-hidden sm:rounded-xl sm:border sm:bg-card sm:p-3 sm:text-card-foreground sm:shadow-sm [&_[data-slot=tabs-content]]:mt-2 sm:[&_[data-slot=tabs-content]]:p-2">
+        <div className="sm:overflow-hidden sm:rounded-xl sm:border sm:bg-background sm:p-3 sm:shadow-sm [&_[data-slot=tabs-content]]:mt-2 sm:[&_[data-slot=tabs-content]]:p-2">
           <SettingsTabsRouter navigationMode="page" />
         </div>
       </div>

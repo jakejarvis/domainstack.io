@@ -20,7 +20,7 @@
     "@base-ui/react": "^1.8.0",
     "@shadcn/react": "^0.3.1",
     "clipboard-copy": "^4.0.1",
-    "cn": "^0.3.2",
+    "cn": "^0.4.0",
     "cva": "^1.0.0-beta.12"
   },
   "devDependencies": {
@@ -28,13 +28,11 @@
     "@tabler/icons-react": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "motion": "catalog:",
     "shadcn": "^4.21.0",
     "sonner": "catalog:"
   },
   "peerDependencies": {
     "@tabler/icons-react": "^3",
-    "motion": "^13",
     "react": ">=19",
     "react-dom": ">=19",
     "sonner": "^2"

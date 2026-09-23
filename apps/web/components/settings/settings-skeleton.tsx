@@ -29,7 +29,7 @@ export function SubscriptionSkeleton({ className }: { className?: string }) {
       <SettingsCardHeaderSkeleton titleClassName="w-12" descriptionClassName="w-64" />
       <CardContent className="space-y-4 px-0">
         {/* Current plan card — matches PlanStatusCard */}
-        <div className="flex items-center justify-between rounded-xl border bg-muted/30 p-4">
+        <div className="flex items-center justify-between rounded-xl border bg-foreground/2.5 p-4">
           <div className="space-y-1.5">
             <Skeleton className="h-5 w-20" />
             <Skeleton className="h-4 w-36" />
@@ -38,7 +38,7 @@ export function SubscriptionSkeleton({ className }: { className?: string }) {
         </div>
 
         {/* Pro upgrade section — default Free-plan loaded UI */}
-        <div className="space-y-3 rounded-xl border border-accent-gold/25 bg-card bg-linear-to-bl from-accent-gold/10 to-transparent to-60% p-4">
+        <div className="space-y-3 rounded-xl border border-accent-gold/25 bg-background bg-linear-to-bl from-accent-gold/10 to-transparent to-60% p-4">
           <Skeleton className="h-5 w-12" />
           <div className="space-y-1.5">
             <Skeleton className="h-4 w-44" />
@@ -262,7 +262,7 @@ export function SettingsPageSkeleton() {
         <Skeleton className="h-7 w-28" />
         <Skeleton className="h-6 w-80" />
       </div>
-      <div className="flex flex-col gap-2 sm:overflow-hidden sm:rounded-xl sm:border sm:bg-card sm:p-3 sm:shadow-sm">
+      <div className="flex flex-col gap-2 sm:overflow-hidden sm:rounded-xl sm:border sm:bg-background sm:p-3 sm:shadow-sm">
         <SettingsSkeletonTabsList />
         <SettingsSkeletonPanels className="mt-2 sm:p-2" />
       </div>

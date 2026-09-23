@@ -5,6 +5,7 @@ import { Suspense } from "react";
 
 import { RegistrarLinks, RegistrarLinksSkeleton } from "@/components/domain/registrar-links";
 import { NONPUBLIC_TLDS } from "@domainstack/constants";
+import { Card } from "@domainstack/ui/card";
 import { extractTldClient } from "@domainstack/utils/domain/client";
 
 // Renders nothing on error; used for supplementary info like pricing.
@@ -23,10 +24,10 @@ export function DomainUnregisteredCard({ domain }: DomainUnregisteredCardProps) 
   const canShowRegistrarLinks = !isNonPublicTld && tld;
 
   return (
-    <div className="relative overflow-hidden rounded-xl border bg-card p-8 text-center shadow-sm">
+    <Card className="relative overflow-hidden p-8 text-center">
       <div
         aria-hidden
-        className="pointer-events-none absolute -inset-x-35 -top-35 h-85 glow-accent-indigo/20"
+        className="pointer-events-none absolute -inset-x-35 -top-35 h-85 glow-accent-indigo/15"
       />
 
       <div className="space-y-4.5">
@@ -47,6 +48,6 @@ export function DomainUnregisteredCard({ domain }: DomainUnregisteredCardProps) 
           </SilentErrorBoundary>
         )}
       </div>
-    </div>
+    </Card>
   );
 }

@@ -35,7 +35,7 @@ export function DashboardContent({ domains, totalDomains }: DashboardContentProp
   // Empty state: No domains match filters
   if (domains.length === 0 && hasActiveFilters) {
     return (
-      <Empty className="rounded-xl border bg-card shadow-sm">
+      <Empty className="rounded-xl border bg-background shadow-sm">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <IconFilterX className="size-6" />
@@ -57,14 +57,14 @@ export function DashboardContent({ domains, totalDomains }: DashboardContentProp
   // Empty state: First-time user (no domains at all)
   if (totalDomains === 0) {
     return (
-      <Empty className="relative overflow-hidden rounded-xl border bg-card shadow-sm">
+      <Empty className="relative overflow-hidden rounded-xl border bg-background shadow-sm">
         <div
           aria-hidden
-          className="pointer-events-none absolute top-0 left-1/4 size-112 -translate-x-1/2 -translate-y-1/2 glow-accent-indigo/12"
+          className="pointer-events-none absolute top-0 left-1/4 size-112 -translate-x-1/2 -translate-y-1/2 glow-accent-indigo/6"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-36 -bottom-36 size-96 glow-accent-blue/8"
+          className="pointer-events-none absolute -right-36 -bottom-36 size-96 glow-accent-blue/6"
         />
 
         <EmptyHeader className="relative">

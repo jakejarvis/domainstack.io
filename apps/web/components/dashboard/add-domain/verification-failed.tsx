@@ -52,15 +52,15 @@ export function VerificationFailed({
 
   return (
     <div className="space-y-4">
-      <Alert className="bg-card/60">
-        <IconAlertTriangle className="size-4 text-danger-foreground" />
-        <AlertTitle className="font-medium text-danger-foreground">Verification Failed</AlertTitle>
+      <Alert variant="destructive">
+        <IconAlertTriangle aria-hidden="true" />
+        <AlertTitle>Verification Failed</AlertTitle>
         <AlertDescription>
           We couldn&apos;t verify your domain ownership. Please check your setup and try again.
         </AlertDescription>
       </Alert>
 
-      <div className="rounded-lg border bg-card/60 p-4 text-card-foreground">
+      <div className="rounded-lg border bg-foreground/2.5 p-4">
         <h4 className="mb-2 text-sm font-medium">{troubleshooting.title}</h4>
         <ul className="space-y-1.5 text-sm text-muted-foreground">
           {troubleshooting.tips.map((tip) => (

@@ -14,6 +14,7 @@ import { ReportSection } from "@/components/domain/report-section";
 import { ProviderLogo } from "@/components/icons/provider-logo";
 import { sections } from "@/lib/constants/sections";
 import type { RegistrationResponse } from "@domainstack/types";
+import { Alert, AlertDescription, AlertTitle } from "@domainstack/ui/alert";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
@@ -47,18 +48,11 @@ function getRegistrationSource(data: RegistrationResponse) {
 
 function RegistrationUnavailableNotice({ data }: { data: RegistrationResponse }) {
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-warning-border bg-warning-border/10 p-4 text-sm dark:bg-warning-border/10">
-      <IconAlertCircle
-        className="mt-0.5 size-4 shrink-0 text-yellow-800 dark:text-yellow-200"
-        aria-hidden="true"
-      />
-      <div className="space-y-1">
-        <p className="font-medium text-yellow-800 dark:text-yellow-200">
-          Registration Data Unavailable
-        </p>
-        <p className="text-yellow-800/90 dark:text-yellow-200/80">{getUnavailableMessage(data)}</p>
-      </div>
-    </div>
+    <Alert variant="warning">
+      <IconAlertCircle aria-hidden="true" />
+      <AlertTitle>Registration Data Unavailable</AlertTitle>
+      <AlertDescription>{getUnavailableMessage(data)}</AlertDescription>
+    </Alert>
   );
 }
 

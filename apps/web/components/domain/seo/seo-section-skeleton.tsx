@@ -34,7 +34,7 @@ export function SeoSectionSkeleton() {
           </div>
           {/* a neutral card, not any one provider's chrome */}
           <div className="mx-auto mt-4 mb-2 w-full max-w-[480px] md:max-w-[640px]">
-            <div className="overflow-hidden rounded-2xl border border-border bg-card">
+            <div className="overflow-hidden rounded-2xl border border-border bg-background">
               <div className="aspect-[16/9] min-h-[160px] w-full">
                 <Skeleton className="h-full w-full rounded-none" />
               </div>
