@@ -9,8 +9,10 @@ describe("PlanUsage", () => {
     await render(<PlanUsage activeCount={3} planQuota={5} archivedCount={0} />);
 
     await expect.element(page.getByText("Tracked domains")).toBeInTheDocument();
-    await expect.element(page.getByText("/ 5")).toBeInTheDocument();
     await expect.element(page.getByText("3", { exact: true })).toBeInTheDocument();
+    await expect
+      .element(page.getByRole("meter", { name: "Domain usage" }))
+      .toHaveAttribute("aria-valuetext", "3 of 5 domains used");
   });
 
   it("hides the archived note when nothing is archived", async () => {

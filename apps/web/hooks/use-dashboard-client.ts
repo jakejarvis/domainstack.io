@@ -17,7 +17,7 @@ import {
   useSyncVisibleDomainIds,
 } from "@/hooks/use-dashboard-selection";
 import { useRouter } from "@/hooks/use-router";
-import { useSubscription, useSyncBilling } from "@/hooks/use-subscription";
+import { useSubscription } from "@/hooks/use-subscription";
 import {
   type ConfirmAction,
   DEFAULT_SORT,
@@ -140,8 +140,6 @@ export function useDashboardClient() {
 
   const [pendingAction, setPendingAction] = useState<ConfirmAction | null>(null);
   const [showUpgradedBanner, setShowUpgradedBanner] = useState(false);
-  // outlives the banner, so dismissing it doesn't stop the post-checkout sync
-  const [awaitingUpgrade, setAwaitingUpgrade] = useState(false);
 
   const handleConfirm = useCallback(() => {
     if (!pendingAction) return;
@@ -162,9 +160,6 @@ export function useDashboardClient() {
   if (upgradedParam && !showUpgradedBanner) {
     setShowUpgradedBanner(true);
   }
-  if (upgradedParam && !awaitingUpgrade) {
-    setAwaitingUpgrade(true);
-  }
   useEffect(() => {
     if (!upgradedParam || !searchParams) return;
     const params = new URLSearchParams(searchParams.toString());
@@ -173,12 +168,6 @@ export function useDashboardClient() {
     const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
     router.replace(newUrl, { scroll: false });
   }, [upgradedParam, router, searchParams]);
-
-  // checkout can redirect here before the webhook lands
-  useSyncBilling({
-    enabled: awaitingUpgrade && subscription !== undefined && subscription.plan !== "pro",
-    pollInterval: 3000,
-  });
 
   const handleVerify = useCallback(
     (id: string, verificationMethod: VerificationMethod | null) => {

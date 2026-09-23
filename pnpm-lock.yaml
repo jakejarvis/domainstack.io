@@ -402,9 +402,6 @@ importers:
       '@domainstack/logger':
         specifier: workspace:*
         version: link:../logger
-      '@domainstack/polar':
-        specifier: workspace:*
-        version: link:../polar
       '@domainstack/redis':
         specifier: workspace:*
         version: link:../redis

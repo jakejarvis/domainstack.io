@@ -136,13 +136,9 @@ export async function setSubscriptionEndsAt(
 }
 
 /**
- * Clear subscription end date. With `expectedEndsAt`, only clears if the row
- * still holds that date, so a cancellation written in the meantime survives.
+ * Clear subscription end date.
  */
-export async function clearSubscriptionEndsAt(
-  userId: string,
-  expectedEndsAt?: Date,
-): Promise<void> {
+export async function clearSubscriptionEndsAt(userId: string): Promise<void> {
   await db
     .update(userSubscriptions)
     .set({
@@ -150,12 +146,7 @@ export async function clearSubscriptionEndsAt(
       lastExpiryNotification: null,
       updatedAt: new Date(),
     })
-    .where(
-      and(
-        eq(userSubscriptions.userId, userId),
-        expectedEndsAt ? eq(userSubscriptions.endsAt, expectedEndsAt) : undefined,
-      ),
-    );
+    .where(eq(userSubscriptions.userId, userId));
 }
 
 /**

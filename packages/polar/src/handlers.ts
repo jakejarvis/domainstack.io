@@ -320,21 +320,6 @@ export async function handleSubscriptionUncanceled(
     return;
   }
 
-  // Reconcile against Polar: a stale `uncanceled` must not erase a pending end
-  // date, or the downgrade cron would never see the expiry.
-  const state = await getCustomerSubscriptionState(userId);
-  if (state.status === "unknown") {
-    // keep the end date and let Polar redeliver once its state is readable
-    throw new Error("Polar customer state unavailable; retrying uncanceled event");
-  }
-  if (!state.hasNonCancelingActive) {
-    logger.info(
-      { subscriptionId: data.id, userId },
-      "Customer has no non-canceling active subscription; ignoring stale uncanceled event",
-    );
-    return;
-  }
-
   // Clear the subscription end date since they're no longer canceling
   await clearSubscriptionEndsAt(userId);
 }

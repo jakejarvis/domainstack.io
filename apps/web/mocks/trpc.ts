@@ -102,10 +102,6 @@ export const getSubscriptionQuery = vi.fn<() => Promise<SubscriptionQuota>>(
   async () => subscriptionState,
 );
 
-export const syncBillingQuery = vi.fn<
-  () => Promise<{ plan: SubscriptionQuota["plan"]; changed: boolean; billing: null }>
->(async () => ({ plan: subscriptionState.plan, changed: false, billing: null }));
-
 export const addDomainMutation = vi.fn<(input: AddDomainInput) => Promise<AddDomainResult>>(
   async ({ domain }) => ({
     id: "domain-new",
@@ -314,12 +310,6 @@ export function resetTrpcMocks() {
   subscriptionState = { ...DEFAULT_SUBSCRIPTION };
   getSubscriptionQuery.mockReset();
   getSubscriptionQuery.mockImplementation(async () => subscriptionState);
-  syncBillingQuery.mockReset();
-  syncBillingQuery.mockImplementation(async () => ({
-    plan: subscriptionState.plan,
-    changed: false,
-    billing: null,
-  }));
 
   addDomainMutation.mockReset();
   addDomainMutation.mockImplementation(async ({ domain }) => ({
@@ -537,12 +527,6 @@ export function useTRPC() {
           };
         },
         queryFilter: () => queryFilterFor(SUBSCRIPTION_QUERY_KEY),
-      },
-      syncBilling: {
-        queryOptions: () => ({
-          queryKey: ["user", "syncBilling"] as const,
-          queryFn: () => syncBillingQuery(),
-        }),
       },
       setDomainMuted: {
         mutationOptions: mutationOptionsFor(setDomainMutedMutation),

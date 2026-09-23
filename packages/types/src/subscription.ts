@@ -12,16 +12,3 @@ export interface SubscriptionQuota {
   archivedCount: number;
   canAddMore: boolean;
 }
-
-/**
- * Live billing details from Polar for the user's current subscription.
- */
-export interface BillingDetails {
-  /** In cents. */
-  amount: number;
-  /** Lowercase ISO 4217. */
-  currency: string;
-  interval: string;
-  currentPeriodEnd: Date | null;
-  cancelAtPeriodEnd: boolean;
-}
