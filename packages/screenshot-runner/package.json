@@ -1,13 +1,11 @@
 {
-  "name": "@domainstack/screenshot",
+  "name": "@domainstack/screenshot-runner",
   "version": "0.0.0-beta.1",
   "private": true,
   "type": "module",
-  "sideEffects": false,
-  "exports": {
-    ".": "./src/index.ts"
-  },
   "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "build:blocklist": "node dist/build-blocklist.js",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt --config ../../.oxfmtrc.json",
@@ -15,13 +13,12 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@domainstack/logger": "workspace:*",
-    "@domainstack/safe-fetch": "workspace:*",
-    "@vercel/sandbox": "^3.2.1"
+    "@ghostery/adblocker-puppeteer": "2.18.2",
+    "puppeteer": "25.1.0"
   },
   "devDependencies": {
-    "@domainstack/typescript-config": "workspace:*",
     "@types/node": "catalog:",
+    "typescript": "7.0.2",
     "vitest": "catalog:"
   }
 }

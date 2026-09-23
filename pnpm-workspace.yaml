@@ -27,9 +27,6 @@ catalog:
   vitest: ^5.0.1
   workflow: 5.0.0-beta.53
   zod: ^4.6.5
-publicHoistPattern:
-  - '@sparticuz/chromium'
-  - puppeteer-core
 allowBuilds:
   '@posthog/cli': true
   '@swc/core': true
