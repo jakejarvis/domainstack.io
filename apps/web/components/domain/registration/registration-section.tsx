@@ -47,7 +47,7 @@ function getRegistrationSource(data: RegistrationResponse) {
 
 function RegistrationUnavailableNotice({ data }: { data: RegistrationResponse }) {
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-warning-border bg-warning-border/10 p-4 text-sm backdrop-blur-lg dark:bg-warning-border/10">
+    <div className="flex items-start gap-3 rounded-lg border border-warning-border bg-warning-border/10 p-4 text-sm dark:bg-warning-border/10">
       <IconAlertCircle
         className="mt-0.5 size-4 shrink-0 text-yellow-800 dark:text-yellow-200"
         aria-hidden="true"

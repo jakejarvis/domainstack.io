@@ -6,16 +6,10 @@ import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
 
 const GLOW_COLORS = {
-  info: { primary: "bg-accent-blue/10", secondary: "bg-accent-blue/8" },
-  warning: {
-    primary: "bg-accent-orange/10",
-    secondary: "bg-accent-orange/8",
-  },
-  success: {
-    primary: "bg-accent-green/10",
-    secondary: "bg-accent-green/8",
-  },
-  danger: { primary: "bg-accent-red/10", secondary: "bg-accent-red/8" },
+  info: { primary: "glow-accent-blue/6", secondary: "glow-accent-blue/4" },
+  warning: { primary: "glow-accent-orange/6", secondary: "glow-accent-orange/4" },
+  success: { primary: "glow-accent-green/6", secondary: "glow-accent-green/4" },
+  danger: { primary: "glow-accent-red/6", secondary: "glow-accent-red/4" },
 };
 
 const ICON_COLORS = {
@@ -105,12 +99,7 @@ export function DashboardBanner({
   className,
 }: DashboardBannerProps) {
   return (
-    <Card
-      className={cn(
-        "group/dashboard-banner relative overflow-hidden border-black/10 bg-muted/10 dark:border-white/10",
-        className,
-      )}
-    >
+    <Card className={cn("group/dashboard-banner relative overflow-hidden bg-muted/10", className)}>
       {dismissible ? (
         <Button
           variant="ghost"
@@ -127,14 +116,14 @@ export function DashboardBanner({
       <div
         aria-hidden
         className={cn(
-          "pointer-events-none absolute -top-24 -right-20 size-48 rounded-full blur-[80px]",
+          "pointer-events-none absolute -top-54 -right-50 size-108",
           GLOW_COLORS[variant].primary,
         )}
       />
       <div
         aria-hidden
         className={cn(
-          "pointer-events-none absolute -bottom-20 left-8 size-40 rounded-full blur-[80px]",
+          "pointer-events-none absolute -bottom-50 -left-22 size-100",
           GLOW_COLORS[variant].secondary,
         )}
       />

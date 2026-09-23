@@ -116,7 +116,7 @@ export function DashboardTable({ domains }: DashboardTableProps) {
   const table = useTable<DashboardTableFeatures, TrackedDomainWithDetails>(tableOptions);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-black/15 bg-background/60 shadow-2xl shadow-black/10 dark:border-white/15">
+    <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
       <ScrollArea className="w-full">
         <table className="w-full text-[13px]" style={{ tableLayout: "fixed" }}>
           <colgroup>
@@ -131,10 +131,7 @@ export function DashboardTable({ domains }: DashboardTableProps) {
           </colgroup>
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr
-                key={headerGroup.id}
-                className="min-w-full border-b border-black/10 bg-muted/30 dark:border-white/10"
-              >
+              <tr key={headerGroup.id} className="min-w-full border-b bg-muted/30">
                 {headerGroup.headers.map((header) => {
                   const isSelectColumn = header.column.id === "select";
                   const isDomainColumn = header.column.id === "domainName";

@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import { LoginContent } from "@/components/auth/login-content";
 import { createMetadata } from "@/lib/seo";
 import { Card } from "@domainstack/ui/card";
-import { cn } from "@domainstack/ui/utils";
 
 export const metadata: Metadata = createMetadata({
   path: "/login",
@@ -13,12 +12,7 @@ export const metadata: Metadata = createMetadata({
 
 export default function LoginPage() {
   return (
-    <Card
-      className={cn(
-        "w-full max-w-md overflow-hidden rounded-xl px-6 py-8",
-        "border-black/15 bg-background/70 shadow-2xl ring-1 ring-black/5 backdrop-blur-2xl dark:border-white/8 dark:bg-background/60 dark:ring-white/5",
-      )}
-    >
+    <Card className="w-full max-w-md overflow-hidden rounded-xl px-6 py-8">
       <LoginContent />
     </Card>
   );

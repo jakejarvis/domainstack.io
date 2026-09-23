@@ -35,7 +35,7 @@ export function DashboardTablePagination({
   onPageSizeChange,
 }: DashboardTablePaginationProps) {
   return (
-    <div className="flex h-12 items-center justify-between border-t border-black/10 px-4 py-2 dark:border-white/10">
+    <div className="flex h-12 items-center justify-between border-t px-4 py-2">
       {/* Page size selector */}
       <div className="flex items-center gap-1.5">
         <span className="text-xs text-muted-foreground">Show</span>

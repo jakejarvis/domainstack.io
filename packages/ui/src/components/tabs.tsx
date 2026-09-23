@@ -19,8 +19,7 @@ const tabsListVariants = cva({
   base: "group/tabs-list relative inline-flex items-center text-muted-foreground group-data-[orientation=vertical]/tabs:h-fit group-data-[orientation=vertical]/tabs:flex-col",
   variants: {
     variant: {
-      default:
-        "h-9 w-fit justify-center rounded-lg border border-black/8 bg-muted/40 p-1 backdrop-blur-sm dark:border-white/10",
+      default: "h-9 w-fit justify-center rounded-lg border bg-muted/40 p-1",
       line: "h-10 w-full gap-1.5 border-b border-muted bg-transparent",
     },
   },
@@ -42,10 +41,8 @@ function TabsList({
       renderBeforeHydration
       className={cn(
         "pointer-events-none absolute left-[var(--active-tab-left)] z-0 w-[var(--active-tab-width)] transition-[width,height,top,left] duration-200 ease-out will-change-[transform,width,height]",
-        // Default variant: pill background
         variant === "default" &&
           "top-[var(--active-tab-top)] h-[var(--active-tab-height)] rounded-md bg-muted shadow-sm ring-1 ring-black/5 dark:shadow-none dark:ring-white/10",
-        // Line variant: underline that sits on top of the border
         variant === "line" && "bottom-0 h-0.5 bg-foreground",
       )}
     />
@@ -86,17 +83,11 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
     <TabsPrimitive.Tab
       data-slot="tabs-trigger"
       className={cn(
-        // Base styles
         "relative z-10 inline-flex h-full flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-transparent px-2 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors",
-        // Focus styles
         "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring",
-        // Disabled styles
         "disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50",
-        // Active styles
         "data-[active]:cursor-default data-[active]:text-foreground",
-        // Icon styles
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-muted-foreground/70 data-[active]:[&_svg]:text-foreground [&_svg:not([class*='size-'])]:size-4",
-        // Vertical orientation
         "group-data-[orientation=vertical]/tabs:w-full group-data-[orientation=vertical]/tabs:justify-start",
         className,
       )}

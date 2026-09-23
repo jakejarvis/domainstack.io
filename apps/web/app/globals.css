@@ -12,6 +12,7 @@
   --color-accent-green: var(--accent-green);
   --color-accent-purple: var(--accent-purple);
   --color-accent-orange: var(--accent-orange);
+  --color-accent-pink: var(--accent-pink);
   --color-accent-cyan: var(--accent-cyan);
   --color-accent-slate: var(--accent-slate);
   --color-accent-red: var(--accent-red);
@@ -131,8 +132,20 @@
   }
 }
 
-@utility accent-glow {
-  @apply bg-[radial-gradient(closest-side,var(--glow-color,var(--accent-slate)),transparent)];
+/* soft glow that fades out at the element's nearest edges: `glow-accent-blue/15`. the
+   intermediate stops ease the falloff like a blur would; a straight two-stop fade peaks
+   into a hotspot and bands at low alpha */
+@utility glow-* {
+  --glow-color: --value(--color-*);
+  --glow-color: --alpha(--value(--color-*) / --modifier(integer)%);
+  background-image: radial-gradient(
+    closest-side,
+    var(--glow-color),
+    color-mix(in oklab, var(--glow-color) 75%, transparent) 30%,
+    color-mix(in oklab, var(--glow-color) 35%, transparent) 60%,
+    color-mix(in oklab, var(--glow-color) 10%, transparent) 82%,
+    transparent
+  );
 }
 
 @keyframes heartbeat {

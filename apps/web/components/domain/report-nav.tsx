@@ -66,10 +66,8 @@ export function SectionNav({
         className={cn(
           "relative flex items-center",
           "h-[var(--section-nav-height)]",
-          // Full-width background using pseudo-element
           "before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-screen before:-translate-x-1/2",
           "before:bg-background/80 before:backdrop-blur",
-          // Full-width bottom border using pseudo-element
           "after:absolute after:bottom-0 after:left-1/2 after:h-px after:w-screen after:-translate-x-1/2",
           "after:transition-opacity after:duration-200",
           // Solid border when scrolled, faded edges when at top (desktop only)
@@ -81,9 +79,7 @@ export function SectionNav({
         <div
           className={cn(
             "flex shrink-0 items-center gap-2 overflow-hidden transition duration-200 ease-out",
-            isHeaderVisible
-              ? "w-0 opacity-0"
-              : "mr-3 w-auto border-r border-black/10 pr-3 opacity-100 dark:border-white/10",
+            isHeaderVisible ? "w-0 opacity-0" : "mr-3 w-auto border-r pr-3 opacity-100",
           )}
         >
           <button
@@ -97,7 +93,6 @@ export function SectionNav({
           </button>
         </div>
 
-        {/* Section tabs - horizontally scrollable with gradient indicators */}
         <ScrollArea
           className="flex-1 [&_[data-slot=scroll-area-viewport]]:overscroll-y-none"
           hideScrollbar

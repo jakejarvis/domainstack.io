@@ -24,13 +24,11 @@ export function HeaderSearchClient() {
         "flex min-w-0 flex-1 justify-center overflow-hidden",
         // Inset the clip box so it doesn't cut the input's 3px focus ring.
         "-m-1 p-1",
-        // Mobile: overlays the header actions in the second column and fades
-        // in over them — opacity/translate only, so it stays on the compositor.
+        // Mobile: fades in over the header actions in column 2.
         "motion-reduce:transition-none max-md:col-start-2 max-md:row-start-1 max-md:duration-200 max-md:ease-out",
-        // Reads `isOpen` directly so this class updates in the same
-        // synchronous commit `open()` focuses in. `visibility` only transitions
-        // on close: transitioning it on open keeps it hidden for the first
-        // frame, so the synchronous focus would miss.
+        // Reads `isOpen` so this lands in the commit `open()` focuses in.
+        // `visibility` transitions only on close, or the focus would hit a
+        // still-hidden input.
         isOpen
           ? "max-md:transition-[opacity,translate]"
           : "invisible max-md:translate-x-4 max-md:opacity-0 max-md:transition-[opacity,translate,visibility] md:visible",

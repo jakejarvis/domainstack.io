@@ -8,6 +8,17 @@ import {
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
 import { Spinner } from "@domainstack/ui/spinner";
+import { cn } from "@domainstack/ui/utils";
+
+const GLOW_CLASSES = {
+  blue: "glow-accent-blue/15",
+  purple: "glow-accent-purple/15",
+  green: "glow-accent-green/15",
+  orange: "glow-accent-orange/15",
+  pink: "glow-accent-pink/15",
+  cyan: "glow-accent-cyan/15",
+  slate: "glow-accent-slate/15",
+};
 
 interface ReportSectionProps {
   title: string;
@@ -15,7 +26,7 @@ interface ReportSectionProps {
   help?: string;
   icon?: React.ElementType;
   slug?: string;
-  accent?: "blue" | "purple" | "green" | "orange" | "pink" | "cyan" | "slate";
+  accent?: keyof typeof GLOW_CLASSES;
   isLoading?: boolean;
   /** Optional actions to render in the top-right of the section header */
   headerActions?: React.ReactNode;
@@ -48,12 +59,13 @@ export function ReportSection({
       // scroll-mt accounts for sticky headers: mobile (sub-nav only) / desktop (global + sub-nav)
       className="scroll-mt-[calc(var(--section-nav-height)+var(--scroll-padding))] border-none md:scroll-mt-[calc(var(--header-height)+var(--section-nav-height)+var(--scroll-padding))]"
     >
-      <Card className="relative gap-0 overflow-hidden rounded-xl border border-black/10 bg-background/60 py-0 shadow-2xl shadow-black/10 dark:border-white/10">
-        {/* Accent glow */}
+      <Card className="relative gap-0 overflow-hidden rounded-xl py-0">
         <div
           aria-hidden
-          className="pointer-events-none absolute -inset-x-8 -top-8 h-24 accent-glow opacity-30 blur-2xl"
-          style={{ "--glow-color": `var(--accent-${accent})` } as React.CSSProperties}
+          className={cn(
+            "pointer-events-none absolute -inset-x-20 -top-20 h-52",
+            GLOW_CLASSES[accent],
+          )}
         />
         <div className="relative">
           <div className="p-5" id={headerId}>

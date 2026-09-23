@@ -20,9 +20,8 @@ export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
         className={cn(
           "group/header top-0 right-0 left-0 z-100 grid h-[var(--header-height)] items-center gap-4 px-4 md:sticky md:right-auto md:left-auto",
           "border-b border-black/15 bg-background/80 backdrop-blur dark:border-white/10",
-          // Mobile: the search and actions share the second column and
-          // crossfade (see HeaderSearchClient/AppHeaderActions). Animating the
-          // column widths instead relays out every frame, which stutters on iOS.
+          // Mobile: search and actions share column 2 and crossfade; animating
+          // the column widths instead stutters on iOS.
           "grid-cols-[auto_1fr] duration-300 ease-out motion-reduce:transition-none md:grid-cols-[1fr_minmax(0,var(--container-2xl))_1fr]",
           // Mobile: scrolls with the page until past the threshold, then pins,
           // hiding instantly on scroll-down and animating back in on scroll-up.

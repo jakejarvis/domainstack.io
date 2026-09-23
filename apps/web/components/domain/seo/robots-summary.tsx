@@ -239,7 +239,7 @@ export function RobotsSummary({
                   startTransition(() => setOnly(next ?? "all"));
                 }}
                 spacing={1}
-                className="relative h-9 w-full items-stretch overflow-hidden rounded-lg border border-black/8 bg-muted/50 p-1 text-muted-foreground sm:w-auto dark:border-white/10 [&>*]:flex-1 sm:[&>*]:flex-none"
+                className="relative h-9 w-full items-stretch overflow-hidden rounded-lg border bg-muted/50 p-1 text-muted-foreground sm:w-auto [&>*]:flex-1 sm:[&>*]:flex-none"
               >
                 <ToggleGroupItem value="all" className="h-full">
                   <IconCircleHalf2 className="size-3.5 text-accent-blue" aria-hidden />

@@ -7,7 +7,7 @@ import { Skeleton } from "@domainstack/ui/skeleton";
 export function CertificatesSectionSkeleton() {
   return (
     <ReportSection isLoading {...sections.certificates}>
-      <div className="relative overflow-hidden rounded-xl border bg-background/60 p-3 backdrop-blur-lg">
+      <div className="relative overflow-hidden rounded-xl border bg-muted/40 p-3">
         <KeyValueGrid colsDesktop={2}>
           <KeyValueSkeleton label="Issuer" widthClass="w-[100px]" withLeading />
           <KeyValueSkeleton label="Subject" widthClass="w-[100px]" />

@@ -35,7 +35,7 @@ export function DashboardContent({ domains, totalDomains }: DashboardContentProp
   // Empty state: No domains match filters
   if (domains.length === 0 && hasActiveFilters) {
     return (
-      <Empty className="rounded-xl border border-black/15 bg-background/60 shadow-2xl shadow-black/10 dark:border-white/15">
+      <Empty className="rounded-xl border bg-card shadow-sm">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <IconFilterX className="size-6" />
@@ -57,15 +57,14 @@ export function DashboardContent({ domains, totalDomains }: DashboardContentProp
   // Empty state: First-time user (no domains at all)
   if (totalDomains === 0) {
     return (
-      <Empty className="relative overflow-hidden rounded-xl border border-black/15 bg-background/60 shadow-2xl shadow-black/10 dark:border-white/15">
-        {/* Decorative gradient orbs */}
+      <Empty className="relative overflow-hidden rounded-xl border bg-card shadow-sm">
         <div
           aria-hidden
-          className="pointer-events-none absolute top-0 left-1/4 size-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-primary/20 to-transparent blur-3xl"
+          className="pointer-events-none absolute top-0 left-1/4 size-112 -translate-x-1/2 -translate-y-1/2 glow-accent-indigo/12"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute right-0 bottom-0 size-48 translate-x-1/4 translate-y-1/4 rounded-full bg-gradient-to-tl from-blue-500/15 to-transparent blur-3xl"
+          className="pointer-events-none absolute -right-36 -bottom-36 size-96 glow-accent-blue/8"
         />
 
         <EmptyHeader className="relative">
@@ -121,7 +120,6 @@ export function DashboardContent({ domains, totalDomains }: DashboardContentProp
         </m.div>
       </AnimatePresence>
 
-      {/* Bulk actions toolbar - appears when items are selected */}
       <BulkActionsToolbar totalCount={domains.length} />
     </>
   );
