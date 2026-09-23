@@ -5,8 +5,8 @@ import { StepConfirmation } from "@/components/dashboard/add-domain/step-confirm
 import { StepEnterDomain } from "@/components/dashboard/add-domain/step-enter-domain";
 import { StepInstructionsError } from "@/components/dashboard/add-domain/step-instructions-error";
 import { StepVerifyOwnership } from "@/components/dashboard/add-domain/step-verify-ownership";
-import { PlanStatusCard } from "@/components/plan-status-card";
-import { UpgradeCard } from "@/components/upgrade-card";
+import { ProPlanCard } from "@/components/plan-cards";
+import { PlanUsage } from "@/components/plan-usage";
 import { useDomainVerification } from "@/hooks/use-domain-verification";
 import { useSubscription } from "@/hooks/use-subscription";
 import type {
@@ -102,7 +102,7 @@ function AddDomainQuotaReached({
 }: {
   className?: string;
   onClose?: () => void;
-  subscription?: Pick<SubscriptionQuota, "activeCount" | "planQuota" | "endsAt">;
+  subscription?: Pick<SubscriptionQuota, "activeCount" | "planQuota" | "archivedCount">;
   isPro: boolean;
 }) {
   return (
@@ -120,11 +120,10 @@ function AddDomainQuotaReached({
 
       <div className="space-y-4">
         {subscription ? (
-          <PlanStatusCard
+          <PlanUsage
             activeCount={subscription.activeCount}
             planQuota={subscription.planQuota}
-            isPro={isPro}
-            endsAt={subscription.endsAt}
+            archivedCount={subscription.archivedCount}
           />
         ) : null}
 
@@ -141,7 +140,7 @@ function AddDomainQuotaReached({
             ) : null}
           </div>
         ) : (
-          <UpgradeCard />
+          <ProPlanCard />
         )}
       </div>
     </div>

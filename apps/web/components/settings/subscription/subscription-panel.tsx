@@ -1,16 +1,18 @@
-import { IconCreditCard } from "@tabler/icons-react";
+import { IconAlertCircle, IconCreditCard } from "@tabler/icons-react";
 
-import { PlanStatusCard } from "@/components/plan-status-card";
+import { FreePlanCard, PlanFeatures, ProPlanCard } from "@/components/plan-cards";
+import { PlanUsage } from "@/components/plan-usage";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { SubscriptionSkeleton } from "@/components/settings/settings-skeleton";
-import { UpgradeCard } from "@/components/upgrade-card";
 import { useSubscription } from "@/hooks/use-subscription";
+import { PLAN_QUOTAS } from "@domainstack/constants";
+import { Alert, AlertDescription, AlertTitle } from "@domainstack/ui/alert";
 import { Button } from "@domainstack/ui/button";
+import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@domainstack/ui/item";
 import { Spinner } from "@domainstack/ui/spinner";
 import { formatDate, toDateTimeAttr } from "@domainstack/utils/date";
 
 export function SubscriptionPanel() {
-  // Subscription query and hooks
   const {
     subscription,
     isPro,
@@ -28,49 +30,88 @@ export function SubscriptionPanel() {
     return <SettingsCard title="Plan" description="Failed to load subscription information" />;
   }
 
+  const portalIcon = isCustomerPortalLoading ? <Spinner /> : <IconCreditCard />;
+
   return (
     <SettingsCard
       title="Plan"
       description={
         isPro
-          ? "You're on the Pro plan. Thank you for your support!"
-          : "Upgrade to Pro for more tracked domains."
+          ? "You're on Pro. Thank you for supporting Domainstack!"
+          : `You're on the Free plan, with up to ${PLAN_QUOTAS.free} tracked domains.`
       }
     >
-      <div className="space-y-4">
-        {/* Current plan info */}
-        {subscription && (
-          <PlanStatusCard
+      <div className="space-y-6">
+        {subscription ? (
+          <PlanUsage
             activeCount={subscription.activeCount}
             planQuota={subscription.planQuota}
-            isPro={isPro}
-            endsAt={subscription.endsAt}
+            archivedCount={subscription.archivedCount}
           />
-        )}
+        ) : null}
 
-        {/* Actions */}
         {isPro ? (
-          <div className="space-y-2">
-            <Button
-              variant="outline"
-              onClick={handleCustomerPortal}
-              disabled={isCustomerPortalLoading}
-              className="w-full"
-            >
-              {isCustomerPortalLoading ? <Spinner /> : <IconCreditCard />}
-              Manage Subscription
-            </Button>
-            {subscription?.endsAt && (
-              <p className="text-center text-xs text-muted-foreground">
-                Your Pro access continues until{" "}
-                <time dateTime={toDateTimeAttr(subscription.endsAt)} suppressHydrationWarning>
-                  {formatDate(subscription.endsAt)}
-                </time>
-              </p>
+          <div className="space-y-3">
+            {subscription?.endsAt ? (
+              <Alert variant="warning">
+                <IconAlertCircle aria-hidden="true" />
+                <AlertTitle>
+                  Pro ends{" "}
+                  <time dateTime={toDateTimeAttr(subscription.endsAt)} suppressHydrationWarning>
+                    {formatDate(subscription.endsAt)}
+                  </time>
+                </AlertTitle>
+                <AlertDescription>
+                  <p>
+                    After that you can track up to {PLAN_QUOTAS.free} domains, and any beyond that
+                    are archived.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCustomerPortal}
+                    disabled={isCustomerPortalLoading}
+                    className="mt-2"
+                  >
+                    {portalIcon}
+                    Resubscribe
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            ) : null}
+
+            <ProPlanCard current />
+
+            {subscription?.endsAt ? null : (
+              <Item variant="outline">
+                <ItemContent>
+                  <ItemTitle>Billing</ItemTitle>
+                  <ItemDescription>
+                    Update your payment method, download invoices, or cancel.
+                  </ItemDescription>
+                </ItemContent>
+                <ItemActions>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCustomerPortal}
+                    disabled={isCustomerPortalLoading}
+                  >
+                    {portalIcon}
+                    Manage billing
+                  </Button>
+                </ItemActions>
+              </Item>
             )}
           </div>
         ) : (
-          <UpgradeCard />
+          <>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <FreePlanCard current />
+              <ProPlanCard />
+            </div>
+            <PlanFeatures />
+          </>
         )}
       </div>
     </SettingsCard>

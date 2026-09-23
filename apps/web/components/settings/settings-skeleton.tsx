@@ -20,35 +20,55 @@ function SettingsCardHeaderSkeleton({
 }
 
 /**
- * Skeleton for the subscription section.
- * Shows placeholders for plan info, usage progress, and upgrade/manage button.
+ * Skeleton for the subscription section, in its Free-plan layout (usage, plan cards, features).
  */
 export function SubscriptionSkeleton({ className }: { className?: string }) {
   return (
     <div className={cn("space-y-4", className)}>
-      <SettingsCardHeaderSkeleton titleClassName="w-12" descriptionClassName="w-64" />
-      <CardContent className="space-y-4 px-0">
-        {/* Current plan card — matches PlanStatusCard */}
-        <div className="flex items-center justify-between rounded-lg border bg-card/60 p-4">
-          <div className="space-y-1.5">
-            <Skeleton className="h-5 w-20" />
-            <Skeleton className="h-4 w-36" />
+      <SettingsCardHeaderSkeleton titleClassName="w-12" descriptionClassName="w-72" />
+      <CardContent className="space-y-6 px-0">
+        {/* PlanUsage */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-4">
+            <Skeleton className="h-5 w-28" />
+            <Skeleton className="h-7 w-14" />
           </div>
-          <Skeleton className="h-2 w-24 rounded-full" />
+          <Skeleton className="h-2 w-full rounded-full" />
         </div>
 
-        {/* Pro upgrade section — default Free-plan loaded UI */}
-        <div className="space-y-3 rounded-lg border border-accent-gold/25 bg-background bg-linear-to-bl from-accent-gold/10 to-transparent to-60% p-4">
-          <Skeleton className="h-5 w-12" />
-          <div className="space-y-1.5">
-            <Skeleton className="h-4 w-44" />
-            <Skeleton className="h-4 w-48" />
-            <Skeleton className="h-4 w-36" />
+        {/* FreePlanCard + ProPlanCard */}
+        <div className="grid gap-3 sm:grid-cols-2">
+          {[false, true].map((pro) => (
+            <div
+              key={String(pro)}
+              className={cn(
+                "flex flex-col gap-4 rounded-xl border bg-card/60 p-4",
+                pro &&
+                  "border-accent-gold/25 bg-linear-to-bl from-accent-gold/10 to-transparent to-60%",
+              )}
+            >
+              <div className="flex min-h-5 items-center justify-between gap-2">
+                <Skeleton className="h-5 w-12" />
+                {pro ? null : <Skeleton className="h-5 w-24" />}
+              </div>
+              <div className="space-y-1">
+                <Skeleton className="h-8 w-20" />
+                <Skeleton className="h-5 w-36" />
+              </div>
+              <Skeleton className="h-5 w-44" />
+              {pro ? <Skeleton className="mt-auto h-9 w-full" /> : null}
+            </div>
+          ))}
+        </div>
+
+        {/* PlanFeatures */}
+        <div className="space-y-2">
+          <Skeleton className="h-5 w-32" />
+          <div className="grid gap-1.5 sm:grid-cols-2">
+            {[0, 1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-5 w-full max-w-72" />
+            ))}
           </div>
-          <div className="flex items-center gap-2 pt-1">
-            <Skeleton className="h-4 w-30" />
-          </div>
-          <Skeleton className="mt-1 h-9 w-full" />
         </div>
       </CardContent>
     </div>

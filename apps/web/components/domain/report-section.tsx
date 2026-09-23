@@ -68,7 +68,7 @@ export function ReportSection({
           )}
         />
         <div className="relative">
-          <div className="p-6" id={headerId}>
+          <div className="p-5" id={headerId}>
             <div className="flex w-full items-center gap-2 text-left">
               {IconComponent && (
                 <Icon size="sm" className="rounded-full">
@@ -110,7 +110,7 @@ export function ReportSection({
         </div>
         {children && (
           <div id={contentId}>
-            <CardContent className="space-y-2 pb-6">{children}</CardContent>
+            <CardContent className="space-y-2 px-5 pt-0 pb-5">{children}</CardContent>
           </div>
         )}
       </Card>
