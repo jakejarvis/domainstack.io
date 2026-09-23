@@ -636,12 +636,13 @@ describe("handleSubscriptionUncanceled", () => {
     expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
   });
 
-  it("clears end date when Polar state is unknown", async () => {
+  it("keeps end date and throws for webhook retry when Polar state is unknown", async () => {
     vi.mocked(getCustomerSubscriptionState).mockResolvedValue({ status: "unknown" });
 
-    await handleSubscriptionUncanceled(createUncanceledPayload());
-
-    expect(clearSubscriptionEndsAt).toHaveBeenCalledWith("user-456");
+    await expect(handleSubscriptionUncanceled(createUncanceledPayload())).rejects.toThrow(
+      "Polar customer state unavailable",
+    );
+    expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
   });
 
   it("does not clear end date when externalId (userId) is missing", async () => {

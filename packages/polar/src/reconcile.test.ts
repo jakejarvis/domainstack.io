@@ -1,3 +1,4 @@
+import { ResourceNotFound } from "@polar-sh/sdk/models/errors/resourcenotfound.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 type ActiveSubscriptionFixture = {
@@ -175,14 +176,14 @@ describe("syncSubscriptionFromPolar", () => {
     expect(result).toEqual({ plan: "pro", changed: false, billing: null });
   });
 
-  it("returns the local plan unchanged when Polar is unreachable", async () => {
+  it("throws without touching the local plan when Polar is unreachable", async () => {
     getUserSubscription.mockResolvedValue(localSubscription("free"));
     getStateExternal.mockRejectedValue(new Error("Polar down"));
 
-    const result = await syncSubscriptionFromPolar("user-1");
-
+    await expect(syncSubscriptionFromPolar("user-1")).rejects.toThrow(
+      "Polar customer state unavailable",
+    );
     expect(updateUserTier).not.toHaveBeenCalled();
-    expect(result).toEqual({ plan: "free", changed: false, billing: null });
   });
 
   it("still grants pro when the welcome email fails", async () => {
@@ -217,5 +218,15 @@ describe("getCustomerSubscriptionState", () => {
     getStateExternal.mockRejectedValue(new Error("Polar down"));
 
     await expect(getCustomerSubscriptionState("user-1")).resolves.toEqual({ status: "unknown" });
+  });
+
+  it("reports no subscription when Polar has no customer for the user", async () => {
+    getStateExternal.mockRejectedValue(Object.create(ResourceNotFound.prototype));
+
+    await expect(getCustomerSubscriptionState("user-1")).resolves.toEqual({
+      status: "ok",
+      hasActiveSubscription: false,
+      hasNonCancelingActive: false,
+    });
   });
 });

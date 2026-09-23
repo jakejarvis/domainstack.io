@@ -1,3 +1,5 @@
+import { ResourceNotFound } from "@polar-sh/sdk/models/errors/resourcenotfound.js";
+
 import {
   clearSubscriptionEndsAt,
   getUserSubscription,
@@ -31,6 +33,8 @@ async function fetchActiveSubscriptions(userId: string) {
     const state = await polarClient.customers.getStateExternal({ externalId: userId });
     return state.activeSubscriptions ?? [];
   } catch (err) {
+    // never checked out, so Polar has no customer for this user
+    if (err instanceof ResourceNotFound) return [];
     logger.error({ err, userId }, "Failed to fetch Polar customer state for reconciliation");
     return null;
   }
@@ -54,18 +58,20 @@ export interface SubscriptionSyncResult {
   plan: Plan;
   /** True when this call changed the local subscription row. */
   changed: boolean;
-  /** Null when Polar is unreachable or there's no active subscription. */
+  /** Null when Polar is disabled or there's no active subscription. */
   billing: BillingDetails | null;
 }
 
 /**
  * Pull live Polar state into the local row, covering delayed or dropped
  * webhooks. Never downgrades — that's left to `revoked` and the cron.
+ * Throws when Polar is configured but unreachable, so callers can show a retry.
  */
 export async function syncSubscriptionFromPolar(userId: string): Promise<SubscriptionSyncResult> {
   const local = await getUserSubscription(userId);
   const active = await fetchActiveSubscriptions(userId);
 
+  if (!active && polarClient) throw new Error("Polar customer state unavailable");
   if (!active?.length) return { plan: local.plan, changed: false, billing: null };
 
   const renewing = active.find((sub) => !sub.cancelAtPeriodEnd);

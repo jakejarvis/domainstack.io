@@ -165,7 +165,7 @@ function BillingSummary({
     return <Skeleton render={<span />} className="inline-block h-3.5 w-44 align-middle" />;
   }
 
-  if (isError && !billing) {
+  if (isError) {
     return (
       <>
         Couldn&apos;t load billing details.{" "}
