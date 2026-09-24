@@ -144,10 +144,13 @@ export function useDashboardMutations() {
       }
       toast.error(errorMessage(err, variables));
     },
-    onSettled: () => {
+    onSettled: (_data: unknown, _err: unknown, variables: TVariables) => {
       void queryClient.invalidateQueries(domainsFilter);
-      void queryClient.invalidateQueries(trpc.tracking.getTrackingStatus.queryFilter());
-      void queryClient.invalidateQueries(subscriptionFilter);
+      // Only changes that move the quota (remove/archive/unarchive) affect these.
+      if (toChange(variables).quotaDelta) {
+        void queryClient.invalidateQueries(trpc.tracking.getTrackingStatus.queryFilter());
+        void queryClient.invalidateQueries(subscriptionFilter);
+      }
     },
   });
 
@@ -221,8 +224,10 @@ export function useDashboardMutations() {
   );
 
   return {
-    remove: (trackedDomainId: string) => removeMutation.mutate({ trackedDomainId }),
-    archive: (trackedDomainId: string) => archiveMutation.mutate({ trackedDomainId }),
+    remove: (trackedDomainId: string, onSuccess?: () => void) =>
+      removeMutation.mutate({ trackedDomainId }, { onSuccess }),
+    archive: (trackedDomainId: string, onSuccess?: () => void) =>
+      archiveMutation.mutate({ trackedDomainId }, { onSuccess }),
     unarchive: (trackedDomainId: string) => unarchiveMutation.mutate({ trackedDomainId }),
     setMuted: (trackedDomainId: string, muted: boolean) =>
       muteMutation.mutate({ trackedDomainId, muted }),

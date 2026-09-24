@@ -51,8 +51,9 @@ export type DashboardView = ReturnType<typeof useDashboardViewState>;
  * and view mode in preferences. Returns the filtered, sorted domains for both
  * the grid and the table.
  *
- * Any filter or sort change returns to page 1 and clears the selection in the
- * same update, so nothing has to watch for changes after the fact.
+ * Any filter or sort change returns to page 1 in the same update, and filter
+ * changes also clear the selection (sorting keeps the same domains visible), so
+ * nothing has to watch for changes after the fact.
  */
 export function useDashboardViewState(domains: TrackedDomainWithDetails[]) {
   const now = useHydratedNow();
@@ -115,14 +116,15 @@ export function useDashboardViewState(domains: TrackedDomainWithDetails[]) {
     [domains, now],
   );
 
-  // A deep-linked page past the end shows page 1 instead of an empty table, and the
-  // URL follows so it never names a page that isn't shown.
+  // A deep-linked page that doesn't exist (past the end, or below 1) shows page 1
+  // instead of an empty table, and the URL follows so it never names a page that isn't shown.
   const requestedPageIndex = Math.max(0, params.page - 1);
-  const isPastEnd = isPagePastEnd(visibleDomains.length, requestedPageIndex, pageSize);
-  const pageIndex = isPastEnd ? 0 : requestedPageIndex;
+  const isInvalidPage =
+    params.page < 1 || isPagePastEnd(visibleDomains.length, requestedPageIndex, pageSize);
+  const pageIndex = isInvalidPage ? 0 : requestedPageIndex;
   useEffect(() => {
-    if (isPastEnd) void setParams({ page: null });
-  }, [isPastEnd, setParams]);
+    if (isInvalidPage) void setParams({ page: null });
+  }, [isInvalidPage, setParams]);
 
   const actions = useMemo(() => {
     const updateFilters = (patch: FilterPatch) => {
@@ -159,8 +161,9 @@ export function useDashboardViewState(domains: TrackedDomainWithDetails[]) {
     ? (domains.find((d) => d.id === domainId)?.domainName ?? null)
     : null;
 
+  // Matches filterDomains, which ignores a whitespace-only search.
   const hasActiveFilters =
-    params.search.length > 0 ||
+    params.search.trim().length > 0 ||
     status.length > 0 ||
     health.length > 0 ||
     tlds.length > 0 ||

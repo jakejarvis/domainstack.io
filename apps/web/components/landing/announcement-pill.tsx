@@ -13,16 +13,21 @@ export function AnnouncementPill() {
   const { visible, dismiss } = useAnnouncement();
   const [isExiting, setIsExiting] = useState(false);
 
+  // Persist the dismissal right away (so leaving mid-animation still counts), and
+  // keep rendering locally until the exit animation finishes.
   const handleDismiss = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    dismiss();
     setIsExiting(true);
   };
 
-  if (!visible) return null;
+  const finishExit = (e: React.AnimationEvent) => {
+    if (e.target === e.currentTarget) setIsExiting(false);
+  };
 
-  // Reduced motion keeps the fade but drops the slide and scale, so the exit
-  // animation still runs and `onAnimationEnd` still dismisses.
+  if (!visible && !isExiting) return null;
+
   return (
     <div
       className={cn(
@@ -31,9 +36,7 @@ export function AnnouncementPill() {
           ? "animate-out duration-300 fade-out-0 fill-mode-forwards zoom-out-95 motion-reduce:duration-150 motion-reduce:zoom-out-100"
           : "slide-in-from-top-2.5 animate-in duration-300 fade-in-0 zoom-in-95 motion-reduce:duration-150 motion-reduce:slide-in-from-top-0 motion-reduce:zoom-in-100",
       )}
-      onAnimationEnd={(e) => {
-        if (isExiting && e.target === e.currentTarget) dismiss();
-      }}
+      onAnimationEnd={isExiting ? finishExit : undefined}
     >
       <div className="relative inline-flex items-center rounded-full border bg-muted/40 text-sm transition-colors hover:border-foreground/20 hover:bg-muted/80">
         <Link href="/dashboard" className="group inline-flex items-center gap-2 py-1.5 pr-2 pl-3">

@@ -61,8 +61,8 @@ export function useDashboardClient() {
     if (upgradedParam) void setUpgradedParam(null);
   }, [upgradedParam, setUpgradedParam]);
 
-  // A removed or archived domain leaves the list; drop it from the selection too so it
-  // doesn't come back selected if it's ever unarchived.
+  // Once a remove or archive succeeds, drop the domain from the selection too so it
+  // doesn't come back selected if it's ever unarchived. A failed one keeps it.
   const deselect = (id: string) =>
     setSelectedIds((prev) => {
       if (!prev.has(id)) return prev;
@@ -79,11 +79,11 @@ export function useDashboardClient() {
   const handleConfirm = () => {
     if (!pendingAction) return;
     if (pendingAction.type === "remove") {
-      mutations.remove(pendingAction.domainId);
-      deselect(pendingAction.domainId);
+      const { domainId } = pendingAction;
+      mutations.remove(domainId, () => deselect(domainId));
     } else if (pendingAction.type === "archive") {
-      mutations.archive(pendingAction.domainId);
-      deselect(pendingAction.domainId);
+      const { domainId } = pendingAction;
+      mutations.archive(domainId, () => deselect(domainId));
     } else if (pendingAction.type === "bulk-archive") {
       clearSelectionOnSuccess(mutations.bulkArchive(pendingAction.domainIds));
     } else if (pendingAction.type === "bulk-delete") {

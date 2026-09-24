@@ -184,16 +184,23 @@ function reportTransition(
   next: ScreenshotQueryState,
   { domain, domainId }: { domain: string; domainId?: string },
 ) {
-  const isSameRun = prev?.status === next.status && runIdFromState(prev) === runIdFromState(next);
-
-  if (next.status === "running" && !isSameRun) {
+  // A retry or rate limit mid-run keeps the run id, so compare only that: one
+  // request event per run, however many transient polls it takes.
+  if (next.status === "running" && runIdFromState(prev) !== next.runId) {
     analytics.track("screenshot_requested", { domain });
   } else if (next.status === "completed") {
     analytics.track(
       next.source === "cache" ? "screenshot_loaded_from_cache" : "screenshot_loaded_from_api",
       { domain },
     );
-  } else if (next.status === "rate_limited") {
+  } else if (
+    next.status === "rate_limited" &&
+    !(
+      prev?.status === "rate_limited" &&
+      prev.runId === next.runId &&
+      prev.retryAfter === next.retryAfter
+    )
+  ) {
     toast.error("Too many requests", {
       id: `screenshot-rate-limited-${domainId ?? domain}`,
       description: `Retrying in ${next.retryAfter} second${next.retryAfter !== 1 ? "s" : ""}.`,

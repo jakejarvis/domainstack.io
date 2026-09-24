@@ -82,8 +82,16 @@ export function useDashboardSelection() {
     selectedCount,
     isAllSelected,
     isPartiallySelected: selectedCount > 0 && !isAllSelected,
-    /** Selects every visible domain, or clears the selection if they already are. */
-    toggleAll: () => setSelectedIds(isAllSelected ? new Set() : new Set(visibleIds)),
+    /** Selects every visible domain, or deselects them if they already are. */
+    toggleAll: () =>
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        for (const id of visibleIds) {
+          if (isAllSelected) next.delete(id);
+          else next.add(id);
+        }
+        return next;
+      }),
     clearSelection,
   };
 }

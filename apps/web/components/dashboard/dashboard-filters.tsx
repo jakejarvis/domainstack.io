@@ -105,7 +105,7 @@ export function DashboardFilters() {
           ]
         : []),
       // Include search term as a chip if present
-      ...(search.length > 0
+      ...(search.trim().length > 0
         ? [
             {
               type: "search" as const,

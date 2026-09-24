@@ -183,7 +183,11 @@ export async function pollScreenshot(runId: string): Promise<ScreenshotQueryStat
 
 /** True for a state that won't resolve on its own without a scheduled retry — no immediate remount refetch. */
 export function isAwaitingScheduledRetry(state: ScreenshotQueryState | undefined): boolean {
-  return state?.status === "retrying" || (state?.status === "failed" && !!state.recoverable);
+  return (
+    state?.status === "retrying" ||
+    state?.status === "rate_limited" ||
+    (state?.status === "failed" && !!state.recoverable)
+  );
 }
 
 export function isTerminalState(
