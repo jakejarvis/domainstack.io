@@ -1,7 +1,7 @@
 "use client";
 
 import { IconXboxX } from "@tabler/icons-react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import type { RefObject } from "react";
 
 import { NotificationCard } from "@/components/notifications/notification-card";
@@ -36,8 +36,6 @@ export function NotificationList({
   onNotificationClick,
   onClosePopover,
 }: NotificationListProps) {
-  const shouldReduceMotion = useReducedMotion();
-
   return (
     <ScrollArea scrollRef={scrollAreaRef} className="min-h-0 flex-1 bg-popover/10">
       <div className={!isLoading && !isError && notifications.length > 0 ? "divide-y" : undefined}>
@@ -61,12 +59,12 @@ export function NotificationList({
             notifications.map((notification) => (
               <motion.div
                 key={notification.id}
-                layout={shouldReduceMotion ? false : "position"}
+                layout={"position"}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{
-                  duration: shouldReduceMotion ? 0.1 : 0.2,
+                  duration: 0.2,
                   ease: "easeInOut",
                 }}
               >

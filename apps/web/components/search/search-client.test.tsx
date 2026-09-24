@@ -143,24 +143,18 @@ describe("DomainSearch (form variant)", () => {
     expect(toast.error).toHaveBeenCalled();
   });
 
-  it("handles pending domain from store (suggestion click)", async () => {
-    // Start with no pending domain
-    mockPendingDomain.value = null;
-    const { rerender } = await render(<SearchClient variant="lg" />);
-
-    // Simulate external navigation request (e.g., from suggestion click via store)
+  it("shows a suggestion chip's pending navigation and clears it when hidden", async () => {
     mockPendingDomain.value = "test.invalid";
-    await rerender(<SearchClient variant="lg" />);
+    const { unmount } = await render(<SearchClient variant="lg" />);
 
-    // Wait for input to reflect the triggered domain (async due to useEffect)
+    // The chip's link navigates; the search only mirrors it.
     const input = domainSearchInput();
     await expect.element(input).toHaveValue("test.invalid");
+    await expect.element(input).toBeDisabled();
+    expect(nav.push).not.toHaveBeenCalled();
 
-    // Wait for navigation and store clear to be triggered
-    await vi.waitFor(() => {
-      expect(nav.push).toHaveBeenCalledWith("/test.invalid");
-      expect(mockSetPendingDomain).toHaveBeenCalledWith(null);
-    });
+    await unmount();
+    expect(mockSetPendingDomain).toHaveBeenCalledWith(null);
   });
 });
 

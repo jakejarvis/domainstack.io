@@ -20,23 +20,6 @@ vi.mock("@domainstack/ui/tooltip", () => ({
   ),
 }));
 
-vi.mock("@domainstack/ui/accordion", () => ({
-  Accordion: ({ children }: { children: React.ReactNode }) => (
-    <div data-slot="accordion">{children}</div>
-  ),
-  AccordionContent: ({ children }: { children: React.ReactNode }) => (
-    <div data-slot="accordion-content">{children}</div>
-  ),
-  AccordionItem: ({ children }: { children: React.ReactNode }) => (
-    <div data-slot="accordion-item">{children}</div>
-  ),
-  AccordionTrigger: ({ children }: { children: React.ReactNode }) => (
-    <button type="button" data-slot="accordion-trigger">
-      {children}
-    </button>
-  ),
-}));
-
 describe("RobotsSummary", () => {
   describe("robots.txt rendering", () => {
     it("renders robots.txt rules and sitemaps", async () => {
@@ -229,10 +212,10 @@ describe("RobotsSummary", () => {
         sitemaps: [],
       };
       await render(<RobotsSummary domain="test.invalid" robots={robots} />);
-      // Empty disallow means allow all - the message appears inside the accordion when opened
-      // Since we're using mocked accordions, we can't test the message visibility
-      // Just verify the component renders
-      await expect.element(page.getByRole("link", { name: /robots\.txt/i })).toBeInTheDocument();
+      // Empty disallow means allow all; the "*" group is open by default
+      await expect
+        .element(page.getByText("No disallow restrictions (allow all)", { exact: true }))
+        .toBeVisible();
     });
 
     it("lists All bots first when grouped with other user agents", async () => {
@@ -279,6 +262,55 @@ describe("RobotsSummary", () => {
       expect(allButton).toBeDefined();
       expect(allowButton).toBeDefined();
       expect(disallowButton).toBeDefined();
+    });
+  });
+
+  describe("accordion", () => {
+    const robots: SeoResponse["robots"] = {
+      fetched: true,
+      groups: [
+        {
+          userAgents: ["*"],
+          rules: [
+            { type: "allow", value: "/public" },
+            { type: "disallow", value: "/admin" },
+          ],
+        },
+        { userAgents: ["Googlebot"], rules: [{ type: "disallow", value: "/private" }] },
+        { userAgents: ["Bingbot"], rules: [{ type: "allow", value: "/bing" }] },
+      ],
+      sitemaps: [],
+    };
+
+    it("opens the All bots group by default", async () => {
+      await render(<RobotsSummary domain="test.invalid" robots={robots} />);
+
+      await expect.element(page.getByText("/public", { exact: true })).toBeVisible();
+      await expect.element(page.getByText("/bing", { exact: true })).not.toBeVisible();
+    });
+
+    it("keeps the same group open when a filter hides the groups before it", async () => {
+      await render(<RobotsSummary domain="test.invalid" robots={robots} />);
+
+      await page.getByRole("button", { name: /Bingbot/ }).click();
+      await expect.element(page.getByText("/bing", { exact: true })).toBeVisible();
+
+      // Googlebot has no allow rules, so this drops it and shifts Bingbot up a position.
+      await page.getByRole("button", { name: /^Allow/ }).click();
+      await expect.element(page.getByRole("button", { name: /Googlebot/ })).not.toBeInTheDocument();
+
+      await expect.element(page.getByText("/bing", { exact: true })).toBeVisible();
+      await expect.element(page.getByText("/public", { exact: true })).not.toBeVisible();
+    });
+
+    it("opens every matching group while searching", async () => {
+      await render(<RobotsSummary domain="test.invalid" robots={robots} />);
+
+      await page.getByRole("textbox", { name: "Filter robots rules" }).fill("/");
+
+      await expect.element(page.getByText("/public", { exact: true })).toBeVisible();
+      await expect.element(page.getByText("/private", { exact: true })).toBeVisible();
+      await expect.element(page.getByText("/bing", { exact: true })).toBeVisible();
     });
   });
 });

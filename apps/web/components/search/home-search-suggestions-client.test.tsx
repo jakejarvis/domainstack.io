@@ -39,6 +39,21 @@ vi.mock("jotai", async (importOriginal) => {
   };
 });
 
+// Keep chip links from navigating the test page.
+vi.mock("next/link", () => ({
+  default: ({
+    onClick,
+    ...props
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) =>
+    createElement("a", {
+      ...props,
+      onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
+        onClick?.(e);
+        e.preventDefault();
+      },
+    }),
+}));
+
 const DEFAULT_TEST_SUGGESTIONS = [
   "github.invalid",
   "reddit.invalid",
@@ -110,10 +125,16 @@ describe("DomainSuggestionsClient", () => {
     expect(mockClearHistory).toHaveBeenCalled();
   });
 
-  it("sets pending domain when a suggestion is clicked", async () => {
+  it("links each suggestion and marks it pending on a plain click", async () => {
     mockHistoryState.history = ["example.invalid"];
     await render(<HomeSearchSuggestionsClient defaultSuggestions={DEFAULT_TEST_SUGGESTIONS} />);
-    await page.getByRole("button", { name: /example.invalid/i }).click();
+    const chip = page.getByRole("button", { name: /example.invalid/i });
+    await expect.element(chip).toHaveAttribute("href", "/example.invalid");
+
+    await chip.click({ modifiers: ["ControlOrMeta"] });
+    expect(mockSetPendingDomain).not.toHaveBeenCalled();
+
+    await chip.click();
     expect(mockSetPendingDomain).toHaveBeenCalledWith("example.invalid");
   });
 });

@@ -1,5 +1,5 @@
 import { type Cell, FlexRender } from "@tanstack/react-table";
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
 
 import { useIsDomainSelected } from "@/hooks/use-dashboard-selection";
 import type { DashboardTableFeatures } from "@/lib/dashboard-table-features";
@@ -13,18 +13,17 @@ type VerifiedTableRowProps = {
 };
 
 export function VerifiedTableRow({ rowId, cells, original }: VerifiedTableRowProps) {
-  const shouldReduceMotion = useReducedMotion();
   const isSelected = useIsDomainSelected(original.id);
 
   return (
     <motion.tr
       key={rowId}
-      layout={shouldReduceMotion ? false : "position"}
-      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 6 }}
+      layout={"position"}
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -6 }}
+      exit={{ opacity: 0, y: -6 }}
       transition={{
-        duration: shouldReduceMotion ? 0.1 : 0.16,
+        duration: 0.16,
         ease: [0.22, 1, 0.36, 1] as const,
       }}
       className={cn(

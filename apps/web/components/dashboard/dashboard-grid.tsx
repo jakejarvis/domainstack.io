@@ -1,4 +1,4 @@
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 
 import { DashboardGridCard } from "@/components/dashboard/dashboard-grid-card";
@@ -10,8 +10,6 @@ type DashboardGridProps = {
 };
 
 export function DashboardGrid({ domains }: DashboardGridProps) {
-  const shouldReduceMotion = useReducedMotion();
-
   // Capture visual-order delays on this grid's first mount.
   const [enterDelays] = useState(() => {
     const delays = new Map<string, number>();
@@ -23,19 +21,19 @@ export function DashboardGrid({ domains }: DashboardGridProps) {
   });
 
   const ease = [0.22, 1, 0.36, 1] as const;
-  const duration = shouldReduceMotion ? 0.1 : 0.18;
+  const duration = 0.18;
   const layoutTransition = { duration, ease } as const;
 
   const getItemMotionProps = (id: string) => {
-    const delay = shouldReduceMotion ? 0 : (enterDelays.get(id) ?? 0);
+    const delay = enterDelays.get(id) ?? 0;
 
     return {
-      layout: shouldReduceMotion ? false : ("position" as const),
-      initial: { opacity: 0, y: shouldReduceMotion ? 0 : 10 },
+      layout: "position" as const,
+      initial: { opacity: 0, y: 10 },
       animate: { opacity: 1, y: 0 },
       exit: {
         opacity: 0,
-        y: shouldReduceMotion ? 0 : -10,
+        y: -10,
         transition: {
           opacity: { duration, ease, delay: 0 },
           y: { duration, ease, delay: 0 },

@@ -40,17 +40,16 @@ export function HomeSearchSuggestionsClient({
     return merged.slice(0, max);
   }, [history, defaultSuggestions, max]);
 
-  const handleClick = useCallback(
-    (domain: string) => {
-      analytics.track("search_suggestion_clicked", {
-        domain,
-        source: "suggestion",
-      });
-      // Set pending domain for SearchClient to pick up and navigate
-      setPendingDomain(domain);
-    },
-    [analytics, setPendingDomain],
-  );
+  const handleClick = (e: React.MouseEvent, domain: string) => {
+    // Modified clicks open a new tab or window; this page isn't going anywhere.
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    analytics.track("search_suggestion_clicked", {
+      domain,
+      source: "suggestion",
+    });
+    analytics.track("search_submitted", { domain });
+    setPendingDomain(domain);
+  };
 
   const handleClearHistory = useCallback(() => {
     clearHistory();
@@ -86,10 +85,7 @@ export function HomeSearchSuggestionsClient({
             variant="secondary"
             size="sm"
             className="shrink-0 gap-2 border-none bg-muted/40 px-2.5 leading-none ring-1 ring-ring/20 hover:bg-muted/60"
-            onClick={(e) => {
-              e.preventDefault();
-              handleClick(domain);
-            }}
+            onClick={(e) => handleClick(e, domain)}
             nativeButton={false}
             aria-label={domain}
             render={

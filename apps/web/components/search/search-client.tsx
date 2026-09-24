@@ -205,20 +205,13 @@ function useSearchClient({
     startNavigation(() => router.push(`/${encodeURIComponent(target)}`));
   };
 
-  const navigateRef = useRef(navigateToDomain);
+  // A home suggestion chip is navigating: show its domain and the spinner until this
+  // page is hidden (kept alive under <Activity>) or unmounted.
+  const suggestedDomain = variant === "lg" ? pendingDomain : null;
   useEffect(() => {
-    navigateRef.current = navigateToDomain;
-  });
-
-  if (variant === "lg" && pendingDomain && value !== pendingDomain) {
-    setValue(pendingDomain);
-  }
-  useEffect(() => {
-    if (variant === "lg" && pendingDomain) {
-      navigateRef.current(pendingDomain);
-      setPendingDomain(null);
-    }
-  }, [variant, pendingDomain, setPendingDomain]);
+    if (variant !== "lg") return;
+    return () => setPendingDomain(null);
+  }, [variant, setPendingDomain]);
 
   const pointerDownRef = useRef(false);
   const justFocusedRef = useRef(false);
@@ -288,7 +281,7 @@ function useSearchClient({
     [onFocusChangeAction, onDismissAction],
   );
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = () => {
     const normalized = normalizeDomainInput(value);
 
     // Validate before blurring: on mobile the blur collapses the search, and a
@@ -306,15 +299,15 @@ function useSearchClient({
 
     setIsFocused(false);
     inputRef.current?.blur();
-    navigateRef.current(normalized);
+    navigateToDomain(normalized);
     onCloseAction?.();
-  }, [value, onCloseAction]);
+  };
 
   return {
     variant,
-    value,
+    value: suggestedDomain ?? value,
     setValue,
-    loading,
+    loading: loading || suggestedDomain !== null,
     mounted,
     isMobile,
     isFocused,
