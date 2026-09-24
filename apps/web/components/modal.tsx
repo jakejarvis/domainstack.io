@@ -1,7 +1,5 @@
 "use client";
 
-import type { ComponentPropsWithoutRef } from "react";
-
 import { useRouter } from "@/hooks/use-router";
 import {
   ModalClose,
@@ -15,7 +13,7 @@ import {
   ModalTitle,
 } from "@domainstack/ui/modal";
 
-type ModalProps = ComponentPropsWithoutRef<typeof ModalPrimitive>;
+type ModalProps = React.ComponentPropsWithoutRef<typeof ModalPrimitive>;
 
 /**
  * Modal that auto-closes via router.back().

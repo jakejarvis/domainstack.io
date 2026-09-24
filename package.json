@@ -25,13 +25,12 @@
     "db:push": "turbo run db:push",
     "db:migrate": "turbo run db:migrate",
     "db:studio": "turbo run db:studio",
-    "clean": "shx rm -rf .turbo \"apps/*/.turbo\" \"apps/*/node_modules\" \"apps/*/*.tsbuildinfo\" apps/web/.next \"packages/*/.turbo\" \"packages/*/node_modules\" \"packages/*/*.tsbuildinfo\" node_modules pnpm-lock.yaml"
+    "clean": "node -e \"const { globSync, rmSync } = require('node:fs'); for (const pattern of process.argv.slice(1)) for (const path of globSync(pattern)) rmSync(path, { recursive: true, force: true, maxRetries: process.platform === 'win32' ? 10 : 0 })\" -- .turbo \"apps/*/.turbo\" \"apps/*/node_modules\" \"apps/*/*.tsbuildinfo\" apps/web/.next \"packages/*/.turbo\" \"packages/*/node_modules\" \"packages/*/*.tsbuildinfo\" node_modules pnpm-lock.yaml"
   },
   "devDependencies": {
     "oxfmt": "^0.70.0",
     "oxlint": "^1.85.0",
     "oxlint-tsgolint": "^7.0.2002",
-    "shx": "^0.4.0",
     "turbo": "^2.11.3",
     "typescript": "^7.0.2"
   },

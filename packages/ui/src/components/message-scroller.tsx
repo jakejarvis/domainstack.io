@@ -1,7 +1,6 @@
 "use client";
 
 import { MessageScroller as MessageScrollerPrimitive } from "@shadcn/react/message-scroller";
-import type { ComponentProps } from "react";
 
 import { cn } from "../utils";
 
@@ -11,14 +10,16 @@ export {
   useMessageScrollerVisibility,
 } from "@shadcn/react/message-scroller";
 
-function MessageScrollerProvider(props: ComponentProps<typeof MessageScrollerPrimitive.Provider>) {
+function MessageScrollerProvider(
+  props: React.ComponentProps<typeof MessageScrollerPrimitive.Provider>,
+) {
   return <MessageScrollerPrimitive.Provider data-slot="message-scroller-provider" {...props} />;
 }
 
 function MessageScrollerRoot({
   className,
   ...props
-}: ComponentProps<typeof MessageScrollerPrimitive.Root>) {
+}: React.ComponentProps<typeof MessageScrollerPrimitive.Root>) {
   return (
     <MessageScrollerPrimitive.Root
       data-slot="message-scroller-root"
@@ -31,7 +32,7 @@ function MessageScrollerRoot({
 function MessageScrollerViewport({
   className,
   ...props
-}: ComponentProps<typeof MessageScrollerPrimitive.Viewport>) {
+}: React.ComponentProps<typeof MessageScrollerPrimitive.Viewport>) {
   return (
     <MessageScrollerPrimitive.Viewport
       data-slot="message-scroller-viewport"
@@ -47,7 +48,7 @@ function MessageScrollerViewport({
 function MessageScrollerContent({
   className,
   ...props
-}: ComponentProps<typeof MessageScrollerPrimitive.Content>) {
+}: React.ComponentProps<typeof MessageScrollerPrimitive.Content>) {
   return (
     <MessageScrollerPrimitive.Content
       data-slot="message-scroller-content"
@@ -57,7 +58,7 @@ function MessageScrollerContent({
   );
 }
 
-function MessageScrollerItem(props: ComponentProps<typeof MessageScrollerPrimitive.Item>) {
+function MessageScrollerItem(props: React.ComponentProps<typeof MessageScrollerPrimitive.Item>) {
   return <MessageScrollerPrimitive.Item data-slot="message-scroller-item" {...props} />;
 }
 

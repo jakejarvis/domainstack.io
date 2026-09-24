@@ -1,5 +1,3 @@
-import type { ReactNode } from "react";
-
 export function Favicon({ domain }: { domain: string }) {
   return <span aria-hidden data-domain={domain} />;
 }
@@ -16,7 +14,7 @@ export function ProviderLogo({
   return <span aria-hidden data-provider-logo={providerId} />;
 }
 
-export function ScreenshotPopover({ children }: { children: ReactNode }) {
+export function ScreenshotPopover({ children }: { children: React.ReactNode }) {
   return children;
 }
 

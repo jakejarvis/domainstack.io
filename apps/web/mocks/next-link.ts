@@ -1,8 +1,8 @@
-import { type ComponentProps, createElement, type ReactNode } from "react";
+import { createElement } from "react";
 
 type NextLinkMockProps = {
   href: string | { pathname?: string };
-  children?: ReactNode;
+  children?: React.ReactNode;
   prefetch?: unknown;
   scroll?: unknown;
   replace?: unknown;
@@ -10,7 +10,7 @@ type NextLinkMockProps = {
   locale?: unknown;
   passHref?: unknown;
   onNavigate?: (e: { preventDefault: () => void }) => void;
-} & Omit<ComponentProps<"a">, "href">;
+} & Omit<React.ComponentProps<"a">, "href">;
 
 export default function NextLinkMock({
   href,

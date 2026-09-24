@@ -2,7 +2,6 @@
 
 import { IconXboxX } from "@tabler/icons-react";
 import { AnimatePresence, motion } from "motion/react";
-import type { RefObject } from "react";
 
 import { NotificationCard } from "@/components/notifications/notification-card";
 import { NotificationEmptyState } from "@/components/notifications/notification-empty-state";
@@ -18,8 +17,8 @@ interface NotificationListProps {
   view: "inbox" | "archive";
   hasNextPage?: boolean;
   isFetchingNextPage?: boolean;
-  loadMoreRef?: RefObject<HTMLDivElement | null>;
-  scrollAreaRef?: RefObject<HTMLDivElement | null>;
+  loadMoreRef?: React.RefObject<HTMLDivElement | null>;
+  scrollAreaRef?: React.RefObject<HTMLDivElement | null>;
   onNotificationClick?: (notification: NotificationData) => void;
   onClosePopover?: () => void;
 }

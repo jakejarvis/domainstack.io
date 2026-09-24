@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, type ReactNode, type RefObject, useCallback, useRef } from "react";
+import { useCallback, useRef } from "react";
 
 import { cn } from "../utils";
 import { Card, CardContent, CardHeader, CardTitle } from "./card";
@@ -8,10 +8,10 @@ import { CopyButton } from "./copy-button";
 import { ScrollArea } from "./scroll-area";
 
 type CodeBlockProps = {
-  children: ReactNode;
+  children: React.ReactNode;
   className?: string;
-  icon?: ReactNode;
-  style?: CSSProperties;
+  icon?: React.ReactNode;
+  style?: React.CSSProperties;
   tabIndex?: number;
   title?: string;
 };
@@ -23,10 +23,10 @@ function CodeBlockPre({
   style,
   tabIndex,
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
   className?: string;
-  preRef: RefObject<HTMLPreElement | null>;
-  style?: CSSProperties;
+  preRef: React.RefObject<HTMLPreElement | null>;
+  style?: React.CSSProperties;
   tabIndex?: number;
 }) {
   return (

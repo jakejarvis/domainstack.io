@@ -8,7 +8,7 @@ import {
   useSuspenseQuery,
   type UseSuspenseQueryOptions,
 } from "@tanstack/react-query";
-import { type ComponentType, type ReactNode, Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 
 import { CreateIssueButton } from "@/components/create-issue-button";
 import { CertificatesSection } from "@/components/domain/certificates/certificates-section";
@@ -75,8 +75,8 @@ function reportSection<T, TError, TKey extends QueryKey>({
     trpc: Trpc,
     domain: string,
   ) => UseSuspenseQueryOptions<LookupOutcome<T>, TError, LookupOutcome<T>, TKey>;
-  Section: ComponentType<{ domain: string; data: NoInfer<T> }>;
-  Skeleton: ComponentType;
+  Section: React.ComponentType<{ domain: string; data: NoInfer<T> }>;
+  Skeleton: React.ComponentType;
 }) {
   function Loaded({ domain }: { domain: string }) {
     const trpc = useTRPC();
@@ -249,7 +249,7 @@ function DomainReportLoadError({
   );
 }
 
-function DomainReportSections({ children }: { children: ReactNode }) {
+function DomainReportSections({ children }: { children: React.ReactNode }) {
   return <div className="space-y-4">{children}</div>;
 }
 

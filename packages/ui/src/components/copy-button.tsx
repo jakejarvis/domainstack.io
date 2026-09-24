@@ -1,7 +1,6 @@
 "use client";
 
 import { IconCheck, IconCircleX, IconClipboardCheck, IconCopy } from "@tabler/icons-react";
-import clipboardCopy from "clipboard-copy";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -46,7 +45,7 @@ export function CopyButton({
 
     try {
       const textToCopy = typeof value === "function" ? value() : value;
-      await clipboardCopy(textToCopy);
+      await navigator.clipboard.writeText(textToCopy);
 
       toast.success("Copied!", {
         icon: <IconClipboardCheck className="size-4" />,
