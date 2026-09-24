@@ -1,13 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useMemo } from "react";
 import { toast } from "sonner";
 
 import { useTRPC } from "@/lib/trpc/client";
 import type { SubscriptionQuota, TrackedDomainWithDetails } from "@domainstack/types";
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
 
 interface BulkMutationResult {
   successCount: number;
@@ -16,83 +11,88 @@ interface BulkMutationResult {
 
 type DomainsData = TrackedDomainWithDetails[] | undefined;
 
-interface MutationContext {
+type LifecycleCounts = { active: number; archived: number };
+
+/** An optimistic change to a set of tracked domains. */
+interface DomainChange {
+  ids: string[];
+  /** The domain after the change, or `null` to drop it from the list. */
+  update: (domain: TrackedDomainWithDetails) => TrackedDomainWithDetails | null;
+  /** How the plan quota counts move, given the affected domains' current states. */
+  quotaDelta?: (affected: LifecycleCounts) => LifecycleCounts;
+}
+
+interface Snapshot {
   previousDomains: [unknown, unknown][];
-  previousSubscription: SubscriptionQuota | undefined;
+  /** Only captured when the change touched the quota. */
+  previousSubscription?: SubscriptionQuota;
+}
+
+const removeDomains = (ids: string[]): DomainChange => ({
+  ids,
+  update: () => null,
+  quotaDelta: ({ active, archived }) => ({ active: -active, archived: -archived }),
+});
+
+const archiveDomains = (ids: string[]): DomainChange => ({
+  ids,
+  update: (d) => (d.archivedAt ? d : { ...d, archivedAt: new Date() }),
+  quotaDelta: ({ active }) => ({ active: -active, archived: active }),
+});
+
+const unarchiveDomains = (ids: string[]): DomainChange => ({
+  ids,
+  update: (d) => ({ ...d, archivedAt: null }),
+  quotaDelta: ({ archived }) => ({ active: archived, archived: -archived }),
+});
+
+const muteDomains = (ids: string[], muted: boolean): DomainChange => ({
+  ids,
+  update: (d) => ({ ...d, muted }),
+});
+
+// Count affected domains by their current lifecycle state, deduped across
+// every cached listDomains variant so a domain present in multiple entries
+// (e.g. includeArchived true/false) is counted once. The subscription delta
+// must reflect actual state transitions, not a blind ±1.
+function affectedCounts(previousDomains: [unknown, unknown][], ids: Set<string>): LifecycleCounts {
+  const seen = new Set<string>();
+  const counts = { active: 0, archived: 0 };
+  for (const [, domains] of previousDomains) {
+    if (!domains) continue;
+    for (const d of domains as TrackedDomainWithDetails[]) {
+      if (!ids.has(d.id) || seen.has(d.id)) continue;
+      seen.add(d.id);
+      counts[d.archivedAt ? "archived" : "active"] += 1;
+    }
+  }
+  return counts;
 }
 
 function toastBulkResult(
   verb: "Archived" | "Deleted" | "Muted" | "Unmuted",
   result: BulkMutationResult,
   requestedCount: number,
-) {
+): BulkMutationResult {
   if (result.failedCount === 0) {
     toast.success(`${verb} ${requestedCount} domain${requestedCount === 1 ? "" : "s"}`);
-    return;
+  } else {
+    toast.warning(
+      `${verb} ${result.successCount} of ${requestedCount} domains (${result.failedCount} failed)`,
+    );
   }
-
-  toast.warning(
-    `${verb} ${result.successCount} of ${requestedCount} domains (${result.failedCount} failed)`,
-  );
+  return result;
 }
-
-// Count affected domains by their current lifecycle state, deduped across
-// every cached listDomains variant so a domain present in multiple entries
-// (e.g. includeArchived true/false) is counted once. The subscription delta
-// must reflect actual state transitions, not a blind ±1.
-function affectedCounts(previousDomains: [unknown, unknown][], ids: Iterable<string>) {
-  const idSet = new Set(ids);
-  const seen = new Set<string>();
-  let active = 0;
-  let archived = 0;
-  for (const [, domains] of previousDomains) {
-    if (!domains) continue;
-    for (const d of domains as TrackedDomainWithDetails[]) {
-      if (!idSet.has(d.id) || seen.has(d.id)) continue;
-      seen.add(d.id);
-      if (d.archivedAt) archived += 1;
-      else active += 1;
-    }
-  }
-  return { active, archived };
-}
-
-interface UseDashboardMutationsReturn {
-  // Single-item mutations
-  remove: (trackedDomainId: string) => void;
-  archive: (trackedDomainId: string) => void;
-  unarchive: (trackedDomainId: string) => void;
-  setMuted: (trackedDomainId: string, muted: boolean) => void;
-
-  // Bulk mutations (return promises for confirmation dialog flow)
-  bulkArchive: (trackedDomainIds: string[]) => Promise<BulkMutationResult>;
-  bulkDelete: (trackedDomainIds: string[]) => Promise<BulkMutationResult>;
-  bulkSetMuted: (trackedDomainIds: string[], muted: boolean) => Promise<BulkMutationResult>;
-
-  // Loading states
-  isRemoving: boolean;
-  isArchiving: boolean;
-  isUnarchiving: boolean;
-  isMuting: boolean;
-  isBulkArchiving: boolean;
-  isBulkDeleting: boolean;
-  isBulkMuting: boolean;
-}
-
-// ---------------------------------------------------------------------------
-// Hook
-// ---------------------------------------------------------------------------
 
 /**
- * Encapsulates all dashboard domain mutations with optimistic updates.
+ * Dashboard domain mutations. Every one applies its change optimistically to
+ * all cached `listDomains` variants (and the plan quota when counts move),
+ * rolls back and toasts on error, and refetches on settle.
  *
- * All mutations handle:
- * - Optimistic cache updates for instant UI feedback
- * - Rollback on error
- * - Toast notifications for success/failure
- * - Query invalidation on settle
+ * Single-domain and bulk variants hit different endpoints but share the same
+ * {@link DomainChange}, so they can't drift apart.
  */
-export function useDashboardMutations(): UseDashboardMutationsReturn {
+export function useDashboardMutations() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
@@ -100,444 +100,155 @@ export function useDashboardMutations(): UseDashboardMutationsReturn {
   const subscriptionFilter = trpc.user.getSubscription.queryFilter();
   const subscriptionQueryKey = trpc.user.getSubscription.queryKey();
 
-  const invalidateDomainQueries = useCallback(() => {
-    void queryClient.invalidateQueries(domainsFilter);
-    void queryClient.invalidateQueries(trpc.tracking.getTrackingStatus.queryFilter());
-    void queryClient.invalidateQueries(subscriptionFilter);
-  }, [queryClient, domainsFilter, subscriptionFilter, trpc]);
+  const applyChange = async ({ ids, update, quotaDelta }: DomainChange): Promise<Snapshot> => {
+    const idSet = new Set(ids);
+    await queryClient.cancelQueries(domainsFilter);
+    const previousDomains = queryClient.getQueriesData(domainsFilter);
 
-  // Helper to rollback domain queries
-  const rollbackDomains = (previousDomains: [unknown, unknown][]) => {
-    for (const [key, data] of previousDomains) {
-      queryClient.setQueryData(key as string[], data);
+    let previousSubscription: SubscriptionQuota | undefined;
+    if (quotaDelta) {
+      await queryClient.cancelQueries(subscriptionFilter);
+      previousSubscription = queryClient.getQueryData<SubscriptionQuota>(subscriptionQueryKey);
+      const delta = quotaDelta(affectedCounts(previousDomains, idSet));
+      queryClient.setQueryData<SubscriptionQuota | undefined>(subscriptionQueryKey, (old) => {
+        if (!old) return old;
+        const activeCount = Math.max(0, old.activeCount + delta.active);
+        return {
+          ...old,
+          activeCount,
+          archivedCount: Math.max(0, old.archivedCount + delta.archived),
+          canAddMore: activeCount < old.planQuota,
+        };
+      });
     }
+
+    queryClient.setQueriesData(domainsFilter, (old: DomainsData) =>
+      old?.flatMap((d) => (idSet.has(d.id) ? (update(d) ?? []) : [d])),
+    );
+
+    return { previousDomains, previousSubscription };
   };
 
-  // ---------------------------------------------------------------------------
-  // Remove Mutation
-  // ---------------------------------------------------------------------------
+  /** onMutate/onError/onSettled for a mutation whose variables map to a {@link DomainChange}. */
+  const optimistic = <TVariables>(
+    toChange: (variables: TVariables) => DomainChange,
+    errorMessage: (err: unknown, variables: TVariables) => string,
+  ) => ({
+    onMutate: (variables: TVariables) => applyChange(toChange(variables)),
+    onError: (err: unknown, variables: TVariables, snapshot: Snapshot | undefined) => {
+      for (const [key, data] of snapshot?.previousDomains ?? []) {
+        queryClient.setQueryData(key as string[], data);
+      }
+      if (snapshot?.previousSubscription) {
+        queryClient.setQueryData(subscriptionQueryKey, snapshot.previousSubscription);
+      }
+      toast.error(errorMessage(err, variables));
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries(domainsFilter);
+      void queryClient.invalidateQueries(trpc.tracking.getTrackingStatus.queryFilter());
+      void queryClient.invalidateQueries(subscriptionFilter);
+    },
+  });
 
   const removeMutation = useMutation(
     trpc.tracking.removeDomain.mutationOptions({
-      onMutate: async ({ trackedDomainId }: { trackedDomainId: string }) => {
-        await queryClient.cancelQueries(domainsFilter);
-        await queryClient.cancelQueries(subscriptionFilter);
-
-        const previousDomains = queryClient.getQueriesData(domainsFilter);
-        const previousSubscription =
-          queryClient.getQueryData<SubscriptionQuota>(subscriptionQueryKey);
-
-        const { active, archived } = affectedCounts(previousDomains, [trackedDomainId]);
-
-        queryClient.setQueriesData(domainsFilter, (old: DomainsData) =>
-          old?.filter((d) => d.id !== trackedDomainId),
-        );
-        queryClient.setQueryData<SubscriptionQuota | undefined>(subscriptionQueryKey, (old) => {
-          if (!old) return old;
-          const activeCount = Math.max(0, old.activeCount - active);
-          const archivedCount = Math.max(0, old.archivedCount - archived);
-          return {
-            ...old,
-            activeCount,
-            archivedCount,
-            canAddMore: activeCount < old.planQuota,
-          };
-        });
-
-        return {
-          previousDomains,
-          previousSubscription,
-        };
-      },
-      onError: (_err, _vars, context: MutationContext | undefined) => {
-        if (context?.previousDomains) {
-          rollbackDomains(context.previousDomains);
-        }
-        if (context?.previousSubscription) {
-          queryClient.setQueryData(subscriptionQueryKey, context.previousSubscription);
-        }
-        toast.error("Failed to remove domain");
-      },
+      ...optimistic(
+        ({ trackedDomainId }: { trackedDomainId: string }) => removeDomains([trackedDomainId]),
+        () => "Failed to remove domain",
+      ),
       onSuccess: () => toast.success("Domain removed"),
-      onSettled: invalidateDomainQueries,
     }),
   );
-
-  // ---------------------------------------------------------------------------
-  // Archive Mutation
-  // ---------------------------------------------------------------------------
 
   const archiveMutation = useMutation(
     trpc.tracking.archiveDomain.mutationOptions({
-      onMutate: async ({ trackedDomainId }: { trackedDomainId: string }) => {
-        await queryClient.cancelQueries(domainsFilter);
-        await queryClient.cancelQueries(subscriptionFilter);
-
-        const previousDomains = queryClient.getQueriesData(domainsFilter);
-        const previousSubscription =
-          queryClient.getQueryData<SubscriptionQuota>(subscriptionQueryKey);
-
-        const { active: toArchive } = affectedCounts(previousDomains, [trackedDomainId]);
-
-        queryClient.setQueriesData(domainsFilter, (old: DomainsData) =>
-          old?.map((d) => (d.id === trackedDomainId ? { ...d, archivedAt: new Date() } : d)),
-        );
-        queryClient.setQueryData<SubscriptionQuota | undefined>(subscriptionQueryKey, (old) => {
-          if (!old) return old;
-          const activeCount = Math.max(0, old.activeCount - toArchive);
-          return {
-            ...old,
-            activeCount,
-            archivedCount: old.archivedCount + toArchive,
-            canAddMore: activeCount < old.planQuota,
-          };
-        });
-
-        return {
-          previousDomains,
-          previousSubscription,
-        };
-      },
-      onError: (_err, _vars, context: MutationContext | undefined) => {
-        if (context?.previousDomains) {
-          rollbackDomains(context.previousDomains);
-        }
-        if (context?.previousSubscription) {
-          queryClient.setQueryData(subscriptionQueryKey, context.previousSubscription);
-        }
-        toast.error("Failed to archive domain");
-      },
+      ...optimistic(
+        ({ trackedDomainId }: { trackedDomainId: string }) => archiveDomains([trackedDomainId]),
+        () => "Failed to archive domain",
+      ),
       onSuccess: () => toast.success("Domain archived"),
-      onSettled: invalidateDomainQueries,
     }),
   );
-
-  // ---------------------------------------------------------------------------
-  // Unarchive Mutation
-  // ---------------------------------------------------------------------------
 
   const unarchiveMutation = useMutation(
     trpc.tracking.unarchiveDomain.mutationOptions({
-      onMutate: async ({ trackedDomainId }: { trackedDomainId: string }) => {
-        await queryClient.cancelQueries(domainsFilter);
-        await queryClient.cancelQueries(subscriptionFilter);
-
-        const previousDomains = queryClient.getQueriesData(domainsFilter);
-        const previousSubscription =
-          queryClient.getQueryData<SubscriptionQuota>(subscriptionQueryKey);
-
-        const { archived: toActivate } = affectedCounts(previousDomains, [trackedDomainId]);
-
-        queryClient.setQueriesData(domainsFilter, (old: DomainsData) =>
-          old?.map((d) => (d.id === trackedDomainId ? { ...d, archivedAt: null } : d)),
-        );
-        queryClient.setQueryData<SubscriptionQuota | undefined>(subscriptionQueryKey, (old) => {
-          if (!old) return old;
-          const activeCount = old.activeCount + toActivate;
-          return {
-            ...old,
-            activeCount,
-            archivedCount: Math.max(0, old.archivedCount - toActivate),
-            canAddMore: activeCount < old.planQuota,
-          };
-        });
-
-        return {
-          previousDomains,
-          previousSubscription,
-        };
-      },
-      onError: (err, _vars, context: MutationContext | undefined) => {
-        if (context?.previousDomains) {
-          rollbackDomains(context.previousDomains);
-        }
-        if (context?.previousSubscription) {
-          queryClient.setQueryData(subscriptionQueryKey, context.previousSubscription);
-        }
-        toast.error(err instanceof Error ? err.message : "Failed to reactivate domain");
-      },
+      ...optimistic(
+        ({ trackedDomainId }: { trackedDomainId: string }) => unarchiveDomains([trackedDomainId]),
+        (err) => (err instanceof Error ? err.message : "Failed to reactivate domain"),
+      ),
       onSuccess: () => toast.success("Domain reactivated"),
-      onSettled: invalidateDomainQueries,
     }),
   );
-
-  // ---------------------------------------------------------------------------
-  // Mute Mutation
-  // ---------------------------------------------------------------------------
 
   const muteMutation = useMutation(
     trpc.user.setDomainMuted.mutationOptions({
-      onMutate: async ({ trackedDomainId, muted }: { trackedDomainId: string; muted: boolean }) => {
-        await queryClient.cancelQueries(domainsFilter);
-
-        const previousDomains = queryClient.getQueriesData(domainsFilter);
-
-        queryClient.setQueriesData(domainsFilter, (old: DomainsData) =>
-          old?.map((d) => (d.id === trackedDomainId ? { ...d, muted } : d)),
-        );
-
-        return { previousDomains };
-      },
-      onError: (_err, _vars, context: { previousDomains: [unknown, unknown][] } | undefined) => {
-        if (context?.previousDomains) {
-          rollbackDomains(context.previousDomains);
-        }
-        toast.error("Failed to update notification settings");
-      },
+      ...optimistic(
+        ({ trackedDomainId, muted }: { trackedDomainId: string; muted: boolean }) =>
+          muteDomains([trackedDomainId], muted),
+        () => "Failed to update notification settings",
+      ),
       onSuccess: (_data, { muted }) => toast.success(muted ? "Domain muted" : "Domain unmuted"),
-      onSettled: () => void queryClient.invalidateQueries(domainsFilter),
     }),
   );
-
-  // ---------------------------------------------------------------------------
-  // Bulk Archive Mutation
-  // ---------------------------------------------------------------------------
 
   const bulkArchiveMutation = useMutation(
-    trpc.tracking.bulkArchiveDomains.mutationOptions({
-      onMutate: async ({ trackedDomainIds }: { trackedDomainIds: string[] }) => {
-        await queryClient.cancelQueries(domainsFilter);
-        await queryClient.cancelQueries(subscriptionFilter);
-
-        const previousDomains = queryClient.getQueriesData(domainsFilter);
-        const previousSubscription =
-          queryClient.getQueryData<SubscriptionQuota>(subscriptionQueryKey);
-
-        const idsSet = new Set(trackedDomainIds);
-        const { active: archiveCount } = affectedCounts(previousDomains, idsSet);
-
-        queryClient.setQueriesData(domainsFilter, (old: DomainsData) =>
-          old?.map((d) =>
-            idsSet.has(d.id) && !d.archivedAt ? { ...d, archivedAt: new Date() } : d,
-          ),
-        );
-        queryClient.setQueryData<SubscriptionQuota | undefined>(subscriptionQueryKey, (old) => {
-          if (!old) return old;
-          const activeCount = Math.max(0, old.activeCount - archiveCount);
-          return {
-            ...old,
-            activeCount,
-            archivedCount: old.archivedCount + archiveCount,
-            canAddMore: activeCount < old.planQuota,
-          };
-        });
-
-        return {
-          previousDomains,
-          previousSubscription,
-        };
-      },
-      onError: (_err, _vars, context: MutationContext | undefined) => {
-        if (context?.previousDomains) {
-          rollbackDomains(context.previousDomains);
-        }
-        if (context?.previousSubscription) {
-          queryClient.setQueryData(subscriptionQueryKey, context.previousSubscription);
-        }
-        toast.error("Failed to archive domains");
-      },
-      onSettled: invalidateDomainQueries,
-    }),
+    trpc.tracking.bulkArchiveDomains.mutationOptions(
+      optimistic(
+        ({ trackedDomainIds }: { trackedDomainIds: string[] }) => archiveDomains(trackedDomainIds),
+        () => "Failed to archive domains",
+      ),
+    ),
   );
-
-  // ---------------------------------------------------------------------------
-  // Bulk Delete Mutation
-  // ---------------------------------------------------------------------------
 
   const bulkDeleteMutation = useMutation(
-    trpc.tracking.bulkRemoveDomains.mutationOptions({
-      onMutate: async ({ trackedDomainIds }: { trackedDomainIds: string[] }) => {
-        await queryClient.cancelQueries(domainsFilter);
-        await queryClient.cancelQueries(subscriptionFilter);
-
-        const previousDomains = queryClient.getQueriesData(domainsFilter);
-        const previousSubscription =
-          queryClient.getQueryData<SubscriptionQuota>(subscriptionQueryKey);
-
-        const idsSet = new Set(trackedDomainIds);
-        const { active: activeDeleted, archived: archivedDeleted } = affectedCounts(
-          previousDomains,
-          idsSet,
-        );
-
-        queryClient.setQueriesData(domainsFilter, (old: DomainsData) =>
-          old?.filter((d) => !idsSet.has(d.id)),
-        );
-        queryClient.setQueryData<SubscriptionQuota | undefined>(subscriptionQueryKey, (old) => {
-          if (!old) return old;
-          const activeCount = Math.max(0, old.activeCount - activeDeleted);
-          const archivedCount = Math.max(0, old.archivedCount - archivedDeleted);
-          return {
-            ...old,
-            activeCount,
-            archivedCount,
-            canAddMore: activeCount < old.planQuota,
-          };
-        });
-
-        return {
-          previousDomains,
-          previousSubscription,
-        };
-      },
-      onError: (_err, _vars, context: MutationContext | undefined) => {
-        if (context?.previousDomains) {
-          rollbackDomains(context.previousDomains);
-        }
-        if (context?.previousSubscription) {
-          queryClient.setQueryData(subscriptionQueryKey, context.previousSubscription);
-        }
-        toast.error("Failed to delete domains");
-      },
-      onSettled: invalidateDomainQueries,
-    }),
+    trpc.tracking.bulkRemoveDomains.mutationOptions(
+      optimistic(
+        ({ trackedDomainIds }: { trackedDomainIds: string[] }) => removeDomains(trackedDomainIds),
+        () => "Failed to delete domains",
+      ),
+    ),
   );
-
-  // ---------------------------------------------------------------------------
-  // Bulk Mute Mutation
-  // ---------------------------------------------------------------------------
 
   const bulkSetMutedMutation = useMutation(
-    trpc.tracking.bulkSetMuted.mutationOptions({
-      onMutate: async ({
-        trackedDomainIds,
-        muted,
-      }: {
-        trackedDomainIds: string[];
-        muted: boolean;
-      }) => {
-        await queryClient.cancelQueries(domainsFilter);
-
-        const previousDomains = queryClient.getQueriesData(domainsFilter);
-
-        const idsSet = new Set(trackedDomainIds);
-        queryClient.setQueriesData(domainsFilter, (old: DomainsData) =>
-          old?.map((d) => (idsSet.has(d.id) ? { ...d, muted } : d)),
-        );
-
-        return { previousDomains };
-      },
-      onError: (
-        _err,
-        { muted },
-        context: { previousDomains: [unknown, unknown][] } | undefined,
-      ) => {
-        if (context?.previousDomains) {
-          rollbackDomains(context.previousDomains);
-        }
-        toast.error(muted ? "Failed to mute domains" : "Failed to unmute domains");
-      },
-      onSettled: () => void queryClient.invalidateQueries(domainsFilter),
-    }),
+    trpc.tracking.bulkSetMuted.mutationOptions(
+      optimistic(
+        ({ trackedDomainIds, muted }: { trackedDomainIds: string[]; muted: boolean }) =>
+          muteDomains(trackedDomainIds, muted),
+        (_err, { muted }) => (muted ? "Failed to mute domains" : "Failed to unmute domains"),
+      ),
+    ),
   );
 
-  // ---------------------------------------------------------------------------
-  // Wrapped Handlers
-  // ---------------------------------------------------------------------------
+  return {
+    remove: (trackedDomainId: string) => removeMutation.mutate({ trackedDomainId }),
+    archive: (trackedDomainId: string) => archiveMutation.mutate({ trackedDomainId }),
+    unarchive: (trackedDomainId: string) => unarchiveMutation.mutate({ trackedDomainId }),
+    setMuted: (trackedDomainId: string, muted: boolean) =>
+      muteMutation.mutate({ trackedDomainId, muted }),
 
-  const { mutate: removeDomain } = removeMutation;
-  const { mutate: archiveDomain } = archiveMutation;
-  const { mutate: unarchiveDomain } = unarchiveMutation;
-  const { mutate: muteDomain } = muteMutation;
-  const { mutateAsync: archiveDomains } = bulkArchiveMutation;
-  const { mutateAsync: deleteDomains } = bulkDeleteMutation;
-  const { mutateAsync: muteDomains } = bulkSetMutedMutation;
+    // Bulk mutations resolve with the per-domain result so callers can react to success
+    bulkArchive: async (trackedDomainIds: string[]) =>
+      toastBulkResult(
+        "Archived",
+        await bulkArchiveMutation.mutateAsync({ trackedDomainIds }),
+        trackedDomainIds.length,
+      ),
+    bulkDelete: async (trackedDomainIds: string[]) =>
+      toastBulkResult(
+        "Deleted",
+        await bulkDeleteMutation.mutateAsync({ trackedDomainIds }),
+        trackedDomainIds.length,
+      ),
+    bulkSetMuted: async (trackedDomainIds: string[], muted: boolean) =>
+      toastBulkResult(
+        muted ? "Muted" : "Unmuted",
+        await bulkSetMutedMutation.mutateAsync({ trackedDomainIds, muted }),
+        trackedDomainIds.length,
+      ),
 
-  const remove = useCallback(
-    (trackedDomainId: string) => {
-      removeDomain({ trackedDomainId });
-    },
-    [removeDomain],
-  );
-
-  const archive = useCallback(
-    (trackedDomainId: string) => {
-      archiveDomain({ trackedDomainId });
-    },
-    [archiveDomain],
-  );
-
-  const unarchive = useCallback(
-    (trackedDomainId: string) => {
-      unarchiveDomain({ trackedDomainId });
-    },
-    [unarchiveDomain],
-  );
-
-  const setMuted = useCallback(
-    (trackedDomainId: string, muted: boolean) => {
-      muteDomain({ trackedDomainId, muted });
-    },
-    [muteDomain],
-  );
-
-  const bulkArchive = useCallback(
-    async (trackedDomainIds: string[]): Promise<BulkMutationResult> => {
-      const result = await archiveDomains({ trackedDomainIds });
-      toastBulkResult("Archived", result, trackedDomainIds.length);
-      return result;
-    },
-    [archiveDomains],
-  );
-
-  const bulkDelete = useCallback(
-    async (trackedDomainIds: string[]): Promise<BulkMutationResult> => {
-      const result = await deleteDomains({ trackedDomainIds });
-      toastBulkResult("Deleted", result, trackedDomainIds.length);
-      return result;
-    },
-    [deleteDomains],
-  );
-
-  const bulkSetMuted = useCallback(
-    async (trackedDomainIds: string[], muted: boolean): Promise<BulkMutationResult> => {
-      const result = await muteDomains({ trackedDomainIds, muted });
-      toastBulkResult(muted ? "Muted" : "Unmuted", result, trackedDomainIds.length);
-      return result;
-    },
-    [muteDomains],
-  );
-
-  const isRemoving = removeMutation.isPending;
-  const isArchiving = archiveMutation.isPending;
-  const isUnarchiving = unarchiveMutation.isPending;
-  const isMuting = muteMutation.isPending;
-  const isBulkArchiving = bulkArchiveMutation.isPending;
-  const isBulkDeleting = bulkDeleteMutation.isPending;
-  const isBulkMuting = bulkSetMutedMutation.isPending;
-
-  return useMemo(
-    () => ({
-      remove,
-      archive,
-      unarchive,
-      setMuted,
-      bulkArchive,
-      bulkDelete,
-      bulkSetMuted,
-      isRemoving,
-      isArchiving,
-      isUnarchiving,
-      isMuting,
-      isBulkArchiving,
-      isBulkDeleting,
-      isBulkMuting,
-    }),
-    [
-      remove,
-      archive,
-      unarchive,
-      setMuted,
-      bulkArchive,
-      bulkDelete,
-      bulkSetMuted,
-      isRemoving,
-      isArchiving,
-      isUnarchiving,
-      isMuting,
-      isBulkArchiving,
-      isBulkDeleting,
-      isBulkMuting,
-    ],
-  );
+    isBulkArchiving: bulkArchiveMutation.isPending,
+    isBulkDeleting: bulkDeleteMutation.isPending,
+    isBulkMuting: bulkSetMutedMutation.isPending,
+  };
 }

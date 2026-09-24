@@ -154,7 +154,8 @@ describe("RobotsSummary", () => {
       };
       await render(<RobotsSummary domain="test.invalid" robots={robots} />);
       await page.getByRole("textbox", { name: "Filter robots rules" }).fill("nomatch");
-      await expect.element(page.getByText("No matching rules.")).toBeInTheDocument();
+      // The message shares its element with the reset button, so match by substring.
+      await expect.element(page.getByText(/No matching rules/)).toBeInTheDocument();
 
       await page.getByRole("button", { name: "Reset filters" }).click();
       await expect.element(page.getByText("/admin", { exact: true })).toBeInTheDocument();

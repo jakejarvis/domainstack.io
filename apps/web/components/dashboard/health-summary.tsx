@@ -1,13 +1,13 @@
 import { IconAlertTriangle, IconClock } from "@tabler/icons-react";
 
-import { useDashboardFiltersContext } from "@/context/dashboard-context";
+import { useDashboardView } from "@/context/dashboard-context";
 import { EXPIRING_SOON_DAYS } from "@domainstack/constants";
 import { Badge } from "@domainstack/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 import { cn } from "@domainstack/ui/utils";
 
 export function HealthSummary() {
-  const { stats, applyHealthFilter } = useDashboardFiltersContext();
+  const { stats, applyHealthFilter } = useDashboardView();
   const { expiringSoon, pendingVerification } = stats;
   // Don't render if no alerts
   if (expiringSoon === 0 && pendingVerification === 0) {

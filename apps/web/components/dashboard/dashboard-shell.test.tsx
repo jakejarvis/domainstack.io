@@ -270,10 +270,8 @@ describe("dashboard shell", () => {
       await waitForCatalog();
       await openTable();
 
-      // The domain column has no explicit `sortFn`, so it resolves `"auto"` ->
-      // `text` from the registry on `dashboardTableFeatures`. Without that
-      // registration it silently falls back to `basic`, which sorts by code
-      // point and puts every capitalized domain ahead of the lowercase ones.
+      // Rows arrive pre-sorted by `sortDomains`, which compares with `localeCompare`;
+      // a code-point sort would put every capitalized domain ahead of the lowercase ones.
       await vi.waitFor(() => {
         const names = page
           .getByRole("table")
@@ -342,7 +340,7 @@ describe("dashboard shell", () => {
 
     it("clamps an impossible deep-linked page to page 1", async () => {
       usePreferencesStore.setState({ viewMode: "table" });
-      await renderDashboardShell({
+      const { urlUpdates } = await renderDashboardShell({
         domains: makePaginationDomains(2),
         searchParams: "page=2",
       });
@@ -352,6 +350,9 @@ describe("dashboard shell", () => {
         .element(page.getByRole("table").getByRole("link", { name: "site00.com" }))
         .toBeInTheDocument();
       await expect.element(page.getByText("1 of 1", { exact: true })).toBeInTheDocument();
+      await vi.waitFor(() => {
+        expect(urlUpdates.at(-1)).not.toMatch(/(?:^|[?&])page=/);
+      });
     });
 
     it("keeps a deep-linked page when filters are not changed", async () => {
@@ -459,6 +460,15 @@ describe("dashboard shell", () => {
       await vi.waitFor(() => {
         expect(domainNames().sort()).toEqual(["alpha.com", "beta.io"]);
       });
+    });
+
+    it("ignores TLDs and providers in the URL that no domain has", async () => {
+      await renderDashboardShell({ searchParams: "tlds=nope&providers=bogus" });
+      await waitForCatalog();
+      expect(domainNames()).toHaveLength(4);
+      await expect
+        .element(page.getByRole("button", { name: "Clear all" }).first())
+        .not.toBeInTheDocument();
     });
 
     it("applies pending and expiring filters from the health summary", async () => {

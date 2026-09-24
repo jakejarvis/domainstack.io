@@ -15,7 +15,7 @@ import { FilterSearchInput } from "@/components/dashboard/filter-search-input";
 import { GridSortDropdown } from "@/components/dashboard/grid-sort-dropdown";
 import { MobileFiltersCollapsible } from "@/components/dashboard/mobile-filters-collapsible";
 import { ProviderLogo } from "@/components/icons/provider-logo";
-import { useDashboardFiltersContext } from "@/context/dashboard-context";
+import { useDashboardView } from "@/context/dashboard-context";
 import { HEALTH_OPTIONS } from "@/lib/constants/domain-filters";
 import { useDashboardViewMode } from "@/lib/stores/preferences-store";
 import { Button } from "@domainstack/ui/button";
@@ -39,9 +39,9 @@ export function DashboardFilters() {
     domainId,
     filteredDomainName,
     clearDomainId,
-    sortOption,
-    setSortOption,
-  } = useDashboardFiltersContext();
+    sort,
+    setSort,
+  } = useDashboardView();
   const viewMode = useDashboardViewMode();
 
   // Flat map of all providers for chip rendering
@@ -208,9 +208,7 @@ export function DashboardFilters() {
         )}
 
         {/* Sort dropdown - only for grid view */}
-        {viewMode === "grid" && (
-          <GridSortDropdown sortOption={sortOption} onSortChange={setSortOption} />
-        )}
+        {viewMode === "grid" && <GridSortDropdown sortOption={sort} onSortChange={setSort} />}
 
         {/* Column visibility - only for table view, hidden when collapsed (shown outside collapsible) */}
         {viewMode === "table" && (

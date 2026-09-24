@@ -20,22 +20,20 @@ import { Button } from "@domainstack/ui/button";
 import { useIsClient } from "@domainstack/ui/hooks";
 
 function DashboardActiveView({
-  domains,
-  filteredDomains,
+  totalDomains,
   archivedCount,
   onShowArchived,
 }: {
-  domains: TrackedDomainWithDetails[];
-  filteredDomains: TrackedDomainWithDetails[];
+  totalDomains: number;
   archivedCount: number;
   onShowArchived: () => void;
 }) {
   return (
     <div className="space-y-4">
-      {domains.length > 0 ? <HealthSummary /> : null}
-      {domains.length > 0 ? <DashboardFilters /> : null}
+      {totalDomains > 0 ? <HealthSummary /> : null}
+      {totalDomains > 0 ? <DashboardFilters /> : null}
 
-      <DashboardContent domains={filteredDomains} totalDomains={domains.length} />
+      <DashboardContent totalDomains={totalDomains} />
 
       {archivedCount > 0 ? (
         <div className="pt-4 text-center">
@@ -112,22 +110,9 @@ export function DashboardClient({ userName }: { userName: string }) {
       <UpgradeBanner />
 
       <DashboardProvider
-        onVerify={dashboard.handleVerify}
-        onRemove={dashboard.handleRemove}
-        onArchive={dashboard.handleArchive}
-        onUnarchive={dashboard.handleUnarchive}
-        onMute={dashboard.handleMute}
-        verifyingDomainId={dashboard.verifyingDomainId}
-        onBulkArchive={dashboard.handleBulkArchive}
-        onBulkDelete={dashboard.handleBulkDelete}
-        onBulkMute={dashboard.handleBulkMute}
-        isBulkArchiving={dashboard.mutations.isBulkArchiving}
-        isBulkDeleting={dashboard.mutations.isBulkDeleting}
-        isBulkMuting={dashboard.mutations.isBulkMuting}
-        filterHook={dashboard.filterHook}
-        sortOption={dashboard.sortOption}
-        setSortOption={dashboard.setSortOption}
-        paginationHook={dashboard.paginationHook}
+        domains={dashboard.domains}
+        actions={dashboard.actions}
+        bulk={dashboard.bulk}
       >
         {dashboard.activeTab === "archived" ? (
           <DashboardArchivedView
@@ -136,8 +121,7 @@ export function DashboardClient({ userName }: { userName: string }) {
           />
         ) : (
           <DashboardActiveView
-            domains={dashboard.domains}
-            filteredDomains={dashboard.filteredDomains}
+            totalDomains={dashboard.domains.length}
             archivedCount={dashboard.subscription?.archivedCount ?? 0}
             onShowArchived={() => dashboard.setActiveTab("archived")}
           />

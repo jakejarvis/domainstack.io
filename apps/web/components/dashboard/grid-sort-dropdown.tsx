@@ -11,7 +11,7 @@ import {
 } from "@domainstack/ui/dropdown-menu";
 
 type GridSortDropdownProps = {
-  sortOption: SortOption;
+  sortOption: string;
   onSortChange: (sort: SortOption) => void;
 };
 

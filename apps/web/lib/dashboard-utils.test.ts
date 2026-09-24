@@ -8,7 +8,6 @@ import {
   makeProvider,
   makeTrackedDomain,
 } from "@/components/dashboard/test-fixtures";
-import { getDashboardFilterSignature } from "@/hooks/use-dashboard-pagination";
 import {
   computeHealthStats,
   DEFAULT_SORT,
@@ -23,6 +22,7 @@ import {
   serializeSortState,
   sortDomains,
   type StatusFilter,
+  toGridSort,
   validateHealthFilters,
   validateStatusFilters,
 } from "@/lib/dashboard-utils";
@@ -59,13 +59,13 @@ describe("parseSortParam / serializeSortState", () => {
 
 describe("sortDomains", () => {
   it("sorts by name A-Z and Z-A without pushing unverified last", () => {
-    expect(names(sortDomains(domains, "domainName.asc"))).toEqual([
+    expect(names(sortDomains(domains, "domainName.asc", DASHBOARD_TEST_NOW))).toEqual([
       "alpha.com",
       "beta.io",
       "gamma.com",
       "pending.dev",
     ]);
-    expect(names(sortDomains(domains, "domainName.desc"))).toEqual([
+    expect(names(sortDomains(domains, "domainName.desc", DASHBOARD_TEST_NOW))).toEqual([
       "pending.dev",
       "gamma.com",
       "beta.io",
@@ -74,7 +74,7 @@ describe("sortDomains", () => {
   });
 
   it("sorts by expiry and keeps unverified last", () => {
-    expect(names(sortDomains(domains, "expirationDate.asc"))).toEqual([
+    expect(names(sortDomains(domains, "expirationDate.asc", DASHBOARD_TEST_NOW))).toEqual([
       "gamma.com",
       "beta.io",
       "alpha.com",
@@ -93,7 +93,55 @@ describe("sortDomains", () => {
       domainName: "new.com",
       createdAt: daysFromTestNow(-1),
     });
-    expect(names(sortDomains([older, newer], "createdAt.desc"))).toEqual(["new.com", "old.com"]);
+    expect(names(sortDomains([older, newer], "createdAt.desc", DASHBOARD_TEST_NOW))).toEqual([
+      "new.com",
+      "old.com",
+    ]);
+  });
+});
+
+describe("sortDomains shared with the table", () => {
+  const sorted = (sort: string) => names(sortDomains(domains, sort, DASHBOARD_TEST_NOW));
+
+  it("keeps unverified domains and missing values last in both directions", () => {
+    expect(sorted("expirationDate.desc")).toEqual([
+      "alpha.com",
+      "beta.io",
+      "gamma.com",
+      "pending.dev",
+    ]);
+    // gamma.com has no registrar name
+    expect(sorted("registrar.asc")).toEqual(["alpha.com", "beta.io", "gamma.com", "pending.dev"]);
+    expect(sorted("registrar.desc")).toEqual(["beta.io", "alpha.com", "gamma.com", "pending.dev"]);
+  });
+
+  it("orders health from most to least urgent", () => {
+    expect(sorted("health.asc")).toEqual(["gamma.com", "beta.io", "alpha.com", "pending.dev"]);
+    expect(sorted("health.desc")).toEqual(["alpha.com", "beta.io", "gamma.com", "pending.dev"]);
+  });
+
+  it("compares names case-insensitively", () => {
+    const mixed = [
+      makeTrackedDomain({ id: "z", domainName: "Zeta.com" }),
+      makeTrackedDomain({ id: "a", domainName: "alpha.com" }),
+      makeTrackedDomain({ id: "b", domainName: "Beta.io" }),
+    ];
+    expect(names(sortDomains(mixed, "domainName.asc", DASHBOARD_TEST_NOW))).toEqual([
+      "alpha.com",
+      "Beta.io",
+      "Zeta.com",
+    ]);
+  });
+
+  it("leaves the order alone for an unknown column", () => {
+    expect(sorted("nope.asc")).toEqual(names(domains));
+  });
+});
+
+describe("toGridSort", () => {
+  it("keeps grid options and falls back for table-only columns", () => {
+    expect(toGridSort("createdAt.desc")).toBe("createdAt.desc");
+    expect(toGridSort("registrar.asc")).toBe(DEFAULT_SORT);
   });
 });
 
@@ -345,7 +393,6 @@ describe("isPagePastEnd", () => {
     expect(isPagePastEnd(12, 1, 10)).toBe(false);
     expect(isPagePastEnd(2, 1, 10)).toBe(true);
     expect(isPagePastEnd(0, 0, 10)).toBe(false);
-    // Loading fallback (0 results) looks like page 2 is past the end — callers must wait for data.
     expect(isPagePastEnd(0, 1, 10)).toBe(true);
   });
 });
@@ -383,22 +430,6 @@ describe("makeTrackedDomain", () => {
     const next = makeTrackedDomain({ registrar: source });
     expect(next.registrar.whoisServer).toBe("whois.cloudflare.com");
     expect(next.registrar.records?.[0].value).toBe("1.2.3.4");
-  });
-});
-
-describe("getDashboardFilterSignature", () => {
-  it("changes when a filter value changes", () => {
-    const base = {
-      search: "",
-      status: [] as string[],
-      health: [] as string[],
-      tlds: [] as string[],
-      providers: [] as string[],
-      domainId: null,
-    };
-    expect(getDashboardFilterSignature({ ...base, search: "s" })).not.toBe(
-      getDashboardFilterSignature(base),
-    );
   });
 });
 
