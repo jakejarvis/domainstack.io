@@ -65,7 +65,6 @@ export const POLAR_PRODUCTS = {
     interval: "year" as const,
     amount: 2000, // $20/year
     label: "$20/year",
-    savings: "Save ~17%",
   },
 } as const;
 
