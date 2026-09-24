@@ -20,8 +20,22 @@ export default function NextLinkMock({
   shallow: _shallow,
   locale: _locale,
   passHref: _passHref,
+  onClick,
   ...props
 }: NextLinkMockProps) {
   const resolvedHref = typeof href === "string" ? href : (href.pathname ?? "#");
-  return createElement("a", { href: resolvedHref, ...props }, children);
+  return createElement(
+    "a",
+    {
+      href: resolvedHref,
+      ...props,
+      // Run the caller's handler, then stop the click from navigating the test page
+      // (real next/link would take over with a client-side navigation instead).
+      onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
+        onClick?.(e);
+        e.preventDefault();
+      },
+    },
+    children,
+  );
 }

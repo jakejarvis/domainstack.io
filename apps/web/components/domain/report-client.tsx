@@ -87,6 +87,8 @@ function reportSection<T, TError, TKey extends QueryKey>({
     }
     return <Section domain={domain} data={data.data} />;
   }
+  // Distinct names in React DevTools and error-boundary component stacks.
+  Loaded.displayName = `Suspended${sectionName}Section`;
 
   return { id, sectionName, Loaded, Skeleton };
 }

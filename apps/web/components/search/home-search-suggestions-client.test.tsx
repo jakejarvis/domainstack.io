@@ -39,21 +39,6 @@ vi.mock("jotai", async (importOriginal) => {
   };
 });
 
-// Keep chip links from navigating the test page.
-vi.mock("next/link", () => ({
-  default: ({
-    onClick,
-    ...props
-  }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) =>
-    createElement("a", {
-      ...props,
-      onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
-        onClick?.(e);
-        e.preventDefault();
-      },
-    }),
-}));
-
 const DEFAULT_TEST_SUGGESTIONS = [
   "github.invalid",
   "reddit.invalid",

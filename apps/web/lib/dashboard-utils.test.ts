@@ -23,6 +23,7 @@ import {
   sortDomains,
   type StatusFilter,
   toGridSort,
+  toTableSort,
   validateHealthFilters,
   validateStatusFilters,
 } from "@/lib/dashboard-utils";
@@ -135,6 +136,14 @@ describe("sortDomains shared with the table", () => {
 
   it("leaves the order alone for an unknown column", () => {
     expect(sorted("nope.asc")).toEqual(names(domains));
+  });
+});
+
+describe("toTableSort", () => {
+  it("keeps known columns and falls back for unknown or malformed ones", () => {
+    expect(toTableSort("registrar.desc")).toBe("registrar.desc");
+    expect(toTableSort("bogus.asc")).toBe(DEFAULT_SORT);
+    expect(toTableSort("domainName.sideways")).toBe(DEFAULT_SORT);
   });
 });
 

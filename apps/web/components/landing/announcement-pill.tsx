@@ -9,6 +9,9 @@ import { Button } from "@domainstack/ui/button";
 import { Separator } from "@domainstack/ui/separator";
 import { cn } from "@domainstack/ui/utils";
 
+/** A little longer than the 300ms exit animation. */
+const EXIT_FALLBACK_MS = 400;
+
 export function AnnouncementPill() {
   const { visible, dismiss } = useAnnouncement();
   const [isExiting, setIsExiting] = useState(false);
@@ -20,6 +23,8 @@ export function AnnouncementPill() {
     e.stopPropagation();
     dismiss();
     setIsExiting(true);
+    // Fallback in case the exit animation never runs (animations disabled).
+    setTimeout(() => setIsExiting(false), EXIT_FALLBACK_MS);
   };
 
   const finishExit = (e: React.AnimationEvent) => {

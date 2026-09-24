@@ -144,11 +144,13 @@ describe("DomainSearch (form variant)", () => {
   });
 
   it("shows a suggestion chip's pending navigation and clears it when hidden", async () => {
-    mockPendingDomain.value = "test.invalid";
-    const { unmount } = await render(<SearchClient variant="lg" />);
-
-    // The chip's link navigates; the search only mirrors it.
+    const { rerender, unmount } = await render(<SearchClient variant="lg" />);
     const input = domainSearchInput();
+    await expect.element(input).toHaveValue("");
+
+    // A chip is clicked after the search mounted; its link navigates, the search only mirrors it.
+    mockPendingDomain.value = "test.invalid";
+    await rerender(<SearchClient variant="lg" />);
     await expect.element(input).toHaveValue("test.invalid");
     await expect.element(input).toBeDisabled();
     expect(nav.push).not.toHaveBeenCalled();

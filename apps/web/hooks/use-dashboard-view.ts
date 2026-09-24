@@ -18,6 +18,7 @@ import {
   sortDomains,
   type StatusFilter,
   toGridSort,
+  toTableSort,
   validateHealthFilters,
   validateStatusFilters,
 } from "@/lib/dashboard-utils";
@@ -90,14 +91,16 @@ export function useDashboardViewState(domains: TrackedDomainWithDetails[]) {
     [params.providers, validProviderIds],
   );
 
-  const sort = viewMode === "grid" ? toGridSort(params.sort) : params.sort;
+  const sort = viewMode === "grid" ? toGridSort(params.sort) : toTableSort(params.sort);
   const sorting = useMemo(() => parseSortParam(sort), [sort]);
+  // Like search, the header reflects a new sort at once while re-sorting can lag.
+  const deferredSort = useDeferredValue(sort);
 
   const visibleDomains = useMemo(() => {
     if (!now) return domains;
     const criteria = { search: deferredSearch, status, health, tlds, providers, domainId };
     const filtered = filterDomains(domains, criteria, validProviderIds, now);
-    return sortDomains(filtered, sort, now);
+    return sortDomains(filtered, deferredSort, now);
   }, [
     domains,
     deferredSearch,
@@ -107,7 +110,7 @@ export function useDashboardViewState(domains: TrackedDomainWithDetails[]) {
     providers,
     domainId,
     validProviderIds,
-    sort,
+    deferredSort,
     now,
   ]);
 

@@ -223,6 +223,14 @@ export function sortDomains(
   });
 }
 
+/** Table sorts fall back to the default when the URL names a column that doesn't exist. */
+export function toTableSort(sort: string): string {
+  const [{ id }] = parseSortParam(sort);
+  return id in SORT_COLUMNS && sort === serializeSortState(parseSortParam(sort))
+    ? sort
+    : DEFAULT_SORT;
+}
+
 /** Grid sort options fall back to the default when the URL holds a table-only column. */
 export function toGridSort(sort: string): SortOption {
   return SORT_OPTIONS.some((opt) => opt.value === sort) ? (sort as SortOption) : DEFAULT_SORT;
