@@ -26,8 +26,8 @@ export function SeoSectionSkeleton() {
           <div className="text-[11px] tracking-[0.08em] text-foreground/70 uppercase dark:text-foreground/80">
             Open Graph
           </div>
-          {/* TabsList is h-9 w-full with default variant chrome */}
-          <div className="flex h-9 w-full items-center gap-1 rounded-lg border bg-muted/40 p-1">
+          {/* TabsList is h-11 w-full with default variant chrome */}
+          <div className="flex h-11 w-full items-center gap-1 rounded-lg border bg-muted/40 p-1">
             {[1, 2, 3, 4, 5].map((id) => (
               <Skeleton key={`og-tab-${id}`} className="h-full flex-1 basis-0 rounded-md" />
             ))}
