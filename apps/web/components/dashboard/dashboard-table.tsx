@@ -1,24 +1,20 @@
 import type { OnChangeFn, PaginationState, SortingState } from "@tanstack/react-table";
 import { useTable } from "@tanstack/react-table";
 import { AnimatePresence } from "motion/react";
-import { parseAsString, useQueryState } from "nuqs";
-import { useCallback, useMemo, useTransition } from "react";
+import { useMemo } from "react";
 
-import {
-  createColumns,
-  createUnverifiedLastSorter,
-} from "@/components/dashboard/dashboard-table-columns";
+import { createColumns } from "@/components/dashboard/dashboard-table-columns";
 import { DashboardTablePagination } from "@/components/dashboard/dashboard-table-pagination";
 import { SortIndicator } from "@/components/dashboard/sort-indicator";
 import { UnverifiedTableRow } from "@/components/dashboard/unverified-table-row";
 import { UpgradeRow } from "@/components/dashboard/upgrade-row";
 import { VerifiedTableRow } from "@/components/dashboard/verified-table-row";
-import { useDashboardActions, useDashboardPaginationContext } from "@/context/dashboard-context";
+import { useDashboardActions, useDashboardView } from "@/context/dashboard-context";
 import {
   dashboardTableFeatures,
   type DashboardTableFeatures,
 } from "@/lib/dashboard-table-features";
-import { DEFAULT_SORT, parseSortParam, serializeSortState } from "@/lib/dashboard-utils";
+import { serializeSortState } from "@/lib/dashboard-utils";
 import { useDashboardColumnVisibility, usePreferencesStore } from "@/lib/stores/preferences-store";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Card } from "@domainstack/ui/card";
@@ -26,73 +22,37 @@ import { ScrollArea } from "@domainstack/ui/scroll-area";
 import { cn } from "@domainstack/ui/utils";
 
 type DashboardTableProps = {
+  /** Already filtered and sorted by `useDashboardView`; the table only paginates. */
   domains: TrackedDomainWithDetails[];
 };
 
 export function DashboardTable({ domains }: DashboardTableProps) {
-  const { onVerify, onRemove, onArchive, onMute } = useDashboardActions();
-  const { pageIndex, pageSize, setPageSize, setPageIndex, resetPage } =
-    useDashboardPaginationContext();
+  const { onVerify } = useDashboardActions();
+  const { sorting, setSort, pageIndex, pageSize, setPageSize, setPageIndex } = useDashboardView();
   const pagination = useMemo(
     (): PaginationState => ({ pageIndex, pageSize }),
     [pageIndex, pageSize],
   );
 
-  // Table sort state with URL persistence
-  const [sortParam, setSortParam] = useQueryState(
-    "sort",
-    parseAsString.withDefault(DEFAULT_SORT).withOptions({
-      shallow: true,
-      clearOnDefault: true,
-    }),
-  );
-  const sorting = useMemo(() => parseSortParam(sortParam), [sortParam]);
-  const [, startSortTransition] = useTransition();
-  const setSorting = useCallback(
-    (updater: SortingState | ((old: SortingState) => SortingState)) => {
-      startSortTransition(() => {
-        const newSorting = typeof updater === "function" ? updater(sorting) : updater;
-        void setSortParam(serializeSortState(newSorting));
-        resetPage();
-      });
-    },
-    [sorting, setSortParam, resetPage],
+  const onSortingChange = useMemo<OnChangeFn<SortingState>>(
+    () => (updater) =>
+      setSort(serializeSortState(typeof updater === "function" ? updater(sorting) : updater)),
+    [sorting, setSort],
   );
 
   const columnVisibility = useDashboardColumnVisibility();
   const setColumnVisibility = usePreferencesStore((s) => s.setColumnVisibility);
 
-  const withUnverifiedLast = useMemo(
-    () =>
-      createUnverifiedLastSorter((columnId) => {
-        const columnSort = sorting.find((s) => s.id === columnId);
-        return columnSort?.desc ?? false;
-      }),
-    [sorting],
-  );
-
-  const columns = useMemo(
-    () =>
-      createColumns({
-        onVerify,
-        onRemove,
-        onArchive,
-        onMute,
-        withUnverifiedLast,
-      }),
-    [onRemove, onArchive, onMute, onVerify, withUnverifiedLast],
-  );
+  const columns = useMemo(() => createColumns({ onVerify }), [onVerify]);
 
   const tableState = useMemo(
     () => ({ sorting, pagination, columnVisibility }),
     [sorting, pagination, columnVisibility],
   );
 
-  const onPaginationChange = useCallback<OnChangeFn<PaginationState>>(
-    (updater) => {
-      const newPagination = typeof updater === "function" ? updater(pagination) : updater;
-      setPageIndex(newPagination.pageIndex);
-    },
+  const onPaginationChange = useMemo<OnChangeFn<PaginationState>>(
+    () => (updater) =>
+      setPageIndex((typeof updater === "function" ? updater(pagination) : updater).pageIndex),
     [pagination, setPageIndex],
   );
 
@@ -107,11 +67,12 @@ export function DashboardTable({ domains }: DashboardTableProps) {
       data: domains,
       columns,
       state: tableState,
-      onSortingChange: setSorting,
+      manualSorting: true,
+      onSortingChange,
       onPaginationChange,
       onColumnVisibilityChange: setColumnVisibility,
     }),
-    [domains, columns, tableState, setSorting, onPaginationChange, setColumnVisibility],
+    [domains, columns, tableState, onSortingChange, onPaginationChange, setColumnVisibility],
   );
 
   const table = useTable<DashboardTableFeatures, TrackedDomainWithDetails>(tableOptions);

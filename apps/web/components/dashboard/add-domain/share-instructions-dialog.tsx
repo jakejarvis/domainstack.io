@@ -8,7 +8,7 @@ import {
   IconShare,
 } from "@tabler/icons-react";
 import { useMutation } from "@tanstack/react-query";
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useTRPC } from "@/lib/trpc/client";
@@ -43,87 +43,8 @@ import {
 import { Spinner } from "@domainstack/ui/spinner";
 import { formatInstructionsForSharing } from "@domainstack/utils/verification";
 
-// ============================================================================
-// Types
-// ============================================================================
-
-type ShareInstructionsDialogProps = {
-  domain: string;
-  verificationToken: string;
-  trackedDomainId: string;
-};
-
-// ============================================================================
-// State Machine
-// ============================================================================
-
-/**
- * State machine for the share dialog.
- * Models the copy and email flows as explicit states.
- */
-type ShareDialogState = {
-  /** Whether the dialog is open */
-  open: boolean;
-  /** Copy to clipboard state */
-  copyStatus: "idle" | "copied";
-  /** Email form state */
-  emailStatus: "idle" | "sending" | "sent";
-  /** Current email input value */
-  email: string;
-};
-
-type ShareDialogAction =
-  | { type: "OPEN" }
-  | { type: "CLOSE" }
-  | { type: "SET_EMAIL"; email: string }
-  | { type: "COPY_SUCCESS" }
-  | { type: "COPY_RESET" }
-  | { type: "EMAIL_SENDING" }
-  | { type: "EMAIL_SENT" }
-  | { type: "EMAIL_ERROR" }
-  | { type: "EMAIL_RESET" };
-
-const initialState: ShareDialogState = {
-  open: false,
-  copyStatus: "idle",
-  emailStatus: "idle",
-  email: "",
-};
-
-function shareDialogReducer(state: ShareDialogState, action: ShareDialogAction): ShareDialogState {
-  switch (action.type) {
-    case "OPEN":
-      return { ...state, open: true };
-
-    case "CLOSE":
-      // Reset everything when dialog closes
-      return initialState;
-
-    case "SET_EMAIL":
-      return { ...state, email: action.email };
-
-    case "COPY_SUCCESS":
-      return { ...state, copyStatus: "copied" };
-
-    case "COPY_RESET":
-      return { ...state, copyStatus: "idle" };
-
-    case "EMAIL_SENDING":
-      return { ...state, emailStatus: "sending" };
-
-    case "EMAIL_SENT":
-      return { ...state, emailStatus: "sent" };
-
-    case "EMAIL_ERROR":
-      return { ...state, emailStatus: "idle" };
-
-    case "EMAIL_RESET":
-      return { ...state, emailStatus: "idle", email: "" };
-
-    default:
-      return state;
-  }
-}
+/** How long the Send button shows its checkmark before the form resets. */
+const SENT_RESET_MS = 3000;
 
 // ============================================================================
 // Helpers
@@ -173,52 +94,40 @@ export function ShareInstructionsDialog({
   domain,
   verificationToken,
   trackedDomainId,
-}: ShareInstructionsDialogProps) {
-  const [state, dispatch] = useReducer(shareDialogReducer, initialState);
+}: {
+  domain: string;
+  verificationToken: string;
+  trackedDomainId: string;
+}) {
+  const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const emailInputRef = useRef<HTMLInputElement>(null);
 
   const trpc = useTRPC();
 
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
+  useEffect(() => () => clearTimeout(resetTimerRef.current ?? undefined), []);
 
+  // The mutation's own pending/success state drives the Send button; on error it
+  // falls back to idle and keeps the typed email so the user can retry.
   const sendEmailMutation = useMutation({
     ...trpc.tracking.sendVerificationInstructions.mutationOptions(),
-    onMutate: () => {
-      dispatch({ type: "EMAIL_SENDING" });
-      return undefined;
-    },
-    onSuccess: () => {
-      dispatch({ type: "EMAIL_SENT" });
-      toast.success("Instructions sent!", {
-        description: `Email sent to ${state.email.trim()}`,
-      });
-      // Reset after a delay
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      timeoutRef.current = setTimeout(() => {
-        dispatch({ type: "EMAIL_RESET" });
-      }, 3000);
+    onSuccess: (_data, { recipientEmail }) => {
+      toast.success("Instructions sent!", { description: `Email sent to ${recipientEmail}` });
+      clearTimeout(resetTimerRef.current ?? undefined);
+      resetTimerRef.current = setTimeout(() => {
+        sendEmailMutation.reset();
+        setEmail("");
+      }, SENT_RESET_MS);
     },
     onError: () => {
-      // Keep the typed email so the user can retry without re-entering it
-      dispatch({ type: "EMAIL_ERROR" });
       toast.error("Failed to send email", {
         description: "Please try again or use another method.",
       });
     },
   });
 
-  const handleDownload = useCallback(() => {
+  const handleDownload = () => {
     const result = downloadInstructionsFile(domain, verificationToken);
     if (result.success) {
       toast.success("Instructions downloaded!", {
@@ -229,10 +138,10 @@ export function ShareInstructionsDialog({
         description: "Try again or copy the instructions instead.",
       });
     }
-  }, [domain, verificationToken]);
+  };
 
-  const handleSendEmail = useCallback(() => {
-    const trimmed = state.email.trim();
+  const handleSendEmail = () => {
+    const trimmed = email.trim();
     if (!trimmed) {
       setEmailError("Enter an email address, like admin@example.com.");
       emailInputRef.current?.focus();
@@ -244,33 +153,24 @@ export function ShareInstructionsDialog({
       return;
     }
     setEmailError("");
-    sendEmailMutation.mutate({
-      trackedDomainId,
-      recipientEmail: trimmed,
-    });
-  }, [state.email, trackedDomainId, sendEmailMutation]);
+    sendEmailMutation.mutate({ trackedDomainId, recipientEmail: trimmed });
+  };
 
-  const handleOpenChange = useCallback((isOpen: boolean) => {
-    if (isOpen) {
-      dispatch({ type: "OPEN" });
-    } else {
-      setEmailError("");
-      dispatch({ type: "CLOSE" });
-    }
-  }, []);
-
-  const handleEmailChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  // Closing starts the dialog fresh next time.
+  const handleOpenChange = (open: boolean) => {
+    if (open) return;
+    clearTimeout(resetTimerRef.current ?? undefined);
+    sendEmailMutation.reset();
+    setEmail("");
     setEmailError("");
-    dispatch({ type: "SET_EMAIL", email: e.target.value });
-  }, []);
+  };
 
-  // Derived state
-  const isEmailSending = state.emailStatus === "sending";
-  const isEmailSent = state.emailStatus === "sent";
+  const isEmailSending = sendEmailMutation.isPending;
+  const isEmailSent = sendEmailMutation.isSuccess;
   const isEmailDisabled = isEmailSending || isEmailSent;
 
   return (
-    <Dialog open={state.open} onOpenChange={handleOpenChange}>
+    <Dialog onOpenChange={handleOpenChange}>
       <DialogTrigger
         render={
           <Button variant="outline">
@@ -358,15 +258,18 @@ export function ShareInstructionsDialog({
                     autoComplete="email"
                     spellCheck={false}
                     placeholder={`admin@${domain}\u2026`}
-                    value={state.email}
-                    onChange={handleEmailChange}
+                    value={email}
+                    onChange={(e) => {
+                      setEmailError("");
+                      setEmail(e.target.value);
+                    }}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" && !isEmailSending && !isEmailSent) {
+                      if (e.key === "Enter" && !isEmailDisabled) {
                         e.preventDefault();
                         handleSendEmail();
                       }
                     }}
-                    disabled={isEmailSending || isEmailSent}
+                    disabled={isEmailDisabled}
                     aria-invalid={emailError ? true : undefined}
                     data-1p-ignore
                   />

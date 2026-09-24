@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { WorkflowChatTransport } from "@ai-sdk/workflow/client";
-import type { UIMessage } from "ai";
+import type { ChatStatus, UIMessage } from "ai";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -24,7 +24,7 @@ import { CHAT_STALL_TIMEOUT_MS } from "@domainstack/constants";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@domainstack/ui/drawer";
 
 import { ChatHeaderActions } from "./chat-header-actions";
-import { ChatPanel } from "./chat-panel";
+import { type ChatController, ChatPanel, LIVE_MESSAGE_STATUSES } from "./chat-panel";
 import { ChatSettingsDialog } from "./chat-settings-dialog";
 import { getUserFriendlyError } from "./utils";
 
@@ -37,15 +37,22 @@ interface ChatClientProps {
 
 const EMPTY_SUGGESTIONS: string[] = [];
 
-interface ChatController {
+/**
+ * What a cloud or local chat session hands to the shell. `ChatShell` applies the
+ * rules both share: trimming input, tracking whether a conversation is active,
+ * and hiding errors while a response is in flight.
+ */
+interface ChatSession {
   messages: UIMessage[];
-  sendMessage: (params: { text: string }) => void;
-  clearMessages: () => void;
+  status: ChatStatus;
+  error: Error | null;
+  send: (text: string) => void;
+  clear: () => void;
   retry: () => void;
   clearError: () => void;
-  status: "submitted" | "streaming" | "ready" | "error";
-  error: string | null;
 }
+
+type RenderShell = (session: ChatSession) => React.ReactNode;
 
 export function ChatClient({
   suggestions = EMPTY_SUGGESTIONS,
@@ -85,20 +92,9 @@ export function ChatClient({
 
   if (!chatHydrated) return null;
 
-  return mode === "local" ? (
-    <LocalChatSession
-      domain={domain}
-      suggestions={suggestions}
-      model={browserAI.model}
-      browserAI={browserAI}
-      open={open}
-      onOpenChange={onOpenChange}
-      settingsOpen={settingsOpen}
-      onSettingsOpenChange={setSettingsOpen}
-      onActiveChange={handleActiveChange}
-    />
-  ) : (
-    <CloudChatSession
+  const renderShell: RenderShell = (session) => (
+    <ChatShell
+      session={session}
       domain={domain}
       suggestions={suggestions}
       browserAI={browserAI}
@@ -109,89 +105,71 @@ export function ChatClient({
       onActiveChange={handleActiveChange}
     />
   );
+
+  return mode === "local" ? (
+    <LocalChatSession domain={domain} model={browserAI.model}>
+      {renderShell}
+    </LocalChatSession>
+  ) : (
+    <CloudChatSession domain={domain}>{renderShell}</CloudChatSession>
+  );
 }
 
-interface ChatSessionProps {
-  domain?: string;
-  suggestions: string[];
-  browserAI: UseBrowserAIResult;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  settingsOpen: boolean;
-  onSettingsOpenChange: (open: boolean) => void;
-  onActiveChange: (active: boolean) => void;
-}
+const STALL_ERROR = new Error("Chat stream timed out");
 
-function CloudChatSession({
-  domain,
-  suggestions,
-  browserAI,
-  open,
-  onOpenChange,
-  settingsOpen,
-  onSettingsOpenChange,
-  onActiveChange,
-}: ChatSessionProps) {
+function CloudChatSession({ domain, children }: { domain?: string; children: RenderShell }) {
   const domainRef = useRef(domain);
   useEffect(() => {
     domainRef.current = domain;
   });
 
-  const runId = useChatStore((s) => s.runId);
-  const runIdRef = useRef(runId);
-  useEffect(() => {
-    runIdRef.current = runId;
+  // Snapshot the persisted session once: resume must keep using the initial run id even
+  // after onChatEnd clears it, and the live messages belong to useChat from here on.
+  const [initial] = useState(() => {
+    const { runId, messages } = useChatStore.getState();
+    return { runId, messages: messages as DomainChatUIMessage[] };
   });
-  // Capture initial runId for resume — must stay stable so AI SDK does not
-  // restart resumption when onChatEnd later clears the live run ID.
-  const [initialRunId] = useState(runId);
-  const storedMessages = useChatStore((s) => s.messages);
-  const [initialMessages] = useState(storedMessages);
-  const setRunId = useChatStore((s) => s.setRunId);
-  const setStoredMessages = useChatStore((s) => s.setMessages);
-  const clearSession = useChatStore((s) => s.clearSession);
-  const ensureSessionId = useChatStore((s) => s.ensureSessionId);
 
-  const transport = useMemo(
+  const [transport] = useState(
+    // oxlint-disable-next-line react/refs -- transport callbacks read the latest domain from a ref after render
     () =>
-      // oxlint-disable-next-line react/refs -- transport callbacks read latest domain/runId from refs after render
       new WorkflowChatTransport({
         api: "/api/chat",
         prepareSendMessagesRequest: ({ messages }) => ({
           body: {
             messages: trimChatHistory(messages),
             domain: domainRef.current,
-            sessionId: ensureSessionId(),
+            sessionId: useChatStore.getState().ensureSessionId(),
           },
         }),
         prepareReconnectToStreamRequest: ({ api: _api, ...rest }) => {
-          const currentRunId = runIdRef.current;
-          if (!currentRunId) {
+          const { runId } = useChatStore.getState();
+          if (!runId) {
             throw new Error("No active workflow run ID found");
           }
           return {
             ...rest,
-            api: `/api/chat/${encodeURIComponent(currentRunId)}/stream`,
+            api: `/api/chat/${encodeURIComponent(runId)}/stream`,
           };
         },
         onChatSendMessage: (response, options) => {
-          setStoredMessages(options.messages);
+          const store = useChatStore.getState();
+          store.setMessages(options.messages);
           const workflowRunId = response.headers.get("x-workflow-run-id");
           if (workflowRunId) {
-            setRunId(workflowRunId);
+            store.setRunId(workflowRunId);
           }
         },
         onChatEnd: () => {
-          setRunId(null);
+          useChatStore.getState().setRunId(null);
         },
       }),
-    [setStoredMessages, setRunId, ensureSessionId],
   );
 
   const chat = useChat<DomainChatUIMessage>({
     transport,
-    messages: initialMessages as DomainChatUIMessage[],
-    resume: !!initialRunId,
+    messages: initial.messages,
+    resume: !!initial.runId,
     onError: (error) => {
       analytics.trackException(error, { context: "chat-send", domain });
     },
@@ -203,7 +181,7 @@ function CloudChatSession({
   });
 
   const { stop, status } = chat;
-  const isBusy = status === "submitted" || status === "streaming";
+  const isBusy = LIVE_MESSAGE_STATUSES.has(status);
 
   // Watchdog: abort if no chunk arrives for CHAT_STALL_TIMEOUT_MS. Each chunk
   // produces a new `messages` array, which restarts the timer.
@@ -213,7 +191,7 @@ function CloudChatSession({
     const timer = setTimeout(() => {
       void stop();
       setStalled(true);
-      analytics.trackException(new Error("Chat stream timed out"), {
+      analytics.trackException(STALL_ERROR, {
         context: "chat-stall",
         domain: domainRef.current,
       });
@@ -222,79 +200,43 @@ function CloudChatSession({
     // oxlint-disable-next-line react/exhaustive-effect-dependencies -- messages is a restart trigger, not a value read by the effect
   }, [isBusy, stop, chat.messages]);
 
-  const clearMessages = useCallback(() => {
-    // Abort the in-flight request first: otherwise the transport keeps
-    // streaming (or reconnecting) into the message list we're about to empty,
-    // and status stays "submitted"/"streaming".
-    void stop();
-    chat.setMessages([]);
-    clearSession();
-    setStalled(false);
-    onActiveChange(false);
-  }, [chat, stop, clearSession, onActiveChange]);
-
-  const sendMessage = useCallback(
-    (msgParams: { text: string }) => {
-      const text = msgParams.text.trim();
-      if (!text) return;
+  return children({
+    messages: chat.messages,
+    status,
+    error: chat.error ?? (stalled ? STALL_ERROR : null),
+    send: (text) => {
       setStalled(false);
       void chat.sendMessage({ text });
-      onActiveChange(true);
     },
-    [chat, onActiveChange],
-  );
-
-  const retry = useCallback(() => {
-    setStalled(false);
-    void chat.regenerate();
-  }, [chat]);
-
-  const clearError = useCallback(() => {
-    setStalled(false);
-    chat.clearError();
-  }, [chat]);
-
-  const error = isBusy
-    ? null
-    : chat.error
-      ? getUserFriendlyError(chat.error)
-      : stalled
-        ? getUserFriendlyError(new Error("Chat stream timed out"))
-        : null;
-
-  return (
-    <ChatShell
-      chat={{
-        messages: chat.messages,
-        sendMessage,
-        clearMessages,
-        retry,
-        clearError,
-        status: chat.status,
-        error,
-      }}
-      domain={domain}
-      suggestions={suggestions}
-      browserAI={browserAI}
-      open={open}
-      onOpenChange={onOpenChange}
-      settingsOpen={settingsOpen}
-      onSettingsOpenChange={onSettingsOpenChange}
-    />
-  );
+    clear: () => {
+      // Abort the in-flight request first: otherwise the transport keeps
+      // streaming (or reconnecting) into the message list we're about to empty,
+      // and status stays "submitted"/"streaming".
+      void stop();
+      chat.setMessages([]);
+      useChatStore.getState().clearSession();
+      setStalled(false);
+    },
+    retry: () => {
+      setStalled(false);
+      void chat.regenerate();
+    },
+    clearError: () => {
+      setStalled(false);
+      chat.clearError();
+    },
+  });
 }
 
 function LocalChatSession({
   domain,
-  suggestions,
   model,
-  browserAI,
-  open,
-  onOpenChange,
-  settingsOpen,
-  onSettingsOpenChange,
-  onActiveChange,
-}: ChatSessionProps & { model: UseBrowserAIResult["model"] }) {
+  children,
+}: {
+  domain?: string;
+  model: UseBrowserAIResult["model"];
+  children: RenderShell;
+}) {
   const trpcClient = useTRPCClient();
   const clientTools = useMemo(() => createClientDomainTools(trpcClient), [trpcClient]);
   const systemPrompt = useMemo(() => buildClientSystemPrompt(domain), [domain]);
@@ -308,58 +250,22 @@ function LocalChatSession({
     },
   });
 
-  const { stop: stopLocal } = chat;
-  const clearMessages = useCallback(() => {
-    stopLocal();
-    chat.setMessages([]);
-    onActiveChange(false);
-  }, [chat, stopLocal, onActiveChange]);
-
-  const sendMessage = useCallback(
-    (msgParams: { text: string }) => {
-      const text = msgParams.text.trim();
-      if (!text) return;
-      chat.sendMessage({ text });
-      onActiveChange(true);
+  return children({
+    messages: chat.messages,
+    status: chat.status,
+    error: chat.error,
+    send: (text) => chat.sendMessage({ text }),
+    clear: () => {
+      chat.stop();
+      chat.setMessages([]);
     },
-    [chat, onActiveChange],
-  );
-
-  const retry = useCallback(() => {
-    chat.regenerate();
-  }, [chat]);
-
-  const error =
-    chat.status === "submitted" || chat.status === "streaming"
-      ? null
-      : chat.error
-        ? getUserFriendlyError(chat.error)
-        : null;
-
-  return (
-    <ChatShell
-      chat={{
-        messages: chat.messages,
-        sendMessage,
-        clearMessages,
-        retry,
-        clearError: chat.clearError,
-        status: chat.status,
-        error,
-      }}
-      domain={domain}
-      suggestions={suggestions}
-      browserAI={browserAI}
-      open={open}
-      onOpenChange={onOpenChange}
-      settingsOpen={settingsOpen}
-      onSettingsOpenChange={onSettingsOpenChange}
-    />
-  );
+    retry: chat.regenerate,
+    clearError: chat.clearError,
+  });
 }
 
 function ChatShell({
-  chat,
+  session,
   domain,
   suggestions,
   browserAI,
@@ -367,8 +273,9 @@ function ChatShell({
   onOpenChange,
   settingsOpen,
   onSettingsOpenChange,
+  onActiveChange,
 }: {
-  chat: ChatController;
+  session: ChatSession;
   domain?: string;
   suggestions: string[];
   browserAI: UseBrowserAIResult;
@@ -376,8 +283,28 @@ function ChatShell({
   onOpenChange: (open: boolean) => void;
   settingsOpen: boolean;
   onSettingsOpenChange: (open: boolean) => void;
+  onActiveChange: (active: boolean) => void;
 }) {
   const isMobile = useIsMobile();
+  const isBusy = LIVE_MESSAGE_STATUSES.has(session.status);
+
+  const chat: ChatController = {
+    messages: session.messages,
+    status: session.status,
+    error: !isBusy && session.error ? getUserFriendlyError(session.error) : null,
+    sendMessage: ({ text }) => {
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      session.send(trimmed);
+      onActiveChange(true);
+    },
+    clearMessages: () => {
+      session.clear();
+      onActiveChange(false);
+    },
+    retry: session.retry,
+    clearError: session.clearError,
+  };
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
@@ -408,13 +335,7 @@ function ChatShell({
           </div>
         </DrawerHeader>
         <ChatPanel
-          messages={chat.messages}
-          sendMessage={chat.sendMessage}
-          clearMessages={chat.clearMessages}
-          status={chat.status}
-          error={chat.error}
-          onRetry={chat.retry}
-          onClearError={chat.clearError}
+          chat={chat}
           domain={domain}
           homeSuggestions={suggestions}
           browserAI={browserAI}

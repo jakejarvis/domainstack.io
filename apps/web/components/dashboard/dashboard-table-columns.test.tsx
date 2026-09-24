@@ -1,10 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { page } from "vitest/browser";
 
-import {
-  createColumns,
-  createUnverifiedLastSorter,
-} from "@/components/dashboard/dashboard-table-columns";
+import { createColumns } from "@/components/dashboard/dashboard-table-columns";
 import { DASHBOARD_TEST_NOW, makeTrackedDomain } from "@/components/dashboard/test-fixtures";
 import { render } from "@/mocks/react";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
@@ -13,10 +10,6 @@ import { TooltipProvider } from "@domainstack/ui/tooltip";
 function expirationCell(date: Date | null) {
   const columns = createColumns({
     onVerify: vi.fn<(id: string, method: string | null) => void>(),
-    onRemove: vi.fn<(id: string) => void>(),
-    onArchive: vi.fn<(id: string) => void>(),
-    onMute: vi.fn<(id: string, muted: boolean) => void>(),
-    withUnverifiedLast: createUnverifiedLastSorter(() => false),
   });
   const column = columns.find((c) => "accessorKey" in c && c.accessorKey === "expirationDate");
   expect(column?.cell).toBeTypeOf("function");

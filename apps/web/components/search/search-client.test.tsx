@@ -17,7 +17,9 @@ const useIsMobile = vi.hoisted(() => vi.fn<() => boolean>(() => false));
 const mockPendingDomain = vi.hoisted(() => ({
   value: null as string | null,
 }));
-const mockSetPendingDomain = vi.fn<(domain: string | null) => void>();
+const mockSetPendingDomain = vi.fn<(domain: string | null) => void>((domain) => {
+  mockPendingDomain.value = domain;
+});
 
 vi.mock("jotai", async (importOriginal) => {
   const actual = await importOriginal<typeof import("jotai")>();
@@ -143,20 +145,50 @@ describe("DomainSearch (form variant)", () => {
     expect(toast.error).toHaveBeenCalled();
   });
 
-  it("handles pending domain from store (suggestion click)", async () => {
-    // Start with no pending domain
-    mockPendingDomain.value = null;
-    const { rerender } = await render(<SearchClient variant="lg" />);
+  it("clears a suggestion's loading state when the preserved homepage is restored", async () => {
+    function PreservedNavigationHarness() {
+      const [route, setRoute] = useState<"home" | "report">("home");
+      useEffect(() => {
+        const showReport = () => setRoute("report");
+        window.addEventListener(TEST_NAVIGATE_EVENT, showReport);
+        return () => window.removeEventListener(TEST_NAVIGATE_EVENT, showReport);
+      }, []);
 
-    // Simulate external navigation request (e.g., from suggestion click via store)
+      return (
+        <>
+          <Activity mode={route === "home" ? "visible" : "hidden"}>
+            <SearchClient variant="lg" />
+          </Activity>
+          {route === "report" && (
+            <button type="button" onClick={() => setRoute("home")}>
+              Return home
+            </button>
+          )}
+        </>
+      );
+    }
+
+    const { rerender } = await render(<PreservedNavigationHarness />);
+    mockPendingDomain.value = "test.invalid";
+    await rerender(<PreservedNavigationHarness />);
+
+    await page.getByRole("button", { name: "Return home" }).click();
+
+    await expect.element(domainSearchInput()).toBeEnabled();
+    await expect.element(page.getByRole("status", { name: /loading/i })).not.toBeInTheDocument();
+    expect(nav.push).toHaveBeenCalledTimes(1);
+  });
+
+  it("searches a suggestion chip's domain after mount", async () => {
+    const { rerender } = await render(<SearchClient variant="lg" />);
+    const input = domainSearchInput();
+    await expect.element(input).toHaveValue("");
+
+    // A chip is clicked after the search mounted.
     mockPendingDomain.value = "test.invalid";
     await rerender(<SearchClient variant="lg" />);
 
-    // Wait for input to reflect the triggered domain (async due to useEffect)
-    const input = domainSearchInput();
     await expect.element(input).toHaveValue("test.invalid");
-
-    // Wait for navigation and store clear to be triggered
     await vi.waitFor(() => {
       expect(nav.push).toHaveBeenCalledWith("/test.invalid");
       expect(mockSetPendingDomain).toHaveBeenCalledWith(null);

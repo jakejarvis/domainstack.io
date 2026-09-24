@@ -3,230 +3,25 @@
 import { IconCircleX, IconShieldExclamation } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { analytics } from "@/lib/analytics/client";
-import { parseRetryAfterHeader } from "@/lib/ratelimit/client";
+import {
+  getScreenshotQueryKey,
+  isAwaitingScheduledRetry,
+  isTerminalState,
+  MAX_CONSECUTIVE_FAILURES,
+  pollDelayMs,
+  pollScreenshot,
+  runIdFromState,
+  type ScreenshotQueryState,
+  startScreenshot,
+} from "@/lib/screenshot";
 import type { ScreenshotData } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
-
-const POLL_INTERVAL_MS = 2000;
-/** Base delay for the first backoff retry after a transient start/poll failure. */
-const POLL_RECOVERY_BASE_MS = 5000;
-/** Ceiling on the exponential backoff delay, so a sustained outage still polls occasionally. */
-const POLL_RECOVERY_MAX_MS = 60_000;
-/** After giving up, how long before trying again on its own (self-heal, not hammering). */
-const GIVE_UP_RECOVERY_MS = 5 * 60_000;
-/**
- * Give up after this many consecutive transient failures (start or poll
- * requests that threw — network errors, 5xx, malformed responses) rather
- * than polling forever. A fixed-interval retry loop with no cap would
- * otherwise re-invoke `startScreenshot` (a non-idempotent, expensive,
- * headless-browser-starting POST) indefinitely against a persistently
- * failing endpoint.
- */
-const MAX_CONSECUTIVE_FAILURES = 5;
-
-type ScreenshotQueryState =
-  | { status: "completed"; source: "cache" | "workflow"; data: ScreenshotData }
-  | { status: "running"; runId: string }
-  // `recoverable`: reached by giving up on repeated transient errors, not a
-  // definitive server signal — retried again after a long cooldown instead
-  // of staying failed until the query is garbage-collected or reloaded.
-  | { status: "failed"; error: string; recoverable?: boolean }
-  | { status: "rate_limited"; retryAfter: number; runId?: string }
-  | { status: "retrying"; attempt: number; runId?: string };
-
-type TerminalScreenshotQueryState = Extract<
-  ScreenshotQueryState,
-  { status: "completed" | "failed" }
->;
-
-/** Exponential backoff (capped, with jitter) for the Nth consecutive transient failure. */
-function backoffDelayMs(attempt: number): number {
-  const exponential = Math.min(POLL_RECOVERY_BASE_MS * 2 ** (attempt - 1), POLL_RECOVERY_MAX_MS);
-  const jitterMs = Math.floor(Math.random() * 500);
-  return exponential + jitterMs;
-}
-
-/** The run id to keep polling, carried over from any non-terminal state that has one. */
-function runIdFromState(state: ScreenshotQueryState | undefined): string | undefined {
-  if (state?.status === "running") return state.runId;
-  if (state?.status === "rate_limited") return state.runId;
-  if (state?.status === "retrying") return state.runId;
-  return undefined;
-}
-
-interface ScreenshotDataPayload {
-  blocked?: unknown;
-  url?: unknown;
-}
-
-interface ScreenshotResponsePayload {
-  data?: ScreenshotDataPayload;
-  error?: unknown;
-  runId?: unknown;
-  status?: unknown;
-  success?: unknown;
-}
-
-function getScreenshotQueryKey(domain: string, domainId?: string) {
-  return ["screenshot", domainId ?? domain] as const;
-}
-
-function parseScreenshotData(payload: ScreenshotDataPayload | null): ScreenshotData {
-  if (!payload) {
-    throw new Error("Screenshot response is missing data");
-  }
-
-  return {
-    url: typeof payload.url === "string" ? payload.url : null,
-    blocked: payload.blocked === true,
-  };
-}
-
-function parseStartResponse(payload: ScreenshotResponsePayload | null): ScreenshotQueryState {
-  if (!payload) {
-    throw new Error("Invalid screenshot response");
-  }
-
-  if ("error" in payload && !("status" in payload)) {
-    throw new Error(
-      typeof payload.error === "string" ? payload.error : "Screenshot request failed",
-    );
-  }
-
-  if (payload.status === "running" && typeof payload.runId === "string") {
-    return { status: "running", runId: payload.runId };
-  }
-
-  if (payload.status === "completed" && payload.success === false) {
-    return {
-      status: "failed",
-      error: typeof payload.error === "string" ? payload.error : "Screenshot capture failed",
-    };
-  }
-
-  if (payload.status === "completed" && payload.data) {
-    return {
-      status: "completed",
-      source: "cache",
-      data: parseScreenshotData(payload.data),
-    };
-  }
-
-  throw new Error("Unknown screenshot response format");
-}
-
-function parseStatusResponse(
-  payload: ScreenshotResponsePayload | null,
-  runId: string,
-): ScreenshotQueryState {
-  if (!payload) {
-    throw new Error("Invalid screenshot status response");
-  }
-
-  if ("error" in payload && !("status" in payload)) {
-    throw new Error(
-      typeof payload.error === "string" ? payload.error : "Screenshot status unavailable",
-    );
-  }
-
-  if (payload.status === "running") {
-    return { status: "running", runId };
-  }
-
-  if (payload.status === "failed") {
-    return {
-      status: "failed",
-      error: typeof payload.error === "string" ? payload.error : "Workflow failed",
-    };
-  }
-
-  if (payload.status === "completed" && payload.data) {
-    return {
-      status: "completed",
-      source: "workflow",
-      data: parseScreenshotData(payload.data),
-    };
-  }
-
-  throw new Error("Unknown screenshot status response format");
-}
-
-async function readErrorMessage(response: Response, fallback: string): Promise<string> {
-  try {
-    const raw = (await response.json()) as { error?: unknown };
-    return typeof raw.error === "string" ? raw.error : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-async function startScreenshot(domainId: string): Promise<ScreenshotQueryState> {
-  const response = await fetch("/api/screenshot", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ domainId }),
-  });
-
-  if (response.status === 429) {
-    return { status: "rate_limited", retryAfter: parseRetryAfterHeader(response) };
-  }
-
-  if (!response.ok) {
-    const error = await readErrorMessage(response, `Screenshot request failed: ${response.status}`);
-    if (response.status >= 400 && response.status < 500) {
-      return { status: "failed", error };
-    }
-    throw new Error(error);
-  }
-
-  return parseStartResponse((await response.json()) as ScreenshotResponsePayload);
-}
-
-async function pollScreenshot(runId: string): Promise<ScreenshotQueryState> {
-  const response = await fetch(`/api/screenshot?runId=${encodeURIComponent(runId)}`, {
-    cache: "no-store",
-  });
-
-  if (response.status === 429) {
-    return {
-      status: "rate_limited",
-      retryAfter: parseRetryAfterHeader(response),
-      runId,
-    };
-  }
-
-  if (!response.ok) {
-    const error = await readErrorMessage(
-      response,
-      `Screenshot status poll failed: ${response.status}`,
-    );
-    if (response.status >= 400 && response.status < 500) {
-      // A run id that's gone or invalid will never resolve — fail now
-      // instead of burning retries on a poll that can't succeed.
-      return { status: "failed", error };
-    }
-    throw new Error(error);
-  }
-
-  return parseStatusResponse((await response.json()) as ScreenshotResponsePayload, runId);
-}
-
-/** True for a state that won't resolve on its own without a scheduled retry — no immediate remount refetch. */
-function isAwaitingScheduledRetry(state: ScreenshotQueryState | undefined): boolean {
-  return state?.status === "retrying" || (state?.status === "failed" && !!state.recoverable);
-}
-
-function isTerminalState(
-  state: ScreenshotQueryState | undefined,
-): state is TerminalScreenshotQueryState {
-  return state?.status === "completed" || (state?.status === "failed" && !state.recoverable);
-}
 
 export interface UseScreenshotResult {
   data: ScreenshotData | null;
@@ -348,6 +143,75 @@ function ScreenshotImage({
   );
 }
 
+/** One step of the start/poll loop, folding transient failures into the backoff states. */
+async function fetchNextState(
+  current: ScreenshotQueryState | undefined,
+  domainId: string | undefined,
+  domain: string,
+): Promise<ScreenshotQueryState> {
+  const runId = runIdFromState(current);
+  const attempt = current?.status === "retrying" ? current.attempt : 0;
+
+  if (!runId && !domainId) {
+    // Deterministic (the `enabled` guard already requires a domainId) —
+    // never retryable, so this throws instead of feeding the backoff loop.
+    const error = new Error("Screenshot domain ID is missing");
+    analytics.trackException(error, { domain });
+    throw error;
+  }
+
+  try {
+    return runId ? await pollScreenshot(runId) : await startScreenshot(domainId as string);
+  } catch (err) {
+    if (attempt + 1 >= MAX_CONSECUTIVE_FAILURES) {
+      analytics.trackException(err, { domain });
+      return {
+        status: "failed",
+        error: err instanceof Error ? err.message : "Screenshot request failed",
+        recoverable: true,
+      };
+    }
+    return { status: "retrying", attempt: attempt + 1, runId };
+  }
+}
+
+/**
+ * Analytics and toasts for a state change. Called from the query function, which
+ * runs once per fetch for all observers, so each transition is reported once.
+ */
+function reportTransition(
+  prev: ScreenshotQueryState | undefined,
+  next: ScreenshotQueryState,
+  { domain, domainId }: { domain: string; domainId?: string },
+) {
+  // A retry or rate limit mid-run keeps the run id, so compare only that: one
+  // request event per run, however many transient polls it takes.
+  if (next.status === "running" && runIdFromState(prev) !== next.runId) {
+    analytics.track("screenshot_requested", { domain });
+  } else if (next.status === "completed") {
+    analytics.track(
+      next.source === "cache" ? "screenshot_loaded_from_cache" : "screenshot_loaded_from_api",
+      { domain },
+    );
+  } else if (
+    next.status === "rate_limited" &&
+    !(
+      prev?.status === "rate_limited" &&
+      prev.runId === next.runId &&
+      prev.retryAfter === next.retryAfter
+    )
+  ) {
+    toast.error("Too many requests", {
+      id: `screenshot-rate-limited-${domainId ?? domain}`,
+      description: `Retrying in ${next.retryAfter} second${next.retryAfter !== 1 ? "s" : ""}.`,
+    });
+    analytics.track("screenshot_rate_limited", { domain, retryAfter: next.retryAfter });
+  }
+}
+
+const refetchUnlessWaiting = (query: { state: { data: ScreenshotQueryState | undefined } }) =>
+  !isTerminalState(query.state.data) && !isAwaitingScheduledRetry(query.state.data);
+
 /**
  * Hook to fetch a screenshot for a domain.
  * Call this in a component that stays mounted to keep polling active.
@@ -367,110 +231,23 @@ export function useScreenshot({
     queryKey,
     queryFn: async () => {
       const current = queryClient.getQueryData<ScreenshotQueryState>(queryKey);
+      if (isTerminalState(current)) return current;
 
-      if (isTerminalState(current)) {
-        return current;
-      }
-
-      const runId = runIdFromState(current);
-      const attempt = current?.status === "retrying" ? current.attempt : 0;
-
-      if (!runId && !domainId) {
-        // Deterministic (the `enabled` guard already requires a domainId) —
-        // never retryable, so this throws instead of feeding the backoff loop.
-        throw new Error("Screenshot domain ID is missing");
-      }
-
-      try {
-        return runId ? await pollScreenshot(runId) : await startScreenshot(domainId as string);
-      } catch (err) {
-        if (attempt + 1 >= MAX_CONSECUTIVE_FAILURES) {
-          analytics.trackException(err, { domain });
-          return {
-            status: "failed" as const,
-            error: err instanceof Error ? err.message : "Screenshot request failed",
-            recoverable: true,
-          };
-        }
-        return { status: "retrying" as const, attempt: attempt + 1, runId };
-      }
+      const next = await fetchNextState(current, domainId, domain);
+      reportTransition(current, next, { domain, domainId });
+      return next;
     },
     enabled: enabled && !!domainId,
     retry: false,
     staleTime: (query) => (isTerminalState(query.state.data) ? Number.POSITIVE_INFINITY : 0),
-    refetchOnMount: (query) =>
-      !isTerminalState(query.state.data) && !isAwaitingScheduledRetry(query.state.data),
-    refetchInterval: (query) => {
-      const state = query.state.data;
-      // Checked before isTerminalState: its type predicate narrows "failed"
-      // out of the union entirely, which would make this branch unreachable.
-      if (state?.status === "failed" && state.recoverable) {
-        return GIVE_UP_RECOVERY_MS;
-      }
-      if (isTerminalState(state)) {
-        return false;
-      }
-      if (state?.status === "rate_limited") {
-        return state.retryAfter * 1000;
-      }
-      if (state?.status === "running") {
-        return POLL_INTERVAL_MS;
-      }
-      if (state?.status === "retrying") {
-        return backoffDelayMs(state.attempt);
-      }
-      // No state yet: the very first attempt, poll soon.
-      return POLL_RECOVERY_BASE_MS;
-    },
+    // A remount, focus, or reconnect must not jump ahead of a scheduled retry
+    // (or re-POST a start that was just rate limited).
+    refetchOnMount: refetchUnlessWaiting,
+    refetchOnWindowFocus: refetchUnlessWaiting,
+    refetchOnReconnect: refetchUnlessWaiting,
+    refetchInterval: (query) => pollDelayMs(query.state.data),
     refetchIntervalInBackground: true,
   });
-
-  const reportedStateRef = useRef<string | null>(null);
-  useEffect(() => {
-    const state = screenshotQuery.data;
-    if (!state) return;
-
-    const marker = ((): string => {
-      switch (state.status) {
-        case "running":
-          return `running:${state.runId}`;
-        case "completed":
-          return `completed:${state.source}:${state.data.url ?? "none"}`;
-        case "rate_limited":
-          return `rate-limited:${state.runId ?? "start"}:${state.retryAfter}`;
-        case "retrying":
-          return `retrying:${state.runId ?? "start"}:${state.attempt}`;
-        case "failed":
-          return `failed:${state.error}`;
-      }
-    })();
-    if (reportedStateRef.current === marker) return;
-    reportedStateRef.current = marker;
-
-    if (state.status === "running") {
-      analytics.track("screenshot_requested", { domain });
-    } else if (state.status === "completed") {
-      analytics.track(
-        state.source === "cache" ? "screenshot_loaded_from_cache" : "screenshot_loaded_from_api",
-        { domain },
-      );
-    } else if (state.status === "rate_limited") {
-      toast.error("Too many requests", {
-        id: `screenshot-rate-limited-${domainId ?? domain}`,
-        description: `Retrying in ${state.retryAfter} second${state.retryAfter !== 1 ? "s" : ""}.`,
-      });
-      analytics.track("screenshot_rate_limited", {
-        domain,
-        retryAfter: state.retryAfter,
-      });
-    }
-  }, [screenshotQuery.data, domain, domainId]);
-
-  useEffect(() => {
-    if (screenshotQuery.error) {
-      analytics.trackException(screenshotQuery.error, { domain });
-    }
-  }, [screenshotQuery.error, domain]);
 
   const state = screenshotQuery.data;
   const data = state?.status === "completed" ? state.data : null;

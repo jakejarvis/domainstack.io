@@ -50,7 +50,7 @@ import { Suggestion, Suggestions } from "./elements/suggestion";
 import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from "./elements/tool";
 
 const EMPTY_SUGGESTIONS: string[] = [];
-const LIVE_MESSAGE_STATUSES = new Set<ChatStatus>(["submitted", "streaming"]);
+export const LIVE_MESSAGE_STATUSES = new Set<ChatStatus>(["submitted", "streaming"]);
 
 function AssistantWaitIndicator({ kind }: { kind: AssistantWaitKind }) {
   const isThinking = kind === "thinking";
@@ -319,8 +319,8 @@ function ChatErrorAlert({
   onClearError,
 }: {
   error: string;
-  onRetry?: () => void;
-  onClearError?: () => void;
+  onRetry: () => void;
+  onClearError: () => void;
 }) {
   return (
     <div
@@ -330,42 +330,44 @@ function ChatErrorAlert({
       <IconAlertCircle className="size-4 shrink-0" aria-hidden />
       <span className="min-w-0 flex-1 break-words">{error}</span>
       <div className="flex shrink-0 items-center gap-1">
-        {onRetry ? (
-          <Button
-            variant="ghost"
-            size="xs"
-            onClick={onRetry}
-            className="text-destructive hover:!bg-destructive/20 hover:!text-destructive"
-          >
-            <IconRefresh />
-            Retry
-          </Button>
-        ) : null}
-        {onClearError ? (
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            onClick={onClearError}
-            aria-label="Dismiss error"
-            className="text-destructive hover:!bg-destructive/20 hover:!text-destructive"
-          >
-            <IconX className="size-3" aria-hidden />
-          </Button>
-        ) : null}
+        <Button
+          variant="ghost"
+          size="xs"
+          onClick={onRetry}
+          className="text-destructive hover:!bg-destructive/20 hover:!text-destructive"
+        >
+          <IconRefresh />
+          Retry
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          onClick={onClearError}
+          aria-label="Dismiss error"
+          className="text-destructive hover:!bg-destructive/20 hover:!text-destructive"
+        >
+          <IconX className="size-3" aria-hidden />
+        </Button>
       </div>
     </div>
   );
 }
 
-interface ChatPanelProps {
+/** A chat conversation as the panel drives it, from either the cloud or local session. */
+export interface ChatController {
   messages: UIMessage[];
+  status: ChatStatus;
+  /** User-facing message; null while a response is in flight. */
+  error: string | null;
   sendMessage: (params: { text: string }) => void;
   clearMessages: () => void;
-  status: ChatStatus;
+  retry: () => void;
+  clearError: () => void;
+}
+
+interface ChatPanelProps {
+  chat: ChatController;
   domain?: string;
-  error?: string | null;
-  onRetry?: () => void;
-  onClearError?: () => void;
   homeSuggestions?: string[];
   browserAI: UseBrowserAIResult;
   conversationClassName?: string;
@@ -381,19 +383,14 @@ export function ChatPanel(props: ChatPanelProps) {
 }
 
 function ChatPanelBody({
-  messages,
-  sendMessage,
-  clearMessages,
-  status,
+  chat,
   domain,
-  error,
-  onRetry,
-  onClearError,
   homeSuggestions = EMPTY_SUGGESTIONS,
   browserAI,
   conversationClassName,
   inputClassName,
 }: ChatPanelProps) {
+  const { messages, status, error, sendMessage, clearMessages, clearError } = chat;
   const [inputLength, setInputLength] = useState(0);
   const showToolCalls = usePreferencesStore((s) => s.showToolCalls);
   const showReasoning = usePreferencesStore((s) => s.showReasoning);
@@ -415,18 +412,18 @@ function ChatPanelBody({
 
   const handleSuggestionClick = (suggestion: string) => {
     clearMessages();
-    onClearError?.();
+    clearError();
     sendMessage({ text: suggestion });
   };
 
   const handleRetry = () => {
-    onRetry?.();
+    chat.retry();
     scrollToEnd({ behavior: "smooth" });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputLength(e.target.value.length);
-    onClearError?.();
+    clearError();
   };
 
   const isEmpty = messages.length === 0 && !showWait;
@@ -473,11 +470,7 @@ function ChatPanelBody({
         ) : null}
 
         {error ? (
-          <ChatErrorAlert
-            error={error}
-            onRetry={onRetry ? handleRetry : undefined}
-            onClearError={onClearError}
-          />
+          <ChatErrorAlert error={error} onRetry={handleRetry} onClearError={clearError} />
         ) : null}
 
         <PromptInput onSubmit={handleSubmit}>

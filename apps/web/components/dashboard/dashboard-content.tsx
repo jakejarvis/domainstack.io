@@ -1,13 +1,12 @@
 import { IconFilterX, IconHourglass, IconPlus, IconWorld } from "@tabler/icons-react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 
 import { BulkActionsToolbar } from "@/components/dashboard/bulk-actions-toolbar";
 import { DashboardGrid } from "@/components/dashboard/dashboard-grid";
 import { DashboardTable } from "@/components/dashboard/dashboard-table";
-import { useDashboardFiltersContext } from "@/context/dashboard-context";
+import { useDashboardView } from "@/context/dashboard-context";
 import { useDashboardViewMode } from "@/lib/stores/preferences-store";
-import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Button, buttonVariants } from "@domainstack/ui/button";
 import {
   Empty,
@@ -17,19 +16,10 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@domainstack/ui/empty";
-import { useIsClient } from "@domainstack/ui/hooks";
 
-type DashboardContentProps = {
-  domains: TrackedDomainWithDetails[];
-  totalDomains: number; // Total before filtering
-};
-
-export function DashboardContent({ domains, totalDomains }: DashboardContentProps) {
-  const { hasActiveFilters, clearFilters } = useDashboardFiltersContext();
+export function DashboardContent({ totalDomains }: { totalDomains: number }) {
+  const { visibleDomains: domains, hasActiveFilters, clearFilters } = useDashboardView();
   const viewMode = useDashboardViewMode();
-  // Avoid animating the initial view swap during hydration when localStorage preferences reconcile.
-  const hasHydrated = useIsClient();
-  const shouldReduceMotion = useReducedMotion();
 
   // Empty state: No domains match filters
   if (domains.length === 0 && hasActiveFilters) {
@@ -99,17 +89,13 @@ export function DashboardContent({ domains, totalDomains }: DashboardContentProp
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={viewMode}
-          initial={hasHydrated ? { opacity: 0, y: shouldReduceMotion ? 0 : 8 } : false}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={hasHydrated ? { opacity: 0, y: shouldReduceMotion ? 0 : -8 } : undefined}
-          transition={
-            hasHydrated
-              ? {
-                  duration: shouldReduceMotion ? 0.1 : 0.18,
-                  ease: [0.22, 1, 0.36, 1] as const,
-                }
-              : { duration: 0 }
-          }
+          exit={{ opacity: 0, y: -8 }}
+          transition={{
+            duration: 0.18,
+            ease: [0.22, 1, 0.36, 1] as const,
+          }}
         >
           {viewMode === "table" ? (
             <DashboardTable domains={domains} />

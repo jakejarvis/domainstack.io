@@ -8,14 +8,22 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
+import { cn } from "@domainstack/ui/utils";
 
 type ProviderCellProps = {
   provider: ProviderInfo;
   trackedDomainId: string;
   providerType: ProviderCategory;
+  logoClassName?: string;
 };
 
-export function ProviderCell({ provider, trackedDomainId, providerType }: ProviderCellProps) {
+/** Provider logo and name, with a lazy details tooltip (or the full name when truncated). */
+export function ProviderCell({
+  provider,
+  trackedDomainId,
+  providerType,
+  logoClassName = "size-[13px]",
+}: ProviderCellProps) {
   const { valueRef, isTruncated } = useTruncation();
 
   const tooltipData = useProviderTooltipData({
@@ -34,7 +42,7 @@ export function ProviderCell({ provider, trackedDomainId, providerType }: Provid
         <ProviderLogo
           providerId={provider.id}
           providerName={provider.name}
-          className="size-[13px] shrink-0"
+          className={cn("shrink-0", logoClassName)}
         />
       )}
       <span ref={valueRef} className="min-w-0 flex-1 truncate">
@@ -49,17 +57,9 @@ export function ProviderCell({ provider, trackedDomainId, providerType }: Provid
         <ResponsiveTooltipTrigger nativeButton={false} render={providerContent} />
         <ResponsiveTooltipContent>
           <ProviderTooltipContent
-            providerId={tooltipData.providerId}
+            {...tooltipData}
             providerName={provider.name}
             providerType={providerType}
-            isLoading={tooltipData.isLoading}
-            records={tooltipData.records}
-            certificateExpiryDate={tooltipData.certificateExpiryDate}
-            whoisServer={tooltipData.whoisServer}
-            rdapServers={tooltipData.rdapServers}
-            registrationSource={tooltipData.registrationSource}
-            transferLock={tooltipData.transferLock}
-            registrantInfo={tooltipData.registrantInfo}
           />
         </ResponsiveTooltipContent>
       </ResponsiveTooltip>

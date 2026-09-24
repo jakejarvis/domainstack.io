@@ -1,33 +1,16 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "next/navigation";
-import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { parseAsBoolean, parseAsStringLiteral, useQueryState } from "nuqs";
+import { useEffect, useMemo, useState, useTransition } from "react";
 
-import { useDashboardFilters } from "@/hooks/use-dashboard-filters";
+import type { DashboardActions, DashboardBulkActions } from "@/context/dashboard-context";
 import { useDashboardMutations } from "@/hooks/use-dashboard-mutations";
-import {
-  getDashboardFilterSignature,
-  useDashboardPagination,
-  useSyncDashboardPage,
-} from "@/hooks/use-dashboard-pagination";
-import {
-  useClearDashboardSelection,
-  useSyncVisibleDomainIds,
-} from "@/hooks/use-dashboard-selection";
+import { useClearDashboardSelection } from "@/hooks/use-dashboard-selection";
 import { useRouter } from "@/hooks/use-router";
 import { useSubscription } from "@/hooks/use-subscription";
-import {
-  type ConfirmAction,
-  DEFAULT_SORT,
-  SORT_OPTIONS,
-  type SortOption,
-  sortDomains,
-} from "@/lib/dashboard-utils";
-import { useDashboardViewMode } from "@/lib/stores/preferences-store";
+import type { ConfirmAction } from "@/lib/dashboard-utils";
 import { useTRPC } from "@/lib/trpc/client";
-import type { VerificationMethod } from "@domainstack/types";
 
 export function useDashboardClient() {
   const router = useRouter();
@@ -41,7 +24,7 @@ export function useDashboardClient() {
     refetchSubscription,
   } = useSubscription();
   const mutations = useDashboardMutations();
-  const { remove, archive, unarchive, setMuted, bulkArchive, bulkDelete, bulkSetMuted } = mutations;
+  const clearSelection = useClearDashboardSelection();
 
   const [activeTab, setActiveTab] = useQueryState(
     "view",
@@ -49,25 +32,6 @@ export function useDashboardClient() {
       .withDefault("active")
       .withOptions({ shallow: true, clearOnDefault: true }),
   );
-  const viewMode = useDashboardViewMode();
-
-  const [sortParam, setSortParam] = useQueryState(
-    "sort",
-    parseAsString.withDefault(DEFAULT_SORT).withOptions({
-      shallow: true,
-      clearOnDefault: true,
-    }),
-  );
-  const sortOption = SORT_OPTIONS.some((opt) => opt.value === sortParam)
-    ? (sortParam as SortOption)
-    : DEFAULT_SORT;
-  const setSortOption = setSortParam;
-
-  const paginationHook = useDashboardPagination();
-  const {
-    state: pagination,
-    actions: { resetPage },
-  } = paginationHook;
 
   const domainsQuery = useQuery(trpc.tracking.listDomains.queryOptions({ includeArchived: true }));
   const allDomains = domainsQuery.data;
@@ -81,190 +45,82 @@ export function useDashboardClient() {
     [allDomains],
   );
 
-  const filterHook = useDashboardFilters(domains);
-  const { filteredDomains: filteredUnsorted } = filterHook.state;
-
-  const filteredDomains = useMemo(
-    () => (viewMode === "grid" ? sortDomains(filteredUnsorted, sortOption) : filteredUnsorted),
-    [filteredUnsorted, sortOption, viewMode],
-  );
-
-  const filteredDomainIds = useMemo(() => filteredDomains.map((d) => d.id), [filteredDomains]);
-  useSyncVisibleDomainIds(filteredDomainIds);
-  useSyncDashboardPage({
-    itemCount: filteredDomains.length,
-    pageIndex: pagination.pageIndex,
-    pageSize: pagination.pageSize,
-    filterSignature: getDashboardFilterSignature(filterHook.state),
-    resetPage,
-    enabled: allDomains !== undefined,
-  });
-
-  const clearSelection = useClearDashboardSelection();
-
-  const doBulkArchive = useCallback(
-    async (domainIds: string[]) => {
-      try {
-        await bulkArchive(domainIds);
-        clearSelection();
-      } catch {
-        // Error handled in mutation onError
-      }
-    },
-    [bulkArchive, clearSelection],
-  );
-
-  const doBulkDelete = useCallback(
-    async (domainIds: string[]) => {
-      try {
-        await bulkDelete(domainIds);
-        clearSelection();
-      } catch {
-        // Error handled in mutation onError
-      }
-    },
-    [bulkDelete, clearSelection],
-  );
-
-  const doBulkMute = useCallback(
-    async (domainIds: string[], muted: boolean) => {
-      try {
-        await bulkSetMuted(domainIds, muted);
-        clearSelection();
-      } catch {
-        // Error handled in mutation onError
-      }
-    },
-    [bulkSetMuted, clearSelection],
-  );
-
   const [pendingAction, setPendingAction] = useState<ConfirmAction | null>(null);
-  const [showUpgradedBanner, setShowUpgradedBanner] = useState(false);
 
-  const handleConfirm = useCallback(() => {
+  // Checkout returns to `?upgraded=true`. Show the banner for this visit, but drop the
+  // param so a refresh or shared link doesn't show it again.
+  const [upgradedParam, setUpgradedParam] = useQueryState(
+    "upgraded",
+    parseAsBoolean.withDefault(false).withOptions({ shallow: true }),
+  );
+  const [showUpgradedBanner, setShowUpgradedBanner] = useState(upgradedParam);
+  useEffect(() => {
+    if (upgradedParam) void setUpgradedParam(null);
+  }, [upgradedParam, setUpgradedParam]);
+
+  // Bulk mutations toast their own errors; the selection only clears on success.
+  const clearSelectionOnSuccess = (result: Promise<unknown>) => {
+    result.then(clearSelection, () => {});
+  };
+
+  const handleConfirm = () => {
     if (!pendingAction) return;
     if (pendingAction.type === "remove") {
-      remove(pendingAction.domainId);
+      mutations.remove(pendingAction.domainId);
     } else if (pendingAction.type === "archive") {
-      archive(pendingAction.domainId);
+      mutations.archive(pendingAction.domainId);
     } else if (pendingAction.type === "bulk-archive") {
-      void doBulkArchive(pendingAction.domainIds);
+      clearSelectionOnSuccess(mutations.bulkArchive(pendingAction.domainIds));
     } else if (pendingAction.type === "bulk-delete") {
-      void doBulkDelete(pendingAction.domainIds);
+      clearSelectionOnSuccess(mutations.bulkDelete(pendingAction.domainIds));
     }
     setPendingAction(null);
-  }, [pendingAction, remove, archive, doBulkArchive, doBulkDelete]);
+  };
 
-  const searchParams = useSearchParams();
-  const upgradedParam = searchParams?.get("upgraded") === "true";
-  if (upgradedParam && !showUpgradedBanner) {
-    setShowUpgradedBanner(true);
-  }
-  useEffect(() => {
-    if (!upgradedParam || !searchParams) return;
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("upgraded");
-    const newSearch = params.toString();
-    const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
-    router.replace(newUrl, { scroll: false });
-  }, [upgradedParam, router, searchParams]);
+  const confirmSingle = (type: "remove" | "archive", id: string) => {
+    const domainName = allDomains?.find((d) => d.id === id)?.domainName;
+    if (domainName) setPendingAction({ type, domainId: id, domainName });
+  };
 
-  const handleVerify = useCallback(
-    (id: string, verificationMethod: VerificationMethod | null) => {
-      const params = new URLSearchParams({
-        resume: "true",
-        id,
-      });
+  const confirmBulk = (type: "bulk-archive" | "bulk-delete", domainIds: string[]) => {
+    if (domainIds.length > 0) setPendingAction({ type, domainIds, count: domainIds.length });
+  };
 
-      if (verificationMethod) {
-        params.set("method", verificationMethod);
-      }
+  const actions: DashboardActions = {
+    onVerify: (id, verificationMethod) => {
+      const params = new URLSearchParams({ resume: "true", id });
+      if (verificationMethod) params.set("method", verificationMethod);
 
       setVerifyingDomainId(id);
       startVerifyNavigation(() =>
-        router.push(`/dashboard/add-domain?${params.toString()}`, {
-          scroll: false,
-        }),
+        router.push(`/dashboard/add-domain?${params.toString()}`, { scroll: false }),
       );
     },
-    [router, startVerifyNavigation],
-  );
+    onRemove: (id) => confirmSingle("remove", id),
+    onArchive: (id) => confirmSingle("archive", id),
+    onUnarchive: mutations.unarchive,
+    onMute: mutations.setMuted,
+    verifyingDomainId: isVerifyPending ? verifyingDomainId : null,
+  };
 
-  const domainNameById = useCallback(
-    (id: string) => allDomains?.find((d) => d.id === id)?.domainName,
-    [allDomains],
-  );
-
-  const handleRemove = useCallback(
-    (id: string) => {
-      const domainName = domainNameById(id);
-      if (!domainName) return;
-      setPendingAction({ type: "remove", domainId: id, domainName });
+  const bulk: DashboardBulkActions = {
+    onBulkArchive: (domainIds) => confirmBulk("bulk-archive", domainIds),
+    onBulkDelete: (domainIds) => confirmBulk("bulk-delete", domainIds),
+    onBulkMute: (domainIds, muted) => {
+      if (domainIds.length > 0) clearSelectionOnSuccess(mutations.bulkSetMuted(domainIds, muted));
     },
-    [domainNameById],
-  );
-
-  const handleArchive = useCallback(
-    (id: string) => {
-      const domainName = domainNameById(id);
-      if (!domainName) return;
-      setPendingAction({ type: "archive", domainId: id, domainName });
-    },
-    [domainNameById],
-  );
-
-  const handleBulkArchive = useCallback((domainIds: string[]) => {
-    if (domainIds.length === 0) return;
-    setPendingAction({
-      type: "bulk-archive",
-      domainIds,
-      count: domainIds.length,
-    });
-  }, []);
-
-  const handleBulkDelete = useCallback((domainIds: string[]) => {
-    if (domainIds.length === 0) return;
-    setPendingAction({
-      type: "bulk-delete",
-      domainIds,
-      count: domainIds.length,
-    });
-  }, []);
-
-  const handleBulkMute = useCallback(
-    (domainIds: string[], muted: boolean) => {
-      if (domainIds.length === 0) return;
-      void doBulkMute(domainIds, muted);
-    },
-    [doBulkMute],
-  );
-
-  const handleUnarchive = useCallback(
-    (id: string) => {
-      unarchive(id);
-    },
-    [unarchive],
-  );
-
-  const handleMute = useCallback(
-    (id: string, muted: boolean) => {
-      setMuted(id, muted);
-    },
-    [setMuted],
-  );
-
-  const isLoading = subscriptionLoading || domainsQuery.isLoading;
-  const hasError = subscriptionError || domainsQuery.isError;
-
-  const handleRetry = useCallback(() => {
-    refetchSubscription();
-    void domainsQuery.refetch();
-  }, [refetchSubscription, domainsQuery]);
+    isBulkArchiving: mutations.isBulkArchiving,
+    isBulkDeleting: mutations.isBulkDeleting,
+    isBulkMuting: mutations.isBulkMuting,
+  };
 
   return {
-    isLoading,
-    hasError,
-    handleRetry,
+    isLoading: subscriptionLoading || domainsQuery.isLoading,
+    hasError: subscriptionError || domainsQuery.isError,
+    handleRetry: () => {
+      refetchSubscription();
+      void domainsQuery.refetch();
+    },
     subscription,
     showUpgradedBanner,
     setShowUpgradedBanner,
@@ -272,21 +128,8 @@ export function useDashboardClient() {
     setActiveTab,
     domains,
     archivedDomains,
-    filteredDomains,
-    handleVerify,
-    handleRemove,
-    handleArchive,
-    handleUnarchive,
-    handleMute,
-    verifyingDomainId: isVerifyPending ? verifyingDomainId : null,
-    handleBulkArchive,
-    handleBulkDelete,
-    handleBulkMute,
-    mutations,
-    filterHook,
-    sortOption,
-    setSortOption,
-    paginationHook,
+    actions,
+    bulk,
     pendingAction,
     setPendingAction,
     handleConfirm,

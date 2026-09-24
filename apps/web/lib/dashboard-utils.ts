@@ -160,60 +160,81 @@ export const SORT_OPTIONS: SortOptionConfig[] = [
 
 export const DEFAULT_SORT: SortOption = "domainName.asc";
 
-/**
- * Columns where unverified domains should NOT be pushed to the end.
- * For all other columns, unverified/pending domains will appear last.
- */
-const COLUMNS_WITHOUT_VERIFICATION_SORT = new Set(["domainName", "verified", "createdAt"]);
+type SortKey = string | number | null;
 
 /**
- * Sort domains based on sort option (using table column format).
- * For columns other than domainName, verified, and createdAt,
- * unverified/pending domains are always pushed to the end of the list.
+ * The value each sortable column orders by, shared by the grid and the table
+ * (which uses manual sorting) so both views order the same data identically.
+ * `unverifiedLast` columns push pending domains to the end in either direction.
+ */
+const SORT_COLUMNS: Record<
+  string,
+  { key: (domain: TrackedDomainWithDetails, now: Date) => SortKey; unverifiedLast: boolean }
+> = {
+  domainName: { key: (d) => d.domainName, unverifiedLast: false },
+  verified: { key: (d) => (d.verified ? 0 : 1), unverifiedLast: false },
+  // Health severity rises as days-left falls, so days-left orders critical ->
+  // warning -> healthy, with unknown (no usable date) last.
+  health: {
+    key: (d, now) => getDaysUntilExpiry(d.expirationDate, d.verified, now),
+    unverifiedLast: true,
+  },
+  expirationDate: { key: (d) => d.expirationDate?.getTime() ?? null, unverifiedLast: true },
+  registrar: { key: (d) => d.registrar.name, unverifiedLast: true },
+  dns: { key: (d) => d.dns.name, unverifiedLast: true },
+  hosting: { key: (d) => d.hosting.name, unverifiedLast: true },
+  email: { key: (d) => d.email.name, unverifiedLast: true },
+  ca: { key: (d) => d.ca.name, unverifiedLast: true },
+  registrationDate: { key: (d) => d.registrationDate?.getTime() ?? null, unverifiedLast: true },
+  createdAt: { key: (d) => d.createdAt.getTime(), unverifiedLast: false },
+};
+
+function isMissing(key: SortKey): key is null {
+  return key === null || key === "" || Number.isNaN(key);
+}
+
+/**
+ * Sort domains by a "columnId.direction" sort string. Domains missing the
+ * sorted value always land after those that have it, in either direction.
  */
 export function sortDomains(
   domains: TrackedDomainWithDetails[],
-  sortOption: SortOption,
+  sort: string,
+  now: Date,
 ): TrackedDomainWithDetails[] {
-  const sorted = [...domains];
-  const [columnId, direction] = sortOption.split(".") as [string, "asc" | "desc"];
-  const isDesc = direction === "desc";
-  const pushUnverifiedToEnd = !COLUMNS_WITHOUT_VERIFICATION_SORT.has(columnId);
+  const [{ id, desc }] = parseSortParam(sort);
+  // Own keys only, so a URL naming an inherited property like "constructor" can't match.
+  const column = Object.hasOwn(SORT_COLUMNS, id) ? SORT_COLUMNS[id] : undefined;
+  if (!column) return domains;
 
-  switch (columnId) {
-    case "domainName":
-      sorted.sort((a, b) =>
-        isDesc
-          ? b.domainName.localeCompare(a.domainName)
-          : a.domainName.localeCompare(b.domainName),
-      );
-      break;
-    case "expirationDate":
-      sorted.sort((a, b) => {
-        // Push unverified domains to the end
-        if (pushUnverifiedToEnd) {
-          if (!a.verified && b.verified) return 1;
-          if (a.verified && !b.verified) return -1;
-        }
-        // Put domains without expiry date at the end (among their verification group)
-        if (!a.expirationDate && !b.expirationDate) return 0;
-        if (!a.expirationDate) return 1;
-        if (!b.expirationDate) return -1;
-        return isDesc
-          ? b.expirationDate.getTime() - a.expirationDate.getTime()
-          : a.expirationDate.getTime() - b.expirationDate.getTime();
-      });
-      break;
-    case "createdAt":
-      sorted.sort((a, b) =>
-        isDesc
-          ? b.createdAt.getTime() - a.createdAt.getTime()
-          : a.createdAt.getTime() - b.createdAt.getTime(),
-      );
-      break;
-  }
+  return domains.toSorted((a, b) => {
+    if (column.unverifiedLast && a.verified !== b.verified) return a.verified ? -1 : 1;
 
-  return sorted;
+    const aKey = column.key(a, now);
+    const bKey = column.key(b, now);
+    if (isMissing(aKey) || isMissing(bKey)) {
+      return Number(isMissing(aKey)) - Number(isMissing(bKey));
+    }
+
+    const order =
+      typeof aKey === "string" && typeof bKey === "string"
+        ? aKey.localeCompare(bKey)
+        : Number(aKey) - Number(bKey);
+    return desc ? -order : order;
+  });
+}
+
+/** Table sorts fall back to the default when the URL names a column that doesn't exist. */
+export function toTableSort(sort: string): string {
+  const [{ id }] = parseSortParam(sort);
+  return Object.hasOwn(SORT_COLUMNS, id) && sort === serializeSortState(parseSortParam(sort))
+    ? sort
+    : DEFAULT_SORT;
+}
+
+/** Grid sort options fall back to the default when the URL holds a table-only column. */
+export function toGridSort(sort: string): SortOption {
+  return SORT_OPTIONS.some((opt) => opt.value === sort) ? (sort as SortOption) : DEFAULT_SORT;
 }
 
 /**

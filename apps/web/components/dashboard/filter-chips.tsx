@@ -1,5 +1,5 @@
 import { IconX } from "@tabler/icons-react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 
 import { Badge } from "@domainstack/ui/badge";
 
@@ -17,8 +17,6 @@ type FilterChipsProps = {
 };
 
 export function FilterChips({ chips, onRemove }: FilterChipsProps) {
-  const shouldReduceMotion = useReducedMotion();
-
   if (chips.length === 0) {
     return null;
   }
@@ -29,22 +27,22 @@ export function FilterChips({ chips, onRemove }: FilterChipsProps) {
         {chips.map((chip, index) => (
           <motion.div
             key={chip.type === "search" ? "search" : `${chip.type}-${chip.value}`}
-            layout={shouldReduceMotion ? false : "position"}
+            layout={"position"}
             initial={{
               opacity: 0,
-              y: shouldReduceMotion ? 0 : 6,
-              scale: shouldReduceMotion ? 1 : 0.98,
+              y: 6,
+              scale: 0.98,
             }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{
               opacity: 0,
-              y: shouldReduceMotion ? 0 : -6,
-              scale: shouldReduceMotion ? 1 : 0.98,
+              y: -6,
+              scale: 0.98,
             }}
             transition={{
-              duration: shouldReduceMotion ? 0.1 : 0.18,
+              duration: 0.18,
               ease: [0.22, 1, 0.36, 1] as const,
-              delay: shouldReduceMotion ? 0 : Math.min(index * 0.01, 0.06),
+              delay: Math.min(index * 0.01, 0.06),
             }}
             className="inline-flex"
           >

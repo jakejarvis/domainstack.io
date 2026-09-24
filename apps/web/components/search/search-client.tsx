@@ -4,7 +4,7 @@ import { IconArrowRight, IconCircleX, IconSearch, IconX } from "@tabler/icons-re
 import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
 import { useAtom } from "jotai";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useEffectEvent, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -205,20 +205,18 @@ function useSearchClient({
     startNavigation(() => router.push(`/${encodeURIComponent(target)}`));
   };
 
-  const navigateRef = useRef(navigateToDomain);
-  useEffect(() => {
-    navigateRef.current = navigateToDomain;
+  // A home suggestion chip was clicked: run it through this input's navigation, so the
+  // spinner is the transition's own pending state. That ends when the navigation
+  // commits, including when the home page is later restored from <Activity>.
+  const searchSuggestion = useEffectEvent((domain: string) => {
+    setPendingDomain(null);
+    setValue(domain);
+    navigateToDomain(domain);
   });
-
-  if (variant === "lg" && pendingDomain && value !== pendingDomain) {
-    setValue(pendingDomain);
-  }
   useEffect(() => {
-    if (variant === "lg" && pendingDomain) {
-      navigateRef.current(pendingDomain);
-      setPendingDomain(null);
-    }
-  }, [variant, pendingDomain, setPendingDomain]);
+    // oxlint-disable-next-line react/set-state-in-effect -- consumes a request from another component's click, via the shared atom
+    if (variant === "lg" && pendingDomain) searchSuggestion(pendingDomain);
+  }, [variant, pendingDomain]);
 
   const pointerDownRef = useRef(false);
   const justFocusedRef = useRef(false);
@@ -288,7 +286,7 @@ function useSearchClient({
     [onFocusChangeAction, onDismissAction],
   );
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = () => {
     const normalized = normalizeDomainInput(value);
 
     // Validate before blurring: on mobile the blur collapses the search, and a
@@ -306,9 +304,9 @@ function useSearchClient({
 
     setIsFocused(false);
     inputRef.current?.blur();
-    navigateRef.current(normalized);
+    navigateToDomain(normalized);
     onCloseAction?.();
-  }, [value, onCloseAction]);
+  };
 
   return {
     variant,

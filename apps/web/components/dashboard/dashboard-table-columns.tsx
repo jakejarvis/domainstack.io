@@ -1,15 +1,7 @@
-import {
-  IconArchive,
-  IconBell,
-  IconBellOff,
-  IconBookmark,
-  IconDotsVertical,
-  IconExternalLink,
-  IconTrash,
-} from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import Link from "next/link";
 
+import { DomainActionsMenu } from "@/components/dashboard/domain-actions-menu";
 import { DomainHealthBadge } from "@/components/dashboard/domain-health-badge";
 import { DomainStatusBadge } from "@/components/dashboard/domain-status-badge";
 import { ProviderCell } from "@/components/dashboard/provider-cell";
@@ -17,17 +9,8 @@ import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Favicon } from "@/components/icons/favicon";
 import { useIsDomainSelected, useToggleDomainSelection } from "@/hooks/use-dashboard-selection";
 import type { DashboardTableFeatures } from "@/lib/dashboard-table-features";
-import { getHealthSeverity, type HealthSeverity } from "@/lib/dashboard-utils";
 import type { TrackedDomainWithDetails, VerificationMethod } from "@domainstack/types";
-import { Button } from "@domainstack/ui/button";
 import { Checkbox } from "@domainstack/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@domainstack/ui/dropdown-menu";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
@@ -81,52 +64,6 @@ export const HIDEABLE_COLUMNS = (
     "createdAt",
   ] as const satisfies readonly (keyof typeof COLUMN_HEADERS)[]
 ).map((id) => ({ id, header: COLUMN_HEADERS[id] }));
-
-/** Health badge severities in the order the health column sorts them. */
-const HEALTH_SORT_PRIORITY: Record<HealthSeverity, number> = {
-  critical: 0,
-  warning: 1,
-  healthy: 2,
-  unknown: 3,
-};
-
-/**
- * Creates a sorting function factory that pushes unverified domains to the end.
- * Returns a function that creates `sortFn` functions with access to the current
- * sort state.
- *
- * TanStack Table multiplies the `sortFn` result by -1 for descending sorts,
- * so we need to counteract this to keep unverified domains at the end.
- *
- * @param isDescFn - Function that returns whether the current column is sorted descending
- */
-export function createUnverifiedLastSorter(isDescFn: (columnId: string) => boolean) {
-  return function withUnverifiedLast(
-    compareFn: (a: TrackedDomainWithDetails, b: TrackedDomainWithDetails) => number,
-  ) {
-    return (
-      rowA: { original: TrackedDomainWithDetails },
-      rowB: { original: TrackedDomainWithDetails },
-      columnId: string,
-    ) => {
-      const a = rowA.original;
-      const b = rowB.original;
-      const isDesc = isDescFn(columnId);
-
-      // Push unverified domains to the end regardless of sort direction
-      // In desc mode, TanStack multiplies the result by -1, so we counteract it
-      if (!a.verified && b.verified) {
-        return isDesc ? -1 : 1;
-      }
-      if (a.verified && !b.verified) {
-        return isDesc ? 1 : -1;
-      }
-
-      // Both have same verification status, apply the comparison
-      return compareFn(a, b);
-    };
-  };
-}
 
 type DomainSelectCellProps = {
   domainId: string;
@@ -198,17 +135,11 @@ function DomainSelectCell({ domainId, domainName }: DomainSelectCellProps) {
 
 export type ColumnCallbacks = {
   onVerify: (id: string, verificationMethod: VerificationMethod | null) => void;
-  onRemove: (id: string) => void;
-  onArchive: (id: string) => void;
-  onMute: (id: string, muted: boolean) => void;
-  withUnverifiedLast: ReturnType<typeof createUnverifiedLastSorter>;
 };
 
-export function createColumns(
-  callbacks: ColumnCallbacks,
-): ColumnDef<DashboardTableFeatures, TrackedDomainWithDetails>[] {
-  const { onVerify, onRemove, onArchive, onMute, withUnverifiedLast } = callbacks;
-
+export function createColumns({
+  onVerify,
+}: ColumnCallbacks): ColumnDef<DashboardTableFeatures, TrackedDomainWithDetails>[] {
   return [
     // Selection checkbox column
     {
@@ -263,9 +194,6 @@ export function createColumns(
         );
       },
       size: 100,
-      // Sort verified domains first (verified = -1, unverified = 1)
-      sortFn: (rowA, rowB) =>
-        rowA.original.verified === rowB.original.verified ? 0 : rowA.original.verified ? -1 : 1,
     },
     {
       id: "health",
@@ -278,25 +206,6 @@ export function createColumns(
         />
       ),
       size: 100,
-      // Sort by health status priority: critical (0) > warning (1) > healthy (2) > unknown (3)
-      // Within the same status, sort by expiration date for more granular ordering
-      sortFn: withUnverifiedLast((a, b) => {
-        const now = new Date();
-        const getHealthPriority = (exp: Date | null, verified: boolean): number =>
-          HEALTH_SORT_PRIORITY[getHealthSeverity(exp, verified, now)];
-
-        const aPriority = getHealthPriority(a.expirationDate, a.verified);
-        const bPriority = getHealthPriority(b.expirationDate, b.verified);
-
-        if (aPriority !== bPriority) {
-          return aPriority - bPriority;
-        }
-
-        // Same status - sort by expiration date
-        const aTime = a.expirationDate?.getTime() ?? 0;
-        const bTime = b.expirationDate?.getTime() ?? 0;
-        return aTime - bTime;
-      }),
     },
     {
       accessorKey: "expirationDate",
@@ -309,11 +218,6 @@ export function createColumns(
         return <DateCell date={date} />;
       },
       size: 110,
-      sortFn: withUnverifiedLast((a, b) => {
-        const aTime = a.expirationDate?.getTime() ?? 0;
-        const bTime = b.expirationDate?.getTime() ?? 0;
-        return aTime - bTime;
-      }),
     },
     {
       id: "registrar",
@@ -327,11 +231,6 @@ export function createColumns(
         />
       ),
       size: 128,
-      sortFn: withUnverifiedLast((a, b) => {
-        const aName = a.registrar.name ?? "";
-        const bName = b.registrar.name ?? "";
-        return aName.localeCompare(bName);
-      }),
     },
     {
       id: "dns",
@@ -345,11 +244,6 @@ export function createColumns(
         />
       ),
       size: 128,
-      sortFn: withUnverifiedLast((a, b) => {
-        const aName = a.dns.name ?? "";
-        const bName = b.dns.name ?? "";
-        return aName.localeCompare(bName);
-      }),
     },
     {
       id: "hosting",
@@ -363,11 +257,6 @@ export function createColumns(
         />
       ),
       size: 128,
-      sortFn: withUnverifiedLast((a, b) => {
-        const aName = a.hosting.name ?? "";
-        const bName = b.hosting.name ?? "";
-        return aName.localeCompare(bName);
-      }),
     },
     {
       id: "email",
@@ -381,11 +270,6 @@ export function createColumns(
         />
       ),
       size: 128,
-      sortFn: withUnverifiedLast((a, b) => {
-        const aName = a.email.name ?? "";
-        const bName = b.email.name ?? "";
-        return aName.localeCompare(bName);
-      }),
     },
     {
       id: "ca",
@@ -399,11 +283,6 @@ export function createColumns(
         />
       ),
       size: 128,
-      sortFn: withUnverifiedLast((a, b) => {
-        const aName = a.ca.name ?? "";
-        const bName = b.ca.name ?? "";
-        return aName.localeCompare(bName);
-      }),
     },
     {
       accessorKey: "registrationDate",
@@ -416,11 +295,6 @@ export function createColumns(
         return <DateCell date={date} />;
       },
       size: 110,
-      sortFn: withUnverifiedLast((a, b) => {
-        const aTime = a.registrationDate?.getTime() ?? 0;
-        const bTime = b.registrationDate?.getTime() ?? 0;
-        return aTime - bTime;
-      }),
     },
     {
       accessorKey: "createdAt",
@@ -430,71 +304,11 @@ export function createColumns(
         return <DateCell date={date} />;
       },
       size: 110,
-      sortFn: (rowA, rowB) => rowA.original.createdAt.getTime() - rowB.original.createdAt.getTime(),
     },
     {
       id: "actions",
       header: () => <span className="sr-only">Actions</span>,
-      cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button variant="outline" size="icon-sm">
-                <IconDotsVertical />
-                <span className="sr-only">Actions</span>
-              </Button>
-            }
-          />
-          <DropdownMenuContent align="end" className="min-w-36">
-            <DropdownMenuItem
-              nativeButton={false}
-              render={
-                <a
-                  href={`https://${row.original.domainName}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <IconExternalLink />
-                  Open
-                </a>
-              }
-            />
-            <DropdownMenuItem
-              nativeButton={false}
-              render={
-                <Link href={`/${encodeURIComponent(row.original.domainName)}`}>
-                  <IconBookmark />
-                  View Report
-                </Link>
-              }
-            />
-            <DropdownMenuSeparator />
-            {row.original.verified && (
-              <DropdownMenuItem onClick={() => onMute(row.original.id, !row.original.muted)}>
-                {row.original.muted ? (
-                  <>
-                    <IconBell />
-                    Unmute
-                  </>
-                ) : (
-                  <>
-                    <IconBellOff />
-                    Mute
-                  </>
-                )}
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem onClick={() => onArchive(row.original.id)}>
-              <IconArchive />
-              Archive
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onRemove(row.original.id)}>
-              <IconTrash className="text-danger-foreground" />
-              Remove
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
+      cell: ({ row }) => <DomainActionsMenu domain={row.original} triggerVariant="outline" />,
       size: 56,
       enableHiding: false, // Always show actions menu
       meta: {

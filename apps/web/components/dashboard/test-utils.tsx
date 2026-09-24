@@ -1,6 +1,5 @@
-import { parseAsString, useQueryState } from "nuqs";
 import { NuqsTestingAdapter } from "nuqs/adapters/testing";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { vi } from "vitest";
 
 import { ArchivedDomainsList } from "@/components/dashboard/archived-domains-list";
@@ -13,22 +12,13 @@ import {
   mockSubscription,
   resetSubscriptionActionSpies,
 } from "@/components/dashboard/mocks/subscription";
-import { DashboardProvider } from "@/context/dashboard-context";
-import { useDashboardFilters } from "@/hooks/use-dashboard-filters";
 import {
-  getDashboardFilterSignature,
-  useDashboardPagination,
-  useSyncDashboardPage,
-} from "@/hooks/use-dashboard-pagination";
-import { useSyncVisibleDomainIds } from "@/hooks/use-dashboard-selection";
+  type DashboardActions,
+  type DashboardBulkActions,
+  DashboardProvider,
+} from "@/context/dashboard-context";
 import { resetHydratedNow } from "@/hooks/use-hydrated-now";
-import {
-  type ConfirmAction,
-  DEFAULT_SORT,
-  SORT_OPTIONS,
-  type SortOption,
-  sortDomains,
-} from "@/lib/dashboard-utils";
+import type { ConfirmAction } from "@/lib/dashboard-utils";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { render } from "@/mocks/react";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
@@ -52,52 +42,23 @@ export const dashboardActionSpies = {
   onBulkMute: vi.fn<(domainIds: string[], muted: boolean) => void>(),
 };
 
-const emptyProviders = {
-  registrar: [],
-  dns: [],
-  hosting: [],
-  email: [],
-  ca: [],
+const spyActions: DashboardActions = {
+  onVerify: dashboardActionSpies.onVerify,
+  onRemove: dashboardActionSpies.onRemove,
+  onArchive: dashboardActionSpies.onArchive,
+  onUnarchive: dashboardActionSpies.onUnarchive,
+  onMute: dashboardActionSpies.onMute,
+  verifyingDomainId: null,
 };
 
-function stubFilterHook() {
-  return {
-    state: {
-      search: "",
-      status: [],
-      health: [],
-      tlds: [],
-      providers: [],
-      domainId: null,
-      filteredDomainName: null,
-      availableTlds: [],
-      availableProviders: emptyProviders,
-      hasActiveFilters: false,
-      stats: { expiringSoon: 0, pendingVerification: 0 },
-    },
-    actions: {
-      setSearch: vi.fn<(value: string) => void>(),
-      setStatus: vi.fn<(values: ("verified" | "pending")[]) => void>(),
-      setHealth: vi.fn<(values: ("healthy" | "expiring" | "expired")[]) => void>(),
-      setTlds: vi.fn<(values: string[]) => void>(),
-      setProviders: vi.fn<(values: string[]) => void>(),
-      clearFilters: vi.fn<() => void>(),
-      applyHealthFilter: vi.fn<(filter: "healthy" | "expiring" | "expired" | "pending") => void>(),
-      clearDomainId: vi.fn<() => void>(),
-    },
-  };
-}
-
-function stubPaginationHook() {
-  return {
-    state: { pageIndex: 0, pageSize: 10 as const },
-    actions: {
-      setPageIndex: vi.fn<(pageIndex: number) => void>(),
-      setPageSize: vi.fn<(pageSize: 10 | 25 | 50 | 100) => void>(),
-      resetPage: vi.fn<() => void>(),
-    },
-  };
-}
+const spyBulk: DashboardBulkActions = {
+  onBulkArchive: dashboardActionSpies.onBulkArchive,
+  onBulkDelete: dashboardActionSpies.onBulkDelete,
+  onBulkMute: dashboardActionSpies.onBulkMute,
+  isBulkArchiving: false,
+  isBulkDeleting: false,
+  isBulkMuting: false,
+};
 
 export function resetDashboardTestState() {
   vi.useFakeTimers({ toFake: ["Date"] });
@@ -138,66 +99,36 @@ function DashboardTestShell({
   userName = "Test User",
   confirmActions = false,
 }: DashboardTestShellProps) {
-  const viewMode = usePreferencesStore((s) => s.viewMode);
-  const [sortParam, setSortParam] = useQueryState(
-    "sort",
-    parseAsString.withDefault(DEFAULT_SORT).withOptions({
-      shallow: true,
-      clearOnDefault: true,
-    }),
-  );
-  const sortOption = SORT_OPTIONS.some((opt) => opt.value === sortParam)
-    ? (sortParam as SortOption)
-    : DEFAULT_SORT;
-
-  const paginationHook = useDashboardPagination();
-  const filterHook = useDashboardFilters(domains);
-  const { filteredDomains: filteredUnsorted } = filterHook.state;
-
-  const filteredDomains = useMemo(
-    () => (viewMode === "grid" ? sortDomains(filteredUnsorted, sortOption) : filteredUnsorted),
-    [filteredUnsorted, sortOption, viewMode],
-  );
-
-  const filteredDomainIds = useMemo(() => filteredDomains.map((d) => d.id), [filteredDomains]);
-  useSyncVisibleDomainIds(filteredDomainIds);
-  useSyncDashboardPage({
-    itemCount: filteredDomains.length,
-    pageIndex: paginationHook.state.pageIndex,
-    pageSize: paginationHook.state.pageSize,
-    filterSignature: getDashboardFilterSignature(filterHook.state),
-    resetPage: paginationHook.actions.resetPage,
-  });
-
   const [pendingAction, setPendingAction] = useState<ConfirmAction | null>(null);
 
-  const requestRemove = useCallback(
-    (id: string) => {
+  // With `confirmActions`, remove/archive go through the confirm dialog like the real
+  // dashboard, and the spies fire on confirm instead of on click.
+  const actions = useMemo<DashboardActions>(() => {
+    if (!confirmActions) return spyActions;
+    const confirmSingle = (type: "remove" | "archive", id: string) => {
       const domainName = domains.find((d) => d.id === id)?.domainName;
-      if (!domainName) return;
-      setPendingAction({ type: "remove", domainId: id, domainName });
-    },
-    [domains],
-  );
-  const requestArchive = useCallback(
-    (id: string) => {
-      const domainName = domains.find((d) => d.id === id)?.domainName;
-      if (!domainName) return;
-      setPendingAction({ type: "archive", domainId: id, domainName });
-    },
-    [domains],
-  );
-  const requestBulkArchive = useCallback((domainIds: string[]) => {
-    setPendingAction({ type: "bulk-archive", domainIds, count: domainIds.length });
-  }, []);
-  const requestBulkDelete = useCallback((domainIds: string[]) => {
-    setPendingAction({ type: "bulk-delete", domainIds, count: domainIds.length });
-  }, []);
+      if (domainName) setPendingAction({ type, domainId: id, domainName });
+    };
+    return {
+      ...spyActions,
+      onRemove: (id) => confirmSingle("remove", id),
+      onArchive: (id) => confirmSingle("archive", id),
+    };
+  }, [confirmActions, domains]);
 
-  const onRemove = confirmActions ? requestRemove : dashboardActionSpies.onRemove;
-  const onArchive = confirmActions ? requestArchive : dashboardActionSpies.onArchive;
-  const onBulkArchive = confirmActions ? requestBulkArchive : dashboardActionSpies.onBulkArchive;
-  const onBulkDelete = confirmActions ? requestBulkDelete : dashboardActionSpies.onBulkDelete;
+  const bulk = useMemo<DashboardBulkActions>(
+    () =>
+      confirmActions
+        ? {
+            ...spyBulk,
+            onBulkArchive: (domainIds) =>
+              setPendingAction({ type: "bulk-archive", domainIds, count: domainIds.length }),
+            onBulkDelete: (domainIds) =>
+              setPendingAction({ type: "bulk-delete", domainIds, count: domainIds.length }),
+          }
+        : spyBulk,
+    [confirmActions],
+  );
 
   const handleConfirm = () => {
     if (!pendingAction) return;
@@ -214,23 +145,7 @@ function DashboardTestShell({
   };
 
   return (
-    <DashboardProvider
-      onVerify={dashboardActionSpies.onVerify}
-      onRemove={onRemove}
-      onArchive={onArchive}
-      onUnarchive={dashboardActionSpies.onUnarchive}
-      onMute={dashboardActionSpies.onMute}
-      onBulkArchive={onBulkArchive}
-      onBulkDelete={onBulkDelete}
-      onBulkMute={dashboardActionSpies.onBulkMute}
-      isBulkArchiving={false}
-      isBulkDeleting={false}
-      isBulkMuting={false}
-      filterHook={filterHook}
-      sortOption={sortOption}
-      setSortOption={setSortParam}
-      paginationHook={paginationHook}
-    >
+    <DashboardProvider domains={domains} actions={actions} bulk={bulk}>
       <div className="space-y-6">
         <DashboardHeader userName={userName} />
         {totalDomains > 0 && (
@@ -239,7 +154,7 @@ function DashboardTestShell({
             <DashboardFilters />
           </div>
         )}
-        <DashboardContent domains={filteredDomains} totalDomains={totalDomains} />
+        <DashboardContent totalDomains={totalDomains} />
       </div>
       {confirmActions && pendingAction ? (
         <DashboardConfirmDialog
@@ -296,27 +211,13 @@ export async function renderDashboardConfirmShell(options: RenderDashboardShellO
 export async function renderArchivedList(domains: TrackedDomainWithDetails[]) {
   mockSubscription.activeCount = 0;
   return render(
-    <TooltipProvider>
-      <DashboardProvider
-        onVerify={dashboardActionSpies.onVerify}
-        onRemove={dashboardActionSpies.onRemove}
-        onArchive={dashboardActionSpies.onArchive}
-        onUnarchive={dashboardActionSpies.onUnarchive}
-        onMute={dashboardActionSpies.onMute}
-        onBulkArchive={dashboardActionSpies.onBulkArchive}
-        onBulkDelete={dashboardActionSpies.onBulkDelete}
-        onBulkMute={dashboardActionSpies.onBulkMute}
-        isBulkArchiving={false}
-        isBulkDeleting={false}
-        isBulkMuting={false}
-        filterHook={stubFilterHook()}
-        sortOption={DEFAULT_SORT}
-        setSortOption={vi.fn<(sort: SortOption) => void>()}
-        paginationHook={stubPaginationHook()}
-      >
-        <ArchivedDomainsList domains={domains} />
-      </DashboardProvider>
-    </TooltipProvider>,
+    <NuqsTestingAdapter>
+      <TooltipProvider>
+        <DashboardProvider domains={[]} actions={spyActions} bulk={spyBulk}>
+          <ArchivedDomainsList domains={domains} />
+        </DashboardProvider>
+      </TooltipProvider>
+    </NuqsTestingAdapter>,
   );
 }
 
