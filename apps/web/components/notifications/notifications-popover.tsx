@@ -10,7 +10,6 @@ import { Button } from "@domainstack/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@domainstack/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@domainstack/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
-import { cn } from "@domainstack/ui/utils";
 
 export function NotificationsPopover() {
   const router = useRouter();
@@ -235,21 +234,17 @@ export function NotificationsPopover() {
                   {/* Clear all action - aligned to the right */}
                   {view === "inbox" && count > 0 && (
                     <div className="ml-auto flex items-center">
-                      <button
-                        type="button"
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => markAllRead.mutate()}
                         disabled={markAllRead.isPending}
-                        className={cn(
-                          "flex h-full items-center gap-1.5 px-2 text-[13px] font-medium text-muted-foreground transition-colors",
-                          "hover:text-foreground focus-visible:text-foreground",
-                          "focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-1 focus-visible:outline-none",
-                          "disabled:pointer-events-none disabled:opacity-50",
-                        )}
+                        className="h-full text-[13px] text-muted-foreground"
                         aria-label="Clear all notifications"
                       >
                         <IconChecks className="size-4" aria-hidden />
                         <span className="max-sm:sr-only">Clear&nbsp;all</span>
-                      </button>
+                      </Button>
                     </div>
                   )}
                 </TabsList>

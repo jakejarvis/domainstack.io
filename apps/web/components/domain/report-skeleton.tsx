@@ -14,11 +14,10 @@ import { cn } from "@domainstack/ui/utils";
 function HeaderSkeleton() {
   return (
     <div className="flex min-w-0 items-center justify-between gap-4">
-      {/* Left: favicon + domain name + camera/spinner slot */}
+      {/* Left: favicon + domain name */}
       <div className="flex min-w-0 items-center gap-2">
         <Skeleton className="size-5 shrink-0 rounded-xs" />
         <Skeleton className="h-7 w-38 rounded-sm" />
-        <Skeleton className="mr-3 ml-0.5 size-3.5 shrink-0 rounded-full" />
       </div>
 
       {/* Right: Track button + Export button + Tools dropdown */}

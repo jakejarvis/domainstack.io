@@ -98,7 +98,11 @@ export function DashboardClient({ userName }: { userName: string }) {
           variant="success"
           icon={IconHeartHandshake}
           title="Welcome to Pro!"
-          description={`You now have access to track up to ${dashboard.subscription?.planQuota} domains. Thank you for upgrading!`}
+          description={
+            dashboard.subscription?.plan === "pro"
+              ? `You now have access to track up to ${dashboard.subscription.planQuota} domains. Thank you for upgrading!`
+              : "We're processing your upgrade. Pro access will appear here once your payment is confirmed."
+          }
           dismissible
           onDismiss={() => dashboard.setShowUpgradedBanner(false)}
         />

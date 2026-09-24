@@ -12,6 +12,7 @@ import { QuotaBar } from "@/components/dashboard/quota-bar";
 import { useSubscription } from "@/hooks/use-subscription";
 import type { DashboardViewModeOptions } from "@/lib/dashboard-utils";
 import { useDashboardViewMode, usePreferencesStore } from "@/lib/stores/preferences-store";
+import { Badge } from "@domainstack/ui/badge";
 import { Button, buttonVariants } from "@domainstack/ui/button";
 import {
   ResponsiveTooltip,
@@ -46,10 +47,13 @@ export function DashboardHeader({ userName }: DashboardHeaderProps) {
               <ResponsiveTooltipTrigger
                 nativeButton={false}
                 render={
-                  <span className="inline-flex cursor-help items-center gap-1 rounded-md border border-accent-gold/15 bg-gradient-to-r from-accent-gold/10 to-accent-gold/20 px-2 py-0.5 text-[10px] font-semibold text-accent-gold uppercase select-none dark:border-accent-gold/20 dark:from-accent-gold/10 dark:to-accent-gold/15">
+                  <Badge
+                    variant="outline"
+                    className="cursor-help border-accent-gold/15 bg-gradient-to-r from-accent-gold/10 to-accent-gold/20 text-[10px] font-semibold text-accent-gold uppercase select-none dark:border-accent-gold/20 dark:from-accent-gold/10 dark:to-accent-gold/15"
+                  >
                     <IconRocket className="size-3" aria-hidden="true" />
                     Pro
-                  </span>
+                  </Badge>
                 }
               />
               <ResponsiveTooltipContent>
@@ -60,15 +64,21 @@ export function DashboardHeader({ userName }: DashboardHeaderProps) {
               </ResponsiveTooltipContent>
             </ResponsiveTooltip>
           ) : (
-            <span className="pointer-events-none inline-flex items-center gap-1 rounded-md border border-accent-gold/15 bg-gradient-to-r from-accent-gold/10 to-accent-gold/20 px-2 py-0.5 text-[10px] font-semibold text-accent-gold uppercase select-none dark:border-accent-gold/20 dark:from-accent-gold/10 dark:to-accent-gold/15">
+            <Badge
+              variant="outline"
+              className="pointer-events-none border-accent-gold/15 bg-gradient-to-r from-accent-gold/10 to-accent-gold/20 text-[10px] font-semibold text-accent-gold uppercase select-none dark:border-accent-gold/20 dark:from-accent-gold/10 dark:to-accent-gold/15"
+            >
               <IconRocket className="size-3" aria-hidden="true" />
               Pro
-            </span>
+            </Badge>
           )
         ) : (
-          <span className="pointer-events-none inline-flex items-center rounded-md border border-foreground/30 px-2 py-0.5 text-[10px] font-medium text-foreground/70 uppercase select-none">
+          <Badge
+            variant="outline"
+            className="pointer-events-none border-foreground/30 text-[10px] text-foreground/70 uppercase select-none"
+          >
             Free
-          </span>
+          </Badge>
         )}
       </div>
 

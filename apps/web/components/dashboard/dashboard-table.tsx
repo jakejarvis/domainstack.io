@@ -21,6 +21,7 @@ import {
 import { DEFAULT_SORT, parseSortParam, serializeSortState } from "@/lib/dashboard-utils";
 import { useDashboardColumnVisibility, usePreferencesStore } from "@/lib/stores/preferences-store";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
+import { Card } from "@domainstack/ui/card";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
 import { cn } from "@domainstack/ui/utils";
 
@@ -116,7 +117,7 @@ export function DashboardTable({ domains }: DashboardTableProps) {
   const table = useTable<DashboardTableFeatures, TrackedDomainWithDetails>(tableOptions);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-black/15 bg-background/60 shadow-2xl shadow-black/10 dark:border-white/15">
+    <Card className="gap-0 overflow-hidden py-0">
       <ScrollArea className="w-full">
         <table className="w-full text-[13px]" style={{ tableLayout: "fixed" }}>
           <colgroup>
@@ -131,10 +132,7 @@ export function DashboardTable({ domains }: DashboardTableProps) {
           </colgroup>
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr
-                key={headerGroup.id}
-                className="min-w-full border-b border-black/10 bg-muted/30 dark:border-white/10"
-              >
+              <tr key={headerGroup.id} className="min-w-full border-b bg-muted/30">
                 {headerGroup.headers.map((header) => {
                   const isSelectColumn = header.column.id === "select";
                   const isDomainColumn = header.column.id === "domainName";
@@ -240,6 +238,6 @@ export function DashboardTable({ domains }: DashboardTableProps) {
 
       {/* Upgrade CTA banner for free tier users */}
       {<UpgradeRow />}
-    </div>
+    </Card>
   );
 }

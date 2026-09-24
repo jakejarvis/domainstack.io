@@ -2,7 +2,6 @@ import { noop } from "@tanstack/react-query";
 
 import { SettingsTabsRouter } from "@/components/settings/settings-content";
 import { getQueryClient, HydrateClient, trpc } from "@/trpc/server";
-import { Card } from "@domainstack/ui/card";
 
 export default async function SettingsTabsLayout() {
   const queryClient = getQueryClient();
@@ -26,9 +25,10 @@ export default async function SettingsTabsLayout() {
           </p>
         </div>
 
-        <Card className="overflow-hidden border border-black/10 bg-background/80 p-3 shadow-xl backdrop-blur-xl dark:border-white/10 [&_[data-slot=tabs-content]]:mt-2 [&_[data-slot=tabs-content]]:p-2">
+        {/* chromeless on phones, where a card inside the page gutter is just a nested frame */}
+        <div className="sm:overflow-hidden sm:rounded-xl sm:border sm:bg-background sm:p-3 sm:shadow-sm [&_[data-slot=tabs-content]]:mt-2 sm:[&_[data-slot=tabs-content]]:p-2">
           <SettingsTabsRouter navigationMode="page" />
-        </Card>
+        </div>
       </div>
     </HydrateClient>
   );

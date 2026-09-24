@@ -44,6 +44,13 @@ import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
 import { formatDate, formatDateTimeUtc, toDateTimeAttr } from "@domainstack/utils/date";
 
+const GLOW_CLASSES: Record<ReturnType<typeof getHealthAccent>, string> = {
+  green: "glow-accent-green/15",
+  orange: "glow-accent-orange/15",
+  red: "glow-accent-red/15",
+  slate: "glow-accent-slate/15",
+};
+
 type DashboardGridCardProps = {
   domain: TrackedDomainWithDetails;
 };
@@ -101,7 +108,7 @@ function ExpiresInfoRow({
           nativeButton={false}
           render={
             <time
-              className="truncate"
+              className="truncate tabular-nums"
               dateTime={toDateTimeAttr(expirationDate)}
               suppressHydrationWarning
             >
@@ -116,7 +123,7 @@ function ExpiresInfoRow({
         </ResponsiveTooltipContent>
       </ResponsiveTooltip>
       {showRelative ? (
-        <span className="shrink-0 text-[11px] leading-none text-muted-foreground">
+        <span className="shrink-0 text-[11px] leading-none text-muted-foreground tabular-nums">
           <RelativeExpiryString to={expirationDate} dangerDays={30} warnDays={45} />
         </span>
       ) : null}
@@ -354,16 +361,13 @@ export const DashboardGridCard = memo(function DashboardGridCard({
         aria-hidden
       />
 
-      <Card
-        className={cn(
-          "relative flex h-full flex-col overflow-hidden rounded-xl border border-black/15 bg-background/60 py-0 shadow-2xl shadow-black/10 dark:border-white/15",
-          selected && "bg-primary/10",
-        )}
-      >
+      <Card className="relative flex h-full flex-col overflow-hidden py-0">
         <div
           aria-hidden
-          className="pointer-events-none absolute -inset-x-8 -top-8 h-24 accent-glow opacity-30 blur-2xl"
-          style={{ "--glow-color": `var(--accent-${accent})` } as React.CSSProperties}
+          className={cn(
+            "pointer-events-none absolute -inset-x-20 -top-20 h-52",
+            GLOW_CLASSES[accent],
+          )}
           suppressHydrationWarning
         />
 
@@ -411,7 +415,6 @@ function InfoRow({
 }) {
   const { valueRef, isTruncated } = useTruncation();
 
-  // Use stable reference for empty provider
   const effectiveProvider = provider ?? EMPTY_PROVIDER;
 
   const tooltipData = useProviderTooltipData({
@@ -436,7 +439,7 @@ function InfoRow({
   );
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border bg-background/40 px-3 py-2 backdrop-blur-lg">
+    <div className="flex items-center justify-between gap-3 rounded-lg border bg-background/60 px-3 py-2">
       <span className="flex shrink-0 items-center text-[10px] leading-[1.2] tracking-[0.08em] text-foreground/75 uppercase dark:text-foreground/80">
         {label}
       </span>

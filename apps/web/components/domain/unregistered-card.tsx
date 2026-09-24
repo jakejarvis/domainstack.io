@@ -5,6 +5,7 @@ import { Suspense } from "react";
 
 import { RegistrarLinks, RegistrarLinksSkeleton } from "@/components/domain/registrar-links";
 import { NONPUBLIC_TLDS } from "@domainstack/constants";
+import { Card } from "@domainstack/ui/card";
 import { extractTldClient } from "@domainstack/utils/domain/client";
 
 // Renders nothing on error; used for supplementary info like pricing.
@@ -23,17 +24,15 @@ export function DomainUnregisteredCard({ domain }: DomainUnregisteredCardProps) 
   const canShowRegistrarLinks = !isNonPublicTld && tld;
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-black/10 bg-background/60 p-8 text-center shadow-2xl shadow-black/10 dark:border-white/10">
+    <Card className="relative overflow-hidden px-6 text-center">
       <div
         aria-hidden
-        className="pointer-events-none absolute -inset-x-16 -top-16 h-40 accent-glow opacity-40 blur-3xl"
-        style={{ "--glow-color": "var(--accent-indigo)" } as React.CSSProperties}
+        className="pointer-events-none absolute -inset-x-35 -top-35 h-85 glow-accent-indigo/15"
       />
 
-      <div className="space-y-4.5">
+      <div className="relative space-y-4.5">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{domain}</h2>
-
           <p className="mt-2 text-sm text-muted-foreground sm:text-base">
             appears to be unregistered…
           </p>
@@ -48,6 +47,6 @@ export function DomainUnregisteredCard({ domain }: DomainUnregisteredCardProps) 
           </SilentErrorBoundary>
         )}
       </div>
-    </div>
+    </Card>
   );
 }

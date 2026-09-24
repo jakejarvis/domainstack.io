@@ -32,7 +32,7 @@ export function SocialPreviews({
         value={selectedTab}
         onValueChange={(v) => startTransition(() => setSelectedTab(v as typeof selectedTab))}
       >
-        <TabsList className="h-11 w-full">
+        <TabsList className="w-full">
           <TabsTrigger value="twitter" data-1p-ignore>
             <SiX className="size-4 md:size-3.5" aria-hidden />
             <span className="hidden text-[13px] md:inline">Twitter</span>

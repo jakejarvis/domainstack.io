@@ -1,7 +1,6 @@
 import { getEnabledProviders } from "@/lib/oauth";
 import { Card } from "@domainstack/ui/card";
 import { Skeleton } from "@domainstack/ui/skeleton";
-import { cn } from "@domainstack/ui/utils";
 
 export function LoginSkeleton() {
   const providers = getEnabledProviders();
@@ -34,13 +33,7 @@ export function LoginSkeleton() {
 
 export function LoginSkeletonWithCard() {
   return (
-    <Card
-      className={cn(
-        "w-full max-w-md overflow-hidden rounded-xl px-6 py-8",
-        // Frosted glass in both light + dark mode (with a bit more presence in light mode).
-        "border-black/15 bg-background/70 shadow-2xl ring-1 ring-black/5 backdrop-blur-2xl dark:border-white/8 dark:bg-background/60 dark:ring-white/5",
-      )}
-    >
+    <Card className="w-full max-w-md overflow-hidden px-6">
       <LoginSkeleton />
     </Card>
   );

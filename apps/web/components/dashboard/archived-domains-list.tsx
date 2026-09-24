@@ -7,7 +7,6 @@ import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { useSubscription } from "@/hooks/use-subscription";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
-import { Card, CardContent } from "@domainstack/ui/card";
 import {
   Empty,
   EmptyDescription,
@@ -15,6 +14,15 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@domainstack/ui/empty";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemMedia,
+  ItemTitle,
+} from "@domainstack/ui/item";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 import { cn } from "@domainstack/ui/utils";
 import { formatRelativeTime, toDateTimeAttr } from "@domainstack/utils/date";
@@ -29,7 +37,7 @@ export function ArchivedDomainsList({ domains }: ArchivedDomainsListProps) {
 
   if (domains.length === 0) {
     return (
-      <Empty className="rounded-xl border bg-background/60">
+      <Empty className="rounded-xl border bg-background shadow-sm">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <IconArchive className="size-6" />
@@ -57,57 +65,55 @@ export function ArchivedDomainsList({ domains }: ArchivedDomainsListProps) {
       )}
 
       {/* Archived domains list */}
-      <div className="grid gap-3">
+      <ItemGroup className="gap-3">
         {domains.map((domain) => (
-          <Card key={domain.id} className="opacity-75">
-            <CardContent className="flex items-center justify-between p-4">
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <Favicon domain={domain.domainName} className="size-6" />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium">{domain.domainName}</div>
-                  <div className="text-sm text-muted-foreground">
-                    Archived <ArchivedRelativeTime archivedAt={domain.archivedAt} />
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <div
-                        className={cn(
-                          "pointer-events-auto",
-                          !subscription?.canAddMore && "cursor-not-allowed",
-                        )}
+          <Item key={domain.id} variant="outline" role="listitem" className="opacity-75">
+            <ItemMedia>
+              <Favicon domain={domain.domainName} className="size-6" />
+            </ItemMedia>
+            <ItemContent className="min-w-0">
+              <ItemTitle className="block w-full truncate">{domain.domainName}</ItemTitle>
+              <ItemDescription>
+                Archived <ArchivedRelativeTime archivedAt={domain.archivedAt} />
+              </ItemDescription>
+            </ItemContent>
+            <ItemActions>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <div
+                      className={cn(
+                        "pointer-events-auto",
+                        !subscription?.canAddMore && "cursor-not-allowed",
+                      )}
+                    >
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onUnarchive(domain.id)}
+                        disabled={!subscription?.canAddMore}
+                        className={!subscription?.canAddMore ? "pointer-events-none" : undefined}
                       >
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onUnarchive(domain.id)}
-                          disabled={!subscription?.canAddMore}
-                          className={!subscription?.canAddMore ? "pointer-events-none" : undefined}
-                        >
-                          <IconRefresh />
-                          <span className="sr-only sm:not-sr-only sm:ml-2">Reactivate</span>
-                        </Button>
-                      </div>
-                    }
-                  />
-                  <TooltipContent>
-                    {subscription?.canAddMore
-                      ? "Reactivate this domain"
-                      : "Upgrade or remove active domains first"}
-                  </TooltipContent>
-                </Tooltip>
-                <Button variant="ghost" size="sm" onClick={() => onRemove(domain.id)}>
-                  <IconTrash className="text-danger-foreground" />
-                  <span className="sr-only">Delete</span>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                        <IconRefresh />
+                        <span className="sr-only sm:not-sr-only sm:ml-2">Reactivate</span>
+                      </Button>
+                    </div>
+                  }
+                />
+                <TooltipContent>
+                  {subscription?.canAddMore
+                    ? "Reactivate this domain"
+                    : "Upgrade or remove active domains first"}
+                </TooltipContent>
+              </Tooltip>
+              <Button variant="ghost" size="sm" onClick={() => onRemove(domain.id)}>
+                <IconTrash className="text-danger-foreground" />
+                <span className="sr-only">Delete</span>
+              </Button>
+            </ItemActions>
+          </Item>
         ))}
-      </div>
+      </ItemGroup>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { VerificationFailed } from "@/components/dashboard/add-domain/verification-failed";
 import { META_TAG_NAME } from "@domainstack/constants";
 import type { VerificationMethod, VerificationState } from "@domainstack/types";
+import { Alert, AlertDescription, AlertTitle } from "@domainstack/ui/alert";
 import { Button } from "@domainstack/ui/button";
 import { CopyableField } from "@domainstack/ui/copyable-field";
 import {
@@ -69,15 +70,13 @@ function VerificationInstructionsLayout({
 }) {
   return (
     <div className="mt-1 min-w-0 space-y-3">
-      <div className="flex gap-3 rounded-lg border border-info-border bg-info p-3">
-        <IconInfoCircle className="mt-0.5 size-4 shrink-0 text-info-foreground" />
-        <div className="space-y-0.5">
-          <p className="text-sm font-medium text-info-foreground">{title}</p>
-          <p className="text-sm text-info-foreground/80">{description}</p>
-        </div>
-      </div>
+      <Alert variant="info">
+        <IconInfoCircle aria-hidden="true" />
+        <AlertTitle>{title}</AlertTitle>
+        <AlertDescription>{description}</AlertDescription>
+      </Alert>
 
-      <div className="space-y-3 rounded-lg border border-input bg-muted/30 p-4">{children}</div>
+      <div className="space-y-3 rounded-lg border bg-card/60 p-4">{children}</div>
     </div>
   );
 }
@@ -109,7 +108,7 @@ export function StepVerifyOwnership({
           if (isVerificationMethod(value)) setMethod(value);
         }}
       >
-        <TabsList className="h-10 w-full">
+        <TabsList className="w-full">
           <TabsTrigger value="dns_txt" disabled={isVerifying}>
             DNS Record
           </TabsTrigger>

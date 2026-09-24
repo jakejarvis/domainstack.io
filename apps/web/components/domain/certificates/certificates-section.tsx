@@ -38,7 +38,7 @@ function CertificateCard({ cert }: { cert: Certificate }) {
     : [];
 
   return (
-    <div className="relative overflow-hidden rounded-xl border bg-background/60 p-3 backdrop-blur-lg">
+    <div className="relative overflow-hidden rounded-lg border bg-background/60 p-3 backdrop-blur-lg">
       <KeyValueGrid colsDesktop={2}>
         <KeyValue
           label="Issuer"
@@ -205,7 +205,7 @@ export function CertificatesSection({
           )}
         </>
       ) : (
-        <Empty className="border border-dashed">
+        <Empty className="border border-solid bg-background/60">
           <EmptyHeader>
             <EmptyMedia variant="icon">
               <IconCertificateOff />

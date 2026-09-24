@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@domainstack/ui/dropdown-menu";
+import { Item, ItemContent, ItemDescription, ItemMedia } from "@domainstack/ui/item";
 import { cn } from "@domainstack/ui/utils";
 
 interface MutableDomain {
@@ -39,12 +40,16 @@ export function DomainMuteList({ domains, onMute, disabled = false }: DomainMute
   // Empty state: no verified domains at all
   if (domains.length === 0) {
     return (
-      <div className="flex items-center gap-3 rounded-xl border border-dashed bg-muted/10 px-4 py-6">
-        <IconWorld className="size-5 text-muted-foreground/50" />
-        <p className="text-sm text-muted-foreground">
-          Verify domains to customize their notification settings.
-        </p>
-      </div>
+      <Item variant="outline" className="border-dashed">
+        <ItemMedia variant="icon">
+          <IconWorld className="text-muted-foreground" />
+        </ItemMedia>
+        <ItemContent>
+          <ItemDescription>
+            Verify domains to customize their notification settings.
+          </ItemDescription>
+        </ItemContent>
+      </Item>
     );
   }
 

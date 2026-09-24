@@ -1,5 +1,5 @@
 import { getEnabledProviders } from "@/lib/oauth";
-import { Card, CardContent, CardHeader } from "@domainstack/ui/card";
+import { CardContent, CardHeader } from "@domainstack/ui/card";
 import { Separator } from "@domainstack/ui/separator";
 import { Skeleton } from "@domainstack/ui/skeleton";
 import { cn } from "@domainstack/ui/utils";
@@ -20,45 +20,54 @@ function SettingsCardHeaderSkeleton({
 }
 
 /**
- * Skeleton for the subscription section.
- * Shows placeholders for plan info, usage progress, and upgrade/manage button.
+ * Skeleton for the subscription section, in its Free-plan layout (usage, plan cards, features).
  */
 export function SubscriptionSkeleton({ className }: { className?: string }) {
   return (
     <div className={cn("space-y-4", className)}>
-      <SettingsCardHeaderSkeleton titleClassName="w-12" descriptionClassName="w-64" />
-      <CardContent className="space-y-4 px-0">
-        {/* Current plan card — matches PlanStatusCard */}
-        <div className="flex items-center justify-between rounded-xl border border-black/10 bg-muted/30 p-4 dark:border-white/10">
-          <div className="space-y-1.5">
-            <Skeleton className="h-5 w-20" />
-            <Skeleton className="h-4 w-36" />
+      <SettingsCardHeaderSkeleton titleClassName="w-12" descriptionClassName="w-72" />
+      <CardContent className="space-y-6 px-0">
+        {/* PlanUsage */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-4">
+            <Skeleton className="h-5 w-28" />
+            <Skeleton className="h-7 w-14" />
           </div>
-          <Skeleton className="h-2 w-24 rounded-full" />
+          <Skeleton className="h-2 w-full rounded-full" />
         </div>
 
-        {/* Pro upgrade section — default Free-plan loaded UI */}
-        <div className="relative overflow-hidden rounded-xl border border-black/10 bg-gradient-to-br from-black/[0.02] to-black/[0.04] p-4 dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04]">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -top-8 -right-8 size-32 rounded-full bg-accent-gold/10 blur-3xl"
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -bottom-8 -left-8 size-24 rounded-full bg-accent-gold-muted/15 blur-3xl"
-          />
+        {/* FreePlanCard + ProPlanCard */}
+        <div className="grid gap-3 sm:grid-cols-2">
+          {[false, true].map((pro) => (
+            <div
+              key={String(pro)}
+              className={cn(
+                "flex flex-col gap-4 rounded-xl border bg-card/60 p-4",
+                pro &&
+                  "border-accent-gold/25 bg-linear-to-bl from-accent-gold/10 to-transparent to-60%",
+              )}
+            >
+              <div className="flex min-h-5 items-center justify-between gap-2">
+                <Skeleton className="h-5 w-12" />
+                {pro ? null : <Skeleton className="h-5 w-24" />}
+              </div>
+              <div className="space-y-1">
+                <Skeleton className="h-8 w-20" />
+                <Skeleton className="h-5 w-36" />
+              </div>
+              <Skeleton className="h-5 w-44" />
+              {pro ? <Skeleton className="mt-auto h-9 w-full" /> : null}
+            </div>
+          ))}
+        </div>
 
-          <div className="relative space-y-3">
-            <Skeleton className="h-5 w-12" />
-            <div className="space-y-1.5">
-              <Skeleton className="h-4 w-44" />
-              <Skeleton className="h-4 w-48" />
-              <Skeleton className="h-4 w-36" />
-            </div>
-            <div className="flex items-center gap-2 pt-1">
-              <Skeleton className="h-4 w-30" />
-            </div>
-            <Skeleton className="mt-1 h-10 w-full rounded-lg" />
+        {/* PlanFeatures */}
+        <div className="space-y-2">
+          <Skeleton className="h-5 w-32" />
+          <div className="grid gap-1.5 sm:grid-cols-2">
+            {[0, 1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-5 w-full max-w-72" />
+            ))}
           </div>
         </div>
       </CardContent>
@@ -73,7 +82,6 @@ export function SubscriptionSkeleton({ className }: { className?: string }) {
 function NotificationMatrixSkeleton({ className }: { className?: string }) {
   return (
     <div className={className}>
-      {/* Header row */}
       <div className="flex items-center border-b border-border py-2 pr-2 pl-1">
         <Skeleton className="h-3 w-16" />
         <div className="ml-auto flex items-center gap-1">
@@ -86,7 +94,6 @@ function NotificationMatrixSkeleton({ className }: { className?: string }) {
         </div>
       </div>
 
-      {/* Category rows */}
       <div className="divide-y divide-border/30">
         {[1, 2, 3, 4, 5].map((i) => (
           <div key={i} className="flex items-center py-2 pr-2 pl-1">
@@ -131,7 +138,6 @@ function CalendarFeedSkeleton({ className }: { className?: string }) {
 export function NotificationsSkeleton({ className }: { className?: string }) {
   return (
     <div className={cn("max-w-full overflow-x-hidden", className)}>
-      {/* Global Preferences section */}
       <div className="space-y-4">
         <SettingsCardHeaderSkeleton titleClassName="w-36" descriptionClassName="w-64" />
         <CardContent className="px-0">
@@ -141,7 +147,6 @@ export function NotificationsSkeleton({ className }: { className?: string }) {
 
       <Separator className="mt-4 mb-6 bg-muted" />
 
-      {/* Muted Domains section */}
       <div className="space-y-4">
         <SettingsCardHeaderSkeleton titleClassName="w-32" descriptionClassName="w-72" />
         <CardContent className="px-0">
@@ -153,7 +158,6 @@ export function NotificationsSkeleton({ className }: { className?: string }) {
 
       <Separator className="my-6 bg-muted" />
 
-      {/* Calendar Feed section */}
       <CalendarFeedSkeleton />
     </div>
   );
@@ -233,22 +237,20 @@ export function LinkedAccountsSkeleton({ className }: { className?: string }) {
  */
 function SettingsSkeletonTabsList({ className }: { className?: string }) {
   return (
-    <div className={cn("w-full", className)}>
+    <div className={cn("w-full overflow-hidden", className)}>
       <div className="flex h-10 w-full items-center gap-1.5 border-b border-muted">
-        {/* Subscription Tab (active) — indicator is the 2px `bg-foreground` underline */}
+        {/* active tab — indicator is the 2px `bg-foreground` underline */}
         <div className="relative flex h-full items-center gap-2 px-2">
           <Skeleton className="size-4 rounded-sm" />
           <Skeleton className="h-3.5 w-[76px]" />
           <div className="absolute inset-x-0 bottom-0 h-0.5 bg-foreground" />
         </div>
 
-        {/* Notifications Tab */}
         <div className="flex h-full items-center gap-2 px-2">
           <Skeleton className="size-4 rounded-sm" />
           <Skeleton className="h-3.5 w-[76px]" />
         </div>
 
-        {/* Account Tab */}
         <div className="flex h-full items-center gap-2 px-2">
           <Skeleton className="size-4 rounded-sm" />
           <Skeleton className="h-3.5 w-[52px]" />
@@ -280,10 +282,10 @@ export function SettingsPageSkeleton() {
         <Skeleton className="h-7 w-28" />
         <Skeleton className="h-6 w-80" />
       </div>
-      <Card className="overflow-hidden border border-black/10 bg-background/80 p-3 shadow-xl backdrop-blur-xl dark:border-white/10">
+      <div className="flex flex-col gap-2 sm:overflow-hidden sm:rounded-xl sm:border sm:bg-background sm:p-3 sm:shadow-sm">
         <SettingsSkeletonTabsList />
-        <SettingsSkeletonPanels className="mt-2 p-2" />
-      </Card>
+        <SettingsSkeletonPanels className="mt-2 sm:p-2" />
+      </div>
     </div>
   );
 }

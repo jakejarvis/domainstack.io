@@ -31,8 +31,8 @@ catalogs:
       specifier: ^2.11.0
       version: 2.11.0
     '@tabler/icons-react':
-      specifier: ^3.47.0
-      version: 3.47.0
+      specifier: ^3.48.0
+      version: 3.48.0
     '@trpc/client':
       specifier: ^11.19.0
       version: 11.19.0
@@ -57,9 +57,6 @@ catalogs:
     ipaddr.js:
       specifier: ^2.5.0
       version: 2.5.0
-    motion:
-      specifier: ^13.4.0
-      version: 13.4.0
     msw:
       specifier: ^2.15.0
       version: 2.15.0
@@ -214,7 +211,7 @@ importers:
         version: 1.11.1(next@16.3.5(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@24.13.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(webpack@5.110.3(@swc/core@1.15.3(@swc/helpers@0.5.23))(esbuild@0.28.2)(lightningcss@1.33.0)(postcss@8.5.28)(sharp@0.35.4(@types/node@24.13.5)))
       '@tabler/icons-react':
         specifier: 'catalog:'
-        version: 3.47.0(react@19.3.0)
+        version: 3.48.0(react@19.3.0)
       '@tanstack/react-hotkeys':
         specifier: ^0.10.0
         version: 0.10.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -264,8 +261,8 @@ importers:
         specifier: ^2.2.0
         version: 2.2.0(@modelcontextprotocol/server@2.0.0)(next@16.3.5(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@24.13.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))
       motion:
-        specifier: 'catalog:'
-        version: 13.4.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        specifier: ^13.4.1
+        version: 13.4.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       ms:
         specifier: 3.0.0-canary.202508261828
         version: 3.0.0-canary.202508261828
@@ -851,8 +848,8 @@ importers:
         specifier: ^4.0.1
         version: 4.0.1
       cn:
-        specifier: ^0.3.2
-        version: 0.3.2
+        specifier: ^0.4.0
+        version: 0.4.0
       cva:
         specifier: ^1.0.0-beta.12
         version: 1.0.0-beta.12(typescript@7.0.2)
@@ -868,16 +865,13 @@ importers:
         version: link:../typescript-config
       '@tabler/icons-react':
         specifier: 'catalog:'
-        version: 3.47.0(react@19.3.0)
+        version: 3.48.0(react@19.3.0)
       '@types/react':
         specifier: 'catalog:'
         version: 19.3.0
       '@types/react-dom':
         specifier: 'catalog:'
         version: 19.3.0(@types/react@19.3.0)
-      motion:
-        specifier: 'catalog:'
-        version: 13.4.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       shadcn:
         specifier: ^4.21.0
         version: 4.21.0(supports-color@10.2.2)(typescript@7.0.2)
@@ -3299,13 +3293,13 @@ packages:
   '@swc/types@0.1.28':
     resolution: {integrity: sha512-V6Mnml8v09QALx6K0elJ7o9K/MkVDtW3t6L+7Ou/JcWtb3xwId2AH4FeOceySd2JaO87IMw4+6vSZxLm34LPbw==}
 
-  '@tabler/icons-react@3.47.0':
-    resolution: {integrity: sha512-lQkDkYwqTzRNt+MYNinu+fkcIZLKjYBcI37RWkcY72doOgE/vMVFvrFrGZ2cVo2ueB3zH1dWMIhnGgi8Y5mFJA==}
+  '@tabler/icons-react@3.48.0':
+    resolution: {integrity: sha512-OCeAlpaWHEMV+EsgdVeGQ3YuKfmfnThZhc++CaZ/ujYzi5+/DONDQlX4OGvH1ikYhIfmc0grI4otJgHy7QAvng==}
     peerDependencies:
       react: '>= 16'
 
-  '@tabler/icons@3.47.0':
-    resolution: {integrity: sha512-aCbSemVrGvSA3w0sJi8mka6QrnQCN8wCD1jKNXXIR/h6Q4ffov/yFPyzjTULDM8ETtK4DABUZhWdYlygqy3npA==}
+  '@tabler/icons@3.48.0':
+    resolution: {integrity: sha512-lQk06gVHNVBnJp0UOgtth54mcZBJM7rdYKsAxKOProj1bbSAx+/xiuOWfHlyvgdL3M+Y+I0HINrjHa3ygp8eXQ==}
 
   '@tailwindcss/node@4.3.3':
     resolution: {integrity: sha512-/T8IKEsf9VTU6tLjgC7+sv2mOPtQxzE2jMw7u4Tt40Tx+QSZxpzh95/H6cMKoja9XuW7iMdLJYBB0o9G1CaAgg==}
@@ -4670,8 +4664,8 @@ packages:
     engines: {node: '>=20'}
     hasBin: true
 
-  cn@0.3.2:
-    resolution: {integrity: sha512-RKzY5Edavc8B2Ka6tjJecKFC4nm0p7lADY72xzICmiJSf4TkaxWXt0fHsib2P2G4FkFyXfSDi9oDtIBuCZvY2g==}
+  cn@0.4.0:
+    resolution: {integrity: sha512-qOAeUhPwPzBxx6jaeQdo646XIKliKHc2j1ZF7Ngb1o0pJZKH5gq8FkA0aVdUdPFUDXNXyUCXpCtoJISo6dhizg==}
     engines: {node: '>=20'}
     hasBin: true
 
@@ -5614,8 +5608,8 @@ packages:
     resolution: {integrity: sha512-buRG0fpBtRHSTCOASe6hD258tEubFoRLb4ZNA6NxMVHNw2gOcwHo9wyablzMzOA5z9xA9L1KNjk/Nt6MT9aYow==}
     engines: {node: '>= 0.6'}
 
-  framer-motion@13.4.0:
-    resolution: {integrity: sha512-HCpqKM9BTu6UYKtj0u6J1QNxojnnirNcghcSDZ+SkpiL3myxvtsgXPS3ZGEELC2eSma7YiA937rAEXtRyydSXQ==}
+  framer-motion@13.4.1:
+    resolution: {integrity: sha512-6DsbU4hsNsokXkwSp3ezdMWMiv5yWzCcdjFgakkeUC6FVIK01Py8ToSzsXvBw8cYA5hff/oXFvZFU7ltbVyUYA==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
@@ -6738,14 +6732,14 @@ packages:
   module-details-from-path@1.0.4:
     resolution: {integrity: sha512-EGWKgxALGMgzvxYF1UyGTy0HXX/2vHLkw6+NvDKW2jypWbHpjQuj4UMcqQWXHERJhVGKikolT06G3bcKe4fi7w==}
 
-  motion-dom@13.3.0:
-    resolution: {integrity: sha512-AmAnB6pHdZ1vHGzWzuzteG6Q3j1lHKeX/lbST6jGlgm0cjvLUgaCk1xhOuPMOy5SgovN6wnnUdwFrkcsus7Ftg==}
+  motion-dom@13.4.1:
+    resolution: {integrity: sha512-qw6ILBFHrIPQd3k9Dd1fNlCLHTNzvMXW2zpeTlxn4wZXX02m0Dnsf8ycyvcjtAZtBiBnL4SfbyDIXWg+b1x/Ig==}
 
   motion-utils@13.3.0:
     resolution: {integrity: sha512-sgSschQp7EseHInIlR7hBbMuvet3RA0bs28KPZAXJcGKGdxHGvh1ogpYDilY3bOMtl73EqPNmp75sAKHYPU5sg==}
 
-  motion@13.4.0:
-    resolution: {integrity: sha512-aiNSA29N+vgV5p5cJSB5cFzx8KTuuxB99z8zGtxsaqlwKtBK6sq8YgPRpkVQLkbJMOcLDU0q/ShdT95qpBy/0g==}
+  motion@13.4.1:
+    resolution: {integrity: sha512-9YjJ918QN6/4VSigEoqJysNPh33uTruTLbrBdGDI7pM6WTWU4kTPKzmEqJ4bXzLGYyDyZ5ubWX2tv2uTuFQugg==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
@@ -8119,11 +8113,6 @@ packages:
 
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
-
-  tsx@4.23.13:
-    resolution: {integrity: sha512-BL5MGkRln6aDYhb0xbQlEAGw743BaZYWdbWtdJOBriYJboKgUUYCadFp2/FpBBZquBC/ezNBn7wMMPx7FDZUDw==}
-    engines: {node: '>=18.0.0'}
-    hasBin: true
 
   tsx@4.23.15:
     resolution: {integrity: sha512-Yiex1Ovn8z2xPpOWckIiysV1SSyRMY9BkLF++q0yKiDxCqRhosKfMg3janKkiLBwZ5c/YryloKwGZcrEmtwxKw==}
@@ -10638,12 +10627,12 @@ snapshots:
     dependencies:
       '@swc/counter': 0.1.3
 
-  '@tabler/icons-react@3.47.0(react@19.3.0)':
+  '@tabler/icons-react@3.48.0(react@19.3.0)':
     dependencies:
-      '@tabler/icons': 3.47.0
+      '@tabler/icons': 3.48.0
       react: 19.3.0
 
-  '@tabler/icons@3.47.0': {}
+  '@tabler/icons@3.48.0': {}
 
   '@tailwindcss/node@4.3.3':
     dependencies:
@@ -12764,7 +12753,7 @@ snapshots:
 
   cn@0.2.6: {}
 
-  cn@0.3.2: {}
+  cn@0.4.0: {}
 
   code-block-writer@13.0.3: {}
 
@@ -13034,7 +13023,7 @@ snapshots:
       '@drizzle-team/brocli': 0.10.2
       '@esbuild-kit/esm-loader': 2.6.5
       esbuild: 0.25.12
-      tsx: 4.23.13
+      tsx: 4.23.15
 
   drizzle-orm@0.45.3(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(@upstash/redis@1.39.0)(kysely@0.29.6)(pg@8.23.0):
     optionalDependencies:
@@ -13646,9 +13635,9 @@ snapshots:
 
   forwarded@0.2.0: {}
 
-  framer-motion@13.4.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
+  framer-motion@13.4.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
     dependencies:
-      motion-dom: 13.3.0
+      motion-dom: 13.4.1
       motion-utils: 13.3.0
       tslib: 2.8.1
     optionalDependencies:
@@ -14888,15 +14877,15 @@ snapshots:
 
   module-details-from-path@1.0.4: {}
 
-  motion-dom@13.3.0:
+  motion-dom@13.4.1:
     dependencies:
       motion-utils: 13.3.0
 
   motion-utils@13.3.0: {}
 
-  motion@13.4.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
+  motion@13.4.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
     dependencies:
-      framer-motion: 13.4.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      framer-motion: 13.4.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       tslib: 2.8.1
     optionalDependencies:
       react: 19.3.0
@@ -16520,18 +16509,11 @@ snapshots:
 
   tslib@2.8.1: {}
 
-  tsx@4.23.13:
-    dependencies:
-      esbuild: 0.28.2
-    optionalDependencies:
-      fsevents: 2.3.3
-
   tsx@4.23.15:
     dependencies:
       esbuild: 0.28.2
     optionalDependencies:
       fsevents: 2.3.3
-    optional: true
 
   turbo@2.11.2:
     optionalDependencies:

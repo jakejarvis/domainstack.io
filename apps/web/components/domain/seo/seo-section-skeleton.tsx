@@ -9,7 +9,6 @@ export function SeoSectionSkeleton() {
   return (
     <ReportSection isLoading {...sections.seo}>
       <div className="space-y-4">
-        {/* Meta Tags */}
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-[11px] leading-none tracking-[0.08em] text-foreground/70 uppercase dark:text-foreground/80">
             Meta Tags
@@ -23,20 +22,19 @@ export function SeoSectionSkeleton() {
           </KeyValueGrid>
         </div>
 
-        {/* Open Graph */}
         <div className="mt-6 space-y-3">
           <div className="text-[11px] tracking-[0.08em] text-foreground/70 uppercase dark:text-foreground/80">
             Open Graph
           </div>
-          {/* Tabs row skeleton — TabsList is h-11 w-full with default variant chrome */}
-          <div className="flex h-11 w-full items-center gap-1 rounded-lg border border-black/8 bg-muted/40 p-1 backdrop-blur-sm dark:border-white/10">
+          {/* TabsList is h-9 w-full with default variant chrome */}
+          <div className="flex h-9 w-full items-center gap-1 rounded-lg border bg-muted/40 p-1">
             {[1, 2, 3, 4, 5].map((id) => (
               <Skeleton key={`og-tab-${id}`} className="h-full flex-1 basis-0 rounded-md" />
             ))}
           </div>
-          {/* Preview skeleton — a neutral card, not a specific provider's chrome/colors */}
+          {/* a neutral card, not any one provider's chrome */}
           <div className="mx-auto mt-4 mb-2 w-full max-w-[480px] md:max-w-[640px]">
-            <div className="overflow-hidden rounded-2xl border border-border bg-background/60 backdrop-blur-lg">
+            <div className="overflow-hidden rounded-2xl border border-border bg-background">
               <div className="aspect-[16/9] min-h-[160px] w-full">
                 <Skeleton className="h-full w-full rounded-none" />
               </div>
@@ -56,35 +54,31 @@ export function SeoSectionSkeleton() {
           </div>
         </div>
 
-        {/* Robots summary skeleton */}
-        <div className="space-y-4 rounded-xl">
+        <div className="space-y-4">
           <div className="mt-5 flex items-center gap-2 text-[11px] leading-none tracking-[0.08em] text-foreground/70 uppercase dark:text-foreground/80">
             robots.txt
             <PillCountSkeleton />
           </div>
 
-          {/* Filters row */}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <Skeleton className="h-9 w-full rounded-md sm:flex-1" />
-            <div className="flex h-9 w-full items-stretch gap-1 rounded-lg border border-black/8 bg-muted/50 p-1 sm:w-auto dark:border-white/10 [&>*]:flex-1 sm:[&>*]:flex-none">
+            <div className="flex h-9 w-full items-stretch gap-1 rounded-lg border bg-muted/40 p-1 sm:w-auto [&>*]:flex-1 sm:[&>*]:flex-none">
               <Skeleton className="h-full rounded-md sm:w-[4.5rem]" />
               <Skeleton className="h-full rounded-md sm:w-[5.5rem]" />
               <Skeleton className="h-full rounded-md sm:w-[6.75rem]" />
             </div>
           </div>
 
-          {/* Groups accordion skeleton */}
           <div className="space-y-2">
             {["g-0", "g-1", "g-2"].map((gid, gidx) => (
               <div key={gid}>
-                {/* Group header */}
                 <div className="flex w-full items-center justify-between rounded-md px-2 py-2">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <Skeleton className="h-5 w-25 rounded" />
                   </div>
                   <Skeleton className="h-4 w-24" />
                 </div>
-                {/* Rule rows skeleton - only show for first group */}
+                {/* rule rows only for the first group */}
                 {gidx === 0 && (
                   <div className="flex flex-col py-2">
                     {[0, 1, 2, 3, 4, 5].map((rid) => (
@@ -102,7 +96,6 @@ export function SeoSectionSkeleton() {
             ))}
           </div>
 
-          {/* Sitemaps */}
           <div className="space-y-3">
             <div className="mt-5 flex items-center gap-2 text-[11px] leading-none tracking-[0.08em] text-foreground/70 uppercase dark:text-foreground/80">
               Sitemaps

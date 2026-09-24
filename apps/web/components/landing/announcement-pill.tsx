@@ -6,6 +6,8 @@ import * as m from "motion/react-m";
 import Link from "next/link";
 
 import { useAnnouncement } from "@/lib/stores/ui-store";
+import { Button } from "@domainstack/ui/button";
+import { Separator } from "@domainstack/ui/separator";
 
 export function AnnouncementPill() {
   const shouldReduceMotion = useReducedMotion();
@@ -37,7 +39,7 @@ export function AnnouncementPill() {
           }}
           className="absolute right-0 bottom-full left-0 z-10 mb-8 flex items-center justify-center"
         >
-          <div className="relative inline-flex items-center rounded-full border border-black/10 bg-gradient-to-r from-black/[0.02] to-black/[0.04] text-sm backdrop-blur-sm transition-colors hover:border-black/20 hover:from-black/[0.04] hover:to-black/[0.06] dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04] dark:hover:border-white/20 dark:hover:from-white/[0.04] dark:hover:to-white/[0.06]">
+          <div className="relative inline-flex items-center rounded-full border bg-muted/40 text-sm transition-colors hover:border-foreground/20 hover:bg-muted/80">
             <Link
               href="/dashboard"
               className="group inline-flex items-center gap-2 py-1.5 pr-2 pl-3"
@@ -50,16 +52,17 @@ export function AnnouncementPill() {
               <IconArrowUpRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-[1px] group-hover:-translate-y-[1px]" />
             </Link>
 
-            <div className="h-4 w-px bg-black/10 dark:bg-white/10" />
+            <Separator orientation="vertical" className="data-[orientation=vertical]:h-4" />
 
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon-xs"
               onClick={handleDismiss}
-              className="cursor-pointer rounded-full p-1.5 pr-2.5 text-muted-foreground/50 transition-colors hover:text-muted-foreground"
+              className="mx-1 rounded-full text-muted-foreground/50 hover:text-muted-foreground"
               aria-label="Dismiss announcement"
             >
               <IconX className="size-3.5" />
-            </button>
+            </Button>
           </div>
         </m.div>
       )}

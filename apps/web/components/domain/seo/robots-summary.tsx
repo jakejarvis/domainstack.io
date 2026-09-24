@@ -184,7 +184,7 @@ export function RobotsSummary({
   );
 
   return (
-    <div className="space-y-4 rounded-xl">
+    <div className="space-y-4">
       <div className="mt-5 flex items-center gap-2 text-[11px] leading-none tracking-[0.08em] text-foreground/70 uppercase dark:text-foreground/80">
         <a
           href={`https://${domain}/robots.txt`}
@@ -239,7 +239,7 @@ export function RobotsSummary({
                   startTransition(() => setOnly(next ?? "all"));
                 }}
                 spacing={1}
-                className="relative h-9 w-full items-stretch overflow-hidden rounded-lg border border-black/8 bg-muted/50 p-1 text-muted-foreground sm:w-auto dark:border-white/10 [&>*]:flex-1 sm:[&>*]:flex-none"
+                className="relative h-9 w-full items-stretch overflow-hidden rounded-lg border bg-muted/40 p-1 text-muted-foreground sm:w-auto [&>*]:flex-1 sm:[&>*]:flex-none"
               >
                 <ToggleGroupItem value="all" className="h-full">
                   <IconCircleHalf2 className="size-3.5 text-accent-blue" aria-hidden />
@@ -283,7 +283,7 @@ export function RobotsSummary({
           // Show groups with empty rules (e.g., "Disallow:" means allow all)
           <GroupsAccordion groups={displayGroups} query={query} only={only} />
         ) : robots?.sitemaps?.length ? (
-          <Empty className="border border-dashed">
+          <Empty className="border border-solid bg-background/60">
             <EmptyHeader>
               <EmptyMedia variant="icon">
                 <IconHelp aria-hidden />

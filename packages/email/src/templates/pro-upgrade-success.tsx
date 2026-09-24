@@ -36,7 +36,6 @@ function ProUpgradeSuccessEmail({ userName, baseUrl }: ProUpgradeSuccessEmailPro
           Your Pro benefits are now active:
         </EmailBoxText>
         <EmailBoxText variant="success">• Track up to {PLAN_QUOTAS.pro} domains</EmailBoxText>
-        <EmailBoxText variant="success">• Priority email notifications</EmailBoxText>
         <EmailBoxText variant="success">• Support ongoing development</EmailBoxText>
       </EmailBox>
 

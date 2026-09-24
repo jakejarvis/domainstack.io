@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { analytics } from "@/lib/analytics/client";
 import { parseRetryAfterHeader } from "@/lib/ratelimit/client";
 import type { ScreenshotData } from "@domainstack/types";
+import { Button } from "@domainstack/ui/button";
 import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
 
@@ -268,13 +269,14 @@ function ScreenshotPlaceholder({
             <IconCircleX />
             <span>Unable to take a screenshot.</span>
             {onReload ? (
-              <button
-                type="button"
-                className="min-h-6 rounded-sm px-1.5 font-medium text-foreground underline underline-offset-2 hover:text-foreground/80 focus-visible:outline-2 focus-visible:outline-offset-2"
+              <Button
+                variant="link"
+                size="xs"
+                className="text-xs text-foreground"
                 onClick={onReload}
               >
                 Reload preview
-              </button>
+              </Button>
             ) : null}
           </>
         )}
