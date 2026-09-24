@@ -11,7 +11,6 @@ import {
   MCP_TOOLS,
   reportSchema,
 } from "@/lib/chat/domain-tools";
-import { checkRateLimit } from "@/lib/ratelimit/api";
 import { type Section, SECTION_IDS } from "@domainstack/constants";
 import { lookupSection } from "@domainstack/core/lookup";
 import { toRegistrableDomain } from "@domainstack/utils/domain";
@@ -27,18 +26,11 @@ const posthog = process.env.NEXT_PUBLIC_POSTHOG_KEY
     })
   : null;
 
-/** Rate-limit MCP requests before creating tools bound to the client IP. */
+/**
+ * No route-wide rate limit: each tool call is metered per IP inside
+ * `lookupSection`, and only when the cache can't answer.
+ */
 async function handler(request: Request): Promise<Response> {
-  const rateLimit = await checkRateLimit(request, {
-    name: "api:mcp-handler",
-    requests: 30,
-    window: "1 m",
-  });
-
-  if (!rateLimit.success) {
-    return rateLimit.error;
-  }
-
   const identifier = ipAddress(request) ?? null;
 
   function lookupDomainSection(section: Section, rawDomain: string) {
@@ -168,19 +160,6 @@ async function handler(request: Request): Promise<Response> {
   // Flush PostHog events captured during this invocation (serverless — SIGTERM unreliable)
   if (posthog) {
     after(() => posthog.flush());
-  }
-
-  // Add rate limit headers to successful responses
-  if (rateLimit.headers) {
-    const headers = new Headers(response.headers);
-    for (const [key, value] of Object.entries(rateLimit.headers)) {
-      headers.set(key, value);
-    }
-    return new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers,
-    });
   }
 
   return response;
