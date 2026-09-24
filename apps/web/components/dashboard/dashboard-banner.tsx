@@ -5,18 +5,18 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@domainstack/ui/ca
 import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
 
-const GLOW_COLORS = {
-  info: "glow-accent-blue/6",
-  warning: "glow-accent-orange/6",
-  success: "glow-accent-green/6",
-  danger: "glow-accent-red/6",
+const SURFACE_COLORS = {
+  info: "border-accent-blue/20 bg-accent-blue/4",
+  warning: "border-accent-orange/20 bg-accent-orange/4",
+  success: "border-accent-green/20 bg-accent-green/4",
+  danger: "border-accent-red/20 bg-accent-red/4",
 };
 
 const ICON_COLORS = {
-  info: "bg-accent-blue/5 text-info-foreground",
-  warning: "bg-accent-orange/5 text-warning-foreground",
-  success: "bg-accent-green/5 text-success-foreground",
-  danger: "bg-accent-red/5 text-danger-foreground",
+  info: "bg-accent-blue/10 text-info-foreground ring-accent-blue/15",
+  warning: "bg-accent-orange/10 text-warning-foreground ring-accent-orange/15",
+  success: "bg-accent-green/10 text-success-foreground ring-accent-green/15",
+  danger: "bg-accent-red/10 text-danger-foreground ring-accent-red/15",
 };
 
 type BannerButtonConfig = {
@@ -99,7 +99,7 @@ export function DashboardBanner({
   className,
 }: DashboardBannerProps) {
   return (
-    <Card className={cn("group/dashboard-banner relative overflow-hidden bg-muted/10", className)}>
+    <Card className={cn("group/dashboard-banner relative", SURFACE_COLORS[variant], className)}>
       {dismissible ? (
         <Button
           variant="ghost"
@@ -113,28 +113,13 @@ export function DashboardBanner({
         </Button>
       ) : null}
 
-      <div
-        aria-hidden
-        className={cn(
-          "pointer-events-none absolute -top-54 -right-50 size-108",
-          GLOW_COLORS[variant],
-        )}
-      />
-      <div
-        aria-hidden
-        className={cn(
-          "pointer-events-none absolute -bottom-50 -left-22 size-100",
-          GLOW_COLORS[variant],
-        )}
-      />
-
-      <CardHeader className="relative flex flex-col items-start justify-between gap-4 space-y-0 md:flex-row md:items-center">
+      <CardHeader className="flex flex-col items-start justify-between gap-4 space-y-0 md:flex-row md:items-center">
         <div className="flex-1 space-y-1.5">
           <div className="flex items-start gap-5 md:items-center">
             {Icon ? (
               <div
                 className={cn(
-                  "flex size-11 shrink-0 items-center justify-center rounded-xl",
+                  "flex size-11 shrink-0 items-center justify-center rounded-xl ring-1 ring-inset",
                   ICON_COLORS[variant],
                 )}
               >

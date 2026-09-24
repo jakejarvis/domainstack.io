@@ -1,20 +1,15 @@
 import { IconAlertCircle, IconCheck, IconGauge } from "@tabler/icons-react";
+import Link from "next/link";
 
 import { ShareInstructionsDialog } from "@/components/dashboard/add-domain/share-instructions-dialog";
 import { StepConfirmation } from "@/components/dashboard/add-domain/step-confirmation";
 import { StepEnterDomain } from "@/components/dashboard/add-domain/step-enter-domain";
 import { StepInstructionsError } from "@/components/dashboard/add-domain/step-instructions-error";
 import { StepVerifyOwnership } from "@/components/dashboard/add-domain/step-verify-ownership";
-import { ProPlanCard } from "@/components/plan-cards";
-import { PlanUsage } from "@/components/plan-usage";
+import { ProUpsell } from "@/components/plan-cards";
 import { useDomainVerification } from "@/hooks/use-domain-verification";
 import { useSubscription } from "@/hooks/use-subscription";
-import type {
-  ResumeDomainData,
-  SubscriptionQuota,
-  VerificationMethod,
-  VerificationState,
-} from "@domainstack/types";
+import type { ResumeDomainData, VerificationMethod, VerificationState } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { Icon } from "@domainstack/ui/icon";
 import { Spinner } from "@domainstack/ui/spinner";
@@ -97,50 +92,43 @@ function AddDomainSubscriptionError({
 function AddDomainQuotaReached({
   className,
   onClose,
-  subscription,
+  planQuota,
   isPro,
 }: {
   className?: string;
   onClose?: () => void;
-  subscription?: Pick<SubscriptionQuota, "activeCount" | "planQuota" | "archivedCount">;
+  planQuota?: number;
   isPro: boolean;
 }) {
   return (
     <div className={className}>
-      <div className="mb-4 flex flex-col items-center gap-1 text-center">
-        <Icon size="lg" variant="destructive" className="mb-2">
+      <div className="mb-5 flex flex-col items-center gap-1 text-center">
+        <Icon size="lg" variant="warning" className="mb-2">
           <IconGauge />
         </Icon>
-        <h2 className="text-lg font-semibold tracking-tight">Domain Limit Reached</h2>
-        <p className="text-sm text-muted-foreground">
-          You&apos;ve reached your limit of {subscription?.planQuota} tracked domain
-          {subscription?.planQuota !== 1 ? "s" : ""}.
+        <h2 className="text-lg font-semibold tracking-tight">Domain limit reached</h2>
+        <p className="text-sm text-balance text-muted-foreground">
+          You&apos;re tracking all <span className="tabular-nums">{planQuota}</span> domains
+          included with {isPro ? "Pro" : "Free"}.{" "}
+          {isPro
+            ? "Archive or remove one you no longer need."
+            : "Archive one you no longer need, or upgrade for more."}
         </p>
       </div>
 
-      <div className="space-y-4">
-        {subscription ? (
-          <PlanUsage
-            activeCount={subscription.activeCount}
-            planQuota={subscription.planQuota}
-            archivedCount={subscription.archivedCount}
-          />
-        ) : null}
-
-        {isPro ? (
-          <div className="flex flex-col gap-2">
-            <p className="text-center text-sm text-muted-foreground">
-              You can archive unused domains to make room for new ones, or remove domains you no
-              longer need to track.
-            </p>
-            {onClose ? (
-              <Button variant="outline" onClick={onClose} className="w-full">
-                Close
-              </Button>
-            ) : null}
-          </div>
+      <div className="flex flex-col gap-2">
+        {isPro ? null : <ProUpsell className="mb-2" />}
+        {onClose ? (
+          <Button variant="ghost" onClick={onClose} className="w-full">
+            Back to domains
+          </Button>
         ) : (
-          <ProPlanCard />
+          <Button
+            variant="ghost"
+            className="w-full"
+            nativeButton={false}
+            render={<Link href="/dashboard">Back to domains</Link>}
+          />
         )}
       </div>
     </div>
@@ -447,7 +435,7 @@ function AddDomainContentInner({
       <AddDomainQuotaReached
         className={className}
         onClose={onClose}
-        subscription={subscription}
+        planQuota={subscription?.planQuota}
         isPro={isPro}
       />
     );

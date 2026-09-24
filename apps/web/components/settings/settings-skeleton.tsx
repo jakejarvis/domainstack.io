@@ -20,7 +20,7 @@ function SettingsCardHeaderSkeleton({
 }
 
 /**
- * Skeleton for the subscription section, in its Free-plan layout (usage, plan cards, features).
+ * Skeleton for the subscription section, in its Free-plan layout (usage, Pro upsell).
  */
 export function SubscriptionSkeleton({ className }: { className?: string }) {
   return (
@@ -36,38 +36,20 @@ export function SubscriptionSkeleton({ className }: { className?: string }) {
           <Skeleton className="h-2 w-full rounded-full" />
         </div>
 
-        {/* FreePlanCard + ProPlanCard */}
-        <div className="grid gap-3 sm:grid-cols-2">
-          {[false, true].map((pro) => (
-            <div
-              key={String(pro)}
-              className={cn(
-                "flex flex-col gap-4 rounded-xl border bg-card/60 p-4",
-                pro &&
-                  "border-accent-gold/25 bg-linear-to-bl from-accent-gold/10 to-transparent to-60%",
-              )}
-            >
-              <div className="flex min-h-5 items-center justify-between gap-2">
-                <Skeleton className="h-5 w-12" />
-                {pro ? null : <Skeleton className="h-5 w-24" />}
-              </div>
-              <div className="space-y-1">
-                <Skeleton className="h-8 w-20" />
-                <Skeleton className="h-5 w-36" />
-              </div>
+        {/* ProUpsell */}
+        <div className="@container rounded-xl border border-accent-gold/25 bg-linear-to-bl from-accent-gold/10 to-transparent to-60% p-4">
+          <div className="flex flex-col gap-3 @sm:flex-row @sm:items-center @sm:justify-between">
+            <div className="space-y-0.5">
+              <Skeleton className="h-6 w-10" />
               <Skeleton className="h-5 w-44" />
-              {pro ? <Skeleton className="mt-auto h-9 w-full" /> : null}
             </div>
-          ))}
-        </div>
-
-        {/* PlanFeatures */}
-        <div className="space-y-2">
-          <Skeleton className="h-5 w-32" />
-          <div className="grid gap-1.5 sm:grid-cols-2">
-            {[0, 1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-5 w-full max-w-72" />
-            ))}
+            <div className="flex items-center justify-between gap-4 @sm:justify-end">
+              <div className="flex flex-col gap-0.5 @sm:items-end">
+                <Skeleton className="h-6 w-20" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+              <Skeleton className="h-8 w-24" />
+            </div>
           </div>
         </div>
       </CardContent>

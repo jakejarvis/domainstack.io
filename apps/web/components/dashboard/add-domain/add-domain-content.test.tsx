@@ -78,19 +78,36 @@ describe("AddDomainContent", () => {
     await expect.element(page.getByText("newdomain.com", { exact: true })).toBeInTheDocument();
   });
 
-  it("shows the quota gate when the user cannot add more domains", async () => {
+  it("shows the quota gate with an upgrade path for Free users at their limit", async () => {
+    mockSubscription.plan = "free";
     mockSubscription.canAddMore = false;
     mockSubscription.planQuota = 5;
 
     await renderAddDomainContent();
 
     await expect
-      .element(page.getByRole("heading", { name: "Domain Limit Reached" }))
+      .element(page.getByRole("heading", { name: "Domain limit reached" }))
       .toBeInTheDocument();
     await expect
-      .element(page.getByText(/You've reached your limit of 5 tracked domains/))
+      .element(page.getByText(/You're tracking all 5 domains included with Free/))
       .toBeInTheDocument();
+    await expect.element(page.getByRole("button", { name: "Upgrade" })).toBeInTheDocument();
     await expect.element(page.getByLabelText("Domain name")).not.toBeInTheDocument();
+
+    await page.getByRole("button", { name: "Back to domains" }).click();
+    expect(addDomainActionSpies.onClose).toHaveBeenCalledOnce();
+  });
+
+  it("shows the quota gate without an upgrade path for Pro users at their limit", async () => {
+    mockSubscription.canAddMore = false;
+
+    await renderAddDomainContent();
+
+    await expect
+      .element(page.getByText(/You're tracking all 100 domains included with Pro/))
+      .toBeInTheDocument();
+    await expect.element(page.getByRole("button", { name: "Upgrade" })).not.toBeInTheDocument();
+    await expect.element(page.getByRole("button", { name: "Back to domains" })).toBeInTheDocument();
   });
 
   it("resumes verification on step 2 for a pending domain", async () => {
