@@ -27,7 +27,7 @@ type DashboardTableProps = {
 };
 
 export function DashboardTable({ domains }: DashboardTableProps) {
-  const { onVerify, onRemove, onArchive, onMute } = useDashboardActions();
+  const { onVerify } = useDashboardActions();
   const { sorting, setSort, pageIndex, pageSize, setPageSize, setPageIndex } = useDashboardView();
   const pagination = useMemo(
     (): PaginationState => ({ pageIndex, pageSize }),
@@ -43,10 +43,7 @@ export function DashboardTable({ domains }: DashboardTableProps) {
   const columnVisibility = useDashboardColumnVisibility();
   const setColumnVisibility = usePreferencesStore((s) => s.setColumnVisibility);
 
-  const columns = useMemo(
-    () => createColumns({ onVerify, onRemove, onArchive, onMute }),
-    [onRemove, onArchive, onMute, onVerify],
-  );
+  const columns = useMemo(() => createColumns({ onVerify }), [onVerify]);
 
   const tableState = useMemo(
     () => ({ sorting, pagination, columnVisibility }),

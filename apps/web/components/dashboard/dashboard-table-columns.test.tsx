@@ -10,9 +10,6 @@ import { TooltipProvider } from "@domainstack/ui/tooltip";
 function expirationCell(date: Date | null) {
   const columns = createColumns({
     onVerify: vi.fn<(id: string, method: string | null) => void>(),
-    onRemove: vi.fn<(id: string) => void>(),
-    onArchive: vi.fn<(id: string) => void>(),
-    onMute: vi.fn<(id: string, muted: boolean) => void>(),
   });
   const column = columns.find((c) => "accessorKey" in c && c.accessorKey === "expirationDate");
   expect(column?.cell).toBeTypeOf("function");

@@ -1,15 +1,7 @@
-import {
-  IconArchive,
-  IconBell,
-  IconBellOff,
-  IconBookmark,
-  IconDotsVertical,
-  IconExternalLink,
-  IconTrash,
-} from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import Link from "next/link";
 
+import { DomainActionsMenu } from "@/components/dashboard/domain-actions-menu";
 import { DomainHealthBadge } from "@/components/dashboard/domain-health-badge";
 import { DomainStatusBadge } from "@/components/dashboard/domain-status-badge";
 import { ProviderCell } from "@/components/dashboard/provider-cell";
@@ -18,15 +10,7 @@ import { Favicon } from "@/components/icons/favicon";
 import { useIsDomainSelected, useToggleDomainSelection } from "@/hooks/use-dashboard-selection";
 import type { DashboardTableFeatures } from "@/lib/dashboard-table-features";
 import type { TrackedDomainWithDetails, VerificationMethod } from "@domainstack/types";
-import { Button } from "@domainstack/ui/button";
 import { Checkbox } from "@domainstack/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@domainstack/ui/dropdown-menu";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
@@ -151,16 +135,11 @@ function DomainSelectCell({ domainId, domainName }: DomainSelectCellProps) {
 
 export type ColumnCallbacks = {
   onVerify: (id: string, verificationMethod: VerificationMethod | null) => void;
-  onRemove: (id: string) => void;
-  onArchive: (id: string) => void;
-  onMute: (id: string, muted: boolean) => void;
 };
 
-export function createColumns(
-  callbacks: ColumnCallbacks,
-): ColumnDef<DashboardTableFeatures, TrackedDomainWithDetails>[] {
-  const { onVerify, onRemove, onArchive, onMute } = callbacks;
-
+export function createColumns({
+  onVerify,
+}: ColumnCallbacks): ColumnDef<DashboardTableFeatures, TrackedDomainWithDetails>[] {
   return [
     // Selection checkbox column
     {
@@ -329,66 +308,7 @@ export function createColumns(
     {
       id: "actions",
       header: () => <span className="sr-only">Actions</span>,
-      cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button variant="outline" size="icon-sm">
-                <IconDotsVertical />
-                <span className="sr-only">Actions</span>
-              </Button>
-            }
-          />
-          <DropdownMenuContent align="end" className="min-w-36">
-            <DropdownMenuItem
-              nativeButton={false}
-              render={
-                <a
-                  href={`https://${row.original.domainName}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <IconExternalLink />
-                  Open
-                </a>
-              }
-            />
-            <DropdownMenuItem
-              nativeButton={false}
-              render={
-                <Link href={`/${encodeURIComponent(row.original.domainName)}`}>
-                  <IconBookmark />
-                  View Report
-                </Link>
-              }
-            />
-            <DropdownMenuSeparator />
-            {row.original.verified && (
-              <DropdownMenuItem onClick={() => onMute(row.original.id, !row.original.muted)}>
-                {row.original.muted ? (
-                  <>
-                    <IconBell />
-                    Unmute
-                  </>
-                ) : (
-                  <>
-                    <IconBellOff />
-                    Mute
-                  </>
-                )}
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem onClick={() => onArchive(row.original.id)}>
-              <IconArchive />
-              Archive
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onRemove(row.original.id)}>
-              <IconTrash className="text-danger-foreground" />
-              Remove
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
+      cell: ({ row }) => <DomainActionsMenu domain={row.original} triggerVariant="outline" />,
       size: 56,
       enableHiding: false, // Always show actions menu
       meta: {

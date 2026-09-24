@@ -9,7 +9,7 @@ import { StepVerifyOwnership } from "@/components/dashboard/add-domain/step-veri
 import { ProUpsell } from "@/components/plan-cards";
 import { useDomainVerification } from "@/hooks/use-domain-verification";
 import { useSubscription } from "@/hooks/use-subscription";
-import type { ResumeDomainData, VerificationMethod, VerificationState } from "@domainstack/types";
+import type { ResumeDomainData } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { Icon } from "@domainstack/ui/icon";
 import { Spinner } from "@domainstack/ui/spinner";
@@ -135,37 +135,49 @@ function AddDomainQuotaReached({
   );
 }
 
-function AddDomainVerifyForm({
-  method,
-  setMethod,
-  domain,
-  verificationToken,
-  verificationState,
-  onVerify,
-  onReturnLater,
-  trackedDomainId,
-  isVerifying,
-}: {
-  method: VerificationMethod;
-  setMethod: (method: VerificationMethod) => void;
-  domain: string;
-  verificationToken: string;
-  verificationState: VerificationState;
-  onVerify: () => void;
-  onReturnLater: () => void;
-  trackedDomainId: string;
-  isVerifying: boolean;
-}) {
+type DomainVerification = ReturnType<typeof useDomainVerification>;
+
+function AddDomainVerifyStep({ verification }: { verification: DomainVerification }) {
+  const { domain, verificationToken, trackedDomainId, isVerifying } = verification;
+
+  if (verification.isLoadingVerificationData) {
+    return (
+      <div className="flex h-[200px] items-center justify-center">
+        <Spinner className="size-6" />
+      </div>
+    );
+  }
+
+  if (verification.isMissingVerificationData) {
+    return (
+      <StepInstructionsError
+        error={
+          verification.isVerificationDataQueryError
+            ? verification.verificationDataErrorMessage
+            : "Verification details could not be loaded."
+        }
+        onRetry={() => void verification.refetchVerificationData()}
+        isRetrying={verification.isRefetchingVerificationData}
+      />
+    );
+  }
+
+  if (!verificationToken || !trackedDomainId) {
+    return null;
+  }
+
+  const onVerify = () => void verification.handleVerify();
+
   return (
     <>
       <StepVerifyOwnership
-        method={method}
-        setMethod={setMethod}
+        method={verification.method}
+        setMethod={verification.setMethod}
         domain={domain}
         verificationToken={verificationToken}
-        verificationState={verificationState}
+        verificationState={verification.verificationState}
         onVerify={onVerify}
-        onReturnLater={onReturnLater}
+        onReturnLater={verification.handleReturnLater}
       />
 
       <div className="mt-6 flex w-full items-center justify-between gap-2">
@@ -185,82 +197,6 @@ function AddDomainVerifyForm({
   );
 }
 
-type AddDomainVerifyStepProps = {
-  method: VerificationMethod;
-  setMethod: (method: VerificationMethod) => void;
-  domain: string;
-  verificationToken: string;
-  verificationState: VerificationState;
-  onVerify: () => void;
-  onReturnLater: () => void;
-  trackedDomainId: string | null;
-  isVerifying: boolean;
-  isLoadingVerificationData: boolean;
-  isMissingVerificationData: boolean;
-  isVerificationDataQueryError: boolean;
-  verificationDataErrorMessage?: string;
-  isRefetchingVerificationData: boolean;
-  onRetryVerificationData: () => void;
-};
-
-function AddDomainVerifyStep({
-  method,
-  setMethod,
-  domain,
-  verificationToken,
-  verificationState,
-  onVerify,
-  onReturnLater,
-  trackedDomainId,
-  isVerifying,
-  isLoadingVerificationData,
-  isMissingVerificationData,
-  isVerificationDataQueryError,
-  verificationDataErrorMessage,
-  isRefetchingVerificationData,
-  onRetryVerificationData,
-}: AddDomainVerifyStepProps) {
-  if (isLoadingVerificationData) {
-    return (
-      <div className="flex h-[200px] items-center justify-center">
-        <Spinner className="size-6" />
-      </div>
-    );
-  }
-
-  if (isMissingVerificationData) {
-    return (
-      <StepInstructionsError
-        error={
-          isVerificationDataQueryError
-            ? verificationDataErrorMessage
-            : "Verification details could not be loaded."
-        }
-        onRetry={onRetryVerificationData}
-        isRetrying={isRefetchingVerificationData}
-      />
-    );
-  }
-
-  if (!verificationToken || !trackedDomainId) {
-    return null;
-  }
-
-  return (
-    <AddDomainVerifyForm
-      method={method}
-      setMethod={setMethod}
-      domain={domain}
-      verificationToken={verificationToken}
-      verificationState={verificationState}
-      onVerify={onVerify}
-      onReturnLater={onReturnLater}
-      trackedDomainId={trackedDomainId}
-      isVerifying={isVerifying}
-    />
-  );
-}
-
 function addDomainHeading(isResuming: boolean, domain: string) {
   if (isResuming) {
     return {
@@ -275,35 +211,18 @@ function addDomainHeading(isResuming: boolean, domain: string) {
   };
 }
 
-type AddDomainStepperProps = {
-  className?: string;
-  isNavigating: boolean;
-  step: 1 | 2 | 3;
-  domain: string;
-  setDomain: (domain: string) => void;
-  domainError: string;
-  isAddingDomain: boolean;
-  onAddDomain: () => void;
-  onDone: () => void;
-  isPrefilled: boolean;
-  isResuming: boolean;
-} & AddDomainVerifyStepProps;
-
 function AddDomainStepper({
   className,
   isNavigating,
-  step,
-  domain,
-  setDomain,
-  domainError,
-  isAddingDomain,
-  onAddDomain,
-  onDone,
-  isPrefilled,
-  isResuming,
-  ...verify
-}: AddDomainStepperProps) {
-  const heading = addDomainHeading(isResuming, domain);
+  verification,
+}: {
+  className?: string;
+  isNavigating: boolean;
+  verification: DomainVerification;
+}) {
+  const { domain, isAddingDomain } = verification;
+  const onAddDomain = () => void verification.handleAddDomain();
+  const heading = addDomainHeading(verification.isResuming, domain);
 
   return (
     <div className={className}>
@@ -313,7 +232,7 @@ function AddDomainStepper({
       </div>
 
       <Stepper
-        value={step}
+        value={verification.step}
         indicators={{
           completed: <IconCheck className="size-4" />,
           loading: <Spinner className="size-4" />,
@@ -333,7 +252,10 @@ function AddDomainStepper({
             </Tooltip>
             <StepperSeparator />
           </StepperItem>
-          <StepperItem step={2} loading={verify.isLoadingVerificationData || verify.isVerifying}>
+          <StepperItem
+            step={2}
+            loading={verification.isLoadingVerificationData || verification.isVerifying}
+          >
             <Tooltip>
               <TooltipTrigger
                 render={
@@ -364,11 +286,11 @@ function AddDomainStepper({
           <StepperContent value={1} className="flex min-h-[200px] flex-col justify-between">
             <StepEnterDomain
               domain={domain}
-              setDomain={setDomain}
-              error={domainError}
+              setDomain={verification.setDomain}
+              error={verification.domainError}
               isLoading={isAddingDomain}
               onSubmit={onAddDomain}
-              readOnly={isPrefilled}
+              readOnly={verification.isPrefilled}
             />
             <div className="mt-6 flex w-full items-center justify-end">
               <Button onClick={onAddDomain} disabled={isAddingDomain}>
@@ -379,13 +301,13 @@ function AddDomainStepper({
           </StepperContent>
 
           <StepperContent value={2}>
-            <AddDomainVerifyStep {...verify} domain={domain} />
+            <AddDomainVerifyStep verification={verification} />
           </StepperContent>
 
           <StepperContent value={3}>
             <StepConfirmation domain={domain} />
             <div className="mt-6 flex w-full items-center justify-end">
-              <Button onClick={onDone} disabled={isNavigating}>
+              <Button onClick={verification.handleDone} disabled={isNavigating}>
                 {isNavigating ? <Spinner /> : null}
                 Done
               </Button>
@@ -445,29 +367,7 @@ function AddDomainContentInner({
     <AddDomainStepper
       className={className}
       isNavigating={isNavigating}
-      step={verification.step}
-      domain={verification.domain}
-      setDomain={verification.setDomain}
-      domainError={verification.domainError}
-      isAddingDomain={verification.isAddingDomain}
-      onAddDomain={() => void verification.handleAddDomain()}
-      onDone={verification.handleDone}
-      isPrefilled={verification.isPrefilled}
-      isResuming={verification.isResuming}
-      method={verification.method}
-      setMethod={verification.setMethod}
-      verificationToken={verification.verificationToken}
-      verificationState={verification.verificationState}
-      onVerify={() => void verification.handleVerify()}
-      onReturnLater={verification.handleReturnLater}
-      trackedDomainId={verification.trackedDomainId}
-      isVerifying={verification.isVerifying}
-      isLoadingVerificationData={verification.isLoadingVerificationData}
-      isMissingVerificationData={verification.isMissingVerificationData}
-      isVerificationDataQueryError={verification.isVerificationDataQueryError}
-      verificationDataErrorMessage={verification.verificationDataErrorMessage}
-      isRefetchingVerificationData={verification.isRefetchingVerificationData}
-      onRetryVerificationData={() => void verification.refetchVerificationData()}
+      verification={verification}
     />
   );
 }

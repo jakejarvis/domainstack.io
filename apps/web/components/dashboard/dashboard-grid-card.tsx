@@ -1,40 +1,21 @@
-import {
-  IconAlertCircle,
-  IconArchive,
-  IconBell,
-  IconBellOff,
-  IconBookmark,
-  IconDotsVertical,
-  IconExternalLink,
-  IconTool,
-  IconTrash,
-} from "@tabler/icons-react";
+import { IconAlertCircle, IconTool } from "@tabler/icons-react";
 import Link from "next/link";
 import { memo, useCallback } from "react";
 
+import { DomainActionsMenu } from "@/components/dashboard/domain-actions-menu";
 import { DomainHealthBadge, getHealthAccent } from "@/components/dashboard/domain-health-badge";
 import { DomainStatusBadge } from "@/components/dashboard/domain-status-badge";
-import { ProviderTooltipContent } from "@/components/dashboard/provider-tooltip-content";
+import { ProviderCell } from "@/components/dashboard/provider-cell";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Favicon } from "@/components/icons/favicon";
-import { ProviderLogo } from "@/components/icons/provider-logo";
 import { useDashboardActions } from "@/context/dashboard-context";
 import { useIsDomainSelected, useToggleDomainSelection } from "@/hooks/use-dashboard-selection";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
-import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
-import { useTruncation } from "@/hooks/use-truncation";
-import type { ProviderCategory, ProviderInfo, TrackedDomainWithDetails } from "@domainstack/types";
+import type { ProviderCategory, TrackedDomainWithDetails } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@domainstack/ui/card";
 import { Checkbox } from "@domainstack/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@domainstack/ui/dropdown-menu";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
@@ -55,35 +36,29 @@ type DashboardGridCardProps = {
   domain: TrackedDomainWithDetails;
 };
 
+const PROVIDER_ROWS = [
+  { label: "Registrar", type: "registrar" },
+  { label: "DNS", type: "dns" },
+  { label: "Hosting", type: "hosting" },
+  { label: "Email", type: "email" },
+  { label: "CA", type: "ca" },
+] as const satisfies readonly { label: string; type: ProviderCategory }[];
+
 function ProviderInfoRows({
   domain,
 }: {
-  domain: Pick<TrackedDomainWithDetails, "id" | "registrar" | "dns" | "hosting" | "email" | "ca">;
+  domain: Pick<TrackedDomainWithDetails, "id" | ProviderCategory>;
 }) {
-  return (
-    <>
-      <InfoRow
-        label="Registrar"
-        provider={domain.registrar}
+  return PROVIDER_ROWS.map(({ label, type }) => (
+    <InfoRow key={type} label={label}>
+      <ProviderCell
+        provider={domain[type]}
         trackedDomainId={domain.id}
-        providerType="registrar"
+        providerType={type}
+        logoClassName="size-3.5"
       />
-      <InfoRow label="DNS" provider={domain.dns} trackedDomainId={domain.id} providerType="dns" />
-      <InfoRow
-        label="Hosting"
-        provider={domain.hosting}
-        trackedDomainId={domain.id}
-        providerType="hosting"
-      />
-      <InfoRow
-        label="Email"
-        provider={domain.email}
-        trackedDomainId={domain.id}
-        providerType="email"
-      />
-      <InfoRow label="CA" provider={domain.ca} trackedDomainId={domain.id} providerType="ca" />
-    </>
-  );
+    </InfoRow>
+  ));
 }
 
 function ExpiresInfoRow({
@@ -190,9 +165,6 @@ function DashboardGridCardHeader({
   isPending,
   onToggleSelect,
   onVerify,
-  onMute,
-  onArchive,
-  onRemove,
 }: {
   domain: TrackedDomainWithDetails;
   selected: boolean;
@@ -200,9 +172,6 @@ function DashboardGridCardHeader({
   isPending: boolean;
   onToggleSelect: () => void;
   onVerify: () => void;
-  onMute: () => void;
-  onArchive: () => void;
-  onRemove: () => void;
 }) {
   return (
     <CardHeader className="relative pt-6 pb-2">
@@ -248,60 +217,7 @@ function DashboardGridCardHeader({
             />
           </div>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button variant="ghost" size="icon-sm">
-                <IconDotsVertical />
-                <span className="sr-only">Actions</span>
-              </Button>
-            }
-          />
-          <DropdownMenuContent align="end" className="min-w-36">
-            <DropdownMenuItem
-              nativeButton={false}
-              render={
-                <a href={`https://${domain.domainName}`} target="_blank" rel="noopener noreferrer">
-                  <IconExternalLink />
-                  Open
-                </a>
-              }
-            />
-            <DropdownMenuItem
-              nativeButton={false}
-              render={
-                <Link href={`/${encodeURIComponent(domain.domainName)}`}>
-                  <IconBookmark />
-                  View Report
-                </Link>
-              }
-            />
-            <DropdownMenuSeparator />
-            {domain.verified ? (
-              <DropdownMenuItem onClick={onMute}>
-                {domain.muted ? (
-                  <>
-                    <IconBell />
-                    Unmute
-                  </>
-                ) : (
-                  <>
-                    <IconBellOff />
-                    Mute
-                  </>
-                )}
-              </DropdownMenuItem>
-            ) : null}
-            <DropdownMenuItem onClick={onArchive}>
-              <IconArchive />
-              Archive
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onRemove}>
-              <IconTrash className="text-danger-foreground" />
-              Remove
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <DomainActionsMenu domain={domain} triggerVariant="ghost" />
       </div>
     </CardHeader>
   );
@@ -314,10 +230,10 @@ function DashboardGridCardHeader({
 export const DashboardGridCard = memo(function DashboardGridCard({
   domain,
 }: DashboardGridCardProps) {
-  const { id: trackedDomainId, verificationMethod, muted } = domain;
+  const { id: trackedDomainId, verificationMethod } = domain;
   const selected = useIsDomainSelected(trackedDomainId);
   const toggle = useToggleDomainSelection();
-  const { onVerify, onRemove, onArchive, onMute, verifyingDomainId } = useDashboardActions();
+  const { onVerify, verifyingDomainId } = useDashboardActions();
   const isVerifyPending = verifyingDomainId !== null;
   const isVerifyingThis = verifyingDomainId === trackedDomainId;
 
@@ -328,18 +244,6 @@ export const DashboardGridCard = memo(function DashboardGridCard({
   const handleVerify = useCallback(() => {
     onVerify(trackedDomainId, verificationMethod);
   }, [onVerify, trackedDomainId, verificationMethod]);
-
-  const handleRemove = useCallback(() => {
-    onRemove(trackedDomainId);
-  }, [onRemove, trackedDomainId]);
-
-  const handleArchive = useCallback(() => {
-    onArchive(trackedDomainId);
-  }, [onArchive, trackedDomainId]);
-
-  const handleMute = useCallback(() => {
-    onMute(trackedDomainId, !muted);
-  }, [onMute, trackedDomainId, muted]);
 
   const now = useHydratedNow();
   const accent = getHealthAccent(domain.expirationDate, domain.verified, now || undefined);
@@ -378,9 +282,6 @@ export const DashboardGridCard = memo(function DashboardGridCard({
           isPending={isPending}
           onToggleSelect={handleToggleSelect}
           onVerify={handleVerify}
-          onMute={handleMute}
-          onArchive={handleArchive}
-          onRemove={handleRemove}
         />
 
         <CardContent className="relative flex flex-1 flex-col pt-2 pb-6">
@@ -397,85 +298,14 @@ export const DashboardGridCard = memo(function DashboardGridCard({
   );
 });
 
-// Stable fallback for empty provider to avoid creating new object on every render
-const EMPTY_PROVIDER: ProviderInfo = { id: null, name: null, domain: null };
-
-function InfoRow({
-  label,
-  provider,
-  children,
-  trackedDomainId,
-  providerType,
-}: {
-  label: string;
-  provider?: ProviderInfo;
-  children?: React.ReactNode;
-  trackedDomainId?: string;
-  providerType?: ProviderCategory;
-}) {
-  const { valueRef, isTruncated } = useTruncation();
-
-  const effectiveProvider = provider ?? EMPTY_PROVIDER;
-
-  const tooltipData = useProviderTooltipData({
-    provider: effectiveProvider,
-    trackedDomainId,
-    providerType,
-  });
-
-  const providerContent = (
-    <span className="flex min-w-0 items-center gap-1.5">
-      {provider?.id && (
-        <ProviderLogo
-          providerId={provider.id}
-          providerName={provider.name}
-          className="size-3.5 shrink-0"
-        />
-      )}
-      <span ref={valueRef} className="min-w-0 flex-1 truncate">
-        {provider?.name}
-      </span>
-    </span>
-  );
-
+function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border bg-background/60 px-3 py-2">
       <span className="flex shrink-0 items-center text-[10px] leading-[1.2] tracking-[0.08em] text-foreground/75 uppercase dark:text-foreground/80">
         {label}
       </span>
       <span className="flex min-w-0 items-center justify-end gap-1.5 text-[13px] leading-[1.2] text-foreground/95">
-        {children ||
-          (provider?.name ? (
-            tooltipData.shouldShowTooltip ? (
-              <ResponsiveTooltip open={tooltipData.isOpen} onOpenChange={tooltipData.setIsOpen}>
-                <ResponsiveTooltipTrigger nativeButton={false} render={providerContent} />
-                <ResponsiveTooltipContent>
-                  <ProviderTooltipContent
-                    providerId={tooltipData.providerId}
-                    providerName={provider.name}
-                    providerType={providerType}
-                    isLoading={tooltipData.isLoading}
-                    records={tooltipData.records}
-                    certificateExpiryDate={tooltipData.certificateExpiryDate}
-                    whoisServer={tooltipData.whoisServer}
-                    rdapServers={tooltipData.rdapServers}
-                    registrationSource={tooltipData.registrationSource}
-                    transferLock={tooltipData.transferLock}
-                    registrantInfo={tooltipData.registrantInfo}
-                  />
-                </ResponsiveTooltipContent>
-              </ResponsiveTooltip>
-            ) : isTruncated ? (
-              <ResponsiveTooltip>
-                <ResponsiveTooltipTrigger nativeButton={false} render={providerContent} />
-                <ResponsiveTooltipContent>{provider.name}</ResponsiveTooltipContent>
-              </ResponsiveTooltip>
-            ) : (
-              providerContent
-            )
-          ) : (
-            <span className="text-xs text-muted-foreground">—</span>
-          ))}
+        {children}
       </span>
     </div>
   );
