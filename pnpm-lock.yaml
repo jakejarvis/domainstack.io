@@ -589,6 +589,9 @@ importers:
       '@domainstack/utils':
         specifier: workspace:*
         version: link:../utils
+      '@vercel/functions':
+        specifier: 'catalog:'
+        version: 3.9.9(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.21.3(bufferutil@4.1.0))
       drizzle-orm:
         specifier: ^0.45.3
         version: 0.45.3(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(@upstash/redis@1.39.0)(kysely@0.29.6)(pg@8.23.0)
@@ -608,9 +611,6 @@ importers:
       '@types/pg':
         specifier: ^8.23.1
         version: 8.23.1
-      '@vercel/functions':
-        specifier: 'catalog:'
-        version: 3.9.9(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.21.3(bufferutil@4.1.0))
       dotenv:
         specifier: ^18.0.3
         version: 18.0.3

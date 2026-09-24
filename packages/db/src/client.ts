@@ -1,3 +1,4 @@
+import { attachDatabasePool } from "@vercel/functions";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
@@ -19,23 +20,14 @@ function getDb(): Database {
   }
 
   poolInstance = new Pool({ connectionString });
-  dbInstance = drizzle(poolInstance, { schema });
 
   // Attach to Vercel's pool management if available
   // This ensures idle connections are properly released before fluid compute functions suspend
   // https://vercel.com/guides/connection-pooling-with-functions
-  void attachPoolIfVercel(poolInstance);
+  attachDatabasePool(poolInstance);
 
+  dbInstance = drizzle(poolInstance, { schema });
   return dbInstance;
-}
-
-async function attachPoolIfVercel(pool: Pool) {
-  try {
-    const { attachDatabasePool } = await import("@vercel/functions");
-    attachDatabasePool(pool);
-  } catch {
-    // Not on Vercel or @vercel/functions not available - that's fine
-  }
 }
 
 // Proxy that lazily initializes the db on first property access

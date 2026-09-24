@@ -12,6 +12,7 @@
         "BLOB_READ_WRITE_TOKEN",
         "BLOB_SIGNING_SECRET",
         "BLOB_STORE_ID",
+        "BLOB_WEBHOOK_PUBLIC_KEY",
         "CRON_SECRET",
         "DATABASE_URL",
         "DYNADOT_API_KEY",

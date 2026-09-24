@@ -25,6 +25,7 @@
     "@domainstack/constants": "workspace:*",
     "@domainstack/types": "workspace:*",
     "@domainstack/utils": "workspace:*",
+    "@vercel/functions": "catalog:",
     "drizzle-orm": "^0.45.3",
     "pg": "^8.23.0"
   },
@@ -36,13 +37,5 @@
     "@vercel/functions": "catalog:",
     "dotenv": "^18.0.3",
     "drizzle-kit": "^0.31.11"
-  },
-  "peerDependencies": {
-    "@vercel/functions": ">=2.0.0"
-  },
-  "peerDependenciesMeta": {
-    "@vercel/functions": {
-      "optional": true
-    }
   }
 }
