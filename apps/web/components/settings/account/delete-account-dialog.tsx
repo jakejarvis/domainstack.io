@@ -156,7 +156,7 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
             </AlertDialogHeader>
 
             <div className="space-y-3">
-              <Alert variant="destructive">
+              <Alert variant="destructive" className="gap-y-1.5">
                 <AlertTitle>This will permanently delete:</AlertTitle>
                 <AlertDescription>
                   <ul className="list-disc space-y-1 pl-4 marker:text-destructive">

@@ -96,8 +96,9 @@ export function useDashboardViewState(domains: TrackedDomainWithDetails[]) {
   // Like search, the header reflects a new sort at once while re-sorting can lag.
   const deferredSort = useDeferredValue(sort);
 
+  // Sorted and filtered before the clock hydrates too: the grid staggers its entrance by
+  // first-render order, so a re-sort a frame later would slide every card around.
   const visibleDomains = useMemo(() => {
-    if (!now) return domains;
     const criteria = { search: deferredSearch, status, health, tlds, providers, domainId };
     const filtered = filterDomains(domains, criteria, validProviderIds, now);
     return sortDomains(filtered, deferredSort, now);

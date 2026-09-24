@@ -48,7 +48,7 @@ export function AppFooterIntegrations() {
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger className="inline-flex cursor-pointer items-center gap-1 text-foreground/85 hover:text-foreground/60">
           <IconPuzzle className="size-4 px-[1px] text-muted-foreground" />
           Integrations

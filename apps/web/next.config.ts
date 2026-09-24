@@ -90,7 +90,7 @@ const withVercelToolbar = createWithVercelToolbar();
 
 const withMDX = createMDX({
   options: {
-    remarkPlugins: ["remark-gfm"],
+    remarkPlugins: ["remark-gfm", "remark-smartypants"],
     rehypePlugins: ["rehype-slug"],
   },
 });

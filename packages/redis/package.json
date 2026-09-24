@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@domainstack/logger": "workspace:*",
-    "@upstash/ratelimit": "^2.1.0",
+    "@upstash/ratelimit": "^2.2.0",
     "@upstash/redis": "^1.39.0",
     "@vercel/functions": "catalog:"
   },

@@ -169,14 +169,15 @@ type SortKey = string | number | null;
  */
 const SORT_COLUMNS: Record<
   string,
-  { key: (domain: TrackedDomainWithDetails, now: Date) => SortKey; unverifiedLast: boolean }
+  { key: (domain: TrackedDomainWithDetails, now: Date | null) => SortKey; unverifiedLast: boolean }
 > = {
   domainName: { key: (d) => d.domainName, unverifiedLast: false },
   verified: { key: (d) => (d.verified ? 0 : 1), unverifiedLast: false },
   // Health severity rises as days-left falls, so days-left orders critical ->
-  // warning -> healthy, with unknown (no usable date) last.
+  // warning -> healthy, with unknown (no usable date) last. Before the clock
+  // hydrates every domain counts as unknown, which keeps the incoming order.
   health: {
-    key: (d, now) => getDaysUntilExpiry(d.expirationDate, d.verified, now),
+    key: (d, now) => (now ? getDaysUntilExpiry(d.expirationDate, d.verified, now) : null),
     unverifiedLast: true,
   },
   expirationDate: { key: (d) => d.expirationDate?.getTime() ?? null, unverifiedLast: true },
@@ -196,11 +197,12 @@ function isMissing(key: SortKey): key is null {
 /**
  * Sort domains by a "columnId.direction" sort string. Domains missing the
  * sorted value always land after those that have it, in either direction.
+ * `now` is null until the clock hydrates; only the health column needs it.
  */
 export function sortDomains(
   domains: TrackedDomainWithDetails[],
   sort: string,
-  now: Date,
+  now: Date | null,
 ): TrackedDomainWithDetails[] {
   const [{ id, desc }] = parseSortParam(sort);
   // Own keys only, so a URL naming an inherited property like "constructor" can't match.
@@ -434,13 +436,14 @@ export interface DomainFilterCriteria {
 }
 
 /**
- * Filter domains based on search, status, health, TLDs, and providers
+ * Filter domains based on search, status, health, TLDs, and providers.
+ * `now` is null until the clock hydrates; the health filter waits for it.
  */
 export function filterDomains(
   domains: TrackedDomainWithDetails[],
   criteria: DomainFilterCriteria,
   validProviderIds: Set<string>,
-  now: Date,
+  now: Date | null,
 ): TrackedDomainWithDetails[] {
   const statusSet = new Set(criteria.status);
   const healthSet = new Set(criteria.health);
@@ -464,7 +467,7 @@ export function filterDomains(
     }
 
     // Filter by health status
-    if (healthSet.size > 0) {
+    if (healthSet.size > 0 && now) {
       const healthStatus = getHealthStatus(domain.expirationDate, domain.verified, now);
       if (!healthStatus || !healthSet.has(healthStatus)) return false;
     }

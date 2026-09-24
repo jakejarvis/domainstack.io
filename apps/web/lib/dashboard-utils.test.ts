@@ -104,6 +104,15 @@ describe("sortDomains", () => {
 describe("sortDomains shared with the table", () => {
   const sorted = (sort: string) => names(sortDomains(domains, sort, DASHBOARD_TEST_NOW));
 
+  it("sorts before the clock hydrates, deferring only the health column", () => {
+    const reversed = domains.toReversed();
+    expect(names(sortDomains(reversed, "domainName.asc", null))).toEqual(sorted("domainName.asc"));
+    // Pending domains still go last; the rest keep their incoming order.
+    expect(names(sortDomains(reversed, "health.asc", null))).toEqual(
+      names([...reversed.filter((d) => d.verified), ...reversed.filter((d) => !d.verified)]),
+    );
+  });
+
   it("leaves the order alone for an inherited property name", () => {
     expect(sorted("constructor.asc")).toEqual(names(domains));
   });

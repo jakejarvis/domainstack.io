@@ -12,10 +12,9 @@ type MessagePart = UIMessage["parts"][number];
 const RUNNING_TOOL_STATES = new Set(["input-streaming", "input-available", "approval-requested"]);
 
 export type AssistantWaitKind = "thinking" | "working";
-export type AssistantWaitPlacement = "none" | "standalone" | "inline";
 
 export type AssistantWaitStatus = {
-  placement: AssistantWaitPlacement;
+  placement: "none" | "standalone" | "inline";
   kind: AssistantWaitKind | null;
 };
 
