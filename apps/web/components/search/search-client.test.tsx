@@ -97,6 +97,7 @@ describe("DomainSearch (form variant)", () => {
     const submitButton = page.getByRole("button", { name: /loading/i });
     await expect.element(submitButton).toBeDisabled();
     expect(submitButton.element().querySelectorAll("svg")).toHaveLength(1);
+    await expect.element(input).toHaveValue("test.invalid");
 
     finishNavigation?.();
     await expect.element(input).toBeEnabled();
@@ -132,6 +133,7 @@ describe("DomainSearch (form variant)", () => {
     await page.getByRole("button", { name: "Return home" }).click();
 
     await expect.element(domainSearchInput()).toBeEnabled();
+    await expect.element(domainSearchInput()).toHaveValue("");
     await expect.element(page.getByRole("status", { name: /loading/i })).not.toBeInTheDocument();
   });
 
@@ -175,6 +177,7 @@ describe("DomainSearch (form variant)", () => {
     await page.getByRole("button", { name: "Return home" }).click();
 
     await expect.element(domainSearchInput()).toBeEnabled();
+    await expect.element(domainSearchInput()).toHaveValue("");
     await expect.element(page.getByRole("status", { name: /loading/i })).not.toBeInTheDocument();
     expect(nav.push).toHaveBeenCalledTimes(1);
   });

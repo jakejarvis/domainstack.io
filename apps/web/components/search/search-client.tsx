@@ -4,7 +4,15 @@ import { IconArrowRight, IconCircleX, IconSearch, IconX } from "@tabler/icons-re
 import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
 import { useAtom } from "jotai";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useEffectEvent, useRef, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { toast } from "sonner";
 
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -162,6 +170,7 @@ function useSearchClient({
   const [value, setValue] = useState(derivedInitial);
   const [prevDerivedInitial, setPrevDerivedInitial] = useState(derivedInitial);
   const [loading, startNavigation] = useTransition();
+  const resetWhenHiddenRef = useRef(false);
   const mounted = useIsClient();
   const [isFocused, setIsFocused] = useState(false);
   // A real `useRef` so React Compiler still recognizes ref access; the caller's
@@ -184,6 +193,17 @@ function useSearchClient({
     }
   }, [shouldAutoFocus]);
 
+  // Activity preserves the homepage while a report is open. Reset submitted searches in the
+  // layout-effect cleanup that runs when Activity hides this component, so Back reveals a fresh
+  // input without clearing the value when navigation fails in place.
+  useLayoutEffect(() => {
+    return () => {
+      if (variant !== "lg" || !resetWhenHiddenRef.current) return;
+      resetWhenHiddenRef.current = false;
+      setValue("");
+    };
+  }, [variant]);
+
   if (derivedInitial !== prevDerivedInitial) {
     setPrevDerivedInitial(derivedInitial);
     setValue(derivedInitial);
@@ -202,6 +222,7 @@ function useSearchClient({
   const navigateToDomain = (domain: string) => {
     const target = normalizeDomainInput(domain);
     analytics.track("search_submitted", { domain: target });
+    if (variant === "lg") resetWhenHiddenRef.current = true;
     startNavigation(() => router.push(`/${encodeURIComponent(target)}`));
   };
 
