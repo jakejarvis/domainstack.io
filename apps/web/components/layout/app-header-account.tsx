@@ -6,7 +6,6 @@ import Link from "next/link";
 import { AppHeaderSeparator } from "@/components/layout/app-header-separator";
 import { UserMenu } from "@/components/layout/user-menu";
 import { NotificationsPopover } from "@/components/notifications/notifications-popover";
-import { useIsClient } from "@/hooks/use-is-client";
 import { useTheme } from "@/hooks/use-theme";
 import { useSession } from "@domainstack/auth/client";
 import { Button } from "@domainstack/ui/button";
@@ -17,6 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@domainstack/ui/dropdown-menu";
+import { useIsClient } from "@domainstack/ui/hooks";
 import { Skeleton } from "@domainstack/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 

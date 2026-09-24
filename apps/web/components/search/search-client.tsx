@@ -7,7 +7,6 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
-import { useIsClient } from "@/hooks/use-is-client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useRouter } from "@/hooks/use-router";
 import { analytics } from "@/lib/analytics/client";
@@ -15,6 +14,7 @@ import { pendingDomainAtom } from "@/lib/atoms/search-atoms";
 import { safeDecodeURIComponent } from "@/lib/safe-parse";
 import { Field, FieldLabel } from "@domainstack/ui/field";
 import { Form } from "@domainstack/ui/form";
+import { useIsClient } from "@domainstack/ui/hooks";
 import {
   InputGroup,
   InputGroupAddon,

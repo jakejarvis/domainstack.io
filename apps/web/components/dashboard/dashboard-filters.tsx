@@ -6,8 +6,6 @@ import {
   IconWorld,
   IconX,
 } from "@tabler/icons-react";
-import { AnimatePresence, useReducedMotion } from "motion/react";
-import * as m from "motion/react-m";
 import { useCallback, useMemo } from "react";
 
 import { DashboardTableColumnMenu } from "@/components/dashboard/dashboard-table-column-menu";
@@ -45,7 +43,6 @@ export function DashboardFilters() {
     setSortOption,
   } = useDashboardFiltersContext();
   const viewMode = useDashboardViewMode();
-  const shouldReduceMotion = useReducedMotion();
 
   // Flat map of all providers for chip rendering
   const allProvidersMap = useMemo(() => {
@@ -199,24 +196,16 @@ export function DashboardFilters() {
       {/* Right side: View-specific controls and clear button */}
       <div className="flex flex-wrap items-center gap-2">
         {/* Clear all button */}
-        <AnimatePresence initial={false}>
-          {hasActiveFilters && (
-            <m.div
-              initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: shouldReduceMotion ? 0 : 6 }}
-              transition={{
-                duration: shouldReduceMotion ? 0.1 : 0.18,
-                ease: [0.22, 1, 0.36, 1] as const,
-              }}
-            >
-              <Button variant="ghost" onClick={clearFilters} className="text-muted-foreground">
-                <IconX />
-                Clear all
-              </Button>
-            </m.div>
-          )}
-        </AnimatePresence>
+        {hasActiveFilters && (
+          <Button
+            variant="ghost"
+            onClick={clearFilters}
+            className="slide-in-from-bottom-1.5 animate-in text-muted-foreground duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] fade-in-0 motion-reduce:animate-none"
+          >
+            <IconX />
+            Clear all
+          </Button>
+        )}
 
         {/* Sort dropdown - only for grid view */}
         {viewMode === "grid" && (

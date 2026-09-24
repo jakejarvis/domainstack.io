@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 import { LoginContent } from "@/components/auth/login-content";
 import { LoginSkeleton } from "@/components/auth/login-skeleton";
@@ -25,9 +25,12 @@ function AuthorizedLoginContent({ onNavigate }: { onNavigate: () => void }) {
   const { data: session } = useSession();
   const router = useRouter();
 
-  if (session?.user) {
-    router.replace("/dashboard");
-  }
+  const isSignedIn = Boolean(session?.user);
+  useEffect(() => {
+    if (isSignedIn) {
+      router.replace("/dashboard");
+    }
+  }, [isSignedIn, router]);
 
   return <LoginContent onNavigate={onNavigate} />;
 }

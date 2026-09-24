@@ -17,18 +17,8 @@ export default async function SettingsTabsLayout() {
 
   return (
     <HydrateClient>
-      <div className="space-y-6">
-        <div className="space-y-1">
-          <h1 className="text-xl font-semibold">Settings</h1>
-          <p className="text-muted-foreground">
-            Manage your subscription, notifications, and account preferences.
-          </p>
-        </div>
-
-        {/* chromeless on phones, where a card inside the page gutter is just a nested frame */}
-        <div className="sm:overflow-hidden sm:rounded-xl sm:border sm:bg-background sm:p-3 sm:shadow-sm [&_[data-slot=tabs-content]]:mt-2 sm:[&_[data-slot=tabs-content]]:p-2">
-          <SettingsTabsRouter navigationMode="page" />
-        </div>
+      <div className="sm:overflow-hidden sm:rounded-xl sm:border sm:bg-background sm:p-3 sm:shadow-sm [&_[data-slot=tabs-content]]:mt-2 sm:[&_[data-slot=tabs-content]]:p-2">
+        <SettingsTabsRouter navigationMode="page" />
       </div>
     </HydrateClient>
   );

@@ -1,3 +1,5 @@
+"use client";
+
 import { Menu } from "@base-ui/react/menu";
 import { IconCheck, IconChevronRight } from "@tabler/icons-react";
 

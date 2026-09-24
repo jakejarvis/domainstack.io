@@ -1,13 +1,11 @@
 import { IconFilterX, IconHourglass, IconPlus, IconWorld } from "@tabler/icons-react";
-import { AnimatePresence, useReducedMotion } from "motion/react";
-import * as m from "motion/react-m";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 
 import { BulkActionsToolbar } from "@/components/dashboard/bulk-actions-toolbar";
 import { DashboardGrid } from "@/components/dashboard/dashboard-grid";
 import { DashboardTable } from "@/components/dashboard/dashboard-table";
 import { useDashboardFiltersContext } from "@/context/dashboard-context";
-import { useIsClient } from "@/hooks/use-is-client";
 import { useDashboardViewMode } from "@/lib/stores/preferences-store";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Button, buttonVariants } from "@domainstack/ui/button";
@@ -19,6 +17,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@domainstack/ui/empty";
+import { useIsClient } from "@domainstack/ui/hooks";
 
 type DashboardContentProps = {
   domains: TrackedDomainWithDetails[];
@@ -98,7 +97,7 @@ export function DashboardContent({ domains, totalDomains }: DashboardContentProp
   return (
     <>
       <AnimatePresence mode="wait" initial={false}>
-        <m.div
+        <motion.div
           key={viewMode}
           initial={hasHydrated ? { opacity: 0, y: shouldReduceMotion ? 0 : 8 } : false}
           animate={{ opacity: 1, y: 0 }}
@@ -117,7 +116,7 @@ export function DashboardContent({ domains, totalDomains }: DashboardContentProp
           ) : (
             <DashboardGrid domains={domains} />
           )}
-        </m.div>
+        </motion.div>
       </AnimatePresence>
 
       <BulkActionsToolbar totalCount={domains.length} />

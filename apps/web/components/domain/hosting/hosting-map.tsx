@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 
 import { HostingMapSkeleton } from "@/components/domain/hosting/hosting-map-skeleton";
-import { useIsClient } from "@/hooks/use-is-client";
+import { useIsClient } from "@domainstack/ui/hooks";
 
 const HostingMapClient = dynamic(
   () => import("@/components/domain/hosting/hosting-map-client").then((m) => m.HostingMapClient),

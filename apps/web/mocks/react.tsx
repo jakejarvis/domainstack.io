@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Provider as JotaiProvider } from "jotai";
 import { useHydrateAtoms } from "jotai/utils";
-import { LazyMotion, MotionConfig, domMax } from "motion/react";
+import { MotionConfig } from "motion/react";
 import { type ComponentRenderOptions, render as baseRender } from "vitest-browser-react";
 
 /**
@@ -49,7 +49,7 @@ function HydrateAtoms({
 /**
  * Test wrapper that provides QueryClient, Jotai, and Motion with a fresh
  * instance for each test. `reducedMotion="always"` skips enter/exit so
- * `m.*` components don't stay stuck at `opacity: 0`.
+ * `motion.*` components don't stay stuck at `opacity: 0`.
  */
 function createWrapper(queryClient: QueryClient, initialAtomValues: AtomTuple[] = []) {
   return function Wrapper({ children }: { children: React.ReactNode }) {
@@ -57,9 +57,7 @@ function createWrapper(queryClient: QueryClient, initialAtomValues: AtomTuple[] 
       <QueryClientProvider client={queryClient}>
         <JotaiProvider>
           <MotionConfig reducedMotion="always">
-            <LazyMotion features={domMax}>
-              <HydrateAtoms initialValues={initialAtomValues}>{children}</HydrateAtoms>
-            </LazyMotion>
+            <HydrateAtoms initialValues={initialAtomValues}>{children}</HydrateAtoms>
           </MotionConfig>
         </JotaiProvider>
       </QueryClientProvider>

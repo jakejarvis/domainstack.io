@@ -255,19 +255,13 @@ export function SettingsSkeletonPanels({ className }: { className?: string }) {
 }
 
 /**
- * Full settings page loading shell: title + tabbed card.
+ * Settings page loading shell: the tabbed card below the (static) page title.
  */
 export function SettingsPageSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="space-y-1">
-        <Skeleton className="h-7 w-28" />
-        <Skeleton className="h-6 w-80" />
-      </div>
-      <div className="flex flex-col gap-2 sm:overflow-hidden sm:rounded-xl sm:border sm:bg-background sm:p-3 sm:shadow-sm">
-        <SettingsSkeletonTabsList />
-        <SettingsSkeletonPanels className="mt-2 sm:p-2" />
-      </div>
+    <div className="flex flex-col gap-2 sm:overflow-hidden sm:rounded-xl sm:border sm:bg-background sm:p-3 sm:shadow-sm">
+      <SettingsSkeletonTabsList />
+      <SettingsSkeletonPanels className="mt-2 sm:p-2" />
     </div>
   );
 }

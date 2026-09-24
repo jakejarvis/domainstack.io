@@ -5,11 +5,11 @@ import { skipToken, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useCallback, useTransition } from "react";
 
-import { useIsClient } from "@/hooks/use-is-client";
 import { useRouter } from "@/hooks/use-router";
 import { useTRPC } from "@/lib/trpc/client";
 import { useSession } from "@domainstack/auth/client";
 import { Button } from "@domainstack/ui/button";
+import { useIsClient } from "@domainstack/ui/hooks";
 import { Spinner } from "@domainstack/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 

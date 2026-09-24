@@ -1,5 +1,3 @@
-"use client";
-
 import type { UIMessage } from "ai";
 import { memo } from "react";
 import { Streamdown } from "streamdown";

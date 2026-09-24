@@ -1,6 +1,5 @@
 import { type Cell, FlexRender } from "@tanstack/react-table";
-import { useReducedMotion } from "motion/react";
-import * as m from "motion/react-m";
+import { motion, useReducedMotion } from "motion/react";
 
 import { useDashboardActions } from "@/context/dashboard-context";
 import { useIsDomainSelected } from "@/hooks/use-dashboard-selection";
@@ -36,7 +35,7 @@ export function UnverifiedTableRow({ rowId, cells, original }: UnverifiedTableRo
   const collapseCount = cells.length - EXPLICIT_COLUMNS.length;
 
   return (
-    <m.tr
+    <motion.tr
       key={rowId}
       layout={shouldReduceMotion ? false : "position"}
       initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 6 }}
@@ -121,6 +120,6 @@ export function UnverifiedTableRow({ rowId, cells, original }: UnverifiedTableRo
           <FlexRender cell={actionsCell} />
         </td>
       )}
-    </m.tr>
+    </motion.tr>
   );
 }

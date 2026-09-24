@@ -1,28 +1,19 @@
-"use client";
-
 import { catchError } from "next/error";
 import { Suspense } from "react";
 
 import { RegistrarLinks, RegistrarLinksSkeleton } from "@/components/domain/registrar-links";
-import { NONPUBLIC_TLDS } from "@domainstack/constants";
 import { Card } from "@domainstack/ui/card";
-import { extractTldClient } from "@domainstack/utils/domain/client";
 
 // Renders nothing on error; used for supplementary info like pricing.
 const SilentErrorBoundary = catchError(() => null);
 
 interface DomainUnregisteredCardProps {
   domain: string;
+  /** TLD to show registrar pricing for; null when the TLD isn't publicly registrable. */
+  pricingTld: string | null;
 }
 
-export function DomainUnregisteredCard({ domain }: DomainUnregisteredCardProps) {
-  const lower = (domain ?? "").toLowerCase();
-  const isNonPublicTld = NONPUBLIC_TLDS.some((suffix) => lower.endsWith(suffix));
-
-  // Extract TLD for registrar pricing - parent handles validation
-  const tld = extractTldClient(domain);
-  const canShowRegistrarLinks = !isNonPublicTld && tld;
-
+export function DomainUnregisteredCard({ domain, pricingTld }: DomainUnregisteredCardProps) {
   return (
     <Card className="relative overflow-hidden px-6 text-center">
       <div
@@ -38,11 +29,11 @@ export function DomainUnregisteredCard({ domain }: DomainUnregisteredCardProps) 
           </p>
         </div>
 
-        {canShowRegistrarLinks && (
+        {pricingTld && (
           // Silently fail on pricing errors - this is supplementary info
           <SilentErrorBoundary>
             <Suspense fallback={<RegistrarLinksSkeleton />}>
-              <RegistrarLinks domain={domain} tld={tld} />
+              <RegistrarLinks domain={domain} tld={pricingTld} />
             </Suspense>
           </SilentErrorBoundary>
         )}

@@ -1,7 +1,6 @@
 "use client";
 
-import { AnimatePresence, useReducedMotion } from "motion/react";
-import * as m from "motion/react-m";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 
 import { DashboardBanner } from "@/components/dashboard/dashboard-banner";
@@ -13,7 +12,7 @@ export function DashboardBannerDismissable(props: React.ComponentProps<typeof Da
   return (
     <AnimatePresence mode="wait">
       {!isDismissed && (
-        <m.div
+        <motion.div
           key="banner"
           initial={{ opacity: 0, y: shouldReduceMotion ? 0 : -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -30,7 +29,7 @@ export function DashboardBannerDismissable(props: React.ComponentProps<typeof Da
               props.onDismiss?.();
             }}
           />
-        </m.div>
+        </motion.div>
       )}
     </AnimatePresence>
   );

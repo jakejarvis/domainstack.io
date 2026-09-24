@@ -28,7 +28,14 @@ async function ProtectedSettingsLayout({ children }: { children: React.ReactNode
 
 export default function SettingsLayout({ children }: LayoutProps<"/settings">) {
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-8">
+    <div className="container mx-auto max-w-3xl space-y-6 px-4 py-8">
+      <div className="space-y-1">
+        <h1 className="text-xl font-semibold">Settings</h1>
+        <p className="text-muted-foreground">
+          Manage your subscription, notifications, and account preferences.
+        </p>
+      </div>
+
       <Suspense fallback={<SettingsPageSkeleton />}>
         <ProtectedSettingsLayout>{children}</ProtectedSettingsLayout>
       </Suspense>

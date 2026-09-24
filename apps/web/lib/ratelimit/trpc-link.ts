@@ -1,5 +1,3 @@
-"use client";
-
 import type { TRPCLink } from "@trpc/client";
 import { observable } from "@trpc/server/observable";
 

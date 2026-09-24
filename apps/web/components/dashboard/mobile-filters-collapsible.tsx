@@ -1,6 +1,4 @@
 import { IconChevronDown, IconFilter } from "@tabler/icons-react";
-import { AnimatePresence, useReducedMotion } from "motion/react";
-import * as m from "motion/react-m";
 import { useState } from "react";
 
 import { DashboardTableColumnMenu } from "@/components/dashboard/dashboard-table-column-menu";
@@ -22,7 +20,6 @@ export function MobileFiltersCollapsible({
   children,
 }: MobileFiltersCollapsibleProps) {
   const viewMode = useDashboardViewMode();
-  const shouldReduceMotion = useReducedMotion();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -34,25 +31,14 @@ export function MobileFiltersCollapsible({
               <span className="flex items-center gap-2">
                 <IconFilter className="text-muted-foreground" />
                 <span className="text-sm">Filters</span>
-                <AnimatePresence initial={false}>
-                  {hasActiveFilters && (
-                    <m.span
-                      initial={{
-                        opacity: 0,
-                        scale: shouldReduceMotion ? 1 : 0.9,
-                      }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.9 }}
-                      transition={{
-                        duration: shouldReduceMotion ? 0.1 : 0.16,
-                        ease: [0.22, 1, 0.36, 1] as const,
-                      }}
-                      className="ml-1 inline-flex"
-                    >
-                      <Badge variant="secondary">{activeFilterCount}</Badge>
-                    </m.span>
-                  )}
-                </AnimatePresence>
+                {hasActiveFilters && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-1 animate-in duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] fade-in-0 zoom-in-90 motion-reduce:animate-none"
+                  >
+                    {activeFilterCount}
+                  </Badge>
+                )}
               </span>
               <IconChevronDown className={cn("transition-transform", mobileOpen && "rotate-180")} />
             </Button>

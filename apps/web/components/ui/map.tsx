@@ -34,9 +34,9 @@ import {
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 
-import { useIsClient } from "@/hooks/use-is-client";
 import { useTheme } from "@/hooks/use-theme";
 import { analytics } from "@/lib/analytics/client";
+import { useIsClient } from "@domainstack/ui/hooks";
 import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
 

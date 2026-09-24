@@ -270,7 +270,13 @@ function DomainReportSections({ children }: { children: ReactNode }) {
   return <div className="space-y-4">{children}</div>;
 }
 
-export function DomainReportClient({ domain }: { domain: string }) {
+export function DomainReportClient({
+  domain,
+  pricingTld,
+}: {
+  domain: string;
+  pricingTld: string | null;
+}) {
   const trpc = useTRPC();
   const {
     data: registration,
@@ -303,7 +309,7 @@ export function DomainReportClient({ domain }: { domain: string }) {
   }
 
   if (!isRegistrationLoading && isUnregistered) {
-    return <DomainUnregisteredCard domain={domain} />;
+    return <DomainUnregisteredCard domain={domain} pricingTld={pricingTld} />;
   }
 
   return (

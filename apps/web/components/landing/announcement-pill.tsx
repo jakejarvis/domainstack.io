@@ -1,8 +1,7 @@
 "use client";
 
 import { IconArrowUpRight, IconMeteor, IconX } from "@tabler/icons-react";
-import { AnimatePresence, useReducedMotion } from "motion/react";
-import * as m from "motion/react-m";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 
 import { useAnnouncement } from "@/lib/stores/ui-store";
@@ -22,7 +21,7 @@ export function AnnouncementPill() {
   return (
     <AnimatePresence>
       {visible && (
-        <m.div
+        <motion.div
           initial={{
             opacity: 0,
             y: shouldReduceMotion ? 0 : -10,
@@ -64,7 +63,7 @@ export function AnnouncementPill() {
               <IconX className="size-3.5" />
             </Button>
           </div>
-        </m.div>
+        </motion.div>
       )}
     </AnimatePresence>
   );

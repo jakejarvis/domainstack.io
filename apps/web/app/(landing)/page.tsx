@@ -3,9 +3,9 @@ import { Suspense } from "react";
 
 import { AnnouncementPill } from "@/components/landing/announcement-pill";
 import { HomeHero } from "@/components/landing/home-hero";
-import { HomeSearchClient } from "@/components/search/home-search-client";
 import { DomainSuggestions } from "@/components/search/home-search-suggestions";
 import { HomeSearchSuggestionsSkeleton } from "@/components/search/home-search-suggestions-skeleton";
+import { SearchClient } from "@/components/search/search-client";
 import { buildHomeJsonLd } from "@/lib/json-ld";
 import { createMetadata } from "@/lib/seo";
 
@@ -26,11 +26,12 @@ export default function LandingPage() {
       <div className="relative w-full space-y-6">
         <AnnouncementPill />
         <HomeHero />
-        <HomeSearchClient>
+        <div className="mx-auto w-full max-w-3xl space-y-5">
+          <SearchClient variant="lg" />
           <Suspense fallback={<HomeSearchSuggestionsSkeleton />}>
             <DomainSuggestions />
           </Suspense>
-        </HomeSearchClient>
+        </div>
       </div>
     </div>
   );

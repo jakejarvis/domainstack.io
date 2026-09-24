@@ -2,6 +2,7 @@
  * Vercel Flags declarations.
  */
 
+import "server-only";
 import { vercelAdapter } from "@flags-sdk/vercel";
 import { flag } from "flags/next";
 

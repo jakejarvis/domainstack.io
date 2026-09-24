@@ -15,9 +15,9 @@ import { SubscriptionEndingBanner } from "@/components/dashboard/subscription-en
 import { UpgradeBanner } from "@/components/dashboard/upgrade-banner";
 import { DashboardProvider } from "@/context/dashboard-context";
 import { useDashboardClient } from "@/hooks/use-dashboard-client";
-import { useIsClient } from "@/hooks/use-is-client";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
+import { useIsClient } from "@domainstack/ui/hooks";
 
 function DashboardActiveView({
   domains,

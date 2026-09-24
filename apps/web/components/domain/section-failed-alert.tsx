@@ -1,5 +1,3 @@
-"use client";
-
 import { IconAlertTriangle } from "@tabler/icons-react";
 
 import { ReportSection } from "@/components/domain/report-section";

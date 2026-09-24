@@ -1,6 +1,4 @@
 import { IconSearch, IconX } from "@tabler/icons-react";
-import { AnimatePresence, useReducedMotion } from "motion/react";
-import * as m from "motion/react-m";
 
 import {
   InputGroup,
@@ -15,8 +13,6 @@ type FilterSearchInputProps = {
 };
 
 export function FilterSearchInput({ value, onChange }: FilterSearchInputProps) {
-  const shouldReduceMotion = useReducedMotion();
-
   return (
     <div className="flex-1 lg:max-w-xs">
       <InputGroup>
@@ -34,29 +30,18 @@ export function FilterSearchInput({ value, onChange }: FilterSearchInputProps) {
           autoCapitalize="none"
           spellCheck={false}
         />
-        <AnimatePresence initial={false}>
-          {value && (
-            <InputGroupAddon align="inline-end">
-              <m.div
-                initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.98 }}
-                transition={{
-                  duration: shouldReduceMotion ? 0.1 : 0.16,
-                  ease: [0.22, 1, 0.36, 1] as const,
-                }}
-              >
-                <InputGroupButton
-                  size="icon-xs"
-                  onClick={() => onChange("")}
-                  aria-label="Clear search"
-                >
-                  <IconX />
-                </InputGroupButton>
-              </m.div>
-            </InputGroupAddon>
-          )}
-        </AnimatePresence>
+        {value && (
+          <InputGroupAddon align="inline-end">
+            <InputGroupButton
+              size="icon-xs"
+              onClick={() => onChange("")}
+              aria-label="Clear search"
+              className="animate-in duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] fade-in-0 zoom-in-98 motion-reduce:animate-none"
+            >
+              <IconX />
+            </InputGroupButton>
+          </InputGroupAddon>
+        )}
       </InputGroup>
     </div>
   );

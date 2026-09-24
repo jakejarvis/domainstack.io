@@ -12,12 +12,17 @@ import {
   IconWaveSquare,
   IconX,
 } from "@tabler/icons-react";
-import { AnimatePresence, useReducedMotion } from "motion/react";
-import * as m from "motion/react-m";
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 
 import { PillCount } from "@/components/domain/pill-count";
-import type { SeoResponse } from "@domainstack/types";
+import {
+  filterRobotsGroups,
+  type RobotsGroupSummary,
+  type RobotsRuleFilter,
+  type RobotsSummaryData,
+  summarizeRobots,
+} from "@/lib/robots";
+import type { RobotsRule, SeoResponse } from "@domainstack/types";
 import {
   Accordion,
   AccordionContent,
@@ -42,23 +47,20 @@ import { ToggleGroup, ToggleGroupItem } from "@domainstack/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 import { cn } from "@domainstack/ui/utils";
 
-type RobotsRule = {
-  type: "allow" | "disallow" | "crawlDelay" | "contentSignal";
-  value: string;
-};
+const RULES_PREVIEW = 6;
+const SITEMAPS_PREVIEW = 2;
+const REVEAL_CLASS = "animate-in duration-200 ease-out fade-in-0 motion-reduce:animate-none";
+const EMPTY_SUMMARY: RobotsSummaryData = { groups: [], counts: { allow: 0, disallow: 0 } };
 
-function getRuleItems(rules: RobotsRule[], scope: string) {
+function getRuleItems(rules: RobotsRule[]) {
   const seen = new Map<string, number>();
 
   return rules.map((rule) => {
-    const baseKey = `${scope}-${rule.type}-${rule.value || "empty"}`;
+    const baseKey = `${rule.type}-${rule.value}`;
     const duplicateCount = seen.get(baseKey) ?? 0;
     seen.set(baseKey, duplicateCount + 1);
 
-    return {
-      key: `${baseKey}-${duplicateCount}`,
-      rule,
-    };
+    return { key: `${baseKey}-${duplicateCount}`, rule };
   });
 }
 
@@ -78,23 +80,6 @@ function highlight(text: string, q: string) {
   );
 }
 
-function useProgressiveReveal<T>(items: T[], initialVisible: number) {
-  const [visible, setVisible] = useState(initialVisible);
-  const total = items.length;
-  const more = total - visible;
-  const [prevVisible, setPrevVisible] = useState(initialVisible);
-  const [seenVisible, setSeenVisible] = useState(initialVisible);
-  if (visible !== seenVisible) {
-    setPrevVisible(seenVisible);
-    setSeenVisible(visible);
-  }
-  const prev = Math.min(prevVisible, visible, total);
-  const existing = items.slice(0, prev);
-  const added = items.slice(prev, Math.min(visible, total));
-
-  return { existing, added, more, total, visible, setVisible } as const;
-}
-
 export function RobotsSummary({
   domain,
   robots,
@@ -102,86 +87,30 @@ export function RobotsSummary({
   domain: string;
   robots: SeoResponse["robots"];
 }) {
-  const counts = useMemo(() => {
-    const isNonEmpty = (r: { value: string }) => r.value.trim() !== "";
-    const disallows =
-      robots?.groups.reduce(
-        (acc, g) => acc + g.rules.filter((r) => r.type === "disallow" && isNonEmpty(r)).length,
-        0,
-      ) ?? 0;
-    const allows =
-      robots?.groups.reduce(
-        (acc, g) => acc + g.rules.filter((r) => r.type === "allow" && isNonEmpty(r)).length,
-        0,
-      ) ?? 0;
-    return { allows, disallows };
-  }, [robots]);
-
-  const hasAnyListedRules = useMemo(() => {
-    const groups = robots?.groups ?? [];
-    for (const g of groups) {
-      for (const r of g.rules) {
-        if ((r.type === "allow" || r.type === "disallow") && r.value.trim() !== "") {
-          return true;
-        }
-      }
-    }
-    return false;
-  }, [robots]);
-
-  // Check if there are groups with empty rules (e.g., "Disallow:" with no path means allow all)
-  const hasEmptyRulesGroups = useMemo(() => {
-    const groups = robots?.groups ?? [];
-    for (const g of groups) {
-      for (const r of g.rules) {
-        if ((r.type === "allow" || r.type === "disallow") && r.value.trim() === "") {
-          return true;
-        }
-      }
-    }
-    return false;
-  }, [robots]);
+  const summary = useMemo(() => (robots ? summarizeRobots(robots) : EMPTY_SUMMARY), [robots]);
+  const { counts } = summary;
+  const listedCount = counts.allow + counts.disallow;
+  const sitemaps = robots?.sitemaps ?? [];
 
   const [query, setQuery] = useState("");
-  const [only, setOnly] = useState<"all" | "allow" | "disallow">("all");
-  const [, startTransition] = useTransition();
-
-  const rankAgents = useCallback((agents: string[]): number => {
-    const joined = agents.join(",").toLowerCase();
-    if (agents.includes("*")) return 0;
-    if (/googlebot/.test(joined)) return 1;
-    return 2;
-  }, []);
-
-  const filteredGroups = useMemo(() => {
-    const base = robots?.groups?.slice() ?? [];
-    const sorted = base.sort((a, b) => rankAgents(a.userAgents) - rankAgents(b.userAgents));
-    const isNonEmpty = (r: { value: string }) => r.value.trim() !== "";
-    return sorted.map((g) => {
-      const hasEmptyAllow = g.rules.some((r) => r.type === "allow" && !isNonEmpty(r));
-      const hasEmptyDisallow = g.rules.some((r) => r.type === "disallow" && !isNonEmpty(r));
-      const queryLower = query?.toLowerCase();
-      const visible = g.rules.filter(
-        (r) =>
-          isNonEmpty(r) &&
-          (only === "all" || r.type === only) &&
-          (!queryLower || r.value.toLowerCase().includes(queryLower)),
-      );
-      return {
-        userAgents: g.userAgents,
-        rules: visible,
-        hasEmptyAllow,
-        hasEmptyDisallow,
-      };
-    });
-  }, [robots, only, query, rankAgents]);
-
-  const hasFilteredRules = filteredGroups.some((g) => g.rules.length > 0);
-  const filtersActive = query.trim().length > 0 || only !== "all";
-  const displayGroups = useMemo(
-    () => (filtersActive ? filteredGroups.filter((g) => g.rules.length > 0) : filteredGroups),
-    [filteredGroups, filtersActive],
+  const [only, setOnly] = useState<RobotsRuleFilter>("all");
+  const q = useDeferredValue(query).trim();
+  const isSearching = q !== "";
+  const groups = useMemo(
+    () => filterRobotsGroups(summary.groups, { query: q, only }),
+    [summary, q, only],
   );
+
+  // Open the `*` group by default; summarizeRobots sorts it first.
+  const [openGroups, setOpenGroups] = useState<string[]>(() => {
+    const first = summary.groups[0];
+    return first?.userAgents[0] === "*" ? [first.key] : [];
+  });
+
+  const resetFilters = () => {
+    setQuery("");
+    setOnly("all");
+  };
 
   return (
     <div className="space-y-4">
@@ -195,94 +124,93 @@ export function RobotsSummary({
           <span>robots.txt</span>
           <IconExternalLink className="relative bottom-px inline-flex size-3" aria-hidden />
         </a>
-        <PillCount count={counts.allows + counts.disallows} color="blue" />
+        <PillCount count={listedCount} color="blue" />
       </div>
 
       <div className="space-y-4">
-        {hasAnyListedRules ? (
-          <>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <InputGroup className="sm:flex-1">
-                <InputGroupInput
-                  name="robots-filter"
-                  placeholder="Filter rules…"
-                  value={query}
-                  onChange={(e) => startTransition(() => setQuery(e.currentTarget.value))}
-                  aria-label="Filter robots rules"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="none"
-                  spellCheck={false}
-                />
-                <InputGroupAddon>
-                  <IconFilter aria-hidden />
+        {listedCount > 0 ? (
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <InputGroup className="sm:flex-1">
+              <InputGroupInput
+                name="robots-filter"
+                placeholder="Filter rules…"
+                value={query}
+                onChange={(e) => setQuery(e.currentTarget.value)}
+                aria-label="Filter robots rules"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="none"
+                spellCheck={false}
+              />
+              <InputGroupAddon>
+                <IconFilter aria-hidden />
+              </InputGroupAddon>
+              {query ? (
+                <InputGroupAddon align="inline-end">
+                  <InputGroupButton
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setQuery("")}
+                    aria-label="Clear filter"
+                  >
+                    <IconX aria-hidden />
+                  </InputGroupButton>
                 </InputGroupAddon>
-                {query ? (
-                  <InputGroupAddon align="inline-end">
-                    <InputGroupButton
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setQuery("")}
-                      aria-label="Clear filter"
-                    >
-                      <IconX aria-hidden />
-                    </InputGroupButton>
-                  </InputGroupAddon>
-                ) : null}
-              </InputGroup>
+              ) : null}
+            </InputGroup>
 
-              <ToggleGroup
-                multiple={false}
-                value={[only]}
-                onValueChange={(groupValue) => {
-                  const next = groupValue[0] as typeof only | undefined;
-                  startTransition(() => setOnly(next ?? "all"));
-                }}
-                spacing={1}
-                className="relative h-9 w-full items-stretch overflow-hidden rounded-lg border bg-muted/40 p-1 text-muted-foreground sm:w-auto [&>*]:flex-1 sm:[&>*]:flex-none"
-              >
-                <ToggleGroupItem value="all" className="h-full">
-                  <IconCircleHalf2 className="size-3.5 text-accent-blue" aria-hidden />
-                  <span className="text-[13px]">All</span>
-                  <PillCount count={counts.allows + counts.disallows} color="slate" />
-                </ToggleGroupItem>
-                <ToggleGroupItem value="allow" className="h-full">
-                  <IconCircleCheck className="size-3.5 text-accent-green" aria-hidden />
-                  <span className="text-[13px]">Allow</span>
-                  <PillCount count={counts.allows} color="slate" />
-                </ToggleGroupItem>
-                <ToggleGroupItem value="disallow" className="h-full">
-                  <IconBan className="size-3.5 text-destructive" aria-hidden />
-                  <span className="text-[13px]">Disallow</span>
-                  <PillCount count={counts.disallows} color="slate" />
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
+            <ToggleGroup
+              multiple={false}
+              value={[only]}
+              onValueChange={(groupValue) => {
+                const next = groupValue[0] as RobotsRuleFilter | undefined;
+                setOnly(next ?? "all");
+              }}
+              spacing={1}
+              className="relative h-9 w-full items-stretch overflow-hidden rounded-lg border bg-muted/40 p-1 text-muted-foreground sm:w-auto [&>*]:flex-1 sm:[&>*]:flex-none"
+            >
+              <ToggleGroupItem value="all" className="h-full">
+                <IconCircleHalf2 className="size-3.5 text-accent-blue" aria-hidden />
+                <span className="text-[13px]">All</span>
+                <PillCount count={listedCount} color="slate" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="allow" className="h-full">
+                <IconCircleCheck className="size-3.5 text-accent-green" aria-hidden />
+                <span className="text-[13px]">Allow</span>
+                <PillCount count={counts.allow} color="slate" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="disallow" className="h-full">
+                <IconBan className="size-3.5 text-destructive" aria-hidden />
+                <span className="text-[13px]">Disallow</span>
+                <PillCount count={counts.disallow} color="slate" />
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+        ) : null}
 
-            {filtersActive && !hasFilteredRules ? (
-              <div className="text-sm text-muted-foreground">
-                No matching rules.
-                <Button
-                  variant="link"
-                  className="px-1"
-                  onClick={() => {
-                    startTransition(() => {
-                      setQuery("");
-                      setOnly("all");
-                    });
-                  }}
-                >
-                  Reset filters
-                </Button>
-              </div>
-            ) : null}
-
-            <GroupsAccordion groups={displayGroups} query={query} only={only} />
-          </>
-        ) : hasEmptyRulesGroups ? (
-          // Show groups with empty rules (e.g., "Disallow:" means allow all)
-          <GroupsAccordion groups={displayGroups} query={query} only={only} />
-        ) : robots?.sitemaps?.length ? (
+        {groups.length > 0 ? (
+          // While searching, every matching group is forced open; otherwise the user's
+          // choice is kept, keyed by user-agent so it survives filtering.
+          <Accordion
+            hiddenUntilFound
+            multiple={isSearching}
+            value={isSearching ? groups.map((g) => g.key) : openGroups}
+            onValueChange={(value) => {
+              if (!isSearching) setOpenGroups(value);
+            }}
+          >
+            {groups.map((group) => (
+              <RobotsGroupItem key={group.key} group={group} query={q} only={only} />
+            ))}
+          </Accordion>
+        ) : summary.groups.length > 0 ? (
+          <div className="text-sm text-muted-foreground">
+            No matching rules.
+            <Button variant="link" className="px-1" onClick={resetFilters}>
+              Reset filters
+            </Button>
+          </div>
+        ) : sitemaps.length > 0 ? (
           <Empty className="border border-solid bg-background/60">
             <EmptyHeader>
               <EmptyMedia variant="icon">
@@ -297,256 +225,110 @@ export function RobotsSummary({
           </Empty>
         ) : null}
 
-        {robots?.sitemaps?.length ? <SitemapsList items={robots.sitemaps} /> : null}
+        {sitemaps.length > 0 ? <SitemapsList items={sitemaps} /> : null}
       </div>
     </div>
   );
 }
 
-function displayUserAgents(agents: string[]): string[] {
-  if (!agents.includes("*")) return agents;
-  return ["*", ...agents.filter((ua) => ua !== "*")];
-}
-
-function RobotsGroupHeader({
-  userAgents,
-  allowN,
-  disallowN,
-  showAllow = true,
-  showDisallow = true,
+function RobotsGroupItem({
+  group,
+  query,
+  only,
 }: {
-  userAgents: string[];
-  allowN: number;
-  disallowN: number;
-  showAllow?: boolean;
-  showDisallow?: boolean;
+  group: RobotsGroupSummary;
+  query: string;
+  only: RobotsRuleFilter;
 }) {
-  const agents = displayUserAgents(userAgents);
+  const allowN = group.rules.filter((r) => r.type === "allow").length;
+  const disallowN = group.rules.filter((r) => r.type === "disallow").length;
 
   return (
-    <div className="flex w-full items-start justify-between gap-3">
-      <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-        <IconChevronRight
-          className="size-3 text-muted-foreground transition-transform group-data-[panel-open]/accordion:rotate-90 motion-reduce:transition-none"
-          aria-hidden
-        />
-        {agents.map((ua) => (
-          <span
-            key={ua}
-            className={cn(
-              "flex items-center gap-1 rounded px-1.5 py-1 text-xs leading-none whitespace-nowrap",
-              ua === "*" ? "bg-accent-purple/18 text-accent-purple" : "bg-muted",
-            )}
-          >
-            {ua === "*" ? (
-              <>
-                <IconAsterisk className="size-3" aria-hidden />
-                All bots
-              </>
-            ) : (
-              ua
-            )}
-          </span>
-        ))}
-      </div>
-      <div className="shrink-0 pt-1 text-xs leading-none whitespace-nowrap text-muted-foreground">
-        {showAllow ? `${allowN} allow` : null}
-        {showAllow && showDisallow ? " · " : null}
-        {showDisallow ? `${disallowN} disallow` : null}
-      </div>
-    </div>
+    <AccordionItem value={group.key} className={cn("border-b-0", REVEAL_CLASS)}>
+      <AccordionTrigger className="group/accordion items-start px-2 py-2 hover:bg-accent/35 hover:no-underline data-[panel-open]:pr-2 [&>svg]:hidden">
+        <div className="flex w-full items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <IconChevronRight
+              className="size-3 text-muted-foreground transition-transform group-data-[panel-open]/accordion:rotate-90 motion-reduce:transition-none"
+              aria-hidden
+            />
+            {group.userAgents.map((ua) => (
+              <span
+                key={ua}
+                className={cn(
+                  "flex items-center gap-1 rounded px-1.5 py-1 text-xs leading-none whitespace-nowrap",
+                  ua === "*" ? "bg-accent-purple/18 text-accent-purple" : "bg-muted",
+                )}
+              >
+                {ua === "*" ? (
+                  <>
+                    <IconAsterisk className="size-3" aria-hidden />
+                    All bots
+                  </>
+                ) : (
+                  ua
+                )}
+              </span>
+            ))}
+          </div>
+          <div className="shrink-0 pt-1 text-xs leading-none whitespace-nowrap text-muted-foreground">
+            {[only !== "disallow" && `${allowN} allow`, only !== "allow" && `${disallowN} disallow`]
+              .filter(Boolean)
+              .join(" · ")}
+          </div>
+        </div>
+      </AccordionTrigger>
+      <AccordionContent className="pb-2">
+        <GroupRules group={group} query={query} />
+      </AccordionContent>
+    </AccordionItem>
   );
 }
 
-function GroupsAccordion({
-  groups,
-  query,
-  only,
-}: {
-  groups: {
-    userAgents: string[];
-    rules: {
-      type: "allow" | "disallow" | "crawlDelay" | "contentSignal";
-      value: string;
-    }[];
-    hasEmptyAllow: boolean;
-    hasEmptyDisallow: boolean;
-  }[];
-  query: string;
-  only?: "all" | "allow" | "disallow";
-}) {
-  const shouldReduceMotion = useReducedMotion();
-  const defaultIdx = useMemo(() => groups.findIndex((g) => g.userAgents.includes("*")), [groups]);
-  const defaultValue = defaultIdx >= 0 ? `g-${defaultIdx}` : undefined;
-  const isSearching = Boolean(query);
-  const openValues = useMemo(
-    () => (isSearching ? groups.map((_, idx) => `g-${idx}`) : undefined),
-    [groups, isSearching],
-  );
-
-  const renderItems = () => (
-    <AnimatePresence initial={false}>
-      {groups.map((g, idx) => {
-        const allowN = g.rules.filter((r) => r.type === "allow").length;
-        const disallowN = g.rules.filter((r) => r.type === "disallow").length;
-        const showAllow = isSearching ? true : only !== "disallow";
-        const showDisallow = isSearching ? true : only !== "allow";
-        // Stable key based on identity, not filtered counts
-        const stableKey = g.userAgents.join(",");
-
-        return (
-          <m.div
-            key={stableKey}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{
-              duration: shouldReduceMotion ? 0 : 0.2,
-              ease: "easeOut",
-            }}
-          >
-            <AccordionItem value={`g-${idx}`}>
-              <AccordionTrigger className="group/accordion items-start px-2 py-2 hover:bg-accent/35 hover:no-underline data-[panel-open]:pr-2 [&>svg]:hidden">
-                <RobotsGroupHeader
-                  userAgents={g.userAgents}
-                  allowN={allowN}
-                  disallowN={disallowN}
-                  showAllow={showAllow}
-                  showDisallow={showDisallow}
-                />
-              </AccordionTrigger>
-              <AccordionContent className="pb-2">
-                <GroupContent
-                  rules={g.rules}
-                  query={query}
-                  only={only}
-                  hasEmptyAllow={g.hasEmptyAllow}
-                  hasEmptyDisallow={g.hasEmptyDisallow}
-                />
-              </AccordionContent>
-            </AccordionItem>
-          </m.div>
-        );
-      })}
-    </AnimatePresence>
-  );
-
-  return isSearching ? (
-    <Accordion key="accordion-search" multiple value={openValues}>
-      {renderItems()}
-    </Accordion>
-  ) : (
-    <Accordion
-      key={`accordion-default-${defaultValue}`}
-      defaultValue={defaultValue ? [defaultValue] : []}
-    >
-      {renderItems()}
-    </Accordion>
-  );
-}
-
-function GroupContent({
-  rules,
-  query,
-  only,
-  hasEmptyAllow,
-  hasEmptyDisallow,
-}: {
-  rules: {
-    type: "allow" | "disallow" | "crawlDelay" | "contentSignal";
-    value: string;
-  }[];
-  query: string;
-  only?: "all" | "allow" | "disallow";
-  hasEmptyAllow: boolean;
-  hasEmptyDisallow: boolean;
-}) {
-  const isSearching = query.trim().length > 0;
-  const shouldReduceMotion = useReducedMotion();
-  const { existing, added, more, total, visible, setVisible } = useProgressiveReveal(rules, 6);
-  if (isSearching) {
-    const ruleItems = getRuleItems(rules, "all");
-    const firstRuleKey = ruleItems[0]?.key;
-
-    return (
-      <div className="flex flex-col">
-        {ruleItems.map(({ key, rule }) => (
-          <RuleRow key={key} rule={rule} query={query} isFirst={key === firstRuleKey} />
-        ))}
-      </div>
-    );
-  }
-
-  const existingItems = getRuleItems(existing, "existing");
-  const firstExistingKey = existingItems[0]?.key;
-  const addedItems = getRuleItems(added, "added");
+function GroupRules({ group, query }: { group: RobotsGroupSummary; query: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const ruleItems = getRuleItems(group.rules);
+  const shown = query || expanded ? ruleItems : ruleItems.slice(0, RULES_PREVIEW);
+  const more = ruleItems.length - shown.length;
 
   return (
     <div className="flex flex-col py-2">
-      {rules.length === 0 && hasEmptyDisallow && only !== "allow" ? (
+      {group.rules.length === 0 && group.hasEmptyDisallow ? (
         <div className="rounded-md bg-muted/30 px-2 py-1 text-[13px] text-muted-foreground/90">
           No disallow restrictions (allow all)
         </div>
       ) : null}
-      {rules.length === 0 && hasEmptyAllow && only !== "disallow" ? (
+      {group.rules.length === 0 && group.hasEmptyAllow ? (
         <div className="rounded-md bg-muted/30 px-2 py-1 text-[13px] text-muted-foreground/90">
           No explicit allow paths
         </div>
       ) : null}
-      {existingItems.map(({ key, rule }) => (
-        <RuleRow key={key} rule={rule} query={query} isFirst={key === firstExistingKey} />
-      ))}
-      {added.length > 0 ? (
-        <m.div
-          key={`added-${visible}`}
-          initial={shouldReduceMotion ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: shouldReduceMotion ? 0 : 0.2, ease: "easeOut" }}
-          className="flex flex-col"
+      {/* CSS animations only run on mount, so only newly revealed rows fade in */}
+      {shown.map(({ key, rule }, i) => (
+        <div
+          key={key}
+          className={cn(
+            "flex items-center gap-2 border-t border-muted px-2 py-2.5 font-mono text-xs first:border-t-0",
+            i >= RULES_PREVIEW && REVEAL_CLASS,
+          )}
         >
-          {addedItems.map(({ key, rule }) => (
-            <RuleRow key={key} rule={rule} query={query} />
-          ))}
-        </m.div>
-      ) : null}
+          <RuleTypeDot type={rule.type} />
+          <span className="truncate">{highlight(rule.value, query)}</span>
+        </div>
+      ))}
       {more > 0 ? (
         <div className="mt-1 flex justify-start">
           <Button
             size="sm"
             variant="outline"
             className="text-[12px]"
-            onClick={() => setVisible(total)}
+            onClick={() => setExpanded(true)}
           >
             <IconDotsVertical className="!size-3.5" aria-hidden />
             <span>Show {more} more</span>
           </Button>
         </div>
       ) : null}
-    </div>
-  );
-}
-
-function RuleRow({
-  rule,
-  query,
-  isFirst = false,
-}: {
-  rule: {
-    type: "allow" | "disallow" | "crawlDelay" | "contentSignal";
-    value: string;
-  };
-  query: string;
-  isFirst?: boolean;
-}) {
-  return (
-    <div
-      className={cn(
-        "group flex items-center gap-2 border-t border-muted px-2 py-2.5 font-mono text-xs",
-        isFirst && "border-t-0",
-      )}
-    >
-      <RuleTypeDot type={rule.type} />
-      <span className="truncate">{highlight(rule.value, query)}</span>
     </div>
   );
 }
@@ -574,7 +356,7 @@ const ruleTypeConfig = {
   },
 } as const;
 
-function RuleTypeDot({ type }: { type: "allow" | "disallow" | "crawlDelay" | "contentSignal" }) {
+function RuleTypeDot({ type }: { type: RobotsRule["type"] }) {
   const { Icon, label, colorClass } = ruleTypeConfig[type];
 
   return (
@@ -597,25 +379,10 @@ function RuleTypeDot({ type }: { type: "allow" | "disallow" | "crawlDelay" | "co
   );
 }
 
-function SitemapLink({ url }: { url: string }) {
-  return (
-    <div className="flex items-center">
-      <a
-        className="flex items-center gap-1.5 truncate text-[13px] font-medium text-foreground/85 hover:text-foreground/60 hover:no-underline"
-        href={url}
-        target="_blank"
-        rel="noopener"
-      >
-        {url}
-        <IconExternalLink className="size-3" aria-hidden />
-      </a>
-    </div>
-  );
-}
-
 function SitemapsList({ items }: { items: string[] }) {
-  const shouldReduceMotion = useReducedMotion();
-  const { existing, added, more, total, visible, setVisible } = useProgressiveReveal(items, 2);
+  const [expanded, setExpanded] = useState(false);
+  const shown = expanded ? items : items.slice(0, SITEMAPS_PREVIEW);
+  const more = items.length - shown.length;
 
   return (
     <div className="space-y-3">
@@ -624,29 +391,26 @@ function SitemapsList({ items }: { items: string[] }) {
         <PillCount count={items.length} color="green" />
       </div>
       <div className="flex flex-col gap-2.5">
-        {existing.map((u) => (
-          <SitemapLink key={`sm-ex-${u}`} url={u} />
+        {shown.map((url, i) => (
+          <div key={url} className={cn("flex items-center", i >= SITEMAPS_PREVIEW && REVEAL_CLASS)}>
+            <a
+              className="flex items-center gap-1.5 truncate text-[13px] font-medium text-foreground/85 hover:text-foreground/60 hover:no-underline"
+              href={url}
+              target="_blank"
+              rel="noopener"
+            >
+              {url}
+              <IconExternalLink className="size-3" aria-hidden />
+            </a>
+          </div>
         ))}
-        {added.length > 0 ? (
-          <m.div
-            key={`sitemaps-added-${visible}`}
-            initial={shouldReduceMotion ? false : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: shouldReduceMotion ? 0 : 0.2, ease: "easeOut" }}
-            className="flex flex-col gap-2.5"
-          >
-            {added.map((u) => (
-              <SitemapLink key={`sm-add-${u}`} url={u} />
-            ))}
-          </m.div>
-        ) : null}
         {more > 0 ? (
           <div className="mt-1 flex justify-start">
             <Button
               size="sm"
               variant="outline"
               className="text-[12px]"
-              onClick={() => setVisible(total)}
+              onClick={() => setExpanded(true)}
             >
               <IconDotsVertical className="!size-3.5" aria-hidden />
               <span>Show {more} more</span>

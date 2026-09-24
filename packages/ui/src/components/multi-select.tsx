@@ -1,3 +1,5 @@
+"use client";
+
 import { Combobox as ComboboxPrimitive } from "@base-ui/react/combobox";
 import type { TablerIcon } from "@tabler/icons-react";
 import { IconChevronDown, IconSearch } from "@tabler/icons-react";

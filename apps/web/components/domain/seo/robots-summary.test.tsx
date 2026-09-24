@@ -131,6 +131,38 @@ describe("RobotsSummary", () => {
       await expect.element(page.getByText("10", { exact: true })).toBeInTheDocument();
     });
 
+    it("renders groups that only have crawl-delay rules", async () => {
+      const robots: SeoResponse["robots"] = {
+        fetched: true,
+        groups: [{ userAgents: ["*"], rules: [{ type: "crawlDelay", value: "10" }] }],
+        sitemaps: ["https://test.invalid/sitemap.xml"],
+      };
+      await render(<RobotsSummary domain="test.invalid" robots={robots} />);
+      await expect.element(page.getByText("10", { exact: true })).toBeInTheDocument();
+      await expect.element(page.getByText(/No crawl rules detected/i)).not.toBeInTheDocument();
+      // No allow/disallow rules to filter, so the filter controls are hidden
+      await expect
+        .element(page.getByRole("textbox", { name: "Filter robots rules" }))
+        .not.toBeInTheDocument();
+    });
+
+    it("offers a reset when the filter matches nothing", async () => {
+      const robots: SeoResponse["robots"] = {
+        fetched: true,
+        groups: [{ userAgents: ["*"], rules: [{ type: "disallow", value: "/admin" }] }],
+        sitemaps: [],
+      };
+      await render(<RobotsSummary domain="test.invalid" robots={robots} />);
+      await page.getByRole("textbox", { name: "Filter robots rules" }).fill("nomatch");
+      await expect.element(page.getByText("No matching rules.")).toBeInTheDocument();
+
+      await page.getByRole("button", { name: "Reset filters" }).click();
+      await expect.element(page.getByText("/admin", { exact: true })).toBeInTheDocument();
+      await expect
+        .element(page.getByRole("textbox", { name: "Filter robots rules" }))
+        .toHaveValue("");
+    });
+
     it("renders content-signal rules", async () => {
       const robots: SeoResponse["robots"] = {
         fetched: true,

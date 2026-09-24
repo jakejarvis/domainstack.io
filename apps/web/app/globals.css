@@ -127,7 +127,7 @@
     @apply pointer-events-none z-[99999] h-0 w-0;
 
     .bar {
-      @apply fixed top-0 left-0 z-[99999] h-[3px] w-full origin-left bg-gradient-to-r from-accent-blue/60 via-accent-indigo/60 to-accent-purple/60;
+      @apply fixed top-0 left-0 z-[99999] h-0.5 w-full origin-left bg-primary;
     }
   }
 }

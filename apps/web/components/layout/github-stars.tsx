@@ -1,4 +1,5 @@
 import { SiGithub } from "@icons-pack/react-simple-icons";
+import { cacheLife } from "next/cache";
 
 import { REPOSITORY_SLUG } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
@@ -8,7 +9,13 @@ const STAR_COUNT_FORMATTER = new Intl.NumberFormat("en-US", {
   compactDisplay: "short",
 });
 
+/**
+ * Cached so the count is part of the prerendered header shell. Failures are
+ * cached briefly so a GitHub outage or rate limit doesn't stick for an hour.
+ */
 async function fetchRepoStars(): Promise<number | null> {
+  "use cache";
+
   try {
     const headers = new Headers({ Accept: "application/vnd.github+json" });
     if (process.env.EXTERNAL_USER_AGENT) {
@@ -18,21 +25,21 @@ async function fetchRepoStars(): Promise<number | null> {
       headers.set("Authorization", `Bearer ${process.env.GITHUB_TOKEN}`);
     }
 
-    const res = await fetch(`https://api.github.com/repos/${REPOSITORY_SLUG}`, {
-      headers,
-      next: {
-        revalidate: 3600, // 1 hour
-      },
-    });
+    const res = await fetch(`https://api.github.com/repos/${REPOSITORY_SLUG}`, { headers });
 
-    if (!res.ok) return null;
-
-    const json = (await res.json()) as { stargazers_count?: number };
-
-    return typeof json.stargazers_count === "number" ? json.stargazers_count : null;
+    if (res.ok) {
+      const json = (await res.json()) as { stargazers_count?: number };
+      if (typeof json.stargazers_count === "number") {
+        cacheLife("hours");
+        return json.stargazers_count;
+      }
+    }
   } catch {
-    return null;
+    // fall through to the short-lived failure result
   }
+
+  cacheLife("minutes");
+  return null;
 }
 
 export async function GithubStars() {

@@ -1,3 +1,4 @@
+import "server-only";
 import { ipAddress } from "@vercel/functions";
 
 import { createLogger } from "@domainstack/logger";

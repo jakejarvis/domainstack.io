@@ -1,7 +1,6 @@
 "use client";
 
-import { AnimatePresence, useReducedMotion } from "motion/react";
-import * as m from "motion/react-m";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { cn } from "@domainstack/ui/utils";
@@ -206,7 +205,7 @@ export function HomeHero({ className }: { className?: string }) {
               instead of taking turns */}
           <span className="absolute left-1/2 grid -translate-x-1/2 justify-items-center *:col-start-1 *:row-start-1">
             <AnimatePresence initial={false}>
-              <m.span
+              <motion.span
                 key={ROTATING_WORDS[index]}
                 initial={{ y: "100%", opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}

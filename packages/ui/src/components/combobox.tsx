@@ -1,3 +1,5 @@
+"use client";
+
 import { Combobox as ComboboxPrimitive } from "@base-ui/react/combobox";
 import { IconCheck, IconChevronDown, IconX } from "@tabler/icons-react";
 import { useRef } from "react";
