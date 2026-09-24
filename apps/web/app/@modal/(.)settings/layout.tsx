@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { Modal, ModalContent, ModalHeader, ModalTitle } from "@/components/modal";
-import { SettingsTabsRouter } from "@/components/settings/settings-content";
+import { SettingsPanels, SettingsTabsRouter } from "@/components/settings/settings-content";
 import { SettingsSkeletonPanels } from "@/components/settings/settings-skeleton";
 import { getServerSession } from "@/lib/auth/session";
 import { createMetadata } from "@/lib/seo";
@@ -21,14 +21,6 @@ export const metadata: Metadata = createMetadata({
   },
 });
 
-function SettingsSkeleton() {
-  return (
-    <div className="w-full">
-      <SettingsSkeletonPanels />
-    </div>
-  );
-}
-
 export default function SettingsModalLayout() {
   return (
     <Modal>
@@ -39,7 +31,13 @@ export default function SettingsModalLayout() {
         </ModalHeader>
         <ScrollArea className="min-h-0 flex-1 bg-popover/10">
           <div className="mt-1 min-w-0 p-5 [contain:inline-size]">
-            <Suspense fallback={<SettingsSkeleton />}>
+            <Suspense
+              fallback={
+                <SettingsTabsRouter navigationMode="modal" tabsListPortalId="settings-modal-tabs">
+                  <SettingsSkeletonPanels />
+                </SettingsTabsRouter>
+              }
+            >
               <AuthorizedSettingsModalLayout />
             </Suspense>
           </div>
@@ -69,7 +67,9 @@ async function AuthorizedSettingsModalLayout() {
 
   return (
     <HydrateClient>
-      <SettingsTabsRouter navigationMode="modal" tabsListPortalId="settings-modal-tabs" />
+      <SettingsTabsRouter navigationMode="modal" tabsListPortalId="settings-modal-tabs">
+        <SettingsPanels userEmail={session.user.email} />
+      </SettingsTabsRouter>
     </HydrateClient>
   );
 }

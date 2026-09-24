@@ -1,7 +1,7 @@
 "use client";
 
 import { IconBell, IconUser, IconWallet } from "@tabler/icons-react";
-import { useSelectedLayoutSegment } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 
@@ -57,22 +57,23 @@ function SettingsTabsList({ className }: { className?: string }) {
   );
 }
 
-function SettingsPanels({ className }: { className?: string }) {
+/** The live settings panels; pass as `SettingsTabsRouter` children once data is loaded. */
+export function SettingsPanels({ userEmail }: { userEmail: string }) {
   return (
     <>
-      <TabsContent value="subscription" className={className}>
+      <TabsContent value="subscription">
         <SettingsErrorBoundary sectionName="Subscription">
           <SubscriptionPanel />
         </SettingsErrorBoundary>
       </TabsContent>
 
-      <TabsContent value="notifications" className={className}>
+      <TabsContent value="notifications">
         <SettingsErrorBoundary sectionName="Notifications">
-          <NotificationsPanel />
+          <NotificationsPanel userEmail={userEmail} />
         </SettingsErrorBoundary>
       </TabsContent>
 
-      <TabsContent value="account" className={className}>
+      <TabsContent value="account">
         <SettingsErrorBoundary sectionName="Account">
           <AccountPanel />
         </SettingsErrorBoundary>
@@ -81,29 +82,38 @@ function SettingsPanels({ className }: { className?: string }) {
   );
 }
 
+/**
+ * Settings tab bar plus tab switching. Panels come in as children: the live
+ * `SettingsPanels`, or `SettingsSkeletonPanels` in loading fallbacks, so the
+ * real tabs render (and switch) before any settings data has loaded.
+ */
 export function SettingsTabsRouter({
   navigationMode,
   tabsListPortalId,
+  children,
 }: {
   navigationMode: "page" | "modal";
   tabsListPortalId?: string;
+  children: React.ReactNode;
 }) {
   const router = useRouter();
-  const segment = useSelectedLayoutSegment();
+  const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
   const tabsRootRef = useRef<HTMLDivElement | null>(null);
 
-  const segmentTab: SettingsTabValue = isSettingsTabValue(segment)
-    ? segment
-    : SETTINGS_TABS[0].value;
+  // Read the tab from the URL rather than a layout segment, so this works in the
+  // settings layout's loading fallback too (above the tab segments). `/settings`
+  // itself is rewritten to the first tab.
+  const urlTab = pathname.split("/")[2];
+  const routeTab: SettingsTabValue = isSettingsTabValue(urlTab) ? urlTab : SETTINGS_TABS[0].value;
 
   // For the full page variant, we *intentionally* avoid Next.js navigation when switching tabs,
   // because client-side navigation to `/settings/*` would be intercepted and open the modal.
   // Instead, we keep the UI responsive by switching tabs locally and syncing the URL via
   // `history.replaceState` (user confirmed they don't care about Back/Forward here).
-  const [pageTab, setPageTab] = useState<SettingsTabValue>(segmentTab);
+  const [pageTab, setPageTab] = useState<SettingsTabValue>(routeTab);
 
-  const activeTab = navigationMode === "page" ? pageTab : segmentTab;
+  const activeTab = navigationMode === "page" ? pageTab : routeTab;
 
   // Look up after commit: a render-time getElementById sees the previous tree,
   // so a same-commit mount (client navigation into the modal) would miss the
@@ -164,7 +174,7 @@ export function SettingsTabsRouter({
         ) : (
           <SettingsTabsList />
         )}
-        <SettingsPanels />
+        {children}
       </Tabs>
     </div>
   );

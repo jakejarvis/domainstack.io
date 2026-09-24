@@ -1,32 +1,28 @@
+import { DangerZone } from "@/components/settings/account/danger-zone";
+import { GlobalPreferencesDescription } from "@/components/settings/notifications/global-preferences-description";
+import { SettingsCard, SettingsCardSeparator } from "@/components/settings/settings-card";
+import { NOTIFICATION_CATEGORY_INFO } from "@/lib/constants/notification-ui";
 import { getEnabledProviders } from "@/lib/oauth";
-import { CardContent, CardHeader } from "@domainstack/ui/card";
-import { Separator } from "@domainstack/ui/separator";
+import { NOTIFICATION_CATEGORIES } from "@domainstack/constants";
 import { Skeleton } from "@domainstack/ui/skeleton";
+import { TabsContent } from "@domainstack/ui/tabs";
 import { cn } from "@domainstack/ui/utils";
 
-function SettingsCardHeaderSkeleton({
-  titleClassName,
-  descriptionClassName,
-}: {
-  titleClassName: string;
-  descriptionClassName: string;
-}) {
-  return (
-    <CardHeader className="gap-1 px-0 pt-0">
-      <Skeleton className={cn("h-[15px]", titleClassName)} />
-      <Skeleton className={cn("h-5", descriptionClassName)} />
-    </CardHeader>
-  );
-}
+// Skeletons render the panels' static copy (card titles, descriptions, labels)
+// for real and only placeholder what depends on the user's data.
 
 /**
  * Skeleton for the subscription section, in its Free-plan layout (usage, Pro upsell).
+ * The description depends on the plan, so it stays a placeholder.
  */
 export function SubscriptionSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn("space-y-4", className)}>
-      <SettingsCardHeaderSkeleton titleClassName="w-12" descriptionClassName="w-72" />
-      <CardContent className="space-y-6 px-0">
+    <SettingsCard
+      title="Plan"
+      description={<Skeleton className="h-5 w-72" />}
+      className={className}
+    >
+      <div className="space-y-6">
         {/* PlanUsage */}
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-4">
@@ -52,141 +48,99 @@ export function SubscriptionSkeleton({ className }: { className?: string }) {
             </div>
           </div>
         </div>
-      </CardContent>
-    </div>
+      </div>
+    </SettingsCard>
   );
 }
 
 /**
- * Skeleton for the notification matrix.
- * Matches NotificationMatrix: header row + 5 category rows with checkboxes.
+ * Skeleton for the notification matrix: the real header and category labels,
+ * with placeholder checkboxes.
  */
-function NotificationMatrixSkeleton({ className }: { className?: string }) {
+function NotificationMatrixSkeleton() {
   return (
-    <div className={className}>
-      <div className="flex items-center border-b border-border py-2 pr-2 pl-1">
-        <Skeleton className="h-3 w-16" />
-        <div className="ml-auto flex items-center gap-1">
-          <div className="flex w-14 justify-center">
-            <Skeleton className="h-3 w-8" />
-          </div>
-          <div className="flex w-14 justify-center">
-            <Skeleton className="h-3 w-10" />
-          </div>
+    <div>
+      <div className="flex items-center border-b border-border py-2 pr-2 pl-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+        <div className="flex-1">Alert Type</div>
+        <div className="flex items-center gap-1">
+          <div className="w-14 text-center">Web</div>
+          <div className="w-14 text-center">Email</div>
         </div>
       </div>
 
       <div className="divide-y divide-border/30">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="flex items-center py-2 pr-2 pl-1">
-            <div className="flex min-w-0 flex-1 items-center gap-2">
-              <Skeleton className="mr-0.5 size-3.5 shrink-0" />
-              <Skeleton className="h-3.5 w-28" />
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="flex w-14 items-center justify-center py-1">
-                <Skeleton className="size-4 rounded" />
-              </div>
-              <div className="flex w-14 items-center justify-center py-1">
-                <Skeleton className="size-4 rounded" />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+        {NOTIFICATION_CATEGORIES.map((category) => {
+          const info = NOTIFICATION_CATEGORY_INFO[category];
+          const Icon = info.icon;
 
-/**
- * Skeleton for the calendar feed section.
- * Matches the Calendar Feed SettingsCard + disabled Enable button.
- */
-function CalendarFeedSkeleton({ className }: { className?: string }) {
-  return (
-    <div className={cn("space-y-4", className)}>
-      <SettingsCardHeaderSkeleton titleClassName="w-28" descriptionClassName="w-72" />
-      <CardContent className="px-0">
-        <Skeleton className="h-9 w-full rounded-md" />
-      </CardContent>
+          return (
+            <div key={category} className="flex items-center py-2 pr-2 pl-1">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                <Icon className="mr-0.5 size-3.5 shrink-0 text-muted-foreground/50" />
+                <span className="truncate text-[13px] font-medium text-muted-foreground">
+                  {info.label}
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="flex w-14 items-center justify-center py-1">
+                  <Skeleton className="size-4 rounded" />
+                </div>
+                <div className="flex w-14 items-center justify-center py-1">
+                  <Skeleton className="size-4 rounded" />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
 /**
  * Skeleton for the notification settings section.
- * Matches NotificationsPanel: Global Preferences matrix + Domain Overrides + Calendar Feed.
+ * Matches NotificationsPanel: Global Preferences matrix + Muted Domains + Calendar Feed.
  */
 export function NotificationsSkeleton({ className }: { className?: string }) {
   return (
     <div className={cn("max-w-full overflow-x-hidden", className)}>
-      <div className="space-y-4">
-        <SettingsCardHeaderSkeleton titleClassName="w-36" descriptionClassName="w-64" />
-        <CardContent className="px-0">
-          <NotificationMatrixSkeleton />
-        </CardContent>
-      </div>
+      <SettingsCard
+        title="Global Preferences"
+        description={
+          <GlobalPreferencesDescription
+            email={<Skeleton render={<span />} className="inline-block h-3.5 w-40 align-middle" />}
+          />
+        }
+      >
+        <NotificationMatrixSkeleton />
+      </SettingsCard>
 
-      <Separator className="mt-4 mb-6 bg-muted" />
+      <SettingsCardSeparator className="mt-4" />
 
-      <div className="space-y-4">
-        <SettingsCardHeaderSkeleton titleClassName="w-32" descriptionClassName="w-72" />
-        <CardContent className="px-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <Skeleton className="h-8 w-28 rounded-full" />
-          </div>
-        </CardContent>
-      </div>
-
-      <Separator className="my-6 bg-muted" />
-
-      <CalendarFeedSkeleton />
-    </div>
-  );
-}
-
-/**
- * Skeleton for a single linked account row.
- * Matches Item size="default" variant="outline".
- */
-function LinkedAccountRowSkeleton({ className }: { className?: string }) {
-  return (
-    <div
-      className={cn(
-        "flex w-full items-center justify-between rounded-lg border border-border px-3 py-2.5",
-        className,
-      )}
-    >
-      <div className="flex items-center gap-2.5">
-        <Skeleton className="size-4" />
-        <Skeleton className="h-4 w-16" />
-      </div>
-      <Skeleton className="h-8 w-16 rounded-md" />
-    </div>
-  );
-}
-
-/**
- * Skeleton for the danger zone section.
- * Shows a collapsed danger zone trigger placeholder.
- */
-function DangerZoneSkeleton({ className }: { className?: string }) {
-  return (
-    <div className={cn("rounded-md border border-destructive/20", className)}>
-      <div className="flex items-center justify-between bg-destructive/5 px-4 py-3">
-        <div className="flex items-center gap-3">
-          <Skeleton className="size-5 bg-destructive/20" />
-          <Skeleton className="h-3.5 w-24 bg-destructive/20" />
+      <SettingsCard
+        title="Muted Domains"
+        description="Domains you add here won&rsquo;t trigger any notifications."
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <Skeleton className="h-8 w-28 rounded-full" />
         </div>
-        <Skeleton className="size-4 bg-destructive/20" />
-      </div>
+      </SettingsCard>
+
+      <SettingsCardSeparator />
+
+      <SettingsCard
+        title="Calendar Feed"
+        description="Subscribe to domain expiration dates in your calendar app."
+      >
+        <Skeleton className="h-9 w-full rounded-md" />
+      </SettingsCard>
     </div>
   );
 }
 
 /**
- * Skeleton for the Account panel (linked accounts section).
- * Matches AccountPanel: "Login Providers" header + provider rows + danger zone.
+ * Skeleton for the Account panel. Provider rows stay placeholders because the
+ * real list sorts linked providers first; the Danger Zone renders for real.
  */
 export function LinkedAccountsSkeleton({ className }: { className?: string }) {
   const providers = getEnabledProviders();
@@ -195,73 +149,49 @@ export function LinkedAccountsSkeleton({ className }: { className?: string }) {
 
   return (
     <div className={cn("max-w-full overflow-x-hidden", className)}>
-      <div className="space-y-4">
-        <SettingsCardHeaderSkeleton titleClassName="w-28" descriptionClassName="w-80" />
-        <CardContent className="px-0">
-          <div className="flex w-full flex-col gap-2.5">
-            {rowKeys.map((key) => (
-              <LinkedAccountRowSkeleton key={key} />
-            ))}
-          </div>
-        </CardContent>
-      </div>
+      <SettingsCard
+        title="Login Providers"
+        description="Protect your account with additional third-party services."
+      >
+        <div className="flex w-full flex-col gap-2.5">
+          {rowKeys.map((key) => (
+            <div
+              key={key}
+              className="flex w-full items-center justify-between rounded-lg border border-border px-3 py-2.5"
+            >
+              <div className="flex items-center gap-2.5">
+                <Skeleton className="size-4" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+              <Skeleton className="h-8 w-16 rounded-md" />
+            </div>
+          ))}
+        </div>
+      </SettingsCard>
 
-      <Separator className="my-6 bg-muted" />
+      <SettingsCardSeparator />
 
-      <DangerZoneSkeleton />
+      <DangerZone />
     </div>
   );
 }
 
 /**
- * Skeleton for the tabs navigation.
- * Shows placeholders for tab triggers (line variant with full-width border).
+ * Skeleton panels for every settings tab, as `TabsContent` so they slot into
+ * `SettingsTabsRouter` in place of the real panels while data loads.
  */
-function SettingsSkeletonTabsList({ className }: { className?: string }) {
+export function SettingsSkeletonPanels() {
   return (
-    <div className={cn("w-full overflow-hidden", className)}>
-      <div className="flex h-10 w-full items-center gap-1.5 border-b border-muted">
-        {/* active tab — indicator is the 2px `bg-foreground` underline */}
-        <div className="relative flex h-full items-center gap-2 px-2">
-          <Skeleton className="size-4 rounded-sm" />
-          <Skeleton className="h-3.5 w-[76px]" />
-          <div className="absolute inset-x-0 bottom-0 h-0.5 bg-foreground" />
-        </div>
-
-        <div className="flex h-full items-center gap-2 px-2">
-          <Skeleton className="size-4 rounded-sm" />
-          <Skeleton className="h-3.5 w-[76px]" />
-        </div>
-
-        <div className="flex h-full items-center gap-2 px-2">
-          <Skeleton className="size-4 rounded-sm" />
-          <Skeleton className="h-3.5 w-[52px]" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Loading skeleton for settings content panels.
- * Defaults to Subscription (first tab).
- */
-export function SettingsSkeletonPanels({ className }: { className?: string }) {
-  return (
-    <div className={className}>
-      <SubscriptionSkeleton />
-    </div>
-  );
-}
-
-/**
- * Settings page loading shell: the tabbed card below the (static) page title.
- */
-export function SettingsPageSkeleton() {
-  return (
-    <div className="flex flex-col gap-2 sm:overflow-hidden sm:rounded-xl sm:border sm:bg-background sm:p-3 sm:shadow-sm">
-      <SettingsSkeletonTabsList />
-      <SettingsSkeletonPanels className="mt-2 sm:p-2" />
-    </div>
+    <>
+      <TabsContent value="subscription">
+        <SubscriptionSkeleton />
+      </TabsContent>
+      <TabsContent value="notifications">
+        <NotificationsSkeleton />
+      </TabsContent>
+      <TabsContent value="account">
+        <LinkedAccountsSkeleton />
+      </TabsContent>
+    </>
   );
 }

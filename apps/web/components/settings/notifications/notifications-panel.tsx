@@ -5,22 +5,18 @@ import {
   CalendarInstructionsSkeleton,
 } from "@/components/calendar-instructions";
 import { DomainMuteList } from "@/components/settings/notifications/domain-mute-list";
+import { GlobalPreferencesDescription } from "@/components/settings/notifications/global-preferences-description";
 import { NotificationMatrix } from "@/components/settings/notifications/notification-matrix";
 import { SettingsCard, SettingsCardSeparator } from "@/components/settings/settings-card";
 import { SettingsErrorBoundary } from "@/components/settings/settings-error-boundary";
 import { NotificationsSkeleton } from "@/components/settings/settings-skeleton";
 import { useNotificationPreferences } from "@/hooks/use-notification-preferences";
-import { useSession } from "@domainstack/auth/client";
-import { useIsClient } from "@domainstack/ui/hooks";
-import {
-  ResponsiveTooltip,
-  ResponsiveTooltipContent,
-  ResponsiveTooltipTrigger,
-} from "@domainstack/ui/responsive-tooltip";
 
-export function NotificationsPanel() {
-  const { data: session, isPending: isSessionPending } = useSession();
-  const mounted = useIsClient();
+/**
+ * `userEmail` comes from the server session rather than `useSession()`, which is
+ * unresolved during SSR and would make the server and first client render differ.
+ */
+export function NotificationsPanel({ userEmail }: { userEmail: string }) {
   const {
     domains,
     globalPrefs,
@@ -31,7 +27,7 @@ export function NotificationsPanel() {
     setDomainMuted,
   } = useNotificationPreferences();
 
-  if (!mounted || isLoading || isSessionPending) {
+  if (isLoading) {
     return <NotificationsSkeleton />;
   }
 
@@ -47,40 +43,7 @@ export function NotificationsPanel() {
     <>
       <SettingsCard
         title="Global Preferences"
-        description={
-          <>
-            Alerts will be sent to <span className="font-semibold">{session?.user?.email}</span>.{" "}
-            <ResponsiveTooltip>
-              <ResponsiveTooltipTrigger
-                render={
-                  <span className="cursor-help text-muted-foreground underline decoration-dotted underline-offset-3" />
-                }
-              >
-                (Why can&rsquo;t I change this?)
-              </ResponsiveTooltipTrigger>
-              <ResponsiveTooltipContent>
-                <div className="space-y-2">
-                  <p>
-                    This is the email address that was verified with the linked account provider you
-                    chose at sign up.
-                  </p>
-                  <p>
-                    To change it, sign in with a different external account or{" "}
-                    <a
-                      href="/help#contact"
-                      className="underline underline-offset-3"
-                      target="_blank"
-                      rel="noopener"
-                    >
-                      contact support
-                    </a>
-                    .
-                  </p>
-                </div>
-              </ResponsiveTooltipContent>
-            </ResponsiveTooltip>
-          </>
-        }
+        description={<GlobalPreferencesDescription email={userEmail} />}
       >
         <NotificationMatrix
           preferences={globalPrefs}

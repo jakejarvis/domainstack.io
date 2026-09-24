@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
-import { SettingsPageSkeleton } from "@/components/settings/settings-skeleton";
+import { SettingsTabsRouter } from "@/components/settings/settings-content";
+import { SettingsSkeletonPanels } from "@/components/settings/settings-skeleton";
 import { getServerSession } from "@/lib/auth/session";
 import { createMetadata } from "@/lib/seo";
 
@@ -36,9 +37,17 @@ export default function SettingsLayout({ children }: LayoutProps<"/settings">) {
         </p>
       </div>
 
-      <Suspense fallback={<SettingsPageSkeleton />}>
-        <ProtectedSettingsLayout>{children}</ProtectedSettingsLayout>
-      </Suspense>
+      <div className="sm:overflow-hidden sm:rounded-xl sm:border sm:bg-background sm:p-3 sm:shadow-sm [&_[data-slot=tabs-content]]:mt-2 sm:[&_[data-slot=tabs-content]]:p-2">
+        <Suspense
+          fallback={
+            <SettingsTabsRouter navigationMode="page">
+              <SettingsSkeletonPanels />
+            </SettingsTabsRouter>
+          }
+        >
+          <ProtectedSettingsLayout>{children}</ProtectedSettingsLayout>
+        </Suspense>
+      </div>
     </div>
   );
 }

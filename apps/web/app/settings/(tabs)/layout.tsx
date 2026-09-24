@@ -1,11 +1,13 @@
 import { noop } from "@tanstack/react-query";
 
-import { SettingsTabsRouter } from "@/components/settings/settings-content";
+import { SettingsPanels, SettingsTabsRouter } from "@/components/settings/settings-content";
+import { getServerSession } from "@/lib/auth/session";
 import { getQueryClient, HydrateClient, trpc } from "@/trpc/server";
 
 export default async function SettingsTabsLayout() {
   const queryClient = getQueryClient();
-  await Promise.all([
+  const [session] = await Promise.all([
+    getServerSession(),
     queryClient.query(trpc.user.getSubscription.queryOptions()).catch(noop),
     queryClient.query(trpc.user.getLinkedAccounts.queryOptions()).catch(noop),
     queryClient.query(trpc.user.getNotificationPreferences.queryOptions()).catch(noop),
@@ -17,9 +19,9 @@ export default async function SettingsTabsLayout() {
 
   return (
     <HydrateClient>
-      <div className="sm:overflow-hidden sm:rounded-xl sm:border sm:bg-background sm:p-3 sm:shadow-sm [&_[data-slot=tabs-content]]:mt-2 sm:[&_[data-slot=tabs-content]]:p-2">
-        <SettingsTabsRouter navigationMode="page" />
-      </div>
+      <SettingsTabsRouter navigationMode="page">
+        <SettingsPanels userEmail={session?.user.email ?? ""} />
+      </SettingsTabsRouter>
     </HydrateClient>
   );
 }
