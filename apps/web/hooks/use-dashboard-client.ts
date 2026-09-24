@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useSetAtom } from "jotai";
 import { parseAsBoolean, parseAsStringLiteral, useQueryState } from "nuqs";
 import { useEffect, useMemo, useState, useTransition } from "react";
 
@@ -10,7 +9,6 @@ import { useDashboardMutations } from "@/hooks/use-dashboard-mutations";
 import { useClearDashboardSelection } from "@/hooks/use-dashboard-selection";
 import { useRouter } from "@/hooks/use-router";
 import { useSubscription } from "@/hooks/use-subscription";
-import { selectedDomainIdsAtom } from "@/lib/atoms/dashboard-atoms";
 import type { ConfirmAction } from "@/lib/dashboard-utils";
 import { useTRPC } from "@/lib/trpc/client";
 
@@ -27,7 +25,6 @@ export function useDashboardClient() {
   } = useSubscription();
   const mutations = useDashboardMutations();
   const clearSelection = useClearDashboardSelection();
-  const setSelectedIds = useSetAtom(selectedDomainIdsAtom);
 
   const [activeTab, setActiveTab] = useQueryState(
     "view",
@@ -61,16 +58,6 @@ export function useDashboardClient() {
     if (upgradedParam) void setUpgradedParam(null);
   }, [upgradedParam, setUpgradedParam]);
 
-  // Once a remove or archive succeeds, drop the domain from the selection too so it
-  // doesn't come back selected if it's ever unarchived. A failed one keeps it.
-  const deselect = (id: string) =>
-    setSelectedIds((prev) => {
-      if (!prev.has(id)) return prev;
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
-
   // Bulk mutations toast their own errors; the selection only clears on success.
   const clearSelectionOnSuccess = (result: Promise<unknown>) => {
     result.then(clearSelection, () => {});
@@ -79,11 +66,9 @@ export function useDashboardClient() {
   const handleConfirm = () => {
     if (!pendingAction) return;
     if (pendingAction.type === "remove") {
-      const { domainId } = pendingAction;
-      mutations.remove(domainId, () => deselect(domainId));
+      mutations.remove(pendingAction.domainId);
     } else if (pendingAction.type === "archive") {
-      const { domainId } = pendingAction;
-      mutations.archive(domainId, () => deselect(domainId));
+      mutations.archive(pendingAction.domainId);
     } else if (pendingAction.type === "bulk-archive") {
       clearSelectionOnSuccess(mutations.bulkArchive(pendingAction.domainIds));
     } else if (pendingAction.type === "bulk-delete") {

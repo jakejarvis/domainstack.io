@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  isAwaitingScheduledRetry,
   isTerminalState,
   pollDelayMs,
   pollScreenshot,
@@ -89,6 +90,17 @@ describe("state helpers", () => {
     expect(isTerminalState({ status: "failed", error: "x" })).toBe(true);
     expect(isTerminalState({ status: "failed", error: "x", recoverable: true })).toBe(false);
     expect(isTerminalState({ status: "running", runId: "r" })).toBe(false);
+  });
+
+  it("waits for the scheduled retry while backing off or rate limited", () => {
+    expect(isAwaitingScheduledRetry({ status: "retrying", attempt: 1, runId: "r" })).toBe(true);
+    expect(isAwaitingScheduledRetry({ status: "rate_limited", retryAfter: 3 })).toBe(true);
+    expect(isAwaitingScheduledRetry({ status: "failed", error: "x", recoverable: true })).toBe(
+      true,
+    );
+    expect(isAwaitingScheduledRetry({ status: "running", runId: "r" })).toBe(false);
+    expect(isAwaitingScheduledRetry({ status: "failed", error: "x" })).toBe(false);
+    expect(isAwaitingScheduledRetry(undefined)).toBe(false);
   });
 
   it("carries the run id through non-terminal states", () => {

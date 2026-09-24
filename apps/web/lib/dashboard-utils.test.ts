@@ -104,6 +104,10 @@ describe("sortDomains", () => {
 describe("sortDomains shared with the table", () => {
   const sorted = (sort: string) => names(sortDomains(domains, sort, DASHBOARD_TEST_NOW));
 
+  it("leaves the order alone for an inherited property name", () => {
+    expect(sorted("constructor.asc")).toEqual(names(domains));
+  });
+
   it("keeps unverified domains and missing values last in both directions", () => {
     expect(sorted("expirationDate.desc")).toEqual([
       "alpha.com",
@@ -144,6 +148,9 @@ describe("toTableSort", () => {
     expect(toTableSort("registrar.desc")).toBe("registrar.desc");
     expect(toTableSort("bogus.asc")).toBe(DEFAULT_SORT);
     expect(toTableSort("domainName.sideways")).toBe(DEFAULT_SORT);
+    // Inherited Object properties aren't columns.
+    expect(toTableSort("constructor.asc")).toBe(DEFAULT_SORT);
+    expect(toTableSort("toString.desc")).toBe(DEFAULT_SORT);
   });
 });
 

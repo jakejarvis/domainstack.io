@@ -1,4 +1,5 @@
 import { QueryClientProvider } from "@tanstack/react-query";
+import { createStore, Provider as JotaiProvider } from "jotai";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -20,6 +21,7 @@ import {
   makeDashboardDomains,
   makeTrackedDomain,
 } from "@/components/dashboard/test-fixtures";
+import { selectedDomainIdsAtom } from "@/lib/atoms/dashboard-atoms";
 import { createTestQueryClient, renderHook } from "@/mocks/react";
 import {
   bulkArchiveDomainsMutation,
@@ -72,8 +74,10 @@ function getSubscription(queryClient: ReturnType<typeof createTestQueryClient>) 
 async function renderDashboardMutations(options?: {
   domains?: TrackedDomainWithDetails[];
   subscription?: SubscriptionCache;
+  store?: ReturnType<typeof createStore>;
 }) {
   const queryClient = createTestQueryClient();
+  const store = options?.store ?? createStore();
   const domains = options?.domains ?? [...makeDashboardDomains(), archivedDomain];
   const subscription = options?.subscription ?? defaultSubscription();
 
@@ -82,7 +86,9 @@ async function renderDashboardMutations(options?: {
 
   const view = await renderHook(() => useDashboardMutations(), {
     wrapper: ({ children }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <JotaiProvider store={store}>{children}</JotaiProvider>
+      </QueryClientProvider>
     ),
   });
 
@@ -118,6 +124,35 @@ describe("useDashboardMutations", () => {
     });
     expect(toast.success).toHaveBeenCalledWith("Domain removed");
     expect(removeDomainMutation.mock.calls[0]?.[0]).toEqual({ trackedDomainId: "domain-alpha" });
+  });
+
+  it("deselects every removed or archived domain, even when the calls overlap", async () => {
+    const store = createStore();
+    store.set(selectedDomainIdsAtom, new Set(["domain-alpha", "domain-beta", "domain-gamma"]));
+    const { result } = await renderDashboardMutations({ store });
+
+    // Back to back, before either settles: per-call `mutate` callbacks would only
+    // fire for the second one.
+    result.current.remove("domain-alpha");
+    result.current.archive("domain-beta");
+
+    await vi.waitFor(() => {
+      expect(store.get(selectedDomainIdsAtom)).toEqual(new Set(["domain-gamma"]));
+    });
+  });
+
+  it("keeps a domain selected when removing it fails", async () => {
+    removeDomainMutation.mockRejectedValueOnce(new Error("nope"));
+    const store = createStore();
+    store.set(selectedDomainIdsAtom, new Set(["domain-alpha"]));
+    const { result } = await renderDashboardMutations({ store });
+
+    result.current.remove("domain-alpha");
+
+    await vi.waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Failed to remove domain");
+    });
+    expect(store.get(selectedDomainIdsAtom)).toEqual(new Set(["domain-alpha"]));
   });
 
   it("archives a domain and moves it from active to archived counts", async () => {

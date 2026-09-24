@@ -203,7 +203,8 @@ export function sortDomains(
   now: Date,
 ): TrackedDomainWithDetails[] {
   const [{ id, desc }] = parseSortParam(sort);
-  const column = SORT_COLUMNS[id];
+  // Own keys only, so a URL naming an inherited property like "constructor" can't match.
+  const column = Object.hasOwn(SORT_COLUMNS, id) ? SORT_COLUMNS[id] : undefined;
   if (!column) return domains;
 
   return domains.toSorted((a, b) => {
@@ -226,7 +227,7 @@ export function sortDomains(
 /** Table sorts fall back to the default when the URL names a column that doesn't exist. */
 export function toTableSort(sort: string): string {
   const [{ id }] = parseSortParam(sort);
-  return id in SORT_COLUMNS && sort === serializeSortState(parseSortParam(sort))
+  return Object.hasOwn(SORT_COLUMNS, id) && sort === serializeSortState(parseSortParam(sort))
     ? sort
     : DEFAULT_SORT;
 }

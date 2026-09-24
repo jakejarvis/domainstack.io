@@ -1,6 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSetAtom } from "jotai";
 import { toast } from "sonner";
 
+import { selectedDomainIdsAtom } from "@/lib/atoms/dashboard-atoms";
 import { useTRPC } from "@/lib/trpc/client";
 import type { SubscriptionQuota, TrackedDomainWithDetails } from "@domainstack/types";
 
@@ -95,6 +97,19 @@ function toastBulkResult(
 export function useDashboardMutations() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const setSelectedIds = useSetAtom(selectedDomainIdsAtom);
+
+  // Once a remove or archive succeeds, drop the domain from the selection too so it
+  // doesn't come back selected if it's ever unarchived. A failed one keeps it.
+  // This runs at the mutation level: per-call callbacks passed to `mutate` only
+  // fire for the latest call, so a quick second action would skip the first's.
+  const deselect = (id: string) =>
+    setSelectedIds((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
 
   const domainsFilter = trpc.tracking.listDomains.queryFilter();
   const subscriptionFilter = trpc.user.getSubscription.queryFilter();
@@ -160,7 +175,10 @@ export function useDashboardMutations() {
         ({ trackedDomainId }: { trackedDomainId: string }) => removeDomains([trackedDomainId]),
         () => "Failed to remove domain",
       ),
-      onSuccess: () => toast.success("Domain removed"),
+      onSuccess: (_data, { trackedDomainId }) => {
+        deselect(trackedDomainId);
+        toast.success("Domain removed");
+      },
     }),
   );
 
@@ -170,7 +188,10 @@ export function useDashboardMutations() {
         ({ trackedDomainId }: { trackedDomainId: string }) => archiveDomains([trackedDomainId]),
         () => "Failed to archive domain",
       ),
-      onSuccess: () => toast.success("Domain archived"),
+      onSuccess: (_data, { trackedDomainId }) => {
+        deselect(trackedDomainId);
+        toast.success("Domain archived");
+      },
     }),
   );
 
@@ -224,10 +245,8 @@ export function useDashboardMutations() {
   );
 
   return {
-    remove: (trackedDomainId: string, onSuccess?: () => void) =>
-      removeMutation.mutate({ trackedDomainId }, { onSuccess }),
-    archive: (trackedDomainId: string, onSuccess?: () => void) =>
-      archiveMutation.mutate({ trackedDomainId }, { onSuccess }),
+    remove: (trackedDomainId: string) => removeMutation.mutate({ trackedDomainId }),
+    archive: (trackedDomainId: string) => archiveMutation.mutate({ trackedDomainId }),
     unarchive: (trackedDomainId: string) => unarchiveMutation.mutate({ trackedDomainId }),
     setMuted: (trackedDomainId: string, muted: boolean) =>
       muteMutation.mutate({ trackedDomainId, muted }),

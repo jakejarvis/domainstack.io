@@ -209,6 +209,9 @@ function reportTransition(
   }
 }
 
+const refetchUnlessWaiting = (query: { state: { data: ScreenshotQueryState | undefined } }) =>
+  !isTerminalState(query.state.data) && !isAwaitingScheduledRetry(query.state.data);
+
 /**
  * Hook to fetch a screenshot for a domain.
  * Call this in a component that stays mounted to keep polling active.
@@ -237,8 +240,11 @@ export function useScreenshot({
     enabled: enabled && !!domainId,
     retry: false,
     staleTime: (query) => (isTerminalState(query.state.data) ? Number.POSITIVE_INFINITY : 0),
-    refetchOnMount: (query) =>
-      !isTerminalState(query.state.data) && !isAwaitingScheduledRetry(query.state.data),
+    // A remount, focus, or reconnect must not jump ahead of a scheduled retry
+    // (or re-POST a start that was just rate limited).
+    refetchOnMount: refetchUnlessWaiting,
+    refetchOnWindowFocus: refetchUnlessWaiting,
+    refetchOnReconnect: refetchUnlessWaiting,
     refetchInterval: (query) => pollDelayMs(query.state.data),
     refetchIntervalInBackground: true,
   });

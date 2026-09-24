@@ -50,7 +50,7 @@ import { Suggestion, Suggestions } from "./elements/suggestion";
 import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from "./elements/tool";
 
 const EMPTY_SUGGESTIONS: string[] = [];
-const LIVE_MESSAGE_STATUSES = new Set<ChatStatus>(["submitted", "streaming"]);
+export const LIVE_MESSAGE_STATUSES = new Set<ChatStatus>(["submitted", "streaming"]);
 
 function AssistantWaitIndicator({ kind }: { kind: AssistantWaitKind }) {
   const isThinking = kind === "thinking";

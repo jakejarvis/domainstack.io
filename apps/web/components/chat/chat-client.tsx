@@ -24,7 +24,7 @@ import { CHAT_STALL_TIMEOUT_MS } from "@domainstack/constants";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@domainstack/ui/drawer";
 
 import { ChatHeaderActions } from "./chat-header-actions";
-import { type ChatController, ChatPanel } from "./chat-panel";
+import { type ChatController, ChatPanel, LIVE_MESSAGE_STATUSES } from "./chat-panel";
 import { ChatSettingsDialog } from "./chat-settings-dialog";
 import { getUserFriendlyError } from "./utils";
 
@@ -181,7 +181,7 @@ function CloudChatSession({ domain, children }: { domain?: string; children: Ren
   });
 
   const { stop, status } = chat;
-  const isBusy = status === "submitted" || status === "streaming";
+  const isBusy = LIVE_MESSAGE_STATUSES.has(status);
 
   // Watchdog: abort if no chunk arrives for CHAT_STALL_TIMEOUT_MS. Each chunk
   // produces a new `messages` array, which restarts the timer.
@@ -286,7 +286,7 @@ function ChatShell({
   onActiveChange: (active: boolean) => void;
 }) {
   const isMobile = useIsMobile();
-  const isBusy = session.status === "submitted" || session.status === "streaming";
+  const isBusy = LIVE_MESSAGE_STATUSES.has(session.status);
 
   const chat: ChatController = {
     messages: session.messages,

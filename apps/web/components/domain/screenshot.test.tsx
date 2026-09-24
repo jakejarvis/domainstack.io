@@ -1,4 +1,5 @@
-import { QueryClientProvider } from "@tanstack/react-query";
+import { focusManager, QueryClientProvider } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page } from "vitest/browser";
 
@@ -12,6 +13,7 @@ vi.mock("sonner", () => ({
   toast: { error: vi.fn<(message: string, options?: unknown) => void>() },
 }));
 
+import { analytics } from "@/lib/analytics/client";
 import { createTestQueryClient, render, renderHook } from "@/mocks/react";
 
 import { Screenshot, useScreenshot } from "./screenshot";
@@ -183,6 +185,76 @@ describe("useScreenshot", () => {
     // would show up well within a fake-timer-free short wait.
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(fetchMock.mock.calls.length).toBe(callsBeforeRemount);
+  });
+
+  it("waits out a rate limit instead of re-requesting on remount or window focus", async () => {
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockImplementation(async () =>
+      jsonResponse({}, { status: 429, headers: { "Retry-After": "30" } }),
+    );
+
+    const queryClient = createTestQueryClient();
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    const first = await renderHook(
+      () => useScreenshot({ domain: "example.com", domainId: "domain-1" }),
+      { wrapper },
+    );
+
+    await vi.waitFor(() =>
+      expect(queryClient.getQueryData(["screenshot", "domain-1"])).toMatchObject({
+        status: "rate_limited",
+        retryAfter: 30,
+      }),
+    );
+
+    const callsBeforeRemount = fetchMock.mock.calls.length;
+    await first.unmount();
+    await renderHook(() => useScreenshot({ domain: "example.com", domainId: "domain-1" }), {
+      wrapper,
+    });
+    try {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    } finally {
+      focusManager.setFocused(undefined);
+    }
+
+    // Neither the remount nor the focus re-POSTed the start request early.
+    expect(fetchMock.mock.calls.length).toBe(callsBeforeRemount);
+  });
+
+  it("reports a repeated, identical rate limit only once", async () => {
+    vi.mocked(toast.error).mockClear();
+    vi.mocked(analytics.track).mockClear();
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockImplementation(async () =>
+      jsonResponse({}, { status: 429, headers: { "Retry-After": "30" } }),
+    );
+
+    const queryClient = createTestQueryClient();
+    await renderHook(() => useScreenshot({ domain: "example.com", domainId: "domain-1" }), {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      ),
+    });
+
+    await vi.waitFor(() =>
+      expect(queryClient.getQueryData(["screenshot", "domain-1"])).toMatchObject({
+        status: "rate_limited",
+      }),
+    );
+    await queryClient.refetchQueries({ queryKey: ["screenshot", "domain-1"] });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(toast.error).toHaveBeenCalledTimes(1);
+    expect(
+      vi
+        .mocked(analytics.track)
+        .mock.calls.filter(([event]) => event === "screenshot_rate_limited"),
+    ).toHaveLength(1);
   });
 
   it("self-heals after giving up, instead of staying failed until the query is garbage-collected", async () => {
