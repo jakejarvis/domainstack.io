@@ -9,6 +9,7 @@ type NextLinkMockProps = {
   shallow?: unknown;
   locale?: unknown;
   passHref?: unknown;
+  onNavigate?: (e: { preventDefault: () => void }) => void;
 } & Omit<ComponentProps<"a">, "href">;
 
 export default function NextLinkMock({
@@ -21,6 +22,7 @@ export default function NextLinkMock({
   locale: _locale,
   passHref: _passHref,
   onClick,
+  onNavigate,
   ...props
 }: NextLinkMockProps) {
   const resolvedHref = typeof href === "string" ? href : (href.pathname ?? "#");
@@ -29,10 +31,14 @@ export default function NextLinkMock({
     {
       href: resolvedHref,
       ...props,
-      // Run the caller's handler, then stop the click from navigating the test page
-      // (real next/link would take over with a client-side navigation instead).
+      // Like next/link: run the caller's handler, then report a client-side navigation
+      // for unmodified left clicks only. Either way, never navigate the test page.
       onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
         onClick?.(e);
+        const isModified = e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0;
+        if (!e.defaultPrevented && !isModified) {
+          onNavigate?.({ preventDefault: () => {} });
+        }
         e.preventDefault();
       },
     },

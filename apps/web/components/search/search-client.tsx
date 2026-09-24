@@ -4,7 +4,7 @@ import { IconArrowRight, IconCircleX, IconSearch, IconX } from "@tabler/icons-re
 import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
 import { useAtom } from "jotai";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useEffectEvent, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -205,13 +205,18 @@ function useSearchClient({
     startNavigation(() => router.push(`/${encodeURIComponent(target)}`));
   };
 
-  // A home suggestion chip is navigating: show its domain and the spinner until this
-  // page is hidden (kept alive under <Activity>) or unmounted.
-  const suggestedDomain = variant === "lg" ? pendingDomain : null;
+  // A home suggestion chip was clicked: run it through this input's navigation, so the
+  // spinner is the transition's own pending state. That ends when the navigation
+  // commits, including when the home page is later restored from <Activity>.
+  const searchSuggestion = useEffectEvent((domain: string) => {
+    setPendingDomain(null);
+    setValue(domain);
+    navigateToDomain(domain);
+  });
   useEffect(() => {
-    if (variant !== "lg") return;
-    return () => setPendingDomain(null);
-  }, [variant, setPendingDomain]);
+    // oxlint-disable-next-line react/set-state-in-effect -- consumes a request from another component's click, via the shared atom
+    if (variant === "lg" && pendingDomain) searchSuggestion(pendingDomain);
+  }, [variant, pendingDomain]);
 
   const pointerDownRef = useRef(false);
   const justFocusedRef = useRef(false);
@@ -305,9 +310,9 @@ function useSearchClient({
 
   return {
     variant,
-    value: suggestedDomain ?? value,
+    value,
     setValue,
-    loading: loading || suggestedDomain !== null,
+    loading,
     mounted,
     isMobile,
     isFocused,

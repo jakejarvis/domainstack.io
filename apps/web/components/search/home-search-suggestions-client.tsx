@@ -40,14 +40,15 @@ export function HomeSearchSuggestionsClient({
     return merged.slice(0, max);
   }, [history, defaultSuggestions, max]);
 
-  const handleClick = (e: React.MouseEvent, domain: string) => {
-    // Modified clicks open a new tab or window; this page isn't going anywhere.
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+  // Next calls onNavigate only for client-side navigations, so modified clicks
+  // (new tab or window) still go straight through the link. A plain click is
+  // handed to the home search instead, which shows the domain and its spinner.
+  const handleNavigate = (e: { preventDefault: () => void }, domain: string) => {
+    e.preventDefault();
     analytics.track("search_suggestion_clicked", {
       domain,
       source: "suggestion",
     });
-    analytics.track("search_submitted", { domain });
     setPendingDomain(domain);
   };
 
@@ -85,11 +86,13 @@ export function HomeSearchSuggestionsClient({
             variant="secondary"
             size="sm"
             className="shrink-0 gap-2 border-none bg-muted/40 px-2.5 leading-none ring-1 ring-ring/20 hover:bg-muted/60"
-            onClick={(e) => handleClick(e, domain)}
             nativeButton={false}
             aria-label={domain}
             render={
-              <Link href={`/${encodeURIComponent(domain)}`}>
+              <Link
+                href={`/${encodeURIComponent(domain)}`}
+                onNavigate={(e) => handleNavigate(e, domain)}
+              >
                 <Favicon domain={domain} className="shrink-0" />
                 {domain}
               </Link>
