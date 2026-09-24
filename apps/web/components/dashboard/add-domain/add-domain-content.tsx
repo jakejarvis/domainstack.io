@@ -102,18 +102,20 @@ function AddDomainQuotaReached({
 }) {
   return (
     <div className={className}>
-      <div className="mb-5 flex flex-col items-center gap-1 text-center">
-        <Icon size="lg" variant="warning" className="mb-2">
+      <div className="mb-4 flex items-start gap-3">
+        <Icon size="sm" variant="warning" className="-mt-1">
           <IconGauge />
         </Icon>
-        <h2 className="text-lg font-semibold tracking-tight">Domain limit reached</h2>
-        <p className="text-sm text-balance text-muted-foreground">
-          You&apos;re tracking all <span className="tabular-nums">{planQuota}</span> domains
-          included with {isPro ? "Pro" : "Free"}.{" "}
-          {isPro
-            ? "Archive or remove one you no longer need."
-            : "Archive one you no longer need, or upgrade for more."}
-        </p>
+        <div className="min-w-0">
+          <h2 className="text-base font-semibold">Domain limit reached</h2>
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+            You&apos;re tracking all <span className="tabular-nums">{planQuota}</span> domains
+            included with {isPro ? "Pro" : "Free"}.{" "}
+            {isPro
+              ? "Archive or remove one you no longer need."
+              : "Archive one you no longer need, or upgrade for more."}
+          </p>
+        </div>
       </div>
 
       <div className="flex flex-col gap-2">

@@ -91,7 +91,7 @@ describe("AddDomainContent", () => {
     await expect
       .element(page.getByText(/You're tracking all 5 domains included with Free/))
       .toBeInTheDocument();
-    await expect.element(page.getByRole("button", { name: "Upgrade" })).toBeInTheDocument();
+    await expect.element(page.getByRole("button", { name: "Upgrade to Pro" })).toBeInTheDocument();
     await expect.element(page.getByLabelText("Domain name")).not.toBeInTheDocument();
 
     await page.getByRole("button", { name: "Back to domains" }).click();
@@ -106,7 +106,9 @@ describe("AddDomainContent", () => {
     await expect
       .element(page.getByText(/You're tracking all 100 domains included with Pro/))
       .toBeInTheDocument();
-    await expect.element(page.getByRole("button", { name: "Upgrade" })).not.toBeInTheDocument();
+    await expect
+      .element(page.getByRole("button", { name: "Upgrade to Pro" }))
+      .not.toBeInTheDocument();
     await expect.element(page.getByRole("button", { name: "Back to domains" })).toBeInTheDocument();
   });
 
