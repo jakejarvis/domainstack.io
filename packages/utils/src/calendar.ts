@@ -33,7 +33,7 @@ export interface DomainExpiryEvent {
   url: string;
 }
 
-export interface BuildDomainExpiryEventsOptions {
+interface BuildDomainExpiryEventsOptions {
   /** Origin used to build the dashboard deep link (no trailing slash). */
   baseUrl: string;
 }

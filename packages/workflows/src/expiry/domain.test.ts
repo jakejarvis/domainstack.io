@@ -19,8 +19,6 @@ const sharedNotificationsMock = vi.hoisted(() => ({
   checkExpiryPreferencesStep:
     vi.fn<typeof import("../steps/notifications").checkExpiryPreferencesStep>(),
   checkAlreadySentStep: vi.fn<typeof import("../steps/notifications").checkAlreadySentStep>(),
-  getThresholdNotificationType:
-    vi.fn<typeof import("../steps/notifications").getThresholdNotificationType>(),
   sendNotification: vi.fn<typeof import("../steps/notifications").sendNotification>(),
 }));
 
@@ -53,7 +51,6 @@ describe("checkDomainExpiry", () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(NOW);
     trackedDomainsMock.getTrackedDomainForNotification.mockResolvedValue(baseDomain as never);
-    sharedNotificationsMock.getThresholdNotificationType.mockReturnValue("domain_expiry_7d");
     sharedNotificationsMock.checkExpiryPreferencesStep.mockResolvedValue({
       shouldSendEmail: true,
       shouldSendInApp: true,
@@ -130,16 +127,6 @@ describe("checkDomainExpiry", () => {
     const result = await checkDomainExpiry({ trackedDomainId: "td-1" });
 
     expect(result).toEqual({ skipped: true, reason: "already_sent" });
-    expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
-  });
-
-  it("no_threshold_met: no notification type for the current days remaining", async () => {
-    sharedNotificationsMock.getThresholdNotificationType.mockReturnValue(null);
-
-    const { checkDomainExpiry } = await import("./domain");
-    const result = await checkDomainExpiry({ trackedDomainId: "td-1" });
-
-    expect(result).toEqual({ skipped: true, reason: "no_threshold_met" });
     expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
   });
 

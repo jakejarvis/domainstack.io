@@ -403,11 +403,11 @@ domainstack.io/
 │   │       ├── components/     # Framework-agnostic UI primitives
 │   │       ├── hooks/          # Shared React hooks
 │   │       └── lib/            # Utilities (cn, etc.)
-│   ├── utils/                   # Pure helpers: dates, domains, providers, change detection
+│   ├── utils/                   # Pure helpers shared by 2+ packages: dates, domains, DNS records, providers
 │   └── workflows/               # Every "use workflow"/"use step" but chat (@domainstack/workflows)
 │       └── src/
 │           ├── steps/          # Shared step wrappers (dns, headers, certificates, hosting, registration, …)
-│           └── lib/            # Workflow infra: errors.ts (classifyDatabaseError), monitor-lock.ts, settled.ts
+│           └── lib/            # Non-step code shared by 2+ workflows: change-detection.ts, errors.ts (classifyDatabaseError), monitor-lock.ts, settled.ts
 ├── turbo.json                  # Turborepo task configuration
 ├── pnpm-workspace.yaml         # pnpm workspace definition
 └── package.json                # Root workspace config
@@ -434,6 +434,11 @@ The backend is layered strictly one-way: `apps/web` → `@domainstack/api` →
    UI, and the chat workflow (the one exception that stays in the Next app).
 5. No package cycles, and no one-line `index.ts` barrels — `package.json`
    `exports` point straight at the implementation files.
+6. Code lives with its only consumer. `@domainstack/utils` holds pure helpers
+   (no network I/O) used by two or more packages. Within `@domainstack/workflows`,
+   code used by one workflow sits in that workflow's folder; code shared by two or
+   more workflows goes in `lib/` (or `steps/` when it is a step). Exception: tested
+   helpers stay out of `@domainstack/db`, which has no test runner.
 
 ### Package Imports
 

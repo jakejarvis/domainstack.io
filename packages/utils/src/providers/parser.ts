@@ -15,7 +15,7 @@ const ProviderEntrySchema = z.object({
   rule: RuleSchema,
 });
 
-export type ProviderEntry = z.infer<typeof ProviderEntrySchema>;
+type ProviderEntry = z.infer<typeof ProviderEntrySchema>;
 
 /**
  * A full provider entry with category.

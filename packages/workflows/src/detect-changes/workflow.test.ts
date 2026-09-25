@@ -5,7 +5,7 @@ import { CHANGE_CONFIRMATIONS } from "@domainstack/constants";
 import type { DnsFetchData } from "@domainstack/core/dns";
 import type { SnapshotForMonitoring } from "@domainstack/db/queries/snapshots";
 
-import { providerObservationKey } from "../lib/change-detection/detection";
+import { providerObservationKey } from "../lib/change-detection";
 
 // Hoisted mocks for every module the workflow imports (dynamically or statically).
 const registrationMock = vi.hoisted(() => ({

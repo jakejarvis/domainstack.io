@@ -1,7 +1,7 @@
 /* @vitest-environment node */
 import { describe, expect, it } from "vitest";
 
-import { describeTlsValidationError, findLeafCertificate } from "./tls";
+import { describeTlsValidationError } from "./tls";
 
 describe("describeTlsValidationError", () => {
   it("explains expired certificates", () => {
@@ -38,20 +38,5 @@ describe("describeTlsValidationError", () => {
 
   it("falls back for null", () => {
     expect(describeTlsValidationError(null).title).toBe("Invalid certificate");
-  });
-});
-
-describe("findLeafCertificate", () => {
-  it("selects chainPosition 0 rather than array order", () => {
-    const chain = [
-      { chainPosition: 1, subject: "Intermediate" },
-      { chainPosition: 0, subject: "example.com" },
-      { chainPosition: 2, subject: "Root" },
-    ];
-    expect(findLeafCertificate(chain)?.subject).toBe("example.com");
-  });
-
-  it("returns undefined when no leaf is present", () => {
-    expect(findLeafCertificate([{ chainPosition: 1, subject: "Intermediate" }])).toBeUndefined();
   });
 });

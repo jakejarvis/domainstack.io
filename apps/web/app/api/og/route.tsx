@@ -9,7 +9,8 @@ import { checkRateLimit } from "@/lib/ratelimit/api";
 import { createCaller } from "@domainstack/api";
 import { createLogger } from "@domainstack/logger";
 import type { ProviderRef } from "@domainstack/types";
-import { normalizeDomainInput, toRegistrableDomain } from "@domainstack/utils/domain";
+import { toRegistrableDomain } from "@domainstack/utils/domain";
+import { normalizeDomainInput } from "@domainstack/utils/domain/client";
 
 const SIZE = OG_IMAGE_SIZE;
 

@@ -8,7 +8,6 @@ import type {
   ProviderChangeWithNames,
   RegistrationSnapshotData,
 } from "@domainstack/types";
-import { findLeafCertificate } from "@domainstack/utils/tls";
 
 import {
   certificateSnapshotFrom,
@@ -16,17 +15,12 @@ import {
   detectProviderChange,
   detectRegistrationChange,
   evaluateCertificateChange,
+  findLeafCertificate,
   isUninitializedRegistration,
   providerObservationKey,
   registrationObservationKey,
   registrationSnapshotFrom,
-} from "../lib/change-detection/detection";
-import {
-  describeCertificateChange,
-  describeProviderChange,
-  describeRegistrationChange,
-  describeUnregistered,
-} from "../lib/change-detection/notification-copy";
+} from "../lib/change-detection";
 import {
   determineNotificationChannelsStep,
   type NotificationChannels,
@@ -34,6 +28,12 @@ import {
   sendChangeNotificationStep,
 } from "../steps/notifications";
 import { observeDomain } from "../steps/observe-domain";
+import {
+  describeCertificateChange,
+  describeProviderChange,
+  describeRegistrationChange,
+  describeUnregistered,
+} from "./notification-copy";
 
 // =============================================================================
 // Workflow Types

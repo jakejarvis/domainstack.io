@@ -34,7 +34,6 @@
     "@electric-sql/pglite": "^0.5.8",
     "@types/node": "catalog:",
     "@types/pg": "^8.23.1",
-    "@vercel/functions": "catalog:",
     "dotenv": "^18.0.3",
     "drizzle-kit": "^0.31.11"
   }

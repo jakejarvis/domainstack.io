@@ -10,7 +10,7 @@ import {
   makeDnsRecordKey,
   sortDnsRecordsByType,
   sortDnsRecordsForType,
-} from "./records";
+} from "./dns";
 
 describe("makeDnsRecordKey", () => {
   it("creates a key for A records", () => {

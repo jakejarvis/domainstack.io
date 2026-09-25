@@ -95,15 +95,6 @@ export function isValidVerificationMethod(value: unknown): value is Verification
 }
 
 /**
- * Generate a secure verification token.
- */
-export function generateVerificationToken(): string {
-  const array = new Uint8Array(16);
-  crypto.getRandomValues(array);
-  return Array.from(array, (b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-/**
  * Formats all verification instructions into a plain text format
  * suitable for sharing with IT or via email.
  */

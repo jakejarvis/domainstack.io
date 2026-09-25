@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 /* @vitest-environment node */
 import type { DohProvider } from "@domainstack/types";
 
-import { providerOrderForLookup, queryDohProvider } from "./query";
+import { providerOrderForLookup, queryDohProvider } from "./doh";
 
 // Use type assertion for mock provider since DohProvider is a literal union type
 const mockProvider = {

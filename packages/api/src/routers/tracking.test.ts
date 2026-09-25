@@ -270,7 +270,7 @@ describe("tracking router", () => {
 
       expect(result.id).toBeDefined();
       expect(result.domain).toBe(TEST_DOMAIN);
-      expect(result.verificationToken).toBeDefined();
+      expect(result.verificationToken).toMatch(/^[0-9a-f]{32}$/);
       expect(result.resumed).toBe(false);
     });
 
@@ -878,14 +878,14 @@ describe("tracking router", () => {
   });
 
   describe("registrant contacts", () => {
-    const legacyContact = {
+    const contact = {
       type: "registrant" as const,
       name: "REDACTED FOR PRIVACY",
       email: "Please query the RDDS service of the Registrar of Record",
       country: "US",
     };
 
-    async function trackDomainWithLegacyRegistration() {
+    async function trackDomainWithRegistration() {
       await db.insert(userTrackedDomains).values({
         id: TEST_TRACKED_ID,
         userId: TEST_USER_ID,
@@ -900,29 +900,15 @@ describe("tracking router", () => {
           domainId: TEST_DOMAIN_ID,
           isRegistered: true,
           source: "rdap",
-          contacts: [legacyContact],
+          contacts: [contact],
           fetchedAt: new Date(),
           expiresAt: new Date(Date.now() + 86_400_000),
         })
         .onConflictDoNothing();
     }
 
-    it("getDomainDetails brings contacts stored by older rdapper versions up to date", async () => {
-      await trackDomainWithLegacyRegistration();
-
-      const result = await createAuthenticatedCaller().tracking.getDomainDetails({
-        trackedDomainId: TEST_TRACKED_ID,
-      });
-
-      const [registrant] = result.registrar.registrantInfo?.contacts ?? [];
-      expect(registrant?.name).toBeUndefined();
-      expect(registrant?.email).toBeUndefined();
-      expect(registrant).toMatchObject({ redacted: true, countryCode: "US" });
-      expect(registrant?.redactedFields).toEqual(expect.arrayContaining(["name", "email"]));
-    });
-
     it("listDomains does not return contacts at all", async () => {
-      await trackDomainWithLegacyRegistration();
+      await trackDomainWithRegistration();
 
       const [item] = await createAuthenticatedCaller().tracking.listDomains();
 

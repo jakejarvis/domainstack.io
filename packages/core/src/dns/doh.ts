@@ -6,9 +6,35 @@
 
 import { DOH_PROVIDERS } from "@domainstack/constants";
 import type { DohProvider } from "@domainstack/types";
+import { simpleHash } from "@domainstack/utils/simple-hash";
 
-import { simpleHash } from "../simple-hash";
-import type { DnsAnswer, DnsJson, DohQueryOptions } from "./types";
+/**
+ * DNS answer from DoH JSON response.
+ */
+interface DnsAnswer {
+  name: string;
+  type: number;
+  TTL: number;
+  data: string;
+}
+
+/**
+ * DoH JSON response format (RFC 8427).
+ */
+interface DnsJson {
+  Status: number;
+  Answer?: DnsAnswer[];
+}
+
+/**
+ * Options for DoH queries.
+ */
+interface DohQueryOptions {
+  /** Add timestamp parameter to bypass HTTP caches (useful for verification) */
+  cacheBust?: boolean;
+  /** Request timeout in milliseconds (default: 5000) */
+  timeoutMs?: number;
+}
 
 const DEFAULT_TIMEOUT_MS = 5000;
 

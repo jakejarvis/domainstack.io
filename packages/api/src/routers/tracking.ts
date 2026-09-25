@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 
 import { TRPCError } from "@trpc/server";
 import { start } from "workflow/api";
@@ -44,10 +44,7 @@ import {
   verifyDomainByMethod,
 } from "@domainstack/core/verification";
 import { toRegistrableDomain } from "@domainstack/utils/domain";
-import {
-  buildVerificationInstructions,
-  generateVerificationToken,
-} from "@domainstack/utils/verification";
+import { buildVerificationInstructions } from "@domainstack/utils/verification";
 
 import { protectedProcedure } from "../procedures";
 import { withTrpcRateLimitErrors } from "../rate-limit";
@@ -179,8 +176,7 @@ export const trackingRouter = createTRPCRouter({
     // Get user's subscription to know their limit
     const sub = await getUserSubscription(ctx.user.id);
 
-    // Generate verification token
-    const verificationToken = generateVerificationToken();
+    const verificationToken = randomBytes(16).toString("hex");
 
     // Create tracked domain with atomic limit check (prevents race conditions)
     const result = await createTrackedDomainWithLimitCheck({

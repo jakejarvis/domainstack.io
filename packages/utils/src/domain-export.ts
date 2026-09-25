@@ -71,5 +71,3 @@ export function serializeDomainExport(domain: string, data: Partial<DomainRespon
     seo,
   };
 }
-
-export type SerializedDomainExport = ReturnType<typeof serializeDomainExport>;

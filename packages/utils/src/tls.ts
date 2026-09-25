@@ -4,7 +4,7 @@
  * The stored/API value remains the original code for diagnostics.
  */
 
-export interface TlsValidationCopy {
+interface TlsValidationCopy {
   title: string;
   description: string;
 }
@@ -71,14 +71,4 @@ const TLS_VALIDATION_COPY = {
 export function describeTlsValidationError(code: string | null | undefined): TlsValidationCopy {
   if (!code || !(code in TLS_VALIDATION_COPY)) return DEFAULT_COPY;
   return TLS_VALIDATION_COPY[code as keyof typeof TLS_VALIDATION_COPY];
-}
-
-/**
- * Select the leaf certificate from a chain by explicit position.
- * Position `0` is the site certificate the owner can renew.
- */
-export function findLeafCertificate<T extends { chainPosition: number }>(
-  certificates: T[],
-): T | undefined {
-  return certificates.find((certificate) => certificate.chainPosition === 0);
 }

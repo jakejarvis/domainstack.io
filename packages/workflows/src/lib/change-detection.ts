@@ -32,13 +32,46 @@ import type {
 import { normalizeCertificateHex } from "@domainstack/utils/certificate-hex";
 import { normalizeDnsHost } from "@domainstack/utils/providers";
 
-import { normalizeStatus, statusesAreEqual } from "./status";
-
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const NOTIFIABLE_KINDS: ReadonlySet<CertificateChangeKind> = new Set(
   NOTIFIABLE_CERTIFICATE_CHANGE_KINDS,
 );
+
+/**
+ * Normalize a domain registration status to a canonical form for comparison.
+ *
+ * RDAP and WHOIS responses return EPP status codes in different formats:
+ * - EPP camelCase: "clientTransferProhibited", "serverDeleteProhibited"
+ * - Space-separated: "client transfer prohibited", "server delete prohibited"
+ * - With underscores: "client_transfer_prohibited"
+ *
+ * This function normalizes all formats to lowercase without separators,
+ * making "clientTransferProhibited" and "client transfer prohibited" equivalent.
+ */
+export function normalizeStatus(status: string): string {
+  return status
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "") // Remove spaces, underscores, hyphens
+    .trim();
+}
+
+/**
+ * Compare two arrays of status strings for semantic equality.
+ *
+ * Returns true if both arrays contain the same statuses after normalization,
+ * regardless of order or formatting differences.
+ */
+export function statusesAreEqual(previous: string[], current: string[]): boolean {
+  if (previous.length !== current.length) {
+    return false;
+  }
+
+  const prevNormalized = [...previous].map(normalizeStatus).sort();
+  const currNormalized = [...current].map(normalizeStatus).sort();
+
+  return prevNormalized.every((status, i) => status === currNormalized[i]);
+}
 
 /**
  * Snapshot the comparable fields of a registered domain's registration data.
@@ -52,6 +85,16 @@ export function registrationSnapshotFrom(
     transferLock: registration.transferLock ?? null,
     statuses: (registration.statuses ?? []).map((status) => status.status),
   };
+}
+
+/**
+ * Select the leaf certificate from a chain by explicit position.
+ * Position `0` is the site certificate the owner can renew.
+ */
+export function findLeafCertificate<T extends { chainPosition: number }>(
+  certificates: T[],
+): T | undefined {
+  return certificates.find((certificate) => certificate.chainPosition === 0);
 }
 
 /**

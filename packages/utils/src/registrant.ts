@@ -4,15 +4,13 @@ import type { RegistrationContact } from "@domainstack/types";
  * Interpret registrant contacts for display.
  *
  * Client-safe: this only reads what rdapper already decided (`redacted`,
- * `redactedFields`, `privacyService`) and never imports rdapper itself. Stored
- * contacts from older rdapper versions are brought up to date server-side by
- * `upgradeContacts` (`@domainstack/utils/contacts`) before they reach the client.
+ * `redactedFields`, `privacyService`) and never imports rdapper itself.
  *
  * Registries can also return NIC handles (e.g. `JJ1234-IS`) in place of a name,
  * which rdapper doesn't resolve yet, so that one check lives here.
  */
 
-export type RegistrantState =
+type RegistrantState =
   /** A usable name or organization is available. */
   | "named"
   /** Identity is redacted by the registry/registrar. */

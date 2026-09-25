@@ -7,10 +7,9 @@
   "exports": {
     "./calendar": "./src/calendar.ts",
     "./certificate-hex": "./src/certificate-hex.ts",
-    "./contacts": "./src/contacts.ts",
     "./country-emoji": "./src/country-emoji.ts",
     "./date": "./src/date.ts",
-    "./dns": "./src/dns/index.ts",
+    "./dns": "./src/dns.ts",
     "./domain": "./src/domain/index.ts",
     "./domain-export": "./src/domain-export.ts",
     "./domain/client": "./src/domain/client.ts",

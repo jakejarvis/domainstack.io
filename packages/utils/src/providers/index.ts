@@ -9,5 +9,3 @@
 export * from "./detection";
 // Catalog parsing and types
 export * from "./parser";
-// Rules and evaluation
-export * from "./rules";

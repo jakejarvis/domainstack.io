@@ -20,7 +20,7 @@ function getFormatter(locale: string, currency: string): Intl.NumberFormat {
   return formatter;
 }
 
-export interface FormatPriceOptions {
+interface FormatPriceOptions {
   /** BCP 47 locale tag. Defaults to `en-US` to preserve existing output. */
   locale?: string;
   /** ISO 4217 currency code. Defaults to `USD`. */

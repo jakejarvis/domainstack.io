@@ -7,15 +7,11 @@
 
 import { DNS_RECORD_TYPES, DNS_TYPE_NUMBERS } from "@domainstack/constants";
 import type { DnsRecord } from "@domainstack/types";
-import {
-  deduplicateDnsRecords,
-  providerOrderForLookup,
-  queryDohProvider,
-  sortDnsRecordsByType,
-} from "@domainstack/utils/dns";
+import { deduplicateDnsRecords, sortDnsRecordsByType } from "@domainstack/utils/dns";
 
 import { isCloudflareIp } from "../lib/cloudflare";
 import { ttlForDnsRecord } from "../lib/ttl";
+import { providerOrderForLookup, queryDohProvider } from "./doh";
 import type { DnsFetchData } from "./types";
 
 /**

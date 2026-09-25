@@ -17,9 +17,6 @@ import type {
   UserNotificationPreferences,
 } from "@domainstack/types";
 
-// Re-export expiry utilities from utils
-export { getThresholdNotificationType } from "@domainstack/utils/expiry";
-
 export interface NotificationChannels {
   shouldSendEmail: boolean;
   shouldSendInApp: boolean;

@@ -15,11 +15,14 @@ import {
   detectProviderChange,
   detectRegistrationChange,
   evaluateCertificateChange,
+  findLeafCertificate,
   isUninitializedRegistration,
+  normalizeStatus,
   providerObservationKey,
   registrationObservationKey,
   registrationSnapshotFrom,
-} from "./detection";
+  statusesAreEqual,
+} from "./change-detection";
 
 describe("detectRegistrationChange", () => {
   const baseSnapshot = {
@@ -976,5 +979,83 @@ describe("certificateSnapshotFrom", () => {
     } as unknown as Certificate;
 
     expect(certificateSnapshotFrom(leaf).caProviderId).toBeNull();
+  });
+});
+
+describe("normalizeStatus", () => {
+  it("converts to lowercase", () => {
+    expect(normalizeStatus("ClientTransferProhibited")).toBe("clienttransferprohibited");
+  });
+
+  it("removes spaces", () => {
+    expect(normalizeStatus("client transfer prohibited")).toBe("clienttransferprohibited");
+  });
+
+  it("removes underscores", () => {
+    expect(normalizeStatus("client_transfer_prohibited")).toBe("clienttransferprohibited");
+  });
+
+  it("removes hyphens", () => {
+    expect(normalizeStatus("client-transfer-prohibited")).toBe("clienttransferprohibited");
+  });
+
+  it("handles mixed separators", () => {
+    expect(normalizeStatus("client_transfer-prohibited here")).toBe("clienttransferprohibitedhere");
+  });
+
+  it("trims whitespace", () => {
+    expect(normalizeStatus("  active  ")).toBe("active");
+  });
+});
+
+describe("statusesAreEqual", () => {
+  it("returns true for identical arrays", () => {
+    const a = ["active", "clientTransferProhibited"];
+    const b = ["active", "clientTransferProhibited"];
+    expect(statusesAreEqual(a, b)).toBe(true);
+  });
+
+  it("returns true for semantically equal arrays with different order", () => {
+    const a = ["active", "clientTransferProhibited"];
+    const b = ["clientTransferProhibited", "active"];
+    expect(statusesAreEqual(a, b)).toBe(true);
+  });
+
+  it("returns true for semantically equal arrays with different formatting", () => {
+    const a = ["clientTransferProhibited"];
+    const b = ["client transfer prohibited"];
+    expect(statusesAreEqual(a, b)).toBe(true);
+  });
+
+  it("returns false for arrays with different lengths", () => {
+    const a = ["active"];
+    const b = ["active", "clientTransferProhibited"];
+    expect(statusesAreEqual(a, b)).toBe(false);
+  });
+
+  it("returns false for semantically different arrays", () => {
+    const a = ["active"];
+    const b = ["inactive"];
+    expect(statusesAreEqual(a, b)).toBe(false);
+  });
+
+  it("handles empty arrays", () => {
+    expect(statusesAreEqual([], [])).toBe(true);
+    expect(statusesAreEqual(["active"], [])).toBe(false);
+  });
+});
+
+describe("findLeafCertificate", () => {
+  it("selects chainPosition 0 rather than array order", () => {
+    const chain = [
+      { chainPosition: 1, subject: "Intermediate" },
+      { chainPosition: 0, subject: "example.com" },
+      { chainPosition: 2, subject: "Root" },
+    ];
+    expect(findLeafCertificate(chain)?.subject).toBe("example.com");
+  });
+
+  it("returns undefined when no leaf is present", () => {
+    expect(findLeafCertificate([{ chainPosition: 1, subject: "Intermediate" }])).toBeUndefined();
   });
 });
