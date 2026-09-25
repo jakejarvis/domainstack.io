@@ -29,7 +29,7 @@ export const dashboardTableFeatures = tableFeatures({
   paginatedRowModel: createPaginatedRowModel(),
   // Per-table column meta type, replacing v8-style global `declare module`
   // augmentation of `ColumnMeta` (which would leak into every table).
-  columnMeta: metaHelper<{ className?: string }>(),
+  columnMeta: metaHelper<{ className?: string; showForUnverified?: boolean }>(),
 });
 
 export type DashboardTableFeatures = typeof dashboardTableFeatures;

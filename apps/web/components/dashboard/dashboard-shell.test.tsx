@@ -26,6 +26,7 @@ vi.mock("@/hooks/use-provider-tooltip-data", async () => {
   return { useProviderTooltipData };
 });
 
+import { HIDEABLE_COLUMNS } from "@/components/dashboard/dashboard-table-columns";
 import { makePaginationDomains, makeTrackedDomain } from "@/components/dashboard/test-fixtures";
 import {
   dashboardActionSpies,
@@ -144,8 +145,13 @@ describe("dashboard shell", () => {
       await expect.element(page.getByText("Healthy", { exact: true })).toBeInTheDocument();
       expect(page.getByText("Needs Attention", { exact: true }).length).toBeGreaterThan(0);
 
-      await page.getByRole("button", { name: /Complete Verification/ }).click();
-      expect(dashboardActionSpies.onVerify).toHaveBeenCalledWith("domain-pending", null);
+      const resumeHref = "/dashboard/add-domain?resume=true&id=domain-pending";
+      await expect
+        .element(page.getByRole("button", { name: /Complete Verification/ }))
+        .toHaveAttribute("href", resumeHref);
+      await expect
+        .element(page.getByRole("link", { name: "Pending" }))
+        .toHaveAttribute("href", resumeHref);
     });
 
     it("archives, mutes, and removes a verified card from the actions menu", async () => {
@@ -231,8 +237,9 @@ describe("dashboard shell", () => {
       const table = page.getByRole("table");
       await expect.element(table.getByRole("link", { name: "alpha.com" })).toBeInTheDocument();
 
-      await table.getByRole("button", { name: "Continue" }).click();
-      expect(dashboardActionSpies.onVerify).toHaveBeenCalledWith("domain-pending", null);
+      await expect
+        .element(table.getByRole("button", { name: "Continue" }))
+        .toHaveAttribute("href", "/dashboard/add-domain?resume=true&id=domain-pending");
 
       await table.getByRole("button", { name: "Remove" }).click();
       expect(dashboardActionSpies.onRemove).toHaveBeenCalledWith("domain-pending");
@@ -250,12 +257,7 @@ describe("dashboard shell", () => {
 
       await page.getByRole("button", { name: /^Expires$/ }).click();
       await vi.waitFor(() => {
-        const names = page
-          .getByRole("table")
-          .getByRole("link")
-          .elements()
-          .map((el) => el.textContent?.trim());
-        expect(names.at(-1)).toBe("pending.dev");
+        expect(domainNames().at(-1)).toBe("pending.dev");
       });
     });
 
@@ -442,6 +444,55 @@ describe("dashboard shell", () => {
       await expect
         .element(page.getByRole("table").getByRole("button", { name: "Continue" }))
         .toBeInTheDocument();
+    });
+
+    it("keeps an unverified row aligned when every hideable column is hidden", async () => {
+      usePreferencesStore.setState({
+        columnVisibility: Object.fromEntries(HIDEABLE_COLUMNS.map(({ id }) => [id, false])),
+      });
+      await renderDashboardShell();
+      await waitForCatalog();
+      await openTable();
+
+      const table = page.getByRole("table").element() as HTMLTableElement;
+      const pendingRow = page
+        .getByRole("table")
+        .getByRole("link", { name: "pending.dev" })
+        .element()
+        .closest("tr")!;
+      const spanOf = (cells: Iterable<HTMLTableCellElement>) =>
+        Array.from(cells).reduce((sum, cell) => sum + cell.colSpan, 0);
+
+      expect(spanOf(pendingRow.cells)).toBe(spanOf(table.tHead!.rows[0].cells));
+      await userEvent.click(pendingRow.querySelector("td:last-child button")!);
+      await expect
+        .element(page.getByRole("menuitem", { name: "Continue verification" }))
+        .toHaveAttribute("href", "/dashboard/add-domain?resume=true&id=domain-pending");
+    });
+
+    it("keeps required columns visible despite invalid saved preferences", async () => {
+      usePreferencesStore.setState({
+        columnVisibility: { select: false, domainName: false, actions: false },
+      });
+      await renderDashboardShell();
+      await waitForCatalog();
+      await openTable();
+
+      const table = page.getByRole("table").element() as HTMLTableElement;
+      const pendingRow = page
+        .getByRole("table")
+        .getByRole("link", { name: "pending.dev" })
+        .element()
+        .closest("tr")!;
+      const spanOf = (cells: Iterable<HTMLTableCellElement>) =>
+        Array.from(cells).reduce((sum, cell) => sum + cell.colSpan, 0);
+
+      expect(spanOf(pendingRow.cells)).toBe(spanOf(table.tHead!.rows[0].cells));
+      await expect.element(page.getByRole("button", { name: /^Domain$/ })).toBeInTheDocument();
+      await expect
+        .element(page.getByRole("checkbox", { name: "Select pending.dev" }))
+        .toBeInTheDocument();
+      expect(pendingRow.querySelector("td:last-child button")).not.toBeNull();
     });
 
     it("selects a row and shows the bulk toolbar", async () => {

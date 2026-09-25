@@ -2,22 +2,17 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { parseAsBoolean, parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type { DashboardActions, DashboardBulkActions } from "@/context/dashboard-context";
 import { useDashboardMutations } from "@/hooks/use-dashboard-mutations";
 import { useClearDashboardSelection } from "@/hooks/use-dashboard-selection";
-import { useRouter } from "@/hooks/use-router";
 import { useSubscription } from "@/hooks/use-subscription";
-import { addDomainResumeHref } from "@/lib/add-domain-resume";
 import type { ConfirmAction } from "@/lib/dashboard-utils";
 import { useTRPC } from "@/lib/trpc/client";
 
 export function useDashboardClient() {
-  const router = useRouter();
   const trpc = useTRPC();
-  const [isVerifyPending, startVerifyNavigation] = useTransition();
-  const [verifyingDomainId, setVerifyingDomainId] = useState<string | null>(null);
   const {
     subscription,
     isSubscriptionLoading: subscriptionLoading,
@@ -88,17 +83,10 @@ export function useDashboardClient() {
   };
 
   const actions: DashboardActions = {
-    onVerify: (id, verificationMethod) => {
-      setVerifyingDomainId(id);
-      startVerifyNavigation(() =>
-        router.push(addDomainResumeHref(id, verificationMethod), { scroll: false }),
-      );
-    },
     onRemove: (id) => confirmSingle("remove", id),
     onArchive: (id) => confirmSingle("archive", id),
     onUnarchive: mutations.unarchive,
     onMute: mutations.mute,
-    verifyingDomainId: isVerifyPending ? verifyingDomainId : null,
   };
 
   const bulk: DashboardBulkActions = {

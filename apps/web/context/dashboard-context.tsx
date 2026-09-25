@@ -3,16 +3,13 @@
 import { createContext, useContext } from "react";
 
 import { type DashboardView, useDashboardViewState } from "@/hooks/use-dashboard-view";
-import type { TrackedDomainWithDetails, VerificationMethod } from "@domainstack/types";
+import type { TrackedDomainWithDetails } from "@domainstack/types";
 
 export interface DashboardActions {
-  onVerify: (id: string, verificationMethod: VerificationMethod | null) => void;
   onRemove: (id: string) => void;
   onArchive: (id: string) => void;
   onUnarchive: (id: string) => void;
   onMute: (id: string, muted: boolean) => void;
-  /** Domain ID currently navigating to the verify flow, if any. */
-  verifyingDomainId: string | null;
 }
 
 export interface DashboardBulkActions {

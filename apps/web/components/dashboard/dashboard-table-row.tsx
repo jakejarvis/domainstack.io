@@ -1,18 +1,17 @@
 import { type Cell, FlexRender } from "@tanstack/react-table";
 import { motion } from "motion/react";
+import Link from "next/link";
 
+import { LinkPendingIcon } from "@/components/link-pending-icon";
 import { useDashboardActions } from "@/context/dashboard-context";
 import { useIsDomainSelected } from "@/hooks/use-dashboard-selection";
+import { addDomainResumeHref } from "@/lib/add-domain-resume";
 import type { DashboardTableFeatures } from "@/lib/dashboard-table-features";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
-import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
 
 type DashboardCell = Cell<DashboardTableFeatures, TrackedDomainWithDetails>;
-
-/** Columns an unverified row still renders; every other visible column collapses into one cell. */
-const UNVERIFIED_COLUMNS = new Set(["select", "domainName", "verified", "actions"]);
 
 function TableCell({ cell }: { cell: DashboardCell }) {
   return (
@@ -29,7 +28,7 @@ function VerifyPromptCell({
   domain: TrackedDomainWithDetails;
   colSpan: number;
 }) {
-  const { onVerify, onRemove, verifyingDomainId } = useDashboardActions();
+  const { onRemove } = useDashboardActions();
 
   return (
     <td colSpan={colSpan}>
@@ -39,13 +38,15 @@ function VerifyPromptCell({
         </span>
         <Button
           size="xs"
-          onClick={() => onVerify(domain.id, domain.verificationMethod)}
-          disabled={verifyingDomainId !== null}
+          nativeButton={false}
           className="text-[13px]"
-        >
-          {verifyingDomainId === domain.id ? <Spinner /> : null}
-          Continue
-        </Button>
+          render={
+            <Link href={addDomainResumeHref(domain.id, domain.verificationMethod)} scroll={false}>
+              <LinkPendingIcon icon={null} />
+              Continue
+            </Link>
+          }
+        />
         <Button
           size="xs"
           variant="destructive"
@@ -61,8 +62,8 @@ function VerifyPromptCell({
 
 /**
  * One dashboard table row. A verified domain renders every visible cell; an
- * unverified one keeps its select, domain, status, and actions cells and
- * replaces the detail columns with a single verify prompt.
+ * unverified one keeps cells marked for pending domains and replaces each
+ * contiguous run of detail columns with a spanning cell.
  */
 export function DashboardTableRow({
   cells,
@@ -77,23 +78,30 @@ export function DashboardTableRow({
   if (domain.verified) {
     content = cells.map((cell) => <TableCell key={cell.id} cell={cell} />);
   } else {
-    // Hidden columns are already absent from `cells`, so the prompt spans exactly the
-    // detail columns that are showing. With none showing it still takes one cell.
-    const detailCount = cells.filter((cell) => !UNVERIFIED_COLUMNS.has(cell.column.id)).length;
-    const leading = cells.filter(
-      (cell) => UNVERIFIED_COLUMNS.has(cell.column.id) && cell.column.id !== "actions",
-    );
-    const actions = cells.find((cell) => cell.column.id === "actions");
+    const renderedCells: React.ReactNode[] = [];
+    let promptRendered = false;
+    for (let index = 0; index < cells.length;) {
+      const cell = cells[index];
+      if (cell.column.columnDef.meta?.showForUnverified) {
+        renderedCells.push(<TableCell key={cell.id} cell={cell} />);
+        index++;
+        continue;
+      }
 
-    content = (
-      <>
-        {leading.map((cell) => (
-          <TableCell key={cell.id} cell={cell} />
-        ))}
-        <VerifyPromptCell domain={domain} colSpan={Math.max(1, detailCount)} />
-        {actions ? <TableCell cell={actions} /> : null}
-      </>
-    );
+      let end = index + 1;
+      while (end < cells.length && !cells[end].column.columnDef.meta?.showForUnverified) end++;
+      const colSpan = end - index;
+      renderedCells.push(
+        promptRendered ? (
+          <td key={cell.id} colSpan={colSpan} aria-hidden="true" />
+        ) : (
+          <VerifyPromptCell key={cell.id} domain={domain} colSpan={colSpan} />
+        ),
+      );
+      promptRendered = true;
+      index = end;
+    }
+    content = renderedCells;
   }
 
   return (

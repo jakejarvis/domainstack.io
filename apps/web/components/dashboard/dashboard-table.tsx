@@ -3,12 +3,15 @@ import { useTable } from "@tanstack/react-table";
 import { AnimatePresence } from "motion/react";
 import { useMemo } from "react";
 
-import { createColumns } from "@/components/dashboard/dashboard-table-columns";
+import {
+  dashboardColumns,
+  HIDEABLE_COLUMN_IDS,
+} from "@/components/dashboard/dashboard-table-columns";
 import { DashboardTablePagination } from "@/components/dashboard/dashboard-table-pagination";
 import { DashboardTableRow } from "@/components/dashboard/dashboard-table-row";
 import { SortIndicator } from "@/components/dashboard/sort-indicator";
 import { UpgradeRow } from "@/components/dashboard/upgrade-row";
-import { useDashboardActions, useDashboardView } from "@/context/dashboard-context";
+import { useDashboardView } from "@/context/dashboard-context";
 import {
   dashboardTableFeatures,
   type DashboardTableFeatures,
@@ -29,7 +32,6 @@ type DashboardTableProps = {
 };
 
 export function DashboardTable({ domains }: DashboardTableProps) {
-  const { onVerify } = useDashboardActions();
   const { sorting, setSort, pageIndex, pageSize, setPageSize, setPageIndex } = useDashboardView();
   const pagination = useMemo(
     (): PaginationState => ({ pageIndex, pageSize }),
@@ -42,10 +44,17 @@ export function DashboardTable({ domains }: DashboardTableProps) {
     [sorting, setSort],
   );
 
-  const columnVisibility = useDashboardColumnVisibility();
+  const storedColumnVisibility = useDashboardColumnVisibility();
   const setColumnVisibility = usePreferencesStore((s) => s.setColumnVisibility);
-
-  const columns = useMemo(() => createColumns({ onVerify }), [onVerify]);
+  // Persisted preferences can contain stale or hand-edited keys. Only columns
+  // exposed by the visibility menu may be hidden.
+  const columnVisibility = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(storedColumnVisibility).filter(([id]) => HIDEABLE_COLUMN_IDS.has(id)),
+      ),
+    [storedColumnVisibility],
+  );
 
   const tableState = useMemo(
     () => ({ sorting, pagination, columnVisibility }),
@@ -70,14 +79,15 @@ export function DashboardTable({ domains }: DashboardTableProps) {
       // Key rows by domain, not position, so a sort, filter, or removal doesn't hand one
       // domain's row (and its enter/exit animation) to another.
       getRowId: (domain: TrackedDomainWithDetails) => domain.id,
-      columns,
+      columns: dashboardColumns,
       state: tableState,
       manualSorting: true,
+      enableMultiSort: false,
       onSortingChange,
       onPaginationChange,
       onColumnVisibilityChange: setColumnVisibility,
     }),
-    [domains, columns, tableState, onSortingChange, onPaginationChange, setColumnVisibility],
+    [domains, tableState, onSortingChange, onPaginationChange, setColumnVisibility],
   );
 
   const table = useTable<DashboardTableFeatures, TrackedDomainWithDetails>(tableOptions);
@@ -100,16 +110,6 @@ export function DashboardTable({ domains }: DashboardTableProps) {
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="min-w-full border-b bg-muted/30">
                 {headerGroup.headers.map((header) => {
-                  const isSelectColumn = header.column.id === "select";
-                  const isDomainColumn = header.column.id === "domainName";
-
-                  // The "Domain" header spans both the selection column (favicon/checkbox)
-                  // and the domain name column, so we don't render a separate header cell
-                  // for the selection column.
-                  if (isSelectColumn) {
-                    return null;
-                  }
-
                   const canSort = header.column.getCanSort();
                   const isSorted = header.column.getIsSorted();
 
@@ -132,7 +132,7 @@ export function DashboardTable({ domains }: DashboardTableProps) {
                   return (
                     <th
                       key={header.id}
-                      colSpan={isDomainColumn ? 2 : header.colSpan}
+                      colSpan={header.colSpan}
                       style={{
                         width: header.column.getSize(),
                       }}

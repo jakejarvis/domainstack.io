@@ -1,5 +1,5 @@
 import { NuqsTestingAdapter } from "nuqs/adapters/testing";
-import { memo, useMemo, useState } from "react";
+import { memo, useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { page } from "vitest/browser";
 
@@ -11,7 +11,6 @@ import {
   useDashboardView,
 } from "@/context/dashboard-context";
 import { render } from "@/mocks/react";
-import type { VerificationMethod } from "@domainstack/types";
 
 const bulk: DashboardBulkActions = {
   onBulkArchive: vi.fn<(domainIds: string[]) => void>(),
@@ -44,24 +43,22 @@ function FiltersProbe() {
   );
 }
 
+function makeActions(): DashboardActions {
+  return {
+    onRemove: vi.fn<(id: string) => void>(),
+    onArchive: vi.fn<(id: string) => void>(),
+    onUnarchive: vi.fn<(id: string) => void>(),
+    onMute: vi.fn<(id: string, muted: boolean) => void>(),
+  };
+}
+
 function Harness() {
-  const [verifyingDomainId, setVerifyingDomainId] = useState<string | null>(null);
-  const actions = useMemo<DashboardActions>(
-    () => ({
-      onVerify: vi.fn<(id: string, method: VerificationMethod | null) => void>(),
-      onRemove: vi.fn<(id: string) => void>(),
-      onArchive: vi.fn<(id: string) => void>(),
-      onUnarchive: vi.fn<(id: string) => void>(),
-      onMute: vi.fn<(id: string, muted: boolean) => void>(),
-      verifyingDomainId,
-    }),
-    [verifyingDomainId],
-  );
+  const [actions, setActions] = useState(makeActions);
 
   return (
     <NuqsTestingAdapter hasMemory>
-      <button type="button" onClick={() => setVerifyingDomainId("d1")}>
-        verify
+      <button type="button" onClick={() => setActions(makeActions())}>
+        replace actions
       </button>
       <DashboardProvider domains={[]} actions={actions} bulk={bulk}>
         <MemoProbe />
@@ -86,11 +83,11 @@ describe("DashboardProvider", () => {
     expect(actionRenderSpy).toHaveBeenCalledTimes(rendersBefore);
   });
 
-  it("re-renders action consumers when action state changes", async () => {
+  it("re-renders action consumers when the actions change", async () => {
     await render(<Harness />);
     const rendersBefore = actionRenderSpy.mock.calls.length;
 
-    await page.getByRole("button", { name: "verify" }).click();
+    await page.getByRole("button", { name: "replace actions" }).click();
     await expect.poll(() => actionRenderSpy.mock.calls.length).toBeGreaterThan(rendersBefore);
   });
 });

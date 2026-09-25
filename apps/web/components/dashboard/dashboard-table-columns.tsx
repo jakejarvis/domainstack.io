@@ -9,7 +9,7 @@ import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Favicon } from "@/components/icons/favicon";
 import { useIsDomainSelected, useToggleDomainSelection } from "@/hooks/use-dashboard-selection";
 import type { DashboardTableFeatures } from "@/lib/dashboard-table-features";
-import type { TrackedDomainWithDetails, VerificationMethod } from "@domainstack/types";
+import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Checkbox } from "@domainstack/ui/checkbox";
 import {
   ResponsiveTooltip,
@@ -37,33 +37,6 @@ const COLUMN_HEADERS = {
   registrationDate: "Registered",
   createdAt: "Added",
 } as const;
-
-/**
- * Columns the visibility menu can toggle, in table order. Mirrors the columns
- * that leave `enableHiding` at its default in {@link createColumns}; `select`,
- * `domainName`, and `actions` opt out.
- *
- * Column visibility is controlled by the preferences store rather than the
- * table, so the menu reads this list instead of `table.getAllColumns()`. v9's
- * `useTable` return value is deliberately not a stable reference and must not
- * be shared through context or parent state.
- *
- * @see https://tanstack.com/table/latest/docs/framework/react/guide/table-context
- */
-export const HIDEABLE_COLUMNS = (
-  [
-    "verified",
-    "health",
-    "expirationDate",
-    "registrar",
-    "dns",
-    "hosting",
-    "email",
-    "ca",
-    "registrationDate",
-    "createdAt",
-  ] as const satisfies readonly (keyof typeof COLUMN_HEADERS)[]
-).map((id) => ({ id, header: COLUMN_HEADERS[id] }));
 
 type DomainSelectCellProps = {
   domainId: string;
@@ -133,18 +106,12 @@ function DomainSelectCell({ domainId, domainName }: DomainSelectCellProps) {
   );
 }
 
-export type ColumnCallbacks = {
-  onVerify: (id: string, verificationMethod: VerificationMethod | null) => void;
-};
-
-export function createColumns({
-  onVerify,
-}: ColumnCallbacks): ColumnDef<DashboardTableFeatures, TrackedDomainWithDetails>[] {
+export function createColumns(): ColumnDef<DashboardTableFeatures, TrackedDomainWithDetails>[] {
   return [
     // Selection checkbox column
     {
       id: "select",
-      header: () => null, // No header checkbox here - it's in the bulk toolbar
+      header: () => <span className="sr-only">Selection</span>, // Bulk select lives in the toolbar
       cell: ({ row }) => (
         <DomainSelectCell domainId={row.original.id} domainName={row.original.domainName} />
       ),
@@ -152,6 +119,7 @@ export function createColumns({
       enableHiding: false, // Always show selection column
       meta: {
         className: "!pl-4.5 max-w-[40px] text-center",
+        showForUnverified: true,
       },
     },
     {
@@ -171,17 +139,14 @@ export function createColumns({
         </ScreenshotPopover>
       ),
       enableHiding: false, // Always show domain name
+      meta: { showForUnverified: true },
     },
     {
       accessorKey: "verified",
       header: COLUMN_HEADERS.verified,
-      cell: ({ row }) => (
-        <DomainStatusBadge
-          domain={row.original}
-          onClick={() => onVerify(row.original.id, row.original.verificationMethod)}
-        />
-      ),
+      cell: ({ row }) => <DomainStatusBadge domain={row.original} />,
       size: 100,
+      meta: { showForUnverified: true },
     },
     {
       id: "health",
@@ -301,7 +266,23 @@ export function createColumns({
       enableHiding: false, // Always show actions menu
       meta: {
         className: "!pr-4 text-right",
+        showForUnverified: true,
       },
     },
   ];
 }
+
+// Share the exact definitions used by the table with its column menu. The menu
+// lives outside the table, so it cannot read the table instance directly.
+export const dashboardColumns = createColumns();
+
+export const HIDEABLE_COLUMNS = dashboardColumns.flatMap((column) => {
+  const id = column.id ?? ("accessorKey" in column ? column.accessorKey : undefined);
+  return typeof id === "string" &&
+    column.enableHiding !== false &&
+    typeof column.header === "string"
+    ? [{ id, header: column.header }]
+    : [];
+});
+
+export const HIDEABLE_COLUMN_IDS = new Set(HIDEABLE_COLUMNS.map((column) => column.id));

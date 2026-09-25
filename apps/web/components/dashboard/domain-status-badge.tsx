@@ -7,6 +7,7 @@ import {
 
 import { BadgeWithTooltip } from "@/components/dashboard/badge-with-tooltip";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
+import { addDomainResumeHref } from "@/lib/add-domain-resume";
 import { VERIFICATION_GRACE_PERIOD_DAYS } from "@domainstack/constants";
 import type { TrackedDomainWithDetails, VerificationMethod } from "@domainstack/types";
 import { cn } from "@domainstack/ui/utils";
@@ -15,10 +16,8 @@ import { calculateDaysElapsed } from "@domainstack/utils/expiry";
 type DomainStatusBadgeProps = {
   domain: Pick<
     TrackedDomainWithDetails,
-    "verified" | "verificationStatus" | "verificationMethod" | "verificationFailedAt"
+    "id" | "verified" | "verificationStatus" | "verificationMethod" | "verificationFailedAt"
   >;
-  /** Called from the Failing and Pending badges; a healthy Verified badge isn't clickable. */
-  onClick?: () => void;
   className?: string;
 };
 
@@ -27,7 +26,7 @@ type DomainStatusBadgeConfig = {
   label: string;
   className: string;
   tooltipContent?: React.ReactNode;
-  onClick?: () => void;
+  href?: string;
 };
 
 function getVerificationMethodLabel(method: VerificationMethod): string {
@@ -55,11 +54,13 @@ function getFailingTooltip(
 }
 
 function getDomainStatusBadge({
-  domain: { verified, verificationStatus, verificationMethod, verificationFailedAt },
-  onClick,
+  domain: { id, verified, verificationStatus, verificationMethod, verificationFailedAt },
   className,
   now,
 }: DomainStatusBadgeProps & { now: Date | null }): DomainStatusBadgeConfig {
+  // Failing and Pending badges link to the verify flow; a healthy Verified badge doesn't.
+  const verifyHref = addDomainResumeHref(id, verificationMethod);
+
   if (verified && verificationStatus === "failing") {
     return {
       icon: IconAlertTriangle,
@@ -68,7 +69,7 @@ function getDomainStatusBadge({
       tooltipContent: (
         <span suppressHydrationWarning>{getFailingTooltip(verificationFailedAt, now)}</span>
       ),
-      onClick,
+      href: verifyHref,
     };
   }
 
@@ -87,8 +88,8 @@ function getDomainStatusBadge({
     icon: IconProgressAlert,
     label: "Pending",
     className: cn("border-warning-border bg-warning/20 text-warning-foreground", className),
-    tooltipContent: onClick ? "Complete verification" : undefined,
-    onClick,
+    tooltipContent: "Complete verification",
+    href: verifyHref,
   };
 }
 

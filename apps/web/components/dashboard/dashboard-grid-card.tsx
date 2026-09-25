@@ -9,9 +9,10 @@ import { ProviderCell } from "@/components/dashboard/provider-cell";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Favicon } from "@/components/icons/favicon";
-import { useDashboardActions } from "@/context/dashboard-context";
+import { LinkPendingIcon } from "@/components/link-pending-icon";
 import { useIsDomainSelected, useToggleDomainSelection } from "@/hooks/use-dashboard-selection";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
+import { addDomainResumeHref } from "@/lib/add-domain-resume";
 import type { ProviderCategory, TrackedDomainWithDetails } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@domainstack/ui/card";
@@ -21,7 +22,6 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
-import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
 import { formatDate, formatDateTimeUtc, toDateTimeAttr } from "@domainstack/utils/date";
 
@@ -106,17 +106,32 @@ function ExpiresInfoRow({
   );
 }
 
-function DashboardGridCardBody({
+function VerifyButton({
   domain,
-  isVerifyPending,
-  isVerifyingThis,
-  onVerify,
+  icon,
+  className,
+  children,
 }: {
   domain: TrackedDomainWithDetails;
-  isVerifyPending: boolean;
-  isVerifyingThis: boolean;
-  onVerify: () => void;
+  icon: React.ReactNode;
+  className?: string;
+  children: React.ReactNode;
 }) {
+  return (
+    <Button
+      nativeButton={false}
+      className={cn("w-full", className)}
+      render={
+        <Link href={addDomainResumeHref(domain.id, domain.verificationMethod)} scroll={false}>
+          <LinkPendingIcon icon={icon} />
+          {children}
+        </Link>
+      }
+    />
+  );
+}
+
+function DashboardGridCardBody({ domain }: { domain: TrackedDomainWithDetails }) {
   const isFailing = domain.verificationStatus === "failing";
 
   if (domain.verified && !isFailing) {
@@ -136,10 +151,9 @@ function DashboardGridCardBody({
           <ProviderInfoRows domain={domain} />
         </div>
         <div className="min-h-4 flex-1" />
-        <Button onClick={onVerify} disabled={isVerifyPending} className="mt-3 w-full">
-          {isVerifyingThis ? <Spinner /> : <IconTool />}
+        <VerifyButton domain={domain} icon={<IconTool />} className="mt-3">
           Fix Verification
-        </Button>
+        </VerifyButton>
       </>
     );
   }
@@ -150,10 +164,9 @@ function DashboardGridCardBody({
         Complete verification to start receiving health alerts.
       </p>
       <div className="min-h-4 flex-1" />
-      <Button onClick={onVerify} disabled={isVerifyPending} className="w-full">
-        {isVerifyingThis ? <Spinner /> : <IconAlertCircle />}
+      <VerifyButton domain={domain} icon={<IconAlertCircle />}>
         Complete Verification
-      </Button>
+      </VerifyButton>
     </div>
   );
 }
@@ -162,12 +175,10 @@ function DashboardGridCardHeader({
   domain,
   selected,
   onToggleSelect,
-  onVerify,
 }: {
   domain: TrackedDomainWithDetails;
   selected: boolean;
   onToggleSelect: () => void;
-  onVerify: () => void;
 }) {
   return (
     <CardHeader className="relative pt-6 pb-2">
@@ -204,7 +215,7 @@ function DashboardGridCardHeader({
                 verified={domain.verified}
               />
             ) : null}
-            <DomainStatusBadge domain={domain} onClick={onVerify} />
+            <DomainStatusBadge domain={domain} />
           </div>
         </div>
         <DomainActionsMenu domain={domain} triggerVariant="ghost" />
@@ -220,20 +231,13 @@ function DashboardGridCardHeader({
 export const DashboardGridCard = memo(function DashboardGridCard({
   domain,
 }: DashboardGridCardProps) {
-  const { id: trackedDomainId, verificationMethod } = domain;
+  const { id: trackedDomainId } = domain;
   const selected = useIsDomainSelected(trackedDomainId);
   const toggle = useToggleDomainSelection();
-  const { onVerify, verifyingDomainId } = useDashboardActions();
-  const isVerifyPending = verifyingDomainId !== null;
-  const isVerifyingThis = verifyingDomainId === trackedDomainId;
 
   const handleToggleSelect = useCallback(() => {
     toggle(trackedDomainId);
   }, [toggle, trackedDomainId]);
-
-  const handleVerify = useCallback(() => {
-    onVerify(trackedDomainId, verificationMethod);
-  }, [onVerify, trackedDomainId, verificationMethod]);
 
   const now = useHydratedNow();
   const accent = getHealthAccent(domain.expirationDate, domain.verified, now || undefined);
@@ -267,16 +271,10 @@ export const DashboardGridCard = memo(function DashboardGridCard({
           domain={domain}
           selected={selected}
           onToggleSelect={handleToggleSelect}
-          onVerify={handleVerify}
         />
 
         <CardContent className="relative flex flex-1 flex-col pt-2 pb-6">
-          <DashboardGridCardBody
-            domain={domain}
-            isVerifyPending={isVerifyPending}
-            isVerifyingThis={isVerifyingThis}
-            onVerify={handleVerify}
-          />
+          <DashboardGridCardBody domain={domain} />
         </CardContent>
       </Card>
     </div>

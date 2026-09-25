@@ -3,6 +3,7 @@ import {
   IconBell,
   IconBellOff,
   IconBookmark,
+  IconCircleDashedCheck,
   IconDotsVertical,
   IconExternalLink,
   IconTrash,
@@ -10,6 +11,7 @@ import {
 import Link from "next/link";
 
 import { useDashboardActions } from "@/context/dashboard-context";
+import { addDomainResumeHref } from "@/lib/add-domain-resume";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import {
@@ -25,7 +27,10 @@ export function DomainActionsMenu({
   domain,
   triggerVariant,
 }: {
-  domain: Pick<TrackedDomainWithDetails, "id" | "domainName" | "verified" | "muted">;
+  domain: Pick<
+    TrackedDomainWithDetails,
+    "id" | "domainName" | "verified" | "verificationMethod" | "muted"
+  >;
   triggerVariant: "ghost" | "outline";
 }) {
   const { onMute, onArchive, onRemove } = useDashboardActions();
@@ -59,6 +64,17 @@ export function DomainActionsMenu({
             </Link>
           }
         />
+        {!domain.verified ? (
+          <DropdownMenuItem
+            nativeButton={false}
+            render={
+              <Link href={addDomainResumeHref(domain.id, domain.verificationMethod)}>
+                <IconCircleDashedCheck />
+                Continue verification
+              </Link>
+            }
+          />
+        ) : null}
         <DropdownMenuSeparator />
         {domain.verified ? (
           <DropdownMenuItem onClick={() => onMute(domain.id, !domain.muted)}>

@@ -1,4 +1,5 @@
 import type { TablerIcon } from "@tabler/icons-react";
+import Link from "next/link";
 
 import { Badge } from "@domainstack/ui/badge";
 import {
@@ -13,7 +14,8 @@ type BadgeWithTooltipProps = {
   label: string;
   className?: string;
   tooltipContent?: React.ReactNode;
-  onClick?: () => void;
+  /** Makes the badge a link (only when it also has tooltip content). */
+  href?: string;
 };
 
 export function BadgeWithTooltip({
@@ -21,13 +23,13 @@ export function BadgeWithTooltip({
   label,
   className,
   tooltipContent,
-  onClick,
+  href,
 }: BadgeWithTooltipProps) {
   const badge = (
     <Badge
       className={cn(
         "gap-[5px] py-1 leading-none font-semibold select-none",
-        onClick && "cursor-pointer transition-opacity hover:opacity-95",
+        href && "cursor-pointer transition-opacity hover:opacity-95",
         className,
       )}
     >
@@ -40,10 +42,10 @@ export function BadgeWithTooltip({
     return badge;
   }
 
-  const trigger = onClick ? (
-    <button type="button" onClick={onClick} className="cursor-pointer">
+  const trigger = href ? (
+    <Link href={href} scroll={false} className="cursor-pointer">
       {badge}
-    </button>
+    </Link>
   ) : (
     badge
   );

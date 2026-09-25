@@ -32,7 +32,6 @@ export {
 } from "@/components/dashboard/mocks/subscription";
 
 export const dashboardActionSpies = {
-  onVerify: vi.fn<(id: string, method: string | null) => void>(),
   onRemove: vi.fn<(id: string) => void>(),
   onArchive: vi.fn<(id: string) => void>(),
   onUnarchive: vi.fn<(id: string) => void>(),
@@ -43,12 +42,10 @@ export const dashboardActionSpies = {
 };
 
 const spyActions: DashboardActions = {
-  onVerify: dashboardActionSpies.onVerify,
   onRemove: dashboardActionSpies.onRemove,
   onArchive: dashboardActionSpies.onArchive,
   onUnarchive: dashboardActionSpies.onUnarchive,
   onMute: dashboardActionSpies.onMute,
-  verifyingDomainId: null,
 };
 
 const spyBulk: DashboardBulkActions = {

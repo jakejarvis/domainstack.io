@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import { createColumns } from "@/components/dashboard/dashboard-table-columns";
@@ -8,9 +8,7 @@ import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { TooltipProvider } from "@domainstack/ui/tooltip";
 
 function expirationCell(date: Date | null) {
-  const columns = createColumns({
-    onVerify: vi.fn<(id: string, method: string | null) => void>(),
-  });
+  const columns = createColumns();
   const column = columns.find((c) => "accessorKey" in c && c.accessorKey === "expirationDate");
   expect(column?.cell).toBeTypeOf("function");
 

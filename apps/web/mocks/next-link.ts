@@ -12,6 +12,16 @@ type NextLinkMockProps = {
   onNavigate?: (e: { preventDefault: () => void }) => void;
 } & Omit<React.ComponentProps<"a">, "href">;
 
+/**
+ * Tests never navigate, so a Link is only pending when a test says so: set
+ * `linkStatusMock.pending` before rendering (and reset it afterwards).
+ */
+export const linkStatusMock = { pending: false };
+
+export function useLinkStatus() {
+  return { pending: linkStatusMock.pending };
+}
+
 export default function NextLinkMock({
   href,
   children,

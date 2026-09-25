@@ -3,15 +3,13 @@
 import { IconAlertCircle, IconBellPlus, IconRosetteDiscountCheck } from "@tabler/icons-react";
 import { skipToken, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useCallback, useTransition } from "react";
 
-import { useRouter } from "@/hooks/use-router";
+import { LinkPendingIcon } from "@/components/link-pending-icon";
 import { addDomainResumeHref } from "@/lib/add-domain-resume";
 import { useTRPC } from "@/lib/trpc/client";
 import { useSession } from "@domainstack/auth/client";
 import { Button } from "@domainstack/ui/button";
 import { useIsClient } from "@domainstack/ui/hooks";
-import { Spinner } from "@domainstack/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 
 type TrackDomainButtonProps = {
@@ -45,14 +43,10 @@ function TrackedVerifiedButton() {
 
 function TrackOrVerifyButton({
   isPendingVerification,
-  isAuthenticated,
-  isNavigating,
-  onClick,
+  href,
 }: {
   isPendingVerification: boolean;
-  isAuthenticated: boolean;
-  isNavigating: boolean;
-  onClick: () => void;
+  href: string;
 }) {
   const label = isPendingVerification ? "Verify" : "Track";
   const icon = isPendingVerification ? (
@@ -60,37 +54,28 @@ function TrackOrVerifyButton({
   ) : (
     <IconBellPlus className="sm:text-muted-foreground" aria-hidden="true" />
   );
-  const buttonContent = (
-    <>
-      {isNavigating ? <Spinner /> : icon}
-      <span className="hidden sm:inline">{label}</span>
-    </>
-  );
   const tooltipText = isPendingVerification
     ? "Complete verification for this domain"
     : "Get alerts for this domain";
   const ariaLabel = isPendingVerification ? "Verify domain" : "Track domain";
 
-  const trigger = isAuthenticated ? (
-    <Button variant="outline" onClick={onClick} disabled={isNavigating} aria-label={ariaLabel}>
-      {buttonContent}
-    </Button>
-  ) : (
-    <Button
-      variant="outline"
-      nativeButton={false}
-      aria-label={ariaLabel}
-      render={
-        <Link href="/login" scroll={false}>
-          {buttonContent}
-        </Link>
-      }
-    />
-  );
-
   return (
     <Tooltip>
-      <TooltipTrigger render={trigger} />
+      <TooltipTrigger
+        render={
+          <Button
+            variant="outline"
+            nativeButton={false}
+            aria-label={ariaLabel}
+            render={
+              <Link href={href} scroll={false}>
+                <LinkPendingIcon icon={icon} />
+                <span className="hidden sm:inline">{label}</span>
+              </Link>
+            }
+          />
+        }
+      />
       <TooltipContent>
         <p>{tooltipText}</p>
       </TooltipContent>
@@ -100,9 +85,7 @@ function TrackOrVerifyButton({
 
 export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonProps) {
   const { data: session, isPending: isSessionPending } = useSession();
-  const router = useRouter();
   const trpc = useTRPC();
-  const [isNavigating, startNavigation] = useTransition();
   const mounted = useIsClient();
 
   const isAuthenticated = !!session?.user;
@@ -113,25 +96,6 @@ export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonP
   const isTracked = !!trackedDomain;
   const isVerified = trackedDomain?.verified ?? false;
   const isPendingVerification = isTracked && !isVerified;
-
-  const handleButtonClick = useCallback(() => {
-    if (!session?.user) return;
-
-    if (isPendingVerification && trackedDomain) {
-      startNavigation(() =>
-        router.push(addDomainResumeHref(trackedDomain.id, trackedDomain.verificationMethod), {
-          scroll: false,
-        }),
-      );
-      return;
-    }
-
-    startNavigation(() =>
-      router.push(`/dashboard/add-domain?domain=${encodeURIComponent(domain)}`, {
-        scroll: false,
-      }),
-    );
-  }, [session?.user, isPendingVerification, trackedDomain, domain, router, startNavigation]);
 
   if (!mounted || isSessionPending || !enabled || (session?.user && isLoadingStatus)) {
     return (
@@ -146,12 +110,13 @@ export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonP
     return <TrackedVerifiedButton />;
   }
 
-  return (
-    <TrackOrVerifyButton
-      isPendingVerification={isPendingVerification}
-      isAuthenticated={isAuthenticated}
-      isNavigating={isNavigating}
-      onClick={handleButtonClick}
-    />
-  );
+  let href = "/login";
+  if (isAuthenticated) {
+    href =
+      isPendingVerification && trackedDomain
+        ? addDomainResumeHref(trackedDomain.id, trackedDomain.verificationMethod)
+        : `/dashboard/add-domain?domain=${encodeURIComponent(domain)}`;
+  }
+
+  return <TrackOrVerifyButton isPendingVerification={isPendingVerification} href={href} />;
 }
