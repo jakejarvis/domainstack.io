@@ -154,3 +154,14 @@ describe("sendEmail", () => {
     expect(high.retryAfter.getTime()).toBeGreaterThan(low.retryAfter.getTime());
   });
 });
+
+describe("getFirstName", () => {
+  it("takes the first word and falls back for blank names", async () => {
+    const { getFirstName } = await import("./email");
+
+    expect(getFirstName("Alex Doe")).toBe("Alex");
+    expect(getFirstName("  Alex   Doe ")).toBe("Alex");
+    expect(getFirstName("   ")).toBe("there");
+    expect(getFirstName(null)).toBe("there");
+  });
+});

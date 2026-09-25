@@ -2,8 +2,9 @@ import { CERTIFICATE_EXPIRY_THRESHOLDS } from "@domainstack/constants";
 import type { TrackedDomainCertificate } from "@domainstack/db/queries/certificates";
 import type { NotificationType } from "@domainstack/types";
 import { formatDateLong } from "@domainstack/utils/date";
+import { calculateDaysRemaining } from "@domainstack/utils/expiry";
 
-import { calculateDaysRemainingStep } from "../steps/notifications";
+import type { NotificationChannels } from "../steps/notifications";
 import { type ExpirySkipResult, evaluateExpiryNotification } from "./thresholds";
 
 export interface CertificateExpiryWorkflowInput {
@@ -12,7 +13,7 @@ export interface CertificateExpiryWorkflowInput {
 
 export type CertificateExpiryWorkflowResult =
   | ExpirySkipResult
-  | { skipped: true; reason: "not_found" | "already_expired" }
+  | { skipped: true; reason: "not_found" | "invalid_expiration_date" | "already_expired" }
   | { skipped: false; sent: true };
 
 /**
@@ -35,16 +36,18 @@ export async function checkCertificateExpiry(
     return { skipped: true, reason: "not_found" };
   }
 
-  // Step 2: Calculate days remaining
-  const validTo = cert.validTo;
-
-  const daysRemaining = await calculateDaysRemainingStep(validTo);
+  // Days remaining is computed in the workflow body: the sandbox fixes `Date`
+  // per replay, so no step is needed to keep it deterministic.
+  const daysRemaining = calculateDaysRemaining(cert.validTo);
 
   // The cron starts this workflow for every verified tracked domain holding a
   // certificate, so an already-expired one reaches us here. The thresholds only
   // describe an approaching expiry and getThresholdNotificationType maps
   // anything at or below the smallest one, so without this guard an expired
   // certificate alerts "expires in -12 days".
+  if (!Number.isFinite(daysRemaining)) {
+    return { skipped: true, reason: "invalid_expiration_date" };
+  }
   if (daysRemaining < 0) {
     return { skipped: true, reason: "already_expired" };
   }
@@ -66,7 +69,7 @@ export async function checkCertificateExpiry(
   // Step 6: Build the notification content (pure — no I/O, safe to recompute)
   const { title, subject, message } = buildCertificateExpiryContent({
     domainName: cert.domainName,
-    validTo,
+    validTo: cert.validTo,
     issuer: cert.issuer,
     daysRemaining,
   });
@@ -84,12 +87,11 @@ export async function checkCertificateExpiry(
       title,
       message,
       subject,
-      validTo,
+      validTo: cert.validTo,
       issuer: cert.issuer,
       daysRemaining,
     },
-    prefs.shouldSendEmail,
-    prefs.shouldSendInApp,
+    prefs,
   );
 
   return { skipped: false, sent: true };
@@ -150,16 +152,14 @@ async function sendCertificateExpiryNotification(
     issuer: string;
     daysRemaining: number;
   },
-  shouldSendEmail: boolean,
-  shouldSendInApp: boolean,
+  channels: NotificationChannels,
 ): Promise<boolean> {
   "use step";
 
   const { default: CertificateExpiryEmail } =
     await import("@domainstack/email/templates/certificate-expiry");
   const { sendNotification } = await import("../steps/notifications");
-
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
+  const { getBaseUrl, getFirstName } = await import("../steps/email");
 
   return await sendNotification(
     {
@@ -172,15 +172,14 @@ async function sendCertificateExpiryNotification(
       message: params.message,
       emailSubject: params.subject,
       emailComponent: CertificateExpiryEmail({
-        userName: params.userName.split(" ")[0] || "there",
+        userName: getFirstName(params.userName),
         domainName: params.domainName,
         expirationDate: formatDateLong(params.validTo),
         daysRemaining: params.daysRemaining,
         issuer: params.issuer,
-        baseUrl,
+        baseUrl: getBaseUrl(),
       }),
     },
-    shouldSendEmail,
-    shouldSendInApp,
+    channels,
   );
 }

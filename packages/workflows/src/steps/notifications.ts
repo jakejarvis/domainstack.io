@@ -83,19 +83,6 @@ export async function resolveProviderNamesStep(
 // ============================================================================
 
 /**
- * Step: Calculate days remaining until expiration.
- *
- * Getting current time inside a step ensures deterministic replay.
- */
-export async function calculateDaysRemainingStep(expirationDate: Date | string): Promise<number> {
-  "use step";
-
-  const { calculateDaysRemaining } = await import("@domainstack/utils/expiry");
-
-  return calculateDaysRemaining(expirationDate);
-}
-
-/**
  * Step: Check user notification preferences for expiry notifications.
  *
  * Respects the muted flag on tracked domains.
@@ -189,8 +176,7 @@ export async function sendNotification(
     emailSubject?: string;
     idempotencyKey?: string;
   },
-  shouldSendEmail: boolean,
-  shouldSendInApp: boolean,
+  { shouldSendEmail, shouldSendInApp }: NotificationChannels,
 ): Promise<boolean> {
   const { createNotification, updateNotificationResendId } =
     await import("@domainstack/db/queries/notifications");
@@ -310,11 +296,11 @@ type ChangeNotification = {
 );
 
 async function renderChangeEmail(notification: ChangeNotification): Promise<React.ReactElement> {
-  const { getEmailBaseUrl } = await import("./email");
+  const { getBaseUrl, getFirstName } = await import("./email");
   const common = {
-    userName: notification.userName.split(" ")[0] || "there",
+    userName: getFirstName(notification.userName),
     domainName: notification.domainName,
-    baseUrl: getEmailBaseUrl(),
+    baseUrl: getBaseUrl(),
   };
 
   switch (notification.type) {
@@ -368,7 +354,6 @@ export async function sendChangeNotificationStep(
       emailComponent,
       idempotencyKey: notification.idempotencyKey,
     },
-    channels.shouldSendEmail,
-    channels.shouldSendInApp,
+    channels,
   );
 }

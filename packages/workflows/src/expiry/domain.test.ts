@@ -16,8 +16,6 @@ const notificationsQueryMock = vi.hoisted(() => ({
 }));
 
 const sharedNotificationsMock = vi.hoisted(() => ({
-  calculateDaysRemainingStep:
-    vi.fn<typeof import("../steps/notifications").calculateDaysRemainingStep>(),
   checkExpiryPreferencesStep:
     vi.fn<typeof import("../steps/notifications").checkExpiryPreferencesStep>(),
   checkAlreadySentStep: vi.fn<typeof import("../steps/notifications").checkAlreadySentStep>(),
@@ -33,6 +31,11 @@ vi.mock("@domainstack/email/templates/domain-expiry", () => ({
   default: vi.fn<() => React.ReactElement>().mockReturnValue({} as React.ReactElement),
 }));
 
+// Days remaining is computed in the workflow body from `Date`, so pin the clock
+// and express dates relative to it. The extra hour keeps `Math.floor` on N.
+const NOW = new Date("2026-09-20T12:00:00.000Z");
+const inDays = (n: number) => new Date(NOW.getTime() + n * 86_400_000 + 3_600_000);
+
 const baseDomain = {
   id: "td-1",
   domainName: "example.com",
@@ -41,14 +44,15 @@ const baseDomain = {
   userEmail: "a@example.com",
   muted: false,
   registrar: "Namecheap",
-  expirationDate: "2026-10-20T00:00:00.000Z",
+  expirationDate: inDays(7).toISOString(),
 };
 
 describe("checkDomainExpiry", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(NOW);
     trackedDomainsMock.getTrackedDomainForNotification.mockResolvedValue(baseDomain as never);
-    sharedNotificationsMock.calculateDaysRemainingStep.mockResolvedValue(7);
     sharedNotificationsMock.getThresholdNotificationType.mockReturnValue("domain_expiry_7d");
     sharedNotificationsMock.checkExpiryPreferencesStep.mockResolvedValue({
       shouldSendEmail: true,
@@ -59,6 +63,7 @@ describe("checkDomainExpiry", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -86,7 +91,10 @@ describe("checkDomainExpiry", () => {
   });
 
   it("invalid_expiration_date: unparseable expiration, no send", async () => {
-    sharedNotificationsMock.calculateDaysRemainingStep.mockResolvedValue(Number.NaN);
+    trackedDomainsMock.getTrackedDomainForNotification.mockResolvedValue({
+      ...baseDomain,
+      expirationDate: "not-a-date",
+    } as never);
 
     const { checkDomainExpiry } = await import("./domain");
     const result = await checkDomainExpiry({ trackedDomainId: "td-1" });
@@ -96,7 +104,10 @@ describe("checkDomainExpiry", () => {
   });
 
   it("renewed: expiration beyond the max threshold clears notifications", async () => {
-    sharedNotificationsMock.calculateDaysRemainingStep.mockResolvedValue(90);
+    trackedDomainsMock.getTrackedDomainForNotification.mockResolvedValue({
+      ...baseDomain,
+      expirationDate: inDays(90).toISOString(),
+    } as never);
     notificationsQueryMock.clearDomainExpiryNotifications.mockResolvedValue(3);
 
     const { checkDomainExpiry } = await import("./domain");
@@ -161,8 +172,7 @@ describe("checkDomainExpiry", () => {
         title: expect.stringContaining("example.com"),
         message: expect.stringContaining("Namecheap"),
       }),
-      true,
-      true,
+      { shouldSendEmail: true, shouldSendInApp: true },
     );
   });
 });

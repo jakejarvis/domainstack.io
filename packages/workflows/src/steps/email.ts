@@ -14,7 +14,12 @@ interface SendEmailParams {
   idempotencyKey?: string;
 }
 
-export function getEmailBaseUrl(): string {
+/** First name for an email greeting, or "there" when the name is blank. */
+export function getFirstName(name: string | null | undefined): string {
+  return (name ?? "").trim().split(/\s+/)[0] || "there";
+}
+
+export function getBaseUrl(): string {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
   if (!baseUrl) {
     throw new FatalError("NEXT_PUBLIC_BASE_URL is required to send workflow emails");
@@ -52,7 +57,7 @@ export async function sendEmail(params: SendEmailParams): Promise<{ emailId: str
     // Use stepId as idempotency key - stable across retries and unique per step
     idempotencyKey = getStepMetadata().stepId;
   }
-  const baseUrl = getEmailBaseUrl();
+  const baseUrl = getBaseUrl();
 
   const { data, error } = await sendResendEmail(
     { to, subject, react },

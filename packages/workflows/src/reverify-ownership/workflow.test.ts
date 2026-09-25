@@ -249,8 +249,7 @@ describe("reverifyOwnershipWorkflow", () => {
     expect(sharedNotificationsMock.sendNotification).toHaveBeenCalledTimes(1);
     expect(sharedNotificationsMock.sendNotification).toHaveBeenCalledWith(
       expect.objectContaining({ notificationType: "verification_failing" }),
-      true,
-      true,
+      { shouldSendEmail: true, shouldSendInApp: true },
     );
     expect(result).toEqual({ verified: false, action: "marked_failing" });
   });
@@ -325,8 +324,7 @@ describe("reverifyOwnershipWorkflow", () => {
 
     expect(sharedNotificationsMock.sendNotification).toHaveBeenCalledWith(
       expect.objectContaining({ notificationType: "verification_revoked" }),
-      true,
-      true,
+      { shouldSendEmail: true, shouldSendInApp: true },
     );
     expect(trackedDomainsMock.revokeVerification).toHaveBeenCalledWith("td-1");
     expect(sharedNotificationsMock.sendNotification.mock.invocationCallOrder[0]).toBeLessThan(

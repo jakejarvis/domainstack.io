@@ -2,8 +2,9 @@ import { DOMAIN_EXPIRY_THRESHOLDS } from "@domainstack/constants";
 import type { TrackedDomainForNotification } from "@domainstack/db/queries/tracked-domains";
 import type { NotificationType } from "@domainstack/types";
 import { formatDateLong } from "@domainstack/utils/date";
+import { calculateDaysRemaining } from "@domainstack/utils/expiry";
 
-import { calculateDaysRemainingStep } from "../steps/notifications";
+import type { NotificationChannels } from "../steps/notifications";
 import { type ExpirySkipResult, evaluateExpiryNotification } from "./thresholds";
 
 export interface DomainExpiryWorkflowInput {
@@ -41,8 +42,9 @@ export async function checkDomainExpiry(
     return { skipped: true, reason: "no_expiration_date" };
   }
 
-  // Step 2: Calculate days remaining and check for renewal
-  const daysRemaining = await calculateDaysRemainingStep(domain.expirationDate);
+  // Days remaining is computed in the workflow body: the sandbox fixes `Date`
+  // per replay, so no step is needed to keep it deterministic.
+  const daysRemaining = calculateDaysRemaining(domain.expirationDate);
 
   // The cron starts this workflow for every verified tracked domain, so an
   // already-expired (or unparseable) date reaches us here. The thresholds only
@@ -97,8 +99,7 @@ export async function checkDomainExpiry(
       daysRemaining,
       registrar: domain.registrar ?? undefined,
     },
-    prefs.shouldSendEmail,
-    prefs.shouldSendInApp,
+    prefs,
   );
 
   return { skipped: false, sent: true };
@@ -159,15 +160,13 @@ async function sendDomainExpiryNotification(
     daysRemaining: number;
     registrar?: string;
   },
-  shouldSendEmail: boolean,
-  shouldSendInApp: boolean,
+  channels: NotificationChannels,
 ): Promise<boolean> {
   "use step";
 
   const { default: DomainExpiryEmail } = await import("@domainstack/email/templates/domain-expiry");
   const { sendNotification } = await import("../steps/notifications");
-
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
+  const { getBaseUrl, getFirstName } = await import("../steps/email");
 
   return await sendNotification(
     {
@@ -180,15 +179,14 @@ async function sendDomainExpiryNotification(
       message: params.message,
       emailSubject: params.subject,
       emailComponent: DomainExpiryEmail({
-        userName: params.userName.split(" ")[0] || "there",
+        userName: getFirstName(params.userName),
         domainName: params.domainName,
         expirationDate: formatDateLong(params.expirationDate),
         daysRemaining: params.daysRemaining,
         registrar: params.registrar,
-        baseUrl,
+        baseUrl: getBaseUrl(),
       }),
     },
-    shouldSendEmail,
-    shouldSendInApp,
+    channels,
   );
 }

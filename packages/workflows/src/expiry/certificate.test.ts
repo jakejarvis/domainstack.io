@@ -16,8 +16,6 @@ const notificationsQueryMock = vi.hoisted(() => ({
 }));
 
 const sharedNotificationsMock = vi.hoisted(() => ({
-  calculateDaysRemainingStep:
-    vi.fn<typeof import("../steps/notifications").calculateDaysRemainingStep>(),
   checkExpiryPreferencesStep:
     vi.fn<typeof import("../steps/notifications").checkExpiryPreferencesStep>(),
   checkAlreadySentStep: vi.fn<typeof import("../steps/notifications").checkAlreadySentStep>(),
@@ -33,13 +31,18 @@ vi.mock("@domainstack/email/templates/certificate-expiry", () => ({
   default: vi.fn<() => React.ReactElement>().mockReturnValue({} as React.ReactElement),
 }));
 
+// Days remaining is computed in the workflow body from `Date`, so pin the clock
+// and express dates relative to it. The extra hour keeps `Math.floor` on N.
+const NOW = new Date("2026-09-20T12:00:00.000Z");
+const inDays = (n: number) => new Date(NOW.getTime() + n * 86_400_000 + 3_600_000);
+
 const baseCert = {
   trackedDomainId: "td-1",
   userId: "u1",
   domainId: "d-1",
   domainName: "example.com",
   muted: false,
-  validTo: new Date("2026-09-27T00:00:00.000Z"),
+  validTo: inDays(7),
   issuer: "Let's Encrypt",
   userEmail: "a@example.com",
   userName: "Alex Doe",
@@ -48,8 +51,9 @@ const baseCert = {
 describe("checkCertificateExpiry", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(NOW);
     certificatesQueryMock.getEarliestCertificate.mockResolvedValue(baseCert);
-    sharedNotificationsMock.calculateDaysRemainingStep.mockResolvedValue(7);
     sharedNotificationsMock.getThresholdNotificationType.mockReturnValue("certificate_expiry_7d");
     sharedNotificationsMock.checkExpiryPreferencesStep.mockResolvedValue({
       shouldSendEmail: true,
@@ -60,6 +64,7 @@ describe("checkCertificateExpiry", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -74,7 +79,10 @@ describe("checkCertificateExpiry", () => {
   });
 
   it("renewed: certificate beyond the max threshold clears notifications", async () => {
-    sharedNotificationsMock.calculateDaysRemainingStep.mockResolvedValue(60);
+    certificatesQueryMock.getEarliestCertificate.mockResolvedValue({
+      ...baseCert,
+      validTo: inDays(60),
+    });
     notificationsQueryMock.clearCertificateExpiryNotifications.mockResolvedValue(2);
 
     const { checkCertificateExpiry } = await import("./certificate");
@@ -110,8 +118,24 @@ describe("checkCertificateExpiry", () => {
     expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
   });
 
+  it("invalid_expiration_date: unparseable valid-to date, no send", async () => {
+    certificatesQueryMock.getEarliestCertificate.mockResolvedValue({
+      ...baseCert,
+      validTo: new Date(Number.NaN),
+    });
+
+    const { checkCertificateExpiry } = await import("./certificate");
+    const result = await checkCertificateExpiry({ trackedDomainId: "td-1" });
+
+    expect(result).toEqual({ skipped: true, reason: "invalid_expiration_date" });
+    expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+  });
+
   it("already_expired: negative days remaining, no send", async () => {
-    sharedNotificationsMock.calculateDaysRemainingStep.mockResolvedValue(-3);
+    certificatesQueryMock.getEarliestCertificate.mockResolvedValue({
+      ...baseCert,
+      validTo: inDays(-3),
+    });
 
     const { checkCertificateExpiry } = await import("./certificate");
     const result = await checkCertificateExpiry({ trackedDomainId: "td-1" });
@@ -136,8 +160,7 @@ describe("checkCertificateExpiry", () => {
         title: expect.stringContaining("example.com"),
         message: expect.stringContaining("Let's Encrypt"),
       }),
-      true,
-      true,
+      { shouldSendEmail: true, shouldSendInApp: true },
     );
   });
 });

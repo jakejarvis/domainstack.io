@@ -1,4 +1,5 @@
 import type { UserWithEndingSubscription } from "@domainstack/db/queries/user-subscription";
+import { calculateDaysRemaining } from "@domainstack/utils/expiry";
 
 interface SubscriptionExpiryWorkflowInput {
   userId: string;
@@ -83,8 +84,8 @@ export async function subscriptionExpiryWorkflow(
     return { skipped: true, reason: "not_found" };
   }
 
-  // Note: We get current time in a step to ensure deterministic replay
-  const daysRemaining = await calculateDaysRemaining(user.endsAt);
+  // The workflow sandbox fixes `Date` per replay, so this needs no step.
+  const daysRemaining = calculateDaysRemaining(user.endsAt);
 
   // Skip if beyond max threshold or already expired
   if (daysRemaining > MAX_THRESHOLD_DAYS || daysRemaining < 0) {
@@ -127,15 +128,6 @@ async function fetchUserSubscription(userId: string): Promise<UserWithEndingSubs
   return await getUserWithEndingSubscription(userId);
 }
 
-async function calculateDaysRemaining(endsAt: Date): Promise<number> {
-  "use step";
-
-  const { calculateDaysRemaining: daysUntil } = await import("@domainstack/utils/expiry");
-
-  // Getting current time inside a step ensures deterministic replay
-  return daysUntil(endsAt);
-}
-
 async function updateExpiryTracking(userId: string, threshold: number): Promise<void> {
   "use step";
 
@@ -149,16 +141,6 @@ async function updateExpiryTracking(userId: string, threshold: number): Promise<
   }
 }
 
-/**
- * Safely extract first name from a name string.
- * Handles null, undefined, empty, or whitespace-only names.
- */
-function getFirstName(name: string | null | undefined): string {
-  const trimmed = (name || "").trim();
-  if (!trimmed) return "there";
-  return trimmed.split(/\s+/)[0];
-}
-
 async function sendSubscriptionExpiryNotification(params: {
   userName: string;
   userEmail: string;
@@ -170,13 +152,13 @@ async function sendSubscriptionExpiryNotification(params: {
   const { formatDateLong } = await import("@domainstack/utils/date");
   const { default: SubscriptionCancelingEmail } =
     await import("@domainstack/email/templates/subscription-canceling");
-  const { getEmailBaseUrl, sendEmail } = await import("../steps/email");
+  const { getBaseUrl, getFirstName, sendEmail } = await import("../steps/email");
 
   const { userName, userEmail, endsAt, daysRemaining } = params;
 
   const firstName = getFirstName(userName);
   const endDate = formatDateLong(endsAt);
-  const baseUrl = getEmailBaseUrl();
+  const baseUrl = getBaseUrl();
 
   // Determine urgency for subject line
   const isUrgent = daysRemaining <= 3;

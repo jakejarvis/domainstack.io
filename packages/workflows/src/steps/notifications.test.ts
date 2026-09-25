@@ -6,9 +6,10 @@ import type { ProviderChangeWithNames } from "@domainstack/types";
 
 // Hoist mocks for the dependencies sendNotificationInternal pulls in via dynamic import.
 const sendEmailMock = vi.hoisted(() => ({
-  getEmailBaseUrl: vi
-    .fn<typeof import("./email").getEmailBaseUrl>()
+  getBaseUrl: vi
+    .fn<typeof import("./email").getBaseUrl>()
     .mockReturnValue("https://test.domainstack.io"),
+  getFirstName: vi.fn<typeof import("./email").getFirstName>().mockReturnValue("Alex"),
   sendEmail: vi.fn<typeof import("./email").sendEmail>(),
 }));
 const notificationsMock = vi.hoisted(() => ({
@@ -116,7 +117,7 @@ describe("sendChangeNotificationStep", () => {
     });
 
     expect(result).toBe(false);
-    expect(sendEmailMock.getEmailBaseUrl).not.toHaveBeenCalled();
+    expect(sendEmailMock.getBaseUrl).not.toHaveBeenCalled();
     expect(sendEmailMock.sendEmail).not.toHaveBeenCalled();
   });
 
@@ -128,7 +129,7 @@ describe("sendChangeNotificationStep", () => {
     });
 
     expect(result).toBe(true);
-    expect(sendEmailMock.getEmailBaseUrl).not.toHaveBeenCalled();
+    expect(sendEmailMock.getBaseUrl).not.toHaveBeenCalled();
     expect(sendEmailMock.sendEmail).not.toHaveBeenCalled();
     expect(notificationsMock.createNotification).toHaveBeenCalledWith(
       expect.objectContaining({ channels: ["in-app"] }),

@@ -244,6 +244,9 @@ function episodeStart(failedAt: Date): Date {
   return new Date(new Date(failedAt).getTime() - 60 * 60 * 1000);
 }
 
+/** Ownership alerts go out on every channel, regardless of mute and preferences. */
+const ACCOUNT_CRITICAL_CHANNELS = { shouldSendEmail: true, shouldSendInApp: true };
+
 /**
  * Step: Send verification failing notification email.
  *
@@ -260,6 +263,7 @@ async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boo
   const { calculateDaysElapsed } = await import("@domainstack/utils/expiry");
   const { hasRecentNotification } = await import("@domainstack/db/queries/notifications");
   const { sendNotification } = await import("../steps/notifications");
+  const { getBaseUrl, getFirstName } = await import("../steps/email");
 
   const alreadySent = await hasRecentNotification(
     domain.id,
@@ -278,8 +282,6 @@ async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boo
   const subject = `⚠️ ${title}`;
   const message = `Verification for ${domain.domainName} is failing. You have ${daysLeft} days to fix it before access is revoked.`;
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
-
   // Account-critical: sent regardless of mute and notification preferences.
   return await sendNotification(
     {
@@ -292,15 +294,14 @@ async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boo
       message,
       emailSubject: subject,
       emailComponent: VerificationFailingEmail({
-        userName: domain.userName.split(" ")[0] || "there",
+        userName: getFirstName(domain.userName),
         domainName: domain.domainName,
         verificationMethod: domain.verificationMethod,
         gracePeriodDays: daysLeft,
-        baseUrl,
+        baseUrl: getBaseUrl(),
       }),
     },
-    true,
-    true,
+    ACCOUNT_CRITICAL_CHANNELS,
   );
 }
 
@@ -318,6 +319,7 @@ async function sendVerificationRevokedEmail(domain: DomainForEmail): Promise<boo
     await import("@domainstack/email/templates/verification-revoked");
   const { hasRecentNotification } = await import("@domainstack/db/queries/notifications");
   const { sendNotification } = await import("../steps/notifications");
+  const { getBaseUrl, getFirstName } = await import("../steps/email");
 
   const alreadySent = await hasRecentNotification(
     domain.id,
@@ -329,8 +331,6 @@ async function sendVerificationRevokedEmail(domain: DomainForEmail): Promise<boo
   const title = `Verification revoked for ${domain.domainName}`;
   const subject = `❌ ${title}`;
   const message = `Verification for ${domain.domainName} has been revoked. The grace period has expired without successful re-verification.`;
-
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
 
   // Account-critical: sent regardless of mute and notification preferences.
   return await sendNotification(
@@ -344,12 +344,11 @@ async function sendVerificationRevokedEmail(domain: DomainForEmail): Promise<boo
       message,
       emailSubject: subject,
       emailComponent: VerificationRevokedEmail({
-        userName: domain.userName.split(" ")[0] || "there",
+        userName: getFirstName(domain.userName),
         domainName: domain.domainName,
-        baseUrl,
+        baseUrl: getBaseUrl(),
       }),
     },
-    true,
-    true,
+    ACCOUNT_CRITICAL_CHANNELS,
   );
 }
