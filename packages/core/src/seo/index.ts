@@ -52,7 +52,10 @@ interface HtmlFetchData {
     image: string | null;
     canonicalUrl: string;
   } | null;
+  /** Human-readable reason, stored in the response. */
   error?: string;
+  /** Set for failures no retry can fix; other failures still return partial data. */
+  errorCode?: SeoError;
 }
 
 interface RobotsFetchData {
@@ -86,18 +89,11 @@ export async function fetchSeo(domain: string): Promise<SeoResult> {
   // Check for permanent HTML failures (DNS/TLS errors)
   // These are fatal - no useful data can be extracted
   // Still persist the error state to prevent repeated retries
-  if (!htmlResult.success) {
-    if (
-      htmlResult.error === "DNS resolution failed" ||
-      htmlResult.error === "Invalid SSL certificate"
-    ) {
-      const errorResponse = buildSeoResponse(htmlResult, robotsResult, null);
-      await persistSeo(domain, errorResponse, null, false);
-
-      const errorCode = htmlResult.error === "DNS resolution failed" ? "dns_error" : "tls_error";
-      return { success: false, error: errorCode };
-    }
-    // Other HTML failures (HTTP errors, non-HTML) continue with partial data
+  // Other HTML failures (HTTP errors, non-HTML) continue with partial data
+  if (htmlResult.errorCode) {
+    const errorResponse = buildSeoResponse(htmlResult, robotsResult, null);
+    await persistSeo(domain, errorResponse, null, false);
+    return { success: false, error: htmlResult.errorCode };
   }
 
   // Step 3: Process OG image (if present and not blocked)
@@ -205,6 +201,7 @@ async function fetchHtml(domain: string): Promise<HtmlFetchData> {
         meta: null,
         preview: null,
         error: "DNS resolution failed",
+        errorCode: "dns_error",
       };
     }
 
@@ -216,6 +213,7 @@ async function fetchHtml(domain: string): Promise<HtmlFetchData> {
         meta: null,
         preview: null,
         error: "Invalid SSL certificate",
+        errorCode: "tls_error",
       };
     }
 

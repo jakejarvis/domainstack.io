@@ -8,10 +8,7 @@ import {
   getCalendarFeed,
   rotateCalendarFeedToken,
 } from "@domainstack/db/queries/calendar-feeds";
-import {
-  countTrackedDomainsByStatus,
-  setDomainMuted,
-} from "@domainstack/db/queries/tracked-domains";
+import { countTrackedDomainsByStatus } from "@domainstack/db/queries/tracked-domains";
 import {
   getOrCreateUserNotificationPreferences,
   updateUserNotificationPreferences,
@@ -97,40 +94,6 @@ export const userRouter = createTRPCRouter({
       analytics.track("notification_preferences_updated", { ...input }, ctx.user.id);
 
       return updated;
-    }),
-
-  /**
-   * Set muted state for a specific tracked domain.
-   * Muted domains receive no notifications.
-   */
-  setDomainMuted: protectedProcedure
-    .input(
-      z.object({
-        trackedDomainId: z.uuid(),
-        muted: z.boolean(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { trackedDomainId, muted } = input;
-
-      const updated = await setDomainMuted(trackedDomainId, ctx.user.id, muted);
-
-      // A null result covers both "not found" and "wrong user" — return
-      // identical errors for both to prevent enumeration attacks via error
-      // differentiation.
-      if (!updated) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Tracked domain not found",
-        });
-      }
-
-      analytics.track(muted ? "domain_muted" : "domain_unmuted", {}, ctx.user.id);
-
-      return {
-        id: updated.id,
-        muted: updated.muted,
-      };
     }),
 
   // ============================================================================

@@ -8,6 +8,8 @@ import type {
   ProviderChangeWithNames,
   RegistrationSnapshotData,
 } from "@domainstack/types";
+import { findLeafCertificate } from "@domainstack/utils/tls";
+
 import {
   certificateSnapshotFrom,
   confirmChange,
@@ -18,15 +20,18 @@ import {
   providerObservationKey,
   registrationObservationKey,
   registrationSnapshotFrom,
-} from "@domainstack/utils/change-detection";
-import { findLeafCertificate } from "@domainstack/utils/tls";
-
+} from "../lib/change-detection/detection";
+import {
+  describeCertificateChange,
+  describeProviderChange,
+  describeRegistrationChange,
+  describeUnregistered,
+} from "../lib/change-detection/notification-copy";
 import {
   determineNotificationChannelsStep,
+  type NotificationChannels,
   resolveProviderNamesStep,
-  sendCertificateChangeNotificationStep,
-  sendProviderChangeNotificationStep,
-  sendRegistrationChangeNotificationStep,
+  sendChangeNotificationStep,
 } from "../steps/notifications";
 import { observeDomain } from "../steps/observe-domain";
 
@@ -97,589 +102,26 @@ export async function detectChangesWorkflow(
   }
 }
 
+/** What every change check needs about the tracked domain and its baseline. */
+interface CheckContext {
+  trackedDomainId: string;
+  snapshot: SnapshotForMonitoring;
+}
+
 async function runChangeDetection(
   trackedDomainId: string,
   monitorLockOwnerToken: string,
   snapshot: SnapshotForMonitoring,
 ): Promise<DetectChangesWorkflowResult> {
-  const { domainName, userId, userName, userEmail } = snapshot;
-
   // Step 2: Fetch and persist fresh data
-  const { registrationData, dnsResult, headersResult, certificates, ip, geoResult, providers } =
-    await observeDomain(domainName);
+  const observation = await observeDomain(snapshot.domainName);
+  const ctx: CheckContext = { trackedDomainId, snapshot };
 
-  const results = {
-    skipped: false as const,
-    registrationChanges: false,
-    providerChanges: false,
-    certificateChanges: false,
-  };
-
-  // Step 3: Check registration changes
-  if (registrationData && registrationData.status === "registered") {
-    const currentRegistration = registrationSnapshotFrom(registrationData);
-
-    if (isUninitializedRegistration(snapshot.registration)) {
-      // The baseline was written without registration data (lookup unavailable
-      // at initialize time). Adopt this first real observation silently —
-      // reporting "nothing → registrar X" would be a false alert.
-      await updateRegistrationSnapshot(trackedDomainId, { ...currentRegistration, pending: null });
-    } else {
-      const registrationChange = detectRegistrationChange(
-        snapshot.registration,
-        currentRegistration,
-      );
-
-      if (!registrationChange) {
-        // No difference from the stored snapshot: clear a stale pending
-        // observation if one is set (the wobble went away), or a stale
-        // "unregistered" flag if the domain came back with the same data.
-        if (snapshot.registration.pending || snapshot.registration.unregistered) {
-          await updateRegistrationSnapshot(trackedDomainId, {
-            ...snapshot.registration,
-            pending: null,
-            unregistered: false,
-          });
-        }
-      } else {
-        // Step 3a: Check notification preferences
-        const channels = await determineNotificationChannelsStep(
-          userId,
-          trackedDomainId,
-          "registrationChanges",
-        );
-
-        if (!channels.shouldSendEmail && !channels.shouldSendInApp) {
-          // Muted domain / disabled category: nothing to deliver. Advance the
-          // snapshot now so we don't infinitely re-detect this change (and
-          // don't replay a stale change as "fresh" when the user later unmutes
-          // / re-enables the category).
-          await updateRegistrationSnapshot(trackedDomainId, {
-            ...currentRegistration,
-            pending: null,
-          });
-        } else {
-          // Require a repeat observation before notifying — a single differing
-          // lookup is often a transient wobble (see confirmChange).
-          const confirmation = confirmChange(
-            snapshot.registration.pending,
-            registrationObservationKey(currentRegistration),
-          );
-
-          if (!confirmation.confirmed) {
-            // Keep the previous registration values — only pending changes.
-            await updateRegistrationSnapshot(trackedDomainId, {
-              ...snapshot.registration,
-              pending: confirmation.pending,
-            });
-          } else {
-            // Step 3b: Resolve registrar provider names
-            const registrarIds = [
-              registrationChange.previousRegistrar,
-              registrationChange.newRegistrar,
-            ].filter((id): id is string => !!id);
-            const registrarNames =
-              registrarIds.length > 0 ? await resolveProviderNamesStep(registrarIds) : new Map();
-
-            const previousRegistrar = registrationChange.previousRegistrar
-              ? (registrarNames.get(registrationChange.previousRegistrar) ??
-                registrationChange.previousRegistrar)
-              : null;
-            const newRegistrar = registrationChange.newRegistrar
-              ? (registrarNames.get(registrationChange.newRegistrar) ??
-                registrationChange.newRegistrar)
-              : null;
-
-            // Build notification content (title, message, subject) - inlined
-            const changeDetails: string[] = [];
-
-            if (registrationChange.registrarChanged) {
-              if (previousRegistrar && newRegistrar) {
-                changeDetails.push(
-                  `Registrar changed from ${previousRegistrar} to ${newRegistrar}`,
-                );
-              } else if (newRegistrar) {
-                changeDetails.push(`Registrar set to ${newRegistrar}`);
-              } else if (previousRegistrar) {
-                changeDetails.push(`Registrar ${previousRegistrar} removed`);
-              }
-            }
-
-            if (registrationChange.transferLockChanged) {
-              if (registrationChange.newTransferLock === true) {
-                changeDetails.push("Transfer lock enabled");
-              } else if (registrationChange.newTransferLock === false) {
-                changeDetails.push("Transfer lock disabled");
-              }
-            }
-
-            if (registrationChange.nameserversChanged) {
-              const prevNs = registrationChange.previousNameservers.map((ns) => ns.host);
-              const newNs = registrationChange.newNameservers.map((ns) => ns.host);
-              if (prevNs.length > 0 && newNs.length > 0) {
-                changeDetails.push(
-                  `Nameservers changed to ${newNs.slice(0, 2).join(", ")}${newNs.length > 2 ? ` (+${newNs.length - 2} more)` : ""}`,
-                );
-              } else if (newNs.length > 0) {
-                changeDetails.push(
-                  `Nameservers set to ${newNs.slice(0, 2).join(", ")}${newNs.length > 2 ? ` (+${newNs.length - 2} more)` : ""}`,
-                );
-              }
-            }
-
-            if (registrationChange.statusesChanged) {
-              const previousStatusSet = new Set(registrationChange.previousStatuses);
-              const newStatusSet = new Set(registrationChange.newStatuses);
-              const addedStatuses = registrationChange.newStatuses.filter(
-                (s) => !previousStatusSet.has(s),
-              );
-              const removedStatuses = registrationChange.previousStatuses.filter(
-                (s) => !newStatusSet.has(s),
-              );
-              if (addedStatuses.length > 0) {
-                changeDetails.push(`Status added: ${addedStatuses.join(", ")}`);
-              }
-              if (removedStatuses.length > 0) {
-                changeDetails.push(`Status removed: ${removedStatuses.join(", ")}`);
-              }
-            }
-
-            // Determine primary change type for title (in priority order)
-            let primaryChange = "Registration";
-            if (registrationChange.registrarChanged) {
-              primaryChange = "Registrar";
-            } else if (registrationChange.transferLockChanged) {
-              primaryChange = "Transfer lock";
-            } else if (registrationChange.nameserversChanged) {
-              primaryChange = "Nameservers";
-            }
-
-            const title = `${primaryChange} changed for ${domainName}`;
-            const emailSubject = `⚠️ ${title}`;
-            const message =
-              changeDetails.length > 0
-                ? `${changeDetails.join(". ")}.`
-                : `Registration details updated for ${domainName}.`;
-
-            // Step 3c: Settle notification delivery. A permanent email failure
-            // can degrade to in-app-only (or no delivery when email was the only
-            // channel), but the snapshot still advances so the workflow does not
-            // retry an address that cannot accept mail forever.
-            // Keyed by the change (before > after), not the step: if this run fails
-            // after sending, the next hourly run re-detects the same change and
-            // Resend dedupes the email instead of delivering it twice.
-            await sendRegistrationChangeNotificationStep(
-              {
-                userId,
-                userEmail,
-                trackedDomainId,
-                domainName,
-                userName,
-                title,
-                message,
-                emailSubject,
-                changes: { ...registrationChange, previousRegistrar, newRegistrar },
-                idempotencyKey: `registration:${trackedDomainId}:${registrationObservationKey(snapshot.registration)}>${registrationObservationKey(currentRegistration)}`,
-              },
-              channels.shouldSendEmail,
-              channels.shouldSendInApp,
-            );
-
-            results.registrationChanges = true;
-
-            // Advance only after the email/in-app step succeeds. If a step above
-            // threw, the snapshot stays stale and the next hourly cron retries
-            // the full alert rather than silently swallowing it.
-            await updateRegistrationSnapshot(trackedDomainId, {
-              ...currentRegistration,
-              pending: null,
-            });
-          }
-        }
-      }
-    }
-  } else if (
-    registrationData?.status === "unregistered" &&
-    !isUninitializedRegistration(snapshot.registration) &&
-    !snapshot.registration.unregistered
-  ) {
-    // The registry says a domain we had registration data for is gone. Keep the
-    // previous registration values in the snapshot (so a re-registration with a
-    // different registrar still alerts) and mark the drop as handled.
-    const channels = await determineNotificationChannelsStep(
-      userId,
-      trackedDomainId,
-      "registrationChanges",
-    );
-
-    if (!channels.shouldSendEmail && !channels.shouldSendInApp) {
-      await updateRegistrationSnapshot(trackedDomainId, {
-        ...snapshot.registration,
-        pending: null,
-        unregistered: true,
-      });
-    } else {
-      // Same one-hour confirmation as other registration changes; a fixed key
-      // distinct from any registrationObservationKey output.
-      const confirmation = confirmChange(snapshot.registration.pending, "unregistered");
-
-      if (!confirmation.confirmed) {
-        await updateRegistrationSnapshot(trackedDomainId, {
-          ...snapshot.registration,
-          pending: confirmation.pending,
-        });
-      } else {
-        const previousRegistrarId = snapshot.registration.registrarProviderId;
-        const registrarNames = previousRegistrarId
-          ? await resolveProviderNamesStep([previousRegistrarId])
-          : new Map<string, string>();
-        const previousRegistrar = previousRegistrarId
-          ? (registrarNames.get(previousRegistrarId) ?? previousRegistrarId)
-          : null;
-
-        const title = `${domainName} is no longer registered`;
-        const emailSubject = `🚨 ${title}`;
-        const message = `The registry reports ${domainName} as unregistered${
-          previousRegistrar ? ` (previously registered with ${previousRegistrar})` : ""
-        }. If this is unexpected, contact your registrar immediately.`;
-
-        await sendRegistrationChangeNotificationStep(
-          {
-            userId,
-            userEmail,
-            trackedDomainId,
-            domainName,
-            userName,
-            title,
-            message,
-            emailSubject,
-            changes: {
-              unregistered: true,
-              registrarChanged: false,
-              nameserversChanged: false,
-              transferLockChanged: false,
-              statusesChanged: false,
-              previousRegistrar,
-              previousNameservers: snapshot.registration.nameservers ?? [],
-              previousTransferLock: snapshot.registration.transferLock ?? null,
-              previousStatuses: snapshot.registration.statuses ?? [],
-              newRegistrar: null,
-              newNameservers: [],
-              newTransferLock: null,
-              newStatuses: [],
-            },
-            idempotencyKey: `registration:${trackedDomainId}:${registrationObservationKey(snapshot.registration)}>unregistered`,
-          },
-          channels.shouldSendEmail,
-          channels.shouldSendInApp,
-        );
-
-        results.registrationChanges = true;
-
-        await updateRegistrationSnapshot(trackedDomainId, {
-          ...snapshot.registration,
-          pending: null,
-          unregistered: true,
-        });
-      }
-    }
-  }
-
-  // An empty DNS record set means we could not observe the domain's providers —
-  // either every resolver failed or the domain resolves to nothing right now.
-  // Either way it is not evidence that the providers were removed, and treating
-  // it as such emails users a false "provider removed" alert and then advances
-  // the snapshot so the recovery looks like a second change.
-  const dnsObserved = dnsResult.records.length > 0;
-
-  // Hosting is derived from HTTP headers (catalog match), falling back to the
-  // IP owner from GeoIP. When the domain has an address but either input was
-  // unavailable this run, the derived value is not evidence of a change —
-  // compare against the stored provider instead (same rule as dnsObserved).
-  const hostingObserved = ip === null || (headersResult?.success === true && geoResult !== null);
-
-  // Step 4: Check provider changes
-  if (dnsObserved) {
-    const currentProviderIds = {
-      dns: providers.dnsProvider?.id ?? null,
-      hosting: hostingObserved
-        ? (providers.hostingProvider?.id ?? null)
-        : snapshot.hostingProviderId,
-      email: providers.emailProvider?.id ?? null,
-    };
-
-    const currentProviderSnapshot = {
-      dnsProviderId: currentProviderIds.dns,
-      hostingProviderId: currentProviderIds.hosting,
-      emailProviderId: currentProviderIds.email,
-    };
-
-    const providerChange = detectProviderChange(
-      {
-        dnsProviderId: snapshot.dnsProviderId,
-        hostingProviderId: snapshot.hostingProviderId,
-        emailProviderId: snapshot.emailProviderId,
-      },
-      currentProviderSnapshot,
-    );
-
-    if (!providerChange) {
-      // No difference from the stored snapshot: clear a stale pending
-      // observation if one is set (the wobble went away).
-      if (snapshot.providerPending) {
-        await updateProviderPending(trackedDomainId, null);
-      }
-    } else {
-      // Step 4a: Check notification preferences
-      const channels = await determineNotificationChannelsStep(
-        userId,
-        trackedDomainId,
-        "providerChanges",
-      );
-
-      if (!channels.shouldSendEmail && !channels.shouldSendInApp) {
-        // Muted / disabled: advance on detection so we don't infinitely
-        // re-detect (see registration branch rationale).
-        await updateProviderSnapshot(trackedDomainId, currentProviderIds);
-      } else {
-        // Require a repeat observation before notifying — a single differing
-        // lookup is often a transient wobble (see confirmChange).
-        const confirmation = confirmChange(
-          snapshot.providerPending,
-          providerObservationKey(currentProviderSnapshot),
-        );
-
-        if (!confirmation.confirmed) {
-          await updateProviderPending(trackedDomainId, confirmation.pending);
-        } else {
-          // Step 4b: Fetch provider names for notification
-          const providerIds = [
-            snapshot.dnsProviderId,
-            snapshot.hostingProviderId,
-            snapshot.emailProviderId,
-            currentProviderIds.dns,
-            currentProviderIds.hosting,
-            currentProviderIds.email,
-          ].filter((id): id is string => id !== null);
-
-          const providerNames = await resolveProviderNamesStep(providerIds);
-
-          const enrichedChange: ProviderChangeWithNames = {
-            ...providerChange,
-            previousDnsProvider: providerChange.previousDnsProviderId
-              ? providerNames.get(providerChange.previousDnsProviderId) || null
-              : null,
-            newDnsProvider: providerChange.newDnsProviderId
-              ? providerNames.get(providerChange.newDnsProviderId) || null
-              : null,
-            previousHostingProvider: providerChange.previousHostingProviderId
-              ? providerNames.get(providerChange.previousHostingProviderId) || null
-              : null,
-            newHostingProvider: providerChange.newHostingProviderId
-              ? providerNames.get(providerChange.newHostingProviderId) || null
-              : null,
-            previousEmailProvider: providerChange.previousEmailProviderId
-              ? providerNames.get(providerChange.previousEmailProviderId) || null
-              : null,
-            newEmailProvider: providerChange.newEmailProviderId
-              ? providerNames.get(providerChange.newEmailProviderId) || null
-              : null,
-          };
-
-          // Step 4c: Build notification content - inlined
-          const providerChangeDetails: string[] = [];
-
-          if (enrichedChange.dnsProviderChanged) {
-            const prev = enrichedChange.previousDnsProvider;
-            const next = enrichedChange.newDnsProvider;
-            if (prev && next) {
-              providerChangeDetails.push(`DNS provider changed from ${prev} to ${next}`);
-            } else if (next) {
-              providerChangeDetails.push(`DNS provider set to ${next}`);
-            } else if (prev) {
-              providerChangeDetails.push(`DNS provider ${prev} removed`);
-            }
-          }
-
-          if (enrichedChange.hostingProviderChanged) {
-            const prev = enrichedChange.previousHostingProvider;
-            const next = enrichedChange.newHostingProvider;
-            if (prev && next) {
-              providerChangeDetails.push(`Hosting changed from ${prev} to ${next}`);
-            } else if (next) {
-              providerChangeDetails.push(`Hosting set to ${next}`);
-            } else if (prev) {
-              providerChangeDetails.push(`Hosting provider ${prev} removed`);
-            }
-          }
-
-          if (enrichedChange.emailProviderChanged) {
-            const prev = enrichedChange.previousEmailProvider;
-            const next = enrichedChange.newEmailProvider;
-            if (prev && next) {
-              providerChangeDetails.push(`Email provider changed from ${prev} to ${next}`);
-            } else if (next) {
-              providerChangeDetails.push(`Email provider set to ${next}`);
-            } else if (prev) {
-              providerChangeDetails.push(`Email provider ${prev} removed`);
-            }
-          }
-
-          // Determine primary change type for title (in priority order)
-          let providerPrimaryChange = "Provider";
-          if (enrichedChange.dnsProviderChanged) {
-            providerPrimaryChange = "DNS provider";
-          } else if (enrichedChange.hostingProviderChanged) {
-            providerPrimaryChange = "Hosting";
-          } else if (enrichedChange.emailProviderChanged) {
-            providerPrimaryChange = "Email provider";
-          }
-
-          const title = `${providerPrimaryChange} changed for ${domainName}`;
-          const emailSubject = `🔄 ${title}`;
-          const message =
-            providerChangeDetails.length > 0
-              ? `${providerChangeDetails.join(". ")}.`
-              : `Provider configuration updated for ${domainName}.`;
-
-          await sendProviderChangeNotificationStep(
-            {
-              userId,
-              userEmail,
-              trackedDomainId,
-              domainName,
-              userName,
-              title,
-              message,
-              emailSubject,
-              changes: enrichedChange,
-              idempotencyKey: `provider:${trackedDomainId}:${providerObservationKey({ dnsProviderId: snapshot.dnsProviderId, hostingProviderId: snapshot.hostingProviderId, emailProviderId: snapshot.emailProviderId })}>${providerObservationKey(currentProviderSnapshot)}`,
-            },
-            channels.shouldSendEmail,
-            channels.shouldSendInApp,
-          );
-
-          results.providerChanges = true;
-
-          // Advance only after delivery (see registration branch rationale).
-          await updateProviderSnapshot(trackedDomainId, currentProviderIds);
-        }
-      }
-    }
-  }
-
-  // Step 5: Check certificate changes
-  if (certificates.length > 0) {
-    const leafCert = findLeafCertificate(certificates);
-
-    if (leafCert) {
-      const currentCertificate = certificateSnapshotFrom(leafCert);
-
-      const evaluation = evaluateCertificateChange(snapshot.certificate, currentCertificate);
-
-      const persistCertificateSnapshot = async () => {
-        if (evaluation.snapshotToWrite) {
-          await updateCertificateSnapshot(trackedDomainId, evaluation.snapshotToWrite);
-        }
-      };
-
-      if (evaluation.shouldNotify) {
-        const channels = await determineNotificationChannelsStep(
-          userId,
-          trackedDomainId,
-          "certificateChanges",
-        );
-
-        if (channels.shouldSendEmail || channels.shouldSendInApp) {
-          const certificateChange = evaluation.change;
-          const caIds = [
-            certificateChange.previousCaProviderId,
-            certificateChange.newCaProviderId,
-          ].filter((id): id is string => id !== null);
-
-          const caProviderNames = await resolveProviderNamesStep(caIds);
-
-          const enrichedChange: CertificateChangeWithNames = {
-            ...certificateChange,
-            previousCaProvider: certificateChange.previousCaProviderId
-              ? caProviderNames.get(certificateChange.previousCaProviderId) || null
-              : null,
-            newCaProvider: certificateChange.newCaProviderId
-              ? caProviderNames.get(certificateChange.newCaProviderId) || null
-              : null,
-          };
-
-          const validUntil = formatCertificateValidUntil(currentCertificate.validTo);
-          const certChangeDetails: string[] = [];
-
-          if (evaluation.kind === "renewal") {
-            certChangeDetails.push(`Valid until ${validUntil}`);
-          } else {
-            if (enrichedChange.caProviderChanged) {
-              const prev = enrichedChange.previousCaProvider;
-              const next = enrichedChange.newCaProvider;
-              if (prev && next) {
-                certChangeDetails.push(`Certificate authority changed from ${prev} to ${next}`);
-              } else if (next) {
-                certChangeDetails.push(`Certificate authority set to ${next}`);
-              }
-            }
-
-            if (enrichedChange.issuerChanged) {
-              const prev = enrichedChange.previousIssuer;
-              const next = enrichedChange.newIssuer;
-              if (prev && next) {
-                certChangeDetails.push(`Issuer changed from ${prev} to ${next}`);
-              } else if (next) {
-                certChangeDetails.push(`Issuer set to ${next}`);
-              }
-            }
-
-            certChangeDetails.push(`Valid until ${validUntil}`);
-          }
-
-          const title =
-            evaluation.kind === "renewal"
-              ? `Certificate renewed for ${domainName}`
-              : evaluation.kind === "authority"
-                ? `Certificate authority changed for ${domainName}`
-                : `Certificate changed for ${domainName}`;
-          const emailSubject = `🔒 ${title}`;
-          const message = `${certChangeDetails.join(". ")}.`;
-
-          await sendCertificateChangeNotificationStep(
-            {
-              userId,
-              userEmail,
-              trackedDomainId,
-              domainName,
-              userName,
-              title,
-              message,
-              emailSubject,
-              newValidTo: currentCertificate.validTo,
-              kind: evaluation.kind,
-              changes: enrichedChange,
-              idempotencyKey: `certificate:${trackedDomainId}:${snapshot.certificate.fingerprint ?? snapshot.certificate.serialNumber ?? ""}>${currentCertificate.fingerprint ?? currentCertificate.serialNumber ?? ""}`,
-            },
-            channels.shouldSendEmail,
-            channels.shouldSendInApp,
-          );
-
-          results.certificateChanges = true;
-
-          // Advance only after delivery (see registration branch rationale).
-          await persistCertificateSnapshot();
-        } else {
-          // Muted / disabled: advance on detection so we don't infinitely
-          // re-detect (see registration branch rationale).
-          await persistCertificateSnapshot();
-        }
-      } else {
-        await persistCertificateSnapshot();
-      }
-    }
-  }
+  // Each check advances its own part of the snapshot. They run in sequence so
+  // the step order (and so each replay) stays the same.
+  const registrationChanges = await checkRegistration(ctx, observation.registrationData);
+  const providerChanges = await checkProviders(ctx, observation);
+  const certificateChanges = await checkCertificate(ctx, observation.certificates);
 
   // Release the per-domain monitor lock so the next hourly cron can re-run.
   // Only runs on successful completion — a retrying Error/RetryableError above
@@ -688,20 +130,409 @@ async function runChangeDetection(
   // released there too, since nothing is going to retry it.
   await releaseMonitorLockStep(trackedDomainId, monitorLockOwnerToken);
 
-  return results;
+  return { skipped: false, registrationChanges, providerChanges, certificateChanges };
 }
 
-const CERTIFICATE_VALID_UNTIL_FORMATTER = new Intl.DateTimeFormat("en-US", {
-  year: "numeric",
-  month: "long",
-  day: "numeric",
-  timeZone: "UTC",
-});
+type Observation = Awaited<ReturnType<typeof observeDomain>>;
 
-function formatCertificateValidUntil(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return CERTIFICATE_VALID_UNTIL_FORMATTER.format(date);
+const hasAnyChannel = (channels: NotificationChannels) =>
+  channels.shouldSendEmail || channels.shouldSendInApp;
+
+/** A resolved provider name, or null when the id is absent or unknown. */
+const nameOf = (names: Map<string, string>, id: string | null) =>
+  id ? names.get(id) || null : null;
+
+function recipientOf({ snapshot, trackedDomainId }: CheckContext) {
+  return {
+    userId: snapshot.userId,
+    userEmail: snapshot.userEmail,
+    userName: snapshot.userName,
+    domainName: snapshot.domainName,
+    trackedDomainId,
+  };
+}
+
+/** Step 3: registrar, nameserver, transfer lock, and status changes, plus a lapsed registration. */
+async function checkRegistration(
+  ctx: CheckContext,
+  registrationData: Observation["registrationData"],
+): Promise<boolean> {
+  const { trackedDomainId, snapshot } = ctx;
+  const stored = snapshot.registration;
+
+  if (registrationData?.status === "unregistered") {
+    return await checkUnregistered(ctx);
+  }
+  if (registrationData?.status !== "registered") {
+    return false;
+  }
+
+  const currentRegistration = registrationSnapshotFrom(registrationData);
+
+  if (isUninitializedRegistration(stored)) {
+    // The baseline was written without registration data (lookup unavailable
+    // at initialize time). Adopt this first real observation silently —
+    // reporting "nothing → registrar X" would be a false alert.
+    await updateRegistrationSnapshot(trackedDomainId, { ...currentRegistration, pending: null });
+    return false;
+  }
+
+  const registrationChange = detectRegistrationChange(stored, currentRegistration);
+
+  if (!registrationChange) {
+    // No difference from the stored snapshot: clear a stale pending
+    // observation if one is set (the wobble went away), or a stale
+    // "unregistered" flag if the domain came back with the same data.
+    if (stored.pending || stored.unregistered) {
+      await updateRegistrationSnapshot(trackedDomainId, {
+        ...stored,
+        pending: null,
+        unregistered: false,
+      });
+    }
+    return false;
+  }
+
+  const channels = await determineNotificationChannelsStep(
+    snapshot.userId,
+    trackedDomainId,
+    "registrationChanges",
+  );
+
+  if (!hasAnyChannel(channels)) {
+    // Muted domain / disabled category: nothing to deliver. Advance the
+    // snapshot now so we don't infinitely re-detect this change (and
+    // don't replay a stale change as "fresh" when the user later unmutes
+    // / re-enables the category).
+    await updateRegistrationSnapshot(trackedDomainId, { ...currentRegistration, pending: null });
+    return false;
+  }
+
+  // Require a repeat observation before notifying — a single differing
+  // lookup is often a transient wobble (see confirmChange).
+  const confirmation = confirmChange(
+    stored.pending,
+    registrationObservationKey(currentRegistration),
+  );
+
+  if (!confirmation.confirmed) {
+    // Keep the previous registration values — only pending changes.
+    await updateRegistrationSnapshot(trackedDomainId, {
+      ...stored,
+      pending: confirmation.pending,
+    });
+    return false;
+  }
+
+  // Unknown registrar ids fall back to the id itself rather than "removed".
+  const registrarIds = [
+    registrationChange.previousRegistrar,
+    registrationChange.newRegistrar,
+  ].filter((id): id is string => !!id);
+  const registrarNames =
+    registrarIds.length > 0
+      ? await resolveProviderNamesStep(registrarIds)
+      : new Map<string, string>();
+  const changes = {
+    ...registrationChange,
+    previousRegistrar: registrationChange.previousRegistrar
+      ? (registrarNames.get(registrationChange.previousRegistrar) ??
+        registrationChange.previousRegistrar)
+      : null,
+    newRegistrar: registrationChange.newRegistrar
+      ? (registrarNames.get(registrationChange.newRegistrar) ?? registrationChange.newRegistrar)
+      : null,
+  };
+
+  // Settle notification delivery. A permanent email failure can degrade to
+  // in-app-only (or no delivery when email was the only channel), but the
+  // snapshot still advances so the workflow does not retry an address that
+  // cannot accept mail forever.
+  // Keyed by the change (before > after), not the step: if this run fails
+  // after sending, the next hourly run re-detects the same change and
+  // Resend dedupes the email instead of delivering it twice.
+  await sendChangeNotificationStep(
+    {
+      ...recipientOf(ctx),
+      ...describeRegistrationChange(changes, snapshot.domainName),
+      type: "registration_change",
+      changes,
+      idempotencyKey: `registration:${trackedDomainId}:${registrationObservationKey(stored)}>${registrationObservationKey(currentRegistration)}`,
+    },
+    channels,
+  );
+
+  // Advance only after the email/in-app step succeeds. If a step above
+  // threw, the snapshot stays stale and the next hourly cron retries
+  // the full alert rather than silently swallowing it.
+  await updateRegistrationSnapshot(trackedDomainId, { ...currentRegistration, pending: null });
+  return true;
+}
+
+/**
+ * The registry says a domain we had registration data for is gone. Keep the
+ * previous registration values in the snapshot (so a re-registration with a
+ * different registrar still alerts) and mark the drop as handled.
+ */
+async function checkUnregistered(ctx: CheckContext): Promise<boolean> {
+  const { trackedDomainId, snapshot } = ctx;
+  const stored = snapshot.registration;
+
+  if (isUninitializedRegistration(stored) || stored.unregistered) {
+    return false;
+  }
+
+  const channels = await determineNotificationChannelsStep(
+    snapshot.userId,
+    trackedDomainId,
+    "registrationChanges",
+  );
+
+  if (!hasAnyChannel(channels)) {
+    await updateRegistrationSnapshot(trackedDomainId, {
+      ...stored,
+      pending: null,
+      unregistered: true,
+    });
+    return false;
+  }
+
+  // Same one-hour confirmation as other registration changes; a fixed key
+  // distinct from any registrationObservationKey output.
+  const confirmation = confirmChange(stored.pending, "unregistered");
+
+  if (!confirmation.confirmed) {
+    await updateRegistrationSnapshot(trackedDomainId, {
+      ...stored,
+      pending: confirmation.pending,
+    });
+    return false;
+  }
+
+  const previousRegistrarId = stored.registrarProviderId;
+  const registrarNames = previousRegistrarId
+    ? await resolveProviderNamesStep([previousRegistrarId])
+    : new Map<string, string>();
+  const previousRegistrar = previousRegistrarId
+    ? (registrarNames.get(previousRegistrarId) ?? previousRegistrarId)
+    : null;
+
+  await sendChangeNotificationStep(
+    {
+      ...recipientOf(ctx),
+      ...describeUnregistered(snapshot.domainName, previousRegistrar),
+      type: "registration_change",
+      changes: {
+        unregistered: true,
+        registrarChanged: false,
+        nameserversChanged: false,
+        transferLockChanged: false,
+        statusesChanged: false,
+        previousRegistrar,
+        previousNameservers: stored.nameservers ?? [],
+        previousTransferLock: stored.transferLock ?? null,
+        previousStatuses: stored.statuses ?? [],
+        newRegistrar: null,
+        newNameservers: [],
+        newTransferLock: null,
+        newStatuses: [],
+      },
+      idempotencyKey: `registration:${trackedDomainId}:${registrationObservationKey(stored)}>unregistered`,
+    },
+    channels,
+  );
+
+  await updateRegistrationSnapshot(trackedDomainId, {
+    ...stored,
+    pending: null,
+    unregistered: true,
+  });
+  return true;
+}
+
+/** Step 4: DNS, hosting, and email provider changes. */
+async function checkProviders(
+  ctx: CheckContext,
+  { dnsResult, headersResult, ip, geoResult, providers }: Observation,
+): Promise<boolean> {
+  const { trackedDomainId, snapshot } = ctx;
+
+  // An empty DNS record set means we could not observe the domain's providers —
+  // either every resolver failed or the domain resolves to nothing right now.
+  // Either way it is not evidence that the providers were removed, and treating
+  // it as such emails users a false "provider removed" alert and then advances
+  // the snapshot so the recovery looks like a second change.
+  if (dnsResult.records.length === 0) {
+    return false;
+  }
+
+  // Hosting is derived from HTTP headers (catalog match), falling back to the
+  // IP owner from GeoIP. When the domain has an address but either input was
+  // unavailable this run, the derived value is not evidence of a change —
+  // compare against the stored provider instead (same rule as the DNS check).
+  const hostingObserved = ip === null || (headersResult?.success === true && geoResult !== null);
+
+  const currentProviderIds = {
+    dns: providers.dnsProvider?.id ?? null,
+    hosting: hostingObserved ? (providers.hostingProvider?.id ?? null) : snapshot.hostingProviderId,
+    email: providers.emailProvider?.id ?? null,
+  };
+  const storedProviderSnapshot = {
+    dnsProviderId: snapshot.dnsProviderId,
+    hostingProviderId: snapshot.hostingProviderId,
+    emailProviderId: snapshot.emailProviderId,
+  };
+  const currentProviderSnapshot = {
+    dnsProviderId: currentProviderIds.dns,
+    hostingProviderId: currentProviderIds.hosting,
+    emailProviderId: currentProviderIds.email,
+  };
+
+  const providerChange = detectProviderChange(storedProviderSnapshot, currentProviderSnapshot);
+
+  if (!providerChange) {
+    // No difference from the stored snapshot: clear a stale pending
+    // observation if one is set (the wobble went away).
+    if (snapshot.providerPending) {
+      await updateProviderPending(trackedDomainId, null);
+    }
+    return false;
+  }
+
+  const channels = await determineNotificationChannelsStep(
+    snapshot.userId,
+    trackedDomainId,
+    "providerChanges",
+  );
+
+  if (!hasAnyChannel(channels)) {
+    // Muted / disabled: advance on detection so we don't infinitely
+    // re-detect (see checkRegistration).
+    await updateProviderSnapshot(trackedDomainId, currentProviderIds);
+    return false;
+  }
+
+  // Require a repeat observation before notifying — a single differing
+  // lookup is often a transient wobble (see confirmChange).
+  const confirmation = confirmChange(
+    snapshot.providerPending,
+    providerObservationKey(currentProviderSnapshot),
+  );
+
+  if (!confirmation.confirmed) {
+    await updateProviderPending(trackedDomainId, confirmation.pending);
+    return false;
+  }
+
+  const providerNames = await resolveProviderNamesStep(
+    [
+      snapshot.dnsProviderId,
+      snapshot.hostingProviderId,
+      snapshot.emailProviderId,
+      currentProviderIds.dns,
+      currentProviderIds.hosting,
+      currentProviderIds.email,
+    ].filter((id): id is string => id !== null),
+  );
+
+  const changes: ProviderChangeWithNames = {
+    ...providerChange,
+    previousDnsProvider: nameOf(providerNames, providerChange.previousDnsProviderId),
+    newDnsProvider: nameOf(providerNames, providerChange.newDnsProviderId),
+    previousHostingProvider: nameOf(providerNames, providerChange.previousHostingProviderId),
+    newHostingProvider: nameOf(providerNames, providerChange.newHostingProviderId),
+    previousEmailProvider: nameOf(providerNames, providerChange.previousEmailProviderId),
+    newEmailProvider: nameOf(providerNames, providerChange.newEmailProviderId),
+  };
+
+  await sendChangeNotificationStep(
+    {
+      ...recipientOf(ctx),
+      ...describeProviderChange(changes, snapshot.domainName),
+      type: "provider_change",
+      changes,
+      idempotencyKey: `provider:${trackedDomainId}:${providerObservationKey(storedProviderSnapshot)}>${providerObservationKey(currentProviderSnapshot)}`,
+    },
+    channels,
+  );
+
+  // Advance only after delivery (see checkRegistration).
+  await updateProviderSnapshot(trackedDomainId, currentProviderIds);
+  return true;
+}
+
+/** Step 5: leaf certificate renewals and authority/issuer changes. */
+async function checkCertificate(
+  ctx: CheckContext,
+  certificates: Observation["certificates"],
+): Promise<boolean> {
+  const { trackedDomainId, snapshot } = ctx;
+
+  const leafCert = certificates.length > 0 ? findLeafCertificate(certificates) : null;
+  if (!leafCert) {
+    return false;
+  }
+
+  const currentCertificate = certificateSnapshotFrom(leafCert);
+  const evaluation = evaluateCertificateChange(snapshot.certificate, currentCertificate);
+
+  // Every path below ends by writing the evaluated snapshot (when there is one):
+  // after delivery when notifying, and on detection when muted or not notable.
+  const persistCertificateSnapshot = async () => {
+    if (evaluation.snapshotToWrite) {
+      await updateCertificateSnapshot(trackedDomainId, evaluation.snapshotToWrite);
+    }
+  };
+
+  if (!evaluation.shouldNotify) {
+    await persistCertificateSnapshot();
+    return false;
+  }
+
+  const channels = await determineNotificationChannelsStep(
+    snapshot.userId,
+    trackedDomainId,
+    "certificateChanges",
+  );
+
+  if (!hasAnyChannel(channels)) {
+    await persistCertificateSnapshot();
+    return false;
+  }
+
+  const certificateChange = evaluation.change;
+  const caProviderNames = await resolveProviderNamesStep(
+    [certificateChange.previousCaProviderId, certificateChange.newCaProviderId].filter(
+      (id): id is string => id !== null,
+    ),
+  );
+  const changes: CertificateChangeWithNames = {
+    ...certificateChange,
+    previousCaProvider: nameOf(caProviderNames, certificateChange.previousCaProviderId),
+    newCaProvider: nameOf(caProviderNames, certificateChange.newCaProviderId),
+  };
+
+  await sendChangeNotificationStep(
+    {
+      ...recipientOf(ctx),
+      ...describeCertificateChange(
+        evaluation.kind,
+        changes,
+        currentCertificate.validTo,
+        snapshot.domainName,
+      ),
+      type: "certificate_change",
+      changes,
+      kind: evaluation.kind,
+      newValidTo: currentCertificate.validTo,
+      idempotencyKey: `certificate:${trackedDomainId}:${snapshot.certificate.fingerprint ?? snapshot.certificate.serialNumber ?? ""}>${currentCertificate.fingerprint ?? currentCertificate.serialNumber ?? ""}`,
+    },
+    channels,
+  );
+
+  // Advance only after delivery (see checkRegistration).
+  await persistCertificateSnapshot();
+  return true;
 }
 
 // --- Step Functions ---

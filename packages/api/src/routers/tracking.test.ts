@@ -509,6 +509,94 @@ describe("tracking router", () => {
         caller.tracking.archiveDomain({ trackedDomainId: TEST_TRACKED_ID }),
       ).rejects.toThrow("already archived");
     });
+
+    it("returns not found for another user's domain and leaves it unarchived", async () => {
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "test-token",
+        verified: true,
+      });
+
+      await expect(
+        createAuthenticatedCaller(TEST_USER_2_ID).tracking.archiveDomain({
+          trackedDomainId: TEST_TRACKED_ID,
+        }),
+      ).rejects.toThrow("not found");
+
+      const [row] = await db
+        .select({ archivedAt: userTrackedDomains.archivedAt })
+        .from(userTrackedDomains)
+        .where(eq(userTrackedDomains.id, TEST_TRACKED_ID));
+      expect(row?.archivedAt).toBeNull();
+    });
+  });
+
+  describe("muteDomain", () => {
+    beforeEach(async () => {
+      // Create tracked domain for these tests
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "token",
+        verified: true,
+      });
+    });
+
+    it("mutes a domain", async () => {
+      const caller = createAuthenticatedCaller();
+
+      const result = await caller.tracking.muteDomain({
+        trackedDomainId: TEST_TRACKED_ID,
+        muted: true,
+      });
+
+      expect(result.muted).toBe(true);
+    });
+
+    it("unmutes a domain", async () => {
+      const caller = createAuthenticatedCaller();
+
+      // First mute it
+      await caller.tracking.muteDomain({
+        trackedDomainId: TEST_TRACKED_ID,
+        muted: true,
+      });
+
+      // Then unmute
+      const result = await caller.tracking.muteDomain({
+        trackedDomainId: TEST_TRACKED_ID,
+        muted: false,
+      });
+
+      expect(result.muted).toBe(false);
+    });
+
+    it("returns not found for non-existent domain", async () => {
+      const caller = createAuthenticatedCaller();
+
+      await expect(
+        caller.tracking.muteDomain({
+          trackedDomainId: "c0000000-0000-1000-a000-000000000999",
+          muted: true,
+        }),
+      ).rejects.toThrow("not found");
+    });
+
+    it("returns not found for domain owned by another user (prevents enumeration)", async () => {
+      const caller = createAuthenticatedCaller(TEST_USER_2_ID);
+
+      // Security: Returns same error for "not found" and "wrong user"
+      // to prevent enumeration attacks via error differentiation
+      await expect(
+        caller.tracking.muteDomain({
+          trackedDomainId: TEST_TRACKED_ID,
+          muted: true,
+        }),
+      ).rejects.toThrow("not found");
+    });
   });
 
   describe("unarchiveDomain", () => {
@@ -1096,7 +1184,7 @@ describe("tracking router", () => {
     });
   });
 
-  describe("bulkSetMuted", () => {
+  describe("bulkMuteDomains", () => {
     it("mutes multiple domains", async () => {
       const caller = createAuthenticatedCaller();
 
@@ -1117,7 +1205,7 @@ describe("tracking router", () => {
         },
       ]);
 
-      const result = await caller.tracking.bulkSetMuted({
+      const result = await caller.tracking.bulkMuteDomains({
         trackedDomainIds: [TEST_TRACKED_ID, TEST_TRACKED_2_ID],
         muted: true,
       });
@@ -1141,7 +1229,7 @@ describe("tracking router", () => {
         muted: true,
       });
 
-      const result = await caller.tracking.bulkSetMuted({
+      const result = await caller.tracking.bulkMuteDomains({
         trackedDomainIds: [TEST_TRACKED_ID],
         muted: true,
       });
@@ -1169,7 +1257,7 @@ describe("tracking router", () => {
         verified: true,
       });
 
-      const result = await caller.tracking.bulkSetMuted({
+      const result = await caller.tracking.bulkMuteDomains({
         trackedDomainIds: [TEST_TRACKED_ID, TEST_TRACKED_2_ID],
         muted: true,
       });

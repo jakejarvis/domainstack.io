@@ -72,7 +72,7 @@ export function useDashboardClient() {
     } else if (pendingAction.type === "bulk-archive") {
       clearSelectionOnSuccess(mutations.bulkArchive(pendingAction.domainIds));
     } else if (pendingAction.type === "bulk-delete") {
-      clearSelectionOnSuccess(mutations.bulkDelete(pendingAction.domainIds));
+      clearSelectionOnSuccess(mutations.bulkRemove(pendingAction.domainIds));
     }
     setPendingAction(null);
   };
@@ -99,7 +99,7 @@ export function useDashboardClient() {
     onRemove: (id) => confirmSingle("remove", id),
     onArchive: (id) => confirmSingle("archive", id),
     onUnarchive: mutations.unarchive,
-    onMute: mutations.setMuted,
+    onMute: mutations.mute,
     verifyingDomainId: isVerifyPending ? verifyingDomainId : null,
   };
 
@@ -107,7 +107,7 @@ export function useDashboardClient() {
     onBulkArchive: (domainIds) => confirmBulk("bulk-archive", domainIds),
     onBulkDelete: (domainIds) => confirmBulk("bulk-delete", domainIds),
     onBulkMute: (domainIds, muted) => {
-      if (domainIds.length > 0) clearSelectionOnSuccess(mutations.bulkSetMuted(domainIds, muted));
+      if (domainIds.length > 0) clearSelectionOnSuccess(mutations.bulkMute(domainIds, muted));
     },
     isBulkArchiving: mutations.isBulkArchiving,
     isBulkDeleting: mutations.isBulkDeleting,

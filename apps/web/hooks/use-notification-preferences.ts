@@ -36,7 +36,7 @@ export interface UseNotificationPreferencesReturn {
     enabled: boolean,
   ) => void;
   /** Toggle muted state for a domain */
-  setDomainMuted: (trackedDomainId: string, muted: boolean) => void;
+  muteDomain: (trackedDomainId: string, muted: boolean) => void;
 }
 
 /**
@@ -92,8 +92,8 @@ export function useNotificationPreferences(): UseNotificationPreferencesReturn {
   });
 
   // Set domain muted mutation (optimistic)
-  const setDomainMutedMutation = useMutation({
-    ...trpc.user.setDomainMuted.mutationOptions(),
+  const muteDomainMutation = useMutation({
+    ...trpc.tracking.muteDomain.mutationOptions(),
     onMutate: async ({ trackedDomainId, muted }) => {
       await queryClient.cancelQueries(domainsFilter);
       // Snapshot all domain query variants for rollback
@@ -146,8 +146,8 @@ export function useNotificationPreferences(): UseNotificationPreferencesReturn {
     updateGlobalMutation.mutate({ [category]: updatedPref });
   };
 
-  const setDomainMuted = (trackedDomainId: string, muted: boolean) => {
-    setDomainMutedMutation.mutate({ trackedDomainId, muted });
+  const muteDomain = (trackedDomainId: string, muted: boolean) => {
+    muteDomainMutation.mutate({ trackedDomainId, muted });
   };
 
   return {
@@ -155,8 +155,8 @@ export function useNotificationPreferences(): UseNotificationPreferencesReturn {
     globalPrefs,
     isLoading: domainsResult.isLoading || globalPrefsResult.isLoading,
     isError: domainsResult.isError || globalPrefsResult.isError,
-    isPending: updateGlobalMutation.isPending || setDomainMutedMutation.isPending,
+    isPending: updateGlobalMutation.isPending || muteDomainMutation.isPending,
     updateGlobalPreference,
-    setDomainMuted,
+    muteDomain,
   };
 }

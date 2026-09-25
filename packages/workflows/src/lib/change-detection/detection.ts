@@ -29,9 +29,9 @@ import type {
   RegistrationResponse,
   RegistrationSnapshotData,
 } from "@domainstack/types";
+import { normalizeCertificateHex } from "@domainstack/utils/certificate-hex";
+import { normalizeDnsHost } from "@domainstack/utils/providers";
 
-import { normalizeCertificateHex } from "../certificate-hex";
-import { normalizeDnsHost } from "../providers/detection";
 import { normalizeStatus, statusesAreEqual } from "./status";
 
 const DAY_MS = 24 * 60 * 60 * 1000;

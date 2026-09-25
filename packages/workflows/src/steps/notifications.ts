@@ -20,7 +20,7 @@ import type {
 // Re-export expiry utilities from utils
 export { getThresholdNotificationType } from "@domainstack/utils/expiry";
 
-interface NotificationChannels {
+export interface NotificationChannels {
   shouldSendEmail: boolean;
   shouldSendInApp: boolean;
 }
@@ -287,168 +287,88 @@ export async function sendNotification(
 // Notification sending steps
 // ============================================================================
 
-/**
- * Step: Send registration change notification via email and/or in-app.
- *
- * The email is deduped by `params.idempotencyKey`, which identifies the change.
- */
-export async function sendRegistrationChangeNotificationStep(
-  params: {
-    userId: string;
-    userEmail: string;
-    trackedDomainId: string;
-    domainName: string;
-    userName: string;
-    title: string;
-    message: string;
-    emailSubject: string;
-    changes: RegistrationChange;
-    idempotencyKey: string;
-  },
-  shouldSendEmail: boolean,
-  shouldSendInApp: boolean,
-): Promise<boolean> {
-  "use step";
+type ChangeNotification = {
+  userId: string;
+  userEmail: string;
+  trackedDomainId: string;
+  domainName: string;
+  userName: string;
+  title: string;
+  message: string;
+  emailSubject: string;
+  /** Identifies the change (before > after), so a re-detected change dedupes the email. */
+  idempotencyKey: string;
+} & (
+  | { type: "registration_change"; changes: RegistrationChange }
+  | { type: "provider_change"; changes: ProviderChangeWithNames }
+  | {
+      type: "certificate_change";
+      changes: CertificateChangeWithNames;
+      kind: CertificateChangeKind;
+      newValidTo: string;
+    }
+);
 
-  let emailComponent: React.ReactElement | undefined;
-  if (shouldSendEmail) {
-    const { default: RegistrationChangeEmail } =
-      await import("@domainstack/email/templates/registration-change");
-    const { getEmailBaseUrl } = await import("./email");
-    emailComponent = RegistrationChangeEmail({
-      userName: params.userName.split(" ")[0] || "there",
-      domainName: params.domainName,
-      changes: params.changes,
-      baseUrl: getEmailBaseUrl(),
-    });
+async function renderChangeEmail(notification: ChangeNotification): Promise<React.ReactElement> {
+  const { getEmailBaseUrl } = await import("./email");
+  const common = {
+    userName: notification.userName.split(" ")[0] || "there",
+    domainName: notification.domainName,
+    baseUrl: getEmailBaseUrl(),
+  };
+
+  switch (notification.type) {
+    case "registration_change": {
+      const { default: RegistrationChangeEmail } =
+        await import("@domainstack/email/templates/registration-change");
+      return RegistrationChangeEmail({ ...common, changes: notification.changes });
+    }
+    case "provider_change": {
+      const { default: ProviderChangeEmail } =
+        await import("@domainstack/email/templates/provider-change");
+      return ProviderChangeEmail({ ...common, changes: notification.changes });
+    }
+    case "certificate_change": {
+      const { default: CertificateChangeEmail } =
+        await import("@domainstack/email/templates/certificate-change");
+      return CertificateChangeEmail({
+        ...common,
+        kind: notification.kind,
+        changes: notification.changes,
+        newValidTo: notification.newValidTo,
+      });
+    }
   }
-
-  return await sendNotification(
-    {
-      userId: params.userId,
-      userEmail: params.userEmail,
-      trackedDomainId: params.trackedDomainId,
-      domainName: params.domainName,
-      notificationType: "registration_change",
-      title: params.title,
-      message: params.message,
-      emailSubject: params.emailSubject,
-      emailComponent,
-      idempotencyKey: params.idempotencyKey,
-    },
-    shouldSendEmail,
-    shouldSendInApp,
-  );
 }
 
 /**
- * Step: Send provider change notification via email and/or in-app.
- *
- * The email is deduped by `params.idempotencyKey`, which identifies the change.
+ * Step: Send a registration, provider, or certificate change alert via email
+ * and/or in-app, as `channels` allows.
  */
-export async function sendProviderChangeNotificationStep(
-  params: {
-    userId: string;
-    userEmail: string;
-    trackedDomainId: string;
-    domainName: string;
-    userName: string;
-    title: string;
-    message: string;
-    emailSubject: string;
-    changes: ProviderChangeWithNames;
-    idempotencyKey: string;
-  },
-  shouldSendEmail: boolean,
-  shouldSendInApp: boolean,
+export async function sendChangeNotificationStep(
+  notification: ChangeNotification,
+  channels: NotificationChannels,
 ): Promise<boolean> {
   "use step";
 
-  let emailComponent: React.ReactElement | undefined;
-  if (shouldSendEmail) {
-    const { default: ProviderChangeEmail } =
-      await import("@domainstack/email/templates/provider-change");
-    const { getEmailBaseUrl } = await import("./email");
-    emailComponent = ProviderChangeEmail({
-      userName: params.userName.split(" ")[0] || "there",
-      domainName: params.domainName,
-      changes: params.changes,
-      baseUrl: getEmailBaseUrl(),
-    });
-  }
+  const emailComponent = channels.shouldSendEmail
+    ? await renderChangeEmail(notification)
+    : undefined;
 
   return await sendNotification(
     {
-      userId: params.userId,
-      userEmail: params.userEmail,
-      trackedDomainId: params.trackedDomainId,
-      domainName: params.domainName,
-      notificationType: "provider_change",
-      title: params.title,
-      message: params.message,
-      emailSubject: params.emailSubject,
+      userId: notification.userId,
+      userEmail: notification.userEmail,
+      trackedDomainId: notification.trackedDomainId,
+      domainName: notification.domainName,
+      notificationType: notification.type,
+      title: notification.title,
+      message: notification.message,
+      emailSubject: notification.emailSubject,
       emailComponent,
-      idempotencyKey: params.idempotencyKey,
+      idempotencyKey: notification.idempotencyKey,
     },
-    shouldSendEmail,
-    shouldSendInApp,
-  );
-}
-
-/**
- * Step: Send certificate change notification via email and/or in-app.
- *
- * The email is deduped by `params.idempotencyKey`, which identifies the change.
- */
-export async function sendCertificateChangeNotificationStep(
-  params: {
-    userId: string;
-    userEmail: string;
-    trackedDomainId: string;
-    domainName: string;
-    userName: string;
-    title: string;
-    message: string;
-    emailSubject: string;
-    newValidTo: string;
-    kind: CertificateChangeKind;
-    changes: CertificateChangeWithNames;
-    idempotencyKey: string;
-  },
-  shouldSendEmail: boolean,
-  shouldSendInApp: boolean,
-): Promise<boolean> {
-  "use step";
-
-  let emailComponent: React.ReactElement | undefined;
-  if (shouldSendEmail) {
-    const { default: CertificateChangeEmail } =
-      await import("@domainstack/email/templates/certificate-change");
-    const { getEmailBaseUrl } = await import("./email");
-    emailComponent = CertificateChangeEmail({
-      userName: params.userName.split(" ")[0] || "there",
-      domainName: params.domainName,
-      kind: params.kind,
-      changes: params.changes,
-      newValidTo: params.newValidTo,
-      baseUrl: getEmailBaseUrl(),
-    });
-  }
-
-  return await sendNotification(
-    {
-      userId: params.userId,
-      userEmail: params.userEmail,
-      trackedDomainId: params.trackedDomainId,
-      domainName: params.domainName,
-      notificationType: "certificate_change",
-      title: params.title,
-      message: params.message,
-      emailSubject: params.emailSubject,
-      emailComponent,
-      idempotencyKey: params.idempotencyKey,
-    },
-    shouldSendEmail,
-    shouldSendInApp,
+    channels.shouldSendEmail,
+    channels.shouldSendInApp,
   );
 }

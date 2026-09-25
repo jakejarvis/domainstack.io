@@ -1,10 +1,10 @@
 import type { CertificateSnapshotData, RegistrationSnapshotData } from "@domainstack/types";
+import { findLeafCertificate } from "@domainstack/utils/tls";
+
 import {
   certificateSnapshotFrom,
   registrationSnapshotFrom,
-} from "@domainstack/utils/change-detection";
-import { findLeafCertificate } from "@domainstack/utils/tls";
-
+} from "../lib/change-detection/detection";
 import { observeDomain } from "../steps/observe-domain";
 
 interface InitializeSnapshotWorkflowInput {

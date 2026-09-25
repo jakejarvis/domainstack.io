@@ -36,11 +36,12 @@ const baseParams = {
   title: "Provider change detected",
   message: "Your DNS provider changed.",
   emailSubject: "Provider change for example.com",
+  type: "provider_change" as const,
   changes: {} as ProviderChangeWithNames,
   idempotencyKey: 'provider:tracked-1:["a",null,null]>["b",null,null]',
 };
 
-describe("sendProviderChangeNotificationStep", () => {
+describe("sendChangeNotificationStep", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     notificationsMock.createNotification.mockResolvedValue({ id: "n_1" } as never);
@@ -54,8 +55,11 @@ describe("sendProviderChangeNotificationStep", () => {
   it("sends email and in-app, then records the notification with both channels", async () => {
     sendEmailMock.sendEmail.mockResolvedValue({ emailId: "em_1" });
 
-    const { sendProviderChangeNotificationStep } = await import("./notifications");
-    const result = await sendProviderChangeNotificationStep(baseParams, true, true);
+    const { sendChangeNotificationStep } = await import("./notifications");
+    const result = await sendChangeNotificationStep(baseParams, {
+      shouldSendEmail: true,
+      shouldSendInApp: true,
+    });
 
     expect(result).toBe(true);
     expect(notificationsMock.createNotification).toHaveBeenCalledWith(
@@ -67,8 +71,11 @@ describe("sendProviderChangeNotificationStep", () => {
   it("degrades to in-app only when the email fails permanently", async () => {
     sendEmailMock.sendEmail.mockRejectedValue(new FatalError("validation_error"));
 
-    const { sendProviderChangeNotificationStep } = await import("./notifications");
-    const result = await sendProviderChangeNotificationStep(baseParams, true, true);
+    const { sendChangeNotificationStep } = await import("./notifications");
+    const result = await sendChangeNotificationStep(baseParams, {
+      shouldSendEmail: true,
+      shouldSendInApp: true,
+    });
 
     expect(result).toBe(true);
     expect(notificationsMock.createNotification).toHaveBeenCalledWith(
@@ -80,8 +87,11 @@ describe("sendProviderChangeNotificationStep", () => {
   it("resolves false and skips the notification record when email fails permanently with in-app off", async () => {
     sendEmailMock.sendEmail.mockRejectedValue(new FatalError("validation_error"));
 
-    const { sendProviderChangeNotificationStep } = await import("./notifications");
-    const result = await sendProviderChangeNotificationStep(baseParams, true, false);
+    const { sendChangeNotificationStep } = await import("./notifications");
+    const result = await sendChangeNotificationStep(baseParams, {
+      shouldSendEmail: true,
+      shouldSendInApp: false,
+    });
 
     expect(result).toBe(false);
     expect(notificationsMock.createNotification).not.toHaveBeenCalled();
@@ -90,17 +100,20 @@ describe("sendProviderChangeNotificationStep", () => {
   it("rejects and does not record when the email fails transiently", async () => {
     sendEmailMock.sendEmail.mockRejectedValue(new RetryableError("rate_limit_exceeded"));
 
-    const { sendProviderChangeNotificationStep } = await import("./notifications");
+    const { sendChangeNotificationStep } = await import("./notifications");
 
-    await expect(sendProviderChangeNotificationStep(baseParams, true, true)).rejects.toThrow(
-      "rate_limit_exceeded",
-    );
+    await expect(
+      sendChangeNotificationStep(baseParams, { shouldSendEmail: true, shouldSendInApp: true }),
+    ).rejects.toThrow("rate_limit_exceeded");
     expect(notificationsMock.createNotification).not.toHaveBeenCalled();
   });
 
   it("resolves false and never calls sendEmail when both channels are off", async () => {
-    const { sendProviderChangeNotificationStep } = await import("./notifications");
-    const result = await sendProviderChangeNotificationStep(baseParams, false, false);
+    const { sendChangeNotificationStep } = await import("./notifications");
+    const result = await sendChangeNotificationStep(baseParams, {
+      shouldSendEmail: false,
+      shouldSendInApp: false,
+    });
 
     expect(result).toBe(false);
     expect(sendEmailMock.getEmailBaseUrl).not.toHaveBeenCalled();
@@ -108,8 +121,11 @@ describe("sendProviderChangeNotificationStep", () => {
   });
 
   it("records an in-app-only notification without rendering email content", async () => {
-    const { sendProviderChangeNotificationStep } = await import("./notifications");
-    const result = await sendProviderChangeNotificationStep(baseParams, false, true);
+    const { sendChangeNotificationStep } = await import("./notifications");
+    const result = await sendChangeNotificationStep(baseParams, {
+      shouldSendEmail: false,
+      shouldSendInApp: true,
+    });
 
     expect(result).toBe(true);
     expect(sendEmailMock.getEmailBaseUrl).not.toHaveBeenCalled();
@@ -123,11 +139,12 @@ describe("sendProviderChangeNotificationStep", () => {
     sendEmailMock.sendEmail.mockResolvedValue({ emailId: "em_1" });
     notificationsMock.createNotification.mockRejectedValue(new Error("connection terminated"));
 
-    const { sendProviderChangeNotificationStep } = await import("./notifications");
+    const { sendChangeNotificationStep } = await import("./notifications");
 
-    const rejection = await sendProviderChangeNotificationStep(baseParams, true, true).catch(
-      (err) => err,
-    );
+    const rejection = await sendChangeNotificationStep(baseParams, {
+      shouldSendEmail: true,
+      shouldSendInApp: true,
+    }).catch((err) => err);
     expect(RetryableError.is(rejection)).toBe(true);
     expect(FatalError.is(rejection)).toBe(false);
     expect(notificationsMock.updateNotificationResendId).not.toHaveBeenCalled();
@@ -139,11 +156,12 @@ describe("sendProviderChangeNotificationStep", () => {
       new Error('unique constraint "notifications_pkey" violated'),
     );
 
-    const { sendProviderChangeNotificationStep } = await import("./notifications");
+    const { sendChangeNotificationStep } = await import("./notifications");
 
-    const rejection = await sendProviderChangeNotificationStep(baseParams, true, true).catch(
-      (err) => err,
-    );
+    const rejection = await sendChangeNotificationStep(baseParams, {
+      shouldSendEmail: true,
+      shouldSendInApp: true,
+    }).catch((err) => err);
     expect(FatalError.is(rejection)).toBe(true);
     expect(notificationsMock.updateNotificationResendId).not.toHaveBeenCalled();
   });
@@ -151,8 +169,8 @@ describe("sendProviderChangeNotificationStep", () => {
   it("forwards the idempotency key to sendEmail", async () => {
     sendEmailMock.sendEmail.mockResolvedValue({ emailId: "em_1" });
 
-    const { sendProviderChangeNotificationStep } = await import("./notifications");
-    await sendProviderChangeNotificationStep(baseParams, true, true);
+    const { sendChangeNotificationStep } = await import("./notifications");
+    await sendChangeNotificationStep(baseParams, { shouldSendEmail: true, shouldSendInApp: true });
 
     expect(sendEmailMock.sendEmail).toHaveBeenCalledWith(
       expect.objectContaining({ idempotencyKey: baseParams.idempotencyKey }),

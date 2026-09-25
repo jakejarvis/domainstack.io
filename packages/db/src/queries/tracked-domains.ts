@@ -792,9 +792,9 @@ export async function verifyTrackedDomain(id: string, method: VerificationMethod
 }
 
 /**
- * Set the muted state for a tracked domain.
+ * Mute or unmute a tracked domain.
  */
-export async function setDomainMuted(id: string, userId: string, muted: boolean) {
+export async function muteTrackedDomain(id: string, userId: string, muted: boolean) {
   const updated = await db
     .update(userTrackedDomains)
     .set({ muted })
@@ -809,9 +809,9 @@ export async function setDomainMuted(id: string, userId: string, muted: boolean)
 }
 
 /**
- * Delete a tracked domain.
+ * Remove (delete) a tracked domain.
  */
-export async function deleteTrackedDomain(id: string, userId: string): Promise<boolean> {
+export async function removeTrackedDomain(id: string, userId: string): Promise<boolean> {
   const deleted = await db
     .delete(userTrackedDomains)
     .where(and(eq(userTrackedDomains.id, id), eq(userTrackedDomains.userId, userId)))
@@ -961,47 +961,36 @@ export async function revokeVerification(id: string) {
   return updated[0];
 }
 
+export type ArchiveTrackedDomainResult =
+  | { success: true; archivedAt: Date }
+  | { success: false; reason: "not_found" | "already_archived" };
+
 /**
- * Archive a tracked domain.
+ * Archive a user's tracked domain in one conditional update. "not_found" also
+ * covers another user's domain, so callers can't tell the two apart.
  */
-export async function archiveTrackedDomain(id: string, userId: string) {
-  const updated = await db
+export async function archiveTrackedDomain(
+  id: string,
+  userId: string,
+): Promise<ArchiveTrackedDomainResult> {
+  const owned = and(eq(userTrackedDomains.id, id), eq(userTrackedDomains.userId, userId));
+
+  const [archived] = await db
     .update(userTrackedDomains)
     .set({ archivedAt: new Date() })
-    .where(and(eq(userTrackedDomains.id, id), eq(userTrackedDomains.userId, userId)))
-    .returning();
+    .where(and(owned, isNull(userTrackedDomains.archivedAt)))
+    .returning({ archivedAt: userTrackedDomains.archivedAt });
 
-  if (updated.length === 0) {
-    return null;
+  if (archived?.archivedAt) {
+    return { success: true, archivedAt: archived.archivedAt };
   }
 
-  return updated[0];
-}
+  const [existing] = await db
+    .select({ id: userTrackedDomains.id })
+    .from(userTrackedDomains)
+    .where(owned);
 
-/**
- * Unarchive (reactivate) a tracked domain.
- */
-export async function unarchiveTrackedDomain(id: string) {
-  return await db.transaction(async (tx) => {
-    // Lock userTrackedDomains before domainSnapshots — matches
-    // verifyTrackedDomain's order to avoid a deadlock against it.
-    const updated = await tx
-      .update(userTrackedDomains)
-      .set({ archivedAt: null })
-      .where(eq(userTrackedDomains.id, id))
-      .returning();
-
-    if (updated.length === 0) {
-      return null;
-    }
-
-    // The snapshot predates the archive; comparing against it would report every
-    // change made while unmonitored as new. Drop it so the monitor cron writes a
-    // fresh baseline.
-    await tx.delete(domainSnapshots).where(eq(domainSnapshots.trackedDomainId, id));
-
-    return updated[0];
-  });
+  return { success: false, reason: existing ? "already_archived" : "not_found" };
 }
 
 /**
@@ -1061,103 +1050,89 @@ export async function unarchiveTrackedDomainWithLimitCheck(
 }
 
 /**
+ * Sort requested ids into missing, someone else's, already in the target state,
+ * and still to update. One query regardless of how many ids.
+ */
+async function partitionForBulkUpdate(
+  userId: string,
+  trackedDomainIds: string[],
+  isAlreadyDone: (row: { archivedAt: Date | null; muted: boolean }) => boolean,
+) {
+  const rows = await db
+    .select({
+      id: userTrackedDomains.id,
+      userId: userTrackedDomains.userId,
+      archivedAt: userTrackedDomains.archivedAt,
+      muted: userTrackedDomains.muted,
+    })
+    .from(userTrackedDomains)
+    .where(inArray(userTrackedDomains.id, trackedDomainIds));
+
+  const foundIds = new Set(rows.map((row) => row.id));
+  const partition = {
+    toUpdate: [] as string[],
+    alreadyProcessed: [] as string[],
+    notOwned: [] as string[],
+    notFound: trackedDomainIds.filter((id) => !foundIds.has(id)),
+  };
+
+  for (const row of rows) {
+    if (row.userId !== userId) partition.notOwned.push(row.id);
+    else if (isAlreadyDone(row)) partition.alreadyProcessed.push(row.id);
+    else partition.toUpdate.push(row.id);
+  }
+
+  return partition;
+}
+
+const EMPTY_BULK_RESULT: BulkOperationResult = {
+  succeeded: [],
+  alreadyProcessed: [],
+  notFound: [],
+  notOwned: [],
+};
+
+/**
  * Bulk archive domains for a user with ownership verification.
  */
 export async function bulkArchiveTrackedDomains(
   userId: string,
   trackedDomainIds: string[],
 ): Promise<BulkOperationResult> {
-  if (trackedDomainIds.length === 0) {
-    return {
-      succeeded: [],
-      alreadyProcessed: [],
-      notFound: [],
-      notOwned: [],
-    };
-  }
+  if (trackedDomainIds.length === 0) return EMPTY_BULK_RESULT;
 
-  const foundDomains = await db
-    .select({
-      id: userTrackedDomains.id,
-      userId: userTrackedDomains.userId,
-      archivedAt: userTrackedDomains.archivedAt,
-    })
-    .from(userTrackedDomains)
-    .where(inArray(userTrackedDomains.id, trackedDomainIds));
-
-  const foundIds = new Set(foundDomains.map((d) => d.id));
-  const notFound = trackedDomainIds.filter((id) => !foundIds.has(id));
-
-  const notOwned: string[] = [];
-  const alreadyProcessed: string[] = [];
-  const toArchive: string[] = [];
-
-  for (const domain of foundDomains) {
-    if (domain.userId !== userId) {
-      notOwned.push(domain.id);
-    } else if (domain.archivedAt !== null) {
-      alreadyProcessed.push(domain.id);
-    } else {
-      toArchive.push(domain.id);
-    }
-  }
-
-  if (toArchive.length === 0) {
-    return { succeeded: [], alreadyProcessed, notFound, notOwned };
-  }
+  const { toUpdate, ...rest } = await partitionForBulkUpdate(
+    userId,
+    trackedDomainIds,
+    (row) => row.archivedAt !== null,
+  );
+  if (toUpdate.length === 0) return { succeeded: [], ...rest };
 
   const archived = await db
     .update(userTrackedDomains)
     .set({ archivedAt: new Date() })
-    .where(inArray(userTrackedDomains.id, toArchive))
+    .where(inArray(userTrackedDomains.id, toUpdate))
     .returning({ id: userTrackedDomains.id });
 
-  const succeeded = archived.map((d) => d.id);
-
-  return { succeeded, alreadyProcessed, notFound, notOwned };
+  return { succeeded: archived.map((d) => d.id), ...rest };
 }
 
 /**
  * Bulk set muted on domains for a user with ownership verification.
  */
-export async function bulkSetTrackedDomainsMuted(
+export async function bulkMuteTrackedDomains(
   userId: string,
   trackedDomainIds: string[],
   muted: boolean,
 ): Promise<BulkOperationResult> {
-  if (trackedDomainIds.length === 0) {
-    return { succeeded: [], alreadyProcessed: [], notFound: [], notOwned: [] };
-  }
+  if (trackedDomainIds.length === 0) return EMPTY_BULK_RESULT;
 
-  const foundDomains = await db
-    .select({
-      id: userTrackedDomains.id,
-      userId: userTrackedDomains.userId,
-      muted: userTrackedDomains.muted,
-    })
-    .from(userTrackedDomains)
-    .where(inArray(userTrackedDomains.id, trackedDomainIds));
-
-  const foundIds = new Set(foundDomains.map((d) => d.id));
-  const notFound = trackedDomainIds.filter((id) => !foundIds.has(id));
-
-  const notOwned: string[] = [];
-  const alreadyProcessed: string[] = [];
-  const toUpdate: string[] = [];
-
-  for (const domain of foundDomains) {
-    if (domain.userId !== userId) {
-      notOwned.push(domain.id);
-    } else if (domain.muted === muted) {
-      alreadyProcessed.push(domain.id);
-    } else {
-      toUpdate.push(domain.id);
-    }
-  }
-
-  if (toUpdate.length === 0) {
-    return { succeeded: [], alreadyProcessed, notFound, notOwned };
-  }
+  const { toUpdate, ...rest } = await partitionForBulkUpdate(
+    userId,
+    trackedDomainIds,
+    (row) => row.muted === muted,
+  );
+  if (toUpdate.length === 0) return { succeeded: [], ...rest };
 
   const updated = await db
     .update(userTrackedDomains)
@@ -1165,9 +1140,7 @@ export async function bulkSetTrackedDomainsMuted(
     .where(inArray(userTrackedDomains.id, toUpdate))
     .returning({ id: userTrackedDomains.id });
 
-  const succeeded = updated.map((d) => d.id);
-
-  return { succeeded, alreadyProcessed, notFound, notOwned };
+  return { succeeded: updated.map((d) => d.id), ...rest };
 }
 
 /**
@@ -1177,42 +1150,19 @@ export async function bulkRemoveTrackedDomains(
   userId: string,
   trackedDomainIds: string[],
 ): Promise<Omit<BulkOperationResult, "alreadyProcessed">> {
-  if (trackedDomainIds.length === 0) {
-    return { succeeded: [], notFound: [], notOwned: [] };
-  }
+  if (trackedDomainIds.length === 0) return { succeeded: [], notFound: [], notOwned: [] };
 
-  const foundDomains = await db
-    .select({
-      id: userTrackedDomains.id,
-      userId: userTrackedDomains.userId,
-    })
-    .from(userTrackedDomains)
-    .where(inArray(userTrackedDomains.id, trackedDomainIds));
-
-  const foundIds = new Set(foundDomains.map((d) => d.id));
-  const notFound = trackedDomainIds.filter((id) => !foundIds.has(id));
-
-  const notOwned: string[] = [];
-  const toRemove: string[] = [];
-
-  for (const domain of foundDomains) {
-    if (domain.userId !== userId) {
-      notOwned.push(domain.id);
-    } else {
-      toRemove.push(domain.id);
-    }
-  }
-
-  if (toRemove.length === 0) {
-    return { succeeded: [], notFound, notOwned };
-  }
+  const { toUpdate, notFound, notOwned } = await partitionForBulkUpdate(
+    userId,
+    trackedDomainIds,
+    () => false,
+  );
+  if (toUpdate.length === 0) return { succeeded: [], notFound, notOwned };
 
   const deleted = await db
     .delete(userTrackedDomains)
-    .where(inArray(userTrackedDomains.id, toRemove))
+    .where(inArray(userTrackedDomains.id, toUpdate))
     .returning({ id: userTrackedDomains.id });
 
-  const succeeded = deleted.map((d) => d.id);
-
-  return { succeeded, notFound, notOwned };
+  return { succeeded: deleted.map((d) => d.id), notFound, notOwned };
 }

@@ -152,14 +152,14 @@ export const bulkRemoveDomainsMutation = vi.fn<
   failedCount: 0,
 }));
 
-export const bulkSetMutedMutation = vi.fn<
+export const bulkMuteDomainsMutation = vi.fn<
   (input: BulkSetMutedInput) => Promise<BulkMutationResult>
 >(async ({ trackedDomainIds }) => ({
   successCount: trackedDomainIds.length,
   failedCount: 0,
 }));
 
-export const setDomainMutedMutation = vi.fn<(input: SetMutedInput) => Promise<{ ok: true }>>(
+export const muteDomainMutation = vi.fn<(input: SetMutedInput) => Promise<{ ok: true }>>(
   async () => ({ ok: true }),
 );
 
@@ -353,14 +353,14 @@ export function resetTrpcMocks() {
     failedCount: 0,
   }));
 
-  bulkSetMutedMutation.mockReset();
-  bulkSetMutedMutation.mockImplementation(async ({ trackedDomainIds }) => ({
+  bulkMuteDomainsMutation.mockReset();
+  bulkMuteDomainsMutation.mockImplementation(async ({ trackedDomainIds }) => ({
     successCount: trackedDomainIds.length,
     failedCount: 0,
   }));
 
-  setDomainMutedMutation.mockReset();
-  setDomainMutedMutation.mockImplementation(async () => ({ ok: true }));
+  muteDomainMutation.mockReset();
+  muteDomainMutation.mockImplementation(async () => ({ ok: true }));
 
   sendVerificationInstructionsMutation.mockReset();
   sendVerificationInstructionsMutation.mockImplementation(async () => ({ sent: true }));
@@ -504,8 +504,11 @@ export function useTRPC() {
       bulkRemoveDomains: {
         mutationOptions: mutationOptionsFor(bulkRemoveDomainsMutation),
       },
-      bulkSetMuted: {
-        mutationOptions: mutationOptionsFor(bulkSetMutedMutation),
+      muteDomain: {
+        mutationOptions: mutationOptionsFor(muteDomainMutation),
+      },
+      bulkMuteDomains: {
+        mutationOptions: mutationOptionsFor(bulkMuteDomainsMutation),
       },
       sendVerificationInstructions: {
         mutationOptions: mutationOptionsFor(sendVerificationInstructionsMutation),
@@ -527,9 +530,6 @@ export function useTRPC() {
           };
         },
         queryFilter: () => queryFilterFor(SUBSCRIPTION_QUERY_KEY),
-      },
-      setDomainMuted: {
-        mutationOptions: mutationOptionsFor(setDomainMutedMutation),
       },
       getCalendarFeed: {
         queryKey: () => CALENDAR_FEED_QUERY_KEY,

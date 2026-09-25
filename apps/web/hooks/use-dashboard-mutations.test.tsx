@@ -26,7 +26,7 @@ import { createTestQueryClient, renderHook } from "@/mocks/react";
 import {
   bulkArchiveDomainsMutation,
   bulkRemoveDomainsMutation,
-  bulkSetMutedMutation,
+  bulkMuteDomainsMutation,
   DOMAINS_QUERY_KEY,
   removeDomainMutation,
   resetTrpcMocks,
@@ -195,7 +195,7 @@ describe("useDashboardMutations", () => {
     const { result, queryClient } = await renderDashboardMutations();
     const subscriptionBefore = getSubscription(queryClient);
 
-    result.current.setMuted("domain-alpha", true);
+    result.current.mute("domain-alpha", true);
 
     await vi.waitFor(() => {
       expect(getDomains(queryClient).find((d) => d.id === "domain-alpha")?.muted).toBe(true);
@@ -203,7 +203,7 @@ describe("useDashboardMutations", () => {
     expect(getSubscription(queryClient)).toEqual(subscriptionBefore);
     expect(toast.success).toHaveBeenCalledWith("Domain muted");
 
-    result.current.setMuted("domain-alpha", false);
+    result.current.mute("domain-alpha", false);
     await vi.waitFor(() => {
       expect(toast.success).toHaveBeenCalledWith("Domain unmuted");
     });
@@ -257,7 +257,7 @@ describe("useDashboardMutations", () => {
   it("bulk-deletes ids and decrements active and archived counts by lifecycle state", async () => {
     const { result, queryClient } = await renderDashboardMutations();
 
-    await result.current.bulkDelete(["domain-alpha", "domain-archived"]);
+    await result.current.bulkRemove(["domain-alpha", "domain-archived"]);
 
     const ids = getDomains(queryClient).map((d) => d.id);
     expect(ids).not.toContain("domain-alpha");
@@ -278,7 +278,7 @@ describe("useDashboardMutations", () => {
     queryClient.setQueryData(archivedListKey, getDomains(queryClient));
     const subscriptionBefore = getSubscription(queryClient);
 
-    await result.current.bulkSetMuted(["domain-alpha", "domain-archived"], true);
+    await result.current.bulkMute(["domain-alpha", "domain-archived"], true);
 
     expect(getDomains(queryClient).find((d) => d.id === "domain-alpha")?.muted).toBe(true);
     expect(
@@ -287,7 +287,7 @@ describe("useDashboardMutations", () => {
         ?.find((d) => d.id === "domain-archived")?.muted,
     ).toBe(true);
     expect(getSubscription(queryClient)).toEqual(subscriptionBefore);
-    expect(bulkSetMutedMutation.mock.calls[0]?.[0]).toEqual({
+    expect(bulkMuteDomainsMutation.mock.calls[0]?.[0]).toEqual({
       trackedDomainIds: ["domain-alpha", "domain-archived"],
       muted: true,
     });
@@ -297,21 +297,21 @@ describe("useDashboardMutations", () => {
   it("toasts unmute success and a warning when bulk mute only partially succeeds", async () => {
     const { result, queryClient } = await renderDashboardMutations();
 
-    await result.current.bulkSetMuted(["domain-alpha"], false);
+    await result.current.bulkMute(["domain-alpha"], false);
     expect(getDomains(queryClient).find((d) => d.id === "domain-alpha")?.muted).toBe(false);
     expect(toast.success).toHaveBeenCalledWith("Unmuted 1 domain");
 
-    bulkSetMutedMutation.mockResolvedValueOnce({ successCount: 1, failedCount: 1 });
-    await result.current.bulkSetMuted(["domain-alpha", "domain-beta"], true);
+    bulkMuteDomainsMutation.mockResolvedValueOnce({ successCount: 1, failedCount: 1 });
+    await result.current.bulkMute(["domain-alpha", "domain-beta"], true);
     expect(toast.warning).toHaveBeenCalledWith("Muted 1 of 2 domains (1 failed)");
   });
 
   it("rolls back muted flags when bulk mute fails", async () => {
-    bulkSetMutedMutation.mockRejectedValueOnce(new Error("nope"));
+    bulkMuteDomainsMutation.mockRejectedValueOnce(new Error("nope"));
     const { result, queryClient } = await renderDashboardMutations();
     const domainsBefore = getDomains(queryClient);
 
-    await expect(result.current.bulkSetMuted(["domain-alpha"], true)).rejects.toThrow("nope");
+    await expect(result.current.bulkMute(["domain-alpha"], true)).rejects.toThrow("nope");
 
     await vi.waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Failed to mute domains");
@@ -323,7 +323,7 @@ describe("useDashboardMutations", () => {
     bulkRemoveDomainsMutation.mockResolvedValueOnce({ successCount: 1, failedCount: 1 });
     const { result } = await renderDashboardMutations();
 
-    await result.current.bulkDelete(["domain-alpha", "domain-beta"]);
+    await result.current.bulkRemove(["domain-alpha", "domain-beta"]);
 
     expect(toast.warning).toHaveBeenCalledWith("Deleted 1 of 2 domains (1 failed)");
     expect(toast.success).not.toHaveBeenCalled();

@@ -24,7 +24,7 @@ export function NotificationsPanel({ userEmail }: { userEmail: string }) {
     isError,
     isPending,
     updateGlobalPreference,
-    setDomainMuted,
+    muteDomain,
   } = useNotificationPreferences();
 
   if (isLoading) {
@@ -64,7 +64,7 @@ export function NotificationsPanel({ userEmail }: { userEmail: string }) {
             domainName: d.domainName,
             muted: d.muted,
           }))}
-          onMute={setDomainMuted}
+          onMute={muteDomain}
           disabled={isPending}
         />
       </SettingsCard>

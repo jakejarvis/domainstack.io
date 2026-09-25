@@ -4,7 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CHANGE_CONFIRMATIONS } from "@domainstack/constants";
 import type { DnsFetchData } from "@domainstack/core/dns";
 import type { SnapshotForMonitoring } from "@domainstack/db/queries/snapshots";
-import { providerObservationKey } from "@domainstack/utils/change-detection";
+
+import { providerObservationKey } from "../lib/change-detection/detection";
 
 // Hoisted mocks for every module the workflow imports (dynamically or statically).
 const registrationMock = vi.hoisted(() => ({
@@ -43,12 +44,8 @@ const notificationsMock = vi.hoisted(() => ({
     vi.fn<typeof import("../steps/notifications").determineNotificationChannelsStep>(),
   resolveProviderNamesStep:
     vi.fn<typeof import("../steps/notifications").resolveProviderNamesStep>(),
-  sendRegistrationChangeNotificationStep:
-    vi.fn<typeof import("../steps/notifications").sendRegistrationChangeNotificationStep>(),
-  sendProviderChangeNotificationStep:
-    vi.fn<typeof import("../steps/notifications").sendProviderChangeNotificationStep>(),
-  sendCertificateChangeNotificationStep:
-    vi.fn<typeof import("../steps/notifications").sendCertificateChangeNotificationStep>(),
+  sendChangeNotificationStep:
+    vi.fn<typeof import("../steps/notifications").sendChangeNotificationStep>(),
 }));
 
 const snapshotsMock = vi.hoisted(() => ({
@@ -220,7 +217,7 @@ describe("change alert idempotency", () => {
   });
 
   it("keys the same confirmed change with an identical idempotencyKey across runs, even when the first run fails", async () => {
-    notificationsMock.sendProviderChangeNotificationStep
+    notificationsMock.sendChangeNotificationStep
       .mockRejectedValueOnce(new Error("insert failed"))
       .mockResolvedValueOnce(true);
 
@@ -241,15 +238,15 @@ describe("change alert idempotency", () => {
     expect(result.providerChanges).toBe(true);
 
     const expectedKey = `provider:td-1:${providerObservationKey({ dnsProviderId: "p-old", hostingProviderId: null, emailProviderId: null })}>${providerObservationKey({ dnsProviderId: "p-dns", hostingProviderId: null, emailProviderId: null })}`;
-    expect(notificationsMock.sendProviderChangeNotificationStep).toHaveBeenCalledTimes(2);
-    for (const call of notificationsMock.sendProviderChangeNotificationStep.mock.calls) {
+    expect(notificationsMock.sendChangeNotificationStep).toHaveBeenCalledTimes(2);
+    for (const call of notificationsMock.sendChangeNotificationStep.mock.calls) {
       expect(call[0]).toEqual(expect.objectContaining({ idempotencyKey: expectedKey }));
     }
   });
 
   it("releases the monitor lock when a FatalError terminates the run, since nothing will retry it", async () => {
     const { FatalError } = await import("workflow");
-    notificationsMock.sendProviderChangeNotificationStep.mockRejectedValue(
+    notificationsMock.sendChangeNotificationStep.mockRejectedValue(
       new FatalError("failed to create notification record"),
     );
 
@@ -276,16 +273,15 @@ describe("change alert idempotency", () => {
         },
       }),
     );
-    notificationsMock.sendProviderChangeNotificationStep.mockResolvedValue(true);
+    notificationsMock.sendChangeNotificationStep.mockResolvedValue(true);
 
     const { detectChangesWorkflow } = await import("./workflow");
     await detectChangesWorkflow({ trackedDomainId: "td-1", monitorLockOwnerToken: "tok" });
 
     const expectedKey = `provider:td-1:${providerObservationKey({ dnsProviderId: "p-older", hostingProviderId: null, emailProviderId: null })}>${providerObservationKey({ dnsProviderId: "p-dns", hostingProviderId: null, emailProviderId: null })}`;
-    expect(notificationsMock.sendProviderChangeNotificationStep).toHaveBeenCalledWith(
-      expect.objectContaining({ idempotencyKey: expectedKey }),
-      true,
-      true,
+    expect(notificationsMock.sendChangeNotificationStep).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "provider_change", idempotencyKey: expectedKey }),
+      { shouldSendEmail: true, shouldSendInApp: true },
     );
   });
 });

@@ -10,14 +10,14 @@ import {
   archiveTrackedDomain,
   bulkArchiveTrackedDomains,
   bulkRemoveTrackedDomains,
-  bulkSetTrackedDomainsMuted,
+  bulkMuteTrackedDomains,
   createTrackedDomainWithLimitCheck,
-  deleteTrackedDomain,
+  removeTrackedDomain,
   findTrackedDomain,
-  findTrackedDomainById,
   findTrackedDomainWithDomainName,
   getTrackedDomainDetails,
   getTrackedDomainsForUser,
+  muteTrackedDomain,
   unarchiveTrackedDomainWithLimitCheck,
   verifyTrackedDomain,
 } from "@domainstack/db/queries/tracked-domains";
@@ -369,7 +369,7 @@ export const trackingRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { trackedDomainId } = input;
 
-      const deleted = await deleteTrackedDomain(trackedDomainId, ctx.user.id);
+      const deleted = await removeTrackedDomain(trackedDomainId, ctx.user.id);
 
       // A false result covers both "not found" and "wrong user" — return
       // identical errors for both to prevent enumeration attacks via error
@@ -397,40 +397,19 @@ export const trackingRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { trackedDomainId } = input;
+      const result = await archiveTrackedDomain(input.trackedDomainId, ctx.user.id);
 
-      // Get tracked domain
-      const tracked = await findTrackedDomainById(trackedDomainId);
-
-      // Return identical error for both "not found" and "wrong user"
-      // to prevent enumeration attacks via error differentiation
-      if (!tracked || tracked.userId !== ctx.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Tracked domain not found",
-        });
-      }
-
-      // Check if already archived
-      if (tracked.archivedAt) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Domain is already archived",
-        });
-      }
-
-      const updated = await archiveTrackedDomain(trackedDomainId, ctx.user.id);
-
-      if (!updated) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to archive domain",
-        });
+      if (!result.success) {
+        // "not_found" also covers another user's domain, so the error can't be
+        // used to probe for ids.
+        throw result.reason === "already_archived"
+          ? new TRPCError({ code: "BAD_REQUEST", message: "Domain is already archived" })
+          : new TRPCError({ code: "NOT_FOUND", message: "Tracked domain not found" });
       }
 
       analytics.track("domain_archived", {}, ctx.user.id);
 
-      return { success: true, archivedAt: updated.archivedAt };
+      return { success: true, archivedAt: result.archivedAt };
     }),
 
   /**
@@ -536,9 +515,42 @@ export const trackingRouter = createTRPCRouter({
     }),
 
   /**
+   * Mute or unmute a tracked domain. Muted domains receive no notifications.
+   */
+  muteDomain: protectedProcedure
+    .input(
+      z.object({
+        trackedDomainId: z.uuid(),
+        muted: z.boolean(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { trackedDomainId, muted } = input;
+
+      const updated = await muteTrackedDomain(trackedDomainId, ctx.user.id, muted);
+
+      // A null result covers both "not found" and "wrong user" — return
+      // identical errors for both to prevent enumeration attacks via error
+      // differentiation.
+      if (!updated) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Tracked domain not found",
+        });
+      }
+
+      analytics.track(muted ? "domain_muted" : "domain_unmuted", {}, ctx.user.id);
+
+      return {
+        id: updated.id,
+        muted: updated.muted,
+      };
+    }),
+
+  /**
    * Bulk mute or unmute multiple tracked domains.
    */
-  bulkSetMuted: protectedProcedure
+  bulkMuteDomains: protectedProcedure
     .input(
       z.object({
         trackedDomainIds: z.array(z.uuid()).min(1).max(100),
@@ -548,7 +560,7 @@ export const trackingRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { trackedDomainIds, muted } = input;
 
-      const result = await bulkSetTrackedDomainsMuted(ctx.user.id, trackedDomainIds, muted);
+      const result = await bulkMuteTrackedDomains(ctx.user.id, trackedDomainIds, muted);
 
       const successCount = result.succeeded.length;
       const failedCount = result.notFound.length + result.notOwned.length;
