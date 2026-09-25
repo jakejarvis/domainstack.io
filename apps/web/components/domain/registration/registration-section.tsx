@@ -13,6 +13,7 @@ import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { ReportSection } from "@/components/domain/report-section";
 import { ProviderLogo } from "@/components/icons/provider-logo";
 import { sections } from "@/lib/constants/sections";
+import { describeRegistrationSource } from "@/lib/registration-source";
 import type { RegistrationResponse } from "@domainstack/types";
 import { Alert, AlertDescription, AlertTitle } from "@domainstack/ui/alert";
 import {
@@ -33,19 +34,6 @@ function getUnavailableMessage(data: RegistrationResponse): string {
   return "Registration information could not be retrieved at this time.";
 }
 
-function getRegistrationSource(data: RegistrationResponse) {
-  const serverUrl =
-    data.rdapServers && data.rdapServers.length > 0
-      ? data.rdapServers[data.rdapServers.length - 1]
-      : undefined;
-  const serverName = serverUrl
-    ? (extractSourceDomain(serverUrl) ?? "RDAP")
-    : (data.whoisServer ?? "WHOIS");
-  const learnUrl =
-    data.source === "rdap" ? "https://about.rdap.org/" : "https://en.wikipedia.org/wiki/WHOIS";
-  return { serverUrl, serverName, learnUrl };
-}
-
 function RegistrationUnavailableNotice({ data }: { data: RegistrationResponse }) {
   return (
     <Alert variant="warning">
@@ -60,13 +48,8 @@ function RegistrarVerifiedBy({
   serverUrl,
   serverName,
   learnUrl,
-  source,
-}: {
-  serverUrl?: string;
-  serverName: string;
-  learnUrl: string;
-  source: RegistrationResponse["source"];
-}) {
+  sourceLabel,
+}: ReturnType<typeof describeRegistrationSource>) {
   return (
     <ResponsiveTooltip>
       <ResponsiveTooltipTrigger
@@ -101,7 +84,7 @@ function RegistrarVerifiedBy({
             href={learnUrl}
             target="_blank"
             rel="noopener"
-            title={`Learn about ${source === "rdap" ? "RDAP" : "WHOIS"}`}
+            title={`Learn about ${sourceLabel}`}
             className="text-muted/80"
           >
             <IconSchool className="size-3" />
@@ -114,8 +97,6 @@ function RegistrarVerifiedBy({
 
 function RegistrationDetailsGrid({ data }: { data: RegistrationResponse }) {
   const registrant = describeRegistrant(data.contacts, data.privacyEnabled);
-  const { serverUrl, serverName, learnUrl } = getRegistrationSource(data);
-
   return (
     <KeyValueGrid colsDesktop={2}>
       <KeyValue
@@ -129,14 +110,7 @@ function RegistrationDetailsGrid({ data }: { data: RegistrationResponse }) {
             />
           ) : undefined
         }
-        suffix={
-          <RegistrarVerifiedBy
-            serverUrl={serverUrl}
-            serverName={serverName}
-            learnUrl={learnUrl}
-            source={data.source}
-          />
-        }
+        suffix={<RegistrarVerifiedBy {...describeRegistrationSource(data)} />}
       />
 
       <RegistrantKeyValue view={registrant} />
@@ -207,7 +181,7 @@ export function RegistrationSection({
   if (!data) return null;
 
   const isWhoisUnavailable = data.status === "unknown";
-  const { serverUrl, serverName } = getRegistrationSource(data);
+  const { serverUrl, serverName } = describeRegistrationSource(data);
 
   return (
     <ReportSection
@@ -259,16 +233,4 @@ function RegistrantKeyValue({ view }: { view: RegistrantView | null }) {
       }
     />
   );
-}
-
-function extractSourceDomain(input: string | undefined | null): string | undefined {
-  if (!input) return;
-  const value = String(input).trim();
-  if (!value) return;
-  try {
-    const url = new URL(value.includes("://") ? value : `https://${value}`);
-    return url.hostname || undefined;
-  } catch {
-    return;
-  }
 }

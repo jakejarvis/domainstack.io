@@ -126,7 +126,7 @@ export function getDomainToolStatus(type: string): string {
 }
 
 /** Messages returned to the model when a tool call completes without data. */
-export const INVALID_DOMAIN_MESSAGE = "Please provide a valid root domain (e.g., example.com).";
+export const INVALID_DOMAIN_MESSAGE = "Enter a valid domain name, like example.com.";
 export const RATE_LIMIT_MESSAGE = "Rate limit exceeded. Please wait a moment and try again.";
 export const TOOL_TIMEOUT_MESSAGE = "The lookup timed out. Try again in a moment.";
 

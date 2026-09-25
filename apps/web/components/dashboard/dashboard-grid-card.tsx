@@ -108,17 +108,17 @@ function ExpiresInfoRow({
 
 function DashboardGridCardBody({
   domain,
-  isFailing,
   isVerifyPending,
   isVerifyingThis,
   onVerify,
 }: {
   domain: TrackedDomainWithDetails;
-  isFailing: boolean;
   isVerifyPending: boolean;
   isVerifyingThis: boolean;
   onVerify: () => void;
 }) {
+  const isFailing = domain.verificationStatus === "failing";
+
   if (domain.verified && !isFailing) {
     return (
       <div className="space-y-2">
@@ -161,15 +161,11 @@ function DashboardGridCardBody({
 function DashboardGridCardHeader({
   domain,
   selected,
-  isFailing,
-  isPending,
   onToggleSelect,
   onVerify,
 }: {
   domain: TrackedDomainWithDetails;
   selected: boolean;
-  isFailing: boolean;
-  isPending: boolean;
   onToggleSelect: () => void;
   onVerify: () => void;
 }) {
@@ -208,13 +204,7 @@ function DashboardGridCardHeader({
                 verified={domain.verified}
               />
             ) : null}
-            <DomainStatusBadge
-              verified={domain.verified}
-              verificationStatus={domain.verificationStatus}
-              verificationMethod={domain.verificationMethod}
-              verificationFailedAt={domain.verificationFailedAt}
-              onClick={isFailing || isPending ? onVerify : undefined}
-            />
+            <DomainStatusBadge domain={domain} onClick={onVerify} />
           </div>
         </div>
         <DomainActionsMenu domain={domain} triggerVariant="ghost" />
@@ -247,8 +237,6 @@ export const DashboardGridCard = memo(function DashboardGridCard({
 
   const now = useHydratedNow();
   const accent = getHealthAccent(domain.expirationDate, domain.verified, now || undefined);
-  const isFailing = domain.verified && domain.verificationStatus === "failing";
-  const isPending = !domain.verified;
 
   return (
     <div
@@ -278,8 +266,6 @@ export const DashboardGridCard = memo(function DashboardGridCard({
         <DashboardGridCardHeader
           domain={domain}
           selected={selected}
-          isFailing={isFailing}
-          isPending={isPending}
           onToggleSelect={handleToggleSelect}
           onVerify={handleVerify}
         />
@@ -287,7 +273,6 @@ export const DashboardGridCard = memo(function DashboardGridCard({
         <CardContent className="relative flex flex-1 flex-col pt-2 pb-6">
           <DashboardGridCardBody
             domain={domain}
-            isFailing={isFailing}
             isVerifyPending={isVerifyPending}
             isVerifyingThis={isVerifyingThis}
             onVerify={handleVerify}

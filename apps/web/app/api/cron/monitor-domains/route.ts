@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 
 import { settleInBatches, startInBatches } from "@/lib/batch";
+import { isCronAuthorized } from "@/lib/cron";
 import {
   getMonitoredSnapshotIds,
   getVerifiedDomainsWithoutSnapshots,
@@ -24,7 +25,7 @@ const START_BATCH_SIZE = 50;
  * 2. Detect changes for domains that already have snapshots
  */
 export async function GET(request: Request) {
-  if (request.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isCronAuthorized(request)) {
     logger.warn("Unauthorized cron request");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

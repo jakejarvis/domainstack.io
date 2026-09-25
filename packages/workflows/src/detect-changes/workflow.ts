@@ -6,6 +6,7 @@ import type {
   CertificateSnapshotData,
   PendingChangeObservation,
   ProviderChangeWithNames,
+  ProviderSnapshotData,
   RegistrationSnapshotData,
 } from "@domainstack/types";
 
@@ -372,20 +373,17 @@ async function checkProviders(
   // compare against the stored provider instead (same rule as the DNS check).
   const hostingObserved = ip === null || (headersResult?.success === true && geoResult !== null);
 
-  const currentProviderIds = {
-    dns: providers.dnsProvider?.id ?? null,
-    hosting: hostingObserved ? (providers.hostingProvider?.id ?? null) : snapshot.hostingProviderId,
-    email: providers.emailProvider?.id ?? null,
-  };
-  const storedProviderSnapshot = {
+  const storedProviderSnapshot: ProviderSnapshotData = {
     dnsProviderId: snapshot.dnsProviderId,
     hostingProviderId: snapshot.hostingProviderId,
     emailProviderId: snapshot.emailProviderId,
   };
-  const currentProviderSnapshot = {
-    dnsProviderId: currentProviderIds.dns,
-    hostingProviderId: currentProviderIds.hosting,
-    emailProviderId: currentProviderIds.email,
+  const currentProviderSnapshot: ProviderSnapshotData = {
+    dnsProviderId: providers.dnsProvider?.id ?? null,
+    hostingProviderId: hostingObserved
+      ? (providers.hostingProvider?.id ?? null)
+      : snapshot.hostingProviderId,
+    emailProviderId: providers.emailProvider?.id ?? null,
   };
 
   const providerChange = detectProviderChange(storedProviderSnapshot, currentProviderSnapshot);
@@ -408,7 +406,7 @@ async function checkProviders(
   if (!hasAnyChannel(channels)) {
     // Muted / disabled: advance on detection so we don't infinitely
     // re-detect (see checkRegistration).
-    await updateProviderSnapshot(trackedDomainId, currentProviderIds);
+    await updateProviderSnapshot(trackedDomainId, currentProviderSnapshot);
     return false;
   }
 
@@ -425,14 +423,9 @@ async function checkProviders(
   }
 
   const providerNames = await resolveProviderNamesStep(
-    [
-      snapshot.dnsProviderId,
-      snapshot.hostingProviderId,
-      snapshot.emailProviderId,
-      currentProviderIds.dns,
-      currentProviderIds.hosting,
-      currentProviderIds.email,
-    ].filter((id): id is string => id !== null),
+    [...Object.values(storedProviderSnapshot), ...Object.values(currentProviderSnapshot)].filter(
+      (id): id is string => id !== null,
+    ),
   );
 
   const changes: ProviderChangeWithNames = {
@@ -457,7 +450,7 @@ async function checkProviders(
   );
 
   // Advance only after delivery (see checkRegistration).
-  await updateProviderSnapshot(trackedDomainId, currentProviderIds);
+  await updateProviderSnapshot(trackedDomainId, currentProviderSnapshot);
   return true;
 }
 
@@ -566,21 +559,12 @@ async function updateRegistrationSnapshot(
 
 async function updateProviderSnapshot(
   trackedDomainId: string,
-  providers: {
-    dns: string | null;
-    hosting: string | null;
-    email: string | null;
-  },
+  providers: ProviderSnapshotData,
 ): Promise<void> {
   "use step";
 
   const { updateSnapshot } = await import("@domainstack/db/queries/snapshots");
-  await updateSnapshot(trackedDomainId, {
-    dnsProviderId: providers.dns,
-    hostingProviderId: providers.hosting,
-    emailProviderId: providers.email,
-    providerPending: null,
-  });
+  await updateSnapshot(trackedDomainId, { ...providers, providerPending: null });
 }
 
 async function updateProviderPending(

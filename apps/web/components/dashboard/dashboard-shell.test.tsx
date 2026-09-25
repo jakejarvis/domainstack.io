@@ -399,6 +399,51 @@ describe("dashboard shell", () => {
       await expect.element(page.getByRole("button", { name: /^Registrar$/ })).toBeInTheDocument();
     });
 
+    it("keeps each domain's row when the sort order changes", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+      await openTable();
+
+      const rowOf = (name: string) =>
+        page.getByRole("table").getByRole("link", { name }).element().closest("tr");
+      const alphaRow = rowOf("alpha.com");
+      expect(alphaRow).not.toBeNull();
+      const before = domainNames().indexOf("alpha.com");
+
+      await page.getByRole("button", { name: /^Domain$/ }).click();
+      await vi.waitFor(() => {
+        expect(domainNames().indexOf("alpha.com")).not.toBe(before);
+      });
+
+      // Rows keyed by position would reuse this <tr> for whichever domain now sorts first.
+      expect(rowOf("alpha.com")).toBe(alphaRow);
+    });
+
+    it("keeps an unverified row aligned with the header when Status is hidden", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+      await openTable();
+
+      await page.getByRole("button", { name: "Toggle columns" }).first().click();
+      await page.getByRole("menuitemcheckbox", { name: /Status/ }).click();
+      await expect.element(page.getByRole("button", { name: /^Status$/ })).not.toBeInTheDocument();
+
+      const spanOf = (cells: Iterable<HTMLTableCellElement>) =>
+        Array.from(cells).reduce((sum, cell) => sum + cell.colSpan, 0);
+      const table = page.getByRole("table").element() as HTMLTableElement;
+      const headerSpan = spanOf(table.tHead!.rows[0].cells);
+      const pendingRow = page
+        .getByRole("table")
+        .getByRole("link", { name: "pending.dev" })
+        .element()
+        .closest("tr")!;
+
+      expect(spanOf(pendingRow.cells)).toBe(headerSpan);
+      await expect
+        .element(page.getByRole("table").getByRole("button", { name: "Continue" }))
+        .toBeInTheDocument();
+    });
+
     it("selects a row and shows the bulk toolbar", async () => {
       await renderDashboardShell();
       await waitForCatalog();

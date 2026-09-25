@@ -36,7 +36,7 @@ async function handler(request: Request): Promise<Response> {
   function lookupDomainSection(section: Section, rawDomain: string) {
     const domain = toRegistrableDomain(rawDomain);
     if (!domain) {
-      throw new Error('"domain" must be a valid registrable domain (e.g. example.com)');
+      throw new Error("Enter a valid domain name, like example.com.");
     }
     return lookupSection(section, domain, { identifier });
   }

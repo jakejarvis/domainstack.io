@@ -93,6 +93,11 @@ function toastBulkResult(
  *
  * Single-domain and bulk variants hit different endpoints but share the same
  * {@link DomainChange}, so they can't drift apart.
+ *
+ * Only the stable `mutate`/`mutateAsync` functions are kept from each
+ * `useMutation` result (the result object itself is new every render), so the
+ * returned handlers keep their identity and the dashboard's action contexts
+ * don't re-render every row on unrelated updates.
  */
 export function useDashboardMutations() {
   const trpc = useTRPC();
@@ -169,7 +174,7 @@ export function useDashboardMutations() {
     },
   });
 
-  const removeMutation = useMutation(
+  const { mutate: mutateRemove } = useMutation(
     trpc.tracking.removeDomain.mutationOptions({
       ...optimistic(
         ({ trackedDomainId }: { trackedDomainId: string }) => removeDomains([trackedDomainId]),
@@ -182,7 +187,7 @@ export function useDashboardMutations() {
     }),
   );
 
-  const archiveMutation = useMutation(
+  const { mutate: mutateArchive } = useMutation(
     trpc.tracking.archiveDomain.mutationOptions({
       ...optimistic(
         ({ trackedDomainId }: { trackedDomainId: string }) => archiveDomains([trackedDomainId]),
@@ -195,7 +200,7 @@ export function useDashboardMutations() {
     }),
   );
 
-  const unarchiveMutation = useMutation(
+  const { mutate: mutateUnarchive } = useMutation(
     trpc.tracking.unarchiveDomain.mutationOptions({
       ...optimistic(
         ({ trackedDomainId }: { trackedDomainId: string }) => unarchiveDomains([trackedDomainId]),
@@ -205,7 +210,7 @@ export function useDashboardMutations() {
     }),
   );
 
-  const muteMutation = useMutation(
+  const { mutate: mutateMute } = useMutation(
     trpc.tracking.muteDomain.mutationOptions({
       ...optimistic(
         ({ trackedDomainId, muted }: { trackedDomainId: string; muted: boolean }) =>
@@ -216,7 +221,7 @@ export function useDashboardMutations() {
     }),
   );
 
-  const bulkArchiveMutation = useMutation(
+  const { mutateAsync: mutateBulkArchive, isPending: isBulkArchiving } = useMutation(
     trpc.tracking.bulkArchiveDomains.mutationOptions(
       optimistic(
         ({ trackedDomainIds }: { trackedDomainIds: string[] }) => archiveDomains(trackedDomainIds),
@@ -225,7 +230,7 @@ export function useDashboardMutations() {
     ),
   );
 
-  const bulkRemoveMutation = useMutation(
+  const { mutateAsync: mutateBulkRemove, isPending: isBulkDeleting } = useMutation(
     trpc.tracking.bulkRemoveDomains.mutationOptions(
       optimistic(
         ({ trackedDomainIds }: { trackedDomainIds: string[] }) => removeDomains(trackedDomainIds),
@@ -234,7 +239,7 @@ export function useDashboardMutations() {
     ),
   );
 
-  const bulkMuteMutation = useMutation(
+  const { mutateAsync: mutateBulkMute, isPending: isBulkMuting } = useMutation(
     trpc.tracking.bulkMuteDomains.mutationOptions(
       optimistic(
         ({ trackedDomainIds, muted }: { trackedDomainIds: string[]; muted: boolean }) =>
@@ -245,34 +250,33 @@ export function useDashboardMutations() {
   );
 
   return {
-    remove: (trackedDomainId: string) => removeMutation.mutate({ trackedDomainId }),
-    archive: (trackedDomainId: string) => archiveMutation.mutate({ trackedDomainId }),
-    unarchive: (trackedDomainId: string) => unarchiveMutation.mutate({ trackedDomainId }),
-    mute: (trackedDomainId: string, muted: boolean) =>
-      muteMutation.mutate({ trackedDomainId, muted }),
+    remove: (trackedDomainId: string) => mutateRemove({ trackedDomainId }),
+    archive: (trackedDomainId: string) => mutateArchive({ trackedDomainId }),
+    unarchive: (trackedDomainId: string) => mutateUnarchive({ trackedDomainId }),
+    mute: (trackedDomainId: string, muted: boolean) => mutateMute({ trackedDomainId, muted }),
 
     // Bulk mutations resolve with the per-domain result so callers can react to success
     bulkArchive: async (trackedDomainIds: string[]) =>
       toastBulkResult(
         "Archived",
-        await bulkArchiveMutation.mutateAsync({ trackedDomainIds }),
+        await mutateBulkArchive({ trackedDomainIds }),
         trackedDomainIds.length,
       ),
     bulkRemove: async (trackedDomainIds: string[]) =>
       toastBulkResult(
         "Deleted",
-        await bulkRemoveMutation.mutateAsync({ trackedDomainIds }),
+        await mutateBulkRemove({ trackedDomainIds }),
         trackedDomainIds.length,
       ),
     bulkMute: async (trackedDomainIds: string[], muted: boolean) =>
       toastBulkResult(
         muted ? "Muted" : "Unmuted",
-        await bulkMuteMutation.mutateAsync({ trackedDomainIds, muted }),
+        await mutateBulkMute({ trackedDomainIds, muted }),
         trackedDomainIds.length,
       ),
 
-    isBulkArchiving: bulkArchiveMutation.isPending,
-    isBulkDeleting: bulkRemoveMutation.isPending,
-    isBulkMuting: bulkMuteMutation.isPending,
+    isBulkArchiving,
+    isBulkDeleting,
+    isBulkMuting,
   };
 }

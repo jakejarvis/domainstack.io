@@ -8,15 +8,16 @@ import {
 import { BadgeWithTooltip } from "@/components/dashboard/badge-with-tooltip";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { VERIFICATION_GRACE_PERIOD_DAYS } from "@domainstack/constants";
-import type { VerificationMethod, VerificationStatus } from "@domainstack/types";
+import type { TrackedDomainWithDetails, VerificationMethod } from "@domainstack/types";
 import { cn } from "@domainstack/ui/utils";
 import { calculateDaysElapsed } from "@domainstack/utils/expiry";
 
 type DomainStatusBadgeProps = {
-  verified: boolean;
-  verificationStatus?: VerificationStatus;
-  verificationMethod?: VerificationMethod | null;
-  verificationFailedAt?: Date | null;
+  domain: Pick<
+    TrackedDomainWithDetails,
+    "verified" | "verificationStatus" | "verificationMethod" | "verificationFailedAt"
+  >;
+  /** Called from the Failing and Pending badges; a healthy Verified badge isn't clickable. */
   onClick?: () => void;
   className?: string;
 };
@@ -54,10 +55,7 @@ function getFailingTooltip(
 }
 
 function getDomainStatusBadge({
-  verified,
-  verificationStatus,
-  verificationMethod,
-  verificationFailedAt,
+  domain: { verified, verificationStatus, verificationMethod, verificationFailedAt },
   onClick,
   className,
   now,

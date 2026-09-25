@@ -175,24 +175,12 @@ export function createColumns({
     {
       accessorKey: "verified",
       header: COLUMN_HEADERS.verified,
-      cell: ({ row }) => {
-        const isFailing = row.original.verified && row.original.verificationStatus === "failing";
-        const isPending = !row.original.verified;
-
-        return (
-          <DomainStatusBadge
-            verified={row.original.verified}
-            verificationStatus={row.original.verificationStatus}
-            verificationMethod={row.original.verificationMethod}
-            verificationFailedAt={row.original.verificationFailedAt}
-            onClick={
-              isFailing || isPending
-                ? () => onVerify(row.original.id, row.original.verificationMethod)
-                : undefined
-            }
-          />
-        );
-      },
+      cell: ({ row }) => (
+        <DomainStatusBadge
+          domain={row.original}
+          onClick={() => onVerify(row.original.id, row.original.verificationMethod)}
+        />
+      ),
       size: 100,
     },
     {

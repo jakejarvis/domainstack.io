@@ -83,7 +83,7 @@ export async function checkDomainExpiry(
   });
 
   // Step 7: Send and record. Email goes first inside the step so a failed send
-  // leaves no dedup row behind (see sendNotification in shared/notifications.ts).
+  // leaves no dedup row behind (see sendNotification in steps/notifications.ts).
   await sendDomainExpiryNotification(
     {
       userId: domain.userId,

@@ -5,10 +5,9 @@ import { useMemo } from "react";
 
 import { createColumns } from "@/components/dashboard/dashboard-table-columns";
 import { DashboardTablePagination } from "@/components/dashboard/dashboard-table-pagination";
+import { DashboardTableRow } from "@/components/dashboard/dashboard-table-row";
 import { SortIndicator } from "@/components/dashboard/sort-indicator";
-import { UnverifiedTableRow } from "@/components/dashboard/unverified-table-row";
 import { UpgradeRow } from "@/components/dashboard/upgrade-row";
-import { VerifiedTableRow } from "@/components/dashboard/verified-table-row";
 import { useDashboardActions, useDashboardView } from "@/context/dashboard-context";
 import {
   dashboardTableFeatures,
@@ -22,7 +21,10 @@ import { ScrollArea } from "@domainstack/ui/scroll-area";
 import { cn } from "@domainstack/ui/utils";
 
 type DashboardTableProps = {
-  /** Already filtered and sorted by `useDashboardView`; the table only paginates. */
+  /**
+   * Already filtered and sorted by `useDashboardView`; the table only paginates.
+   * Never empty: `DashboardContent` shows its own empty states instead.
+   */
   domains: TrackedDomainWithDetails[];
 };
 
@@ -65,6 +67,9 @@ export function DashboardTable({ domains }: DashboardTableProps) {
     () => ({
       features: dashboardTableFeatures,
       data: domains,
+      // Key rows by domain, not position, so a sort, filter, or removal doesn't hand one
+      // domain's row (and its enter/exit animation) to another.
+      getRowId: (domain: TrackedDomainWithDetails) => domain.id,
       columns,
       state: tableState,
       manualSorting: true,
@@ -143,62 +148,31 @@ export function DashboardTable({ domains }: DashboardTableProps) {
             ))}
           </thead>
           <tbody className="divide-y divide-black/5 dark:divide-white/5">
-            {table.getRowModel().rows.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="h-16 text-center text-sm text-muted-foreground"
-                >
-                  No domains tracked yet.
-                </td>
-              </tr>
-            ) : (
-              <AnimatePresence initial={false}>
-                {table.getRowModel().rows.map((row) => {
-                  const isUnverified = !row.original.verified;
-                  const cells = row.getVisibleCells();
-
-                  if (isUnverified) {
-                    return (
-                      <UnverifiedTableRow
-                        key={row.id}
-                        rowId={row.id}
-                        cells={cells}
-                        original={row.original}
-                      />
-                    );
-                  }
-
-                  return (
-                    <VerifiedTableRow
-                      key={row.id}
-                      rowId={row.id}
-                      cells={cells}
-                      original={row.original}
-                    />
-                  );
-                })}
-              </AnimatePresence>
-            )}
+            <AnimatePresence initial={false}>
+              {table.getRowModel().rows.map((row) => (
+                <DashboardTableRow
+                  key={row.id}
+                  cells={row.getVisibleCells()}
+                  domain={row.original}
+                />
+              ))}
+            </AnimatePresence>
           </tbody>
         </table>
       </ScrollArea>
 
-      {/* Pagination controls - only show if there are domains */}
-      {domains.length > 0 && (
-        <DashboardTablePagination
-          pageIndex={table.state.pagination.pageIndex}
-          pageSize={pageSize}
-          pageCount={table.getPageCount()}
-          canPreviousPage={table.getCanPreviousPage()}
-          canNextPage={table.getCanNextPage()}
-          onPageChange={(index) => setPageIndex(index)}
-          onPageSizeChange={setPageSize}
-        />
-      )}
+      <DashboardTablePagination
+        pageIndex={table.state.pagination.pageIndex}
+        pageSize={pageSize}
+        pageCount={table.getPageCount()}
+        canPreviousPage={table.getCanPreviousPage()}
+        canNextPage={table.getCanNextPage()}
+        onPageChange={(index) => setPageIndex(index)}
+        onPageSizeChange={setPageSize}
+      />
 
       {/* Upgrade CTA banner for free tier users */}
-      {<UpgradeRow />}
+      <UpgradeRow />
     </Card>
   );
 }

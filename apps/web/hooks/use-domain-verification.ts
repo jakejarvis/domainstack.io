@@ -1,5 +1,5 @@
 import { skipToken, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 import { useTRPC } from "@/lib/trpc/client";
@@ -30,11 +30,6 @@ export function useDomainVerification({
 
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-
-  const onSuccessRef = useRef(onSuccess);
-  useEffect(() => {
-    onSuccessRef.current = onSuccess;
-  });
 
   const invalidateQueries = useCallback(() => {
     void queryClient.invalidateQueries(trpc.tracking.listDomains.queryFilter());
@@ -153,12 +148,12 @@ export function useDomainVerification({
       if (result.verified) {
         setState(toStep3(state));
         toast.success("Domain verified successfully!");
-        onSuccessRef.current();
+        onSuccess();
       }
     } catch {
       // Failed status is derived from the mutation
     }
-  }, [state, verifyDomainMutation]);
+  }, [state, verifyDomainMutation, onSuccess]);
 
   const handleReturnLater = useCallback(() => {
     toast.info("Domain saved", {

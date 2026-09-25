@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 
 import { startInBatches } from "@/lib/batch";
+import { isCronAuthorized } from "@/lib/cron";
 import { getRecentlyAccessedDomains } from "@domainstack/db/queries/domains";
 import { createLogger } from "@domainstack/logger";
 import { warmDomainWorkflow } from "@domainstack/workflows/warm-domains";
@@ -21,7 +22,7 @@ const START_BATCH_SIZE = 50;
  * refreshes them.
  */
 export async function GET(request: Request) {
-  if (request.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isCronAuthorized(request)) {
     logger.warn("Unauthorized cron request");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

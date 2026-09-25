@@ -1,17 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page } from "vitest/browser";
 
-const nav = vi.hoisted(() => ({
-  push: vi.fn<(href: string) => void>(),
-}));
-
 vi.mock("@/lib/trpc/client", async () => {
   const { useTRPC } = await import("@/mocks/trpc");
   return { useTRPC };
 });
-vi.mock("@/hooks/use-router", () => ({
-  useRouter: () => ({ push: nav.push }),
-}));
 vi.mock("sonner", () => ({
   toast: {
     success: vi.fn<(message?: string) => void>(),
@@ -90,7 +83,6 @@ describe("NotificationsPopover", () => {
     vi.setSystemTime(now);
     resetHydratedNow(now);
     resetTrpcMocks();
-    nav.push.mockClear();
   });
 
   afterEach(() => {
@@ -228,15 +220,41 @@ describe("NotificationsPopover", () => {
     await renderPopover([unreadAlpha]);
     await openInbox();
 
-    await page.getByRole("button", { name: "Notification settings" }).click();
+    const settingsLink = page.getByRole("button", { name: "Notification settings" });
+    await expect.element(settingsLink).toHaveAttribute("href", "/settings/notifications");
+    await settingsLink.click();
 
-    expect(nav.push).toHaveBeenCalledWith("/settings/notifications");
     await vi.waitFor(() => {
       expect(markAllReadMutation).toHaveBeenCalledOnce();
     });
     await expect
       .element(page.getByRole("heading", { name: "Notifications" }))
       .not.toBeInTheDocument();
+  });
+
+  it("closes from the empty inbox's dashboard link", async () => {
+    await renderPopover([]);
+    await openInbox();
+
+    const dashboardLink = page.getByRole("button", { name: "Go to dashboard" });
+    await expect.element(dashboardLink).toHaveAttribute("href", "/dashboard");
+    await dashboardLink.click();
+
+    await expect
+      .element(page.getByRole("heading", { name: "Notifications" }))
+      .not.toBeInTheDocument();
+  });
+
+  it("leaves the popover open when settings is opened with a modifier key", async () => {
+    await renderPopover([unreadAlpha]);
+    await openInbox();
+
+    await page
+      .getByRole("button", { name: "Notification settings" })
+      .click({ modifiers: ["Meta"] });
+
+    await expect.element(page.getByRole("heading", { name: "Notifications" })).toBeInTheDocument();
+    expect(markAllReadMutation).not.toHaveBeenCalled();
   });
 
   it("caps the inbox badge at 99+", async () => {

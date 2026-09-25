@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { parseBlocklist } from "@/lib/blocklist";
+import { isCronAuthorized } from "@/lib/cron";
 import { blocklistSources } from "@/lib/flags";
 import { syncBlockedDomains } from "@domainstack/db/queries/blocked-domains";
 import { createLogger } from "@domainstack/logger";
@@ -13,8 +15,7 @@ const logger = createLogger({ source: "cron/sync-blocklist" });
  * parses domains, and syncs to the blocked_domains table.
  */
 export async function GET(request: Request) {
-  // Verify the request is from Vercel Cron
-  if (request.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isCronAuthorized(request)) {
     logger.warn("Unauthorized cron request");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -43,65 +44,7 @@ export async function GET(request: Request) {
           throw new Error(`Failed to fetch blocklist: HTTP ${response.status}`);
         }
 
-        const text = await response.text();
-        const domains: string[] = [];
-
-        // Parse domains from blocklist format
-        // OISD uses wildcard format: *.example.com or example.com
-        let start = 0;
-        const len = text.length;
-
-        while (start < len) {
-          let end = text.indexOf("\n", start);
-          if (end === -1) end = len;
-
-          let tStart = start;
-          let tEnd = end - 1;
-
-          // Fast trim spaces and carriage returns
-          while (tStart <= tEnd && text.charCodeAt(tStart) <= 32) tStart++;
-          while (tEnd >= tStart && text.charCodeAt(tEnd) <= 32) tEnd--;
-
-          start = end + 1;
-
-          if (tStart > tEnd || text.charCodeAt(tStart) === 35) continue; // Empty line or '#' comment
-
-          // Remove "*." prefix
-          if (
-            tEnd - tStart >= 1 &&
-            text.charCodeAt(tStart) === 42 &&
-            text.charCodeAt(tStart + 1) === 46
-          ) {
-            tStart += 2;
-          }
-
-          const dLen = tEnd - tStart + 1;
-          // Length check and check for leading/trailing dot
-          if (
-            dLen > 253 ||
-            dLen < 3 ||
-            text.charCodeAt(tStart) === 46 ||
-            text.charCodeAt(tEnd) === 46
-          ) {
-            continue;
-          }
-
-          let hasDot = false;
-          let valid = true;
-          for (let i = tStart + 1; i < tEnd; i++) {
-            const c = text.charCodeAt(i);
-            if (c === 46) hasDot = true;
-            else if (c <= 32) {
-              valid = false;
-              break;
-            }
-          }
-
-          if (valid && hasDot) {
-            domains.push(text.slice(tStart, tEnd + 1).toLowerCase());
-          }
-        }
-
+        const domains = parseBlocklist(await response.text());
         logger.info({ sourceUrl, count: domains.length }, "Parsed blocklist");
         return domains;
       }),

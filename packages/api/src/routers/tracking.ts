@@ -5,6 +5,10 @@ import { start } from "workflow/api";
 import { z } from "zod";
 
 import { VERIFICATION_METHODS } from "@domainstack/constants";
+import {
+  verifyDomain as verifyDomainAll,
+  verifyDomainByMethod,
+} from "@domainstack/core/verification";
 import { ensureDomainRecord, findDomainByName } from "@domainstack/db/queries/domains";
 import {
   archiveTrackedDomain,
@@ -26,10 +30,15 @@ import { sendEmail } from "@domainstack/email";
 import VerificationInstructionsEmail from "@domainstack/email/templates/verification-instructions";
 import { createLogger } from "@domainstack/logger";
 import { enforceRateLimit } from "@domainstack/redis/enforce";
+import { buildVerificationInstructions } from "@domainstack/utils/verification";
 import { autoVerifyWorkflow } from "@domainstack/workflows/auto-verify";
 import { initializeSnapshotWorkflow } from "@domainstack/workflows/initialize-snapshot";
 
 import { analytics } from "../analytics";
+import { DomainInputSchema } from "../domain-input";
+import { protectedProcedure } from "../procedures";
+import { withTrpcRateLimitErrors } from "../rate-limit";
+import { createTRPCRouter } from "../trpc";
 
 const logger = createLogger({ source: "routers/tracking" });
 
@@ -38,28 +47,6 @@ const logger = createLogger({ source: "routers/tracking" });
  * per-user daily limit doesn't stop many accounts mailing the same person.
  */
 const VERIFICATION_INSTRUCTIONS_PER_RECIPIENT = { requests: 3, window: "1 d" } as const;
-
-import {
-  verifyDomain as verifyDomainAll,
-  verifyDomainByMethod,
-} from "@domainstack/core/verification";
-import { toRegistrableDomain } from "@domainstack/utils/domain";
-import { buildVerificationInstructions } from "@domainstack/utils/verification";
-
-import { protectedProcedure } from "../procedures";
-import { withTrpcRateLimitErrors } from "../rate-limit";
-import { createTRPCRouter } from "../trpc";
-
-const DomainInputSchema = z.object({ domain: z.string().min(1) }).transform(({ domain }) => {
-  const registrable = toRegistrableDomain(domain);
-  if (!registrable) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Invalid domain name",
-    });
-  }
-  return { domain: registrable };
-});
 
 export const trackingRouter = createTRPCRouter({
   /**
@@ -150,11 +137,10 @@ export const trackingRouter = createTRPCRouter({
     // Ensure domain record exists in DB
     const domainRecord = await ensureDomainRecord(domain);
 
-    // Check if already tracking this domain
-    const existing = await findTrackedDomain(ctx.user.id, domainRecord.id);
-
-    if (existing) {
-      // If already verified, don't allow re-adding
+    // An unverified domain the user already started tracking resumes with its
+    // existing token instead of failing. Covers both a plain re-add and losing
+    // the insert race to a concurrent request.
+    const resume = (existing: { id: string; verified: boolean; verificationToken: string }) => {
       if (existing.verified) {
         throw new TRPCError({
           code: "CONFLICT",
@@ -164,13 +150,17 @@ export const trackingRouter = createTRPCRouter({
 
       analytics.track("domain_added", { domain, resumed: true }, ctx.user.id);
 
-      // If unverified, return the existing record so user can resume verification
       return {
         id: existing.id,
         domain,
         verificationToken: existing.verificationToken,
         resumed: true, // Flag to indicate this is resuming verification
       };
+    };
+
+    const existing = await findTrackedDomain(ctx.user.id, domainRecord.id);
+    if (existing) {
+      return resume(existing);
     }
 
     // Get user's subscription to know their limit
@@ -198,14 +188,7 @@ export const trackingRouter = createTRPCRouter({
       // "already_exists" - race condition where another request created it first
       const raceExisting = await findTrackedDomain(ctx.user.id, domainRecord.id);
       if (raceExisting) {
-        analytics.track("domain_added", { domain, resumed: true }, ctx.user.id);
-
-        return {
-          id: raceExisting.id,
-          domain,
-          verificationToken: raceExisting.verificationToken,
-          resumed: true,
-        };
+        return resume(raceExisting);
       }
 
       // This shouldn't happen, but guard against it
@@ -267,7 +250,7 @@ export const trackingRouter = createTRPCRouter({
       }
 
       // Synchronous: the user is waiting on this request. Each HTTP check has
-      // its own timeout (see packages/server/src/verification).
+      // its own timeout (see packages/core/src/verification).
       const httpOptions = { userAgent: process.env.EXTERNAL_USER_AGENT };
       const result = method
         ? await verifyDomainByMethod(

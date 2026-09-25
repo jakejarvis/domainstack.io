@@ -37,8 +37,15 @@ vi.mock("@domainstack/email/templates/verification-instructions", () => ({
 const { domains, domainSnapshots, registrations, userSubscriptions, users, userTrackedDomains } =
   await import("@domainstack/db/schema");
 const { eq } = await import("@domainstack/db/drizzle");
-const { countActiveTrackedDomainsForUser, verifyTrackedDomain } =
-  await import("@domainstack/db/queries/tracked-domains");
+const {
+  bulkArchiveTrackedDomains,
+  bulkRemoveTrackedDomains,
+  countTrackedDomainsByStatus,
+  markVerificationFailing,
+  markVerificationSuccessful,
+  revokeVerification,
+  verifyTrackedDomain,
+} = await import("@domainstack/db/queries/tracked-domains");
 const { sendEmail } = await import("@domainstack/email");
 const { default: VerificationInstructionsEmail } =
   await import("@domainstack/email/templates/verification-instructions");
@@ -338,7 +345,7 @@ describe("tracking router", () => {
       const caller = createAuthenticatedCaller();
 
       await expect(caller.tracking.addDomain({ domain: "not-a-domain" })).rejects.toThrow(
-        "Invalid domain",
+        "Enter a valid domain name, like example.com.",
       );
     });
   });
@@ -367,7 +374,7 @@ describe("tracking router", () => {
       const result = await caller.tracking.addDomain({ domain: QUOTA_DOMAIN_NAMES[0] });
 
       expect(result.id).toBeDefined();
-      expect(await countActiveTrackedDomainsForUser(TEST_USER_ID)).toBe(3);
+      expect((await countTrackedDomainsByStatus(TEST_USER_ID)).active).toBe(3);
     });
 
     it("throws FORBIDDEN at exactly the limit", async () => {
@@ -383,7 +390,7 @@ describe("tracking router", () => {
       await expect(caller.tracking.addDomain({ domain: "over-the-limit.com" })).rejects.toThrow(
         "reached your domain tracking limit",
       );
-      expect(await countActiveTrackedDomainsForUser(TEST_USER_ID)).toBe(5);
+      expect((await countTrackedDomainsByStatus(TEST_USER_ID)).active).toBe(5);
     });
 
     it("allows exactly one of two concurrent adds at max - 1", async () => {
@@ -414,7 +421,7 @@ describe("tracking router", () => {
       expect(rejected[0].reason).toMatchObject({
         message: expect.stringContaining("reached your domain tracking limit"),
       });
-      expect(await countActiveTrackedDomainsForUser(TEST_USER_ID)).toBe(5);
+      expect((await countTrackedDomainsByStatus(TEST_USER_ID)).active).toBe(5);
     });
   });
 
@@ -1132,6 +1139,169 @@ describe("tracking router", () => {
       // Only user's own domain should be archived
       expect(result.successCount).toBe(1);
       expect(result.failedCount).toBe(1);
+    });
+  });
+
+  describe("reverification writes", () => {
+    const failedAt = new Date("2026-09-01T00:00:00.000Z");
+
+    async function seedTracked(values: Partial<typeof userTrackedDomains.$inferInsert>) {
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "token1",
+        verificationMethod: "dns_txt",
+        ...values,
+      });
+    }
+
+    async function readTracked() {
+      const [row] = await db
+        .select()
+        .from(userTrackedDomains)
+        .where(eq(userTrackedDomains.id, TEST_TRACKED_ID));
+      return row;
+    }
+
+    it("revokes the episode it was given", async () => {
+      await seedTracked({
+        verified: true,
+        verificationStatus: "failing",
+        verificationFailedAt: failedAt,
+      });
+
+      expect(await revokeVerification(TEST_TRACKED_ID, failedAt)).not.toBeNull();
+      expect(await readTracked()).toMatchObject({
+        verified: false,
+        verificationStatus: "unverified",
+        verificationFailedAt: null,
+      });
+    });
+
+    it("does not revoke a domain that recovered or started a new episode", async () => {
+      await seedTracked({ verified: true, verificationStatus: "verified" });
+      expect(await revokeVerification(TEST_TRACKED_ID, failedAt)).toBeNull();
+      expect(await readTracked()).toMatchObject({ verified: true, verificationStatus: "verified" });
+
+      await db
+        .update(userTrackedDomains)
+        .set({ verificationStatus: "failing", verificationFailedAt: new Date("2026-09-10") })
+        .where(eq(userTrackedDomains.id, TEST_TRACKED_ID));
+      expect(await revokeVerification(TEST_TRACKED_ID, failedAt)).toBeNull();
+      expect((await readTracked())?.verified).toBe(true);
+    });
+
+    it("does not mark a revoked domain as verified", async () => {
+      await seedTracked({ verified: false, verificationStatus: "unverified" });
+
+      expect(await markVerificationSuccessful(TEST_TRACKED_ID)).toBeNull();
+      expect(await readTracked()).toMatchObject({
+        verified: false,
+        verificationStatus: "unverified",
+      });
+    });
+
+    it("marks failing only from the expected state", async () => {
+      await seedTracked({ verified: true, verificationStatus: "verified" });
+
+      expect(
+        await markVerificationFailing(TEST_TRACKED_ID, { status: "failing", failedAt: null }),
+      ).toBeNull();
+      const updated = await markVerificationFailing(TEST_TRACKED_ID, {
+        status: "verified",
+        failedAt: null,
+      });
+      expect(updated?.verificationStatus).toBe("failing");
+      expect(updated?.verificationFailedAt).toBeInstanceOf(Date);
+    });
+  });
+
+  describe("bulk query classification", () => {
+    const MISSING_ID = "b0000000-0000-1000-a000-0000000000ff";
+    const OTHER_USERS_ID = "b0000000-0000-1000-a000-000000000012";
+    const archivedAt = new Date("2026-01-01T00:00:00.000Z");
+
+    async function seedMixedRows() {
+      await db.insert(userTrackedDomains).values([
+        {
+          id: TEST_TRACKED_ID,
+          userId: TEST_USER_ID,
+          domainId: TEST_DOMAIN_ID,
+          verificationToken: "token1",
+          verified: true,
+        },
+        {
+          id: TEST_TRACKED_2_ID,
+          userId: TEST_USER_ID,
+          domainId: TEST_DOMAIN_2_ID,
+          verificationToken: "token2",
+          verified: true,
+          archivedAt,
+        },
+        {
+          id: OTHER_USERS_ID,
+          userId: TEST_USER_2_ID,
+          domainId: TEST_DOMAIN_ID,
+          verificationToken: "token3",
+          verified: true,
+        },
+      ]);
+    }
+
+    async function archivedAtOf(id: string) {
+      const [row] = await db
+        .select({ archivedAt: userTrackedDomains.archivedAt })
+        .from(userTrackedDomains)
+        .where(eq(userTrackedDomains.id, id));
+      return row?.archivedAt;
+    }
+
+    it("archives only owned, unarchived rows and sorts the rest", async () => {
+      await seedMixedRows();
+
+      const result = await bulkArchiveTrackedDomains(TEST_USER_ID, [
+        TEST_TRACKED_ID,
+        TEST_TRACKED_2_ID,
+        OTHER_USERS_ID,
+        MISSING_ID,
+      ]);
+
+      expect(result).toEqual({
+        succeeded: [TEST_TRACKED_ID],
+        alreadyProcessed: [TEST_TRACKED_2_ID],
+        notOwned: [OTHER_USERS_ID],
+        notFound: [MISSING_ID],
+      });
+      // The already-archived row keeps its original timestamp; the other user's is untouched.
+      expect(await archivedAtOf(TEST_TRACKED_2_ID)).toEqual(archivedAt);
+      expect(await archivedAtOf(OTHER_USERS_ID)).toBeNull();
+    });
+
+    it("removes only owned rows", async () => {
+      await seedMixedRows();
+
+      const result = await bulkRemoveTrackedDomains(TEST_USER_ID, [
+        TEST_TRACKED_ID,
+        OTHER_USERS_ID,
+        MISSING_ID,
+      ]);
+
+      expect(result).toEqual({
+        succeeded: [TEST_TRACKED_ID],
+        notOwned: [OTHER_USERS_ID],
+        notFound: [MISSING_ID],
+      });
+      expect(await archivedAtOf(OTHER_USERS_ID)).toBeNull();
+    });
+
+    it("returns an empty result for no ids", async () => {
+      expect(await bulkArchiveTrackedDomains(TEST_USER_ID, [])).toEqual({
+        succeeded: [],
+        alreadyProcessed: [],
+        notFound: [],
+        notOwned: [],
+      });
     });
   });
 

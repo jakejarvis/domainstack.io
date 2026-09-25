@@ -83,7 +83,11 @@ export async function initializeSnapshotWorkflow(
     return { success: false, error: "dns_unobserved" };
   }
 
-  // Step 3: Create the baseline snapshot
+  // Step 3: Create the baseline snapshot.
+  // Unlike detect-changes, hosting is written even when headers or GeoIP failed
+  // this run (so it may be the IP-owner fallback or null). Skipping the baseline
+  // instead would leave a domain whose headers always fail unmonitored forever;
+  // the cost is a possible one-off hosting-change alert once headers recover.
   const snapshot = await createSnapshotStep({
     trackedDomainId,
     registration: registrationSnapshot,

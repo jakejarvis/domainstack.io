@@ -203,11 +203,10 @@ describe("reverifyOwnershipWorkflow", () => {
     const result = await reverifyOwnershipWorkflow({ trackedDomainId: "td-1" });
 
     expect(result).toEqual({ verified: false, action: "marked_failing" });
-    expect(trackedDomainsMock.markVerificationFailing).toHaveBeenCalledWith(
-      "td-1",
-      "failing",
-      null,
-    );
+    expect(trackedDomainsMock.markVerificationFailing).toHaveBeenCalledWith("td-1", {
+      status: "failing",
+      failedAt: null,
+    });
     expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
   });
 
@@ -218,11 +217,10 @@ describe("reverifyOwnershipWorkflow", () => {
     const { reverifyOwnershipWorkflow } = await import("./workflow");
     const result = await reverifyOwnershipWorkflow({ trackedDomainId: "td-1" });
 
-    expect(trackedDomainsMock.markVerificationFailing).toHaveBeenCalledWith(
-      "td-1",
-      "verified",
-      null,
-    );
+    expect(trackedDomainsMock.markVerificationFailing).toHaveBeenCalledWith("td-1", {
+      status: "verified",
+      failedAt: null,
+    });
     expect(result).toEqual({ skipped: true, reason: "invalid_state" });
     expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
   });
@@ -326,7 +324,10 @@ describe("reverifyOwnershipWorkflow", () => {
       expect.objectContaining({ notificationType: "verification_revoked" }),
       { shouldSendEmail: true, shouldSendInApp: true },
     );
-    expect(trackedDomainsMock.revokeVerification).toHaveBeenCalledWith("td-1");
+    expect(trackedDomainsMock.revokeVerification).toHaveBeenCalledWith(
+      "td-1",
+      new Date("2026-09-05T04:00:00Z"),
+    );
     expect(sharedNotificationsMock.sendNotification.mock.invocationCallOrder[0]).toBeLessThan(
       trackedDomainsMock.revokeVerification.mock.invocationCallOrder[0],
     );

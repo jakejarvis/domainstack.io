@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useCallback, useTransition } from "react";
 
 import { useRouter } from "@/hooks/use-router";
+import { addDomainResumeHref } from "@/lib/add-domain-resume";
 import { useTRPC } from "@/lib/trpc/client";
 import { useSession } from "@domainstack/auth/client";
 import { Button } from "@domainstack/ui/button";
@@ -117,17 +118,8 @@ export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonP
     if (!session?.user) return;
 
     if (isPendingVerification && trackedDomain) {
-      const params = new URLSearchParams({
-        resume: "true",
-        id: trackedDomain.id,
-      });
-
-      if (trackedDomain.verificationMethod) {
-        params.set("method", trackedDomain.verificationMethod);
-      }
-
       startNavigation(() =>
-        router.push(`/dashboard/add-domain?${params.toString()}`, {
+        router.push(addDomainResumeHref(trackedDomain.id, trackedDomain.verificationMethod), {
           scroll: false,
         }),
       );

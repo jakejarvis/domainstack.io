@@ -18,30 +18,8 @@ import {
 } from "@domainstack/ui/empty";
 
 export function DashboardContent({ totalDomains }: { totalDomains: number }) {
-  const { visibleDomains: domains, hasActiveFilters, clearFilters } = useDashboardView();
+  const { visibleDomains: domains, clearFilters } = useDashboardView();
   const viewMode = useDashboardViewMode();
-
-  // Empty state: No domains match filters
-  if (domains.length === 0 && hasActiveFilters) {
-    return (
-      <Empty className="rounded-xl border bg-background shadow-sm">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <IconFilterX className="size-6" />
-          </EmptyMedia>
-          <EmptyTitle>No domains match your filters</EmptyTitle>
-          <EmptyDescription>
-            Try adjusting your search or filter criteria to find what you're looking for.
-          </EmptyDescription>
-        </EmptyHeader>
-        <EmptyContent>
-          <Button variant="outline" onClick={clearFilters}>
-            Clear Filters
-          </Button>
-        </EmptyContent>
-      </Empty>
-    );
-  }
 
   // Empty state: First-time user (no domains at all)
   if (totalDomains === 0) {
@@ -79,6 +57,30 @@ export function DashboardContent({ totalDomains }: { totalDomains: number }) {
             <IconHourglass className="size-4" />
             <span>Verification takes less than 2&nbsp;minutes</span>
           </div>
+        </EmptyContent>
+      </Empty>
+    );
+  }
+
+  // Empty state: the user has domains, but none survive the filters. Checked on the
+  // filtered list itself rather than `hasActiveFilters`, which reads the live search while
+  // the list lags a render behind it.
+  if (domains.length === 0) {
+    return (
+      <Empty className="rounded-xl border bg-background shadow-sm">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <IconFilterX className="size-6" />
+          </EmptyMedia>
+          <EmptyTitle>No domains match your filters</EmptyTitle>
+          <EmptyDescription>
+            Try adjusting your search or filter criteria to find what you're looking for.
+          </EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <Button variant="outline" onClick={clearFilters}>
+            Clear Filters
+          </Button>
         </EmptyContent>
       </Empty>
     );

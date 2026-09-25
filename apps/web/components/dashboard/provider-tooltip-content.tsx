@@ -1,6 +1,7 @@
 import { IconLock, IconLockOpen, IconRosetteDiscountCheck, IconSpy } from "@tabler/icons-react";
 
 import { ProviderLogo } from "@/components/icons/provider-logo";
+import { describeRegistrationSource } from "@/lib/registration-source";
 import type {
   DnsRecord,
   ProviderCategory,
@@ -27,39 +28,6 @@ type ProviderTooltipContentProps = {
     contacts: RegistrationContact[] | null;
   };
 };
-
-/**
- * Extract domain from URL or hostname string
- */
-function extractDomain(input: string | undefined | null): string | undefined {
-  if (!input) return;
-  const value = String(input).trim();
-  if (!value) return;
-  try {
-    const url = new URL(value.includes("://") ? value : `https://${value}`);
-    return url.hostname || undefined;
-  } catch {
-    return;
-  }
-}
-
-function getRegistrarSource(
-  whoisServer?: string | null,
-  rdapServers?: string[] | null,
-  registrationSource?: RegistrationSource | null,
-) {
-  const serverUrl =
-    rdapServers && rdapServers.length > 0 ? rdapServers[rdapServers.length - 1] : undefined;
-  return {
-    serverUrl,
-    serverName: serverUrl ? (extractDomain(serverUrl) ?? "RDAP") : (whoisServer ?? "WHOIS"),
-    learnUrl:
-      registrationSource === "rdap"
-        ? "https://about.rdap.org/"
-        : "https://en.wikipedia.org/wiki/WHOIS",
-    sourceLabel: registrationSource === "rdap" ? "RDAP" : "WHOIS",
-  };
-}
 
 function RegistrantRow({
   registrantInfo,
@@ -110,11 +78,11 @@ function VerifiedByRow({
   rdapServers,
   registrationSource,
 }: Pick<ProviderTooltipContentProps, "whoisServer" | "rdapServers" | "registrationSource">) {
-  const { serverUrl, serverName, learnUrl, sourceLabel } = getRegistrarSource(
+  const { serverUrl, serverName, learnUrl, sourceLabel } = describeRegistrationSource({
     whoisServer,
     rdapServers,
-    registrationSource,
-  );
+    source: registrationSource,
+  });
 
   return (
     <div className="flex items-center gap-1.5">

@@ -1,7 +1,6 @@
 import { IconArchive, IconArrowRight, IconConfetti } from "@tabler/icons-react";
 import Link from "next/link";
 
-import { useRouter } from "@/hooks/use-router";
 import { Button } from "@domainstack/ui/button";
 import {
   Empty,
@@ -18,8 +17,6 @@ interface NotificationEmptyStateProps {
 }
 
 export function NotificationEmptyState({ variant, onClosePopover }: NotificationEmptyStateProps) {
-  const router = useRouter();
-
   return (
     <Empty className="p-10 md:p-10">
       <EmptyHeader>
@@ -35,15 +32,12 @@ export function NotificationEmptyState({ variant, onClosePopover }: Notification
         <Button
           variant="link"
           className="text-[13px]"
-          onClick={(e) => {
-            e.preventDefault();
-            router.push("/dashboard");
-            onClosePopover?.();
-          }}
           nativeButton={false}
           aria-label="Go to dashboard"
           render={
-            <Link href="/dashboard">
+            // onNavigate fires only for client-side navigation, so a modified click
+            // still opens a new tab and leaves the popover open.
+            <Link href="/dashboard" onNavigate={onClosePopover}>
               Go to dashboard
               <IconArrowRight className="size-3" />
             </Link>

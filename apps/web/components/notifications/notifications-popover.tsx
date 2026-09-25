@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useTransition } from "react";
 
 import { NotificationList } from "@/components/notifications/notification-list";
 import { useNotificationsData } from "@/hooks/use-notifications-data";
-import { useRouter } from "@/hooks/use-router";
 import type { NotificationData } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@domainstack/ui/popover";
@@ -12,7 +11,6 @@ import { Tabs, TabsList, TabsTrigger } from "@domainstack/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 
 export function NotificationsPopover() {
-  const router = useRouter();
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<"inbox" | "archive">("inbox");
@@ -172,13 +170,10 @@ export function NotificationsPopover() {
                       size="icon-sm"
                       aria-label="Notification settings"
                       nativeButton={false}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        router.push("/settings/notifications");
-                        closePopover();
-                      }}
                       render={
-                        <Link href="/settings/notifications">
+                        // onNavigate fires only for client-side navigation, so a
+                        // modified click still opens a new tab and leaves the popover open.
+                        <Link href="/settings/notifications" onNavigate={closePopover}>
                           <IconBellCog className="size-3.5 shrink-0 text-foreground/90" />
                           <span className="sr-only">Settings</span>
                         </Link>

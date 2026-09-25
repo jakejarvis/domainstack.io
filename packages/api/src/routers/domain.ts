@@ -1,24 +1,10 @@
-import { TRPCError } from "@trpc/server";
-import { z } from "zod";
-
 import type { Section } from "@domainstack/constants";
 import { lookupFavicon, lookupSection } from "@domainstack/core/lookup";
-import { toRegistrableDomain } from "@domainstack/utils/domain";
 
+import { DomainInputSchema } from "../domain-input";
 import { publicProcedure } from "../procedures";
 import { rateLimitIdentifier, withTrpcRateLimitErrors } from "../rate-limit";
 import { createTRPCRouter } from "../trpc";
-
-const DomainInputSchema = z.object({ domain: z.string().min(1) }).transform(({ domain }) => {
-  const registrable = toRegistrableDomain(domain);
-  if (!registrable) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: '"domain" must be a valid registrable domain (e.g., example.com)',
-    });
-  }
-  return { domain: registrable };
-});
 
 /**
  * One procedure per report section: normalize the domain, then let

@@ -93,7 +93,7 @@ export async function reverifyOwnershipWorkflow(
     });
     // Revoke only after the email is recorded: a revoked domain leaves the
     // re-verification cron, so a lost email could never be retried.
-    await revokeVerificationStep(domain.id);
+    await revokeVerificationStep(domain.id, failureResult.failedAt);
   }
 
   return { verified: false, action: failureResult.action };
@@ -149,6 +149,7 @@ async function fetchDomain(trackedDomainId: string): Promise<DomainData | null> 
   };
 }
 
+/** Step: record a passing check. A no-op if a concurrent run already revoked the domain. */
 async function markSuccess(trackedDomainId: string): Promise<void> {
   "use step";
 
@@ -197,11 +198,10 @@ async function determineFailureAction(
     (domain.verificationStatus === "failing" && !failedAt)
   ) {
     // First failure of this episode (or a failing row missing its timestamp).
-    const updated = await markVerificationFailing(
-      domain.id,
-      current.verificationStatus,
-      current.verificationFailedAt,
-    );
+    const updated = await markVerificationFailing(domain.id, {
+      status: current.verificationStatus,
+      failedAt: current.verificationFailedAt,
+    });
     if (!updated) return null;
     return {
       action: "marked_failing",
@@ -222,11 +222,16 @@ async function determineFailureAction(
   return { action: "in_grace_period", email: null, failedAt: null };
 }
 
-async function revokeVerificationStep(trackedDomainId: string): Promise<void> {
+/**
+ * Step: revoke verification for the failure episode that began at `failedAt`.
+ * A no-op if the domain recovered (or started a new episode) since this run
+ * read it.
+ */
+async function revokeVerificationStep(trackedDomainId: string, failedAt: Date): Promise<void> {
   "use step";
 
   const { revokeVerification } = await import("@domainstack/db/queries/tracked-domains");
-  await revokeVerification(trackedDomainId);
+  await revokeVerification(trackedDomainId, failedAt);
 }
 
 type DomainForEmail = Pick<
@@ -251,7 +256,7 @@ const ACCOUNT_CRITICAL_CHANNELS = { shouldSendEmail: true, shouldSendInApp: true
  * Step: Send verification failing notification email.
  *
  * Sends before recording; the idempotency contract for that is in
- * `sendNotification` (shared/notifications.ts). Skips if this failure episode
+ * `sendNotification` (steps/notifications.ts). Skips if this failure episode
  * already has this notification.
  */
 async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boolean> {

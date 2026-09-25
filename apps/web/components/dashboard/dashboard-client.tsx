@@ -122,7 +122,7 @@ export function DashboardClient({ userName }: { userName: string }) {
         ) : (
           <DashboardActiveView
             totalDomains={dashboard.domains.length}
-            archivedCount={dashboard.subscription?.archivedCount ?? 0}
+            archivedCount={dashboard.archivedDomains.length}
             onShowArchived={() => dashboard.setActiveTab("archived")}
           />
         )}

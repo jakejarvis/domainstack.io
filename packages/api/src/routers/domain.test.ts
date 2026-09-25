@@ -160,7 +160,7 @@ describe("domain router", () => {
       const caller = createTestCaller();
 
       await expect(caller.domain.getRegistration({ domain: "not-a-domain" })).rejects.toThrow(
-        "must be a valid registrable domain",
+        "Enter a valid domain name, like example.com.",
       );
     });
 
@@ -169,7 +169,7 @@ describe("domain router", () => {
 
       await expect(
         caller.domain.getRegistration({ domain: "example.invalidtld12345" }),
-      ).rejects.toThrow("must be a valid registrable domain");
+      ).rejects.toThrow("Enter a valid domain name, like example.com.");
     });
 
     it("normalizes domain to registrable form", async () => {

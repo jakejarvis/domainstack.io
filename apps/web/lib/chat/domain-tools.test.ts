@@ -69,7 +69,7 @@ describe("getDomainToolErrorMessage", () => {
 
   it("returns the BAD_REQUEST message", () => {
     expect(getDomainToolErrorMessage({ data: { code: "BAD_REQUEST" } })).toBe(
-      "Please provide a valid root domain (e.g., example.com).",
+      "Enter a valid domain name, like example.com.",
     );
   });
 

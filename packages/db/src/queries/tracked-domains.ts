@@ -642,15 +642,12 @@ export async function findTrackedDomainWithDomainName(
  */
 export async function getTrackedDomainsForUser(
   userId: string,
-  options: GetTrackedDomainsOptions | boolean = {},
-): Promise<TrackedDomainWithDetails[]> {
-  const opts = typeof options === "boolean" ? { includeArchived: options } : options;
-  const {
+  {
     includeArchived = false,
     includeDnsRecords = true,
     includeRegistrarDetails = true,
-  } = opts;
-
+  }: GetTrackedDomainsOptions = {},
+): Promise<TrackedDomainWithDetails[]> {
   const whereCondition = includeArchived
     ? eq(userTrackedDomains.userId, userId)
     : and(eq(userTrackedDomains.userId, userId), isNull(userTrackedDomains.archivedAt));
@@ -680,32 +677,6 @@ export async function getTrackedDomainDetails(
   );
 
   return results[0] ?? null;
-}
-
-/**
- * Count tracked domains for a user.
- */
-export async function countTrackedDomainsForUser(
-  userId: string,
-  includeArchived = false,
-): Promise<number> {
-  const whereCondition = includeArchived
-    ? eq(userTrackedDomains.userId, userId)
-    : (and(eq(userTrackedDomains.userId, userId), isNull(userTrackedDomains.archivedAt)) as SQL);
-
-  const [result] = await db
-    .select({ count: count() })
-    .from(userTrackedDomains)
-    .where(whereCondition);
-
-  return result?.count ?? 0;
-}
-
-/**
- * Count active (non-archived) tracked domains for a user.
- */
-export async function countActiveTrackedDomainsForUser(userId: string): Promise<number> {
-  return countTrackedDomainsForUser(userId, false);
 }
 
 /**
@@ -881,7 +852,9 @@ export async function getTrackedDomainForReverification(
 }
 
 /**
- * Mark a domain's verification as successful.
+ * Record a passing re-verification. Only touches a domain that is still
+ * verified: a concurrent revoke must not leave `verified = false` with a
+ * `"verified"` status.
  */
 export async function markVerificationSuccessful(id: string) {
   const updated = await db
@@ -891,19 +864,33 @@ export async function markVerificationSuccessful(id: string) {
       verificationFailedAt: null,
       lastVerifiedAt: new Date(),
     })
-    .where(eq(userTrackedDomains.id, id))
+    .where(and(eq(userTrackedDomains.id, id), eq(userTrackedDomains.verified, true)))
     .returning();
 
   return updated[0] ?? null;
 }
 
+/** The verification state a re-verification run read, for compare-and-set writes. */
+interface ExpectedVerificationState {
+  status: VerificationStatus;
+  failedAt: Date | null;
+}
+
+/** Matches rows whose failure timestamp equals `failedAt` (at the millisecond precision JS keeps). */
+function verificationFailedAtIs(failedAt: Date | null): SQL {
+  return failedAt === null
+    ? isNull(userTrackedDomains.verificationFailedAt)
+    : sql`date_trunc('milliseconds', ${userTrackedDomains.verificationFailedAt}) = ${failedAt}`;
+}
+
 /**
- * Mark a domain's verification as failing.
+ * Mark a domain's verification as failing, keeping an existing failure
+ * timestamp. Compare-and-set: writes only if the row is still in `expected`,
+ * and returns null when a concurrent run changed it first.
  */
 export async function markVerificationFailing(
   id: string,
-  verificationStatus: VerificationStatus,
-  verificationFailedAt: Date | null,
+  expected: ExpectedVerificationState,
 ): Promise<typeof userTrackedDomains.$inferSelect | null> {
   const updated = await db
     .update(userTrackedDomains)
@@ -914,10 +901,8 @@ export async function markVerificationFailing(
     .where(
       and(
         eq(userTrackedDomains.id, id),
-        eq(userTrackedDomains.verificationStatus, verificationStatus),
-        verificationFailedAt === null
-          ? isNull(userTrackedDomains.verificationFailedAt)
-          : sql`date_trunc('milliseconds', ${userTrackedDomains.verificationFailedAt}) = ${verificationFailedAt}`,
+        eq(userTrackedDomains.verificationStatus, expected.status),
+        verificationFailedAtIs(expected.failedAt),
       ),
     )
     .returning();
@@ -926,9 +911,11 @@ export async function markVerificationFailing(
 }
 
 /**
- * Revoke a domain's verification.
+ * Revoke a domain's verification at the end of the failure episode that began
+ * at `failedAt`. Returns null without writing if the domain recovered or a new
+ * episode started in the meantime.
  */
-export async function revokeVerification(id: string) {
+export async function revokeVerification(id: string, failedAt: Date) {
   const updated = await db
     .update(userTrackedDomains)
     .set({
@@ -936,14 +923,16 @@ export async function revokeVerification(id: string) {
       verificationStatus: "unverified",
       verificationFailedAt: null,
     })
-    .where(eq(userTrackedDomains.id, id))
+    .where(
+      and(
+        eq(userTrackedDomains.id, id),
+        eq(userTrackedDomains.verificationStatus, "failing"),
+        verificationFailedAtIs(failedAt),
+      ),
+    )
     .returning();
 
-  if (updated.length === 0) {
-    return null;
-  }
-
-  return updated[0];
+  return updated[0] ?? null;
 }
 
 export type ArchiveTrackedDomainResult =
@@ -1035,47 +1024,56 @@ export async function unarchiveTrackedDomainWithLimitCheck(
 }
 
 /**
- * Sort requested ids into missing, someone else's, already in the target state,
- * and still to update. One query regardless of how many ids.
+ * Run one conditional write over the user's rows among `trackedDomainIds`, then
+ * sort the ids it didn't touch into missing, someone else's, and already in the
+ * target state.
+ *
+ * The write itself carries the ownership and state predicates (`write` adds the
+ * state one to `owned`), so a row that changes between the write and the
+ * classification can't be updated from a stale read — the same shape as the
+ * single-domain mutations. Two queries regardless of how many ids.
  */
-async function partitionForBulkUpdate(
+async function bulkWriteOwned(
   userId: string,
   trackedDomainIds: string[],
-  isAlreadyDone: (row: { archivedAt: Date | null; muted: boolean }) => boolean,
-) {
-  const rows = await db
-    .select({
-      id: userTrackedDomains.id,
-      userId: userTrackedDomains.userId,
-      archivedAt: userTrackedDomains.archivedAt,
-      muted: userTrackedDomains.muted,
-    })
-    .from(userTrackedDomains)
-    .where(inArray(userTrackedDomains.id, trackedDomainIds));
-
-  const foundIds = new Set(rows.map((row) => row.id));
-  const partition = {
-    toUpdate: [] as string[],
-    alreadyProcessed: [] as string[],
-    notOwned: [] as string[],
-    notFound: trackedDomainIds.filter((id) => !foundIds.has(id)),
-  };
-
-  for (const row of rows) {
-    if (row.userId !== userId) partition.notOwned.push(row.id);
-    else if (isAlreadyDone(row)) partition.alreadyProcessed.push(row.id);
-    else partition.toUpdate.push(row.id);
+  write: (owned: SQL) => Promise<{ id: string }[]>,
+): Promise<BulkOperationResult> {
+  if (trackedDomainIds.length === 0) {
+    return { succeeded: [], alreadyProcessed: [], notFound: [], notOwned: [] };
   }
 
-  return partition;
-}
+  const owned = and(
+    inArray(userTrackedDomains.id, trackedDomainIds),
+    eq(userTrackedDomains.userId, userId),
+  ) as SQL;
+  const succeeded = (await write(owned)).map((row) => row.id);
 
-const EMPTY_BULK_RESULT: BulkOperationResult = {
-  succeeded: [],
-  alreadyProcessed: [],
-  notFound: [],
-  notOwned: [],
-};
+  const written = new Set(succeeded);
+  const untouched = trackedDomainIds.filter((id) => !written.has(id));
+  const result: BulkOperationResult = {
+    succeeded,
+    alreadyProcessed: [],
+    notFound: [],
+    notOwned: [],
+  };
+  if (untouched.length === 0) return result;
+
+  const rows = await db
+    .select({ id: userTrackedDomains.id, userId: userTrackedDomains.userId })
+    .from(userTrackedDomains)
+    .where(inArray(userTrackedDomains.id, untouched));
+  const ownerById = new Map(rows.map((row) => [row.id, row.userId]));
+
+  for (const id of untouched) {
+    const owner = ownerById.get(id);
+    if (owner === undefined) result.notFound.push(id);
+    else if (owner !== userId) result.notOwned.push(id);
+    // Owned but not written: the state predicate excluded it.
+    else result.alreadyProcessed.push(id);
+  }
+
+  return result;
+}
 
 /**
  * Bulk archive domains for a user with ownership verification.
@@ -1084,22 +1082,13 @@ export async function bulkArchiveTrackedDomains(
   userId: string,
   trackedDomainIds: string[],
 ): Promise<BulkOperationResult> {
-  if (trackedDomainIds.length === 0) return EMPTY_BULK_RESULT;
-
-  const { toUpdate, ...rest } = await partitionForBulkUpdate(
-    userId,
-    trackedDomainIds,
-    (row) => row.archivedAt !== null,
+  return bulkWriteOwned(userId, trackedDomainIds, (owned) =>
+    db
+      .update(userTrackedDomains)
+      .set({ archivedAt: new Date() })
+      .where(and(owned, isNull(userTrackedDomains.archivedAt)))
+      .returning({ id: userTrackedDomains.id }),
   );
-  if (toUpdate.length === 0) return { succeeded: [], ...rest };
-
-  const archived = await db
-    .update(userTrackedDomains)
-    .set({ archivedAt: new Date() })
-    .where(inArray(userTrackedDomains.id, toUpdate))
-    .returning({ id: userTrackedDomains.id });
-
-  return { succeeded: archived.map((d) => d.id), ...rest };
 }
 
 /**
@@ -1110,22 +1099,13 @@ export async function bulkMuteTrackedDomains(
   trackedDomainIds: string[],
   muted: boolean,
 ): Promise<BulkOperationResult> {
-  if (trackedDomainIds.length === 0) return EMPTY_BULK_RESULT;
-
-  const { toUpdate, ...rest } = await partitionForBulkUpdate(
-    userId,
-    trackedDomainIds,
-    (row) => row.muted === muted,
+  return bulkWriteOwned(userId, trackedDomainIds, (owned) =>
+    db
+      .update(userTrackedDomains)
+      .set({ muted })
+      .where(and(owned, eq(userTrackedDomains.muted, !muted)))
+      .returning({ id: userTrackedDomains.id }),
   );
-  if (toUpdate.length === 0) return { succeeded: [], ...rest };
-
-  const updated = await db
-    .update(userTrackedDomains)
-    .set({ muted })
-    .where(inArray(userTrackedDomains.id, toUpdate))
-    .returning({ id: userTrackedDomains.id });
-
-  return { succeeded: updated.map((d) => d.id), ...rest };
 }
 
 /**
@@ -1135,19 +1115,12 @@ export async function bulkRemoveTrackedDomains(
   userId: string,
   trackedDomainIds: string[],
 ): Promise<Omit<BulkOperationResult, "alreadyProcessed">> {
-  if (trackedDomainIds.length === 0) return { succeeded: [], notFound: [], notOwned: [] };
-
-  const { toUpdate, notFound, notOwned } = await partitionForBulkUpdate(
+  // Every owned row is deleted, so nothing is ever "already processed"; a row
+  // deleted concurrently is simply gone and reports as not found.
+  const { alreadyProcessed: _alreadyProcessed, ...result } = await bulkWriteOwned(
     userId,
     trackedDomainIds,
-    () => false,
+    (owned) => db.delete(userTrackedDomains).where(owned).returning({ id: userTrackedDomains.id }),
   );
-  if (toUpdate.length === 0) return { succeeded: [], notFound, notOwned };
-
-  const deleted = await db
-    .delete(userTrackedDomains)
-    .where(inArray(userTrackedDomains.id, toUpdate))
-    .returning({ id: userTrackedDomains.id });
-
-  return { succeeded: deleted.map((d) => d.id), notFound, notOwned };
+  return result;
 }

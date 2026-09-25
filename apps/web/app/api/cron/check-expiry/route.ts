@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 
 import { startInBatches } from "@/lib/batch";
+import { isCronAuthorized } from "@/lib/cron";
 import { getVerifiedTrackedDomainIds } from "@domainstack/db/queries/tracked-domains";
 import { createLogger } from "@domainstack/logger";
 import { expiryWorkflow } from "@domainstack/workflows/expiry";
@@ -15,7 +16,7 @@ const START_BATCH_SIZE = 50;
  * Cron job to check domain and certificate expiry and send notifications.
  */
 export async function GET(request: Request) {
-  if (request.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isCronAuthorized(request)) {
     logger.warn("Unauthorized cron request");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

@@ -1,4 +1,4 @@
-import type { ResumeDomainData } from "@domainstack/types";
+import type { ResumeDomainData, VerificationMethod } from "@domainstack/types";
 import { isValidVerificationMethod } from "@domainstack/utils/verification";
 
 /**
@@ -28,4 +28,14 @@ export function parseResumeDomain(
   }
 
   return null;
+}
+
+/**
+ * Link to the add-domain flow that resumes verification of a tracked domain.
+ * {@link parseResumeDomain} reads it back.
+ */
+export function addDomainResumeHref(id: string, method: VerificationMethod | null): string {
+  const params = new URLSearchParams({ resume: "true", id });
+  if (method) params.set("method", method);
+  return `/dashboard/add-domain?${params.toString()}`;
 }

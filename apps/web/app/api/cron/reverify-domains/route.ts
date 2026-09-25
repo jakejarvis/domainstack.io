@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 
 import { startInBatches } from "@/lib/batch";
+import { isCronAuthorized } from "@/lib/cron";
 import { getVerifiedTrackedDomainIds } from "@domainstack/db/queries/tracked-domains";
 import { createLogger } from "@domainstack/logger";
 import { reverifyOwnershipWorkflow } from "@domainstack/workflows/reverify-ownership";
@@ -16,7 +17,7 @@ const START_BATCH_SIZE = 50;
  * Pending domain verification is handled by the auto-verify workflow.
  */
 export async function GET(request: Request) {
-  if (request.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isCronAuthorized(request)) {
     logger.warn("Unauthorized cron request");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

@@ -9,6 +9,7 @@ import { useDashboardMutations } from "@/hooks/use-dashboard-mutations";
 import { useClearDashboardSelection } from "@/hooks/use-dashboard-selection";
 import { useRouter } from "@/hooks/use-router";
 import { useSubscription } from "@/hooks/use-subscription";
+import { addDomainResumeHref } from "@/lib/add-domain-resume";
 import type { ConfirmAction } from "@/lib/dashboard-utils";
 import { useTRPC } from "@/lib/trpc/client";
 
@@ -88,12 +89,9 @@ export function useDashboardClient() {
 
   const actions: DashboardActions = {
     onVerify: (id, verificationMethod) => {
-      const params = new URLSearchParams({ resume: "true", id });
-      if (verificationMethod) params.set("method", verificationMethod);
-
       setVerifyingDomainId(id);
       startVerifyNavigation(() =>
-        router.push(`/dashboard/add-domain?${params.toString()}`, { scroll: false }),
+        router.push(addDomainResumeHref(id, verificationMethod), { scroll: false }),
       );
     },
     onRemove: (id) => confirmSingle("remove", id),
