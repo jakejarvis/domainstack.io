@@ -32,6 +32,7 @@ describe("DnsSection", () => {
     const records = [
       { type: "A", name: "a", value: "1.2.3.4" },
       { type: "AAAA", name: "aaaa", value: "::1" },
+      { type: "CNAME", name: "cname", value: "edge.cdn.test.invalid" },
       { type: "MX", name: "mx", value: "mx.test.invalid", priority: 10 },
       { type: "TXT", name: "txt", value: "v=spf1" },
       { type: "NS", name: "ns", value: "ns1.test.invalid" },
@@ -40,8 +41,10 @@ describe("DnsSection", () => {
     await render(<DnsSection data={{ records, resolver: null }} />);
 
     await expect.element(page.getByText("A Records", { exact: true })).toBeInTheDocument();
-    expect(page.getByText("count:1", { exact: true }).length).toBe(5);
+    expect(page.getByText("count:1", { exact: true }).length).toBe(6);
     await expect.element(page.getByText("MX Records", { exact: true })).toBeInTheDocument();
+    await expect.element(page.getByText("CNAME Records", { exact: true })).toBeInTheDocument();
+    await expect.element(page.getByText("list:CNAME", { exact: true })).toBeInTheDocument();
   });
 
   it("shows empty state when no records", async () => {

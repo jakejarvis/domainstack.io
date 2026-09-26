@@ -21,15 +21,25 @@ afterEach(() => {
 });
 
 describe("startScreenshot", () => {
+  it("posts the row id, or the hostname when there is no id", async () => {
+    mockFetch({ status: "running", runId: "run-1" });
+    await startScreenshot({ domainId: "domain-1" });
+    await startScreenshot({ domain: "api.example.com" });
+
+    const calls = vi.mocked(fetch).mock.calls;
+    expect(JSON.parse(calls[0][1]?.body as string)).toEqual({ domainId: "domain-1" });
+    expect(JSON.parse(calls[1][1]?.body as string)).toEqual({ domain: "api.example.com" });
+  });
+
   it("returns a running run or a cached result", async () => {
     mockFetch({ status: "running", runId: "run-1" });
-    await expect(startScreenshot("domain-1")).resolves.toEqual({
+    await expect(startScreenshot({ domainId: "domain-1" })).resolves.toEqual({
       status: "running",
       runId: "run-1",
     });
 
     mockFetch({ status: "completed", success: true, data: { url: "https://x.test/a.png" } });
-    await expect(startScreenshot("domain-1")).resolves.toEqual({
+    await expect(startScreenshot({ domainId: "domain-1" })).resolves.toEqual({
       status: "completed",
       source: "cache",
       data: { url: "https://x.test/a.png", blocked: false },
@@ -38,7 +48,7 @@ describe("startScreenshot", () => {
 
   it("treats a completed-but-unsuccessful capture as failed", async () => {
     mockFetch({ status: "completed", success: false, error: "Blocked by robots" });
-    await expect(startScreenshot("domain-1")).resolves.toEqual({
+    await expect(startScreenshot({ domainId: "domain-1" })).resolves.toEqual({
       status: "failed",
       error: "Blocked by robots",
     });
@@ -46,16 +56,19 @@ describe("startScreenshot", () => {
 
   it("maps 429 to rate_limited and other 4xx to failed, but throws on 5xx", async () => {
     mockFetch({}, { status: 429, headers: { "Retry-After": "7" } });
-    await expect(startScreenshot("domain-1")).resolves.toMatchObject({
+    await expect(startScreenshot({ domainId: "domain-1" })).resolves.toMatchObject({
       status: "rate_limited",
       retryAfter: 7,
     });
 
     mockFetch({ error: "Nope" }, { status: 403 });
-    await expect(startScreenshot("domain-1")).resolves.toEqual({ status: "failed", error: "Nope" });
+    await expect(startScreenshot({ domainId: "domain-1" })).resolves.toEqual({
+      status: "failed",
+      error: "Nope",
+    });
 
     mockFetch({ error: "Boom" }, { status: 500 });
-    await expect(startScreenshot("domain-1")).rejects.toThrow("Boom");
+    await expect(startScreenshot({ domainId: "domain-1" })).rejects.toThrow("Boom");
   });
 });
 

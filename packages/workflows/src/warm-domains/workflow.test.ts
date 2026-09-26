@@ -115,6 +115,38 @@ describe("warmDomainWorkflow", () => {
     expect(result).toEqual({ refreshed: ["registration", "seo"], unavailable: [] });
   });
 
+  it("never fetches registration for a subdomain row", async () => {
+    const missing = { data: null, stale: false, fetchedAt: null, expiresAt: null };
+    cacheMocks.getCachedRegistration.mockResolvedValue(missing);
+    cacheMocks.getCachedHosting.mockResolvedValue(missing);
+    cacheMocks.getCachedCertificates.mockResolvedValue(missing);
+    cacheMocks.getCachedSeo.mockResolvedValue(missing);
+
+    const { warmDomainWorkflow } = await import("./workflow");
+    const result = await warmDomainWorkflow({ domain: "api.example.com" });
+
+    expect(cacheMocks.getCachedRegistration).not.toHaveBeenCalled();
+    expect(fetchMocks.fetchRegistration).not.toHaveBeenCalled();
+    expect(fetchMocks.fetchHosting).toHaveBeenCalledWith("api.example.com");
+    expect(fetchMocks.fetchCertificates).toHaveBeenCalledWith("api.example.com");
+    expect(fetchMocks.fetchSeo).toHaveBeenCalledWith("api.example.com");
+    expect(result).toEqual({ refreshed: ["hosting", "certificates", "seo"], unavailable: [] });
+  });
+
+  it("treats www as a subdomain row too", async () => {
+    cacheMocks.getCachedRegistration.mockResolvedValue({
+      data: null,
+      stale: false,
+      fetchedAt: null,
+      expiresAt: null,
+    });
+
+    const { warmDomainWorkflow } = await import("./workflow");
+    await warmDomainWorkflow({ domain: "www.example.com" });
+
+    expect(fetchMocks.fetchRegistration).not.toHaveBeenCalled();
+  });
+
   it("refreshes hosting instead of headers when both are due, and never touches dns directly", async () => {
     const dueSoon = {
       data: {},

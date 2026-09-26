@@ -23,6 +23,7 @@ import { RegistrationSection } from "@/components/domain/registration/registrati
 import { RegistrationSectionSkeleton } from "@/components/domain/registration/registration-section-skeleton";
 import { DomainReportHeader } from "@/components/domain/report-header";
 import { SectionNav } from "@/components/domain/report-nav";
+import { ReportSection } from "@/components/domain/report-section";
 import { SectionErrorBoundary } from "@/components/domain/report-section-error-boundary";
 import { SectionFailedAlert } from "@/components/domain/section-failed-alert";
 import { SeoSection } from "@/components/domain/seo/seo-section";
@@ -59,7 +60,8 @@ const staticQueryOptions = {
 type Trpc = ReturnType<typeof useTRPC>;
 
 /**
- * A report section that loads after registration confirms the domain exists.
+ * A hostname-scoped report section. It loads independently of registration, so
+ * a slow or failed RDAP/WHOIS lookup never holds it back.
  * `sectionName` labels its error boundary (and the exception analytics).
  */
 function reportSection<T, TError, TKey extends QueryKey>({
@@ -206,12 +208,19 @@ function getReportErrorDescription({
   return "We couldn't fetch registration data for this domain. Please try again.";
 }
 
-function DomainReportLoadError({
+/**
+ * Registration failed to load. Only the registration section shows the
+ * failure; the hostname sections below still render their own data.
+ */
+function RegistrationLoadError({
   domain,
+  scope,
   registrationError,
   description,
 }: {
+  /** The registrable domain the registration query is keyed by. */
   domain: string;
+  scope?: string;
   registrationError: unknown;
   description: string;
 }) {
@@ -219,33 +228,35 @@ function DomainReportLoadError({
   const queryClient = useQueryClient();
 
   return (
-    <Empty className="border border-dashed">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <IconAlertTriangle />
-        </EmptyMedia>
-        <EmptyTitle>Failed to load domain report</EmptyTitle>
-        <EmptyDescription>{description}</EmptyDescription>
-      </EmptyHeader>
-      <EmptyContent>
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <Button
-            size="sm"
-            onClick={() =>
-              queryClient.invalidateQueries(trpc.domain.getRegistration.queryFilter({ domain }))
-            }
-          >
-            <IconRefresh />
-            Retry
-          </Button>
-          <CreateIssueButton
-            error={registrationError instanceof Error ? registrationError : undefined}
-            variant="outline"
-            size="sm"
-          />
-        </div>
-      </EmptyContent>
-    </Empty>
+    <ReportSection {...sections.registration} scope={scope}>
+      <Empty className="border border-dashed">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <IconAlertTriangle />
+          </EmptyMedia>
+          <EmptyTitle>Failed to load registration data</EmptyTitle>
+          <EmptyDescription>{description}</EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <Button
+              size="sm"
+              onClick={() =>
+                queryClient.invalidateQueries(trpc.domain.getRegistration.queryFilter({ domain }))
+              }
+            >
+              <IconRefresh />
+              Retry
+            </Button>
+            <CreateIssueButton
+              error={registrationError instanceof Error ? registrationError : undefined}
+              variant="outline"
+              size="sm"
+            />
+          </div>
+        </EmptyContent>
+      </Empty>
+    </ReportSection>
   );
 }
 
@@ -254,58 +265,62 @@ function DomainReportSections({ children }: { children: React.ReactNode }) {
 }
 
 export function DomainReportClient({
-  domain,
+  hostname,
+  registrableDomain,
   pricingTld,
 }: {
-  domain: string;
+  /** The exact hostname this report describes. */
+  hostname: string;
+  /** The hostname's registrable domain, which owns registration and tracking. */
+  registrableDomain: string;
   pricingTld: string | null;
 }) {
   const trpc = useTRPC();
+  const isSubdomain = hostname !== registrableDomain;
   const {
     data: registration,
     isLoading: isRegistrationLoading,
     isError: isRegistrationError,
     error: registrationError,
-  } = useQuery(trpc.domain.getRegistration.queryOptions({ domain }, staticQueryOptions));
+  } = useQuery(
+    trpc.domain.getRegistration.queryOptions({ domain: registrableDomain }, staticQueryOptions),
+  );
   const registrationData = registration?.success ? registration.data : undefined;
   const lookupFailed = Boolean(registration && !registration.success);
   const isRegistered = registrationData?.isRegistered === true;
   const isUnregistered = registrationData?.isRegistered === false;
   const { headerRef, isHeaderVisible, activeSection, scrollToSection } = useDomainReportTracking(
-    domain,
+    hostname,
     isRegistered,
   );
-
-  if (isRegistrationError || lookupFailed) {
-    return (
-      <DomainReportLoadError
-        domain={domain}
-        registrationError={registrationError}
-        description={getReportErrorDescription({
-          isRegistrationError,
-          registrationError,
-          lookupFailed,
-          registration,
-        })}
-      />
-    );
-  }
+  // Registration describes the parent, so name it when the report is a subdomain's.
+  const registrationScope = isSubdomain ? registrableDomain : undefined;
 
   if (!isRegistrationLoading && isUnregistered) {
-    return <DomainUnregisteredCard domain={domain} pricingTld={pricingTld} />;
+    // A subdomain of an unregistered domain is not itself for sale: explain the
+    // parent's state instead of offering registrar pricing.
+    return isSubdomain ? (
+      <DomainUnregisteredCard domain={registrableDomain} hostname={hostname} pricingTld={null} />
+    ) : (
+      <DomainUnregisteredCard domain={registrableDomain} pricingTld={pricingTld} />
+    );
   }
 
   return (
     <>
       <DomainReportHeader
-        domain={domain}
-        domainId={registrationData?.domainId}
+        hostname={hostname}
+        registrableDomain={registrableDomain}
+        // The registration row's id belongs to the registrable domain, so it
+        // only identifies this report's hostname when the two are the same.
+        domainId={isSubdomain ? undefined : registrationData?.domainId}
+        isReady={!isRegistrationLoading}
         isRegistered={isRegistered}
         ref={headerRef}
       />
 
       <SectionNav
-        domain={domain}
+        domain={hostname}
         sections={Object.values(sections)}
         activeSection={activeSection}
         isHeaderVisible={isHeaderVisible}
@@ -315,20 +330,32 @@ export function DomainReportClient({
       <DomainReportSections>
         {isRegistrationLoading ? (
           <RegistrationSectionSkeleton />
+        ) : isRegistrationError || lookupFailed ? (
+          <RegistrationLoadError
+            domain={registrableDomain}
+            scope={registrationScope}
+            registrationError={registrationError}
+            description={getReportErrorDescription({
+              isRegistrationError,
+              registrationError,
+              lookupFailed,
+              registration,
+            })}
+          />
         ) : (
-          <RegistrationSection domain={domain} data={registrationData} />
+          <RegistrationSection
+            domain={registrableDomain}
+            scope={registrationScope}
+            data={registrationData}
+          />
         )}
-        {REPORT_SECTIONS.map(({ id, sectionName, Loaded, Skeleton }) =>
-          isRegistered ? (
-            <SectionErrorBoundary key={id} sectionName={sectionName}>
-              <Suspense fallback={<Skeleton />}>
-                <Loaded domain={domain} />
-              </Suspense>
-            </SectionErrorBoundary>
-          ) : (
-            <Skeleton key={id} />
-          ),
-        )}
+        {REPORT_SECTIONS.map(({ id, sectionName, Loaded, Skeleton }) => (
+          <SectionErrorBoundary key={id} sectionName={sectionName}>
+            <Suspense fallback={<Skeleton />}>
+              <Loaded domain={hostname} />
+            </Suspense>
+          </SectionErrorBoundary>
+        ))}
       </DomainReportSections>
     </>
   );

@@ -5,10 +5,15 @@ import { HookNotFoundError, WorkflowRunNotFoundError } from "workflow/errors";
 
 import { checkRateLimit } from "@/lib/ratelimit/api";
 import { isDomainBlocked } from "@domainstack/db/queries/blocked-domains";
-import { getDomainById } from "@domainstack/db/queries/domains";
+import {
+  ensureDomainRecord,
+  findDomainByName,
+  getDomainById,
+} from "@domainstack/db/queries/domains";
 import { getScreenshotByDomainId } from "@domainstack/db/queries/screenshots";
 import { createLogger } from "@domainstack/logger";
 import type { ScreenshotData } from "@domainstack/types";
+import { parseDomainTarget } from "@domainstack/utils/domain";
 import {
   getScreenshotWorkflowToken,
   type ScreenshotWorkflowResult,
@@ -41,7 +46,9 @@ function withNoStore(headers?: HeadersInit): Headers {
  * POST /api/screenshot
  *
  * Start a screenshot workflow for a domain.
- * Accepts { domainId: string } in the request body.
+ * Accepts { domainId: string } or { domain: string } in the request body. A
+ * `domain` is resolved to the exact hostname's own row (created if missing),
+ * never to its registrable parent's.
  * Returns cached result immediately if available, otherwise starts workflow.
  *
  * Rate limited to 10 requests/minute (expensive operation).
@@ -67,9 +74,23 @@ export async function POST(
 
   try {
     const body = await bodyPromise;
-    const { domainId } = body as { domainId?: string };
+    const { domainId: rawDomainId, domain: rawDomain } = body as {
+      domainId?: unknown;
+      domain?: unknown;
+    };
 
-    if (!domainId || typeof domainId !== "string") {
+    let domainId: string;
+    if (typeof rawDomainId === "string" && rawDomainId) {
+      domainId = rawDomainId;
+    } else if (typeof rawDomain === "string" && rawDomain) {
+      const target = parseDomainTarget(rawDomain);
+      if (!target) {
+        return NextResponse.json({ error: "Invalid domain" }, { status: 400 });
+      }
+      const row =
+        (await findDomainByName(target.hostname)) ?? (await ensureDomainRecord(target.hostname));
+      domainId = row.id;
+    } else {
       return NextResponse.json({ error: "Missing or invalid domainId" }, { status: 400 });
     }
 

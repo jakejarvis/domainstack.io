@@ -174,8 +174,11 @@ function RegistrationDetailsGrid({ data }: { data: RegistrationResponse }) {
 
 export function RegistrationSection({
   data,
+  scope,
 }: {
   domain?: string;
+  /** The registrable domain to name in the header, for a subdomain report. */
+  scope?: string;
   data?: RegistrationResponse | null;
 }) {
   if (!data) return null;
@@ -186,6 +189,7 @@ export function RegistrationSection({
   return (
     <ReportSection
       {...sections.registration}
+      scope={scope}
       headerActions={
         data.rawResponse ? (
           <RawDataDialog

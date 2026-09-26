@@ -26,15 +26,19 @@ export type SectionCacheState = { data: unknown; expiresAt: Date | null };
 
 /**
  * Pick the sections to refresh: missing, or expiring within REFRESH_AHEAD_MS.
+ * Only sections present in `cache` are considered, so a caller leaves out the
+ * ones outside the row's scope (registration for a subdomain).
  * Headers are dropped when hosting is selected, because `fetchHosting`
  * fetches and persists headers itself.
  */
 export function selectSectionsToRefresh(
-  cache: Record<WarmSection, SectionCacheState>,
+  cache: Partial<Record<WarmSection, SectionCacheState>>,
   now: number,
 ): WarmSection[] {
   const due = WARM_SECTIONS.filter((section) => {
-    const { data, expiresAt } = cache[section];
+    const state = cache[section];
+    if (!state) return false;
+    const { data, expiresAt } = state;
     return data === null || expiresAt === null || expiresAt.getTime() <= now + REFRESH_AHEAD_MS;
   });
   return due.includes("hosting") ? due.filter((section) => section !== "headers") : due;

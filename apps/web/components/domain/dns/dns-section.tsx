@@ -20,6 +20,7 @@ export function DnsSection({ data }: { domain?: string; data?: DnsRecordsRespons
     const byType: Record<DnsRecord["type"], DnsRecord[]> = {
       A: [],
       AAAA: [],
+      CNAME: [],
       MX: [],
       TXT: [],
       NS: [],
@@ -42,6 +43,9 @@ export function DnsSection({ data }: { domain?: string; data?: DnsRecordsRespons
           <DnsGroup title="AAAA Records" color="cyan" count={recordsByType.AAAA.length}>
             <DnsRecordList records={recordsByType.AAAA} type="AAAA" />
           </DnsGroup>
+          <DnsGroup title="CNAME Records" color="indigo" count={recordsByType.CNAME.length}>
+            <DnsRecordList records={recordsByType.CNAME} type="CNAME" />
+          </DnsGroup>
           <DnsGroup title="MX Records" color="green" count={recordsByType.MX.length}>
             <DnsRecordList records={recordsByType.MX} type="MX" />
           </DnsGroup>
@@ -60,8 +64,8 @@ export function DnsSection({ data }: { domain?: string; data?: DnsRecordsRespons
             </EmptyMedia>
             <EmptyTitle>No DNS records found</EmptyTitle>
             <EmptyDescription>
-              We couldn&apos;t resolve A/AAAA, MX, TXT, or NS records for this domain. If DNS was
-              recently updated, it may take time to propagate.
+              We couldn&apos;t resolve A/AAAA, CNAME, MX, TXT, or NS records for this hostname. If
+              DNS was recently updated, it may take time to propagate.
             </EmptyDescription>
           </EmptyHeader>
         </Empty>

@@ -32,7 +32,7 @@ import {
 import { Kbd } from "@domainstack/ui/kbd";
 import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
-import { isValidDomain, normalizeDomainInput } from "@domainstack/utils/domain/client";
+import { isValidDomain, normalizeHostnameInput } from "@domainstack/utils/domain/client";
 
 const SEARCH_HOTKEY = "Mod+K";
 
@@ -63,7 +63,7 @@ function getDerivedInitialValue(
   initialValue: string,
 ): string {
   const rawInitial = variant === "sm" ? getRoutePrefill(routeDomain) : initialValue;
-  const normalizedInitial = normalizeDomainInput(rawInitial);
+  const normalizedInitial = normalizeHostnameInput(rawInitial);
   return isValidDomain(normalizedInitial) ? normalizedInitial : "";
 }
 
@@ -220,7 +220,7 @@ function useSearchClient({
   );
 
   const navigateToDomain = (domain: string) => {
-    const target = normalizeDomainInput(domain);
+    const target = normalizeHostnameInput(domain);
     analytics.track("search_submitted", { domain: target });
     if (variant === "lg") resetWhenHiddenRef.current = true;
     startNavigation(() => router.push(`/${encodeURIComponent(target)}`));
@@ -308,7 +308,7 @@ function useSearchClient({
   );
 
   const handleSubmit = () => {
-    const normalized = normalizeDomainInput(value);
+    const normalized = normalizeHostnameInput(value);
 
     // Validate before blurring: on mobile the blur collapses the search, and a
     // collapsed input can't take focus back to show the error.

@@ -31,7 +31,7 @@ function ProviderKeyValue({
   return (
     <KeyValue
       label={label}
-      value={provider?.name ?? "Not configured"}
+      value={provider?.name ?? "Not detected"}
       leading={
         provider?.id ? (
           <ProviderLogo providerId={provider.id} providerName={provider.name} />

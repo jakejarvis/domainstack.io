@@ -13,12 +13,18 @@ import { useIsClient } from "@domainstack/ui/hooks";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 
 type TrackDomainButtonProps = {
+  /** The registrable domain to track. */
   domain: string;
   /** Whether the button is enabled. Defaults to true. */
   enabled?: boolean;
+  /**
+   * The report is for a subdomain of `domain`. Tracking still follows `domain`,
+   * so tooltips name it explicitly.
+   */
+  forSubdomain?: boolean;
 };
 
-function TrackedVerifiedButton() {
+function TrackedVerifiedButton({ domainLabel }: { domainLabel: string }) {
   return (
     <Tooltip>
       <TooltipTrigger
@@ -36,7 +42,7 @@ function TrackedVerifiedButton() {
           />
         }
       />
-      <TooltipContent>You own and track this domain</TooltipContent>
+      <TooltipContent>You own and track {domainLabel}</TooltipContent>
     </Tooltip>
   );
 }
@@ -44,9 +50,11 @@ function TrackedVerifiedButton() {
 function TrackOrVerifyButton({
   isPendingVerification,
   href,
+  domainLabel,
 }: {
   isPendingVerification: boolean;
   href: string;
+  domainLabel: string;
 }) {
   const label = isPendingVerification ? "Verify" : "Track";
   const icon = isPendingVerification ? (
@@ -55,8 +63,8 @@ function TrackOrVerifyButton({
     <IconBellPlus className="sm:text-muted-foreground" aria-hidden="true" />
   );
   const tooltipText = isPendingVerification
-    ? "Complete verification for this domain"
-    : "Get alerts for this domain";
+    ? `Complete verification for ${domainLabel}`
+    : `Get alerts for ${domainLabel}`;
   const ariaLabel = isPendingVerification ? "Verify domain" : "Track domain";
 
   return (
@@ -83,7 +91,11 @@ function TrackOrVerifyButton({
   );
 }
 
-export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonProps) {
+export function TrackDomainButton({
+  domain,
+  enabled = true,
+  forSubdomain = false,
+}: TrackDomainButtonProps) {
   const { data: session, isPending: isSessionPending } = useSession();
   const trpc = useTRPC();
   const mounted = useIsClient();
@@ -106,8 +118,10 @@ export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonP
     );
   }
 
+  const domainLabel = forSubdomain ? domain : "this domain";
+
   if (isTracked && isVerified) {
-    return <TrackedVerifiedButton />;
+    return <TrackedVerifiedButton domainLabel={domainLabel} />;
   }
 
   let href = "/login";
@@ -118,5 +132,11 @@ export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonP
         : `/dashboard/add-domain?domain=${encodeURIComponent(domain)}`;
   }
 
-  return <TrackOrVerifyButton isPendingVerification={isPendingVerification} href={href} />;
+  return (
+    <TrackOrVerifyButton
+      isPendingVerification={isPendingVerification}
+      href={href}
+      domainLabel={domainLabel}
+    />
+  );
 }

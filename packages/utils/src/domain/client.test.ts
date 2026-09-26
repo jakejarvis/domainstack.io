@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isValidDomain, normalizeDomainInput } from "./client";
+import { isValidDomain, normalizeDomainInput, normalizeHostnameInput } from "./client";
 
 describe("normalizeDomainInput", () => {
   it("strips scheme, auth, port, path and lowercases", () => {
@@ -96,5 +96,28 @@ describe("normalizeDomainInput IDN handling", () => {
   it("produces a value isValidDomain accepts either way", () => {
     expect(isValidDomain(normalizeDomainInput("https://münchen.de"))).toBe(true);
     expect(isValidDomain(normalizeDomainInput("münchen.de"))).toBe(true);
+  });
+});
+
+describe("normalizeHostnameInput", () => {
+  it("keeps www and every other label", () => {
+    expect(normalizeHostnameInput("www.example.test")).toBe("www.example.test");
+    expect(normalizeHostnameInput("WWW.EXAMPLE.TEST")).toBe("www.example.test");
+    expect(normalizeHostnameInput("api.foo.example.test")).toBe("api.foo.example.test");
+  });
+
+  it("applies the same cleanup as normalizeDomainInput", () => {
+    expect(normalizeHostnameInput("https://user:pass@WWW.Example.TEST:8080/a/b?c#d")).toBe(
+      "www.example.test",
+    );
+    expect(normalizeHostnameInput("Api.Example.test.")).toBe("api.example.test");
+    expect(normalizeHostnameInput("http:/api.example.test")).toBe("api.example.test");
+    expect(normalizeHostnameInput("  api.example.test/path  ")).toBe("api.example.test");
+    expect(normalizeHostnameInput("[::1]:8080")).toBe("");
+    expect(normalizeHostnameInput("")).toBe("");
+  });
+
+  it("punycodes IDN labels", () => {
+    expect(normalizeHostnameInput("www.münchen.de")).toBe("www.xn--mnchen-3ya.de");
   });
 });

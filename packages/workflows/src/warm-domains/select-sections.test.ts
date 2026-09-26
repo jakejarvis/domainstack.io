@@ -60,6 +60,15 @@ describe("selectSectionsToRefresh", () => {
     expect(selectSectionsToRefresh(cache, now)).toEqual(["hosting"]);
   });
 
+  it("never selects a section missing from the cache map (registration for a subdomain)", () => {
+    const due = { data: null, expiresAt: null };
+    const { registration: _omitted, ...hostnameCache } = cacheOf({
+      registration: due,
+      seo: due,
+    });
+    expect(selectSectionsToRefresh(hostnameCache, now)).toEqual(["seo"]);
+  });
+
   it("keeps headers when hosting is fresh", () => {
     const cache = cacheOf({ headers: { data: {}, expiresAt: at(0) } });
     expect(selectSectionsToRefresh(cache, now)).toEqual(["headers"]);

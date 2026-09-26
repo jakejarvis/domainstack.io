@@ -14,7 +14,8 @@
 const SCHEME_PREFIX_REGEX = /^https?[:/]+([^/]+)/i;
 
 /**
- * Normalize arbitrary user input into a bare hostname string.
+ * Normalize arbitrary user input into a bare hostname string, keeping every
+ * label (including a leading `www.`).
  * Accepts values like:
  *  - "example.com"
  *  - "www.example.com."
@@ -22,10 +23,10 @@ const SCHEME_PREFIX_REGEX = /^https?[:/]+([^/]+)/i;
  *  - "http://user:pass@example.com:8080/"
  *  - "http:/example.com" (malformed protocol)
  *  - "  EXAMPLE.COM  "
- * Returns a lowercased hostname without scheme, path, auth, port, trailing dot, or www. prefix.
+ * Returns a lowercased hostname without scheme, path, auth, port, or trailing dot.
  * Returns empty string for invalid/unparseable input or IPv6 literals.
  */
-export function normalizeDomainInput(input: string): string {
+export function normalizeHostnameInput(input: string): string {
   let value = (input ?? "").trim();
   if (value === "") return "";
 
@@ -76,10 +77,16 @@ export function normalizeDomainInput(input: string): string {
   // Trim any remaining whitespace
   value = value.trim();
 
-  // Remove common leading www.
-  value = value.replace(/^www\./i, "");
-
   return value.toLowerCase();
+}
+
+/**
+ * {@link normalizeHostnameInput}, then drop a leading `www.`. Kept for callers
+ * that deliberately treat `www.example.com` and `example.com` as one name
+ * (e.g. domain verification); reports use the exact hostname instead.
+ */
+export function normalizeDomainInput(input: string): string {
+  return normalizeHostnameInput(input).replace(/^www\./, "");
 }
 
 /**

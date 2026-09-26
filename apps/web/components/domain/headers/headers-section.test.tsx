@@ -103,10 +103,10 @@ describe("HeadersSection", () => {
       .element(page.getByText("https://www.test.invalid/path", { exact: true }))
       .toBeInTheDocument();
 
-    // Check that the link is rendered with correct href
+    // The link targets the exact redirected hostname, www included
     await expect
-      .element(page.getByTitle("View report for test.invalid"))
-      .toHaveAttribute("href", "/test.invalid");
+      .element(page.getByTitle("View report for www.test.invalid"))
+      .toHaveAttribute("href", "/www.test.invalid");
   });
 
   it("renders location header without link for relative URLs", async () => {

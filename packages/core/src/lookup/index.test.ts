@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   fetchDns: vi.fn<(domain: string) => Promise<unknown>>(),
   fetchHeaders: vi.fn<(domain: string) => Promise<unknown>>(),
   fetchCertificates: vi.fn<(domain: string) => Promise<unknown>>(),
+  getCachedRegistration: vi.fn<(domain: string) => Promise<unknown>>(),
+  fetchRegistration: vi.fn<(domain: string) => Promise<unknown>>(),
   enforceRateLimit: vi.fn<(args: unknown) => Promise<unknown>>(),
   updateLastAccessed: vi.fn<(domain: string) => Promise<boolean>>(),
   waitUntil: vi.fn<(work: Promise<unknown>) => void>(),
@@ -41,6 +43,10 @@ vi.mock("@domainstack/db/queries/headers", () => ({ getCachedHeaders: mocks.getC
 vi.mock("../dns", () => ({ fetchDns: mocks.fetchDns }));
 vi.mock("../tls", () => ({ fetchCertificates: mocks.fetchCertificates }));
 vi.mock("../headers", () => ({ fetchHeaders: mocks.fetchHeaders }));
+vi.mock("@domainstack/db/queries/registrations", () => ({
+  getCachedRegistration: mocks.getCachedRegistration,
+}));
+vi.mock("../whois", () => ({ fetchRegistration: mocks.fetchRegistration }));
 vi.mock("@domainstack/redis/enforce", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@domainstack/redis/enforce")>()),
   enforceRateLimit: mocks.enforceRateLimit,
@@ -171,6 +177,45 @@ describe("lookupSection", () => {
       data: { status: 404, statusMessage: "Not Found" },
     });
   });
+});
+
+describe("section scopes", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.enforceRateLimit.mockResolvedValue(undefined);
+    mocks.updateLastAccessed.mockResolvedValue(true);
+    mocks.getCachedDns.mockResolvedValue(notCached);
+    mocks.getCachedRegistration.mockResolvedValue(notCached);
+  });
+
+  it("looks up hostname sections under the exact subdomain", async () => {
+    mocks.fetchDns.mockResolvedValue({ success: true, data: DNS_DATA });
+
+    await lookupSection("dns", "api.example.com");
+
+    expect(mocks.getCachedDns).toHaveBeenCalledWith("api.example.com");
+    expect(mocks.fetchDns).toHaveBeenCalledWith("api.example.com");
+  });
+
+  it("looks up registration for a registrable domain", async () => {
+    mocks.fetchRegistration.mockResolvedValue({ success: true, data: {} });
+
+    await lookupSection("registration", "example.com");
+
+    expect(mocks.fetchRegistration).toHaveBeenCalledWith("example.com");
+  });
+
+  it.each(["api.example.com", "www.example.com"])(
+    "never looks up or fetches registration for the subdomain %s",
+    async (domain) => {
+      await expect(lookupSection("registration", domain)).rejects.toThrow(/registrable domain/);
+      await expect(fetchSection("registration", domain)).rejects.toThrow(/registrable domain/);
+
+      expect(mocks.getCachedRegistration).not.toHaveBeenCalled();
+      expect(mocks.fetchRegistration).not.toHaveBeenCalled();
+      expect(mocks.updateLastAccessed).not.toHaveBeenCalled();
+    },
+  );
 });
 
 describe("fetchSection", () => {

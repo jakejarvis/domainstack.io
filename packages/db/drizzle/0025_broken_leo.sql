@@ -1,0 +1,1 @@
+ALTER TYPE "public"."dns_record_type" ADD VALUE 'CNAME' BEFORE 'MX';

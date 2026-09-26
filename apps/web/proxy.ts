@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { getSessionCookie } from "@domainstack/auth/server";
-import { toRegistrableDomain } from "@domainstack/utils/domain";
+import { parseDomainTarget } from "@domainstack/utils/domain";
 
 // Routes that require authentication (pre-check for faster redirects)
 const PROTECTED_ROUTES = ["/dashboard", "/settings"];
@@ -15,10 +15,10 @@ export function proxy(request: NextRequest) {
     // Handle search queries (e.g. /?q=example.com) from homepage or browser search bar
     const query = searchParams.get("q");
     if (query) {
-      const registrable = toRegistrableDomain(query);
-      if (registrable) {
+      const target = parseDomainTarget(query);
+      if (target) {
         const url = request.nextUrl.clone();
-        url.pathname = `/${registrable}`;
+        url.pathname = `/${target.hostname}`;
         url.search = "";
         url.hash = "";
         return NextResponse.redirect(url);
@@ -48,7 +48,7 @@ export function proxy(request: NextRequest) {
   }
 
   // ============================================================================
-  // Redirect handling for domain reports (e.g. /SUBDOMAIN.EXAMPLE.COM/path -> /example.com)
+  // Redirect handling for domain reports (e.g. /API.EXAMPLE.COM/path -> /api.example.com)
   // ============================================================================
 
   // 1. Get raw input (remove leading slash)
@@ -62,19 +62,19 @@ export function proxy(request: NextRequest) {
     // ignore decoding failures
   }
 
-  // 3. Validate and extract the registrable domain
-  const registrable = toRegistrableDomain(decodedInput);
-  if (!registrable) {
+  // 3. Validate and normalize to the exact hostname (subdomains and www are kept)
+  const target = parseDomainTarget(decodedInput);
+  if (!target) {
     // Not a valid domain - pass through to Next.js routing
     return NextResponse.next();
   }
 
   // 4. Redirect if necessary
-  // We compare the originally decoded input against the final canonical domain.
-  // Any difference (path, query, scheme, case, whitespace, userinfo, port, subdomain) triggers a redirect.
-  if (decodedInput !== registrable) {
+  // We compare the originally decoded input against the canonical hostname.
+  // Any difference (path, query, scheme, case, whitespace, userinfo, port, trailing dot) triggers a redirect.
+  if (decodedInput !== target.hostname) {
     const url = request.nextUrl.clone();
-    url.pathname = `/${registrable}`;
+    url.pathname = `/${target.hostname}`;
     url.search = "";
     url.hash = "";
     return NextResponse.redirect(url);

@@ -51,7 +51,7 @@ export async function findDomainByName(name: string) {
  * This is used by services that need to persist data for a domain (favicon, screenshot, etc.)
  * even when a full domain report hasn't been requested.
  *
- * @param domain - The domain name (should already be normalized/registrable)
+ * @param domain - The normalized hostname (a registrable domain or a subdomain)
  * @returns The domain record with its ID
  * @throws {Error} If the domain has no valid TLD
  */

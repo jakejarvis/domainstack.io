@@ -12,7 +12,8 @@ interface WarmDomainWorkflowResult {
 
 /**
  * Durable workflow that refreshes a recently viewed domain's cached report data
- * before it expires, so the next visit is served from cache.
+ * before it expires, so the next visit is served from cache. A subdomain row
+ * refreshes only its hostname-scoped sections, never registration.
  *
  * Each section is its own step: unexpected failures retry, remote-unavailable
  * results are recorded and left for the next cron run. All sections settle
@@ -45,12 +46,14 @@ async function getSectionsToRefreshStep(domain: string): Promise<WarmSection[]> 
   "use step";
 
   const [
+    { parseDomainTarget },
     { getCachedRegistration },
     { getCachedHosting },
     { getCachedCertificates },
     { getCachedHeaders },
     { getCachedSeo },
   ] = await Promise.all([
+    import("@domainstack/utils/domain"),
     import("@domainstack/db/queries/registrations"),
     import("@domainstack/db/queries/hosting"),
     import("@domainstack/db/queries/certificates"),
@@ -58,9 +61,14 @@ async function getSectionsToRefreshStep(domain: string): Promise<WarmSection[]> 
     import("@domainstack/db/queries/seo"),
   ]);
 
+  // `domains` rows include hostname observations (subdomains). Registration
+  // belongs to the registrable domain's own row, so only that row warms it.
+  const target = parseDomainTarget(domain);
+  const isRegistrable = target !== null && target.hostname === target.registrableDomain;
+
   try {
     const [registration, hosting, certificates, headers, seo] = await Promise.all([
-      getCachedRegistration(domain),
+      isRegistrable ? getCachedRegistration(domain) : undefined,
       getCachedHosting(domain),
       getCachedCertificates(domain),
       getCachedHeaders(domain),

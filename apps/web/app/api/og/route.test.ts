@@ -66,6 +66,18 @@ describe("GET /api/og", () => {
     );
   });
 
+  it("accepts a subdomain hostname", async () => {
+    mocks.checkRateLimit.mockResolvedValue({
+      success: false,
+      error: new Response("rate limited", { status: 429 }),
+    });
+
+    const response = await GET(makeRequest("https://domainstack.io/api/og?domain=api.example.com"));
+
+    expect(response.status).toBe(429);
+    expect(mocks.checkRateLimit).toHaveBeenCalledTimes(1);
+  });
+
   it("returns the pre-built error response and skips createCaller when rate limited", async () => {
     const rateLimitError = new Response("rate limited", { status: 429 });
     mocks.checkRateLimit.mockResolvedValue({ success: false, error: rateLimitError });

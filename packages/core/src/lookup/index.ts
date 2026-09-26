@@ -2,7 +2,8 @@
  * Domain lookups — the one place that decides "cached, or rate-limit and fetch".
  *
  * Shared by the tRPC routers and the chat tools. Callers pass an
- * already-normalized identifier to look up and an identifier to meter (user id
+ * already-normalized name at the section's scope (see {@link SectionSpec.scope})
+ * to look up and an identifier to meter (user id
  * or IP); everything else — cache read, rate limit, fetch, error normalization,
  * and recording that a domain was looked up — lives here. The warm-domains
  * workflow uses {@link fetchSection} to refresh a section regardless of cache
@@ -67,6 +68,12 @@ interface Cached<T> {
 }
 
 interface SectionSpec<S extends Section> {
+  /**
+   * What name the section is keyed by: `registrable` sections (registration)
+   * only accept a registrable domain, never a subdomain; `hostname` sections
+   * describe the exact hostname, which may be a subdomain.
+   */
+  scope: "registrable" | "hostname";
   /** Budget per identifier, consumed only when the cache can't answer. */
   limit: RateLimitConfig;
   getCached: (domain: string) => Promise<Cached<SectionDataMap[S]>>;
@@ -76,29 +83,34 @@ interface SectionSpec<S extends Section> {
 
 const SECTIONS: { [S in Section]: SectionSpec<S> } = {
   registration: {
+    scope: "registrable",
     limit: { requests: 30, window: "1 m" },
     getCached: async (domain) =>
       (await import("@domainstack/db/queries/registrations")).getCachedRegistration(domain),
     fetch: async (domain) => (await import("../whois")).fetchRegistration(domain),
   },
   dns: {
+    scope: "hostname",
     limit: { requests: 60, window: "1 m" },
     getCached: async (domain) => (await import("@domainstack/db/queries/dns")).getCachedDns(domain),
     fetch: async (domain) => (await import("../dns")).fetchDns(domain),
   },
   hosting: {
+    scope: "hostname",
     limit: { requests: 30, window: "1 m" },
     getCached: async (domain) =>
       (await import("@domainstack/db/queries/hosting")).getCachedHosting(domain),
     fetch: async (domain) => (await import("../hosting")).fetchHosting(domain),
   },
   certificates: {
+    scope: "hostname",
     limit: { requests: 30, window: "1 m" },
     getCached: async (domain) =>
       (await import("@domainstack/db/queries/certificates")).getCachedCertificates(domain),
     fetch: async (domain) => (await import("../tls")).fetchCertificates(domain),
   },
   headers: {
+    scope: "hostname",
     limit: { requests: 60, window: "1 m" },
     getCached: async (domain) => {
       const { getCachedHeaders } = await import("@domainstack/db/queries/headers");
@@ -116,6 +128,7 @@ const SECTIONS: { [S in Section]: SectionSpec<S> } = {
     fetch: async (domain) => (await import("../headers")).fetchHeaders(domain),
   },
   seo: {
+    scope: "hostname",
     limit: { requests: 30, window: "1 m" },
     getCached: async (domain) => (await import("@domainstack/db/queries/seo")).getCachedSeo(domain),
     fetch: async (domain) => (await import("../seo")).fetchSeo(domain),
@@ -123,16 +136,33 @@ const SECTIONS: { [S in Section]: SectionSpec<S> } = {
 };
 
 /**
+ * Refuse a name outside the section's scope, so registration data is never
+ * fetched for, or persisted under, a subdomain's row.
+ *
+ * @throws Error when a registrable-scoped section gets anything but a registrable domain
+ */
+async function assertSectionScope(section: Section, domain: string): Promise<void> {
+  if (SECTIONS[section].scope !== "registrable") return;
+  const { toRegistrableDomain } = await import("@domainstack/utils/domain");
+  if (toRegistrableDomain(domain) !== domain) {
+    throw new Error(`${section} is keyed by registrable domain; got "${domain}"`);
+  }
+}
+
+/**
  * Fetch and persist a section, bypassing the cache and rate limit.
  *
- * @throws Error on transient failures (unreachable host, provider outage)
+ * @throws Error on transient failures (unreachable host, provider outage), or
+ * when `domain` is outside the section's scope
  */
-export function fetchSection<S extends Section>(
+export async function fetchSection<S extends Section>(
   section: S,
-  domain: string,
+  rawDomain: string,
 ): Promise<FetchOutcome<SectionDataMap[S]>> {
   // Same key `lookupSection` reads, so what's stored here is what's found there.
-  return SECTIONS[section].fetch(domain.toLowerCase());
+  const domain = rawDomain.toLowerCase();
+  await assertSectionScope(section, domain);
+  return SECTIONS[section].fetch(domain);
 }
 
 interface LookupOptions {
@@ -181,8 +211,11 @@ async function resolveLookup<T>({
 }
 
 /**
- * Look up one report section for a registrable domain, and record that the
- * domain was accessed (it feeds the warm-domains recency window).
+ * Look up one report section at its scope (registrable domain for
+ * registration, exact hostname for the rest), and record that the name was
+ * accessed (it feeds the warm-domains recency window).
+ *
+ * @throws Error when `rawDomain` is outside the section's scope
  */
 export async function lookupSection<S extends Section>(
   section: S,
@@ -192,6 +225,7 @@ export async function lookupSection<S extends Section>(
   const { limit, getCached, fetch } = SECTIONS[section];
   // Rows are stored under the lowercased name, so read and fetch with that key.
   const domain = rawDomain.toLowerCase();
+  await assertSectionScope(section, domain);
 
   // Fire-and-forget: `updateLastAccessed` never throws, and `waitUntil` keeps
   // the write alive after the response on Vercel.

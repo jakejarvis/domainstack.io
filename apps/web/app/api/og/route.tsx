@@ -9,8 +9,7 @@ import { checkRateLimit } from "@/lib/ratelimit/api";
 import { createCaller } from "@domainstack/api";
 import { createLogger } from "@domainstack/logger";
 import type { ProviderRef } from "@domainstack/types";
-import { toRegistrableDomain } from "@domainstack/utils/domain";
-import { normalizeDomainInput } from "@domainstack/utils/domain/client";
+import { parseDomainTarget } from "@domainstack/utils/domain";
 
 const SIZE = OG_IMAGE_SIZE;
 
@@ -51,7 +50,11 @@ function getDomainFontSize(domain: string): number {
   return 68;
 }
 
-async function fetchProviderData(domain: string): Promise<ProviderData> {
+/**
+ * Providers for a report card: the registrar comes from the registrable domain,
+ * everything else from the exact hostname.
+ */
+async function fetchProviderData(domain: string, registrableDomain: string): Promise<ProviderData> {
   "use cache: remote";
 
   try {
@@ -62,7 +65,7 @@ async function fetchProviderData(domain: string): Promise<ProviderData> {
 
     // Fetch registration, hosting, and certificates in parallel
     const [registrationResult, hostingResult, certificatesResult] = await Promise.all([
-      caller.domain.getRegistration({ domain }),
+      caller.domain.getRegistration({ domain: registrableDomain }),
       caller.domain.getHosting({ domain }),
       caller.domain.getCertificates({ domain }),
     ]);
@@ -155,11 +158,10 @@ export async function GET(request: NextRequest) {
     return new NextResponse("Missing domain parameter", { status: 400 });
   }
 
-  const normalized = normalizeDomainInput(domain);
-
-  // Validate that this is a registrable domain
-  const registrable = toRegistrableDomain(normalized);
-  if (!registrable) {
+  // Validate that this is a hostname under a registrable domain; the card
+  // describes the exact hostname, like the report it previews.
+  const target = parseDomainTarget(domain);
+  if (!target) {
     return new NextResponse("Invalid domain", { status: 400 });
   }
 
@@ -179,7 +181,7 @@ export async function GET(request: NextRequest) {
   const [geistRegularFont, geistSemiBoldFont, providerData] = await Promise.all([
     loadGoogleFont("Geist", 400),
     loadGoogleFont("Geist", 600),
-    fetchProviderData(registrable),
+    fetchProviderData(target.hostname, target.registrableDomain),
   ]);
 
   return new ImageResponse(
@@ -274,7 +276,7 @@ export async function GET(request: NextRequest) {
                 }}
               >
                 <img
-                  src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(registrable)}&sz=128`}
+                  src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(target.hostname)}&sz=128`}
                   alt=""
                   width={48}
                   height={48}
@@ -288,7 +290,7 @@ export async function GET(request: NextRequest) {
                     maxWidth: 650,
                     overflow: "hidden",
                     color: "#171717",
-                    fontSize: getDomainFontSize(registrable),
+                    fontSize: getDomainFontSize(target.hostname),
                     fontWeight: 600,
                     letterSpacing: -2.6,
                     lineHeight: 1.02,
@@ -296,7 +298,7 @@ export async function GET(request: NextRequest) {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {registrable}
+                  {target.hostname}
                 </div>
               </div>
             </div>

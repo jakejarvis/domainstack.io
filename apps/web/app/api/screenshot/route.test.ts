@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => ({
   runNotFound: new Error("run not found"),
   checkRateLimit: vi.fn<() => Promise<unknown>>(),
   getDomainById: vi.fn<(domainId: string) => Promise<unknown>>(),
+  findDomainByName: vi.fn<(name: string) => Promise<unknown>>(),
+  ensureDomainRecord: vi.fn<(name: string) => Promise<unknown>>(),
   getHookByToken: vi.fn<(token: string) => Promise<{ runId: string }>>(),
   getRun: vi.fn<(runId: string) => { status: Promise<string>; returnValue?: Promise<unknown> }>(),
   getScreenshotByDomainId: vi.fn<(domainId: string) => Promise<unknown>>(),
@@ -26,17 +28,21 @@ vi.mock("@/lib/ratelimit/api", () => ({ checkRateLimit: mocks.checkRateLimit }))
 vi.mock("@domainstack/db/queries/blocked-domains", () => ({
   isDomainBlocked: mocks.isDomainBlocked,
 }));
-vi.mock("@domainstack/db/queries/domains", () => ({ getDomainById: mocks.getDomainById }));
+vi.mock("@domainstack/db/queries/domains", () => ({
+  getDomainById: mocks.getDomainById,
+  findDomainByName: mocks.findDomainByName,
+  ensureDomainRecord: mocks.ensureDomainRecord,
+}));
 vi.mock("@domainstack/db/queries/screenshots", () => ({
   getScreenshotByDomainId: mocks.getScreenshotByDomainId,
 }));
 
 import { GET, POST } from "./route";
 
-function postRequest() {
+function postRequest(body: unknown = { domainId: "domain-1" }) {
   return new NextRequest("https://domainstack.io/api/screenshot", {
     method: "POST",
-    body: JSON.stringify({ domainId: "domain-1" }),
+    body: JSON.stringify(body),
     headers: { "Content-Type": "application/json" },
   });
 }
@@ -71,6 +77,38 @@ describe("screenshot API", () => {
     expect(mocks.start).toHaveBeenCalledWith(expect.any(Function), [
       { domain: "example.com", domainId: "domain-1" },
     ]);
+  });
+
+  it("resolves a hostname to its own row, not its registrable parent's", async () => {
+    mocks.findDomainByName.mockResolvedValue(null);
+    mocks.ensureDomainRecord.mockResolvedValue({ id: "host-1", name: "api.example.com" });
+    mocks.getDomainById.mockResolvedValue({ id: "host-1", name: "api.example.com" });
+
+    const response = await POST(postRequest({ domain: "API.Example.com" }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.findDomainByName).toHaveBeenCalledWith("api.example.com");
+    expect(mocks.ensureDomainRecord).toHaveBeenCalledWith("api.example.com");
+    expect(mocks.getDomainById).toHaveBeenCalledWith("host-1");
+    expect(mocks.start).toHaveBeenCalledWith(expect.any(Function), [
+      { domain: "api.example.com", domainId: "host-1" },
+    ]);
+  });
+
+  it("reuses an existing hostname row", async () => {
+    mocks.findDomainByName.mockResolvedValue({ id: "host-1", name: "www.example.com" });
+    mocks.getDomainById.mockResolvedValue({ id: "host-1", name: "www.example.com" });
+
+    await POST(postRequest({ domain: "www.example.com" }));
+
+    expect(mocks.ensureDomainRecord).not.toHaveBeenCalled();
+    expect(mocks.getDomainById).toHaveBeenCalledWith("host-1");
+  });
+
+  it("rejects an invalid hostname or a missing target", async () => {
+    expect((await POST(postRequest({ domain: "not a domain" }))).status).toBe(400);
+    expect((await POST(postRequest({}))).status).toBe(400);
+    expect(mocks.ensureDomainRecord).not.toHaveBeenCalled();
   });
 
   it("reports a cancelled workflow as terminal", async () => {

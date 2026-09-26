@@ -14,6 +14,11 @@ import { ttlForDnsRecord } from "../lib/ttl";
 import { providerOrderForLookup, queryDohProvider } from "./doh";
 import type { DnsFetchData } from "./types";
 
+/** Normalize a hostname-valued record (NS, CNAME): trailing root dot removed, lowercased. */
+function normalizeDnsHostname(data: string): string {
+  return (data.endsWith(".") ? data.slice(0, -1) : data).toLowerCase();
+}
+
 /**
  * Error thrown when all DoH providers fail.
  */
@@ -64,8 +69,11 @@ export async function fetchDnsRecords(
                     const isCloudflare = await isCloudflareIp(value);
                     return { type, name, value, ttl, isCloudflare };
                   }
+                  case "CNAME":
                   case "NS": {
-                    const value = a.data.endsWith(".") ? a.data.slice(0, -1) : a.data;
+                    // Hostname-valued records: drop the root dot, compare case-insensitively.
+                    const value = normalizeDnsHostname(a.data);
+                    if (!value) return null;
                     return { type, name, value, ttl };
                   }
                   case "TXT": {

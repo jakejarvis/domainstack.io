@@ -5,7 +5,7 @@
 /**
  * Central list of DNS record types that we probe and display.
  */
-export const DNS_RECORD_TYPES = ["A", "AAAA", "MX", "TXT", "NS"] as const;
+export const DNS_RECORD_TYPES = ["A", "AAAA", "CNAME", "MX", "TXT", "NS"] as const;
 
 /**
  * DNS-over-HTTPS providers for DNS resolution.

@@ -35,7 +35,7 @@ import { autoVerifyWorkflow } from "@domainstack/workflows/auto-verify";
 import { initializeSnapshotWorkflow } from "@domainstack/workflows/initialize-snapshot";
 
 import { analytics } from "../analytics";
-import { DomainInputSchema } from "../domain-input";
+import { RegistrableDomainInputSchema } from "../domain-input";
 import { protectedProcedure } from "../procedures";
 import { withTrpcRateLimitErrors } from "../rate-limit";
 import { createTRPCRouter } from "../trpc";
@@ -81,23 +81,25 @@ export const trackingRouter = createTRPCRouter({
    *
    * @returns null when the domain isn't tracked by this user or is archived
    */
-  getTrackingStatus: protectedProcedure.input(DomainInputSchema).query(async ({ ctx, input }) => {
-    const domainRecord = await findDomainByName(input.domain);
-    if (!domainRecord) {
-      return null;
-    }
+  getTrackingStatus: protectedProcedure
+    .input(RegistrableDomainInputSchema)
+    .query(async ({ ctx, input }) => {
+      const domainRecord = await findDomainByName(input.domain);
+      if (!domainRecord) {
+        return null;
+      }
 
-    const tracked = await findTrackedDomain(ctx.user.id, domainRecord.id);
-    if (!tracked || tracked.archivedAt) {
-      return null;
-    }
+      const tracked = await findTrackedDomain(ctx.user.id, domainRecord.id);
+      if (!tracked || tracked.archivedAt) {
+        return null;
+      }
 
-    return {
-      id: tracked.id,
-      verified: tracked.verified,
-      verificationMethod: tracked.verificationMethod,
-    };
-  }),
+      return {
+        id: tracked.id,
+        verified: tracked.verified,
+        verificationMethod: tracked.verificationMethod,
+      };
+    }),
 
   /**
    * Get full details for a tracked domain including DNS records.
@@ -131,91 +133,93 @@ export const trackingRouter = createTRPCRouter({
    * Returns the verification token (instructions are generated client-side).
    * If the domain is already being tracked but unverified, returns the existing record.
    */
-  addDomain: protectedProcedure.input(DomainInputSchema).mutation(async ({ ctx, input }) => {
-    const { domain } = input;
+  addDomain: protectedProcedure
+    .input(RegistrableDomainInputSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { domain } = input;
 
-    // Ensure domain record exists in DB
-    const domainRecord = await ensureDomainRecord(domain);
+      // Ensure domain record exists in DB
+      const domainRecord = await ensureDomainRecord(domain);
 
-    // An unverified domain the user already started tracking resumes with its
-    // existing token instead of failing. Covers both a plain re-add and losing
-    // the insert race to a concurrent request.
-    const resume = (existing: { id: string; verified: boolean; verificationToken: string }) => {
-      if (existing.verified) {
+      // An unverified domain the user already started tracking resumes with its
+      // existing token instead of failing. Covers both a plain re-add and losing
+      // the insert race to a concurrent request.
+      const resume = (existing: { id: string; verified: boolean; verificationToken: string }) => {
+        if (existing.verified) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "You are already tracking this domain",
+          });
+        }
+
+        analytics.track("domain_added", { domain, resumed: true }, ctx.user.id);
+
+        return {
+          id: existing.id,
+          domain,
+          verificationToken: existing.verificationToken,
+          resumed: true, // Flag to indicate this is resuming verification
+        };
+      };
+
+      const existing = await findTrackedDomain(ctx.user.id, domainRecord.id);
+      if (existing) {
+        return resume(existing);
+      }
+
+      // Get user's subscription to know their limit
+      const sub = await getUserSubscription(ctx.user.id);
+
+      const verificationToken = randomBytes(16).toString("hex");
+
+      // Create tracked domain with atomic limit check (prevents race conditions)
+      const result = await createTrackedDomainWithLimitCheck({
+        userId: ctx.user.id,
+        domainId: domainRecord.id,
+        verificationToken,
+        maxDomains: sub.planQuota,
+      });
+
+      // Handle different failure cases
+      if (!result.success) {
+        if (result.reason === "limit_exceeded") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "You have reached your domain tracking limit. Upgrade to add more domains.",
+          });
+        }
+
+        // "already_exists" - race condition where another request created it first
+        const raceExisting = await findTrackedDomain(ctx.user.id, domainRecord.id);
+        if (raceExisting) {
+          return resume(raceExisting);
+        }
+
+        // This shouldn't happen, but guard against it
         throw new TRPCError({
-          code: "CONFLICT",
-          message: "You are already tracking this domain",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create tracked domain",
         });
       }
 
-      analytics.track("domain_added", { domain, resumed: true }, ctx.user.id);
+      const tracked = result.trackedDomain;
+
+      // Trigger auto-verification workflow in the background
+      // The workflow handles a 30-day retry schedule with increasing delays.
+      void start(autoVerifyWorkflow, [{ trackedDomainId: tracked.id }]).catch((err: unknown) => {
+        // Log but don't fail the request - user can still manually verify
+        logger.error({ err, trackedDomainId: tracked.id }, "failed to start auto-verify workflow");
+      });
+
+      analytics.track("domain_added", { domain, resumed: false }, ctx.user.id);
 
       return {
-        id: existing.id,
+        id: tracked.id,
         domain,
-        verificationToken: existing.verificationToken,
-        resumed: true, // Flag to indicate this is resuming verification
+        verificationToken,
+        resumed: false,
       };
-    };
-
-    const existing = await findTrackedDomain(ctx.user.id, domainRecord.id);
-    if (existing) {
-      return resume(existing);
-    }
-
-    // Get user's subscription to know their limit
-    const sub = await getUserSubscription(ctx.user.id);
-
-    const verificationToken = randomBytes(16).toString("hex");
-
-    // Create tracked domain with atomic limit check (prevents race conditions)
-    const result = await createTrackedDomainWithLimitCheck({
-      userId: ctx.user.id,
-      domainId: domainRecord.id,
-      verificationToken,
-      maxDomains: sub.planQuota,
-    });
-
-    // Handle different failure cases
-    if (!result.success) {
-      if (result.reason === "limit_exceeded") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You have reached your domain tracking limit. Upgrade to add more domains.",
-        });
-      }
-
-      // "already_exists" - race condition where another request created it first
-      const raceExisting = await findTrackedDomain(ctx.user.id, domainRecord.id);
-      if (raceExisting) {
-        return resume(raceExisting);
-      }
-
-      // This shouldn't happen, but guard against it
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to create tracked domain",
-      });
-    }
-
-    const tracked = result.trackedDomain;
-
-    // Trigger auto-verification workflow in the background
-    // The workflow handles a 30-day retry schedule with increasing delays.
-    void start(autoVerifyWorkflow, [{ trackedDomainId: tracked.id }]).catch((err: unknown) => {
-      // Log but don't fail the request - user can still manually verify
-      logger.error({ err, trackedDomainId: tracked.id }, "failed to start auto-verify workflow");
-    });
-
-    analytics.track("domain_added", { domain, resumed: false }, ctx.user.id);
-
-    return {
-      id: tracked.id,
-      domain,
-      verificationToken,
-      resumed: false,
-    };
-  }),
+    }),
 
   /**
    * Verify domain ownership.

@@ -281,6 +281,14 @@ describe("tracking router", () => {
       expect(result.resumed).toBe(false);
     });
 
+    it("tracks the registrable domain when given a subdomain", async () => {
+      const caller = createAuthenticatedCaller();
+
+      const result = await caller.tracking.addDomain({ domain: `api.${TEST_DOMAIN}` });
+
+      expect(result.domain).toBe(TEST_DOMAIN);
+    });
+
     it("triggers auto-verification workflow", async () => {
       const caller = createAuthenticatedCaller();
 

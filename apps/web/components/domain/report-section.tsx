@@ -27,6 +27,11 @@ interface ReportSectionProps {
   icon?: React.ElementType;
   slug?: string;
   accent?: keyof typeof GLOW_CLASSES;
+  /**
+   * The name this section describes, when it differs from the report's own
+   * hostname (e.g. a subdomain report's registration belongs to its parent).
+   */
+  scope?: string;
   isLoading?: boolean;
   /** Optional actions to render in the top-right of the section header */
   headerActions?: React.ReactNode;
@@ -40,6 +45,7 @@ export function ReportSection({
   icon,
   slug,
   accent = "slate",
+  scope,
   isLoading,
   headerActions,
   children,
@@ -76,8 +82,15 @@ export function ReportSection({
                 </Icon>
               )}
               <div className="min-w-0 flex-1">
-                <CardTitle className="flex items-center gap-2">
-                  <span className="text-base">{title}</span>
+                <CardTitle className="flex min-w-0 items-center gap-2">
+                  <span className="shrink-0 text-base">{title}</span>
+                  {scope && (
+                    <span className="min-w-0 truncate text-sm font-normal text-muted-foreground">
+                      <span aria-hidden="true">· </span>
+                      <span className="sr-only">for </span>
+                      {scope}
+                    </span>
+                  )}
                   {help && (
                     <ResponsiveTooltip>
                       <ResponsiveTooltipTrigger

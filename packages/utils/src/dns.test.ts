@@ -2,6 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
+import { DNS_RECORD_TYPES } from "@domainstack/constants";
 import type { DnsRecord, DnsRecordType } from "@domainstack/types";
 
 import {
@@ -191,5 +192,32 @@ describe("sortDnsRecordsByType ordering edge cases", () => {
   it("omits records whose type is absent from the order", () => {
     const records = [record("A", "1.1.1.1"), record("TXT", "v=spf1")];
     expect(sortDnsRecordsByType(records, ["A"]).map((r) => r.value)).toEqual(["1.1.1.1"]);
+  });
+});
+
+describe("CNAME records", () => {
+  const record = (type: DnsRecordType, value: string): DnsRecord => ({
+    type,
+    name: "api.example.com",
+    value,
+  });
+
+  it("dedupes CNAME targets case-insensitively", () => {
+    const deduped = deduplicateDnsRecords([
+      record("CNAME", "edge.cdn.test"),
+      record("CNAME", "EDGE.CDN.test"),
+    ]);
+    expect(deduped).toHaveLength(1);
+  });
+
+  it("sorts CNAME between AAAA and MX in the display order", () => {
+    const records = [
+      record("NS", "ns1.example.com"),
+      record("MX", "mail.example.com"),
+      record("CNAME", "edge.cdn.test"),
+      record("A", "192.0.2.1"),
+    ];
+    const sorted = sortDnsRecordsByType(records, DNS_RECORD_TYPES);
+    expect(sorted.map((r) => r.type)).toEqual(["A", "CNAME", "MX", "NS"]);
   });
 });

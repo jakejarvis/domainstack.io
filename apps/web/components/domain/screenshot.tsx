@@ -148,20 +148,23 @@ async function fetchNextState(
   current: ScreenshotQueryState | undefined,
   domainId: string | undefined,
   domain: string,
+  resolveByName: boolean,
 ): Promise<ScreenshotQueryState> {
   const runId = runIdFromState(current);
   const attempt = current?.status === "retrying" ? current.attempt : 0;
 
-  if (!runId && !domainId) {
-    // Deterministic (the `enabled` guard already requires a domainId) —
-    // never retryable, so this throws instead of feeding the backoff loop.
+  if (!runId && !domainId && !resolveByName) {
+    // Deterministic (the `enabled` guard already requires a domainId or
+    // `resolveByName`) — never retryable, so this throws instead of feeding
+    // the backoff loop.
     const error = new Error("Screenshot domain ID is missing");
     analytics.trackException(error, { domain });
     throw error;
   }
 
   try {
-    return runId ? await pollScreenshot(runId) : await startScreenshot(domainId as string);
+    if (runId) return await pollScreenshot(runId);
+    return await startScreenshot(domainId ? { domainId } : { domain });
   } catch (err) {
     if (attempt + 1 >= MAX_CONSECUTIVE_FAILURES) {
       analytics.trackException(err, { domain });
@@ -219,10 +222,16 @@ const refetchUnlessWaiting = (query: { state: { data: ScreenshotQueryState | und
 export function useScreenshot({
   domain,
   domainId,
+  resolveByName = false,
   enabled = true,
 }: {
   domain: string;
   domainId?: string;
+  /**
+   * Without a `domainId`, start the screenshot by hostname instead of waiting
+   * for an id; the server resolves the hostname's own row.
+   */
+  resolveByName?: boolean;
   enabled?: boolean;
 }): UseScreenshotResult {
   const queryClient = useQueryClient();
@@ -233,11 +242,11 @@ export function useScreenshot({
       const current = queryClient.getQueryData<ScreenshotQueryState>(queryKey);
       if (isTerminalState(current)) return current;
 
-      const next = await fetchNextState(current, domainId, domain);
+      const next = await fetchNextState(current, domainId, domain, resolveByName);
       reportTransition(current, next, { domain, domainId });
       return next;
     },
-    enabled: enabled && !!domainId,
+    enabled: enabled && (!!domainId || resolveByName),
     retry: false,
     staleTime: (query) => (isTerminalState(query.state.data) ? Number.POSITIVE_INFINITY : 0),
     // A remount, focus, or reconnect must not jump ahead of a scheduled retry
@@ -253,7 +262,7 @@ export function useScreenshot({
   const data = state?.status === "completed" ? state.data : null;
   const hasFailed = state?.status === "failed";
   const error = hasFailed ? new Error(state.error) : (screenshotQuery.error ?? null);
-  const isLoading = enabled && (!domainId || (!data && !hasFailed));
+  const isLoading = enabled && ((!domainId && !resolveByName) || (!data && !hasFailed));
 
   return { data, isLoading, error, hasFailed };
 }

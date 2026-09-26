@@ -18,7 +18,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@domainstack/ui/empty";
-import { normalizeDomainInput } from "@domainstack/utils/domain/client";
+import { normalizeHostnameInput } from "@domainstack/utils/domain/client";
 
 /**
  * Extract domain from a Location header value.
@@ -28,7 +28,7 @@ function extractDomainFromLocation(locationValue: string): string | null {
   try {
     // Try to parse as URL
     const url = new URL(locationValue);
-    return normalizeDomainInput(url.hostname);
+    return normalizeHostnameInput(url.hostname);
   } catch {
     // If it fails, it might be a relative URL, return null
     return null;

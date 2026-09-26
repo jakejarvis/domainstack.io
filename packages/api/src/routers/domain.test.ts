@@ -73,6 +73,20 @@ vi.mock("@domainstack/core/tls", () => ({
   }),
 }));
 
+vi.mock("@domainstack/core/hosting", () => ({
+  fetchHosting: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue({
+    success: true,
+    data: {},
+  }),
+}));
+
+vi.mock("@domainstack/core/seo", () => ({
+  fetchSeo: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue({
+    success: true,
+    data: {},
+  }),
+}));
+
 // Mock edge-config
 vi.mock("@domainstack/edge-config", () => ({
   getProviderCatalog: vi.fn<(...args: unknown[]) => Promise<unknown>>().mockResolvedValue(null),
@@ -95,6 +109,8 @@ const { fetchDns } = await import("@domainstack/core/dns");
 const { fetchFavicon } = await import("@domainstack/core/favicon");
 const { fetchHeaders } = await import("@domainstack/core/headers");
 const { fetchRegistration } = await import("@domainstack/core/whois");
+const { fetchHosting } = await import("@domainstack/core/hosting");
+const { fetchSeo } = await import("@domainstack/core/seo");
 const { getRateLimiter } = await import("@domainstack/redis/ratelimit");
 const { createCaller } = await import("../router");
 const { eq } = await import("@domainstack/db/drizzle");
@@ -213,6 +229,55 @@ describe("domain router", () => {
       await expect(
         caller.domain.getRegistration({ domain: "sub.example.com" }),
       ).resolves.toBeDefined();
+    });
+  });
+
+  describe("section scopes", () => {
+    const HOSTNAME = "api.example.com";
+
+    it("looks up registration for the registrable domain of a hostname", async () => {
+      const caller = createTestCaller();
+      // A parent with no cached registration, so the lookup must fetch.
+      await caller.domain.getRegistration({ domain: "api.scope-parent.com" });
+
+      expect(fetchRegistration).toHaveBeenCalledTimes(1);
+      expect(fetchRegistration).toHaveBeenCalledWith("scope-parent.com");
+    });
+
+    it("looks up every other section for the exact hostname", async () => {
+      const caller = createTestCaller();
+
+      await caller.domain.getDnsRecords({ domain: HOSTNAME });
+      await caller.domain.getHosting({ domain: HOSTNAME });
+      await caller.domain.getCertificates({ domain: HOSTNAME });
+      await caller.domain.getHeaders({ domain: HOSTNAME });
+      await caller.domain.getSeo({ domain: HOSTNAME });
+      await caller.domain.getFavicon({ domain: HOSTNAME });
+
+      expect(fetchDns).toHaveBeenCalledWith(HOSTNAME);
+      expect(fetchHosting).toHaveBeenCalledWith(HOSTNAME);
+      expect(fetchCertificates).toHaveBeenCalledWith(HOSTNAME);
+      expect(fetchHeaders).toHaveBeenCalledWith(HOSTNAME);
+      expect(fetchSeo).toHaveBeenCalledWith(HOSTNAME);
+      expect(fetchFavicon).toHaveBeenCalledWith(HOSTNAME);
+    });
+
+    it("keeps www as part of the hostname", async () => {
+      const caller = createTestCaller();
+      await caller.domain.getHeaders({ domain: "WWW.Scoped-Example.com." });
+
+      expect(fetchHeaders).toHaveBeenCalledWith("www.scoped-example.com");
+    });
+
+    it("rejects hostnames without a valid registrable parent", async () => {
+      const caller = createTestCaller();
+
+      await expect(caller.domain.getDnsRecords({ domain: "co.uk" })).rejects.toThrow(
+        "Enter a valid domain name, like example.com.",
+      );
+      await expect(
+        caller.domain.getDnsRecords({ domain: "bad_label.example.com" }),
+      ).rejects.toThrow("Enter a valid domain name, like example.com.");
     });
   });
 

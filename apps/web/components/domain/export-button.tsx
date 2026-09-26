@@ -13,21 +13,36 @@ import { Button } from "@domainstack/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@domainstack/ui/tooltip";
 import { cn } from "@domainstack/ui/utils";
 
-export function ExportButton({ domain, enabled = true }: { domain: string; enabled?: boolean }) {
+/**
+ * Export the report's loaded sections as JSON. Registration is keyed by the
+ * registrable domain; every other section by the report's exact hostname.
+ */
+export function ExportButton({
+  hostname,
+  registrableDomain,
+  enabled = true,
+}: {
+  hostname: string;
+  registrableDomain: string;
+  enabled?: boolean;
+}) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  // The export file and analytics are named after the report's hostname.
+  const domain = hostname;
 
-  const queryKeys = useMemo(
-    () => ({
-      registration: trpc.domain.getRegistration.queryOptions({ domain }).queryKey,
-      dns: trpc.domain.getDnsRecords.queryOptions({ domain }).queryKey,
-      hosting: trpc.domain.getHosting.queryOptions({ domain }).queryKey,
-      certificates: trpc.domain.getCertificates.queryOptions({ domain }).queryKey,
-      headers: trpc.domain.getHeaders.queryOptions({ domain }).queryKey,
-      seo: trpc.domain.getSeo.queryOptions({ domain }).queryKey,
-    }),
-    [trpc, domain],
-  );
+  const queryKeys = useMemo(() => {
+    const input = { domain: hostname };
+    return {
+      registration: trpc.domain.getRegistration.queryOptions({ domain: registrableDomain })
+        .queryKey,
+      dns: trpc.domain.getDnsRecords.queryOptions(input).queryKey,
+      hosting: trpc.domain.getHosting.queryOptions(input).queryKey,
+      certificates: trpc.domain.getCertificates.queryOptions(input).queryKey,
+      headers: trpc.domain.getHeaders.queryOptions(input).queryKey,
+      seo: trpc.domain.getSeo.queryOptions(input).queryKey,
+    };
+  }, [trpc, hostname, registrableDomain]);
 
   const subscribe = useCallback(
     (onStoreChange: () => void) => queryClient.getQueryCache().subscribe(onStoreChange),
