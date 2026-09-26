@@ -293,6 +293,12 @@ export function DomainReportClient({
     hostname,
     isRegistered,
   );
+  // The hostname's own row id arrives with its DNS lookup (same query the DNS
+  // section suspends on, so no extra request). Screenshots are keyed by it.
+  const { data: dns } = useQuery(
+    trpc.domain.getDnsRecords.queryOptions({ domain: hostname }, staticQueryOptions),
+  );
+  const hostnameDomainId = dns?.success ? dns.data.domainId : undefined;
   // Registration describes the parent, so name it when the report is a subdomain's.
   const registrationScope = isSubdomain ? registrableDomain : undefined;
 
@@ -313,7 +319,7 @@ export function DomainReportClient({
         registrableDomain={registrableDomain}
         // The registration row's id belongs to the registrable domain, so it
         // only identifies this report's hostname when the two are the same.
-        domainId={isSubdomain ? undefined : registrationData?.domainId}
+        domainId={isSubdomain ? hostnameDomainId : (registrationData?.domainId ?? hostnameDomainId)}
         isReady={!isRegistrationLoading}
         isRegistered={isRegistered}
         ref={headerRef}

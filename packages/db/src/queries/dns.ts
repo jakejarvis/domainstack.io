@@ -10,7 +10,7 @@ import {
 } from "@domainstack/utils/dns";
 
 import { db } from "../client";
-import { dnsRecords, type dnsRecordType, domains } from "../schema";
+import { dnsChecks, dnsRecords, type dnsRecordType, domains } from "../schema";
 import type { CacheResult } from "../types";
 
 type DnsRecordInsert = InferInsertModel<typeof dnsRecords>;
@@ -19,6 +19,8 @@ export interface UpsertDnsParams {
   domainId: string;
   resolver: string;
   fetchedAt: Date;
+  /** When the lookup as a whole goes stale, including one that found no records. */
+  expiresAt: Date;
   // complete set per type
   recordsByType: Record<
     (typeof dnsRecordType.enumValues)[number],
@@ -109,6 +111,24 @@ export async function replaceDns(params: UpsertDnsParams) {
       await tx.delete(dnsRecords).where(inArray(dnsRecords.id, idsToDelete));
     }
 
+    // Record the lookup itself, so an answer with no records is still cached
+    await tx
+      .insert(dnsChecks)
+      .values({
+        domainId,
+        resolver: params.resolver,
+        fetchedAt: params.fetchedAt,
+        expiresAt: params.expiresAt,
+      })
+      .onConflictDoUpdate({
+        target: dnsChecks.domainId,
+        set: {
+          resolver: params.resolver,
+          fetchedAt: params.fetchedAt,
+          expiresAt: params.expiresAt,
+        },
+      });
+
     // Batch upsert all records
     if (allRecordsToUpsert.length > 0) {
       await tx
@@ -151,6 +171,7 @@ export async function getCachedDns(domain: string): Promise<CacheResult<DnsRecor
   // Single query: JOIN domains -> dnsRecords
   const rows = await db
     .select({
+      domainId: domains.id,
       type: dnsRecords.type,
       name: dnsRecords.name,
       value: dnsRecords.value,
@@ -165,12 +186,29 @@ export async function getCachedDns(domain: string): Promise<CacheResult<DnsRecor
     .innerJoin(dnsRecords, eq(dnsRecords.domainId, domains.id))
     .where(eq(domains.name, domain));
 
-  // Records are stored per row, so a lookup that found none leaves nothing to
-  // carry its freshness: an empty answer reads as a cache miss and is refetched
-  // (and metered) each time. Accepted because a registered domain with none of
-  // the probed record types is rare; caching it would need a schema change.
+  // No records: the last lookup may still have found nothing (common for a
+  // hostname that doesn't exist), which `dns_checks` keeps fresh until expiry.
   if (rows.length === 0) {
-    return { data: null, stale: false, fetchedAt: null, expiresAt: null };
+    const [check] = await db
+      .select({
+        domainId: domains.id,
+        resolver: dnsChecks.resolver,
+        fetchedAt: dnsChecks.fetchedAt,
+        expiresAt: dnsChecks.expiresAt,
+      })
+      .from(domains)
+      .innerJoin(dnsChecks, eq(dnsChecks.domainId, domains.id))
+      .where(eq(domains.name, domain))
+      .limit(1);
+    if (!check) {
+      return { data: null, stale: false, fetchedAt: null, expiresAt: null };
+    }
+    return {
+      data: { records: [], resolver: check.resolver, domainId: check.domainId },
+      stale: check.expiresAt.getTime() <= nowMs,
+      fetchedAt: check.fetchedAt,
+      expiresAt: check.expiresAt,
+    };
   }
 
   // Find the earliest fetchedAt (oldest data) across all records
@@ -208,6 +246,7 @@ export async function getCachedDns(domain: string): Promise<CacheResult<DnsRecor
     data: {
       records: sorted,
       resolver: rows[0]?.resolver ?? null,
+      domainId: rows[0].domainId,
     },
     stale,
     fetchedAt: earliestFetchedAt,

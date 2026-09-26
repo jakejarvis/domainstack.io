@@ -39,7 +39,9 @@ export async function upsertDomain(params: UpsertDomainParams) {
 
 /**
  * Find an existing domain record by name.
- * Returns null if the domain doesn't exist (typically means unregistered).
+ * Returns null if no row exists yet. A row does not imply registration: rows are
+ * also created for hostname observations (subdomains) by DNS, TLS, headers, SEO,
+ * favicon, and screenshot lookups.
  */
 export async function findDomainByName(name: string) {
   const rows = await db.select().from(domains).where(eq(domains.name, name)).limit(1);

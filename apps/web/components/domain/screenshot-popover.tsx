@@ -9,7 +9,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@domainstack/ui/popover
 export function ScreenshotPopover({
   domain,
   domainId,
-  resolveByName,
   children,
   align,
   alignOffset,
@@ -18,8 +17,6 @@ export function ScreenshotPopover({
 }: {
   domain: string;
   domainId?: string;
-  /** See `useScreenshot`: start by hostname when there is no `domainId`. */
-  resolveByName?: boolean;
   children: React.ReactElement;
 } & Pick<
   React.ComponentProps<typeof PopoverContent>,
@@ -31,7 +28,7 @@ export function ScreenshotPopover({
   const { isTouchDevice } = usePointerCapability();
 
   // Hook lives here (not in PopoverContent) so it stays mounted and keeps polling
-  const screenshot = useScreenshot({ domain, domainId, resolveByName, enabled: hasOpened });
+  const screenshot = useScreenshot({ domain, domainId, enabled: hasOpened });
 
   const handleInteraction = (e: React.MouseEvent<HTMLElement>) => {
     // On touch devices, implement two-tap behavior

@@ -130,18 +130,11 @@ async function readErrorMessage(response: Response, fallback: string): Promise<s
   }
 }
 
-/**
- * Start (or reuse) a screenshot. Identify the target by its row id, or by
- * hostname when the caller has no id for it (e.g. a subdomain report): the
- * server then resolves the hostname's own row.
- */
-export async function startScreenshot(
-  target: { domainId: string } | { domain: string },
-): Promise<ScreenshotQueryState> {
+export async function startScreenshot(domainId: string): Promise<ScreenshotQueryState> {
   const response = await fetch("/api/screenshot", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(target),
+    body: JSON.stringify({ domainId }),
   });
 
   if (response.status === 429) {

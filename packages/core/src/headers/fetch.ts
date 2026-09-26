@@ -26,6 +26,19 @@ export class HeadersFetchError extends Error {
 }
 
 /**
+ * Hosts a header probe may follow redirects to: the exact hostname, plus its
+ * `www.` variant (a common apex → www hop). A `www.` hostname is its own
+ * report, so a redirect from it to the apex stops at the redirect response
+ * instead of reporting the apex's headers.
+ *
+ * @internal exported for testing only
+ */
+export function allowedRedirectHosts(domain: string): string[] {
+  const [hostname] = domain.toLowerCase().split(":");
+  return hostname.startsWith("www.") ? [hostname] : [hostname, `www.${hostname}`];
+}
+
+/**
  * Fetch HTTP headers from a domain.
  *
  * DNS and TLS errors are returned as failure results (permanent).
@@ -35,10 +48,7 @@ export class HeadersFetchError extends Error {
  * @returns Headers fetch result with data or typed error
  */
 export async function fetchHttpHeaders(domain: string): Promise<HeadersFetchResult> {
-  // Normalize domain: strip www. prefix and port to get base hostname
-  // Then allow both apex and www variants
-  const [hostname] = domain.replace(/^www\./i, "").split(":");
-  const allowedHosts = [hostname, `www.${hostname}`];
+  const allowedHosts = allowedRedirectHosts(domain);
 
   try {
     const final = await safeFetch({

@@ -503,6 +503,37 @@ if (stale) {
 }
 ```
 
+### Report Scopes: Hostname vs Registrable Domain
+
+A report describes the exact hostname requested (`/api.example.com` and
+`/www.example.com` are their own reports). Registration and tracking belong to
+its registrable domain (eTLD+1); every other section describes the hostname.
+
+| Scope | Sections / features |
+| --- | --- |
+| Registrable domain (`example.com`) | registration (RDAP/WHOIS), tracking, verification, registrar pricing |
+| Exact hostname (`api.example.com`) | DNS, hosting, certificates, headers, SEO, favicon, screenshot |
+
+- Parse a report target with `parseDomainTarget(input)` from
+  `@domainstack/utils/domain` → `{ hostname, registrableDomain, isSubdomain }`.
+  `toRegistrableDomain` still collapses to eTLD+1.
+- Normalize user input with `normalizeHostnameInput` (keeps `www`) for reports
+  and navigation. `normalizeDomainInput` strips `www.` and is only for
+  registrable-domain callers such as domain verification.
+- tRPC inputs: `HostnameInputSchema` or `RegistrableDomainInputSchema` from
+  `packages/api/src/domain-input.ts`, matching the section's scope.
+- `lookupSection`/`fetchSection` throw if registration is requested for a
+  subdomain, so registration is never stored under a hostname row.
+- The `domains` table holds both registrable domains and hostname observations.
+  A row does not imply registration or tracking; only `userTrackedDomains`
+  rows are tracked. The warm-domains workflow refreshes registration only for
+  registrable-domain rows.
+- Screenshots are keyed by the hostname's own row id (`DnsRecordsResponse.domainId`
+  for a subdomain), never by its registrable domain's id.
+- Lookups keyed by registrable domain that must also cover subdomains (e.g. the
+  blocklist) check `hostnameWithParents(hostname)`.
+- Chat and MCP tools still look everything up by registrable domain.
+
 ### Workflow Concurrency
 
 The hourly `monitor-domains` cron must not start a second `detectChangesWorkflow`

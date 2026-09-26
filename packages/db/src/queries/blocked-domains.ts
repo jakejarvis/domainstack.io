@@ -1,5 +1,7 @@
-import { eq, notExists, sql } from "drizzle-orm";
+import { eq, inArray, notExists, sql } from "drizzle-orm";
 import { pgTable, text } from "drizzle-orm/pg-core";
+
+import { hostnameWithParents } from "@domainstack/utils/domain";
 
 import { db } from "../client";
 import { blockedDomains } from "../schema";
@@ -13,14 +15,16 @@ const blocklistIncoming = pgTable("blocklist_incoming", {
 });
 
 /**
- * Check if a domain is on the blocklist.
- * Uses primary key lookup for O(1) performance.
+ * Check if a domain is on the blocklist. A subdomain is blocked when it or any
+ * parent up to its registrable domain is listed (`www.blocked.test` is blocked
+ * by `blocked.test`), since reports now look up exact hostnames.
+ * Uses primary key lookups (one per name).
  */
 export async function isDomainBlocked(domain: string): Promise<boolean> {
   const rows = await db
     .select({ domain: blockedDomains.domain })
     .from(blockedDomains)
-    .where(eq(blockedDomains.domain, domain))
+    .where(inArray(blockedDomains.domain, hostnameWithParents(domain)))
     .limit(1);
 
   return rows.length > 0;

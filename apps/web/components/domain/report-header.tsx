@@ -16,8 +16,9 @@ interface DomainReportHeaderProps {
   /** The hostname's registrable domain, which owns registration and tracking. */
   registrableDomain: string;
   /**
-   * Database id of the `hostname` row, when known. Never pass the registrable
-   * domain's id for a subdomain report: the screenshot would be stored under it.
+   * Database id of the `hostname` row, once known (the screenshot waits for
+   * it). Never pass the registrable domain's id for a subdomain report: the
+   * screenshot would be stored under it.
    */
   domainId?: string;
   /** Whether registration has settled. Until then, render loading states. */
@@ -50,7 +51,6 @@ export function DomainReportHeader({
             <ScreenshotPopover
               domain={hostname}
               domainId={domainId}
-              resolveByName
               align="start"
               side="bottom"
               sideOffset={8}

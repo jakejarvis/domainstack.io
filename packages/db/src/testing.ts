@@ -72,6 +72,7 @@ export async function resetPGliteDb(): Promise<void> {
   // Delete in dependency-friendly order
   const {
     dnsRecords,
+    dnsChecks,
     httpHeaders,
     certificateChecks,
     certificates,
@@ -84,6 +85,7 @@ export async function resetPGliteDb(): Promise<void> {
     domains,
   } = schema;
   await db.delete(dnsRecords);
+  await db.delete(dnsChecks);
   await db.delete(httpHeaders);
   await db.delete(certificateChecks);
   await db.delete(certificates);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseDomainTarget, toRegistrableDomain } from "./index";
+import { hostnameWithParents, parseDomainTarget, toRegistrableDomain } from "./index";
 
 describe("parseDomainTarget", () => {
   it("parses a registrable domain", () => {
@@ -69,5 +69,24 @@ describe("toRegistrableDomain", () => {
   it("still collapses subdomains and www to the registrable domain", () => {
     expect(toRegistrableDomain("www.example.com")).toBe("example.com");
     expect(toRegistrableDomain("https://api.foo.example.co.uk/x")).toBe("example.co.uk");
+  });
+});
+
+describe("hostnameWithParents", () => {
+  it("lists a subdomain and each parent down to the registrable domain", () => {
+    expect(hostnameWithParents("a.b.example.co.uk")).toEqual([
+      "a.b.example.co.uk",
+      "b.example.co.uk",
+      "example.co.uk",
+    ]);
+    expect(hostnameWithParents("WWW.Example.com")).toEqual(["www.example.com", "example.com"]);
+  });
+
+  it("returns a registrable domain on its own", () => {
+    expect(hostnameWithParents("example.com")).toEqual(["example.com"]);
+  });
+
+  it("returns the input when there is no registrable domain", () => {
+    expect(hostnameWithParents("co.uk")).toEqual(["co.uk"]);
   });
 });

@@ -126,6 +126,10 @@ describe("DomainReportClient", () => {
     ] as const) {
       lookups[name].mockImplementation(async ({ domain }) => ok({ domain }));
     }
+    // The DNS lookup carries the hostname's own row id.
+    lookups.getDnsRecords.mockImplementation(async ({ domain }) =>
+      ok({ domain, domainId: `host-${domain}` }),
+    );
   });
 
   afterEach(() => {
@@ -162,8 +166,10 @@ describe("DomainReportClient", () => {
         .element(page.getByRole("button", { name: "Track domain" }))
         .toHaveAttribute("href", "/login");
       await expect.element(page.getByText("tools:api.example.com")).toBeVisible();
-      // Never the registration row's id (id-example.com): that row is the parent's.
-      await expect.element(page.getByText("screenshot:api.example.com:none")).toBeVisible();
+      // The hostname's own row id, never the registration row's (id-example.com).
+      await expect
+        .element(page.getByText("screenshot:api.example.com:host-api.example.com"))
+        .toBeVisible();
     });
 
     it("keeps healthy sections when registration fails", async () => {
@@ -213,7 +219,7 @@ describe("DomainReportClient", () => {
         "api.example.com",
         expect.objectContaining({
           registration: expect.objectContaining({ domain: "example.com" }),
-          dns: { domain: "api.example.com" },
+          dns: { domain: "api.example.com", domainId: "host-api.example.com" },
           hosting: { domain: "api.example.com" },
           certificates: { domain: "api.example.com" },
           headers: { domain: "api.example.com" },
@@ -236,6 +242,14 @@ describe("DomainReportClient", () => {
       await renderReport("example.com", "example.com", "com");
 
       await expect.element(page.getByText("screenshot:example.com:id-example.com")).toBeVisible();
+    });
+
+    it("falls back to the DNS row id when registration fails", async () => {
+      lookups.getRegistration.mockResolvedValue({ success: false, error: "fetch_failed" });
+
+      await renderReport("example.com", "example.com", "com");
+
+      await expect.element(page.getByText("screenshot:example.com:host-example.com")).toBeVisible();
     });
 
     it("keeps the purchase flow when unregistered", async () => {

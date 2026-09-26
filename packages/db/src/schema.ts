@@ -412,6 +412,22 @@ export const dnsRecords = pgTable(
   ],
 );
 
+// DNS lookup metadata (latest), one row per domain. Records are stored one per
+// row, so this carries the lookup's freshness even when it found no records
+// (common for a hostname that doesn't exist).
+export const dnsChecks = pgTable(
+  "dns_checks",
+  {
+    domainId: uuid("domain_id")
+      .primaryKey()
+      .references(() => domains.id, { onDelete: "cascade" }),
+    resolver: text("resolver").notNull(),
+    fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [index("i_dns_checks_expires").on(t.expiresAt)],
+);
+
 // TLS certificates (latest)
 export const certificates = pgTable(
   "certificates",

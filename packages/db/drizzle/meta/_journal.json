@@ -183,6 +183,13 @@
       "when": 1790450732742,
       "tag": "0025_broken_leo",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1790452072686,
+      "tag": "0026_tranquil_doctor_spectrum",
+      "breakpoints": true
     }
   ]
 }

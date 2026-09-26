@@ -74,3 +74,18 @@ export function parseDomainTarget(input: string): DomainTarget | null {
 
   return { hostname, registrableDomain, isSubdomain };
 }
+
+/**
+ * A hostname followed by each parent name down to its registrable domain:
+ * `a.b.example.co.uk` → `a.b.example.co.uk`, `b.example.co.uk`, `example.co.uk`.
+ * Lets a lookup keyed by registrable domain (e.g. a blocklist) also cover its
+ * subdomains. Returns just the input when it has no registrable domain.
+ */
+export function hostnameWithParents(hostname: string): string[] {
+  const name = hostname.trim().toLowerCase();
+  const registrable = toRegistrableDomainRaw(name);
+  if (!registrable || !name.endsWith(`.${registrable}`)) return [name];
+
+  const labels = name.slice(0, -registrable.length - 1).split(".");
+  return [...labels.map((_, i) => `${labels.slice(i).join(".")}.${registrable}`), registrable];
+}

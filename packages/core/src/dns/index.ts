@@ -13,6 +13,7 @@ import type { DnsRecordType, DnsRecordsResponse } from "@domainstack/types";
 
 import { RemoteDataUnavailableError } from "../lib/fetch-errors";
 import { shareInFlight } from "../lib/in-flight";
+import { ttlForDnsRecord } from "../lib/ttl";
 import { DnsProviderError, fetchDnsRecords } from "./fetch";
 import type { DnsFetchData } from "./types";
 
@@ -59,13 +60,14 @@ async function fetchAndPersistDns(domain: string): Promise<DnsResult> {
   }
 
   // 2. Persist to database
-  await persistDnsRecords(domain, fetchData);
+  const domainId = await persistDnsRecords(domain, fetchData);
 
   return {
     success: true,
     data: {
       records: fetchData.records,
       resolver: fetchData.resolver,
+      domainId,
     },
   };
 }
@@ -74,7 +76,12 @@ async function fetchAndPersistDns(domain: string): Promise<DnsResult> {
 // Internal: Persist DNS Records
 // ============================================================================
 
-export async function persistDnsRecords(domain: string, fetchData: DnsFetchData): Promise<void> {
+/**
+ * Replace a domain's stored DNS records with a fresh lookup.
+ *
+ * @returns the id of the domain's row
+ */
+export async function persistDnsRecords(domain: string, fetchData: DnsFetchData): Promise<string> {
   const types = DNS_RECORD_TYPES;
   const now = new Date();
 
@@ -104,10 +111,20 @@ export async function persistDnsRecords(domain: string, fetchData: DnsFetchData)
     });
   }
 
+  // The lookup goes stale with its first expiring record; one that found
+  // nothing is cached for the default DNS TTL instead of being refetched.
+  const expiresAt = fetchData.recordsWithExpiry.reduce<Date>((earliest, r) => {
+    const recordExpiry = new Date(r.expiresAt);
+    return recordExpiry < earliest ? recordExpiry : earliest;
+  }, ttlForDnsRecord(now));
+
   await replaceDns({
     domainId: domainRecord.id,
     resolver: fetchData.resolver,
     fetchedAt: now,
+    expiresAt,
     recordsByType,
   });
+
+  return domainRecord.id;
 }
