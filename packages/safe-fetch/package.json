@@ -5,7 +5,12 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/safe-fetch.ts",
+    "./dns": "./src/dns.ts",
+    "./errors": "./src/errors.ts",
+    "./ip": "./src/ip.ts",
+    "./resolve": "./src/resolve.ts",
+    "./types": "./src/types.ts"
   },
   "scripts": {
     "lint": "oxlint",

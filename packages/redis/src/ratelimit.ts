@@ -80,6 +80,3 @@ export type RateLimitInfo = {
   remaining: number;
   reset: number;
 };
-
-// Re-export Duration type for consumers
-export type { Duration } from "@upstash/ratelimit";

@@ -3,10 +3,8 @@ import { Agent } from "undici";
 import { createLogger } from "@domainstack/logger";
 
 import { SafeFetchError } from "./errors";
-import type { ResolvedIp } from "./resolve";
-import { createPinnedLookup, resolvePublicHost } from "./resolve";
+import { createPinnedLookup, resolvePublicHost, type ResolvedIp } from "./resolve";
 import type { SafeFetchLogger, SafeFetchOptions, SafeFetchResult } from "./types";
-import { withTimeout } from "./utils";
 
 const defaultLogger = createLogger({ source: "safe-fetch" });
 
@@ -76,19 +74,18 @@ export async function safeFetch(opts: SafeFetchOptions): Promise<SafeFetchResult
     const hopUrl = currentUrl;
 
     try {
-      const response = await withTimeout(async (signal) => {
-        try {
-          return await customFetch(hopUrl.toString(), {
-            method,
-            headers: headersForHop(baseHeaders, initialUrl, hopUrl),
-            redirect: "manual",
-            signal,
-            dispatcher,
-          } satisfies FetchInit as RequestInit);
-        } catch (err) {
-          throw toTransportError(err, hopUrl);
-        }
-      }, timeoutMs);
+      let response: Response;
+      try {
+        response = await customFetch(hopUrl.toString(), {
+          method,
+          headers: headersForHop(baseHeaders, initialUrl, hopUrl),
+          redirect: "manual",
+          signal: AbortSignal.timeout(timeoutMs),
+          dispatcher,
+        } satisfies FetchInit as RequestInit);
+      } catch (err) {
+        throw toTransportError(err, hopUrl);
+      }
 
       // Handle redirects
       if (isRedirect(response)) {

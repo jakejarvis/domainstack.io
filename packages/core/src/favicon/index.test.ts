@@ -1,7 +1,7 @@
 /* @vitest-environment node */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { SafeFetchError } from "@domainstack/safe-fetch";
+import { SafeFetchError } from "@domainstack/safe-fetch/errors";
 
 const mocks = vi.hoisted(() => ({
   safeFetch: vi.fn<(opts: { url: string }) => Promise<unknown>>(),

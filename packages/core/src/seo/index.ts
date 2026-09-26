@@ -9,7 +9,8 @@ import { isDomainBlocked } from "@domainstack/db/queries/blocked-domains";
 import { ensureDomainRecord } from "@domainstack/db/queries/domains";
 import { upsertSeo } from "@domainstack/db/queries/seo";
 import { optimizeImage, storeImage } from "@domainstack/image";
-import { isExpectedDnsError, safeFetch } from "@domainstack/safe-fetch";
+import { safeFetch } from "@domainstack/safe-fetch";
+import { isExpectedDnsError } from "@domainstack/safe-fetch/dns";
 import type {
   GeneralMeta,
   OpenGraphMeta,

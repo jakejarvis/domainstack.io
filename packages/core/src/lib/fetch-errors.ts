@@ -1,8 +1,5 @@
-import {
-  isExpectedDnsError,
-  SafeFetchError,
-  type SafeFetchErrorCode,
-} from "@domainstack/safe-fetch";
+import { isExpectedDnsError } from "@domainstack/safe-fetch/dns";
+import { SafeFetchError, type SafeFetchErrorCode } from "@domainstack/safe-fetch/errors";
 
 /**
  * A remote domain or provider could not supply data, but the application is

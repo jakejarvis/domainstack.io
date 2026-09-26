@@ -5,7 +5,8 @@
  * Does not handle persistence - that's done by callers (workflows, services).
  */
 
-import { isExpectedDnsError, safeFetch } from "@domainstack/safe-fetch";
+import { safeFetch } from "@domainstack/safe-fetch";
+import { isExpectedDnsError } from "@domainstack/safe-fetch/dns";
 import type { Header } from "@domainstack/types";
 
 import { isExpectedTlsError } from "../tls/utils";

@@ -10,12 +10,9 @@
 
 import type { TLSSocket } from "node:tls";
 
-import {
-  createPinnedLookup,
-  isExpectedDnsError,
-  resolvePublicHost,
-  SafeFetchError,
-} from "@domainstack/safe-fetch";
+import { isExpectedDnsError } from "@domainstack/safe-fetch/dns";
+import { SafeFetchError } from "@domainstack/safe-fetch/errors";
+import { createPinnedLookup, resolvePublicHost } from "@domainstack/safe-fetch/resolve";
 
 import type { TlsFetchOptions, TlsFetchResult } from "./types";
 import {
