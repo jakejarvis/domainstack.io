@@ -21,6 +21,8 @@ export default async function Image() {
         height: "100%",
         display: "flex",
         position: "relative",
+        padding: 28,
+        color: "#171717",
         backgroundImage: OG_BACKGROUND_IMAGE,
         fontFamily: "Geist",
       }}
@@ -29,61 +31,67 @@ export default async function Image() {
         style={{
           display: "flex",
           flexDirection: "column",
-          justifyContent: "space-between",
           width: "100%",
           height: "100%",
-          padding: "56px 64px",
+          overflow: "hidden",
+          border: "1px solid rgba(23, 23, 23, 0.13)",
+          borderRadius: 24,
+          background: "rgba(255, 255, 255, 0.72)",
+          boxShadow: "0 24px 60px rgba(23, 23, 23, 0.08)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <Logo
-            width={48}
-            height={48}
-            style={{
-              color: "#EAEFF7",
-              display: "block",
-            }}
-          />
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <div
-              style={{
-                fontSize: 22,
-                color: "#EAEFF7",
-                letterSpacing: 0.3,
-                fontWeight: 600,
-              }}
-            >
-              {SITE_NAME}
-            </div>
-            <div style={{ fontSize: 14, color: "#AAB3C2" }}>{SITE_TAGLINE}</div>
+        <div
+          style={{
+            display: "flex",
+            height: 76,
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "0 32px",
+            borderBottom: "1px solid rgba(23, 23, 23, 0.1)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Logo width={32} height={32} style={{ color: "#171717", display: "block" }} />
+            <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: -0.3 }}>{SITE_NAME}</div>
           </div>
+          <div style={{ color: "#666662", fontSize: 15 }}>{SITE_TAGLINE}</div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        <div style={{ display: "flex", flex: 1, padding: "48px 40px 42px" }}>
           <div
             style={{
               display: "flex",
-              fontSize: 64,
-              lineHeight: 1.1,
-              fontWeight: 600,
-              color: "#EAEFF7",
-              letterSpacing: -1.2,
-              textShadow: "0 2px 16px rgba(0,0,0,0.35)",
-              maxWidth: 980,
+              flex: 1,
+              flexDirection: "column",
+              justifyContent: "center",
+              gap: 22,
+              maxWidth: 820,
             }}
           >
-            Inspect any domain.
-          </div>
-          <div
-            style={{
-              display: "flex",
-              fontSize: 26,
-              lineHeight: 1.5,
-              color: "#AAB3C2",
-              maxWidth: 900,
-            }}
-          >
-            {SITE_DESCRIPTION}
+            <div
+              style={{
+                display: "flex",
+                fontSize: 68,
+                lineHeight: 1.02,
+                fontWeight: 600,
+                color: "#171717",
+                letterSpacing: -2.6,
+                maxWidth: 650,
+              }}
+            >
+              Inspect any domain.
+            </div>
+            <div
+              style={{
+                display: "flex",
+                fontSize: 21,
+                lineHeight: 1.5,
+                color: "#686864",
+                maxWidth: 620,
+              }}
+            >
+              {SITE_DESCRIPTION}
+            </div>
           </div>
         </div>
 
@@ -91,24 +99,13 @@ export default async function Image() {
           style={{
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
-            borderTop: "1px solid rgba(255,255,255,0.08)",
-            paddingTop: 18,
+            justifyContent: "flex-end",
+            height: 54,
+            padding: "0 32px",
+            borderTop: "1px solid rgba(23, 23, 23, 0.1)",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div
-              style={{
-                width: 10,
-                height: 10,
-                borderRadius: 999,
-                background: "rgba(0, 212, 255, 1)",
-                boxShadow: "0 0 20px rgba(0, 212, 255, 0.66)",
-              }}
-            />
-            <div style={{ color: "#AAB3C2", fontSize: 18 }}>WHOIS, DNS, SSL, hosting & SEO</div>
-          </div>
-          <div style={{ color: "#EAEFF7", fontSize: 18 }}>domainstack.io</div>
+          <div style={{ color: "#343431", fontSize: 14, fontWeight: 600 }}>domainstack.io</div>
         </div>
       </div>
     </div>,

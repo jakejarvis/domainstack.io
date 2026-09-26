@@ -4,7 +4,7 @@ import { ImageResponse } from "next/og";
 import { type NextRequest, NextResponse } from "next/server";
 
 import { Logo } from "@/components/logo";
-import { hexToRGBA, loadGoogleFont, OG_BACKGROUND_IMAGE, OG_IMAGE_SIZE } from "@/lib/og-utils";
+import { loadGoogleFont, OG_BACKGROUND_IMAGE, OG_IMAGE_SIZE } from "@/lib/og-utils";
 import { checkRateLimit } from "@/lib/ratelimit/api";
 import { createCaller } from "@domainstack/api";
 import { createLogger } from "@domainstack/logger";
@@ -16,17 +16,26 @@ const SIZE = OG_IMAGE_SIZE;
 
 const logger = createLogger({ source: "api/og" });
 
-// Provider colors for dynamic chips
 const PROVIDER_COLORS = {
-  registrar: "#7C5CFC",
-  dns: "#00D4FF",
-  hosting: "#22C55E",
-  email: "#60A5FA",
-  certificate: "#F472B6",
+  registrar: "#6D5DE7",
+  dns: "#148DA1",
+  hosting: "#37865A",
+  email: "#3972B7",
+  certificate: "#B15A84",
 } as const;
 
+const PROVIDER_LAYERS = [
+  { type: "Registrar", label: "Registrar", color: PROVIDER_COLORS.registrar },
+  { type: "DNS", label: "DNS", color: PROVIDER_COLORS.dns },
+  { type: "Hosting", label: "Hosting", color: PROVIDER_COLORS.hosting },
+  { type: "Email", label: "Email", color: PROVIDER_COLORS.email },
+  { type: "Certificate", label: "TLS", color: PROVIDER_COLORS.certificate },
+] as const;
+
+type ProviderType = (typeof PROVIDER_LAYERS)[number]["type"];
+
 interface ProviderChip {
-  type: string;
+  type: ProviderType;
   name: string;
   logoUrl: string | null;
   color: string;
@@ -34,6 +43,12 @@ interface ProviderChip {
 
 interface ProviderData {
   providers: ProviderChip[];
+}
+
+function getDomainFontSize(domain: string): number {
+  if (domain.length > 32) return 50;
+  if (domain.length > 24) return 58;
+  return 68;
 }
 
 async function fetchProviderData(domain: string): Promise<ProviderData> {
@@ -53,7 +68,7 @@ async function fetchProviderData(domain: string): Promise<ProviderData> {
     ]);
 
     // Collect all provider refs
-    const providerRefs: { type: string; ref: ProviderRef; color: string }[] = [];
+    const providerRefs: { type: ProviderType; ref: ProviderRef; color: string }[] = [];
 
     // Extract registrar (first, as it's the most important)
     if (registrationResult.success && registrationResult.data) {
@@ -174,171 +189,237 @@ export async function GET(request: NextRequest) {
         height: "100%",
         display: "flex",
         position: "relative",
+        padding: 28,
+        color: "#171717",
         backgroundImage: OG_BACKGROUND_IMAGE,
         fontFamily: "Geist", // must match fonts[].name
       }}
     >
-      {/* Content */}
+      <div
+        style={{
+          position: "absolute",
+          top: 28,
+          right: 28,
+          width: 430,
+          height: 250,
+          borderRadius: 24,
+          backgroundImage:
+            "radial-gradient(circle at 50% 45%, rgba(109, 93, 231, 0.13), rgba(109, 93, 231, 0) 68%)",
+        }}
+      />
       <div
         style={{
           display: "flex",
           flexDirection: "column",
-          justifyContent: "space-between",
           width: "100%",
           height: "100%",
-          padding: "56px 64px",
+          overflow: "hidden",
+          border: "1px solid rgba(23, 23, 23, 0.13)",
+          borderRadius: 24,
+          background: "rgba(255, 255, 255, 0.72)",
+          boxShadow: "0 24px 60px rgba(23, 23, 23, 0.08)",
         }}
       >
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <Logo
-            width={48}
-            height={48}
-            style={{
-              color: "#EAEFF7",
-              display: "block",
-            }}
-          />
-          <div style={{ display: "flex", flexDirection: "column" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            height: 76,
+            padding: "0 32px",
+            borderBottom: "1px solid rgba(23, 23, 23, 0.1)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Logo width={32} height={32} style={{ color: "#171717", display: "block" }} />
+            <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: -0.3 }}>Domainstack</div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div
               style={{
-                fontSize: 22,
-                color: "#EAEFF7",
-                letterSpacing: 0.3,
-                fontWeight: 600,
+                width: 8,
+                height: 8,
+                borderRadius: 999,
+                background: "#4C9A6A",
+                boxShadow: "0 0 0 4px rgba(76, 154, 106, 0.12)",
               }}
-            >
-              Domainstack
-            </div>
-            <div style={{ fontSize: 14, color: "#AAB3C2" }}>Domain Intelligence Made Easy</div>
+            />
+            <div style={{ color: "#666662", fontSize: 15 }}>Live domain report</div>
           </div>
         </div>
 
-        {/* Title + subtitle + chips */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-            <img
-              src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(registrable)}&sz=128`}
-              alt="favicon"
-              width={64}
-              height={64}
-              style={{ borderRadius: 8 }}
-            />
-            <div
-              style={{
-                fontSize: 72,
-                lineHeight: 1.1,
-                fontWeight: 600,
-                color: "#EAEFF7",
-                letterSpacing: -1.2,
-                textShadow: "0 2px 16px rgba(0,0,0,0.35)",
-                maxWidth: 980,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-              title={registrable}
-            >
-              {registrable}
+        <div style={{ display: "flex", flex: 1, padding: "34px 32px 30px", gap: 34 }}>
+          <div
+            style={{
+              display: "flex",
+              flex: 1,
+              flexDirection: "column",
+              justifyContent: "center",
+              minWidth: 0,
+              padding: "6px 4px",
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              <div
+                style={{
+                  display: "flex",
+                  width: 80,
+                  height: 80,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: 18,
+                  border: "1px solid rgba(23, 23, 23, 0.12)",
+                  background: "rgba(255, 255, 255, 0.88)",
+                  boxShadow: "0 10px 30px rgba(23, 23, 23, 0.08)",
+                }}
+              >
+                <img
+                  src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(registrable)}&sz=128`}
+                  alt=""
+                  width={48}
+                  height={48}
+                  style={{ borderRadius: 9 }}
+                />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+                <div
+                  style={{
+                    display: "block",
+                    maxWidth: 650,
+                    overflow: "hidden",
+                    color: "#171717",
+                    fontSize: getDomainFontSize(registrable),
+                    fontWeight: 600,
+                    letterSpacing: -2.6,
+                    lineHeight: 1.02,
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {registrable}
+                </div>
+              </div>
             </div>
           </div>
 
           <div
             style={{
               display: "flex",
-              fontSize: 26,
-              lineHeight: 1.5,
-              color: "#AAB3C2",
-              maxWidth: 990,
+              width: 398,
+              flexDirection: "column",
+              overflow: "hidden",
+              borderRadius: 18,
+              border: "1px solid rgba(23, 23, 23, 0.12)",
+              background: "rgba(250, 250, 248, 0.9)",
             }}
           >
-            Domain intelligence report for {registrable}
-          </div>
+            <div
+              style={{
+                display: "flex",
+                height: 64,
+                alignItems: "center",
+                padding: "0 20px",
+                borderBottom: "1px solid rgba(23, 23, 23, 0.1)",
+              }}
+            >
+              <div style={{ fontSize: 17, fontWeight: 600 }}>Infrastructure stack</div>
+            </div>
+            <div style={{ display: "flex", flex: 1, flexDirection: "column" }}>
+              {PROVIDER_LAYERS.map((layer, index) => {
+                const provider = providerData.providers.find((item) => item.type === layer.type);
 
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 6 }}>
-            {providerData.providers.length > 0
-              ? providerData.providers.map((provider) => (
+                return (
                   <div
-                    key={provider.type}
+                    key={layer.type}
                     style={{
                       display: "flex",
+                      flex: 1,
                       alignItems: "center",
-                      gap: 14,
-                      fontSize: 18,
-                      color: "#EAEFF7",
-                      padding: "12px 18px",
-                      borderRadius: 12,
-                      background: `linear-gradient(180deg, ${hexToRGBA(provider.color, 0.12)} 0%, rgba(255,255,255,0.03) 100%)`,
-                      border: `1px solid ${hexToRGBA(provider.color, 0.32)}`,
+                      gap: 13,
+                      minHeight: 0,
+                      padding: "0 20px",
+                      borderBottom:
+                        index < PROVIDER_LAYERS.length - 1
+                          ? "1px solid rgba(23, 23, 23, 0.075)"
+                          : "0px solid transparent",
                     }}
                   >
-                    {provider.logoUrl && (
-                      <img
-                        src={provider.logoUrl}
-                        alt=""
-                        width={24}
-                        height={24}
-                        style={{ borderRadius: 4 }}
-                      />
-                    )}
-                    <div style={{ display: "flex", flexDirection: "column" }}>
+                    <div
+                      style={{ width: 4, height: 28, borderRadius: 999, background: layer.color }}
+                    />
+                    <div
+                      style={{
+                        display: "flex",
+                        width: 91,
+                        color: "#777772",
+                        fontSize: 14,
+                      }}
+                    >
+                      {layer.label}
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        minWidth: 0,
+                        flex: 1,
+                        alignItems: "center",
+                        gap: 10,
+                      }}
+                    >
+                      {provider?.logoUrl ? (
+                        <img
+                          src={provider.logoUrl}
+                          alt=""
+                          width={24}
+                          height={24}
+                          style={{ borderRadius: 6 }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: 24,
+                            height: 24,
+                            borderRadius: 6,
+                            border: "1px solid rgba(23, 23, 23, 0.1)",
+                            background: "rgba(23, 23, 23, 0.035)",
+                          }}
+                        />
+                      )}
                       <div
                         style={{
-                          fontSize: 12,
-                          color: provider.color,
-                          fontWeight: 600,
-                          textTransform: "uppercase",
-                          letterSpacing: 0.5,
+                          display: "block",
+                          maxWidth: 195,
+                          overflow: "hidden",
+                          color: provider ? "#262624" : "#9A9A94",
+                          fontSize: 16,
+                          fontWeight: provider ? 600 : 400,
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
                         }}
                       >
-                        {provider.type}
+                        {provider?.name ?? "Not detected"}
                       </div>
-                      <div style={{ fontSize: 18, fontWeight: 600 }}>{provider.name}</div>
                     </div>
                   </div>
-                ))
-              : // Fallback: show static placeholder chips when no data
-                ["Registrar", "DNS", "Hosting", "SSL"].map((label) => (
-                  <div
-                    key={label}
-                    style={{
-                      fontSize: 20,
-                      color: "#AAB3C2",
-                      padding: "10px 16px",
-                      borderRadius: 999,
-                      background: "rgba(255,255,255,0.04)",
-                      border: "1px solid rgba(255,255,255,0.12)",
-                    }}
-                  >
-                    {label}
-                  </div>
-                ))}
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        {/* Footer */}
         <div
           style={{
             display: "flex",
+            height: 54,
             alignItems: "center",
-            justifyContent: "space-between",
-            borderTop: "1px solid rgba(255,255,255,0.08)",
-            paddingTop: 18,
+            justifyContent: "flex-end",
+            padding: "0 32px",
+            borderTop: "1px solid rgba(23, 23, 23, 0.1)",
+            color: "#777772",
+            fontSize: 14,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div
-              style={{
-                width: 10,
-                height: 10,
-                borderRadius: 999,
-                background: "rgba(0, 212, 255, 1)",
-                boxShadow: "0 0 20px rgba(0, 212, 255, 0.66)",
-              }}
-            />
-            <div style={{ color: "#AAB3C2", fontSize: 18 }}>Live data</div>
-          </div>
-          <div style={{ color: "#EAEFF7", fontSize: 18 }}>domainstack.io</div>
+          <div style={{ color: "#343431", fontWeight: 600 }}>domainstack.io</div>
         </div>
       </div>
     </div>,
