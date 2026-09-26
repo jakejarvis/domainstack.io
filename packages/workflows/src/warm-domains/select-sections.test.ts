@@ -44,9 +44,12 @@ describe("selectSectionsToRefresh", () => {
     expect(selectSectionsToRefresh(cache, now)).toEqual([]);
   });
 
-  it("refreshes a section with no cached data", () => {
-    const cache = cacheOf({ registration: { data: null, expiresAt: null } });
-    expect(selectSectionsToRefresh(cache, now)).toEqual(["registration"]);
+  it("leaves a section with no cached data for the next visit to fetch", () => {
+    const cache = cacheOf({
+      hosting: { data: null, expiresAt: null },
+      seo: { data: null, expiresAt: null },
+    });
+    expect(selectSectionsToRefresh(cache, now)).toEqual([]);
   });
 
   it("refreshes a section with cached data but no expiry", () => {
@@ -61,7 +64,7 @@ describe("selectSectionsToRefresh", () => {
   });
 
   it("never selects a section missing from the cache map (registration for a subdomain)", () => {
-    const due = { data: null, expiresAt: null };
+    const due = { data: {}, expiresAt: at(0) };
     const { registration: _omitted, ...hostnameCache } = cacheOf({
       registration: due,
       seo: due,

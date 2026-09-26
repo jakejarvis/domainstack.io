@@ -78,7 +78,38 @@ beforeEach(() => {
   fetchMocks.fetchSeo.mockResolvedValue({ success: true, data: {} } as never);
 });
 
+/** A cached section expiring before the next warm run. */
+function due() {
+  return {
+    data: {},
+    stale: false,
+    fetchedAt: new Date(),
+    expiresAt: new Date(Date.now() + 60_000),
+  } as never;
+}
+
+const notCached = { data: null, stale: false, fetchedAt: null, expiresAt: null };
+
 describe("warmDomainWorkflow", () => {
+  it("warms a parent's registration without fetching sections nobody viewed", async () => {
+    // A subdomain report looked up example.com's registration only.
+    cacheMocks.getCachedRegistration.mockResolvedValue(due());
+    cacheMocks.getCachedHosting.mockResolvedValue(notCached);
+    cacheMocks.getCachedCertificates.mockResolvedValue(notCached);
+    cacheMocks.getCachedHeaders.mockResolvedValue(notCached);
+    cacheMocks.getCachedSeo.mockResolvedValue(notCached);
+
+    const { warmDomainWorkflow } = await import("./workflow");
+    const result = await warmDomainWorkflow({ domain: "example.com" });
+
+    expect(fetchMocks.fetchRegistration).toHaveBeenCalledWith("example.com");
+    expect(fetchMocks.fetchHosting).not.toHaveBeenCalled();
+    expect(fetchMocks.fetchCertificates).not.toHaveBeenCalled();
+    expect(fetchMocks.fetchHeaders).not.toHaveBeenCalled();
+    expect(fetchMocks.fetchSeo).not.toHaveBeenCalled();
+    expect(result).toEqual({ refreshed: ["registration"], unavailable: [] });
+  });
+
   it("refreshes nothing when every section is fresh", async () => {
     const { warmDomainWorkflow } = await import("./workflow");
     const result = await warmDomainWorkflow({ domain: "example.com" });
@@ -91,19 +122,9 @@ describe("warmDomainWorkflow", () => {
     expect(fetchMocks.fetchSeo).not.toHaveBeenCalled();
   });
 
-  it("refreshes only the sections that are missing", async () => {
-    cacheMocks.getCachedSeo.mockResolvedValue({
-      data: null,
-      stale: false,
-      fetchedAt: null,
-      expiresAt: null,
-    });
-    cacheMocks.getCachedRegistration.mockResolvedValue({
-      data: null,
-      stale: false,
-      fetchedAt: null,
-      expiresAt: null,
-    });
+  it("refreshes only the sections that are due", async () => {
+    cacheMocks.getCachedSeo.mockResolvedValue(due());
+    cacheMocks.getCachedRegistration.mockResolvedValue(due());
 
     const { warmDomainWorkflow } = await import("./workflow");
     const result = await warmDomainWorkflow({ domain: "example.com" });
@@ -116,11 +137,10 @@ describe("warmDomainWorkflow", () => {
   });
 
   it("never fetches registration for a subdomain row", async () => {
-    const missing = { data: null, stale: false, fetchedAt: null, expiresAt: null };
-    cacheMocks.getCachedRegistration.mockResolvedValue(missing);
-    cacheMocks.getCachedHosting.mockResolvedValue(missing);
-    cacheMocks.getCachedCertificates.mockResolvedValue(missing);
-    cacheMocks.getCachedSeo.mockResolvedValue(missing);
+    cacheMocks.getCachedRegistration.mockResolvedValue(due());
+    cacheMocks.getCachedHosting.mockResolvedValue(due());
+    cacheMocks.getCachedCertificates.mockResolvedValue(due());
+    cacheMocks.getCachedSeo.mockResolvedValue(due());
 
     const { warmDomainWorkflow } = await import("./workflow");
     const result = await warmDomainWorkflow({ domain: "api.example.com" });
@@ -134,12 +154,7 @@ describe("warmDomainWorkflow", () => {
   });
 
   it("treats www as a subdomain row too", async () => {
-    cacheMocks.getCachedRegistration.mockResolvedValue({
-      data: null,
-      stale: false,
-      fetchedAt: null,
-      expiresAt: null,
-    });
+    cacheMocks.getCachedRegistration.mockResolvedValue(due());
 
     const { warmDomainWorkflow } = await import("./workflow");
     await warmDomainWorkflow({ domain: "www.example.com" });
@@ -166,12 +181,7 @@ describe("warmDomainWorkflow", () => {
   });
 
   it("records unavailable when a fetch rejects with RemoteDataUnavailableError", async () => {
-    cacheMocks.getCachedSeo.mockResolvedValue({
-      data: null,
-      stale: false,
-      fetchedAt: null,
-      expiresAt: null,
-    });
+    cacheMocks.getCachedSeo.mockResolvedValue(due());
     fetchMocks.fetchSeo.mockRejectedValue(new RemoteDataUnavailableError("down"));
 
     const { warmDomainWorkflow } = await import("./workflow");
@@ -181,12 +191,7 @@ describe("warmDomainWorkflow", () => {
   });
 
   it("records unavailable when a fetch resolves with success: false", async () => {
-    cacheMocks.getCachedCertificates.mockResolvedValue({
-      data: null,
-      stale: false,
-      fetchedAt: null,
-      expiresAt: null,
-    });
+    cacheMocks.getCachedCertificates.mockResolvedValue(due());
     fetchMocks.fetchCertificates.mockResolvedValue({
       success: false,
       error: "tls_error",
@@ -199,18 +204,8 @@ describe("warmDomainWorkflow", () => {
   });
 
   it("rejects when a fetch throws an unclassified error, without blocking the other section", async () => {
-    cacheMocks.getCachedRegistration.mockResolvedValue({
-      data: null,
-      stale: false,
-      fetchedAt: null,
-      expiresAt: null,
-    });
-    cacheMocks.getCachedSeo.mockResolvedValue({
-      data: null,
-      stale: false,
-      fetchedAt: null,
-      expiresAt: null,
-    });
+    cacheMocks.getCachedRegistration.mockResolvedValue(due());
+    cacheMocks.getCachedSeo.mockResolvedValue(due());
     fetchMocks.fetchRegistration.mockRejectedValue(new Error("db write failed"));
 
     const { warmDomainWorkflow } = await import("./workflow");

@@ -25,7 +25,12 @@ export const REFRESH_AHEAD_MS = 4 * 60 * 60 * 1000;
 export type SectionCacheState = { data: unknown; expiresAt: Date | null };
 
 /**
- * Pick the sections to refresh: missing, or expiring within REFRESH_AHEAD_MS.
+ * Pick the sections to refresh: cached, and expiring within REFRESH_AHEAD_MS
+ * (or with no expiry). A section with no cached data is left for the next
+ * visit to fetch: warming keeps viewed data fresh, it doesn't fill in sections
+ * nobody asked for. That matters because a subdomain report looks up its
+ * parent's registration, which marks the parent row as accessed without
+ * anyone viewing the parent's other sections.
  * Only sections present in `cache` are considered, so a caller leaves out the
  * ones outside the row's scope (registration for a subdomain).
  * Headers are dropped when hosting is selected, because `fetchHosting`
@@ -39,7 +44,8 @@ export function selectSectionsToRefresh(
     const state = cache[section];
     if (!state) return false;
     const { data, expiresAt } = state;
-    return data === null || expiresAt === null || expiresAt.getTime() <= now + REFRESH_AHEAD_MS;
+    if (data === null) return false;
+    return expiresAt === null || expiresAt.getTime() <= now + REFRESH_AHEAD_MS;
   });
   return due.includes("hosting") ? due.filter((section) => section !== "headers") : due;
 }

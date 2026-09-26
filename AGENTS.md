@@ -527,7 +527,9 @@ its registrable domain (eTLD+1); every other section describes the hostname.
 - The `domains` table holds both registrable domains and hostname observations.
   A row does not imply registration or tracking; only `userTrackedDomains`
   rows are tracked. The warm-domains workflow refreshes registration only for
-  registrable-domain rows.
+  registrable-domain rows, and only refreshes sections that already have cached
+  data (a parent touched only by its subdomains' registration lookups isn't
+  fully scanned).
 - The report page resolves the hostname's own row id once
   (`getOrCreateDomainId(hostname)`) and passes it down; hostname-scoped features
   such as screenshots are keyed by it, never by the registrable domain's id.
