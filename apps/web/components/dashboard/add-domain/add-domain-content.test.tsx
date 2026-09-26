@@ -89,7 +89,7 @@ describe("AddDomainContent", () => {
       .element(page.getByRole("heading", { name: "Domain limit reached" }))
       .toBeInTheDocument();
     await expect
-      .element(page.getByText(/You're tracking all 5 domains included with Free/))
+      .element(page.getByText(/Your Free plan supports up to 5 tracked domains/))
       .toBeInTheDocument();
     await expect.element(page.getByRole("button", { name: "Upgrade to Pro" })).toBeInTheDocument();
     await expect.element(page.getByLabelText("Domain name")).not.toBeInTheDocument();
@@ -104,7 +104,7 @@ describe("AddDomainContent", () => {
     await renderAddDomainContent();
 
     await expect
-      .element(page.getByText(/You're tracking all 100 domains included with Pro/))
+      .element(page.getByText(/Your Pro plan supports up to 100 tracked domains/))
       .toBeInTheDocument();
     await expect
       .element(page.getByRole("button", { name: "Upgrade to Pro" }))

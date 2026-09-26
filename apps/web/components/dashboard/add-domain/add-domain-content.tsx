@@ -109,11 +109,11 @@ function AddDomainQuotaReached({
         <div className="min-w-0">
           <h2 className="text-base font-semibold">Domain limit reached</h2>
           <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-            You&apos;re tracking all <span className="tabular-nums">{planQuota}</span> domains
-            included with {isPro ? "Pro" : "Free"}.{" "}
+            Your {isPro ? "Pro" : "Free"} plan supports up to{" "}
+            <span className="tabular-nums">{planQuota}</span> tracked domains.{" "}
             {isPro
-              ? "Archive or remove one you no longer need."
-              : "Archive one you no longer need, or upgrade for more."}
+              ? "Archive or remove a domain to track another."
+              : "Archive a domain to track another, or upgrade to Pro."}
           </p>
         </div>
       </div>
