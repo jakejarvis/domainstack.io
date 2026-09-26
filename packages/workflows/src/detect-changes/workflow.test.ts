@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CHANGE_CONFIRMATIONS } from "@domainstack/constants";
-import type { DnsFetchData } from "@domainstack/core/dns";
+import type { DnsFetchData } from "@domainstack/core/dns/types";
 import type { SnapshotForMonitoring } from "@domainstack/db/queries/snapshots";
 
 import { providerObservationKey } from "../lib/change-detection";

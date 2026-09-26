@@ -14,14 +14,11 @@ afterAll(async () => {
 
 // Hoist mock for @domainstack/core/whois
 const whoisMock = vi.hoisted(() => ({
-  lookupWhois: vi.fn<typeof import("@domainstack/core/whois").lookupWhois>(),
+  lookupWhois: vi.fn<typeof import("@domainstack/core/whois/lookup").lookupWhois>(),
 }));
 
 // Only the WHOIS lookup is faked; normalize/persist come from the real module.
-vi.mock("@domainstack/core/whois", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@domainstack/core/whois")>()),
-  ...whoisMock,
-}));
+vi.mock("@domainstack/core/whois/lookup", () => whoisMock);
 
 // Mock Edge Config
 vi.mock("@domainstack/edge-config", () => ({
@@ -218,7 +215,7 @@ describe("lookupWhoisStep retry delay", () => {
   const failure = (
     error: "retry" | "timeout",
     retryAfterMs?: number,
-  ): Awaited<ReturnType<typeof import("@domainstack/core/whois").lookupWhois>> => ({
+  ): Awaited<ReturnType<typeof import("@domainstack/core/whois/lookup").lookupWhois>> => ({
     success: false,
     error,
     detail: { code: "rate_limited", retryAfterMs, attempts: [] },

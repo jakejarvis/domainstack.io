@@ -1,4 +1,4 @@
-import type { HeadersFetchData, HeadersFetchResult } from "@domainstack/core/headers";
+import type { HeadersFetchData, HeadersFetchResult } from "@domainstack/core/headers/types";
 
 /**
  * Step: Fetch HTTP headers from the domain.
@@ -13,7 +13,7 @@ import type { HeadersFetchData, HeadersFetchResult } from "@domainstack/core/hea
 export async function fetchHeadersStep(domain: string): Promise<HeadersFetchResult> {
   "use step";
 
-  const { fetchHttpHeaders } = await import("@domainstack/core/headers");
+  const { fetchHttpHeaders } = await import("@domainstack/core/headers/fetch");
 
   const result = await fetchHttpHeaders(domain);
 

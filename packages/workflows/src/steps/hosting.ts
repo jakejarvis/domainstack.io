@@ -9,7 +9,7 @@ import type { DnsRecord, GeoIpData, Header, ProviderDetectionData } from "@domai
 export async function lookupGeoIpStep(ip: string): Promise<GeoIpData | null> {
   "use step";
 
-  const { lookupGeoIp } = await import("@domainstack/core/hosting");
+  const { lookupGeoIp } = await import("@domainstack/core/hosting/geoip");
   return await lookupGeoIp(ip);
 }
 

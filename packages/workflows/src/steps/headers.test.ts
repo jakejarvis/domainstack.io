@@ -123,7 +123,7 @@ describe("fetchHeadersStep", () => {
       http.get("https://error.test/", () => HttpResponse.error()),
     );
 
-    const { HeadersFetchError } = await import("@domainstack/core/headers");
+    const { HeadersFetchError } = await import("@domainstack/core/headers/fetch");
     const { fetchHeadersStep } = await import("./headers");
 
     await expect(fetchHeadersStep("error.test")).rejects.toBeInstanceOf(HeadersFetchError);

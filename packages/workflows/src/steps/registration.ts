@@ -25,7 +25,7 @@ export async function lookupWhoisStep(domain: string): Promise<FetchRegistration
   "use step";
 
   // Dynamic import to keep step bundle small
-  const { lookupWhois } = await import("@domainstack/core/whois");
+  const { lookupWhois } = await import("@domainstack/core/whois/lookup");
 
   const { createLogger } = await import("@domainstack/logger");
   const logger = createLogger({ source: "workflows/registration" });

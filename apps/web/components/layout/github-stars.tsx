@@ -14,18 +14,17 @@ const STAR_COUNT_FORMATTER = new Intl.NumberFormat("en-US", {
  * cached briefly so a GitHub outage or rate limit doesn't stick for an hour.
  */
 async function fetchRepoStars(): Promise<number | null> {
-  "use cache";
+  "use cache: remote";
 
   try {
-    const headers = new Headers({ Accept: "application/vnd.github+json" });
-    if (process.env.EXTERNAL_USER_AGENT) {
-      headers.set("User-Agent", process.env.EXTERNAL_USER_AGENT);
-    }
-    if (process.env.GITHUB_TOKEN) {
-      headers.set("Authorization", `Bearer ${process.env.GITHUB_TOKEN}`);
-    }
-
-    const res = await fetch(`https://api.github.com/repos/${REPOSITORY_SLUG}`, { headers });
+    const res = await fetch(`https://api.github.com/repos/${REPOSITORY_SLUG}`, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        ...(process.env.GITHUB_TOKEN
+          ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }
+          : {}),
+      },
+    });
 
     if (res.ok) {
       const json = (await res.json()) as { stargazers_count?: number };

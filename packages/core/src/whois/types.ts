@@ -17,7 +17,7 @@ export interface RdapLookupSuccess {
  * operation (including failures recovered by fallback), so a timeout can be
  * pinned to a specific phase and server.
  */
-export interface RdapLookupFailureDetail {
+interface RdapLookupFailureDetail {
   message?: string;
   code?: LookupErrorCode;
   phase?: LookupAttempt["phase"];

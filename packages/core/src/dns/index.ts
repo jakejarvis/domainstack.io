@@ -16,9 +16,6 @@ import { shareInFlight } from "../lib/in-flight";
 import { DnsProviderError, fetchDnsRecords } from "./fetch";
 import type { DnsFetchData } from "./types";
 
-export { DnsProviderError, fetchDnsRecords } from "./fetch";
-export type { DnsFetchData, DnsRecordWithExpiry } from "./types";
-
 // ============================================================================
 // Types
 // ============================================================================

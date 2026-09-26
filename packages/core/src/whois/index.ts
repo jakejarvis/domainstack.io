@@ -28,9 +28,6 @@ import { RemoteDataUnavailableError } from "../lib/fetch-errors";
 import { ttlForRegistration } from "../lib/ttl";
 import { lookupWhois as lookup } from "./lookup";
 
-export * from "./lookup";
-export * from "./types";
-
 // ============================================================================
 // Types
 // ============================================================================

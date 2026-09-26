@@ -17,10 +17,6 @@ import { ttlForHeaders } from "../lib/ttl";
 import { fetchHttpHeaders, HeadersFetchError } from "./fetch";
 import type { HeadersError, HeadersFetchData } from "./types";
 
-export { fetchHttpHeaders, HeadersFetchError } from "./fetch";
-export { getHttpStatusMessage } from "./status-message";
-export type { HeadersError, HeadersFetchData, HeadersFetchResult } from "./types";
-
 // ============================================================================
 // Types
 // ============================================================================

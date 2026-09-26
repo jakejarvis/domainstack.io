@@ -8,9 +8,6 @@
   "functions": {
     "app/api/cron/**/*.ts": {
       "maxDuration": 800
-    },
-    "app/.well-known/workflow/v1/flow/route.js": {
-      "maxDuration": 800
     }
   },
   "crons": [
@@ -28,7 +25,7 @@
     },
     {
       "path": "/api/cron/monitor-domains",
-      "schedule": "25 * * * *"
+      "schedule": "15,45 * * * *"
     },
     {
       "path": "/api/cron/warm-domains",

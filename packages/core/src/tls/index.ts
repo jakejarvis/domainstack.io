@@ -19,10 +19,6 @@ import { ttlForCertificates } from "../lib/ttl";
 import { fetchCertificateChain } from "./fetch";
 import type { RawCertificate, TlsFetchSuccess } from "./types";
 
-export * from "./fetch";
-export * from "./types";
-export * from "./utils";
-
 // ============================================================================
 // Types
 // ============================================================================
