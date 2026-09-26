@@ -16,9 +16,8 @@ interface DomainReportHeaderProps {
   /** The hostname's registrable domain, which owns registration and tracking. */
   registrableDomain: string;
   /**
-   * Database id of the `hostname` row, once known (the screenshot waits for
-   * it). Never pass the registrable domain's id for a subdomain report: the
-   * screenshot would be stored under it.
+   * Id of the `hostname`'s own `domains` row, which keys its screenshot. Never
+   * the registrable domain's id on a subdomain report.
    */
   domainId?: string;
   /** Whether registration has settled. Until then, render loading states. */

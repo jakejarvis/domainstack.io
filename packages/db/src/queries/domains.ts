@@ -79,6 +79,23 @@ export async function ensureDomainRecord(domain: string) {
 }
 
 /**
+ * Get the id of a hostname's row, creating the row if it doesn't exist yet.
+ * Reads first, so the common case (a row already exists) writes nothing.
+ *
+ * @param name - The normalized hostname (a registrable domain or a subdomain)
+ * @throws {Error} If the hostname has no valid TLD
+ */
+export async function getOrCreateDomainId(name: string): Promise<string> {
+  const existing = await db
+    .select({ id: domains.id })
+    .from(domains)
+    .where(eq(domains.name, name))
+    .limit(1);
+  if (existing[0]) return existing[0].id;
+  return (await ensureDomainRecord(name)).id;
+}
+
+/**
  * Find an existing domain record by ID.
  * Returns null if the domain doesn't exist.
  */

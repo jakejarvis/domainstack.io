@@ -60,14 +60,13 @@ async function fetchAndPersistDns(domain: string): Promise<DnsResult> {
   }
 
   // 2. Persist to database
-  const domainId = await persistDnsRecords(domain, fetchData);
+  await persistDnsRecords(domain, fetchData);
 
   return {
     success: true,
     data: {
       records: fetchData.records,
       resolver: fetchData.resolver,
-      domainId,
     },
   };
 }
@@ -76,12 +75,7 @@ async function fetchAndPersistDns(domain: string): Promise<DnsResult> {
 // Internal: Persist DNS Records
 // ============================================================================
 
-/**
- * Replace a domain's stored DNS records with a fresh lookup.
- *
- * @returns the id of the domain's row
- */
-export async function persistDnsRecords(domain: string, fetchData: DnsFetchData): Promise<string> {
+export async function persistDnsRecords(domain: string, fetchData: DnsFetchData): Promise<void> {
   const types = DNS_RECORD_TYPES;
   const now = new Date();
 
@@ -125,6 +119,4 @@ export async function persistDnsRecords(domain: string, fetchData: DnsFetchData)
     expiresAt,
     recordsByType,
   });
-
-  return domainRecord.id;
 }

@@ -171,7 +171,6 @@ export async function getCachedDns(domain: string): Promise<CacheResult<DnsRecor
   // Single query: JOIN domains -> dnsRecords
   const rows = await db
     .select({
-      domainId: domains.id,
       type: dnsRecords.type,
       name: dnsRecords.name,
       value: dnsRecords.value,
@@ -191,7 +190,6 @@ export async function getCachedDns(domain: string): Promise<CacheResult<DnsRecor
   if (rows.length === 0) {
     const [check] = await db
       .select({
-        domainId: domains.id,
         resolver: dnsChecks.resolver,
         fetchedAt: dnsChecks.fetchedAt,
         expiresAt: dnsChecks.expiresAt,
@@ -204,7 +202,7 @@ export async function getCachedDns(domain: string): Promise<CacheResult<DnsRecor
       return { data: null, stale: false, fetchedAt: null, expiresAt: null };
     }
     return {
-      data: { records: [], resolver: check.resolver, domainId: check.domainId },
+      data: { records: [], resolver: check.resolver },
       stale: check.expiresAt.getTime() <= nowMs,
       fetchedAt: check.fetchedAt,
       expiresAt: check.expiresAt,
@@ -246,7 +244,6 @@ export async function getCachedDns(domain: string): Promise<CacheResult<DnsRecor
     data: {
       records: sorted,
       resolver: rows[0]?.resolver ?? null,
-      domainId: rows[0].domainId,
     },
     stale,
     fetchedAt: earliestFetchedAt,

@@ -11,6 +11,7 @@ import { safeDecodeURIComponent } from "@/lib/safe-parse";
 import { createMetadata, notFoundMetadata } from "@/lib/seo";
 import { getQueryClient, HydrateClient, trpc } from "@/trpc/server";
 import { NONPUBLIC_TLDS } from "@domainstack/constants";
+import { getOrCreateDomainId } from "@domainstack/db/queries/domains";
 import { parseDomainTarget } from "@domainstack/utils/domain";
 import { extractTldClient } from "@domainstack/utils/domain/client";
 
@@ -91,9 +92,15 @@ async function DomainReport({ params }: Pick<PageProps<"/[domain]">, "params">) 
 
   // Registration is awaited so the unregistered state renders without a flash.
   // A failure here is a registration-section failure, not a report failure.
-  const registration = await queryClient
-    .query(trpc.domain.getRegistration.queryOptions({ domain: registrableDomain }))
-    .catch(noop);
+  // Alongside it, resolve the hostname's own row id: hostname-scoped features
+  // such as screenshots are keyed by it, never by the registrable domain's row.
+  // Without it (database unavailable) the screenshot is simply unavailable.
+  const [registration, hostnameId] = await Promise.all([
+    queryClient
+      .query(trpc.domain.getRegistration.queryOptions({ domain: registrableDomain }))
+      .catch(noop),
+    getOrCreateDomainId(hostname).catch(() => undefined),
+  ]);
 
   if (registration?.success && !registration.data.isRegistered && pricingTld) {
     void queryClient.query(trpc.registrar.getPricing.queryOptions({ tld: pricingTld })).catch(noop);
@@ -103,6 +110,7 @@ async function DomainReport({ params }: Pick<PageProps<"/[domain]">, "params">) 
     <HydrateClient>
       <DomainReportClient
         hostname={hostname}
+        hostnameId={hostnameId}
         registrableDomain={registrableDomain}
         pricingTld={pricingTld}
       />

@@ -22,9 +22,4 @@ export interface DnsRecord {
 export interface DnsRecordsResponse {
   records: DnsRecord[];
   resolver: string | null;
-  /**
-   * Internal id of the looked-up hostname's `domains` row, once persisted.
-   * Used for screenshot API requests, which are keyed by the hostname's own row.
-   */
-  domainId?: string;
 }

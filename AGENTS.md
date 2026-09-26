@@ -528,8 +528,9 @@ its registrable domain (eTLD+1); every other section describes the hostname.
   A row does not imply registration or tracking; only `userTrackedDomains`
   rows are tracked. The warm-domains workflow refreshes registration only for
   registrable-domain rows.
-- Screenshots are keyed by the hostname's own row id (`DnsRecordsResponse.domainId`
-  for a subdomain), never by its registrable domain's id.
+- The report page resolves the hostname's own row id once
+  (`getOrCreateDomainId(hostname)`) and passes it down; hostname-scoped features
+  such as screenshots are keyed by it, never by the registrable domain's id.
 - Lookups keyed by registrable domain that must also cover subdomains (e.g. the
   blocklist) check `hostnameWithParents(hostname)`.
 - Chat and MCP tools still look everything up by registrable domain.

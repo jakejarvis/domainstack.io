@@ -107,6 +107,8 @@ function renderReport(hostname: string, registrableDomain: string, pricingTld: s
     <TooltipProvider>
       <DomainReportClient
         hostname={hostname}
+        // The page resolves the hostname's own row id.
+        hostnameId={`host-${hostname}`}
         registrableDomain={registrableDomain}
         pricingTld={pricingTld}
       />
@@ -126,10 +128,6 @@ describe("DomainReportClient", () => {
     ] as const) {
       lookups[name].mockImplementation(async ({ domain }) => ok({ domain }));
     }
-    // The DNS lookup carries the hostname's own row id.
-    lookups.getDnsRecords.mockImplementation(async ({ domain }) =>
-      ok({ domain, domainId: `host-${domain}` }),
-    );
   });
 
   afterEach(() => {
@@ -167,6 +165,7 @@ describe("DomainReportClient", () => {
         .toHaveAttribute("href", "/login");
       await expect.element(page.getByText("tools:api.example.com")).toBeVisible();
       // The hostname's own row id, never the registration row's (id-example.com).
+      // It is known up front, so no section lookup has to finish first.
       await expect
         .element(page.getByText("screenshot:api.example.com:host-api.example.com"))
         .toBeVisible();
@@ -219,7 +218,7 @@ describe("DomainReportClient", () => {
         "api.example.com",
         expect.objectContaining({
           registration: expect.objectContaining({ domain: "example.com" }),
-          dns: { domain: "api.example.com", domainId: "host-api.example.com" },
+          dns: { domain: "api.example.com" },
           hosting: { domain: "api.example.com" },
           certificates: { domain: "api.example.com" },
           headers: { domain: "api.example.com" },
@@ -238,13 +237,7 @@ describe("DomainReportClient", () => {
       expect(page.getByText("Subdomain", { exact: true }).elements()).toHaveLength(0);
     });
 
-    it("passes the registration row's id to the screenshot", async () => {
-      await renderReport("example.com", "example.com", "com");
-
-      await expect.element(page.getByText("screenshot:example.com:id-example.com")).toBeVisible();
-    });
-
-    it("falls back to the DNS row id when registration fails", async () => {
+    it("keys the screenshot by the hostname's row, even when registration fails", async () => {
       lookups.getRegistration.mockResolvedValue({ success: false, error: "fetch_failed" });
 
       await renderReport("example.com", "example.com", "com");

@@ -28,7 +28,7 @@ describe("persistDnsRecords", () => {
       ttl: 300,
     };
 
-    const domainId = await persistDnsRecords("api.example.com", {
+    await persistDnsRecords("api.example.com", {
       records: [a, cname],
       resolver: "cloudflare",
       recordsWithExpiry: [
@@ -39,7 +39,6 @@ describe("persistDnsRecords", () => {
 
     const cached = await getCachedDns("api.example.com");
     expect(cached.stale).toBe(false);
-    expect(cached.data?.domainId).toBe(domainId);
     expect(cached.data?.records).toEqual([
       expect.objectContaining({ type: "A", value: "192.0.2.1" }),
       expect.objectContaining({ type: "CNAME", name: "api.example.com", value: "edge.cdn.test" }),
@@ -51,7 +50,7 @@ describe("persistDnsRecords", () => {
 
   it("caches a lookup that found no records instead of treating it as a miss", async () => {
     const before = Date.now();
-    const domainId = await persistDnsRecords("missing.example.com", {
+    await persistDnsRecords("missing.example.com", {
       records: [],
       resolver: "google",
       recordsWithExpiry: [],
@@ -59,7 +58,7 @@ describe("persistDnsRecords", () => {
 
     const cached = await getCachedDns("missing.example.com");
     expect(cached.stale).toBe(false);
-    expect(cached.data).toEqual({ records: [], resolver: "google", domainId });
+    expect(cached.data).toEqual({ records: [], resolver: "google" });
     // Cached for the default DNS TTL (1 hour).
     expect(cached.expiresAt?.getTime()).toBeGreaterThanOrEqual(before + 60 * 60 * 1000);
   });
@@ -67,7 +66,7 @@ describe("persistDnsRecords", () => {
   it("expires the lookup with its first expiring record", async () => {
     const soon = new Date(Date.now() + 60_000);
     const later = new Date(Date.now() + 600_000);
-    const domainId = await persistDnsRecords("example.com", {
+    await persistDnsRecords("example.com", {
       records: [],
       resolver: "cloudflare",
       recordsWithExpiry: [
@@ -89,7 +88,7 @@ describe("persistDnsRecords", () => {
     });
 
     const [check] = await db.select().from(dnsChecks);
-    expect(check).toMatchObject({ domainId, resolver: "cloudflare", expiresAt: soon });
+    expect(check).toMatchObject({ resolver: "cloudflare", expiresAt: soon });
   });
 
   it("serves an empty answer that replaced earlier records from the cache", async () => {

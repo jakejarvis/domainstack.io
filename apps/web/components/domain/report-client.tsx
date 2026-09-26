@@ -266,11 +266,14 @@ function DomainReportSections({ children }: { children: React.ReactNode }) {
 
 export function DomainReportClient({
   hostname,
+  hostnameId,
   registrableDomain,
   pricingTld,
 }: {
   /** The exact hostname this report describes. */
   hostname: string;
+  /** Id of the hostname's own `domains` row; keys hostname-scoped features like screenshots. */
+  hostnameId?: string;
   /** The hostname's registrable domain, which owns registration and tracking. */
   registrableDomain: string;
   pricingTld: string | null;
@@ -293,12 +296,6 @@ export function DomainReportClient({
     hostname,
     isRegistered,
   );
-  // The hostname's own row id arrives with its DNS lookup (same query the DNS
-  // section suspends on, so no extra request). Screenshots are keyed by it.
-  const { data: dns } = useQuery(
-    trpc.domain.getDnsRecords.queryOptions({ domain: hostname }, staticQueryOptions),
-  );
-  const hostnameDomainId = dns?.success ? dns.data.domainId : undefined;
   // Registration describes the parent, so name it when the report is a subdomain's.
   const registrationScope = isSubdomain ? registrableDomain : undefined;
 
@@ -317,9 +314,7 @@ export function DomainReportClient({
       <DomainReportHeader
         hostname={hostname}
         registrableDomain={registrableDomain}
-        // The registration row's id belongs to the registrable domain, so it
-        // only identifies this report's hostname when the two are the same.
-        domainId={isSubdomain ? hostnameDomainId : (registrationData?.domainId ?? hostnameDomainId)}
+        domainId={hostnameId}
         isReady={!isRegistrationLoading}
         isRegistered={isRegistered}
         ref={headerRef}
