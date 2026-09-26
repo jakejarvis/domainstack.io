@@ -30,12 +30,12 @@
   "devDependencies": {
     "oxfmt": "^0.70.0",
     "oxlint": "^1.85.0",
-    "oxlint-tsgolint": "^7.0.2002",
-    "turbo": "^2.11.3",
+    "oxlint-tsgolint": "^7.0.2003",
+    "turbo": "^2.11.4",
     "typescript": "^7.0.2"
   },
   "engines": {
     "node": ">=24.x"
   },
-  "packageManager": "pnpm@11.27.1"
+  "packageManager": "pnpm@11.28.0"
 }

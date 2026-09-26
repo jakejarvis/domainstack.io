@@ -118,18 +118,18 @@ function AddDomainQuotaReached({
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
-        {isPro ? null : <ProUpsell className="mb-2" />}
+      <div className="flex flex-col gap-3">
+        {isPro ? null : <ProUpsell />}
         {onClose ? (
-          <Button variant="ghost" onClick={onClose} className="w-full">
-            Back to domains
+          <Button variant="outline" onClick={onClose} className="h-10 w-full">
+            Close
           </Button>
         ) : (
           <Button
-            variant="ghost"
-            className="w-full"
+            variant="outline"
+            className="h-10 w-full"
             nativeButton={false}
-            render={<Link href="/dashboard">Back to domains</Link>}
+            render={<Link href="/dashboard">Close</Link>}
           />
         )}
       </div>
