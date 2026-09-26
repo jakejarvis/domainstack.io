@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import posthogClient from "posthog-js";
 import { useEffect, useState } from "react";
 
 import { OAuthButton } from "@/components/auth/oauth-button";
 import { Logo } from "@/components/logo";
 import { useAuthCallback } from "@/hooks/use-auth-callback";
-import { analytics } from "@/lib/analytics/client";
 import { getEnabledProviders } from "@/lib/oauth";
 import { useSession } from "@domainstack/auth/client";
 import { Icon } from "@domainstack/ui/icon";
@@ -36,7 +36,7 @@ export function LoginContent({ className, onNavigate, callbackURL }: LoginConten
       return;
     }
 
-    analytics.track("signup_pageview", { pathname });
+    posthogClient.capture("signup_pageview", { pathname });
   }, [isPending, pathname, session?.user]);
 
   // Use provided callback URL, or auto-detect current page

@@ -1,9 +1,9 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import posthogClient from "posthog-js";
 import { toast } from "sonner";
 
-import { analytics } from "@/lib/analytics/client";
 import { getEnabledProviders, type OAuthProviderConfig } from "@/lib/oauth";
 import { useTRPC } from "@/lib/trpc/client";
 import { linkSocial, unlinkAccount } from "@domainstack/auth/client";
@@ -39,7 +39,7 @@ async function linkProvider(provider: OAuthProviderConfig) {
       callbackURL: "/settings",
     });
   } catch (err) {
-    analytics.trackException(err, {
+    posthogClient.captureException(err, {
       provider: provider.id,
       action: "link_account",
     });
@@ -93,7 +93,7 @@ export function useLinkedAccounts(): UseLinkedAccountsReturn {
       if (context?.previousAccounts) {
         queryClient.setQueryData(linkedAccountsQueryKey, context.previousAccounts);
       }
-      analytics.trackException(err, {
+      posthogClient.captureException(err, {
         provider: providerId,
         action: "unlink_account",
       });

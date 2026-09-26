@@ -1,9 +1,8 @@
 "use client";
 
 import NextError from "next/error";
+import posthogClient from "posthog-js";
 import { useEffect } from "react";
-
-import { analytics } from "@/lib/analytics/client";
 
 export default function GlobalError({
   error,
@@ -13,7 +12,7 @@ export default function GlobalError({
   retry: () => void;
 }) {
   useEffect(() => {
-    analytics.trackException(error);
+    posthogClient.captureException(error);
   }, [error]);
 
   return (

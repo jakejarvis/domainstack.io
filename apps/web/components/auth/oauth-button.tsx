@@ -1,8 +1,8 @@
 "use client";
 
+import posthogClient from "posthog-js";
 import { toast } from "sonner";
 
-import { useAnalytics } from "@/lib/analytics/client";
 import type { OAuthProviderConfig } from "@/lib/oauth";
 import { signIn } from "@domainstack/auth/client";
 import { Button } from "@domainstack/ui/button";
@@ -45,12 +45,11 @@ export function OAuthButton({
   isAnyLoading = false,
   onLoadingChange,
 }: OAuthButtonProps) {
-  const analytics = useAnalytics();
   const Icon = provider.icon;
 
   const handleSignIn = async () => {
     onLoadingChange?.(true);
-    analytics.track("sign_in_clicked", { provider: provider.id });
+    posthogClient.capture("sign_in_clicked", { provider: provider.id });
 
     // Reset loading state if user returns to page (e.g., via back button)
     const handleVisibilityChange = () => {
@@ -74,7 +73,7 @@ export function OAuthButton({
       // Only reset on actual error
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       onLoadingChange?.(false);
-      analytics.trackException(err, {
+      posthogClient.captureException(err, {
         provider: provider.id,
         action: "sign_in",
       });

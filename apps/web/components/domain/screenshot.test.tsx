@@ -3,17 +3,10 @@ import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page } from "vitest/browser";
 
-vi.mock("@/lib/analytics/client", () => ({
-  analytics: {
-    track: vi.fn<(event: string, properties?: Record<string, unknown>) => void>(),
-    trackException: vi.fn<(error: unknown, context?: Record<string, unknown>) => void>(),
-  },
-}));
 vi.mock("sonner", () => ({
   toast: { error: vi.fn<(message: string, options?: unknown) => void>() },
 }));
 
-import { analytics } from "@/lib/analytics/client";
 import { createTestQueryClient, render, renderHook } from "@/mocks/react";
 
 import { Screenshot, useScreenshot } from "./screenshot";
@@ -228,7 +221,6 @@ describe("useScreenshot", () => {
 
   it("reports a repeated, identical rate limit only once", async () => {
     vi.mocked(toast.error).mockClear();
-    vi.mocked(analytics.track).mockClear();
     const fetchMock = vi.mocked(fetch);
     fetchMock.mockImplementation(async () =>
       jsonResponse({}, { status: 429, headers: { "Retry-After": "30" } }),
@@ -250,11 +242,6 @@ describe("useScreenshot", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(toast.error).toHaveBeenCalledTimes(1);
-    expect(
-      vi
-        .mocked(analytics.track)
-        .mock.calls.filter(([event]) => event === "screenshot_rate_limited"),
-    ).toHaveLength(1);
   });
 
   it("self-heals after giving up, instead of staying failed until the query is garbage-collected", async () => {

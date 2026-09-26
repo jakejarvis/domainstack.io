@@ -1,10 +1,10 @@
 "use client";
 
 import { IconRefresh } from "@tabler/icons-react";
+import posthogClient from "posthog-js";
 import { useEffect } from "react";
 
 import { CreateIssueButton } from "@/components/create-issue-button";
-import { analytics } from "@/lib/analytics/client";
 import { Button } from "@domainstack/ui/button";
 import { CodeBlock } from "@domainstack/ui/code-block";
 
@@ -23,7 +23,7 @@ export function RouteError({
   description = "An unexpected error occurred. Please try again.",
 }: RouteErrorProps) {
   useEffect(() => {
-    analytics.trackException(error, { digest: error.digest });
+    posthogClient.captureException(error, { digest: error.digest });
   }, [error]);
 
   const isDev = process.env.NODE_ENV !== "production";

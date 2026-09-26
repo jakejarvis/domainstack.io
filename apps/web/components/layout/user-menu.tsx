@@ -9,10 +9,10 @@ import {
 } from "@tabler/icons-react";
 import { getImageProps } from "next/image";
 import Link from "next/link";
+import posthogClient from "posthog-js";
 
 import { useRouter } from "@/hooks/use-router";
 import { useTheme } from "@/hooks/use-theme";
-import { useAnalytics } from "@/lib/analytics/client";
 import { signOut, useSession } from "@domainstack/auth/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@domainstack/ui/avatar";
 import { Button } from "@domainstack/ui/button";
@@ -26,7 +26,6 @@ import {
 
 export function UserMenu() {
   const router = useRouter();
-  const analytics = useAnalytics();
   const { data: session } = useSession();
   const { theme, toggleTheme } = useTheme();
 
@@ -54,7 +53,7 @@ export function UserMenu() {
       .slice(0, 2) || "?";
 
   const handleSignOut = async () => {
-    analytics.track("sign_out_clicked");
+    posthogClient.capture("sign_out_clicked");
     try {
       await signOut({
         fetchOptions: {

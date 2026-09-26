@@ -4,9 +4,9 @@ import {
   IconCheck,
   IconHeartBroken,
 } from "@tabler/icons-react";
+import posthogClient from "posthog-js";
 import { useCallback, useReducer } from "react";
 
-import { useAnalytics } from "@/lib/analytics/client";
 import { deleteUser } from "@domainstack/auth/client";
 import { Alert, AlertDescription, AlertTitle } from "@domainstack/ui/alert";
 import {
@@ -78,7 +78,6 @@ function dialogReducer(state: DialogState, action: DialogAction): DialogState {
 
 export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
   const [state, dispatch] = useReducer(dialogReducer, initialState);
-  const analytics = useAnalytics();
 
   const handleDelete = useCallback(async () => {
     dispatch({ type: "START_DELETE" });
@@ -87,7 +86,7 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
       const result = await deleteUser();
 
       if (result.error) {
-        analytics.trackException(new Error(result.error.message), {
+        posthogClient.captureException(new Error(result.error.message), {
           action: "delete_account",
         });
         dispatch({
@@ -97,10 +96,10 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
         return;
       }
 
-      analytics.track("delete_account_initiated");
+      posthogClient.capture("delete_account_initiated");
       dispatch({ type: "DELETE_SUCCESS" });
     } catch (err) {
-      analytics.trackException(err, {
+      posthogClient.captureException(err, {
         action: "delete_account",
       });
       dispatch({
@@ -108,7 +107,7 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
         message: "An unexpected error occurred. Please try again.",
       });
     }
-  }, [analytics]);
+  }, []);
 
   const handleOpenChange = useCallback(
     (newOpen: boolean) => {

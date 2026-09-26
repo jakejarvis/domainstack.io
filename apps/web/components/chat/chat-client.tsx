@@ -4,6 +4,7 @@ import { useChat } from "@ai-sdk/react";
 import { WorkflowChatTransport } from "@ai-sdk/workflow/client";
 import type { ChatStatus, UIMessage } from "ai";
 import { useParams } from "next/navigation";
+import posthogClient from "posthog-js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BetaBadge } from "@/components/beta-badge";
@@ -11,7 +12,6 @@ import { type UseBrowserAIResult, useBrowserAI } from "@/hooks/use-browser-ai";
 import { useChatPersistence } from "@/hooks/use-chat-persistence";
 import { useLocalChat } from "@/hooks/use-local-chat";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { analytics } from "@/lib/analytics/client";
 import { createClientDomainTools } from "@/lib/chat/client-tools";
 import { buildClientSystemPrompt } from "@/lib/chat/system-prompt";
 import { trimChatHistory } from "@/lib/chat/trim-history";
@@ -171,7 +171,7 @@ function CloudChatSession({ domain, children }: { domain?: string; children: Ren
     messages: initial.messages,
     resume: !!initial.runId,
     onError: (error) => {
-      analytics.trackException(error, { context: "chat-send", domain });
+      posthogClient.captureException(error, { context: "chat-send", domain });
     },
   });
 
@@ -191,7 +191,7 @@ function CloudChatSession({ domain, children }: { domain?: string; children: Ren
     const timer = setTimeout(() => {
       void stop();
       setStalled(true);
-      analytics.trackException(STALL_ERROR, {
+      posthogClient.captureException(STALL_ERROR, {
         context: "chat-stall",
         domain: domainRef.current,
       });
@@ -246,7 +246,7 @@ function LocalChatSession({
     tools: clientTools,
     systemPrompt,
     onError: (error) => {
-      analytics.trackException(error, { context: "local-chat-send", domain });
+      posthogClient.captureException(error, { context: "local-chat-send", domain });
     },
   });
 

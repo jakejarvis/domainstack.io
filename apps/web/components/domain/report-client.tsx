@@ -8,6 +8,7 @@ import {
   useSuspenseQuery,
   type UseSuspenseQueryOptions,
 } from "@tanstack/react-query";
+import posthogClient from "posthog-js";
 import { Suspense, useEffect, useRef, useState } from "react";
 
 import { CreateIssueButton } from "@/components/create-issue-button";
@@ -29,7 +30,6 @@ import { SeoSection } from "@/components/domain/seo/seo-section";
 import { SeoSectionSkeleton } from "@/components/domain/seo/seo-section-skeleton";
 import { DomainUnregisteredCard } from "@/components/domain/unregistered-card";
 import { useSectionTracking } from "@/hooks/use-section-tracking";
-import { analytics } from "@/lib/analytics/client";
 import { getLookupErrorMessage } from "@/lib/constants/lookup-errors";
 import { sections } from "@/lib/constants/sections";
 import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
@@ -154,7 +154,7 @@ function useDomainReportTracking(domain: string, isRegistered: boolean) {
       return;
     }
     viewedDomainRef.current = domain;
-    analytics.track("report_viewed", { domain });
+    posthogClient.capture("report_viewed", { domain });
   }, [domain, isRegistered]);
 
   const headerRef = useRef<HTMLDivElement>(null);

@@ -4,6 +4,7 @@ import { IconArrowRight, IconCircleX, IconSearch, IconX } from "@tabler/icons-re
 import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
 import { useAtom } from "jotai";
 import { useParams } from "next/navigation";
+import posthogClient from "posthog-js";
 import {
   useCallback,
   useEffect,
@@ -17,7 +18,6 @@ import { toast } from "sonner";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useRouter } from "@/hooks/use-router";
-import { analytics } from "@/lib/analytics/client";
 import { pendingDomainAtom } from "@/lib/atoms/search-atoms";
 import { safeDecodeURIComponent } from "@/lib/safe-parse";
 import { Field, FieldLabel } from "@domainstack/ui/field";
@@ -221,7 +221,7 @@ function useSearchClient({
 
   const navigateToDomain = (domain: string) => {
     const target = normalizeDomainInput(domain);
-    analytics.track("search_submitted", { domain: target });
+    posthogClient.capture("search_submitted", { domain: target });
     if (variant === "lg") resetWhenHiddenRef.current = true;
     startNavigation(() => router.push(`/${encodeURIComponent(target)}`));
   };
@@ -313,7 +313,7 @@ function useSearchClient({
     // Validate before blurring: on mobile the blur collapses the search, and a
     // collapsed input can't take focus back to show the error.
     if (!isValidDomain(normalized)) {
-      analytics.track("search_invalid_input", { input: value });
+      posthogClient.capture("search_invalid_input", { input: value });
       toast.error("Please enter a valid domain.", {
         id: `search-invalid-input-${value}`,
         icon: <IconCircleX className="size-4" />,

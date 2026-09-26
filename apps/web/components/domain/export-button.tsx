@@ -2,10 +2,10 @@
 
 import { IconDownload } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
+import posthogClient from "posthog-js";
 import { useCallback, useMemo, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 
-import { analytics } from "@/lib/analytics/client";
 import { exportDomainData } from "@/lib/json-export";
 import { useTRPC } from "@/lib/trpc/client";
 import type { DomainResponse } from "@domainstack/types";
@@ -45,7 +45,7 @@ export function ExportButton({ domain, enabled = true }: { domain: string; enabl
   );
 
   const handleExport = useCallback(() => {
-    analytics.track("export_json_clicked", { domain });
+    posthogClient.capture("export_json_clicked", { domain });
 
     try {
       const exportData: Partial<DomainResponse> = {};

@@ -3,11 +3,11 @@
 import { IconX } from "@tabler/icons-react";
 import { useSetAtom } from "jotai";
 import Link from "next/link";
+import posthogClient from "posthog-js";
 import { useCallback, useMemo, useRef } from "react";
 
 import { Favicon } from "@/components/icons/favicon";
 import { HomeSearchSuggestionsSkeleton } from "@/components/search/home-search-suggestions-skeleton";
-import { useAnalytics } from "@/lib/analytics/client";
 import { pendingDomainAtom } from "@/lib/atoms/search-atoms";
 import { useSearchHistory } from "@/lib/stores/search-history-store";
 import { MAX_HISTORY_ITEMS } from "@domainstack/constants";
@@ -28,7 +28,6 @@ export function HomeSearchSuggestionsClient({
   className,
   max = MAX_HISTORY_ITEMS,
 }: HomeSearchSuggestionsClientProps) {
-  const analytics = useAnalytics();
   const setPendingDomain = useSetAtom(pendingDomainAtom);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -45,7 +44,7 @@ export function HomeSearchSuggestionsClient({
   // handed to the home search instead, which shows the domain and its spinner.
   const handleNavigate = (e: { preventDefault: () => void }, domain: string) => {
     e.preventDefault();
-    analytics.track("search_suggestion_clicked", {
+    posthogClient.capture("search_suggestion_clicked", {
       domain,
       source: "suggestion",
     });
@@ -54,7 +53,7 @@ export function HomeSearchSuggestionsClient({
 
   const handleClearHistory = useCallback(() => {
     clearHistory();
-    analytics.track("search_history_cleared");
+    posthogClient.capture("search_history_cleared");
 
     // Scroll back to the left with smooth animation
     if (scrollContainerRef.current && typeof scrollContainerRef.current.scrollTo === "function") {
@@ -63,7 +62,7 @@ export function HomeSearchSuggestionsClient({
         behavior: "smooth",
       });
     }
-  }, [analytics, clearHistory]);
+  }, [clearHistory]);
 
   // Persisted history is unavailable during SSR and until zustand rehydrates, so show the
   // skeleton instead of chips that would shuffle once localStorage lands.

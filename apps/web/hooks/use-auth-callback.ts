@@ -1,11 +1,11 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import posthogClient from "posthog-js";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 
 import { useRouter } from "@/hooks/use-router";
-import { analytics } from "@/lib/analytics/client";
 import { getAuthErrorMessage, isAccountLinkingError } from "@domainstack/auth/errors";
 
 /**
@@ -45,7 +45,7 @@ export function useAuthCallback() {
     const isLinkError = isAccountLinkingError(error);
 
     // Track auth errors in PostHog
-    analytics.trackException(new Error(error), {
+    posthogClient.captureException(new Error(error), {
       action: isLinkError ? "link_account" : "sign_in",
       errorCode: error,
     });

@@ -1,8 +1,8 @@
 "use client";
 
+import posthogClient from "posthog-js";
 import { useEffect, useRef } from "react";
 
-import { analytics } from "@/lib/analytics/client";
 import { useSession } from "@domainstack/auth/client";
 
 /**
@@ -25,12 +25,12 @@ export function PostHogIdentityProvider({ children }: { children: React.ReactNod
     if (currentUserId && currentUserId !== previousUserId) {
       // A direct account switch must not retain the previous person's identity.
       if (previousUserId) {
-        analytics.reset();
+        posthogClient.reset();
       }
 
       const user = session?.user;
       if (user) {
-        analytics.identify(
+        posthogClient.identify(
           user.id,
           // $set properties (can change)
           {
@@ -47,7 +47,7 @@ export function PostHogIdentityProvider({ children }: { children: React.ReactNod
 
     // User logged out
     if (!currentUserId && previousUserId) {
-      analytics.reset();
+      posthogClient.reset();
     }
 
     previousUserIdRef.current = currentUserId;

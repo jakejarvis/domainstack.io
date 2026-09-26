@@ -3,10 +3,10 @@
 import { IconCircleX, IconShieldExclamation } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
+import posthogClient from "posthog-js";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { analytics } from "@/lib/analytics/client";
 import {
   getScreenshotQueryKey,
   isAwaitingScheduledRetry,
@@ -156,7 +156,7 @@ async function fetchNextState(
     // Deterministic (the `enabled` guard already requires a domainId) —
     // never retryable, so this throws instead of feeding the backoff loop.
     const error = new Error("Screenshot domain ID is missing");
-    analytics.trackException(error, { domain });
+    posthogClient.captureException(error, { domain });
     throw error;
   }
 
@@ -164,7 +164,7 @@ async function fetchNextState(
     return runId ? await pollScreenshot(runId) : await startScreenshot(domainId as string);
   } catch (err) {
     if (attempt + 1 >= MAX_CONSECUTIVE_FAILURES) {
-      analytics.trackException(err, { domain });
+      posthogClient.captureException(err, { domain });
       return {
         status: "failed",
         error: err instanceof Error ? err.message : "Screenshot request failed",
@@ -187,9 +187,9 @@ function reportTransition(
   // A retry or rate limit mid-run keeps the run id, so compare only that: one
   // request event per run, however many transient polls it takes.
   if (next.status === "running" && runIdFromState(prev) !== next.runId) {
-    analytics.track("screenshot_requested", { domain });
+    posthogClient.capture("screenshot_requested", { domain });
   } else if (next.status === "completed") {
-    analytics.track(
+    posthogClient.capture(
       next.source === "cache" ? "screenshot_loaded_from_cache" : "screenshot_loaded_from_api",
       { domain },
     );
@@ -205,7 +205,7 @@ function reportTransition(
       id: `screenshot-rate-limited-${domainId ?? domain}`,
       description: `Retrying in ${next.retryAfter} second${next.retryAfter !== 1 ? "s" : ""}.`,
     });
-    analytics.track("screenshot_rate_limited", { domain, retryAfter: next.retryAfter });
+    posthogClient.capture("screenshot_rate_limited", { domain, retryAfter: next.retryAfter });
   }
 }
 

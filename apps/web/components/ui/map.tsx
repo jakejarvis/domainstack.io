@@ -35,7 +35,6 @@ import { createPortal } from "react-dom";
 import { toast } from "sonner";
 
 import { useTheme } from "@/hooks/use-theme";
-import { analytics } from "@/lib/analytics/client";
 import { useIsClient } from "@domainstack/ui/hooks";
 import { Spinner } from "@domainstack/ui/spinner";
 import { cn } from "@domainstack/ui/utils";
@@ -714,14 +713,6 @@ function MapControls({
                   ? "Location request timed out. Please try again."
                   : "Unable to get your location";
           toast.error(message);
-
-          // Track non-permission errors (permission denied is expected user behavior)
-          if (error.code !== 1) {
-            analytics.trackException(new Error(message), {
-              context: "geolocation",
-              code: error.code,
-            });
-          }
         },
       );
     }

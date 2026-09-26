@@ -7,8 +7,8 @@
 
 import type { TRPCClient } from "@trpc/client";
 import { tool, type Tool } from "ai";
+import posthogClient from "posthog-js";
 
-import { analytics } from "@/lib/analytics/client";
 import { getLookupErrorMessage } from "@/lib/constants/lookup-errors";
 import type { AppRouter } from "@domainstack/api";
 
@@ -47,7 +47,7 @@ function makeClientDomainTool<TDef extends (typeof DOMAIN_TOOL_DEFS)[number]>(
         }
         return result.data;
       } catch (err) {
-        analytics.trackException(err, {
+        posthogClient.captureException(err, {
           context: "client-domain-tool",
           tool: def.name,
           domain,

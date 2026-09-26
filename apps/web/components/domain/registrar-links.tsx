@@ -1,8 +1,8 @@
 import { SiCloudflare } from "@icons-pack/react-simple-icons";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import posthogClient from "posthog-js";
 
-import { useAnalytics } from "@/lib/analytics/client";
 import { useTRPC } from "@/lib/trpc/client";
 import { REGISTRAR_PROVIDERS } from "@domainstack/constants";
 import type { RegistrarKey } from "@domainstack/types";
@@ -70,7 +70,6 @@ export function RegistrarLinks({
   className?: string;
 }) {
   const trpc = useTRPC();
-  const analytics = useAnalytics();
 
   // Suspense handles loading state; data is guaranteed defined
   const { data } = useSuspenseQuery({
@@ -112,7 +111,7 @@ export function RegistrarLinks({
                   target="_blank"
                   rel="noopener"
                   onClick={() =>
-                    analytics.track("registrar_referral_clicked", {
+                    posthogClient.capture("registrar_referral_clicked", {
                       domain,
                       provider: providerPricing.provider,
                     })

@@ -15,19 +15,12 @@ globalThis.fetch = vi.fn<typeof fetch>(() => {
   throw new Error("Network requests are not allowed in tests. Please mock fetch.");
 });
 
-vi.mock("@/lib/analytics/client", () => ({
-  analytics: {
-    track: vi.fn<(...args: unknown[]) => void>(),
-    trackException: vi.fn<(...args: unknown[]) => void>(),
+vi.mock("posthog-js", () => ({
+  default: {
+    capture: vi.fn<(...args: unknown[]) => void>(),
+    captureException: vi.fn<(...args: unknown[]) => void>(),
     identify: vi.fn<(...args: unknown[]) => void>(),
     reset: vi.fn<(...args: unknown[]) => void>(),
     setPersonProperties: vi.fn<(...args: unknown[]) => void>(),
   },
-  useAnalytics: () => ({
-    track: vi.fn<(...args: unknown[]) => void>(),
-    trackException: vi.fn<(...args: unknown[]) => void>(),
-    identify: vi.fn<(...args: unknown[]) => void>(),
-    reset: vi.fn<(...args: unknown[]) => void>(),
-    setPersonProperties: vi.fn<(...args: unknown[]) => void>(),
-  }),
 }));

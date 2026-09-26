@@ -14,6 +14,11 @@ if (!posthogKey) {
     tracing_headers: [window.location.hostname],
     defaults: "2026-05-30",
     capture_exceptions: true,
+    disable_session_recording: true,
+    disable_surveys: true,
+    disable_scroll_properties: true,
+    disable_conversations: true,
+    advanced_disable_feature_flags: true,
     debug: process.env.NODE_ENV === "development",
     // GDPR: don't set cookies until the user consents; cookieless until then
     cookieless_mode: "on_reject",

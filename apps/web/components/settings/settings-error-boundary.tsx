@@ -3,10 +3,10 @@
 import { IconAlertTriangle, IconRefresh } from "@tabler/icons-react";
 import { useQueryErrorResetBoundary } from "@tanstack/react-query";
 import { catchError, type ErrorInfo } from "next/error";
+import posthogClient from "posthog-js";
 import { useEffect } from "react";
 
 import { CreateIssueButton } from "@/components/create-issue-button";
-import { analytics } from "@/lib/analytics/client";
 import { Button } from "@domainstack/ui/button";
 import { CardDescription, CardHeader, CardTitle } from "@domainstack/ui/card";
 
@@ -25,7 +25,8 @@ function SettingsErrorFallback({ sectionName, error, retry }: Props & ErrorInfo)
   const errorObj = error instanceof Error ? error : undefined;
 
   useEffect(() => {
-    if (errorObj) analytics.trackException(errorObj, { section: sectionName, context: "settings" });
+    if (errorObj)
+      posthogClient.captureException(errorObj, { section: sectionName, context: "settings" });
   }, [errorObj, sectionName]);
 
   return (

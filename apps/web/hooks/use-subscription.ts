@@ -1,10 +1,10 @@
 "use client";
 
 import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
+import posthogClient from "posthog-js";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
-import { analytics } from "@/lib/analytics/client";
 import { useTRPC } from "@/lib/trpc/client";
 import { checkoutEmbed, customer } from "@domainstack/auth/client";
 import { PRO_TIER_INFO } from "@domainstack/polar/products";
@@ -111,7 +111,7 @@ export function useSubscription(options: UseSubscriptionOptions = {}): UseSubscr
   const handleCheckout = async () => {
     if (isCheckoutLoading) return;
     setCheckoutLoading(true);
-    analytics.track("upgrade_clicked");
+    posthogClient.capture("upgrade_clicked");
 
     try {
       const monthlyProductId = PRO_TIER_INFO.monthly.productId;
@@ -124,7 +124,7 @@ export function useSubscription(options: UseSubscriptionOptions = {}): UseSubscr
         products: [monthlyProductId, yearlyProductId],
       });
     } catch (err) {
-      analytics.trackException(err, {
+      posthogClient.captureException(err, {
         action: "upgrade_checkout",
       });
       toast.error("Failed to open checkout. Please try again.");
@@ -136,12 +136,12 @@ export function useSubscription(options: UseSubscriptionOptions = {}): UseSubscr
   const handleCustomerPortal = async () => {
     if (isCustomerPortalLoading) return;
     setCustomerPortalLoading(true);
-    analytics.track("customer_portal_opened");
+    posthogClient.capture("customer_portal_opened");
 
     try {
       await customer.portal();
     } catch (err) {
-      analytics.trackException(err, {
+      posthogClient.captureException(err, {
         action: "open_customer_portal",
       });
       toast.error("Failed to open customer portal. Please try again.");
