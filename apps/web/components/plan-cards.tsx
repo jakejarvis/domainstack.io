@@ -23,7 +23,7 @@ export function ProUpsell({ className }: { className?: string }) {
       aria-label="Upgrade to Pro"
       aria-busy={isCheckoutLoading}
       className={cn(
-        "@container w-full cursor-pointer touch-manipulation rounded-xl border border-accent-gold/25 bg-linear-to-bl from-accent-gold/5 to-transparent to-60% p-4 text-left transition-colors hover:border-accent-gold/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50",
+        "@container w-full cursor-pointer touch-manipulation rounded-md border border-accent-gold/25 bg-linear-to-bl from-accent-gold/5 to-transparent to-60% p-4 text-left transition-colors hover:border-accent-gold/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
     >

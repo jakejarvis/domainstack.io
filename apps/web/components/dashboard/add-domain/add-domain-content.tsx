@@ -109,11 +109,11 @@ function AddDomainQuotaReached({
         <div className="min-w-0">
           <h2 className="text-base font-semibold">Domain limit reached</h2>
           <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-            Your {isPro ? "Pro" : "Free"} plan supports up to{" "}
+            {isPro ? "Pro" : "Free"} accounts support up to{" "}
             <span className="tabular-nums">{planQuota}</span> tracked domains.{" "}
             {isPro
-              ? "Archive or remove a domain to track another."
-              : "Archive a domain to track another, or upgrade to Pro."}
+              ? "Archive or remove a domain to track more."
+              : "Archive or remove a domain to track more, or upgrade to Pro:"}
           </p>
         </div>
       </div>
@@ -121,13 +121,13 @@ function AddDomainQuotaReached({
       <div className="flex flex-col gap-3">
         {isPro ? null : <ProUpsell />}
         {onClose ? (
-          <Button variant="outline" onClick={onClose} className="h-10 w-full">
+          <Button variant="outline" onClick={onClose} className="w-full">
             Close
           </Button>
         ) : (
           <Button
             variant="outline"
-            className="h-10 w-full"
+            className="w-full"
             nativeButton={false}
             render={<Link href="/dashboard">Close</Link>}
           />

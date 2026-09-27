@@ -33,7 +33,7 @@ export default function AddDomainPage({ searchParams }: PageProps<"/dashboard/ad
         className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <IconArrowLeft className="size-4" />
-        Back to dashboard
+        Dashboard
       </Link>
       <Suspense
         fallback={
