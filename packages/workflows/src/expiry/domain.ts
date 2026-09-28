@@ -15,7 +15,12 @@ export type DomainExpiryWorkflowResult =
   | ExpirySkipResult
   | {
       skipped: true;
-      reason: "not_found" | "no_expiration_date" | "invalid_expiration_date" | "already_expired";
+      reason:
+        | "not_found"
+        | "data_unavailable"
+        | "no_expiration_date"
+        | "invalid_expiration_date"
+        | "already_expired";
     }
   | { skipped: false; sent: true };
 
@@ -31,12 +36,14 @@ export async function checkDomainExpiry(
 ): Promise<DomainExpiryWorkflowResult> {
   const { trackedDomainId } = input;
 
-  // Step 1: Fetch domain data
-  const domain = await fetchDomain(trackedDomainId);
+  // Step 1: Load the registration, refreshing it first when its cache window
+  // has elapsed. Everything below uses the row this step returns.
+  const loaded = await loadFreshDomain(trackedDomainId);
 
-  if (!domain) {
-    return { skipped: true, reason: "not_found" };
+  if (loaded.status !== "ok") {
+    return { skipped: true, reason: loaded.status };
   }
+  const { domain } = loaded;
 
   if (!domain.expirationDate) {
     return { skipped: true, reason: "no_expiration_date" };
@@ -105,13 +112,68 @@ export async function checkDomainExpiry(
   return { skipped: false, sent: true };
 }
 
-async function fetchDomain(trackedDomainId: string): Promise<TrackedDomainForNotification | null> {
+type LoadFreshDomainResult =
+  | { status: "ok"; domain: TrackedDomainForNotification }
+  | { status: "not_found" }
+  | { status: "data_unavailable" };
+
+/**
+ * Load the tracked domain's registration for an expiry decision. A warning must
+ * not come from stale data, so a row past its policy window is refreshed from
+ * the source and reloaded; if the source can't supply it, the alert is skipped
+ * until the next cron run rather than sent from an old date.
+ */
+async function loadFreshDomain(trackedDomainId: string): Promise<LoadFreshDomainResult> {
   "use step";
 
   const { getTrackedDomainForNotification } =
     await import("@domainstack/db/queries/tracked-domains");
+  const { classifyDatabaseError } = await import("../lib/errors");
 
-  return await getTrackedDomainForNotification(trackedDomainId);
+  const load = async (): Promise<TrackedDomainForNotification | null> => {
+    try {
+      return await getTrackedDomainForNotification(trackedDomainId);
+    } catch (err) {
+      throw classifyDatabaseError(err, {
+        context: `loading tracked domain ${trackedDomainId} for expiry`,
+      });
+    }
+  };
+  const isFresh = (row: TrackedDomainForNotification) =>
+    row.registrationExpiresAt.getTime() > Date.now();
+
+  const domain = await load();
+  if (!domain) return { status: "not_found" };
+  if (isFresh(domain)) return { status: "ok", domain };
+
+  const { RemoteDataUnavailableError } = await import("@domainstack/core/lib/fetch-errors");
+  const { fetchSection } = await import("@domainstack/core/lookup");
+
+  try {
+    const result = await fetchSection("registration", domain.domainName);
+    if (!result.success) return { status: "data_unavailable" };
+  } catch (err) {
+    // The remote target couldn't supply data (WHOIS/RDAP timeout). Retrying
+    // within this run rarely helps; the next cron run tries again.
+    if (err instanceof RemoteDataUnavailableError) {
+      return { status: "data_unavailable" };
+    }
+    throw err;
+  }
+
+  // Reload: the refresh may have changed the expiration date, and the tracked
+  // domain may have been archived or unverified while it ran.
+  const refreshed = await load();
+  if (!refreshed) return { status: "not_found" };
+  if (!isFresh(refreshed)) {
+    const { createLogger } = await import("@domainstack/logger");
+    createLogger({ source: "workflows/expiry" }).warn(
+      { trackedDomainId, section: "registration" },
+      "registration still stale after refresh, skipping expiry check",
+    );
+    return { status: "data_unavailable" };
+  }
+  return { status: "ok", domain: refreshed };
 }
 
 async function clearRenewedNotifications(trackedDomainId: string): Promise<number> {

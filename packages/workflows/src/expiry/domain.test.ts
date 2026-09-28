@@ -1,6 +1,8 @@
 /* @vitest-environment node */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { RemoteDataUnavailableError } from "@domainstack/core/lib/fetch-errors";
+
 // Hoist mocks for the dependencies the branch's steps pull in via dynamic
 // import, plus the shared notification step helpers it imports statically.
 const trackedDomainsMock = vi.hoisted(() => ({
@@ -22,7 +24,12 @@ const sharedNotificationsMock = vi.hoisted(() => ({
   sendNotification: vi.fn<typeof import("../steps/notifications").sendNotification>(),
 }));
 
+const lookupMock = vi.hoisted(() => ({
+  fetchSection: vi.fn<typeof import("@domainstack/core/lookup").fetchSection>(),
+}));
+
 vi.mock("@domainstack/db/queries/tracked-domains", () => trackedDomainsMock);
+vi.mock("@domainstack/core/lookup", () => lookupMock);
 vi.mock("@domainstack/db/queries/notifications", () => notificationsQueryMock);
 vi.mock("../steps/notifications", () => sharedNotificationsMock);
 vi.mock("@domainstack/email/templates/domain-expiry", () => ({
@@ -43,6 +50,15 @@ const baseDomain = {
   muted: false,
   registrar: "Namecheap",
   expirationDate: inDays(7).toISOString(),
+  // Cache window is open (expires 12h from NOW), so no refresh is needed.
+  registrationFetchedAt: new Date(NOW.getTime() - 12 * 3_600_000),
+  registrationExpiresAt: new Date(NOW.getTime() + 12 * 3_600_000),
+};
+
+// Cache window elapsed an hour ago: the expiry check must refresh first.
+const staleWindow = {
+  registrationFetchedAt: new Date(NOW.getTime() - 25 * 3_600_000),
+  registrationExpiresAt: new Date(NOW.getTime() - 3_600_000),
 };
 
 describe("checkDomainExpiry", () => {
@@ -57,6 +73,7 @@ describe("checkDomainExpiry", () => {
     });
     sharedNotificationsMock.checkAlreadySentStep.mockResolvedValue(false);
     sharedNotificationsMock.sendNotification.mockResolvedValue(true);
+    lookupMock.fetchSection.mockResolvedValue({ success: true, data: {} } as never);
   });
 
   afterEach(() => {
@@ -197,5 +214,143 @@ describe("checkDomainExpiry", () => {
     await checkDomainExpiry({ trackedDomainId: "td-1" });
     expect(keyOfLastSend()).toBeTypeOf("string");
     expect(keyOfLastSend()).not.toBe(first);
+  });
+
+  describe("freshness", () => {
+    it("fresh metadata: does not refresh and evaluates the loaded row", async () => {
+      const { checkDomainExpiry } = await import("./domain");
+      const result = await checkDomainExpiry({ trackedDomainId: "td-1" });
+
+      expect(result).toEqual({ skipped: false, sent: true });
+      expect(lookupMock.fetchSection).not.toHaveBeenCalled();
+      expect(trackedDomainsMock.getTrackedDomainForNotification).toHaveBeenCalledTimes(1);
+    });
+
+    it("stale metadata + successful refresh: refreshes once, reloads, and uses the new date", async () => {
+      trackedDomainsMock.getTrackedDomainForNotification
+        .mockResolvedValueOnce({
+          ...baseDomain,
+          ...staleWindow,
+          expirationDate: inDays(7).toISOString(),
+        } as never)
+        .mockResolvedValueOnce({
+          ...baseDomain,
+          expirationDate: inDays(6).toISOString(),
+        } as never);
+
+      const { checkDomainExpiry } = await import("./domain");
+      const result = await checkDomainExpiry({ trackedDomainId: "td-1" });
+
+      expect(result).toEqual({ skipped: false, sent: true });
+      expect(lookupMock.fetchSection).toHaveBeenCalledTimes(1);
+      expect(lookupMock.fetchSection).toHaveBeenCalledWith("registration", "example.com");
+      expect(trackedDomainsMock.getTrackedDomainForNotification).toHaveBeenCalledTimes(2);
+      expect(sharedNotificationsMock.sendNotification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dedupeKey: `domain-expiry:td-1:${inDays(6).toISOString()}:domain_expiry_7d`,
+          message: expect.stringContaining("example.com"),
+        }),
+        { shouldSendEmail: true, shouldSendInApp: true },
+      );
+    });
+
+    it("stale old threshold that was renewed by the refresh: clears old notifications and does not send", async () => {
+      trackedDomainsMock.getTrackedDomainForNotification
+        .mockResolvedValueOnce({ ...baseDomain, ...staleWindow } as never)
+        .mockResolvedValueOnce({
+          ...baseDomain,
+          expirationDate: inDays(365).toISOString(),
+        } as never);
+      notificationsQueryMock.clearDomainExpiryNotifications.mockResolvedValue(2);
+
+      const { checkDomainExpiry } = await import("./domain");
+      const result = await checkDomainExpiry({ trackedDomainId: "td-1" });
+
+      expect(result).toEqual({
+        skipped: true,
+        reason: "renewed",
+        renewed: true,
+        clearedCount: 2,
+      });
+      expect(lookupMock.fetchSection).toHaveBeenCalledTimes(1);
+      expect(notificationsQueryMock.clearDomainExpiryNotifications).toHaveBeenCalledWith("td-1");
+      expect(sharedNotificationsMock.checkAlreadySentStep).not.toHaveBeenCalled();
+      expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+    });
+
+    it("stale metadata + typed failure: data_unavailable, no already-sent check, no send", async () => {
+      trackedDomainsMock.getTrackedDomainForNotification.mockResolvedValue({
+        ...baseDomain,
+        ...staleWindow,
+      } as never);
+      lookupMock.fetchSection.mockResolvedValue({
+        success: false,
+        error: "whois_unavailable",
+      } as never);
+
+      const { checkDomainExpiry } = await import("./domain");
+      const result = await checkDomainExpiry({ trackedDomainId: "td-1" });
+
+      expect(result).toEqual({ skipped: true, reason: "data_unavailable" });
+      expect(trackedDomainsMock.getTrackedDomainForNotification).toHaveBeenCalledTimes(1);
+      expect(sharedNotificationsMock.checkAlreadySentStep).not.toHaveBeenCalled();
+      expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+    });
+
+    it("stale metadata + RemoteDataUnavailableError: data_unavailable, no already-sent check, no send", async () => {
+      trackedDomainsMock.getTrackedDomainForNotification.mockResolvedValue({
+        ...baseDomain,
+        ...staleWindow,
+      } as never);
+      lookupMock.fetchSection.mockRejectedValue(new RemoteDataUnavailableError("WHOIS timed out"));
+
+      const { checkDomainExpiry } = await import("./domain");
+      const result = await checkDomainExpiry({ trackedDomainId: "td-1" });
+
+      expect(result).toEqual({ skipped: true, reason: "data_unavailable" });
+      expect(sharedNotificationsMock.checkAlreadySentStep).not.toHaveBeenCalled();
+      expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+    });
+
+    it("stale metadata + unexpected refresh error: propagates so the step retries", async () => {
+      trackedDomainsMock.getTrackedDomainForNotification.mockResolvedValue({
+        ...baseDomain,
+        ...staleWindow,
+      } as never);
+      lookupMock.fetchSection.mockRejectedValue(new Error("boom"));
+
+      const { checkDomainExpiry } = await import("./domain");
+
+      await expect(checkDomainExpiry({ trackedDomainId: "td-1" })).rejects.toThrow("boom");
+      expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+    });
+
+    it("stale before refresh but archived or unverified on reload: not_found, no send", async () => {
+      trackedDomainsMock.getTrackedDomainForNotification
+        .mockResolvedValueOnce({ ...baseDomain, ...staleWindow } as never)
+        .mockResolvedValueOnce(null);
+
+      const { checkDomainExpiry } = await import("./domain");
+      const result = await checkDomainExpiry({ trackedDomainId: "td-1" });
+
+      expect(result).toEqual({ skipped: true, reason: "not_found" });
+      expect(lookupMock.fetchSection).toHaveBeenCalledTimes(1);
+      expect(sharedNotificationsMock.checkExpiryPreferencesStep).not.toHaveBeenCalled();
+      expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+    });
+
+    it("still stale after a successful refresh: data_unavailable, no send", async () => {
+      trackedDomainsMock.getTrackedDomainForNotification.mockResolvedValue({
+        ...baseDomain,
+        ...staleWindow,
+      } as never);
+
+      const { checkDomainExpiry } = await import("./domain");
+      const result = await checkDomainExpiry({ trackedDomainId: "td-1" });
+
+      expect(result).toEqual({ skipped: true, reason: "data_unavailable" });
+      expect(lookupMock.fetchSection).toHaveBeenCalledTimes(1);
+      expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+    });
   });
 });

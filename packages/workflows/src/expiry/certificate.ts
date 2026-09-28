@@ -13,7 +13,10 @@ export interface CertificateExpiryWorkflowInput {
 
 export type CertificateExpiryWorkflowResult =
   | ExpirySkipResult
-  | { skipped: true; reason: "not_found" | "invalid_expiration_date" | "already_expired" }
+  | {
+      skipped: true;
+      reason: "not_found" | "data_unavailable" | "invalid_expiration_date" | "already_expired";
+    }
   | { skipped: false; sent: true };
 
 /**
@@ -29,12 +32,15 @@ export async function checkCertificateExpiry(
 ): Promise<CertificateExpiryWorkflowResult> {
   const { trackedDomainId } = input;
 
-  // Step 1: Fetch certificate data
-  const cert = await fetchCertificate(trackedDomainId);
+  // Step 1: Load the leaf certificate, refreshing the domain's certificates
+  // first when their cache window has elapsed. Everything below uses the row
+  // this step returns.
+  const loaded = await loadFreshCertificate(trackedDomainId);
 
-  if (!cert) {
-    return { skipped: true, reason: "not_found" };
+  if (loaded.status !== "ok") {
+    return { skipped: true, reason: loaded.status };
   }
+  const { cert } = loaded;
 
   // Days remaining is computed in the workflow body: the sandbox fixes `Date`
   // per replay, so no step is needed to keep it deterministic.
@@ -97,12 +103,68 @@ export async function checkCertificateExpiry(
   return { skipped: false, sent: true };
 }
 
-async function fetchCertificate(trackedDomainId: string): Promise<TrackedDomainCertificate | null> {
+type LoadFreshCertificateResult =
+  | { status: "ok"; cert: TrackedDomainCertificate }
+  | { status: "not_found" }
+  | { status: "data_unavailable" };
+
+/**
+ * Load the leaf certificate for an expiry decision. A warning must not come
+ * from stale data, so a certificate whose `certificate_checks` window is
+ * elapsed (or missing) is refreshed from the host and reloaded; if the host
+ * can't supply it, the alert is skipped until the next cron run.
+ */
+async function loadFreshCertificate(trackedDomainId: string): Promise<LoadFreshCertificateResult> {
   "use step";
 
   const { getEarliestCertificate } = await import("@domainstack/db/queries/certificates");
+  const { classifyDatabaseError } = await import("../lib/errors");
 
-  return await getEarliestCertificate(trackedDomainId);
+  const load = async (): Promise<TrackedDomainCertificate | null> => {
+    try {
+      return await getEarliestCertificate(trackedDomainId);
+    } catch (err) {
+      throw classifyDatabaseError(err, {
+        context: `loading certificate for tracked domain ${trackedDomainId} for expiry`,
+      });
+    }
+  };
+  // A missing check row (null) is stale, never fresh.
+  const isFresh = (row: TrackedDomainCertificate) =>
+    row.checkExpiresAt !== null && row.checkExpiresAt.getTime() > Date.now();
+
+  const cert = await load();
+  if (!cert) return { status: "not_found" };
+  if (isFresh(cert)) return { status: "ok", cert };
+
+  const { RemoteDataUnavailableError } = await import("@domainstack/core/lib/fetch-errors");
+  const { fetchSection } = await import("@domainstack/core/lookup");
+
+  try {
+    const result = await fetchSection("certificates", cert.domainName);
+    if (!result.success) return { status: "data_unavailable" };
+  } catch (err) {
+    // The remote target couldn't supply data (unreachable host, TLS handshake
+    // failure). Retrying within this run rarely helps; the next cron run tries again.
+    if (err instanceof RemoteDataUnavailableError) {
+      return { status: "data_unavailable" };
+    }
+    throw err;
+  }
+
+  // Reload: a renewal changes validTo, and the tracked domain may have been
+  // archived or unverified while the refresh ran.
+  const refreshed = await load();
+  if (!refreshed) return { status: "not_found" };
+  if (!isFresh(refreshed)) {
+    const { createLogger } = await import("@domainstack/logger");
+    createLogger({ source: "workflows/expiry" }).warn(
+      { trackedDomainId, section: "certificates" },
+      "certificates still stale after refresh, skipping expiry check",
+    );
+    return { status: "data_unavailable" };
+  }
+  return { status: "ok", cert: refreshed };
 }
 
 async function clearRenewedNotifications(trackedDomainId: string): Promise<number> {

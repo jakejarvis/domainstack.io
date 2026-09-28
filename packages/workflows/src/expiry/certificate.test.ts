@@ -1,6 +1,8 @@
 /* @vitest-environment node */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { RemoteDataUnavailableError } from "@domainstack/core/lib/fetch-errors";
+
 // Hoist mocks for the dependencies the branch's steps pull in via dynamic
 // import, plus the shared notification step helpers it imports statically.
 const certificatesQueryMock = vi.hoisted(() => ({
@@ -22,7 +24,12 @@ const sharedNotificationsMock = vi.hoisted(() => ({
   sendNotification: vi.fn<typeof import("../steps/notifications").sendNotification>(),
 }));
 
+const lookupMock = vi.hoisted(() => ({
+  fetchSection: vi.fn<typeof import("@domainstack/core/lookup").fetchSection>(),
+}));
+
 vi.mock("@domainstack/db/queries/certificates", () => certificatesQueryMock);
+vi.mock("@domainstack/core/lookup", () => lookupMock);
 vi.mock("@domainstack/db/queries/notifications", () => notificationsQueryMock);
 vi.mock("../steps/notifications", () => sharedNotificationsMock);
 vi.mock("@domainstack/email/templates/certificate-expiry", () => ({
@@ -42,8 +49,17 @@ const baseCert = {
   muted: false,
   validTo: inDays(7),
   issuer: "Let's Encrypt",
+  // Check window is open (expires 12h from NOW), so no refresh is needed.
+  checkFetchedAt: new Date(NOW.getTime() - 12 * 3_600_000),
+  checkExpiresAt: new Date(NOW.getTime() + 12 * 3_600_000),
   userEmail: "a@example.com",
   userName: "Alex Doe",
+};
+
+// Check window elapsed an hour ago: the expiry check must refresh first.
+const staleWindow = {
+  checkFetchedAt: new Date(NOW.getTime() - 25 * 3_600_000),
+  checkExpiresAt: new Date(NOW.getTime() - 3_600_000),
 };
 
 describe("checkCertificateExpiry", () => {
@@ -58,6 +74,7 @@ describe("checkCertificateExpiry", () => {
     });
     sharedNotificationsMock.checkAlreadySentStep.mockResolvedValue(false);
     sharedNotificationsMock.sendNotification.mockResolvedValue(true);
+    lookupMock.fetchSection.mockResolvedValue({ success: true, data: {} } as never);
   });
 
   afterEach(() => {
@@ -197,5 +214,148 @@ describe("checkCertificateExpiry", () => {
     });
     await checkCertificateExpiry({ trackedDomainId: "td-1" });
     expect(keyOfLastSend()).not.toBe(first);
+  });
+
+  describe("freshness", () => {
+    it("fresh metadata: does not refresh and evaluates the loaded row", async () => {
+      const { checkCertificateExpiry } = await import("./certificate");
+      const result = await checkCertificateExpiry({ trackedDomainId: "td-1" });
+
+      expect(result).toEqual({ skipped: false, sent: true });
+      expect(lookupMock.fetchSection).not.toHaveBeenCalled();
+      expect(certificatesQueryMock.getEarliestCertificate).toHaveBeenCalledTimes(1);
+    });
+
+    it("stale metadata + successful refresh: refreshes once, reloads, and uses the new certificate", async () => {
+      certificatesQueryMock.getEarliestCertificate
+        .mockResolvedValueOnce({ ...baseCert, ...staleWindow })
+        .mockResolvedValueOnce({ ...baseCert, validTo: inDays(6) });
+
+      const { checkCertificateExpiry } = await import("./certificate");
+      const result = await checkCertificateExpiry({ trackedDomainId: "td-1" });
+
+      expect(result).toEqual({ skipped: false, sent: true });
+      expect(lookupMock.fetchSection).toHaveBeenCalledTimes(1);
+      expect(lookupMock.fetchSection).toHaveBeenCalledWith("certificates", "example.com");
+      expect(certificatesQueryMock.getEarliestCertificate).toHaveBeenCalledTimes(2);
+      expect(sharedNotificationsMock.sendNotification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dedupeKey: expect.stringContaining(`:${inDays(6).toISOString()}:`),
+          notificationType: "certificate_expiry_7d",
+        }),
+        { shouldSendEmail: true, shouldSendInApp: true },
+      );
+    });
+
+    it("missing certificate check row (null freshness): treated as stale and refreshed", async () => {
+      certificatesQueryMock.getEarliestCertificate
+        .mockResolvedValueOnce({ ...baseCert, checkFetchedAt: null, checkExpiresAt: null })
+        .mockResolvedValueOnce(baseCert);
+
+      const { checkCertificateExpiry } = await import("./certificate");
+      const result = await checkCertificateExpiry({ trackedDomainId: "td-1" });
+
+      expect(result).toEqual({ skipped: false, sent: true });
+      expect(lookupMock.fetchSection).toHaveBeenCalledTimes(1);
+      expect(certificatesQueryMock.getEarliestCertificate).toHaveBeenCalledTimes(2);
+    });
+
+    it("stale old threshold that was renewed by the refresh: clears old notifications and does not send", async () => {
+      certificatesQueryMock.getEarliestCertificate
+        .mockResolvedValueOnce({ ...baseCert, ...staleWindow })
+        .mockResolvedValueOnce({ ...baseCert, validTo: inDays(85) });
+      notificationsQueryMock.clearCertificateExpiryNotifications.mockResolvedValue(2);
+
+      const { checkCertificateExpiry } = await import("./certificate");
+      const result = await checkCertificateExpiry({ trackedDomainId: "td-1" });
+
+      expect(result).toEqual({
+        skipped: true,
+        reason: "renewed",
+        renewed: true,
+        clearedCount: 2,
+      });
+      expect(lookupMock.fetchSection).toHaveBeenCalledTimes(1);
+      expect(notificationsQueryMock.clearCertificateExpiryNotifications).toHaveBeenCalledWith(
+        "td-1",
+      );
+      expect(sharedNotificationsMock.checkAlreadySentStep).not.toHaveBeenCalled();
+      expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+    });
+
+    it("stale metadata + typed failure: data_unavailable, no already-sent check, no send", async () => {
+      certificatesQueryMock.getEarliestCertificate.mockResolvedValue({
+        ...baseCert,
+        ...staleWindow,
+      });
+      lookupMock.fetchSection.mockResolvedValue({
+        success: false,
+        error: "dns_error",
+      } as never);
+
+      const { checkCertificateExpiry } = await import("./certificate");
+      const result = await checkCertificateExpiry({ trackedDomainId: "td-1" });
+
+      expect(result).toEqual({ skipped: true, reason: "data_unavailable" });
+      expect(certificatesQueryMock.getEarliestCertificate).toHaveBeenCalledTimes(1);
+      expect(sharedNotificationsMock.checkAlreadySentStep).not.toHaveBeenCalled();
+      expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+    });
+
+    it("stale metadata + RemoteDataUnavailableError: data_unavailable, no already-sent check, no send", async () => {
+      certificatesQueryMock.getEarliestCertificate.mockResolvedValue({
+        ...baseCert,
+        ...staleWindow,
+      });
+      lookupMock.fetchSection.mockRejectedValue(new RemoteDataUnavailableError("host unreachable"));
+
+      const { checkCertificateExpiry } = await import("./certificate");
+      const result = await checkCertificateExpiry({ trackedDomainId: "td-1" });
+
+      expect(result).toEqual({ skipped: true, reason: "data_unavailable" });
+      expect(sharedNotificationsMock.checkAlreadySentStep).not.toHaveBeenCalled();
+      expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+    });
+
+    it("stale metadata + unexpected refresh error: propagates so the step retries", async () => {
+      certificatesQueryMock.getEarliestCertificate.mockResolvedValue({
+        ...baseCert,
+        ...staleWindow,
+      });
+      lookupMock.fetchSection.mockRejectedValue(new Error("boom"));
+
+      const { checkCertificateExpiry } = await import("./certificate");
+
+      await expect(checkCertificateExpiry({ trackedDomainId: "td-1" })).rejects.toThrow("boom");
+      expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+    });
+
+    it("stale before refresh but archived or unverified on reload: not_found, no send", async () => {
+      certificatesQueryMock.getEarliestCertificate
+        .mockResolvedValueOnce({ ...baseCert, ...staleWindow })
+        .mockResolvedValueOnce(null);
+
+      const { checkCertificateExpiry } = await import("./certificate");
+      const result = await checkCertificateExpiry({ trackedDomainId: "td-1" });
+
+      expect(result).toEqual({ skipped: true, reason: "not_found" });
+      expect(lookupMock.fetchSection).toHaveBeenCalledTimes(1);
+      expect(sharedNotificationsMock.checkExpiryPreferencesStep).not.toHaveBeenCalled();
+      expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+    });
+
+    it("still stale after a successful refresh: data_unavailable, no send", async () => {
+      certificatesQueryMock.getEarliestCertificate.mockResolvedValue({
+        ...baseCert,
+        ...staleWindow,
+      });
+
+      const { checkCertificateExpiry } = await import("./certificate");
+      const result = await checkCertificateExpiry({ trackedDomainId: "td-1" });
+
+      expect(result).toEqual({ skipped: true, reason: "data_unavailable" });
+      expect(lookupMock.fetchSection).toHaveBeenCalledTimes(1);
+      expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+    });
   });
 });

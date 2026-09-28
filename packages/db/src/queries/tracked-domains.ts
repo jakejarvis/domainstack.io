@@ -211,6 +211,10 @@ export interface TrackedDomainForNotification {
   muted: boolean;
   expirationDate: Date | string | null;
   registrar: string | null;
+  /** Registration cache observation time; expiry checks refresh it when `registrationExpiresAt` has elapsed. */
+  registrationFetchedAt: Date;
+  /** Registration cache policy window (not the domain's expiration). */
+  registrationExpiresAt: Date;
   userEmail: string;
   userName: string;
 }
@@ -833,6 +837,8 @@ export async function getTrackedDomainForNotification(
       muted: userTrackedDomains.muted,
       expirationDate: registrations.expirationDate,
       registrar: registrarProvider.name,
+      registrationFetchedAt: registrations.fetchedAt,
+      registrationExpiresAt: registrations.expiresAt,
       userEmail: users.email,
       userName: users.name,
     })

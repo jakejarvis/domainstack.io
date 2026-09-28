@@ -52,6 +52,10 @@ export interface TrackedDomainCertificate {
   muted: boolean;
   validTo: Date;
   issuer: string;
+  /** `certificate_checks` observation time; null when the check row is missing. */
+  checkFetchedAt: Date | null;
+  /** `certificate_checks` policy window; null (missing check row) must be treated as stale. */
+  checkExpiresAt: Date | null;
   userEmail: string;
   userName: string;
 }
@@ -201,7 +205,9 @@ export async function getCachedCertificates(
 /**
  * Get the leaf certificate for a tracked domain.
  * Used by the certificate expiry worker — alerts describe the site certificate.
- * Null unless the tracked domain is still verified and not archived.
+ * Null unless the tracked domain is still verified and not archived. Carries the
+ * `certificate_checks` freshness window (left join, so a missing check row reads
+ * as stale rather than hiding the certificate).
  */
 export async function getEarliestCertificate(
   trackedDomainId: string,
@@ -215,12 +221,15 @@ export async function getEarliestCertificate(
       muted: userTrackedDomains.muted,
       validTo: certificates.validTo,
       issuer: certificates.issuer,
+      checkFetchedAt: certificateChecks.fetchedAt,
+      checkExpiresAt: certificateChecks.expiresAt,
       userEmail: users.email,
       userName: users.name,
     })
     .from(userTrackedDomains)
     .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
     .innerJoin(certificates, eq(domains.id, certificates.domainId))
+    .leftJoin(certificateChecks, eq(certificateChecks.domainId, domains.id))
     .innerJoin(users, eq(userTrackedDomains.userId, users.id))
     .where(
       and(eq(userTrackedDomains.id, trackedDomainId), activeTrackedDomain, leafOrLegacyCertificate),
