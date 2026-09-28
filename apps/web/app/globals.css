@@ -6,7 +6,9 @@
 
 @theme inline {
   --font-sans: var(--font-geist-sans);
+  --font-sans--font-feature-settings: "rlig" 1, "calt" 0, "ss11" 1;
   --font-mono: var(--font-geist-mono);
+  --font-mono--font-feature-settings: "liga" 0, "calt" 0, "tnum" 1, "zero" 1, "ss01" 1;
   --color-accent-blue: var(--accent-blue);
   --color-accent-indigo: var(--accent-indigo);
   --color-accent-green: var(--accent-green);
