@@ -31,6 +31,33 @@ export async function replaceDns(params: UpsertDnsParams) {
 
   // Atomic delete and upsert in a single transaction to ensure data consistency
   await db.transaction(async (tx) => {
+    // Serialize complete-set replacements per domain. A transaction alone gives
+    // atomicity, not isolation: two concurrent replacements could both read the
+    // same old set, then interleave deletes and upserts and leave a union (or stale
+    // values) instead of either complete observation. The in-process `shareInFlight`
+    // cannot help across serverless instances, so the database is the mutex.
+    //
+    // The parent `domains` row is the lock key because it is the one stable row every
+    // replacement for this domain shares. Locking `dns_records` rows would not work:
+    // when the old or new complete set is empty there is nothing to lock.
+    //
+    // `FOR NO KEY UPDATE` (not `FOR UPDATE`) still conflicts with itself, so two
+    // replacements for one domain queue up, but it does not conflict with the
+    // `FOR KEY SHARE` lock Postgres takes for foreign-key checks when other sections
+    // (registrations, certificates, headers, ...) insert rows for this domain, so
+    // those writes are not stalled while DNS replaces. Other domains stay concurrent.
+    // This MUST stay the first query, before any read of `dns_records`.
+    const [lockedDomain] = await tx
+      .select({ id: domains.id })
+      .from(domains)
+      .where(eq(domains.id, domainId))
+      .for("no key update");
+
+    if (!lockedDomain) {
+      // Invariant violation: callers obtain `domainId` from ensureDomainRecord first.
+      throw new Error(`Cannot replace DNS records: domain ${domainId} does not exist`);
+    }
+
     // Fetch all existing records for all types in a single query
     const allExisting = await tx
       .select({
