@@ -140,6 +140,7 @@ async function createSnapshotStep(params: {
     });
   }
 
-  // null: a snapshot already exists (another baseline or the monitor got there first).
+  // null: a snapshot already exists (another baseline or the monitor got there
+  // first), or the tracked domain was archived or unverified since this run began.
   return snapshot ? { id: snapshot.id } : null;
 }

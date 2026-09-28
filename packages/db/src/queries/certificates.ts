@@ -13,6 +13,7 @@ import {
   userTrackedDomains,
 } from "../schema";
 import type { CacheResult } from "../types";
+import { activeTrackedDomain } from "./tracked-domains";
 
 type CertificateInsert = InferInsertModel<typeof certificates>;
 
@@ -200,6 +201,7 @@ export async function getCachedCertificates(
 /**
  * Get the leaf certificate for a tracked domain.
  * Used by the certificate expiry worker — alerts describe the site certificate.
+ * Null unless the tracked domain is still verified and not archived.
  */
 export async function getEarliestCertificate(
   trackedDomainId: string,
@@ -220,7 +222,9 @@ export async function getEarliestCertificate(
     .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
     .innerJoin(certificates, eq(domains.id, certificates.domainId))
     .innerJoin(users, eq(userTrackedDomains.userId, users.id))
-    .where(and(eq(userTrackedDomains.id, trackedDomainId), leafOrLegacyCertificate))
+    .where(
+      and(eq(userTrackedDomains.id, trackedDomainId), activeTrackedDomain, leafOrLegacyCertificate),
+    )
     .orderBy(asc(certificates.chainPosition), asc(certificates.validTo))
     .limit(1);
 

@@ -74,6 +74,19 @@ describe("checkDomainExpiry", () => {
     expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
   });
 
+  it("not_found: an archived or unverified tracked domain is filtered by the loader, nothing is sent", async () => {
+    // getTrackedDomainForNotification returns null unless verified and not archived.
+    trackedDomainsMock.getTrackedDomainForNotification.mockResolvedValue(null);
+
+    const { checkDomainExpiry } = await import("./domain");
+    const result = await checkDomainExpiry({ trackedDomainId: "td-1" });
+
+    expect(trackedDomainsMock.getTrackedDomainForNotification).toHaveBeenCalledWith("td-1");
+    expect(result).toEqual({ skipped: true, reason: "not_found" });
+    expect(sharedNotificationsMock.checkExpiryPreferencesStep).not.toHaveBeenCalled();
+    expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+  });
+
   it("no_expiration_date: missing expiration, no send", async () => {
     trackedDomainsMock.getTrackedDomainForNotification.mockResolvedValue({
       ...baseDomain,

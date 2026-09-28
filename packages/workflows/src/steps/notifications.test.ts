@@ -18,9 +18,25 @@ const notificationsMock = vi.hoisted(() => ({
   updateNotificationResendId:
     vi.fn<typeof import("@domainstack/db/queries/notifications").updateNotificationResendId>(),
 }));
+const trackedDomainsMock = vi.hoisted(() => ({
+  findTrackedDomainById:
+    vi.fn<typeof import("@domainstack/db/queries/tracked-domains").findTrackedDomainById>(),
+  isTrackedDomainNotificationEligible:
+    vi.fn<
+      typeof import("@domainstack/db/queries/tracked-domains").isTrackedDomainNotificationEligible
+    >(),
+}));
+const preferencesMock = vi.hoisted(() => ({
+  getOrCreateUserNotificationPreferences:
+    vi.fn<
+      typeof import("@domainstack/db/queries/user-notification-preferences").getOrCreateUserNotificationPreferences
+    >(),
+}));
 
 vi.mock("./email", () => sendEmailMock);
 vi.mock("@domainstack/db/queries/notifications", () => notificationsMock);
+vi.mock("@domainstack/db/queries/tracked-domains", () => trackedDomainsMock);
+vi.mock("@domainstack/db/queries/user-notification-preferences", () => preferencesMock);
 // A truthy stand-in: sendNotificationInternal gates the email path on
 // `emailComponent` being present, so a real `null` render would (incorrectly)
 // look identical to "no template" and skip the send entirely.
@@ -47,6 +63,7 @@ describe("sendChangeNotificationStep", () => {
     vi.clearAllMocks();
     notificationsMock.createNotification.mockResolvedValue({ id: "n_1" } as never);
     notificationsMock.updateNotificationResendId.mockResolvedValue(true);
+    trackedDomainsMock.isTrackedDomainNotificationEligible.mockResolvedValue(true);
   });
 
   afterEach(() => {
@@ -176,5 +193,94 @@ describe("sendChangeNotificationStep", () => {
     expect(sendEmailMock.sendEmail).toHaveBeenCalledWith(
       expect.objectContaining({ idempotencyKey: baseParams.idempotencyKey }),
     );
+  });
+
+  it("returns false before sendEmail and createNotification when the tracked domain is no longer eligible", async () => {
+    trackedDomainsMock.isTrackedDomainNotificationEligible.mockResolvedValue(false);
+
+    const { sendChangeNotificationStep } = await import("./notifications");
+    const result = await sendChangeNotificationStep(baseParams, {
+      shouldSendEmail: true,
+      shouldSendInApp: true,
+    });
+
+    expect(result).toBe(false);
+    expect(trackedDomainsMock.isTrackedDomainNotificationEligible).toHaveBeenCalledWith(
+      "tracked-1",
+    );
+    expect(sendEmailMock.sendEmail).not.toHaveBeenCalled();
+    expect(notificationsMock.createNotification).not.toHaveBeenCalled();
+    expect(notificationsMock.updateNotificationResendId).not.toHaveBeenCalled();
+  });
+
+  it("checks eligibility only after the no-channel fast return", async () => {
+    const { sendChangeNotificationStep } = await import("./notifications");
+    await sendChangeNotificationStep(baseParams, {
+      shouldSendEmail: false,
+      shouldSendInApp: false,
+    });
+
+    expect(trackedDomainsMock.isTrackedDomainNotificationEligible).not.toHaveBeenCalled();
+  });
+});
+
+describe("determineNotificationChannelsStep", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    trackedDomainsMock.isTrackedDomainNotificationEligible.mockResolvedValue(true);
+    trackedDomainsMock.findTrackedDomainById.mockResolvedValue({
+      id: "tracked-1",
+      muted: false,
+    } as never);
+    preferencesMock.getOrCreateUserNotificationPreferences.mockResolvedValue({
+      domainExpiry: { email: true, inApp: false },
+      registrationChanges: { email: false, inApp: true },
+    } as never);
+  });
+
+  it("returns no channels for an archived or unverified tracked domain, before loading preferences", async () => {
+    trackedDomainsMock.isTrackedDomainNotificationEligible.mockResolvedValue(false);
+
+    const { determineNotificationChannelsStep } = await import("./notifications");
+    const channels = await determineNotificationChannelsStep(
+      "user-1",
+      "tracked-1",
+      "registrationChanges",
+    );
+
+    expect(channels).toEqual({ shouldSendEmail: false, shouldSendInApp: false });
+    expect(trackedDomainsMock.isTrackedDomainNotificationEligible).toHaveBeenCalledWith(
+      "tracked-1",
+    );
+    expect(preferencesMock.getOrCreateUserNotificationPreferences).not.toHaveBeenCalled();
+  });
+
+  it("returns no channels for a muted eligible domain", async () => {
+    trackedDomainsMock.findTrackedDomainById.mockResolvedValue({
+      id: "tracked-1",
+      muted: true,
+    } as never);
+
+    const { determineNotificationChannelsStep } = await import("./notifications");
+    const channels = await determineNotificationChannelsStep(
+      "user-1",
+      "tracked-1",
+      "registrationChanges",
+    );
+
+    expect(channels).toEqual({ shouldSendEmail: false, shouldSendInApp: false });
+    expect(preferencesMock.getOrCreateUserNotificationPreferences).not.toHaveBeenCalled();
+  });
+
+  it("falls back to the user's global preferences for an eligible, unmuted domain", async () => {
+    const { determineNotificationChannelsStep } = await import("./notifications");
+    const channels = await determineNotificationChannelsStep(
+      "user-1",
+      "tracked-1",
+      "registrationChanges",
+    );
+
+    expect(channels).toEqual({ shouldSendEmail: false, shouldSendInApp: true });
+    expect(preferencesMock.getOrCreateUserNotificationPreferences).toHaveBeenCalledWith("user-1");
   });
 });

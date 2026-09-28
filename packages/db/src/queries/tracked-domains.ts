@@ -26,6 +26,18 @@ import {
   userTrackedDomains,
 } from "../schema";
 
+/**
+ * Active eligibility for cron-driven workflows: verified and not archived.
+ * Cron selectors enqueue on it, and every workflow re-checks it at its entry
+ * read and before delivering a notification, because a queued or retried run
+ * can outlive the selection. `verified` is the authority flag, not
+ * `verificationStatus`.
+ */
+export const activeTrackedDomain = and(
+  eq(userTrackedDomains.verified, true),
+  isNull(userTrackedDomains.archivedAt),
+) as SQL;
+
 export interface CreateTrackedDomainParams {
   userId: string;
   domainId: string;
@@ -789,7 +801,23 @@ export async function getVerifiedTrackedDomainIds(): Promise<string[]> {
 }
 
 /**
- * Get a single tracked domain for notification.
+ * Whether a tracked domain is still verified and not archived. The final
+ * just-in-time check before a notification is delivered; muting and category
+ * preferences are separate concerns.
+ */
+export async function isTrackedDomainNotificationEligible(id: string): Promise<boolean> {
+  const rows = await db
+    .select({ id: userTrackedDomains.id })
+    .from(userTrackedDomains)
+    .where(and(eq(userTrackedDomains.id, id), activeTrackedDomain))
+    .limit(1);
+
+  return rows.length > 0;
+}
+
+/**
+ * Get a single tracked domain for notification. Null unless it is still
+ * verified and not archived.
  */
 export async function getTrackedDomainForNotification(
   trackedDomainId: string,
@@ -813,14 +841,15 @@ export async function getTrackedDomainForNotification(
     .innerJoin(registrations, eq(domains.id, registrations.domainId))
     .innerJoin(users, eq(userTrackedDomains.userId, users.id))
     .leftJoin(registrarProvider, eq(registrations.registrarProviderId, registrarProvider.id))
-    .where(eq(userTrackedDomains.id, trackedDomainId))
+    .where(and(eq(userTrackedDomains.id, trackedDomainId), activeTrackedDomain))
     .limit(1);
 
   return rows[0] ?? null;
 }
 
 /**
- * Get a single tracked domain for reverification.
+ * Get a single tracked domain for reverification. Null unless it is still
+ * verified and not archived.
  */
 export async function getTrackedDomainForReverification(
   trackedDomainId: string,
@@ -841,7 +870,7 @@ export async function getTrackedDomainForReverification(
     .from(userTrackedDomains)
     .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
     .innerJoin(users, eq(userTrackedDomains.userId, users.id))
-    .where(eq(userTrackedDomains.id, trackedDomainId))
+    .where(and(eq(userTrackedDomains.id, trackedDomainId), activeTrackedDomain))
     .limit(1);
 
   if (rows.length === 0 || !rows[0].verificationMethod) {

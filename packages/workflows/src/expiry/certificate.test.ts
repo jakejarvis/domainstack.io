@@ -75,6 +75,19 @@ describe("checkCertificateExpiry", () => {
     expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
   });
 
+  it("not_found: an archived or unverified tracked domain is filtered by the loader, nothing is sent", async () => {
+    // getEarliestCertificate returns null unless the tracked domain is verified and not archived.
+    certificatesQueryMock.getEarliestCertificate.mockResolvedValue(null);
+
+    const { checkCertificateExpiry } = await import("./certificate");
+    const result = await checkCertificateExpiry({ trackedDomainId: "td-1" });
+
+    expect(certificatesQueryMock.getEarliestCertificate).toHaveBeenCalledWith("td-1");
+    expect(result).toEqual({ skipped: true, reason: "not_found" });
+    expect(sharedNotificationsMock.checkExpiryPreferencesStep).not.toHaveBeenCalled();
+    expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+  });
+
   it("renewed: certificate beyond the max threshold clears notifications", async () => {
     certificatesQueryMock.getEarliestCertificate.mockResolvedValue({
       ...baseCert,

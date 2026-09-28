@@ -73,6 +73,35 @@ describe("reverifyOwnershipWorkflow", () => {
     vi.restoreAllMocks();
   });
 
+  it("invalid_state: an archived or unverified tracked domain is filtered by the loader, nothing runs", async () => {
+    // getTrackedDomainForReverification returns null unless verified and not archived.
+    trackedDomainsMock.getTrackedDomainForReverification.mockResolvedValue(null);
+
+    const { reverifyOwnershipWorkflow } = await import("./workflow");
+    const result = await reverifyOwnershipWorkflow({ trackedDomainId: "td-1" });
+
+    expect(trackedDomainsMock.getTrackedDomainForReverification).toHaveBeenCalledWith("td-1");
+    expect(result).toEqual({ skipped: true, reason: "invalid_state" });
+    expect(verifyDomainMock.verifyDomainOwnershipByMethod).not.toHaveBeenCalled();
+    expect(trackedDomainsMock.markVerificationFailing).not.toHaveBeenCalled();
+    expect(trackedDomainsMock.revokeVerification).not.toHaveBeenCalled();
+    expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+  });
+
+  it("invalid_state: a domain archived or unverified after the probe skips the failure handling", async () => {
+    trackedDomainsMock.getTrackedDomainForReverification
+      .mockResolvedValueOnce(baseDomain as never)
+      .mockResolvedValueOnce(null);
+
+    const { reverifyOwnershipWorkflow } = await import("./workflow");
+    const result = await reverifyOwnershipWorkflow({ trackedDomainId: "td-1" });
+
+    expect(result).toEqual({ skipped: true, reason: "invalid_state" });
+    expect(trackedDomainsMock.markVerificationFailing).not.toHaveBeenCalled();
+    expect(trackedDomainsMock.revokeVerification).not.toHaveBeenCalled();
+    expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+  });
+
   it("recovery: marks success and sends no notification", async () => {
     verifyDomainMock.verifyDomainOwnershipByMethod.mockResolvedValue({
       verified: true,
@@ -332,6 +361,35 @@ describe("reverifyOwnershipWorkflow", () => {
       trackedDomainsMock.revokeVerification.mock.invocationCallOrder[0],
     );
     expect(result).toEqual({ verified: false, action: "revoked" });
+  });
+
+  it("revoke: a domain eligible until the revoked alert still gets it before revocation", async () => {
+    // Eligible for both reads that precede the alert; the loader would report it
+    // ineligible only once revocation has been written, which happens after.
+    const failing = {
+      ...baseDomain,
+      verificationStatus: "failing" as const,
+      verificationFailedAt: new Date("2026-09-05T04:00:00Z"),
+    };
+    trackedDomainsMock.getTrackedDomainForReverification
+      .mockResolvedValueOnce(failing as never)
+      .mockResolvedValueOnce(failing as never)
+      .mockResolvedValue(null);
+    notificationsQueryMock.hasRecentNotification.mockResolvedValue(false);
+
+    const { reverifyOwnershipWorkflow } = await import("./workflow");
+    const result = await reverifyOwnershipWorkflow({ trackedDomainId: "td-1" });
+
+    expect(result).toEqual({ verified: false, action: "revoked" });
+    expect(sharedNotificationsMock.sendNotification).toHaveBeenCalledTimes(1);
+    expect(sharedNotificationsMock.sendNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ notificationType: "verification_revoked" }),
+      { shouldSendEmail: true, shouldSendInApp: true },
+    );
+    expect(trackedDomainsMock.revokeVerification).toHaveBeenCalledTimes(1);
+    expect(sharedNotificationsMock.sendNotification.mock.invocationCallOrder[0]).toBeLessThan(
+      trackedDomainsMock.revokeVerification.mock.invocationCallOrder[0],
+    );
   });
 
   it("revoke: email failure prevents revocation", async () => {

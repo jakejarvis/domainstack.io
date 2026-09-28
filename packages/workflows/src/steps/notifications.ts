@@ -25,8 +25,8 @@ export interface NotificationChannels {
 /**
  * Step: Determine which notification channels to use based on user preferences.
  *
- * If the domain is muted, returns false for both channels.
- * Otherwise, falls back to global preferences.
+ * If the domain is archived, unverified, or muted, returns false for both
+ * channels. Otherwise, falls back to global preferences.
  */
 export async function determineNotificationChannelsStep(
   userId: string,
@@ -35,9 +35,16 @@ export async function determineNotificationChannelsStep(
 ): Promise<NotificationChannels> {
   "use step";
 
-  const { findTrackedDomainById } = await import("@domainstack/db/queries/tracked-domains");
+  const { findTrackedDomainById, isTrackedDomainNotificationEligible } =
+    await import("@domainstack/db/queries/tracked-domains");
   const { getOrCreateUserNotificationPreferences } =
     await import("@domainstack/db/queries/user-notification-preferences");
+
+  // Archived or unverified since the cron selected it: nothing to deliver.
+  // `sendNotification` re-checks right before delivery; this skips work early.
+  if (!(await isTrackedDomainNotificationEligible(trackedDomainId))) {
+    return { shouldSendEmail: false, shouldSendInApp: false };
+  }
 
   const trackedDomain = await findTrackedDomainById(trackedDomainId);
   if (!trackedDomain) {
@@ -177,6 +184,8 @@ export async function sendNotification(
 ): Promise<boolean> {
   const { createNotification, updateNotificationResendId } =
     await import("@domainstack/db/queries/notifications");
+  const { isTrackedDomainNotificationEligible } =
+    await import("@domainstack/db/queries/tracked-domains");
   const { createLogger } = await import("@domainstack/logger");
 
   const logger = createLogger({ source: "workflows/notifications" });
@@ -195,6 +204,12 @@ export async function sendNotification(
   } = options;
 
   if (!shouldSendEmail && !shouldSendInApp) return false;
+
+  // Final just-in-time check: the domain may have been archived or unverified
+  // since the run started (observation, confirmation, or step retries all leave
+  // a window). Applies to every tracked-domain alert, regardless of channel
+  // choices. Revocation alerts still pass: they send before verification is revoked.
+  if (!(await isTrackedDomainNotificationEligible(trackedDomainId))) return false;
 
   const email =
     shouldSendEmail && emailComponent && emailSubject

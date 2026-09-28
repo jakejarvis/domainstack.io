@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 
 import type {
   CertificateSnapshotData,
@@ -8,6 +8,7 @@ import type {
 
 import { db } from "../client";
 import { domainSnapshots, domains, users, userTrackedDomains } from "../schema";
+import { activeTrackedDomain } from "./tracked-domains";
 
 /**
  * Parameters for creating a new snapshot.
@@ -74,6 +75,11 @@ const EMPTY_CERTIFICATE: CertificateSnapshotData = {
  * Insert-only: returns `null` when a snapshot already exists. A baseline must
  * never replace a snapshot that change detection may already have advanced —
  * that would roll it back and re-alert changes the user was already told about.
+ *
+ * Also returns `null` when the tracked domain is no longer verified or has been
+ * archived. The insert selects from the tracked-domain row under a share lock, so
+ * a concurrent archive or unverify either commits first (no row is selected) or
+ * waits until the baseline exists; a read-then-insert would leave that window open.
  */
 export async function createSnapshot(
   params: CreateSnapshotParams,
@@ -87,16 +93,34 @@ export async function createSnapshot(
     emailProviderId = null,
   } = params;
 
+  // Insert-from-select must supply every column, in table order. The JSONB values
+  // are serialized and cast the same way a plain `.values()` insert stores them.
   const inserted = await db
     .insert(domainSnapshots)
-    .values({
-      trackedDomainId,
-      registration,
-      certificate,
-      dnsProviderId,
-      hostingProviderId,
-      emailProviderId,
-    })
+    .select((qb) =>
+      qb
+        .select({
+          id: sql<string>`gen_random_uuid()`.as("id"),
+          trackedDomainId: userTrackedDomains.id,
+          registration: sql<RegistrationSnapshotData>`${JSON.stringify(registration)}::jsonb`.as(
+            "registration",
+          ),
+          dnsProviderId: sql<string | null>`${dnsProviderId}::uuid`.as("dns_provider_id"),
+          hostingProviderId: sql<string | null>`${hostingProviderId}::uuid`.as(
+            "hosting_provider_id",
+          ),
+          emailProviderId: sql<string | null>`${emailProviderId}::uuid`.as("email_provider_id"),
+          providerPending: sql<null>`null::jsonb`.as("provider_pending"),
+          certificate: sql<CertificateSnapshotData>`${JSON.stringify(certificate)}::jsonb`.as(
+            "certificate",
+          ),
+          createdAt: sql<Date>`now()`.as("created_at"),
+          updatedAt: sql<Date>`now()`.as("updated_at"),
+        })
+        .from(userTrackedDomains)
+        .where(and(eq(userTrackedDomains.id, trackedDomainId), activeTrackedDomain))
+        .for("share"),
+    )
     .onConflictDoNothing({ target: domainSnapshots.trackedDomainId })
     .returning();
 
@@ -181,7 +205,8 @@ export async function getVerifiedDomainsWithoutSnapshots(): Promise<
 }
 
 /**
- * Get full snapshot data for a single domain.
+ * Get full snapshot data for a single domain. Null unless the tracked domain is
+ * still verified and not archived.
  */
 export async function getSnapshot(trackedDomainId: string): Promise<SnapshotForMonitoring | null> {
   const rows = await db
@@ -204,7 +229,7 @@ export async function getSnapshot(trackedDomainId: string): Promise<SnapshotForM
     .innerJoin(userTrackedDomains, eq(domainSnapshots.trackedDomainId, userTrackedDomains.id))
     .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
     .innerJoin(users, eq(userTrackedDomains.userId, users.id))
-    .where(eq(domainSnapshots.trackedDomainId, trackedDomainId))
+    .where(and(eq(domainSnapshots.trackedDomainId, trackedDomainId), activeTrackedDomain))
     .limit(1);
 
   if (rows.length === 0) {

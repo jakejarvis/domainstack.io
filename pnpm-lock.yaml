@@ -79,6 +79,9 @@ catalogs:
       specifier: ^4.6.5
       version: 4.6.5
 
+overrides:
+  iconv-lite@<0.7: ^0.7.3
+
 importers:
 
   .:
@@ -5802,10 +5805,6 @@ packages:
   human-signals@8.0.1:
     resolution: {integrity: sha512-eKCa6bwnJhvxj14kZk5NCPc6Hb6BdsU9DZcOnmQKSnO1VKrfV0zCvtttPZUsBvjmNDn8rpcJfpwSYnHBjc95MQ==}
     engines: {node: '>=18.18.0'}
-
-  iconv-lite@0.6.3:
-    resolution: {integrity: sha512-4fCk79wshMdzMp2rH06qWrJE4iolqLhCUH+OiuIgU++RB0+94NlDL81atO7GX55uUKueo0txHNtvEyI6D7WdMw==}
-    engines: {node: '>=0.10.0'}
 
   iconv-lite@0.7.3:
     resolution: {integrity: sha512-IKXpvIzjnC9XTAUbVBcMfGS0EPaIXtW6v+zr+RRp+hqULEpo0owZax6wyRwPOJbWbzjYspQwusTsfVr0ifh4uQ==}
@@ -12716,7 +12715,7 @@ snapshots:
 
   encoding-sniffer@0.2.1:
     dependencies:
-      iconv-lite: 0.6.3
+      iconv-lite: 0.7.3
       whatwg-encoding: 3.1.1
 
   end-of-stream@1.4.5:
@@ -13574,10 +13573,6 @@ snapshots:
   human-signals@5.0.0: {}
 
   human-signals@8.0.1: {}
-
-  iconv-lite@0.6.3:
-    dependencies:
-      safer-buffer: 2.1.2
 
   iconv-lite@0.7.3:
     dependencies:
@@ -16427,7 +16422,7 @@ snapshots:
 
   whatwg-encoding@3.1.1:
     dependencies:
-      iconv-lite: 0.6.3
+      iconv-lite: 0.7.3
 
   whatwg-mimetype@4.0.0: {}
 

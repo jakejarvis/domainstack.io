@@ -174,6 +174,26 @@ describe("detectChangesWorkflow", () => {
     expect(monitorDedupMock.releaseMonitorLock).toHaveBeenCalledWith("td-1", "tok");
   });
 
+  it("skips without observing or notifying when the tracked domain is archived or unverified", async () => {
+    // getSnapshot only returns a snapshot for a verified, non-archived tracked
+    // domain, so an ineligible one reads as a missing snapshot.
+    snapshotsMock.getSnapshot.mockResolvedValue(null);
+
+    const { detectChangesWorkflow } = await import("./workflow");
+    const result = await detectChangesWorkflow({
+      trackedDomainId: "td-1",
+      monitorLockOwnerToken: "tok",
+    });
+
+    expect(snapshotsMock.getSnapshot).toHaveBeenCalledWith("td-1");
+    expect(result).toMatchObject({ skipped: true, reason: "snapshot_not_found" });
+    expect(dnsMock.fetchDnsRecordsStep).not.toHaveBeenCalled();
+    expect(snapshotsMock.updateSnapshot).not.toHaveBeenCalled();
+    expect(notificationsMock.determineNotificationChannelsStep).not.toHaveBeenCalled();
+    expect(notificationsMock.sendChangeNotificationStep).not.toHaveBeenCalled();
+    expect(monitorDedupMock.releaseMonitorLock).toHaveBeenCalledWith("td-1", "tok");
+  });
+
   it("releases the lock when fetching the snapshot fails fatally", async () => {
     const { FatalError } = await import("workflow");
     snapshotsMock.getSnapshot.mockRejectedValue(new FatalError("snapshot unavailable"));
