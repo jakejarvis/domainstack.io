@@ -863,6 +863,8 @@ describe("dashboard shell", () => {
 
       const dialog = page.getByRole("dialog", { name: "Keyboard Shortcuts" });
       await expect.element(dialog).toBeInTheDocument();
+      // Opens onto the dialog itself, not the scrollable list (no stray focus ring).
+      await expect.element(dialog).toHaveFocus();
       await expect.element(dialog.getByRole("heading", { name: "Global" })).toBeInTheDocument();
       await expect.element(dialog.getByText("Show keyboard shortcuts")).toBeInTheDocument();
       await expect.element(dialog.getByRole("heading", { name: "Dashboard" })).toBeInTheDocument();

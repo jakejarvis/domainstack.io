@@ -2,7 +2,7 @@
 
 import { IconInfoCircle } from "@tabler/icons-react";
 import { formatForDisplay, useHotkey, useHotkeyRegistrations } from "@tanstack/react-hotkeys";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 
 import { Button } from "@domainstack/ui/button";
 import {
@@ -134,6 +134,7 @@ function ShortcutList() {
 
 export function KeyboardShortcutsDialog() {
   const [open, setOpen] = useState(false);
+  const popupRef = useRef<HTMLDivElement>(null);
 
   useHotkey("?", () => setOpen(true), {
     ignoreInputs: true,
@@ -147,7 +148,9 @@ export function KeyboardShortcutsDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-md">
+      {/* Open onto the dialog itself. By default Base UI focuses the first tabbable
+          element, the scrollable list, which would show its focus ring right away. */}
+      <DialogContent ref={popupRef} initialFocus={popupRef} className="sm:max-w-md">
         <DialogHeader className="gap-0.5">
           <DialogTitle>Keyboard Shortcuts</DialogTitle>
           <DialogDescription>Shortcuts available on this page.</DialogDescription>
