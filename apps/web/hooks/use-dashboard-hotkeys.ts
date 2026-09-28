@@ -60,10 +60,16 @@ export function useDashboardHotkeys(): void {
   const hotkeys: UseHotkeyDefinition[] = [
     {
       hotkey: DASHBOARD_HOTKEYS.selectAll,
-      callback: selectAll,
+      // In a popup, leave Mod+A to the browser; only block its select-all when we handle it.
+      callback: (event) => {
+        if (isFromOpenPopup(event)) return;
+        event.preventDefault();
+        selectAll();
+      },
       options: {
         enabled: visibleCount > 0,
         ignoreInputs: true,
+        preventDefault: false,
         requireReset: true,
         meta: {
           name: "Select all domains",
@@ -74,8 +80,12 @@ export function useDashboardHotkeys(): void {
     },
     {
       hotkey: DASHBOARD_HOTKEYS.clearSelection,
-      // Escape inside a popup dismisses that popup; the selection stays.
-      callback: unlessInPopup(clearSelection),
+      // Escape inside a popup dismisses that popup, and mid-composition it
+      // cancels the IME; either way the selection stays.
+      callback: (event) => {
+        if (event.isComposing) return;
+        unlessInPopup(clearSelection)(event);
+      },
       options: {
         enabled: selectedCount > 0,
         preventDefault: false,

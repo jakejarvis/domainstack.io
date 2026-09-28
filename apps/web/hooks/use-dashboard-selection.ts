@@ -1,7 +1,7 @@
 import { atom, useAtom, useAtomValue, useSetAtom, useStore } from "jotai";
 import { useCallback, useMemo } from "react";
 
-import { useDashboardView } from "@/context/dashboard-context";
+import { useDashboardView, useDashboardVisibleIdsRef } from "@/context/dashboard-context";
 import {
   clearDashboardSelectionAtom,
   dashboardSelectionAnchorIdAtom,
@@ -80,10 +80,11 @@ export function useDomainSelectionHandler(
   const store = useStore();
   const setSelectedIds = useSetAtom(dashboardSelectedDomainIdsAtom);
   const setAnchorId = useSetAtom(dashboardSelectionAnchorIdAtom);
-  const { visibleDomainIds } = useDashboardView();
+  const visibleIdsRef = useDashboardVisibleIdsRef();
 
   return useCallback(
     (checked: boolean, details: CheckboxChangeDetails) => {
+      const visibleDomainIds = visibleIdsRef.current;
       const anchorId = store.get(dashboardSelectionAnchorIdAtom);
       const anchorIndex = anchorId === null ? -1 : visibleDomainIds.indexOf(anchorId);
       const endpointIndex = visibleDomainIds.indexOf(id);
@@ -109,7 +110,7 @@ export function useDomainSelectionHandler(
       });
       setAnchorId(id);
     },
-    [id, setAnchorId, setSelectedIds, store, visibleDomainIds],
+    [id, setAnchorId, setSelectedIds, store, visibleIdsRef],
   );
 }
 

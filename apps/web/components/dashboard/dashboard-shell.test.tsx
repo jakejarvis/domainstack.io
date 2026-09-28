@@ -81,11 +81,7 @@ async function pressSelectAllHotkey() {
   await userEvent.keyboard(`{${modifier}>}a{/${modifier}}`);
 }
 
-async function clickSelectionCheckbox(name: string, options?: { grid?: boolean; shift?: boolean }) {
-  if (options?.grid) {
-    const card = domainCard(name);
-    await userEvent.hover(card);
-  }
+async function clickSelectionCheckbox(name: string, options?: { shift?: boolean }) {
   const checkbox = page.getByRole("checkbox", { name: `Select ${name}` });
   await expect.element(checkbox).toBeInTheDocument();
 
@@ -931,6 +927,43 @@ describe("dashboard shell", () => {
             .getByText("1 selected", { exact: true }),
         )
         .toBeInTheDocument();
+    });
+
+    it("keeps the selection when Escape cancels an IME composition", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await selectGridCard("alpha.com");
+      const search = page.getByRole("textbox", { name: "Search domains" });
+      await search.click();
+      search
+        .element()
+        .dispatchEvent(
+          new KeyboardEvent("keydown", { key: "Escape", isComposing: true, bubbles: true }),
+        );
+
+      await expect
+        .element(
+          page
+            .getByRole("toolbar", { name: "Bulk actions" })
+            .getByText("1 selected", { exact: true }),
+        )
+        .toBeInTheDocument();
+    });
+
+    it("leaves Mod+A to the open shortcuts dialog", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await userEvent.keyboard("?");
+      await expect
+        .element(page.getByRole("dialog", { name: "Keyboard shortcuts" }))
+        .toBeInTheDocument();
+
+      await pressSelectAllHotkey();
+      await expect
+        .element(page.getByRole("toolbar", { name: "Bulk actions" }))
+        .not.toBeInTheDocument();
     });
 
     it("keeps the selection when Escape closes the shortcuts dialog", async () => {

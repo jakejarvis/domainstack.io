@@ -2,7 +2,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSetAtom } from "jotai";
 import { toast } from "sonner";
 
-import { dashboardSelectedDomainIdsAtom } from "@/lib/atoms/dashboard-atoms";
+import {
+  dashboardSelectedDomainIdsAtom,
+  dashboardSelectionAnchorIdAtom,
+} from "@/lib/atoms/dashboard-atoms";
 import { useTRPC } from "@/lib/trpc/client";
 import type { SubscriptionQuota, TrackedDomainWithDetails } from "@domainstack/types";
 
@@ -103,18 +106,22 @@ export function useDashboardMutations() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const setSelectedIds = useSetAtom(dashboardSelectedDomainIdsAtom);
+  const setAnchorId = useSetAtom(dashboardSelectionAnchorIdAtom);
 
-  // Once a remove or archive succeeds, drop the domain from the selection too so it
-  // doesn't come back selected if it's ever unarchived. A failed one keeps it.
+  // Once a remove or archive succeeds, drop the domain from the selection (and the
+  // range anchor) too so it doesn't come back selected if it's ever unarchived. A
+  // failed one keeps it.
   // This runs at the mutation level: per-call callbacks passed to `mutate` only
   // fire for the latest call, so a quick second action would skip the first's.
-  const deselect = (id: string) =>
+  const deselect = (id: string) => {
     setSelectedIds((prev) => {
       if (!prev.has(id)) return prev;
       const next = new Set(prev);
       next.delete(id);
       return next;
     });
+    setAnchorId((anchorId) => (anchorId === id ? null : anchorId));
+  };
 
   const domainsFilter = trpc.tracking.listDomains.queryFilter();
   const subscriptionFilter = trpc.user.getSubscription.queryFilter();
