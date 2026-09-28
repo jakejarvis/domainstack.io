@@ -7,7 +7,7 @@ import { DomainStatusBadge } from "@/components/dashboard/domain-status-badge";
 import { ProviderCell } from "@/components/dashboard/provider-cell";
 import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Favicon } from "@/components/icons/favicon";
-import { useIsDomainSelected, useToggleDomainSelection } from "@/hooks/use-dashboard-selection";
+import { useDomainSelectionHandler, useIsDomainSelected } from "@/hooks/use-dashboard-selection";
 import type { DashboardTableFeatures } from "@/lib/dashboard-table-features";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Checkbox } from "@domainstack/ui/checkbox";
@@ -78,7 +78,7 @@ function DateCell({ date }: { date: Date }) {
  */
 function DomainSelectCell({ domainId, domainName }: DomainSelectCellProps) {
   const isSelected = useIsDomainSelected(domainId);
-  const toggle = useToggleDomainSelection();
+  const handleSelectionChange = useDomainSelectionHandler(domainId);
 
   return (
     <div className="relative size-4">
@@ -93,7 +93,7 @@ function DomainSelectCell({ domainId, domainName }: DomainSelectCellProps) {
       {/* Checkbox stays mounted so it remains focusable when unselected */}
       <Checkbox
         checked={isSelected}
-        onCheckedChange={() => toggle(domainId)}
+        onCheckedChange={handleSelectionChange}
         aria-label={`Select ${domainName}`}
         className={cn(
           "absolute inset-0",

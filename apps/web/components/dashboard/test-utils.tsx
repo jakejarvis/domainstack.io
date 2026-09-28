@@ -7,6 +7,7 @@ import { DashboardConfirmDialog } from "@/components/dashboard/dashboard-confirm
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
 import { DashboardFilters } from "@/components/dashboard/dashboard-filters";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { DashboardHotkeys } from "@/components/dashboard/dashboard-hotkeys";
 import { HealthSummary } from "@/components/dashboard/health-summary";
 import {
   mockSubscription,
@@ -143,6 +144,7 @@ function DashboardTestShell({
 
   return (
     <DashboardProvider domains={domains} actions={actions} bulk={bulk}>
+      <DashboardHotkeys />
       <div className="space-y-6">
         <DashboardHeader userName={userName} />
         {totalDomains > 0 && (

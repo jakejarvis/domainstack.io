@@ -1,6 +1,6 @@
 import { IconAlertCircle, IconTool } from "@tabler/icons-react";
 import Link from "next/link";
-import { memo, useCallback } from "react";
+import { memo } from "react";
 
 import { DomainActionsMenu } from "@/components/dashboard/domain-actions-menu";
 import { DomainHealthBadge, getHealthAccent } from "@/components/dashboard/domain-health-badge";
@@ -12,8 +12,8 @@ import { Favicon } from "@/components/icons/favicon";
 import { LinkPendingIcon } from "@/components/link-pending-icon";
 import {
   useHasDashboardSelection,
+  useDomainSelectionHandler,
   useIsDomainSelected,
-  useToggleDomainSelection,
 } from "@/hooks/use-dashboard-selection";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { addDomainResumeHref } from "@/lib/add-domain-resume";
@@ -184,7 +184,7 @@ function DashboardGridCardHeader({
   domain: TrackedDomainWithDetails;
   selected: boolean;
   selectionActive: boolean;
-  onToggleSelect: () => void;
+  onToggleSelect: (checked: boolean, details: { event: Event }) => void;
 }) {
   return (
     <CardHeader className="relative pt-6 pb-2">
@@ -243,11 +243,7 @@ export const DashboardGridCard = memo(function DashboardGridCard({
   const { id: trackedDomainId } = domain;
   const selected = useIsDomainSelected(trackedDomainId);
   const selectionActive = useHasDashboardSelection();
-  const toggle = useToggleDomainSelection();
-
-  const handleToggleSelect = useCallback(() => {
-    toggle(trackedDomainId);
-  }, [toggle, trackedDomainId]);
+  const handleToggleSelect = useDomainSelectionHandler(trackedDomainId);
 
   const now = useHydratedNow();
   const accent = getHealthAccent(domain.expirationDate, domain.verified, now || undefined);

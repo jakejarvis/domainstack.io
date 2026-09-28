@@ -52,7 +52,7 @@
     "@posthog/mcp": "^0.18.1",
     "@posthog/nextjs-config": "^1.11.1",
     "@tabler/icons-react": "catalog:",
-    "@tanstack/react-hotkeys": "^0.12.0",
+    "@tanstack/react-hotkeys": "^0.12.1",
     "@tanstack/react-query": "^5.103.2",
     "@tanstack/react-query-devtools": "^5.103.2",
     "@tanstack/react-table": "^9.2.4",

@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSetAtom } from "jotai";
 import { toast } from "sonner";
 
-import { selectedDomainIdsAtom } from "@/lib/atoms/dashboard-atoms";
+import { dashboardSelectedDomainIdsAtom } from "@/lib/atoms/dashboard-atoms";
 import { useTRPC } from "@/lib/trpc/client";
 import type { SubscriptionQuota, TrackedDomainWithDetails } from "@domainstack/types";
 
@@ -102,7 +102,7 @@ function toastBulkResult(
 export function useDashboardMutations() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const setSelectedIds = useSetAtom(selectedDomainIdsAtom);
+  const setSelectedIds = useSetAtom(dashboardSelectedDomainIdsAtom);
 
   // Once a remove or archive succeeds, drop the domain from the selection too so it
   // doesn't come back selected if it's ever unarchived. A failed one keeps it.

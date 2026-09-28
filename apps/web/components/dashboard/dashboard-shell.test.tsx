@@ -65,11 +65,28 @@ function cardButton(card: HTMLElement, name: string) {
   return button!;
 }
 
-async function selectGridCard(name: string) {
+async function pressSelectAllHotkey() {
+  const modifier = navigator.platform.includes("Mac") ? "Meta" : "Control";
+  await userEvent.keyboard(`{${modifier}>}a{/${modifier}}`);
+}
+
+async function clickSelectionCheckbox(name: string, options?: { grid?: boolean; shift?: boolean }) {
+  if (options?.grid) {
+    const card = domainCard(name);
+    await userEvent.hover(card);
+  }
+  const checkbox = page.getByRole("checkbox", { name: `Select ${name}` });
+  await expect.element(checkbox).toBeInTheDocument();
+
+  if (options?.shift) await userEvent.keyboard("{Shift>}");
+  await checkbox.click();
+  if (options?.shift) await userEvent.keyboard("{/Shift}");
+}
+
+async function selectGridCard(name: string, shift = false) {
   const card = domainCard(name);
   await userEvent.hover(card);
-  await expect.element(page.getByRole("checkbox", { name: `Select ${name}` })).toBeInTheDocument();
-  await page.getByRole("checkbox", { name: `Select ${name}` }).click();
+  await clickSelectionCheckbox(name, { shift });
 }
 
 describe("dashboard shell", () => {
@@ -635,6 +652,110 @@ describe("dashboard shell", () => {
   });
 
   describe("bulk toolbar", () => {
+    it("selects all visible domains with Mod+A in grid and table views", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await pressSelectAllHotkey();
+      await expect
+        .element(page.getByRole("toolbar", { name: "Bulk actions" }).getByText("4 selected"))
+        .toBeInTheDocument();
+
+      await userEvent.keyboard("{Escape}");
+      await page.getByRole("button", { name: "Table view" }).click();
+      await pressSelectAllHotkey();
+      await expect
+        .element(page.getByRole("toolbar", { name: "Bulk actions" }).getByText("4 selected"))
+        .toBeInTheDocument();
+    });
+
+    it("selects domains across table pages with Mod+A", async () => {
+      usePreferencesStore.setState({ viewMode: "table" });
+      await renderDashboardShell({ domains: makePaginationDomains(12) });
+      await expect.element(page.getByText("1 of 2", { exact: true })).toBeInTheDocument();
+
+      await pressSelectAllHotkey();
+      await expect
+        .element(page.getByRole("toolbar", { name: "Bulk actions" }).getByText("12 selected"))
+        .toBeInTheDocument();
+    });
+
+    it("leaves Mod+A to native text selection inside search", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+      const search = page.getByRole("textbox", { name: "Search domains" }).first();
+
+      await search.fill("alpha");
+      await search.click();
+      await pressSelectAllHotkey();
+
+      const input = search.element() as HTMLInputElement;
+      expect(input.selectionStart).toBe(0);
+      expect(input.selectionEnd).toBe(input.value.length);
+      await expect
+        .element(page.getByRole("toolbar", { name: "Bulk actions" }))
+        .not.toBeInTheDocument();
+    });
+
+    it("applies additive Shift ranges and endpoint deselection in the grid", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await selectGridCard("pending.dev");
+      await selectGridCard("alpha.com");
+      await selectGridCard("gamma.com", true);
+      const toolbar = page.getByRole("toolbar", { name: "Bulk actions" });
+      await expect.element(toolbar.getByText("4 selected")).toBeInTheDocument();
+
+      await selectGridCard("beta.io", true);
+      await expect.element(toolbar.getByText("2 selected")).toBeInTheDocument();
+      await expect.element(page.getByRole("checkbox", { name: "Select alpha.com" })).toBeChecked();
+      await expect
+        .element(page.getByRole("checkbox", { name: "Select pending.dev" }))
+        .toBeChecked();
+    });
+
+    it("applies an inclusive Shift range in the table", async () => {
+      usePreferencesStore.setState({ viewMode: "table" });
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await clickSelectionCheckbox("alpha.com");
+      await clickSelectionCheckbox("gamma.com", { shift: true });
+
+      const toolbar = page.getByRole("toolbar", { name: "Bulk actions" });
+      await expect.element(toolbar.getByText("3 selected")).toBeInTheDocument();
+      await expect.element(page.getByRole("checkbox", { name: "Select beta.io" })).toBeChecked();
+    });
+
+    it("falls back to a single selection after filters clear the range anchor", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+      await selectGridCard("alpha.com");
+
+      const search = page.getByRole("textbox", { name: "Search domains" }).first();
+      await search.fill("beta");
+      await vi.waitFor(() => expect(domainNames()).toEqual(["beta.io"]));
+      await search.fill("");
+      await waitForCatalog();
+
+      await selectGridCard("gamma.com", true);
+      await expect
+        .element(page.getByRole("toolbar", { name: "Bulk actions" }).getByText("1 selected"))
+        .toBeInTheDocument();
+    });
+
+    it("does not run disabled dashboard commands without visible domains", async () => {
+      await renderDashboardShell({ domains: [], totalDomains: 0 });
+
+      await pressSelectAllHotkey();
+      await userEvent.keyboard("{Escape}");
+
+      await expect
+        .element(page.getByRole("toolbar", { name: "Bulk actions" }))
+        .not.toBeInTheDocument();
+    });
+
     it("archives, deletes, mutes, unmutes, cancels, and select-alls visible ids", async () => {
       await renderDashboardShell();
       await waitForCatalog();
