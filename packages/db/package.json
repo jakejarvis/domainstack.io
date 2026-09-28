@@ -31,11 +31,11 @@
     "pg": "^8.23.1"
   },
   "devDependencies": {
+    "@better-auth/utils": "^0.4.2",
     "@domainstack/typescript-config": "workspace:*",
     "@electric-sql/pglite": "^0.5.8",
     "@types/node": "catalog:",
     "@types/pg": "^8.23.1",
-    "better-auth": "^1.7.6",
     "dotenv": "^18.0.5",
     "drizzle-kit": "^0.31.11",
     "tsx": "^4.23.15"

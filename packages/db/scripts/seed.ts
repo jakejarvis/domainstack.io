@@ -59,7 +59,7 @@ async function main() {
 
   // Imported after env loading so the db client sees DATABASE_URL
   const { randomBytes } = await import("node:crypto");
-  const { hashPassword } = await import("better-auth/crypto");
+  const { hashPassword } = await import("@better-auth/utils/password");
   const { eq, inArray, sql } = await import("drizzle-orm");
   const { db } = await import("../src/client");
   const { accounts, domains, notifications, userTrackedDomains, users } =

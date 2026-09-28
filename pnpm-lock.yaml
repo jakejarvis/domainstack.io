@@ -596,6 +596,9 @@ importers:
         specifier: ^8.23.1
         version: 8.23.1
     devDependencies:
+      '@better-auth/utils':
+        specifier: ^0.4.2
+        version: 0.4.3
       '@domainstack/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
@@ -608,9 +611,6 @@ importers:
       '@types/pg':
         specifier: ^8.23.1
         version: 8.23.1
-      better-auth:
-        specifier: ^1.7.6
-        version: 1.7.6(@opentelemetry/api@1.9.1)(drizzle-kit@0.31.11)(drizzle-orm@0.45.3(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(@upstash/redis@1.39.0)(kysely@0.29.6)(pg@8.23.0))(next@16.3.6(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@types/node@24.13.6)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(pg@8.23.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(solid-js@1.9.15)(vitest@5.0.2)
       dotenv:
         specifier: ^18.0.5
         version: 18.0.5
