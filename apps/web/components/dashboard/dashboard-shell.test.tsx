@@ -1064,10 +1064,16 @@ describe("dashboard shell", () => {
       const item = page.getByRole("menuitemradio").first();
       await expect.element(item).toBeInTheDocument();
 
-      const event = new KeyboardEvent("keydown", { key: "e", bubbles: true, cancelable: true });
-      item.element().dispatchEvent(event);
+      // The menu's typeahead prevents every character key itself, so assert the
+      // outcome rather than `defaultPrevented`: the menu takes "e" (typeahead
+      // jumps to "Expiry…") and the archive command doesn't run.
+      item
+        .element()
+        .dispatchEvent(new KeyboardEvent("keydown", { key: "e", bubbles: true, cancelable: true }));
 
-      expect(event.defaultPrevented).toBe(false);
+      await expect
+        .element(page.getByRole("menuitemradio", { name: "Expiry (Soonest first)" }))
+        .toHaveAttribute("data-highlighted");
       expect(dashboardActionSpies.onBulkArchive).not.toHaveBeenCalled();
     });
 

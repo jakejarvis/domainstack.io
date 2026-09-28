@@ -1,19 +1,17 @@
 "use client";
 
-import { IconInfoCircle } from "@tabler/icons-react";
 import { formatForDisplay, useHotkey, useHotkeyRegistrations } from "@tanstack/react-hotkeys";
 import { useId, useRef, useState } from "react";
 
-import { Button } from "@domainstack/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@domainstack/ui/dialog";
 import { Kbd, KbdGroup } from "@domainstack/ui/kbd";
+import { cn } from "@domainstack/ui/utils";
 
 type ShortcutItem = {
   id: string;
@@ -67,17 +65,14 @@ function ShortcutSection({ title, items }: { title: string; items: ShortcutItem[
   const headingId = useId();
 
   return (
-    <section aria-labelledby={headingId} className="space-y-1.5">
-      <h3
-        id={headingId}
-        className="pl-1 text-xs font-medium tracking-wide text-muted-foreground uppercase"
-      >
+    <section aria-labelledby={headingId} className="mb-5 break-inside-avoid last:mb-0">
+      <h3 id={headingId} className="mb-1 text-xs font-medium text-muted-foreground">
         {title}
       </h3>
-      <ul className="divide-y divide-border/50 rounded-lg border">
+      <ul>
         {items.map((item) => (
-          <li key={item.id} className="flex min-h-10 items-center justify-between gap-4 px-3 py-2">
-            <span className="min-w-0 truncate text-[13px] font-medium">{item.name}</span>
+          <li key={item.id} className="flex min-h-8 items-center justify-between gap-4 py-1">
+            <span className="min-w-0 truncate text-sm">{item.name}</span>
             <ShortcutKeys hotkey={item.hotkey} gesture={item.gesture} />
           </li>
         ))}
@@ -116,6 +111,8 @@ function ShortcutList() {
     return index === -1 ? GROUP_ORDER.length : index;
   };
   const sections = [...groups].sort(([a], [b]) => rank(a) - rank(b));
+  // A lone section (e.g. Global off the dashboard) stays one column in a narrow dialog.
+  const multiColumn = sections.length > 1;
 
   return (
     <div
@@ -123,11 +120,19 @@ function ShortcutList() {
       // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex
       tabIndex={0}
       aria-label="Shortcuts"
-      className="-mx-5 min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-5 pb-1 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:ring-inset"
+      className="-mx-5 min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:ring-inset"
     >
-      {sections.map(([title, items]) => (
-        <ShortcutSection key={title} title={title} items={items} />
-      ))}
+      {/* Columns sit inside the scroller: a height-capped multicol box would
+          overflow sideways into extra columns instead of scrolling. The dialog
+          widens to fit them via `data-multi-column`. */}
+      <div
+        data-multi-column={multiColumn || undefined}
+        className={cn(multiColumn && "sm:columns-2 sm:gap-8")}
+      >
+        {sections.map(([title, items]) => (
+          <ShortcutSection key={title} title={title} items={items} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -150,26 +155,16 @@ export function KeyboardShortcutsDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       {/* Open onto the dialog itself. By default Base UI focuses the first tabbable
           element, the scrollable list, which would show its focus ring right away. */}
-      <DialogContent ref={popupRef} initialFocus={popupRef} className="sm:max-w-md">
+      <DialogContent
+        ref={popupRef}
+        initialFocus={popupRef}
+        className="sm:max-w-md sm:has-data-multi-column:max-w-2xl"
+      >
         <DialogHeader className="gap-0.5">
           <DialogTitle>Keyboard Shortcuts</DialogTitle>
-          <DialogDescription>Shortcuts available on this page.</DialogDescription>
+          <DialogDescription>Hotkeys available on this page</DialogDescription>
         </DialogHeader>
         <ShortcutList />
-        <DialogFooter className="gap-2.5 sm:items-center sm:justify-between sm:gap-5">
-          <div className="mx-auto flex items-start gap-1.5 pl-2 sm:mx-0 sm:gap-2 sm:pl-1">
-            <IconInfoCircle
-              className="size-3.5 translate-y-[3px] text-muted-foreground"
-              aria-hidden
-            />
-            <p className="text-[13px] leading-normal text-muted-foreground">
-              Single-key shortcuts pause while you&rsquo;re typing.
-            </p>
-          </div>
-          <Button variant="outline" onClick={() => setOpen(false)} className="sm:hidden">
-            Close
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
