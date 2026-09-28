@@ -13,6 +13,7 @@ import {
   mockSubscription,
   resetSubscriptionActionSpies,
 } from "@/components/dashboard/mocks/subscription";
+import { KeyboardShortcutsDialog } from "@/components/keyboard-shortcuts";
 import {
   type DashboardActions,
   type DashboardBulkActions,
@@ -145,6 +146,7 @@ function DashboardTestShell({
   return (
     <DashboardProvider domains={domains} actions={actions} bulk={bulk}>
       <DashboardHotkeys />
+      <KeyboardShortcutsDialog />
       <div className="space-y-6">
         <DashboardHeader userName={userName} />
         {totalDomains > 0 && (

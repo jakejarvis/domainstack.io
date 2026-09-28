@@ -31,7 +31,19 @@ export function useDashboardHotkeys(): void {
     },
     {
       hotkey: DASHBOARD_HOTKEYS.clearSelection,
-      callback: clearSelection,
+      callback: (event) => {
+        // Escape inside an open popup (dialog, menu, or a combobox whose input keeps
+        // focus) dismisses that popup; the selection stays.
+        if (
+          event.target instanceof Element &&
+          event.target.closest(
+            '[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [aria-expanded="true"]',
+          )
+        ) {
+          return;
+        }
+        clearSelection();
+      },
       options: {
         enabled: selectedCount > 0,
         preventDefault: false,

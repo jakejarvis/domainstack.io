@@ -36,8 +36,8 @@ Before editing files for a substantial task:
 ### Testing
 
 - `pnpm test` — Run all tests once
-- `pnpm test path/to/file.test.ts` — Run a single test file
-- `pnpm test -t "test name"` — Run tests matching a pattern
+- `pnpm --filter @domainstack/web test components/foo.test.tsx` — Run specific test files (paths relative to that package; root `pnpm test` is `turbo run test`, which reads extra args as task names)
+- `pnpm --filter @domainstack/web test -t "test name"` — Run tests matching a pattern
 - `pnpm test:coverage` — Run tests with coverage report
 
 ### Database

@@ -30,6 +30,7 @@ import { HIDEABLE_COLUMNS } from "@/components/dashboard/dashboard-table-columns
 import { makePaginationDomains, makeTrackedDomain } from "@/components/dashboard/test-fixtures";
 import {
   dashboardActionSpies,
+  renderDashboardConfirmShell,
   renderDashboardShell,
   resetDashboardTestState,
 } from "@/components/dashboard/test-utils";
@@ -845,6 +846,117 @@ describe("dashboard shell", () => {
       await expect
         .element(page.getByRole("toolbar", { name: "Bulk actions" }))
         .not.toBeInTheDocument();
+    });
+  });
+
+  describe("keyboard shortcuts", () => {
+    it("lists the mounted shortcuts when ? is pressed", async () => {
+      await renderDashboardShell();
+
+      await userEvent.keyboard("?");
+
+      const dialog = page.getByRole("dialog", { name: "Keyboard shortcuts" });
+      await expect.element(dialog).toBeInTheDocument();
+      await expect.element(dialog.getByRole("heading", { name: "Global" })).toBeInTheDocument();
+      await expect.element(dialog.getByText("Show keyboard shortcuts")).toBeInTheDocument();
+      await expect.element(dialog.getByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
+      await expect.element(dialog.getByText("Select all domains")).toBeInTheDocument();
+      await expect.element(dialog.getByText("Clear domain selection")).toBeInTheDocument();
+      await expect.element(dialog.getByText("Select a range")).toBeInTheDocument();
+    });
+
+    it("clears the search on Escape, then leaves the empty field", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      const search = page.getByRole("textbox", { name: "Search domains" });
+      await search.fill("alpha");
+      await vi.waitFor(() => {
+        expect(domainNames()).toEqual(["alpha.com"]);
+      });
+
+      await userEvent.keyboard("{Escape}");
+      await expect.element(search).toHaveValue("");
+      await expect.element(search).toHaveFocus();
+
+      await userEvent.keyboard("{Escape}");
+      await expect.element(search).not.toHaveFocus();
+    });
+
+    it("keeps the selection when Escape leaves the empty search field", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await selectGridCard("alpha.com");
+      const search = page.getByRole("textbox", { name: "Search domains" });
+      await search.click();
+      await expect.element(search).toHaveFocus();
+
+      await userEvent.keyboard("{Escape}");
+      await expect.element(search).not.toHaveFocus();
+      await expect
+        .element(
+          page
+            .getByRole("toolbar", { name: "Bulk actions" })
+            .getByText("1 selected", { exact: true }),
+        )
+        .toBeInTheDocument();
+    });
+
+    it("keeps the selection when Escape closes a filter dropdown", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await selectGridCard("alpha.com");
+      await getFilterTrigger(/TLD/i).click();
+      const listbox = page.getByRole("listbox");
+      await expect.element(listbox).toBeInTheDocument();
+
+      await userEvent.keyboard("{Escape}");
+      await expect.element(listbox).not.toBeInTheDocument();
+      await expect
+        .element(
+          page
+            .getByRole("toolbar", { name: "Bulk actions" })
+            .getByText("1 selected", { exact: true }),
+        )
+        .toBeInTheDocument();
+    });
+
+    it("keeps the selection when Escape closes the shortcuts dialog", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await selectGridCard("alpha.com");
+      await userEvent.keyboard("?");
+      const dialog = page.getByRole("dialog", { name: "Keyboard shortcuts" });
+      await expect.element(dialog).toBeInTheDocument();
+
+      await userEvent.keyboard("{Escape}");
+      await expect.element(dialog).not.toBeInTheDocument();
+      await expect
+        .element(
+          page
+            .getByRole("toolbar", { name: "Bulk actions" })
+            .getByText("1 selected", { exact: true }),
+        )
+        .toBeInTheDocument();
+    });
+
+    it("keeps the selection when Escape cancels a bulk confirm dialog", async () => {
+      await renderDashboardConfirmShell();
+      await waitForCatalog();
+
+      await selectGridCard("alpha.com");
+      await selectGridCard("beta.io");
+      const toolbar = page.getByRole("toolbar", { name: "Bulk actions" });
+      await toolbar.getByRole("button", { name: "Delete" }).click();
+      await expect.element(page.getByRole("alertdialog")).toBeInTheDocument();
+
+      await userEvent.keyboard("{Escape}");
+      await expect.element(page.getByRole("alertdialog")).not.toBeInTheDocument();
+      expect(dashboardActionSpies.onBulkDelete).not.toHaveBeenCalled();
+      await expect.element(toolbar.getByText("2 selected", { exact: true })).toBeInTheDocument();
     });
   });
 

@@ -110,6 +110,14 @@ export function ChatClientLazy({
   useHotkey(CHAT_HOTKEY, handleActivation, {
     conflictBehavior: "allow",
     enabled: hydrated && !hideAiFeatures,
+    // Without meta, the shortcuts dialog leaves chat out while AI features are hidden.
+    meta: hideAiFeatures
+      ? undefined
+      : {
+          name: "Toggle AI chat",
+          description: "Open or close the AI assistant",
+          group: "Global",
+        },
   });
 
   const handleReady = useCallback(() => {
