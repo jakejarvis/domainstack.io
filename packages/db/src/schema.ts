@@ -241,8 +241,14 @@ export const notifications = pgTable(
     sentAt: timestamp("sent_at", { withTimezone: true }).notNull(),
     // Resend email ID for troubleshooting delivery issues
     resendId: text("resend_id"),
+    // Stable logical identity for alerts that must exist at most once per episode
+    // (expiry thresholds, verification failures). NULL for recurring change alerts;
+    // PostgreSQL allows multiple NULLs under the unique constraint below.
+    dedupeKey: text("dedupe_key"),
   },
   (t) => [
+    // Atomic dedupe for keyed notifications (see createNotification)
+    unique("u_notifications_dedupe_key").on(t.dedupeKey),
     // Index for fast fetching of user's notifications
     index("idx_notifications_user_sent").on(t.userId, t.sentAt),
     // Index for unread count queries

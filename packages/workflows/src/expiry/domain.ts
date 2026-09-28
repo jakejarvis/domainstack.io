@@ -178,6 +178,8 @@ async function sendDomainExpiryNotification(
       title: params.title,
       message: params.message,
       emailSubject: params.subject,
+      // One alert per threshold per expiration date; a renewal changes the date.
+      dedupeKey: `domain-expiry:${params.trackedDomainId}:${new Date(params.expirationDate).toISOString()}:${params.notificationType}`,
       emailComponent: DomainExpiryEmail({
         userName: getFirstName(params.userName),
         domainName: params.domainName,

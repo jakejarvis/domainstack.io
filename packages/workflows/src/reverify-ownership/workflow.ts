@@ -298,6 +298,7 @@ async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boo
       title,
       message,
       emailSubject: subject,
+      dedupeKey: `verification:${domain.id}:${new Date(domain.failedAt).toISOString()}:verification_failing`,
       emailComponent: VerificationFailingEmail({
         userName: getFirstName(domain.userName),
         domainName: domain.domainName,
@@ -348,6 +349,7 @@ async function sendVerificationRevokedEmail(domain: DomainForEmail): Promise<boo
       title,
       message,
       emailSubject: subject,
+      dedupeKey: `verification:${domain.id}:${new Date(domain.failedAt).toISOString()}:verification_revoked`,
       emailComponent: VerificationRevokedEmail({
         userName: getFirstName(domain.userName),
         domainName: domain.domainName,

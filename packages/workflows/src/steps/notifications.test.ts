@@ -61,7 +61,10 @@ const baseParams = {
 describe("sendChangeNotificationStep", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    notificationsMock.createNotification.mockResolvedValue({ id: "n_1" } as never);
+    notificationsMock.createNotification.mockResolvedValue({
+      notification: { id: "n_1" },
+      created: true,
+    } as never);
     notificationsMock.updateNotificationResendId.mockResolvedValue(true);
     trackedDomainsMock.isTrackedDomainNotificationEligible.mockResolvedValue(true);
   });
@@ -195,6 +198,17 @@ describe("sendChangeNotificationStep", () => {
     );
   });
 
+  it("passes no dedupeKey to createNotification for change alerts", async () => {
+    sendEmailMock.sendEmail.mockResolvedValue({ emailId: "em_1" });
+
+    const { sendChangeNotificationStep } = await import("./notifications");
+    await sendChangeNotificationStep(baseParams, { shouldSendEmail: true, shouldSendInApp: true });
+
+    expect(notificationsMock.createNotification).toHaveBeenCalledTimes(1);
+    const call = notificationsMock.createNotification.mock.calls[0]?.[0];
+    expect(call?.dedupeKey).toBeUndefined();
+  });
+
   it("returns false before sendEmail and createNotification when the tracked domain is no longer eligible", async () => {
     trackedDomainsMock.isTrackedDomainNotificationEligible.mockResolvedValue(false);
 
@@ -282,5 +296,74 @@ describe("determineNotificationChannelsStep", () => {
 
     expect(channels).toEqual({ shouldSendEmail: false, shouldSendInApp: true });
     expect(preferencesMock.getOrCreateUserNotificationPreferences).toHaveBeenCalledWith("user-1");
+  });
+});
+
+describe("sendNotification with a dedupeKey", () => {
+  const options = {
+    userId: "user-1",
+    userEmail: "user@example.com",
+    trackedDomainId: "tracked-1",
+    domainName: "example.com",
+    notificationType: "domain_expiry_7d" as const,
+    title: "example.com expires in 7 days",
+    message: "Your domain example.com will expire soon.",
+    emailSubject: "example.com expires in 7 days",
+    emailComponent: {} as React.ReactElement,
+    dedupeKey: "domain-expiry:tracked-1:2026-10-05T00:00:00.000Z:domain_expiry_7d",
+  };
+  const channels = { shouldSendEmail: true, shouldSendInApp: true };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    notificationsMock.updateNotificationResendId.mockResolvedValue(true);
+    trackedDomainsMock.isTrackedDomainNotificationEligible.mockResolvedValue(true);
+    sendEmailMock.sendEmail.mockResolvedValue({ emailId: "em_1" });
+  });
+
+  it("uses the dedupe key as the email idempotency key and passes it to createNotification", async () => {
+    notificationsMock.createNotification.mockResolvedValue({
+      notification: { id: "n_1" },
+      created: true,
+    } as never);
+
+    const { sendNotification } = await import("./notifications");
+    const result = await sendNotification(options, channels);
+
+    expect(result).toBe(true);
+    expect(sendEmailMock.sendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ idempotencyKey: options.dedupeKey }),
+    );
+    expect(notificationsMock.createNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ dedupeKey: options.dedupeKey }),
+    );
+    expect(notificationsMock.updateNotificationResendId).toHaveBeenCalledWith("n_1", "em_1");
+  });
+
+  it("prefers an explicit idempotencyKey over the dedupe key for the email", async () => {
+    notificationsMock.createNotification.mockResolvedValue({
+      notification: { id: "n_1" },
+      created: true,
+    } as never);
+
+    const { sendNotification } = await import("./notifications");
+    await sendNotification({ ...options, idempotencyKey: "explicit-key" }, channels);
+
+    expect(sendEmailMock.sendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ idempotencyKey: "explicit-key" }),
+    );
+  });
+
+  it("returns false and leaves the winner's row alone when the insert race is lost", async () => {
+    notificationsMock.createNotification.mockResolvedValue({
+      notification: { id: "n_winner" },
+      created: false,
+    } as never);
+
+    const { sendNotification } = await import("./notifications");
+    const result = await sendNotification(options, channels);
+
+    expect(result).toBe(false);
+    expect(notificationsMock.updateNotificationResendId).not.toHaveBeenCalled();
   });
 });

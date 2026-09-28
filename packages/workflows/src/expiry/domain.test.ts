@@ -175,4 +175,27 @@ describe("checkDomainExpiry", () => {
       { shouldSendEmail: true, shouldSendInApp: true },
     );
   });
+
+  it("dedupe key: identical for the same expiration and threshold, different after a renewal", async () => {
+    const { checkDomainExpiry } = await import("./domain");
+    const keyOfLastSend = () => {
+      const call = sharedNotificationsMock.sendNotification.mock.calls.at(-1);
+      return call?.[0].dedupeKey;
+    };
+
+    await checkDomainExpiry({ trackedDomainId: "td-1" });
+    const first = keyOfLastSend();
+    await checkDomainExpiry({ trackedDomainId: "td-1" });
+    expect(keyOfLastSend()).toBe(first);
+    expect(first).toBe(`domain-expiry:td-1:${baseDomain.expirationDate}:domain_expiry_7d`);
+
+    // Renewed by a day but still inside the same threshold window.
+    trackedDomainsMock.getTrackedDomainForNotification.mockResolvedValue({
+      ...baseDomain,
+      expirationDate: inDays(6).toISOString(),
+    } as never);
+    await checkDomainExpiry({ trackedDomainId: "td-1" });
+    expect(keyOfLastSend()).toBeTypeOf("string");
+    expect(keyOfLastSend()).not.toBe(first);
+  });
 });

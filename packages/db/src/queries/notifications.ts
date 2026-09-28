@@ -13,36 +13,67 @@ export interface CreateNotificationParams {
   message: string;
   data?: Record<string, unknown>;
   channels?: NotificationChannel[];
+  /**
+   * Stable logical identity. When set, creation is an atomic claim: a second
+   * call with the same key returns the existing row instead of inserting.
+   */
+  dedupeKey?: string;
 }
 
 /** Filter type for notification queries */
 export type NotificationFilter = "unread" | "read" | "all";
 
 /**
- * Create a new notification record.
+ * Create a notification record.
+ *
+ * Without a `dedupeKey` this is a plain insert. With one, the insert is
+ * `ON CONFLICT DO NOTHING` on the unique `dedupe_key`, so concurrent callers
+ * for the same logical notification produce exactly one row: the winner gets
+ * `created: true`, the losers get the existing row with `created: false`.
  *
  * Throws on database errors. Callers run inside workflow steps, where a throw
  * retries the step; swallowing the error would turn a transient blip into a
  * failed run and a duplicate email on the next run.
  */
-export async function createNotification(params: CreateNotificationParams) {
-  const { userId, trackedDomainId, type, title, message, data, channels } = params;
+export async function createNotification(
+  params: CreateNotificationParams,
+): Promise<
+  | { notification: typeof notifications.$inferSelect | undefined; created: true }
+  | { notification: typeof notifications.$inferSelect; created: false }
+> {
+  const { userId, trackedDomainId, type, title, message, data, channels, dedupeKey } = params;
 
-  const [notification] = await db
-    .insert(notifications)
-    .values({
-      userId,
-      trackedDomainId: trackedDomainId ?? null,
-      type,
-      title,
-      message,
-      data: data ?? {},
-      channels: channels ?? ["in-app", "email"],
-      sentAt: new Date(),
-    })
+  const insert = db.insert(notifications).values({
+    userId,
+    trackedDomainId: trackedDomainId ?? null,
+    type,
+    title,
+    message,
+    data: data ?? {},
+    channels: channels ?? ["in-app", "email"],
+    sentAt: new Date(),
+    dedupeKey: dedupeKey ?? null,
+  });
+
+  if (!dedupeKey) {
+    const [notification] = await insert.returning();
+    return { notification, created: true };
+  }
+
+  const [inserted] = await insert
+    .onConflictDoNothing({ target: notifications.dedupeKey })
     .returning();
+  if (inserted) return { notification: inserted, created: true };
 
-  return notification;
+  const [existing] = await db
+    .select()
+    .from(notifications)
+    .where(eq(notifications.dedupeKey, dedupeKey))
+    .limit(1);
+  if (!existing) {
+    throw new Error(`notification dedupe conflict but no row found for key ${dedupeKey}`);
+  }
+  return { notification: existing, created: false };
 }
 
 /**

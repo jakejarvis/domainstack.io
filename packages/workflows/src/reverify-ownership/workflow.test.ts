@@ -275,10 +275,40 @@ describe("reverifyOwnershipWorkflow", () => {
     );
     expect(sharedNotificationsMock.sendNotification).toHaveBeenCalledTimes(1);
     expect(sharedNotificationsMock.sendNotification).toHaveBeenCalledWith(
-      expect.objectContaining({ notificationType: "verification_failing" }),
+      expect.objectContaining({
+        notificationType: "verification_failing",
+        dedupeKey: "verification:td-1:2026-09-13T04:00:00.000Z:verification_failing",
+      }),
       { shouldSendEmail: true, shouldSendInApp: true },
     );
     expect(result).toEqual({ verified: false, action: "marked_failing" });
+  });
+
+  it("dedupe key: identical within a failure episode, different for a new failure timestamp", async () => {
+    const failingAt = (iso: string) =>
+      trackedDomainsMock.getTrackedDomainForReverification.mockResolvedValue({
+        ...baseDomain,
+        verificationStatus: "failing",
+        verificationFailedAt: new Date(iso),
+      } as never);
+    notificationsQueryMock.hasRecentNotification.mockResolvedValue(false);
+    const keyOfLastSend = () => {
+      const call = sharedNotificationsMock.sendNotification.mock.calls.at(-1);
+      return call?.[0].dedupeKey;
+    };
+
+    const { reverifyOwnershipWorkflow } = await import("./workflow");
+
+    failingAt("2026-09-10T04:00:00Z");
+    await reverifyOwnershipWorkflow({ trackedDomainId: "td-1" });
+    const first = keyOfLastSend();
+    await reverifyOwnershipWorkflow({ trackedDomainId: "td-1" });
+    expect(keyOfLastSend()).toBe(first);
+
+    failingAt("2026-09-11T04:00:00Z");
+    await reverifyOwnershipWorkflow({ trackedDomainId: "td-1" });
+    expect(keyOfLastSend()).toBeTypeOf("string");
+    expect(keyOfLastSend()).not.toBe(first);
   });
 
   it("regression: second episode within 30 days still sends", async () => {
@@ -350,7 +380,10 @@ describe("reverifyOwnershipWorkflow", () => {
     const result = await reverifyOwnershipWorkflow({ trackedDomainId: "td-1" });
 
     expect(sharedNotificationsMock.sendNotification).toHaveBeenCalledWith(
-      expect.objectContaining({ notificationType: "verification_revoked" }),
+      expect.objectContaining({
+        notificationType: "verification_revoked",
+        dedupeKey: "verification:td-1:2026-09-05T04:00:00.000Z:verification_revoked",
+      }),
       { shouldSendEmail: true, shouldSendInApp: true },
     );
     expect(trackedDomainsMock.revokeVerification).toHaveBeenCalledWith(

@@ -163,4 +163,39 @@ describe("checkCertificateExpiry", () => {
       { shouldSendEmail: true, shouldSendInApp: true },
     );
   });
+
+  it("dedupe key: identical for the same certificate and threshold, different after a renewal or reissue", async () => {
+    const { checkCertificateExpiry } = await import("./certificate");
+    const keyOfLastSend = () => {
+      const call = sharedNotificationsMock.sendNotification.mock.calls.at(-1);
+      return call?.[0].dedupeKey;
+    };
+
+    await checkCertificateExpiry({ trackedDomainId: "td-1" });
+    const first = keyOfLastSend();
+    await checkCertificateExpiry({ trackedDomainId: "td-1" });
+    expect(keyOfLastSend()).toBe(first);
+    expect(first).toMatch(
+      new RegExp(
+        `^certificate-expiry:td-1:${baseCert.validTo.toISOString()}:[0-9a-f]{16}:certificate_expiry_7d$`,
+      ),
+    );
+
+    // Renewed by a day but still inside the same threshold window.
+    certificatesQueryMock.getEarliestCertificate.mockResolvedValue({
+      ...baseCert,
+      validTo: inDays(6),
+    });
+    await checkCertificateExpiry({ trackedDomainId: "td-1" });
+    const renewed = keyOfLastSend();
+    expect(renewed).not.toBe(first);
+
+    // Same expiry from a different issuer is a different certificate.
+    certificatesQueryMock.getEarliestCertificate.mockResolvedValue({
+      ...baseCert,
+      issuer: "Google Trust Services",
+    });
+    await checkCertificateExpiry({ trackedDomainId: "td-1" });
+    expect(keyOfLastSend()).not.toBe(first);
+  });
 });

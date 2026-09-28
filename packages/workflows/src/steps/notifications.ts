@@ -144,18 +144,30 @@ export async function checkAlreadySentStep(
  * Every caller runs this inside a `"use step"` function, so the whole body
  * re-runs from the top when the step is retried.
  *
- * 1. **Email first, record second**: `createNotification` is a plain insert with
- *    no deduplication, so writing the row before the send would leave one extra
- *    copy of the alert in the user's inbox view for every failed email attempt.
- *    Sending first means a failed attempt leaves no trace to duplicate, and the
- *    row is only written once delivery is confirmed.
+ * 1. **Email first, record second**: writing the row before the send would
+ *    leave one extra copy of the alert in the user's inbox view for every
+ *    failed email attempt. Sending first means a failed attempt leaves no
+ *    trace to duplicate, and the row is only written once delivery is
+ *    confirmed.
  *
  * 2. **Email-level idempotency**: the send goes through `steps/email.ts`,
- *    which uses the enclosing step's id as the Resend idempotency key, so a
- *    retry after a partial failure re-sends the same mail without delivering
- *    it twice (~24-48 hour window).
+ *    which uses the enclosing step's id as the Resend idempotency key unless
+ *    the caller provides one, so a retry after a partial failure re-sends the
+ *    same mail without delivering it twice (~24-48 hour window). Keyed alerts
+ *    (`dedupeKey`) use that key, so concurrent runs share one Resend key too.
  *
- * 3. **Permanent email failures degrade to in-app only; transient ones throw
+ * 3. **Atomic row dedupe for keyed alerts**: expiry and verification alerts
+ *    pass a `dedupeKey` naming the logical episode. `createNotification`
+ *    claims it with a unique constraint (`ON CONFLICT DO NOTHING`), so racing
+ *    runs write one row; the loser returns `false` and leaves the winner's row
+ *    (and its Resend id) untouched. Recurring change alerts pass no key: the
+ *    same transition can legitimately happen again, and their emails dedupe
+ *    through their own `idempotencyKey`. The callers' pre-send "already sent"
+ *    checks stay in place: the email goes out before the row is written and
+ *    Resend keys expire, so the key alone would not stop a later run from
+ *    re-sending.
+ *
+ * 4. **Permanent email failures degrade to in-app only; transient ones throw
  *    for step retry.**
  *
  * After the send, the notification row is recorded. Database errors from that
@@ -179,6 +191,8 @@ export async function sendNotification(
     emailComponent?: React.ReactElement;
     emailSubject?: string;
     idempotencyKey?: string;
+    /** Logical episode identity; makes the row insert atomic and keys the email. */
+    dedupeKey?: string;
   },
   { shouldSendEmail, shouldSendInApp }: NotificationChannels,
 ): Promise<boolean> {
@@ -201,6 +215,7 @@ export async function sendNotification(
     emailComponent,
     emailSubject,
     idempotencyKey,
+    dedupeKey,
   } = options;
 
   if (!shouldSendEmail && !shouldSendInApp) return false;
@@ -232,7 +247,7 @@ export async function sendNotification(
         to: userEmail,
         subject: email.subject,
         react: email.react,
-        idempotencyKey,
+        idempotencyKey: idempotencyKey ?? dedupeKey,
       });
       emailId = sent.emailId;
     } catch (err) {
@@ -253,9 +268,9 @@ export async function sendNotification(
   if (channels.length === 0) return false;
 
   // Record the notification only once delivery is settled.
-  let notification: Awaited<ReturnType<typeof createNotification>>;
+  let result: Awaited<ReturnType<typeof createNotification>>;
   try {
-    notification = await createNotification({
+    result = await createNotification({
       userId,
       trackedDomainId,
       type: notificationType,
@@ -263,12 +278,17 @@ export async function sendNotification(
       message,
       data: { domainName },
       channels,
+      dedupeKey,
     });
   } catch (err) {
     const { classifyDatabaseError } = await import("../lib/errors");
     throw classifyDatabaseError(err, { context: `creating notification record for ${domainName}` });
   }
 
+  // A concurrent run already recorded this episode; leave its row alone.
+  if (!result.created) return false;
+
+  const { notification } = result;
   if (!notification) {
     // An insert that returns no row without raising is not retryable.
     throw new FatalError("Failed to create notification record in database");

@@ -160,6 +160,11 @@ async function sendCertificateExpiryNotification(
     await import("@domainstack/email/templates/certificate-expiry");
   const { sendNotification } = await import("../steps/notifications");
   const { getBaseUrl, getFirstName } = await import("../steps/email");
+  const { createHash } = await import("node:crypto");
+
+  // The earliest-certificate query exposes no fingerprint, so the issuer hash
+  // plus validTo identify the certificate; a renewal changes validTo.
+  const issuerHash = createHash("sha256").update(params.issuer).digest("hex").slice(0, 16);
 
   return await sendNotification(
     {
@@ -171,6 +176,7 @@ async function sendCertificateExpiryNotification(
       title: params.title,
       message: params.message,
       emailSubject: params.subject,
+      dedupeKey: `certificate-expiry:${params.trackedDomainId}:${new Date(params.validTo).toISOString()}:${issuerHash}:${params.notificationType}`,
       emailComponent: CertificateExpiryEmail({
         userName: getFirstName(params.userName),
         domainName: params.domainName,
