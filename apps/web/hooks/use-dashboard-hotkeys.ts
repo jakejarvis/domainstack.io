@@ -74,7 +74,7 @@ export function useDashboardHotkeys(): void {
         meta: {
           name: "Select all domains",
           description: "Select every domain in the current dashboard results",
-          group: "Dashboard",
+          group: "Selection",
         },
       },
     },
@@ -94,7 +94,7 @@ export function useDashboardHotkeys(): void {
         meta: {
           name: "Clear domain selection",
           description: "Clear the current dashboard selection",
-          group: "Dashboard",
+          group: "Selection",
         },
       },
     },
@@ -105,9 +105,9 @@ export function useDashboardHotkeys(): void {
         enabled: canRunBulkAction,
         requireReset: true,
         meta: {
-          name: "Archive selected",
+          name: "Archive selected…",
           description: "Archive the selected domains",
-          group: "Dashboard",
+          group: "Selection",
         },
       },
     },
@@ -124,7 +124,7 @@ export function useDashboardHotkeys(): void {
         meta: {
           name: "Mute or unmute selected",
           description: "Mute the selected domains, or unmute them if all are muted",
-          group: "Dashboard",
+          group: "Selection",
         },
       },
     },
@@ -135,9 +135,9 @@ export function useDashboardHotkeys(): void {
         enabled: canRunBulkAction,
         requireReset: true,
         meta: {
-          name: "Delete selected",
+          name: "Delete selected…",
           description: "Delete the selected domains, after confirmation",
-          group: "Dashboard",
+          group: "Selection",
         },
       },
     },
@@ -178,7 +178,7 @@ export function useDashboardHotkeys(): void {
         enabled: subscription?.canAddMore === true,
         requireReset: true,
         meta: {
-          name: "Add domain",
+          name: "Add domain…",
           description: "Start tracking a new domain",
           group: "Dashboard",
         },

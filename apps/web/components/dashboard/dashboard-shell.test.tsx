@@ -861,11 +861,13 @@ describe("dashboard shell", () => {
 
       await userEvent.keyboard("?");
 
-      const dialog = page.getByRole("dialog", { name: "Keyboard shortcuts" });
+      const dialog = page.getByRole("dialog", { name: "Keyboard Shortcuts" });
       await expect.element(dialog).toBeInTheDocument();
       await expect.element(dialog.getByRole("heading", { name: "Global" })).toBeInTheDocument();
       await expect.element(dialog.getByText("Show keyboard shortcuts")).toBeInTheDocument();
       await expect.element(dialog.getByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
+      await expect.element(dialog.getByText("Filter domains")).toBeInTheDocument();
+      await expect.element(dialog.getByRole("heading", { name: "Selection" })).toBeInTheDocument();
       await expect.element(dialog.getByText("Select all domains")).toBeInTheDocument();
       await expect.element(dialog.getByText("Clear domain selection")).toBeInTheDocument();
       await expect.element(dialog.getByText("Select a range")).toBeInTheDocument();
@@ -957,7 +959,7 @@ describe("dashboard shell", () => {
 
       await userEvent.keyboard("?");
       await expect
-        .element(page.getByRole("dialog", { name: "Keyboard shortcuts" }))
+        .element(page.getByRole("dialog", { name: "Keyboard Shortcuts" }))
         .toBeInTheDocument();
 
       await pressSelectAllHotkey();
@@ -972,7 +974,7 @@ describe("dashboard shell", () => {
 
       await selectGridCard("alpha.com");
       await userEvent.keyboard("?");
-      const dialog = page.getByRole("dialog", { name: "Keyboard shortcuts" });
+      const dialog = page.getByRole("dialog", { name: "Keyboard Shortcuts" });
       await expect.element(dialog).toBeInTheDocument();
 
       await userEvent.keyboard("{Escape}");
