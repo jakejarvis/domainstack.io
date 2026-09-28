@@ -159,7 +159,8 @@ async function main() {
     .where(inArray(domains.name, domainNames));
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-  const secret = process.env.CRON_SECRET || "<CRON_SECRET>";
+  // Only echo the documented dev default; never print a real secret
+  const secret = process.env.CRON_SECRET === "dev" ? "dev" : "$CRON_SECRET";
   console.info(`
 Seeded ${DEV_USERS.length} users. Sign in at ${baseUrl}/login with:
 ${DEV_USERS.map((u) => `  ${u.email} / ${DEV_PASSWORD} (${u.tier})`).join("\n")}
@@ -167,7 +168,7 @@ ${DEV_USERS.map((u) => `  ${u.email} / ${DEV_PASSWORD} (${u.tier})`).join("\n")}
 With \`pnpm dev\` running, fill in report data and change-detection baselines:
   curl -H "Authorization: Bearer ${secret}" ${baseUrl}/api/cron/warm-domains
   curl -H "Authorization: Bearer ${secret}" ${baseUrl}/api/cron/monitor-domains
-`);
+${secret === "dev" ? "" : "(set CRON_SECRET in your shell to the value in apps/web/.env.local)\n"}`);
 }
 
 main().then(

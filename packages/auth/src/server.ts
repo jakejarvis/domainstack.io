@@ -214,6 +214,8 @@ export const auth = betterAuth({
   socialProviders,
   emailAndPassword: {
     enabled: isDev,
+    // Dev accounts come from `pnpm db:seed`; no need to expose sign-up
+    disableSignUp: true,
   },
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days

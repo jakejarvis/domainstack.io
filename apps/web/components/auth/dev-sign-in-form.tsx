@@ -36,14 +36,20 @@ export function DevSignInForm({ callbackURL, onNavigate }: DevSignInFormProps) {
 
     setError(null);
     setIsPending(true);
-    const { error: signInError } = await signIn.email({
-      email: field("email").trim(),
-      password: field("password"),
-    });
+    try {
+      const { error: signInError } = await signIn.email({
+        email: field("email").trim(),
+        password: field("password"),
+      });
 
-    if (signInError) {
+      if (signInError) {
+        setIsPending(false);
+        setError(signInError.message ?? "Sign-in failed. Did you run `pnpm db:seed`?");
+        return;
+      }
+    } catch {
       setIsPending(false);
-      setError(signInError.message ?? "Sign-in failed. Did you run `pnpm db:seed`?");
+      setError("Sign-in failed. Please try again.");
       return;
     }
 

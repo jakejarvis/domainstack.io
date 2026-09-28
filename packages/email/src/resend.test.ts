@@ -1,4 +1,4 @@
-import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -44,10 +44,51 @@ describe("sendEmail without Resend configured", () => {
     expect(error).toBeNull();
     expect(data?.id).toMatch(/^dev-/);
 
-    const dir = path.join(cwd, "public", "_dev-emails");
+    const dir = path.join(cwd, ".dev-emails");
     const [file] = await readdir(dir);
-    expect(file).toMatch(/-confirm-your-account-deletion\.html$/);
+    expect(file).toBe(`confirm-your-account-deletion-${data?.id}.html`);
+    expect(data?.id).toMatch(/^dev-[0-9a-f-]{36}$/);
     expect(await readFile(path.join(dir, file), "utf8")).toContain("Hello from the outbox");
+  });
+
+  it("gives each email its own file", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    const { sendEmail } = await import("./resend");
+
+    await Promise.all([
+      sendEmail(email, { baseUrl: "http://localhost:3000" }),
+      sendEmail(email, { baseUrl: "http://localhost:3000" }),
+    ]);
+
+    expect(await readdir(path.join(cwd, ".dev-emails"))).toHaveLength(2);
+  });
+
+  it("points the inline logo at the hosted image", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    const { sendEmail } = await import("./resend");
+
+    await sendEmail(
+      { ...email, react: createElement("img", { src: "cid:domainstack-logo", alt: "" }) },
+      { baseUrl: "http://localhost:3000/" },
+    );
+
+    const dir = path.join(cwd, ".dev-emails");
+    const [file] = await readdir(dir);
+    const html = await readFile(path.join(dir, file), "utf8");
+    expect(html).toContain('src="http://localhost:3000/apple-icon.png"');
+    expect(html).not.toContain("cid:");
+  });
+
+  it("returns a Resend-style error when the outbox cannot be written", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    // A file where the outbox directory should be makes mkdir fail
+    await writeFile(path.join(cwd, ".dev-emails"), "");
+    const { sendEmail } = await import("./resend");
+
+    const { data, error } = await sendEmail(email, { baseUrl: "http://localhost:3000" });
+
+    expect(data).toBeNull();
+    expect(error?.name).toBe("application_error");
   });
 
   it("throws outside development", async () => {

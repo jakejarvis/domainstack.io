@@ -24,7 +24,7 @@ export type SendEmailOptions = {
  * - From field: "Domainstack <RESEND_FROM_EMAIL>"
  *
  * In development without `RESEND_API_KEY`, the email is written to a local
- * HTML file instead (see `writeToDevOutbox`).
+ * HTML file under `.dev-emails/` instead (see `writeToDevOutbox`).
  *
  * @param params - Email parameters (omit 'from' field)
  * @param options - Options including baseUrl for logo attachment
@@ -35,8 +35,19 @@ export async function sendEmail(
   options: SendEmailOptions,
 ) {
   if (!resend && shouldUseDevOutbox()) {
-    const data = await writeToDevOutbox({ ...params, baseUrl: options.baseUrl });
-    return { data, error: null, headers: null };
+    try {
+      const data = await writeToDevOutbox({ ...params, baseUrl: options.baseUrl });
+      return { data, error: null, headers: null };
+    } catch (err) {
+      // Match Resend's contract (errors are returned, not thrown) so callers
+      // classify local failures the same way
+      const message = err instanceof Error ? err.message : String(err);
+      return {
+        data: null,
+        error: { name: "application_error" as const, message, statusCode: null },
+        headers: null,
+      };
+    }
   }
 
   if (!resend) {

@@ -1,3 +1,7 @@
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { blobKey, getFiles } from "./files";
@@ -89,12 +93,23 @@ describe("getFiles in development without credentials", () => {
     vi.stubEnv("BLOB_READ_WRITE_TOKEN", "");
     vi.stubEnv("VERCEL_OIDC_TOKEN", "");
     vi.stubEnv("NEXT_PUBLIC_BASE_URL", "http://localhost:3000/");
+    const cwd = await mkdtemp(path.join(tmpdir(), "blob-dev-"));
+    const cwdSpy = vi.spyOn(process, "cwd").mockReturnValue(cwd);
 
-    const { getFiles: getDevFiles } = await importFresh();
+    try {
+      const { getFiles: getDevFiles } = await importFresh();
+      await getDevFiles().upload("abc/32x32.webp", WEBP);
 
-    expect(await getDevFiles().url("abc/32x32.webp")).toBe(
-      "http://localhost:3000/_dev-blob/abc/32x32.webp",
-    );
+      expect(await readFile(path.join(cwd, "public", "_dev-blob", "abc", "32x32.webp"))).toEqual(
+        WEBP,
+      );
+      expect(await getDevFiles().url("abc/32x32.webp")).toBe(
+        "http://localhost:3000/_dev-blob/abc/32x32.webp",
+      );
+    } finally {
+      cwdSpy.mockRestore();
+      await rm(cwd, { recursive: true, force: true });
+    }
   });
 
   it("uses Vercel Blob when a token is set", async () => {
