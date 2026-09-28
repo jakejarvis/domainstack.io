@@ -2,6 +2,8 @@ import { Resend } from "resend";
 
 import { RESEND_LOGO_CONTENT_ID, RESEND_LOGO_PATH } from "@domainstack/constants";
 
+import { shouldUseDevOutbox, writeToDevOutbox } from "./dev-outbox";
+
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 /**
@@ -21,6 +23,9 @@ export type SendEmailOptions = {
  * - Logo attachment via remote URL (baseUrl/apple-icon.png)
  * - From field: "Domainstack <RESEND_FROM_EMAIL>"
  *
+ * In development without `RESEND_API_KEY`, the email is written to a local
+ * HTML file instead (see `writeToDevOutbox`).
+ *
  * @param params - Email parameters (omit 'from' field)
  * @param options - Options including baseUrl for logo attachment
  * @returns Promise with Resend response
@@ -29,6 +34,11 @@ export async function sendEmail(
   params: Omit<Parameters<typeof Resend.prototype.emails.send>[0], "from">,
   options: SendEmailOptions,
 ) {
+  if (!resend && shouldUseDevOutbox()) {
+    const data = await writeToDevOutbox({ ...params, baseUrl: options.baseUrl });
+    return { data, error: null, headers: null };
+  }
+
   if (!resend) {
     throw new Error("Resend is not configured");
   }
@@ -58,6 +68,8 @@ export async function sendEmail(
  * @param fullName - The full name of the contact.
  */
 export async function addContact(email: string, fullName: string | null | undefined) {
+  if (!resend && shouldUseDevOutbox()) return;
+
   if (!resend) {
     throw new Error("Resend is not configured");
   }
@@ -81,6 +93,8 @@ export async function addContact(email: string, fullName: string | null | undefi
  * @param email - The email address of the contact.
  */
 export async function removeContact(email: string) {
+  if (!resend && shouldUseDevOutbox()) return;
+
   if (!resend) {
     throw new Error("Resend is not configured");
   }

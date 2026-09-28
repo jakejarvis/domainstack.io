@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import posthogClient from "posthog-js";
 import { useEffect, useState } from "react";
 
+import { DevSignInForm } from "@/components/auth/dev-sign-in-form";
 import { OAuthButton } from "@/components/auth/oauth-button";
 import { Logo } from "@/components/logo";
 import { useAuthCallback } from "@/hooks/use-auth-callback";
@@ -71,6 +72,9 @@ export function LoginContent({ className, onNavigate, callbackURL }: LoginConten
             onLoadingChange={(loading) => setLoadingProvider(loading ? provider.id : null)}
           />
         ))}
+        {process.env.NODE_ENV === "development" && (
+          <DevSignInForm callbackURL={effectiveCallbackURL} onNavigate={onNavigate} />
+        )}
       </div>
       <p className="mt-6 text-center text-xs leading-relaxed text-muted-foreground">
         By signing in, you agree to our{" "}

@@ -75,7 +75,7 @@ function createDestination(): pino.DestinationStream {
  * Shared logger options.
  */
 const baseOptions: pino.LoggerOptions = {
-  level: process.env.LOG_LEVEL ?? (isTest ? "warn" : isDev ? "debug" : "info"),
+  level: process.env.LOG_LEVEL || (isTest ? "warn" : isDev ? "debug" : "info"),
   timestamp: pino.stdTimeFunctions.isoTime,
   base: undefined, // Removes the unhelpful pid and hostname fields
   formatters: {

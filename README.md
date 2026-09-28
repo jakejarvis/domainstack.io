@@ -51,7 +51,7 @@
 
 ## Development
 
-This is a **[Turborepo](https://turborepo.dev/docs) monorepo**.
+This is a **[Turborepo](https://turborepo.dev/docs) monorepo**. You need Node.js 24+, pnpm, and Docker.
 
 ### 1. Clone & install
 
@@ -61,23 +61,25 @@ cd domainstack.io
 pnpm install
 ```
 
-### 2. Configure environment variables
+### 2. Start local services and configure env
 
-Create `.env.local` in the `apps/web` directory and populate [required variables](apps/web/.env.example):
+[`compose.yml`](compose.yml) runs Postgres and an Upstash-compatible Redis. The top block of [`.env.example`](apps/web/.env.example) already points at them:
 
 ```bash
+docker compose up -d
 cp apps/web/.env.example apps/web/.env.local
 ```
 
-At minimum, you'll need `DATABASE_URL` pointing to a Postgres database.
+Maintainers can use `vercel env pull apps/web/.env.local` instead to get real credentials.
 
 ### 3. Set up the database
 
-Apply Drizzle migrations to initialize the database schema:
-
 ```bash
 pnpm db:migrate
+pnpm db:seed
 ```
+
+The seed creates two users, `free@dev.local` and `pro@dev.local` (password `password123`), with tracked domains in each verification state. It only runs against a local database unless you pass `--force`.
 
 ### 4. Start development
 
@@ -85,7 +87,29 @@ pnpm db:migrate
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000/login](http://localhost:3000/login) and use the **Dev sign-in** form. Email/password sign-in only exists when `NODE_ENV=development`.
+
+To fill in report data and change-detection baselines for the seeded domains, trigger the crons by hand:
+
+```bash
+curl -H "Authorization: Bearer dev" http://localhost:3000/api/cron/warm-domains
+curl -H "Authorization: Bearer dev" http://localhost:3000/api/cron/monitor-domains
+```
+
+### Optional services
+
+Every other variable in `.env.example` is optional locally:
+
+| Service | Without it (in development) |
+| --- | --- |
+| OAuth (GitHub, GitLab, Google, Vercel) | Sign in as a seeded user with email/password |
+| Resend | Emails are written to `apps/web/public/_dev-emails/`, and the log prints a link to each one |
+| Vercel Blob | Favicons, screenshots and OG images are stored in `apps/web/public/_dev-blob/` |
+| Upstash Redis | Rate limiting, session caching and monitor locks are skipped |
+| Polar | Billing is disabled. When a token is set, Polar runs in sandbox outside production |
+| Global Config | Provider detection falls back to "unknown" |
+| Dynadot, IPLocate, PostHog | Pricing, geolocation and analytics are skipped |
+| Logo.dev | Provider logos come from the other logo sources only |
 
 ## License
 

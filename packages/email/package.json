@@ -12,10 +12,12 @@
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt --config ../../.oxfmtrc.json",
-    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json"
+    "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json",
+    "test": "vitest run"
   },
   "dependencies": {
     "@domainstack/constants": "workspace:*",
+    "@domainstack/logger": "workspace:*",
     "@domainstack/types": "workspace:*",
     "@domainstack/utils": "workspace:*",
     "react-email": "^6.11.0",
@@ -24,7 +26,8 @@
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@types/node": "catalog:",
-    "@types/react": "catalog:"
+    "@types/react": "catalog:",
+    "vitest": "catalog:"
   },
   "peerDependencies": {
     "react": ">=19"

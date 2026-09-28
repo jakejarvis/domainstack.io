@@ -32,6 +32,10 @@ const logger = createLogger({ source: "auth" });
 
 const redis = getRedis();
 
+// Local development also allows email/password sign-in (for seeded dev users),
+// so OAuth apps are optional there.
+const isDev = process.env.NODE_ENV === "development";
+
 // Validate required env vars
 if (!process.env.BETTER_AUTH_SECRET) {
   throw new Error("BETTER_AUTH_SECRET is required");
@@ -96,8 +100,8 @@ const { providers: socialProviders, enabledProviders } = buildOAuthProviders({
       : undefined,
 });
 
-// Ensure at least one OAuth provider is configured
-if (enabledProviders.length === 0) {
+// Ensure at least one OAuth provider is configured (outside local development)
+if (enabledProviders.length === 0 && !isDev) {
   throw new Error(
     "At least one OAuth provider must be configured (GitHub, GitLab, Google, or Vercel)",
   );
@@ -208,6 +212,9 @@ export const auth = betterAuth({
     },
   },
   socialProviders,
+  emailAndPassword: {
+    enabled: isDev,
+  },
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // 1 day
