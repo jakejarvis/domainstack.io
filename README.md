@@ -79,7 +79,7 @@ pnpm db:migrate
 pnpm db:seed
 ```
 
-The seed creates two users, `free@dev.local` and `pro@dev.local` (password `password123`), with tracked domains in each verification state. It only runs against a local database unless you pass `--force` (`pnpm db:seed --force`).
+The seed creates two users, `free@dev.local` and `pro@dev.local` (password `password123`), with tracked domains in each verification state. It only runs against a local database unless you pass `--force` (`pnpm db:seed -- --force`).
 
 ### 4. Start development
 
@@ -102,16 +102,16 @@ If you pulled real env vars, replace `dev` with your `CRON_SECRET`.
 
 Every other variable in `.env.example` is optional locally:
 
-| Service | Without it (in development) |
-| --- | --- |
-| OAuth (GitHub, GitLab, Google, Vercel) | Sign in as a seeded user with email/password |
-| Resend | Emails are written to `apps/web/.dev-emails/`, and the log prints the path to each one |
-| Vercel Blob | Favicons, screenshots and OG images are stored in `apps/web/public/_dev-blob/` |
-| Upstash Redis | Rate limiting, session caching and monitor locks are skipped |
-| Polar | Billing is disabled. When a token is set, Polar runs in sandbox outside production |
-| Global Config | Provider detection falls back to "unknown" |
-| Dynadot, IPLocate, PostHog | Pricing, geolocation and analytics are skipped |
-| Logo.dev | Provider logos come from the other logo sources only |
+| Service                                | Without it (in development)                                                            |
+| -------------------------------------- | -------------------------------------------------------------------------------------- |
+| OAuth (GitHub, GitLab, Google, Vercel) | Sign in as a seeded user with email/password                                           |
+| Resend                                 | Emails are written to `apps/web/.dev-emails/`, and the log prints the path to each one |
+| Vercel Blob                            | Favicons, screenshots and OG images are stored in `apps/web/public/_dev-blob/`         |
+| Upstash Redis                          | Rate limiting, session caching and monitor locks are skipped                           |
+| Polar                                  | Billing is disabled. When a token is set, Polar runs in sandbox outside production     |
+| Global Config                          | Provider detection falls back to "unknown"                                             |
+| Dynadot, IPLocate, PostHog             | Pricing, geolocation and analytics are skipped                                         |
+| Logo.dev                               | Provider logos come from the other logo sources only                                   |
 
 ## License
 

@@ -1,8 +1,8 @@
 /**
  * Seed a local database with dev users and tracked domains.
  *
- *   pnpm db:seed           # refuses to run against a non-local DATABASE_URL
- *   pnpm db:seed --force   # run anyway
+ *   pnpm db:seed              # refuses to run against a non-local DATABASE_URL
+ *   pnpm db:seed -- --force   # run anyway
  *
  * Safe to re-run: users, accounts and tracked domains are upserted on fixed
  * keys, and the seeded users' notifications are replaced.
