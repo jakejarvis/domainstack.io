@@ -1,11 +1,13 @@
 import { IconGauge, IconShoppingCart } from "@tabler/icons-react";
 
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
-import { UpgradeButton } from "@/components/upgrade-button";
 import { useSubscription } from "@/hooks/use-subscription";
+import { Button } from "@domainstack/ui/button";
+import { Spinner } from "@domainstack/ui/spinner";
 
 export function UpgradeBanner() {
-  const { subscription, isPro, isSubscriptionLoading } = useSubscription();
+  const { handleCheckout, isCheckoutLoading, subscription, isPro, isSubscriptionLoading } =
+    useSubscription();
 
   if (!subscription || isSubscriptionLoading || isPro) {
     return null;
@@ -32,9 +34,10 @@ export function UpgradeBanner() {
       }
       dismissible
       action={
-        <UpgradeButton className="w-full md:w-auto" icon={IconShoppingCart}>
+        <Button className="w-full md:w-auto" onClick={handleCheckout} disabled={isCheckoutLoading}>
+          {isCheckoutLoading ? <Spinner /> : <IconShoppingCart />}
           Upgrade
-        </UpgradeButton>
+        </Button>
       }
     />
   );

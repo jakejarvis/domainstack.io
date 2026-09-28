@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 
 import { DashboardGridCard } from "@/components/dashboard/dashboard-grid-card";
-import { GridUpgradeCard } from "@/components/dashboard/grid-upgrade-card";
+import { GridUpgradeButton } from "@/components/dashboard/grid-upgrade-button";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 
 type DashboardGridProps = {
@@ -58,7 +58,7 @@ export function DashboardGrid({ domains }: DashboardGridProps) {
         ))}
 
         <motion.div key="upgrade-cta" className="h-full" {...getItemMotionProps("upgrade-cta")}>
-          <GridUpgradeCard />
+          <GridUpgradeButton />
         </motion.div>
       </AnimatePresence>
     </div>

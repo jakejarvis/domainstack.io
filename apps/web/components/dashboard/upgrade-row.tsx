@@ -2,7 +2,7 @@
 
 import { IconCircleArrowUp } from "@tabler/icons-react";
 
-import { PRO_PRICE_SUMMARY } from "@/components/plan-cards";
+import { PRO_PRICE_SUMMARY } from "@/components/pro-upgrade-button";
 import { useSubscription } from "@/hooks/use-subscription";
 import { PLAN_QUOTAS } from "@domainstack/constants";
 import { Spinner } from "@domainstack/ui/spinner";

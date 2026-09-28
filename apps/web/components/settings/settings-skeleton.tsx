@@ -32,15 +32,15 @@ export function SubscriptionSkeleton({ className }: { className?: string }) {
           <Skeleton className="h-2 w-full rounded-full" />
         </div>
 
-        {/* ProUpsell */}
-        <div className="@container rounded-xl border border-accent-gold/25 bg-linear-to-bl from-accent-gold/5 to-transparent to-60% p-4">
-          <div className="flex flex-col gap-4 @sm:flex-row @sm:items-center @sm:justify-between">
-            <div className="space-y-1">
+        {/* ProUpgradeButton */}
+        <div className="rounded-xl border border-accent-gold/25 bg-linear-to-bl from-accent-gold/5 to-transparent to-60% p-4">
+          <div className="flex items-center justify-between gap-5">
+            <div className="min-w-0 flex-1 space-y-1">
               <Skeleton className="h-5 w-8" />
               <Skeleton className="h-4 w-40" />
             </div>
-            <div className="flex items-center justify-between gap-5 @sm:justify-end">
-              <div className="flex flex-col gap-1 @sm:items-end">
+            <div className="flex shrink-0 items-center justify-end gap-5">
+              <div className="flex flex-col items-end gap-1">
                 <Skeleton className="h-3.5 w-16" />
                 <Skeleton className="h-3 w-16" />
               </div>

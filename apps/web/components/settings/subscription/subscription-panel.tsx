@@ -1,7 +1,7 @@
 import { IconAlertCircle, IconCreditCard } from "@tabler/icons-react";
 
-import { ProUpsell } from "@/components/plan-cards";
 import { PlanUsage } from "@/components/plan-usage";
+import { ProUpgradeButton } from "@/components/pro-upgrade-button";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { SubscriptionSkeleton } from "@/components/settings/settings-skeleton";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -106,7 +106,7 @@ export function SubscriptionPanel() {
             </ItemActions>
           </Item>
         ) : (
-          <ProUpsell />
+          <ProUpgradeButton />
         )}
       </div>
     </SettingsCard>

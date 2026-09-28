@@ -89,12 +89,12 @@ describe("AddDomainContent", () => {
       .element(page.getByRole("heading", { name: "Domain limit reached" }))
       .toBeInTheDocument();
     await expect
-      .element(page.getByText(/Your Free plan supports up to 5 tracked domains/))
+      .element(page.getByText(/Free accounts support up to 5 tracked domains/))
       .toBeInTheDocument();
     await expect.element(page.getByRole("button", { name: "Upgrade to Pro" })).toBeInTheDocument();
     await expect.element(page.getByLabelText("Domain name")).not.toBeInTheDocument();
 
-    await page.getByRole("button", { name: "Back to domains" }).click();
+    await page.getByRole("button", { name: "Close" }).click();
     expect(addDomainActionSpies.onClose).toHaveBeenCalledOnce();
   });
 
@@ -104,12 +104,12 @@ describe("AddDomainContent", () => {
     await renderAddDomainContent();
 
     await expect
-      .element(page.getByText(/Your Pro plan supports up to 100 tracked domains/))
+      .element(page.getByText(/Pro accounts support up to 100 tracked domains/))
       .toBeInTheDocument();
     await expect
       .element(page.getByRole("button", { name: "Upgrade to Pro" }))
       .not.toBeInTheDocument();
-    await expect.element(page.getByRole("button", { name: "Back to domains" })).toBeInTheDocument();
+    await expect.element(page.getByRole("button", { name: "Close" })).toBeInTheDocument();
   });
 
   it("resumes verification on step 2 for a pending domain", async () => {

@@ -6,7 +6,7 @@ import { StepConfirmation } from "@/components/dashboard/add-domain/step-confirm
 import { StepEnterDomain } from "@/components/dashboard/add-domain/step-enter-domain";
 import { StepInstructionsError } from "@/components/dashboard/add-domain/step-instructions-error";
 import { StepVerifyOwnership } from "@/components/dashboard/add-domain/step-verify-ownership";
-import { ProUpsell } from "@/components/plan-cards";
+import { ProUpgradeButton } from "@/components/pro-upgrade-button";
 import { useDomainVerification } from "@/hooks/use-domain-verification";
 import { useSubscription } from "@/hooks/use-subscription";
 import type { ResumeDomainData } from "@domainstack/types";
@@ -119,7 +119,7 @@ function AddDomainQuotaReached({
       </div>
 
       <div className="flex flex-col gap-3">
-        {isPro ? null : <ProUpsell />}
+        {isPro ? null : <ProUpgradeButton />}
         {onClose ? (
           <Button variant="outline" onClick={onClose} className="w-full">
             Close
