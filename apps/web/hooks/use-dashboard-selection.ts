@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo } from "react";
 import { useDashboardView } from "@/context/dashboard-context";
 import { selectedDomainIdsAtom } from "@/lib/atoms/dashboard-atoms";
 
+const hasDashboardSelectionAtom = atom((get) => get(selectedDomainIdsAtom).size > 0);
+
 /**
  * Whether a single domain is selected. Subscribe in the cell/row that renders
  * the checkbox or selection highlight so the table owner does not have to.
@@ -13,6 +15,11 @@ export function useIsDomainSelected(id: string): boolean {
   // would retain one atom per ID for the lifetime of the module.
   const isSelectedAtom = useMemo(() => atom((get) => get(selectedDomainIdsAtom).has(id)), [id]);
   return useAtomValue(isSelectedAtom);
+}
+
+/** Whether the dashboard is currently in multi-select mode. */
+export function useHasDashboardSelection(): boolean {
+  return useAtomValue(hasDashboardSelectionAtom);
 }
 
 /**

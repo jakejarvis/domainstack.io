@@ -10,7 +10,11 @@ import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Favicon } from "@/components/icons/favicon";
 import { LinkPendingIcon } from "@/components/link-pending-icon";
-import { useIsDomainSelected, useToggleDomainSelection } from "@/hooks/use-dashboard-selection";
+import {
+  useHasDashboardSelection,
+  useIsDomainSelected,
+  useToggleDomainSelection,
+} from "@/hooks/use-dashboard-selection";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { addDomainResumeHref } from "@/lib/add-domain-resume";
 import type { ProviderCategory, TrackedDomainWithDetails } from "@domainstack/types";
@@ -174,10 +178,12 @@ function DashboardGridCardBody({ domain }: { domain: TrackedDomainWithDetails })
 function DashboardGridCardHeader({
   domain,
   selected,
+  selectionActive,
   onToggleSelect,
 }: {
   domain: TrackedDomainWithDetails;
   selected: boolean;
+  selectionActive: boolean;
   onToggleSelect: () => void;
 }) {
   return (
@@ -186,15 +192,18 @@ function DashboardGridCardHeader({
         <div className="relative size-8 shrink-0">
           <Favicon
             domain={domain.domainName}
-            className={cn("size-8 rounded-md", selected ? "hidden" : "group-hover:hidden")}
+            className={cn(
+              "size-8 rounded-md",
+              selectionActive ? "hidden" : "group-focus-within:hidden group-hover:hidden",
+            )}
           />
           <Checkbox
             checked={selected}
             onCheckedChange={onToggleSelect}
             aria-label={`Select ${domain.domainName}`}
             className={cn(
-              "absolute top-1/2 left-1/2 size-5 -translate-x-1/2 -translate-y-1/2",
-              selected ? "flex" : "hidden group-hover:flex",
+              "absolute top-1/2 left-1/2 size-5 -translate-x-1/2 -translate-y-1/2 after:-inset-3",
+              selectionActive ? "flex" : "hidden group-focus-within:flex group-hover:flex",
             )}
           />
         </div>
@@ -233,6 +242,7 @@ export const DashboardGridCard = memo(function DashboardGridCard({
 }: DashboardGridCardProps) {
   const { id: trackedDomainId } = domain;
   const selected = useIsDomainSelected(trackedDomainId);
+  const selectionActive = useHasDashboardSelection();
   const toggle = useToggleDomainSelection();
 
   const handleToggleSelect = useCallback(() => {
@@ -270,6 +280,7 @@ export const DashboardGridCard = memo(function DashboardGridCard({
         <DashboardGridCardHeader
           domain={domain}
           selected={selected}
+          selectionActive={selectionActive}
           onToggleSelect={handleToggleSelect}
         />
 

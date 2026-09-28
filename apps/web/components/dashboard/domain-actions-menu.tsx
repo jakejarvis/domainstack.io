@@ -6,11 +6,13 @@ import {
   IconCircleDashedCheck,
   IconDotsVertical,
   IconExternalLink,
+  IconSquareCheck,
   IconTrash,
 } from "@tabler/icons-react";
 import Link from "next/link";
 
 import { useDashboardActions } from "@/context/dashboard-context";
+import { useIsDomainSelected, useToggleDomainSelection } from "@/hooks/use-dashboard-selection";
 import { addDomainResumeHref } from "@/lib/add-domain-resume";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
@@ -34,6 +36,8 @@ export function DomainActionsMenu({
   triggerVariant: "ghost" | "outline";
 }) {
   const { onMute, onArchive, onRemove } = useDashboardActions();
+  const selected = useIsDomainSelected(domain.id);
+  const toggleSelection = useToggleDomainSelection();
 
   return (
     <DropdownMenu>
@@ -46,6 +50,11 @@ export function DomainActionsMenu({
         }
       />
       <DropdownMenuContent align="end" className="min-w-36">
+        <DropdownMenuItem onClick={() => toggleSelection(domain.id)}>
+          <IconSquareCheck />
+          {selected ? "Deselect" : "Select"}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem
           nativeButton={false}
           render={

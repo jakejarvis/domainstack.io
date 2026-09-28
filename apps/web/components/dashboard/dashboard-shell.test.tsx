@@ -221,6 +221,26 @@ describe("dashboard shell", () => {
       await expect.element(toolbar).toBeInTheDocument();
       await expect.element(toolbar.getByText("1 selected", { exact: true })).toBeInTheDocument();
     });
+
+    it("starts and continues selection from card actions without hover", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      const alphaCard = domainCard("alpha.com");
+      await userEvent.click(cardButton(alphaCard, "Actions"));
+      await page.getByRole("menuitem", { name: "Select" }).click();
+
+      const toolbar = page.getByRole("toolbar", { name: "Bulk actions" });
+      await expect.element(toolbar.getByText("1 selected", { exact: true })).toBeInTheDocument();
+      await expect.element(page.getByRole("checkbox", { name: "Select beta.io" })).toBeVisible();
+
+      await page.getByRole("checkbox", { name: "Select beta.io" }).click();
+      await expect.element(toolbar.getByText("2 selected", { exact: true })).toBeInTheDocument();
+
+      await userEvent.click(cardButton(alphaCard, "Actions"));
+      await page.getByRole("menuitem", { name: "Deselect" }).click();
+      await expect.element(toolbar.getByText("1 selected", { exact: true })).toBeInTheDocument();
+    });
   });
 
   describe("table", () => {
