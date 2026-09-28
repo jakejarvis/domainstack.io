@@ -160,9 +160,11 @@ export function KeyboardShortcutsDialog() {
         initialFocus={popupRef}
         className="sm:max-w-md sm:has-data-multi-column:max-w-2xl"
       >
-        <DialogHeader className="gap-0.5">
+        <DialogHeader>
           <DialogTitle>Keyboard Shortcuts</DialogTitle>
-          <DialogDescription>Hotkeys available on this page</DialogDescription>
+          <DialogDescription className="sr-only">
+            Shortcuts available on this page
+          </DialogDescription>
         </DialogHeader>
         <ShortcutList />
       </DialogContent>
