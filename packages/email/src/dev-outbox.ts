@@ -25,6 +25,22 @@ export function shouldUseDevOutbox(): boolean {
   return process.env.NODE_ENV === "development" && !process.env.RESEND_API_KEY;
 }
 
+function escapeHtml(value: string): string {
+  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+}
+
+/** Resend accepts `react`, `html` or `text` bodies; mirror that precedence. */
+async function renderBody(email: {
+  react?: React.ReactNode;
+  html?: string;
+  text?: string;
+}): Promise<string> {
+  if (email.react) return await render(email.react);
+  if (email.html) return email.html;
+  if (email.text) return `<pre style="white-space:pre-wrap">${escapeHtml(email.text)}</pre>`;
+  throw new Error("Email has no react, html or text body");
+}
+
 /**
  * Render an email to an HTML file under the web app's `.dev-emails/` and log
  * its path, so flows that send email can be exercised locally without a
@@ -37,6 +53,7 @@ export async function writeToDevOutbox(email: {
   subject?: string;
   react?: React.ReactNode;
   html?: string;
+  text?: string;
   baseUrl: string;
 }): Promise<{ id: string }> {
   const id = `dev-${randomUUID()}`;
@@ -47,7 +64,7 @@ export async function writeToDevOutbox(email: {
     .slice(0, 60);
   const filename = `${slug || "email"}-${id}.html`;
 
-  const rendered = email.react ? await render(email.react) : (email.html ?? "");
+  const rendered = await renderBody(email);
   // Resend attaches the logo inline; point the preview at the hosted copy instead
   const html = rendered.replaceAll(
     `cid:${RESEND_LOGO_CONTENT_ID}`,

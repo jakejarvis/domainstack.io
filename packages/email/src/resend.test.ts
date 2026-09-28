@@ -79,6 +79,34 @@ describe("sendEmail without Resend configured", () => {
     expect(html).not.toContain("cid:");
   });
 
+  it("keeps text-only emails, escaped", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    const { sendEmail } = await import("./resend");
+
+    const { error } = await sendEmail(
+      { to: "user@example.com", subject: "Plain", text: "a < b & c" },
+      { baseUrl: "http://localhost:3000" },
+    );
+
+    expect(error).toBeNull();
+    const dir = path.join(cwd, ".dev-emails");
+    const [file] = await readdir(dir);
+    expect(await readFile(path.join(dir, file), "utf8")).toContain("a &lt; b &amp; c");
+  });
+
+  it("returns a Resend-style error for an email with no body", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    const { sendEmail } = await import("./resend");
+
+    const { data, error } = await sendEmail(
+      { to: "user@example.com", subject: "Empty" },
+      { baseUrl: "http://localhost:3000" },
+    );
+
+    expect(data).toBeNull();
+    expect(error?.name).toBe("application_error");
+  });
+
   it("returns a Resend-style error when the outbox cannot be written", async () => {
     vi.stubEnv("NODE_ENV", "development");
     // A file where the outbox directory should be makes mkdir fail
