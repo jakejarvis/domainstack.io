@@ -16,7 +16,10 @@ import {
   EmptyTitle,
 } from "@domainstack/ui/empty";
 
-/** Where focus lands after a confirmed archive or delete removes the focused domain. */
+/**
+ * Where focus lands after a confirmed archive or delete removes the focused domain.
+ * The archived list reuses it; the two views never mount together.
+ */
 export const DASHBOARD_RESULTS_ID = "dashboard-results";
 
 export function DashboardContent({ totalDomains }: { totalDomains: number }) {

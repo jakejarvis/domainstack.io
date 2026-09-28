@@ -1053,6 +1053,22 @@ describe("dashboard shell", () => {
       expect(dashboardActionSpies.onBulkMute).not.toHaveBeenCalled();
     });
 
+    it("leaves single-key presses to an open menu", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await selectGridCard("alpha.com");
+      await page.getByRole("button", { name: /^Sort:/ }).click();
+      const item = page.getByRole("menuitemradio").first();
+      await expect.element(item).toBeInTheDocument();
+
+      const event = new KeyboardEvent("keydown", { key: "e", bubbles: true, cancelable: true });
+      item.element().dispatchEvent(event);
+
+      expect(event.defaultPrevented).toBe(false);
+      expect(dashboardActionSpies.onBulkArchive).not.toHaveBeenCalled();
+    });
+
     it("does not run bulk hotkeys without a selection or while typing", async () => {
       await renderDashboardShell();
       await waitForCatalog();

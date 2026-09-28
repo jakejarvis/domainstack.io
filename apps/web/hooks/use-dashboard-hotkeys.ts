@@ -51,10 +51,14 @@ export function useDashboardHotkeys(): void {
 
   // Single-key commands already skip text inputs (TanStack's default); they
   // also skip open popups so typing or dismissing there never triggers them.
+  // Those registrations set `preventDefault: false` so a popup keeps its keys
+  // (e.g. menu typeahead); the default is prevented only when a command runs.
   const unlessInPopup =
     (command: () => void) =>
     (event: KeyboardEvent): void => {
-      if (!isFromOpenPopup(event)) command();
+      if (isFromOpenPopup(event)) return;
+      event.preventDefault();
+      command();
     };
 
   const hotkeys: UseHotkeyDefinition[] = [
@@ -83,8 +87,8 @@ export function useDashboardHotkeys(): void {
       // Escape inside a popup dismisses that popup, and mid-composition it
       // cancels the IME; either way the selection stays.
       callback: (event) => {
-        if (event.isComposing) return;
-        unlessInPopup(clearSelection)(event);
+        if (event.isComposing || isFromOpenPopup(event)) return;
+        clearSelection();
       },
       options: {
         enabled: selectedCount > 0,
@@ -102,6 +106,7 @@ export function useDashboardHotkeys(): void {
       hotkey: DASHBOARD_HOTKEYS.archive,
       callback: unlessInPopup(() => onBulkArchive(Array.from(selectedIds))),
       options: {
+        preventDefault: false,
         enabled: canRunBulkAction,
         requireReset: true,
         meta: {
@@ -119,6 +124,7 @@ export function useDashboardHotkeys(): void {
         onBulkMute(Array.from(selectedIds), !allMuted);
       }),
       options: {
+        preventDefault: false,
         enabled: canRunBulkAction,
         requireReset: true,
         meta: {
@@ -132,6 +138,7 @@ export function useDashboardHotkeys(): void {
       hotkey: DASHBOARD_HOTKEYS.delete,
       callback: unlessInPopup(() => onBulkDelete(Array.from(selectedIds))),
       options: {
+        preventDefault: false,
         enabled: canRunBulkAction,
         requireReset: true,
         meta: {
@@ -150,8 +157,9 @@ export function useDashboardHotkeys(): void {
           .find((input) => input.checkVisibility())
           ?.focus();
       }),
-      // preventDefault (the default) keeps the "/" out of the input it just focused.
+      // The guard's preventDefault keeps the "/" out of the input it just focused.
       options: {
+        preventDefault: false,
         meta: {
           name: "Filter domains",
           description: "Focus the dashboard search",
@@ -163,6 +171,7 @@ export function useDashboardHotkeys(): void {
       hotkey: DASHBOARD_HOTKEYS.toggleView,
       callback: unlessInPopup(() => setViewMode(viewMode === "grid" ? "table" : "grid")),
       options: {
+        preventDefault: false,
         requireReset: true,
         meta: {
           name: "Switch view",
@@ -175,6 +184,7 @@ export function useDashboardHotkeys(): void {
       hotkey: DASHBOARD_HOTKEYS.addDomain,
       callback: unlessInPopup(() => router.push("/dashboard/add-domain", { scroll: false })),
       options: {
+        preventDefault: false,
         enabled: subscription?.canAddMore === true,
         requireReset: true,
         meta: {
