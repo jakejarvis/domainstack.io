@@ -1,7 +1,7 @@
 import { useHotkeys, type UseHotkeyDefinition } from "@tanstack/react-hotkeys";
 
 import { useDashboardBulkActions, useDashboardView } from "@/context/dashboard-context";
-import { useDashboardSelection } from "@/hooks/use-dashboard-selection";
+import { useDashboardSelection, useHasDashboardSelection } from "@/hooks/use-dashboard-selection";
 import { useRouter } from "@/hooks/use-router";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useDashboardViewMode, usePreferencesStore } from "@/lib/stores/preferences-store";
@@ -38,6 +38,9 @@ function isFromOpenPopup(event: KeyboardEvent): boolean {
 export function useDashboardHotkeys(): void {
   const { selectedIds, selectedCount, visibleCount, selectAll, clearSelection } =
     useDashboardSelection();
+  // Includes domains hidden by filters, which stay selected and keep the grid in
+  // selection mode, so Escape can still clear them.
+  const hasSelection = useHasDashboardSelection();
   const { visibleDomains } = useDashboardView();
   const { onBulkArchive, onBulkDelete, onBulkMute, isBulkArchiving, isBulkDeleting, isBulkMuting } =
     useDashboardBulkActions();
@@ -91,7 +94,7 @@ export function useDashboardHotkeys(): void {
         clearSelection();
       },
       options: {
-        enabled: selectedCount > 0,
+        enabled: hasSelection,
         preventDefault: false,
         stopPropagation: false,
         requireReset: true,

@@ -853,6 +853,29 @@ describe("dashboard shell", () => {
         .element(page.getByRole("toolbar", { name: "Bulk actions" }))
         .not.toBeInTheDocument();
     });
+
+    it("clears a selection hidden by filters on Escape", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await selectGridCard("alpha.com");
+      const search = page.getByRole("textbox", { name: "Search domains" });
+      await search.fill("beta");
+      await vi.waitFor(() => {
+        expect(domainNames()).toEqual(["beta.io"]);
+      });
+      // Leave the field so Escape reaches the dashboard instead of clearing the query.
+      search.element().blur();
+
+      await userEvent.keyboard("{Escape}");
+      await search.fill("");
+      await vi.waitFor(() => {
+        expect(domainNames()).toContain("alpha.com");
+      });
+      await expect
+        .element(page.getByRole("toolbar", { name: "Bulk actions" }))
+        .not.toBeInTheDocument();
+    });
   });
 
   describe("keyboard shortcuts", () => {

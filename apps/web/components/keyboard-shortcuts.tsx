@@ -69,9 +69,9 @@ function ShortcutSection({ title, items }: { title: string; items: ShortcutItem[
       <h3 id={headingId} className="mb-1 text-xs font-medium text-muted-foreground">
         {title}
       </h3>
-      <ul>
+      <ul className="divide-y divide-border/60">
         {items.map((item) => (
-          <li key={item.id} className="flex min-h-8 items-center justify-between gap-4 py-1">
+          <li key={item.id} className="flex min-h-9 items-center justify-between gap-4 py-1.5">
             <span className="min-w-0 truncate text-sm">{item.name}</span>
             <ShortcutKeys hotkey={item.hotkey} gesture={item.gesture} />
           </li>
@@ -122,9 +122,6 @@ function ShortcutList() {
       aria-label="Shortcuts"
       className="-mx-5 min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:ring-inset"
     >
-      {/* Columns sit inside the scroller: a height-capped multicol box would
-          overflow sideways into extra columns instead of scrolling. The dialog
-          widens to fit them via `data-multi-column`. */}
       <div
         data-multi-column={multiColumn || undefined}
         className={cn(multiColumn && "sm:columns-2 sm:gap-8")}
@@ -153,8 +150,6 @@ export function KeyboardShortcutsDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      {/* Open onto the dialog itself. By default Base UI focuses the first tabbable
-          element, the scrollable list, which would show its focus ring right away. */}
       <DialogContent
         ref={popupRef}
         initialFocus={popupRef}
