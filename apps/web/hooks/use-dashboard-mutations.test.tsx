@@ -21,7 +21,7 @@ import {
   makeDashboardDomains,
   makeTrackedDomain,
 } from "@/components/dashboard/test-fixtures";
-import { selectedDomainIdsAtom } from "@/lib/atoms/dashboard-atoms";
+import { dashboardSelectedDomainIdsAtom } from "@/lib/atoms/dashboard-atoms";
 import { createTestQueryClient, renderHook } from "@/mocks/react";
 import {
   bulkArchiveDomainsMutation,
@@ -128,7 +128,10 @@ describe("useDashboardMutations", () => {
 
   it("deselects every removed or archived domain, even when the calls overlap", async () => {
     const store = createStore();
-    store.set(selectedDomainIdsAtom, new Set(["domain-alpha", "domain-beta", "domain-gamma"]));
+    store.set(
+      dashboardSelectedDomainIdsAtom,
+      new Set(["domain-alpha", "domain-beta", "domain-gamma"]),
+    );
     const { result } = await renderDashboardMutations({ store });
 
     // Back to back, before either settles: per-call `mutate` callbacks would only
@@ -137,14 +140,14 @@ describe("useDashboardMutations", () => {
     result.current.archive("domain-beta");
 
     await vi.waitFor(() => {
-      expect(store.get(selectedDomainIdsAtom)).toEqual(new Set(["domain-gamma"]));
+      expect(store.get(dashboardSelectedDomainIdsAtom)).toEqual(new Set(["domain-gamma"]));
     });
   });
 
   it("keeps a domain selected when removing it fails", async () => {
     removeDomainMutation.mockRejectedValueOnce(new Error("nope"));
     const store = createStore();
-    store.set(selectedDomainIdsAtom, new Set(["domain-alpha"]));
+    store.set(dashboardSelectedDomainIdsAtom, new Set(["domain-alpha"]));
     const { result } = await renderDashboardMutations({ store });
 
     result.current.remove("domain-alpha");
@@ -152,7 +155,7 @@ describe("useDashboardMutations", () => {
     await vi.waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Failed to remove domain");
     });
-    expect(store.get(selectedDomainIdsAtom)).toEqual(new Set(["domain-alpha"]));
+    expect(store.get(dashboardSelectedDomainIdsAtom)).toEqual(new Set(["domain-alpha"]));
   });
 
   it("archives a domain and moves it from active to archived counts", async () => {

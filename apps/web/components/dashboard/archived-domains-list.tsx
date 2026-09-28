@@ -1,6 +1,7 @@
 import { IconArchive, IconCircleArrowUp, IconRefresh, IconTrash } from "@tabler/icons-react";
 
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
+import { DASHBOARD_RESULTS_ID } from "@/components/dashboard/dashboard-content";
 import { Favicon } from "@/components/icons/favicon";
 import { useDashboardActions } from "@/context/dashboard-context";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
@@ -32,6 +33,21 @@ type ArchivedDomainsListProps = {
 };
 
 export function ArchivedDomainsList({ domains }: ArchivedDomainsListProps) {
+  // Same focus target as the active view's results (the two never mount together),
+  // so a confirmed delete here lands focus on the list instead of the page body.
+  return (
+    <section
+      id={DASHBOARD_RESULTS_ID}
+      aria-label="Archived domains"
+      tabIndex={-1}
+      className="rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+    >
+      <ArchivedDomainsListBody domains={domains} />
+    </section>
+  );
+}
+
+function ArchivedDomainsListBody({ domains }: ArchivedDomainsListProps) {
   const { onUnarchive, onRemove } = useDashboardActions();
   const { subscription, isPro } = useSubscription();
 

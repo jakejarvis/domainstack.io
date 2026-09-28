@@ -7,6 +7,7 @@ import { Suspense } from "react";
 import { Providers } from "@/app/providers";
 import { ChatServer } from "@/components/chat/chat-server";
 import { CookiePromptGeofenced } from "@/components/consent/cookie-prompt-geofenced";
+import { KeyboardShortcutsDialog } from "@/components/keyboard-shortcuts";
 import { AppFooter } from "@/components/layout/app-footer";
 import { AppHeader } from "@/components/layout/app-header";
 import { Toaster } from "@/components/ui/sonner";
@@ -68,6 +69,7 @@ export default function RootLayout({ children, modal }: LayoutProps<"/">) {
             </Suspense>
           </div>
           <Toaster />
+          <KeyboardShortcutsDialog />
 
           {modal}
         </Providers>

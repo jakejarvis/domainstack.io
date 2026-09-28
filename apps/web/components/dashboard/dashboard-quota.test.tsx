@@ -5,6 +5,10 @@ vi.mock("@/hooks/use-subscription", async () => {
   const { useSubscription } = await import("./mocks/subscription");
   return { useSubscription };
 });
+vi.mock("@/hooks/use-router", async () => {
+  const { useRouter } = await import("./mocks/router");
+  return { useRouter };
+});
 vi.mock("@/components/icons/favicon", async () => {
   const { Favicon } = await import("./mocks/leaf");
   return { Favicon };

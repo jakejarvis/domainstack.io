@@ -9,6 +9,7 @@ import { DashboardContent } from "@/components/dashboard/dashboard-content";
 import { DashboardError } from "@/components/dashboard/dashboard-error";
 import { DashboardFilters } from "@/components/dashboard/dashboard-filters";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { DashboardHotkeys } from "@/components/dashboard/dashboard-hotkeys";
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { HealthSummary } from "@/components/dashboard/health-summary";
 import { SubscriptionEndingBanner } from "@/components/dashboard/subscription-ending-banner";
@@ -30,6 +31,7 @@ function DashboardActiveView({
 }) {
   return (
     <div className="space-y-4">
+      <DashboardHotkeys />
       {totalDomains > 0 ? <HealthSummary /> : null}
       {totalDomains > 0 ? <DashboardFilters /> : null}
 

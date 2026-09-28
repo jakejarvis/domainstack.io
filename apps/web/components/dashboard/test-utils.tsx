@@ -7,11 +7,14 @@ import { DashboardConfirmDialog } from "@/components/dashboard/dashboard-confirm
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
 import { DashboardFilters } from "@/components/dashboard/dashboard-filters";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { DashboardHotkeys } from "@/components/dashboard/dashboard-hotkeys";
 import { HealthSummary } from "@/components/dashboard/health-summary";
+import { routerSpies } from "@/components/dashboard/mocks/router";
 import {
   mockSubscription,
   resetSubscriptionActionSpies,
 } from "@/components/dashboard/mocks/subscription";
+import { KeyboardShortcutsDialog } from "@/components/keyboard-shortcuts";
 import {
   type DashboardActions,
   type DashboardBulkActions,
@@ -26,6 +29,7 @@ import { TooltipProvider } from "@domainstack/ui/tooltip";
 
 import { DASHBOARD_TEST_NOW, makeDashboardDomains } from "./test-fixtures";
 
+export { routerSpies } from "@/components/dashboard/mocks/router";
 export {
   mockSubscription,
   subscriptionActionSpies,
@@ -81,6 +85,7 @@ export function resetDashboardTestState() {
     spy.mockClear();
   }
   resetSubscriptionActionSpies();
+  routerSpies.push.mockClear();
 }
 
 type DashboardTestShellProps = {
@@ -143,6 +148,8 @@ function DashboardTestShell({
 
   return (
     <DashboardProvider domains={domains} actions={actions} bulk={bulk}>
+      <DashboardHotkeys />
+      <KeyboardShortcutsDialog />
       <div className="space-y-6">
         <DashboardHeader userName={userName} />
         {totalDomains > 0 && (

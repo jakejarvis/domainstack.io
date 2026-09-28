@@ -41,7 +41,6 @@ type SearchClientVariant = "sm" | "lg";
 export type SearchClientProps = {
   variant?: SearchClientVariant;
   initialValue?: string;
-  onFocusChangeAction?: (isFocused: boolean) => void;
   /** Lets a parent focus the input imperatively; internal ref when omitted. */
   inputRef?: React.RefObject<HTMLInputElement | null>;
   /** Collapse without moving focus — used after submit and on an idle blur. */
@@ -151,16 +150,12 @@ function SearchInputAddons({
 function useSearchClient({
   variant,
   initialValue,
-  onFocusChangeAction,
   inputRef: externalInputRef,
   onCloseAction,
   onDismissAction,
   onHotkeyAction,
 }: Required<Pick<SearchClientProps, "variant" | "initialValue">> &
-  Pick<
-    SearchClientProps,
-    "onFocusChangeAction" | "inputRef" | "onCloseAction" | "onDismissAction" | "onHotkeyAction"
-  >) {
+  Pick<SearchClientProps, "inputRef" | "onCloseAction" | "onDismissAction" | "onHotkeyAction">) {
   const router = useRouter();
   const params = useParams<{ domain?: string }>();
   const isMobile = useIsMobile();
@@ -216,7 +211,10 @@ function useSearchClient({
       onHotkeyAction?.();
       inputRef.current?.focus();
     },
-    { conflictBehavior: "allow" },
+    {
+      conflictBehavior: "allow",
+      meta: { name: "Search domains", description: "Focus the site search", group: "Global" },
+    },
   );
 
   const navigateToDomain = (domain: string) => {
@@ -247,20 +245,16 @@ function useSearchClient({
     pointerDownRef.current = true;
   }, [variant]);
 
-  const handleFocus = useCallback(
-    (e: React.FocusEvent<HTMLInputElement>) => {
-      setIsFocused(true);
-      onFocusChangeAction?.(true);
-      if (!pointerDownRef.current) {
-        e.currentTarget.select();
-        justFocusedRef.current = false;
-      } else {
-        justFocusedRef.current = true;
-        pointerDownRef.current = false;
-      }
-    },
-    [onFocusChangeAction],
-  );
+  const handleFocus = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
+    setIsFocused(true);
+    if (!pointerDownRef.current) {
+      e.currentTarget.select();
+      justFocusedRef.current = false;
+    } else {
+      justFocusedRef.current = true;
+      pointerDownRef.current = false;
+    }
+  }, []);
 
   // Bound to the whole input group rather than the input, so Tabbing between the
   // input and the close button doesn't read as leaving the search — and so focus
@@ -271,14 +265,13 @@ function useSearchClient({
       if (next instanceof Node && e.currentTarget.contains(next)) return;
 
       setIsFocused(false);
-      onFocusChangeAction?.(false);
       // Collapse only when nothing would be lost. Report pages prefill the input,
       // so "unchanged" counts as dismissable or it could never auto-collapse.
       if (value.trim() === "" || value === derivedInitial) {
         onCloseAction?.();
       }
     },
-    [onFocusChangeAction, onCloseAction, value, derivedInitial],
+    [onCloseAction, value, derivedInitial],
   );
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLInputElement>) => {
@@ -295,16 +288,20 @@ function useSearchClient({
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        e.stopPropagation();
-        e.currentTarget.blur();
-        setIsFocused(false);
-        onFocusChangeAction?.(false);
-        onDismissAction?.();
+      // Mid-composition, Escape belongs to the IME.
+      if (e.key !== "Escape" || e.nativeEvent.isComposing) return;
+      e.preventDefault();
+      e.stopPropagation();
+      // First Escape discards edits, back to the route's domain on report pages.
+      if (value !== derivedInitial) {
+        setValue(derivedInitial);
+        return;
       }
+      // Then dismiss. The blur runs handleBlur, which resets the focus state.
+      e.currentTarget.blur();
+      onDismissAction?.();
     },
-    [onFocusChangeAction, onDismissAction],
+    [value, derivedInitial, onDismissAction],
   );
 
   const handleSubmit = () => {
@@ -350,7 +347,6 @@ function useSearchClient({
 export function SearchClient({
   variant = "lg",
   initialValue = "",
-  onFocusChangeAction,
   inputRef: externalInputRef,
   onCloseAction,
   onDismissAction,
@@ -373,7 +369,6 @@ export function SearchClient({
   } = useSearchClient({
     variant,
     initialValue,
-    onFocusChangeAction,
     inputRef: externalInputRef,
     onCloseAction,
     onDismissAction,

@@ -54,6 +54,21 @@ describe("HeaderSearch", () => {
     expect(nav.push).not.toHaveBeenCalled();
   });
 
+  it("reverts edits on the first Escape and leaves the search on the second", async () => {
+    nav.params = { domain: "example.com" };
+    await render(<HeaderSearch />);
+    const input = domainSearchInput();
+    await userEvent.fill(input, "other.com");
+
+    await userEvent.keyboard("{Escape}");
+    await expect.element(input).toHaveValue("example.com");
+    await expect.element(input).toHaveFocus();
+
+    await userEvent.keyboard("{Escape}");
+    await expect.element(input).not.toHaveFocus();
+    await expect.element(input).toHaveValue("example.com");
+  });
+
   it("re-enables the input after navigating to a new route", async () => {
     let finishNavigation: (() => void) | undefined;
     nav.push.mockImplementation(

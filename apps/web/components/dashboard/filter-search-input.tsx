@@ -25,6 +25,15 @@ export function FilterSearchInput({ value, onChange }: FilterSearchInputProps) {
           aria-label="Search domains"
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key !== "Escape" || e.nativeEvent.isComposing) return;
+            // Clear the query first, then leave the field. Stopping propagation keeps
+            // the dashboard's Escape hotkey from also clearing the selection.
+            e.preventDefault();
+            e.stopPropagation();
+            if (value) onChange("");
+            else e.currentTarget.blur();
+          }}
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="none"

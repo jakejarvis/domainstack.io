@@ -3,7 +3,7 @@ import { parseAsArrayOf, parseAsInteger, parseAsString, useQueryStates } from "n
 import { useDeferredValue, useEffect, useMemo } from "react";
 
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
-import { selectedDomainIdsAtom } from "@/lib/atoms/dashboard-atoms";
+import { clearDashboardSelectionAtom } from "@/lib/atoms/dashboard-atoms";
 import {
   computeHealthStats,
   DEFAULT_SORT,
@@ -61,7 +61,7 @@ export function useDashboardViewState(domains: TrackedDomainWithDetails[]) {
   const viewMode = useDashboardViewMode();
   const pageSize = useDashboardPageSize();
   const setPageSizePreference = usePreferencesStore((s) => s.setPageSize);
-  const setSelectedIds = useSetAtom(selectedDomainIdsAtom);
+  const clearSelection = useSetAtom(clearDashboardSelectionAtom);
 
   const [params, setParams] = useQueryStates(dashboardParams, {
     shallow: true,
@@ -114,6 +114,10 @@ export function useDashboardViewState(domains: TrackedDomainWithDetails[]) {
     deferredSort,
     now,
   ]);
+  const visibleDomainIds = useMemo(
+    () => visibleDomains.map((domain) => domain.id),
+    [visibleDomains],
+  );
 
   const stats = useMemo(
     () => (now ? computeHealthStats(domains, now) : { expiringSoon: 0, pendingVerification: 0 }),
@@ -133,7 +137,7 @@ export function useDashboardViewState(domains: TrackedDomainWithDetails[]) {
   const actions = useMemo(() => {
     const updateFilters = (patch: FilterPatch) => {
       void setParams({ ...patch, domainId: null, page: null });
-      setSelectedIds(new Set());
+      clearSelection();
     };
     const listOrNull = <T extends string>(values: T[]) => (values.length > 0 ? values : null);
 
@@ -159,7 +163,7 @@ export function useDashboardViewState(domains: TrackedDomainWithDetails[]) {
         void setParams({ page: null });
       },
     };
-  }, [setParams, setSelectedIds, setPageSizePreference]);
+  }, [setParams, clearSelection, setPageSizePreference]);
 
   const filteredDomainName = domainId
     ? (domains.find((d) => d.id === domainId)?.domainName ?? null)
@@ -192,6 +196,7 @@ export function useDashboardViewState(domains: TrackedDomainWithDetails[]) {
     pageSize,
     /** Filtered and sorted; the table paginates this, the grid shows all of it. */
     visibleDomains,
+    visibleDomainIds,
     ...actions,
   };
 }

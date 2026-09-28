@@ -5,6 +5,10 @@ vi.mock("@/hooks/use-subscription", async () => {
   const { useSubscription } = await import("./mocks/subscription");
   return { useSubscription };
 });
+vi.mock("@/hooks/use-router", async () => {
+  const { useRouter } = await import("./mocks/router");
+  return { useRouter };
+});
 vi.mock("@/components/icons/favicon", async () => {
   const { Favicon } = await import("./mocks/leaf");
   return { Favicon };
@@ -27,11 +31,18 @@ vi.mock("@/hooks/use-provider-tooltip-data", async () => {
 });
 
 import { HIDEABLE_COLUMNS } from "@/components/dashboard/dashboard-table-columns";
-import { makePaginationDomains, makeTrackedDomain } from "@/components/dashboard/test-fixtures";
+import {
+  makeDashboardDomains,
+  makePaginationDomains,
+  makeTrackedDomain,
+} from "@/components/dashboard/test-fixtures";
 import {
   dashboardActionSpies,
+  mockSubscription,
+  renderDashboardConfirmShell,
   renderDashboardShell,
   resetDashboardTestState,
+  routerSpies,
 } from "@/components/dashboard/test-utils";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 
@@ -65,11 +76,24 @@ function cardButton(card: HTMLElement, name: string) {
   return button!;
 }
 
-async function selectGridCard(name: string) {
+async function pressSelectAllHotkey() {
+  const modifier = navigator.platform.includes("Mac") ? "Meta" : "Control";
+  await userEvent.keyboard(`{${modifier}>}a{/${modifier}}`);
+}
+
+async function clickSelectionCheckbox(name: string, options?: { shift?: boolean }) {
+  const checkbox = page.getByRole("checkbox", { name: `Select ${name}` });
+  await expect.element(checkbox).toBeInTheDocument();
+
+  if (options?.shift) await userEvent.keyboard("{Shift>}");
+  await checkbox.click();
+  if (options?.shift) await userEvent.keyboard("{/Shift}");
+}
+
+async function selectGridCard(name: string, shift = false) {
   const card = domainCard(name);
   await userEvent.hover(card);
-  await expect.element(page.getByRole("checkbox", { name: `Select ${name}` })).toBeInTheDocument();
-  await page.getByRole("checkbox", { name: `Select ${name}` }).click();
+  await clickSelectionCheckbox(name, { shift });
 }
 
 describe("dashboard shell", () => {
@@ -635,6 +659,110 @@ describe("dashboard shell", () => {
   });
 
   describe("bulk toolbar", () => {
+    it("selects all visible domains with Mod+A in grid and table views", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await pressSelectAllHotkey();
+      await expect
+        .element(page.getByRole("toolbar", { name: "Bulk actions" }).getByText("4 selected"))
+        .toBeInTheDocument();
+
+      await userEvent.keyboard("{Escape}");
+      await page.getByRole("button", { name: "Table view" }).click();
+      await pressSelectAllHotkey();
+      await expect
+        .element(page.getByRole("toolbar", { name: "Bulk actions" }).getByText("4 selected"))
+        .toBeInTheDocument();
+    });
+
+    it("selects domains across table pages with Mod+A", async () => {
+      usePreferencesStore.setState({ viewMode: "table" });
+      await renderDashboardShell({ domains: makePaginationDomains(12) });
+      await expect.element(page.getByText("1 of 2", { exact: true })).toBeInTheDocument();
+
+      await pressSelectAllHotkey();
+      await expect
+        .element(page.getByRole("toolbar", { name: "Bulk actions" }).getByText("12 selected"))
+        .toBeInTheDocument();
+    });
+
+    it("leaves Mod+A to native text selection inside search", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+      const search = page.getByRole("textbox", { name: "Search domains" }).first();
+
+      await search.fill("alpha");
+      await search.click();
+      await pressSelectAllHotkey();
+
+      const input = search.element() as HTMLInputElement;
+      expect(input.selectionStart).toBe(0);
+      expect(input.selectionEnd).toBe(input.value.length);
+      await expect
+        .element(page.getByRole("toolbar", { name: "Bulk actions" }))
+        .not.toBeInTheDocument();
+    });
+
+    it("applies additive Shift ranges and endpoint deselection in the grid", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await selectGridCard("pending.dev");
+      await selectGridCard("alpha.com");
+      await selectGridCard("gamma.com", true);
+      const toolbar = page.getByRole("toolbar", { name: "Bulk actions" });
+      await expect.element(toolbar.getByText("4 selected")).toBeInTheDocument();
+
+      await selectGridCard("beta.io", true);
+      await expect.element(toolbar.getByText("2 selected")).toBeInTheDocument();
+      await expect.element(page.getByRole("checkbox", { name: "Select alpha.com" })).toBeChecked();
+      await expect
+        .element(page.getByRole("checkbox", { name: "Select pending.dev" }))
+        .toBeChecked();
+    });
+
+    it("applies an inclusive Shift range in the table", async () => {
+      usePreferencesStore.setState({ viewMode: "table" });
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await clickSelectionCheckbox("alpha.com");
+      await clickSelectionCheckbox("gamma.com", { shift: true });
+
+      const toolbar = page.getByRole("toolbar", { name: "Bulk actions" });
+      await expect.element(toolbar.getByText("3 selected")).toBeInTheDocument();
+      await expect.element(page.getByRole("checkbox", { name: "Select beta.io" })).toBeChecked();
+    });
+
+    it("falls back to a single selection after filters clear the range anchor", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+      await selectGridCard("alpha.com");
+
+      const search = page.getByRole("textbox", { name: "Search domains" }).first();
+      await search.fill("beta");
+      await vi.waitFor(() => expect(domainNames()).toEqual(["beta.io"]));
+      await search.fill("");
+      await waitForCatalog();
+
+      await selectGridCard("gamma.com", true);
+      await expect
+        .element(page.getByRole("toolbar", { name: "Bulk actions" }).getByText("1 selected"))
+        .toBeInTheDocument();
+    });
+
+    it("does not run disabled dashboard commands without visible domains", async () => {
+      await renderDashboardShell({ domains: [], totalDomains: 0 });
+
+      await pressSelectAllHotkey();
+      await userEvent.keyboard("{Escape}");
+
+      await expect
+        .element(page.getByRole("toolbar", { name: "Bulk actions" }))
+        .not.toBeInTheDocument();
+    });
+
     it("archives, deletes, mutes, unmutes, cancels, and select-alls visible ids", async () => {
       await renderDashboardShell();
       await waitForCatalog();
@@ -724,6 +852,305 @@ describe("dashboard shell", () => {
       await expect
         .element(page.getByRole("toolbar", { name: "Bulk actions" }))
         .not.toBeInTheDocument();
+    });
+
+    it("clears a selection hidden by filters on Escape", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await selectGridCard("alpha.com");
+      const search = page.getByRole("textbox", { name: "Search domains" });
+      await search.fill("beta");
+      await vi.waitFor(() => {
+        expect(domainNames()).toEqual(["beta.io"]);
+      });
+      // Leave the field so Escape reaches the dashboard instead of clearing the query.
+      search.element().blur();
+
+      await userEvent.keyboard("{Escape}");
+      await search.fill("");
+      await vi.waitFor(() => {
+        expect(domainNames()).toContain("alpha.com");
+      });
+      await expect
+        .element(page.getByRole("toolbar", { name: "Bulk actions" }))
+        .not.toBeInTheDocument();
+    });
+  });
+
+  describe("keyboard shortcuts", () => {
+    it("lists the mounted shortcuts when ? is pressed", async () => {
+      await renderDashboardShell();
+
+      await userEvent.keyboard("?");
+
+      const dialog = page.getByRole("dialog", { name: "Keyboard Shortcuts" });
+      await expect.element(dialog).toBeInTheDocument();
+      // Opens onto the dialog itself, not the scrollable list (no stray focus ring).
+      await expect.element(dialog).toHaveFocus();
+      await expect.element(dialog.getByRole("heading", { name: "Global" })).toBeInTheDocument();
+      await expect.element(dialog.getByText("Show keyboard shortcuts")).toBeInTheDocument();
+      await expect.element(dialog.getByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
+      await expect.element(dialog.getByText("Filter domains")).toBeInTheDocument();
+      await expect.element(dialog.getByRole("heading", { name: "Selection" })).toBeInTheDocument();
+      await expect.element(dialog.getByText("Select all domains")).toBeInTheDocument();
+      await expect.element(dialog.getByText("Clear domain selection")).toBeInTheDocument();
+      await expect.element(dialog.getByText("Select a range")).toBeInTheDocument();
+    });
+
+    it("clears the search on Escape, then leaves the empty field", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      const search = page.getByRole("textbox", { name: "Search domains" });
+      await search.fill("alpha");
+      await vi.waitFor(() => {
+        expect(domainNames()).toEqual(["alpha.com"]);
+      });
+
+      await userEvent.keyboard("{Escape}");
+      await expect.element(search).toHaveValue("");
+      await expect.element(search).toHaveFocus();
+
+      await userEvent.keyboard("{Escape}");
+      await expect.element(search).not.toHaveFocus();
+    });
+
+    it("keeps the selection when Escape leaves the empty search field", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await selectGridCard("alpha.com");
+      const search = page.getByRole("textbox", { name: "Search domains" });
+      await search.click();
+      await expect.element(search).toHaveFocus();
+
+      await userEvent.keyboard("{Escape}");
+      await expect.element(search).not.toHaveFocus();
+      await expect
+        .element(
+          page
+            .getByRole("toolbar", { name: "Bulk actions" })
+            .getByText("1 selected", { exact: true }),
+        )
+        .toBeInTheDocument();
+    });
+
+    it("keeps the selection when Escape closes a filter dropdown", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await selectGridCard("alpha.com");
+      await getFilterTrigger(/TLD/i).click();
+      const listbox = page.getByRole("listbox");
+      await expect.element(listbox).toBeInTheDocument();
+
+      await userEvent.keyboard("{Escape}");
+      await expect.element(listbox).not.toBeInTheDocument();
+      await expect
+        .element(
+          page
+            .getByRole("toolbar", { name: "Bulk actions" })
+            .getByText("1 selected", { exact: true }),
+        )
+        .toBeInTheDocument();
+    });
+
+    it("keeps the selection when Escape cancels an IME composition", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await selectGridCard("alpha.com");
+      const search = page.getByRole("textbox", { name: "Search domains" });
+      await search.click();
+      search
+        .element()
+        .dispatchEvent(
+          new KeyboardEvent("keydown", { key: "Escape", isComposing: true, bubbles: true }),
+        );
+
+      await expect
+        .element(
+          page
+            .getByRole("toolbar", { name: "Bulk actions" })
+            .getByText("1 selected", { exact: true }),
+        )
+        .toBeInTheDocument();
+    });
+
+    it("leaves Mod+A to the open shortcuts dialog", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await userEvent.keyboard("?");
+      await expect
+        .element(page.getByRole("dialog", { name: "Keyboard Shortcuts" }))
+        .toBeInTheDocument();
+
+      await pressSelectAllHotkey();
+      await expect
+        .element(page.getByRole("toolbar", { name: "Bulk actions" }))
+        .not.toBeInTheDocument();
+    });
+
+    it("keeps the selection when Escape closes the shortcuts dialog", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await selectGridCard("alpha.com");
+      await userEvent.keyboard("?");
+      const dialog = page.getByRole("dialog", { name: "Keyboard Shortcuts" });
+      await expect.element(dialog).toBeInTheDocument();
+
+      await userEvent.keyboard("{Escape}");
+      await expect.element(dialog).not.toBeInTheDocument();
+      await expect
+        .element(
+          page
+            .getByRole("toolbar", { name: "Bulk actions" })
+            .getByText("1 selected", { exact: true }),
+        )
+        .toBeInTheDocument();
+    });
+
+    it("keeps the selection when Escape cancels a bulk confirm dialog", async () => {
+      await renderDashboardConfirmShell();
+      await waitForCatalog();
+
+      await selectGridCard("alpha.com");
+      await selectGridCard("beta.io");
+      const toolbar = page.getByRole("toolbar", { name: "Bulk actions" });
+      await toolbar.getByRole("button", { name: "Delete" }).click();
+      await expect.element(page.getByRole("alertdialog")).toBeInTheDocument();
+
+      await userEvent.keyboard("{Escape}");
+      await expect.element(page.getByRole("alertdialog")).not.toBeInTheDocument();
+      expect(dashboardActionSpies.onBulkDelete).not.toHaveBeenCalled();
+      await expect.element(toolbar.getByText("2 selected", { exact: true })).toBeInTheDocument();
+    });
+  });
+
+  describe("bulk and view hotkeys", () => {
+    it("archives the selection with E", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await selectGridCard("alpha.com");
+      await selectGridCard("beta.io");
+      await userEvent.keyboard("e");
+
+      expect(dashboardActionSpies.onBulkArchive).toHaveBeenCalledWith([
+        "domain-alpha",
+        "domain-beta",
+      ]);
+    });
+
+    it("mutes with M, or unmutes when every selected domain is muted", async () => {
+      const domains = makeDashboardDomains();
+      for (const domain of domains) {
+        if (domain.domainName === "alpha.com") domain.muted = true;
+      }
+      await renderDashboardShell({ domains });
+      await waitForCatalog();
+
+      await selectGridCard("alpha.com");
+      await userEvent.keyboard("m");
+      expect(dashboardActionSpies.onBulkMute).toHaveBeenLastCalledWith(["domain-alpha"], false);
+
+      await selectGridCard("beta.io");
+      await userEvent.keyboard("m");
+      expect(dashboardActionSpies.onBulkMute).toHaveBeenLastCalledWith(
+        ["domain-alpha", "domain-beta"],
+        true,
+      );
+    });
+
+    it("confirms before deleting with #, and ignores other keys in the dialog", async () => {
+      await renderDashboardConfirmShell();
+      await waitForCatalog();
+
+      await selectGridCard("alpha.com");
+      await userEvent.keyboard("#");
+      await expect.element(page.getByRole("alertdialog")).toBeInTheDocument();
+      expect(dashboardActionSpies.onBulkDelete).not.toHaveBeenCalled();
+
+      await userEvent.keyboard("m");
+      expect(dashboardActionSpies.onBulkMute).not.toHaveBeenCalled();
+    });
+
+    it("leaves single-key presses to an open menu", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await selectGridCard("alpha.com");
+      await page.getByRole("button", { name: /^Sort:/ }).click();
+      const item = page.getByRole("menuitemradio").first();
+      await expect.element(item).toBeInTheDocument();
+
+      // The menu's typeahead prevents every character key itself, so assert the
+      // outcome rather than `defaultPrevented`: the menu takes "e" (typeahead
+      // jumps to "Expiry…") and the archive command doesn't run.
+      item
+        .element()
+        .dispatchEvent(new KeyboardEvent("keydown", { key: "e", bubbles: true, cancelable: true }));
+
+      await expect
+        .element(page.getByRole("menuitemradio", { name: "Expiry (Soonest first)" }))
+        .toHaveAttribute("data-highlighted");
+      expect(dashboardActionSpies.onBulkArchive).not.toHaveBeenCalled();
+    });
+
+    it("does not run bulk hotkeys without a selection or while typing", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await userEvent.keyboard("e");
+      expect(dashboardActionSpies.onBulkArchive).not.toHaveBeenCalled();
+
+      await selectGridCard("alpha.com");
+      await page.getByRole("textbox", { name: "Search domains" }).click();
+      await userEvent.keyboard("em");
+      expect(dashboardActionSpies.onBulkArchive).not.toHaveBeenCalled();
+      expect(dashboardActionSpies.onBulkMute).not.toHaveBeenCalled();
+    });
+
+    it("focuses the dashboard search with / without typing the slash", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await userEvent.keyboard("/");
+
+      const search = page.getByRole("textbox", { name: "Search domains" });
+      await expect.element(search).toHaveFocus();
+      await expect.element(search).toHaveValue("");
+    });
+
+    it("switches between grid and table with V", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await userEvent.keyboard("v");
+      await expect.element(page.getByRole("table")).toBeInTheDocument();
+
+      await userEvent.keyboard("v");
+      await expect.element(page.getByRole("table")).not.toBeInTheDocument();
+    });
+
+    it("opens add-domain with N", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await userEvent.keyboard("n");
+      expect(routerSpies.push).toHaveBeenCalledWith("/dashboard/add-domain", { scroll: false });
+    });
+
+    it("ignores N when the domain quota is reached", async () => {
+      mockSubscription.canAddMore = false;
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await userEvent.keyboard("n");
+      expect(routerSpies.push).not.toHaveBeenCalled();
     });
   });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext } from "react";
+import { createContext, useContext, useLayoutEffect, useRef } from "react";
 
 import { type DashboardView, useDashboardViewState } from "@/hooks/use-dashboard-view";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
@@ -25,6 +25,9 @@ export interface DashboardBulkActions {
 const DashboardActionsContext = createContext<DashboardActions | null>(null);
 const DashboardBulkContext = createContext<DashboardBulkActions | null>(null);
 const DashboardViewContext = createContext<DashboardView | null>(null);
+// A stable ref, so range selection can read the current order at click time
+// without every card and row subscribing to view changes.
+const DashboardVisibleIdsContext = createContext<React.RefObject<string[]> | null>(null);
 
 /**
  * Owns the dashboard's view state (filters, sort, pagination) for `domains` and
@@ -43,11 +46,17 @@ export function DashboardProvider({
   children: React.ReactNode;
 }) {
   const view = useDashboardViewState(domains);
+  const visibleIdsRef = useRef(view.visibleDomainIds);
+  useLayoutEffect(() => {
+    visibleIdsRef.current = view.visibleDomainIds;
+  }, [view.visibleDomainIds]);
 
   return (
     <DashboardActionsContext.Provider value={actions}>
       <DashboardBulkContext.Provider value={bulk}>
-        <DashboardViewContext.Provider value={view}>{children}</DashboardViewContext.Provider>
+        <DashboardVisibleIdsContext.Provider value={visibleIdsRef}>
+          <DashboardViewContext.Provider value={view}>{children}</DashboardViewContext.Provider>
+        </DashboardVisibleIdsContext.Provider>
       </DashboardBulkContext.Provider>
     </DashboardActionsContext.Provider>
   );
@@ -74,4 +83,9 @@ export function useDashboardBulkActions() {
 /** Filters, sort, pagination, and the resulting visible domains */
 export function useDashboardView() {
   return useRequiredContext(DashboardViewContext);
+}
+
+/** Current visible domain order, read at event time; never triggers a re-render. */
+export function useDashboardVisibleIdsRef() {
+  return useRequiredContext(DashboardVisibleIdsContext);
 }
