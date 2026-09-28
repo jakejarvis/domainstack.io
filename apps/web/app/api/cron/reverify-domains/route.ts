@@ -24,15 +24,15 @@ export async function GET(request: Request) {
 
   try {
     const ids = await getVerifiedTrackedDomainIds();
-    const started = await startInBatches(
+    const { started, failed } = await startInBatches(
       ids,
       START_BATCH_SIZE,
       (id) => start(reverifyOwnershipWorkflow, [{ trackedDomainId: id }]),
       logger,
     );
 
-    logger.info({ started, total: ids.length }, "Reverify domains completed");
-    return NextResponse.json({ started });
+    logger.info({ started, failed, total: ids.length }, "Reverify domains completed");
+    return NextResponse.json({ started, failed }, { status: failed > 0 ? 500 : 200 });
   } catch (err) {
     logger.error({ err }, "Reverify domains failed");
     return NextResponse.json({ error: "Failed to reverify domains" }, { status: 500 });

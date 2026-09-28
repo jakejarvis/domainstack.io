@@ -29,15 +29,15 @@ export async function GET(request: Request) {
 
   try {
     const domains = await getRecentlyAccessedDomains(LOOKBACK_HOURS);
-    const started = await startInBatches(
+    const { started, failed } = await startInBatches(
       domains,
       START_BATCH_SIZE,
       (domain) => start(warmDomainWorkflow, [{ domain }]),
       logger,
     );
 
-    logger.info({ started, total: domains.length }, "Warm domains completed");
-    return NextResponse.json({ started });
+    logger.info({ started, failed, total: domains.length }, "Warm domains completed");
+    return NextResponse.json({ started, failed }, { status: failed > 0 ? 500 : 200 });
   } catch (err) {
     logger.error({ err }, "Warm domains failed");
     return NextResponse.json({ error: "Failed to warm domains" }, { status: 500 });

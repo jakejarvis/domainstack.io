@@ -45,14 +45,14 @@ describe("warm domains cron", () => {
     );
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ started: 3 });
+    await expect(response.json()).resolves.toEqual({ started: 3, failed: 0 });
     expect(mocks.start).toHaveBeenCalledTimes(3);
     for (const domain of ["a.com", "b.com", "c.com"]) {
       expect(mocks.start).toHaveBeenCalledWith(warmDomainWorkflow, [{ domain }]);
     }
   });
 
-  it("reports partial start failures without dropping the other domains", async () => {
+  it("returns 500 with counts on partial start failure without dropping the other domains", async () => {
     mocks.getRecentlyAccessedDomains.mockResolvedValue(["a.com", "b.com", "c.com"]);
     mocks.start.mockImplementation(async (...args: unknown[]) => {
       const [{ domain }] = args[1] as [{ domain: string }];
@@ -66,8 +66,8 @@ describe("warm domains cron", () => {
       }),
     );
 
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ started: 2 });
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({ started: 2, failed: 1 });
     expect(mocks.start).toHaveBeenCalledTimes(3);
   });
 
@@ -81,7 +81,7 @@ describe("warm domains cron", () => {
     );
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ started: 0 });
+    await expect(response.json()).resolves.toEqual({ started: 0, failed: 0 });
     expect(mocks.start).not.toHaveBeenCalled();
   });
 });

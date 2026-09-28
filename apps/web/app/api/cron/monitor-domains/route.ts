@@ -40,7 +40,7 @@ export async function GET(request: Request) {
       getMonitoredSnapshotIds(),
     ]);
 
-    const baselinesStarted = await startInBatches(
+    const baselines = await startInBatches(
       domains,
       START_BATCH_SIZE,
       (input) => start(initializeSnapshotWorkflow, [input]),
@@ -49,15 +49,30 @@ export async function GET(request: Request) {
 
     // A per-domain lock prevents starting a duplicate run while a prior run
     // (e.g. stuck in retry backoff) for the same domain is still in-flight.
+    // A held lock (null token) is a skip; a rejected acquisition is a failure.
     const lockResults = await settleInBatches(ids, START_BATCH_SIZE, async (id) => ({
       id,
       ownerToken: await acquireMonitorLock(id),
     }));
+    const lockFailures = lockResults.filter(
+      (result): result is PromiseRejectedResult => result.status === "rejected",
+    );
+    if (lockFailures.length > 0) {
+      logger.warn(
+        { failed: lockFailures.length, total: ids.length, err: lockFailures[0].reason },
+        "Some monitor lock acquisitions failed",
+      );
+    }
+    let skippedInFlight = 0;
     const monitorsToStart = lockResults.flatMap((result) => {
-      if (result.status === "rejected" || !result.value.ownerToken) return [];
+      if (result.status === "rejected") return [];
+      if (!result.value.ownerToken) {
+        skippedInFlight++;
+        return [];
+      }
       return [{ id: result.value.id, ownerToken: result.value.ownerToken }];
     });
-    const monitoringStarted = await startInBatches(
+    const monitoring = await startInBatches(
       monitorsToStart,
       START_BATCH_SIZE,
       async ({ id, ownerToken }) => {
@@ -74,16 +89,23 @@ export async function GET(request: Request) {
     );
 
     const result = {
-      baselines: { started: baselinesStarted, total: domains.length },
+      baselines: {
+        started: baselines.started,
+        failed: baselines.failed,
+        total: domains.length,
+      },
       monitoring: {
-        started: monitoringStarted,
+        started: monitoring.started,
+        failed: monitoring.failed + lockFailures.length,
+        lockFailed: lockFailures.length,
         total: ids.length,
-        skippedInFlight: ids.length - monitorsToStart.length,
+        skippedInFlight,
       },
     };
+    const hasFailures = result.baselines.failed > 0 || result.monitoring.failed > 0;
 
     logger.info(result, "Monitor domains completed");
-    return NextResponse.json(result);
+    return NextResponse.json(result, { status: hasFailures ? 500 : 200 });
   } catch (err) {
     logger.error({ err }, "Monitor domains failed");
     return NextResponse.json({ error: "Failed to monitor domains" }, { status: 500 });

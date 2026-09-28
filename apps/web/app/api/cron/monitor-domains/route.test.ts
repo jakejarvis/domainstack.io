@@ -39,7 +39,12 @@ describe("monitor domains cron", () => {
     vi.unstubAllEnvs();
   });
 
-  it("releases an acquired lock when workflow startup fails", async () => {
+  const request = () =>
+    new Request("https://domainstack.io/api/cron/monitor-domains", {
+      headers: { Authorization: "Bearer test-secret" },
+    });
+
+  it("releases an acquired lock and returns 500 when workflow startup fails", async () => {
     mocks.start.mockRejectedValue(new Error("Workflow API unavailable"));
 
     const response = await GET(
@@ -48,10 +53,10 @@ describe("monitor domains cron", () => {
       }),
     );
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(500);
     await expect(response.json()).resolves.toEqual({
-      baselines: { started: 0, total: 0 },
-      monitoring: { started: 0, total: 1, skippedInFlight: 0 },
+      baselines: { started: 0, failed: 0, total: 0 },
+      monitoring: { started: 0, failed: 1, lockFailed: 0, total: 1, skippedInFlight: 0 },
     });
     expect(mocks.releaseMonitorLock).toHaveBeenCalledWith("tracked-1", "owner-1");
   });
@@ -78,10 +83,65 @@ describe("monitor domains cron", () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      baselines: { started: 0, total: 0 },
-      monitoring: { started: 120, total: 120, skippedInFlight: 0 },
+      baselines: { started: 0, failed: 0, total: 0 },
+      monitoring: { started: 120, failed: 0, lockFailed: 0, total: 120, skippedInFlight: 0 },
     });
     expect(mocks.start).toHaveBeenCalledTimes(120);
     expect(maxInFlight).toBeLessThanOrEqual(50);
+  });
+
+  it("treats a held lock as a skip and returns 200", async () => {
+    mocks.getMonitoredSnapshotIds.mockResolvedValue(["tracked-1", "tracked-2"]);
+    mocks.acquireMonitorLock.mockImplementation(async (id) =>
+      id === "tracked-1" ? null : "owner-2",
+    );
+    mocks.start.mockResolvedValue(undefined);
+
+    const response = await GET(request());
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      baselines: { started: 0, failed: 0, total: 0 },
+      monitoring: { started: 1, failed: 0, lockFailed: 0, total: 2, skippedInFlight: 1 },
+    });
+    expect(mocks.start).toHaveBeenCalledTimes(1);
+  });
+
+  it("counts a rejected lock acquisition as a failure, not a skip, and still starts the rest", async () => {
+    mocks.getMonitoredSnapshotIds.mockResolvedValue(["tracked-1", "tracked-2", "tracked-3"]);
+    mocks.acquireMonitorLock.mockImplementation(async (id) => {
+      if (id === "tracked-1") throw new Error("Redis exploded");
+      if (id === "tracked-2") return null;
+      return "owner-3";
+    });
+    mocks.start.mockResolvedValue(undefined);
+
+    const response = await GET(request());
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      baselines: { started: 0, failed: 0, total: 0 },
+      monitoring: { started: 1, failed: 1, lockFailed: 1, total: 3, skippedInFlight: 1 },
+    });
+    expect(mocks.start).toHaveBeenCalledTimes(1);
+    expect(mocks.releaseMonitorLock).not.toHaveBeenCalled();
+  });
+
+  it("returns 500 when a baseline start fails but still attempts monitoring", async () => {
+    mocks.getVerifiedDomainsWithoutSnapshots.mockResolvedValue([{ id: "d-1" }, { id: "d-2" }]);
+    mocks.start.mockImplementation(async (...args: unknown[]) => {
+      const [input] = args[1] as [{ id?: string }];
+      if (input.id === "d-1") throw new Error("Workflow API unavailable");
+      return undefined;
+    });
+
+    const response = await GET(request());
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      baselines: { started: 1, failed: 1, total: 2 },
+      monitoring: { started: 1, failed: 0, lockFailed: 0, total: 1, skippedInFlight: 0 },
+    });
+    expect(mocks.start).toHaveBeenCalledTimes(3);
   });
 });

@@ -48,11 +48,11 @@ describe("settleInBatches", () => {
 });
 
 describe("startInBatches", () => {
-  it("returns the success count and warns once with a sample error on failures", async () => {
+  it("returns started and failed counts and warns once with a sample error on failures", async () => {
     const logger = { warn: vi.fn<(obj: object, msg: string) => void>() };
     const boom = new Error("boom");
 
-    const started = await startInBatches(
+    const result = await startInBatches(
       [1, 2, 3, 4],
       2,
       async (n) => {
@@ -61,7 +61,7 @@ describe("startInBatches", () => {
       logger,
     );
 
-    expect(started).toBe(2);
+    expect(result).toEqual({ started: 2, failed: 2 });
     expect(logger.warn).toHaveBeenCalledTimes(1);
     expect(logger.warn).toHaveBeenCalledWith(
       { failed: 2, total: 4, err: boom },
@@ -69,9 +69,33 @@ describe("startInBatches", () => {
     );
   });
 
+  it("attempts every item even when earlier batches fail", async () => {
+    const logger = { warn: vi.fn<(obj: object, msg: string) => void>() };
+    const fn = vi.fn<(n: number) => Promise<void>>(async () => {
+      throw new Error("down");
+    });
+
+    const result = await startInBatches([1, 2, 3, 4, 5], 2, fn, logger);
+
+    expect(result).toEqual({ started: 0, failed: 5 });
+    expect(fn).toHaveBeenCalledTimes(5);
+  });
+
   it("does not warn when every start succeeds", async () => {
     const logger = { warn: vi.fn<(obj: object, msg: string) => void>() };
-    expect(await startInBatches([1, 2, 3], 2, async () => {}, logger)).toBe(3);
+    expect(await startInBatches([1, 2, 3], 2, async () => {}, logger)).toEqual({
+      started: 3,
+      failed: 0,
+    });
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it("returns zero counts and never calls fn or warns for empty input", async () => {
+    const logger = { warn: vi.fn<(obj: object, msg: string) => void>() };
+    const fn = vi.fn<(n: number) => Promise<void>>();
+
+    expect(await startInBatches([], 2, fn, logger)).toEqual({ started: 0, failed: 0 });
+    expect(fn).not.toHaveBeenCalled();
     expect(logger.warn).not.toHaveBeenCalled();
   });
 });

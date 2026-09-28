@@ -35,29 +35,33 @@ export async function GET(request: Request) {
     // server-side downgrade safety net for users whose paid period elapsed
     // but who are still on `pro` (Polar `subscription.revoked` missed/delayed).
     // Run in sequence so concurrency stays bounded to START_BATCH_SIZE.
-    const remindersStarted = await startInBatches(
+    const reminders = await startInBatches(
       endingIds,
       START_BATCH_SIZE,
       (id) => start(subscriptionExpiryWorkflow, [{ userId: id }]),
       logger.child({ kind: "reminders" }),
     );
-    const downgradesStarted = await startInBatches(
+    const downgrades = await startInBatches(
       pastDueIds,
       START_BATCH_SIZE,
       (id) => start(subscriptionDowngradeWorkflow, [{ userId: id }]),
       logger.child({ kind: "downgrades" }),
     );
 
+    const result = {
+      remindersStarted: reminders.started,
+      remindersFailed: reminders.failed,
+      downgradesStarted: downgrades.started,
+      downgradesFailed: downgrades.failed,
+    };
+
     logger.info(
-      {
-        remindersStarted,
-        endingTotal: endingIds.length,
-        downgradesStarted,
-        pastDueTotal: pastDueIds.length,
-      },
+      { ...result, endingTotal: endingIds.length, pastDueTotal: pastDueIds.length },
       "Check subscription expiry completed",
     );
-    return NextResponse.json({ remindersStarted, downgradesStarted });
+    return NextResponse.json(result, {
+      status: reminders.failed + downgrades.failed > 0 ? 500 : 200,
+    });
   } catch (err) {
     logger.error({ err }, "Check subscription expiry failed");
     return NextResponse.json({ error: "Failed to check subscription expiry" }, { status: 500 });
