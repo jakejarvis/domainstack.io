@@ -5,6 +5,10 @@ vi.mock("@/hooks/use-subscription", async () => {
   const { useSubscription } = await import("./mocks/subscription");
   return { useSubscription };
 });
+vi.mock("@/hooks/use-router", async () => {
+  const { useRouter } = await import("./mocks/router");
+  return { useRouter };
+});
 vi.mock("@/components/icons/favicon", async () => {
   const { Favicon } = await import("./mocks/leaf");
   return { Favicon };
@@ -27,12 +31,18 @@ vi.mock("@/hooks/use-provider-tooltip-data", async () => {
 });
 
 import { HIDEABLE_COLUMNS } from "@/components/dashboard/dashboard-table-columns";
-import { makePaginationDomains, makeTrackedDomain } from "@/components/dashboard/test-fixtures";
+import {
+  makeDashboardDomains,
+  makePaginationDomains,
+  makeTrackedDomain,
+} from "@/components/dashboard/test-fixtures";
 import {
   dashboardActionSpies,
+  mockSubscription,
   renderDashboardConfirmShell,
   renderDashboardShell,
   resetDashboardTestState,
+  routerSpies,
 } from "@/components/dashboard/test-utils";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 
@@ -957,6 +967,108 @@ describe("dashboard shell", () => {
       await expect.element(page.getByRole("alertdialog")).not.toBeInTheDocument();
       expect(dashboardActionSpies.onBulkDelete).not.toHaveBeenCalled();
       await expect.element(toolbar.getByText("2 selected", { exact: true })).toBeInTheDocument();
+    });
+  });
+
+  describe("bulk and view hotkeys", () => {
+    it("archives the selection with E", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await selectGridCard("alpha.com");
+      await selectGridCard("beta.io");
+      await userEvent.keyboard("e");
+
+      expect(dashboardActionSpies.onBulkArchive).toHaveBeenCalledWith([
+        "domain-alpha",
+        "domain-beta",
+      ]);
+    });
+
+    it("mutes with M, or unmutes when every selected domain is muted", async () => {
+      const domains = makeDashboardDomains();
+      for (const domain of domains) {
+        if (domain.domainName === "alpha.com") domain.muted = true;
+      }
+      await renderDashboardShell({ domains });
+      await waitForCatalog();
+
+      await selectGridCard("alpha.com");
+      await userEvent.keyboard("m");
+      expect(dashboardActionSpies.onBulkMute).toHaveBeenLastCalledWith(["domain-alpha"], false);
+
+      await selectGridCard("beta.io");
+      await userEvent.keyboard("m");
+      expect(dashboardActionSpies.onBulkMute).toHaveBeenLastCalledWith(
+        ["domain-alpha", "domain-beta"],
+        true,
+      );
+    });
+
+    it("confirms before deleting with #, and ignores other keys in the dialog", async () => {
+      await renderDashboardConfirmShell();
+      await waitForCatalog();
+
+      await selectGridCard("alpha.com");
+      await userEvent.keyboard("#");
+      await expect.element(page.getByRole("alertdialog")).toBeInTheDocument();
+      expect(dashboardActionSpies.onBulkDelete).not.toHaveBeenCalled();
+
+      await userEvent.keyboard("m");
+      expect(dashboardActionSpies.onBulkMute).not.toHaveBeenCalled();
+    });
+
+    it("does not run bulk hotkeys without a selection or while typing", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await userEvent.keyboard("e");
+      expect(dashboardActionSpies.onBulkArchive).not.toHaveBeenCalled();
+
+      await selectGridCard("alpha.com");
+      await page.getByRole("textbox", { name: "Search domains" }).click();
+      await userEvent.keyboard("em");
+      expect(dashboardActionSpies.onBulkArchive).not.toHaveBeenCalled();
+      expect(dashboardActionSpies.onBulkMute).not.toHaveBeenCalled();
+    });
+
+    it("focuses the dashboard search with / without typing the slash", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await userEvent.keyboard("/");
+
+      const search = page.getByRole("textbox", { name: "Search domains" });
+      await expect.element(search).toHaveFocus();
+      await expect.element(search).toHaveValue("");
+    });
+
+    it("switches between grid and table with V", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await userEvent.keyboard("v");
+      await expect.element(page.getByRole("table")).toBeInTheDocument();
+
+      await userEvent.keyboard("v");
+      await expect.element(page.getByRole("table")).not.toBeInTheDocument();
+    });
+
+    it("opens add-domain with N", async () => {
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await userEvent.keyboard("n");
+      expect(routerSpies.push).toHaveBeenCalledWith("/dashboard/add-domain", { scroll: false });
+    });
+
+    it("ignores N when the domain quota is reached", async () => {
+      mockSubscription.canAddMore = false;
+      await renderDashboardShell();
+      await waitForCatalog();
+
+      await userEvent.keyboard("n");
+      expect(routerSpies.push).not.toHaveBeenCalled();
     });
   });
 

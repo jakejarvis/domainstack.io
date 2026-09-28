@@ -9,6 +9,7 @@ import { DashboardFilters } from "@/components/dashboard/dashboard-filters";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardHotkeys } from "@/components/dashboard/dashboard-hotkeys";
 import { HealthSummary } from "@/components/dashboard/health-summary";
+import { routerSpies } from "@/components/dashboard/mocks/router";
 import {
   mockSubscription,
   resetSubscriptionActionSpies,
@@ -28,6 +29,7 @@ import { TooltipProvider } from "@domainstack/ui/tooltip";
 
 import { DASHBOARD_TEST_NOW, makeDashboardDomains } from "./test-fixtures";
 
+export { routerSpies } from "@/components/dashboard/mocks/router";
 export {
   mockSubscription,
   subscriptionActionSpies,
@@ -83,6 +85,7 @@ export function resetDashboardTestState() {
     spy.mockClear();
   }
   resetSubscriptionActionSpies();
+  routerSpies.push.mockClear();
 }
 
 type DashboardTestShellProps = {

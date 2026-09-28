@@ -16,7 +16,24 @@ import {
   EmptyTitle,
 } from "@domainstack/ui/empty";
 
+/** Where focus lands after a confirmed archive or delete removes the focused domain. */
+export const DASHBOARD_RESULTS_ID = "dashboard-results";
+
 export function DashboardContent({ totalDomains }: { totalDomains: number }) {
+  // Wraps every state (results or empty), so it outlives the domains a bulk action removes.
+  return (
+    <section
+      id={DASHBOARD_RESULTS_ID}
+      aria-label="Domains"
+      tabIndex={-1}
+      className="rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+    >
+      <DashboardContentBody totalDomains={totalDomains} />
+    </section>
+  );
+}
+
+function DashboardContentBody({ totalDomains }: { totalDomains: number }) {
   const { visibleDomains: domains, clearFilters } = useDashboardView();
   const viewMode = useDashboardViewMode();
 

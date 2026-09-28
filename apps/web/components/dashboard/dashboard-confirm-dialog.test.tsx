@@ -5,6 +5,10 @@ vi.mock("@/hooks/use-subscription", async () => {
   const { useSubscription } = await import("./mocks/subscription");
   return { useSubscription };
 });
+vi.mock("@/hooks/use-router", async () => {
+  const { useRouter } = await import("./mocks/router");
+  return { useRouter };
+});
 vi.mock("@/components/icons/favicon", async () => {
   const { Favicon } = await import("./mocks/leaf");
   return { Favicon };
@@ -122,5 +126,59 @@ describe("dashboard confirm dialog", () => {
 
     await page.getByRole("alertdialog").getByRole("button", { name: "Delete All" }).click();
     expect(dashboardActionSpies.onBulkDelete).toHaveBeenCalledWith(["domain-alpha", "domain-beta"]);
+  });
+
+  describe("keyboard", () => {
+    it("focuses the action for archive, so E then Enter archives", async () => {
+      await renderDashboardConfirmShell();
+      await waitForCatalog();
+
+      await selectGridCard("alpha.com");
+      await selectGridCard("beta.io");
+      await userEvent.keyboard("e");
+
+      const action = page.getByRole("alertdialog").getByRole("button", { name: "Archive All" });
+      await expect.element(action).toHaveFocus();
+
+      await userEvent.keyboard("{Enter}");
+      expect(dashboardActionSpies.onBulkArchive).toHaveBeenCalledWith([
+        "domain-alpha",
+        "domain-beta",
+      ]);
+      await expect.element(page.getByRole("alertdialog")).not.toBeInTheDocument();
+      await expect.element(page.getByRole("region", { name: "Domains" })).toHaveFocus();
+    });
+
+    it("focuses Cancel for delete, and returns focus when cancelled", async () => {
+      await renderDashboardConfirmShell();
+      await waitForCatalog();
+
+      await selectGridCard("alpha.com");
+      await userEvent.keyboard("#");
+
+      const cancel = page.getByRole("alertdialog").getByRole("button", { name: "Cancel" });
+      await expect.element(cancel).toHaveFocus();
+
+      await userEvent.keyboard("{Enter}");
+      await expect.element(page.getByRole("alertdialog")).not.toBeInTheDocument();
+      expect(dashboardActionSpies.onBulkDelete).not.toHaveBeenCalled();
+      await expect.element(page.getByRole("checkbox", { name: "Select alpha.com" })).toHaveFocus();
+    });
+
+    it("moves focus to the domains region after a confirmed delete", async () => {
+      await renderDashboardConfirmShell();
+      await waitForCatalog();
+
+      await selectGridCard("alpha.com");
+      await userEvent.keyboard("#");
+      await userEvent.keyboard("{Tab}");
+
+      const action = page.getByRole("alertdialog").getByRole("button", { name: "Delete All" });
+      await expect.element(action).toHaveFocus();
+
+      await userEvent.keyboard("{Enter}");
+      expect(dashboardActionSpies.onBulkDelete).toHaveBeenCalledWith(["domain-alpha"]);
+      await expect.element(page.getByRole("region", { name: "Domains" })).toHaveFocus();
+    });
   });
 });
