@@ -21,7 +21,6 @@ import {
   CALENDAR_FEED_URL,
   type CalendarFeedData,
   deleteCalendarFeedMutation,
-  disableCalendarFeedMutation,
   enableCalendarFeedMutation,
   resetTrpcMocks,
   rotateCalendarFeedTokenMutation,
@@ -92,32 +91,6 @@ describe("useCalendarFeed", () => {
       expect(toast.error).toHaveBeenCalledWith("Failed to enable calendar feed");
     });
     expect(result.current.isEnabled).toBe(false);
-  });
-
-  it("disables the feed optimistically", async () => {
-    const { result, queryClient } = await renderCalendarFeed(enabledFeed);
-
-    result.current.disable();
-
-    await vi.waitFor(() => {
-      expect(getFeed(queryClient)?.enabled).toBe(false);
-    });
-    expect(result.current.isEnabled).toBe(false);
-    expect(toast.success).toHaveBeenCalledWith("Calendar feed disabled");
-    expect(disableCalendarFeedMutation).toHaveBeenCalledOnce();
-  });
-
-  it("rolls back and toasts when disable fails", async () => {
-    disableCalendarFeedMutation.mockRejectedValueOnce(new Error("nope"));
-    const { result, queryClient } = await renderCalendarFeed(enabledFeed);
-
-    result.current.disable();
-
-    await vi.waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("Failed to disable calendar feed");
-    });
-    expect(getFeed(queryClient)).toEqual(enabledFeed);
-    expect(result.current.isEnabled).toBe(true);
   });
 
   it("rotates the token and invalidates to the new URL", async () => {

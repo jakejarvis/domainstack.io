@@ -364,29 +364,6 @@ describe("user router", () => {
     });
   });
 
-  describe("disableCalendarFeed", () => {
-    it("disables an existing feed", async () => {
-      const caller = createAuthenticatedCaller();
-
-      // Create an enabled feed
-      await db.insert(calendarFeeds).values({
-        userId: TEST_USER_ID,
-        token: "test-token",
-        enabled: true,
-      });
-
-      const result = await caller.user.disableCalendarFeed();
-
-      expect(result.success).toBe(true);
-    });
-
-    it("returns not found when no feed exists", async () => {
-      const caller = createAuthenticatedCaller();
-
-      await expect(caller.user.disableCalendarFeed()).rejects.toThrow("not found");
-    });
-  });
-
   describe("rotateCalendarFeedToken", () => {
     it("rotates the feed token", async () => {
       const caller = createAuthenticatedCaller();

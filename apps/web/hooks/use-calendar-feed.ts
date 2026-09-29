@@ -22,8 +22,6 @@ export interface UseCalendarFeedReturn {
   isPending: boolean;
   /** Enable the calendar feed */
   enable: () => void;
-  /** Disable the calendar feed (optimistic) */
-  disable: () => void;
   /** Rotate the feed token to generate a new URL */
   rotate: {
     mutate: (callbacks?: MutationCallbacks) => void;
@@ -75,29 +73,6 @@ export function useCalendarFeed(): UseCalendarFeedReturn {
     },
   });
 
-  // Disable mutation (optimistic)
-  const disableMutation = useMutation({
-    ...trpc.user.disableCalendarFeed.mutationOptions(),
-    onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: feedQueryKey });
-      const previous = queryClient.getQueryData(feedQueryKey);
-      queryClient.setQueryData(feedQueryKey, { enabled: false });
-      return { previous };
-    },
-    onError: (_err, _variables, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(feedQueryKey, context.previous);
-      }
-      toast.error("Failed to disable calendar feed");
-    },
-    onSuccess: () => {
-      toast.success("Calendar feed disabled");
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries(trpc.user.getCalendarFeed.queryFilter());
-    },
-  });
-
   // Rotate token mutation
   const rotateMutation = useMutation({
     ...trpc.user.rotateCalendarFeedToken.mutationOptions(),
@@ -136,10 +111,7 @@ export function useCalendarFeed(): UseCalendarFeedReturn {
   });
 
   const isPending =
-    enableMutation.isPending ||
-    disableMutation.isPending ||
-    rotateMutation.isPending ||
-    deleteMutation.isPending;
+    enableMutation.isPending || rotateMutation.isPending || deleteMutation.isPending;
 
   // With useSuspenseQuery, feed is guaranteed to be defined
   const isEnabled = feed.enabled && "feedUrl" in feed;
@@ -149,7 +121,6 @@ export function useCalendarFeed(): UseCalendarFeedReturn {
     isEnabled,
     isPending,
     enable: () => enableMutation.mutate(),
-    disable: () => disableMutation.mutate(),
     rotate: {
       mutate: (callbacks?: MutationCallbacks) =>
         rotateMutation.mutate(undefined, { onSuccess: callbacks?.onSuccess }),

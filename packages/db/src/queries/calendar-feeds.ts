@@ -59,19 +59,6 @@ export async function enableCalendarFeed(userId: string): Promise<CalendarFeedSe
 }
 
 /**
- * Disable a calendar feed for a user.
- */
-export async function disableCalendarFeed(userId: string): Promise<CalendarFeedSelect | null> {
-  const [updated] = await db
-    .update(calendarFeeds)
-    .set({ enabled: false })
-    .where(eq(calendarFeeds.userId, userId))
-    .returning();
-
-  return updated ?? null;
-}
-
-/**
  * Rotate the calendar feed token for a user.
  */
 export async function rotateCalendarFeedToken(userId: string): Promise<CalendarFeedSelect | null> {

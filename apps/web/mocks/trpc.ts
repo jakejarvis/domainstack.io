@@ -192,15 +192,6 @@ export const enableCalendarFeedMutation = vi.fn<
   return { feedUrl, createdAt: new Date() };
 });
 
-export const disableCalendarFeedMutation = vi.fn<() => Promise<{ success: true }>>(async () => {
-  if ("feedUrl" in calendarFeedState) {
-    calendarFeedState = { ...calendarFeedState, enabled: false };
-  } else {
-    calendarFeedState = { enabled: false };
-  }
-  return { success: true };
-});
-
 export const rotateCalendarFeedTokenMutation = vi.fn<
   () => Promise<{ feedUrl: string; rotatedAt: Date }>
 >(async () => {
@@ -384,16 +375,6 @@ export function resetTrpcMocks() {
     return { feedUrl, createdAt: new Date() };
   });
 
-  disableCalendarFeedMutation.mockReset();
-  disableCalendarFeedMutation.mockImplementation(async () => {
-    if ("feedUrl" in calendarFeedState) {
-      calendarFeedState = { ...calendarFeedState, enabled: false };
-    } else {
-      calendarFeedState = { enabled: false };
-    }
-    return { success: true };
-  });
-
   rotateCalendarFeedTokenMutation.mockReset();
   rotateCalendarFeedTokenMutation.mockImplementation(async () => {
     const feedUrl = CALENDAR_FEED_ROTATED_URL;
@@ -544,9 +525,6 @@ export function useTRPC() {
       },
       enableCalendarFeed: {
         mutationOptions: mutationOptionsFor(enableCalendarFeedMutation),
-      },
-      disableCalendarFeed: {
-        mutationOptions: mutationOptionsFor(disableCalendarFeedMutation),
       },
       rotateCalendarFeedToken: {
         mutationOptions: mutationOptionsFor(rotateCalendarFeedTokenMutation),

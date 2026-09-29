@@ -3,7 +3,6 @@ import { z } from "zod";
 
 import {
   deleteCalendarFeed,
-  disableCalendarFeed,
   enableCalendarFeed,
   getCalendarFeed,
   rotateCalendarFeedToken,
@@ -132,25 +131,6 @@ export const userRouter = createTRPCRouter({
       feedUrl: buildCalendarFeedUrl(feed.token),
       createdAt: feed.createdAt,
     };
-  }),
-
-  /**
-   * Disable the calendar feed for the user.
-   * The token is preserved so the feed can be re-enabled later with the same URL.
-   */
-  disableCalendarFeed: protectedProcedure.mutation(async ({ ctx }) => {
-    const feed = await disableCalendarFeed(ctx.user.id);
-
-    if (!feed) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: "Calendar feed not found",
-      });
-    }
-
-    analytics.track("calendar_feed_disabled", {}, ctx.user.id);
-
-    return { success: true };
   }),
 
   /**
