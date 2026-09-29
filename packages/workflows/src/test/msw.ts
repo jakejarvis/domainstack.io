@@ -2,8 +2,8 @@
  * Package-local MSW test server.
  *
  * Only the handlers actually exercised by this package's tests — iplocate.io
- * GeoIP lookups. Copied (trimmed) from apps/web/mocks/handlers.ts. Tests that
- * need other endpoints register them per-test with `server.use(...)`.
+ * GeoIP lookups. Tests that need other endpoints register them per-test with
+ * `server.use(...)`.
  */
 import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
