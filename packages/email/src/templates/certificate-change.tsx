@@ -4,13 +4,12 @@ import {
   EmailBox,
   EmailBoxText,
   EmailButton,
-  EmailFooter,
   EmailHeading,
   EmailHr,
   EmailLayout,
-  EmailLink,
   EmailSubheading,
   EmailText,
+  TrackingEmailFooter,
 } from "../components";
 
 export type CertificateChangeEmailProps = {
@@ -107,11 +106,7 @@ function CertificateChangeEmail({
 
       <EmailHr />
 
-      <EmailFooter>
-        You received this email because you&apos;re tracking {domainName} on{" "}
-        <EmailLink href={baseUrl}>Domainstack</EmailLink>. You can manage your
-        notification settings in your <EmailLink href={`${baseUrl}/settings`}>dashboard</EmailLink>.
-      </EmailFooter>
+      <TrackingEmailFooter domainName={domainName} baseUrl={baseUrl} />
     </EmailLayout>
   );
 }

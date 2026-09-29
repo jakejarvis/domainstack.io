@@ -63,6 +63,27 @@ export function EmailLink({ href, children }: EmailLinkProps) {
   );
 }
 
+type TrackingEmailFooterProps = {
+  domainName: string;
+  baseUrl: string;
+  wasTracking?: boolean;
+};
+
+/** Footer for alerts about a tracked domain. */
+export function TrackingEmailFooter({
+  domainName,
+  baseUrl,
+  wasTracking = false,
+}: TrackingEmailFooterProps) {
+  return (
+    <EmailFooter>
+      You received this email because you{wasTracking ? " were" : "'re"} tracking {domainName} on{" "}
+      <EmailLink href={baseUrl}>Domainstack</EmailLink>. You can manage your notification settings
+      in your <EmailLink href={`${baseUrl}/settings`}>dashboard</EmailLink>.
+    </EmailFooter>
+  );
+}
+
 type EmailFieldLabelProps = {
   children: React.ReactNode;
 };
