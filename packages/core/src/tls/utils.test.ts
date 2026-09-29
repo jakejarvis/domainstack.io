@@ -3,6 +3,8 @@ import type { Certificate } from "node:tls";
 
 import { describe, expect, it } from "vitest";
 
+import { SafeFetchError } from "@domainstack/safe-fetch/errors";
+
 import {
   cyclicChain,
   incompleteChain,
@@ -130,14 +132,49 @@ describe("isExpectedTlsError", () => {
     expect(isExpectedTlsError(err)).toBe(true);
   });
 
-  it("detects TLS errors by message", () => {
-    const err = new Error("SSL handshake failed");
+  it("detects OpenSSL errors by ERR_SSL_ code prefix", () => {
+    const err = Object.assign(new Error("wrong version"), {
+      code: "ERR_SSL_WRONG_VERSION_NUMBER",
+    });
     expect(isExpectedTlsError(err)).toBe(true);
   });
 
-  it("detects certificate errors by message", () => {
-    const err = new Error("Certificate validation failed");
+  it("detects a code nested two levels deep in the cause chain", () => {
+    const err = new SafeFetchError(
+      "connection_error",
+      "Request to https://example.com/ failed: certificate has expired",
+      undefined,
+      {
+        cause: new TypeError("fetch failed", {
+          cause: Object.assign(new Error("certificate has expired"), {
+            code: "CERT_HAS_EXPIRED",
+          }),
+        }),
+      },
+    );
     expect(isExpectedTlsError(err)).toBe(true);
+  });
+
+  it("does not classify a timeout on a hostname containing ssl", () => {
+    const err = new SafeFetchError("timeout", "Request to https://hassle.com/ timed out");
+    expect(isExpectedTlsError(err)).toBe(false);
+  });
+
+  it("does not classify a socket error on a hostname containing signed", () => {
+    const err = new SafeFetchError(
+      "connection_error",
+      "Request to https://designed.com/ failed: other side closed",
+      undefined,
+      {
+        cause: Object.assign(new Error("other side closed"), { code: "UND_ERR_SOCKET" }),
+      },
+    );
+    expect(isExpectedTlsError(err)).toBe(false);
+  });
+
+  it("does not inspect messages", () => {
+    expect(isExpectedTlsError(new Error("SSL handshake failed"))).toBe(false);
+    expect(isExpectedTlsError(new Error("Certificate validation failed"))).toBe(false);
   });
 });
 

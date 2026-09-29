@@ -193,4 +193,33 @@ describe("fetchSeo", () => {
       expect(lifetimeMs(persisted())).toBe(RETRY_MS);
     });
   });
+
+  describe("page fetch failures", () => {
+    it("treats a timeout on a hostname containing ssl as transient, not a TLS error", async () => {
+      mocks.safeFetch.mockRejectedValue(
+        new SafeFetchError("timeout", "Request to https://hassle.com/ timed out"),
+      );
+
+      await expect(fetchSeo("hassle.com")).rejects.toThrow("HTML data unavailable");
+      expect(mocks.upsertSeo).not.toHaveBeenCalled();
+    });
+
+    it("reports a certificate error nested in the cause chain as tls_error", async () => {
+      mocks.safeFetch.mockRejectedValue(
+        new SafeFetchError(
+          "connection_error",
+          `Request to https://${DOMAIN}/ failed: certificate has expired`,
+          undefined,
+          {
+            cause: Object.assign(new Error("certificate has expired"), {
+              code: "CERT_HAS_EXPIRED",
+            }),
+          },
+        ),
+      );
+
+      await expect(fetchSeo(DOMAIN)).resolves.toEqual({ success: false, error: "tls_error" });
+      expect(mocks.upsertSeo).toHaveBeenCalledOnce();
+    });
+  });
 });

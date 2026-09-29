@@ -92,4 +92,7 @@ export interface SafeFetchResult {
 
   /** All response headers */
   headers: Record<string, string>;
+
+  /** Every `Set-Cookie` value, in order. `headers["set-cookie"]` holds only the last one. */
+  setCookies: string[];
 }

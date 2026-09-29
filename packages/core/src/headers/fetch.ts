@@ -54,10 +54,13 @@ export async function fetchHttpHeaders(domain: string): Promise<HeadersFetchResu
       returnOnDisallowedRedirect: true,
     });
 
-    const headers: Header[] = Object.entries(final.headers).map(([name, value]) => ({
-      name: name.trim().toLowerCase(),
-      value,
-    }));
+    // `final.headers` collapses repeated Set-Cookie into the last one, so add each back separately.
+    const headers: Header[] = [
+      ...Object.entries(final.headers)
+        .filter(([name]) => name.trim().toLowerCase() !== "set-cookie")
+        .map(([name, value]) => ({ name: name.trim().toLowerCase(), value })),
+      ...final.setCookies.map((value) => ({ name: "set-cookie", value })),
+    ];
 
     return {
       success: true,

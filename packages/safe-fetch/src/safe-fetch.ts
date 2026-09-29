@@ -181,13 +181,18 @@ function headersForHop(baseHeaders: Record<string, string>, initialUrl: URL, cur
 function toTransportError(err: unknown, url: URL): SafeFetchError {
   if (err instanceof SafeFetchError) return err;
 
+  // undici wraps the real socket/TLS error (which carries `code`) as `cause`.
+  const inner = err instanceof Error && err.cause instanceof Error ? err.cause : err;
+
   const name = err instanceof Error ? err.name : "";
   if (name === "TimeoutError" || name === "AbortError") {
-    return new SafeFetchError("timeout", `Request to ${url} timed out`);
+    return new SafeFetchError("timeout", `Request to ${url} timed out`, undefined, { cause: err });
   }
 
-  const message = err instanceof Error ? err.message : String(err);
-  return new SafeFetchError("connection_error", `Request to ${url} failed: ${message}`);
+  const message = inner instanceof Error ? inner.message : String(inner);
+  return new SafeFetchError("connection_error", `Request to ${url} failed: ${message}`, undefined, {
+    cause: inner,
+  });
 }
 
 async function ensureUrlAllowed(
@@ -256,6 +261,7 @@ async function buildResult(
     status: response.status,
     ok: response.ok,
     headers,
+    setCookies: response.headers.getSetCookie(),
   };
 }
 

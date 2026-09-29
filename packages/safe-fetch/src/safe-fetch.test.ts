@@ -746,6 +746,27 @@ describe("safeFetch", () => {
       expect((err as SafeFetchError).code).toBe("connection_error");
     });
 
+    it("keeps the underlying error as cause", async () => {
+      const mockFetch = vi.fn<typeof fetch>(async () => {
+        throw new TypeError("fetch failed", {
+          cause: Object.assign(new Error("certificate has expired"), {
+            code: "CERT_HAS_EXPIRED",
+          }),
+        });
+      });
+
+      const err = await safeFetch({
+        url: "https://example.com",
+        userAgent: null,
+        fetch: mockFetch,
+        logger: silentLogger,
+      }).catch((e: unknown) => e);
+
+      expect(err).toBeInstanceOf(SafeFetchError);
+      expect((err as SafeFetchError).code).toBe("connection_error");
+      expect(((err as SafeFetchError).cause as { code?: string }).code).toBe("CERT_HAS_EXPIRED");
+    });
+
     it("maps an aborted request to timeout", async () => {
       const mockFetch = vi.fn<typeof fetch>(async () => {
         throw new DOMException("The operation timed out", "TimeoutError");
@@ -786,6 +807,22 @@ describe("safeFetch", () => {
       expect(result.headers["content-type"]).toBe("text/plain");
       expect(result.headers["x-custom-header"]).toBe("custom-value");
       expect(result.headers["cache-control"]).toBe("no-cache");
+    });
+
+    it("keeps every Set-Cookie value in setCookies", async () => {
+      const headers = new Headers();
+      headers.append("Set-Cookie", "a=1; Path=/");
+      headers.append("Set-Cookie", "b=2; Path=/");
+      const mockFetch = createMockFetch(new Response("OK", { status: 200, headers }));
+
+      const result = await safeFetch({
+        url: "https://example.com",
+        userAgent: "TestBot/1.0",
+        fetch: mockFetch,
+        logger: silentLogger,
+      });
+
+      expect(result.setCookies).toEqual(["a=1; Path=/", "b=2; Path=/"]);
     });
 
     it("returns contentType from Content-Type header", async () => {

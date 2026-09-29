@@ -42,31 +42,40 @@ export function parseAltNames(subjectAltName: string | undefined): string[] {
   });
 }
 
+const TLS_ERROR_CODES = new Set([
+  "ERR_TLS_CERT_ALTNAME_INVALID",
+  "ERR_TLS_CERT_HAS_EXPIRED",
+  "CERT_HAS_EXPIRED",
+  "CERT_NOT_YET_VALID",
+  "CERT_REVOKED",
+  "CERT_UNTRUSTED",
+  "CERT_SIGNATURE_FAILURE",
+  "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+  "UNABLE_TO_GET_ISSUER_CERT",
+  "UNABLE_TO_GET_ISSUER_CERT_LOCALLY",
+  "DEPTH_ZERO_SELF_SIGNED_CERT",
+  "SELF_SIGNED_CERT_IN_CHAIN",
+  "HOSTNAME_MISMATCH",
+]);
+
+const MAX_CAUSE_DEPTH = 4;
+
 /**
  * Check if an error is a TLS/SSL related error from fetch/undici.
+ *
+ * Classifies by error code only, walking the `cause` chain. Messages are not
+ * inspected because they embed the requested URL and hostname.
  */
 export function isExpectedTlsError(err: unknown): boolean {
-  if (!(err instanceof Error)) return false;
-  const tlsError = err as Error & {
-    cause?: { code?: string; message?: string };
-    code?: string;
-  };
-  const code = tlsError.cause?.code || tlsError.code;
-  const message = (tlsError.cause?.message || tlsError.message).toLowerCase();
-
-  return (
-    code === "ERR_TLS_CERT_ALTNAME_INVALID" ||
-    code === "ERR_TLS_CERT_HAS_EXPIRED" ||
-    code === "CERT_HAS_EXPIRED" ||
-    code === "ERR_SSL_PROTOCOL_ERROR" ||
-    code === "UNABLE_TO_VERIFY_LEAF_SIGNATURE" ||
-    code === "DEPTH_ZERO_SELF_SIGNED_CERT" ||
-    code === "ERR_SSL_WRONG_VERSION_NUMBER" ||
-    message.includes("certificate") ||
-    message.includes("tls") ||
-    message.includes("ssl") ||
-    message.includes("signed")
-  );
+  let current: unknown = err;
+  for (let depth = 0; depth < MAX_CAUSE_DEPTH && current instanceof Error; depth++) {
+    const code = (current as Error & { code?: unknown }).code;
+    if (typeof code === "string" && (TLS_ERROR_CODES.has(code) || code.startsWith("ERR_SSL_"))) {
+      return true;
+    }
+    current = current.cause;
+  }
+  return false;
 }
 
 const TRANSIENT_SOCKET_CODES = new Set(["ECONNRESET", "ECONNABORTED", "EPIPE", "ETIMEDOUT"]);
