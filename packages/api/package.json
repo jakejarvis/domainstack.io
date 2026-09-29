@@ -6,8 +6,7 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
-    "./analytics": "./src/analytics.ts",
-    "./middleware": "./src/middleware/index.ts"
+    "./analytics": "./src/analytics.ts"
   },
   "scripts": {
     "lint": "oxlint",

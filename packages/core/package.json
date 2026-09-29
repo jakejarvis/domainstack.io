@@ -16,7 +16,6 @@
     "./hosting/geoip": "./src/hosting/geoip.ts",
     "./lookup": "./src/lookup/index.ts",
     "./pricing": "./src/pricing/index.ts",
-    "./provider-logo": "./src/provider-logo/index.ts",
     "./seo": "./src/seo/index.ts",
     "./tls": "./src/tls/index.ts",
     "./tls/fetch": "./src/tls/fetch.ts",

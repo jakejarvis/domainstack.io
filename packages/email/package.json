@@ -6,8 +6,7 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
-    "./templates/*": "./src/templates/*.tsx",
-    "./components/*": "./src/components/*.tsx"
+    "./templates/*": "./src/templates/*.tsx"
   },
   "scripts": {
     "lint": "oxlint",

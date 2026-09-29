@@ -6,7 +6,6 @@
     "./client": "./src/client.ts",
     "./server": "./src/server.ts",
     "./errors": "./src/errors.ts",
-    "./storage": "./src/storage.ts",
     "./providers": "./src/providers.ts",
     "./types": "./src/types.ts"
   },
