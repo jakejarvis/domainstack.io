@@ -6,8 +6,16 @@ import { render } from "@/mocks/react";
 import { HostingSection } from "./hosting-section";
 
 vi.mock("@/components/icons/provider-logo", () => ({
-  ProviderLogo: ({ providerId }: { providerId: string | null | undefined }) => (
-    <div>logo:{providerId}</div>
+  ProviderLogo: ({
+    providerId,
+    initialUrl,
+  }: {
+    providerId: string | null | undefined;
+    initialUrl?: string | null;
+  }) => (
+    <div data-initial-url={initialUrl === undefined ? "undefined" : String(initialUrl)}>
+      logo:{providerId}
+    </div>
   ),
 }));
 
@@ -52,6 +60,31 @@ describe("HostingSection", () => {
     await expect.element(page.getByText(/logo:provider-cloudflare/)).toBeInTheDocument();
     await expect.element(page.getByText("Vercel", { exact: true })).toBeInTheDocument();
     await expect.element(page.getByText("Google Workspace", { exact: true })).toBeInTheDocument();
+  });
+
+  it("passes a cached provider logo url to the logo", async () => {
+    const data = {
+      dnsProvider: {
+        id: "provider-cloudflare",
+        name: "Cloudflare",
+        domain: "cloudflare.com",
+        logoUrl: "https://blob.example/d.png",
+      },
+      hostingProvider: {
+        id: "provider-vercel",
+        name: "Vercel",
+        domain: "vercel.com",
+      },
+      emailProvider: { id: null, name: null, domain: null },
+      geo: null,
+    } satisfies import("@domainstack/types").HostingResponse;
+    await render(<HostingSection data={data} />);
+    await expect
+      .element(page.getByText(/logo:provider-cloudflare/))
+      .toHaveAttribute("data-initial-url", "https://blob.example/d.png");
+    await expect
+      .element(page.getByText(/logo:provider-vercel/))
+      .toHaveAttribute("data-initial-url", "undefined");
   });
 
   it("shows empty state when no providers", async () => {

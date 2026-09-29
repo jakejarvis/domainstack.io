@@ -107,6 +107,7 @@ function RegistrationDetailsGrid({ data }: { data: RegistrationResponse }) {
             <ProviderLogo
               providerId={data.registrarProvider.id}
               providerName={data.registrarProvider.name}
+              initialUrl={data.registrarProvider.logoUrl}
             />
           ) : undefined
         }

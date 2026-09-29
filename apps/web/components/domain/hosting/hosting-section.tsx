@@ -26,7 +26,7 @@ function ProviderKeyValue({
   provider,
 }: {
   label: string;
-  provider: { id?: string | null; name?: string | null } | null;
+  provider: { id?: string | null; name?: string | null; logoUrl?: string | null } | null;
 }) {
   return (
     <KeyValue
@@ -34,7 +34,11 @@ function ProviderKeyValue({
       value={provider?.name ?? "Not configured"}
       leading={
         provider?.id ? (
-          <ProviderLogo providerId={provider.id} providerName={provider.name} />
+          <ProviderLogo
+            providerId={provider.id}
+            providerName={provider.name}
+            initialUrl={provider.logoUrl}
+          />
         ) : undefined
       }
     />

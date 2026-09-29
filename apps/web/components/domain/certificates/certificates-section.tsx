@@ -45,7 +45,11 @@ function CertificateCard({ cert }: { cert: Certificate }) {
           value={cert.issuer}
           leading={
             cert.caProvider?.id ? (
-              <ProviderLogo providerId={cert.caProvider.id} providerName={cert.caProvider.name} />
+              <ProviderLogo
+                providerId={cert.caProvider.id}
+                providerName={cert.caProvider.name}
+                initialUrl={cert.caProvider.logoUrl}
+              />
             ) : undefined
           }
           suffix={
