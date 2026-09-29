@@ -5,11 +5,11 @@
  */
 
 import { upsertProviderLogo } from "@domainstack/db/queries/provider-logos";
-import { optimizeImage, storeImage } from "@domainstack/image";
-import { safeFetch } from "@domainstack/safe-fetch";
+import { storeImage } from "@domainstack/image";
 import type { ProviderLogoResponse } from "@domainstack/types";
 
-import { isDefinitiveNotFoundError, RemoteDataUnavailableError } from "../lib/fetch-errors";
+import { RemoteDataUnavailableError } from "../lib/fetch-errors";
+import { fetchFirstIcon, type IconFetchResult, type IconSource } from "../lib/icon-sources";
 import { ttlForProviderIcon } from "../lib/ttl";
 
 // ============================================================================
@@ -17,26 +17,6 @@ import { ttlForProviderIcon } from "../lib/ttl";
 // ============================================================================
 
 export type ProviderLogoResult = { success: true; data: ProviderLogoResponse };
-
-interface IconFetchSuccess {
-  success: true;
-  optimized: Buffer;
-  sourceName: string;
-}
-
-interface IconFetchFailure {
-  success: false;
-  allNotFound: boolean;
-}
-
-type IconFetchResult = IconFetchSuccess | IconFetchFailure;
-
-interface IconSource {
-  url: string;
-  name: string;
-  headers?: Record<string, string>;
-  allowHttp?: boolean;
-}
 
 // ============================================================================
 // Constants
@@ -74,7 +54,7 @@ export async function fetchProviderLogo(
     }
 
     // Persist "no logo found" as a cached state (all sources returned 404)
-    await persistFailure(providerId, true);
+    await persistFailure(providerId);
 
     // "No logo" is a valid cached result, not a failure
     return {
@@ -137,62 +117,11 @@ async function fetchIconFromSources(domain: string): Promise<IconFetchResult> {
     },
   );
 
-  let allNotFound = true;
-
-  for (const source of sources) {
-    try {
-      const headers = {
-        Accept: "image/avif,image/webp,image/png,image/*;q=0.9,*/*;q=0.8",
-        ...source.headers,
-      };
-
-      const asset = await safeFetch({
-        url: source.url,
-        userAgent: process.env.EXTERNAL_USER_AGENT,
-        headers,
-        maxBytes: MAX_BYTES,
-        timeoutMs: TIMEOUT_MS,
-        maxRedirects: 2,
-        allowHttp: source.allowHttp ?? false,
-      });
-
-      if (!asset.ok) {
-        const isDefinitiveNotFoundStatus = asset.status === 404 || asset.status === 400;
-        if (!isDefinitiveNotFoundStatus) {
-          allNotFound = false;
-        }
-        continue;
-      }
-
-      // A 200 with an empty body means "no icon here", same as a 404
-      if (asset.buffer.length === 0) continue;
-
-      let optimized: Buffer;
-      try {
-        optimized = await optimizeImage(asset.buffer, {
-          width: DEFAULT_SIZE,
-          height: DEFAULT_SIZE,
-        });
-      } catch {
-        // A 200 that isn't an image (an SPA's HTML shell, say) means "no icon here", like a 404
-        continue;
-      }
-
-      allNotFound = false;
-
-      return {
-        success: true,
-        optimized,
-        sourceName: source.name,
-      };
-    } catch (err) {
-      if (!isDefinitiveNotFoundError(err)) {
-        allNotFound = false;
-      }
-    }
-  }
-
-  return { success: false, allNotFound };
+  return fetchFirstIcon(sources, {
+    size: DEFAULT_SIZE,
+    maxBytes: MAX_BYTES,
+    timeoutMs: TIMEOUT_MS,
+  });
 }
 
 // ============================================================================
@@ -241,7 +170,7 @@ async function processAndStore(
 // Internal: Persist Failure
 // ============================================================================
 
-async function persistFailure(providerId: string, isNotFound: boolean): Promise<void> {
+async function persistFailure(providerId: string): Promise<void> {
   const now = new Date();
   const expiresAt = ttlForProviderIcon(now);
 
@@ -251,7 +180,7 @@ async function persistFailure(providerId: string, isNotFound: boolean): Promise<
     pathname: null,
     size: DEFAULT_SIZE,
     source: null,
-    notFound: isNotFound,
+    notFound: true,
     fetchedAt: now,
     expiresAt,
   });

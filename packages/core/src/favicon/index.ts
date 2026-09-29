@@ -1,17 +1,16 @@
 /**
  * Favicon service - fetches and persists favicons.
  *
- * Replaces the workflow-based implementation with a simple async function.
  * Uses multiple fallback sources (Google, DuckDuckGo, direct).
  */
 
 import { ensureDomainRecord } from "@domainstack/db/queries/domains";
 import { upsertFavicon } from "@domainstack/db/queries/favicons";
-import { optimizeImage, storeImage } from "@domainstack/image";
-import { safeFetch } from "@domainstack/safe-fetch";
+import { storeImage } from "@domainstack/image";
 import type { FaviconResponse } from "@domainstack/types";
 
-import { isDefinitiveNotFoundError, RemoteDataUnavailableError } from "../lib/fetch-errors";
+import { RemoteDataUnavailableError } from "../lib/fetch-errors";
+import { fetchFirstIcon, type IconFetchResult, type IconSource } from "../lib/icon-sources";
 import { ttlForFavicon } from "../lib/ttl";
 
 // ============================================================================
@@ -20,27 +19,7 @@ import { ttlForFavicon } from "../lib/ttl";
 
 export type FaviconResult = { success: true; data: FaviconResponse };
 
-interface IconFetchSuccess {
-  success: true;
-  optimized: Buffer;
-  contentType: string | null;
-  status: number;
-  sourceName: string;
-}
-
-interface IconFetchFailure {
-  success: false;
-  allNotFound: boolean;
-}
-
-type IconFetchResult = IconFetchSuccess | IconFetchFailure;
-
-interface IconSource {
-  url: string;
-  name: string;
-  headers?: Record<string, string>;
-  allowHttp?: boolean;
-}
+type IconFetchSuccess = Extract<IconFetchResult, { success: true }>;
 
 // ============================================================================
 // Constants
@@ -74,7 +53,7 @@ export async function fetchFavicon(domain: string): Promise<FaviconResult> {
     }
 
     // Persist "no favicon found" as a cached state (all sources returned 404)
-    await persistFailure(domain, true);
+    await persistFailure(domain);
 
     // "No favicon" is a valid cached result, not a failure
     return {
@@ -117,64 +96,11 @@ async function fetchIconFromSources(domain: string): Promise<IconFetchResult> {
     },
   ];
 
-  let allNotFound = true;
-
-  for (const source of sources) {
-    try {
-      const headers = {
-        Accept: "image/avif,image/webp,image/png,image/*;q=0.9,*/*;q=0.8",
-        ...source.headers,
-      };
-
-      const asset = await safeFetch({
-        url: source.url,
-        userAgent: process.env.EXTERNAL_USER_AGENT,
-        headers,
-        maxBytes: MAX_BYTES,
-        timeoutMs: TIMEOUT_MS,
-        maxRedirects: 2,
-        allowHttp: source.allowHttp ?? false,
-      });
-
-      if (!asset.ok) {
-        const isDefinitiveNotFoundStatus = asset.status === 404 || asset.status === 400;
-        if (!isDefinitiveNotFoundStatus) {
-          allNotFound = false;
-        }
-        continue;
-      }
-
-      // A 200 with an empty body means "no icon here", same as a 404
-      if (asset.buffer.length === 0) continue;
-
-      let optimized: Buffer;
-      try {
-        optimized = await optimizeImage(asset.buffer, {
-          width: DEFAULT_SIZE,
-          height: DEFAULT_SIZE,
-        });
-      } catch {
-        // A 200 that isn't an image (an SPA's HTML shell, say) means "no icon here", like a 404
-        continue;
-      }
-
-      allNotFound = false;
-
-      return {
-        success: true,
-        optimized,
-        contentType: asset.contentType ?? null,
-        status: asset.status,
-        sourceName: source.name,
-      };
-    } catch (err) {
-      if (!isDefinitiveNotFoundError(err)) {
-        allNotFound = false;
-      }
-    }
-  }
-
-  return { success: false, allNotFound };
+  return fetchFirstIcon(sources, {
+    size: DEFAULT_SIZE,
+    maxBytes: MAX_BYTES,
+    timeoutMs: TIMEOUT_MS,
+  });
 }
 
 // ============================================================================
@@ -223,7 +149,7 @@ async function processAndStore(domain: string, icon: IconFetchSuccess): Promise<
 // Internal: Persist Failure
 // ============================================================================
 
-async function persistFailure(domain: string, isNotFound: boolean): Promise<void> {
+async function persistFailure(domain: string): Promise<void> {
   const domainRecord = await ensureDomainRecord(domain);
   const now = new Date();
   const expiresAt = ttlForFavicon(now);
@@ -234,7 +160,7 @@ async function persistFailure(domain: string, isNotFound: boolean): Promise<void
     pathname: null,
     size: DEFAULT_SIZE,
     source: null,
-    notFound: isNotFound,
+    notFound: true,
     upstreamStatus: null,
     upstreamContentType: null,
     fetchedAt: now,
