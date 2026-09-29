@@ -257,7 +257,7 @@ describe("change alert idempotency", () => {
     });
     expect(result.providerChanges).toBe(true);
 
-    const expectedKey = `provider:td-1:${providerObservationKey({ dnsProviderId: "p-old", hostingProviderId: null, emailProviderId: null })}>${providerObservationKey({ dnsProviderId: "p-dns", hostingProviderId: null, emailProviderId: null })}`;
+    const expectedKey = `provider:td-1:${providerObservationKey({ dnsProviderId: "p-old", hostingProviderId: null, emailProviderId: null })}>${providerObservationKey({ dnsProviderId: "p-dns", hostingProviderId: null, emailProviderId: null })}@2026-09-13T00:00:00.000Z`;
     expect(notificationsMock.sendChangeNotificationStep).toHaveBeenCalledTimes(2);
     for (const call of notificationsMock.sendChangeNotificationStep.mock.calls) {
       expect(call[0]).toEqual(expect.objectContaining({ idempotencyKey: expectedKey }));
@@ -298,10 +298,44 @@ describe("change alert idempotency", () => {
     const { detectChangesWorkflow } = await import("./workflow");
     await detectChangesWorkflow({ trackedDomainId: "td-1", monitorLockOwnerToken: "tok" });
 
-    const expectedKey = `provider:td-1:${providerObservationKey({ dnsProviderId: "p-older", hostingProviderId: null, emailProviderId: null })}>${providerObservationKey({ dnsProviderId: "p-dns", hostingProviderId: null, emailProviderId: null })}`;
+    const expectedKey = `provider:td-1:${providerObservationKey({ dnsProviderId: "p-older", hostingProviderId: null, emailProviderId: null })}>${providerObservationKey({ dnsProviderId: "p-dns", hostingProviderId: null, emailProviderId: null })}@2026-09-13T00:00:00.000Z`;
     expect(notificationsMock.sendChangeNotificationStep).toHaveBeenCalledWith(
       expect.objectContaining({ type: "provider_change", idempotencyKey: expectedKey }),
       { shouldSendEmail: true, shouldSendInApp: true },
     );
+  });
+
+  it("keys a later repeat of the same transition with a different idempotencyKey", async () => {
+    const snapshotWithEpisode = (firstSeenAt: string) =>
+      makeSnapshot({
+        dnsProviderId: "p-old",
+        providerPending: {
+          key: providerObservationKey({
+            dnsProviderId: "p-dns",
+            hostingProviderId: null,
+            emailProviderId: null,
+          }),
+          firstSeenAt,
+          observations: CHANGE_CONFIRMATIONS - 1,
+        },
+      });
+    notificationsMock.sendChangeNotificationStep.mockResolvedValue(true);
+
+    const { detectChangesWorkflow } = await import("./workflow");
+
+    snapshotsMock.getSnapshot.mockResolvedValue(snapshotWithEpisode("2026-09-13T00:00:00.000Z"));
+    await detectChangesWorkflow({ trackedDomainId: "td-1", monitorLockOwnerToken: "tok" });
+    const firstKey = notificationsMock.sendChangeNotificationStep.mock.calls[0]?.[0].idempotencyKey;
+
+    vi.clearAllMocks();
+    notificationsMock.sendChangeNotificationStep.mockResolvedValue(true);
+    snapshotsMock.getSnapshot.mockResolvedValue(snapshotWithEpisode("2026-09-14T00:00:00.000Z"));
+    await detectChangesWorkflow({ trackedDomainId: "td-1", monitorLockOwnerToken: "tok" });
+    const secondKey =
+      notificationsMock.sendChangeNotificationStep.mock.calls[0]?.[0].idempotencyKey;
+
+    expect(firstKey).toEqual(expect.any(String));
+    expect(secondKey).toEqual(expect.any(String));
+    expect(secondKey).not.toBe(firstKey);
   });
 });

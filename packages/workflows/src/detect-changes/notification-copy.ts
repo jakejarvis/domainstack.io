@@ -5,6 +5,8 @@ import type {
   RegistrationChange,
 } from "@domainstack/types";
 
+import { normalizeStatus } from "../lib/change-detection";
+
 /**
  * In-app title/message and email subject for a change alert.
  *
@@ -69,10 +71,13 @@ export function describeRegistrationChange(
   }
 
   if (change.statusesChanged) {
-    const previous = new Set(change.previousStatuses);
-    const next = new Set(change.newStatuses);
-    const added = change.newStatuses.filter((s) => !previous.has(s));
-    const removed = change.previousStatuses.filter((s) => !next.has(s));
+    // Diff on the same normalization detection uses, so a format-only difference
+    // (RDAP "clientTransferProhibited" vs WHOIS "client transfer prohibited") is
+    // not reported as a removal plus an addition.
+    const previous = new Set(change.previousStatuses.map(normalizeStatus));
+    const next = new Set(change.newStatuses.map(normalizeStatus));
+    const added = change.newStatuses.filter((s) => !previous.has(normalizeStatus(s)));
+    const removed = change.previousStatuses.filter((s) => !next.has(normalizeStatus(s)));
     if (added.length > 0) details.push(`Status added: ${added.join(", ")}`);
     if (removed.length > 0) details.push(`Status removed: ${removed.join(", ")}`);
   }

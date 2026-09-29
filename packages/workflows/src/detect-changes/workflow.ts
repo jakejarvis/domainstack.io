@@ -249,16 +249,20 @@ async function checkRegistration(
   // in-app-only (or no delivery when email was the only channel), but the
   // snapshot still advances so the workflow does not retry an address that
   // cannot accept mail forever.
-  // Keyed by the change (before > after), not the step: if this run fails
-  // after sending, the next hourly run re-detects the same change and
-  // Resend dedupes the email instead of delivering it twice.
+  // Keyed by the change (before > after) plus the episode, not the step: if
+  // this run fails after sending, the next hourly run re-detects the same
+  // change with the same pending (same firstSeenAt) and Resend dedupes the
+  // email instead of delivering it twice. A later repeat of the same
+  // transition starts a new pending, so it gets a new key and is delivered.
+  // The confirmed observation's first sighting identifies this occurrence.
+  const episode = stored.pending?.firstSeenAt ?? "";
   await sendChangeNotificationStep(
     {
       ...recipientOf(ctx),
       ...describeRegistrationChange(changes, snapshot.domainName),
       type: "registration_change",
       changes,
-      idempotencyKey: `registration:${trackedDomainId}:${registrationObservationKey(stored)}>${registrationObservationKey(currentRegistration)}`,
+      idempotencyKey: `registration:${trackedDomainId}:${registrationObservationKey(stored)}>${registrationObservationKey(currentRegistration)}@${episode}`,
     },
     channels,
   );
@@ -318,6 +322,9 @@ async function checkUnregistered(ctx: CheckContext): Promise<boolean> {
     ? (registrarNames.get(previousRegistrarId) ?? previousRegistrarId)
     : null;
 
+  // The confirmed observation's first sighting identifies this occurrence (see
+  // checkRegistration): stable across a retry, new for a later repeat.
+  const episode = stored.pending?.firstSeenAt ?? "";
   await sendChangeNotificationStep(
     {
       ...recipientOf(ctx),
@@ -338,7 +345,7 @@ async function checkUnregistered(ctx: CheckContext): Promise<boolean> {
         newTransferLock: null,
         newStatuses: [],
       },
-      idempotencyKey: `registration:${trackedDomainId}:${registrationObservationKey(stored)}>unregistered`,
+      idempotencyKey: `registration:${trackedDomainId}:${registrationObservationKey(stored)}>unregistered@${episode}`,
     },
     channels,
   );
@@ -438,13 +445,16 @@ async function checkProviders(
     newEmailProvider: nameOf(providerNames, providerChange.newEmailProviderId),
   };
 
+  // The confirmed observation's first sighting identifies this occurrence (see
+  // checkRegistration): stable across a retry, new for a later repeat.
+  const episode = snapshot.providerPending?.firstSeenAt ?? "";
   await sendChangeNotificationStep(
     {
       ...recipientOf(ctx),
       ...describeProviderChange(changes, snapshot.domainName),
       type: "provider_change",
       changes,
-      idempotencyKey: `provider:${trackedDomainId}:${providerObservationKey(storedProviderSnapshot)}>${providerObservationKey(currentProviderSnapshot)}`,
+      idempotencyKey: `provider:${trackedDomainId}:${providerObservationKey(storedProviderSnapshot)}>${providerObservationKey(currentProviderSnapshot)}@${episode}`,
     },
     channels,
   );

@@ -84,6 +84,22 @@ describe("describeRegistrationChange", () => {
     });
   });
 
+  it("does not report a format-only status difference as a removal and an addition", () => {
+    const copy = describeRegistrationChange(
+      {
+        ...noRegistrationChange,
+        statusesChanged: true,
+        previousStatuses: ["clientTransferProhibited"],
+        newStatuses: ["client transfer prohibited", "serverHold"],
+      },
+      "example.com",
+    );
+
+    expect(copy.message).toContain("Status added: serverHold");
+    expect(copy.message).not.toContain("Status removed");
+    expect(copy.message).not.toContain("client transfer prohibited");
+  });
+
   it("describes a registrar removal and a transfer lock change", () => {
     const copy = describeRegistrationChange(
       {
