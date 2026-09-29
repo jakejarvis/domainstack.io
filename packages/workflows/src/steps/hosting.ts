@@ -4,13 +4,20 @@ import type { DnsRecord, GeoIpData, Header, ProviderDetectionData } from "@domai
  * Step: Lookup GeoIP data for an IP address.
  *
  * @param ip - The IP address to lookup
- * @returns GeoIpData, or null when the lookup produced no data
+ * @returns GeoIpData, or null when the lookup produced no data or the provider was unreachable
  */
 export async function lookupGeoIpStep(ip: string): Promise<GeoIpData | null> {
   "use step";
 
   const { lookupGeoIp } = await import("@domainstack/core/hosting/geoip");
-  return await lookupGeoIp(ip);
+  try {
+    return await lookupGeoIp(ip);
+  } catch (err) {
+    // Monitoring treats a missing GeoIP result as "hosting not observed".
+    const { RemoteDataUnavailableError } = await import("@domainstack/core/lib/fetch-errors");
+    if (err instanceof RemoteDataUnavailableError) return null;
+    throw err;
+  }
 }
 
 /**

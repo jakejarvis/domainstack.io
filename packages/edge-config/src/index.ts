@@ -18,10 +18,12 @@ const logger = createLogger({ source: "edge-config" });
  *
  * Returns null if Global Config is not configured, the key doesn't exist,
  * or validation fails (graceful degradation - all detections become "unknown").
+ * Throws when the catalog could not be fetched.
  *
  * Global Config key: `provider_catalog`
  *
- * @returns Validated ProviderCatalog or null if unavailable/invalid
+ * @returns Validated ProviderCatalog or null if not configured/missing/invalid
+ * @throws Error when the fetch fails (an outage, not a configuration state)
  */
 export const getProviderCatalog = cache(async (): Promise<ProviderCatalog | null> => {
   if (!process.env.GLOBAL_CONFIG && !process.env.EDGE_CONFIG) {
@@ -46,6 +48,8 @@ export const getProviderCatalog = cache(async (): Promise<ProviderCatalog | null
     return result.data;
   } catch (err) {
     logger.warn(err, "failed to fetch provider catalog");
-    return null;
+    // An outage, unlike a missing or invalid catalog, is transient. Returning null
+    // here would make callers persist provider data computed without the catalog.
+    throw new Error("Provider catalog unavailable", { cause: err });
   }
 });

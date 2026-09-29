@@ -32,6 +32,7 @@ import {
 
 import { fetchDns } from "../dns";
 import { fetchHeaders } from "../headers";
+import { RemoteDataUnavailableError } from "../lib/fetch-errors";
 import { ttlForHosting } from "../lib/ttl";
 import { lookupGeoIp } from "./geoip";
 
@@ -81,13 +82,28 @@ export async function fetchHosting(domain: string): Promise<HostingResult> {
   const ip = (a?.value || aaaa?.value) ?? null;
 
   // Step 4: GeoIP lookup (if we have an IP)
-  const geoResult = ip ? await lookupGeoIp(ip) : null;
+  let geoResult: GeoIpData | null = null;
+  let geoUnavailable = false;
+  if (ip) {
+    try {
+      geoResult = await lookupGeoIp(ip);
+    } catch (err) {
+      if (!(err instanceof RemoteDataUnavailableError)) throw err;
+      geoUnavailable = true;
+    }
+  }
+
+  // Same rule monitoring uses: with an address, hosting is derived from headers
+  // and the IP owner, so a transient failure of either makes it a guess.
+  // `fetch_failed` is only set by the catch above, i.e. a transient headers failure.
+  const headersUnavailable = !headersResult.success && headersResult.error === "fetch_failed";
+  const degraded = ip !== null && (headersUnavailable || geoUnavailable);
 
   // Step 5: Detect providers and resolve IDs
   const providers = await detectAndResolveProviders(dnsRecords, headers, geoResult);
 
   // Step 6: Persist hosting data to database
-  await persistHosting(domain, providers, geoResult?.geo ?? null);
+  await persistHosting(domain, providers, geoResult?.geo ?? null, { retrySoon: degraded });
 
   return {
     success: true,
@@ -224,9 +240,10 @@ export async function persistHosting(
   domain: string,
   providers: ProviderDetectionData,
   geo: GeoIpData["geo"],
+  options: { retrySoon?: boolean } = {},
 ): Promise<void> {
   const now = new Date();
-  const expiresAt = ttlForHosting(now);
+  const expiresAt = ttlForHosting(now, options);
 
   const domainRecord = await ensureDomainRecord(domain);
 

@@ -13,6 +13,7 @@ import {
   TTL_FAVICON,
   TTL_HEADERS,
   TTL_HOSTING,
+  TTL_HOSTING_RETRY,
   TTL_PROVIDER_ICON,
   TTL_REGISTRATION_EXPIRY_THRESHOLD,
   TTL_REGISTRATION_NEAR_EXPIRY,
@@ -72,8 +73,13 @@ export function ttlForHeaders(now: Date): Date {
   return addSeconds(now, TTL_HEADERS);
 }
 
-export function ttlForHosting(now: Date): Date {
-  return addSeconds(now, TTL_HOSTING);
+/**
+ * TTL for hosting data. When the headers fetch or GeoIP lookup failed transiently,
+ * the detected providers are a guess, so it shortens the TTL to retry soon instead
+ * of caching that guess for the full day.
+ */
+export function ttlForHosting(now: Date, options: { retrySoon?: boolean } = {}): Date {
+  return addSeconds(now, options.retrySoon ? TTL_HOSTING_RETRY : TTL_HOSTING);
 }
 
 /**

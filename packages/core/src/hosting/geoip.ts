@@ -2,6 +2,8 @@ import { createLogger } from "@domainstack/logger";
 import { getRedis } from "@domainstack/redis";
 import type { GeoIpData } from "@domainstack/types";
 
+import { RemoteDataUnavailableError } from "../lib/fetch-errors";
+
 const logger = createLogger({ source: "geoip" });
 
 /** Raw iplocate.io API response - cached in Redis */
@@ -38,6 +40,10 @@ function transformApiResponse(data: IplocateApiResponse): GeoIpData {
  *
  * Caches raw API response in Redis - transformation happens on read.
  * This ensures cached data remains valid if transformation logic changes.
+ *
+ * Returns null when the provider has no data (no API key, HTTP 4xx other than 429,
+ * or an error message in the body). Throws `RemoteDataUnavailableError` when the
+ * provider could not be reached (network error, timeout, HTTP 5xx or 429).
  */
 export async function lookupGeoIp(ip: string): Promise<GeoIpData | null> {
   const redis = getRedis();
@@ -83,6 +89,11 @@ export async function lookupGeoIp(ip: string): Promise<GeoIpData | null> {
         { status: res.status, body: body.slice(0, 500) },
         "iplocate.io lookup failed with non-OK status",
       );
+      if (res.status >= 500 || res.status === 429) {
+        throw new RemoteDataUnavailableError("GeoIP lookup unavailable", {
+          details: { status: res.status },
+        });
+      }
       return null;
     }
 
@@ -102,7 +113,8 @@ export async function lookupGeoIp(ip: string): Promise<GeoIpData | null> {
 
     return transformApiResponse(data);
   } catch (err) {
+    if (err instanceof RemoteDataUnavailableError) throw err;
     logger.warn({ err }, "iplocate.io lookup failed");
-    return null;
+    throw new RemoteDataUnavailableError("GeoIP lookup unavailable", { cause: err });
   }
 }

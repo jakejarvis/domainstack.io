@@ -1,13 +1,25 @@
 /* @vitest-environment node */
 import { describe, expect, it } from "vitest";
 
-import { ttlForCertificates, ttlForDnsRecord, ttlForRegistration, ttlForSeo } from "./ttl";
+import {
+  ttlForCertificates,
+  ttlForDnsRecord,
+  ttlForHosting,
+  ttlForRegistration,
+  ttlForSeo,
+} from "./ttl";
 
 describe("TTL policy", () => {
   it("seo: 24h normally, 15m when the preview image should be retried", () => {
     const now = new Date("2024-01-01T00:00:00.000Z");
     expect(ttlForSeo(now).getTime() - now.getTime()).toBe(24 * 60 * 60 * 1000);
     expect(ttlForSeo(now, { imageRetry: true }).getTime() - now.getTime()).toBe(15 * 60 * 1000);
+  });
+
+  it("hosting: 24h normally, 15m when headers or geoip were unavailable", () => {
+    const now = new Date("2024-01-01T00:00:00.000Z");
+    expect(ttlForHosting(now).getTime() - now.getTime()).toBe(24 * 60 * 60 * 1000);
+    expect(ttlForHosting(now, { retrySoon: true }).getTime() - now.getTime()).toBe(15 * 60 * 1000);
   });
 
   it("registration: 24h when far from expiry", () => {
