@@ -1,14 +1,14 @@
-import { noop } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { Modal, ModalContent, ModalHeader, ModalTitle } from "@/components/modal";
+import { prefetchSettingsQueries } from "@/components/settings/prefetch";
 import { SettingsPanels, SettingsTabsRouter } from "@/components/settings/settings-content";
 import { SettingsSkeletonPanels } from "@/components/settings/settings-skeleton";
 import { getServerSession } from "@/lib/auth/session";
 import { createMetadata } from "@/lib/seo";
-import { getQueryClient, HydrateClient, trpc } from "@/trpc/server";
+import { HydrateClient } from "@/trpc/server";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
 
 export const metadata: Metadata = createMetadata({
@@ -54,16 +54,8 @@ async function AuthorizedSettingsModalLayout() {
     redirect("/login");
   }
 
-  // Same queries the full settings page awaits, started without awaiting so the
-  // modal opens immediately and the data streams in with the RSC payload.
-  const queryClient = getQueryClient();
-  void queryClient.query(trpc.user.getSubscription.queryOptions()).catch(noop);
-  void queryClient.query(trpc.user.getLinkedAccounts.queryOptions()).catch(noop);
-  void queryClient.query(trpc.user.getNotificationPreferences.queryOptions()).catch(noop);
-  void queryClient
-    .query(trpc.tracking.listDomains.queryOptions({ includeArchived: false }))
-    .catch(noop);
-  void queryClient.query(trpc.user.getCalendarFeed.queryOptions()).catch(noop);
+  // Started without awaiting so the modal opens immediately; data streams in with the RSC payload.
+  void prefetchSettingsQueries();
 
   return (
     <HydrateClient>
