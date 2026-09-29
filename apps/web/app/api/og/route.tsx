@@ -43,6 +43,8 @@ interface ProviderChip {
 
 interface ProviderData {
   providers: ProviderChip[];
+  /** False when a lookup failed transiently, so the stack may be missing providers. */
+  complete: boolean;
 }
 
 function getDomainFontSize(domain: string): number {
@@ -66,6 +68,11 @@ async function fetchProviderData(domain: string): Promise<ProviderData> {
       caller.domain.getHosting({ domain }),
       caller.domain.getCertificates({ domain }),
     ]);
+
+    // A transient lookup failure gives an incomplete stack; don't freeze it for days.
+    const complete = [registrationResult, hostingResult, certificatesResult].every(
+      (r) => r.success || r.error !== "fetch_failed",
+    );
 
     // Collect all provider refs
     const providerRefs: { type: ProviderType; ref: ProviderRef; color: string }[] = [];
@@ -133,10 +140,15 @@ async function fetchProviderData(domain: string): Promise<ProviderData> {
       color: p.color,
     }));
 
-    // Cache successful data for 1 day
-    cacheLife("days");
+    // Cache complete data for a day; incomplete data only briefly
+    // Separate calls: cacheLife's overloads don't accept a union of profile names.
+    if (complete) {
+      cacheLife("days");
+    } else {
+      cacheLife("minutes");
+    }
 
-    return { providers };
+    return { providers, complete };
   } catch (err) {
     logger.debug({ err, domain }, "provider data unavailable for OG image");
   }
@@ -144,7 +156,7 @@ async function fetchProviderData(domain: string): Promise<ProviderData> {
   // Cache failure briefly
   cacheLife("minutes");
 
-  return { providers: [] };
+  return { providers: [], complete: false };
 }
 
 export async function GET(request: NextRequest) {
@@ -439,10 +451,16 @@ export async function GET(request: NextRequest) {
           weight: 600,
         },
       ],
-      headers: {
-        "Cache-Control": "public, max-age=3600",
-        "Vercel-CDN-Cache-Control": "public, s-maxage=604800, stale-while-revalidate=86400",
-      },
+      headers: providerData.complete
+        ? {
+            "Cache-Control": "public, max-age=3600",
+            "Vercel-CDN-Cache-Control": "public, s-maxage=604800, stale-while-revalidate=86400",
+          }
+        : {
+            // A lookup failed transiently; keep the incomplete image short-lived.
+            "Cache-Control": "public, max-age=300",
+            "Vercel-CDN-Cache-Control": "public, s-maxage=300",
+          },
     },
   );
 }

@@ -66,7 +66,8 @@ export function generateCalendarFeed(domains: TrackedDomainWithDetails[]): Calen
 }
 
 /**
- * Compute a stable ETag for the calendar based on domain data.
+ * Hash of everything that appears in the feed except DTSTAMP, so a changed
+ * description (registrar, SSL expiry) invalidates clients' cached copies.
  * Used for HTTP conditional requests (304 Not Modified).
  */
 function computeEtag(events: DomainExpiryEvent[]): string {
@@ -74,10 +75,12 @@ function computeEtag(events: DomainExpiryEvent[]): string {
     return "empty";
   }
 
+  // Events arrive sorted by uid from buildDomainExpiryEvents.
   const hashInput = events
-    .map((e) => `${e.trackedDomainId}:${e.expirationDate.toISOString()}`)
-    .sort()
-    .join("|");
+    .map((e) =>
+      JSON.stringify([e.uid, e.expirationDate.toISOString(), e.summary, e.description, e.url]),
+    )
+    .join("\n");
 
   return crypto.createHash("sha256").update(hashInput).digest("hex").slice(0, 16);
 }

@@ -11,6 +11,17 @@ const mocks = vi.hoisted(() => ({
       ) => Promise<{ success: true; headers?: unknown } | { success: false; error: Response }>
     >(),
   createCaller: vi.fn<(...args: unknown[]) => unknown>(),
+  cacheLife: vi.fn<(profile: string) => void>(),
+  loadGoogleFont: vi.fn<() => Promise<ArrayBuffer>>(),
+}));
+
+vi.mock("next/cache", () => ({
+  cacheLife: mocks.cacheLife,
+}));
+
+vi.mock("@/lib/og-utils", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/og-utils")>()),
+  loadGoogleFont: mocks.loadGoogleFont,
 }));
 
 vi.mock("@/lib/ratelimit/api", () => ({
@@ -74,5 +85,73 @@ describe("GET /api/og", () => {
 
     expect(response).toBe(rateLimitError);
     expect(mocks.createCaller).not.toHaveBeenCalled();
+  });
+});
+
+describe("GET /api/og caching", () => {
+  const registration = {
+    success: true,
+    cached: true,
+    data: { registrarProvider: { name: "Namecheap", domain: "namecheap.com" } },
+  };
+  const hosting = {
+    success: true,
+    cached: true,
+    data: {
+      dnsProvider: { name: "Cloudflare", domain: "cloudflare.com" },
+      hostingProvider: { name: "Vercel", domain: "vercel.com" },
+      emailProvider: { name: "Google Workspace", domain: "google.com" },
+    },
+  };
+  const certificates = {
+    success: true,
+    cached: true,
+    data: { certificates: [{ caProvider: { name: "Let's Encrypt", domain: "letsencrypt.org" } }] },
+  };
+
+  const getRegistration = vi.fn<(input: unknown) => Promise<unknown>>();
+  const getHosting = vi.fn<(input: unknown) => Promise<unknown>>();
+  const getCertificates = vi.fn<(input: unknown) => Promise<unknown>>();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.checkRateLimit.mockResolvedValue({ success: true });
+    mocks.loadGoogleFont.mockResolvedValue(new ArrayBuffer(0));
+    getRegistration.mockResolvedValue(registration);
+    getHosting.mockResolvedValue(hosting);
+    getCertificates.mockResolvedValue(certificates);
+    mocks.createCaller.mockReturnValue({
+      domain: { getRegistration, getHosting, getCertificates },
+    });
+  });
+
+  async function fetchImage(): Promise<Response> {
+    return GET(makeRequest("https://domainstack.io/api/og?domain=example.com"));
+  }
+
+  it("caches a complete provider stack for days at the CDN", async () => {
+    const response = await fetchImage();
+
+    expect(mocks.cacheLife).toHaveBeenCalledWith("days");
+    expect(response.headers.get("Vercel-CDN-Cache-Control")).toContain("s-maxage=604800");
+  });
+
+  it("caches briefly when a lookup failed transiently", async () => {
+    getHosting.mockResolvedValue({ success: false, error: "fetch_failed" });
+
+    const response = await fetchImage();
+
+    expect(mocks.cacheLife).toHaveBeenCalledWith("minutes");
+    expect(response.headers.get("Cache-Control")).toBe("public, max-age=300");
+    expect(response.headers.get("Vercel-CDN-Cache-Control")).toBe("public, s-maxage=300");
+  });
+
+  it("still caches for days when a lookup failed permanently", async () => {
+    getCertificates.mockResolvedValue({ success: false, error: "tls_error" });
+
+    const response = await fetchImage();
+
+    expect(mocks.cacheLife).toHaveBeenCalledWith("days");
+    expect(response.headers.get("Vercel-CDN-Cache-Control")).toContain("s-maxage=604800");
   });
 });
