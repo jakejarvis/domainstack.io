@@ -22,7 +22,7 @@ export type FaviconResult = { success: true; data: FaviconResponse };
 
 interface IconFetchSuccess {
   success: true;
-  imageBase64: string;
+  optimized: Buffer;
   contentType: string | null;
   status: number;
   sourceName: string;
@@ -147,11 +147,22 @@ async function fetchIconFromSources(domain: string): Promise<IconFetchResult> {
       // A 200 with an empty body means "no icon here", same as a 404
       if (asset.buffer.length === 0) continue;
 
+      let optimized: Buffer;
+      try {
+        optimized = await optimizeImage(asset.buffer, {
+          width: DEFAULT_SIZE,
+          height: DEFAULT_SIZE,
+        });
+      } catch {
+        // A 200 that isn't an image (an SPA's HTML shell, say) means "no icon here", like a 404
+        continue;
+      }
+
       allNotFound = false;
 
       return {
         success: true,
-        imageBase64: asset.buffer.toString("base64"),
+        optimized,
         contentType: asset.contentType ?? null,
         status: asset.status,
         sourceName: source.name,
@@ -171,12 +182,8 @@ async function fetchIconFromSources(domain: string): Promise<IconFetchResult> {
 // ============================================================================
 
 async function processAndStore(domain: string, icon: IconFetchSuccess): Promise<{ url: string }> {
-  // 1. Process image
-  const inputBuffer = Buffer.from(icon.imageBase64, "base64");
-  const optimized = await optimizeImage(inputBuffer, {
-    width: DEFAULT_SIZE,
-    height: DEFAULT_SIZE,
-  });
+  // 1. Check the decoded image
+  const { optimized } = icon;
 
   if (optimized.length === 0) {
     throw new Error(`Image processing returned empty result: ${domain}`);

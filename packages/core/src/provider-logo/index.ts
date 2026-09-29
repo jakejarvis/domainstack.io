@@ -20,7 +20,7 @@ export type ProviderLogoResult = { success: true; data: ProviderLogoResponse };
 
 interface IconFetchSuccess {
   success: true;
-  imageBase64: string;
+  optimized: Buffer;
   sourceName: string;
 }
 
@@ -87,7 +87,7 @@ export async function fetchProviderLogo(
   const result = await processAndStore(
     providerId,
     providerDomain,
-    fetchResult.imageBase64,
+    fetchResult.optimized,
     fetchResult.sourceName,
   );
 
@@ -164,11 +164,25 @@ async function fetchIconFromSources(domain: string): Promise<IconFetchResult> {
         continue;
       }
 
+      // A 200 with an empty body means "no icon here", same as a 404
+      if (asset.buffer.length === 0) continue;
+
+      let optimized: Buffer;
+      try {
+        optimized = await optimizeImage(asset.buffer, {
+          width: DEFAULT_SIZE,
+          height: DEFAULT_SIZE,
+        });
+      } catch {
+        // A 200 that isn't an image (an SPA's HTML shell, say) means "no icon here", like a 404
+        continue;
+      }
+
       allNotFound = false;
 
       return {
         success: true,
-        imageBase64: asset.buffer.toString("base64"),
+        optimized,
         sourceName: source.name,
       };
     } catch (err) {
@@ -188,16 +202,10 @@ async function fetchIconFromSources(domain: string): Promise<IconFetchResult> {
 async function processAndStore(
   providerId: string,
   providerDomain: string,
-  imageBase64: string,
+  optimized: Buffer,
   sourceName: string,
 ): Promise<{ url: string }> {
-  // 1. Process image
-  const inputBuffer = Buffer.from(imageBase64, "base64");
-  const optimized = await optimizeImage(inputBuffer, {
-    width: DEFAULT_SIZE,
-    height: DEFAULT_SIZE,
-  });
-
+  // 1. Check the decoded image
   if (optimized.length === 0) {
     throw new Error(`Image processing returned empty result for provider ${providerId}`);
   }

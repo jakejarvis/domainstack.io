@@ -143,6 +143,26 @@ describe("fetchFavicon when a source has an icon", () => {
     expect(mocks.safeFetch).toHaveBeenCalledTimes(2);
   });
 
+  it("falls through past a 200 that is not a decodable image", async () => {
+    sourcesRespond(
+      response(404),
+      response(404),
+      response(200, "<html>app shell</html>", "text/html"),
+      response(200, ICON_BYTES, "image/x-icon"),
+    );
+    mocks.optimizeImage.mockRejectedValueOnce(new Error("unsupported image format"));
+
+    await expect(fetchFavicon("example.com")).resolves.toEqual({
+      success: true,
+      data: { url: "https://blob.test/favicon.png" },
+    });
+
+    expect(mocks.upsertFavicon).toHaveBeenCalledWith(
+      expect.objectContaining({ source: "direct_http", notFound: false }),
+    );
+    expect(mocks.safeFetch).toHaveBeenCalledTimes(4);
+  });
+
   it("reports an image that optimizes to nothing instead of caching it", async () => {
     sourcesRespond(response(200, ICON_BYTES));
     mocks.optimizeImage.mockResolvedValue(Buffer.alloc(0));
@@ -163,6 +183,22 @@ describe("fetchFavicon when no source has an icon", () => {
     expect(mocks.upsertFavicon).toHaveBeenCalledWith(
       expect.objectContaining({ url: null, notFound: true }),
     );
+  });
+
+  it("caches not-found when every source is 404 or not a decodable image", async () => {
+    sourcesRespond(
+      response(404),
+      response(404),
+      response(200, "<html>app shell</html>", "text/html"),
+      response(404),
+    );
+    mocks.optimizeImage.mockRejectedValue(new Error("unsupported image format"));
+
+    await expect(fetchFavicon("example.com")).resolves.toEqual({
+      success: true,
+      data: { url: null },
+    });
+    expect(persisted().notFound).toBe(true);
   });
 
   it("caches not-found when every source is blocked or unreachable by policy", async () => {
