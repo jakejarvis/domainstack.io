@@ -22,12 +22,7 @@ import {
   registrationObservationKey,
   registrationSnapshotFrom,
 } from "../lib/change-detection";
-import {
-  determineNotificationChannelsStep,
-  type NotificationChannels,
-  resolveProviderNamesStep,
-  sendChangeNotificationStep,
-} from "../steps/notifications";
+import type { NotificationChannels } from "../steps/notifications";
 import { observeDomain } from "../steps/observe-domain";
 import {
   describeCertificateChange,
@@ -35,6 +30,11 @@ import {
   describeRegistrationChange,
   describeUnregistered,
 } from "./notification-copy";
+import {
+  determineNotificationChannelsStep,
+  resolveProviderNamesStep,
+  sendChangeNotificationStep,
+} from "./notify";
 
 // =============================================================================
 // Workflow Types

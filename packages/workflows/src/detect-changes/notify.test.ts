@@ -1,0 +1,300 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+/* @vitest-environment node */
+import { FatalError, RetryableError } from "workflow";
+
+import type { ProviderChangeWithNames } from "@domainstack/types";
+
+// Hoist mocks for the dependencies sendNotificationInternal pulls in via dynamic import.
+const sendEmailMock = vi.hoisted(() => ({
+  getBaseUrl: vi
+    .fn<typeof import("../steps/email").getBaseUrl>()
+    .mockReturnValue("https://test.domainstack.io"),
+  getFirstName: vi.fn<typeof import("../steps/email").getFirstName>().mockReturnValue("Alex"),
+  sendEmail: vi.fn<typeof import("../steps/email").sendEmail>(),
+}));
+const notificationsMock = vi.hoisted(() => ({
+  createNotification:
+    vi.fn<typeof import("@domainstack/db/queries/notifications").createNotification>(),
+  updateNotificationResendId:
+    vi.fn<typeof import("@domainstack/db/queries/notifications").updateNotificationResendId>(),
+}));
+const trackedDomainsMock = vi.hoisted(() => ({
+  findTrackedDomainById:
+    vi.fn<typeof import("@domainstack/db/queries/tracked-domains").findTrackedDomainById>(),
+  isTrackedDomainNotificationEligible:
+    vi.fn<
+      typeof import("@domainstack/db/queries/tracked-domains").isTrackedDomainNotificationEligible
+    >(),
+}));
+const preferencesMock = vi.hoisted(() => ({
+  getUserNotificationPreferences:
+    vi.fn<
+      typeof import("@domainstack/db/queries/user-notification-preferences").getUserNotificationPreferences
+    >(),
+}));
+
+vi.mock("../steps/email", () => sendEmailMock);
+vi.mock("@domainstack/db/queries/notifications", () => notificationsMock);
+vi.mock("@domainstack/db/queries/tracked-domains", () => trackedDomainsMock);
+vi.mock("@domainstack/db/queries/user-notification-preferences", () => preferencesMock);
+// A truthy stand-in: sendNotificationInternal gates the email path on
+// `emailComponent` being present, so a real `null` render would (incorrectly)
+// look identical to "no template" and skip the send entirely.
+vi.mock("@domainstack/email/templates/provider-change", () => ({
+  default: vi.fn<() => React.ReactElement>().mockReturnValue({} as React.ReactElement),
+}));
+
+const baseParams = {
+  userId: "user-1",
+  userEmail: "user@example.com",
+  trackedDomainId: "tracked-1",
+  domainName: "example.com",
+  userName: "Alex",
+  title: "Provider change detected",
+  message: "Your DNS provider changed.",
+  emailSubject: "Provider change for example.com",
+  type: "provider_change" as const,
+  changes: {} as ProviderChangeWithNames,
+  idempotencyKey: 'provider:tracked-1:["a",null,null]>["b",null,null]',
+};
+
+describe("sendChangeNotificationStep", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    notificationsMock.createNotification.mockResolvedValue({
+      notification: { id: "n_1" },
+      created: true,
+    } as never);
+    notificationsMock.updateNotificationResendId.mockResolvedValue(true);
+    trackedDomainsMock.isTrackedDomainNotificationEligible.mockResolvedValue(true);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("sends email and in-app, then records the notification with both channels", async () => {
+    sendEmailMock.sendEmail.mockResolvedValue({ emailId: "em_1" });
+
+    const { sendChangeNotificationStep } = await import("./notify");
+    const result = await sendChangeNotificationStep(baseParams, {
+      shouldSendEmail: true,
+      shouldSendInApp: true,
+    });
+
+    expect(result).toBe(true);
+    expect(notificationsMock.createNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ channels: ["email", "in-app"] }),
+    );
+    expect(notificationsMock.updateNotificationResendId).toHaveBeenCalledWith("n_1", "em_1");
+  });
+
+  it("degrades to in-app only when the email fails permanently", async () => {
+    sendEmailMock.sendEmail.mockRejectedValue(new FatalError("validation_error"));
+
+    const { sendChangeNotificationStep } = await import("./notify");
+    const result = await sendChangeNotificationStep(baseParams, {
+      shouldSendEmail: true,
+      shouldSendInApp: true,
+    });
+
+    expect(result).toBe(true);
+    expect(notificationsMock.createNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ channels: ["in-app"] }),
+    );
+    expect(notificationsMock.updateNotificationResendId).not.toHaveBeenCalled();
+  });
+
+  it("resolves false and skips the notification record when email fails permanently with in-app off", async () => {
+    sendEmailMock.sendEmail.mockRejectedValue(new FatalError("validation_error"));
+
+    const { sendChangeNotificationStep } = await import("./notify");
+    const result = await sendChangeNotificationStep(baseParams, {
+      shouldSendEmail: true,
+      shouldSendInApp: false,
+    });
+
+    expect(result).toBe(false);
+    expect(notificationsMock.createNotification).not.toHaveBeenCalled();
+  });
+
+  it("rejects and does not record when the email fails transiently", async () => {
+    sendEmailMock.sendEmail.mockRejectedValue(new RetryableError("rate_limit_exceeded"));
+
+    const { sendChangeNotificationStep } = await import("./notify");
+
+    await expect(
+      sendChangeNotificationStep(baseParams, { shouldSendEmail: true, shouldSendInApp: true }),
+    ).rejects.toThrow("rate_limit_exceeded");
+    expect(notificationsMock.createNotification).not.toHaveBeenCalled();
+  });
+
+  it("resolves false and never calls sendEmail when both channels are off", async () => {
+    const { sendChangeNotificationStep } = await import("./notify");
+    const result = await sendChangeNotificationStep(baseParams, {
+      shouldSendEmail: false,
+      shouldSendInApp: false,
+    });
+
+    expect(result).toBe(false);
+    expect(sendEmailMock.getBaseUrl).not.toHaveBeenCalled();
+    expect(sendEmailMock.sendEmail).not.toHaveBeenCalled();
+  });
+
+  it("records an in-app-only notification without rendering email content", async () => {
+    const { sendChangeNotificationStep } = await import("./notify");
+    const result = await sendChangeNotificationStep(baseParams, {
+      shouldSendEmail: false,
+      shouldSendInApp: true,
+    });
+
+    expect(result).toBe(true);
+    expect(sendEmailMock.getBaseUrl).not.toHaveBeenCalled();
+    expect(sendEmailMock.sendEmail).not.toHaveBeenCalled();
+    expect(notificationsMock.createNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ channels: ["in-app"] }),
+    );
+  });
+
+  it("classifies a transient createNotification failure as RetryableError, not FatalError", async () => {
+    sendEmailMock.sendEmail.mockResolvedValue({ emailId: "em_1" });
+    notificationsMock.createNotification.mockRejectedValue(new Error("connection terminated"));
+
+    const { sendChangeNotificationStep } = await import("./notify");
+
+    const rejection = await sendChangeNotificationStep(baseParams, {
+      shouldSendEmail: true,
+      shouldSendInApp: true,
+    }).catch((err) => err);
+    expect(RetryableError.is(rejection)).toBe(true);
+    expect(FatalError.is(rejection)).toBe(false);
+    expect(notificationsMock.updateNotificationResendId).not.toHaveBeenCalled();
+  });
+
+  it("classifies a constraint-violation createNotification failure as FatalError, not a dumb retry", async () => {
+    sendEmailMock.sendEmail.mockResolvedValue({ emailId: "em_1" });
+    notificationsMock.createNotification.mockRejectedValue(
+      new Error('unique constraint "notifications_pkey" violated'),
+    );
+
+    const { sendChangeNotificationStep } = await import("./notify");
+
+    const rejection = await sendChangeNotificationStep(baseParams, {
+      shouldSendEmail: true,
+      shouldSendInApp: true,
+    }).catch((err) => err);
+    expect(FatalError.is(rejection)).toBe(true);
+    expect(notificationsMock.updateNotificationResendId).not.toHaveBeenCalled();
+  });
+
+  it("forwards the idempotency key to sendEmail", async () => {
+    sendEmailMock.sendEmail.mockResolvedValue({ emailId: "em_1" });
+
+    const { sendChangeNotificationStep } = await import("./notify");
+    await sendChangeNotificationStep(baseParams, { shouldSendEmail: true, shouldSendInApp: true });
+
+    expect(sendEmailMock.sendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ idempotencyKey: baseParams.idempotencyKey }),
+    );
+  });
+
+  it("passes no dedupeKey to createNotification for change alerts", async () => {
+    sendEmailMock.sendEmail.mockResolvedValue({ emailId: "em_1" });
+
+    const { sendChangeNotificationStep } = await import("./notify");
+    await sendChangeNotificationStep(baseParams, { shouldSendEmail: true, shouldSendInApp: true });
+
+    expect(notificationsMock.createNotification).toHaveBeenCalledTimes(1);
+    const call = notificationsMock.createNotification.mock.calls[0]?.[0];
+    expect(call?.dedupeKey).toBeUndefined();
+  });
+
+  it("returns false before sendEmail and createNotification when the tracked domain is no longer eligible", async () => {
+    trackedDomainsMock.isTrackedDomainNotificationEligible.mockResolvedValue(false);
+
+    const { sendChangeNotificationStep } = await import("./notify");
+    const result = await sendChangeNotificationStep(baseParams, {
+      shouldSendEmail: true,
+      shouldSendInApp: true,
+    });
+
+    expect(result).toBe(false);
+    expect(trackedDomainsMock.isTrackedDomainNotificationEligible).toHaveBeenCalledWith(
+      "tracked-1",
+    );
+    expect(sendEmailMock.sendEmail).not.toHaveBeenCalled();
+    expect(notificationsMock.createNotification).not.toHaveBeenCalled();
+    expect(notificationsMock.updateNotificationResendId).not.toHaveBeenCalled();
+  });
+
+  it("checks eligibility only after the no-channel fast return", async () => {
+    const { sendChangeNotificationStep } = await import("./notify");
+    await sendChangeNotificationStep(baseParams, {
+      shouldSendEmail: false,
+      shouldSendInApp: false,
+    });
+
+    expect(trackedDomainsMock.isTrackedDomainNotificationEligible).not.toHaveBeenCalled();
+  });
+});
+
+describe("determineNotificationChannelsStep", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    trackedDomainsMock.isTrackedDomainNotificationEligible.mockResolvedValue(true);
+    trackedDomainsMock.findTrackedDomainById.mockResolvedValue({
+      id: "tracked-1",
+      muted: false,
+    } as never);
+    preferencesMock.getUserNotificationPreferences.mockResolvedValue({
+      domainExpiry: { email: true, inApp: false },
+      registrationChanges: { email: false, inApp: true },
+    } as never);
+  });
+
+  it("returns no channels for an archived or unverified tracked domain, before loading preferences", async () => {
+    trackedDomainsMock.isTrackedDomainNotificationEligible.mockResolvedValue(false);
+
+    const { determineNotificationChannelsStep } = await import("./notify");
+    const channels = await determineNotificationChannelsStep(
+      "user-1",
+      "tracked-1",
+      "registrationChanges",
+    );
+
+    expect(channels).toEqual({ shouldSendEmail: false, shouldSendInApp: false });
+    expect(trackedDomainsMock.isTrackedDomainNotificationEligible).toHaveBeenCalledWith(
+      "tracked-1",
+    );
+    expect(preferencesMock.getUserNotificationPreferences).not.toHaveBeenCalled();
+  });
+
+  it("returns no channels for a muted eligible domain", async () => {
+    trackedDomainsMock.findTrackedDomainById.mockResolvedValue({
+      id: "tracked-1",
+      muted: true,
+    } as never);
+
+    const { determineNotificationChannelsStep } = await import("./notify");
+    const channels = await determineNotificationChannelsStep(
+      "user-1",
+      "tracked-1",
+      "registrationChanges",
+    );
+
+    expect(channels).toEqual({ shouldSendEmail: false, shouldSendInApp: false });
+    expect(preferencesMock.getUserNotificationPreferences).not.toHaveBeenCalled();
+  });
+
+  it("falls back to the user's global preferences for an eligible, unmuted domain", async () => {
+    const { determineNotificationChannelsStep } = await import("./notify");
+    const channels = await determineNotificationChannelsStep(
+      "user-1",
+      "tracked-1",
+      "registrationChanges",
+    );
+
+    expect(channels).toEqual({ shouldSendEmail: false, shouldSendInApp: true });
+    expect(preferencesMock.getUserNotificationPreferences).toHaveBeenCalledWith("user-1");
+  });
+});

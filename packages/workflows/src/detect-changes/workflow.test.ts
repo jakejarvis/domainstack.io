@@ -41,11 +41,11 @@ const hostingMock = vi.hoisted(() => ({
 
 const notificationsMock = vi.hoisted(() => ({
   determineNotificationChannelsStep:
-    vi.fn<typeof import("../steps/notifications").determineNotificationChannelsStep>(),
+    vi.fn<typeof import("./notify").determineNotificationChannelsStep>(),
   resolveProviderNamesStep:
-    vi.fn<typeof import("../steps/notifications").resolveProviderNamesStep>(),
+    vi.fn<typeof import("./notify").resolveProviderNamesStep>(),
   sendChangeNotificationStep:
-    vi.fn<typeof import("../steps/notifications").sendChangeNotificationStep>(),
+    vi.fn<typeof import("./notify").sendChangeNotificationStep>(),
 }));
 
 const snapshotsMock = vi.hoisted(() => ({
@@ -62,7 +62,7 @@ vi.mock("../steps/dns", () => dnsMock);
 vi.mock("../steps/headers", () => headersMock);
 vi.mock("../steps/certificates", () => certificatesMock);
 vi.mock("../steps/hosting", () => hostingMock);
-vi.mock("../steps/notifications", () => notificationsMock);
+vi.mock("./notify", () => notificationsMock);
 vi.mock("@domainstack/db/queries/snapshots", () => snapshotsMock);
 vi.mock("../lib/monitor-lock", () => monitorDedupMock);
 
