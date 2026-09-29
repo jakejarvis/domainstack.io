@@ -510,6 +510,40 @@ describe("notifications router", () => {
       expect(unreadCount).toBe(0);
     });
 
+    it("only marks notifications sent at or before upTo", async () => {
+      const caller = createAuthenticatedCaller();
+
+      const t1 = new Date(Date.now() - 20_000);
+      const t2 = new Date(Date.now() - 10_000);
+      await db.insert(notifications).values([
+        {
+          id: TEST_NOTIFICATION_ID,
+          userId: TEST_USER_ID,
+          type: "domain_expiry_30d",
+          title: "Older",
+          message: "Message 1",
+          sentAt: t1,
+          readAt: null,
+        },
+        {
+          id: TEST_NOTIFICATION_2_ID,
+          userId: TEST_USER_ID,
+          type: "domain_expiry_30d",
+          title: "Newer",
+          message: "Message 2",
+          sentAt: t2,
+          readAt: null,
+        },
+      ]);
+
+      const result = await caller.notifications.markAllRead({ upTo: t1 });
+
+      expect(result.count).toBe(1);
+
+      const unread = await caller.notifications.list({ filter: "unread" });
+      expect(unread.items.map((n) => n.title)).toEqual(["Newer"]);
+    });
+
     it("returns 0 when no unread notifications", async () => {
       const caller = createAuthenticatedCaller();
 

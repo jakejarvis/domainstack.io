@@ -148,6 +148,24 @@ describe("NotificationsPopover", () => {
     await expect.element(page.getByRole("alert")).toHaveTextContent("Failed to load notifications");
   });
 
+  it("does not auto-mark anything read when the list failed to load and the popover closes", async () => {
+    listNotificationsQuery.mockRejectedValue(new Error("nope"));
+    const queryClient = createTestQueryClient();
+    setNotificationsState([unreadAlpha]);
+    queryClient.setQueryData(NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY, 1);
+    await render(<NotificationsPopover />, { queryClient });
+
+    await openInbox();
+    await expect.element(page.getByRole("alert")).toHaveTextContent("Failed to load notifications");
+
+    await page.getByRole("button", { name: /Notifications/ }).click();
+    await expect
+      .element(page.getByRole("heading", { name: "Notifications" }))
+      .not.toBeInTheDocument();
+
+    expect(markAllReadMutation).not.toHaveBeenCalled();
+  });
+
   it("deep-links domain notifications and falls back to the dashboard", async () => {
     await renderPopover([unreadAlpha, unreadGeneric]);
     await openInbox();
@@ -211,6 +229,7 @@ describe("NotificationsPopover", () => {
     await vi.waitFor(() => {
       expect(markAllReadMutation).toHaveBeenCalledOnce();
     });
+    expect(markAllReadMutation.mock.calls[0]?.[0]).toEqual({ upTo: unreadAlpha.sentAt });
     await expect
       .element(page.getByRole("heading", { name: "Notifications" }))
       .not.toBeInTheDocument();

@@ -49,16 +49,26 @@ export function NotificationsPopover() {
     if (markAllRead.isPending) return;
     if (view !== "inbox") return;
 
+    // Only mark what the user could actually have seen: nothing while the list
+    // is loading or failed, and nothing newer than the newest loaded item.
+    if (showLoading || isNotificationsError) return;
+    if (notifications.length === 0) return;
+
     const latestUnreadCount = getLatestUnreadCount();
     if (latestUnreadCount <= 0) return;
 
+    const upTo = new Date(Math.max(...notifications.map((n) => n.sentAt.getTime())));
+
     autoMarkedThisOpenRef.current = true;
-    markAllRead.mutate(undefined, {
-      onError: () => {
-        // Allow retry within this open session if the mutation fails.
-        autoMarkedThisOpenRef.current = false;
+    markAllRead.mutate(
+      { upTo },
+      {
+        onError: () => {
+          // Allow retry within this open session if the mutation fails.
+          autoMarkedThisOpenRef.current = false;
+        },
       },
-    });
+    );
   };
 
   const closePopover = () => {

@@ -92,10 +92,13 @@ export const notificationsRouter = createTRPCRouter({
     }),
 
   /**
-   * Mark all notifications as read for the current user.
+   * Mark unread notifications as read for the current user. With `upTo`, only
+   * notifications sent at or before that time are marked.
    */
-  markAllRead: protectedProcedure.mutation(async ({ ctx }) => {
-    const count = await markAllAsRead(ctx.user.id);
-    return { count };
-  }),
+  markAllRead: protectedProcedure
+    .input(z.object({ upTo: z.date().optional() }).optional())
+    .mutation(async ({ ctx, input }) => {
+      const count = await markAllAsRead(ctx.user.id, input?.upTo);
+      return { count };
+    }),
 });

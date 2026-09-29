@@ -293,12 +293,20 @@ export const markReadMutation = vi.fn<(input: { id: string }) => Promise<{ succe
   },
 );
 
-export const markAllReadMutation = vi.fn<() => Promise<{ count: number }>>(async () => {
+async function defaultMarkAllRead(input?: { upTo?: Date }): Promise<{ count: number }> {
   const now = new Date();
-  const unreadCount = filteredNotifications("unread").length;
-  notificationsState = notificationsState.map((item) => markNotificationRead(item, now));
-  return { count: unreadCount };
-});
+  const upTo = input?.upTo;
+  const shouldMark = (item: NotificationData) =>
+    item.readAt === null && (!upTo || item.sentAt.getTime() <= upTo.getTime());
+  const count = notificationsState.filter(shouldMark).length;
+  notificationsState = notificationsState.map((item) =>
+    shouldMark(item) ? markNotificationRead(item, now) : item,
+  );
+  return { count };
+}
+
+export const markAllReadMutation =
+  vi.fn<(input?: { upTo?: Date }) => Promise<{ count: number }>>(defaultMarkAllRead);
 
 export function resetTrpcMocks() {
   domainsState = [];
@@ -421,12 +429,7 @@ export function resetTrpcMocks() {
   });
 
   markAllReadMutation.mockReset();
-  markAllReadMutation.mockImplementation(async () => {
-    const now = new Date();
-    const unreadCount = filteredNotifications("unread").length;
-    notificationsState = notificationsState.map((item) => markNotificationRead(item, now));
-    return { count: unreadCount };
-  });
+  markAllReadMutation.mockImplementation(defaultMarkAllRead);
 }
 
 export function useTRPC() {

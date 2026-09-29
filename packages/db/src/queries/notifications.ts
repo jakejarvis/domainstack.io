@@ -1,5 +1,5 @@
 import type { SQL } from "drizzle-orm";
-import { and, count, desc, eq, gt, isNotNull, isNull, like, lt, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, gt, isNotNull, isNull, like, lt, lte, or, sql } from "drizzle-orm";
 
 import type { NotificationChannel, NotificationType } from "@domainstack/types";
 
@@ -170,13 +170,20 @@ export async function markAsRead(notificationId: string, userId: string): Promis
 }
 
 /**
- * Mark all notifications as read for a user.
+ * Mark unread notifications as read for a user. With `upTo`, only those sent
+ * at or before that instant are marked, so newer unseen ones stay unread.
  */
-export async function markAllAsRead(userId: string): Promise<number> {
+export async function markAllAsRead(userId: string, upTo?: Date): Promise<number> {
   const updated = await db
     .update(notifications)
     .set({ readAt: new Date() })
-    .where(and(eq(notifications.userId, userId), isNull(notifications.readAt)))
+    .where(
+      and(
+        eq(notifications.userId, userId),
+        isNull(notifications.readAt),
+        upTo ? lte(notifications.sentAt, upTo) : undefined,
+      ),
+    )
     .returning();
 
   return updated.length;
