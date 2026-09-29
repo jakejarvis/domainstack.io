@@ -222,7 +222,15 @@ export async function lookupSection<S extends Section>(
   if (last === undefined || now - last >= DOMAIN_UPDATE_DEBOUNCE_MS) {
     if (lastAccessRecordedAt.size >= 10_000) lastAccessRecordedAt.clear();
     lastAccessRecordedAt.set(domain, now);
-    waitUntil(updateLastAccessed(domain));
+    waitUntil(
+      updateLastAccessed(domain).then((updated) => {
+        // No row yet (a new domain's first lookup), a DB-side debounce, or an error:
+        // let a later lookup try again rather than suppressing it for the window.
+        if (!updated && lastAccessRecordedAt.get(domain) === now) {
+          lastAccessRecordedAt.delete(domain);
+        }
+      }),
+    );
   }
 
   return resolveLookup({

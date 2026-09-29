@@ -7,7 +7,8 @@ await makePGliteDb();
 
 const { db } = await import("@domainstack/db/client");
 const { eq } = await import("@domainstack/db/drizzle");
-const { ensureDomainRecord, upsertDomain } = await import("@domainstack/db/queries/domains");
+const { ensureDomainRecord, updateLastAccessed, upsertDomain } =
+  await import("@domainstack/db/queries/domains");
 const { domains } = await import("@domainstack/db/schema");
 
 async function readDomain(name: string) {
@@ -54,6 +55,27 @@ describe("ensureDomainRecord", () => {
     await ensureDomainRecord("xn--bcher-kva.example");
 
     expect((await readDomain("xn--bcher-kva.example"))?.unicodeName).toBe("bücher.example");
+  });
+});
+
+describe("updateLastAccessed", () => {
+  it("returns false when the domain has no row yet", async () => {
+    expect(await updateLastAccessed("missing.example")).toBe(false);
+  });
+
+  it("returns true for an existing row that has never been accessed", async () => {
+    const row = await ensureDomainRecord("example.com");
+    expect(row.lastAccessedAt).toBeNull();
+
+    expect(await updateLastAccessed("example.com")).toBe(true);
+    expect((await readDomain("example.com"))?.lastAccessedAt).not.toBeNull();
+  });
+
+  it("returns false on an immediate second call (DB-side debounce)", async () => {
+    await ensureDomainRecord("example.com");
+
+    expect(await updateLastAccessed("example.com")).toBe(true);
+    expect(await updateLastAccessed("example.com")).toBe(false);
   });
 });
 

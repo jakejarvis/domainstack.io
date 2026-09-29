@@ -120,7 +120,7 @@ export async function updateLastAccessed(name: string): Promise<boolean> {
   try {
     const debounceThreshold = new Date(Date.now() - DOMAIN_UPDATE_DEBOUNCE_MS);
 
-    await db
+    const rows = await db
       .update(domains)
       .set({
         lastAccessedAt: new Date(),
@@ -130,8 +130,9 @@ export async function updateLastAccessed(name: string): Promise<boolean> {
           eq(domains.name, name),
           or(isNull(domains.lastAccessedAt), lt(domains.lastAccessedAt, debounceThreshold)),
         ),
-      );
-    return true;
+      )
+      .returning({ id: domains.id });
+    return rows.length > 0;
   } catch {
     return false;
   }

@@ -106,6 +106,22 @@ describe("lookupSection", () => {
     expect(mocks.updateLastAccessed).toHaveBeenLastCalledWith("other.com");
   });
 
+  it("retries recording when the first write updated no row", async () => {
+    mocks.getCachedDns.mockResolvedValue({ ...notCached, data: DNS_DATA });
+    mocks.updateLastAccessed.mockResolvedValueOnce(false).mockResolvedValue(true);
+
+    await lookupSection("dns", "example.com");
+    // Let the first write settle so the failed record is forgotten.
+    await mocks.waitUntil.mock.calls[0]?.[0];
+
+    await lookupSection("dns", "example.com");
+    await mocks.waitUntil.mock.calls[1]?.[0];
+    expect(mocks.updateLastAccessed).toHaveBeenCalledTimes(2);
+
+    await lookupSection("dns", "example.com");
+    expect(mocks.updateLastAccessed).toHaveBeenCalledTimes(2);
+  });
+
   describe("after the debounce window", () => {
     afterEach(() => {
       vi.useRealTimers();
