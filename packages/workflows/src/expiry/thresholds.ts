@@ -72,6 +72,34 @@ export function getThresholdNotificationType(
   return null;
 }
 
+/**
+ * Certificate thresholds worth alerting on for a certificate of this lifetime.
+ *
+ * Automated renewal (ACME clients, ARI) normally happens with about a third of
+ * the lifetime left, so an alert before that point is noise: a 6-day
+ * certificate is always "expiring in under 7 days". Thresholds at or above a
+ * third of the lifetime are dropped; for a 90-day certificate that keeps all of
+ * 14/7/3/1.
+ */
+export function certificateThresholdsForLifetime(
+  validFrom: Date,
+  validTo: Date,
+  thresholds: readonly number[] = CERTIFICATE_EXPIRY_THRESHOLDS,
+): number[] {
+  const lifetimeDays = (validTo.getTime() - validFrom.getTime()) / 86_400_000;
+  if (!Number.isFinite(lifetimeDays) || lifetimeDays <= 0) return [...thresholds];
+  return thresholds.filter((t) => t < lifetimeDays / 3);
+}
+
+/**
+ * Phrase for a floored day count (`calculateDaysRemaining`): 0 means under 24
+ * hours left, 1 means 24-48 hours. Never "tomorrow" or "0 days".
+ */
+export function inDaysPhrase(days: number): string {
+  if (days <= 0) return "within 24 hours";
+  return `in ${days} day${days === 1 ? "" : "s"}`;
+}
+
 export type ExpirySkipResult =
   | {
       skipped: true;

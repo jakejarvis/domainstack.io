@@ -28,7 +28,7 @@ function CertificateExpiryEmail({
   baseUrl,
 }: CertificateExpiryEmailProps) {
   const isUrgent = daysRemaining <= 3;
-  const previewText = `SSL certificate for ${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;
+  const previewText = `SSL certificate for ${domainName} expires ${daysRemaining <= 0 ? "within 24 hours" : `in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`}`;
 
   return (
     <EmailLayout previewText={previewText}>
@@ -38,11 +38,14 @@ function CertificateExpiryEmail({
 
       <EmailText>
         The SSL certificate for <strong>{domainName}</strong> is set to expire{" "}
-        {daysRemaining === 1 ? (
-          <span style={urgent}>tomorrow</span>
+        {daysRemaining <= 0 ? (
+          <span style={urgent}>within 24 hours</span>
         ) : (
           <>
-            in <span style={isUrgent ? urgent : highlight}>{daysRemaining} days</span>
+            in{" "}
+            <span style={isUrgent ? urgent : highlight}>
+              {daysRemaining} day{daysRemaining === 1 ? "" : "s"}
+            </span>
           </>
         )}{" "}
         on <strong>{expirationDate}</strong>.

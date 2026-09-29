@@ -64,7 +64,8 @@ function getHealthStatus(
   const daysUntilExpiry = getDaysUntilExpiry(expirationDate, verified, now);
   if (daysUntilExpiry === null) return null;
 
-  if (daysUntilExpiry <= 0) return "expired";
+  // 0 = under 24 h left, not yet expired (same rule as the expiry workflow)
+  if (daysUntilExpiry < 0) return "expired";
   if (daysUntilExpiry <= EXPIRING_SOON_DAYS) return "expiring";
   return "healthy";
 }

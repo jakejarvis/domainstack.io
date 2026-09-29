@@ -314,6 +314,28 @@ describe("filterDomains", () => {
     ).toEqual([]);
   });
 
+  it("does not call a domain expired while it still has under 24 hours left", () => {
+    const list = [
+      makeTrackedDomain({
+        id: "domain-today",
+        domainName: "today.com",
+        expirationDate: new Date(DASHBOARD_TEST_NOW.getTime() + 12 * 3_600_000),
+      }),
+    ];
+    const run = (health: HealthFilter) =>
+      names(
+        filterDomains(
+          list,
+          { ...emptyCriteria, health: [health] },
+          validProviderIds,
+          DASHBOARD_TEST_NOW,
+        ),
+      );
+
+    expect(run("expiring")).toEqual(["today.com"]);
+    expect(run("expired")).toEqual([]);
+  });
+
   it("filters by TLD", () => {
     expect(
       names(

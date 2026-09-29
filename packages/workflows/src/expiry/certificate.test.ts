@@ -47,6 +47,8 @@ const baseCert = {
   domainId: "d-1",
   domainName: "example.com",
   muted: false,
+  // 90-day-style certificate: validTo - validFrom is 90 days.
+  validFrom: inDays(-83),
   validTo: inDays(7),
   issuer: "Let's Encrypt",
   // Check window is open (expires 12h from NOW), so no refresh is needed.
@@ -159,6 +161,71 @@ describe("checkCertificateExpiry", () => {
 
     expect(result).toEqual({ skipped: true, reason: "already_expired" });
     expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+  });
+
+  // A ~6.7-day certificate (Let's Encrypt short-lived profile), built with
+  // explicit dates so the day count is exact.
+  const shortLived = (daysLeft: number) => {
+    const validTo = new Date(NOW.getTime() + daysLeft * 86_400_000);
+    return { ...baseCert, validFrom: new Date(validTo.getTime() - 6.7 * 86_400_000), validTo };
+  };
+
+  it("short-lived certificate with days left: treated as renewed, clears old notifications", async () => {
+    certificatesQueryMock.getEarliestCertificate.mockResolvedValue(shortLived(5.5));
+    notificationsQueryMock.clearCertificateExpiryNotifications.mockResolvedValue(1);
+
+    const { checkCertificateExpiry } = await import("./certificate");
+    const result = await checkCertificateExpiry({ trackedDomainId: "td-1" });
+
+    expect(result).toEqual({ skipped: true, reason: "renewed", renewed: true, clearedCount: 1 });
+    expect(notificationsQueryMock.clearCertificateExpiryNotifications).toHaveBeenCalledWith("td-1");
+    expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+  });
+
+  it("short-lived certificate under 24 h left: renewal is overdue, sends", async () => {
+    certificatesQueryMock.getEarliestCertificate.mockResolvedValue(shortLived(0.5));
+
+    const { checkCertificateExpiry } = await import("./certificate");
+    const result = await checkCertificateExpiry({ trackedDomainId: "td-1" });
+
+    expect(result).toEqual({ skipped: false, sent: true });
+    expect(sharedNotificationsMock.sendNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        notificationType: "certificate_expiry_1d",
+        title: "SSL certificate for example.com expires within 24 hours",
+      }),
+      { shouldSendEmail: true, shouldSendInApp: true },
+    );
+  });
+
+  it("short_lived: a 2-day certificate never alerts", async () => {
+    const validTo = new Date(NOW.getTime() + 1.5 * 86_400_000);
+    certificatesQueryMock.getEarliestCertificate.mockResolvedValue({
+      ...baseCert,
+      validFrom: new Date(validTo.getTime() - 2 * 86_400_000),
+      validTo,
+    });
+
+    const { checkCertificateExpiry } = await import("./certificate");
+    const result = await checkCertificateExpiry({ trackedDomainId: "td-1" });
+
+    expect(result).toEqual({ skipped: true, reason: "short_lived" });
+    expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
+  });
+
+  it("title wording: 1 day left reads 'in 1 day', never 'tomorrow'", async () => {
+    certificatesQueryMock.getEarliestCertificate.mockResolvedValue({
+      ...baseCert,
+      validTo: inDays(1),
+    });
+
+    const { checkCertificateExpiry } = await import("./certificate");
+    await checkCertificateExpiry({ trackedDomainId: "td-1" });
+
+    expect(sharedNotificationsMock.sendNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "SSL certificate for example.com expires in 1 day" }),
+      expect.anything(),
+    );
   });
 
   it("due threshold: sends with the issuer, valid-to date, and channel flags", async () => {

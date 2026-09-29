@@ -50,6 +50,7 @@ export interface TrackedDomainCertificate {
   domainId: string;
   domainName: string;
   muted: boolean;
+  validFrom: Date;
   validTo: Date;
   issuer: string;
   /** `certificate_checks` observation time; null when the check row is missing. */
@@ -219,6 +220,7 @@ export async function getEarliestCertificate(
       domainId: userTrackedDomains.domainId,
       domainName: domains.name,
       muted: userTrackedDomains.muted,
+      validFrom: certificates.validFrom,
       validTo: certificates.validTo,
       issuer: certificates.issuer,
       checkFetchedAt: certificateChecks.fetchedAt,

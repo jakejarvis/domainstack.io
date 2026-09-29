@@ -193,6 +193,22 @@ describe("checkDomainExpiry", () => {
     );
   });
 
+  it("title wording: 0 days reads 'within 24 hours', 1 day reads 'in 1 day'", async () => {
+    const { checkDomainExpiry } = await import("./domain");
+    const titleFor = async (days: number) => {
+      trackedDomainsMock.getTrackedDomainForNotification.mockResolvedValue({
+        ...baseDomain,
+        expirationDate: inDays(days).toISOString(),
+      } as never);
+      await checkDomainExpiry({ trackedDomainId: "td-1" });
+      return sharedNotificationsMock.sendNotification.mock.calls.at(-1)?.[0].title;
+    };
+
+    expect(await titleFor(0)).toBe("example.com expires within 24 hours");
+    expect(await titleFor(1)).toBe("example.com expires in 1 day");
+    expect(await titleFor(5)).toBe("example.com expires in 5 days");
+  });
+
   it("dedupe key: identical for the same expiration and threshold, different after a renewal", async () => {
     const { checkDomainExpiry } = await import("./domain");
     const keyOfLastSend = () => {

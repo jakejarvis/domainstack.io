@@ -1,11 +1,15 @@
-import { CERTIFICATE_EXPIRY_THRESHOLDS } from "@domainstack/constants";
 import type { TrackedDomainCertificate } from "@domainstack/db/queries/certificates";
 import type { NotificationType } from "@domainstack/types";
 import { formatDateLong } from "@domainstack/utils/date";
 import { calculateDaysRemaining } from "@domainstack/utils/expiry";
 
 import type { NotificationChannels } from "../steps/notifications";
-import { type ExpirySkipResult, evaluateExpiryNotification } from "./thresholds";
+import {
+  type ExpirySkipResult,
+  certificateThresholdsForLifetime,
+  evaluateExpiryNotification,
+  inDaysPhrase,
+} from "./thresholds";
 
 export interface CertificateExpiryWorkflowInput {
   trackedDomainId: string;
@@ -15,7 +19,12 @@ export type CertificateExpiryWorkflowResult =
   | ExpirySkipResult
   | {
       skipped: true;
-      reason: "not_found" | "data_unavailable" | "invalid_expiration_date" | "already_expired";
+      reason:
+        | "not_found"
+        | "data_unavailable"
+        | "invalid_expiration_date"
+        | "already_expired"
+        | "short_lived";
     }
   | { skipped: false; sent: true };
 
@@ -58,11 +67,18 @@ export async function checkCertificateExpiry(
     return { skipped: true, reason: "already_expired" };
   }
 
+  // A short-lived certificate renews long before the smaller thresholds
+  // apply; alerting on them would fire every cycle despite healthy renewal.
+  const thresholds = certificateThresholdsForLifetime(cert.validFrom, cert.validTo);
+  if (thresholds.length === 0) {
+    return { skipped: true, reason: "short_lived" };
+  }
+
   // Steps 3-5: renewal, threshold, preferences, and already-sent checks
   const check = await evaluateExpiryNotification({
     trackedDomainId,
     daysRemaining,
-    thresholds: CERTIFICATE_EXPIRY_THRESHOLDS,
+    thresholds,
     prefix: "certificate_expiry",
     preferenceKey: "certificateExpiry",
     userId: cert.userId,
@@ -199,7 +215,7 @@ interface ExpiryContent {
 function buildCertificateExpiryContent(params: CertificateExpiryContentInput): ExpiryContent {
   const { domainName, validTo, issuer, daysRemaining } = params;
 
-  const title = `SSL certificate for ${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;
+  const title = `SSL certificate for ${domainName} expires ${inDaysPhrase(daysRemaining)}`;
   const subject = `${daysRemaining <= 3 ? "🔒⚠️ " : "🔒 "}${title}`;
   const message = `The SSL certificate for ${domainName} (issued by ${issuer}) will expire on ${formatDateLong(validTo)}.`;
 
