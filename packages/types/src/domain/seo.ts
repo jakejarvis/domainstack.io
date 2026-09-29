@@ -97,5 +97,10 @@ export interface SeoResponse {
   errors?: {
     html?: string;
     robots?: string;
+    /**
+     * Set when the homepage failed permanently. A cached row with this code is
+     * served as a failed lookup, not as data.
+     */
+    htmlCode?: "dns_error" | "tls_error";
   };
 }

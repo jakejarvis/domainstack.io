@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   isDomainBlocked: vi.fn<(domain: string) => Promise<boolean>>(),
   ensureDomainRecord: vi.fn<(domain: string) => Promise<{ id: string }>>(),
   upsertSeo: vi.fn<(row: SeoRow) => Promise<void>>(),
+  getCachedSeo: vi.fn<(domain: string) => Promise<unknown>>(),
 }));
 
 interface SeoRow {
@@ -33,7 +34,10 @@ vi.mock("@domainstack/db/queries/blocked-domains", () => ({
 vi.mock("@domainstack/db/queries/domains", () => ({
   ensureDomainRecord: mocks.ensureDomainRecord,
 }));
-vi.mock("@domainstack/db/queries/seo", () => ({ upsertSeo: mocks.upsertSeo }));
+vi.mock("@domainstack/db/queries/seo", () => ({
+  upsertSeo: mocks.upsertSeo,
+  getCachedSeo: mocks.getCachedSeo,
+}));
 
 import { fetchSeo } from "./index";
 
@@ -105,6 +109,12 @@ describe("fetchSeo", () => {
     mocks.isDomainBlocked.mockResolvedValue(false);
     mocks.ensureDomainRecord.mockResolvedValue({ id: "domain-id" });
     mocks.upsertSeo.mockResolvedValue(undefined);
+    mocks.getCachedSeo.mockResolvedValue({
+      data: { meta: null, robots: null, preview: null, source: { finalUrl: null, status: null } },
+      stale: false,
+      fetchedAt: null,
+      expiresAt: null,
+    });
     mocks.optimizeImage.mockResolvedValue(Buffer.from("optimized"));
     mocks.storeImage.mockResolvedValue({ url: "https://blob.test/og.png" });
   });

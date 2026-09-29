@@ -64,6 +64,8 @@ type FetchOutcome<T> = { success: true; data: T } | { success: false; error: Loo
 interface Cached<T> {
   data: T | null;
   stale: boolean;
+  /** A persisted permanent failure. Served (while fresh) as `{ success: false }` without refetching. */
+  failure?: LookupError;
 }
 
 interface SectionSpec<S extends Section> {
@@ -117,7 +119,11 @@ const SECTIONS: { [S in Section]: SectionSpec<S> } = {
   },
   seo: {
     limit: { requests: 30, window: "1 m" },
-    getCached: async (domain) => (await import("@domainstack/db/queries/seo")).getCachedSeo(domain),
+    getCached: async (domain) => {
+      const cached = await (await import("@domainstack/db/queries/seo")).getCachedSeo(domain);
+      const code = cached.data?.errors?.htmlCode;
+      return code ? { ...cached, data: null, failure: code } : cached;
+    },
     fetch: async (domain) => (await import("../seo")).fetchSeo(domain),
   },
 };
@@ -153,11 +159,15 @@ async function resolveLookup<T>({
   fetch,
   log,
 }: {
-  cached: { data: T | null; stale: boolean };
+  cached: Cached<T>;
   meter: { key: string; identifier?: string | null; config: RateLimitConfig };
   fetch: () => Promise<FetchOutcome<T>>;
   log: { label: string; fields: Record<string, unknown>; unavailableLevel?: "warn" | "debug" };
 }): Promise<LookupOutcome<T>> {
+  if (cached.failure && !cached.stale) {
+    return { success: false, error: cached.failure };
+  }
+
   if (cached.data && !cached.stale) {
     return { success: true, cached: true, data: cached.data };
   }

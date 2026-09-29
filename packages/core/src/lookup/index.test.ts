@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   getCachedDns: vi.fn<(domain: string) => Promise<unknown>>(),
   getCachedHeaders: vi.fn<(domain: string) => Promise<unknown>>(),
+  getCachedSeo: vi.fn<(domain: string) => Promise<unknown>>(),
+  fetchSeo: vi.fn<(domain: string) => Promise<unknown>>(),
   fetchDns: vi.fn<(domain: string) => Promise<unknown>>(),
   fetchHeaders: vi.fn<(domain: string) => Promise<unknown>>(),
   fetchCertificates: vi.fn<(domain: string) => Promise<unknown>>(),
@@ -38,6 +40,8 @@ vi.mock("../favicon", () => ({ fetchFavicon: mocks.fetchFavicon }));
 vi.mock("../provider-logo", () => ({ fetchProviderLogo: mocks.fetchProviderLogo }));
 vi.mock("@domainstack/db/queries/dns", () => ({ getCachedDns: mocks.getCachedDns }));
 vi.mock("@domainstack/db/queries/headers", () => ({ getCachedHeaders: mocks.getCachedHeaders }));
+vi.mock("@domainstack/db/queries/seo", () => ({ getCachedSeo: mocks.getCachedSeo }));
+vi.mock("../seo", () => ({ fetchSeo: mocks.fetchSeo }));
 vi.mock("../dns", () => ({ fetchDns: mocks.fetchDns }));
 vi.mock("../tls", () => ({ fetchCertificates: mocks.fetchCertificates }));
 vi.mock("../headers", () => ({ fetchHeaders: mocks.fetchHeaders }));
@@ -300,5 +304,62 @@ describe("lookupProviderLogo", () => {
       config: { requests: 60, window: "1 m" },
     });
     expect(mocks.fetchProviderLogo).toHaveBeenCalledWith(PROVIDER_ID, "provider.example");
+  });
+});
+
+describe("lookupSection seo cached failures", () => {
+  const SEO_DATA = {
+    meta: null,
+    robots: null,
+    preview: null,
+    source: { finalUrl: null, status: null },
+  };
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.enforceRateLimit.mockResolvedValue(undefined);
+    mocks.updateLastAccessed.mockResolvedValue(true);
+  });
+
+  it("serves a fresh persisted DNS failure as a failure without refetching or metering", async () => {
+    mocks.getCachedSeo.mockResolvedValue({
+      ...notCached,
+      data: { ...SEO_DATA, errors: { html: "DNS resolution failed", htmlCode: "dns_error" } },
+    });
+
+    await expect(lookupSection("seo", "example.com")).resolves.toEqual({
+      success: false,
+      error: "dns_error",
+    });
+    expect(mocks.fetchSeo).not.toHaveBeenCalled();
+    expect(mocks.enforceRateLimit).not.toHaveBeenCalled();
+  });
+
+  it("refetches when the persisted failure is stale", async () => {
+    mocks.getCachedSeo.mockResolvedValue({
+      ...notCached,
+      stale: true,
+      data: { ...SEO_DATA, errors: { html: "DNS resolution failed", htmlCode: "dns_error" } },
+    });
+    mocks.fetchSeo.mockResolvedValue({ success: true, data: SEO_DATA });
+
+    await expect(lookupSection("seo", "example.com")).resolves.toEqual({
+      success: true,
+      cached: false,
+      data: SEO_DATA,
+    });
+    expect(mocks.fetchSeo).toHaveBeenCalledOnce();
+  });
+
+  it("serves a fresh row without a failure code as data", async () => {
+    const data = { ...SEO_DATA, errors: { html: "HTTP 404" } };
+    mocks.getCachedSeo.mockResolvedValue({ ...notCached, data });
+
+    await expect(lookupSection("seo", "example.com")).resolves.toEqual({
+      success: true,
+      cached: true,
+      data,
+    });
+    expect(mocks.fetchSeo).not.toHaveBeenCalled();
   });
 });

@@ -7,7 +7,7 @@
 
 import { isDomainBlocked } from "@domainstack/db/queries/blocked-domains";
 import { ensureDomainRecord } from "@domainstack/db/queries/domains";
-import { upsertSeo } from "@domainstack/db/queries/seo";
+import { getCachedSeo, upsertSeo } from "@domainstack/db/queries/seo";
 import { optimizeImage, storeImage } from "@domainstack/image";
 import { safeFetch } from "@domainstack/safe-fetch";
 import { isExpectedDnsError } from "@domainstack/safe-fetch/dns";
@@ -93,6 +93,8 @@ export async function fetchSeo(domain: string): Promise<SeoResult> {
   // Other HTML failures (HTTP errors, non-HTML) continue with partial data
   if (htmlResult.errorCode) {
     const errorResponse = buildSeoResponse(htmlResult, robotsResult, null);
+    // Persist the typed code so a cached row is served as a failure, not as data.
+    errorResponse.errors = { ...errorResponse.errors, htmlCode: htmlResult.errorCode };
     await persistSeo(domain, errorResponse, null, false);
     return { success: false, error: htmlResult.errorCode };
   }
@@ -116,10 +118,12 @@ export async function fetchSeo(domain: string): Promise<SeoResult> {
   // Step 5: Persist to database
   await persistSeo(domain, response, uploadedImageUrl, retryImage);
 
-  return {
-    success: true,
-    data: response,
-  };
+  // Read the persisted row back so a cold and a cached lookup return identical data.
+  const cached = await getCachedSeo(domain);
+  if (!cached.data) {
+    throw new Error(`seo for ${domain} was persisted but could not be read back`);
+  }
+  return { success: true, data: cached.data };
 }
 
 // ============================================================================

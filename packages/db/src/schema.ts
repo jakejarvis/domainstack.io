@@ -550,7 +550,7 @@ export const seo = pgTable(
       .notNull()
       .default(sql`'[]'::jsonb`),
     errors: jsonb("errors")
-      .$type<{ html?: string; robots?: string }>()
+      .$type<{ html?: string; robots?: string; htmlCode?: "dns_error" | "tls_error" }>()
       .notNull()
       .default(sql`'{}'::jsonb`),
     fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
