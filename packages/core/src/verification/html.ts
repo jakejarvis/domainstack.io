@@ -42,12 +42,10 @@ export async function verifyByHtmlFile(
     `https://${domain}${HTML_FILE_PATH_LEGACY}`,
   ];
 
-  // Whether any URL was reachable at all (an HTTP response, even a 404,
+  // `reachable`: the URL answered at all (an HTTP response, even a 404,
   // counts) — distinguishes a confirmed-absent proof from a probe that
   // never actually completed.
-  let anyReachable = false;
-
-  for (const urlStr of urls) {
+  async function probe(urlStr: string): Promise<{ reachable: boolean; matched: boolean }> {
     try {
       const result = await safeFetch({
         url: urlStr,
@@ -58,23 +56,26 @@ export async function verifyByHtmlFile(
         maxBytes: 1024,
         maxRedirects: 3,
       });
-      anyReachable = true;
-
-      if (!result.ok) {
-        continue;
-      }
-
-      if (result.buffer.toString("utf-8").trim() === expectedContent) {
-        return { verified: true, method: "html_file" };
-      }
+      const matched = result.ok && result.buffer.toString("utf-8").trim() === expectedContent;
+      return { reachable: true, matched };
     } catch (err) {
       // The server answered; its body was just too big to be the proof we want.
-      if (err instanceof SafeFetchError && err.code === "size_exceeded") {
-        anyReachable = true;
-      }
-      // Otherwise: network/DNS/TLS/timeout failure for this URL — try the next one.
+      // Otherwise: network/DNS/TLS/timeout failure for this URL.
+      const reachable = err instanceof SafeFetchError && err.code === "size_exceeded";
+      return { reachable, matched: false };
     }
   }
 
-  return { verified: false, method: null, checkFailed: !anyReachable };
+  // Fetch both URLs at once, but read them in order so the per-token file wins.
+  const probes = urls.map(probe);
+  const results: Array<{ reachable: boolean; matched: boolean }> = [];
+  for (const pending of probes) {
+    const result = await pending;
+    if (result.matched) {
+      return { verified: true, method: "html_file" };
+    }
+    results.push(result);
+  }
+
+  return { verified: false, method: null, checkFailed: !results.some((r) => r.reachable) };
 }

@@ -20,8 +20,8 @@ export { verifyByMetaTag } from "./meta";
 export type { VerificationHttpOptions } from "./types";
 
 /**
- * Verify domain ownership by trying all methods in order.
- * Returns on first successful verification.
+ * Verify domain ownership by trying all methods at once.
+ * Returns the first successful method in precedence order.
  *
  * Order: DNS (most reliable) -> HTML file -> Meta tag
  *
@@ -35,16 +35,19 @@ export async function verifyDomain(
   token: string,
   options?: VerificationHttpOptions,
 ): Promise<VerificationResult> {
-  // Try DNS first (most reliable)
-  const dnsResult = await verifyByDns(domain, token);
+  // Start every probe at once; read them in precedence order. A DNS match returns as
+  // soon as DNS answers, and the failure path costs the slowest probe instead of the sum.
+  const failed: VerificationResult = { verified: false, method: null, checkFailed: true };
+  const settle = (p: Promise<VerificationResult>) => p.catch(() => failed);
+  const dns = settle(verifyByDns(domain, token));
+  const html = settle(verifyByHtmlFile(domain, token, options));
+  const meta = settle(verifyByMetaTag(domain, token, options));
+
+  const dnsResult = await dns;
   if (dnsResult.verified) return dnsResult;
-
-  // Try HTML file
-  const htmlResult = await verifyByHtmlFile(domain, token, options);
+  const htmlResult = await html;
   if (htmlResult.verified) return htmlResult;
-
-  // Try meta tag
-  const metaResult = await verifyByMetaTag(domain, token, options);
+  const metaResult = await meta;
   if (metaResult.verified) return metaResult;
 
   // Only report checkFailed if every method's probe failed to complete: one

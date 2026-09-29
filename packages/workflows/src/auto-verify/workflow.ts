@@ -157,20 +157,21 @@ async function checkDomainStatus(trackedDomainId: string): Promise<DomainStatus>
  * verification steps, which keeps each method independently journaled and
  * retryable. Marking it `"use step"` would collapse them into one unit and
  * re-run DNS, HTML, and meta-tag checks together on any single retry.
+ *
+ * The three steps run concurrently and are read in precedence order
+ * (DNS -> HTML file -> meta tag). All three are awaited before returning, so
+ * no started step is left dangling when the helper returns.
  */
 async function attemptVerification(domainName: string, token: string): Promise<VerificationResult> {
-  // Try DNS first (most reliable)
-  const dnsResult = await verifyDomainByDns(domainName, token);
+  // Each method stays its own journaled, retryable step; they just run together.
+  const [dnsResult, htmlResult, metaResult] = await Promise.all([
+    verifyDomainByDns(domainName, token),
+    verifyDomainByHtmlFile(domainName, token),
+    verifyDomainByMetaTag(domainName, token),
+  ]);
   if (dnsResult.verified) return dnsResult;
-
-  // Try HTML file
-  const htmlResult = await verifyDomainByHtmlFile(domainName, token);
   if (htmlResult.verified) return htmlResult;
-
-  // Try meta tag
-  const metaResult = await verifyDomainByMetaTag(domainName, token);
   if (metaResult.verified) return metaResult;
-
   return { verified: false, method: null };
 }
 

@@ -1,4 +1,4 @@
-import { HttpResponse, http } from "msw";
+import { HttpResponse, delay, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { server } from "./test-setup";
@@ -821,6 +821,149 @@ describe("verifyDomain (all methods)", () => {
 
     expect(result.verified).toBe(false);
     expect(result.checkFailed).toBe(true);
+  });
+
+  it("probes the HTML file without waiting for DNS to answer", async () => {
+    let htmlRequested = false;
+    let htmlWasRequestedFirst = false;
+    let resolveHtmlSeen: () => void = () => {};
+    const htmlSeen = new Promise<void>((resolve) => {
+      resolveHtmlSeen = resolve;
+    });
+
+    const dohSlowTxtHandler = async ({ request }: { request: Request }) => {
+      const url = new URL(request.url);
+      const type = url.searchParams.get("type");
+
+      if (type === "TXT") {
+        await Promise.race([htmlSeen, delay(1500)]);
+        htmlWasRequestedFirst = htmlRequested;
+        return HttpResponse.json({ Status: 0, Answer: [] });
+      }
+
+      if (type === "A") {
+        return HttpResponse.json({
+          Status: 0,
+          Answer: [
+            {
+              name: "verified-dns.test.",
+              type: 1,
+              TTL: 60,
+              data: "1.2.3.4",
+            },
+          ],
+        });
+      }
+
+      return HttpResponse.json({ Status: 0, Answer: [] });
+    };
+
+    server.use(
+      http.get("https://cloudflare-dns.com/dns-query", dohSlowTxtHandler),
+      http.get("https://dns.google/resolve", dohSlowTxtHandler),
+      http.get(`https://verified-dns.test/.well-known/domainstack-verify/${token}.html`, () => {
+        htmlRequested = true;
+        resolveHtmlSeen();
+        return new HttpResponse(null, { status: 404 });
+      }),
+    );
+
+    const { verifyDomain } = await import("./index");
+    await verifyDomain("verified-dns.test", token);
+
+    expect(htmlWasRequestedFirst).toBe(true);
+  });
+
+  it("returns a DNS match without waiting for a slow homepage", async () => {
+    const dohHandler = () =>
+      HttpResponse.json({
+        Status: 0,
+        Answer: [
+          {
+            name: "verified-dns.test.",
+            type: 16,
+            TTL: 300,
+            data: `"domainstack-verification=${token}"`,
+          },
+        ],
+      });
+
+    server.use(
+      http.get("https://cloudflare-dns.com/dns-query", dohHandler),
+      http.get("https://dns.google/resolve", dohHandler),
+      http.get("https://verified-dns.test/", async () => {
+        await delay(3000);
+        return new HttpResponse("<html></html>");
+      }),
+    );
+
+    const { verifyDomain } = await import("./index");
+    const start = performance.now();
+    const result = await verifyDomain("verified-dns.test", token);
+    const elapsed = performance.now() - start;
+
+    expect(result.method).toBe("dns_txt");
+    expect(elapsed).toBeLessThan(1500);
+  });
+
+  it("prefers DNS when DNS and the HTML file both match", async () => {
+    const dohHandler = () =>
+      HttpResponse.json({
+        Status: 0,
+        Answer: [
+          {
+            name: "verified-dns.test.",
+            type: 16,
+            TTL: 300,
+            data: `"domainstack-verification=${token}"`,
+          },
+        ],
+      });
+
+    server.use(
+      http.get("https://cloudflare-dns.com/dns-query", dohHandler),
+      http.get("https://dns.google/resolve", dohHandler),
+      http.get(
+        `https://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
+        () =>
+          new HttpResponse(`domainstack-verify: ${token}`, {
+            headers: { "Content-Type": "text/html" },
+          }),
+      ),
+    );
+
+    const { verifyDomain } = await import("./index");
+    const result = await verifyDomain("verified-dns.test", token);
+
+    expect(result.verified).toBe(true);
+    expect(result.method).toBe("dns_txt");
+  });
+
+  it("prefers the per-token HTML file over the legacy one", async () => {
+    server.use(
+      http.get(
+        "https://verified-dns.test/.well-known/domainstack-verify.html",
+        () =>
+          new HttpResponse(`domainstack-verify: ${token}`, {
+            headers: { "Content-Type": "text/html" },
+          }),
+      ),
+      http.get(
+        `https://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
+        async () => {
+          await delay(300);
+          return new HttpResponse(`domainstack-verify: ${token}`, {
+            headers: { "Content-Type": "text/html" },
+          });
+        },
+      ),
+    );
+
+    const { verifyDomain } = await import("./index");
+    const result = await verifyDomain("verified-dns.test", token);
+
+    expect(result.verified).toBe(true);
+    expect(result.method).toBe("html_file");
   });
 });
 
