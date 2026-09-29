@@ -880,7 +880,7 @@ export async function getVerifiedTrackedDomainIds(): Promise<string[]> {
   const rows = await db
     .select({ id: userTrackedDomains.id })
     .from(userTrackedDomains)
-    .where(and(eq(userTrackedDomains.verified, true), isNull(userTrackedDomains.archivedAt)));
+    .where(activeTrackedDomain);
 
   return rows.map((r) => r.id);
 }

@@ -175,7 +175,7 @@ export async function getMonitoredSnapshotIds(): Promise<string[]> {
     .select({ trackedDomainId: domainSnapshots.trackedDomainId })
     .from(domainSnapshots)
     .innerJoin(userTrackedDomains, eq(domainSnapshots.trackedDomainId, userTrackedDomains.id))
-    .where(and(eq(userTrackedDomains.verified, true), isNull(userTrackedDomains.archivedAt)));
+    .where(activeTrackedDomain);
 
   return rows.map((r) => r.trackedDomainId);
 }
@@ -193,13 +193,7 @@ export async function getVerifiedDomainsWithoutSnapshots(): Promise<
     })
     .from(userTrackedDomains)
     .leftJoin(domainSnapshots, eq(userTrackedDomains.id, domainSnapshots.trackedDomainId))
-    .where(
-      and(
-        eq(userTrackedDomains.verified, true),
-        isNull(userTrackedDomains.archivedAt),
-        isNull(domainSnapshots.id),
-      ),
-    );
+    .where(and(activeTrackedDomain, isNull(domainSnapshots.id)));
 
   return rows;
 }
