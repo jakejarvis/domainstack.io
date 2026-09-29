@@ -199,34 +199,26 @@ export async function getUnreadCount(userId: string): Promise<number> {
  * Mark a notification as read.
  */
 export async function markAsRead(notificationId: string, userId: string): Promise<boolean> {
-  try {
-    const updated = await db
-      .update(notifications)
-      .set({ readAt: new Date() })
-      .where(and(eq(notifications.id, notificationId), eq(notifications.userId, userId)))
-      .returning();
+  const updated = await db
+    .update(notifications)
+    .set({ readAt: new Date() })
+    .where(and(eq(notifications.id, notificationId), eq(notifications.userId, userId)))
+    .returning();
 
-    return updated.length > 0;
-  } catch {
-    return false;
-  }
+  return updated.length > 0;
 }
 
 /**
  * Mark all notifications as read for a user.
  */
 export async function markAllAsRead(userId: string): Promise<number> {
-  try {
-    const updated = await db
-      .update(notifications)
-      .set({ readAt: new Date() })
-      .where(and(eq(notifications.userId, userId), isNull(notifications.readAt)))
-      .returning();
+  const updated = await db
+    .update(notifications)
+    .set({ readAt: new Date() })
+    .where(and(eq(notifications.userId, userId), isNull(notifications.readAt)))
+    .returning();
 
-    return updated.length;
-  } catch {
-    return 0;
-  }
+  return updated.length;
 }
 
 /**
@@ -290,21 +282,17 @@ export async function getNotificationsForTrackedDomain(
  * Clear all domain expiry notifications for a tracked domain.
  */
 export async function clearDomainExpiryNotifications(trackedDomainId: string): Promise<number> {
-  try {
-    const deleted = await db
-      .delete(notifications)
-      .where(
-        and(
-          eq(notifications.trackedDomainId, trackedDomainId),
-          like(notifications.type, "domain_expiry_%"),
-        ),
-      )
-      .returning();
+  const deleted = await db
+    .delete(notifications)
+    .where(
+      and(
+        eq(notifications.trackedDomainId, trackedDomainId),
+        like(notifications.type, "domain_expiry_%"),
+      ),
+    )
+    .returning();
 
-    return deleted.length;
-  } catch {
-    return 0;
-  }
+  return deleted.length;
 }
 
 /**
@@ -313,19 +301,15 @@ export async function clearDomainExpiryNotifications(trackedDomainId: string): P
 export async function clearCertificateExpiryNotifications(
   trackedDomainId: string,
 ): Promise<number> {
-  try {
-    const deleted = await db
-      .delete(notifications)
-      .where(
-        and(
-          eq(notifications.trackedDomainId, trackedDomainId),
-          like(notifications.type, "certificate_expiry_%"),
-        ),
-      )
-      .returning();
+  const deleted = await db
+    .delete(notifications)
+    .where(
+      and(
+        eq(notifications.trackedDomainId, trackedDomainId),
+        like(notifications.type, "certificate_expiry_%"),
+      ),
+    )
+    .returning();
 
-    return deleted.length;
-  } catch {
-    return 0;
-  }
+  return deleted.length;
 }

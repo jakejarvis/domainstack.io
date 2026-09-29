@@ -181,7 +181,14 @@ async function clearRenewedNotifications(trackedDomainId: string): Promise<numbe
 
   const { clearDomainExpiryNotifications } = await import("@domainstack/db/queries/notifications");
 
-  return await clearDomainExpiryNotifications(trackedDomainId);
+  try {
+    return await clearDomainExpiryNotifications(trackedDomainId);
+  } catch (err) {
+    const { classifyDatabaseError } = await import("../lib/errors");
+    throw classifyDatabaseError(err, {
+      context: `clearing renewed expiry notifications for ${trackedDomainId}`,
+    });
+  }
 }
 
 interface DomainExpiryContentInput {
