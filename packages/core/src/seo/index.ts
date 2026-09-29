@@ -140,6 +140,7 @@ async function fetchHtml(domain: string): Promise<HtmlFetchData> {
       userAgent: process.env.EXTERNAL_USER_AGENT,
       allowHttp: true,
       timeoutMs: 10_000,
+      totalTimeoutMs: 15_000,
       maxBytes: 512 * 1024,
       maxRedirects: 5,
       truncateOnLimit: true,
@@ -240,6 +241,7 @@ async function fetchRobots(domain: string): Promise<RobotsFetchData> {
       userAgent: process.env.EXTERNAL_USER_AGENT,
       allowHttp: true,
       timeoutMs: 8000,
+      totalTimeoutMs: 10_000,
       maxBytes: 256 * 1024,
       maxRedirects: 5,
       headers: {
@@ -302,6 +304,7 @@ async function processOgImage(
       },
       maxBytes: 5 * 1024 * 1024, // 5MB
       timeoutMs: 8000,
+      totalTimeoutMs: 10_000,
       maxRedirects: 3,
     });
   } catch (err) {

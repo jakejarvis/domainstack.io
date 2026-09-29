@@ -47,6 +47,7 @@ export async function fetchHttpHeaders(domain: string): Promise<HeadersFetchResu
       userAgent: process.env.EXTERNAL_USER_AGENT,
       allowHttp: true,
       timeoutMs: REQUEST_TIMEOUT_MS,
+      totalTimeoutMs: 10_000, // shared by the HEAD attempt and its GET fallback
       maxRedirects: 5,
       allowedHosts,
       method: "HEAD",

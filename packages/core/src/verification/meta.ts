@@ -48,6 +48,7 @@ export async function verifyByMetaTag(
         allowHttp: false,
         allowedHosts: [domain, `www.${domain}`],
         timeoutMs: 10_000,
+        totalTimeoutMs: 15_000,
         maxBytes: MAX_HTML_BYTES,
         maxRedirects: 5,
         truncateOnLimit: true,

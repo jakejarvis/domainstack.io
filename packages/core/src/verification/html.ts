@@ -53,6 +53,7 @@ export async function verifyByHtmlFile(
         allowHttp: false,
         allowedHosts: [domain, `www.${domain}`],
         timeoutMs: 5000,
+        totalTimeoutMs: 8_000,
         maxBytes: 1024,
         maxRedirects: 3,
       });
