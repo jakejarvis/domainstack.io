@@ -64,7 +64,8 @@ export function getRateLimiter(config: RateLimitConfig): Ratelimit | null {
       redis,
       ephemeralCache,
       limiter: Ratelimit.slidingWindow(config.requests, config.window),
-      analytics: true,
+      // Nothing reads Upstash rate-limit analytics; enabling it costs one extra request per check.
+      analytics: false,
     });
     instanceCache.set(cacheKey, limiter);
   }

@@ -62,9 +62,10 @@ export async function enforceRateLimit({
 
   const { success, limit, remaining, reset, pending } = result;
 
-  // Analytics write lands after the response; `waitUntil` no-ops off-platform
-  // (local dev, tests) and drops it, which is fine for analytics. Swallow
-  // failures either way so they can't become an unhandled rejection.
+  // `pending` covers any background work the limiter schedules (multi-region
+  // sync); it is empty with analytics off. `waitUntil` no-ops off-platform
+  // (local dev, tests) and drops it, which is fine. Swallow failures either way
+  // so they can't become an unhandled rejection.
   waitUntil(pending.catch(() => undefined));
 
   const info = { limit, remaining, reset } satisfies RateLimitInfo;
