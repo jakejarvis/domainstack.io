@@ -18,6 +18,8 @@ interface MutableDomain {
   id: string;
   domainName: string;
   muted: boolean;
+  /** Cached favicon URL from `listDomains` (string = url, null = none, undefined = unknown). */
+  faviconUrl?: string | null;
 }
 
 interface DomainMuteListProps {
@@ -95,7 +97,7 @@ export function DomainMuteList({ domains, onMute, disabled = false }: DomainMute
                 setIsOpen(false);
               }}
             >
-              <Favicon domain={domain.domainName} />
+              <Favicon domain={domain.domainName} initialUrl={domain.faviconUrl} />
               {domain.domainName}
             </DropdownMenuItem>
           ))}
@@ -114,7 +116,11 @@ interface MutedDomainChipProps {
 function MutedDomainChip({ domain, onUnmute, disabled }: MutedDomainChipProps) {
   return (
     <div className="group flex h-8 items-center gap-1.5 rounded-full border bg-muted/40 pr-1.5 pl-3.5 transition-colors hover:bg-muted/60">
-      <Favicon domain={domain.domainName} className="mr-0.5 size-3.5 shrink-0" />
+      <Favicon
+        domain={domain.domainName}
+        initialUrl={domain.faviconUrl}
+        className="mr-0.5 size-3.5 shrink-0"
+      />
       <span className="max-w-32 truncate text-[13px] font-medium">{domain.domainName}</span>
       <Button
         variant="ghost"

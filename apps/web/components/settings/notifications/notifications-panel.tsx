@@ -63,6 +63,7 @@ export function NotificationsPanel({ userEmail }: { userEmail: string }) {
             id: d.id,
             domainName: d.domainName,
             muted: d.muted,
+            faviconUrl: d.faviconUrl,
           }))}
           onMute={muteDomain}
           disabled={isPending}
