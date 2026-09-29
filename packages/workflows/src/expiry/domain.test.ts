@@ -17,10 +17,12 @@ const notificationsQueryMock = vi.hoisted(() => ({
     vi.fn<typeof import("@domainstack/db/queries/notifications").clearDomainExpiryNotifications>(),
 }));
 
+const expiryNotifyMock = vi.hoisted(() => ({
+  checkExpiryPreferencesStep: vi.fn<typeof import("./notify").checkExpiryPreferencesStep>(),
+  checkAlreadySentStep: vi.fn<typeof import("./notify").checkAlreadySentStep>(),
+}));
+
 const sharedNotificationsMock = vi.hoisted(() => ({
-  checkExpiryPreferencesStep:
-    vi.fn<typeof import("../steps/notifications").checkExpiryPreferencesStep>(),
-  checkAlreadySentStep: vi.fn<typeof import("../steps/notifications").checkAlreadySentStep>(),
   sendNotification: vi.fn<typeof import("../steps/notifications").sendNotification>(),
 }));
 
@@ -31,6 +33,7 @@ const lookupMock = vi.hoisted(() => ({
 vi.mock("@domainstack/db/queries/tracked-domains", () => trackedDomainsMock);
 vi.mock("@domainstack/core/lookup", () => lookupMock);
 vi.mock("@domainstack/db/queries/notifications", () => notificationsQueryMock);
+vi.mock("./notify", () => expiryNotifyMock);
 vi.mock("../steps/notifications", () => sharedNotificationsMock);
 vi.mock("@domainstack/email/templates/domain-expiry", () => ({
   default: vi.fn<() => React.ReactElement>().mockReturnValue({} as React.ReactElement),
@@ -67,11 +70,11 @@ describe("checkDomainExpiry", () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(NOW);
     trackedDomainsMock.getTrackedDomainForNotification.mockResolvedValue(baseDomain as never);
-    sharedNotificationsMock.checkExpiryPreferencesStep.mockResolvedValue({
+    expiryNotifyMock.checkExpiryPreferencesStep.mockResolvedValue({
       shouldSendEmail: true,
       shouldSendInApp: true,
     });
-    sharedNotificationsMock.checkAlreadySentStep.mockResolvedValue(false);
+    expiryNotifyMock.checkAlreadySentStep.mockResolvedValue(false);
     sharedNotificationsMock.sendNotification.mockResolvedValue(true);
     lookupMock.fetchSection.mockResolvedValue({ success: true, data: {} } as never);
   });
@@ -100,7 +103,7 @@ describe("checkDomainExpiry", () => {
 
     expect(trackedDomainsMock.getTrackedDomainForNotification).toHaveBeenCalledWith("td-1");
     expect(result).toEqual({ skipped: true, reason: "not_found" });
-    expect(sharedNotificationsMock.checkExpiryPreferencesStep).not.toHaveBeenCalled();
+    expect(expiryNotifyMock.checkExpiryPreferencesStep).not.toHaveBeenCalled();
     expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
   });
 
@@ -151,7 +154,7 @@ describe("checkDomainExpiry", () => {
   });
 
   it("already_sent: due threshold already notified, no send", async () => {
-    sharedNotificationsMock.checkAlreadySentStep.mockResolvedValue(true);
+    expiryNotifyMock.checkAlreadySentStep.mockResolvedValue(true);
 
     const { checkDomainExpiry } = await import("./domain");
     const result = await checkDomainExpiry({ trackedDomainId: "td-1" });
@@ -161,7 +164,7 @@ describe("checkDomainExpiry", () => {
   });
 
   it("notifications_disabled: no channel enabled, no send", async () => {
-    sharedNotificationsMock.checkExpiryPreferencesStep.mockResolvedValue({
+    expiryNotifyMock.checkExpiryPreferencesStep.mockResolvedValue({
       shouldSendEmail: false,
       shouldSendInApp: false,
     });
@@ -290,7 +293,7 @@ describe("checkDomainExpiry", () => {
       });
       expect(lookupMock.fetchSection).toHaveBeenCalledTimes(1);
       expect(notificationsQueryMock.clearDomainExpiryNotifications).toHaveBeenCalledWith("td-1");
-      expect(sharedNotificationsMock.checkAlreadySentStep).not.toHaveBeenCalled();
+      expect(expiryNotifyMock.checkAlreadySentStep).not.toHaveBeenCalled();
       expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
     });
 
@@ -309,7 +312,7 @@ describe("checkDomainExpiry", () => {
 
       expect(result).toEqual({ skipped: true, reason: "data_unavailable" });
       expect(trackedDomainsMock.getTrackedDomainForNotification).toHaveBeenCalledTimes(1);
-      expect(sharedNotificationsMock.checkAlreadySentStep).not.toHaveBeenCalled();
+      expect(expiryNotifyMock.checkAlreadySentStep).not.toHaveBeenCalled();
       expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
     });
 
@@ -324,7 +327,7 @@ describe("checkDomainExpiry", () => {
       const result = await checkDomainExpiry({ trackedDomainId: "td-1" });
 
       expect(result).toEqual({ skipped: true, reason: "data_unavailable" });
-      expect(sharedNotificationsMock.checkAlreadySentStep).not.toHaveBeenCalled();
+      expect(expiryNotifyMock.checkAlreadySentStep).not.toHaveBeenCalled();
       expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
     });
 
@@ -351,7 +354,7 @@ describe("checkDomainExpiry", () => {
 
       expect(result).toEqual({ skipped: true, reason: "not_found" });
       expect(lookupMock.fetchSection).toHaveBeenCalledTimes(1);
-      expect(sharedNotificationsMock.checkExpiryPreferencesStep).not.toHaveBeenCalled();
+      expect(expiryNotifyMock.checkExpiryPreferencesStep).not.toHaveBeenCalled();
       expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
     });
 

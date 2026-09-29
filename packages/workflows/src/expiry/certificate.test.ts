@@ -17,10 +17,12 @@ const notificationsQueryMock = vi.hoisted(() => ({
     >(),
 }));
 
+const expiryNotifyMock = vi.hoisted(() => ({
+  checkExpiryPreferencesStep: vi.fn<typeof import("./notify").checkExpiryPreferencesStep>(),
+  checkAlreadySentStep: vi.fn<typeof import("./notify").checkAlreadySentStep>(),
+}));
+
 const sharedNotificationsMock = vi.hoisted(() => ({
-  checkExpiryPreferencesStep:
-    vi.fn<typeof import("../steps/notifications").checkExpiryPreferencesStep>(),
-  checkAlreadySentStep: vi.fn<typeof import("../steps/notifications").checkAlreadySentStep>(),
   sendNotification: vi.fn<typeof import("../steps/notifications").sendNotification>(),
 }));
 
@@ -31,6 +33,7 @@ const lookupMock = vi.hoisted(() => ({
 vi.mock("@domainstack/db/queries/certificates", () => certificatesQueryMock);
 vi.mock("@domainstack/core/lookup", () => lookupMock);
 vi.mock("@domainstack/db/queries/notifications", () => notificationsQueryMock);
+vi.mock("./notify", () => expiryNotifyMock);
 vi.mock("../steps/notifications", () => sharedNotificationsMock);
 vi.mock("@domainstack/email/templates/certificate-expiry", () => ({
   default: vi.fn<() => React.ReactElement>().mockReturnValue({} as React.ReactElement),
@@ -70,11 +73,11 @@ describe("checkCertificateExpiry", () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(NOW);
     certificatesQueryMock.getEarliestCertificate.mockResolvedValue(baseCert);
-    sharedNotificationsMock.checkExpiryPreferencesStep.mockResolvedValue({
+    expiryNotifyMock.checkExpiryPreferencesStep.mockResolvedValue({
       shouldSendEmail: true,
       shouldSendInApp: true,
     });
-    sharedNotificationsMock.checkAlreadySentStep.mockResolvedValue(false);
+    expiryNotifyMock.checkAlreadySentStep.mockResolvedValue(false);
     sharedNotificationsMock.sendNotification.mockResolvedValue(true);
     lookupMock.fetchSection.mockResolvedValue({ success: true, data: {} } as never);
   });
@@ -103,7 +106,7 @@ describe("checkCertificateExpiry", () => {
 
     expect(certificatesQueryMock.getEarliestCertificate).toHaveBeenCalledWith("td-1");
     expect(result).toEqual({ skipped: true, reason: "not_found" });
-    expect(sharedNotificationsMock.checkExpiryPreferencesStep).not.toHaveBeenCalled();
+    expect(expiryNotifyMock.checkExpiryPreferencesStep).not.toHaveBeenCalled();
     expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
   });
 
@@ -128,7 +131,7 @@ describe("checkCertificateExpiry", () => {
   });
 
   it("already_sent: due threshold already notified, no send", async () => {
-    sharedNotificationsMock.checkAlreadySentStep.mockResolvedValue(true);
+    expiryNotifyMock.checkAlreadySentStep.mockResolvedValue(true);
 
     const { checkCertificateExpiry } = await import("./certificate");
     const result = await checkCertificateExpiry({ trackedDomainId: "td-1" });
@@ -346,7 +349,7 @@ describe("checkCertificateExpiry", () => {
       expect(notificationsQueryMock.clearCertificateExpiryNotifications).toHaveBeenCalledWith(
         "td-1",
       );
-      expect(sharedNotificationsMock.checkAlreadySentStep).not.toHaveBeenCalled();
+      expect(expiryNotifyMock.checkAlreadySentStep).not.toHaveBeenCalled();
       expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
     });
 
@@ -365,7 +368,7 @@ describe("checkCertificateExpiry", () => {
 
       expect(result).toEqual({ skipped: true, reason: "data_unavailable" });
       expect(certificatesQueryMock.getEarliestCertificate).toHaveBeenCalledTimes(1);
-      expect(sharedNotificationsMock.checkAlreadySentStep).not.toHaveBeenCalled();
+      expect(expiryNotifyMock.checkAlreadySentStep).not.toHaveBeenCalled();
       expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
     });
 
@@ -380,7 +383,7 @@ describe("checkCertificateExpiry", () => {
       const result = await checkCertificateExpiry({ trackedDomainId: "td-1" });
 
       expect(result).toEqual({ skipped: true, reason: "data_unavailable" });
-      expect(sharedNotificationsMock.checkAlreadySentStep).not.toHaveBeenCalled();
+      expect(expiryNotifyMock.checkAlreadySentStep).not.toHaveBeenCalled();
       expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
     });
 
@@ -407,7 +410,7 @@ describe("checkCertificateExpiry", () => {
 
       expect(result).toEqual({ skipped: true, reason: "not_found" });
       expect(lookupMock.fetchSection).toHaveBeenCalledTimes(1);
-      expect(sharedNotificationsMock.checkExpiryPreferencesStep).not.toHaveBeenCalled();
+      expect(expiryNotifyMock.checkExpiryPreferencesStep).not.toHaveBeenCalled();
       expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
     });
 

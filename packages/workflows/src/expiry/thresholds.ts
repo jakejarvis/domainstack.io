@@ -11,7 +11,7 @@ import type {
   NotificationType,
 } from "@domainstack/types";
 
-import { checkAlreadySentStep, checkExpiryPreferencesStep } from "../steps/notifications";
+import { checkAlreadySentStep, checkExpiryPreferencesStep } from "./notify";
 
 function isDomainExpiryThreshold(value: number): value is DomainExpiryThreshold {
   return (DOMAIN_EXPIRY_THRESHOLDS as readonly number[]).includes(value);
