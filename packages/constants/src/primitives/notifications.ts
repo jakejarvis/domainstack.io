@@ -41,6 +41,9 @@ export const EXPIRING_SOON_DAYS = DOMAIN_EXPIRY_THRESHOLDS[0];
 // `domain_expiry_7d` notification so the badge and the email agree.
 export const EXPIRING_CRITICAL_DAYS = 7 satisfies DomainExpiryThreshold;
 
+// Certificate alerts at or under this many days are flagged urgent in subject and body.
+export const CERTIFICATE_EXPIRING_CRITICAL_DAYS = 3 satisfies CertificateExpiryThreshold;
+
 // Mapping from threshold to notification type
 export const DOMAIN_THRESHOLD_TO_TYPE: Record<DomainExpiryThreshold, NotificationType> = {
   30: "domain_expiry_30d",

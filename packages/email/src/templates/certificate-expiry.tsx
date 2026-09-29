@@ -1,3 +1,6 @@
+import { CERTIFICATE_EXPIRING_CRITICAL_DAYS } from "@domainstack/constants";
+import { inDaysPhrase } from "@domainstack/utils/expiry";
+
 import {
   EmailBox,
   EmailBoxText,
@@ -26,8 +29,8 @@ function CertificateExpiryEmail({
   issuer,
   baseUrl,
 }: CertificateExpiryEmailProps) {
-  const isUrgent = daysRemaining <= 3;
-  const previewText = `SSL certificate for ${domainName} expires ${daysRemaining <= 0 ? "within 24 hours" : `in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`}`;
+  const isUrgent = daysRemaining <= CERTIFICATE_EXPIRING_CRITICAL_DAYS;
+  const previewText = `SSL certificate for ${domainName} expires ${inDaysPhrase(daysRemaining)}`;
 
   return (
     <EmailLayout previewText={previewText}>

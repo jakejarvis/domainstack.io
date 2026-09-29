@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { calculateDaysElapsed, calculateDaysRemaining } from "./expiry";
+import { calculateDaysElapsed, calculateDaysRemaining, inDaysPhrase } from "./expiry";
 
 describe("calculateDaysRemaining", () => {
   const now = new Date("2024-06-15T12:00:00Z");
@@ -58,5 +58,13 @@ describe("calculateDaysElapsed", () => {
 
   it("accepts an ISO string", () => {
     expect(calculateDaysElapsed("2024-06-10T12:00:00Z", now)).toBe(5);
+  });
+});
+
+describe("inDaysPhrase", () => {
+  it("phrases floored day counts without tomorrow or 0 days", () => {
+    expect(inDaysPhrase(0)).toBe("within 24 hours");
+    expect(inDaysPhrase(1)).toBe("in 1 day");
+    expect(inDaysPhrase(5)).toBe("in 5 days");
   });
 });

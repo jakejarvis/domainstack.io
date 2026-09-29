@@ -35,3 +35,12 @@ export function calculateDaysRemaining(
 export function calculateDaysElapsed(since: Date | string, now: Date = new Date()): number {
   return calculateDaysRemaining(now, typeof since === "string" ? new Date(since) : since);
 }
+
+/**
+ * Phrase for a floored day count (`calculateDaysRemaining`): 0 means under 24
+ * hours left, 1 means 24-48 hours. Never "tomorrow" or "0 days".
+ */
+export function inDaysPhrase(days: number): string {
+  if (days <= 0) return "within 24 hours";
+  return `in ${days} day${days === 1 ? "" : "s"}`;
+}

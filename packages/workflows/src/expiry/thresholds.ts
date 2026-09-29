@@ -91,15 +91,6 @@ export function certificateThresholdsForLifetime(
   return thresholds.filter((t) => t < lifetimeDays / 3);
 }
 
-/**
- * Phrase for a floored day count (`calculateDaysRemaining`): 0 means under 24
- * hours left, 1 means 24-48 hours. Never "tomorrow" or "0 days".
- */
-export function inDaysPhrase(days: number): string {
-  if (days <= 0) return "within 24 hours";
-  return `in ${days} day${days === 1 ? "" : "s"}`;
-}
-
 export type ExpirySkipResult =
   | {
       skipped: true;

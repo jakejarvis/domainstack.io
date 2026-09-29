@@ -1,14 +1,14 @@
+import { CERTIFICATE_EXPIRING_CRITICAL_DAYS } from "@domainstack/constants";
 import type { TrackedDomainCertificate } from "@domainstack/db/queries/certificates";
 import type { NotificationType } from "@domainstack/types";
 import { formatDateLong } from "@domainstack/utils/date";
-import { calculateDaysRemaining } from "@domainstack/utils/expiry";
+import { calculateDaysRemaining, inDaysPhrase } from "@domainstack/utils/expiry";
 
 import type { NotificationChannels } from "../steps/notifications";
 import {
   type ExpirySkipResult,
   certificateThresholdsForLifetime,
   evaluateExpiryNotification,
-  inDaysPhrase,
 } from "./thresholds";
 
 export interface CertificateExpiryWorkflowInput {
@@ -216,7 +216,7 @@ function buildCertificateExpiryContent(params: CertificateExpiryContentInput): E
   const { domainName, validTo, issuer, daysRemaining } = params;
 
   const title = `SSL certificate for ${domainName} expires ${inDaysPhrase(daysRemaining)}`;
-  const subject = `${daysRemaining <= 3 ? "🔒⚠️ " : "🔒 "}${title}`;
+  const subject = `${daysRemaining <= CERTIFICATE_EXPIRING_CRITICAL_DAYS ? "🔒⚠️ " : "🔒 "}${title}`;
   const message = `The SSL certificate for ${domainName} (issued by ${issuer}) will expire on ${formatDateLong(validTo)}.`;
 
   return { title, subject, message };

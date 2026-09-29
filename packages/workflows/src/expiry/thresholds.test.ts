@@ -4,11 +4,7 @@ import { describe, expect, it } from "vitest";
 import { CERTIFICATE_EXPIRY_THRESHOLDS, DOMAIN_EXPIRY_THRESHOLDS } from "@domainstack/constants";
 import { calculateDaysRemaining } from "@domainstack/utils/expiry";
 
-import {
-  certificateThresholdsForLifetime,
-  getThresholdNotificationType,
-  inDaysPhrase,
-} from "./thresholds";
+import { certificateThresholdsForLifetime, getThresholdNotificationType } from "./thresholds";
 
 describe("getThresholdNotificationType", () => {
   it("returns smallest matching threshold for domain expiry", () => {
@@ -112,13 +108,5 @@ describe("certificateThresholdsForLifetime", () => {
   it("returns the original list for a zero or negative lifetime", () => {
     expect(certificateThresholdsForLifetime(from, from)).toEqual([14, 7, 3, 1]);
     expect(certificateThresholdsForLifetime(from, lifetime(-5))).toEqual([14, 7, 3, 1]);
-  });
-});
-
-describe("inDaysPhrase", () => {
-  it("phrases floored day counts without tomorrow or 0 days", () => {
-    expect(inDaysPhrase(0)).toBe("within 24 hours");
-    expect(inDaysPhrase(1)).toBe("in 1 day");
-    expect(inDaysPhrase(5)).toBe("in 5 days");
   });
 });

@@ -1,11 +1,11 @@
-import { DOMAIN_EXPIRY_THRESHOLDS } from "@domainstack/constants";
+import { DOMAIN_EXPIRY_THRESHOLDS, EXPIRING_CRITICAL_DAYS } from "@domainstack/constants";
 import type { TrackedDomainForNotification } from "@domainstack/db/queries/tracked-domains";
 import type { NotificationType } from "@domainstack/types";
 import { formatDateLong } from "@domainstack/utils/date";
-import { calculateDaysRemaining } from "@domainstack/utils/expiry";
+import { calculateDaysRemaining, inDaysPhrase } from "@domainstack/utils/expiry";
 
 import type { NotificationChannels } from "../steps/notifications";
-import { type ExpirySkipResult, evaluateExpiryNotification, inDaysPhrase } from "./thresholds";
+import { type ExpirySkipResult, evaluateExpiryNotification } from "./thresholds";
 
 export interface DomainExpiryWorkflowInput {
   trackedDomainId: string;
@@ -208,7 +208,7 @@ function buildDomainExpiryContent(params: DomainExpiryContentInput): DomainExpir
   const { domainName, expirationDate, daysRemaining, registrar } = params;
 
   const title = `${domainName} expires ${inDaysPhrase(daysRemaining)}`;
-  const subject = `${daysRemaining <= 7 ? "⚠️ " : ""}${title}`;
+  const subject = `${daysRemaining <= EXPIRING_CRITICAL_DAYS ? "⚠️ " : ""}${title}`;
   const message = `Your domain ${domainName} will expire on ${formatDateLong(expirationDate)}${registrar ? ` (registered with ${registrar})` : ""}.`;
 
   return { title, subject, message };

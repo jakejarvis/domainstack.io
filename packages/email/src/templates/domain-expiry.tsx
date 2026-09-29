@@ -1,3 +1,6 @@
+import { EXPIRING_CRITICAL_DAYS } from "@domainstack/constants";
+import { inDaysPhrase } from "@domainstack/utils/expiry";
+
 import {
   EmailBox,
   EmailBoxText,
@@ -26,8 +29,8 @@ function DomainExpiryEmail({
   registrar,
   baseUrl,
 }: DomainExpiryEmailProps) {
-  const isUrgent = daysRemaining <= 7;
-  const previewText = `${domainName} expires ${daysRemaining <= 0 ? "within 24 hours" : `in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`}`;
+  const isUrgent = daysRemaining <= EXPIRING_CRITICAL_DAYS;
+  const previewText = `${domainName} expires ${inDaysPhrase(daysRemaining)}`;
 
   return (
     <EmailLayout previewText={previewText}>
