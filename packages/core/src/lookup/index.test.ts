@@ -12,10 +12,10 @@ const mocks = vi.hoisted(() => ({
   enforceRateLimit: vi.fn<(args: unknown) => Promise<unknown>>(),
   updateLastAccessed: vi.fn<(domain: string) => Promise<boolean>>(),
   waitUntil: vi.fn<(work: Promise<unknown>) => void>(),
-  getFavicon: vi.fn<(domain: string) => Promise<unknown>>(),
+  getCachedFavicon: vi.fn<(domain: string) => Promise<unknown>>(),
   fetchFavicon: vi.fn<(domain: string) => Promise<unknown>>(),
   getProviderById: vi.fn<(id: string) => Promise<unknown>>(),
-  getProviderLogo: vi.fn<(id: string) => Promise<unknown>>(),
+  getCachedProviderLogo: vi.fn<(id: string) => Promise<unknown>>(),
   fetchProviderLogo: vi.fn<(id: string, domain: string) => Promise<unknown>>(),
 }));
 
@@ -32,10 +32,10 @@ vi.mock("@domainstack/db/queries/domains", () => ({
   DOMAIN_UPDATE_DEBOUNCE_MS: 300_000,
   updateLastAccessed: mocks.updateLastAccessed,
 }));
-vi.mock("@domainstack/db/queries/favicons", () => ({ getFavicon: mocks.getFavicon }));
+vi.mock("@domainstack/db/queries/favicons", () => ({ getCachedFavicon: mocks.getCachedFavicon }));
 vi.mock("@domainstack/db/queries/providers", () => ({ getProviderById: mocks.getProviderById }));
 vi.mock("@domainstack/db/queries/provider-logos", () => ({
-  getProviderLogo: mocks.getProviderLogo,
+  getCachedProviderLogo: mocks.getCachedProviderLogo,
 }));
 vi.mock("../favicon", () => ({ fetchFavicon: mocks.fetchFavicon }));
 vi.mock("../provider-logo", () => ({ fetchProviderLogo: mocks.fetchProviderLogo }));
@@ -270,11 +270,11 @@ describe("lookupFavicon", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mocks.enforceRateLimit.mockResolvedValue(undefined);
-    mocks.getFavicon.mockResolvedValue(notCached);
+    mocks.getCachedFavicon.mockResolvedValue(notCached);
   });
 
   it("serves a fresh hit without metering, and does not record access", async () => {
-    mocks.getFavicon.mockResolvedValue({ ...notCached, data: ICON });
+    mocks.getCachedFavicon.mockResolvedValue({ ...notCached, data: ICON });
 
     await expect(lookupFavicon("example.com", { identifier: "1.2.3.4" })).resolves.toEqual({
       success: true,
@@ -317,7 +317,7 @@ describe("lookupProviderLogo", () => {
     vi.resetAllMocks();
     mocks.enforceRateLimit.mockResolvedValue(undefined);
     mocks.getProviderById.mockResolvedValue({ id: PROVIDER_ID, domain: "provider.example" });
-    mocks.getProviderLogo.mockResolvedValue(notCached);
+    mocks.getCachedProviderLogo.mockResolvedValue(notCached);
   });
 
   it("resolves to no logo, without metering, when the provider has no domain", async () => {
@@ -333,7 +333,7 @@ describe("lookupProviderLogo", () => {
   });
 
   it("serves a fresh hit without metering", async () => {
-    mocks.getProviderLogo.mockResolvedValue({ ...notCached, data: ICON });
+    mocks.getCachedProviderLogo.mockResolvedValue({ ...notCached, data: ICON });
 
     await expect(lookupProviderLogo(PROVIDER_ID)).resolves.toEqual({
       success: true,

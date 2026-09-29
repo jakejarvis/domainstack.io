@@ -25,7 +25,7 @@ export async function upsertProviderLogo(params: ProviderLogoInsert): Promise<Pr
 /**
  * Fetch provider logo record by provider ID with staleness metadata.
  */
-export async function getProviderLogo(
+export async function getCachedProviderLogo(
   providerId: string,
 ): Promise<CacheResult<ProviderLogoResponse>> {
   const nowMs = Date.now();

@@ -248,11 +248,11 @@ export async function lookupFavicon(
   { identifier }: LookupOptions = {},
 ): Promise<LookupOutcome<FaviconResponse>> {
   const domain = rawDomain.toLowerCase();
-  const { getFavicon } = await import("@domainstack/db/queries/favicons");
+  const { getCachedFavicon } = await import("@domainstack/db/queries/favicons");
   const { fetchFavicon } = await import("../favicon");
 
   return resolveLookup({
-    cached: await getFavicon(domain),
+    cached: await getCachedFavicon(domain),
     meter: { key: "lookup.favicon", identifier, config: { requests: 100, window: "1 m" } },
     fetch: () => fetchFavicon(domain),
     log: { label: "favicon", fields: { domain }, unavailableLevel: "debug" },
@@ -265,12 +265,12 @@ export async function lookupProviderLogo(
   { identifier }: LookupOptions = {},
 ): Promise<LookupOutcome<ProviderLogoResponse>> {
   const { getProviderById } = await import("@domainstack/db/queries/providers");
-  const { getProviderLogo } = await import("@domainstack/db/queries/provider-logos");
+  const { getCachedProviderLogo } = await import("@domainstack/db/queries/provider-logos");
   const { fetchProviderLogo } = await import("../provider-logo");
 
   const [provider, cached] = await Promise.all([
     getProviderById(providerId),
-    getProviderLogo(providerId),
+    getCachedProviderLogo(providerId),
   ]);
   const providerDomain = provider?.domain;
   if (!providerDomain) {
