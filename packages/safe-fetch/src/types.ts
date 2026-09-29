@@ -32,8 +32,15 @@ export interface SafeFetchOptions {
   /** Additional headers */
   headers?: Record<string, string>;
 
-  /** Timeout per request in ms (default: 8000) */
+  /** Timeout per hop in ms, for DNS resolution and for the request and body (default: 8000) */
   timeoutMs?: number;
+
+  /**
+   * Overall budget in ms across every hop, DNS resolution, body read, and the
+   * HEAD→GET retry. Each hop gets min(timeoutMs, time left). Default: no overall
+   * budget (per-hop `timeoutMs` only).
+   */
+  totalTimeoutMs?: number;
 
   /** Max response size in bytes (default: 15MB) */
   maxBytes?: number;

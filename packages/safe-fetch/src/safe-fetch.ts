@@ -36,6 +36,7 @@ export async function safeFetch(opts: SafeFetchOptions): Promise<SafeFetchResult
   const {
     userAgent,
     timeoutMs = DEFAULT_TIMEOUT_MS,
+    totalTimeoutMs,
     maxBytes = DEFAULT_MAX_BYTES,
     maxRedirects = DEFAULT_MAX_REDIRECTS,
     allowHttp = false,
@@ -58,13 +59,22 @@ export async function safeFetch(opts: SafeFetchOptions): Promise<SafeFetchResult
   const normalizedAllowedHosts =
     allowedHosts?.map((h) => h.trim().toLowerCase()).filter(Boolean) ?? [];
 
+  const deadlineAt =
+    totalTimeoutMs === undefined ? Number.POSITIVE_INFINITY : Date.now() + totalTimeoutMs;
+
   for (let redirectCount = 0; redirectCount <= maxRedirects; redirectCount++) {
+    const remainingMs = deadlineAt - Date.now();
+    if (remainingMs <= 0) {
+      throw new SafeFetchError("timeout", `Request to ${currentUrl} exceeded its overall deadline`);
+    }
+    const hopTimeoutMs = Math.min(timeoutMs, remainingMs);
+
     // Validate every hop (including initial) to prevent SSRF via redirects
     const addresses = await ensureUrlAllowed(currentUrl, {
       allowHttp,
       allowedHosts: normalizedAllowedHosts,
       logger,
-      timeoutMs,
+      timeoutMs: hopTimeoutMs,
     });
 
     // Pin the socket to the addresses we just validated so a second DNS answer
@@ -80,7 +90,7 @@ export async function safeFetch(opts: SafeFetchOptions): Promise<SafeFetchResult
           method,
           headers: headersForHop(baseHeaders, initialUrl, hopUrl),
           redirect: "manual",
-          signal: AbortSignal.timeout(timeoutMs),
+          signal: AbortSignal.timeout(hopTimeoutMs),
           dispatcher,
         } satisfies FetchInit as RequestInit);
       } catch (err) {

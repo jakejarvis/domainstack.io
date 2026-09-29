@@ -469,6 +469,69 @@ describe("safeFetch", () => {
     });
   });
 
+  describe("overall deadline", () => {
+    it("fails with timeout once totalTimeoutMs is spent across redirect hops", async () => {
+      let callCount = 0;
+      const mockFetch = vi.fn<typeof fetch>(async () => {
+        callCount++;
+        await new Promise((resolve) => setTimeout(resolve, 400));
+        return mockResponse("", {
+          status: 302,
+          headers: { Location: `https://example.com/hop-${callCount}` },
+        });
+      });
+
+      const err = await safeFetch({
+        url: "https://example.com/start",
+        userAgent: "TestBot/1.0",
+        maxRedirects: 5,
+        timeoutMs: 1000,
+        totalTimeoutMs: 1000,
+        fetch: mockFetch,
+        logger: silentLogger,
+      }).catch((e: unknown) => e);
+
+      expect(err).toBeInstanceOf(SafeFetchError);
+      expect((err as SafeFetchError).code).toBe("timeout");
+      expect(mockFetch.mock.calls.length).toBeLessThan(4);
+    });
+
+    it("passes the remaining budget, not the full per-hop timeout, to later hops", async () => {
+      let callCount = 0;
+      const mockFetch = vi.fn<typeof fetch>(async (_input, init) => {
+        callCount++;
+        if (callCount === 1) {
+          await new Promise((resolve) => setTimeout(resolve, 300));
+          return mockResponse("", {
+            status: 302,
+            headers: { Location: "https://example.com/slow" },
+          });
+        }
+        // Hop 2 never resolves on its own; only the hop's abort signal ends it.
+        return await new Promise<Response>((_, reject) => {
+          const signal = init?.signal;
+          signal?.addEventListener("abort", () => reject(signal.reason));
+        });
+      });
+
+      const startedAt = Date.now();
+      const err = await safeFetch({
+        url: "https://example.com/start",
+        userAgent: "TestBot/1.0",
+        timeoutMs: 5000,
+        totalTimeoutMs: 600,
+        fetch: mockFetch,
+        logger: silentLogger,
+      }).catch((e: unknown) => e);
+      const elapsedMs = Date.now() - startedAt;
+
+      expect(err).toBeInstanceOf(SafeFetchError);
+      expect((err as SafeFetchError).code).toBe("timeout");
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(elapsedMs).toBeLessThan(2000);
+    });
+  });
+
   describe("HEAD to GET fallback", () => {
     it("retries with GET when HEAD returns 405", async () => {
       const mockFetch = vi.fn<typeof fetch>(async (_input, init) => {
