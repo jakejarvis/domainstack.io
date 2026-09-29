@@ -6,6 +6,7 @@ const { makePGliteDb, closePGliteDb } = await import("@domainstack/db/testing");
 const { db } = await makePGliteDb();
 
 // Now import modules that depend on the db
+const { eq } = await import("@domainstack/db/drizzle");
 const { notifications, users } = await import("@domainstack/db/schema");
 const { createCaller } = await import("../router");
 
@@ -302,6 +303,52 @@ describe("notifications router", () => {
         "Notification 2",
         "Notification 1",
       ]);
+    });
+  });
+
+  describe("list cursor", () => {
+    it("keeps paging forward when the cursor row was deleted", async () => {
+      const caller = createAuthenticatedCaller();
+
+      const ids = [
+        TEST_NOTIFICATION_ID,
+        TEST_NOTIFICATION_2_ID,
+        TEST_NOTIFICATION_3_ID,
+        TEST_NOTIFICATION_4_ID,
+        TEST_NOTIFICATION_5_ID,
+      ];
+      await db.insert(notifications).values(
+        ids.map((id, index) => ({
+          id,
+          userId: TEST_USER_ID,
+          type: "domain_expiry_30d" as const,
+          title: `Notification ${index + 1}`,
+          message: `Message ${index + 1}`,
+          sentAt: new Date(Date.now() - (5 - index) * 10_000),
+        })),
+      );
+
+      const first = await caller.notifications.list({ limit: 2, filter: "all" });
+      expect(first.items.map((n) => n.title)).toEqual(["Notification 5", "Notification 4"]);
+      expect(first.nextCursor).toBeDefined();
+
+      // The cursor row (the last returned item) disappears before page 2.
+      await db.delete(notifications).where(eq(notifications.id, TEST_NOTIFICATION_4_ID));
+
+      const second = await caller.notifications.list({
+        limit: 2,
+        filter: "all",
+        cursor: first.nextCursor,
+      });
+      expect(second.items.map((n) => n.title)).toEqual(["Notification 3", "Notification 2"]);
+    });
+
+    it("rejects a malformed cursor with BAD_REQUEST", async () => {
+      const caller = createAuthenticatedCaller();
+
+      await expect(
+        caller.notifications.list({ limit: 2, filter: "all", cursor: "not-a-cursor" }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });
   });
 

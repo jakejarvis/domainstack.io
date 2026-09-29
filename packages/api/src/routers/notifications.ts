@@ -14,6 +14,20 @@ import { createTRPCRouter } from "../trpc";
 /** Schema for notification filter parameter */
 const notificationFilterSchema = z.enum(["unread", "read", "all"]).default("all");
 
+/**
+ * Opaque pagination cursor: `<sentAt ISO>_<id>`, decoded into the keyset the
+ * query needs. Malformed values fail input validation (BAD_REQUEST).
+ */
+const cursorSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}T[\d:.]+Z_[0-9a-f-]{36}$/i, "Invalid cursor")
+  .transform((raw) => {
+    const [iso = "", id = ""] = raw.split("_");
+    return { sentAt: new Date(iso), id };
+  })
+  .refine((c) => !Number.isNaN(c.sentAt.getTime()), "Invalid cursor")
+  .nullish(); // React Query sends null on infinite invalidation
+
 export const notificationsRouter = createTRPCRouter({
   /**
    * List notifications for the current user with cursor-based pagination.
@@ -23,7 +37,7 @@ export const notificationsRouter = createTRPCRouter({
     .input(
       z.object({
         limit: z.number().min(1).max(100).default(50),
-        cursor: z.string().nullish(), // React Query sends null on infinite invalidation
+        cursor: cursorSchema,
         filter: notificationFilterSchema,
       }),
     )
@@ -35,11 +49,13 @@ export const notificationsRouter = createTRPCRouter({
 
       // `getUserNotifications` treats the cursor as exclusive, so the next page
       // must resume from the last item we actually return. Using the dropped
-      // look-ahead row here would skip it on the following page.
+      // look-ahead row here would skip it on the following page. The cursor
+      // carries `sentAt` too, so it survives the row being deleted meanwhile.
       let nextCursor: string | undefined;
       if (items.length > limit) {
         items.pop(); // Drop the extra look-ahead item
-        nextCursor = items[items.length - 1]?.id;
+        const last = items[items.length - 1];
+        nextCursor = last ? `${last.sentAt.toISOString()}_${last.id}` : undefined;
       }
 
       return {

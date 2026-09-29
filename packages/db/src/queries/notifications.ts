@@ -1,3 +1,4 @@
+import type { SQL } from "drizzle-orm";
 import { and, count, desc, eq, gt, isNotNull, isNull, like, lt, or, sql } from "drizzle-orm";
 
 import type { NotificationChannel, NotificationType } from "@domainstack/types";
@@ -91,82 +92,42 @@ export async function updateNotificationResendId(
   }
 }
 
+/** Keyset cursor: the `(sentAt, id)` of the last row of the previous page. */
+export interface NotificationCursor {
+  sentAt: Date;
+  id: string;
+}
+
 /**
- * Get notifications for a user with cursor-based pagination.
+ * Get notifications for a user with keyset pagination.
+ *
+ * The cursor is exclusive and self-contained, so it keeps working even if the
+ * row it was taken from has since been deleted.
  */
 export async function getUserNotifications(
   userId: string,
   limit = 50,
-  cursor?: string,
+  cursor?: NotificationCursor,
   filter: NotificationFilter = "all",
 ) {
-  const getReadStatusCondition = () => {
-    switch (filter) {
-      case "unread":
-        return isNull(notifications.readAt);
-      case "read":
-        return isNotNull(notifications.readAt);
-      case "all":
-        return;
-    }
-  };
-
-  if (!cursor) {
-    const conditions = [
-      eq(notifications.userId, userId),
-      sql`${notifications.channels} @> '["in-app"]'`,
-    ];
-
-    const readStatusCondition = getReadStatusCondition();
-    if (readStatusCondition) {
-      conditions.push(readStatusCondition);
-    }
-
-    return db
-      .select()
-      .from(notifications)
-      .where(and(...conditions))
-      .orderBy(desc(notifications.sentAt), desc(notifications.id))
-      .limit(limit);
-  }
-
-  const [cursorNotif] = await db
-    .select()
-    .from(notifications)
-    .where(and(eq(notifications.id, cursor), eq(notifications.userId, userId)))
-    .limit(1);
-
-  if (!cursorNotif) {
-    const conditions = [
-      eq(notifications.userId, userId),
-      sql`${notifications.channels} @> '["in-app"]'`,
-    ];
-
-    const readStatusCondition = getReadStatusCondition();
-    if (readStatusCondition) {
-      conditions.push(readStatusCondition);
-    }
-
-    return db
-      .select()
-      .from(notifications)
-      .where(and(...conditions))
-      .orderBy(desc(notifications.sentAt), desc(notifications.id))
-      .limit(limit);
-  }
-
-  const conditions = [
+  const conditions: (SQL | undefined)[] = [
     eq(notifications.userId, userId),
-    or(
-      lt(notifications.sentAt, cursorNotif.sentAt),
-      and(eq(notifications.sentAt, cursorNotif.sentAt), lt(notifications.id, cursorNotif.id)),
-    ),
     sql`${notifications.channels} @> '["in-app"]'`,
   ];
 
-  const readStatusCondition = getReadStatusCondition();
-  if (readStatusCondition) {
-    conditions.push(readStatusCondition);
+  if (cursor) {
+    conditions.push(
+      or(
+        lt(notifications.sentAt, cursor.sentAt),
+        and(eq(notifications.sentAt, cursor.sentAt), lt(notifications.id, cursor.id)),
+      ),
+    );
+  }
+
+  if (filter === "unread") {
+    conditions.push(isNull(notifications.readAt));
+  } else if (filter === "read") {
+    conditions.push(isNotNull(notifications.readAt));
   }
 
   return db
