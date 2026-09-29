@@ -3,6 +3,8 @@ import type { RegistrarKey } from "@domainstack/types";
 
 const logger = createLogger({ source: "pricing" });
 
+const PRICING_FETCH_TIMEOUT_MS = 8000;
+
 /**
  * Domain registration pricing service.
  *
@@ -85,6 +87,7 @@ function createPricingProvider(
   const providerFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
     const requestInit: NextRequestInit = {
       ...options,
+      signal: options.signal ?? AbortSignal.timeout(PRICING_FETCH_TIMEOUT_MS),
       next: { revalidate, tags: ["pricing", `pricing:${name}`] },
     };
     const res = await fetch(url, requestInit);

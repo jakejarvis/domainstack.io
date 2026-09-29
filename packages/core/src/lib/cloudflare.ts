@@ -12,6 +12,7 @@ import { LRUCache } from "lru-cache";
  * @see https://developers.cloudflare.com/api/resources/ips/methods/list/
  */
 const CLOUDFLARE_IPS_URL = "https://api.cloudflare.com/client/v4/ips";
+const CLOUDFLARE_FETCH_TIMEOUT_MS = 3000;
 
 /**
  * LRU cache for Cloudflare IP check results.
@@ -96,6 +97,7 @@ async function fetchParsedRanges(): Promise<ParsedCloudflareRanges> {
     headers: process.env.EXTERNAL_USER_AGENT
       ? { "User-Agent": process.env.EXTERNAL_USER_AGENT }
       : undefined,
+    signal: AbortSignal.timeout(CLOUDFLARE_FETCH_TIMEOUT_MS),
   });
 
   if (!res.ok) {
@@ -156,6 +158,11 @@ async function getParsedRanges(): Promise<ParsedCloudflareRanges | null> {
   })();
 
   return activePromise;
+}
+
+/** Start loading the range list without waiting (DNS lookups call this before querying DoH). */
+export function preloadCloudflareRanges(): void {
+  void getParsedRanges();
 }
 
 /**

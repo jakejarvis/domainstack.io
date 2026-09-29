@@ -73,15 +73,8 @@ export async function lookupGeoIp(ip: string): Promise<GeoIpData | null> {
     const url = new URL(`https://www.iplocate.io/api/lookup/${encodeURIComponent(ip)}`);
     url.searchParams.set("apikey", apiKey);
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-    let res: Response;
-    try {
-      res = await fetch(url.toString(), { signal: controller.signal });
-    } finally {
-      clearTimeout(timeoutId);
-    }
+    // The signal also bounds the body read below (`res.text()` / `res.json()`).
+    const res = await fetch(url.toString(), { signal: AbortSignal.timeout(5000) });
 
     if (!res.ok) {
       const body = await res.text().catch(() => "");

@@ -98,4 +98,43 @@ describe("isCloudflareIp", () => {
 
     expect(await isCloudflareIp("104.16.2.2")).toBe(true);
   });
+
+  it("gives up on a hung range fetch after the timeout", async () => {
+    // Vitest's fake timers do not drive AbortSignal.timeout, so spy on it and
+    // hand back a signal this test aborts by hand once the "timeout" elapses.
+    const controller = new AbortController();
+    const timeoutSpy = vi.spyOn(AbortSignal, "timeout").mockReturnValue(controller.signal);
+    fetchMock.mockImplementation(
+      (_input, init) =>
+        new Promise<Response>((_, reject) => {
+          const signal = init?.signal;
+          signal?.addEventListener("abort", () => reject(signal.reason));
+        }),
+    );
+
+    try {
+      const { isCloudflareIp } = await loadModule();
+
+      const pending = isCloudflareIp("104.16.1.1");
+      expect(timeoutSpy).toHaveBeenCalledWith(3000);
+
+      controller.abort(
+        new DOMException("The operation was aborted due to timeout", "TimeoutError"),
+      );
+
+      expect(await pending).toBe(false);
+    } finally {
+      timeoutSpy.mockRestore();
+    }
+  });
+
+  it("preloadCloudflareRanges starts exactly one fetch that isCloudflareIp reuses", async () => {
+    fetchMock.mockResolvedValue(okResponse({ ipv4_cidrs: IPV4_CIDRS, ipv6_cidrs: IPV6_CIDRS }));
+    const { isCloudflareIp, preloadCloudflareRanges } = await loadModule();
+
+    preloadCloudflareRanges();
+    expect(await isCloudflareIp("104.16.1.1")).toBe(true);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
 });

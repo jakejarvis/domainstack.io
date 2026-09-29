@@ -9,7 +9,7 @@ import { DNS_RECORD_TYPES, DNS_TYPE_NUMBERS } from "@domainstack/constants";
 import type { DnsRecord } from "@domainstack/types";
 import { deduplicateDnsRecords, sortDnsRecordsByType } from "@domainstack/utils/dns";
 
-import { isCloudflareIp } from "../lib/cloudflare";
+import { isCloudflareIp, preloadCloudflareRanges } from "../lib/cloudflare";
 import { ttlForDnsRecord } from "../lib/ttl";
 import { providerOrderForLookup, queryDohProvider } from "./doh";
 import type { DnsFetchData } from "./types";
@@ -38,6 +38,7 @@ export async function fetchDnsRecords(
   domain: string,
   now: Date = new Date(),
 ): Promise<DnsFetchData> {
+  preloadCloudflareRanges();
   const providers = providerOrderForLookup(domain);
   const types = DNS_RECORD_TYPES;
 
