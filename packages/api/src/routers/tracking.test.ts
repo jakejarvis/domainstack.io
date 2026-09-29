@@ -41,6 +41,7 @@ const {
   bulkArchiveTrackedDomains,
   bulkRemoveTrackedDomains,
   countTrackedDomainsByStatus,
+  createTrackedDomainWithLimitCheck,
   markVerificationFailing,
   markVerificationSuccessful,
   revokeVerification,
@@ -330,6 +331,90 @@ describe("tracking router", () => {
       );
     });
 
+    it("rejects re-adding a verified archived domain and leaves it archived", async () => {
+      const caller = createAuthenticatedCaller();
+
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "existing-token",
+        verified: true,
+        verificationMethod: "dns_txt",
+        archivedAt: new Date(),
+      });
+
+      await expect(caller.tracking.addDomain({ domain: TEST_DOMAIN })).rejects.toThrow("archived");
+
+      const [row] = await db
+        .select()
+        .from(userTrackedDomains)
+        .where(eq(userTrackedDomains.id, TEST_TRACKED_ID));
+      expect(row.archivedAt).not.toBeNull();
+    });
+
+    it("unarchives an unverified archived domain and resumes verification", async () => {
+      const caller = createAuthenticatedCaller();
+
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "existing-token",
+        verified: false,
+        archivedAt: new Date(),
+      });
+
+      const result = await caller.tracking.addDomain({ domain: TEST_DOMAIN });
+
+      expect(result).toMatchObject({
+        id: TEST_TRACKED_ID,
+        verificationToken: "existing-token",
+        resumed: true,
+      });
+
+      const [row] = await db
+        .select()
+        .from(userTrackedDomains)
+        .where(eq(userTrackedDomains.id, TEST_TRACKED_ID));
+      expect(row.archivedAt).toBeNull();
+    });
+
+    it("rejects resuming an unverified archived domain when the quota is full", async () => {
+      const caller = createAuthenticatedCaller();
+
+      // 5 active domains == free-plan quota, plus the archived unverified row
+      const activeDomainIds = [TEST_DOMAIN_2_ID, ...QUOTA_DOMAIN_IDS.slice(0, 4)];
+      await db.insert(userTrackedDomains).values(
+        activeDomainIds.map((domainId, i) => ({
+          id: `b0000000-0000-1000-a000-0000000000${(20 + i).toString().padStart(2, "0")}`,
+          userId: TEST_USER_ID,
+          domainId,
+          verificationToken: `token-${i}`,
+          verified: true,
+          verificationMethod: "dns_txt" as const,
+        })),
+      );
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "existing-token",
+        verified: false,
+        archivedAt: new Date(),
+      });
+
+      await expect(caller.tracking.addDomain({ domain: TEST_DOMAIN })).rejects.toThrow(
+        "reached your domain tracking limit",
+      );
+
+      const [row] = await db
+        .select()
+        .from(userTrackedDomains)
+        .where(eq(userTrackedDomains.id, TEST_TRACKED_ID));
+      expect(row.archivedAt).not.toBeNull();
+    });
+
     it("normalizes domain input", async () => {
       const caller = createAuthenticatedCaller();
 
@@ -391,6 +476,47 @@ describe("tracking router", () => {
         "reached your domain tracking limit",
       );
       expect((await countTrackedDomainsByStatus(TEST_USER_ID)).active).toBe(5);
+    });
+
+    it("reads the plan quota under the lock, not from the caller", async () => {
+      const caller = createAuthenticatedCaller();
+
+      // The user was on Pro and tracked 5 domains, then a downgrade committed.
+      await db
+        .update(userSubscriptions)
+        .set({ tier: "pro" })
+        .where(eq(userSubscriptions.userId, TEST_USER_ID));
+
+      try {
+        await trackDomains(TEST_USER_ID, [
+          TEST_DOMAIN_ID,
+          TEST_DOMAIN_2_ID,
+          ...QUOTA_DOMAIN_IDS.slice(0, 3),
+        ]);
+
+        await db
+          .update(userSubscriptions)
+          .set({ tier: "free" })
+          .where(eq(userSubscriptions.userId, TEST_USER_ID));
+
+        await expect(caller.tracking.addDomain({ domain: QUOTA_DOMAIN_NAMES[4] })).rejects.toThrow(
+          "reached your domain tracking limit",
+        );
+
+        // No `maxDomains` parameter: the function resolves the tier itself.
+        const result = await createTrackedDomainWithLimitCheck({
+          userId: TEST_USER_ID,
+          domainId: QUOTA_DOMAIN_IDS[4],
+          verificationToken: "direct-token",
+        });
+        expect(result).toEqual({ success: false, reason: "limit_exceeded" });
+        expect((await countTrackedDomainsByStatus(TEST_USER_ID)).active).toBe(5);
+      } finally {
+        await db
+          .update(userSubscriptions)
+          .set({ tier: "free" })
+          .where(eq(userSubscriptions.userId, TEST_USER_ID));
+      }
     });
 
     it("allows exactly one of two concurrent adds at max - 1", async () => {

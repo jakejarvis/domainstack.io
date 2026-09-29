@@ -2,6 +2,7 @@ import type { SQL } from "drizzle-orm";
 import { and, asc, count, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
+import { PLAN_QUOTAS } from "@domainstack/constants";
 import type {
   DnsRecord,
   ProviderInfo,
@@ -22,6 +23,7 @@ import {
   hosting,
   providers,
   registrations,
+  userSubscriptions,
   users,
   userTrackedDomains,
 } from "../schema";
@@ -561,16 +563,31 @@ export async function lockUserDomainQuota(
   );
 }
 
+/** The user's plan quota, read inside the quota-locked transaction so a concurrent downgrade can't be missed. */
+async function readPlanQuota(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  userId: string,
+) {
+  const [row] = await tx
+    .select({ tier: userSubscriptions.tier })
+    .from(userSubscriptions)
+    .where(eq(userSubscriptions.userId, userId))
+    .limit(1);
+  return PLAN_QUOTAS[row?.tier ?? "free"];
+}
+
 /**
  * Create a new tracked domain record with limit checking serialized per user via an advisory lock.
+ * The plan quota is read under that lock, so a concurrent downgrade can't be missed.
  */
 export async function createTrackedDomainWithLimitCheck(
-  params: CreateTrackedDomainParams & { maxDomains: number },
+  params: CreateTrackedDomainParams,
 ): Promise<CreateTrackedDomainWithLimitCheckResult> {
-  const { userId, domainId, verificationToken, verificationMethod, maxDomains } = params;
+  const { userId, domainId, verificationToken, verificationMethod } = params;
 
   return await db.transaction(async (tx) => {
     await lockUserDomainQuota(tx, userId);
+    const maxDomains = await readPlanQuota(tx, userId);
 
     const lockedRows = await tx
       .select({ id: userTrackedDomains.id })
@@ -1004,14 +1021,15 @@ export async function archiveTrackedDomain(
 
 /**
  * Unarchive a tracked domain with limit checking serialized per user via an advisory lock.
+ * The plan quota is read under that lock, so a concurrent downgrade can't be missed.
  */
 export async function unarchiveTrackedDomainWithLimitCheck(
   id: string,
   userId: string,
-  maxDomains: number,
 ): Promise<UnarchiveTrackedDomainWithLimitCheckResult> {
   return await db.transaction(async (tx) => {
     await lockUserDomainQuota(tx, userId);
+    const maxDomains = await readPlanQuota(tx, userId);
 
     const [tracked] = await tx
       .select()

@@ -25,7 +25,6 @@ import {
   unarchiveTrackedDomainWithLimitCheck,
   verifyTrackedDomain,
 } from "@domainstack/db/queries/tracked-domains";
-import { getUserSubscription } from "@domainstack/db/queries/user-subscription";
 import { sendEmail } from "@domainstack/email";
 import VerificationInstructionsEmail from "@domainstack/email/templates/verification-instructions";
 import { createLogger } from "@domainstack/logger";
@@ -140,7 +139,45 @@ export const trackingRouter = createTRPCRouter({
     // An unverified domain the user already started tracking resumes with its
     // existing token instead of failing. Covers both a plain re-add and losing
     // the insert race to a concurrent request.
-    const resume = (existing: { id: string; verified: boolean; verificationToken: string }) => {
+    const resume = async (existing: {
+      id: string;
+      verified: boolean;
+      verificationToken: string;
+      archivedAt: Date | null;
+    }) => {
+      if (existing.archivedAt) {
+        if (existing.verified) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message:
+              "This domain is archived. Unarchive it from your dashboard to resume monitoring.",
+          });
+        }
+
+        // An unverified archived row: bring it back (quota-checked) and resume verification.
+        const restored = await unarchiveTrackedDomainWithLimitCheck(existing.id, ctx.user.id);
+        if (!restored.success) {
+          switch (restored.reason) {
+            case "limit_exceeded":
+              throw new TRPCError({
+                code: "FORBIDDEN",
+                message:
+                  "You have reached your domain tracking limit. Upgrade to add more domains.",
+              });
+            case "not_found":
+            case "wrong_user":
+              // The row was deleted concurrently; this shouldn't happen.
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Failed to create tracked domain",
+              });
+            case "not_archived":
+              // A concurrent request already restored it; resuming is still right.
+              break;
+          }
+        }
+      }
+
       if (existing.verified) {
         throw new TRPCError({
           code: "CONFLICT",
@@ -160,11 +197,8 @@ export const trackingRouter = createTRPCRouter({
 
     const existing = await findTrackedDomain(ctx.user.id, domainRecord.id);
     if (existing) {
-      return resume(existing);
+      return await resume(existing);
     }
-
-    // Get user's subscription to know their limit
-    const sub = await getUserSubscription(ctx.user.id);
 
     const verificationToken = randomBytes(16).toString("hex");
 
@@ -173,7 +207,6 @@ export const trackingRouter = createTRPCRouter({
       userId: ctx.user.id,
       domainId: domainRecord.id,
       verificationToken,
-      maxDomains: sub.planQuota,
     });
 
     // Handle different failure cases
@@ -188,7 +221,7 @@ export const trackingRouter = createTRPCRouter({
       // "already_exists" - race condition where another request created it first
       const raceExisting = await findTrackedDomain(ctx.user.id, domainRecord.id);
       if (raceExisting) {
-        return resume(raceExisting);
+        return await resume(raceExisting);
       }
 
       // This shouldn't happen, but guard against it
@@ -404,15 +437,8 @@ export const trackingRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { trackedDomainId } = input;
 
-      // Get user's subscription to know their limit
-      const sub = await getUserSubscription(ctx.user.id);
-
       // Atomic unarchive with limit check (prevents race conditions)
-      const result = await unarchiveTrackedDomainWithLimitCheck(
-        trackedDomainId,
-        ctx.user.id,
-        sub.planQuota,
-      );
+      const result = await unarchiveTrackedDomainWithLimitCheck(trackedDomainId, ctx.user.id);
 
       if (!result.success) {
         switch (result.reason) {
