@@ -153,6 +153,9 @@ async function handler(request: Request): Promise<Response> {
       verboseLogs: process.env.NODE_ENV === "development",
       experimental_webMcp: {
         tools: MCP_TOOLS.map((tool) => tool.name),
+        // Same body for every visitor of a host; let the CDN serve it instead of
+        // invoking this function on every page load (max-age alone is browser-only).
+        cacheControl: "public, max-age=300, s-maxage=86400, stale-while-revalidate=86400",
       },
     },
   )(request);
