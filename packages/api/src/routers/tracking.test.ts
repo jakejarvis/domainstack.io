@@ -873,6 +873,78 @@ describe("tracking router", () => {
       expect(start).not.toHaveBeenCalled();
     });
 
+    it("re-checks a failing domain and leaves it failing when the proof is still missing", async () => {
+      const caller = createAuthenticatedCaller();
+      const failedAt = new Date("2026-01-01T00:00:00.000Z");
+
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "test-token",
+        verified: true,
+        verificationStatus: "failing",
+        verificationFailedAt: failedAt,
+        verificationMethod: "dns_txt",
+      });
+
+      verificationMock.verifyDomain.mockResolvedValue({ verified: false, method: null });
+
+      const result = await caller.tracking.verifyDomain({
+        trackedDomainId: TEST_TRACKED_ID,
+      });
+
+      expect(result).toEqual({ verified: false, method: null });
+      expect(verificationMock.verifyDomain).toHaveBeenCalled();
+
+      const [row] = await db
+        .select()
+        .from(userTrackedDomains)
+        .where(eq(userTrackedDomains.id, TEST_TRACKED_ID));
+      expect(row.verificationStatus).toBe("failing");
+      expect(row.verificationFailedAt?.getTime()).toBe(failedAt.getTime());
+    });
+
+    it("recovers a failing domain with a different method without resetting its snapshot", async () => {
+      const caller = createAuthenticatedCaller();
+
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "test-token",
+        verified: true,
+        verificationStatus: "failing",
+        verificationFailedAt: new Date("2026-01-01T00:00:00.000Z"),
+        verificationMethod: "dns_txt",
+      });
+      await db.insert(domainSnapshots).values({ trackedDomainId: TEST_TRACKED_ID });
+
+      verificationMock.verifyDomain.mockResolvedValue({ verified: true, method: "meta_tag" });
+
+      const result = await caller.tracking.verifyDomain({
+        trackedDomainId: TEST_TRACKED_ID,
+      });
+
+      expect(result).toEqual({ verified: true, method: "meta_tag" });
+
+      const [row] = await db
+        .select()
+        .from(userTrackedDomains)
+        .where(eq(userTrackedDomains.id, TEST_TRACKED_ID));
+      expect(row.verificationStatus).toBe("verified");
+      expect(row.verificationFailedAt).toBeNull();
+      expect(row.verificationMethod).toBe("meta_tag");
+
+      // Recovery keeps the monitoring baseline: no re-initialization workflow.
+      expect(start).not.toHaveBeenCalled();
+      const snapshots = await db
+        .select()
+        .from(domainSnapshots)
+        .where(eq(domainSnapshots.trackedDomainId, TEST_TRACKED_ID));
+      expect(snapshots.length).toBe(1);
+    });
+
     it("verifyTrackedDomain does not wipe a snapshot created after it already verified (concurrent verify race)", async () => {
       await db.insert(userTrackedDomains).values({
         id: TEST_TRACKED_ID,

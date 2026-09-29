@@ -21,6 +21,7 @@ import {
   findTrackedDomainWithDomainName,
   getTrackedDomainDetails,
   getTrackedDomainsForUser,
+  markVerificationSuccessful,
   muteTrackedDomain,
   unarchiveTrackedDomainWithLimitCheck,
   verifyTrackedDomain,
@@ -277,8 +278,10 @@ export const trackingRouter = createTRPCRouter({
         });
       }
 
-      // Already verified?
-      if (tracked.verified) {
+      // A healthy verified domain has nothing to re-check. A "failing" one (its
+      // proof disappeared; still verified during the grace period) must be
+      // re-checked, or "Fix Verification" would report success without looking.
+      if (tracked.verified && tracked.verificationStatus !== "failing") {
         return { verified: true, method: tracked.verificationMethod };
       }
 
@@ -295,6 +298,20 @@ export const trackingRouter = createTRPCRouter({
         : await verifyDomainAll(tracked.domainName, tracked.verificationToken, httpOptions);
 
       if (result.verified && result.method) {
+        if (tracked.verified) {
+          // Recovering a failing domain: clear the failure, keep its snapshot and baseline.
+          const recovered = await markVerificationSuccessful(trackedDomainId, result.method);
+          if (recovered) {
+            analytics.track(
+              "domain_verification_succeeded",
+              { method: result.method, recovered: true },
+              ctx.user.id,
+            );
+            return { verified: true, method: result.method };
+          }
+          // Revoked concurrently: fall through and verify it afresh below.
+        }
+
         // Update the tracked domain as verified
         const updated = await verifyTrackedDomain(trackedDomainId, result.method);
 

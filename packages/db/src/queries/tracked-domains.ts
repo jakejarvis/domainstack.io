@@ -907,14 +907,19 @@ export async function getTrackedDomainForReverification(
  * Record a passing re-verification. Only touches a domain that is still
  * verified: a concurrent revoke must not leave `verified = false` with a
  * `"verified"` status.
+ *
+ * Pass `method` when the passing check may have used a different method than
+ * the stored one (a user fixing a failing domain), so re-verification checks
+ * the method that now works.
  */
-export async function markVerificationSuccessful(id: string) {
+export async function markVerificationSuccessful(id: string, method?: VerificationMethod) {
   const updated = await db
     .update(userTrackedDomains)
     .set({
       verificationStatus: "verified",
       verificationFailedAt: null,
       lastVerifiedAt: new Date(),
+      ...(method ? { verificationMethod: method } : {}),
     })
     .where(and(eq(userTrackedDomains.id, id), eq(userTrackedDomains.verified, true)))
     .returning();
