@@ -86,6 +86,7 @@ const {
   domains,
   favicons,
   httpHeaders,
+  providerLogos,
   providers,
   registrations,
 } = await import("@domainstack/db/schema");
@@ -171,6 +172,11 @@ async function setRawRegistration({
     .insert(registrations)
     .values({ domainId: TEST_DOMAIN_ID, ...values })
     .onConflictDoUpdate({ target: registrations.domainId, set: values });
+}
+
+async function clearCertificateCache() {
+  await db.delete(certificates).where(eq(certificates.domainId, TEST_DOMAIN_ID));
+  await db.delete(certificateChecks).where(eq(certificateChecks.domainId, TEST_DOMAIN_ID));
 }
 
 describe("domain router", () => {
@@ -699,11 +705,6 @@ describe("domain router", () => {
       ...observation,
     };
 
-    async function clearCertificateCache() {
-      await db.delete(certificates).where(eq(certificates.domainId, TEST_DOMAIN_ID));
-      await db.delete(certificateChecks).where(eq(certificateChecks.domainId, TEST_DOMAIN_ID));
-    }
-
     async function insertCachedObservation() {
       const now = new Date();
       const expiresAt = new Date(now.getTime() + 60 * 60 * 1000);
@@ -806,6 +807,151 @@ describe("domain router", () => {
         data: freshData,
       });
       expect(fetchCertificates).toHaveBeenCalledWith(TEST_DOMAIN);
+    });
+  });
+
+  describe("provider logos", () => {
+    const DAY_MS = 24 * 60 * 60 * 1000;
+
+    async function insertFreshRegistration() {
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + DAY_MS);
+      await db
+        .insert(registrations)
+        .values({
+          domainId: TEST_DOMAIN_ID,
+          isRegistered: true,
+          privacyEnabled: false,
+          registrarProviderId: TEST_PROVIDER_ID,
+          source: "rdap",
+          fetchedAt: now,
+          expiresAt,
+        })
+        .onConflictDoUpdate({
+          target: registrations.domainId,
+          set: {
+            isRegistered: true,
+            registrarProviderId: TEST_PROVIDER_ID,
+            fetchedAt: now,
+            expiresAt,
+          },
+        });
+    }
+
+    async function insertLogo({
+      url,
+      notFound,
+      expiresAt,
+    }: {
+      url: string | null;
+      notFound: boolean;
+      expiresAt: Date;
+    }) {
+      await db.insert(providerLogos).values({
+        providerId: TEST_PROVIDER_ID,
+        url,
+        notFound,
+        size: 32,
+        fetchedAt: new Date(),
+        expiresAt,
+      });
+    }
+
+    beforeEach(async () => {
+      await db.delete(providerLogos).where(eq(providerLogos.providerId, TEST_PROVIDER_ID));
+    });
+
+    it("attaches a fresh cached registrar logo", async () => {
+      const caller = createTestCaller();
+      await insertFreshRegistration();
+      await insertLogo({
+        url: "https://blob.example/r.png",
+        notFound: false,
+        expiresAt: new Date(Date.now() + DAY_MS),
+      });
+
+      const result = await caller.domain.getRegistration({ domain: TEST_DOMAIN });
+
+      if (!result.success) {
+        throw new Error("Expected getRegistration to succeed");
+      }
+      expect(result.cached).toBe(true);
+      expect(result.data.registrarProvider.logoUrl).toBe("https://blob.example/r.png");
+    });
+
+    it("marks a known-missing logo as null", async () => {
+      const caller = createTestCaller();
+      await insertFreshRegistration();
+      await insertLogo({ url: null, notFound: true, expiresAt: new Date(Date.now() + DAY_MS) });
+
+      const result = await caller.domain.getRegistration({ domain: TEST_DOMAIN });
+
+      if (!result.success) {
+        throw new Error("Expected getRegistration to succeed");
+      }
+      expect(result.data.registrarProvider.logoUrl).toBeNull();
+    });
+
+    it("leaves the logo unknown when nothing fresh is cached", async () => {
+      const caller = createTestCaller();
+      await insertFreshRegistration();
+      await insertLogo({
+        url: "https://blob.example/r.png",
+        notFound: false,
+        expiresAt: new Date(Date.now() - DAY_MS),
+      });
+
+      const result = await caller.domain.getRegistration({ domain: TEST_DOMAIN });
+
+      if (!result.success) {
+        throw new Error("Expected getRegistration to succeed");
+      }
+      const ref = result.data.registrarProvider;
+      expect("logoUrl" in ref ? ref.logoUrl : undefined).toBeUndefined();
+    });
+
+    it("attaches CA logos to freshly fetched certificates", async () => {
+      const caller = createTestCaller();
+      await clearCertificateCache();
+      vi.mocked(fetchCertificates).mockResolvedValueOnce({
+        success: true,
+        data: {
+          certificates: [
+            {
+              issuer: "Test CA",
+              subject: "example.com",
+              altNames: ["example.com"],
+              validFrom: "2024-01-01T00:00:00.000Z",
+              validTo: "2027-01-01T00:00:00.000Z",
+              fingerprint256: "cc".repeat(32),
+              serialNumber: "04",
+              chainPosition: 0,
+              caProvider: { id: TEST_PROVIDER_ID, name: "CA", domain: "ca.example" },
+            },
+          ],
+          valid: true,
+          validationError: null,
+          protocol: "TLSv1.3",
+          cipher: "TLS_AES_256_GCM_SHA384",
+          publicKeyBits: 256,
+          chainComplete: true,
+        },
+      });
+      await insertLogo({
+        url: "https://blob.example/ca.png",
+        notFound: false,
+        expiresAt: new Date(Date.now() + DAY_MS),
+      });
+
+      const result = await caller.domain.getCertificates({ domain: TEST_DOMAIN });
+
+      if (!result.success) {
+        throw new Error("Expected getCertificates to succeed");
+      }
+      expect(result.cached).toBe(false);
+      expect(fetchCertificates).toHaveBeenCalledWith(TEST_DOMAIN);
+      expect(result.data.certificates[0]?.caProvider.logoUrl).toBe("https://blob.example/ca.png");
+      await clearCertificateCache();
     });
   });
 });
