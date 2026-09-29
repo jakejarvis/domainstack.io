@@ -13,7 +13,7 @@ import {
   resolveProviderId,
   upsertCatalogProvider,
 } from "@domainstack/db/queries/providers";
-import { upsertRegistration } from "@domainstack/db/queries/registrations";
+import { getCachedRegistration, upsertRegistration } from "@domainstack/db/queries/registrations";
 import { getProviderCatalog } from "@domainstack/edge-config";
 import type { RegistrationContact, RegistrationResponse } from "@domainstack/types";
 import { getDomainTld } from "@domainstack/utils/domain";
@@ -69,7 +69,16 @@ export async function fetchRegistration(domain: string): Promise<RegistrationRes
   // 4. Persist (registered and unregistered alike, so drops are cached too)
   await persistRegistration(domain, normalized);
 
-  return { success: true, data: normalized };
+  // 5. Read the persisted row back. The fresh result goes through the same
+  // projection as the cache, so a cold and a cached lookup return identical
+  // data (including `domainId`). The extra indexed query is negligible next to
+  // the WHOIS/RDAP fetch.
+  const cached = await getCachedRegistration(domain);
+  if (!cached.data) {
+    throw new Error(`registration for ${domain} was persisted but could not be read back`);
+  }
+
+  return { success: true, data: cached.data };
 }
 
 // ============================================================================
@@ -172,7 +181,6 @@ export async function normalizeRegistration(
     unicodeName: record.unicodeName,
     punycodeName: record.punycodeName,
     registry: record.registry,
-    registrar: record.registrar,
     reseller: record.reseller?.name,
     statuses: record.statuses,
     creationDate: record.creationDate,
@@ -180,14 +188,12 @@ export async function normalizeRegistration(
     expirationDate: record.expirationDate,
     deletionDate: record.deletionDate,
     transferLock: record.transferLock,
-    dnssec: record.dnssec,
     nameservers: record.nameservers,
     contacts: record.contacts,
     privacyEnabled: record.privacyEnabled,
     whoisServer: record.whoisServer,
     rdapServers: record.rdapServers,
     source: record.source ?? null,
-    warnings: record.warnings,
     registrarProvider: {
       id: registrarProviderId,
       name: registrarName.trim() || null,

@@ -25,7 +25,6 @@ describe("serializeDomainExport", () => {
         domain: "example.com",
         unicodeName: "example.com",
         punycodeName: "example.com",
-        warnings: ["whois throttled"],
         registrarProvider: { id: "p_1", name: "Example Registrar", category: "registrar" },
         isRegistered: true,
         expirationDate: "2030-01-01",
@@ -80,7 +79,6 @@ describe("serializeDomainExport", () => {
     expect(result.registration).not.toHaveProperty("domain");
     expect(result.registration).not.toHaveProperty("unicodeName");
     expect(result.registration).not.toHaveProperty("punycodeName");
-    expect(result.registration).not.toHaveProperty("warnings");
     expect(result.registration).not.toHaveProperty("registrarProvider");
     expect(result.registration).toMatchObject({ isRegistered: true, expirationDate: "2030-01-01" });
 

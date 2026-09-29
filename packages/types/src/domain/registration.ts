@@ -78,8 +78,8 @@ export interface RegistrationStatus {
  */
 export interface RegistrationResponse {
   /**
-   * Internal domain ID from database. Only present for registered domains
-   * that have been persisted. Used for screenshot API requests.
+   * Internal domain ID from the database. Present on every persisted result,
+   * fresh or cached, registered or unregistered. Used for screenshot API requests.
    */
   domainId?: string;
   domain: string;
@@ -96,13 +96,6 @@ export interface RegistrationResponse {
   unicodeName?: string;
   punycodeName?: string;
   registry?: string;
-  registrar?: {
-    name?: string;
-    ianaId?: string;
-    url?: string;
-    email?: string;
-    phone?: string;
-  };
   reseller?: string;
   statuses?: RegistrationStatus[];
   creationDate?: string;
@@ -110,22 +103,12 @@ export interface RegistrationResponse {
   expirationDate?: string;
   deletionDate?: string;
   transferLock?: boolean;
-  dnssec?: {
-    enabled: boolean;
-    dsRecords?: {
-      keyTag?: number;
-      algorithm?: number;
-      digestType?: number;
-      digest?: string;
-    }[];
-  };
   nameservers?: RegistrationNameserver[];
   contacts?: RegistrationContact[];
   privacyEnabled?: boolean;
   whoisServer?: string;
   rdapServers?: string[];
   source: RegistrationSource | null;
-  warnings?: string[];
   registrarProvider: ProviderRef;
   /**
    * Raw RDAP/WHOIS response from the registry.

@@ -13,7 +13,6 @@ export function serializeDomainExport(domain: string, data: Partial<DomainRespon
       domain: _d,
       unicodeName: _u,
       punycodeName: _p,
-      warnings: _w,
       registrarProvider: _rp,
       ...rest
     } = data.registration;
