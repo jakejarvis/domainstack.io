@@ -27,6 +27,8 @@ import {
   users,
   userTrackedDomains,
 } from "../schema";
+import { getFreshFaviconUrls } from "./favicons";
+import { getFreshProviderLogoUrls } from "./provider-logos";
 
 /**
  * Active eligibility for cron-driven workflows: verified and not archived.
@@ -243,6 +245,7 @@ export interface GetTrackedDomainsOptions {
   includeArchived?: boolean;
   includeDnsRecords?: boolean;
   includeRegistrarDetails?: boolean;
+  includeIconUrls?: boolean;
 }
 
 export interface BulkOperationResult {
@@ -263,6 +266,7 @@ interface QueryTrackedDomainsOptions {
   includeArchived?: boolean;
   includeDnsRecords?: boolean;
   includeRegistrarDetails?: boolean;
+  includeIconUrls?: boolean;
 }
 
 /**
@@ -447,7 +451,11 @@ async function queryTrackedDomainsWithDetails(
   orderByColumn: typeof userTrackedDomains.createdAt | typeof userTrackedDomains.archivedAt,
   options: QueryTrackedDomainsOptions = {},
 ): Promise<TrackedDomainWithDetails[]> {
-  const { includeDnsRecords = true, includeRegistrarDetails = true } = options;
+  const {
+    includeDnsRecords = true,
+    includeRegistrarDetails = true,
+    includeIconUrls = false,
+  } = options;
 
   const registrarProvider = alias(providers, "registrar_provider");
   const dnsProvider = alias(providers, "dns_provider");
@@ -485,12 +493,25 @@ async function queryTrackedDomainsWithDetails(
       emailId: emailProvider.id,
       emailName: emailProvider.name,
       emailDomain: emailProvider.domain,
-      registrationWhoisServer: registrations.whoisServer,
-      registrationRdapServers: registrations.rdapServers,
-      registrationSource: registrations.source,
-      registrationTransferLock: registrations.transferLock,
-      registrationPrivacyEnabled: registrations.privacyEnabled,
-      registrationContacts: registrations.contacts,
+      // Skip reading registrar details (notably the contacts jsonb) when they are discarded below.
+      registrationWhoisServer: includeRegistrarDetails
+        ? registrations.whoisServer
+        : sql<string | null>`null`,
+      registrationRdapServers: includeRegistrarDetails
+        ? registrations.rdapServers
+        : sql<string[] | null>`null`,
+      registrationSource: includeRegistrarDetails
+        ? registrations.source
+        : sql<RegistrationSource | null>`null`,
+      registrationTransferLock: includeRegistrarDetails
+        ? registrations.transferLock
+        : sql<boolean | null>`null`,
+      registrationPrivacyEnabled: includeRegistrarDetails
+        ? registrations.privacyEnabled
+        : sql<boolean | null>`null`,
+      registrationContacts: includeRegistrarDetails
+        ? registrations.contacts
+        : sql<RegistrationContact[] | null>`null`,
     })
     .from(userTrackedDomains)
     .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
@@ -540,6 +561,47 @@ async function queryTrackedDomainsWithDetails(
         name: domain.registrar.name,
         domain: domain.registrar.domain,
       },
+    }));
+  }
+
+  if (includeIconUrls) {
+    const providerIds = new Set<string>();
+    for (const domain of domainsResult) {
+      for (const provider of [
+        domain.registrar,
+        domain.dns,
+        domain.hosting,
+        domain.email,
+        domain.ca,
+      ]) {
+        if (provider.id) providerIds.add(provider.id);
+      }
+    }
+
+    const [faviconUrls, providerLogoUrls] = await Promise.all([
+      getFreshFaviconUrls(domainIds),
+      getFreshProviderLogoUrls([...providerIds]),
+    ]);
+
+    // Tri-state: string = known url, null = known none, undefined = unknown (not in cache).
+    const withLogo = (provider: ProviderInfo): ProviderInfo =>
+      provider.id
+        ? {
+            ...provider,
+            logoUrl: providerLogoUrls.has(provider.id)
+              ? providerLogoUrls.get(provider.id)
+              : undefined,
+          }
+        : provider;
+
+    domainsResult = domainsResult.map((domain) => ({
+      ...domain,
+      faviconUrl: faviconUrls.has(domain.domainId) ? faviconUrls.get(domain.domainId) : undefined,
+      registrar: withLogo(domain.registrar),
+      dns: withLogo(domain.dns),
+      hosting: withLogo(domain.hosting),
+      email: withLogo(domain.email),
+      ca: withLogo(domain.ca),
     }));
   }
 
@@ -679,6 +741,7 @@ export async function getTrackedDomainsForUser(
     includeArchived = false,
     includeDnsRecords = true,
     includeRegistrarDetails = true,
+    includeIconUrls = false,
   }: GetTrackedDomainsOptions = {},
 ): Promise<TrackedDomainWithDetails[]> {
   const whereCondition = includeArchived
@@ -688,6 +751,7 @@ export async function getTrackedDomainsForUser(
   return queryTrackedDomainsWithDetails(whereCondition as SQL, userTrackedDomains.createdAt, {
     includeDnsRecords,
     includeRegistrarDetails,
+    includeIconUrls,
   });
 }
 

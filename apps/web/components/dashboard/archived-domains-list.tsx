@@ -85,7 +85,11 @@ function ArchivedDomainsListBody({ domains }: ArchivedDomainsListProps) {
         {domains.map((domain) => (
           <Item key={domain.id} variant="outline" role="listitem" className="opacity-75">
             <ItemMedia>
-              <Favicon domain={domain.domainName} className="size-6" />
+              <Favicon
+                domain={domain.domainName}
+                initialUrl={domain.faviconUrl}
+                className="size-6"
+              />
             </ItemMedia>
             <ItemContent className="min-w-0">
               <ItemTitle className="block w-full truncate">{domain.domainName}</ItemTitle>

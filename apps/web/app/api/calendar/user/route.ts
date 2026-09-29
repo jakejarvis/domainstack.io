@@ -59,6 +59,7 @@ export async function GET(request: NextRequest) {
   const domains = await getTrackedDomainsForUser(validation.userId, {
     includeArchived: false,
     includeDnsRecords: false,
+    includeRegistrarDetails: false,
   });
 
   // 5. Generate ICS content

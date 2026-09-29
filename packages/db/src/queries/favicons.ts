@@ -1,5 +1,5 @@
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
-import { eq } from "drizzle-orm";
+import { and, eq, gt, inArray, isNotNull, or } from "drizzle-orm";
 
 import type { FaviconResponse } from "@domainstack/types";
 
@@ -58,4 +58,26 @@ export async function getFavicon(domainName: string): Promise<CacheResult<Favico
     fetchedAt,
     expiresAt,
   };
+}
+
+/**
+ * Fresh, definitive favicon URLs for many domains in one query, keyed by domain id.
+ * A domain is absent from the map when it has no fresh definitive row; `null` means
+ * "known to have no favicon".
+ */
+export async function getFreshFaviconUrls(
+  domainIds: string[],
+): Promise<Map<string, string | null>> {
+  if (domainIds.length === 0) return new Map();
+  const rows = await db
+    .select({ domainId: favicons.domainId, url: favicons.url })
+    .from(favicons)
+    .where(
+      and(
+        inArray(favicons.domainId, domainIds),
+        gt(favicons.expiresAt, new Date()),
+        or(isNotNull(favicons.url), eq(favicons.notFound, true)),
+      ),
+    );
+  return new Map(rows.map((row) => [row.domainId, row.url]));
 }

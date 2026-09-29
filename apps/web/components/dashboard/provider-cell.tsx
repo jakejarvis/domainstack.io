@@ -42,6 +42,7 @@ export function ProviderCell({
         <ProviderLogo
           providerId={provider.id}
           providerName={provider.name}
+          initialUrl={provider.logoUrl}
           className={cn("shrink-0", logoClassName)}
         />
       )}

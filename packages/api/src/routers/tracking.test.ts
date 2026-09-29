@@ -34,8 +34,18 @@ vi.mock("@domainstack/email/templates/verification-instructions", () => ({
 }));
 
 // Now import modules that depend on the db
-const { domains, domainSnapshots, registrations, userSubscriptions, users, userTrackedDomains } =
-  await import("@domainstack/db/schema");
+const {
+  domains,
+  domainSnapshots,
+  favicons,
+  hosting,
+  providerLogos,
+  providers,
+  registrations,
+  userSubscriptions,
+  users,
+  userTrackedDomains,
+} = await import("@domainstack/db/schema");
 const { eq } = await import("@domainstack/db/drizzle");
 const {
   bulkArchiveTrackedDomains,
@@ -267,6 +277,109 @@ describe("tracking router", () => {
       const result = await caller.tracking.listDomains();
 
       expect(result).toEqual([]);
+    });
+
+    describe("icon urls", () => {
+      const PROVIDER_ID = "c0000000-0000-1000-a000-000000000001";
+      const DAY_MS = 24 * 60 * 60 * 1000;
+
+      beforeEach(async () => {
+        await db.delete(favicons);
+        await db.delete(providerLogos);
+        await db.delete(hosting);
+        await db.delete(providers);
+      });
+
+      async function trackVerifiedDomain() {
+        await db.insert(userTrackedDomains).values({
+          id: TEST_TRACKED_ID,
+          userId: TEST_USER_ID,
+          domainId: TEST_DOMAIN_ID,
+          verificationToken: "test-token-123",
+          verified: true,
+          verificationMethod: "dns_txt",
+        });
+      }
+
+      async function insertFavicon(values: {
+        url: string | null;
+        notFound: boolean;
+        expiresAt: Date;
+      }) {
+        await db.insert(favicons).values({
+          domainId: TEST_DOMAIN_ID,
+          size: 32,
+          fetchedAt: new Date(),
+          ...values,
+        });
+      }
+
+      it("returns a fresh favicon url", async () => {
+        await trackVerifiedDomain();
+        await insertFavicon({
+          url: "https://blob.example/f.png",
+          notFound: false,
+          expiresAt: new Date(Date.now() + DAY_MS),
+        });
+
+        const result = await createAuthenticatedCaller().tracking.listDomains();
+
+        expect(result[0]?.faviconUrl).toBe("https://blob.example/f.png");
+      });
+
+      it("returns null for a fresh not-found favicon", async () => {
+        await trackVerifiedDomain();
+        await insertFavicon({
+          url: null,
+          notFound: true,
+          expiresAt: new Date(Date.now() + DAY_MS),
+        });
+
+        const result = await createAuthenticatedCaller().tracking.listDomains();
+
+        expect(result[0]?.faviconUrl).toBeNull();
+      });
+
+      it("omits stale favicons", async () => {
+        await trackVerifiedDomain();
+        await insertFavicon({
+          url: "https://blob.example/f.png",
+          notFound: false,
+          expiresAt: new Date(Date.now() - DAY_MS),
+        });
+
+        const result = await createAuthenticatedCaller().tracking.listDomains();
+
+        expect(result[0]?.faviconUrl).toBeUndefined();
+      });
+
+      it("returns provider logo urls", async () => {
+        await trackVerifiedDomain();
+        await db.insert(providers).values({
+          id: PROVIDER_ID,
+          category: "hosting",
+          name: "Test Host",
+          domain: "testhost.example",
+          slug: "test-host",
+        });
+        await db.insert(hosting).values({
+          domainId: TEST_DOMAIN_ID,
+          hostingProviderId: PROVIDER_ID,
+          fetchedAt: new Date(),
+          expiresAt: new Date(Date.now() + DAY_MS),
+        });
+        await db.insert(providerLogos).values({
+          providerId: PROVIDER_ID,
+          url: "https://blob.example/logo.png",
+          size: 64,
+          fetchedAt: new Date(),
+          expiresAt: new Date(Date.now() + DAY_MS),
+        });
+
+        const result = await createAuthenticatedCaller().tracking.listDomains();
+
+        expect(result[0]?.hosting.logoUrl).toBe("https://blob.example/logo.png");
+      });
     });
   });
 

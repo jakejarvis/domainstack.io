@@ -192,6 +192,7 @@ function DashboardGridCardHeader({
         <div className="relative size-8 shrink-0">
           <Favicon
             domain={domain.domainName}
+            initialUrl={domain.faviconUrl}
             className={cn(
               "size-8 rounded-md",
               selectionActive ? "hidden" : "group-focus-within:hidden group-hover:hidden",

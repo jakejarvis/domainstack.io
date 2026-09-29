@@ -41,6 +41,7 @@ const COLUMN_HEADERS = {
 type DomainSelectCellProps = {
   domainId: string;
   domainName: string;
+  faviconUrl?: string | null;
 };
 
 function DateCell({ date }: { date: Date }) {
@@ -76,7 +77,7 @@ function DateCell({ date }: { date: Date }) {
  * while this checkbox still updates. Selection is app state (Jotai), not
  * TanStack row-selection, so `table.Subscribe` does not apply here.
  */
-function DomainSelectCell({ domainId, domainName }: DomainSelectCellProps) {
+function DomainSelectCell({ domainId, domainName, faviconUrl }: DomainSelectCellProps) {
   const isSelected = useIsDomainSelected(domainId);
   const handleSelectionChange = useDomainSelectionHandler(domainId);
 
@@ -85,6 +86,7 @@ function DomainSelectCell({ domainId, domainName }: DomainSelectCellProps) {
       {/* Favicon - hidden on hover, keyboard focus, or when selected */}
       <Favicon
         domain={domainName}
+        initialUrl={faviconUrl}
         className={cn(
           "absolute inset-0",
           isSelected ? "hidden" : "group-focus-within:hidden group-hover:hidden",
@@ -113,7 +115,11 @@ export function createColumns(): ColumnDef<DashboardTableFeatures, TrackedDomain
       id: "select",
       header: () => <span className="sr-only">Selection</span>, // Bulk select lives in the toolbar
       cell: ({ row }) => (
-        <DomainSelectCell domainId={row.original.id} domainName={row.original.domainName} />
+        <DomainSelectCell
+          domainId={row.original.id}
+          domainName={row.original.domainName}
+          faviconUrl={row.original.faviconUrl}
+        />
       ),
       size: 40,
       enableHiding: false, // Always show selection column

@@ -81,6 +81,8 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
           }),
           false: httpBatchStreamLink({
             url,
+            // Keep large icon/lookup batches under common request-line limits
+            maxURLLength: 8000,
             transformer: superjson,
             headers: trpcHeaders,
           }),

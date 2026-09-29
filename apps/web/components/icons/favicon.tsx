@@ -3,11 +3,14 @@ import { useTRPC } from "@/lib/trpc/client";
 
 export function Favicon({
   domain,
+  initialUrl,
   size = 16,
   className,
   style,
 }: {
   domain: string;
+  /** Cached favicon URL when the caller knows it (`null` = none); skips the per-icon query. */
+  initialUrl?: string | null;
   size?: number;
   className?: string;
   style?: React.CSSProperties;
@@ -24,6 +27,7 @@ export function Favicon({
   return (
     <RemoteIcon
       queryOptions={{ queryKey, queryFn }}
+      initialUrl={initialUrl}
       fallbackIdentifier={domain}
       size={size}
       className={className}

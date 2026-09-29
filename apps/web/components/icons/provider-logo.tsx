@@ -4,12 +4,15 @@ import { useTRPC } from "@/lib/trpc/client";
 export function ProviderLogo({
   providerId,
   providerName,
+  initialUrl,
   size = 16,
   className,
   style,
 }: {
   providerId: string | null | undefined;
   providerName: string | null | undefined;
+  /** Cached logo URL when the caller knows it (`null` = none); skips the per-icon query. */
+  initialUrl?: string | null;
   size?: number;
   className?: string;
   style?: React.CSSProperties;
@@ -32,6 +35,7 @@ export function ProviderLogo({
   return (
     <RemoteIcon
       queryOptions={{ queryKey, queryFn }}
+      initialUrl={initialUrl}
       fallbackIdentifier={fallbackIdentifier}
       size={size}
       className={className}

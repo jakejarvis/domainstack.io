@@ -70,6 +70,7 @@ export const trackingRouter = createTRPCRouter({
         includeArchived,
         includeDnsRecords: false,
         includeRegistrarDetails: false,
+        includeIconUrls: true,
       });
 
       return items;

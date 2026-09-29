@@ -1,5 +1,5 @@
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
-import { eq } from "drizzle-orm";
+import { and, eq, gt, inArray, isNotNull, or } from "drizzle-orm";
 
 import type { ProviderLogoResponse } from "@domainstack/types";
 
@@ -59,4 +59,26 @@ export async function getProviderLogo(
     fetchedAt,
     expiresAt,
   };
+}
+
+/**
+ * Fresh, definitive provider logo URLs for many providers in one query, keyed by provider id.
+ * A provider is absent from the map when it has no fresh definitive row; `null` means
+ * "known to have no logo".
+ */
+export async function getFreshProviderLogoUrls(
+  providerIds: string[],
+): Promise<Map<string, string | null>> {
+  if (providerIds.length === 0) return new Map();
+  const rows = await db
+    .select({ providerId: providerLogos.providerId, url: providerLogos.url })
+    .from(providerLogos)
+    .where(
+      and(
+        inArray(providerLogos.providerId, providerIds),
+        gt(providerLogos.expiresAt, new Date()),
+        or(isNotNull(providerLogos.url), eq(providerLogos.notFound, true)),
+      ),
+    );
+  return new Map(rows.map((row) => [row.providerId, row.url]));
 }

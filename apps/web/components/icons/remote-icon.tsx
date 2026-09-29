@@ -22,6 +22,11 @@ export type RemoteIconProps<TQueryKey extends QueryKey = QueryKey> = {
    * Expected to resolve to `{ success: true, data: { url: string | null } }` or `{ success: false }`.
    */
   queryOptions: IconQueryOptions<TQueryKey>;
+  /**
+   * A URL the caller already knows (`null` = known to have none); skips the query when defined.
+   * `undefined` means unknown, so the query runs as usual.
+   */
+  initialUrl?: string | null;
   /** Identifier for fallback avatar (e.g., domain name, provider name) */
   fallbackIdentifier: string;
   /** Size in pixels (default: 16) */
@@ -59,7 +64,7 @@ function IconSkeleton({ className, style }: { className?: string; style?: React.
   return <Skeleton className={cn(baseClassName, "bg-input", className)} style={style} />;
 }
 
-type FallbackIconProps = Omit<RemoteIconProps, "queryOptions">;
+type FallbackIconProps = Omit<RemoteIconProps, "queryOptions" | "initialUrl">;
 
 function FallbackIcon({
   size = 32,
@@ -105,6 +110,7 @@ export function RemoteIcon<TQueryKey extends QueryKey>({
   className,
   style,
   queryOptions,
+  initialUrl,
   fallbackIdentifier,
   alt,
   dataAttribute,
@@ -118,6 +124,9 @@ export function RemoteIcon<TQueryKey extends QueryKey>({
   } = useQuery({
     queryKey: queryOptions.queryKey,
     queryFn: queryOptions.queryFn,
+    // A known URL seeds the cache; with refetchOnMount disabled below, no request is made
+    initialData:
+      initialUrl === undefined ? undefined : { success: true as const, data: { url: initialUrl } },
     // Disable retries - icons should fail fast to fallback
     retry: false,
     retryOnMount: false,

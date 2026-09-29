@@ -29,6 +29,8 @@ export interface TrackedDomainWithDetails {
   archivedAt: Date | null;
   expirationDate: Date | null;
   registrationDate: Date | null;
+  /** Cached favicon URL when known (same tri-state as ProviderInfo.logoUrl). */
+  faviconUrl?: string | null;
   registrar: ProviderInfo;
   dns: ProviderInfo;
   hosting: ProviderInfo;
