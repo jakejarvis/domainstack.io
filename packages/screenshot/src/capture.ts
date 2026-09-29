@@ -77,7 +77,8 @@ export async function captureScreenshot(
       height: actualHeight,
     };
   } finally {
-    // Close page in background to avoid blocking
-    void page?.close();
+    // Close page in background to avoid blocking; after a browser crash this
+    // rejects, and an unhandled rejection can take the function instance down.
+    void page?.close().catch(() => {});
   }
 }
