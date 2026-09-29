@@ -60,4 +60,21 @@ describe("RawDataDialog", () => {
       .not.toHaveClass("text-blue-700");
     await expect.element(code.getByText('"ldhName"', { exact: true })).not.toBeInTheDocument();
   });
+
+  it("shows a loading line when data is not loaded yet", async () => {
+    await render(
+      <RawDataDialog
+        domain="example.com"
+        format="RDAP"
+        loadState="loading"
+        serverName="rdap.verisign.com"
+        serverUrl="https://rdap.verisign.com/com/v1/"
+      />,
+    );
+
+    await page.getByRole("button", { name: "View raw RDAP data" }).click();
+
+    await expect.element(page.getByRole("dialog")).toBeInTheDocument();
+    await expect.element(page.getByText("Loading…")).toBeInTheDocument();
+  });
 });

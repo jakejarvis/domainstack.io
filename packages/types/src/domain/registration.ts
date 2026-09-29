@@ -111,11 +111,14 @@ export interface RegistrationResponse {
   source: RegistrationSource | null;
   registrarProvider: ProviderRef;
   /**
-   * Raw RDAP/WHOIS response from the registry.
+   * Raw RDAP/WHOIS response from the registry. Set on the write path only
+   * (normalize -> persist); cached reads don't return it (see `hasRawResponse`).
    * RDAP responses are JSON objects, WHOIS responses are plain text strings.
    * Display formatting (prettification) should happen on the client side.
    */
   rawResponse?: Record<string, unknown> | string;
+  /** Whether a raw RDAP/WHOIS response is stored; fetch it with `domain.getRawRegistration`. */
+  hasRawResponse?: boolean;
 }
 
 /**

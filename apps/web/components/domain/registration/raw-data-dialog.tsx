@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  IconCopy,
   IconExternalLink,
   IconRosetteDiscountCheck,
   IconX,
@@ -74,17 +75,37 @@ function HighlightedLine({
 interface RawDataDialogProps {
   domain: string;
   format: string;
-  /** Raw data: JSON object for RDAP, plain text string for WHOIS */
-  data: Record<string, unknown> | string;
+  /** Raw data: JSON object for RDAP, plain text string for WHOIS. Undefined until loaded. */
+  data?: Record<string, unknown> | string;
+  /** Shown in place of the data while it is not available. */
+  loadState?: "loading" | "error";
+  /** Called whenever the dialog opens or closes. */
+  onOpenChange?: (open: boolean) => void;
   serverName: string;
   serverUrl: string | undefined;
 }
 
-export function RawDataDialog({ domain, format, data, serverName, serverUrl }: RawDataDialogProps) {
+export function RawDataDialog({
+  domain,
+  format,
+  data,
+  loadState,
+  onOpenChange,
+  serverName,
+  serverUrl,
+}: RawDataDialogProps) {
   const [open, setOpen] = useState(false);
   const [wrapLines, setWrapLines] = useState(true);
 
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    onOpenChange?.(next);
+  };
+
   const formattedData = useMemo(() => {
+    if (data === undefined) {
+      return "";
+    }
     if (typeof data === "string") {
       return data;
     }
@@ -92,6 +113,10 @@ export function RawDataDialog({ domain, format, data, serverName, serverUrl }: R
   }, [data]);
 
   const lineItems = useMemo(() => {
+    if (data === undefined) {
+      return [];
+    }
+
     const source = formattedData.trim();
 
     if (typeof data === "string") {
@@ -110,7 +135,7 @@ export function RawDataDialog({ domain, format, data, serverName, serverUrl }: R
   }, [data, formattedData]);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger
         render={
           <Tooltip>
@@ -120,7 +145,7 @@ export function RawDataDialog({ domain, format, data, serverName, serverUrl }: R
                   variant="ghost"
                   size="icon-sm"
                   aria-label={`View raw ${format} data`}
-                  onClick={() => setOpen(true)}
+                  onClick={() => handleOpenChange(true)}
                 >
                   <IconZoomCode className="size-4 text-foreground/95" />
                   <span className="sr-only">View raw {format} data</span>
@@ -177,58 +202,75 @@ export function RawDataDialog({ domain, format, data, serverName, serverUrl }: R
           className="min-h-0 flex-1 overflow-auto overscroll-contain bg-popover/10 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1"
           aria-label={`Raw ${format} data`}
         >
-          <div className="p-3">
-            <pre className="font-mono text-xs leading-5 text-foreground/90">
-              <code
-                className={cn(
-                  "grid",
-                  wrapLines ? "grid-cols-[auto_1fr]" : "w-max min-w-full grid-cols-[auto_auto]",
-                )}
-              >
-                {lineItems.map((item) => (
-                  <div
-                    key={item.lineNumber}
-                    className="col-span-2 grid grid-cols-subgrid rounded px-1 py-0.5 hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none active:bg-muted/50"
-                  >
-                    <span className="justify-self-end px-1 text-muted-foreground/70 select-none">
-                      {item.lineNumber}
-                    </span>
-                    <span
-                      className={cn(
-                        "min-w-0 pr-1 pl-3",
-                        wrapLines ? "break-all whitespace-pre-wrap" : "whitespace-pre",
-                      )}
+          {data === undefined ? (
+            <p className="p-6 text-center text-[13px] text-muted-foreground" role="status">
+              {loadState === "loading" ? "Loading…" : "Raw data isn’t available right now."}
+            </p>
+          ) : (
+            <div className="p-3">
+              <pre className="font-mono text-xs leading-5 text-foreground/90">
+                <code
+                  className={cn(
+                    "grid",
+                    wrapLines ? "grid-cols-[auto_1fr]" : "w-max min-w-full grid-cols-[auto_auto]",
+                  )}
+                >
+                  {lineItems.map((item) => (
+                    <div
+                      key={item.lineNumber}
+                      className="col-span-2 grid grid-cols-subgrid rounded px-1 py-0.5 hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none active:bg-muted/50"
                     >
-                      <HighlightedLine line={item.line} tokens={item.tokens} />
-                    </span>
-                  </div>
-                ))}
-              </code>
-            </pre>
-          </div>
+                      <span className="justify-self-end px-1 text-muted-foreground/70 select-none">
+                        {item.lineNumber}
+                      </span>
+                      <span
+                        className={cn(
+                          "min-w-0 pr-1 pl-3",
+                          wrapLines ? "break-all whitespace-pre-wrap" : "whitespace-pre",
+                        )}
+                      >
+                        <HighlightedLine line={item.line} tokens={item.tokens} />
+                      </span>
+                    </div>
+                  ))}
+                </code>
+              </pre>
+            </div>
+          )}
         </div>
         <div className="flex w-full items-center justify-between gap-2 border-t border-border bg-card/60 p-3">
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 !px-3 text-[13px]"
-            onClick={() => setWrapLines((prev) => !prev)}
-          >
-            <Checkbox checked={wrapLines} className="size-3.5" />
-            Wrap lines
-          </Button>
-          <div className="space-x-2">
-            <CopyButton
-              variant="outline"
-              size="sm"
-              className="gap-2 !px-3 text-[13px]"
-              value={formattedData}
-              showLabel={true}
-            />
+          {data === undefined ? (
+            <span />
+          ) : (
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setOpen(false)}
+              className="gap-2 !px-3 text-[13px]"
+              onClick={() => setWrapLines((prev) => !prev)}
+            >
+              <Checkbox checked={wrapLines} className="size-3.5" />
+              Wrap lines
+            </Button>
+          )}
+          <div className="space-x-2">
+            {data === undefined ? (
+              <Button variant="outline" size="sm" className="gap-2 !px-3 text-[13px]" disabled>
+                <IconCopy />
+                Copy
+              </Button>
+            ) : (
+              <CopyButton
+                variant="outline"
+                size="sm"
+                className="gap-2 !px-3 text-[13px]"
+                value={formattedData}
+                showLabel={true}
+              />
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleOpenChange(false)}
               className="gap-2 !px-3 text-[13px]"
             >
               <IconX />

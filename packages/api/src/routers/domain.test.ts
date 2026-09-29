@@ -148,6 +148,31 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
+// Upserts a fresh registration row for the test domain with the given raw response
+async function setRawRegistration({
+  source,
+  rawResponse,
+}: {
+  source: "rdap" | "whois";
+  rawResponse: Record<string, unknown> | string;
+}) {
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const values = {
+    isRegistered: true,
+    privacyEnabled: false,
+    registrarProviderId: TEST_PROVIDER_ID,
+    source,
+    rawResponse,
+    fetchedAt: now,
+    expiresAt,
+  };
+  await db
+    .insert(registrations)
+    .values({ domainId: TEST_DOMAIN_ID, ...values })
+    .onConflictDoUpdate({ target: registrations.domainId, set: values });
+}
+
 describe("domain router", () => {
   describe("input validation", () => {
     it("rejects empty domain", async () => {
@@ -328,6 +353,51 @@ describe("domain router", () => {
       }
       expect(result.cached).toBe(false);
       expect(fetchRegistration).toHaveBeenCalled();
+    });
+
+    it("reports hasRawResponse without returning the raw response", async () => {
+      const caller = createTestCaller();
+      await setRawRegistration({ source: "rdap", rawResponse: { ldhName: "example.com" } });
+
+      const result = await caller.domain.getRegistration({ domain: TEST_DOMAIN });
+
+      expect(result.success).toBe(true);
+      if (!result.success) {
+        throw new Error("Expected getRegistration to succeed");
+      }
+      expect(result.cached).toBe(true);
+      expect(result.data.hasRawResponse).toBe(true);
+      expect("rawResponse" in result.data).toBe(false);
+    });
+  });
+
+  describe("getRawRegistration", () => {
+    it("returns the stored RDAP object", async () => {
+      const caller = createTestCaller();
+      const rawResponse = { ldhName: "example.com", status: ["active"] };
+      await setRawRegistration({ source: "rdap", rawResponse });
+
+      const result = await caller.domain.getRawRegistration({ domain: TEST_DOMAIN });
+
+      expect(result).toEqual({ source: "rdap", rawResponse });
+    });
+
+    it("returns the stored WHOIS text", async () => {
+      const caller = createTestCaller();
+      const rawResponse = "Domain Name: EXAMPLE.COM\nRegistrar: Reserved";
+      await setRawRegistration({ source: "whois", rawResponse });
+
+      const result = await caller.domain.getRawRegistration({ domain: TEST_DOMAIN });
+
+      expect(result).toEqual({ source: "whois", rawResponse });
+    });
+
+    it("returns null when no registration is stored", async () => {
+      const caller = createTestCaller();
+
+      const result = await caller.domain.getRawRegistration({ domain: "no-registration.com" });
+
+      expect(result).toBeNull();
     });
   });
 

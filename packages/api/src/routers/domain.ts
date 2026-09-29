@@ -1,9 +1,10 @@
 import type { Section } from "@domainstack/constants";
 import { lookupFavicon, lookupSection } from "@domainstack/core/lookup";
+import { getRegistrationRawResponse } from "@domainstack/db/queries/registrations";
 
 import { DomainInputSchema } from "../domain-input";
 import { publicProcedure } from "../procedures";
-import { rateLimitIdentifier, withTrpcRateLimitErrors } from "../rate-limit";
+import { rateLimit, rateLimitIdentifier, withTrpcRateLimitErrors } from "../rate-limit";
 import { createTRPCRouter } from "../trpc";
 
 /**
@@ -27,6 +28,14 @@ export const domainRouter = createTRPCRouter({
   getCertificates: lookupProcedure("certificates"),
   getHeaders: lookupProcedure("headers"),
   getSeo: lookupProcedure("seo"),
+
+  /** Raw RDAP/WHOIS data for the report's raw-data dialog (cache only, never fetches). */
+  getRawRegistration: publicProcedure
+    .input(DomainInputSchema)
+    .query(async ({ ctx, input, path }) => {
+      await rateLimit({ ctx, path, config: { requests: 30, window: "1 m" } });
+      return getRegistrationRawResponse(input.domain.toLowerCase());
+    }),
 
   /**
    * Get a favicon for a domain.

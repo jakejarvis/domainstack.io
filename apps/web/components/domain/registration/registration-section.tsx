@@ -7,7 +7,7 @@ import {
 
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
-import { RawDataDialog } from "@/components/domain/registration/raw-data-dialog";
+import { RegistrationRawDataDialog } from "@/components/domain/registration/registration-raw-data-dialog";
 import { RelativeAgeString } from "@/components/domain/relative-age";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { ReportSection } from "@/components/domain/report-section";
@@ -187,11 +187,10 @@ export function RegistrationSection({
     <ReportSection
       {...sections.registration}
       headerActions={
-        data.rawResponse ? (
-          <RawDataDialog
+        data.hasRawResponse ? (
+          <RegistrationRawDataDialog
             domain={data.domain}
             format={data.source === "rdap" ? "RDAP" : "WHOIS"}
-            data={data.rawResponse}
             serverName={serverName}
             serverUrl={serverUrl}
           />

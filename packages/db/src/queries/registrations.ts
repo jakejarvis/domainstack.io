@@ -1,5 +1,5 @@
 import type { InferInsertModel } from "drizzle-orm";
-import { eq } from "drizzle-orm";
+import { eq, getTableColumns, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import type {
@@ -58,6 +58,8 @@ export async function getCachedRegistration(
 ): Promise<CacheResult<RegistrationResponse>> {
   const now = new Date();
   const resellerProvider = alias(providers, "reseller_provider");
+  // The raw RDAP/WHOIS payload is large; only read it on demand (see getRegistrationRawResponse).
+  const { rawResponse: _omit, ...registrationColumns } = getTableColumns(registrations);
 
   const [row] = await db
     .select({
@@ -65,7 +67,8 @@ export async function getCachedRegistration(
       domainName: domains.name,
       domainTld: domains.tld,
       domainUnicodeName: domains.unicodeName,
-      registration: registrations,
+      registration: registrationColumns,
+      hasRawResponse: sql<boolean>`${registrations.rawResponse} is not null`,
       providerId: providers.id,
       providerName: providers.name,
       providerDomain: providers.domain,
@@ -124,10 +127,30 @@ export async function getCachedRegistration(
     rdapServers: row.registration.rdapServers ?? undefined,
     source: row.registration.source ?? null,
     registrarProvider,
-    rawResponse: getRawResponseFromDb(row.registration.rawResponse, row.registration.source),
+    hasRawResponse: row.hasRawResponse,
   };
 
   return { data: response, stale, fetchedAt, expiresAt };
+}
+
+/** The stored raw RDAP/WHOIS response for a domain, or null when none is stored. */
+export async function getRegistrationRawResponse(domain: string): Promise<{
+  source: "rdap" | "whois" | null;
+  rawResponse: Record<string, unknown> | string;
+} | null> {
+  const [row] = await db
+    .select({ source: registrations.source, rawResponse: registrations.rawResponse })
+    .from(domains)
+    .innerJoin(registrations, eq(registrations.domainId, domains.id))
+    .where(eq(domains.name, domain))
+    .limit(1);
+
+  if (!row) return null;
+
+  const rawResponse = getRawResponseFromDb(row.rawResponse, row.source);
+  if (rawResponse === undefined) return null;
+
+  return { source: row.source, rawResponse };
 }
 
 /**
