@@ -1,7 +1,7 @@
 /* @vitest-environment node */
 import { describe, expect, it } from "vitest";
 
-import { extractMetaTagValues, parseHtmlMeta, selectPreview } from "./parse";
+import { decodeHtml, extractMetaTagValues, parseHtmlMeta, selectPreview } from "./parse";
 import { resolveUrlMaybe, sanitizeText } from "./utils";
 
 describe("seo html/meta parsing", () => {
@@ -118,5 +118,36 @@ describe("seo helpers", () => {
     expect(resolveUrlMaybe("https://x.test/a", "https://e.test")).toBe("https://x.test/a");
     expect(resolveUrlMaybe("mailto:hi@e.test", "https://e.test")).toBeNull();
     expect(resolveUrlMaybe(undefined, "https://e.test")).toBeNull();
+  });
+});
+
+describe("decodeHtml", () => {
+  it("decodes as UTF-8 when there is no charset information", () => {
+    const buf = Buffer.from("<title>Привет こん</title>", "utf-8");
+    expect(decodeHtml(buf, "text/html")).toBe("<title>Привет こん</title>");
+    expect(decodeHtml(buf, null)).toBe("<title>Привет こん</title>");
+  });
+
+  it("uses the Content-Type charset", () => {
+    const buf = Buffer.from([0xcf, 0xf0, 0xe8, 0xe2, 0xe5, 0xf2]);
+    expect(decodeHtml(buf, 'text/html; charset="windows-1251"')).toBe("Привет");
+  });
+
+  it("falls back to a <meta charset> sniff", () => {
+    const buf = Buffer.concat([
+      Buffer.from('<meta charset="Shift_JIS">'),
+      Buffer.from([0x82, 0xb1, 0x82, 0xf1]),
+    ]);
+    expect(decodeHtml(buf, "text/html")).toContain("こん");
+  });
+
+  it("falls back to UTF-8 for an unknown charset label", () => {
+    const buf = Buffer.from("<title>Hello</title>");
+    expect(decodeHtml(buf, "text/html; charset=bogus")).toBe("<title>Hello</title>");
+  });
+
+  it("treats a meta-sniffed utf-16 label on an ASCII document as UTF-8", () => {
+    const buf = Buffer.from('<meta charset="utf-16"><title>Hi</title>');
+    expect(decodeHtml(buf, "text/html")).toContain("<title>Hi</title>");
   });
 });

@@ -261,6 +261,31 @@ describe("verifyByHtmlFile", () => {
     expect(result.verified).toBe(true);
   });
 
+  it("treats an oversized 200 response as reachable, not as a failed check", async () => {
+    server.use(
+      http.get(
+        `https://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
+        () =>
+          new HttpResponse("x".repeat(2048), {
+            headers: { "Content-Type": "text/html" },
+          }),
+      ),
+      http.get(
+        "https://verified-dns.test/.well-known/domainstack-verify.html",
+        () =>
+          new HttpResponse("x".repeat(2048), {
+            headers: { "Content-Type": "text/html" },
+          }),
+      ),
+    );
+
+    const { verifyByHtmlFile } = await import("./index");
+    const result = await verifyByHtmlFile("verified-dns.test", token);
+
+    expect(result.verified).toBe(false);
+    expect(result.checkFailed).toBe(false);
+  });
+
   it("returns not verified when per-token file is empty", async () => {
     server.use(
       http.get(
@@ -397,6 +422,27 @@ describe("verifyByHtmlFile", () => {
 
 describe("verifyByMetaTag", () => {
   const token = "testtoken123";
+
+  it("verifies a homepage larger than the fetch limit by reading only the head", async () => {
+    server.use(
+      http.get(
+        "https://verified-dns.test/",
+        () =>
+          new HttpResponse(
+            `<html><head><meta name="domainstack-verify" content="${token}"></head><body>${"x".repeat(600 * 1024)}</body></html>`,
+            {
+              headers: { "Content-Type": "text/html" },
+            },
+          ),
+      ),
+    );
+
+    const { verifyByMetaTag } = await import("./index");
+    const result = await verifyByMetaTag("verified-dns.test", token);
+
+    expect(result.verified).toBe(true);
+    expect(result.method).toBe("meta_tag");
+  });
 
   it("returns verified when meta tag with correct content exists", async () => {
     server.use(

@@ -8,6 +8,7 @@ import {
   HTML_FILE_PATH_LEGACY,
 } from "@domainstack/constants";
 import { safeFetch } from "@domainstack/safe-fetch";
+import { SafeFetchError } from "@domainstack/safe-fetch/errors";
 import type { VerificationResult } from "@domainstack/types";
 
 import type { VerificationHttpOptions } from "./types";
@@ -66,8 +67,12 @@ export async function verifyByHtmlFile(
       if (result.buffer.toString("utf-8").trim() === expectedContent) {
         return { verified: true, method: "html_file" };
       }
-    } catch {
-      // Network/DNS/TLS/timeout failure for this URL — try the next one.
+    } catch (err) {
+      // The server answered; its body was just too big to be the proof we want.
+      if (err instanceof SafeFetchError && err.code === "size_exceeded") {
+        anyReachable = true;
+      }
+      // Otherwise: network/DNS/TLS/timeout failure for this URL — try the next one.
     }
   }
 

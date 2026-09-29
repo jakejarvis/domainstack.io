@@ -166,3 +166,38 @@ export function extractMetaTagValues(html: string, metaName: string): string[] {
   const $ = cheerio.load(html);
   return collectMeta(indexMetaTags($), metaName.trim().toLowerCase());
 }
+
+const UTF16_LABELS = new Set(["utf-16", "utf-16le", "utf-16be"]);
+
+/**
+ * Decode an HTML response body using its declared charset: the Content-Type
+ * `charset` parameter first, then a `<meta charset>` / `http-equiv` sniff of
+ * the first 1024 bytes, then UTF-8. Unknown labels fall back to UTF-8.
+ *
+ * A UTF-16 label found by the meta sniff is treated as UTF-8: the tag was
+ * readable as ASCII, so the document cannot actually be UTF-16 (WHATWG HTML
+ * encoding sniffing).
+ *
+ * @param buffer - Raw response body
+ * @param contentType - Raw `Content-Type` header value, if any
+ * @returns The decoded HTML string
+ */
+export function decodeHtml(buffer: Buffer, contentType: string | null): string {
+  let label = /charset\s*=\s*["']?\s*([^\s;"']+)/i.exec(contentType ?? "")?.[1];
+
+  if (!label) {
+    const sniffed = /<meta[^>]+charset\s*=\s*["']?([\w-]+)/i.exec(
+      buffer.subarray(0, 1024).toString("latin1"),
+    )?.[1];
+    if (sniffed) {
+      label = UTF16_LABELS.has(sniffed.toLowerCase()) ? "utf-8" : sniffed;
+    }
+  }
+
+  try {
+    return new TextDecoder(label ?? "utf-8", { fatal: false }).decode(buffer);
+  } catch {
+    // Unknown encoding label (RangeError).
+    return buffer.toString("utf-8");
+  }
+}

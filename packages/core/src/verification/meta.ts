@@ -4,9 +4,10 @@
 
 import { META_TAG_NAME } from "@domainstack/constants";
 import { safeFetch } from "@domainstack/safe-fetch";
+import { SafeFetchError } from "@domainstack/safe-fetch/errors";
 import type { VerificationResult } from "@domainstack/types";
 
-import { extractMetaTagValues } from "../seo/parse";
+import { decodeHtml, extractMetaTagValues } from "../seo/parse";
 import type { VerificationHttpOptions } from "./types";
 
 /** Maximum HTML size to fetch for meta tag verification */
@@ -49,6 +50,7 @@ export async function verifyByMetaTag(
         timeoutMs: 10_000,
         maxBytes: MAX_HTML_BYTES,
         maxRedirects: 5,
+        truncateOnLimit: true,
       });
       anyReachable = true;
 
@@ -56,14 +58,18 @@ export async function verifyByMetaTag(
         continue;
       }
 
-      const html = result.buffer.toString("utf-8");
+      const html = decodeHtml(result.buffer, result.contentType);
       const tokens = extractMetaTagValues(html, META_TAG_NAME);
 
       if (tokens.includes(token)) {
         return { verified: true, method: "meta_tag" };
       }
-    } catch {
-      // Network/DNS/TLS/timeout failure for this URL — try the next one.
+    } catch (err) {
+      // The server answered; its body was just too big to be the proof we want.
+      if (err instanceof SafeFetchError && err.code === "size_exceeded") {
+        anyReachable = true;
+      }
+      // Otherwise: network/DNS/TLS/timeout failure for this URL — try the next one.
     }
   }
 

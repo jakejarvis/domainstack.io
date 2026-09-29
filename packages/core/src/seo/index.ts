@@ -22,7 +22,7 @@ import type {
 import { isDefinitiveNotFoundError, RemoteDataUnavailableError } from "../lib/fetch-errors";
 import { ttlForSeo } from "../lib/ttl";
 import { isExpectedTlsError } from "../tls/utils";
-import { parseHtmlMeta, selectPreview } from "./parse";
+import { decodeHtml, parseHtmlMeta, selectPreview } from "./parse";
 import { parseRobotsTxt } from "./robots";
 
 export { extractMetaTagValues, parseHtmlMeta, selectPreview } from "./parse";
@@ -171,7 +171,7 @@ async function fetchHtml(domain: string): Promise<HtmlFetchData> {
       };
     }
 
-    const html = htmlResult.buffer.toString("utf-8");
+    const html = decodeHtml(htmlResult.buffer, htmlResult.contentType);
     const meta = parseHtmlMeta(html, finalUrl);
     const preview = selectPreview(meta, finalUrl);
 
