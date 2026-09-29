@@ -7,12 +7,10 @@ import {
   dashboardSelectionAnchorIdAtom,
 } from "@/lib/atoms/dashboard-atoms";
 import { useTRPC } from "@/lib/trpc/client";
+import type { RouterOutputs } from "@domainstack/api";
 import type { SubscriptionQuota, TrackedDomainWithDetails } from "@domainstack/types";
 
-interface BulkMutationResult {
-  successCount: number;
-  failedCount: number;
-}
+type BulkMutationResult = RouterOutputs["tracking"]["bulkArchiveDomains"];
 
 type DomainsData = TrackedDomainWithDetails[] | undefined;
 

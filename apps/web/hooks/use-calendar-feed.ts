@@ -4,10 +4,9 @@ import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-q
 import { toast } from "sonner";
 
 import { useTRPC } from "@/lib/trpc/client";
+import type { RouterOutputs } from "@domainstack/api";
 
-type CalendarFeedData =
-  | { enabled: false }
-  | { enabled: true; feedUrl: string; lastAccessedAt: Date | null };
+type CalendarFeedData = RouterOutputs["user"]["getCalendarFeed"];
 
 interface MutationCallbacks {
   onSuccess?: () => void;
