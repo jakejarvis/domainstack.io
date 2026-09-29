@@ -63,7 +63,13 @@ function subscribe(callback: () => void): () => void {
       window.cancelAnimationFrame(frame);
     };
   } else if (hydratedNow !== null) {
-    // Clock already running from an earlier mount; keep it going.
+    // Clock already initialized by an earlier mount. If it stopped because
+    // nothing was listening, the stored time is stale: refresh it before
+    // resuming, or consumers render against a time from before the idle gap.
+    if (tickTimer === null && !pinned) {
+      hydratedNow = new Date();
+      emit();
+    }
     startTicking();
   }
 
