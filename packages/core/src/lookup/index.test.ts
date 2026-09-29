@@ -1,5 +1,5 @@
 /* @vitest-environment node */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   getCachedDns: vi.fn<(domain: string) => Promise<unknown>>(),
@@ -29,6 +29,7 @@ vi.mock("@domainstack/logger", () => ({
 }));
 vi.mock("@vercel/functions", () => ({ waitUntil: mocks.waitUntil }));
 vi.mock("@domainstack/db/queries/domains", () => ({
+  DOMAIN_UPDATE_DEBOUNCE_MS: 300_000,
   updateLastAccessed: mocks.updateLastAccessed,
 }));
 vi.mock("@domainstack/db/queries/favicons", () => ({ getFavicon: mocks.getFavicon }));
@@ -53,10 +54,21 @@ vi.mock("@domainstack/redis/enforce", async (importOriginal) => ({
 import { RateLimitError } from "@domainstack/redis/enforce";
 
 import { RemoteDataUnavailableError } from "../lib/fetch-errors";
-import { fetchSection, lookupFavicon, lookupProviderLogo, lookupSection } from "./index";
+import {
+  fetchSection,
+  lookupFavicon,
+  lookupProviderLogo,
+  lookupSection,
+  resetAccessDebounceForTests,
+} from "./index";
 
 const DNS_DATA = { records: [], resolver: "cloudflare" };
 const notCached = { data: null, stale: false, fetchedAt: null, expiresAt: null };
+
+// The access debounce is module-level, so reset it for every test in the file.
+beforeEach(() => {
+  resetAccessDebounceForTests();
+});
 
 describe("lookupSection", () => {
   beforeEach(() => {
@@ -76,7 +88,7 @@ describe("lookupSection", () => {
     expect(mocks.updateLastAccessed).toHaveBeenCalledWith("example.com");
   });
 
-  it("records the access whether or not the cache answers", async () => {
+  it("records one access per domain per debounce window", async () => {
     mocks.getCachedDns.mockResolvedValue({ ...notCached, data: DNS_DATA });
     await lookupSection("dns", "example.com");
 
@@ -84,9 +96,34 @@ describe("lookupSection", () => {
     mocks.fetchDns.mockResolvedValue({ success: true, data: DNS_DATA });
     await lookupSection("dns", "example.com");
 
-    expect(mocks.updateLastAccessed).toHaveBeenCalledTimes(2);
+    expect(mocks.updateLastAccessed).toHaveBeenCalledTimes(1);
     expect(mocks.updateLastAccessed).toHaveBeenCalledWith("example.com");
-    expect(mocks.waitUntil).toHaveBeenCalledTimes(2);
+    expect(mocks.waitUntil).toHaveBeenCalledTimes(1);
+
+    await lookupSection("dns", "other.com");
+
+    expect(mocks.updateLastAccessed).toHaveBeenCalledTimes(2);
+    expect(mocks.updateLastAccessed).toHaveBeenLastCalledWith("other.com");
+  });
+
+  describe("after the debounce window", () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("records the access again after the debounce window", async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+      mocks.getCachedDns.mockResolvedValue({ ...notCached, data: DNS_DATA });
+
+      await lookupSection("dns", "example.com");
+      expect(mocks.updateLastAccessed).toHaveBeenCalledTimes(1);
+
+      vi.advanceTimersByTime(300_001);
+      await lookupSection("dns", "example.com");
+
+      expect(mocks.updateLastAccessed).toHaveBeenCalledTimes(2);
+    });
   });
 
   it("serves a fresh cache hit without metering or fetching", async () => {

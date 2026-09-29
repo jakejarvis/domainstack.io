@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, isNull, lt, or } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, lt, or, sql } from "drizzle-orm";
 
 import { getDomainTld } from "@domainstack/utils/domain";
 
@@ -10,7 +10,7 @@ import { domains } from "../schema";
  * Prevents excessive writes by only updating if the last access was
  * more than this many milliseconds ago.
  */
-const DOMAIN_UPDATE_DEBOUNCE_MS = 5 * 60 * 1000; // 5 minutes
+export const DOMAIN_UPDATE_DEBOUNCE_MS = 5 * 60 * 1000; // 5 minutes
 
 export interface UpsertDomainParams {
   name: string; // punycode lowercased
@@ -19,7 +19,8 @@ export interface UpsertDomainParams {
 }
 
 /**
- * Insert a new domain record or return the existing one if it already exists.
+ * Insert a new domain record, or update tld/unicodeName only when they differ.
+ * An unchanged row is left untouched (no write, no `updatedAt` bump).
  * Used when persisting data for a registered domain.
  */
 export async function upsertDomain(params: UpsertDomainParams) {
@@ -31,10 +32,16 @@ export async function upsertDomain(params: UpsertDomainParams) {
     .onConflictDoUpdate({
       target: [domains.name],
       set: { tld, unicodeName, updatedAt: new Date() },
+      setWhere: sql`(${domains.tld}, ${domains.unicodeName}) is distinct from (excluded.tld, excluded.unicode_name)`,
     })
     .returning();
 
-  return inserted[0];
+  // A skipped conflict update returns no row; read the existing one instead.
+  const row = inserted[0] ?? (await findDomainByName(name));
+  if (!row) {
+    throw new Error(`domain row for ${name} vanished during upsert`);
+  }
+  return row;
 }
 
 /**
@@ -62,18 +69,18 @@ export async function ensureDomainRecord(domain: string) {
     throw new Error(`Cannot persist domain "${domain}": unable to extract TLD`);
   }
 
-  // For unicode handling, we'd need to use toUnicode from node:url or a library,
-  // but for now we'll use the ASCII version as the unicode name if they match
-  // This is safe because rdapper already normalizes to ASCII/punycode when needed
-  const unicodeName = domain;
+  // The Unicode name is owned by the registration persist, so this never overwrites it.
+  const inserted = await db
+    .insert(domains)
+    .values({ name: domain, tld, unicodeName: domain })
+    .onConflictDoNothing({ target: domains.name })
+    .returning();
 
-  const domainRecord = await upsertDomain({
-    name: domain,
-    tld,
-    unicodeName,
-  });
-
-  return domainRecord;
+  const row = inserted[0] ?? (await findDomainByName(domain));
+  if (!row) {
+    throw new Error(`domain row for ${domain} vanished during upsert`);
+  }
+  return row;
 }
 
 /**

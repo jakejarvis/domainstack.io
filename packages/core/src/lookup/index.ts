@@ -35,6 +35,15 @@ import type { RegistrationError } from "../whois";
 
 const logger = createLogger({ source: "lookup" });
 
+// The six section lookups of one report view (and repeated chat/MCP calls) would each send
+// an UPDATE that the DB-side debounce only discards after the round trip; record once per window.
+const lastAccessRecordedAt = new Map<string, number>();
+
+/** @internal Test hook. */
+export function resetAccessDebounceForTests() {
+  lastAccessRecordedAt.clear();
+}
+
 interface SectionDataMap {
   registration: RegistrationResponse;
   dns: DnsRecordsResponse;
@@ -206,8 +215,15 @@ export async function lookupSection<S extends Section>(
   // Fire-and-forget: `updateLastAccessed` never throws, and `waitUntil` keeps
   // the write alive after the response on Vercel.
   const { waitUntil } = await import("@vercel/functions");
-  const { updateLastAccessed } = await import("@domainstack/db/queries/domains");
-  waitUntil(updateLastAccessed(domain));
+  const { updateLastAccessed, DOMAIN_UPDATE_DEBOUNCE_MS } =
+    await import("@domainstack/db/queries/domains");
+  const now = Date.now();
+  const last = lastAccessRecordedAt.get(domain);
+  if (last === undefined || now - last >= DOMAIN_UPDATE_DEBOUNCE_MS) {
+    if (lastAccessRecordedAt.size >= 10_000) lastAccessRecordedAt.clear();
+    lastAccessRecordedAt.set(domain, now);
+    waitUntil(updateLastAccessed(domain));
+  }
 
   return resolveLookup({
     cached: await getCached(domain),

@@ -1,3 +1,5 @@
+import { eq } from "drizzle-orm";
+
 import type { UserNotificationPreferences as UserNotificationPreferencesData } from "@domainstack/types";
 
 import { db } from "../client";
@@ -24,28 +26,29 @@ const DEFAULT_PREFERENCES = {
 } as const;
 
 /**
- * Get user notification preferences, creating default preferences if they don't exist.
+ * Get user notification preferences without writing. A missing row means defaults;
+ * rows are created by `updateUserNotificationPreferences`.
  */
-export async function getOrCreateUserNotificationPreferences(
+export async function getUserNotificationPreferences(
   userId: string,
 ): Promise<UserNotificationPreferencesData> {
   const [row] = await db
-    .insert(userNotificationPreferences)
-    .values({
-      userId,
-      ...DEFAULT_PREFERENCES,
-    })
-    .onConflictDoUpdate({
-      target: userNotificationPreferences.userId,
-      set: { userId },
-    })
-    .returning();
+    .select()
+    .from(userNotificationPreferences)
+    .where(eq(userNotificationPreferences.userId, userId))
+    .limit(1);
 
-  if (!row) {
-    throw new Error(`Failed to get notification preferences for user ${userId} after upsert`);
+  if (row) {
+    return mapPreferences(row);
   }
 
-  return mapPreferences(row);
+  return {
+    domainExpiry: { ...DEFAULT_PREFERENCES.domainExpiry },
+    certificateExpiry: { ...DEFAULT_PREFERENCES.certificateExpiry },
+    registrationChanges: { ...DEFAULT_PREFERENCES.registrationChanges },
+    providerChanges: { ...DEFAULT_PREFERENCES.providerChanges },
+    certificateChanges: { ...DEFAULT_PREFERENCES.certificateChanges },
+  };
 }
 
 /**

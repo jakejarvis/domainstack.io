@@ -27,9 +27,9 @@ const trackedDomainsMock = vi.hoisted(() => ({
     >(),
 }));
 const preferencesMock = vi.hoisted(() => ({
-  getOrCreateUserNotificationPreferences:
+  getUserNotificationPreferences:
     vi.fn<
-      typeof import("@domainstack/db/queries/user-notification-preferences").getOrCreateUserNotificationPreferences
+      typeof import("@domainstack/db/queries/user-notification-preferences").getUserNotificationPreferences
     >(),
 }));
 
@@ -246,7 +246,7 @@ describe("determineNotificationChannelsStep", () => {
       id: "tracked-1",
       muted: false,
     } as never);
-    preferencesMock.getOrCreateUserNotificationPreferences.mockResolvedValue({
+    preferencesMock.getUserNotificationPreferences.mockResolvedValue({
       domainExpiry: { email: true, inApp: false },
       registrationChanges: { email: false, inApp: true },
     } as never);
@@ -266,7 +266,7 @@ describe("determineNotificationChannelsStep", () => {
     expect(trackedDomainsMock.isTrackedDomainNotificationEligible).toHaveBeenCalledWith(
       "tracked-1",
     );
-    expect(preferencesMock.getOrCreateUserNotificationPreferences).not.toHaveBeenCalled();
+    expect(preferencesMock.getUserNotificationPreferences).not.toHaveBeenCalled();
   });
 
   it("returns no channels for a muted eligible domain", async () => {
@@ -283,7 +283,7 @@ describe("determineNotificationChannelsStep", () => {
     );
 
     expect(channels).toEqual({ shouldSendEmail: false, shouldSendInApp: false });
-    expect(preferencesMock.getOrCreateUserNotificationPreferences).not.toHaveBeenCalled();
+    expect(preferencesMock.getUserNotificationPreferences).not.toHaveBeenCalled();
   });
 
   it("falls back to the user's global preferences for an eligible, unmuted domain", async () => {
@@ -295,7 +295,7 @@ describe("determineNotificationChannelsStep", () => {
     );
 
     expect(channels).toEqual({ shouldSendEmail: false, shouldSendInApp: true });
-    expect(preferencesMock.getOrCreateUserNotificationPreferences).toHaveBeenCalledWith("user-1");
+    expect(preferencesMock.getUserNotificationPreferences).toHaveBeenCalledWith("user-1");
   });
 });
 

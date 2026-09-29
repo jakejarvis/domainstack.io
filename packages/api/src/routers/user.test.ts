@@ -6,6 +6,7 @@ const { makePGliteDb, closePGliteDb } = await import("@domainstack/db/testing");
 const { db } = await makePGliteDb();
 
 // Now import modules that depend on the db
+const { eq } = await import("@domainstack/db/drizzle");
 const {
   accounts,
   calendarFeeds,
@@ -239,6 +240,26 @@ describe("user router", () => {
       expect(result).toBeDefined();
       expect(result.domainExpiry).toBeDefined();
       expect(result.certificateExpiry).toBeDefined();
+    });
+
+    it("returns defaults without creating a row", async () => {
+      const caller = createAuthenticatedCaller();
+
+      const result = await caller.user.getNotificationPreferences();
+
+      expect(result).toEqual({
+        domainExpiry: { inApp: true, email: true },
+        certificateExpiry: { inApp: true, email: true },
+        registrationChanges: { inApp: true, email: true },
+        providerChanges: { inApp: true, email: true },
+        certificateChanges: { inApp: true, email: true },
+      });
+
+      const rows = await db
+        .select()
+        .from(userNotificationPreferences)
+        .where(eq(userNotificationPreferences.userId, TEST_USER_ID));
+      expect(rows).toHaveLength(0);
     });
 
     it("returns existing preferences", async () => {

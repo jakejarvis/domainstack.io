@@ -10,7 +10,7 @@ import {
 } from "@domainstack/db/queries/calendar-feeds";
 import { countTrackedDomainsByStatus } from "@domainstack/db/queries/tracked-domains";
 import {
-  getOrCreateUserNotificationPreferences,
+  getUserNotificationPreferences,
   updateUserNotificationPreferences,
 } from "@domainstack/db/queries/user-notification-preferences";
 import { getUserSubscription } from "@domainstack/db/queries/user-subscription";
@@ -78,7 +78,7 @@ export const userRouter = createTRPCRouter({
    * Get global notification preferences for the current user.
    */
   getNotificationPreferences: protectedProcedure.query(async ({ ctx }) => {
-    const prefs = await getOrCreateUserNotificationPreferences(ctx.user.id);
+    const prefs = await getUserNotificationPreferences(ctx.user.id);
     return prefs;
   }),
 

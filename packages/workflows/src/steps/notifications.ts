@@ -37,7 +37,7 @@ export async function determineNotificationChannelsStep(
 
   const { findTrackedDomainById, isTrackedDomainNotificationEligible } =
     await import("@domainstack/db/queries/tracked-domains");
-  const { getOrCreateUserNotificationPreferences } =
+  const { getUserNotificationPreferences } =
     await import("@domainstack/db/queries/user-notification-preferences");
 
   // Archived or unverified since the cron selected it: nothing to deliver.
@@ -57,7 +57,7 @@ export async function determineNotificationChannelsStep(
   }
 
   // Fall back to global preferences
-  const globalPrefs = await getOrCreateUserNotificationPreferences(userId);
+  const globalPrefs = await getUserNotificationPreferences(userId);
   const globalPref = globalPrefs[preferenceType];
   return {
     shouldSendEmail: globalPref.email,
@@ -103,10 +103,10 @@ export async function checkExpiryPreferencesStep(
     return { shouldSendEmail: false, shouldSendInApp: false };
   }
 
-  const { getOrCreateUserNotificationPreferences } =
+  const { getUserNotificationPreferences } =
     await import("@domainstack/db/queries/user-notification-preferences");
 
-  const globalPrefs = await getOrCreateUserNotificationPreferences(userId);
+  const globalPrefs = await getUserNotificationPreferences(userId);
 
   return {
     shouldSendEmail: globalPrefs[preferenceKey].email,
