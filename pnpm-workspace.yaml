@@ -24,7 +24,7 @@ catalog:
   sonner: ^2.0.8
   superjson: ^2.2.6
   vitest: ^5.0.2
-  workflow: 5.0.0-beta.56
+  workflow: 5.0.0-beta.57
   zod: ^4.6.5
 overrides:
   # iconv-lite 0.6.3 ships a .idea/ folder, which the Claude Code sandbox refuses to write.

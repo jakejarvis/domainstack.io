@@ -7,6 +7,12 @@ import { useTRPC } from "@/lib/trpc/client";
 
 const PAGE_SIZE = 20;
 
+/** Stamps unread items with the current time, mirroring what the server does on mark-read. */
+function stampRead<T extends { readAt: unknown }>(items: T[]): T[] {
+  const now = new Date();
+  return items.map((item) => (item.readAt ? item : Object.assign({}, item, { readAt: now })));
+}
+
 type UseNotificationsDataOptions = {
   /** The current filter view */
   filter: "unread" | "read";
@@ -74,12 +80,7 @@ export function useNotificationsData({ filter, enabled }: UseNotificationsDataOp
           };
         });
 
-        const now = new Date();
-        const archivedItem = moved
-          ? moved.readAt
-            ? moved
-            : Object.assign({}, moved, { readAt: now })
-          : undefined;
+        const archivedItem = moved ? stampRead([moved])[0] : undefined;
         queryClient.setQueryData(archiveListQueryKey, (old) => {
           if (!archivedItem) return old;
           if (!old?.pages?.length) {
@@ -130,11 +131,7 @@ export function useNotificationsData({ filter, enabled }: UseNotificationsDataOp
 
         queryClient.setQueryData(countQueryKey, 0);
 
-        const now = new Date();
-        const inboxItems = previousInbox?.pages?.flatMap((page) => page.items) ?? [];
-        const moved = inboxItems.map((item) =>
-          item.readAt ? item : Object.assign({}, item, { readAt: now }),
-        );
+        const moved = stampRead(previousInbox?.pages?.flatMap((page) => page.items) ?? []);
 
         queryClient.setQueryData(inboxListQueryKey, (old) => {
           if (!old?.pages) return old;
