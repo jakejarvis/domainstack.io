@@ -2,13 +2,8 @@
 
 import { useRouter } from "@/hooks/use-router";
 import {
-  ModalClose,
   ModalContent,
-  ModalDescription,
-  ModalFooter,
   ModalHeader,
-  ModalOverlay,
-  ModalPortal,
   Modal as ModalPrimitive,
   ModalTitle,
 } from "@domainstack/ui/modal";
@@ -36,14 +31,4 @@ function Modal({ onOpenChange, ...props }: ModalProps) {
   );
 }
 
-export {
-  Modal,
-  ModalClose,
-  ModalContent,
-  ModalDescription,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
-  ModalPortal,
-  ModalTitle,
-};
+export { Modal, ModalContent, ModalHeader, ModalTitle };
