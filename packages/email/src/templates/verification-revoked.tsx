@@ -52,7 +52,7 @@ function VerificationRevokedEmail({
 
       <EmailFooter>
         You received this email because you were tracking {domainName} on{" "}
-        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. You can manage your
+        <EmailLink href={baseUrl}>Domainstack</EmailLink>. You can manage your
         notification settings in your <EmailLink href={`${baseUrl}/settings`}>dashboard</EmailLink>.
       </EmailFooter>
     </EmailLayout>

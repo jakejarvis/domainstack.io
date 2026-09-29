@@ -52,8 +52,8 @@ function ProUpgradeSuccessEmail({ userName, baseUrl }: ProUpgradeSuccessEmailPro
 
       <EmailFooter>
         You received this email because you upgraded to Pro on{" "}
-        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. Manage your subscription
-        in your <EmailLink href={`${baseUrl}/settings`}>account settings</EmailLink>.
+        <EmailLink href={baseUrl}>Domainstack</EmailLink>. Manage your subscription in your{" "}
+        <EmailLink href={`${baseUrl}/settings`}>account settings</EmailLink>.
       </EmailFooter>
     </EmailLayout>
   );

@@ -60,8 +60,8 @@ function SubscriptionCancelingEmail({
 
       <EmailFooter>
         You received this email because you canceled your Pro subscription on{" "}
-        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. If you have any questions,
-        just reply to this email.
+        <EmailLink href={baseUrl}>Domainstack</EmailLink>. If you have any questions, just reply to
+        this email.
       </EmailFooter>
     </EmailLayout>
   );

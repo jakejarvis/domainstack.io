@@ -74,8 +74,8 @@ function SubscriptionExpiredEmail({
 
       <EmailFooter>
         You received this email because your Pro subscription ended on{" "}
-        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. If you have any questions,
-        just reply to this email.
+        <EmailLink href={baseUrl}>Domainstack</EmailLink>. If you have any questions, just reply to
+        this email.
       </EmailFooter>
     </EmailLayout>
   );

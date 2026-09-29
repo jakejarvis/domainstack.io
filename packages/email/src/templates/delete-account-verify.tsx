@@ -17,7 +17,11 @@ export type DeleteAccountVerifyEmailProps = {
   baseUrl: string;
 };
 
-function DeleteAccountVerifyEmail({ userName, confirmUrl }: DeleteAccountVerifyEmailProps) {
+function DeleteAccountVerifyEmail({
+  userName,
+  confirmUrl,
+  baseUrl,
+}: DeleteAccountVerifyEmailProps) {
   const previewText = "Confirm your account deletion request";
 
   return (
@@ -58,8 +62,8 @@ function DeleteAccountVerifyEmail({ userName, confirmUrl }: DeleteAccountVerifyE
 
       <EmailFooter>
         You received this email because a deletion request was made for your{" "}
-        <EmailLink href="https://domainstack.io">Domainstack</EmailLink> account. If you didn&apos;t
-        make this request, please secure your account.
+        <EmailLink href={baseUrl}>Domainstack</EmailLink> account. If you didn&apos;t make this
+        request, please secure your account.
       </EmailFooter>
     </EmailLayout>
   );

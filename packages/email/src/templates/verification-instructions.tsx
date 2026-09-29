@@ -119,8 +119,8 @@ function VerificationInstructionsEmail({
 
       <EmailFooter>
         This email was sent on behalf of {senderEmail} via{" "}
-        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. You can reply to this
-        email to contact them. If you didn&apos;t expect this email, you can safely ignore it.
+        <EmailLink href={baseUrl}>Domainstack</EmailLink>. You can reply to this email to contact
+        them. If you didn&apos;t expect this email, you can safely ignore it.
       </EmailFooter>
     </EmailLayout>
   );
