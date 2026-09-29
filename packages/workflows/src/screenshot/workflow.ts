@@ -2,8 +2,6 @@ import { createHook, RetryableError } from "workflow";
 
 import type { ScreenshotData } from "@domainstack/types";
 
-import { checkBlocklist } from "../steps/blocklist";
-
 const VIEWPORT_WIDTH = 1200;
 const VIEWPORT_HEIGHT = 630;
 
@@ -69,7 +67,7 @@ export async function screenshotWorkflow(
     return (await conflictingRun.returnValue) as ScreenshotWorkflowResult;
   }
 
-  // Step 1: Check if domain is blocked (shared step)
+  // Step 1: Check if domain is blocked
   const isBlocked = await checkBlocklist(domain);
 
   if (isBlocked) {
@@ -103,6 +101,18 @@ export async function screenshotWorkflow(
     success: true,
     data: { url: storageResult.url, blocked: false },
   };
+}
+
+/**
+ * Step: Check if a domain is on the blocklist
+ */
+async function checkBlocklist(domain: string): Promise<boolean> {
+  "use step";
+
+  const { isDomainBlocked } = await import("@domainstack/db/queries/blocked-domains");
+
+  const blocked = await isDomainBlocked(domain);
+  return blocked;
 }
 
 /**
