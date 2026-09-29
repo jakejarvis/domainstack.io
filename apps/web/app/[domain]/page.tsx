@@ -71,6 +71,9 @@ async function DomainReport({ params }: Pick<PageProps<"/[domain]">, "params">) 
     : extractTldClient(registrable);
 
   const queryClient = getQueryClient();
+  // The header and nav both render this favicon; start it with the page so it
+  // streams in the dehydrated state instead of costing a client round trip.
+  void queryClient.query(trpc.domain.getFavicon.queryOptions({ domain: registrable })).catch(noop);
   const registration = await queryClient
     .query(trpc.domain.getRegistration.queryOptions({ domain: registrable }))
     .catch(noop);
