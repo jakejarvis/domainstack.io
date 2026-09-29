@@ -148,12 +148,11 @@ describe("CertificatesSection", () => {
     await expect.element(page.getByText(/No certificates found/i)).toBeInTheDocument();
   });
 
-  it("shows the invalid-certificate alert when an error is present without a chain", async () => {
+  it("shows the invalid-certificate alert without a chain", async () => {
     await render(
       <CertificatesSection
         data={response([], {
           valid: false,
-          error: "tls_error",
         })}
       />,
     );
@@ -161,7 +160,13 @@ describe("CertificatesSection", () => {
     await expect
       .element(page.getByText("Invalid certificate", { exact: true }))
       .toBeInTheDocument();
-    await expect.element(page.getByText("tls_error", { exact: true })).toBeInTheDocument();
+    await expect
+      .element(
+        page.getByText("The security certificate for this site could not be validated.", {
+          exact: true,
+        }),
+      )
+      .toBeInTheDocument();
     await expect.element(page.getByText(/No certificates found/i)).toBeInTheDocument();
   });
 

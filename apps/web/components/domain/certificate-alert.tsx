@@ -6,17 +6,15 @@ import { describeTlsValidationError } from "@domainstack/utils/tls";
 
 export function CertificateAlert({
   validationError,
-  error,
   className,
   title,
   ...props
 }: React.ComponentProps<typeof Alert> & {
   validationError?: string | null;
-  error?: string;
   title?: string;
 }) {
   const copy = describeTlsValidationError(validationError);
-  const description = error || copy.description;
+  const description = copy.description;
   const resolvedTitle = title ?? copy.title;
 
   return (

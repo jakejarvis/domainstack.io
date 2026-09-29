@@ -34,8 +34,6 @@ export interface CertificatesResponse {
   cipher: string | null;
   publicKeyBits: number | null;
   chainComplete: boolean;
-  /** @deprecated Use `validationError`. Kept for older serialized payloads. */
-  error?: string;
 }
 
 /**
