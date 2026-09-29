@@ -18,6 +18,8 @@ const {
 } = await import("@domainstack/db/schema");
 const { createCaller } = await import("../router");
 
+import { NOTIFICATION_CATEGORIES } from "@domainstack/constants";
+
 import type { Context } from "../context";
 
 // Test fixtures
@@ -262,6 +264,17 @@ describe("user router", () => {
       expect(rows).toHaveLength(0);
     });
 
+    it("returns every category with defaults when no row exists", async () => {
+      const caller = createAuthenticatedCaller();
+
+      const result = await caller.user.getNotificationPreferences();
+
+      expect(Object.keys(result).sort()).toEqual([...NOTIFICATION_CATEGORIES].sort());
+      for (const toggles of Object.values(result)) {
+        expect(toggles).toEqual({ inApp: true, email: true });
+      }
+    });
+
     it("returns existing preferences", async () => {
       const caller = createAuthenticatedCaller();
 
@@ -289,6 +302,16 @@ describe("user router", () => {
       });
 
       expect(result.domainExpiry).toEqual({ inApp: true, email: false });
+    });
+
+    it("rejects an unknown category", async () => {
+      const caller = createAuthenticatedCaller();
+
+      await expect(
+        caller.user.updateGlobalNotificationPreferences({
+          notACategory: { inApp: true, email: true },
+        } as never),
+      ).rejects.toThrow(/notACategory|invalid|unrecognized/i);
     });
 
     it("supports partial updates", async () => {

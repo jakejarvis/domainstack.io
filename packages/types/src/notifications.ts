@@ -2,7 +2,7 @@
  * Notification types - Plain TypeScript interfaces.
  */
 
-import type { NotificationType } from "./primitives";
+import type { NotificationCategory, NotificationType } from "./primitives";
 
 /**
  * Data for a single notification item displayed in the UI.
@@ -24,13 +24,7 @@ export interface ChannelToggles {
 }
 
 /**
- * User's global notification preferences.
+ * User's global notification preferences, one toggle pair per category.
  * Note: Verification notifications are always sent and cannot be disabled.
  */
-export interface UserNotificationPreferences {
-  domainExpiry: ChannelToggles;
-  certificateExpiry: ChannelToggles;
-  registrationChanges: ChannelToggles;
-  providerChanges: ChannelToggles;
-  certificateChanges: ChannelToggles;
-}
+export type UserNotificationPreferences = Record<NotificationCategory, ChannelToggles>;

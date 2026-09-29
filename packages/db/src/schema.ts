@@ -26,6 +26,7 @@ import {
 } from "@domainstack/constants";
 import type {
   CertificateSnapshotData,
+  ChannelToggles,
   GeneralMeta,
   Header,
   NotificationChannel,
@@ -275,23 +276,23 @@ export const userNotificationPreferences = pgTable("user_notification_preference
     .references(() => users.id, { onDelete: "cascade" }),
   // Global toggles (defaults for all domains) - stored as JSONB with { inApp: boolean, email: boolean }
   domainExpiry: jsonb("domain_expiry")
-    .$type<{ inApp: boolean; email: boolean }>()
+    .$type<ChannelToggles>()
     .notNull()
     .default(sql`'{"inApp": true, "email": true}'::jsonb`),
   certificateExpiry: jsonb("certificate_expiry")
-    .$type<{ inApp: boolean; email: boolean }>()
+    .$type<ChannelToggles>()
     .notNull()
     .default(sql`'{"inApp": true, "email": true}'::jsonb`),
   registrationChanges: jsonb("registration_changes")
-    .$type<{ inApp: boolean; email: boolean }>()
+    .$type<ChannelToggles>()
     .notNull()
     .default(sql`'{"inApp": true, "email": true}'::jsonb`),
   providerChanges: jsonb("provider_changes")
-    .$type<{ inApp: boolean; email: boolean }>()
+    .$type<ChannelToggles>()
     .notNull()
     .default(sql`'{"inApp": true, "email": true}'::jsonb`),
   certificateChanges: jsonb("certificate_changes")
-    .$type<{ inApp: boolean; email: boolean }>()
+    .$type<ChannelToggles>()
     .notNull()
     .default(sql`'{"inApp": true, "email": true}'::jsonb`),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

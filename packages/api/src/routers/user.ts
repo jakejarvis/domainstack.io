@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { NOTIFICATION_CATEGORIES } from "@domainstack/constants";
 import {
   deleteCalendarFeed,
   enableCalendarFeed,
@@ -25,15 +26,10 @@ const NotificationChannelsSchema = z.object({
   email: z.boolean(),
 });
 
-const UserNotificationPreferencesSchema = z
-  .object({
-    domainExpiry: NotificationChannelsSchema,
-    certificateExpiry: NotificationChannelsSchema,
-    registrationChanges: NotificationChannelsSchema,
-    providerChanges: NotificationChannelsSchema,
-    certificateChanges: NotificationChannelsSchema,
-  })
-  .partial();
+const UserNotificationPreferencesSchema = z.partialRecord(
+  z.enum(NOTIFICATION_CATEGORIES),
+  NotificationChannelsSchema,
+);
 
 /**
  * Build the full calendar feed URL from a token.

@@ -1,6 +1,9 @@
 import { eq } from "drizzle-orm";
 
-import type { UserNotificationPreferences as UserNotificationPreferencesData } from "@domainstack/types";
+import type {
+  ChannelToggles,
+  UserNotificationPreferences as UserNotificationPreferencesData,
+} from "@domainstack/types";
 
 import { db } from "../client";
 import { userNotificationPreferences } from "../schema";
@@ -17,13 +20,17 @@ function mapPreferences(
   };
 }
 
-const DEFAULT_PREFERENCES = {
-  domainExpiry: { inApp: true, email: true },
-  certificateExpiry: { inApp: true, email: true },
-  registrationChanges: { inApp: true, email: true },
-  providerChanges: { inApp: true, email: true },
-  certificateChanges: { inApp: true, email: true },
-} as const;
+const DEFAULT_TOGGLES: ChannelToggles = { inApp: true, email: true };
+
+function defaultPreferences(): UserNotificationPreferencesData {
+  return {
+    domainExpiry: { ...DEFAULT_TOGGLES },
+    certificateExpiry: { ...DEFAULT_TOGGLES },
+    registrationChanges: { ...DEFAULT_TOGGLES },
+    providerChanges: { ...DEFAULT_TOGGLES },
+    certificateChanges: { ...DEFAULT_TOGGLES },
+  };
+}
 
 /**
  * Get user notification preferences without writing. A missing row means defaults;
@@ -42,13 +49,7 @@ export async function getUserNotificationPreferences(
     return mapPreferences(row);
   }
 
-  return {
-    domainExpiry: { ...DEFAULT_PREFERENCES.domainExpiry },
-    certificateExpiry: { ...DEFAULT_PREFERENCES.certificateExpiry },
-    registrationChanges: { ...DEFAULT_PREFERENCES.registrationChanges },
-    providerChanges: { ...DEFAULT_PREFERENCES.providerChanges },
-    certificateChanges: { ...DEFAULT_PREFERENCES.certificateChanges },
-  };
+  return defaultPreferences();
 }
 
 /**
@@ -62,7 +63,7 @@ export async function updateUserNotificationPreferences(
     .insert(userNotificationPreferences)
     .values({
       userId,
-      ...DEFAULT_PREFERENCES,
+      ...defaultPreferences(),
       ...preferences,
     })
     .onConflictDoUpdate({

@@ -10,14 +10,6 @@ import type {
   UserNotificationPreferences,
 } from "@domainstack/types";
 
-const DEFAULT_PREFERENCES: UserNotificationPreferences = {
-  domainExpiry: { inApp: true, email: true },
-  certificateExpiry: { inApp: true, email: true },
-  registrationChanges: { inApp: true, email: true },
-  providerChanges: { inApp: true, email: true },
-  certificateChanges: { inApp: true, email: true },
-};
-
 export interface UseNotificationPreferencesReturn {
   /** All tracked domains */
   domains: TrackedDomainWithDetails[] | undefined;
@@ -122,10 +114,7 @@ export function useNotificationPreferences(): UseNotificationPreferencesReturn {
     },
   });
 
-  // Merge defaults with saved preferences to ensure new fields are always present
-  const globalPrefs = globalPrefsResult.data
-    ? { ...DEFAULT_PREFERENCES, ...globalPrefsResult.data }
-    : undefined;
+  const globalPrefs = globalPrefsResult.data;
 
   const updateGlobalPreference = (
     category: NotificationCategory,
