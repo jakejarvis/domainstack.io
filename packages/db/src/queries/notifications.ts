@@ -224,29 +224,6 @@ export async function hasRecentNotification(
 }
 
 /**
- * Get notifications for a tracked domain with optional pagination.
- */
-export async function getNotificationsForTrackedDomain(
-  trackedDomainId: string,
-  limit?: number,
-  offset = 0,
-) {
-  let query = db
-    .select()
-    .from(notifications)
-    .where(eq(notifications.trackedDomainId, trackedDomainId))
-    .orderBy(desc(notifications.sentAt))
-    .offset(offset)
-    .$dynamic();
-
-  if (limit !== undefined) {
-    query = query.limit(limit);
-  }
-
-  return query;
-}
-
-/**
  * Clear all domain expiry notifications for a tracked domain.
  */
 export async function clearDomainExpiryNotifications(trackedDomainId: string): Promise<number> {

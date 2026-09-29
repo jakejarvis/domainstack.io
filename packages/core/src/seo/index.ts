@@ -25,11 +25,6 @@ import { isExpectedTlsError } from "../tls/utils";
 import { decodeHtml, parseHtmlMeta, selectPreview } from "./parse";
 import { parseRobotsTxt } from "./robots";
 
-export { extractMetaTagValues, parseHtmlMeta, selectPreview } from "./parse";
-export type { ParseRobotsTxtOptions } from "./robots";
-export { parseRobotsTxt } from "./robots";
-export { resolveUrlMaybe, sanitizeText } from "./utils";
-
 // ============================================================================
 // Types
 // ============================================================================

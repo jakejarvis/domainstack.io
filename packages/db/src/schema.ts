@@ -255,7 +255,7 @@ export const notifications = pgTable(
     index("idx_notifications_user_read").on(t.userId, t.readAt),
     // Index for channels filtering
     index("idx_notifications_channels").using("gin", t.channels),
-    // Index for tracked domain queries (hasRecentNotification, getNotificationsForTrackedDomain, etc.)
+    // Index for tracked domain queries (hasRecentNotification, etc.)
     index("idx_notifications_tracked_domain").on(t.trackedDomainId),
     // Composite index for notification deduplication checks (trackedDomainId + type)
     index("idx_notifications_tracked_domain_type").on(t.trackedDomainId, t.type),
