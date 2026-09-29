@@ -10,25 +10,16 @@ import type { DnsRecord } from "@domainstack/types";
 import { deduplicateDnsRecords, sortDnsRecordsByType } from "@domainstack/utils/dns";
 
 import { isCloudflareIp, preloadCloudflareRanges } from "../lib/cloudflare";
+import { RemoteDataUnavailableError } from "../lib/fetch-errors";
 import { ttlForDnsRecord } from "../lib/ttl";
 import { providerOrderForLookup, queryDohProvider } from "./doh";
 import type { DnsFetchData } from "./types";
 
 /**
- * Error thrown when all DoH providers fail.
- */
-export class DnsProviderError extends Error {
-  constructor(message = "All DoH providers failed") {
-    super(message);
-    this.name = "DnsProviderError";
-  }
-}
-
-/**
  * Fetch DNS records from DoH providers with fallback.
  *
  * Tries each provider in order until one succeeds.
- * Throws DnsProviderError if all providers fail.
+ * Throws RemoteDataUnavailableError if all providers fail.
  *
  * @param domain - The domain to resolve
  * @param now - Current timestamp for TTL calculation (defaults to new Date())
@@ -122,5 +113,7 @@ export async function fetchDnsRecords(
   }
 
   // All providers failed
-  throw new DnsProviderError();
+  throw new RemoteDataUnavailableError("DNS data unavailable", {
+    details: { reason: "all DoH providers failed" },
+  });
 }

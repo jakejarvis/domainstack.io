@@ -9,6 +9,7 @@ import { safeFetch } from "@domainstack/safe-fetch";
 import { isExpectedDnsError } from "@domainstack/safe-fetch/dns";
 import type { Header } from "@domainstack/types";
 
+import { RemoteDataUnavailableError } from "../lib/fetch-errors";
 import { isExpectedTlsError } from "../tls/utils";
 import { getHttpStatusMessage } from "./status-message";
 import type { HeadersFetchResult } from "./types";
@@ -16,21 +17,10 @@ import type { HeadersFetchResult } from "./types";
 const REQUEST_TIMEOUT_MS = 5000;
 
 /**
- * Error thrown when headers fetch fails transiently.
- * DNS and TLS errors are not thrown - they're returned as error results.
- */
-export class HeadersFetchError extends Error {
-  constructor(message = "Headers fetch failed", cause?: unknown) {
-    super(message, { cause });
-    this.name = "HeadersFetchError";
-  }
-}
-
-/**
  * Fetch HTTP headers from a domain.
  *
  * DNS and TLS errors are returned as failure results (permanent).
- * Other errors throw HeadersFetchError (transient, should retry).
+ * Other errors throw RemoteDataUnavailableError (transient, should retry).
  *
  * @param domain - The domain to probe
  * @returns Headers fetch result with data or typed error
@@ -84,6 +74,6 @@ export async function fetchHttpHeaders(domain: string): Promise<HeadersFetchResu
     }
 
     // Transient failure - throw for caller to handle (with cause for debugging)
-    throw new HeadersFetchError("Headers fetch failed", err);
+    throw new RemoteDataUnavailableError("HTTP headers unavailable", { cause: err });
   }
 }

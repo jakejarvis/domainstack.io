@@ -11,12 +11,13 @@ import type { DnsFetchData } from "@domainstack/core/dns/types";
 export async function fetchDnsRecordsStep(domain: string): Promise<DnsFetchData> {
   "use step";
 
-  const { DnsProviderError, fetchDnsRecords } = await import("@domainstack/core/dns/fetch");
+  const { fetchDnsRecords } = await import("@domainstack/core/dns/fetch");
+  const { RemoteDataUnavailableError } = await import("@domainstack/core/lib/fetch-errors");
 
   try {
     return await fetchDnsRecords(domain);
   } catch (err) {
-    if (err instanceof DnsProviderError) {
+    if (err instanceof RemoteDataUnavailableError) {
       throw new RetryableError("All DoH providers failed", {
         retryAfter: "5s",
       });

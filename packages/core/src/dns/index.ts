@@ -11,9 +11,8 @@ import { replaceDns } from "@domainstack/db/queries/dns";
 import { ensureDomainRecord } from "@domainstack/db/queries/domains";
 import type { DnsRecordType, DnsRecordsResponse } from "@domainstack/types";
 
-import { RemoteDataUnavailableError } from "../lib/fetch-errors";
 import { shareInFlight } from "../lib/in-flight";
-import { DnsProviderError, fetchDnsRecords } from "./fetch";
+import { fetchDnsRecords } from "./fetch";
 import type { DnsFetchData } from "./types";
 
 // ============================================================================
@@ -44,16 +43,8 @@ export function fetchDns(domain: string): Promise<DnsResult> {
 }
 
 async function fetchAndPersistDns(domain: string): Promise<DnsResult> {
-  // 1. Fetch from DoH providers (throws DnsProviderError on failure)
-  let fetchData: DnsFetchData;
-  try {
-    fetchData = await fetchDnsRecords(domain);
-  } catch (err) {
-    if (err instanceof DnsProviderError) {
-      throw new RemoteDataUnavailableError("DNS data unavailable", { cause: err });
-    }
-    throw err;
-  }
+  // 1. Fetch from DoH providers (throws RemoteDataUnavailableError on failure)
+  const fetchData = await fetchDnsRecords(domain);
 
   // 2. Persist to database
   await persistDnsRecords(domain, fetchData);

@@ -123,10 +123,10 @@ describe("fetchHeadersStep", () => {
       http.get("https://error.test/", () => HttpResponse.error()),
     );
 
-    const { HeadersFetchError } = await import("@domainstack/core/headers/fetch");
+    const { RemoteDataUnavailableError } = await import("@domainstack/core/lib/fetch-errors");
     const { fetchHeadersStep } = await import("./headers");
 
-    await expect(fetchHeadersStep("error.test")).rejects.toBeInstanceOf(HeadersFetchError);
+    await expect(fetchHeadersStep("error.test")).rejects.toBeInstanceOf(RemoteDataUnavailableError);
   });
 
   it("normalizes headers correctly", async () => {
