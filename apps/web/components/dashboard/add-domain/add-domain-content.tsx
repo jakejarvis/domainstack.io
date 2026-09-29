@@ -354,7 +354,8 @@ function AddDomainContentInner({
     );
   }
 
-  if (!subscription?.canAddMore && !resumeDomain && verification.step !== 3) {
+  // Only gate before a domain is created; once added, the new row counts toward the quota itself.
+  if (verification.step === 1 && !resumeDomain && !subscription?.canAddMore) {
     return (
       <AddDomainQuotaReached
         className={className}

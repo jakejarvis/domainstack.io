@@ -78,6 +78,29 @@ describe("AddDomainContent", () => {
     await expect.element(page.getByText("newdomain.com", { exact: true })).toBeInTheDocument();
   });
 
+  it("keeps showing verification instructions after the added domain fills the quota", async () => {
+    mockSubscription.plan = "free";
+    mockSubscription.planQuota = 5;
+    mockSubscription.canAddMore = true;
+    addDomainMutation.mockImplementationOnce(async ({ domain }) => {
+      // The server has now created the 5th row; the refetched subscription reports full.
+      mockSubscription.canAddMore = false;
+      return { id: "domain-new", domain, verificationToken: "token-new", resumed: false };
+    });
+
+    await renderAddDomainContent();
+    await page.getByLabelText("Domain name").fill("fifth.com");
+    await page.getByRole("button", { name: "Continue" }).click();
+
+    await waitForStep2();
+    await expect
+      .element(page.getByText("domainstack-verification=token-new", { exact: true }))
+      .toBeInTheDocument();
+    await expect
+      .element(page.getByRole("heading", { name: "Domain limit reached" }))
+      .not.toBeInTheDocument();
+  });
+
   it("shows the quota gate with an upgrade path for Free users at their limit", async () => {
     mockSubscription.plan = "free";
     mockSubscription.canAddMore = false;

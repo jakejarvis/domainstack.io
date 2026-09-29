@@ -13,7 +13,7 @@ export function AddDomainPageClient({ prefillDomain }: { prefillDomain?: string 
   const searchParams = useSearchParams();
   const [isNavigating, startNavigation] = useTransition();
 
-  const handleSuccess = () => {
+  const goToDashboard = () => {
     startNavigation(() => router.push("/dashboard", { scroll: false }));
   };
 
@@ -22,7 +22,8 @@ export function AddDomainPageClient({ prefillDomain }: { prefillDomain?: string 
   return (
     <Card className="w-full px-6">
       <AddDomainContent
-        onSuccess={handleSuccess}
+        onSuccess={goToDashboard}
+        onClose={goToDashboard}
         isNavigating={isNavigating}
         prefillDomain={prefillDomain}
         resumeDomain={resumeDomain}

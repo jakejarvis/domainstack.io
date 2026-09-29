@@ -79,9 +79,18 @@ describe("AddDomainPageClient", () => {
       verificationMethod: "dns_txt",
     });
     await expect.element(page.getByTestId("prefill")).toHaveTextContent("from-report.com");
-    await expect.element(page.getByRole("button", { name: "Close" })).not.toBeInTheDocument();
+    await expect.element(page.getByRole("button", { name: "Close" })).toBeInTheDocument();
 
     await page.getByRole("button", { name: "Finish" }).click();
+
+    expect(nav.push).toHaveBeenCalledWith("/dashboard", { scroll: false });
+    expect(nav.back).not.toHaveBeenCalled();
+  });
+
+  it("navigates to the dashboard instead of resetting when closed", async () => {
+    await render(<AddDomainPageClient />);
+
+    await page.getByRole("button", { name: "Close" }).click();
 
     expect(nav.push).toHaveBeenCalledWith("/dashboard", { scroll: false });
     expect(nav.back).not.toHaveBeenCalled();
