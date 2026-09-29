@@ -21,7 +21,6 @@ export default defineConfig({
     "process.env.NEXT_PUBLIC_BASE_URL": JSON.stringify("https://test.domainstack.io"),
   },
   test: {
-    globals: true,
     silent: "passed-only",
     exclude: ["**/node_modules/**", "**/dist/**", "**/.next/**"],
     coverage: {
