@@ -2,6 +2,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { RouterOutputs } from "@domainstack/api";
+
 vi.mock("@/lib/trpc/client", async () => {
   const { useTRPC } = await import("@/mocks/trpc");
   return { useTRPC };
@@ -16,16 +18,17 @@ vi.mock("sonner", () => ({
 
 import { createTestQueryClient, renderHook } from "@/mocks/react";
 import {
-  CALENDAR_FEED_QUERY_KEY,
   CALENDAR_FEED_ROTATED_URL,
   CALENDAR_FEED_URL,
-  type CalendarFeedData,
   deleteCalendarFeedMutation,
   enableCalendarFeedMutation,
   resetTrpcMocks,
   rotateCalendarFeedTokenMutation,
   setCalendarFeedState,
+  trpcKeys,
 } from "@/mocks/trpc";
+
+type CalendarFeedData = RouterOutputs["user"]["getCalendarFeed"];
 
 import { useCalendarFeed } from "./use-calendar-feed";
 
@@ -36,13 +39,13 @@ const enabledFeed: CalendarFeedData = {
 };
 
 function getFeed(queryClient: ReturnType<typeof createTestQueryClient>) {
-  return queryClient.getQueryData<CalendarFeedData>(CALENDAR_FEED_QUERY_KEY);
+  return queryClient.getQueryData<CalendarFeedData>(trpcKeys.user.getCalendarFeed.queryKey());
 }
 
 async function renderCalendarFeed(feed: CalendarFeedData = { enabled: false }) {
   const queryClient = createTestQueryClient();
   setCalendarFeedState(feed);
-  queryClient.setQueryData(CALENDAR_FEED_QUERY_KEY, feed);
+  queryClient.setQueryData(trpcKeys.user.getCalendarFeed.queryKey(), feed);
 
   const view = await renderHook(() => useCalendarFeed(), {
     wrapper: ({ children }) => (

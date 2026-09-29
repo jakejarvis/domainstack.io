@@ -14,7 +14,7 @@ vi.mock("sonner", () => ({
 }));
 
 import { createTestQueryClient, render } from "@/mocks/react";
-import { CALENDAR_FEED_QUERY_KEY, resetTrpcMocks, setCalendarFeedState } from "@/mocks/trpc";
+import { resetTrpcMocks, setCalendarFeedState, trpcKeys } from "@/mocks/trpc";
 
 import { CalendarFeedPopover } from "./calendar-feed-popover";
 
@@ -30,7 +30,7 @@ describe("CalendarFeedPopover", () => {
   it("opens the calendar feed instructions", async () => {
     const queryClient = createTestQueryClient();
     setCalendarFeedState({ enabled: false });
-    queryClient.setQueryData(CALENDAR_FEED_QUERY_KEY, { enabled: false });
+    queryClient.setQueryData(trpcKeys.user.getCalendarFeed.queryKey(), { enabled: false });
 
     await render(<CalendarFeedPopover />, { queryClient });
 

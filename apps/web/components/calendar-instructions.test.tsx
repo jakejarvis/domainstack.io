@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page } from "vitest/browser";
 
+import type { RouterOutputs } from "@domainstack/api";
+
 vi.mock("@/lib/trpc/client", async () => {
   const { useTRPC } = await import("@/mocks/trpc");
   return { useTRPC };
@@ -15,16 +17,17 @@ vi.mock("sonner", () => ({
 
 import { createTestQueryClient, render } from "@/mocks/react";
 import {
-  CALENDAR_FEED_QUERY_KEY,
   CALENDAR_FEED_ROTATED_URL,
   CALENDAR_FEED_URL,
-  type CalendarFeedData,
   deleteCalendarFeedMutation,
   enableCalendarFeedMutation,
   resetTrpcMocks,
   rotateCalendarFeedTokenMutation,
   setCalendarFeedState,
+  trpcKeys,
 } from "@/mocks/trpc";
+
+type CalendarFeedData = RouterOutputs["user"]["getCalendarFeed"];
 
 import { CalendarInstructions } from "./calendar-instructions";
 
@@ -37,7 +40,7 @@ const enabledFeed: CalendarFeedData = {
 async function renderInstructions(feed: CalendarFeedData = { enabled: false }) {
   const queryClient = createTestQueryClient();
   setCalendarFeedState(feed);
-  queryClient.setQueryData(CALENDAR_FEED_QUERY_KEY, feed);
+  queryClient.setQueryData(trpcKeys.user.getCalendarFeed.queryKey(), feed);
   return render(<CalendarInstructions />, { queryClient });
 }
 

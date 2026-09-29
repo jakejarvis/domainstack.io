@@ -23,10 +23,9 @@ import {
   listNotificationsQuery,
   markAllReadMutation,
   markReadMutation,
-  NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY,
-  notificationsListQueryKey,
   resetTrpcMocks,
   setNotificationsState,
+  trpcKeys,
 } from "@/mocks/trpc";
 import type { NotificationData } from "@domainstack/types";
 
@@ -52,7 +51,7 @@ function pageItems(
   filter: "unread" | "read",
 ) {
   const data = queryClient.getQueryData<{ pages: { items: NotificationData[] }[] }>(
-    notificationsListQueryKey(filter),
+    trpcKeys.notifications.list.infiniteQueryKey({ filter, limit: 20 }),
   );
   return data?.pages.flatMap((page) => page.items) ?? [];
 }
@@ -68,16 +67,16 @@ async function renderNotificationsData(options?: {
   setNotificationsState(items);
 
   queryClient.setQueryData(
-    NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY,
+    trpcKeys.notifications.unreadCount.queryKey(),
     items.filter((item) => item.readAt === null).length,
   );
   queryClient.setQueryData(
-    notificationsListQueryKey("unread"),
+    trpcKeys.notifications.list.infiniteQueryKey({ filter: "unread", limit: 20 }),
     makeNotificationsInfiniteData(items.filter((item) => item.readAt === null)),
   );
   if (options?.seedReadList !== false) {
     queryClient.setQueryData(
-      notificationsListQueryKey("read"),
+      trpcKeys.notifications.list.infiniteQueryKey({ filter: "read", limit: 20 }),
       makeNotificationsInfiniteData(items.filter((item) => item.readAt !== null)),
     );
   }
@@ -143,7 +142,7 @@ describe("useNotificationsData", () => {
     const archived = pageItems(queryClient, "read");
     expect(archived.map((item) => item.id)).toEqual(["notif-alpha", "notif-gamma"]);
     expect(archived[0]?.readAt).toBeInstanceOf(Date);
-    expect(queryClient.getQueryData(NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY)).toBe(1);
+    expect(queryClient.getQueryData(trpcKeys.notifications.unreadCount.queryKey())).toBe(1);
     expect(markReadMutation.mock.calls[0]?.[0]).toEqual({ id: "notif-alpha" });
   });
 
@@ -161,7 +160,7 @@ describe("useNotificationsData", () => {
       "notif-beta",
     ]);
     expect(pageItems(queryClient, "read").map((item) => item.id)).toEqual(["notif-gamma"]);
-    expect(queryClient.getQueryData(NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY)).toBe(2);
+    expect(queryClient.getQueryData(trpcKeys.notifications.unreadCount.queryKey())).toBe(2);
   });
 
   it("markAllRead clears inbox and prepends those items onto archive", async () => {
@@ -177,7 +176,7 @@ describe("useNotificationsData", () => {
       "notif-beta",
       "notif-gamma",
     ]);
-    expect(queryClient.getQueryData(NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY)).toBe(0);
+    expect(queryClient.getQueryData(trpcKeys.notifications.unreadCount.queryKey())).toBe(0);
     expect(markAllReadMutation).toHaveBeenCalledOnce();
   });
 
@@ -195,6 +194,6 @@ describe("useNotificationsData", () => {
       "notif-beta",
     ]);
     expect(pageItems(queryClient, "read").map((item) => item.id)).toEqual(["notif-gamma"]);
-    expect(queryClient.getQueryData(NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY)).toBe(2);
+    expect(queryClient.getQueryData(trpcKeys.notifications.unreadCount.queryKey())).toBe(2);
   });
 });

@@ -1,60 +1,18 @@
-import { skipToken } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { TRPCClientError, createTRPCClient, type TRPCLink } from "@trpc/client";
+import { observable } from "@trpc/server/observable";
+import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
+import { useMemo } from "react";
 import { vi } from "vitest";
 
+import type { AppRouter, RouterInputs, RouterOutputs } from "@domainstack/api";
 import type {
-  NotificationData,
-  SubscriptionQuota,
+  NotificationData as NotificationItem,
   TrackedDomainWithDetails,
-  VerificationMethod,
 } from "@domainstack/types";
 
-type AddDomainInput = { domain: string };
-type AddDomainResult = {
-  id: string;
-  domain: string;
-  verificationToken: string;
-  resumed: boolean;
-};
-
-type VerifyDomainInput = { trackedDomainId: string; method?: VerificationMethod };
-type VerifyDomainResult = { verified: boolean; method: VerificationMethod | null };
-
-type GetVerificationDataInput = { trackedDomainId: string };
-type GetVerificationDataResult = {
-  domain: string;
-  verificationToken: string;
-  verificationMethod: VerificationMethod | null;
-};
-
-type TrackedDomainIdInput = { trackedDomainId: string };
-type BulkDomainIdsInput = { trackedDomainIds: string[] };
-type BulkSetMutedInput = { trackedDomainIds: string[]; muted: boolean };
-type BulkMutationResult = { successCount: number; failedCount: number };
-type SetMutedInput = { trackedDomainId: string; muted: boolean };
-type SendVerificationInstructionsInput = { trackedDomainId: string; recipientEmail: string };
-
-export const DOMAINS_QUERY_KEY = ["tracking", "listDomains"] as const;
-export const SUBSCRIPTION_QUERY_KEY = ["user", "getSubscription"] as const;
-
-type ListDomainsInput = { includeArchived?: boolean } | undefined;
-type TrackingStatusInput = { domain: string };
-type TrackingStatusResult = {
-  id: string;
-  verified: boolean;
-  verificationMethod: VerificationMethod | null;
-} | null;
-
-function listDomainsQueryKey(input?: ListDomainsInput) {
-  return input === undefined ? DOMAINS_QUERY_KEY : ([...DOMAINS_QUERY_KEY, input] as const);
-}
-
-function queryFilterFor(queryKey: readonly unknown[]) {
-  return { queryKey };
-}
-
-function mutationOptionsFor<TArgs, TResult>(mutationFn: (args: TArgs) => Promise<TResult>) {
-  return (opts?: object) => ({ ...opts, mutationFn });
-}
+type In = RouterInputs;
+type Out = RouterOutputs;
 
 let domainsState: TrackedDomainWithDetails[] = [];
 
@@ -62,32 +20,38 @@ export function setDomainsState(items: TrackedDomainWithDetails[]) {
   domainsState = items.map((item) => ({ ...item }));
 }
 
-function defaultListDomains(input?: ListDomainsInput): Promise<TrackedDomainWithDetails[]> {
+type ListDomainsInput = In["tracking"]["listDomains"];
+
+async function defaultListDomains(
+  input?: ListDomainsInput,
+): Promise<Out["tracking"]["listDomains"]> {
   const includeArchived = input?.includeArchived ?? false;
   if (includeArchived) {
-    return Promise.resolve(domainsState);
+    return domainsState;
   }
-  return Promise.resolve(domainsState.filter((item) => item.archivedAt == null));
+  return domainsState.filter((item) => item.archivedAt == null);
 }
 
 export const listDomainsQuery =
-  vi.fn<(input?: ListDomainsInput) => Promise<TrackedDomainWithDetails[]>>(defaultListDomains);
+  vi.fn<(input?: ListDomainsInput) => Promise<Out["tracking"]["listDomains"]>>(defaultListDomains);
 
-function defaultTrackingStatus({ domain }: TrackingStatusInput): Promise<TrackingStatusResult> {
+async function defaultTrackingStatus({
+  domain,
+}: In["tracking"]["getTrackingStatus"]): Promise<Out["tracking"]["getTrackingStatus"]> {
   const match = domainsState.find(
     (item) => item.archivedAt == null && item.domainName.toLowerCase() === domain.toLowerCase(),
   );
-  return Promise.resolve(
-    match
-      ? { id: match.id, verified: match.verified, verificationMethod: match.verificationMethod }
-      : null,
-  );
+  return match
+    ? { id: match.id, verified: match.verified, verificationMethod: match.verificationMethod }
+    : null;
 }
 
 export const getTrackingStatusQuery =
-  vi.fn<(input: TrackingStatusInput) => Promise<TrackingStatusResult>>(defaultTrackingStatus);
+  vi.fn<
+    (input: In["tracking"]["getTrackingStatus"]) => Promise<Out["tracking"]["getTrackingStatus"]>
+  >(defaultTrackingStatus);
 
-const DEFAULT_SUBSCRIPTION: SubscriptionQuota = {
+const DEFAULT_SUBSCRIPTION: Out["user"]["getSubscription"] = {
   plan: "pro",
   planQuota: 100,
   endsAt: null,
@@ -96,141 +60,203 @@ const DEFAULT_SUBSCRIPTION: SubscriptionQuota = {
   canAddMore: true,
 };
 
-let subscriptionState: SubscriptionQuota = { ...DEFAULT_SUBSCRIPTION };
+let subscriptionState: Out["user"]["getSubscription"] = { ...DEFAULT_SUBSCRIPTION };
 
-export const getSubscriptionQuery = vi.fn<() => Promise<SubscriptionQuota>>(
-  async () => subscriptionState,
-);
+async function defaultGetSubscription(): Promise<Out["user"]["getSubscription"]> {
+  return subscriptionState;
+}
 
-export const addDomainMutation = vi.fn<(input: AddDomainInput) => Promise<AddDomainResult>>(
-  async ({ domain }) => ({
-    id: "domain-new",
-    domain,
-    verificationToken: "token-new",
-    resumed: false,
-  }),
-);
+export const getSubscriptionQuery =
+  vi.fn<() => Promise<Out["user"]["getSubscription"]>>(defaultGetSubscription);
 
-export const verifyDomainMutation = vi.fn<
-  (input: VerifyDomainInput) => Promise<VerifyDomainResult>
->(async () => ({
-  verified: true,
-  method: "dns_txt",
-}));
+async function defaultAddDomain({
+  domain,
+}: In["tracking"]["addDomain"]): Promise<Out["tracking"]["addDomain"]> {
+  return { id: "domain-new", domain, verificationToken: "token-new", resumed: false };
+}
+
+export const addDomainMutation =
+  vi.fn<(input: In["tracking"]["addDomain"]) => Promise<Out["tracking"]["addDomain"]>>(
+    defaultAddDomain,
+  );
+
+async function defaultVerifyDomain(): Promise<Out["tracking"]["verifyDomain"]> {
+  return { verified: true, method: "dns_txt" };
+}
+
+export const verifyDomainMutation =
+  vi.fn<(input: In["tracking"]["verifyDomain"]) => Promise<Out["tracking"]["verifyDomain"]>>(
+    defaultVerifyDomain,
+  );
+
+async function defaultGetVerificationData(): Promise<Out["tracking"]["getVerificationData"]> {
+  return {
+    domain: "pending.dev",
+    verificationToken: "token-pending",
+    verificationMethod: "dns_txt",
+  };
+}
 
 export const getVerificationDataQuery = vi.fn<
-  (input: GetVerificationDataInput) => Promise<GetVerificationDataResult>
->(async () => ({
-  domain: "pending.dev",
-  verificationToken: "token-pending",
-  verificationMethod: "dns_txt",
-}));
+  (input: In["tracking"]["getVerificationData"]) => Promise<Out["tracking"]["getVerificationData"]>
+>(defaultGetVerificationData);
 
-export const removeDomainMutation = vi.fn<(input: TrackedDomainIdInput) => Promise<{ ok: true }>>(
-  async () => ({ ok: true }),
-);
+async function defaultRemoveDomain(): Promise<Out["tracking"]["removeDomain"]> {
+  return { success: true };
+}
 
-export const archiveDomainMutation = vi.fn<(input: TrackedDomainIdInput) => Promise<{ ok: true }>>(
-  async () => ({ ok: true }),
-);
+export const removeDomainMutation =
+  vi.fn<(input: In["tracking"]["removeDomain"]) => Promise<Out["tracking"]["removeDomain"]>>(
+    defaultRemoveDomain,
+  );
 
-export const unarchiveDomainMutation = vi.fn<
-  (input: TrackedDomainIdInput) => Promise<{ ok: true }>
->(async () => ({ ok: true }));
+async function defaultArchiveDomain(): Promise<Out["tracking"]["archiveDomain"]> {
+  return { success: true, archivedAt: new Date() };
+}
 
-export const bulkArchiveDomainsMutation = vi.fn<
-  (input: BulkDomainIdsInput) => Promise<BulkMutationResult>
->(async ({ trackedDomainIds }) => ({
-  successCount: trackedDomainIds.length,
-  failedCount: 0,
-}));
+export const archiveDomainMutation =
+  vi.fn<(input: In["tracking"]["archiveDomain"]) => Promise<Out["tracking"]["archiveDomain"]>>(
+    defaultArchiveDomain,
+  );
 
-export const bulkRemoveDomainsMutation = vi.fn<
-  (input: BulkDomainIdsInput) => Promise<BulkMutationResult>
->(async ({ trackedDomainIds }) => ({
-  successCount: trackedDomainIds.length,
-  failedCount: 0,
-}));
+async function defaultUnarchiveDomain(): Promise<Out["tracking"]["unarchiveDomain"]> {
+  return { success: true };
+}
 
-export const bulkMuteDomainsMutation = vi.fn<
-  (input: BulkSetMutedInput) => Promise<BulkMutationResult>
->(async ({ trackedDomainIds }) => ({
-  successCount: trackedDomainIds.length,
-  failedCount: 0,
-}));
+export const unarchiveDomainMutation =
+  vi.fn<(input: In["tracking"]["unarchiveDomain"]) => Promise<Out["tracking"]["unarchiveDomain"]>>(
+    defaultUnarchiveDomain,
+  );
 
-export const muteDomainMutation = vi.fn<(input: SetMutedInput) => Promise<{ ok: true }>>(
-  async () => ({ ok: true }),
-);
+async function defaultBulkArchiveDomains({
+  trackedDomainIds,
+}: In["tracking"]["bulkArchiveDomains"]): Promise<Out["tracking"]["bulkArchiveDomains"]> {
+  return { successCount: trackedDomainIds.length, failedCount: 0 };
+}
+
+export const bulkArchiveDomainsMutation =
+  vi.fn<
+    (input: In["tracking"]["bulkArchiveDomains"]) => Promise<Out["tracking"]["bulkArchiveDomains"]>
+  >(defaultBulkArchiveDomains);
+
+async function defaultBulkRemoveDomains({
+  trackedDomainIds,
+}: In["tracking"]["bulkRemoveDomains"]): Promise<Out["tracking"]["bulkRemoveDomains"]> {
+  return { successCount: trackedDomainIds.length, failedCount: 0 };
+}
+
+export const bulkRemoveDomainsMutation =
+  vi.fn<
+    (input: In["tracking"]["bulkRemoveDomains"]) => Promise<Out["tracking"]["bulkRemoveDomains"]>
+  >(defaultBulkRemoveDomains);
+
+async function defaultBulkMuteDomains({
+  trackedDomainIds,
+}: In["tracking"]["bulkMuteDomains"]): Promise<Out["tracking"]["bulkMuteDomains"]> {
+  return { successCount: trackedDomainIds.length, failedCount: 0 };
+}
+
+export const bulkMuteDomainsMutation =
+  vi.fn<(input: In["tracking"]["bulkMuteDomains"]) => Promise<Out["tracking"]["bulkMuteDomains"]>>(
+    defaultBulkMuteDomains,
+  );
+
+async function defaultMuteDomain({
+  trackedDomainId,
+  muted,
+}: In["tracking"]["muteDomain"]): Promise<Out["tracking"]["muteDomain"]> {
+  return { id: trackedDomainId, muted };
+}
+
+export const muteDomainMutation =
+  vi.fn<(input: In["tracking"]["muteDomain"]) => Promise<Out["tracking"]["muteDomain"]>>(
+    defaultMuteDomain,
+  );
+
+async function defaultSendVerificationInstructions(): Promise<
+  Out["tracking"]["sendVerificationInstructions"]
+> {
+  return { success: true };
+}
 
 export const sendVerificationInstructionsMutation = vi.fn<
-  (input: SendVerificationInstructionsInput) => Promise<{ sent: boolean }>
->(async () => ({ sent: true }));
+  (
+    input: In["tracking"]["sendVerificationInstructions"],
+  ) => Promise<Out["tracking"]["sendVerificationInstructions"]>
+>(defaultSendVerificationInstructions);
 
-export const CALENDAR_FEED_QUERY_KEY = ["user", "getCalendarFeed"] as const;
 export const CALENDAR_FEED_URL = "https://cal.example.test/feed/token.ics";
 export const CALENDAR_FEED_ROTATED_URL = "https://cal.example.test/feed/rotated.ics";
 
-export type CalendarFeedData =
-  | { enabled: false }
-  | { enabled: true; feedUrl: string; lastAccessedAt: Date | null }
-  | { enabled: false; feedUrl: string; lastAccessedAt: Date | null };
+let calendarFeedState: Out["user"]["getCalendarFeed"] = { enabled: false };
 
-let calendarFeedState: CalendarFeedData = { enabled: false };
-
-export function setCalendarFeedState(data: CalendarFeedData) {
+export function setCalendarFeedState(data: Out["user"]["getCalendarFeed"]) {
   calendarFeedState = data;
 }
 
-const getCalendarFeedQuery = vi.fn<() => Promise<CalendarFeedData>>(async () => calendarFeedState);
+async function defaultGetCalendarFeed(): Promise<Out["user"]["getCalendarFeed"]> {
+  return calendarFeedState;
+}
 
-export const enableCalendarFeedMutation = vi.fn<
-  () => Promise<{ feedUrl: string; createdAt: Date }>
->(async () => {
+export const getCalendarFeedQuery =
+  vi.fn<() => Promise<Out["user"]["getCalendarFeed"]>>(defaultGetCalendarFeed);
+
+async function defaultEnableCalendarFeed(): Promise<Out["user"]["enableCalendarFeed"]> {
   const feedUrl = CALENDAR_FEED_URL;
   calendarFeedState = { enabled: true, feedUrl, lastAccessedAt: null };
   return { feedUrl, createdAt: new Date() };
-});
+}
 
-export const rotateCalendarFeedTokenMutation = vi.fn<
-  () => Promise<{ feedUrl: string; rotatedAt: Date }>
->(async () => {
+export const enableCalendarFeedMutation =
+  vi.fn<() => Promise<Out["user"]["enableCalendarFeed"]>>(defaultEnableCalendarFeed);
+
+async function defaultRotateCalendarFeedToken(): Promise<Out["user"]["rotateCalendarFeedToken"]> {
   const feedUrl = CALENDAR_FEED_ROTATED_URL;
   calendarFeedState = {
     enabled: true,
     feedUrl,
-    lastAccessedAt: "lastAccessedAt" in calendarFeedState ? calendarFeedState.lastAccessedAt : null,
+    lastAccessedAt: calendarFeedState.lastAccessedAt ?? null,
   };
   return { feedUrl, rotatedAt: new Date() };
-});
+}
 
-export const deleteCalendarFeedMutation = vi.fn<() => Promise<{ success: true }>>(async () => {
+export const rotateCalendarFeedTokenMutation = vi.fn<
+  () => Promise<Out["user"]["rotateCalendarFeedToken"]>
+>(defaultRotateCalendarFeedToken);
+
+async function defaultDeleteCalendarFeed(): Promise<Out["user"]["deleteCalendarFeed"]> {
   calendarFeedState = { enabled: false };
   return { success: true };
-});
+}
 
-export const NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY = ["notifications", "unreadCount"] as const;
+export const deleteCalendarFeedMutation =
+  vi.fn<() => Promise<Out["user"]["deleteCalendarFeed"]>>(defaultDeleteCalendarFeed);
+
 const NOTIFICATIONS_PAGE_SIZE = 20;
 
-type NotificationFilter = "unread" | "read" | "all";
-type NotificationsListInput = {
-  limit?: number;
-  cursor?: string;
-  filter: NotificationFilter;
-};
-type NotificationsListResult = { items: NotificationData[]; nextCursor?: string };
+type NotificationsListInput = In["notifications"]["list"];
+type NotificationFilter = NotificationsListInput["filter"];
+type NotificationData = Out["notifications"]["list"]["items"][number];
 
-export function notificationsListQueryKey(
-  filter: NotificationFilter,
-  limit = NOTIFICATIONS_PAGE_SIZE,
-) {
-  return ["notifications", "list", { limit, filter }] as const;
+/**
+ * Widens the UI-facing `NotificationData` (what components render and fixtures
+ * build) to the full row the `notifications.list` procedure returns.
+ */
+export function toNotificationRow(item: NotificationItem): NotificationData {
+  return {
+    userId: "user-1",
+    data: null,
+    channels: ["in-app"],
+    resendId: null,
+    dedupeKey: null,
+    ...item,
+  };
 }
 
 let notificationsState: NotificationData[] = [];
 
-export function setNotificationsState(items: NotificationData[]) {
-  notificationsState = items.map((item) => ({ ...item }));
+export function setNotificationsState(items: NotificationItem[]) {
+  notificationsState = items.map(toNotificationRow);
 }
 
 function markNotificationRead(item: NotificationData, now: Date): NotificationData {
@@ -249,7 +275,7 @@ function filteredNotifications(filter: NotificationFilter) {
 
 async function defaultListNotifications(
   input: NotificationsListInput,
-): Promise<NotificationsListResult> {
+): Promise<Out["notifications"]["list"]> {
   const limit = input.limit ?? NOTIFICATIONS_PAGE_SIZE;
   const items = filteredNotifications(input.filter);
   let start = 0;
@@ -266,25 +292,35 @@ async function defaultListNotifications(
 }
 
 export const listNotificationsQuery =
-  vi.fn<(input: NotificationsListInput) => Promise<NotificationsListResult>>(
+  vi.fn<(input: NotificationsListInput) => Promise<Out["notifications"]["list"]>>(
     defaultListNotifications,
   );
 
-export const unreadCountQuery = vi.fn<() => Promise<number>>(
-  async () => filteredNotifications("unread").length,
-);
+async function defaultUnreadCount(): Promise<Out["notifications"]["unreadCount"]> {
+  return filteredNotifications("unread").length;
+}
 
-export const markReadMutation = vi.fn<(input: { id: string }) => Promise<{ success: true }>>(
-  async ({ id }) => {
-    const now = new Date();
-    notificationsState = notificationsState.map((item) =>
-      item.id === id ? markNotificationRead(item, now) : item,
-    );
-    return { success: true };
-  },
-);
+export const unreadCountQuery =
+  vi.fn<() => Promise<Out["notifications"]["unreadCount"]>>(defaultUnreadCount);
 
-async function defaultMarkAllRead(input?: { upTo?: Date }): Promise<{ count: number }> {
+async function defaultMarkRead({
+  id,
+}: In["notifications"]["markRead"]): Promise<Out["notifications"]["markRead"]> {
+  const now = new Date();
+  notificationsState = notificationsState.map((item) =>
+    item.id === id ? markNotificationRead(item, now) : item,
+  );
+  return { success: true };
+}
+
+export const markReadMutation =
+  vi.fn<(input: In["notifications"]["markRead"]) => Promise<Out["notifications"]["markRead"]>>(
+    defaultMarkRead,
+  );
+
+async function defaultMarkAllRead(
+  input?: In["notifications"]["markAllRead"],
+): Promise<Out["notifications"]["markAllRead"]> {
   const now = new Date();
   const upTo = input?.upTo;
   const shouldMark = (item: NotificationData) =>
@@ -297,7 +333,9 @@ async function defaultMarkAllRead(input?: { upTo?: Date }): Promise<{ count: num
 }
 
 export const markAllReadMutation =
-  vi.fn<(input?: { upTo?: Date }) => Promise<{ count: number }>>(defaultMarkAllRead);
+  vi.fn<
+    (input?: In["notifications"]["markAllRead"]) => Promise<Out["notifications"]["markAllRead"]>
+  >(defaultMarkAllRead);
 
 export function resetTrpcMocks() {
   domainsState = [];
@@ -308,271 +346,139 @@ export function resetTrpcMocks() {
 
   subscriptionState = { ...DEFAULT_SUBSCRIPTION };
   getSubscriptionQuery.mockReset();
-  getSubscriptionQuery.mockImplementation(async () => subscriptionState);
+  getSubscriptionQuery.mockImplementation(defaultGetSubscription);
 
   addDomainMutation.mockReset();
-  addDomainMutation.mockImplementation(async ({ domain }) => ({
-    id: "domain-new",
-    domain,
-    verificationToken: "token-new",
-    resumed: false,
-  }));
+  addDomainMutation.mockImplementation(defaultAddDomain);
 
   verifyDomainMutation.mockReset();
-  verifyDomainMutation.mockImplementation(async () => ({
-    verified: true,
-    method: "dns_txt",
-  }));
+  verifyDomainMutation.mockImplementation(defaultVerifyDomain);
 
   getVerificationDataQuery.mockReset();
-  getVerificationDataQuery.mockImplementation(async () => ({
-    domain: "pending.dev",
-    verificationToken: "token-pending",
-    verificationMethod: "dns_txt",
-  }));
+  getVerificationDataQuery.mockImplementation(defaultGetVerificationData);
 
   removeDomainMutation.mockReset();
-  removeDomainMutation.mockImplementation(async () => ({ ok: true }));
+  removeDomainMutation.mockImplementation(defaultRemoveDomain);
 
   archiveDomainMutation.mockReset();
-  archiveDomainMutation.mockImplementation(async () => ({ ok: true }));
+  archiveDomainMutation.mockImplementation(defaultArchiveDomain);
 
   unarchiveDomainMutation.mockReset();
-  unarchiveDomainMutation.mockImplementation(async () => ({ ok: true }));
+  unarchiveDomainMutation.mockImplementation(defaultUnarchiveDomain);
 
   bulkArchiveDomainsMutation.mockReset();
-  bulkArchiveDomainsMutation.mockImplementation(async ({ trackedDomainIds }) => ({
-    successCount: trackedDomainIds.length,
-    failedCount: 0,
-  }));
+  bulkArchiveDomainsMutation.mockImplementation(defaultBulkArchiveDomains);
 
   bulkRemoveDomainsMutation.mockReset();
-  bulkRemoveDomainsMutation.mockImplementation(async ({ trackedDomainIds }) => ({
-    successCount: trackedDomainIds.length,
-    failedCount: 0,
-  }));
+  bulkRemoveDomainsMutation.mockImplementation(defaultBulkRemoveDomains);
 
   bulkMuteDomainsMutation.mockReset();
-  bulkMuteDomainsMutation.mockImplementation(async ({ trackedDomainIds }) => ({
-    successCount: trackedDomainIds.length,
-    failedCount: 0,
-  }));
+  bulkMuteDomainsMutation.mockImplementation(defaultBulkMuteDomains);
 
   muteDomainMutation.mockReset();
-  muteDomainMutation.mockImplementation(async () => ({ ok: true }));
+  muteDomainMutation.mockImplementation(defaultMuteDomain);
 
   sendVerificationInstructionsMutation.mockReset();
-  sendVerificationInstructionsMutation.mockImplementation(async () => ({ sent: true }));
+  sendVerificationInstructionsMutation.mockImplementation(defaultSendVerificationInstructions);
 
   calendarFeedState = { enabled: false };
   getCalendarFeedQuery.mockReset();
-  getCalendarFeedQuery.mockImplementation(async () => calendarFeedState);
+  getCalendarFeedQuery.mockImplementation(defaultGetCalendarFeed);
 
   enableCalendarFeedMutation.mockReset();
-  enableCalendarFeedMutation.mockImplementation(async () => {
-    const feedUrl = CALENDAR_FEED_URL;
-    calendarFeedState = { enabled: true, feedUrl, lastAccessedAt: null };
-    return { feedUrl, createdAt: new Date() };
-  });
+  enableCalendarFeedMutation.mockImplementation(defaultEnableCalendarFeed);
 
   rotateCalendarFeedTokenMutation.mockReset();
-  rotateCalendarFeedTokenMutation.mockImplementation(async () => {
-    const feedUrl = CALENDAR_FEED_ROTATED_URL;
-    calendarFeedState = {
-      enabled: true,
-      feedUrl,
-      lastAccessedAt:
-        "lastAccessedAt" in calendarFeedState ? calendarFeedState.lastAccessedAt : null,
-    };
-    return { feedUrl, rotatedAt: new Date() };
-  });
+  rotateCalendarFeedTokenMutation.mockImplementation(defaultRotateCalendarFeedToken);
 
   deleteCalendarFeedMutation.mockReset();
-  deleteCalendarFeedMutation.mockImplementation(async () => {
-    calendarFeedState = { enabled: false };
-    return { success: true };
-  });
+  deleteCalendarFeedMutation.mockImplementation(defaultDeleteCalendarFeed);
 
   notificationsState = [];
   listNotificationsQuery.mockReset();
   listNotificationsQuery.mockImplementation(defaultListNotifications);
 
   unreadCountQuery.mockReset();
-  unreadCountQuery.mockImplementation(async () => filteredNotifications("unread").length);
+  unreadCountQuery.mockImplementation(defaultUnreadCount);
 
   markReadMutation.mockReset();
-  markReadMutation.mockImplementation(async ({ id }) => {
-    const now = new Date();
-    notificationsState = notificationsState.map((item) =>
-      item.id === id ? markNotificationRead(item, now) : item,
-    );
-    return { success: true };
-  });
+  markReadMutation.mockImplementation(defaultMarkRead);
 
   markAllReadMutation.mockReset();
   markAllReadMutation.mockImplementation(defaultMarkAllRead);
 }
 
+/**
+ * Routes every tRPC call made through the real options proxy to the `vi.fn`
+ * handlers above. Handlers are invoked through arrow wrappers so
+ * `mockReset`/`mockImplementation` in tests keep working. A procedure without
+ * an entry fails loudly.
+ */
+const procedures: Record<string, (input: unknown) => Promise<unknown>> = {
+  "tracking.listDomains": (input) => listDomainsQuery(input as In["tracking"]["listDomains"]),
+  "tracking.getTrackingStatus": (input) =>
+    getTrackingStatusQuery(input as In["tracking"]["getTrackingStatus"]),
+  "tracking.getVerificationData": (input) =>
+    getVerificationDataQuery(input as In["tracking"]["getVerificationData"]),
+  "tracking.addDomain": (input) => addDomainMutation(input as In["tracking"]["addDomain"]),
+  "tracking.verifyDomain": (input) => verifyDomainMutation(input as In["tracking"]["verifyDomain"]),
+  "tracking.removeDomain": (input) => removeDomainMutation(input as In["tracking"]["removeDomain"]),
+  "tracking.archiveDomain": (input) =>
+    archiveDomainMutation(input as In["tracking"]["archiveDomain"]),
+  "tracking.unarchiveDomain": (input) =>
+    unarchiveDomainMutation(input as In["tracking"]["unarchiveDomain"]),
+  "tracking.bulkArchiveDomains": (input) =>
+    bulkArchiveDomainsMutation(input as In["tracking"]["bulkArchiveDomains"]),
+  "tracking.bulkRemoveDomains": (input) =>
+    bulkRemoveDomainsMutation(input as In["tracking"]["bulkRemoveDomains"]),
+  "tracking.bulkMuteDomains": (input) =>
+    bulkMuteDomainsMutation(input as In["tracking"]["bulkMuteDomains"]),
+  "tracking.muteDomain": (input) => muteDomainMutation(input as In["tracking"]["muteDomain"]),
+  "tracking.sendVerificationInstructions": (input) =>
+    sendVerificationInstructionsMutation(input as In["tracking"]["sendVerificationInstructions"]),
+  "user.getSubscription": () => getSubscriptionQuery(),
+  "user.getCalendarFeed": () => getCalendarFeedQuery(),
+  "user.enableCalendarFeed": () => enableCalendarFeedMutation(),
+  "user.rotateCalendarFeedToken": () => rotateCalendarFeedTokenMutation(),
+  "user.deleteCalendarFeed": () => deleteCalendarFeedMutation(),
+  "notifications.list": (input) => listNotificationsQuery(input as In["notifications"]["list"]),
+  "notifications.unreadCount": () => unreadCountQuery(),
+  "notifications.markRead": (input) => markReadMutation(input as In["notifications"]["markRead"]),
+  "notifications.markAllRead": (input) =>
+    markAllReadMutation(input as In["notifications"]["markAllRead"]),
+};
+
+const testLink: TRPCLink<AppRouter> = () => {
+  return ({ op }) =>
+    observable((observer) => {
+      const handler = procedures[op.path];
+      if (!handler) {
+        observer.error(TRPCClientError.from(new Error(`No test handler for ${op.path}`)));
+        return;
+      }
+      void (async () => {
+        try {
+          const data = await handler(op.input);
+          observer.next({ result: { data } });
+          observer.complete();
+        } catch (err) {
+          observer.error(TRPCClientError.from(err as Error));
+        }
+      })();
+    });
+};
+
+const client = createTRPCClient<AppRouter>({ links: [testLink] });
+
 export function useTRPC() {
-  return {
-    tracking: {
-      addDomain: {
-        mutationOptions: mutationOptionsFor(addDomainMutation),
-      },
-      verifyDomain: {
-        mutationOptions: mutationOptionsFor(verifyDomainMutation),
-      },
-      getVerificationData: {
-        queryOptions: (input: GetVerificationDataInput | typeof skipToken) => {
-          if (input === skipToken) {
-            return {
-              queryKey: ["tracking", "getVerificationData"] as const,
-              queryFn: skipToken,
-            };
-          }
-          return {
-            queryKey: ["tracking", "getVerificationData", input] as const,
-            queryFn: () => getVerificationDataQuery(input),
-          };
-        },
-        queryFilter: (input?: GetVerificationDataInput) =>
-          queryFilterFor(
-            input
-              ? (["tracking", "getVerificationData", input] as const)
-              : (["tracking", "getVerificationData"] as const),
-          ),
-      },
-      listDomains: {
-        queryKey: listDomainsQueryKey,
-        queryOptions: (input?: ListDomainsInput | typeof skipToken) => {
-          if (input === skipToken) {
-            return {
-              queryKey: DOMAINS_QUERY_KEY,
-              queryFn: skipToken,
-            };
-          }
-          return {
-            queryKey: listDomainsQueryKey(input),
-            queryFn: () => listDomainsQuery(input),
-          };
-        },
-        queryFilter: (input?: ListDomainsInput) => queryFilterFor(listDomainsQueryKey(input)),
-      },
-      getTrackingStatus: {
-        queryOptions: (input: TrackingStatusInput | typeof skipToken) => {
-          if (input === skipToken) {
-            return {
-              queryKey: ["tracking", "getTrackingStatus"] as const,
-              queryFn: skipToken,
-            };
-          }
-          return {
-            queryKey: ["tracking", "getTrackingStatus", input] as const,
-            queryFn: () => getTrackingStatusQuery(input),
-          };
-        },
-        queryFilter: () => queryFilterFor(["tracking", "getTrackingStatus"] as const),
-      },
-      removeDomain: {
-        mutationOptions: mutationOptionsFor(removeDomainMutation),
-      },
-      archiveDomain: {
-        mutationOptions: mutationOptionsFor(archiveDomainMutation),
-      },
-      unarchiveDomain: {
-        mutationOptions: mutationOptionsFor(unarchiveDomainMutation),
-      },
-      bulkArchiveDomains: {
-        mutationOptions: mutationOptionsFor(bulkArchiveDomainsMutation),
-      },
-      bulkRemoveDomains: {
-        mutationOptions: mutationOptionsFor(bulkRemoveDomainsMutation),
-      },
-      muteDomain: {
-        mutationOptions: mutationOptionsFor(muteDomainMutation),
-      },
-      bulkMuteDomains: {
-        mutationOptions: mutationOptionsFor(bulkMuteDomainsMutation),
-      },
-      sendVerificationInstructions: {
-        mutationOptions: mutationOptionsFor(sendVerificationInstructionsMutation),
-      },
-    },
-    user: {
-      getSubscription: {
-        queryKey: () => SUBSCRIPTION_QUERY_KEY,
-        queryOptions: (input?: typeof skipToken) => {
-          if (input === skipToken) {
-            return {
-              queryKey: SUBSCRIPTION_QUERY_KEY,
-              queryFn: skipToken,
-            };
-          }
-          return {
-            queryKey: SUBSCRIPTION_QUERY_KEY,
-            queryFn: () => getSubscriptionQuery(),
-          };
-        },
-        queryFilter: () => queryFilterFor(SUBSCRIPTION_QUERY_KEY),
-      },
-      getCalendarFeed: {
-        queryKey: () => CALENDAR_FEED_QUERY_KEY,
-        queryOptions: () => ({
-          queryKey: CALENDAR_FEED_QUERY_KEY,
-          queryFn: () => getCalendarFeedQuery(),
-        }),
-        queryFilter: () => queryFilterFor(CALENDAR_FEED_QUERY_KEY),
-      },
-      enableCalendarFeed: {
-        mutationOptions: mutationOptionsFor(enableCalendarFeedMutation),
-      },
-      rotateCalendarFeedToken: {
-        mutationOptions: mutationOptionsFor(rotateCalendarFeedTokenMutation),
-      },
-      deleteCalendarFeed: {
-        mutationOptions: mutationOptionsFor(deleteCalendarFeedMutation),
-      },
-    },
-    notifications: {
-      list: {
-        infiniteQueryOptions: (
-          input: NotificationsListInput,
-          opts?: {
-            getNextPageParam?: (lastPage: NotificationsListResult) => string | undefined;
-            refetchOnWindowFocus?: boolean;
-            staleTime?: number;
-            enabled?: boolean;
-          },
-        ) => ({
-          queryKey: notificationsListQueryKey(input.filter, input.limit ?? NOTIFICATIONS_PAGE_SIZE),
-          queryFn: ({ pageParam }: { pageParam?: unknown }) =>
-            listNotificationsQuery({
-              ...input,
-              cursor: typeof pageParam === "string" ? pageParam : undefined,
-            }),
-          initialPageParam: undefined as string | undefined,
-          getNextPageParam:
-            opts?.getNextPageParam ?? ((lastPage: NotificationsListResult) => lastPage.nextCursor),
-          refetchOnWindowFocus: opts?.refetchOnWindowFocus,
-          staleTime: opts?.staleTime,
-          enabled: opts?.enabled,
-        }),
-        queryFilter: () => queryFilterFor(["notifications", "list"] as const),
-      },
-      unreadCount: {
-        queryKey: () => NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY,
-        queryOptions: () => ({
-          queryKey: NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY,
-          queryFn: () => unreadCountQuery(),
-        }),
-        queryFilter: () => queryFilterFor(NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY),
-      },
-      markRead: {
-        mutationOptions: mutationOptionsFor(markReadMutation),
-      },
-      markAllRead: {
-        mutationOptions: mutationOptionsFor(markAllReadMutation),
-      },
-    },
-  };
+  const queryClient = useQueryClient();
+  return useMemo(() => createTRPCOptionsProxy<AppRouter>({ client, queryClient }), [queryClient]);
 }
+
+/** Real query keys/filters for seeding and reading the cache in tests. */
+export const trpcKeys = createTRPCOptionsProxy<AppRouter>({
+  client,
+  queryClient: () => {
+    throw new Error("trpcKeys is for keys and filters only");
+  },
+});

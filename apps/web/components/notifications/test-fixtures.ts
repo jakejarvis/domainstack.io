@@ -1,4 +1,5 @@
 import { DASHBOARD_TEST_NOW } from "@/components/dashboard/test-fixtures";
+import { toNotificationRow } from "@/mocks/trpc";
 import type { NotificationData } from "@domainstack/types";
 
 export function makeNotification(overrides: Partial<NotificationData> = {}): NotificationData {
@@ -16,7 +17,7 @@ export function makeNotification(overrides: Partial<NotificationData> = {}): Not
 
 export function makeNotificationsInfiniteData(items: NotificationData[]) {
   return {
-    pages: [{ items, nextCursor: undefined as string | undefined }],
-    pageParams: [undefined as string | undefined],
+    pages: [{ items: items.map(toNotificationRow), nextCursor: undefined as string | undefined }],
+    pageParams: [null as string | null],
   };
 }

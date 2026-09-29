@@ -27,10 +27,9 @@ import {
   bulkArchiveDomainsMutation,
   bulkRemoveDomainsMutation,
   bulkMuteDomainsMutation,
-  DOMAINS_QUERY_KEY,
   removeDomainMutation,
   resetTrpcMocks,
-  SUBSCRIPTION_QUERY_KEY,
+  trpcKeys,
 } from "@/mocks/trpc";
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 
@@ -64,11 +63,15 @@ function defaultSubscription(overrides: Partial<SubscriptionCache> = {}): Subscr
 }
 
 function getDomains(queryClient: ReturnType<typeof createTestQueryClient>) {
-  return queryClient.getQueryData<TrackedDomainWithDetails[]>(DOMAINS_QUERY_KEY) ?? [];
+  return (
+    queryClient.getQueryData<TrackedDomainWithDetails[]>(
+      trpcKeys.tracking.listDomains.queryKey(),
+    ) ?? []
+  );
 }
 
 function getSubscription(queryClient: ReturnType<typeof createTestQueryClient>) {
-  return queryClient.getQueryData<SubscriptionCache>(SUBSCRIPTION_QUERY_KEY);
+  return queryClient.getQueryData<SubscriptionCache>(trpcKeys.user.getSubscription.queryKey());
 }
 
 async function renderDashboardMutations(options?: {
@@ -81,8 +84,8 @@ async function renderDashboardMutations(options?: {
   const domains = options?.domains ?? [...makeDashboardDomains(), archivedDomain];
   const subscription = options?.subscription ?? defaultSubscription();
 
-  queryClient.setQueryData(DOMAINS_QUERY_KEY, domains);
-  queryClient.setQueryData(SUBSCRIPTION_QUERY_KEY, subscription);
+  queryClient.setQueryData(trpcKeys.tracking.listDomains.queryKey(), domains);
+  queryClient.setQueryData(trpcKeys.user.getSubscription.queryKey(), subscription);
 
   const view = await renderHook(() => useDashboardMutations(), {
     wrapper: ({ children }) => (
@@ -124,6 +127,26 @@ describe("useDashboardMutations", () => {
     });
     expect(toast.success).toHaveBeenCalledWith("Domain removed");
     expect(removeDomainMutation.mock.calls[0]?.[0]).toEqual({ trackedDomainId: "domain-alpha" });
+  });
+
+  it("invalidates every listDomains variant after a mutation", async () => {
+    const { result, queryClient, domains } = await renderDashboardMutations();
+    const includeArchivedKey = trpcKeys.tracking.listDomains.queryKey({ includeArchived: true });
+    const excludeArchivedKey = trpcKeys.tracking.listDomains.queryKey({ includeArchived: false });
+    queryClient.setQueryData(includeArchivedKey, domains);
+    queryClient.setQueryData(
+      excludeArchivedKey,
+      domains.filter((d) => d.archivedAt == null),
+    );
+    expect(queryClient.getQueryState(includeArchivedKey)?.isInvalidated).toBe(false);
+    expect(queryClient.getQueryState(excludeArchivedKey)?.isInvalidated).toBe(false);
+
+    result.current.remove("domain-alpha");
+
+    await vi.waitFor(() => {
+      expect(queryClient.getQueryState(includeArchivedKey)?.isInvalidated).toBe(true);
+      expect(queryClient.getQueryState(excludeArchivedKey)?.isInvalidated).toBe(true);
+    });
   });
 
   it("deselects every removed or archived domain, even when the calls overlap", async () => {
@@ -277,7 +300,7 @@ describe("useDashboardMutations", () => {
 
   it("bulk-mutes ids across listDomains cache variants without touching subscription", async () => {
     const { result, queryClient } = await renderDashboardMutations();
-    const archivedListKey = [...DOMAINS_QUERY_KEY, { includeArchived: true }] as const;
+    const archivedListKey = trpcKeys.tracking.listDomains.queryKey({ includeArchived: true });
     queryClient.setQueryData(archivedListKey, getDomains(queryClient));
     const subscriptionBefore = getSubscription(queryClient);
 

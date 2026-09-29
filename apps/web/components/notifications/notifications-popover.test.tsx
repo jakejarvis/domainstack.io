@@ -24,11 +24,10 @@ import {
   listNotificationsQuery,
   markAllReadMutation,
   markReadMutation,
-  NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY,
-  notificationsListQueryKey,
   resetTrpcMocks,
   setNotificationsState,
   unreadCountQuery,
+  trpcKeys,
 } from "@/mocks/trpc";
 import type { NotificationData } from "@domainstack/types";
 
@@ -55,12 +54,15 @@ function seedNotifications(
   setNotificationsState(items);
   const unread = items.filter((item) => item.readAt === null);
   const read = items.filter((item) => item.readAt !== null);
-  queryClient.setQueryData(NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY, unread.length);
+  queryClient.setQueryData(trpcKeys.notifications.unreadCount.queryKey(), unread.length);
   queryClient.setQueryData(
-    notificationsListQueryKey("unread"),
+    trpcKeys.notifications.list.infiniteQueryKey({ filter: "unread", limit: 20 }),
     makeNotificationsInfiniteData(unread),
   );
-  queryClient.setQueryData(notificationsListQueryKey("read"), makeNotificationsInfiniteData(read));
+  queryClient.setQueryData(
+    trpcKeys.notifications.list.infiniteQueryKey({ filter: "read", limit: 20 }),
+    makeNotificationsInfiniteData(read),
+  );
 }
 
 async function renderPopover(
@@ -140,7 +142,7 @@ describe("NotificationsPopover", () => {
     listNotificationsQuery.mockRejectedValue(new Error("nope"));
     const queryClient = createTestQueryClient();
     setNotificationsState([unreadAlpha]);
-    queryClient.setQueryData(NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY, 1);
+    queryClient.setQueryData(trpcKeys.notifications.unreadCount.queryKey(), 1);
     await render(<NotificationsPopover />, { queryClient });
 
     await openInbox();
@@ -152,7 +154,7 @@ describe("NotificationsPopover", () => {
     listNotificationsQuery.mockRejectedValue(new Error("nope"));
     const queryClient = createTestQueryClient();
     setNotificationsState([unreadAlpha]);
-    queryClient.setQueryData(NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY, 1);
+    queryClient.setQueryData(trpcKeys.notifications.unreadCount.queryKey(), 1);
     await render(<NotificationsPopover />, { queryClient });
 
     await openInbox();
@@ -280,12 +282,15 @@ describe("NotificationsPopover", () => {
     unreadCountQuery.mockResolvedValue(100);
     const queryClient = createTestQueryClient();
     setNotificationsState([unreadAlpha]);
-    queryClient.setQueryData(NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY, 100);
+    queryClient.setQueryData(trpcKeys.notifications.unreadCount.queryKey(), 100);
     queryClient.setQueryData(
-      notificationsListQueryKey("unread"),
+      trpcKeys.notifications.list.infiniteQueryKey({ filter: "unread", limit: 20 }),
       makeNotificationsInfiniteData([unreadAlpha]),
     );
-    queryClient.setQueryData(notificationsListQueryKey("read"), makeNotificationsInfiniteData([]));
+    queryClient.setQueryData(
+      trpcKeys.notifications.list.infiniteQueryKey({ filter: "read", limit: 20 }),
+      makeNotificationsInfiniteData([]),
+    );
     await render(<NotificationsPopover />, { queryClient });
 
     await expect
