@@ -30,6 +30,7 @@ import { sendEmail } from "@domainstack/email";
 import VerificationInstructionsEmail from "@domainstack/email/templates/verification-instructions";
 import { createLogger } from "@domainstack/logger";
 import { enforceRateLimit } from "@domainstack/redis/enforce";
+import { getBaseUrl } from "@domainstack/utils/base-url";
 import { buildVerificationInstructions } from "@domainstack/utils/verification";
 import { autoVerifyWorkflow } from "@domainstack/workflows/auto-verify";
 import { initializeSnapshotWorkflow } from "@domainstack/workflows/initialize-snapshot";
@@ -650,7 +651,7 @@ export const trackingRouter = createTRPCRouter({
 
       const senderEmail = ctx.user.email;
 
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
+      const baseUrl = getBaseUrl();
 
       try {
         const { error } = await sendEmail(

@@ -4,11 +4,10 @@ import ProUpgradeSuccessEmail from "@domainstack/email/templates/pro-upgrade-suc
 import SubscriptionCancelingEmail from "@domainstack/email/templates/subscription-canceling";
 import SubscriptionExpiredEmail from "@domainstack/email/templates/subscription-expired";
 import { createLogger } from "@domainstack/logger";
+import { getBaseUrl } from "@domainstack/utils/base-url";
 import { formatDateLong } from "@domainstack/utils/date";
 
 const logger = createLogger({ source: "polar/emails" });
-
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://domainstack.io";
 
 /**
  * Send a pro upgrade success email to a user.
@@ -20,6 +19,7 @@ export async function sendProUpgradeEmail(userId: string): Promise<void> {
     return;
   }
 
+  const baseUrl = getBaseUrl();
   const { error } = await sendEmail(
     {
       to: user.email,
@@ -49,6 +49,7 @@ export async function sendSubscriptionCancelingEmail(
     return;
   }
 
+  const baseUrl = getBaseUrl();
   const { error } = await sendEmail(
     {
       to: user.email,
@@ -81,6 +82,7 @@ export async function sendSubscriptionExpiredEmail(
     return;
   }
 
+  const baseUrl = getBaseUrl();
   const { error } = await sendEmail(
     {
       to: user.email,

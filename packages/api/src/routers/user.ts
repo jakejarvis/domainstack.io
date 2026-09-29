@@ -16,6 +16,7 @@ import {
 import { getUserSubscription } from "@domainstack/db/queries/user-subscription";
 import { getLinkedAccounts } from "@domainstack/db/queries/users";
 import type { SubscriptionQuota } from "@domainstack/types";
+import { getBaseUrl } from "@domainstack/utils/base-url";
 
 import { analytics } from "../analytics";
 import { protectedProcedure } from "../procedures";
@@ -35,7 +36,7 @@ const UserNotificationPreferencesSchema = z.partialRecord(
  * Build the full calendar feed URL from a token.
  */
 function buildCalendarFeedUrl(token: string): string {
-  return `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard/feed.ics?token=${encodeURIComponent(token)}`;
+  return `${getBaseUrl()}/dashboard/feed.ics?token=${encodeURIComponent(token)}`;
 }
 
 export const userRouter = createTRPCRouter({

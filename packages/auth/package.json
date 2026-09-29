@@ -24,6 +24,7 @@
     "@domainstack/polar": "workspace:*",
     "@domainstack/redis": "workspace:*",
     "@domainstack/types": "workspace:*",
+    "@domainstack/utils": "workspace:*",
     "@vercel/functions": "catalog:",
     "better-auth": "^1.7.6"
   },

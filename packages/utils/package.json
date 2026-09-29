@@ -5,6 +5,7 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
+    "./base-url": "./src/base-url.ts",
     "./calendar": "./src/calendar.ts",
     "./certificate-hex": "./src/certificate-hex.ts",
     "./country-emoji": "./src/country-emoji.ts",
@@ -36,6 +37,7 @@
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:"
   },

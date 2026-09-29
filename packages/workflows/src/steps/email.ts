@@ -1,5 +1,7 @@
 import { FatalError, getStepMetadata, RetryableError } from "workflow";
 
+import { getBaseUrl as resolveBaseUrl } from "@domainstack/utils/base-url";
+
 interface SendEmailParams {
   /** Recipient email address */
   to: string;
@@ -20,11 +22,11 @@ export function getFirstName(name: string | null | undefined): string {
 }
 
 export function getBaseUrl(): string {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-  if (!baseUrl) {
+  try {
+    return resolveBaseUrl();
+  } catch {
     throw new FatalError("NEXT_PUBLIC_BASE_URL is required to send workflow emails");
   }
-  return baseUrl;
 }
 
 /**

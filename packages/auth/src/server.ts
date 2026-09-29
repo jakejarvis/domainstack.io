@@ -23,6 +23,7 @@ import {
 import { getProductsForCheckout } from "@domainstack/polar/products";
 import { polarClient } from "@domainstack/polar/server";
 import { getRedis } from "@domainstack/redis";
+import { getBaseUrl } from "@domainstack/utils/base-url";
 
 import { analytics } from "./analytics";
 import { buildOAuthProviders, validateOAuthCredentialPair } from "./providers";
@@ -177,18 +178,21 @@ export const auth = betterAuth({
       },
       sendDeleteAccountVerification: async ({ user, url }) => {
         waitUntil(
-          sendEmail(
-            {
-              to: user.email,
-              subject: "Confirm your account deletion",
-              react: DeleteAccountVerifyEmail({
-                userName: user.name,
-                confirmUrl: url,
-                baseUrl: process.env.NEXT_PUBLIC_BASE_URL as string,
-              }),
-            },
-            { baseUrl: process.env.NEXT_PUBLIC_BASE_URL as string },
-          ).catch((err: unknown) =>
+          (async () => {
+            const baseUrl = getBaseUrl();
+            await sendEmail(
+              {
+                to: user.email,
+                subject: "Confirm your account deletion",
+                react: DeleteAccountVerifyEmail({
+                  userName: user.name,
+                  confirmUrl: url,
+                  baseUrl,
+                }),
+              },
+              { baseUrl },
+            );
+          })().catch((err: unknown) =>
             logger.error({ err, userId: user.id }, "failed to send delete account verification"),
           ),
         );
