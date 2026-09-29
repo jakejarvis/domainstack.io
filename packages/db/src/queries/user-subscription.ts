@@ -150,17 +150,15 @@ export async function clearSubscriptionEndsAt(userId: string): Promise<void> {
 }
 
 /**
- * Create a subscription for a new user.
+ * Create a subscription for a new user. Errors propagate: callers decide
+ * whether a failure is fatal. A lost insert is healed later, because
+ * `getUserSubscription` lazily creates the free-tier row when none exists.
  */
 export async function createSubscription(userId: string): Promise<void> {
-  try {
-    await db
-      .insert(userSubscriptions)
-      .values({ userId })
-      .onConflictDoNothing({ target: userSubscriptions.userId });
-  } catch {
-    // Log but don't rethrow - user signup should not fail
-  }
+  await db
+    .insert(userSubscriptions)
+    .values({ userId })
+    .onConflictDoNothing({ target: userSubscriptions.userId });
 }
 
 /**

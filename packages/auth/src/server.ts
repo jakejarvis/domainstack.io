@@ -123,8 +123,11 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (user) => {
-          // Create free tier subscription for new users (do not defer)
-          await createSubscription(user.id);
+          // Create free tier subscription for new users (do not defer).
+          // Best-effort: getUserSubscription lazily creates the row if this insert is lost.
+          await createSubscription(user.id).catch((err: unknown) =>
+            logger.error({ err, userId: user.id }, "failed to create free-tier subscription"),
+          );
 
           // Create Resend contact for marketing communications. `waitUntil`
           // never awaits the promise itself, so a rejection escaping here is an
