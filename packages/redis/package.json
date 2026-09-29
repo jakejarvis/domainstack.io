@@ -7,7 +7,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./enforce": "./src/enforce.ts",
-    "./ratelimit": "./src/ratelimit.ts"
+    "./ratelimit": "./src/ratelimit.ts",
+    "./testing": "./src/testing.ts"
   },
   "scripts": {
     "lint": "oxlint",
@@ -23,6 +24,7 @@
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
-    "@types/node": "catalog:"
+    "@types/node": "catalog:",
+    "vitest": "catalog:"
   }
 }
