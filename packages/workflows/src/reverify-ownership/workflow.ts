@@ -133,7 +133,15 @@ async function fetchDomain(trackedDomainId: string): Promise<DomainData | null> 
   const { getTrackedDomainForReverification } =
     await import("@domainstack/db/queries/tracked-domains");
 
-  const domain = await getTrackedDomainForReverification(trackedDomainId);
+  let domain: Awaited<ReturnType<typeof getTrackedDomainForReverification>>;
+  try {
+    domain = await getTrackedDomainForReverification(trackedDomainId);
+  } catch (err) {
+    const { classifyDatabaseError } = await import("../lib/errors");
+    throw classifyDatabaseError(err, {
+      context: `fetching tracked domain for reverification: ${trackedDomainId}`,
+    });
+  }
   if (!domain) return null;
 
   return {
@@ -155,7 +163,14 @@ async function markSuccess(trackedDomainId: string): Promise<void> {
 
   const { markVerificationSuccessful } = await import("@domainstack/db/queries/tracked-domains");
 
-  await markVerificationSuccessful(trackedDomainId);
+  try {
+    await markVerificationSuccessful(trackedDomainId);
+  } catch (err) {
+    const { classifyDatabaseError } = await import("../lib/errors");
+    throw classifyDatabaseError(err, {
+      context: `marking verification successful: ${trackedDomainId}`,
+    });
+  }
 }
 
 type DomainForFailureCheck = Pick<DomainData, "id" | "verificationStatus" | "verificationFailedAt">;
@@ -182,7 +197,15 @@ async function determineFailureAction(
 
   // The ownership probe runs outside this step. A concurrent run may have
   // recovered the domain or started a new failure episode in the meantime.
-  const current = await getTrackedDomainForReverification(domain.id);
+  let current: Awaited<ReturnType<typeof getTrackedDomainForReverification>>;
+  try {
+    current = await getTrackedDomainForReverification(domain.id);
+  } catch (err) {
+    const { classifyDatabaseError } = await import("../lib/errors");
+    throw classifyDatabaseError(err, {
+      context: `re-reading tracked domain for failure check: ${domain.id}`,
+    });
+  }
   if (
     !current ||
     current.verificationStatus !== domain.verificationStatus ||
@@ -198,10 +221,18 @@ async function determineFailureAction(
     (domain.verificationStatus === "failing" && !failedAt)
   ) {
     // First failure of this episode (or a failing row missing its timestamp).
-    const updated = await markVerificationFailing(domain.id, {
-      status: current.verificationStatus,
-      failedAt: current.verificationFailedAt,
-    });
+    let updated: Awaited<ReturnType<typeof markVerificationFailing>>;
+    try {
+      updated = await markVerificationFailing(domain.id, {
+        status: current.verificationStatus,
+        failedAt: current.verificationFailedAt,
+      });
+    } catch (err) {
+      const { classifyDatabaseError } = await import("../lib/errors");
+      throw classifyDatabaseError(err, {
+        context: `marking verification failing: ${domain.id}`,
+      });
+    }
     if (!updated) return null;
     return {
       action: "marked_failing",
@@ -231,7 +262,12 @@ async function revokeVerificationStep(trackedDomainId: string, failedAt: Date): 
   "use step";
 
   const { revokeVerification } = await import("@domainstack/db/queries/tracked-domains");
-  await revokeVerification(trackedDomainId, failedAt);
+  try {
+    await revokeVerification(trackedDomainId, failedAt);
+  } catch (err) {
+    const { classifyDatabaseError } = await import("../lib/errors");
+    throw classifyDatabaseError(err, { context: `revoking verification: ${trackedDomainId}` });
+  }
 }
 
 type DomainForEmail = Pick<

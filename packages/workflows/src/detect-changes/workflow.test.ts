@@ -42,10 +42,8 @@ const hostingMock = vi.hoisted(() => ({
 const notificationsMock = vi.hoisted(() => ({
   determineNotificationChannelsStep:
     vi.fn<typeof import("./notify").determineNotificationChannelsStep>(),
-  resolveProviderNamesStep:
-    vi.fn<typeof import("./notify").resolveProviderNamesStep>(),
-  sendChangeNotificationStep:
-    vi.fn<typeof import("./notify").sendChangeNotificationStep>(),
+  resolveProviderNamesStep: vi.fn<typeof import("./notify").resolveProviderNamesStep>(),
+  sendChangeNotificationStep: vi.fn<typeof import("./notify").sendChangeNotificationStep>(),
 }));
 
 const snapshotsMock = vi.hoisted(() => ({
@@ -203,6 +201,41 @@ describe("detectChangesWorkflow", () => {
     await expect(
       detectChangesWorkflow({ trackedDomainId: "td-1", monitorLockOwnerToken: "tok" }),
     ).rejects.toThrow("snapshot unavailable");
+    expect(monitorDedupMock.releaseMonitorLock).toHaveBeenCalledWith("td-1", "tok");
+  });
+
+  it("fails fast with a FatalError and releases the lock when a snapshot write violates a constraint", async () => {
+    const { FatalError } = await import("workflow");
+    // A first registration observation against the uninitialized baseline
+    // adopts the data with the first snapshot write.
+    registrationMock.lookupWhoisStep.mockResolvedValue({
+      success: true,
+      data: { recordJson: "{}" },
+    } as never);
+    registrationMock.normalizeAndBuildResponseStep.mockResolvedValue({
+      status: "registered",
+      registrarProvider: { id: "reg-1", name: "Registrar" },
+      nameservers: [],
+      transferLock: null,
+      statuses: [],
+    } as never);
+    registrationMock.persistRegistrationStep.mockResolvedValue(undefined);
+    snapshotsMock.updateSnapshot.mockRejectedValue(
+      new Error("duplicate key value violates unique constraint"),
+    );
+
+    const { detectChangesWorkflow } = await import("./workflow");
+    const rejection = await detectChangesWorkflow({
+      trackedDomainId: "td-1",
+      monitorLockOwnerToken: "tok",
+    }).catch((err: unknown) => err);
+
+    expect(FatalError.is(rejection)).toBe(true);
+    expect(snapshotsMock.updateSnapshot).toHaveBeenCalledTimes(1);
+    expect(snapshotsMock.updateSnapshot).toHaveBeenCalledWith(
+      "td-1",
+      expect.objectContaining({ registration: expect.anything() }),
+    );
     expect(monitorDedupMock.releaseMonitorLock).toHaveBeenCalledWith("td-1", "tok");
   });
 

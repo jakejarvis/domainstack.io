@@ -554,7 +554,12 @@ async function fetchSnapshot(trackedDomainId: string): Promise<SnapshotForMonito
   "use step";
 
   const { getSnapshot } = await import("@domainstack/db/queries/snapshots");
-  return await getSnapshot(trackedDomainId);
+  try {
+    return await getSnapshot(trackedDomainId);
+  } catch (err) {
+    const { classifyDatabaseError } = await import("../lib/errors");
+    throw classifyDatabaseError(err, { context: `fetching snapshot for ${trackedDomainId}` });
+  }
 }
 
 async function updateRegistrationSnapshot(
@@ -564,7 +569,14 @@ async function updateRegistrationSnapshot(
   "use step";
 
   const { updateSnapshot } = await import("@domainstack/db/queries/snapshots");
-  await updateSnapshot(trackedDomainId, { registration });
+  try {
+    await updateSnapshot(trackedDomainId, { registration });
+  } catch (err) {
+    const { classifyDatabaseError } = await import("../lib/errors");
+    throw classifyDatabaseError(err, {
+      context: `updating registration snapshot for ${trackedDomainId}`,
+    });
+  }
 }
 
 async function updateProviderSnapshot(
@@ -574,7 +586,14 @@ async function updateProviderSnapshot(
   "use step";
 
   const { updateSnapshot } = await import("@domainstack/db/queries/snapshots");
-  await updateSnapshot(trackedDomainId, { ...providers, providerPending: null });
+  try {
+    await updateSnapshot(trackedDomainId, { ...providers, providerPending: null });
+  } catch (err) {
+    const { classifyDatabaseError } = await import("../lib/errors");
+    throw classifyDatabaseError(err, {
+      context: `updating provider snapshot for ${trackedDomainId}`,
+    });
+  }
 }
 
 async function updateProviderPending(
@@ -584,7 +603,14 @@ async function updateProviderPending(
   "use step";
 
   const { updateSnapshot } = await import("@domainstack/db/queries/snapshots");
-  await updateSnapshot(trackedDomainId, { providerPending });
+  try {
+    await updateSnapshot(trackedDomainId, { providerPending });
+  } catch (err) {
+    const { classifyDatabaseError } = await import("../lib/errors");
+    throw classifyDatabaseError(err, {
+      context: `updating pending provider change for ${trackedDomainId}`,
+    });
+  }
 }
 
 async function updateCertificateSnapshot(
@@ -594,5 +620,12 @@ async function updateCertificateSnapshot(
   "use step";
 
   const { updateSnapshot } = await import("@domainstack/db/queries/snapshots");
-  await updateSnapshot(trackedDomainId, { certificate });
+  try {
+    await updateSnapshot(trackedDomainId, { certificate });
+  } catch (err) {
+    const { classifyDatabaseError } = await import("../lib/errors");
+    throw classifyDatabaseError(err, {
+      context: `updating certificate snapshot for ${trackedDomainId}`,
+    });
+  }
 }

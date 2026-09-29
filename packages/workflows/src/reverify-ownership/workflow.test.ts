@@ -116,6 +116,25 @@ describe("reverifyOwnershipWorkflow", () => {
     expect(sharedNotificationsMock.sendNotification).not.toHaveBeenCalled();
   });
 
+  it("classifies a transient database failure while marking success as RetryableError", async () => {
+    const { RetryableError } = await import("workflow");
+    verifyDomainMock.verifyDomainOwnershipByMethod.mockResolvedValue({
+      verified: true,
+      method: "dns_txt",
+    } as never);
+    trackedDomainsMock.markVerificationSuccessful.mockRejectedValue(
+      new Error("connection terminated unexpectedly"),
+    );
+
+    const { reverifyOwnershipWorkflow } = await import("./workflow");
+    const rejection = await reverifyOwnershipWorkflow({ trackedDomainId: "td-1" }).catch(
+      (err: unknown) => err,
+    );
+
+    expect(RetryableError.is(rejection)).toBe(true);
+    expect(trackedDomainsMock.markVerificationSuccessful).toHaveBeenCalledWith("td-1");
+  });
+
   it("skips without touching grace-period state when the probe itself fails to complete", async () => {
     verifyDomainMock.verifyDomainOwnershipByMethod.mockResolvedValue({
       verified: false,
