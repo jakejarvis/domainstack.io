@@ -41,7 +41,6 @@ allowBuilds:
   core-js: true
   esbuild: true
   msw: true
-  protobufjs: true
   puppeteer: true
   sharp: true
   '@nestjs/core': false
