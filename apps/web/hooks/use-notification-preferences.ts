@@ -1,9 +1,11 @@
 "use client";
 
 import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
+import type { TRPCClientErrorLike } from "@trpc/client";
 import { toast } from "sonner";
 
 import { useTRPC } from "@/lib/trpc/client";
+import type { AppRouter } from "@domainstack/api";
 import type {
   NotificationCategory,
   TrackedDomainWithDetails,
@@ -19,6 +21,8 @@ export interface UseNotificationPreferencesReturn {
   isLoading: boolean;
   /** Whether queries failed */
   isError: boolean;
+  /** The first query error, if any */
+  error: TRPCClientErrorLike<AppRouter> | null;
   /** Whether any mutation is pending */
   isPending: boolean;
   /** Update a global preference toggle */
@@ -144,6 +148,7 @@ export function useNotificationPreferences(): UseNotificationPreferencesReturn {
     globalPrefs,
     isLoading: domainsResult.isLoading || globalPrefsResult.isLoading,
     isError: domainsResult.isError || globalPrefsResult.isError,
+    error: domainsResult.error ?? globalPrefsResult.error,
     isPending: updateGlobalMutation.isPending || muteDomainMutation.isPending,
     updateGlobalPreference,
     muteDomain,

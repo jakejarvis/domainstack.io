@@ -22,6 +22,7 @@ export function NotificationsPanel({ userEmail }: { userEmail: string }) {
     globalPrefs,
     isLoading,
     isError,
+    error,
     isPending,
     updateGlobalPreference,
     muteDomain,
@@ -32,7 +33,7 @@ export function NotificationsPanel({ userEmail }: { userEmail: string }) {
   }
 
   if (isError || !domains || !globalPrefs) {
-    throw new Error("Failed to load notification settings");
+    throw error instanceof Error ? error : new Error("Failed to load notification settings");
   }
 
   const verifiedDomains = domains

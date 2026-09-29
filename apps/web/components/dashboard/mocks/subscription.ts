@@ -26,6 +26,7 @@ export function useSubscription() {
     isPro: mockSubscription.plan === "pro",
     isSubscriptionLoading: false,
     isSubscriptionError: false,
+    subscriptionError: null,
     refetchSubscription: () => undefined,
     invalidateSubscription: () => undefined,
     handleCheckout: subscriptionActionSpies.handleCheckout,

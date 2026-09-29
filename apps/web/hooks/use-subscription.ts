@@ -1,11 +1,13 @@
 "use client";
 
 import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { TRPCClientErrorLike } from "@trpc/client";
 import posthogClient from "posthog-js";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 import { useTRPC } from "@/lib/trpc/client";
+import type { AppRouter } from "@domainstack/api";
 import { checkoutEmbed, customer } from "@domainstack/auth/client";
 import { PRO_TIER_INFO } from "@domainstack/polar/products";
 import type { SubscriptionQuota } from "@domainstack/types";
@@ -24,6 +26,8 @@ interface UseSubscriptionResult {
   isSubscriptionLoading: boolean;
   /** True if error occurred */
   isSubscriptionError: boolean;
+  /** The query error, if any */
+  subscriptionError: TRPCClientErrorLike<AppRouter> | null;
   /** Refetch subscription data */
   refetchSubscription: () => void;
   /** Invalidate subscription query cache */
@@ -155,6 +159,7 @@ export function useSubscription(options: UseSubscriptionOptions = {}): UseSubscr
     isPro: query.data?.plan === "pro",
     isSubscriptionLoading: query.isLoading,
     isSubscriptionError: query.isError,
+    subscriptionError: query.error,
     refetchSubscription: () => {
       void query.refetch();
     },

@@ -18,6 +18,7 @@ export function SubscriptionPanel() {
     isPro,
     isSubscriptionLoading,
     isSubscriptionError,
+    subscriptionError,
     handleCustomerPortal,
     isCustomerPortalLoading,
   } = useSubscription();
@@ -27,7 +28,9 @@ export function SubscriptionPanel() {
   }
 
   if (isSubscriptionError) {
-    return <SettingsCard title="Plan" description="Failed to load subscription information" />;
+    throw subscriptionError instanceof Error
+      ? subscriptionError
+      : new Error("Failed to load subscription");
   }
 
   const portalIcon = isCustomerPortalLoading ? <Spinner /> : <IconCreditCard />;

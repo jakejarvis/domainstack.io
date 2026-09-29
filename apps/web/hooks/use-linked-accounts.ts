@@ -1,11 +1,13 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { TRPCClientErrorLike } from "@trpc/client";
 import posthogClient from "posthog-js";
 import { toast } from "sonner";
 
 import { getEnabledProviders, type OAuthProviderConfig } from "@/lib/oauth";
 import { useTRPC } from "@/lib/trpc/client";
+import type { AppRouter } from "@domainstack/api";
 import { linkSocial, unlinkAccount } from "@domainstack/auth/client";
 
 export interface UseLinkedAccountsReturn {
@@ -19,6 +21,8 @@ export interface UseLinkedAccountsReturn {
   isLoading: boolean;
   /** Whether the query failed */
   isError: boolean;
+  /** The query error, if any */
+  error: TRPCClientErrorLike<AppRouter> | null;
   /** Whether user can unlink (must have at least 2 linked accounts) */
   canUnlink: boolean;
   /** Link a provider (navigates to OAuth flow) */
@@ -65,6 +69,7 @@ export function useLinkedAccounts(): UseLinkedAccountsReturn {
     data: linkedAccounts,
     isLoading,
     isError,
+    error,
   } = useQuery(trpc.user.getLinkedAccounts.queryOptions());
 
   // Unlink mutation with optimistic updates.
@@ -118,6 +123,7 @@ export function useLinkedAccounts(): UseLinkedAccountsReturn {
     enabledProviders,
     isLoading,
     isError,
+    error,
     canUnlink,
     linkProvider,
     unlinkProvider: (providerId: string) => {

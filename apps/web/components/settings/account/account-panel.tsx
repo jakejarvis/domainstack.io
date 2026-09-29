@@ -33,6 +33,7 @@ export function AccountPanel() {
     enabledProviders,
     isLoading,
     isError,
+    error,
     canUnlink,
     linkProvider,
     unlinkProvider,
@@ -74,7 +75,7 @@ export function AccountPanel() {
   }
 
   if (isError || !linkedAccounts) {
-    throw new Error("Failed to load linked accounts");
+    throw error instanceof Error ? error : new Error("Failed to load linked accounts");
   }
 
   // Get the provider config being unlinked for the dialog
