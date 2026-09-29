@@ -1,4 +1,7 @@
-import type { Certificate, RegistrationResponse } from "@domainstack/types";
+import type { DnsFetchData } from "@domainstack/core/dns/types";
+import type { HeadersFetchResult } from "@domainstack/core/headers/types";
+import type { TlsFetchSuccess } from "@domainstack/core/tls/types";
+import type { Certificate, DnsRecord, GeoIpData, RegistrationResponse } from "@domainstack/types";
 
 import { optionalCall, optionalSettled, requireSettled } from "../lib/settled";
 import {
@@ -21,12 +24,27 @@ import {
  *
  * DNS is required. WHOIS/headers/certs are enrichment: RDAP timeouts and
  * unreachable HTTP/TLS hosts (or a domain with no A/AAAA) must not fail the run.
+ *
+ * The independent chains (registration, DNS, headers, certificates, hosting) run
+ * concurrently, and GeoIP starts as soon as DNS resolves; a required failure is
+ * re-thrown only after every chain has settled.
  */
 export async function observeDomain(domainName: string) {
+  // GeoIP needs only the A/AAAA answer, so chain it off DNS instead of waiting
+  // for WHOIS/headers/TLS.
+  const dnsPromise = fetchDnsRecordsStep(domainName);
+  const geoPromise = dnsPromise.then(
+    (dns) => {
+      const ip = firstIp(dns.records);
+      return ip ? optionalCall(lookupGeoIpStep(ip)) : null;
+    },
+    () => null, // DNS failure is re-thrown below via requireSettled
+  );
+
   const [registrationSettled, dnsSettled, headersSettled, certificatesSettled] =
     await Promise.allSettled([
       lookupWhoisStep(domainName),
-      fetchDnsRecordsStep(domainName),
+      dnsPromise,
       fetchHeadersStep(domainName),
       fetchCertificateChainStep(domainName),
     ]);
@@ -36,42 +54,68 @@ export async function observeDomain(domainName: string) {
   const headersResult = optionalSettled(headersSettled);
   const certificatesResult = optionalSettled(certificatesSettled);
 
-  // Process and persist registration
-  let registrationData: RegistrationResponse | null = null;
-  if (registrationResult?.success) {
-    registrationData = await normalizeAndBuildResponseStep(registrationResult.data.recordJson);
-    // Persist registered and unregistered alike, so a drop updates the cache
-    await optionalCall(persistRegistrationStep(domainName, registrationData));
+  const [registrationChain, , , certificatesChain, hostingChain] = await Promise.allSettled([
+    registrationResult?.success
+      ? observeRegistration(domainName, registrationResult.data.recordJson)
+      : null,
+    // The DNS cache is a side effect here: callers use dnsResult directly, so a
+    // failed write must not abort the run (same rule as the other persists).
+    optionalCall(persistDnsRecordsStep(domainName, dnsResult)),
+    headersResult?.success
+      ? optionalCall(persistHeadersStep(domainName, headersResult.data))
+      : null,
+    certificatesResult?.success ? observeCertificates(domainName, certificatesResult) : [],
+    observeHosting(domainName, dnsResult, headersResult, geoPromise),
+  ]);
+
+  const registrationData = requireSettled(registrationChain);
+  const certificates = requireSettled(certificatesChain);
+  const { geoResult, providers } = requireSettled(hostingChain);
+  const ip = firstIp(dnsResult.records);
+
+  return { registrationData, dnsResult, headersResult, certificates, ip, geoResult, providers };
+}
+
+function firstIp(records: DnsRecord[]): string | null {
+  const a = records.find((d) => d.type === "A");
+  const aaaa = records.find((d) => d.type === "AAAA");
+  return (a?.value || aaaa?.value) ?? null;
+}
+
+async function observeRegistration(
+  domainName: string,
+  recordJson: string,
+): Promise<RegistrationResponse> {
+  const registrationData = await normalizeAndBuildResponseStep(recordJson);
+  // Persist registered and unregistered alike, so a drop updates the cache
+  await optionalCall(persistRegistrationStep(domainName, registrationData));
+  return registrationData;
+}
+
+async function observeCertificates(
+  domainName: string,
+  certificatesResult: TlsFetchSuccess,
+): Promise<Certificate[]> {
+  const processed = await optionalCall(processChainStep(certificatesResult));
+  if (processed) {
+    await optionalCall(persistCertificatesStep(domainName, processed));
   }
+  return processed?.certificates ?? [];
+}
 
-  // The DNS cache is a side effect here: callers use dnsResult directly, so a
-  // failed write must not abort the run (same rule as the other persists).
-  await optionalCall(persistDnsRecordsStep(domainName, dnsResult));
-
-  if (headersResult?.success) {
-    await optionalCall(persistHeadersStep(domainName, headersResult.data));
-  }
-
-  // Process and persist certificates
-  let certificates: Certificate[] = [];
-  if (certificatesResult?.success) {
-    const processed = await optionalCall(processChainStep(certificatesResult));
-    if (processed) {
-      await optionalCall(persistCertificatesStep(domainName, processed));
-      certificates = processed.certificates;
-    }
-  }
-
+async function observeHosting(
+  domainName: string,
+  dnsResult: DnsFetchData,
+  headersResult: HeadersFetchResult | null,
+  geoPromise: Promise<GeoIpData | null>,
+) {
   // Hosting detection uses DNS even when headers fail (no A/AAAA, etc.)
-  const a = dnsResult.records.find((d) => d.type === "A");
-  const aaaa = dnsResult.records.find((d) => d.type === "AAAA");
-  const ip = (a?.value || aaaa?.value) ?? null;
-  const geoResult = ip ? await optionalCall(lookupGeoIpStep(ip)) : null;
+  const geoResult = await geoPromise;
   const headers = headersResult?.success ? headersResult.data.headers : [];
 
   const providers = await detectAndResolveProvidersStep(dnsResult.records, headers, geoResult);
 
   await optionalCall(persistHostingStep(domainName, providers, geoResult?.geo ?? null));
 
-  return { registrationData, dnsResult, headersResult, certificates, ip, geoResult, providers };
+  return { geoResult, providers };
 }
