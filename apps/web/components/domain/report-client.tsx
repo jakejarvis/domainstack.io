@@ -9,7 +9,7 @@ import {
   type UseSuspenseQueryOptions,
 } from "@tanstack/react-query";
 import posthogClient from "posthog-js";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 
 import { CreateIssueButton } from "@/components/create-issue-button";
 import { CertificatesSection } from "@/components/domain/certificates/certificates-section";
@@ -157,12 +157,12 @@ function useDomainReportTracking(domain: string, isRegistered: boolean) {
     posthogClient.capture("report_viewed", { domain });
   }, [domain, isRegistered]);
 
-  const headerRef = useRef<HTMLDivElement>(null);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const { activeSection, scrollToSection } = useSectionTracking(SECTION_IDS);
 
-  useEffect(() => {
-    const headerElement = headerRef.current;
+  // A callback ref, not a mount-only effect: the header is absent while the
+  // error state renders and appears after Retry, and must be observed then.
+  const headerRef = useCallback((headerElement: HTMLDivElement | null) => {
     if (!headerElement) return;
 
     const observer = new IntersectionObserver(
@@ -176,7 +176,10 @@ function useDomainReportTracking(domain: string, isRegistered: boolean) {
     );
 
     observer.observe(headerElement);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      setIsHeaderVisible(true);
+    };
   }, []);
 
   return { headerRef, isHeaderVisible, activeSection, scrollToSection };
