@@ -26,7 +26,7 @@ export async function upsertFavicon(params: FaviconInsert): Promise<Favicon | nu
  * Fetch favicon record by domain name with staleness metadata.
  */
 export async function getFavicon(domainName: string): Promise<CacheResult<FaviconResponse>> {
-  const now = new Date();
+  const nowMs = Date.now();
   const [row] = await db
     .select({
       url: favicons.url,
@@ -50,7 +50,7 @@ export async function getFavicon(domainName: string): Promise<CacheResult<Favico
   }
 
   const { fetchedAt, expiresAt } = row;
-  const stale = expiresAt <= now;
+  const stale = expiresAt.getTime() <= nowMs;
 
   return {
     data: { url: row.url },

@@ -56,7 +56,7 @@ export async function replaceHeaders(params: ReplaceHeadersParams) {
  * reducing from 2 round trips to 1.
  */
 export async function getCachedHeaders(domain: string): Promise<CacheResult<HeadersResponse>> {
-  const now = Date.now();
+  const nowMs = Date.now();
 
   // Single query: JOIN domains -> httpHeaders
   const [row] = await db
@@ -76,7 +76,7 @@ export async function getCachedHeaders(domain: string): Promise<CacheResult<Head
   }
 
   const { fetchedAt, expiresAt } = row;
-  const stale = (expiresAt?.getTime?.() ?? 0) <= now;
+  const stale = expiresAt.getTime() <= nowMs;
 
   // Status messages are derived from the numeric code at the call site.
   return {

@@ -21,7 +21,7 @@ type HostingInsert = InferInsertModel<typeof hostingTable>;
  * reducing from 2 round trips to 1.
  */
 export async function getCachedHosting(domain: string): Promise<CacheResult<HostingResponse>> {
-  const now = Date.now();
+  const nowMs = Date.now();
 
   const hp = alias(providersTable, "hp");
   const ep = alias(providersTable, "ep");
@@ -61,7 +61,7 @@ export async function getCachedHosting(domain: string): Promise<CacheResult<Host
   }
 
   const { fetchedAt, expiresAt } = row;
-  const stale = (expiresAt?.getTime?.() ?? 0) <= now;
+  const stale = expiresAt.getTime() <= nowMs;
 
   // Only construct geo object if there's meaningful data
   // (at minimum, country_code is required for display)

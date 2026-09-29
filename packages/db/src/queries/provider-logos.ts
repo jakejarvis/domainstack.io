@@ -28,7 +28,7 @@ export async function upsertProviderLogo(params: ProviderLogoInsert): Promise<Pr
 export async function getProviderLogo(
   providerId: string,
 ): Promise<CacheResult<ProviderLogoResponse>> {
-  const now = new Date();
+  const nowMs = Date.now();
   const [row] = await db
     .select({
       url: providerLogos.url,
@@ -51,7 +51,7 @@ export async function getProviderLogo(
   }
 
   const { fetchedAt, expiresAt } = row;
-  const stale = expiresAt <= now;
+  const stale = expiresAt.getTime() <= nowMs;
 
   return {
     data: { url: row.url },

@@ -215,7 +215,7 @@ export async function getCachedDns(domain: string): Promise<CacheResult<DnsRecor
   }, null);
 
   // Check if ANY record is stale (if one is stale, we should revalidate all)
-  const stale = rows.some((r) => (r.expiresAt?.getTime?.() ?? 0) <= nowMs);
+  const stale = rows.some((r) => r.expiresAt.getTime() <= nowMs);
 
   // Assemble cached records
   const records: DnsRecord[] = rows.map((r) => ({

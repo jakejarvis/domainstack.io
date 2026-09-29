@@ -56,7 +56,7 @@ export async function upsertRegistration(params: RegistrationInsert) {
 export async function getCachedRegistration(
   domain: string,
 ): Promise<CacheResult<RegistrationResponse>> {
-  const now = new Date();
+  const nowMs = Date.now();
   const resellerProvider = alias(providers, "reseller_provider");
   // The raw RDAP/WHOIS payload is large; only read it on demand (see getRegistrationRawResponse).
   const { rawResponse: _omit, ...registrationColumns } = getTableColumns(registrations);
@@ -86,7 +86,7 @@ export async function getCachedRegistration(
   }
 
   const { fetchedAt, expiresAt } = row.registration;
-  const stale = expiresAt <= now;
+  const stale = expiresAt.getTime() <= nowMs;
 
   const registrarProvider: ProviderRef = row.providerName
     ? {

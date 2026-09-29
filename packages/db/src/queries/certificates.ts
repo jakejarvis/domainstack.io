@@ -169,7 +169,7 @@ export async function getCachedCertificates(
   const check = labeled[0];
   const fetchedAt = check.fetchedAt;
   const expiresAt = check.expiresAt;
-  const stale = (expiresAt?.getTime?.() ?? 0) <= nowMs;
+  const stale = expiresAt.getTime() <= nowMs;
 
   const chained: Certificate[] = labeled.map((c) => ({
     issuer: c.issuer,

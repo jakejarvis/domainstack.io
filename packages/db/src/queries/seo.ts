@@ -60,7 +60,7 @@ export async function getCachedSeo(domain: string): Promise<CacheResult<SeoRespo
   }
 
   const { fetchedAt, expiresAt } = row;
-  const stale = (expiresAt?.getTime?.() ?? 0) <= nowMs;
+  const stale = expiresAt.getTime() <= nowMs;
 
   // Check blocklist for cached OG images (isBlocked is non-null if domain is blocked)
   const blocked = row.previewImageUploadedUrl && row.isBlocked !== null;
