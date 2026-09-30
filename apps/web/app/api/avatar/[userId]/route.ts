@@ -14,6 +14,21 @@ const MAX_AVATAR_BYTES = 4 * 1024 * 1024;
 // Request timeout
 const REQUEST_TIMEOUT_MS = 5000;
 
+/** Raster formats browsers render as images only. SVG is excluded (it can carry script). */
+const ALLOWED_AVATAR_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/gif",
+  "image/webp",
+  "image/avif",
+]);
+
+/** `Image/PNG; charset=binary` → `image/png`. */
+function mimeEssence(contentType: string | null): string | null {
+  const essence = contentType?.split(";", 1)[0]?.trim().toLowerCase();
+  return essence || null;
+}
+
 export async function GET(
   _request: NextRequest,
   context: RouteContext<"/api/avatar/[userId]">,
@@ -52,10 +67,13 @@ export async function GET(
       return new NextResponse("Upstream error", { status: 502 });
     }
 
-    // Validate content type is a safe image format (block SVGs which can contain scripts)
-    const { contentType } = asset;
-    if (!contentType?.startsWith("image/") || contentType === "image/svg+xml") {
-      logger.warn({ userId, contentType }, "upstream returned invalid content type");
+    // Validate content type is an allowlisted raster format (SVG can contain scripts)
+    const contentType = mimeEssence(asset.contentType);
+    if (!contentType || !ALLOWED_AVATAR_TYPES.has(contentType)) {
+      logger.warn(
+        { userId, contentType: asset.contentType },
+        "upstream returned disallowed content type",
+      );
       return new NextResponse("Invalid content type", { status: 502 });
     }
 
@@ -75,6 +93,8 @@ export async function GET(
       headers: {
         "Content-Type": contentType,
         "Cache-Control": cacheControl,
+        "X-Content-Type-Options": "nosniff",
+        "Content-Security-Policy": "default-src 'none'; sandbox",
       },
     });
   } catch (err) {
