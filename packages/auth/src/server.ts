@@ -114,6 +114,9 @@ export const auth = betterAuth({
   secondaryStorage: createRedisStorage(redis ?? null),
   baseURL: process.env.NEXT_PUBLIC_BASE_URL,
   secret: process.env.BETTER_AUTH_SECRET,
+  // The app never lets users edit their profile; this endpoint would otherwise
+  // let a signed-in user point `image` at any URL (served by /api/avatar).
+  disabledPaths: ["/update-user"],
   logger: {
     log: (level, message, ...args) => {
       const logFn = logger[level].bind(logger);
