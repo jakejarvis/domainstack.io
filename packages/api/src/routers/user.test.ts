@@ -16,6 +16,7 @@ const {
   users,
   userTrackedDomains,
 } = await import("@domainstack/db/schema");
+const { validateCalendarFeedToken } = await import("@domainstack/db/queries/calendar-feeds");
 const { createCaller } = await import("../router");
 
 import { NOTIFICATION_CATEGORIES } from "@domainstack/constants";
@@ -387,6 +388,18 @@ describe("user router", () => {
     });
   });
 
+  describe("validateCalendarFeedToken", () => {
+    it("rejects the token of a disabled feed", async () => {
+      await db.insert(calendarFeeds).values({
+        userId: TEST_USER_ID,
+        token: "disabled-token",
+        enabled: false,
+      });
+
+      expect(await validateCalendarFeedToken("disabled-token")).toMatchObject({ valid: false });
+    });
+  });
+
   describe("rotateCalendarFeedToken", () => {
     it("rotates the feed token", async () => {
       const caller = createAuthenticatedCaller();
@@ -402,6 +415,31 @@ describe("user router", () => {
 
       expect(result.feedUrl).toBeDefined();
       expect(result.feedUrl).not.toContain("old-token");
+    });
+
+    it("revokes the old token and accepts the new one", async () => {
+      const caller = createAuthenticatedCaller();
+
+      await db.insert(calendarFeeds).values({
+        userId: TEST_USER_ID,
+        token: "old-token",
+        enabled: true,
+      });
+      expect(await validateCalendarFeedToken("old-token")).toMatchObject({
+        valid: true,
+        userId: TEST_USER_ID,
+      });
+
+      const result = await caller.user.rotateCalendarFeedToken();
+      const newToken = new URL(result.feedUrl).searchParams.get("token");
+
+      expect(newToken).toBeTruthy();
+      expect(newToken).not.toBe("old-token");
+      expect(await validateCalendarFeedToken("old-token")).toMatchObject({ valid: false });
+      expect(await validateCalendarFeedToken(newToken as string)).toMatchObject({
+        valid: true,
+        userId: TEST_USER_ID,
+      });
     });
 
     it("returns not found when no feed exists", async () => {
@@ -429,6 +467,21 @@ describe("user router", () => {
       // Verify it's gone
       const feedStatus = await caller.user.getCalendarFeed();
       expect(feedStatus.enabled).toBe(false);
+    });
+
+    it("revokes the deleted feed's token", async () => {
+      const caller = createAuthenticatedCaller();
+
+      await db.insert(calendarFeeds).values({
+        userId: TEST_USER_ID,
+        token: "doomed-token",
+        enabled: true,
+      });
+      expect(await validateCalendarFeedToken("doomed-token")).toMatchObject({ valid: true });
+
+      await caller.user.deleteCalendarFeed();
+
+      expect(await validateCalendarFeedToken("doomed-token")).toMatchObject({ valid: false });
     });
 
     it("returns not found when no feed exists", async () => {

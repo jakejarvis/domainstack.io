@@ -197,6 +197,77 @@ describe("tracking router", () => {
     });
   });
 
+  describe("cross-user access", () => {
+    // A row owned by TEST_USER_ID must be invisible to TEST_USER_2_ID: every
+    // procedure keyed by trackedDomainId answers NOT_FOUND and leaks nothing.
+    const OWNER_TOKEN = "owner-secret-token";
+
+    it("getVerificationData does not expose another user's verification token", async () => {
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: OWNER_TOKEN,
+        verified: false,
+      });
+
+      const error = await createAuthenticatedCaller(TEST_USER_2_ID)
+        .tracking.getVerificationData({ trackedDomainId: TEST_TRACKED_ID })
+        .catch((err: unknown) => err);
+
+      expect(error).toMatchObject({ code: "NOT_FOUND" });
+      expect(JSON.stringify(error, Object.getOwnPropertyNames(error))).not.toContain(OWNER_TOKEN);
+    });
+
+    it("verifyDomain rejects another user's tracked domain and does not verify it", async () => {
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: OWNER_TOKEN,
+        verified: false,
+      });
+      verificationMock.verifyDomain.mockResolvedValue({ verified: true, method: "dns_txt" });
+
+      await expect(
+        createAuthenticatedCaller(TEST_USER_2_ID).tracking.verifyDomain({
+          trackedDomainId: TEST_TRACKED_ID,
+        }),
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+      expect(verificationMock.verifyDomain).not.toHaveBeenCalled();
+      expect(verificationMock.verifyDomainByMethod).not.toHaveBeenCalled();
+      const [row] = await db
+        .select({ verified: userTrackedDomains.verified })
+        .from(userTrackedDomains)
+        .where(eq(userTrackedDomains.id, TEST_TRACKED_ID));
+      expect(row.verified).toBe(false);
+    });
+
+    it("unarchiveDomain rejects another user's archived domain and leaves it archived", async () => {
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: OWNER_TOKEN,
+        verified: true,
+        archivedAt: new Date(),
+      });
+
+      await expect(
+        createAuthenticatedCaller(TEST_USER_2_ID).tracking.unarchiveDomain({
+          trackedDomainId: TEST_TRACKED_ID,
+        }),
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+      const [row] = await db
+        .select({ archivedAt: userTrackedDomains.archivedAt })
+        .from(userTrackedDomains)
+        .where(eq(userTrackedDomains.id, TEST_TRACKED_ID));
+      expect(row.archivedAt).not.toBeNull();
+    });
+  });
+
   describe("listDomains", () => {
     it("returns empty array when user has no tracked domains", async () => {
       const caller = createAuthenticatedCaller();
