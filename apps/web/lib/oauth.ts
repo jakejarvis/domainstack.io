@@ -8,8 +8,9 @@ import type { OAuthProvider } from "@domainstack/auth/types";
  * To add a new provider:
  * 1. Add the provider config to OAUTH_PROVIDERS
  * 2. Add env vars (CLIENT_ID, CLIENT_SECRET) to .env.local
- * 3. Update lib/auth.ts socialProviders config
- * 4. Update env var validation in lib/auth.ts
+ * 3. Update the socialProviders config in packages/auth/src/server.ts
+ * 4. Update env var validation in packages/auth/src/server.ts
+ * 5. Add the id to the OAuthProvider union in packages/auth/src/types.ts
  */
 
 export interface OAuthProviderConfig {
@@ -29,7 +30,7 @@ export interface OAuthProviderConfig {
  *
  * Note: Use NEXT_PUBLIC_ env vars for the enabled flag since this file
  * is imported in client components. The actual OAuth secrets are kept
- * server-side in lib/auth.ts.
+ * server-side in packages/auth/src/server.ts.
  */
 const OAUTH_PROVIDERS: OAuthProviderConfig[] = [
   {

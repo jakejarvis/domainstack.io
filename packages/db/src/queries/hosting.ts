@@ -14,8 +14,8 @@ type HostingInsert = InferInsertModel<typeof hostingTable>;
  * Get cached hosting data for a domain with staleness metadata.
  * Returns data even if expired, with `stale: true` flag.
  *
- * Note: This queries the database cache. For fetching fresh data,
- * use `hostingWorkflow` from workflows/hosting-orchestration.
+ * Note: This queries the database cache. For fresh data,
+ * use `lookupSection("hosting", …)` from `@domainstack/core/lookup`.
  *
  * Optimized: Uses a single query with JOINs to fetch domain and hosting data,
  * reducing from 2 round trips to 1.

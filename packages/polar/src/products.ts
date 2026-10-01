@@ -108,7 +108,6 @@ export function getTierForProductId(productId: string): "pro" | null {
 
 /**
  * Pro tier display info for UI components.
- * Use getProTierInfo() when you need the dynamic domain limit from the subscription.
  */
 export const PRO_TIER_INFO = {
   name: "Pro",
