@@ -55,14 +55,13 @@ describe("getFiles", () => {
     expect(getFiles()).toBe(getFiles());
   });
 
-  it("leaves the content type to the key's extension when the bytes agree", async () => {
+  it("keeps the content type implied by the key's extension when the bytes agree", async () => {
     await getFiles().upload("abc/32x32.webp", WEBP);
 
-    // Vercel Blob derives image/webp from the pathname when no type is sent
     expect(adapter.upload).toHaveBeenLastCalledWith(
       "abc/32x32.webp",
       WEBP,
-      expect.not.objectContaining({ contentType: expect.anything() }),
+      expect.objectContaining({ contentType: "image/webp" }),
     );
   });
 
