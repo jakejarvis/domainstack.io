@@ -20,8 +20,36 @@ const logger = createLogger({ source: "polar/reconcile" });
  * server-side expiry reconcile cron catch genuine expirations later.
  */
 export type CustomerSubscriptionState =
-  | { status: "ok"; hasActiveSubscription: boolean; hasNonCancelingActive: boolean }
+  | {
+      status: "ok";
+      hasActiveSubscription: boolean;
+      hasNonCancelingActive: boolean;
+      /**
+       * When every active subscription is canceling, the latest `current_period_end`
+       * among them (when access actually ends). `null` if any subscription is
+       * renewing, there are none, or no period end could be parsed.
+       */
+      cancelingPeriodEnd: Date | null;
+    }
   | { status: "unknown" };
+
+/**
+ * Polar answers 404 when the customer doesn't exist (never checked out, or
+ * deleted). Duck-typed on `statusCode` to avoid importing an SDK internal path.
+ */
+function isPolarNotFound(err: unknown): boolean {
+  return typeof err === "object" && err !== null && "statusCode" in err && err.statusCode === 404;
+}
+
+function latestPeriodEnd(subscriptions: { current_period_end: string }[]): Date | null {
+  let latest: Date | null = null;
+  for (const sub of subscriptions) {
+    const end = new Date(sub.current_period_end);
+    if (Number.isNaN(end.getTime())) continue;
+    if (!latest || end > latest) latest = end;
+  }
+  return latest;
+}
 
 export async function getCustomerSubscriptionState(
   userId: string,
@@ -34,12 +62,25 @@ export async function getCustomerSubscriptionState(
   try {
     const state = await getStateExternalCustomers(polarClient)(userId);
     const active = state.active_subscriptions;
+    const hasNonCancelingActive = active.some((sub) => !sub.cancel_at_period_end);
     return {
       status: "ok",
       hasActiveSubscription: active.length > 0,
-      hasNonCancelingActive: active.some((sub) => !sub.cancel_at_period_end),
+      hasNonCancelingActive,
+      cancelingPeriodEnd:
+        active.length > 0 && !hasNonCancelingActive ? latestPeriodEnd(active) : null,
     };
   } catch (err) {
+    // Polar answers 404 when the customer doesn't exist (never checked out, or deleted).
+    // That is a definite "no subscription", not an unknown state.
+    if (isPolarNotFound(err)) {
+      return {
+        status: "ok",
+        hasActiveSubscription: false,
+        hasNonCancelingActive: false,
+        cancelingPeriodEnd: null,
+      };
+    }
     logger.error({ err, userId }, "Failed to fetch Polar customer state for reconciliation");
     return { status: "unknown" };
   }
