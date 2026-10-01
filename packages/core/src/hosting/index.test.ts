@@ -129,6 +129,29 @@ describe("fetchHosting TTL", () => {
     expect(expiresInMs()).toBe(RETRY_MS);
   });
 
+  it("returns no location when GeoIP has none, and still persists", async () => {
+    const emptyGeo = { city: "", region: "", country: "", country_code: "", lat: null, lon: null };
+    mocks.lookupGeoIp.mockResolvedValue({ ...GEO, geo: emptyGeo });
+    const res = await fetchHosting(DOMAIN);
+    // getCachedHosting reads an all-empty location back as null; a fresh lookup must agree.
+    expect(res.data.geo).toBeNull();
+    expect(mocks.upsertHosting).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns the location when GeoIP has only a country", async () => {
+    const countryOnly = {
+      ...GEO.geo,
+      city: "",
+      region: "",
+      country_code: "",
+      lat: null,
+      lon: null,
+    };
+    mocks.lookupGeoIp.mockResolvedValue({ ...GEO, geo: countryOnly });
+    const res = await fetchHosting(DOMAIN);
+    expect(res.data.geo).toEqual(countryOnly);
+  });
+
   it("rethrows unexpected GeoIP errors without persisting", async () => {
     mocks.lookupGeoIp.mockRejectedValue(new Error("boom"));
     await expect(fetchHosting(DOMAIN)).rejects.toThrow("boom");

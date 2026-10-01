@@ -111,9 +111,14 @@ export async function fetchHosting(domain: string): Promise<HostingResult> {
       hostingProvider: providers.hostingProvider,
       emailProvider: providers.emailProvider,
       dnsProvider: providers.dnsProvider,
-      geo: geoResult?.geo ?? null,
+      geo: displayGeo(geoResult?.geo),
     },
   };
+}
+
+/** Matches getCachedHosting: no country, country code, or city means no location to show. */
+function displayGeo(geo: GeoIpData["geo"] | null | undefined): GeoIpData["geo"] | null {
+  return geo && (geo.country_code || geo.country || geo.city) ? geo : null;
 }
 
 // ============================================================================
