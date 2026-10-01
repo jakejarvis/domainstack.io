@@ -105,7 +105,7 @@ Every other variable in `.env.example` is optional locally:
 | Service                                | Without it (in development)                                                            |
 | -------------------------------------- | -------------------------------------------------------------------------------------- |
 | OAuth (GitHub, GitLab, Google, Vercel) | Sign in as a seeded user with email/password                                           |
-| Resend                                 | Emails are written to `apps/web/.dev-emails/`, and the log prints the path to each one |
+| Resend                                 | Emails are not sent: each send fails with "Resend is not configured"                   |
 | Vercel Blob                            | Favicons, screenshots and OG images are stored in `apps/web/public/_dev-blob/`         |
 | Upstash Redis                          | Rate limiting, session caching and monitor locks are skipped                           |
 | Polar                                  | Billing is disabled. When a token is set, Polar runs in sandbox outside production     |

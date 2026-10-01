@@ -58,6 +58,5 @@ next-env.d.ts
 # next-agents-md
 .next-docs/
 
-# local dev fallbacks (blob storage and emails written to disk)
+# local dev fallback for blob storage
 apps/web/public/_dev-blob/
-apps/web/.dev-emails/
