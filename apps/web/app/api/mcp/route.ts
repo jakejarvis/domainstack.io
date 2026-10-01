@@ -7,16 +7,33 @@ import { PostHog } from "posthog-node";
 import { boundToolOutput } from "@/lib/chat/bound-tool-output";
 import {
   domainToolInputSchema,
+  INVALID_DOMAIN_MESSAGE,
   MCP_REPORT_TOOL,
   MCP_SECTION_TOOLS,
   MCP_TOOLS,
+  RATE_LIMIT_MESSAGE,
   reportSchema,
 } from "@/lib/chat/domain-tools";
+import { getLookupErrorMessage } from "@/lib/constants/lookup-errors";
 import { type Section, SECTION_IDS } from "@domainstack/constants";
 import { lookupSection } from "@domainstack/core/lookup";
+import { createLogger } from "@domainstack/logger";
+import { RateLimitError } from "@domainstack/redis/enforce";
 import { toRegistrableDomain } from "@domainstack/utils/domain";
 
 export const maxDuration = 800;
+
+const logger = createLogger({ source: "api/mcp" });
+
+class InvalidDomainError extends Error {}
+
+/** Client-safe message for a lookup that threw. Details go to the server log. */
+function toolErrorMessage(err: unknown, section: Section, domain: string): string {
+  if (err instanceof RateLimitError) return RATE_LIMIT_MESSAGE;
+  if (err instanceof InvalidDomainError) return INVALID_DOMAIN_MESSAGE;
+  logger.error({ err, section, domain }, "mcp lookup failed");
+  return getLookupErrorMessage("fetch_failed"); // same text the Local-mode chat tools use
+}
 
 const posthog = process.env.NEXT_PUBLIC_POSTHOG_KEY
   ? new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
@@ -37,7 +54,7 @@ async function handler(request: Request): Promise<Response> {
   function lookupDomainSection(section: Section, rawDomain: string) {
     const domain = toRegistrableDomain(rawDomain);
     if (!domain) {
-      throw new Error("Enter a valid domain name, like example.com.");
+      throw new InvalidDomainError(INVALID_DOMAIN_MESSAGE);
     }
     return lookupSection(section, domain, { identifier });
   }
@@ -60,7 +77,15 @@ async function handler(request: Request): Promise<Response> {
             },
           },
           async ({ domain }) => {
-            const result = await lookupDomainSection(section, domain);
+            let result;
+            try {
+              result = await lookupDomainSection(section, domain);
+            } catch (err) {
+              return {
+                content: [{ type: "text" as const, text: toolErrorMessage(err, section, domain) }],
+                isError: true,
+              };
+            }
             return result.success
               ? {
                   content: [
@@ -111,7 +136,7 @@ async function handler(request: Request): Promise<Response> {
                 return {
                   section,
                   success: false,
-                  error: err instanceof Error ? err.message : "Unknown error",
+                  error: toolErrorMessage(err, section, domain),
                 };
               }
             }),

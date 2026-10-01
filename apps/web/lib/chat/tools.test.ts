@@ -97,7 +97,17 @@ describe("domain chat tools", () => {
     mocks.lookupSection.mockRejectedValue(new Error("db down"));
 
     await expect(runTool("get_dns_records", "example.com")).rejects.toThrow(
-      "domain tool dns failed: db down",
+      "domain tool dns failed",
     );
+  });
+
+  it("does not leak internal error text into the thrown error", async () => {
+    mocks.lookupSection.mockRejectedValue(new Error("Failed query: select … params: secret"));
+
+    const error = await runTool("get_dns_records", "example.com").catch((err: unknown) => err);
+
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toBe("domain tool dns failed");
+    expect((error as Error).message).not.toContain("Failed query");
   });
 });

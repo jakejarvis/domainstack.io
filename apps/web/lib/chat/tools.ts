@@ -86,8 +86,14 @@ async function domainLookupStep(section: DomainToolSection, domain: string, ctx:
     if (err instanceof RateLimitError) {
       return { error: RATE_LIMIT_MESSAGE };
     }
-    const reason = err instanceof Error ? err.message : String(err);
-    throw new RetryableError(`domain tool ${section} failed: ${reason}`, { retryAfter: "5s" });
+    // The raw message can embed SQL and parameter values, so log it and give
+    // the model/UI a fixed message.
+    const { createLogger } = await import("@domainstack/logger");
+    createLogger({ source: "chat/tools" }).error(
+      { err, section, domain: registrable },
+      "domain tool lookup failed",
+    );
+    throw new RetryableError(`domain tool ${section} failed`, { retryAfter: "5s" });
   }
 }
 
