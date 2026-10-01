@@ -1,10 +1,13 @@
 /* @vitest-environment node */
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { CHANGE_CONFIRMATIONS } from "@domainstack/constants";
+import { CERT_CHANGE_CONFIRMATIONS, CHANGE_CONFIRMATIONS } from "@domainstack/constants";
 import type { DnsFetchData } from "@domainstack/core/dns/types";
+import type { CertificatesProcessedData } from "@domainstack/core/tls";
+import type { TlsFetchSuccess } from "@domainstack/core/tls/types";
 import type { SnapshotForMonitoring } from "@domainstack/db/queries/snapshots";
 import type {
+  Certificate,
   PendingChangeObservation,
   ProviderRef,
   RegistrationResponse,
@@ -12,6 +15,8 @@ import type {
 } from "@domainstack/types";
 
 import {
+  applyCertificateDampening,
+  certificateSnapshotFrom,
   confirmChange,
   providerObservationKey,
   registrationObservationKey,
@@ -154,6 +159,54 @@ function registered(overrides: Partial<RegistrationResponse> = {}): Registration
 /** The registry reports the domain as gone. */
 function unregistered(): RegistrationResponse {
   return registered({ isRegistered: false, status: "unregistered" });
+}
+
+/**
+ * A leaf certificate (chain position 0) whose `certificateSnapshotFrom` is
+ * controlled through `caProviderId`, `issuer`, `validTo`, `fingerprint256`
+ * and `serialNumber`.
+ */
+function leafCert(
+  overrides: Partial<Omit<Certificate, "caProvider">> & { caProviderId?: string | null } = {},
+): Certificate {
+  const { caProviderId = "ca-old", ...rest } = overrides;
+  return {
+    issuer: "CN=Old CA",
+    subject: "CN=example.com",
+    altNames: ["example.com"],
+    validFrom: "2026-01-01T00:00:00.000Z",
+    validTo: "2026-04-01T00:00:00.000Z",
+    fingerprint256: "aa".repeat(32),
+    serialNumber: "0a01",
+    caProvider: providerRef(caProviderId),
+    chainPosition: 0,
+    ...rest,
+  };
+}
+
+const TLS_SUCCESS: TlsFetchSuccess = {
+  success: true,
+  chain: [],
+  valid: true,
+  validationError: null,
+  protocol: "TLSv1.3",
+  cipher: "TLS_AES_128_GCM_SHA256",
+  publicKeyBits: 2048,
+  chainComplete: true,
+};
+
+function processedChain(certificates: Certificate[]): CertificatesProcessedData {
+  return {
+    certificates,
+    providerIds: certificates.map((certificate) => certificate.caProvider.id),
+    earliestValidTo: new Date("2026-04-01T00:00:00.000Z"),
+    valid: true,
+    validationError: null,
+    protocol: "TLSv1.3",
+    cipher: "TLS_AES_128_GCM_SHA256",
+    publicKeyBits: 2048,
+    chainComplete: true,
+  };
 }
 
 /** The pending state one observation short of confirming `key`, built with the real helper. */
@@ -606,6 +659,120 @@ describe("registration change orchestration", () => {
 
     expect(result.registrationChanges).toBe(false);
     expect(notificationsMock.determineNotificationChannelsStep).not.toHaveBeenCalled();
+    expect(notificationsMock.sendChangeNotificationStep).not.toHaveBeenCalled();
+    expect(snapshotsMock.updateSnapshot).not.toHaveBeenCalled();
+  });
+});
+
+describe("certificate change orchestration", () => {
+  const storedCertificate = certificateSnapshotFrom(leafCert());
+
+  beforeEach(() => {
+    certificatesMock.fetchCertificateChainStep.mockResolvedValue(TLS_SUCCESS);
+    certificatesMock.persistCertificatesStep.mockResolvedValue(undefined);
+    notificationsMock.sendChangeNotificationStep.mockResolvedValue(true);
+    snapshotsMock.getSnapshot.mockResolvedValue(makeSnapshot({ certificate: storedCertificate }));
+  });
+
+  it("holds the first sighting of a same-CA renewal as pending without notifying", async () => {
+    const renewed = leafCert({
+      fingerprint256: "bb".repeat(32),
+      serialNumber: "0b02",
+      validTo: "2026-07-01T00:00:00.000Z",
+    });
+    certificatesMock.processChainStep.mockResolvedValue(processedChain([renewed]));
+
+    const result = await runWorkflow();
+
+    expect(result.certificateChanges).toBe(false);
+    expect(notificationsMock.sendChangeNotificationStep).not.toHaveBeenCalled();
+    expect(snapshotsMock.updateSnapshot).toHaveBeenCalledTimes(1);
+    // The stored identity is kept; only `pending` records the new certificate.
+    expect(snapshotsMock.updateSnapshot).toHaveBeenCalledWith("td-1", {
+      certificate: {
+        ...storedCertificate,
+        pending: expect.objectContaining({
+          fingerprint: "bb".repeat(32),
+          caProviderId: "ca-old",
+          validTo: "2026-07-01T00:00:00.000Z",
+          observations: 1,
+        }),
+      },
+    });
+  });
+
+  it("notifies a confirmed certificate authority change, then writes the snapshot", async () => {
+    const reissued = leafCert({
+      caProviderId: "ca-new",
+      issuer: "CN=New CA",
+      fingerprint256: "bb".repeat(32),
+      serialNumber: "0b02",
+      validTo: "2026-07-01T00:00:00.000Z",
+    });
+    const currentCertificate = certificateSnapshotFrom(reissued);
+
+    // Build the stored state with the real dampening logic: one observation
+    // short of CERT_CHANGE_CONFIRMATIONS.
+    let stored = storedCertificate;
+    for (let i = 0; i < CERT_CHANGE_CONFIRMATIONS - 1; i++) {
+      const dampened = applyCertificateDampening(
+        stored,
+        currentCertificate,
+        "authority",
+        new Date(EPISODE),
+      );
+      if (dampened.shouldNotify || !dampened.snapshot) {
+        throw new Error("fixture did not stay pending");
+      }
+      stored = dampened.snapshot;
+    }
+    snapshotsMock.getSnapshot.mockResolvedValue(makeSnapshot({ certificate: stored }));
+    certificatesMock.processChainStep.mockResolvedValue(processedChain([reissued]));
+
+    const result = await runWorkflow();
+
+    expect(result.certificateChanges).toBe(true);
+    expect(notificationsMock.sendChangeNotificationStep).toHaveBeenCalledTimes(1);
+    expect(notificationsMock.sendChangeNotificationStep).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "certificate_change",
+        kind: "authority",
+        newValidTo: "2026-07-01T00:00:00.000Z",
+        idempotencyKey: `certificate:td-1:${"aa".repeat(32)}>${"bb".repeat(32)}`,
+        changes: expect.objectContaining({
+          caProviderChanged: true,
+          previousCaProviderId: "ca-old",
+          newCaProviderId: "ca-new",
+        }),
+      }),
+      BOTH_CHANNELS,
+    );
+    expect(snapshotsMock.updateSnapshot).toHaveBeenCalledTimes(1);
+    expect(snapshotsMock.updateSnapshot).toHaveBeenCalledWith("td-1", {
+      certificate: expect.objectContaining({
+        caProviderId: "ca-new",
+        issuer: "CN=New CA",
+        fingerprint: "bb".repeat(32),
+        pending: null,
+      }),
+    });
+    // Advance only after the notification step has succeeded.
+    expect(firstCallOrder(notificationsMock.sendChangeNotificationStep)).toBeLessThan(
+      firstCallOrder(snapshotsMock.updateSnapshot),
+    );
+  });
+
+  it("reports no certificate change and writes no certificate snapshot without a leaf", async () => {
+    certificatesMock.processChainStep.mockResolvedValue(processedChain([]));
+
+    const result = await runWorkflow();
+
+    expect(result).toEqual({
+      skipped: false,
+      registrationChanges: false,
+      providerChanges: false,
+      certificateChanges: false,
+    });
     expect(notificationsMock.sendChangeNotificationStep).not.toHaveBeenCalled();
     expect(snapshotsMock.updateSnapshot).not.toHaveBeenCalled();
   });
