@@ -28,6 +28,7 @@ const PUBLIC_PROCEDURES = new Set([
   "registrar.getPricing",
 ]);
 
+// oxlint-disable-next-line no-underscore-dangle -- tRPC exposes the flat procedure map only via _def
 const allPaths = Object.keys(appRouter._def.procedures).toSorted();
 const protectedPaths = allPaths.filter((path) => !PUBLIC_PROCEDURES.has(path));
 
