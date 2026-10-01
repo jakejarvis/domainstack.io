@@ -21,7 +21,7 @@ type AutoVerifyWorkflowResult =
       verifiedMethod: VerificationMethod;
       attempt: number;
     }
-  | { result: "cancelled"; reason: "domain_deleted" | "already_verified" }
+  | { result: "cancelled"; reason: "domain_deleted" | "domain_archived" | "already_verified" }
   | {
       result: "exhausted";
       message: "Verification schedule complete after 30 days. Domain remains unverified.";
@@ -81,9 +81,13 @@ export async function autoVerifyWorkflow(
     // Check if the domain is still pending and fetch latest verification inputs
     const tracked = await checkDomainStatus(trackedDomainId);
 
-    // If domain was deleted or already verified, stop the schedule
+    // If domain was deleted, archived, or already verified, stop the schedule
     if (tracked.status === "deleted") {
       return { result: "cancelled", reason: "domain_deleted" };
+    }
+
+    if (tracked.status === "archived") {
+      return { result: "cancelled", reason: "domain_archived" };
     }
 
     if (tracked.status === "already-verified") {
@@ -124,6 +128,7 @@ export async function autoVerifyWorkflow(
 
 type DomainStatus =
   | { status: "deleted" }
+  | { status: "archived" }
   | { status: "already-verified" }
   | { status: "pending"; domainName: string; verificationToken: string };
 
@@ -139,6 +144,11 @@ async function checkDomainStatus(trackedDomainId: string): Promise<DomainStatus>
     return { status: "deleted" };
   }
 
+  // Checked before `verified` so an archived row always cancels the run.
+  if (domain.archivedAt) {
+    return { status: "archived" };
+  }
+
   if (domain.verified) {
     return { status: "already-verified" };
   }
@@ -150,6 +160,8 @@ async function checkDomainStatus(trackedDomainId: string): Promise<DomainStatus>
   };
 }
 
+const NOT_VERIFIED: VerificationResult = { verified: false, method: null };
+
 /**
  * Plain orchestration helper, deliberately not a step.
  *
@@ -160,19 +172,24 @@ async function checkDomainStatus(trackedDomainId: string): Promise<DomainStatus>
  *
  * The three steps run concurrently and are read in precedence order
  * (DNS -> HTML file -> meta tag). All three are awaited before returning, so
- * no started step is left dangling when the helper returns.
+ * no started step is left dangling when the helper returns. A step that
+ * rejects (e.g. it exhausted its retries) counts as "not verified" for that
+ * method, so one failing method can't abort a run another method already won.
  */
 async function attemptVerification(domainName: string, token: string): Promise<VerificationResult> {
   // Each method stays its own journaled, retryable step; they just run together.
-  const [dnsResult, htmlResult, metaResult] = await Promise.all([
+  const settled = await Promise.allSettled([
     verifyDomainByDns(domainName, token),
     verifyDomainByHtmlFile(domainName, token),
     verifyDomainByMetaTag(domainName, token),
   ]);
+  const [dnsResult, htmlResult, metaResult] = settled.map((s) =>
+    s.status === "fulfilled" ? s.value : NOT_VERIFIED,
+  );
   if (dnsResult.verified) return dnsResult;
   if (htmlResult.verified) return htmlResult;
   if (metaResult.verified) return metaResult;
-  return { verified: false, method: null };
+  return NOT_VERIFIED;
 }
 
 async function markVerified(

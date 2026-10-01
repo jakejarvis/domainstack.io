@@ -61,6 +61,7 @@ export interface TrackedDomainWithDomainName {
   verificationMethod: VerificationMethod | null;
   verified: boolean;
   verificationStatus: VerificationStatus;
+  archivedAt: Date | null;
 }
 
 // Shared row type for the complex tracked domains query
@@ -723,6 +724,7 @@ export async function findTrackedDomainWithDomainName(
       verificationMethod: userTrackedDomains.verificationMethod,
       verified: userTrackedDomains.verified,
       verificationStatus: userTrackedDomains.verificationStatus,
+      archivedAt: userTrackedDomains.archivedAt,
     })
     .from(userTrackedDomains)
     .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
