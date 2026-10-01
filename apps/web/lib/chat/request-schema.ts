@@ -18,7 +18,12 @@ const userTextPartSchema = z.object({
 const userMessageSchema = z.looseObject({
   id: z.string(),
   role: z.literal("user"),
-  parts: z.array(userTextPartSchema),
+  // The client sends one text part per message. Capping the count keeps a single
+  // message within MAX_MESSAGE_LENGTH, not just each part.
+  parts: z
+    .array(userTextPartSchema)
+    .min(1)
+    .max(1, { message: "A message must have exactly one text part" }),
 });
 
 const assistantPartSchema = z

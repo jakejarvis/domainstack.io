@@ -28,6 +28,31 @@ describe("chatRequestSchema", () => {
     expect(result.success).toBe(true);
   });
 
+  it("rejects a user message with more than one text part", () => {
+    const result = chatRequestSchema.safeParse({
+      messages: [
+        {
+          id: "user-1",
+          role: "user",
+          parts: [
+            { type: "text", text: "a" },
+            { type: "text", text: "b" },
+          ],
+        },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a user message with no parts", () => {
+    const result = chatRequestSchema.safeParse({
+      messages: [{ id: "user-1", role: "user", parts: [] }],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
   it("rejects a user text part over the character limit", () => {
     const result = chatRequestSchema.safeParse({
       messages: [userMessage("x".repeat(MAX_MESSAGE_LENGTH + 1))],
