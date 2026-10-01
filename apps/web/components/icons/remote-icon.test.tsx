@@ -19,7 +19,7 @@ describe("RemoteIcon", () => {
     await render(
       <RemoteIcon
         queryOptions={{ queryKey: ["icon", "known"], queryFn }}
-        initialUrl="https://example.com/i.png"
+        initialUrl="https://icon.test.invalid/i.png"
         fallbackIdentifier="example.com"
         alt="example icon"
       />,
@@ -28,7 +28,7 @@ describe("RemoteIcon", () => {
 
     await expect
       .element(page.getByRole("img", { name: "example icon" }))
-      .toHaveAttribute("src", "https://example.com/i.png");
+      .toHaveAttribute("src", "https://icon.test.invalid/i.png");
     expect(queryFn).not.toHaveBeenCalled();
   });
 

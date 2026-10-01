@@ -49,6 +49,12 @@ export default defineConfig({
           browser: {
             enabled: true,
             provider: playwright({
+              // The fetch stub in vitest.setup.browser.ts does not cover <img>, <link>, or
+              // other browser-initiated loads, so fail every hostname except the local
+              // Vitest server at the resolver to keep tests off the real network.
+              launchOptions: {
+                args: ["--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost"],
+              },
               contextOptions: {
                 reducedMotion: "reduce",
               },
