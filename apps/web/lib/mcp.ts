@@ -12,11 +12,15 @@ export const VSCODE_DEEPLINK = `vscode:mcp/install?${encodeURIComponent(JSON.str
 
 const json = (value: unknown) => JSON.stringify(value, null, 2);
 
-/** `mcpServers` snippet shared by Claude Code, Claude Desktop, and Cursor. */
+/** `mcpServers` snippet used by Cursor. */
 export const MCP_SERVERS_JSON = json({ mcpServers: { domainstack: { url: MCP_URL } } });
 
+export const CLAUDE_CODE_JSON = json({
+  mcpServers: { domainstack: { type: "http", url: MCP_URL } },
+});
+
 export const VSCODE_JSON = json({
-  mcp: { servers: { domainstack: { type: "http", url: MCP_URL } } },
+  servers: { domainstack: { type: "http", url: MCP_URL } },
 });
 
 export const WINDSURF_JSON = json({ mcpServers: { domainstack: { serverUrl: MCP_URL } } });

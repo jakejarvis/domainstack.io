@@ -13,7 +13,14 @@ import { CursorInstallButton, VSCodeInstallButton } from "@/components/mcp/insta
 import { SetupAccordion, SetupItem } from "@/components/mcp/setup-accordion";
 import { McpToolList } from "@/components/mcp/tool-list";
 import { MCP_TOOLS } from "@/lib/chat/domain-tools";
-import { CLINE_JSON, MCP_SERVERS_JSON, MCP_URL, VSCODE_JSON, WINDSURF_JSON } from "@/lib/mcp";
+import {
+  CLAUDE_CODE_JSON,
+  CLINE_JSON,
+  MCP_SERVERS_JSON,
+  MCP_URL,
+  VSCODE_JSON,
+  WINDSURF_JSON,
+} from "@/lib/mcp";
 import { createMetadata } from "@/lib/seo";
 
 export const metadata = createMetadata({
@@ -49,7 +56,7 @@ Run this command to add Domainstack to Claude Code:
 
 Or add this snippet to your project's `.mcp.json` file:
 
-<CodeBlock>{MCP_SERVERS_JSON}</CodeBlock>
+<CodeBlock>{CLAUDE_CODE_JSON}</CodeBlock>
 
 </SetupItem>
 
@@ -64,10 +71,6 @@ Or add this snippet to your project's `.mcp.json` file:
 Open Claude Desktop and navigate to **Settings → Connectors → Add Custom Connector**. Set the server URL to:
 
 <CodeBlock>{MCP_URL}</CodeBlock>
-
-Alternatively, edit your `claude_desktop_config.json` (on macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`):
-
-<CodeBlock>{MCP_SERVERS_JSON}</CodeBlock>
 
 </SetupItem>
 
@@ -97,7 +100,7 @@ Click the button above to install automatically, or add this snippet to `~/.curs
 
 <VSCodeInstallButton />
 
-Click the button above to install automatically, or add this snippet to your VS Code settings:
+Click the button above to install automatically, or add this snippet to `.vscode/mcp.json` in your workspace (or your user `mcp.json`):
 
 <CodeBlock>{VSCODE_JSON}</CodeBlock>
 
@@ -146,7 +149,7 @@ Run this command to add Domainstack to Gemini CLI:
   docsLabel="View Windsurf docs"
 >
 
-Add this snippet to your Windsurf MCP config (`~/.windsurf/mcp.json`):
+Add this snippet to your Windsurf MCP config (`~/.codeium/windsurf/mcp_config.json`):
 
 <CodeBlock>{WINDSURF_JSON}</CodeBlock>
 
@@ -187,9 +190,7 @@ Once configured, you can ask questions like:
 
 ## Rate Limits
 
-The MCP server is dynamically rate limited to meet demand. This applies across all tool calls. If you exceed the limit, requests will return a 429 error with a `Retry-After` header.
-
-The `get_domain_report` tool is useful for reducing the number of calls when you need multiple data types.
+Lookups are rate limited per client IP address and per data type, and only when the answer isn't already cached. When you hit a limit, the tool returns an error result that says so. Wait a moment and try again. `get_domain_report` saves round trips but counts against each section's limit separately.
 
 ## Data Freshness
 
