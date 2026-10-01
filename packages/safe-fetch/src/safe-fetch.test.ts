@@ -1,8 +1,10 @@
 import type { lookup as dnsLookup } from "node:dns/promises";
 
+import { Agent } from "undici";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SafeFetchError } from "./errors";
+import { createPinnedLookup } from "./resolve";
 import { safeFetch } from "./safe-fetch";
 import type { SafeFetchLogger } from "./types";
 
@@ -10,6 +12,28 @@ import type { SafeFetchLogger } from "./types";
 vi.mock("node:dns/promises", () => ({
   lookup: vi.fn<typeof dnsLookup>(),
 }));
+
+// Spy on (but still run) the real pinned-lookup factory and the undici Agent
+// constructor so tests can see how connections are wired to validated addresses.
+vi.mock("./resolve", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./resolve")>();
+  return {
+    ...actual,
+    createPinnedLookup: vi.fn<typeof actual.createPinnedLookup>(actual.createPinnedLookup),
+  };
+});
+
+vi.mock("undici", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("undici")>();
+  return {
+    ...actual,
+    Agent: vi.fn<
+      (opts?: ConstructorParameters<typeof actual.Agent>[0]) => InstanceType<typeof actual.Agent>
+    >(function (opts) {
+      return new actual.Agent(opts);
+    }),
+  };
+});
 
 import { lookup } from "node:dns/promises";
 
@@ -779,6 +803,15 @@ describe("safeFetch", () => {
   });
 
   describe("connection pinning", () => {
+    type PinnedInit = RequestInit & { dispatcher?: unknown };
+
+    // Invoke a pinned lookup the way undici's connector does.
+    function resolveWith(lookupFn: ReturnType<typeof createPinnedLookup>, hostname: string) {
+      return new Promise<{ err: unknown; address: unknown; family: unknown }>((resolve) => {
+        lookupFn(hostname, {}, (err, address, family) => resolve({ err, address, family }));
+      });
+    }
+
     it("pins the request to the addresses that were validated", async () => {
       mockLookupRecords([{ address: "93.184.216.34", family: 4 }]);
       const mockFetch = createMockFetch(mockResponse("ok", { status: 200 }));
@@ -790,10 +823,70 @@ describe("safeFetch", () => {
         logger: silentLogger,
       });
 
-      const init = mockFetch.mock.calls[0][1] as RequestInit & {
-        dispatcher?: { closed: boolean };
-      };
+      expect(createPinnedLookup).toHaveBeenCalledTimes(1);
+      expect(createPinnedLookup).toHaveBeenCalledWith([{ address: "93.184.216.34", family: 4 }]);
+
+      const pinnedLookup = vi.mocked(createPinnedLookup).mock.results[0].value;
+      await expect(resolveWith(pinnedLookup, "example.com")).resolves.toMatchObject({
+        err: null,
+        address: "93.184.216.34",
+        family: 4,
+      });
+
+      expect(Agent).toHaveBeenCalledTimes(1);
+      expect(Agent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          connect: expect.objectContaining({ lookup: pinnedLookup }),
+        }),
+      );
+
+      const init = mockFetch.mock.calls[0][1] as PinnedInit;
       expect(init.dispatcher).toBeDefined();
+      expect(init.dispatcher).toBe(vi.mocked(Agent).mock.results[0].value);
+    });
+
+    it("pins each redirect hop to that hop's own validated addresses", async () => {
+      mockLookup.mockImplementation((async (hostname: string) =>
+        hostname === "a.example"
+          ? [{ address: "93.184.216.34", family: 4 }]
+          : [{ address: "93.184.216.35", family: 4 }]) as unknown as typeof lookup);
+      let call = 0;
+      const mockFetch = vi.fn<typeof fetch>(async () => {
+        call += 1;
+        return call === 1
+          ? mockResponse("", { status: 302, headers: { location: "https://b.example/next" } })
+          : mockResponse("done", { status: 200 });
+      });
+
+      await safeFetch({
+        url: "https://a.example",
+        userAgent: null,
+        fetch: mockFetch,
+        logger: silentLogger,
+      });
+
+      expect(createPinnedLookup).toHaveBeenCalledTimes(2);
+      expect(createPinnedLookup).toHaveBeenNthCalledWith(1, [
+        { address: "93.184.216.34", family: 4 },
+      ]);
+      expect(createPinnedLookup).toHaveBeenNthCalledWith(2, [
+        { address: "93.184.216.35", family: 4 },
+      ]);
+
+      const lookups = vi.mocked(createPinnedLookup).mock.results.map((r) => r.value);
+      expect(Agent).toHaveBeenCalledTimes(2);
+      expect(Agent).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ connect: expect.objectContaining({ lookup: lookups[0] }) }),
+      );
+      expect(Agent).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ connect: expect.objectContaining({ lookup: lookups[1] }) }),
+      );
+
+      const agents = vi.mocked(Agent).mock.results.map((r) => r.value);
+      expect((mockFetch.mock.calls[0][1] as PinnedInit).dispatcher).toBe(agents[0]);
+      expect((mockFetch.mock.calls[1][1] as PinnedInit).dispatcher).toBe(agents[1]);
     });
   });
 
