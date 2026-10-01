@@ -597,8 +597,8 @@ importers:
         version: 8.23.1
     devDependencies:
       '@better-auth/utils':
-        specifier: ^0.4.2
-        version: 0.4.3
+        specifier: ^0.5.0
+        version: 0.5.0
       '@domainstack/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
