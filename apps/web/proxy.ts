@@ -43,7 +43,10 @@ export function proxy(request: NextRequest) {
   if (isProtectedRoute && !isCalendarFeedRoute) {
     const sessionCookie = getSessionCookie(request);
     if (!sessionCookie) {
-      return NextResponse.redirect(new URL("/login", request.url));
+      const loginUrl = new URL("/login", request.url);
+      const nextPath = pathname + request.nextUrl.search;
+      if (nextPath !== "/") loginUrl.searchParams.set("next", nextPath);
+      return NextResponse.redirect(loginUrl);
     }
   }
 

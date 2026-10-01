@@ -4,6 +4,7 @@ import posthogClient from "posthog-js";
 import { toast } from "sonner";
 
 import type { OAuthProviderConfig } from "@/lib/oauth";
+import { loginHref } from "@/lib/safe-next-path";
 import { signIn } from "@domainstack/auth/client";
 import { Button } from "@domainstack/ui/button";
 import { Spinner } from "@domainstack/ui/spinner";
@@ -64,8 +65,9 @@ export function OAuthButton({
       await signIn.social({
         provider: provider.id,
         callbackURL,
-        // On OAuth errors, redirect to login page where errors are displayed
-        errorCallbackURL: "/login",
+        // On OAuth errors, redirect to login page where errors are displayed,
+        // keeping the user's destination
+        errorCallbackURL: loginHref(callbackURL),
       });
       // Don't reset loading here - let it persist during navigation
       // It will be reset if user returns via back button

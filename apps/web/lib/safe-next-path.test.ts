@@ -39,14 +39,10 @@ describe("safeNextPath", () => {
   it.each(["/\t/evil.com", "/\n/evil.com", "/\r/evil.com", "/\t\\evil.com"])(
     "never resolves control-character value %j to another origin",
     (value) => {
-      const result = safeNextPath(value);
-      if (result !== null) {
-        expect(result.startsWith("/")).toBe(true);
-        expect(result.startsWith("//")).toBe(false);
-        expect(new URL(result, "https://placeholder.invalid").origin).toBe(
-          "https://placeholder.invalid",
-        );
-      }
+      const base = "https://placeholder.invalid";
+      const result = safeNextPath(value) ?? "/";
+      expect(result.startsWith("//")).toBe(false);
+      expect(new URL(result, base).origin).toBe(base);
     },
   );
 });

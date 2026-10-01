@@ -6,6 +6,7 @@ import Link from "next/link";
 
 import { LinkPendingIcon } from "@/components/link-pending-icon";
 import { addDomainResumeHref } from "@/lib/add-domain-resume";
+import { loginHref } from "@/lib/safe-next-path";
 import { useTRPC } from "@/lib/trpc/client";
 import { useSession } from "@domainstack/auth/client";
 import { Button } from "@domainstack/ui/button";
@@ -110,7 +111,7 @@ export function TrackDomainButton({ domain, enabled = true }: TrackDomainButtonP
     return <TrackedVerifiedButton />;
   }
 
-  let href = "/login";
+  let href = loginHref(`/dashboard/add-domain?domain=${encodeURIComponent(domain)}`);
   if (isAuthenticated) {
     href =
       isPendingVerification && trackedDomain

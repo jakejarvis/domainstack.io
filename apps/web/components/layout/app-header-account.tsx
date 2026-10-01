@@ -2,11 +2,13 @@
 
 import { IconLayoutDashboard, IconLogin, IconMenu2, IconMoon, IconSun } from "@tabler/icons-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { AppHeaderSeparator } from "@/components/layout/app-header-separator";
 import { UserMenu } from "@/components/layout/user-menu";
 import { NotificationsPopover } from "@/components/notifications/notifications-popover";
 import { useTheme } from "@/hooks/use-theme";
+import { loginHref } from "@/lib/safe-next-path";
 import { useSession } from "@domainstack/auth/client";
 import { Button } from "@domainstack/ui/button";
 import {
@@ -28,6 +30,7 @@ export function AppHeaderAccount() {
   const { data: session, isPending } = useSession();
   const { theme, toggleTheme } = useTheme();
   const mounted = useIsClient();
+  const pathname = usePathname();
 
   // Session can be resolved during SSR and still pending on the first client paint.
   // Keep the skeleton until both sides agree.
@@ -91,7 +94,7 @@ export function AppHeaderAccount() {
           <DropdownMenuItem
             nativeButton={false}
             render={
-              <Link href="/login" scroll={false}>
+              <Link href={loginHref(pathname)} scroll={false}>
                 <IconLogin />
                 Sign In
               </Link>
@@ -126,7 +129,7 @@ export function AppHeaderAccount() {
         aria-label="Sign In"
         className="hidden md:inline-flex"
         render={
-          <Link href="/login" scroll={false}>
+          <Link href={loginHref(pathname)} scroll={false}>
             Sign In
           </Link>
         }

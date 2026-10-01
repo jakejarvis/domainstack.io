@@ -9,6 +9,7 @@ import { OAuthButton } from "@/components/auth/oauth-button";
 import { Logo } from "@/components/logo";
 import { useAuthCallback } from "@/hooks/use-auth-callback";
 import { getEnabledProviders } from "@/lib/oauth";
+import { safeNextPath } from "@/lib/safe-next-path";
 import { useSession } from "@domainstack/auth/client";
 import { Icon } from "@domainstack/ui/icon";
 import { cn } from "@domainstack/ui/utils";
@@ -39,11 +40,13 @@ export function LoginContent({ className, onNavigate, callbackURL }: LoginConten
     posthogClient.capture("signup_pageview", { pathname });
   }, [isPending, pathname, session?.user]);
 
-  // Use provided callback URL, or auto-detect current page
-  // After OAuth completes, better-auth redirects to this URL
-  // Special cases: homepage (/) and /login page redirect to /dashboard
+  // After OAuth completes, better-auth redirects to this URL. Precedence:
+  // explicit prop -> validated `?next=` param -> current page -> /dashboard
+  // (homepage (/) and /login fall through to /dashboard).
+  const next = safeNextPath(searchParams.get("next"));
   const effectiveCallbackURL =
     callbackURL ??
+    next ??
     (["/", "/login"].includes(pathname)
       ? "/dashboard"
       : pathname + (searchParams.toString() ? `?${searchParams.toString()}` : ""));

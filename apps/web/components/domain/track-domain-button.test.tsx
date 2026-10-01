@@ -70,13 +70,13 @@ describe("TrackDomainButton", () => {
       );
   });
 
-  it("links signed-out users to login", async () => {
+  it("links signed-out users to login, returning to the add-domain flow", async () => {
     session.data = null;
     await renderButton();
 
     await expect
       .element(page.getByRole("button", { name: "Track domain" }))
-      .toHaveAttribute("href", "/login");
+      .toHaveAttribute("href", "/login?next=%2Fdashboard%2Fadd-domain%3Fdomain%3Dexample.com");
   });
 
   it("swaps its icon for a spinner while the link navigates", async () => {
