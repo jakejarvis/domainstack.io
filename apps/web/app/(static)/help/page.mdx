@@ -1,4 +1,5 @@
 import { FaqItem, FaqSection } from "@/components/mdx/faq";
+import { NOTIFICATION_CATEGORY_INFO } from "@/lib/constants/notification-ui";
 import { createMetadata } from "@/lib/seo";
 import { PLAN_QUOTAS } from "@domainstack/constants";
 import { PRO_TIER_INFO } from "@domainstack/polar/products";
@@ -26,7 +27,7 @@ Sign up for free to track domains you own and receive notifications about critic
 
 <FaqItem question="Do I need an account to use Domainstack?">
 
-Nope! You can look up any domain and view its full report without signing in. An account is only required if you want to track domains you own and receive expiration notifications. Sign up is free and uses GitHub for authentication.
+Nope! You can look up any domain and view its full report without signing in. An account is only required if you want to track domains you own and receive expiration notifications. Sign up is free: sign in with GitHub, GitLab, Google, or Vercel.
 
 </FaqItem>
 
@@ -90,7 +91,7 @@ Once verified, we'll monitor the domain and notify you about critical changes an
 We offer three verification methods — use whichever is easiest for you:
 
 - **DNS TXT record** — Add a TXT record to your apex domain
-- **HTML file** — Upload a verification file to `/.well-known/domainstack-verify.html`
+- **HTML file** — Upload a file to `/.well-known/domainstack-verify/<your token>.html` (the exact path and contents are shown when you add a domain)
 - **Meta tag** — Add a `domainstack-verify` meta tag to your homepage
 
 Detailed instructions with your unique verification token are shown when you add a domain.
@@ -123,24 +124,29 @@ Active domains count toward your tracking limit and receive notifications. Archi
 
 <FaqItem question="What notifications will I receive?">
 
-We send email notifications for:
+We send notifications for these categories:
 
-- **Domain expiration** — 30, 14, 7, and 1&nbsp;day before your domain expires
-- **Certificate expiration** — 14, 7, 3, and 1&nbsp;day before your SSL certificate expires
-- **Change detection** — Updates to registration details, DNS providers, hosting, or email providers
-- **Verification status** — When verification starts failing or is revoked
+<ul>
+  {Object.values(NOTIFICATION_CATEGORY_INFO).map(({ label, description }) => (
+    <li key={label}>
+      <strong>{label}</strong> — {description}
+    </li>
+  ))}
+</ul>
+
+We also email you if a verified domain's ownership check starts failing or verification is revoked. These account alerts can't be turned off.
 
 </FaqItem>
 
 <FaqItem question="Can I customize notifications for specific domains?">
 
-Yes! Each tracked domain has its own notification settings. You can override global preferences on a per-domain basis — for example, disable certificate alerts for a domain that handles its own renewal while keeping domain expiry and change alerts enabled.
+Partly. You can **mute** individual domains (from the dashboard or in Settings → Notifications) to silence all notifications for that domain. Category settings apply to all of your domains.
 
 </FaqItem>
 
 <FaqItem question="How do I disable notifications?">
 
-Go to [your settings](/settings) to toggle notification categories on or off globally. You can disable domain expiration alerts, certificate expiration alerts, or verification status alerts independently.
+Go to [your settings](/settings) to toggle notification categories on or off globally. You can toggle each notification category (email and in-app) on or off. Ownership verification alerts are always sent.
 
 </FaqItem>
 
@@ -159,7 +165,6 @@ Free accounts can track up to {PLAN_QUOTAS.free} domains. Pro subscribers can tr
 The Pro plan includes the following benefits:
 
 - Track up to {PLAN_QUOTAS.pro} domains (increased from {PLAN_QUOTAS.free})
-- Priority email notifications
 - Support ongoing development of Domainstack
 
 Pro is available for {PRO_TIER_INFO.monthly.label} or {PRO_TIER_INFO.yearly.label}.
@@ -178,7 +183,7 @@ After that, if you have more than {PLAN_QUOTAS.free} active domains, the oldest 
 
 Yes, you can cancel anytime from your dashboard settings. You'll continue to have Pro access until the end of your current billing period.
 
-We don't prorate or issue partial refunds, but you won't be charged again.
+Refund requests are handled case-by-case. Contact us within 14 days of a charge. See our [Terms of Service](/terms).
 
 </FaqItem>
 
@@ -216,7 +221,7 @@ Click "Sign in" in the header (or [click here](/login)) and authenticate with on
 
 <FaqItem question="How do I delete my account?">
 
-Go to your dashboard settings and scroll to the "Danger Zone" section. Click "Delete Account" and confirm to permanently remove your account and all associated data. This action cannot be undone.
+Go to [Settings → Account](/settings/account), scroll to the Danger Zone, and click Delete Account. We'll email you a confirmation link. Your account and all associated data are deleted when you open it. This can't be undone.
 
 </FaqItem>
 
