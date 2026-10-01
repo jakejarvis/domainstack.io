@@ -125,6 +125,16 @@ export async function getProviderNames(ids: string[]): Promise<Map<string, strin
   return new Map(result.map((r) => [r.id, r.name]));
 }
 
+/** Catalog provider rows by `${category}|${slug}|${name}|${domain}`; they change only via catalog edits. */
+const catalogProviderMemo = new Map<string, { row: ProviderRow; at: number }>();
+const CATALOG_PROVIDER_MEMO_TTL_MS = 10 * 60_000;
+const CATALOG_PROVIDER_MEMO_MAX = 5_000;
+
+/** @internal Test hook (also called by `resetPGliteDb`). */
+export function clearCatalogProviderMemo() {
+  catalogProviderMemo.clear();
+}
+
 /**
  * Upsert a catalog provider into the database.
  *
@@ -143,6 +153,12 @@ export async function upsertCatalogProvider(provider: Provider): Promise<Provide
   const slug = slugify(provider.name);
   const lowerDomain = provider.domain?.toLowerCase() ?? null;
 
+  const memoKey = `${provider.category}|${slug}|${provider.name}|${lowerDomain ?? ""}`;
+  const memoized = catalogProviderMemo.get(memoKey);
+  if (memoized && Date.now() - memoized.at < CATALOG_PROVIDER_MEMO_TTL_MS) {
+    return memoized.row;
+  }
+
   // Step 1: Check for existing provider by (category, slug)
   const existing = await db
     .select()
@@ -155,6 +171,8 @@ export async function upsertCatalogProvider(provider: Provider): Promise<Provide
 
     // If it's already a catalog provider with matching data, return as-is
     if (row.source === "catalog" && row.name === provider.name && row.domain === lowerDomain) {
+      if (catalogProviderMemo.size >= CATALOG_PROVIDER_MEMO_MAX) catalogProviderMemo.clear();
+      catalogProviderMemo.set(memoKey, { row, at: Date.now() });
       return row;
     }
 

@@ -3,6 +3,7 @@ import type { PgliteDatabase } from "drizzle-orm/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 
 import { setTestDb, type Database } from "./client";
+import { clearCatalogProviderMemo } from "./queries/providers";
 import * as schema from "./schema";
 
 // Dynamic import via require pattern is recommended in community examples
@@ -67,6 +68,8 @@ export async function closePGliteDb(): Promise<void> {
 
 // Helper for tests to clear all rows between cases while reusing the same DB
 export async function resetPGliteDb(): Promise<void> {
+  // A memoized provider row would outlive the truncated `providers` table below.
+  clearCatalogProviderMemo();
   if (!cached) return;
   const { db } = cached;
   // Delete in dependency-friendly order
