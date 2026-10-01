@@ -9,8 +9,13 @@ interface UseChatPersistenceOptions {
 }
 
 /**
- * Persists cloud chat messages to the Zustand store and clears the runId
- * when a stream finishes or errors (backup for onChatEnd).
+ * Persists cloud chat messages to the Zustand store when a turn settles
+ * (status "ready" or "error") and clears the runId when a stream finishes or
+ * errors (backup for onChatEnd).
+ *
+ * Messages are deliberately not written mid-stream: onChatSendMessage already
+ * stored the outgoing user turn, and persisting a partial assistant reply would
+ * make a resume after reload append a second copy of the answer.
  *
  * Initial restore is done by seeding `useChat({ messages })` after hydration.
  */
@@ -31,7 +36,7 @@ export function useChatPersistence({ messages, status }: UseChatPersistenceOptio
       }
       return;
     }
-    if (messages.length > 0) {
+    if (messages.length > 0 && (status === "ready" || status === "error")) {
       storeSetMessages(messages);
     }
   }, [messages, status, storeSetMessages]);

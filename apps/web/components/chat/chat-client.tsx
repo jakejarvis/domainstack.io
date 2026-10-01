@@ -127,7 +127,10 @@ function CloudChatSession({ domain, children }: { domain?: string; children: Ren
   // after onChatEnd clears it, and the live messages belong to useChat from here on.
   const [initial] = useState(() => {
     const { runId, messages } = useChatStore.getState();
-    return { runId, messages: messages as DomainChatUIMessage[] };
+    // Resume replays the whole turn; drop a partial assistant reply saved by older versions.
+    const seeded =
+      runId && messages.at(-1)?.role === "assistant" ? messages.slice(0, -1) : messages;
+    return { runId, messages: seeded as DomainChatUIMessage[] };
   });
 
   const [transport] = useState(

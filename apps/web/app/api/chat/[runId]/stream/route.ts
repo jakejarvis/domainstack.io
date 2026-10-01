@@ -54,6 +54,13 @@ export async function GET(request: NextRequest, context: RouteContext<"/api/chat
 
   try {
     const run = getRun(runId);
+    if (!(await run.exists)) {
+      logger.debug({ runId }, "chat stream reconnection to unknown workflow");
+      return NextResponse.json(
+        { error: "Chat session completed or expired." },
+        { status: 404, headers: { ...rateLimit.headers } },
+      );
+    }
     const readable = run
       .getReadable({ startIndex: 0 })
       .pipeThrough(createModelCallToUIChunkTransform({ uiStartIndex: startIndex }));
