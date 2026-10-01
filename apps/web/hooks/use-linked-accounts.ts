@@ -39,8 +39,10 @@ async function linkProvider(provider: OAuthProviderConfig) {
   try {
     await linkSocial({
       provider: provider.id,
-      // On error, better-auth appends ?error=... to the callback URL
-      callbackURL: "/settings",
+      callbackURL: "/settings/account",
+      // Link failures (email mismatch, already linked, cancelled) come back here
+      // with ?error=...; AccountPanel's useAuthCallback turns it into a toast.
+      errorCallbackURL: "/settings/account",
     });
   } catch (err) {
     posthogClient.captureException(err, {

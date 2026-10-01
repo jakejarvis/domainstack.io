@@ -17,8 +17,10 @@ const AUTH_CALLBACK_ERROR_CODES = {
   ACCOUNT_NOT_LINKED: "account_not_linked",
 
   // OAuth flow errors
+  ACCESS_DENIED: "access_denied",
+  STATE_NOT_FOUND: "state_not_found",
+  STATE_INVALID: "state_invalid",
   STATE_MISMATCH: "state_mismatch",
-  PLEASE_RESTART: "please_restart_the_process",
   INVALID_CALLBACK: "invalid_callback_request",
   INTERNAL_ERROR: "internal_server_error",
   NO_CODE: "no_code",
@@ -27,6 +29,10 @@ const AUTH_CALLBACK_ERROR_CODES = {
   UNABLE_TO_GET_USER_INFO: "unable_to_get_user_info",
   NO_CALLBACK_URL: "no_callback_url",
   EMAIL_NOT_FOUND: "email_not_found",
+  EMAIL_NOT_VERIFIED: "email_not_verified",
+  SIGNUP_DISABLED: "signup_disabled",
+  UNABLE_TO_CREATE_USER: "unable_to_create_user",
+  UNABLE_TO_CREATE_SESSION: "unable_to_create_session",
 } as const;
 
 type AuthCallbackErrorCode =
@@ -47,8 +53,10 @@ const AUTH_CALLBACK_ERROR_MESSAGES: Record<AuthCallbackErrorCode, string> = {
     "An account with this email already exists. Sign in with the provider you used before, then link this one from Settings → Account.",
 
   // OAuth flow errors - less common but should be handled
+  [AUTH_CALLBACK_ERROR_CODES.ACCESS_DENIED]: "Authorization was cancelled. Please try again.",
+  [AUTH_CALLBACK_ERROR_CODES.STATE_NOT_FOUND]: "Authentication session expired. Please try again.",
+  [AUTH_CALLBACK_ERROR_CODES.STATE_INVALID]: "Authentication session expired. Please try again.",
   [AUTH_CALLBACK_ERROR_CODES.STATE_MISMATCH]: "Authentication session expired. Please try again.",
-  [AUTH_CALLBACK_ERROR_CODES.PLEASE_RESTART]: "Authentication session expired. Please try again.",
   [AUTH_CALLBACK_ERROR_CODES.INVALID_CALLBACK]: "Invalid authentication request. Please try again.",
   [AUTH_CALLBACK_ERROR_CODES.INTERNAL_ERROR]: "An internal error occurred. Please try again later.",
   [AUTH_CALLBACK_ERROR_CODES.NO_CODE]: "Authentication was not completed. Please try again.",
@@ -60,6 +68,12 @@ const AUTH_CALLBACK_ERROR_MESSAGES: Record<AuthCallbackErrorCode, string> = {
     "Authentication configuration error. Please contact support.",
   [AUTH_CALLBACK_ERROR_CODES.EMAIL_NOT_FOUND]:
     "The provider did not return an email address. Please ensure your account has a verified email.",
+  [AUTH_CALLBACK_ERROR_CODES.EMAIL_NOT_VERIFIED]:
+    "Your email address with this provider isn't verified. Verify it there, then try again.",
+  [AUTH_CALLBACK_ERROR_CODES.SIGNUP_DISABLED]: "New sign-ups are currently disabled.",
+  [AUTH_CALLBACK_ERROR_CODES.UNABLE_TO_CREATE_USER]:
+    "Unable to create your account. Please try again later.",
+  [AUTH_CALLBACK_ERROR_CODES.UNABLE_TO_CREATE_SESSION]: "Unable to sign you in. Please try again.",
 };
 
 /**

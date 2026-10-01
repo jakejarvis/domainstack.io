@@ -128,6 +128,12 @@ export const auth = betterAuth({
     "/customer/subscriptions/list",
     "/customer/orders/list",
   ],
+  // OAuth failures we can't attribute to a flow (unreadable state, bad callback)
+  // land on /login, where useAuthCallback toasts the error and offers a retry.
+  // Without this they hit /api/auth/error, which in production bounces to /?error=.
+  onAPIError: {
+    errorURL: "/login",
+  },
   logger: {
     log: (level, message, ...args) => {
       const logFn = logger[level].bind(logger);
