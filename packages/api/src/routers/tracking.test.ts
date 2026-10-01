@@ -46,7 +46,8 @@ const {
   users,
   userTrackedDomains,
 } = await import("@domainstack/db/schema");
-const { eq } = await import("@domainstack/db/drizzle");
+const { eq, inArray } = await import("@domainstack/db/drizzle");
+const { MAX_TRACKED_DOMAIN_ROWS } = await import("@domainstack/constants");
 const {
   bulkArchiveTrackedDomains,
   bulkRemoveTrackedDomains,
@@ -493,6 +494,26 @@ describe("tracking router", () => {
       expect(row.archivedAt).toBeNull();
     });
 
+    it("restarts auto-verification when re-adding restores an archived row", async () => {
+      const caller = createAuthenticatedCaller();
+
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "existing-token",
+        verified: false,
+        archivedAt: new Date(),
+      });
+
+      await caller.tracking.addDomain({ domain: TEST_DOMAIN });
+
+      expect(start).toHaveBeenCalledTimes(1);
+      expect(start).toHaveBeenCalledWith(expect.any(Function), [
+        { trackedDomainId: TEST_TRACKED_ID },
+      ]);
+    });
+
     it("rejects resuming an unverified archived domain when the quota is full", async () => {
       const caller = createAuthenticatedCaller();
 
@@ -661,6 +682,68 @@ describe("tracking router", () => {
         message: expect.stringContaining("reached your domain tracking limit"),
       });
       expect((await countTrackedDomainsByStatus(TEST_USER_ID)).active).toBe(5);
+    });
+  });
+
+  describe("addDomain total-row cap", () => {
+    // Seeds `count` archived rows for the user, each against its own domain row.
+    async function seedArchivedRows(userId: string, count: number) {
+      const rows = Array.from({ length: count }, (_, i) => {
+        const n = (i + 1).toString().padStart(12, "0");
+        return { domainId: `c0000000-0000-1000-a000-${n}`, name: `cap-domain-${i + 1}.com` };
+      });
+      await db.insert(domains).values(
+        rows.map(({ domainId, name }) => ({
+          id: domainId,
+          name,
+          tld: "com",
+          unicodeName: name,
+        })),
+      );
+      await db.insert(userTrackedDomains).values(
+        rows.map(({ domainId }) => ({
+          userId,
+          domainId,
+          verificationToken: "archived-token",
+          verified: true,
+          verificationMethod: "dns_txt" as const,
+          archivedAt: new Date(),
+        })),
+      );
+      return rows.map(({ domainId }) => domainId);
+    }
+
+    it("rejects a new domain once archived rows reach the total cap", async () => {
+      const caller = createAuthenticatedCaller();
+      const domainIds = await seedArchivedRows(TEST_USER_ID, MAX_TRACKED_DOMAIN_ROWS);
+
+      try {
+        await expect(caller.tracking.addDomain({ domain: TEST_DOMAIN })).rejects.toThrow(
+          "too many archived domains",
+        );
+        expect(start).not.toHaveBeenCalled();
+        expect((await countTrackedDomainsByStatus(TEST_USER_ID)).archived).toBe(
+          MAX_TRACKED_DOMAIN_ROWS,
+        );
+      } finally {
+        await db.delete(userTrackedDomains).where(eq(userTrackedDomains.userId, TEST_USER_ID));
+        await db.delete(domains).where(inArray(domains.id, domainIds));
+      }
+    });
+
+    it("still accepts a new domain one row below the total cap", async () => {
+      const caller = createAuthenticatedCaller();
+      const domainIds = await seedArchivedRows(TEST_USER_ID, MAX_TRACKED_DOMAIN_ROWS - 1);
+
+      try {
+        const result = await caller.tracking.addDomain({ domain: TEST_DOMAIN });
+
+        expect(result.resumed).toBe(false);
+        expect((await countTrackedDomainsByStatus(TEST_USER_ID)).active).toBe(1);
+      } finally {
+        await db.delete(userTrackedDomains).where(eq(userTrackedDomains.userId, TEST_USER_ID));
+        await db.delete(domains).where(inArray(domains.id, domainIds));
+      }
     });
   });
 
@@ -864,6 +947,44 @@ describe("tracking router", () => {
       });
 
       expect(result.success).toBe(true);
+    });
+
+    it("restarts auto-verification when unarchiving an unverified domain", async () => {
+      const caller = createAuthenticatedCaller();
+
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "test-token",
+        verified: false,
+        archivedAt: new Date(),
+      });
+
+      await caller.tracking.unarchiveDomain({ trackedDomainId: TEST_TRACKED_ID });
+
+      expect(start).toHaveBeenCalledTimes(1);
+      expect(start).toHaveBeenCalledWith(expect.any(Function), [
+        { trackedDomainId: TEST_TRACKED_ID },
+      ]);
+    });
+
+    it("does not start auto-verification when unarchiving a verified domain", async () => {
+      const caller = createAuthenticatedCaller();
+
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "test-token",
+        verified: true,
+        verificationMethod: "dns_txt",
+        archivedAt: new Date(),
+      });
+
+      await caller.tracking.unarchiveDomain({ trackedDomainId: TEST_TRACKED_ID });
+
+      expect(start).not.toHaveBeenCalled();
     });
 
     it("rejects unarchiving non-archived domain", async () => {

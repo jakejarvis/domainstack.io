@@ -2,7 +2,7 @@ import type { SQL } from "drizzle-orm";
 import { and, asc, count, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
-import { PLAN_QUOTAS } from "@domainstack/constants";
+import { MAX_TRACKED_DOMAIN_ROWS, PLAN_QUOTAS } from "@domainstack/constants";
 import type {
   DnsRecord,
   ProviderInfo,
@@ -51,7 +51,7 @@ export interface CreateTrackedDomainParams {
 
 export type CreateTrackedDomainWithLimitCheckResult =
   | { success: true; trackedDomain: typeof userTrackedDomains.$inferSelect }
-  | { success: false; reason: "limit_exceeded" | "already_exists" };
+  | { success: false; reason: "limit_exceeded" | "total_limit_exceeded" | "already_exists" };
 
 export interface TrackedDomainWithDomainName {
   id: string;
@@ -651,6 +651,16 @@ export async function createTrackedDomainWithLimitCheck(
   return await db.transaction(async (tx) => {
     await lockUserDomainQuota(tx, userId);
     const maxDomains = await readPlanQuota(tx, userId);
+
+    // Archiving frees quota, so cap total rows (archived included) too.
+    const [totals] = await tx
+      .select({ total: count() })
+      .from(userTrackedDomains)
+      .where(eq(userTrackedDomains.userId, userId));
+
+    if ((totals?.total ?? 0) >= MAX_TRACKED_DOMAIN_ROWS) {
+      return { success: false, reason: "total_limit_exceeded" } as const;
+    }
 
     const lockedRows = await tx
       .select({ id: userTrackedDomains.id })

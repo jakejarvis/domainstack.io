@@ -178,6 +178,17 @@ export const trackingRouter = createTRPCRouter({
               // A concurrent request already restored it; resuming is still right.
               break;
           }
+        } else {
+          // The workflow exits when a row is archived, so a restored row needs a new run.
+          void start(autoVerifyWorkflow, [{ trackedDomainId: existing.id }]).catch(
+            (err: unknown) => {
+              // Log but don't fail the request - user can still manually verify
+              logger.error(
+                { err, trackedDomainId: existing.id },
+                "failed to start auto-verify workflow",
+              );
+            },
+          );
         }
       }
 
@@ -218,6 +229,14 @@ export const trackingRouter = createTRPCRouter({
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "You have reached your domain tracking limit. Upgrade to add more domains.",
+        });
+      }
+
+      if (result.reason === "total_limit_exceeded") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message:
+            "You have too many archived domains. Remove some archived domains to add new ones.",
         });
       }
 
@@ -481,6 +500,21 @@ export const trackingRouter = createTRPCRouter({
                 "You have reached your domain tracking limit. Upgrade to Pro or archive other domains first.",
             });
         }
+      }
+
+      // The workflow exits when a row is archived, so an unverified row needs a new run.
+      // Verified rows don't: it would cancel on its first check.
+      if (!result.trackedDomain.verified) {
+        const unarchivedId = result.trackedDomain.id;
+        void start(autoVerifyWorkflow, [{ trackedDomainId: unarchivedId }]).catch(
+          (err: unknown) => {
+            // Log but don't fail the request - user can still manually verify
+            logger.error(
+              { err, trackedDomainId: unarchivedId },
+              "failed to start auto-verify workflow",
+            );
+          },
+        );
       }
 
       analytics.track("domain_unarchived", {}, ctx.user.id);
