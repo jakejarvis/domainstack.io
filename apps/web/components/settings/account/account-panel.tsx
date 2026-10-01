@@ -32,7 +32,6 @@ export function AccountPanel() {
     linkedProviderIds,
     enabledProviders,
     isLoading,
-    isError,
     error,
     canUnlink,
     linkProvider,
@@ -74,7 +73,7 @@ export function AccountPanel() {
     return <LinkedAccountsSkeleton />;
   }
 
-  if (isError || !linkedAccounts) {
+  if (!linkedAccounts) {
     throw error instanceof Error ? error : new Error("Failed to load linked accounts");
   }
 

@@ -1,8 +1,9 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { page } from "vitest/browser";
 
 import { render } from "@/mocks/react";
+import type { UserNotificationPreferences } from "@domainstack/types";
 
 import { AccountPanel } from "./account/account-panel";
 import { NotificationsPanel } from "./notifications/notifications-panel";
@@ -14,9 +15,27 @@ const errors = vi.hoisted(() => ({
   notifications: new Error("boom-notifications"),
 }));
 
+// Data each mocked hook returns alongside its error. Tests set these to simulate a
+// failed background refetch (data present, `isError` true) and reset them afterwards.
+const cached = vi.hoisted(() => ({
+  subscription: undefined as
+    | undefined
+    | {
+        plan: "free";
+        planQuota: number;
+        endsAt: null;
+        activeCount: number;
+        archivedCount: number;
+        canAddMore: boolean;
+      },
+  linkedAccounts: undefined as undefined | unknown[],
+  domains: undefined as undefined | unknown[],
+  globalPrefs: undefined as undefined | UserNotificationPreferences,
+}));
+
 vi.mock("@/hooks/use-subscription", () => ({
   useSubscription: () => ({
-    subscription: undefined,
+    subscription: cached.subscription,
     isPro: false,
     isSubscriptionLoading: false,
     isSubscriptionError: true,
@@ -28,7 +47,7 @@ vi.mock("@/hooks/use-subscription", () => ({
 
 vi.mock("@/hooks/use-linked-accounts", () => ({
   useLinkedAccounts: () => ({
-    linkedAccounts: undefined,
+    linkedAccounts: cached.linkedAccounts,
     linkedProviderIds: new Set<string>(),
     enabledProviders: [],
     isLoading: false,
@@ -44,8 +63,8 @@ vi.mock("@/hooks/use-linked-accounts", () => ({
 
 vi.mock("@/hooks/use-notification-preferences", () => ({
   useNotificationPreferences: () => ({
-    domains: undefined,
-    globalPrefs: undefined,
+    domains: cached.domains,
+    globalPrefs: cached.globalPrefs,
     isLoading: false,
     isError: true,
     error: errors.notifications,
@@ -88,6 +107,13 @@ async function renderCaught(panel: ReactNode): Promise<unknown[]> {
 }
 
 describe("settings panels", () => {
+  afterEach(() => {
+    cached.subscription = undefined;
+    cached.linkedAccounts = undefined;
+    cached.domains = undefined;
+    cached.globalPrefs = undefined;
+  });
+
   it("SubscriptionPanel throws the original query error to the boundary", async () => {
     const caught = await renderCaught(<SubscriptionPanel />);
     expect(caught).toHaveLength(1);
@@ -104,5 +130,56 @@ describe("settings panels", () => {
     const caught = await renderCaught(<NotificationsPanel userEmail="user@example.com" />);
     expect(caught).toHaveLength(1);
     expect(caught[0]).toBe(errors.notifications);
+  });
+
+  it("SubscriptionPanel keeps rendering the plan when a refetch failed", async () => {
+    cached.subscription = {
+      plan: "free",
+      planQuota: 5,
+      endsAt: null,
+      activeCount: 2,
+      archivedCount: 0,
+      canAddMore: true,
+    };
+    const caught: unknown[] = [];
+    await render(
+      <RecordingBoundary onCatch={(error) => caught.push(error)}>
+        <SubscriptionPanel />
+      </RecordingBoundary>,
+    );
+    await expect.element(page.getByText("You're on the Free plan.")).toBeInTheDocument();
+    expect(caught).toHaveLength(0);
+  });
+
+  it("AccountPanel keeps rendering the providers when a refetch failed", async () => {
+    cached.linkedAccounts = [];
+    const caught: unknown[] = [];
+    await render(
+      <RecordingBoundary onCatch={(error) => caught.push(error)}>
+        <AccountPanel />
+      </RecordingBoundary>,
+    );
+    await expect.element(page.getByText("Login Providers")).toBeInTheDocument();
+    expect(caught).toHaveLength(0);
+  });
+
+  it("NotificationsPanel keeps rendering the preferences when a refetch failed", async () => {
+    cached.domains = [];
+    const toggles = { email: true, inApp: true };
+    cached.globalPrefs = {
+      providerChanges: toggles,
+      domainExpiry: toggles,
+      registrationChanges: toggles,
+      certificateExpiry: toggles,
+      certificateChanges: toggles,
+    };
+    const caught: unknown[] = [];
+    await render(
+      <RecordingBoundary onCatch={(error) => caught.push(error)}>
+        <NotificationsPanel userEmail="user@example.com" />
+      </RecordingBoundary>,
+    );
+    await expect.element(page.getByText("Global Preferences")).toBeInTheDocument();
+    expect(caught).toHaveLength(0);
   });
 });

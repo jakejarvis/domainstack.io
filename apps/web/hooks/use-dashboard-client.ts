@@ -102,7 +102,7 @@ export function useDashboardClient() {
 
   return {
     isLoading: subscriptionLoading || domainsQuery.isLoading,
-    hasError: subscriptionError || domainsQuery.isError,
+    hasError: (subscriptionError && !subscription) || (domainsQuery.isError && !domainsQuery.data),
     handleRetry: () => {
       refetchSubscription();
       void domainsQuery.refetch();

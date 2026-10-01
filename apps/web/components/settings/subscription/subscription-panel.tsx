@@ -27,7 +27,7 @@ export function SubscriptionPanel() {
     return <SubscriptionSkeleton />;
   }
 
-  if (isSubscriptionError) {
+  if (isSubscriptionError && !subscription) {
     throw subscriptionError instanceof Error
       ? subscriptionError
       : new Error("Failed to load subscription");

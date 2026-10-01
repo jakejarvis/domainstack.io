@@ -17,22 +17,14 @@ import { useNotificationPreferences } from "@/hooks/use-notification-preferences
  * unresolved during SSR and would make the server and first client render differ.
  */
 export function NotificationsPanel({ userEmail }: { userEmail: string }) {
-  const {
-    domains,
-    globalPrefs,
-    isLoading,
-    isError,
-    error,
-    isPending,
-    updateGlobalPreference,
-    muteDomain,
-  } = useNotificationPreferences();
+  const { domains, globalPrefs, isLoading, error, isPending, updateGlobalPreference, muteDomain } =
+    useNotificationPreferences();
 
   if (isLoading) {
     return <NotificationsSkeleton />;
   }
 
-  if (isError || !domains || !globalPrefs) {
+  if (!domains || !globalPrefs) {
     throw error instanceof Error ? error : new Error("Failed to load notification settings");
   }
 

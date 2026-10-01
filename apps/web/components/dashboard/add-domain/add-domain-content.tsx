@@ -343,7 +343,7 @@ function AddDomainContentInner({
     return <AddDomainLoading className={className} />;
   }
 
-  if (isSubscriptionError) {
+  if (isSubscriptionError && !subscription) {
     return (
       <AddDomainSubscriptionError
         className={className}
