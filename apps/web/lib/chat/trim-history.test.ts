@@ -1,6 +1,7 @@
 /* @vitest-environment node */
 import { describe, expect, it } from "vitest";
 
+import { chatRequestSchema } from "./request-schema";
 import { trimChatHistory } from "./trim-history";
 
 type Role = "user" | "assistant";
@@ -73,5 +74,72 @@ describe("trimChatHistory", () => {
 
   it("returns an empty array for empty input", () => {
     expect(trimChatHistory([])).toEqual([]);
+  });
+
+  describe("assistant part cap", () => {
+    const assistantWithParts = (count: number) => ({
+      id: "assistant-long",
+      role: "assistant" as const,
+      parts: Array.from({ length: count }, (_, index) => ({
+        type: "text" as const,
+        text: `part-${index}`,
+      })),
+    });
+
+    it("keeps only the last 32 parts of an over-cap assistant message", () => {
+      const long = assistantWithParts(40);
+
+      const result = trimChatHistory([msg("user", "question"), long]);
+
+      expect(result).toHaveLength(2);
+      expect(result[1].parts).toHaveLength(32);
+      expect(result[1].parts).toEqual(long.parts.slice(-32));
+    });
+
+    it("returns an assistant message with exactly 32 parts unchanged", () => {
+      const exact = assistantWithParts(32);
+
+      const result = trimChatHistory([msg("user", "question"), exact]);
+
+      expect(result[1]).toEqual(exact);
+      expect(result[1].parts).toHaveLength(32);
+    });
+
+    it("never part-trims user messages", () => {
+      const user = {
+        id: "user-many",
+        role: "user" as const,
+        parts: Array.from({ length: 40 }, (_, index) => ({
+          type: "text" as const,
+          text: `part-${index}`,
+        })),
+      };
+
+      const result = trimChatHistory([user], { maxAssistantParts: 2 });
+
+      expect(result[0].parts).toHaveLength(40);
+    });
+
+    it("does not mutate the input array or its messages", () => {
+      const long = assistantWithParts(40);
+      const messages = [msg("user", "question"), long];
+      const snapshot = structuredClone(messages);
+
+      trimChatHistory(messages);
+
+      expect(messages).toEqual(snapshot);
+      expect(messages[1]).toBe(long);
+      expect(long.parts).toHaveLength(40);
+    });
+
+    it("produces history the request schema accepts", () => {
+      const history = [msg("user", "question"), assistantWithParts(40), msg("user", "follow-up")];
+
+      expect(chatRequestSchema.safeParse({ messages: history }).success).toBe(false);
+
+      const result = trimChatHistory(history);
+
+      expect(chatRequestSchema.safeParse({ messages: result }).success).toBe(true);
+    });
   });
 });

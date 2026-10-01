@@ -20,6 +20,10 @@ import { CHAT_RUN_TIMEOUT_MS, MAX_OUTPUT_TOKENS, MAX_TOOL_STEPS } from "@domains
 import { captureChatTelemetryStep, toChatTelemetryPayload } from "./telemetry";
 import { createDomainToolset, createDomainToolsContext } from "./tools";
 
+/** Fixed client-safe texts: never forward the provider's own error message. */
+const CHAT_ERROR_TEXT = "Chat model request failed";
+const CHAT_TIMEOUT_TEXT = "Chat run timed out";
+
 interface ChatWorkflowInput {
   messages: UIMessage[];
   domain?: string;
@@ -94,6 +98,10 @@ export async function chatWorkflow(input: ChatWorkflowInput) {
         name: error instanceof Error ? error.name : "Error",
         message: error instanceof Error ? error.message : String(error),
       });
+      await writeChatErrorStep(writable, CHAT_ERROR_TEXT);
+    },
+    onAbort: async () => {
+      await writeChatErrorStep(writable, CHAT_TIMEOUT_TEXT);
     },
   });
 
@@ -121,4 +129,18 @@ async function logChatAgentErrorStep(error: { name: string; message: string }) {
   const { createLogger } = await import("@domainstack/logger");
   const logger = createLogger({ source: "chat/workflow" });
   logger.error(error, "chat agent failed");
+}
+
+/** Step: tell the client the turn failed. The SDK closes the stream right after. */
+async function writeChatErrorStep(
+  writable: WritableStream<ModelCallStreamPart>,
+  errorText: string,
+) {
+  "use step";
+  const writer = writable.getWriter();
+  try {
+    await writer.write({ type: "error", error: errorText });
+  } finally {
+    writer.releaseLock();
+  }
 }
