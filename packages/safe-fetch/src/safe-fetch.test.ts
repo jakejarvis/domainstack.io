@@ -532,6 +532,56 @@ describe("safeFetch", () => {
     });
   });
 
+  describe("overall deadline and DNS time", () => {
+    it("counts DNS resolution time against totalTimeoutMs", async () => {
+      vi.useFakeTimers();
+      // Vitest's fake timers don't drive AbortSignal.timeout, so hand fetch a
+      // signal we control and assert on the budget it was created with.
+      const hopSignal = new AbortController();
+      const timeoutSpy = vi.spyOn(AbortSignal, "timeout").mockReturnValue(hopSignal.signal);
+      try {
+        mockLookup.mockImplementation(
+          () =>
+            new Promise((resolve) =>
+              setTimeout(() => resolve([{ address: "93.184.216.34", family: 4 }] as never), 900),
+            ),
+        );
+        const mockFetch = vi.fn<typeof fetch>(
+          (_input, init) =>
+            new Promise<Response>((_, reject) => {
+              const signal = init?.signal;
+              signal?.addEventListener("abort", () => reject(signal.reason));
+            }),
+        );
+
+        const settled = safeFetch({
+          url: "https://example.com",
+          userAgent: null,
+          timeoutMs: 1000,
+          totalTimeoutMs: 1000,
+          fetch: mockFetch,
+          logger: silentLogger,
+        }).then(
+          () => undefined,
+          (e: unknown) => e,
+        );
+
+        await vi.advanceTimersByTimeAsync(1_050);
+
+        // 900ms of the 1000ms budget went to DNS, so the fetch gets at most 100ms.
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+        expect(timeoutSpy.mock.lastCall![0]).toBeLessThanOrEqual(100);
+
+        hopSignal.abort(new DOMException("The operation timed out.", "TimeoutError"));
+        const err = await settled;
+        expect(err).toBeInstanceOf(SafeFetchError);
+        expect((err as SafeFetchError).code).toBe("timeout");
+      } finally {
+        timeoutSpy.mockRestore();
+      }
+    });
+  });
+
   describe("HEAD to GET fallback", () => {
     it("retries with GET when HEAD returns 405", async () => {
       const mockFetch = vi.fn<typeof fetch>(async (_input, init) => {

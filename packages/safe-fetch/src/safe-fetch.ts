@@ -77,6 +77,13 @@ export async function safeFetch(opts: SafeFetchOptions): Promise<SafeFetchResult
       timeoutMs: hopTimeoutMs,
     });
 
+    // DNS resolution spent part of this hop's budget; the fetch gets what's left,
+    // so the overall deadline holds.
+    const fetchTimeoutMs = Math.min(hopTimeoutMs, deadlineAt - Date.now());
+    if (fetchTimeoutMs <= 0) {
+      throw new SafeFetchError("timeout", `Request to ${currentUrl} exceeded its overall deadline`);
+    }
+
     // Pin the socket to the addresses we just validated so a second DNS answer
     // cannot point the connection at a private target (DNS rebinding). The
     // agent is per-request, so it is closed once the body has been read.
@@ -90,7 +97,7 @@ export async function safeFetch(opts: SafeFetchOptions): Promise<SafeFetchResult
           method,
           headers: headersForHop(baseHeaders, initialUrl, hopUrl),
           redirect: "manual",
-          signal: AbortSignal.timeout(hopTimeoutMs),
+          signal: AbortSignal.timeout(fetchTimeoutMs),
           dispatcher,
         } satisfies FetchInit as RequestInit);
       } catch (err) {
