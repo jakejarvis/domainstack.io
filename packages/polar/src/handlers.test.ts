@@ -574,13 +574,45 @@ describe("handleSubscriptionRevoked", () => {
     expect(sendSubscriptionExpiredEmail).not.toHaveBeenCalled();
   });
 
-  it("skips downgrade when Polar customer state cannot be verified", async () => {
+  it("sets a backstop end date and rejects when Polar state cannot be verified for a Pro user without endsAt", async () => {
     vi.mocked(getCustomerSubscriptionState).mockResolvedValue({ status: "unknown" });
+    vi.mocked(getUserSubscription).mockResolvedValue(
+      freeSubscription({ plan: "pro", planQuota: 100, endsAt: null }),
+    );
 
-    await handleSubscriptionRevoked(createRevokedPayload());
+    await expect(handleSubscriptionRevoked(createRevokedPayload())).rejects.toThrow(
+      "Could not verify Polar customer state",
+    );
 
+    expect(setSubscriptionEndsAt).toHaveBeenCalledWith("user-456", expect.any(Date));
     expect(downgradeToFree).not.toHaveBeenCalled();
     expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
+  });
+
+  it("rejects without touching endsAt when state is unknown and the user already has an end date", async () => {
+    vi.mocked(getCustomerSubscriptionState).mockResolvedValue({ status: "unknown" });
+    vi.mocked(getUserSubscription).mockResolvedValue(
+      freeSubscription({ plan: "pro", planQuota: 100, endsAt: new Date("2030-01-01") }),
+    );
+
+    await expect(handleSubscriptionRevoked(createRevokedPayload())).rejects.toThrow(
+      "Could not verify Polar customer state",
+    );
+
+    expect(setSubscriptionEndsAt).not.toHaveBeenCalled();
+    expect(downgradeToFree).not.toHaveBeenCalled();
+  });
+
+  it("rejects without touching endsAt when state is unknown and the user is on the free plan", async () => {
+    vi.mocked(getCustomerSubscriptionState).mockResolvedValue({ status: "unknown" });
+    vi.mocked(getUserSubscription).mockResolvedValue(freeSubscription());
+
+    await expect(handleSubscriptionRevoked(createRevokedPayload())).rejects.toThrow(
+      "Could not verify Polar customer state",
+    );
+
+    expect(setSubscriptionEndsAt).not.toHaveBeenCalled();
+    expect(downgradeToFree).not.toHaveBeenCalled();
   });
 
   it("ignores stale revoked event when customer still has an active subscription", async () => {
@@ -606,6 +638,9 @@ describe("handleSubscriptionRevoked", () => {
 describe("handleSubscriptionUncanceled", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    vi.mocked(getCustomerSubscriptionState).mockResolvedValue(
+      okPolarState({ hasActiveSubscription: true, hasNonCancelingActive: true }),
+    );
   });
 
   it("clears subscription end date when user uncancels", async () => {
@@ -616,6 +651,26 @@ describe("handleSubscriptionUncanceled", () => {
 
   it("does not clear end date when externalId (userId) is missing", async () => {
     await handleSubscriptionUncanceled(createUncanceledPayload({ userId: null }));
+
+    expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
+  });
+
+  it("ignores a stale uncanceled event when the only subscription is canceling", async () => {
+    vi.mocked(getCustomerSubscriptionState).mockResolvedValue(
+      okPolarState({ hasActiveSubscription: true, hasNonCancelingActive: false }),
+    );
+
+    await expect(handleSubscriptionUncanceled(createUncanceledPayload())).resolves.toBeUndefined();
+
+    expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
+  });
+
+  it("rejects without clearing the end date when Polar state cannot be verified", async () => {
+    vi.mocked(getCustomerSubscriptionState).mockResolvedValue({ status: "unknown" });
+
+    await expect(handleSubscriptionUncanceled(createUncanceledPayload())).rejects.toThrow(
+      "Could not verify Polar customer state",
+    );
 
     expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
   });

@@ -260,16 +260,19 @@ export async function handleSubscriptionRevoked(
 
   // Reconcile against Polar before the destructive downgrade+archive. A
   // duplicate/out-of-order `revoked` (for an old subscription) must not
-  // downgrade and archive the domains of a user who has re-subscribed. If the
-  // live lookup fails ("unknown"), skip too — the check-subscription-expiry
-  // reconcile cron will downgrade genuinely-expired users safely.
+  // downgrade and archive the domains of a user who has re-subscribed.
   const state = await getCustomerSubscriptionState(userId);
   if (state.status !== "ok") {
-    logger.warn(
-      { subscriptionId: data.id, userId },
-      "Could not verify Polar customer state; skipping downgrade (cron will reconcile)",
-    );
-    return;
+    // Can't tell a stale revoke from a real one. Make sure the downgrade cron
+    // can see this user (it only selects Pro rows with a past endsAt, and an
+    // immediate revocation may never have set one), then fail the webhook so
+    // Polar redelivers it. The cron re-checks Polar before downgrading and
+    // clears the end date again if the user is in fact still subscribed.
+    const current = await getUserSubscription(userId);
+    if (current.plan === "pro" && current.endsAt === null) {
+      await setSubscriptionEndsAt(userId, new Date());
+    }
+    throw new Error("Could not verify Polar customer state for revoked subscription; retrying");
   }
   if (state.hasActiveSubscription) {
     logger.info(
@@ -322,7 +325,21 @@ export async function handleSubscriptionUncanceled(
     return;
   }
 
-  // Clear the subscription end date since they're no longer canceling
+  // Reconcile against Polar: an `uncanceled` redelivered after a later
+  // re-cancel must not erase the real pending end date.
+  const state = await getCustomerSubscriptionState(userId);
+  if (state.status !== "ok") {
+    // Leaving a stale endsAt only risks an extra reminder email, and the
+    // downgrade cron self-heals it; but retrying is cheap and converges sooner.
+    throw new Error("Could not verify Polar customer state for uncanceled subscription; retrying");
+  }
+  if (!state.hasNonCancelingActive) {
+    logger.info(
+      { subscriptionId: data.id, userId },
+      "No non-canceling active subscription; ignoring stale uncanceled event",
+    );
+    return;
+  }
   await clearSubscriptionEndsAt(userId);
 }
 
