@@ -121,6 +121,14 @@ export async function handleSubscriptionActive(payload: SubscriptionActivePayloa
   // before acting and clears a genuinely stale end date itself.
   if (state.status === "ok" && state.hasNonCancelingActive) {
     await clearSubscriptionEndsAt(userId);
+  } else if (state.status === "ok" && state.cancelingPeriodEnd) {
+    // A `canceled` that arrived while the user was still free was ignored; record its end date now.
+    const changed = previous.endsAt?.getTime() !== state.cancelingPeriodEnd.getTime();
+    if (changed) {
+      await setSubscriptionEndsAt(userId, state.cancelingPeriodEnd, {
+        resetNotificationTracking: true,
+      });
+    }
   }
 
   // Polar delivers webhooks at-least-once. Only send the welcome email on a

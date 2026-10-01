@@ -27,7 +27,12 @@ type UserSubscriptionFixture = {
 };
 
 type CustomerStateFixture =
-  | { status: "ok"; hasActiveSubscription: boolean; hasNonCancelingActive: boolean }
+  | {
+      status: "ok";
+      hasActiveSubscription: boolean;
+      hasNonCancelingActive: boolean;
+      cancelingPeriodEnd: Date | null;
+    }
   | { status: "unknown" };
 
 // Hoist mock functions so they're available to vi.mock factory
@@ -230,12 +235,17 @@ function freeSubscription(
 }
 
 function okPolarState(
-  overrides: Partial<{ hasActiveSubscription: boolean; hasNonCancelingActive: boolean }> = {},
+  overrides: Partial<{
+    hasActiveSubscription: boolean;
+    hasNonCancelingActive: boolean;
+    cancelingPeriodEnd: Date | null;
+  }> = {},
 ): CustomerStateFixture {
   return {
     status: "ok",
     hasActiveSubscription: false,
     hasNonCancelingActive: false,
+    cancelingPeriodEnd: null,
     ...overrides,
   };
 }
@@ -313,6 +323,46 @@ describe("handleSubscriptionActive", () => {
     await handleSubscriptionActive(createActivePayload());
 
     expect(updateUserTier).toHaveBeenCalledWith("user-456", "pro");
+    expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
+  });
+
+  it("records the end date when only canceling subscriptions remain (canceled arrived while free)", async () => {
+    const periodEnd = new Date("2026-11-01T00:00:00.000Z");
+    vi.mocked(getTierForProductId).mockReturnValue("pro");
+    vi.mocked(getCustomerSubscriptionState).mockResolvedValue(
+      okPolarState({
+        hasActiveSubscription: true,
+        hasNonCancelingActive: false,
+        cancelingPeriodEnd: periodEnd,
+      }),
+    );
+
+    await handleSubscriptionActive(createActivePayload());
+
+    expect(updateUserTier).toHaveBeenCalledWith("user-456", "pro");
+    expect(setSubscriptionEndsAt).toHaveBeenCalledWith("user-456", periodEnd, {
+      resetNotificationTracking: true,
+    });
+    expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
+  });
+
+  it("does not rewrite an unchanged end date (keeps reminder tracking)", async () => {
+    const periodEnd = new Date("2026-11-01T00:00:00.000Z");
+    vi.mocked(getTierForProductId).mockReturnValue("pro");
+    vi.mocked(getUserSubscription).mockResolvedValue(
+      freeSubscription({ plan: "pro", endsAt: new Date(periodEnd) }),
+    );
+    vi.mocked(getCustomerSubscriptionState).mockResolvedValue(
+      okPolarState({
+        hasActiveSubscription: true,
+        hasNonCancelingActive: false,
+        cancelingPeriodEnd: periodEnd,
+      }),
+    );
+
+    await handleSubscriptionActive(createActivePayload());
+
+    expect(setSubscriptionEndsAt).not.toHaveBeenCalled();
     expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
   });
 
@@ -529,6 +579,16 @@ describe("handleSubscriptionRevoked", () => {
   });
 
   it("calls downgradeToFree with user ID from customer.externalId", async () => {
+    await handleSubscriptionRevoked(createRevokedPayload());
+
+    expect(downgradeToFree).toHaveBeenCalledWith("user-456");
+  });
+
+  it("downgrades when Polar has no customer (a 404 reconciles to no active subscription)", async () => {
+    vi.mocked(getCustomerSubscriptionState).mockResolvedValue(
+      okPolarState({ hasActiveSubscription: false }),
+    );
+
     await handleSubscriptionRevoked(createRevokedPayload());
 
     expect(downgradeToFree).toHaveBeenCalledWith("user-456");
