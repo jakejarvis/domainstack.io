@@ -1,5 +1,5 @@
 /* @vitest-environment node */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { RemoteDataUnavailableError } from "@domainstack/core/lib/fetch-errors";
 
@@ -55,6 +55,12 @@ vi.mock("@domainstack/core/seo", () => ({
 vi.mock("@domainstack/core/dns", () => ({
   fetchDns: fetchMocks.fetchDns,
 }));
+
+// Load the module (and its SDK / email / schema imports) under the hook
+// timeout instead of inside the first test's budget.
+beforeAll(async () => {
+  await import("./workflow");
+});
 
 beforeEach(() => {
   vi.clearAllMocks();

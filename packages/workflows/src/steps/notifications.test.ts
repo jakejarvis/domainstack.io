@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 /* @vitest-environment node */
 
 // Hoist mocks for the dependencies sendNotification pulls in via dynamic import.
@@ -21,6 +21,12 @@ const trackedDomainsMock = vi.hoisted(() => ({
 vi.mock("./email", () => sendEmailMock);
 vi.mock("@domainstack/db/queries/notifications", () => notificationsMock);
 vi.mock("@domainstack/db/queries/tracked-domains", () => trackedDomainsMock);
+
+// Load the module (and its SDK / email / schema imports) under the hook
+// timeout instead of inside the first test's budget.
+beforeAll(async () => {
+  await import("./notifications");
+});
 
 describe("sendNotification with a dedupeKey", () => {
   const options = {

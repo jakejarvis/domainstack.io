@@ -8,5 +8,9 @@ export default defineConfig({
     include: ["src/**/*.test.ts"],
     environment: "node",
     setupFiles: ["./vitest.setup.ts"],
+    // Suites import the Workflow SDK, React Email and the Drizzle schema; under
+    // `pnpm test` (all packages + Chromium in parallel) cold imports can be slow.
+    testTimeout: 15_000,
+    hookTimeout: 30_000,
   },
 });

@@ -1,5 +1,5 @@
 /* @vitest-environment node */
-import { describe, expect, it, vi } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 const branchMocks = vi.hoisted(() => ({
   checkDomainExpiry: vi.fn<typeof import("./domain").checkDomainExpiry>(),
@@ -8,6 +8,12 @@ const branchMocks = vi.hoisted(() => ({
 
 vi.mock("./domain", () => ({ checkDomainExpiry: branchMocks.checkDomainExpiry }));
 vi.mock("./certificate", () => ({ checkCertificateExpiry: branchMocks.checkCertificateExpiry }));
+
+// Load the module (and its SDK / email / schema imports) under the hook
+// timeout instead of inside the first test's budget.
+beforeAll(async () => {
+  await import("./workflow");
+});
 
 describe("expiryWorkflow", () => {
   it("returns both branch results under { domain, certificate }", async () => {

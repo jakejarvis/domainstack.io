@@ -1,5 +1,5 @@
 /* @vitest-environment node */
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { RemoteDataUnavailableError } from "@domainstack/core/lib/fetch-errors";
 
@@ -38,6 +38,12 @@ vi.mock("../steps/notifications", () => sharedNotificationsMock);
 vi.mock("@domainstack/email/templates/domain-expiry", () => ({
   default: vi.fn<() => React.ReactElement>().mockReturnValue({} as React.ReactElement),
 }));
+
+// Load the module (and its SDK / email / schema imports) under the hook
+// timeout instead of inside the first test's budget.
+beforeAll(async () => {
+  await import("./domain");
+});
 
 // Days remaining is computed in the workflow body from `Date`, so pin the clock
 // and express dates relative to it. The extra hour keeps `Math.floor` on N.

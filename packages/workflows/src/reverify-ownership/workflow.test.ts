@@ -1,5 +1,5 @@
 /* @vitest-environment node */
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createLogger } from "@domainstack/logger";
 
@@ -41,6 +41,12 @@ vi.mock("@domainstack/email/templates/verification-failing", () => ({
 vi.mock("@domainstack/email/templates/verification-revoked", () => ({
   default: vi.fn<() => React.ReactElement>().mockReturnValue({} as React.ReactElement),
 }));
+
+// Load the module (and its SDK / email / schema imports) under the hook
+// timeout instead of inside the first test's budget.
+beforeAll(async () => {
+  await import("./workflow");
+});
 
 const baseDomain = {
   id: "td-1",

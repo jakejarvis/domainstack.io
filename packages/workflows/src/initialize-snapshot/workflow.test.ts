@@ -1,5 +1,5 @@
 /* @vitest-environment node */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { DnsFetchData } from "@domainstack/core/dns/types";
 
@@ -50,6 +50,12 @@ vi.mock("../steps/certificates", () => certificatesMock);
 vi.mock("../steps/hosting", () => hostingMock);
 vi.mock("@domainstack/db/queries/domains", () => domainsMock);
 vi.mock("@domainstack/db/queries/snapshots", () => snapshotsMock);
+
+// Load the module (and its SDK / email / schema imports) under the hook
+// timeout instead of inside the first test's budget.
+beforeAll(async () => {
+  await import("./workflow");
+});
 
 const DNS_RESULT: DnsFetchData = {
   records: [{ type: "A", name: "example.com", value: "192.0.2.1", ttl: 300 }] as never,
