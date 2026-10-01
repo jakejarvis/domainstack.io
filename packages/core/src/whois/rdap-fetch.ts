@@ -1,5 +1,6 @@
-import { safeFetch } from "@domainstack/safe-fetch";
 import type { FetchLike } from "rdapper";
+
+import { safeFetch } from "@domainstack/safe-fetch";
 
 /** RDAP JSON is small; 2 MB covers the largest real responses with room to spare. */
 const RDAP_MAX_BYTES = 2 * 1024 * 1024;
@@ -12,7 +13,9 @@ function toHeaderRecord(headers?: HeadersInit): Record<string, string> | undefin
   return Object.fromEntries(new Headers(headers).entries());
 }
 
-function combineSignals(...signals: Array<AbortSignal | null | undefined>): AbortSignal | undefined {
+function combineSignals(
+  ...signals: Array<AbortSignal | null | undefined>
+): AbortSignal | undefined {
   const present = signals.filter((s): s is AbortSignal => Boolean(s));
   if (present.length === 0) return undefined;
   if (present.length === 1) return present[0];

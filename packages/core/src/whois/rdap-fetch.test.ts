@@ -1,7 +1,8 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import type { safeFetch } from "@domainstack/safe-fetch";
 /* @vitest-environment node */
 import { SafeFetchError } from "@domainstack/safe-fetch/errors";
-import type { safeFetch } from "@domainstack/safe-fetch";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 type SafeFetchResult = Awaited<ReturnType<typeof safeFetch>>;
 
@@ -44,7 +45,7 @@ describe("createRdapFetch", () => {
     });
 
     expect(safeFetchMock).toHaveBeenCalledTimes(1);
-    const opts = safeFetchMock.mock.calls[0]![0];
+    const opts = safeFetchMock.mock.calls[0][0];
     expect(opts.url).toBe("http://rdap.example/domain/example.com");
     expect(opts.userAgent).toBe("test-agent");
     expect(opts.maxBytes).toBe(2 * 1024 * 1024);
@@ -90,7 +91,7 @@ describe("createRdapFetch", () => {
     const rdapFetch = createRdapFetch({ timeoutMs: 1000 });
     await rdapFetch("https://rdap.example/domain/example.com", { signal: rdapperAbort.signal });
 
-    const customFetch = safeFetchMock.mock.calls[0]![0].fetch!;
+    const customFetch = safeFetchMock.mock.calls[0][0].fetch!;
     const safeFetchAbort = new AbortController();
     await customFetch("https://rdap.example/domain/example.com", {
       dispatcher: "d",
@@ -98,7 +99,7 @@ describe("createRdapFetch", () => {
     } as RequestInit);
 
     expect(globalFetch).toHaveBeenCalledTimes(1);
-    const init = globalFetch.mock.calls[0]![1] as RequestInit & { dispatcher?: unknown };
+    const init = globalFetch.mock.calls[0][1] as RequestInit & { dispatcher?: unknown };
     expect(init.dispatcher).toBe("d");
     expect(init.signal).toBeInstanceOf(AbortSignal);
     expect(init.signal).not.toBe(safeFetchAbort.signal);
