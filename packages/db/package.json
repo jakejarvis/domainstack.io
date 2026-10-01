@@ -27,14 +27,14 @@
     "@domainstack/utils": "workspace:*",
     "@vercel/functions": "catalog:",
     "drizzle-orm": "^0.45.3",
-    "pg": "^8.23.0"
+    "pg": "^8.23.1"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@electric-sql/pglite": "^0.5.8",
     "@types/node": "catalog:",
     "@types/pg": "^8.23.1",
-    "dotenv": "^18.0.4",
+    "dotenv": "^18.0.5",
     "drizzle-kit": "^0.31.11"
   }
 }
