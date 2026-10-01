@@ -150,6 +150,7 @@ async function sendSubscriptionExpiryNotification(params: {
   "use step";
 
   const { formatDateLong } = await import("@domainstack/utils/date");
+  const { inDaysPhrase } = await import("@domainstack/utils/expiry");
   const { default: SubscriptionCancelingEmail } =
     await import("@domainstack/email/templates/subscription-canceling");
   const { getBaseUrl, getFirstName, sendEmail } = await import("../steps/email");
@@ -163,7 +164,7 @@ async function sendSubscriptionExpiryNotification(params: {
   // Determine urgency for subject line
   const isUrgent = daysRemaining <= 3;
   const title = isUrgent
-    ? `Pro subscription ends in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`
+    ? `Pro subscription ends ${inDaysPhrase(daysRemaining)}`
     : `Pro subscription ends on ${endDate}`;
   const subject = isUrgent ? `⚠️ Your ${title}` : `Your ${title}`;
 
