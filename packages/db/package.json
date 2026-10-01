@@ -19,7 +19,8 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
     "@domainstack/constants": "workspace:*",
@@ -30,11 +31,13 @@
     "pg": "^8.23.1"
   },
   "devDependencies": {
+    "@better-auth/utils": "^0.4.2",
     "@domainstack/typescript-config": "workspace:*",
     "@electric-sql/pglite": "^0.5.8",
     "@types/node": "catalog:",
     "@types/pg": "^8.23.1",
     "dotenv": "^18.0.5",
-    "drizzle-kit": "^0.31.11"
+    "drizzle-kit": "^0.31.11",
+    "tsx": "^4.23.15"
   }
 }

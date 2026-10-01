@@ -1,0 +1,47 @@
+# Local services for `pnpm dev`. See README "Development".
+#
+#   docker compose up -d     # start
+#   docker compose down -v   # stop and wipe data
+name: domainstack
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: domainstack
+      POSTGRES_PASSWORD: domainstack
+      POSTGRES_DB: domainstack
+    ports:
+      # Loopback only: the dev credentials below are checked in
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U domainstack"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  # Upstash-compatible REST API in front of Redis, for @upstash/redis
+  redis-http:
+    image: hiett/serverless-redis-http:0.0.10
+    environment:
+      SRH_MODE: env
+      SRH_TOKEN: dev-token
+      SRH_CONNECTION_STRING: redis://redis:6379
+    ports:
+      - "127.0.0.1:8079:80"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres:

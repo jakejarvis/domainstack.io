@@ -596,6 +596,9 @@ importers:
         specifier: ^8.23.1
         version: 8.23.1
     devDependencies:
+      '@better-auth/utils':
+        specifier: ^0.4.2
+        version: 0.4.3
       '@domainstack/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
@@ -614,6 +617,9 @@ importers:
       drizzle-kit:
         specifier: ^0.31.11
         version: 0.31.11
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
 
   packages/edge-config:
     dependencies:

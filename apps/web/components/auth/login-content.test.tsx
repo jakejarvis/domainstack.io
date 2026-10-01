@@ -25,6 +25,9 @@ vi.mock("@/components/auth/oauth-button", () => ({
     <div data-testid="oauth" data-callback={callbackURL} />
   ),
 }));
+vi.mock("@/components/auth/dev-sign-in-form", () => ({
+  DevSignInForm: () => null,
+}));
 
 import { LoginContent } from "@/components/auth/login-content";
 import { render } from "@/mocks/react";
