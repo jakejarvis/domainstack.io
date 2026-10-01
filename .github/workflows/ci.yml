@@ -33,15 +33,20 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm --filter @domainstack/web exec playwright install chromium --with-deps
 
-      - name: Run oxlint
-        continue-on-error: true
+      - name: Lint and type-check
         run: pnpm lint
 
-      - name: Run tests with coverage report
-        continue-on-error: true
-        run: pnpm test:coverage
+      - name: Check formatting
+        run: pnpm fmt:check
+
+      - name: Test packages
+        run: pnpm exec turbo run test --filter='!@domainstack/web'
+
+      - name: Test web app with coverage
+        run: pnpm exec turbo run test:coverage --filter=@domainstack/web
 
       - name: Upload coverage reports to Codecov
+        if: ${{ !cancelled() }}
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
