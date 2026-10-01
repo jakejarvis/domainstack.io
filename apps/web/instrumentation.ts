@@ -5,6 +5,8 @@ import type { LogRecordProcessor } from "@opentelemetry/sdk-logs";
 import { OTLPHttpProtoTraceExporter, registerOTel } from "@vercel/otel";
 import type { Instrumentation } from "next";
 
+import { redactRequestPath } from "@/lib/redact-request-path";
+
 const SERVICE_NAME = "domainstack-web";
 
 /**
@@ -107,13 +109,22 @@ export const onRequestError: Instrumentation.onRequestError = async (error, requ
     return;
   }
 
+  // `request.path` includes the query string, which can carry credentials (the
+  // calendar feed's `?token=`). Never log or send it raw.
+  let path: string;
+  try {
+    path = redactRequestPath(request.path);
+  } catch {
+    path = "unknown";
+  }
+
   try {
     const { logger } = await import("@domainstack/logger");
     logger.error(
       {
         err: error,
         source: "instrumentation",
-        path: request.path,
+        path,
         method: request.method,
       },
       "request error",
@@ -125,7 +136,7 @@ export const onRequestError: Instrumentation.onRequestError = async (error, requ
   try {
     const { captureException } = await import("@domainstack/api/analytics");
     await captureException(error, undefined, {
-      path: request.path,
+      path,
       method: request.method,
     });
   } catch {
