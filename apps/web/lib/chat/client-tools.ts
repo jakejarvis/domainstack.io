@@ -12,6 +12,7 @@ import posthogClient from "posthog-js";
 import { getLookupErrorMessage } from "@/lib/constants/lookup-errors";
 import type { AppRouter } from "@domainstack/api";
 
+import { boundToolOutput } from "./bound-tool-output";
 import {
   DOMAIN_TOOL_DEFS,
   domainToolInputSchema,
@@ -45,7 +46,7 @@ function makeClientDomainTool<TDef extends (typeof DOMAIN_TOOL_DEFS)[number]>(
             error: getLookupErrorMessage(result.error),
           };
         }
-        return result.data;
+        return boundToolOutput(result.data);
       } catch (err) {
         posthogClient.captureException(err, {
           context: "client-domain-tool",

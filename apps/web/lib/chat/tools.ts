@@ -10,6 +10,7 @@ import { tool, type Tool } from "ai";
 import { RetryableError } from "workflow";
 import { z } from "zod";
 
+import { boundToolOutput } from "@/lib/chat/bound-tool-output";
 import {
   createDomainToolsContext,
   DOMAIN_TOOL_DEFS,
@@ -76,7 +77,9 @@ async function domainLookupStep(section: DomainToolSection, domain: string, ctx:
     if (!result) {
       return { error: TOOL_TIMEOUT_MESSAGE };
     }
-    return result.success ? result.data : { error: getLookupErrorMessage(result.error) };
+    return result.success
+      ? boundToolOutput(result.data)
+      : { error: getLookupErrorMessage(result.error) };
   } catch (err) {
     // Lookups report failures as `{ success: false }`; the only expected throw
     // is the rate limit. Anything else is a cache/db failure worth retrying.

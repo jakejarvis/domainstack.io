@@ -9,6 +9,7 @@ vi.mock("@domainstack/core/lookup", () => ({ lookupSection: mocks.lookupSection 
 
 import { RateLimitError } from "@domainstack/redis/enforce";
 
+import { TRUNCATION_MARKER } from "./bound-tool-output";
 import { INVALID_DOMAIN_MESSAGE, RATE_LIMIT_MESSAGE } from "./domain-tools";
 import { createDomainToolset } from "./tools";
 
@@ -77,6 +78,19 @@ describe("domain chat tools", () => {
     await expect(runTool("get_dns_records", "example.com")).resolves.toEqual({
       error: RATE_LIMIT_MESSAGE,
     });
+  });
+
+  it("truncates oversized fields in a successful payload", async () => {
+    mocks.lookupSection.mockResolvedValue({
+      success: true,
+      cached: false,
+      data: { title: "t".repeat(5_000) },
+    });
+
+    const result = (await runTool("get_seo", "example.com")) as { title: string };
+
+    expect(result.title).toHaveLength(1_000 + TRUNCATION_MARKER.length);
+    expect(result.title.endsWith(TRUNCATION_MARKER)).toBe(true);
   });
 
   it("throws a retryable error for unexpected failures", async () => {

@@ -4,6 +4,7 @@ import { createMcpHandler } from "mcp-handler";
 import { after } from "next/server";
 import { PostHog } from "posthog-node";
 
+import { boundToolOutput } from "@/lib/chat/bound-tool-output";
 import {
   domainToolInputSchema,
   MCP_REPORT_TOOL,
@@ -63,7 +64,10 @@ async function handler(request: Request): Promise<Response> {
             return result.success
               ? {
                   content: [
-                    { type: "text" as const, text: JSON.stringify(result.data ?? {}, null, 2) },
+                    {
+                      type: "text" as const,
+                      text: JSON.stringify(boundToolOutput(result.data ?? {}), null, 2),
+                    },
                   ],
                 }
               : {
@@ -100,7 +104,7 @@ async function handler(request: Request): Promise<Response> {
                 const result = await lookupDomainSection(section, domain);
                 if (result.success) {
                   // `cached`/`stale` sit beside `data` on the result, not in it
-                  return { section, success: true, data: result.data ?? null };
+                  return { section, success: true, data: boundToolOutput(result.data ?? null) };
                 }
                 return { section, success: false, error: result.error };
               } catch (err) {
