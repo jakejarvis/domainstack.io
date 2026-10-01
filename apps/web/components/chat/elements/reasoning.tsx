@@ -7,6 +7,8 @@ import { Streamdown } from "streamdown";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@domainstack/ui/collapsible";
 import { cn } from "@domainstack/ui/utils";
 
+import { CHAT_DISALLOWED_ELEMENTS, CHAT_REHYPE_PLUGINS } from "./markdown";
+
 interface ReasoningContextValue {
   isStreaming: boolean;
   isOpen: boolean;
@@ -160,7 +162,9 @@ export type ReasoningContentProps = React.ComponentProps<typeof CollapsibleConte
 
 export const ReasoningContent = memo(({ className, children, ...props }: ReasoningContentProps) => (
   <CollapsibleContent className={cn("mt-4 text-sm", className)} {...props}>
-    <Streamdown>{children}</Streamdown>
+    <Streamdown rehypePlugins={CHAT_REHYPE_PLUGINS} disallowedElements={CHAT_DISALLOWED_ELEMENTS}>
+      {children}
+    </Streamdown>
   </CollapsibleContent>
 ));
 

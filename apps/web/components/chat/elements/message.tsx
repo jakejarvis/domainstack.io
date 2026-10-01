@@ -4,6 +4,8 @@ import { Streamdown } from "streamdown";
 
 import { cn } from "@domainstack/ui/utils";
 
+import { CHAT_DISALLOWED_ELEMENTS, CHAT_REHYPE_PLUGINS } from "./markdown";
+
 export type MessageProps = React.ComponentProps<"div"> & {
   from: UIMessage["role"];
 };
@@ -47,6 +49,8 @@ export const MessageResponse = memo(
         className,
       )}
       caret={caret}
+      rehypePlugins={CHAT_REHYPE_PLUGINS}
+      disallowedElements={CHAT_DISALLOWED_ELEMENTS}
       {...props}
     />
   ),
