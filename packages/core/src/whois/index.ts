@@ -7,6 +7,8 @@
  * Permanent errors return { success: false, error }.
  */
 
+import { domainToUnicode } from "node:url";
+
 import { upsertDomain } from "@domainstack/db/queries/domains";
 import {
   resolveOrCreateProviderId,
@@ -215,7 +217,8 @@ export async function persistRegistration(
   const domainRecord = await upsertDomain({
     name: domain,
     tld: getDomainTld(domain) ?? "",
-    unicodeName: response.unicodeName ?? domain,
+    // WHOIS records carry no Unicode name; derive it so an IDN doesn't flip to punycode.
+    unicodeName: response.unicodeName ?? (domainToUnicode(domain) || domain),
   });
 
   const expiresAt = ttlForRegistration(

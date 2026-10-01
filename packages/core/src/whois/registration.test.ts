@@ -25,6 +25,7 @@ vi.mock("@domainstack/db/queries/registrations", async (importOriginal) => {
 });
 
 const { getCachedRegistration } = await import("@domainstack/db/queries/registrations");
+const { findDomainByName } = await import("@domainstack/db/queries/domains");
 const { fetchRegistration } = await import("./index");
 
 afterAll(async () => {
@@ -115,6 +116,28 @@ describe("fetchRegistration", () => {
 
       const cached = await getCachedRegistration(domain);
       expect(fresh.data).toEqual(cached.data);
+    });
+  });
+
+  describe("unicode name", () => {
+    it("derives the unicode name for an IDN when the record carries none", async () => {
+      const domain = "xn--bcher-kva.example";
+      mockRecord({ domain, tld: "example", isRegistered: true, source: "whois" });
+
+      const fresh = await fetchRegistration(domain);
+      expect(fresh.success).toBe(true);
+
+      expect((await findDomainByName(domain))?.unicodeName).toBe("bücher.example");
+    });
+
+    it("stores an ASCII domain as its own unicode name when the record carries none", async () => {
+      const domain = "plain-ascii.com";
+      mockRecord({ domain, tld: "com", isRegistered: true, source: "whois" });
+
+      const fresh = await fetchRegistration(domain);
+      expect(fresh.success).toBe(true);
+
+      expect((await findDomainByName(domain))?.unicodeName).toBe(domain);
     });
   });
 
