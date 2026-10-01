@@ -27,10 +27,13 @@ import { CHAT_TOOL_TIMEOUT_MS } from "@domainstack/constants";
 
 interface ToolContext {
   ip: string | null;
+  userId?: string | null;
 }
 
 const toolContextSchema = z.object({
   ip: z.string().nullable(),
+  // Optional so contexts serialized by in-flight runs before this field existed still parse.
+  userId: z.string().nullable().optional(),
 });
 
 type DomainToolSet = {
@@ -69,7 +72,7 @@ async function domainLookupStep(section: DomainToolSection, domain: string, ctx:
   }
 
   try {
-    const lookup = lookupSection(section, registrable, { identifier: ctx.ip });
+    const lookup = lookupSection(section, registrable, { identifier: ctx.userId ?? ctx.ip });
     // A hung lookup would otherwise block the whole run; the abandoned promise
     // is left to settle on its own.
     void lookup.catch(() => undefined);

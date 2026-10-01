@@ -79,7 +79,7 @@ export async function chatWorkflow(input: ChatWorkflowInput) {
         user: userId ?? ip ?? "",
       } satisfies GatewayProviderOptions,
     },
-    toolsContext: createDomainToolsContext({ ip }),
+    toolsContext: createDomainToolsContext({ ip, userId: userId ?? null }),
   });
 
   const writable = getWritable<ModelCallStreamPart>();

@@ -19,9 +19,10 @@ function runTool(
   name: keyof ReturnType<typeof createDomainToolset>,
   domain: string,
   ip: string | null = "1.2.3.4",
+  userId: string | null = null,
 ): Promise<unknown> {
   const tool = createDomainToolset()[name];
-  return Promise.resolve(tool.execute?.({ domain }, { context: { ip } } as never));
+  return Promise.resolve(tool.execute?.({ domain }, { context: { ip, userId } } as never));
 }
 
 describe("domain chat tools", () => {
@@ -36,6 +37,13 @@ describe("domain chat tools", () => {
     expect(mocks.lookupSection).toHaveBeenCalledWith("dns", "example.com", {
       identifier: "1.2.3.4",
     });
+  });
+
+  it("meters a signed-in user by account instead of IP", async () => {
+    mocks.lookupSection.mockResolvedValue({ success: true, cached: false, data: DNS_DATA });
+
+    await runTool("get_dns_records", "example.com", "1.2.3.4", "u1");
+    expect(mocks.lookupSection).toHaveBeenCalledWith("dns", "example.com", { identifier: "u1" });
   });
 
   it("routes each tool to its own section", async () => {
