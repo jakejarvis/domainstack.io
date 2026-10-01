@@ -3,7 +3,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vites
 
 // Initialize PGlite before importing anything that uses the db
 const { makePGliteDb, closePGliteDb, resetPGliteDb } = await import("@domainstack/db/testing");
-await makePGliteDb();
+const { client } = await makePGliteDb();
 
 const { db } = await import("@domainstack/db/client");
 const { eq } = await import("@domainstack/db/drizzle");
@@ -19,6 +19,22 @@ async function readDomain(name: string) {
 // Advance the clock so an unchanged `updatedAt` proves no write happened, not equal timestamps.
 function advanceClock() {
   vi.setSystemTime(new Date(Date.now() + 60_000));
+}
+
+// Record the SQL text of every statement `fn` issues by wrapping `client.query`.
+async function captureStatements(fn: () => Promise<unknown>): Promise<string[]> {
+  const captured: string[] = [];
+  const originalQuery = client.query.bind(client);
+  (client as any).query = (sqlText: string, ...rest: unknown[]) => {
+    captured.push(sqlText);
+    return (originalQuery as any)(sqlText, ...rest);
+  };
+  try {
+    await fn();
+  } finally {
+    (client as any).query = originalQuery;
+  }
+  return captured;
 }
 
 afterAll(async () => {
@@ -43,6 +59,22 @@ describe("ensureDomainRecord", () => {
 
     expect(second.id).toBe(first.id);
     expect((await readDomain("example.com"))?.updatedAt).toEqual(first.updatedAt);
+  });
+
+  it("issues exactly one statement for an existing domain", async () => {
+    await ensureDomainRecord("example.com");
+
+    const statements = await captureStatements(() => ensureDomainRecord("example.com"));
+
+    expect(statements).toHaveLength(1);
+    expect(statements[0]).toMatch(/^\s*select\b/i);
+  });
+
+  it("creates a row for a new domain", async () => {
+    const row = await ensureDomainRecord("brand-new.example");
+
+    expect(row.id).toBeTruthy();
+    expect((await readDomain("brand-new.example"))?.id).toBe(row.id);
   });
 
   it("does not overwrite a stored Unicode name with the punycode form", async () => {
@@ -89,6 +121,16 @@ describe("upsertDomain", () => {
 
     expect(second.id).toBe(first.id);
     expect(second.updatedAt).toEqual(first.updatedAt);
+    expect((await readDomain("example.com"))?.updatedAt).toEqual(first.updatedAt);
+  });
+
+  it("issues exactly one statement when nothing changed", async () => {
+    const first = await upsertDomain(params);
+    advanceClock();
+
+    const statements = await captureStatements(() => upsertDomain(params));
+
+    expect(statements).toHaveLength(1);
     expect((await readDomain("example.com"))?.updatedAt).toEqual(first.updatedAt);
   });
 

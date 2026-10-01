@@ -26,6 +26,12 @@ export interface UpsertDomainParams {
 export async function upsertDomain(params: UpsertDomainParams) {
   const { name, tld, unicodeName } = params;
 
+  // The row almost always exists and is unchanged: one read, no write.
+  const existing = await findDomainByName(name);
+  if (existing && existing.tld === tld && existing.unicodeName === unicodeName) {
+    return existing;
+  }
+
   const inserted = await db
     .insert(domains)
     .values({ name, tld, unicodeName })
@@ -68,6 +74,10 @@ export async function ensureDomainRecord(domain: string) {
   if (!tld) {
     throw new Error(`Cannot persist domain "${domain}": unable to extract TLD`);
   }
+
+  // The row almost always exists already: one read instead of a no-op insert plus a read.
+  const existing = await findDomainByName(domain);
+  if (existing) return existing;
 
   // The Unicode name is owned by the registration persist, so this never overwrites it.
   const inserted = await db
