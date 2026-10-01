@@ -87,5 +87,6 @@
     }
   },
   "globalDependencies": ["**/.env*"],
-  "globalEnv": ["CI", "NODE_ENV", "VERCEL", "VERCEL_ENV", "VERCEL_URL", "npm_lifecycle_event"]
+  "globalEnv": ["CI", "NODE_ENV", "VERCEL", "VERCEL_ENV", "VERCEL_URL", "npm_lifecycle_event"],
+  "agentGuidance": false
 }

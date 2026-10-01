@@ -1,3 +1,5 @@
+import { getStateExternalCustomers } from "@polar-sh/sdk/2026-10/services/customers";
+
 import { createLogger } from "@domainstack/logger";
 
 import { polarClient } from "./server";
@@ -30,12 +32,12 @@ export async function getCustomerSubscriptionState(
   }
 
   try {
-    const state = await polarClient.customers.getStateExternal({ externalId: userId });
-    const active = state.activeSubscriptions ?? [];
+    const state = await getStateExternalCustomers(polarClient)(userId);
+    const active = state.active_subscriptions;
     return {
       status: "ok",
       hasActiveSubscription: active.length > 0,
-      hasNonCancelingActive: active.some((sub) => !sub.cancelAtPeriodEnd),
+      hasNonCancelingActive: active.some((sub) => !sub.cancel_at_period_end),
     };
   } catch (err) {
     logger.error({ err, userId }, "Failed to fetch Polar customer state for reconciliation");

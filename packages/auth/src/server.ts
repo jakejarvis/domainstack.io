@@ -160,18 +160,6 @@ export const auth = betterAuth({
     deleteUser: {
       enabled: true,
       beforeDelete: async (user) => {
-        // Cancel Polar subscription if user has one
-        // This deletes the Polar customer, which automatically cancels any active
-        // subscriptions and revokes benefits
-        try {
-          await polarClient?.customers.deleteExternal({
-            externalId: user.id,
-          });
-        } catch (err) {
-          // Don't block account deletion if Polar cleanup fails
-          logger.error({ err, userId: user.id }, "failed to delete Polar customer");
-        }
-
         // Delete Resend contact
         waitUntil(
           removeContact(user.email).catch((err: unknown) =>

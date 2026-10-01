@@ -145,10 +145,10 @@ function createSubscriptionData(overrides: {
 
   return {
     id: overrides.subscriptionId ?? "sub-123",
-    customerId: "polar-cust-abc",
+    customer_id: "polar-cust-abc",
     customer: {
       id: "polar-cust-abc",
-      externalId,
+      external_id: externalId,
       email: "user@example.test",
       name: "Test User",
     },
@@ -157,9 +157,10 @@ function createSubscriptionData(overrides: {
       name: "Pro Plan",
     },
     status: overrides.status ?? "active",
-    cancelAtPeriodEnd: overrides.cancelAtPeriodEnd ?? false,
-    currentPeriodEnd: overrides.currentPeriodEnd ?? null,
-    canceledAt: overrides.canceledAt ?? null,
+    cancel_at_period_end: overrides.cancelAtPeriodEnd ?? false,
+    // The SDK delivers timestamps as ISO strings, not Dates.
+    current_period_end: overrides.currentPeriodEnd?.toISOString() ?? null,
+    canceled_at: overrides.canceledAt?.toISOString() ?? null,
     amount: 200,
     currency: "usd",
   };
@@ -171,7 +172,7 @@ function createCreatedPayload(
 ): SubscriptionCreatedPayload {
   return {
     type: "subscription.created",
-    timestamp: new Date(),
+    timestamp: new Date().toISOString(),
     data: createSubscriptionData({ status: "incomplete", ...overrides }),
   } as SubscriptionCreatedPayload;
 }
@@ -181,7 +182,7 @@ function createActivePayload(
 ): SubscriptionActivePayload {
   return {
     type: "subscription.active",
-    timestamp: new Date(),
+    timestamp: new Date().toISOString(),
     data: createSubscriptionData({ status: "active", ...overrides }),
   } as SubscriptionActivePayload;
 }
@@ -191,7 +192,7 @@ function createCanceledPayload(
 ): SubscriptionCanceledPayload {
   return {
     type: "subscription.canceled",
-    timestamp: new Date(),
+    timestamp: new Date().toISOString(),
     data: createSubscriptionData(overrides),
   } as SubscriptionCanceledPayload;
 }
@@ -201,7 +202,7 @@ function createRevokedPayload(
 ): SubscriptionRevokedPayload {
   return {
     type: "subscription.revoked",
-    timestamp: new Date(),
+    timestamp: new Date().toISOString(),
     data: createSubscriptionData(overrides),
   } as SubscriptionRevokedPayload;
 }
@@ -211,7 +212,7 @@ function createUncanceledPayload(
 ): SubscriptionUncanceledPayload {
   return {
     type: "subscription.uncanceled",
-    timestamp: new Date(),
+    timestamp: new Date().toISOString(),
     data: createSubscriptionData({ status: "active", ...overrides }),
   } as SubscriptionUncanceledPayload;
 }

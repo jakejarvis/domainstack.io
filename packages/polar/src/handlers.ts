@@ -47,7 +47,7 @@ export async function handleSubscriptionCreated(
   payload: SubscriptionCreatedPayload,
 ): Promise<void> {
   const { data } = payload;
-  const userId = data.customer.externalId;
+  const userId = data.customer.external_id;
   const tier = getTierForProductId(data.product.id);
 
   logger.info(
@@ -69,7 +69,7 @@ export async function handleSubscriptionCreated(
  */
 export async function handleSubscriptionActive(payload: SubscriptionActivePayload): Promise<void> {
   const { data } = payload;
-  const userId = data.customer.externalId;
+  const userId = data.customer.external_id;
   // Single paid tier: any active subscription means "pro". We log the
   // product→tier mapping for observability but no longer gate the upgrade on
   // it — a sandbox/prod product-id mismatch must not silently leave a paying
@@ -153,20 +153,20 @@ export async function handleSubscriptionActive(payload: SubscriptionActivePayloa
 /**
  * Handle subscription.canceled webhook.
  * This is called when the user cancels their subscription.
- * The subscription remains active until currentPeriodEnd.
+ * The subscription remains active until current_period_end.
  */
 export async function handleSubscriptionCanceled(
   payload: SubscriptionCanceledPayload,
 ): Promise<void> {
   const { data } = payload;
-  const userId = data.customer.externalId;
+  const userId = data.customer.external_id;
 
   logger.info(
     {
       subscriptionId: data.id,
       userId,
-      cancelAtPeriodEnd: data.cancelAtPeriodEnd,
-      currentPeriodEnd: data.currentPeriodEnd,
+      cancelAtPeriodEnd: data.cancel_at_period_end,
+      currentPeriodEnd: data.current_period_end,
     },
     "Subscription canceled",
   );
@@ -176,8 +176,10 @@ export async function handleSubscriptionCanceled(
     return;
   }
 
-  if (!data.currentPeriodEnd) {
-    logger.warn({ subscriptionId: data.id }, "No currentPeriodEnd, skipping end date update");
+  // The SDK delivers timestamps as ISO strings.
+  const periodEnd = data.current_period_end ? new Date(data.current_period_end) : null;
+  if (!periodEnd || Number.isNaN(periodEnd.getTime())) {
+    logger.warn({ subscriptionId: data.id }, "No current_period_end, skipping end date update");
     return;
   }
 
@@ -209,14 +211,14 @@ export async function handleSubscriptionCanceled(
     return;
   }
   const previousEndsAtMs = previous.endsAt?.getTime() ?? null;
-  const nextEndsAtMs = data.currentPeriodEnd.getTime();
+  const nextEndsAtMs = periodEnd.getTime();
   const endsAtChanged = previousEndsAtMs !== nextEndsAtMs;
 
   // Set the subscription end date. A new cancellation cycle (different end
   // date) also resets expiry-reminder tracking, so the 7/3/1-day sequence
   // can fire again for it — a redelivered event with the same end date must
   // not reset it, or already-sent reminders would be forgotten and re-sent.
-  await setSubscriptionEndsAt(userId, data.currentPeriodEnd, {
+  await setSubscriptionEndsAt(userId, periodEnd, {
     resetNotificationTracking: endsAtChanged,
   });
 
@@ -225,7 +227,7 @@ export async function handleSubscriptionCanceled(
   // "subscription ending" email.
   if (endsAtChanged) {
     try {
-      await sendSubscriptionCancelingEmail(userId, data.currentPeriodEnd);
+      await sendSubscriptionCancelingEmail(userId, periodEnd);
     } catch (err) {
       logger.error({ err, userId }, "Failed to send canceling email");
     }
@@ -241,7 +243,7 @@ export async function handleSubscriptionRevoked(
   payload: SubscriptionRevokedPayload,
 ): Promise<void> {
   const { data } = payload;
-  const userId = data.customer.externalId;
+  const userId = data.customer.external_id;
 
   logger.info(
     {
@@ -305,7 +307,7 @@ export async function handleSubscriptionUncanceled(
   payload: SubscriptionUncanceledPayload,
 ): Promise<void> {
   const { data } = payload;
-  const userId = data.customer.externalId;
+  const userId = data.customer.external_id;
 
   logger.info(
     {
@@ -330,16 +332,16 @@ export async function handleSubscriptionUncanceled(
  */
 export async function handleOrderPaid(payload: OrderPaidPayload): Promise<void> {
   const { data } = payload;
-  const userId = data.customer.externalId;
+  const userId = data.customer.external_id;
 
   logger.info(
     {
       orderId: data.id,
       userId,
-      productId: data.productId,
-      totalAmount: data.totalAmount,
+      productId: data.product_id,
+      totalAmount: data.total_amount,
       currency: data.currency,
-      billingReason: data.billingReason,
+      billingReason: data.billing_reason,
     },
     "Order paid",
   );
@@ -352,13 +354,13 @@ export async function handleOrderPaid(payload: OrderPaidPayload): Promise<void> 
   analytics.track(
     "payment_succeeded",
     {
-      revenue: data.totalAmount,
+      revenue: data.total_amount,
       currency: data.currency.toUpperCase(),
       product: data.product?.name,
-      product_id: data.productId,
-      subscription_id: data.subscriptionId,
+      product_id: data.product_id,
+      subscription_id: data.subscription_id,
       order_id: data.id,
-      billing_reason: data.billingReason,
+      billing_reason: data.billing_reason,
     },
     userId,
   );
