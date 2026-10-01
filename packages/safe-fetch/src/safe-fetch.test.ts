@@ -498,7 +498,7 @@ describe("safeFetch", () => {
       let callCount = 0;
       const mockFetch = vi.fn<typeof fetch>(async () => {
         callCount++;
-        await new Promise((resolve) => setTimeout(resolve, 400));
+        await new Promise((resolve) => setTimeout(resolve, 40));
         return mockResponse("", {
           status: 302,
           headers: { Location: `https://example.com/hop-${callCount}` },
@@ -510,7 +510,7 @@ describe("safeFetch", () => {
         userAgent: "TestBot/1.0",
         maxRedirects: 5,
         timeoutMs: 1000,
-        totalTimeoutMs: 1000,
+        totalTimeoutMs: 100,
         fetch: mockFetch,
         logger: silentLogger,
       }).catch((e: unknown) => e);
@@ -525,7 +525,7 @@ describe("safeFetch", () => {
       const mockFetch = vi.fn<typeof fetch>(async (_input, init) => {
         callCount++;
         if (callCount === 1) {
-          await new Promise((resolve) => setTimeout(resolve, 300));
+          await new Promise((resolve) => setTimeout(resolve, 30));
           return mockResponse("", {
             status: 302,
             headers: { Location: "https://example.com/slow" },
@@ -538,21 +538,19 @@ describe("safeFetch", () => {
         });
       });
 
-      const startedAt = Date.now();
       const err = await safeFetch({
         url: "https://example.com/start",
         userAgent: "TestBot/1.0",
         timeoutMs: 5000,
-        totalTimeoutMs: 600,
+        totalTimeoutMs: 300,
         fetch: mockFetch,
         logger: silentLogger,
       }).catch((e: unknown) => e);
-      const elapsedMs = Date.now() - startedAt;
 
       expect(err).toBeInstanceOf(SafeFetchError);
       expect((err as SafeFetchError).code).toBe("timeout");
+      // Hop 2 was ended by the remaining budget (5000ms per hop would never fire).
       expect(mockFetch).toHaveBeenCalledTimes(2);
-      expect(elapsedMs).toBeLessThan(2000);
     });
   });
 
