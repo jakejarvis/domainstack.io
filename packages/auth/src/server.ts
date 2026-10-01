@@ -208,6 +208,9 @@ export const auth = betterAuth({
     storage: redis ? "secondary-storage" : "memory",
   },
   account: {
+    // Provider tokens are stored encrypted with BETTER_AUTH_SECRET. Existing
+    // plaintext rows still read back as-is and are re-encrypted on next sign-in.
+    encryptOAuthTokens: true,
     accountLinking: {
       enabled: true,
       trustedProviders: enabledProviders,
