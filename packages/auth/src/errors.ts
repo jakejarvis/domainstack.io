@@ -35,7 +35,7 @@ const AUTH_CALLBACK_ERROR_CODES = {
   UNABLE_TO_CREATE_SESSION: "unable_to_create_session",
 } as const;
 
-type AuthCallbackErrorCode =
+export type AuthCallbackErrorCode =
   (typeof AUTH_CALLBACK_ERROR_CODES)[keyof typeof AUTH_CALLBACK_ERROR_CODES];
 
 /**
@@ -75,6 +75,11 @@ const AUTH_CALLBACK_ERROR_MESSAGES: Record<AuthCallbackErrorCode, string> = {
     "Unable to create your account. Please try again later.",
   [AUTH_CALLBACK_ERROR_CODES.UNABLE_TO_CREATE_SESSION]: "Unable to sign you in. Please try again.",
 };
+
+/** True for codes this app has a message for. Anything else is untrusted URL input. */
+export function isKnownAuthErrorCode(code: string): code is AuthCallbackErrorCode {
+  return Object.hasOwn(AUTH_CALLBACK_ERROR_MESSAGES, code);
+}
 
 /**
  * Get a user-friendly error message for an auth callback error code.

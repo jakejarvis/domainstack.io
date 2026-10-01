@@ -25,7 +25,7 @@ export function AccountPanel() {
   const [linkingProvider, setLinkingProvider] = useState<string | null>(null);
 
   // Handle auth callback errors from URL params (account linking)
-  useAuthCallback();
+  useAuthCallback({ context: "link" });
 
   const {
     linkedAccounts,

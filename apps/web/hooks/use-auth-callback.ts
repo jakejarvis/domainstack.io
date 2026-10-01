@@ -5,15 +5,22 @@ import posthogClient from "posthog-js";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 
-import { useRouter } from "@/hooks/use-router";
-import { getAuthErrorMessage, isAccountLinkingError } from "@domainstack/auth/errors";
+import {
+  getAuthErrorMessage,
+  isAccountLinkingError,
+  isKnownAuthErrorCode,
+} from "@domainstack/auth/errors";
 
 /**
  * Hook to handle auth callback error query parameters.
  *
  * Automatically:
  * - Shows toast notifications for errors with user-friendly messages
- * - Cleans up the error query param from the URL
+ * - Cleans up the `error` and `error_description` query params from the URL
+ *
+ * The URL is cleaned with `history.replaceState` rather than a router navigation:
+ * `/login` and `/settings/*` have intercepting routes, so a client-side navigation
+ * would open a second modal on top of the full page.
  *
  * @example
  * // In login page (sign-in callbacks)
@@ -21,10 +28,9 @@ import { getAuthErrorMessage, isAccountLinkingError } from "@domainstack/auth/er
  *
  * @example
  * // In settings (account linking callbacks)
- * useAuthCallback();
+ * useAuthCallback({ context: "link" });
  */
-export function useAuthCallback() {
-  const router = useRouter();
+export function useAuthCallback({ context = "sign_in" }: { context?: "sign_in" | "link" } = {}) {
   const searchParams = useSearchParams();
   // Track if we've already processed params to prevent double-firing
   const processedRef = useRef(false);
@@ -40,28 +46,26 @@ export function useAuthCallback() {
     // Mark as processed to prevent re-running
     processedRef.current = true;
 
-    // Show error toast with user-friendly message
-    const errorMessage = getAuthErrorMessage(error);
-    const isLinkError = isAccountLinkingError(error);
+    const isLinkError = context === "link" || isAccountLinkingError(error);
 
-    // Track auth errors in PostHog
-    posthogClient.captureException(new Error(error), {
-      action: isLinkError ? "link_account" : "sign_in",
-      errorCode: error,
+    // Track auth errors in PostHog. Only known codes are sent; anything else is
+    // untrusted URL input and is reported as "unknown".
+    const code = isKnownAuthErrorCode(error) ? error : "unknown";
+    posthogClient.captureException(new Error(`auth callback error: ${code}`), {
+      action: context === "link" ? "link_account" : "sign_in",
+      errorCode: code,
     });
 
-    // Title based on error type
-    const title = isLinkError ? "Failed to link account" : "Sign in failed";
-
-    toast.error(title, {
-      description: errorMessage,
+    toast.error(isLinkError ? "Failed to link account" : "Sign in failed", {
+      description: getAuthErrorMessage(error),
     });
 
-    // Clear error param from URL while preserving others
+    // Clear error params from the URL while preserving others
     const params = new URLSearchParams(searchParams.toString());
     params.delete("error");
+    params.delete("error_description");
     const newSearch = params.toString();
     const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
-    router.replace(newUrl, { scroll: false });
-  }, [router, searchParams]);
+    window.history.replaceState(window.history.state, "", newUrl);
+  }, [context, searchParams]);
 }
