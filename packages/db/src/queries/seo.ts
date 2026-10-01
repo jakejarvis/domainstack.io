@@ -17,6 +17,27 @@ export async function upsertSeo(params: SeoInsert) {
 }
 
 /**
+ * The stored og:image state for a domain, used to skip re-processing an unchanged image.
+ * Returns null when the domain has no SEO row yet.
+ */
+export async function getSeoImageState(domainId: string): Promise<{
+  previewImageUrl: string | null;
+  previewImageUploadedUrl: string | null;
+  previewImageStoredAt: Date | null;
+} | null> {
+  const [row] = await db
+    .select({
+      previewImageUrl: seoTable.previewImageUrl,
+      previewImageUploadedUrl: seoTable.previewImageUploadedUrl,
+      previewImageStoredAt: seoTable.previewImageStoredAt,
+    })
+    .from(seoTable)
+    .where(eq(seoTable.domainId, domainId))
+    .limit(1);
+  return row ?? null;
+}
+
+/**
  * Get cached SEO data for a domain with staleness metadata.
  * Returns data even if expired, with `stale: true` flag.
  *

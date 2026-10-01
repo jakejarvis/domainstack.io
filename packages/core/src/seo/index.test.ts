@@ -11,12 +11,20 @@ const mocks = vi.hoisted(() => ({
   ensureDomainRecord: vi.fn<(domain: string) => Promise<{ id: string }>>(),
   upsertSeo: vi.fn<(row: SeoRow) => Promise<void>>(),
   getCachedSeo: vi.fn<(domain: string) => Promise<unknown>>(),
+  getSeoImageState: vi.fn<(domainId: string) => Promise<ImageState | null>>(),
 }));
+
+interface ImageState {
+  previewImageUrl: string | null;
+  previewImageUploadedUrl: string | null;
+  previewImageStoredAt: Date | null;
+}
 
 interface SeoRow {
   expiresAt: Date;
   fetchedAt: Date;
   previewImageUploadedUrl: string | null;
+  previewImageStoredAt: Date | null;
   robotsSitemaps: string[];
 }
 
@@ -37,6 +45,7 @@ vi.mock("@domainstack/db/queries/domains", () => ({
 vi.mock("@domainstack/db/queries/seo", () => ({
   upsertSeo: mocks.upsertSeo,
   getCachedSeo: mocks.getCachedSeo,
+  getSeoImageState: mocks.getSeoImageState,
 }));
 
 import { fetchSeo } from "./index";
@@ -109,6 +118,7 @@ describe("fetchSeo", () => {
     mocks.isDomainBlocked.mockResolvedValue(false);
     mocks.ensureDomainRecord.mockResolvedValue({ id: "domain-id" });
     mocks.upsertSeo.mockResolvedValue(undefined);
+    mocks.getSeoImageState.mockResolvedValue(null);
     mocks.getCachedSeo.mockResolvedValue({
       data: { meta: null, robots: null, preview: null, source: { finalUrl: null, status: null } },
       stale: false,
@@ -201,6 +211,73 @@ describe("fetchSeo", () => {
       await fetchSeo(DOMAIN);
 
       expect(lifetimeMs(persisted())).toBe(RETRY_MS);
+    });
+  });
+
+  describe("og:image reuse", () => {
+    const STORED_URL = "https://blob.test/stored.png";
+
+    function storedImage(overrides: Partial<ImageState> & { ageMs: number }) {
+      const { ageMs, ...rest } = overrides;
+      const storedAt = new Date(Date.now() - ageMs);
+      mocks.getSeoImageState.mockResolvedValue({
+        previewImageUrl: IMAGE_URL,
+        previewImageUploadedUrl: STORED_URL,
+        previewImageStoredAt: storedAt,
+        ...rest,
+      });
+      return storedAt;
+    }
+
+    const imageFetches = () =>
+      mocks.safeFetch.mock.calls.filter(([opts]) => opts.url === IMAGE_URL);
+
+    it("skips download and upload when the same URL was stored a day ago", async () => {
+      const storedAt = storedImage({ ageMs: ONE_DAY_MS });
+      respondWith({ image: async () => imageResponse() });
+
+      await fetchSeo(DOMAIN);
+
+      expect(imageFetches()).toHaveLength(0);
+      expect(mocks.storeImage).not.toHaveBeenCalled();
+      const row = persisted();
+      expect(row.previewImageUploadedUrl).toBe(STORED_URL);
+      // The original stored-at carries over, so the 7-day window is not extended.
+      expect(row.previewImageStoredAt).toEqual(storedAt);
+      expect(lifetimeMs(row)).toBe(ONE_DAY_MS);
+    });
+
+    it("re-processes the image when it was stored 8 days ago", async () => {
+      storedImage({ ageMs: 8 * ONE_DAY_MS });
+      respondWith({ image: async () => imageResponse() });
+
+      await fetchSeo(DOMAIN);
+
+      expect(imageFetches()).toHaveLength(1);
+      const row = persisted();
+      expect(row.previewImageUploadedUrl).toBe("https://blob.test/og.png");
+      expect(row.previewImageStoredAt).toBeInstanceOf(Date);
+    });
+
+    it("re-processes the image when the source URL changed", async () => {
+      storedImage({ ageMs: ONE_DAY_MS, previewImageUrl: "https://example.com/old-og.png" });
+      respondWith({ image: async () => imageResponse() });
+
+      await fetchSeo(DOMAIN);
+
+      expect(imageFetches()).toHaveLength(1);
+      expect(persisted().previewImageUploadedUrl).toBe("https://blob.test/og.png");
+    });
+
+    it("never reuses an image for a blocked domain", async () => {
+      storedImage({ ageMs: ONE_DAY_MS });
+      mocks.isDomainBlocked.mockResolvedValue(true);
+      respondWith({ image: async () => imageResponse() });
+
+      await fetchSeo(DOMAIN);
+
+      expect(mocks.getSeoImageState).not.toHaveBeenCalled();
+      expect(persisted().previewImageUploadedUrl).toBeNull();
     });
   });
 

@@ -1,0 +1,1 @@
+ALTER TABLE "seo" ADD COLUMN "preview_image_stored_at" timestamp with time zone;

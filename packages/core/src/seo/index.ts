@@ -7,7 +7,7 @@
 
 import { isDomainBlocked } from "@domainstack/db/queries/blocked-domains";
 import { ensureDomainRecord } from "@domainstack/db/queries/domains";
-import { getCachedSeo, upsertSeo } from "@domainstack/db/queries/seo";
+import { getCachedSeo, getSeoImageState, upsertSeo } from "@domainstack/db/queries/seo";
 import { optimizeImage, storeImage } from "@domainstack/image";
 import { safeFetch } from "@domainstack/safe-fetch";
 import { isExpectedDnsError } from "@domainstack/safe-fetch/dns";
@@ -66,6 +66,9 @@ interface RobotsFetchData {
 const SOCIAL_WIDTH = 1200;
 const SOCIAL_HEIGHT = 630;
 
+/** How long a stored og:image is reused while its source URL stays the same. */
+const REUSE_OG_IMAGE_MS = 7 * 24 * 60 * 60 * 1000;
+
 // ============================================================================
 // Main Service Function
 // ============================================================================
@@ -90,20 +93,35 @@ export async function fetchSeo(domain: string): Promise<SeoResult> {
     const errorResponse = buildSeoResponse(htmlResult, robotsResult, null);
     // Persist the typed code so a cached row is served as a failure, not as data.
     errorResponse.errors = { ...errorResponse.errors, htmlCode: htmlResult.errorCode };
-    await persistSeo(domain, errorResponse, null, false);
+    await persistSeo(domain, errorResponse, null, false, null);
     return { success: false, error: htmlResult.errorCode };
   }
 
   // Step 3: Process OG image (if present and not blocked)
   let uploadedImageUrl: string | null = null;
   let retryImage = false;
+  let storedAt: Date | null = null;
   if (htmlResult.preview?.image) {
     const isBlocked = await isDomainBlocked(domain);
 
     if (!isBlocked) {
-      const image = await processOgImage(domain, htmlResult.preview.image, htmlResult.finalUrl);
-      uploadedImageUrl = image.url;
-      retryImage = image.retryable;
+      // Same source URL, already stored, and stored recently: skip download + re-encode + upload.
+      const domainRecord = await ensureDomainRecord(domain);
+      const state = await getSeoImageState(domainRecord.id);
+      if (
+        state?.previewImageUrl === htmlResult.preview.image &&
+        state.previewImageUploadedUrl &&
+        state.previewImageStoredAt &&
+        Date.now() - state.previewImageStoredAt.getTime() < REUSE_OG_IMAGE_MS
+      ) {
+        uploadedImageUrl = state.previewImageUploadedUrl;
+        storedAt = state.previewImageStoredAt;
+      } else {
+        const image = await processOgImage(domain, htmlResult.preview.image, htmlResult.finalUrl);
+        uploadedImageUrl = image.url;
+        retryImage = image.retryable;
+        storedAt = image.url ? new Date() : null;
+      }
     }
   }
 
@@ -111,7 +129,7 @@ export async function fetchSeo(domain: string): Promise<SeoResult> {
   const response = buildSeoResponse(htmlResult, robotsResult, uploadedImageUrl);
 
   // Step 5: Persist to database
-  await persistSeo(domain, response, uploadedImageUrl, retryImage);
+  await persistSeo(domain, response, uploadedImageUrl, retryImage, storedAt);
 
   // Read the persisted row back so a cold and a cached lookup return identical data.
   const cached = await getCachedSeo(domain);
@@ -386,6 +404,7 @@ async function persistSeo(
   response: SeoResponse,
   uploadedImageUrl: string | null,
   retryImage: boolean,
+  storedAt: Date | null,
 ): Promise<void> {
   const now = new Date();
   const expiresAt = ttlForSeo(now, { imageRetry: retryImage });
@@ -407,6 +426,7 @@ async function persistSeo(
     previewDescription: response.preview?.description ?? null,
     previewImageUrl: response.preview?.image ?? null,
     previewImageUploadedUrl: uploadedImageUrl,
+    previewImageStoredAt: storedAt,
     canonicalUrl: response.preview?.canonicalUrl ?? null,
     robots: response.robots ?? { fetched: false, groups: [], sitemaps: [] },
     robotsSitemaps: response.robots?.sitemaps ?? [],

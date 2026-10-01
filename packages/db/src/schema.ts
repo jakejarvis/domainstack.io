@@ -541,6 +541,7 @@ export const seo = pgTable(
     previewDescription: text("preview_description"),
     previewImageUrl: text("preview_image_url"),
     previewImageUploadedUrl: text("preview_image_uploaded_url"),
+    previewImageStoredAt: timestamp("preview_image_stored_at", { withTimezone: true }),
     canonicalUrl: text("canonical_url"),
     robots: jsonb("robots")
       .$type<RobotsTxt>()

@@ -183,6 +183,13 @@
       "when": 1790637737909,
       "tag": "0025_happy_triton",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1790889530406,
+      "tag": "0026_giant_anthem",
+      "breakpoints": true
     }
   ]
 }
