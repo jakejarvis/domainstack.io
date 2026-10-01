@@ -1,6 +1,6 @@
 /* @vitest-environment node */
-import { FatalError } from "workflow";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { FatalError } from "workflow";
 
 import type { VerificationMethod, VerificationResult } from "@domainstack/types";
 
@@ -178,7 +178,7 @@ describe("autoVerifyWorkflow", () => {
 
   it("fails the run with a FatalError when the domain can't be marked verified", async () => {
     verificationMock.verifyDomainByDns.mockResolvedValue(verifiedBy("dns_txt"));
-    trackedDomainsMock.verifyTrackedDomain.mockResolvedValue(null as never);
+    trackedDomainsMock.verifyTrackedDomain.mockResolvedValue(null);
 
     await expect(run()).rejects.toBeInstanceOf(FatalError);
   });
