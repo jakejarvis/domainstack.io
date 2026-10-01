@@ -3,6 +3,7 @@
 import posthogClient from "posthog-js";
 import { toast } from "sonner";
 
+import { authErrorDescription } from "@/lib/auth-client-error";
 import type { OAuthProviderConfig } from "@/lib/oauth";
 import { loginHref } from "@/lib/safe-next-path";
 import { signIn } from "@domainstack/auth/client";
@@ -61,17 +62,7 @@ export function OAuthButton({
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
-    try {
-      await signIn.social({
-        provider: provider.id,
-        callbackURL,
-        // On OAuth errors, redirect to login page where errors are displayed,
-        // keeping the user's destination
-        errorCallbackURL: loginHref(callbackURL),
-      });
-      // Don't reset loading here - let it persist during navigation
-      // It will be reset if user returns via back button
-    } catch (err) {
+    const fail = (err: unknown, description: string) => {
       // Only reset on actual error
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       onLoadingChange?.(false);
@@ -79,9 +70,28 @@ export function OAuthButton({
         provider: provider.id,
         action: "sign_in",
       });
-      toast.error(`Failed to sign in with ${provider.name}.`, {
-        description: "Please try again or choose a different provider.",
+      toast.error(`Failed to sign in with ${provider.name}.`, { description });
+    };
+
+    try {
+      const { error } = await signIn.social({
+        provider: provider.id,
+        callbackURL,
+        // On OAuth errors, redirect to login page where errors are displayed,
+        // keeping the user's destination
+        errorCallbackURL: loginHref(callbackURL),
       });
+      if (error) {
+        // Better Auth resolves `{ error }` (e.g. a 429 from its rate limit) instead of throwing
+        fail(
+          new Error(error.message ?? `sign-in failed (${error.status})`),
+          authErrorDescription(error),
+        );
+      }
+      // Don't reset loading otherwise - let it persist during navigation
+      // It will be reset if user returns via back button
+    } catch (err) {
+      fail(err, "Please try again or choose a different provider.");
     }
   };
 

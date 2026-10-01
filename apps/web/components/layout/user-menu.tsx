@@ -11,6 +11,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { getImageProps } from "next/image";
 import Link from "next/link";
 import posthogClient from "posthog-js";
+import { toast } from "sonner";
 
 import { useTheme } from "@/hooks/use-theme";
 import { useChatStore } from "@/lib/stores/chat-store";
@@ -56,7 +57,8 @@ export function UserMenu() {
   const handleSignOut = async () => {
     posthogClient.capture("sign_out_clicked");
     try {
-      await signOut({
+      // Resolves `{ error }` on failure instead of throwing
+      const { error } = await signOut({
         fetchOptions: {
           onSuccess: () => {
             // Drop everything the signed-in session loaded before leaving: the query
@@ -68,8 +70,16 @@ export function UserMenu() {
           },
         },
       });
-    } catch {
-      // Sign-out failure is rare; user sees they're still logged in
+      if (error) {
+        posthogClient.captureException(
+          new Error(error.message ?? `sign-out failed (${error.status})`),
+          { action: "sign_out" },
+        );
+        toast.error("Couldn't sign you out. Please try again.");
+      }
+    } catch (err) {
+      posthogClient.captureException(err, { action: "sign_out" });
+      toast.error("Couldn't sign you out. Please try again.");
     }
   };
 

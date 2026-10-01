@@ -5,6 +5,7 @@ import type { TRPCClientErrorLike } from "@trpc/client";
 import posthogClient from "posthog-js";
 import { toast } from "sonner";
 
+import { authErrorDescription } from "@/lib/auth-client-error";
 import { getEnabledProviders, type OAuthProviderConfig } from "@/lib/oauth";
 import { useTRPC } from "@/lib/trpc/client";
 import type { AppRouter } from "@domainstack/api";
@@ -36,8 +37,17 @@ export interface UseLinkedAccountsReturn {
 }
 
 async function linkProvider(provider: OAuthProviderConfig) {
+  const fail = (err: unknown, description: string) => {
+    posthogClient.captureException(err, {
+      provider: provider.id,
+      action: "link_account",
+    });
+    toast.error(`Failed to link ${provider.name}.`, { description });
+  };
+
+  let result: Awaited<ReturnType<typeof linkSocial>>;
   try {
-    await linkSocial({
+    result = await linkSocial({
       provider: provider.id,
       callbackURL: "/settings/account",
       // Link failures (email mismatch, already linked, cancelled) come back here
@@ -45,11 +55,14 @@ async function linkProvider(provider: OAuthProviderConfig) {
       errorCallbackURL: "/settings/account",
     });
   } catch (err) {
-    posthogClient.captureException(err, {
-      provider: provider.id,
-      action: "link_account",
-    });
-    toast.error(`Failed to link ${provider.name}. Please try again.`);
+    fail(err, "Please try again.");
+    throw err; // Re-throw so caller can handle loading state
+  }
+
+  // Better Auth resolves `{ error }` (e.g. a 401 once the session expired) instead of throwing
+  if (result.error) {
+    const err = new Error(result.error.message ?? `link failed (${result.error.status})`);
+    fail(err, authErrorDescription(result.error));
     throw err; // Re-throw so caller can handle loading state
   }
 }

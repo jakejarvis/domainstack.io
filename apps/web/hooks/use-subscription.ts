@@ -143,7 +143,15 @@ export function useSubscription(options: UseSubscriptionOptions = {}): UseSubscr
     posthogClient.capture("customer_portal_opened");
 
     try {
-      await customer.portal();
+      // Resolves `{ error }` on Polar failures instead of throwing
+      const { error } = await customer.portal();
+      if (error) {
+        posthogClient.captureException(
+          new Error(error.message ?? `customer portal failed (${error.status})`),
+          { action: "open_customer_portal" },
+        );
+        toast.error("Failed to open customer portal. Please try again.");
+      }
     } catch (err) {
       posthogClient.captureException(err, {
         action: "open_customer_portal",
