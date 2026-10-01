@@ -225,6 +225,10 @@ export const auth = betterAuth({
     encryptOAuthTokens: true,
     accountLinking: {
       enabled: true,
+      // Linking a second provider happens only from Settings while signed in.
+      // Implicit linking at sign-in trusts the provider's email claim, and
+      // GitLab/Vercel may report unverified emails.
+      disableImplicitLinking: true,
       trustedProviders: enabledProviders,
       allowUnlinkingAll: false,
     },

@@ -14,6 +14,7 @@ const AUTH_CALLBACK_ERROR_CODES = {
   EMAIL_DOESNT_MATCH: "email_does_not_match",
   ACCOUNT_ALREADY_LINKED: "account_already_linked_to_different_user",
   UNABLE_TO_LINK: "unable_to_link_account",
+  ACCOUNT_NOT_LINKED: "account_not_linked",
 
   // OAuth flow errors
   STATE_MISMATCH: "state_mismatch",
@@ -42,6 +43,8 @@ const AUTH_CALLBACK_ERROR_MESSAGES: Record<AuthCallbackErrorCode, string> = {
   [AUTH_CALLBACK_ERROR_CODES.ACCOUNT_ALREADY_LINKED]:
     "This account is already linked to a different user.",
   [AUTH_CALLBACK_ERROR_CODES.UNABLE_TO_LINK]: "Unable to link account. Please try again.",
+  [AUTH_CALLBACK_ERROR_CODES.ACCOUNT_NOT_LINKED]:
+    "An account with this email already exists. Sign in with the provider you used before, then link this one from Settings → Account.",
 
   // OAuth flow errors - less common but should be handled
   [AUTH_CALLBACK_ERROR_CODES.STATE_MISMATCH]: "Authentication session expired. Please try again.",
