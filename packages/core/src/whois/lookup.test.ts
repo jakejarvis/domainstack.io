@@ -45,6 +45,10 @@ describe("lookupWhois", () => {
       throw new Error("Expected lookupWhois to succeed");
     }
     expect(result.recordJson).toContain("example.com");
+    expect(lookup).toHaveBeenCalledWith(
+      "example.com",
+      expect.objectContaining({ customFetch: expect.any(Function) }),
+    );
     const parsed = JSON.parse(result.recordJson);
     expect(parsed.domain).toBe("example.com");
   });

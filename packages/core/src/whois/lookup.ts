@@ -4,6 +4,7 @@
 
 import { type BootstrapData, type LookupResult, lookup } from "rdapper";
 
+import { createRdapFetch } from "./rdap-fetch";
 import type { RdapLookupFailure, RdapLookupResult, WhoisLookupOptions } from "./types";
 import { RDAP_BOOTSTRAP_URL } from "./types";
 
@@ -106,6 +107,8 @@ export async function lookupWhois(
       timeoutMs,
       deadlineMs,
       includeRaw,
+      // Route every RDAP request (including followed links and redirects) through safeFetch.
+      customFetch: createRdapFetch({ userAgent: options.userAgent, timeoutMs }),
       // rdapper throws on the mere presence of this key, even when undefined, so omit it when our
       // fetch failed and let rdapper load its own bootstrap (or fall back to WHOIS).
       ...(bootstrapData ? { customBootstrapData: bootstrapData } : {}),
