@@ -115,7 +115,19 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   // The app never lets users edit their profile; this endpoint would otherwise
   // let a signed-in user point `image` at any URL (served by /api/avatar).
-  disabledPaths: ["/update-user"],
+  disabledPaths: [
+    "/update-user",
+    // Never called by the app; they would hand provider tokens to script on our origin.
+    "/get-access-token",
+    "/refresh-token",
+    "/account-info",
+    // Polar customer endpoints the app doesn't use. /customer/subscriptions/list
+    // queries Polar org-wide by a caller-supplied reference_id.
+    "/customer/state",
+    "/customer/benefits/list",
+    "/customer/subscriptions/list",
+    "/customer/orders/list",
+  ],
   logger: {
     log: (level, message, ...args) => {
       const logFn = logger[level].bind(logger);
