@@ -6,7 +6,7 @@ export const metadata = createMetadata({
   description: "Learn how Domainstack collects, uses, and protects your personal information.",
 });
 
-<PageHeader title="Privacy Policy" description="Last updated: January 20, 2026" />
+<PageHeader title="Privacy Policy" description="Last updated: October 1, 2026" />
 
 ## Introduction
 
@@ -21,6 +21,7 @@ When you create an account, we collect the following details from the login prov
 - Name
 - Email address (with verification status)
 - Profile picture (optional)
+- Identifiers from your login provider (account ID) and the access tokens it issues, stored encrypted
 
 ### Domain Data
 
@@ -54,11 +55,11 @@ We use your information to:
 
 We retain your account information for as long as your account is active. Domain data is cached temporarily to improve performance and is refreshed periodically.
 
-You can delete your account at any time through the self-service option in your dashboard settings. Account deletion is permanent and will remove all your personal data, tracked domains, notification preferences, and subscription information from our systems.
+You can delete your account at any time through the self-service option in your dashboard settings. Account deletion is permanent. It removes your account, tracked domains, notification preferences, and subscription records from our database, deletes your customer record at Polar, and removes you from our Resend contact list. Analytics records held by PostHog and authentication event logs held by Better Auth Infrastructure are kept according to those providers' retention settings. To have them deleted, email [privacy@domainstack.io](mailto:privacy@domainstack.io).
 
 ## Payment Information
 
-When you subscribe to our Pro plan, payment processing is handled by our third-party partners:
+A customer record with your name and email address is created at Polar when you sign up, so a subscription can be started later. When you subscribe to our Pro plan, payment processing is handled by our third-party partners:
 
 - **[Polar](https://polar.sh)** — Our merchant of record for subscription management. Polar collects and processes your payment information, including billing address and payment method. See [Polar's Privacy Policy](https://polar.sh/legal/privacy).
 - **[Stripe](https://stripe.com)** — Payment processing infrastructure. Stripe handles your payment card data securely. See [Stripe's Privacy Policy](https://stripe.com/privacy).
@@ -74,7 +75,7 @@ We use [Resend](https://resend.com) to send transactional emails, including:
 - Subscription and account-related emails
 - Account deletion confirmation emails
 
-When we send you an email, your email address is shared with Resend for delivery purposes. See [Resend's Privacy Policy](https://resend.com/legal/privacy-policy).
+When we send you an email, your email address is shared with Resend for delivery purposes. When you sign up, your name and email address are also added to our contact list at Resend (used for product updates you can opt out of), and removed when you delete your account. See [Resend's Privacy Policy](https://resend.com/legal/privacy-policy).
 
 ## AI Assistant
 
@@ -85,17 +86,24 @@ We offer an optional AI-powered chat assistant ("Stacky") to help you look up do
 The AI assistant is powered by [Vercel AI Gateway](https://vercel.com/docs/ai-gateway), which routes Domainstack's requests to large language model (LLM) providers. When you send a message:
 
 - Your message and recent conversation history (up to 10 messages) are sent to the AI service
+- The request to Vercel AI Gateway includes your account ID if you're signed in, or your IP address if you're not
 - The domain you're currently viewing may be included as context
 - The AI may use our domain lookup tools to fetch publicly available information
 
+An optional "Local" mode runs the AI model on your device instead. In Local mode, your messages are not sent to AI providers.
+
 ### Conversation Storage
 
-We do not store your conversations on our servers. This means:
+Your conversations are stored in your browser's local storage on your device. This means:
 
-- Conversations are private to your device and browser
 - Clearing your browser data will delete your chat history
 - Conversations do not sync across devices or browsers
 - You can clear your chat history at any time using the clear button
+
+Conversations are also handled on our side when you use the cloud assistant:
+
+- Each message you send is processed in a Vercel Workflow run. The record of that run includes the conversation, your IP address, and your account ID if you're signed in.
+- We record each assistant response in PostHog, including the conversation sent to the model and the model's reply, to monitor quality and cost. These records are linked to your account ID if you're signed in.
 
 ### Data Shared with AI Providers
 
@@ -106,8 +114,6 @@ When you use the AI assistant, your messages are processed by third-party AI pro
 - [Anthropic Privacy Policy](https://www.anthropic.com/privacy) (for Claude models)
 - [Vercel Privacy Policy](https://vercel.com/legal/privacy-policy)
 
-We do not share your personal account information with AI providers. Messages are processed without your identity attached.
-
 The provider(s) used to process your conversations will vary.
 
 ## Analytics
@@ -117,6 +123,8 @@ We use [PostHog](https://posthog.com) for product analytics and error tracking t
 - Pages viewed and features used
 - Device and browser information
 - IP address (used for approximate location, then discarded)
+- Your name and email address, if you're signed in
+- AI assistant conversations and responses (see AI Assistant above)
 - Error reports and performance metrics
 
 Analytics data is used in aggregate to improve our service and is not sold to third parties. See [PostHog's Privacy Policy](https://posthog.com/privacy).
@@ -125,10 +133,14 @@ Analytics data is used in aggregate to improve our service and is not sold to th
 
 We do not sell your personal information. We may share data with:
 
-- **Service providers:** Companies that help us operate our service (hosting)
-- **Analytics:** PostHog for product analytics (see Analytics section above)
-- **Email delivery:** Resend for transactional email (see Email Communications section above)
-- **Payment processors:** Polar and Stripe for subscription billing (see Payment Information section above)
+- **Vercel:** Hosting, image storage (Vercel Blob), AI Gateway, and Workflow
+- **PostHog:** Product analytics, error tracking, and AI assistant analytics (see Analytics section above)
+- **Better Auth Infrastructure:** Authentication event monitoring and security. It receives sign-up, sign-in, session, and account deletion events with your user ID, name, email address, IP address, and approximate location.
+- **Upstash:** Session storage and rate limiting, keyed by your account ID or IP address
+- **Resend:** Email delivery and our contact list (see Email Communications section above)
+- **Polar and Stripe:** Billing (see Payment Information section above)
+- **AI model providers via Vercel AI Gateway:** Processing AI assistant messages (see AI Assistant section above)
+- **CARTO and unpkg:** Map tiles and the map library, loaded directly by your browser on domain report pages, so they can see your IP address
 - **Legal requirements:** When required by law or to protect our rights
 
 ## Your Rights
@@ -137,7 +149,7 @@ You have the right to:
 
 - Access your personal data
 - Correct inaccurate data
-- Delete your account and data — You can permanently delete your account at any time from your dashboard settings. This will remove all your personal data, tracked domains, and notification preferences. If you have an active subscription, it will be automatically canceled.
+- Delete your account and data — You can permanently delete your account at any time from your dashboard settings. This removes your account, tracked domains, notification preferences, and subscription records from our database, deletes your customer record at Polar, and removes you from our Resend contact list. If you have an active subscription, it will be automatically canceled. To have your analytics records at PostHog and authentication event logs at Better Auth Infrastructure deleted, email [privacy@domainstack.io](mailto:privacy@domainstack.io).
 - Export your data
 - Opt out of marketing communications
 
