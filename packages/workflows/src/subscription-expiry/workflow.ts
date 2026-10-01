@@ -176,6 +176,7 @@ async function sendSubscriptionExpiryNotification(params: {
       userName: firstName,
       endDate,
       baseUrl,
+      variant: "reminder",
     }),
   });
 }

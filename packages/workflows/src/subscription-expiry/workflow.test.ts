@@ -78,6 +78,12 @@ describe("subscriptionExpiryWorkflow", () => {
 
     expect(result).toMatchObject({ skipped: false, sent: true, threshold: 7 });
     expect(sentSubject()).toBe(`Your Pro subscription ends on ${formatDateLong(endsAt)}`);
+    expect(mocks.SubscriptionCancelingEmail).toHaveBeenCalledWith({
+      userName: "Alex",
+      endDate: formatDateLong(endsAt),
+      baseUrl: "https://test.domainstack.io",
+      variant: "reminder",
+    });
     expect(mocks.setLastExpiryNotification).toHaveBeenCalledWith("u1", 7);
   });
 
