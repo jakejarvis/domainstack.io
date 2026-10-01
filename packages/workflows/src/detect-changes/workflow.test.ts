@@ -4,8 +4,19 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { CHANGE_CONFIRMATIONS } from "@domainstack/constants";
 import type { DnsFetchData } from "@domainstack/core/dns/types";
 import type { SnapshotForMonitoring } from "@domainstack/db/queries/snapshots";
+import type {
+  PendingChangeObservation,
+  ProviderRef,
+  RegistrationResponse,
+  RegistrationSnapshotData,
+} from "@domainstack/types";
 
-import { providerObservationKey } from "../lib/change-detection";
+import {
+  confirmChange,
+  providerObservationKey,
+  registrationObservationKey,
+  registrationSnapshotFrom,
+} from "../lib/change-detection";
 
 // Hoisted mocks for every module the workflow imports (dynamically or statically).
 const registrationMock = vi.hoisted(() => ({
@@ -118,6 +129,59 @@ export function makeSnapshot(
   };
 }
 
+const NO_PROVIDER: ProviderRef = { id: null, name: null, domain: null };
+const providerRef = (id: string | null): ProviderRef => ({ id, name: null, domain: null });
+
+/**
+ * A registered `RegistrationResponse`. By default `registrationSnapshotFrom` of
+ * it equals `makeSnapshot().registration` (no registrar, nameservers, lock, or
+ * statuses), i.e. the uninitialized baseline.
+ */
+function registered(overrides: Partial<RegistrationResponse> = {}): RegistrationResponse {
+  return {
+    domain: "example.com",
+    tld: "com",
+    isRegistered: true,
+    status: "registered",
+    source: "rdap",
+    registrarProvider: NO_PROVIDER,
+    nameservers: [],
+    statuses: [],
+    ...overrides,
+  };
+}
+
+/** The registry reports the domain as gone. */
+function unregistered(): RegistrationResponse {
+  return registered({ isRegistered: false, status: "unregistered" });
+}
+
+/** The pending state one observation short of confirming `key`, built with the real helper. */
+function pendingOneShort(key: string, firstSeenAt: string): PendingChangeObservation {
+  let pending: PendingChangeObservation | null = null;
+  for (let i = 0; i < CHANGE_CONFIRMATIONS - 1; i++) {
+    const result = confirmChange(pending, key, new Date(firstSeenAt));
+    if (result.confirmed) throw new Error("fixture reached confirmation too early");
+    pending = result.pending;
+  }
+  if (!pending) throw new Error("CHANGE_CONFIRMATIONS must be at least 2 for this fixture");
+  return pending;
+}
+
+function firstCallOrder(mock: { mock: { invocationCallOrder: number[] } }): number {
+  const order = mock.mock.invocationCallOrder[0];
+  if (order === undefined) throw new Error("mock was never called");
+  return order;
+}
+
+async function runWorkflow() {
+  const { detectChangesWorkflow } = await import("./workflow");
+  return detectChangesWorkflow({ trackedDomainId: "td-1", monitorLockOwnerToken: "tok" });
+}
+
+const BOTH_CHANNELS = { shouldSendEmail: true, shouldSendInApp: true };
+const EPISODE = "2026-09-13T00:00:00.000Z";
+
 beforeEach(() => {
   vi.clearAllMocks();
 
@@ -178,9 +242,9 @@ describe("detectChangesWorkflow", () => {
     expect(monitorDedupMock.releaseMonitorLock).toHaveBeenCalledWith("td-1", "tok");
   });
 
-  it("skips without observing or notifying when the tracked domain is archived or unverified", async () => {
-    // getSnapshot only returns a snapshot for a verified, non-archived tracked
-    // domain, so an ineligible one reads as a missing snapshot.
+  it("does not observe, write, or notify when there is no snapshot", async () => {
+    // Eligibility (verified, not archived) is decided inside getSnapshot, which
+    // is mocked here; the workflow only ever sees "snapshot or null".
     snapshotsMock.getSnapshot.mockResolvedValue(null);
 
     const { detectChangesWorkflow } = await import("./workflow");
@@ -376,5 +440,173 @@ describe("change alert idempotency", () => {
     expect(firstKey).toEqual(expect.any(String));
     expect(secondKey).toEqual(expect.any(String));
     expect(secondKey).not.toBe(firstKey);
+  });
+});
+
+describe("registration change orchestration", () => {
+  const storedRegistration = (
+    overrides: Partial<RegistrationSnapshotData> = {},
+  ): RegistrationSnapshotData => ({
+    registrarProviderId: "p-old",
+    nameservers: [],
+    transferLock: null,
+    statuses: [],
+    ...overrides,
+  });
+
+  const observedRegistration = registered({ registrarProvider: providerRef("p-new") });
+  const observedSnapshot = registrationSnapshotFrom(observedRegistration);
+  const observedKey = registrationObservationKey(observedSnapshot);
+
+  beforeEach(() => {
+    registrationMock.lookupWhoisStep.mockResolvedValue({
+      success: true,
+      data: { recordJson: "{}" },
+    });
+    registrationMock.normalizeAndBuildResponseStep.mockResolvedValue(observedRegistration);
+    registrationMock.persistRegistrationStep.mockResolvedValue(undefined);
+    notificationsMock.sendChangeNotificationStep.mockResolvedValue(true);
+  });
+
+  it("holds the first sighting of a registrar change as pending without notifying", async () => {
+    snapshotsMock.getSnapshot.mockResolvedValue(
+      makeSnapshot({ registration: storedRegistration() }),
+    );
+
+    const result = await runWorkflow();
+
+    expect(result.registrationChanges).toBe(false);
+    expect(notificationsMock.sendChangeNotificationStep).not.toHaveBeenCalled();
+    expect(snapshotsMock.updateSnapshot).toHaveBeenCalledTimes(1);
+    // The previous registrar is kept; only `pending` records the observation.
+    expect(snapshotsMock.updateSnapshot).toHaveBeenCalledWith("td-1", {
+      registration: {
+        ...storedRegistration(),
+        pending: { key: observedKey, firstSeenAt: expect.any(String), observations: 1 },
+      },
+    });
+  });
+
+  it("notifies a confirmed registration change, then advances the snapshot", async () => {
+    const stored = storedRegistration({ pending: pendingOneShort(observedKey, EPISODE) });
+    snapshotsMock.getSnapshot.mockResolvedValue(makeSnapshot({ registration: stored }));
+
+    const result = await runWorkflow();
+
+    expect(result.registrationChanges).toBe(true);
+    const expectedKey = `registration:td-1:${registrationObservationKey(stored)}>${observedKey}@${EPISODE}`;
+    expect(expectedKey).toMatch(/^registration:td-1:.+>.+@.+$/);
+    expect(notificationsMock.sendChangeNotificationStep).toHaveBeenCalledTimes(1);
+    expect(notificationsMock.sendChangeNotificationStep).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "registration_change",
+        idempotencyKey: expectedKey,
+        changes: expect.objectContaining({
+          registrarChanged: true,
+          previousRegistrar: "p-old",
+          newRegistrar: "p-new",
+        }),
+      }),
+      BOTH_CHANNELS,
+    );
+    expect(snapshotsMock.updateSnapshot).toHaveBeenCalledTimes(1);
+    expect(snapshotsMock.updateSnapshot).toHaveBeenCalledWith("td-1", {
+      registration: { ...observedSnapshot, pending: null },
+    });
+    // Advance only after the notification step has succeeded.
+    expect(firstCallOrder(notificationsMock.sendChangeNotificationStep)).toBeLessThan(
+      firstCallOrder(snapshotsMock.updateSnapshot),
+    );
+  });
+
+  it("advances the snapshot immediately, without notifying, when no channel is enabled", async () => {
+    notificationsMock.determineNotificationChannelsStep.mockResolvedValue({
+      shouldSendEmail: false,
+      shouldSendInApp: false,
+    });
+    snapshotsMock.getSnapshot.mockResolvedValue(
+      makeSnapshot({ registration: storedRegistration() }),
+    );
+
+    const result = await runWorkflow();
+
+    expect(result.registrationChanges).toBe(false);
+    expect(notificationsMock.determineNotificationChannelsStep).toHaveBeenCalledWith(
+      "u1",
+      "td-1",
+      "registrationChanges",
+    );
+    expect(notificationsMock.sendChangeNotificationStep).not.toHaveBeenCalled();
+    expect(snapshotsMock.updateSnapshot).toHaveBeenCalledTimes(1);
+    expect(snapshotsMock.updateSnapshot).toHaveBeenCalledWith("td-1", {
+      registration: { ...observedSnapshot, pending: null },
+    });
+  });
+
+  it("adopts the first observation silently when the stored baseline is uninitialized", async () => {
+    // makeSnapshot's default registration carries no data.
+    registrationMock.normalizeAndBuildResponseStep.mockResolvedValue(
+      registered({
+        registrarProvider: providerRef("p-new"),
+        nameservers: [{ host: "ns1.example.net" }],
+        transferLock: true,
+      }),
+    );
+
+    const result = await runWorkflow();
+
+    expect(result.registrationChanges).toBe(false);
+    expect(notificationsMock.determineNotificationChannelsStep).not.toHaveBeenCalled();
+    expect(notificationsMock.sendChangeNotificationStep).not.toHaveBeenCalled();
+    expect(snapshotsMock.updateSnapshot).toHaveBeenCalledTimes(1);
+    expect(snapshotsMock.updateSnapshot).toHaveBeenCalledWith("td-1", {
+      registration: {
+        registrarProviderId: "p-new",
+        nameservers: [{ host: "ns1.example.net" }],
+        transferLock: true,
+        statuses: [],
+        pending: null,
+      },
+    });
+  });
+
+  it("notifies a confirmed unregistered drop, keeps the previous registrar, and flags the snapshot", async () => {
+    registrationMock.normalizeAndBuildResponseStep.mockResolvedValue(unregistered());
+    const stored = storedRegistration({ pending: pendingOneShort("unregistered", EPISODE) });
+    snapshotsMock.getSnapshot.mockResolvedValue(makeSnapshot({ registration: stored }));
+
+    const result = await runWorkflow();
+
+    expect(result.registrationChanges).toBe(true);
+    expect(notificationsMock.sendChangeNotificationStep).toHaveBeenCalledTimes(1);
+    expect(notificationsMock.sendChangeNotificationStep).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "registration_change",
+        idempotencyKey: `registration:td-1:${registrationObservationKey(stored)}>unregistered@${EPISODE}`,
+        changes: expect.objectContaining({ unregistered: true, previousRegistrar: "p-old" }),
+      }),
+      BOTH_CHANNELS,
+    );
+    expect(snapshotsMock.updateSnapshot).toHaveBeenCalledTimes(1);
+    expect(snapshotsMock.updateSnapshot).toHaveBeenCalledWith("td-1", {
+      registration: { ...storedRegistration(), pending: null, unregistered: true },
+    });
+    expect(firstCallOrder(notificationsMock.sendChangeNotificationStep)).toBeLessThan(
+      firstCallOrder(snapshotsMock.updateSnapshot),
+    );
+  });
+
+  it("does nothing for an unregistered drop that was already flagged", async () => {
+    registrationMock.normalizeAndBuildResponseStep.mockResolvedValue(unregistered());
+    snapshotsMock.getSnapshot.mockResolvedValue(
+      makeSnapshot({ registration: storedRegistration({ unregistered: true }) }),
+    );
+
+    const result = await runWorkflow();
+
+    expect(result.registrationChanges).toBe(false);
+    expect(notificationsMock.determineNotificationChannelsStep).not.toHaveBeenCalled();
+    expect(notificationsMock.sendChangeNotificationStep).not.toHaveBeenCalled();
+    expect(snapshotsMock.updateSnapshot).not.toHaveBeenCalled();
   });
 });
