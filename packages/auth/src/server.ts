@@ -1,7 +1,6 @@
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { dash } from "@better-auth/infra";
 import { waitUntil } from "@vercel/functions";
-import { getSessionCookie } from "better-auth/cookies";
 import { betterAuth } from "better-auth/minimal";
 import { nextCookies, toNextJsHandler } from "better-auth/next-js";
 
@@ -264,4 +263,4 @@ export const auth = betterAuth({
 export type Session = typeof auth.$Infer.Session;
 
 // Re-export Next.js utilities for consumers
-export { getSessionCookie, toNextJsHandler };
+export { toNextJsHandler };

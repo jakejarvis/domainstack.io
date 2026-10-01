@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { getSessionCookie } from "@domainstack/auth/server";
+import { getSessionCookie } from "@domainstack/auth/cookies";
 import { toRegistrableDomain } from "@domainstack/utils/domain";
 
 // Routes that require authentication (pre-check for faster redirects)

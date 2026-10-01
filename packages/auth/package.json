@@ -4,6 +4,7 @@
   "private": true,
   "exports": {
     "./client": "./src/client.ts",
+    "./cookies": "./src/cookies.ts",
     "./server": "./src/server.ts",
     "./errors": "./src/errors.ts",
     "./providers": "./src/providers.ts",
