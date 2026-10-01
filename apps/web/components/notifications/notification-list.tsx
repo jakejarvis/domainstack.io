@@ -7,6 +7,7 @@ import { NotificationCard } from "@/components/notifications/notification-card";
 import { NotificationEmptyState } from "@/components/notifications/notification-empty-state";
 import { NotificationListSkeleton } from "@/components/notifications/notification-list-skeleton";
 import type { NotificationData } from "@domainstack/types";
+import { Button } from "@domainstack/ui/button";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
 import { Spinner } from "@domainstack/ui/spinner";
 
@@ -17,6 +18,8 @@ interface NotificationListProps {
   view: "inbox" | "archive";
   hasNextPage?: boolean;
   isFetchingNextPage?: boolean;
+  isFetchNextPageError?: boolean;
+  onRetryNextPage?: () => void;
   loadMoreRef?: React.RefObject<HTMLDivElement | null>;
   scrollAreaRef?: React.RefObject<HTMLDivElement | null>;
   onNotificationClick?: (notification: NotificationData) => void;
@@ -30,6 +33,8 @@ export function NotificationList({
   view,
   hasNextPage,
   isFetchingNextPage,
+  isFetchNextPageError,
+  onRetryNextPage,
   loadMoreRef,
   scrollAreaRef,
   onNotificationClick,
@@ -76,9 +81,21 @@ export function NotificationList({
         </AnimatePresence>
 
         {/* Infinite scroll trigger */}
-        {!isLoading && !isError && hasNextPage && (
+        {!isLoading && !isError && hasNextPage && !isFetchNextPageError && (
           <div ref={loadMoreRef} className="flex justify-center py-4">
             {isFetchingNextPage && <Spinner className="size-5 text-muted-foreground" />}
+          </div>
+        )}
+
+        {!isLoading && !isError && isFetchNextPageError && !isFetchingNextPage && (
+          <div
+            role="alert"
+            className="flex items-center justify-center gap-2 py-3 text-xs text-muted-foreground"
+          >
+            Couldn&apos;t load more notifications.
+            <Button variant="ghost" size="sm" onClick={onRetryNextPage}>
+              Retry
+            </Button>
           </div>
         )}
       </div>

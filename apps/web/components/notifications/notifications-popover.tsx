@@ -29,6 +29,7 @@ export function NotificationsPopover() {
     showLoading,
     hasNextPage,
     isFetchingNextPage,
+    isFetchNextPageError,
     isError: isNotificationsError,
     markAllRead,
     markRead,
@@ -93,7 +94,8 @@ export function NotificationsPopover() {
     const scrollContainer = scrollAreaRef.current;
     const loadMoreElement = loadMoreRef.current;
 
-    if (!open || !loadMoreElement || !hasNextPage || isFetchingNextPage) return;
+    if (!open || !loadMoreElement || !hasNextPage || isFetchingNextPage || isFetchNextPageError)
+      return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -111,7 +113,7 @@ export function NotificationsPopover() {
     observer.observe(loadMoreElement);
 
     return () => observer.disconnect();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage, open]);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, isFetchNextPageError, open]);
 
   return (
     <Popover
@@ -261,10 +263,12 @@ export function NotificationsPopover() {
           <NotificationList
             notifications={notifications}
             isLoading={showLoading}
-            isError={isNotificationsError}
+            isError={isNotificationsError && notifications.length === 0}
             view={view}
             hasNextPage={hasNextPage}
             isFetchingNextPage={isFetchingNextPage}
+            isFetchNextPageError={isFetchNextPageError}
+            onRetryNextPage={() => void fetchNextPage()}
             loadMoreRef={loadMoreRef}
             scrollAreaRef={scrollAreaRef}
             onNotificationClick={handleNotificationClick}

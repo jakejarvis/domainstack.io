@@ -189,23 +189,31 @@ export function useNotificationsData({ filter, enabled }: UseNotificationsDataOp
   });
 
   // Get notifications with infinite scrolling
-  const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage, isLoading, isError } =
-    useInfiniteQuery({
-      ...trpc.notifications.list.infiniteQueryOptions(
-        {
-          limit: PAGE_SIZE,
-          filter,
-        },
-        {
-          getNextPageParam: (lastPage) => lastPage.nextCursor,
-          refetchOnWindowFocus: true,
-          // Always refetch on mount/access to ensure fresh data
-          staleTime: 0,
-          // Base UI popover keeps content mounted for close animations; gate fetching on open
-          enabled,
-        },
-      ),
-    });
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetching,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    isLoading,
+    isError,
+  } = useInfiniteQuery({
+    ...trpc.notifications.list.infiniteQueryOptions(
+      {
+        limit: PAGE_SIZE,
+        filter,
+      },
+      {
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
+        refetchOnWindowFocus: true,
+        // Always refetch on mount/access to ensure fresh data
+        staleTime: 0,
+        // Base UI popover keeps content mounted for close animations; gate fetching on open
+        enabled,
+      },
+    ),
+  });
 
   const notifications = data?.pages.flatMap((page) => page.items) ?? [];
 
@@ -225,6 +233,7 @@ export function useNotificationsData({ filter, enabled }: UseNotificationsDataOp
     showLoading,
     hasNextPage,
     isFetchingNextPage,
+    isFetchNextPageError,
     isError,
     // Mutations
     markRead,
