@@ -3,14 +3,19 @@
  *
  * The prompt text and the AI Gateway model id both live on the PostHog
  * prompt version (`config.model`), so either can change without a deploy.
- * There is no local fallback: if PostHog can't be reached or the prompt is
- * misconfigured, the chat turn fails rather than running on stale text.
+ * There is no hardcoded fallback. The prompt is cached in-process for the
+ * library's default TTL (5 minutes), so edits in PostHog take effect within
+ * that window, and a failed refresh serves the last version PostHog returned.
+ * A cold instance with PostHog unreachable (or a misconfigured prompt) still
+ * fails the chat turn rather than running on stale text.
  *
  * Resolved once in the API route, before the workflow starts (not as a
  * workflow step): a step's default retries would delay a fail-fast error,
  * and a failure inside the workflow body can't reach the route's response
  * (start() only awaits the run being enqueued, not the run finishing).
  */
+
+import type { Prompts } from "@posthog/ai";
 
 import { DOMAIN_TOOL_DEFS, type DomainToolSection } from "@/lib/chat/domain-tools";
 import { domainContext, formatPromptDate, sanitizeDomain } from "@/lib/chat/system-prompt";
@@ -39,6 +44,24 @@ export interface CloudPrompt {
 }
 
 /**
+ * One client per process: `Prompts` keeps its fetch cache on the instance, so
+ * a new instance per turn would never hit it.
+ */
+let promptsClient: Prompts | undefined;
+
+async function getPromptsClient(personalApiKey: string, projectApiKey: string): Promise<Prompts> {
+  if (!promptsClient) {
+    const { Prompts } = await import("@posthog/ai");
+    promptsClient = new Prompts({
+      personalApiKey,
+      projectApiKey,
+      host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
+    });
+  }
+  return promptsClient;
+}
+
+/**
  * Fetch and compile the cloud chat system prompt from PostHog, and resolve
  * the AI Gateway model id from its `config.model`.
  */
@@ -51,12 +74,7 @@ export async function resolveCloudPrompt(domain?: string): Promise<CloudPrompt> 
     );
   }
 
-  const { Prompts } = await import("@posthog/ai");
-  const prompts = new Prompts({
-    personalApiKey,
-    projectApiKey,
-    host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
-  });
+  const prompts = await getPromptsClient(personalApiKey, projectApiKey);
 
   const result = await prompts.get(CLOUD_PROMPT_NAME);
   if (result.source === "code_fallback") {
