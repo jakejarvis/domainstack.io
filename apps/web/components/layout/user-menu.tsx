@@ -7,12 +7,13 @@ import {
   IconSettings,
   IconSun,
 } from "@tabler/icons-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { getImageProps } from "next/image";
 import Link from "next/link";
 import posthogClient from "posthog-js";
 
-import { useRouter } from "@/hooks/use-router";
 import { useTheme } from "@/hooks/use-theme";
+import { useChatStore } from "@/lib/stores/chat-store";
 import { signOut, useSession } from "@domainstack/auth/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@domainstack/ui/avatar";
 import { Button } from "@domainstack/ui/button";
@@ -25,7 +26,7 @@ import {
 } from "@domainstack/ui/dropdown-menu";
 
 export function UserMenu() {
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const { data: session } = useSession();
   const { theme, toggleTheme } = useTheme();
 
@@ -58,7 +59,12 @@ export function UserMenu() {
       await signOut({
         fetchOptions: {
           onSuccess: () => {
-            router.push("/");
+            // Drop everything the signed-in session loaded before leaving: the query
+            // cache (domains, feed URL, …), the persisted chat, and — via a full-page
+            // navigation — any routes Next preserved in <Activity>.
+            queryClient.clear();
+            useChatStore.getState().clearSession();
+            window.location.assign("/");
           },
         },
       });
