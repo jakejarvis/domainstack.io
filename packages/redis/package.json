@@ -20,7 +20,8 @@
     "@domainstack/logger": "workspace:*",
     "@upstash/ratelimit": "^2.2.0",
     "@upstash/redis": "^1.39.0",
-    "@vercel/functions": "catalog:"
+    "@vercel/functions": "catalog:",
+    "ipaddr.js": "catalog:"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",

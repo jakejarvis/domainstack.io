@@ -772,6 +772,9 @@ importers:
       '@vercel/functions':
         specifier: 'catalog:'
         version: 3.9.9(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)
+      ipaddr.js:
+        specifier: 'catalog:'
+        version: 2.5.0
     devDependencies:
       '@domainstack/typescript-config':
         specifier: workspace:*

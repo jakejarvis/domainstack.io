@@ -1,4 +1,5 @@
 import { waitUntil } from "@vercel/functions";
+import * as ipaddr from "ipaddr.js";
 
 import { createLogger } from "@domainstack/logger";
 
@@ -23,6 +24,31 @@ export class RateLimitError extends Error {
     super(`Rate limit exceeded. Try again in ${retryAfter}s`);
     this.name = "RateLimitError";
   }
+}
+
+/**
+ * The bucket an identifier is metered under. IPv6 clients usually control a whole
+ * /64, so they are bucketed by that prefix; IPv4-mapped IPv6 becomes plain IPv4.
+ * Anything that isn't an IP (a user ID) is returned unchanged.
+ */
+export function rateLimitBucket(identifier: string): string {
+  // User IDs and hashes contain neither; skip so bare numbers aren't parsed as IPv4.
+  if (!identifier.includes(".") && !identifier.includes(":")) {
+    return identifier;
+  }
+  if (!ipaddr.isValid(identifier)) {
+    return identifier;
+  }
+  const addr = ipaddr.parse(identifier);
+  if (addr.kind() === "ipv6") {
+    const v6 = addr as ipaddr.IPv6;
+    if (v6.isIPv4MappedAddress()) {
+      return v6.toIPv4Address().toString();
+    }
+    const [a, b, c, d] = v6.parts;
+    return `${[a, b, c, d].map((p) => p.toString(16)).join(":")}::/64`;
+  }
+  return addr.toString();
 }
 
 /**
@@ -52,10 +78,12 @@ export async function enforceRateLimit({
     return undefined;
   }
 
-  const result = await limiter.limit(`${key}:${identifier}`).catch((err: unknown) => {
-    logger.error({ err, key }, "rate limit check failed, allowing request");
-    return null;
-  });
+  const result = await limiter
+    .limit(`${key}:${rateLimitBucket(identifier)}`)
+    .catch((err: unknown) => {
+      logger.error({ err, key }, "rate limit check failed, allowing request");
+      return null;
+    });
   if (!result) {
     return undefined;
   }
