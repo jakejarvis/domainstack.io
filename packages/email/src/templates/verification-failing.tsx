@@ -1,4 +1,5 @@
 import type { VerificationMethod } from "@domainstack/types";
+import { inDaysPhrase } from "@domainstack/utils/expiry";
 
 import {
   EmailBox,
@@ -48,8 +49,9 @@ function VerificationFailingEmail({
 
       <EmailBox variant="warning">
         <EmailBoxText variant="warning">
-          <strong>Action Required:</strong> You have <strong>{gracePeriodDays} days</strong> to
-          restore verification before your domain is removed from tracking.
+          <strong>Action required:</strong> restore verification{" "}
+          <strong>{inDaysPhrase(gracePeriodDays)}</strong> or we&apos;ll mark{" "}
+          <strong>{domainName}</strong> as unverified and pause its alerts.
         </EmailBoxText>
       </EmailBox>
 

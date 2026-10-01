@@ -301,7 +301,7 @@ async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boo
   const { default: VerificationFailingEmail } =
     await import("@domainstack/email/templates/verification-failing");
   const { VERIFICATION_GRACE_PERIOD_DAYS } = await import("@domainstack/constants");
-  const { calculateDaysElapsed } = await import("@domainstack/utils/expiry");
+  const { calculateDaysElapsed, inDaysPhrase } = await import("@domainstack/utils/expiry");
   const { hasRecentNotification } = await import("@domainstack/db/queries/notifications");
   const { sendNotification } = await import("../steps/notifications");
   const { getBaseUrl, getFirstName } = await import("../steps/email");
@@ -321,7 +321,7 @@ async function sendVerificationFailingEmail(domain: DomainForEmail): Promise<boo
 
   const title = `Verification failing for ${domain.domainName}`;
   const subject = `⚠️ ${title}`;
-  const message = `Verification for ${domain.domainName} is failing. You have ${daysLeft} days to fix it before access is revoked.`;
+  const message = `Verification for ${domain.domainName} is failing. Fix it ${inDaysPhrase(daysLeft)} or it will be marked unverified.`;
 
   // Account-critical: sent regardless of mute and notification preferences.
   return await sendNotification(

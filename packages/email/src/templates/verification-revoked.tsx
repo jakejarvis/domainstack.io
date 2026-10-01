@@ -29,23 +29,21 @@ function VerificationRevokedEmail({
       <EmailText>Hi {userName},</EmailText>
 
       <EmailText>
-        We&apos;ve removed <strong>{domainName}</strong> from your tracked domains because we
-        couldn&apos;t verify your ownership after multiple attempts over the past week.
+        We couldn&apos;t verify your ownership of <strong>{domainName}</strong> after multiple
+        attempts over the past week, so it&apos;s now marked as unverified.
       </EmailText>
 
       <EmailBox variant="info">
         <EmailBoxText variant="info">
-          <strong>What this means:</strong> You will no longer receive expiration alerts for this
-          domain. Your domain data has not been deleted.
+          <strong>What this means:</strong> You won&apos;t receive alerts for this domain until
+          it&apos;s verified again. It&apos;s still on your dashboard and none of its data has been
+          deleted.
         </EmailBoxText>
       </EmailBox>
 
-      <EmailText>
-        If you still own this domain, you can re-add it to your dashboard and complete the
-        verification process again.
-      </EmailText>
+      <EmailText>If you still own this domain, open your dashboard and verify it again.</EmailText>
 
-      <EmailButton href={`${baseUrl}/dashboard`}>Re-add Domain</EmailButton>
+      <EmailButton href={`${baseUrl}/dashboard`}>Verify Domain</EmailButton>
 
       <EmailHr />
 

@@ -374,8 +374,27 @@ describe("reverifyOwnershipWorkflow", () => {
     const call = sharedNotificationsMock.sendNotification.mock.calls[0]?.[0] as {
       message: string;
     };
-    expect(call.message).toContain("4 days");
+    expect(call.message).toContain("in 4 days");
     expect(trackedDomainsMock.markVerificationFailing).not.toHaveBeenCalled();
+    expect(result).toEqual({ verified: false, action: "in_grace_period" });
+  });
+
+  it('mid-grace: a single day left reads "in 1 day", never "1 days"', async () => {
+    trackedDomainsMock.getTrackedDomainForReverification.mockResolvedValue({
+      ...baseDomain,
+      verificationStatus: "failing",
+      verificationFailedAt: new Date("2026-09-07T04:00:00Z"), // 6 days before now
+    } as never);
+    notificationsQueryMock.hasRecentNotification.mockResolvedValue(false);
+
+    const { reverifyOwnershipWorkflow } = await import("./workflow");
+    const result = await reverifyOwnershipWorkflow({ trackedDomainId: "td-1" });
+
+    const call = sharedNotificationsMock.sendNotification.mock.calls[0]?.[0] as {
+      message: string;
+    };
+    expect(call.message).toContain("in 1 day");
+    expect(call.message).not.toContain("1 days");
     expect(result).toEqual({ verified: false, action: "in_grace_period" });
   });
 
