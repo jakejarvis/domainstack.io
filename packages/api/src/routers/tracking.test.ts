@@ -3,7 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 
 // Initialize PGlite before importing anything that uses the db
 const { makePGliteDb, closePGliteDb } = await import("@domainstack/db/testing");
-const { db } = await makePGliteDb();
+const { db, client } = await makePGliteDb();
 
 // Mock workflow/api to avoid starting real workflows
 vi.mock("workflow/api", () => ({
@@ -724,7 +724,7 @@ describe("tracking router", () => {
       }
     });
 
-    it("allows exactly one of two concurrent adds at max - 1", async () => {
+    it("documents the one-of-two contract for concurrent adds at max - 1 (PGlite serializes; the lock is asserted separately)", async () => {
       const caller = createAuthenticatedCaller();
 
       // 4 active domains == quota - 1
@@ -753,6 +753,40 @@ describe("tracking router", () => {
         message: expect.stringContaining("reached your domain tracking limit"),
       });
       expect((await countTrackedDomainsByStatus(TEST_USER_ID)).active).toBe(5);
+    });
+
+    it("takes the per-user quota lock before counting the user's rows", async () => {
+      // PGlite serializes transactions on one connection, so a concurrency test
+      // passes with or without the advisory lock. Observe the SQL issued inside
+      // the transaction instead and assert the lock comes before the locked count.
+      const caller = createAuthenticatedCaller();
+
+      const captured: string[] = [];
+      const originalTransaction = client.transaction.bind(client);
+      (client as any).transaction = (callback: (tx: any) => Promise<unknown>) =>
+        originalTransaction((tx) => {
+          const originalQuery = tx.query.bind(tx);
+          (tx as any).query = (sqlText: string, ...rest: unknown[]) => {
+            captured.push(sqlText);
+            return (originalQuery as any)(sqlText, ...rest);
+          };
+          return callback(tx);
+        });
+
+      try {
+        await caller.tracking.addDomain({ domain: QUOTA_DOMAIN_NAMES[0] });
+      } finally {
+        (client as any).transaction = originalTransaction;
+      }
+
+      const lockIndex = captured.findIndex((q) => /pg_advisory_xact_lock/i.test(q));
+      const lockedCountIndex = captured.findIndex(
+        (q) => /from "user_tracked_domains"/i.test(q) && /for update/i.test(q),
+      );
+
+      expect(lockIndex).toBeGreaterThanOrEqual(0);
+      expect(lockedCountIndex).toBeGreaterThanOrEqual(0);
+      expect(lockIndex).toBeLessThan(lockedCountIndex);
     });
   });
 
