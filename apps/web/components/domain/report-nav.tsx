@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 
 import { Favicon } from "@/components/icons/favicon";
 import type { SectionDef } from "@/lib/constants/sections";
+import { preferredScrollBehavior } from "@/lib/scroll-behavior";
 import { Button } from "@domainstack/ui/button";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
 import { cn } from "@domainstack/ui/utils";
@@ -48,7 +49,7 @@ export function SectionNav({
         tabRect.left -
         viewportRect.left -
         (viewportRect.width - tabRect.width) / 2,
-      behavior: "smooth",
+      behavior: preferredScrollBehavior(),
     });
   }, [activeSection]);
 
@@ -84,7 +85,7 @@ export function SectionNav({
         >
           <button
             type="button"
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            onClick={() => window.scrollTo({ top: 0, behavior: preferredScrollBehavior() })}
             className="flex min-w-0 cursor-pointer items-center gap-2"
             aria-label={`Scroll to top - ${domain}`}
           >

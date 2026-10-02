@@ -21,6 +21,7 @@ import {
   getAssistantWaitStatus,
   hasVisibleAssistantParts,
 } from "@/lib/chat/message-parts";
+import { preferredScrollBehavior } from "@/lib/scroll-behavior";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { MAX_MESSAGE_LENGTH } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
@@ -402,7 +403,7 @@ function ChatPanelBody({
   const { scrollToEnd } = useMessageScroller();
   const scrollable = useMessageScrollerScrollable();
   const handleScrollToBottom = useCallback(() => {
-    scrollToEnd({ behavior: "smooth" });
+    scrollToEnd({ behavior: preferredScrollBehavior() });
   }, [scrollToEnd]);
 
   const handleSubmit = (message: { text: string }) => {
@@ -418,7 +419,7 @@ function ChatPanelBody({
 
   const handleRetry = () => {
     chat.retry();
-    scrollToEnd({ behavior: "smooth" });
+    scrollToEnd({ behavior: preferredScrollBehavior() });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { preferredScrollBehavior } from "@/lib/scroll-behavior";
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -116,7 +118,7 @@ export function useSectionTracking(sectionIds: string[]): UseSectionTrackingRetu
     programmaticLockUntilRef.current = now + 1500; // 1.5s lock period
 
     element.scrollIntoView({
-      behavior: "smooth",
+      behavior: preferredScrollBehavior(),
       block: "start",
     });
   }, []);

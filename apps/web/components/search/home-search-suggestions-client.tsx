@@ -9,6 +9,7 @@ import { useCallback, useMemo, useRef } from "react";
 import { Favicon } from "@/components/icons/favicon";
 import { HomeSearchSuggestionsSkeleton } from "@/components/search/home-search-suggestions-skeleton";
 import { pendingDomainAtom } from "@/lib/atoms/search-atoms";
+import { preferredScrollBehavior } from "@/lib/scroll-behavior";
 import { useSearchHistory } from "@/lib/stores/search-history-store";
 import { MAX_HISTORY_ITEMS } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
@@ -59,7 +60,7 @@ export function HomeSearchSuggestionsClient({
     if (scrollContainerRef.current && typeof scrollContainerRef.current.scrollTo === "function") {
       scrollContainerRef.current.scrollTo({
         left: 0,
-        behavior: "smooth",
+        behavior: preferredScrollBehavior(),
       });
     }
   }, [clearHistory]);
