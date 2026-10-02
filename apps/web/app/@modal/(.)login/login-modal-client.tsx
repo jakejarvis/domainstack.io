@@ -5,7 +5,7 @@ import { Suspense, useEffect, useState } from "react";
 
 import { LoginContent } from "@/components/auth/login-content";
 import { LoginSkeleton } from "@/components/auth/login-skeleton";
-import { Modal, ModalContent } from "@/components/modal";
+import { Modal, ModalContent, ModalTitle } from "@/components/modal";
 import { useRouter } from "@/hooks/use-router";
 import { safeNextPath } from "@/lib/safe-next-path";
 import { useSession } from "@domainstack/auth/client";
@@ -15,6 +15,7 @@ export function LoginModalClient() {
   return (
     <Modal open={open}>
       <ModalContent className="!max-w-md p-6">
+        <ModalTitle className="sr-only">Sign in</ModalTitle>
         <Suspense fallback={<LoginSkeleton />}>
           <AuthorizedLoginContent onNavigate={() => setOpen(false)} />
         </Suspense>
