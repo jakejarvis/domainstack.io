@@ -67,7 +67,7 @@ export const CodeBlock = ({
           {children}
         </CodeBlockPre>
         <CopyButton
-          className="absolute top-[5px] right-[5px] !bg-background text-muted-foreground opacity-0 transition-opacity group-hover/code-block:opacity-100 hover:!bg-background hover:text-foreground"
+          className="absolute top-[5px] right-[5px] !bg-background text-muted-foreground opacity-0 transition-opacity group-focus-within/code-block:opacity-100 group-hover/code-block:opacity-100 hover:!bg-background hover:text-foreground focus-visible:opacity-100 pointer-coarse:opacity-100"
           value={getValue}
         />
       </div>
