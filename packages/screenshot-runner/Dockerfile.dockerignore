@@ -1,0 +1,7 @@
+*
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!packages/screenshot-runner/**
+packages/screenshot-runner/node_modules
+packages/screenshot-runner/dist
