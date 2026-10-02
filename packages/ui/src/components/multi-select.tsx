@@ -233,7 +233,7 @@ export function MultiSelect<T extends string>({
                     ref={inputRef}
                     placeholder={`Search ${label}…`}
                     className={cn(
-                      "flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
+                      "flex h-10 w-full rounded-md bg-transparent py-3 text-base outline-hidden placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
                     )}
                     autoComplete="off"
                     autoCorrect="off"
