@@ -15,6 +15,8 @@ type CopyableFieldProps = {
   /** Optional custom content to render instead of the plain input (e.g., syntax-highlighted code) */
   children?: React.ReactNode;
   className?: string;
+  /** Value is a secret: excluded from analytics autocapture */
+  sensitive?: boolean;
 };
 
 export function CopyableField({
@@ -23,6 +25,7 @@ export function CopyableField({
   showLabel = true,
   children,
   className,
+  sensitive = false,
 }: CopyableFieldProps) {
   const contentRef = useRef<HTMLSpanElement>(null);
 
@@ -39,7 +42,7 @@ export function CopyableField({
   };
 
   return (
-    <Field className={cn("min-w-0", className)}>
+    <Field className={cn("min-w-0", sensitive && "ph-no-capture", className)}>
       <FieldTitle
         className={cn(
           showLabel

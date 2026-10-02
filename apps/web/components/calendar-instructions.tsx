@@ -130,7 +130,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
             </div>
 
             {/* Feed URL */}
-            <CopyableField label="Feed URL" value={feed.feedUrl} showLabel={false} />
+            <CopyableField label="Feed URL" value={feed.feedUrl} showLabel={false} sensitive />
 
             {/* Stats */}
             <div className="flex items-center gap-[5px] text-xs leading-none text-muted-foreground">
@@ -167,7 +167,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
                   />
                   <DropdownMenuContent
                     align="end"
-                    className="w-[var(--anchor-width)] max-w-[215px] p-1"
+                    className="ph-no-capture w-[var(--anchor-width)] max-w-[215px] p-1"
                   >
                     {/* 2x2 Grid of calendar apps */}
                     <div className="grid w-full grid-cols-2 gap-1">
