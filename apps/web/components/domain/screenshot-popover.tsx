@@ -54,7 +54,7 @@ export function ScreenshotPopover({
       <PopoverTrigger
         nativeButton={false}
         openOnHover
-        delay={0}
+        delay={400}
         closeDelay={300}
         onClick={handleInteraction}
         render={children}
