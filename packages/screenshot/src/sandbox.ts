@@ -34,6 +34,9 @@ const RUNNER_TRANSIENT_CODES: Partial<Record<ScreenshotErrorCode, ScreenshotErro
 
 const MAX_STDERR_CHARS = 2_000;
 
+// Vercel Sandbox accepts only IPv4 CIDRs here: an IPv6 entry fails
+// Sandbox.create with 400 `Invalid CIDR "::/128"`. Private IPv6 answers are
+// still rejected before a sandbox exists, by resolvePublicHost in capture.ts.
 const DENIED_NETWORKS = [
   "0.0.0.0/8",
   "10.0.0.0/8",
@@ -50,19 +53,6 @@ const DENIED_NETWORKS = [
   "203.0.113.0/24",
   "224.0.0.0/4",
   "240.0.0.0/4",
-  "::/128",
-  "::1/128",
-  "::ffff:0:0/96",
-  "64:ff9b::/96",
-  "64:ff9b:1::/48",
-  "100::/64",
-  "2001::/23",
-  "2001:db8::/32",
-  "2002::/16",
-  "5f00::/16",
-  "fc00::/7",
-  "fe80::/10",
-  "ff00::/8",
 ];
 
 type AdblockStatus = "enabled" | "skipped" | "unavailable";

@@ -254,7 +254,7 @@ describe("captureScreenshot", () => {
           networkPolicy: expect.objectContaining({
             allow: { "*": [] },
             subnets: {
-              deny: expect.arrayContaining(["127.0.0.0/8", "169.254.0.0/16", "::1/128"]),
+              deny: expect.arrayContaining(["127.0.0.0/8", "169.254.0.0/16"]),
             },
           }),
         }),
@@ -276,6 +276,21 @@ describe("captureScreenshot", () => {
         { timeoutMs: 30_000 },
       );
       expect(sandbox.stop).toHaveBeenCalledOnce();
+    });
+
+    it("denies only IPv4 ranges, which is all the Sandbox API accepts", async () => {
+      mocks.createSandbox.mockResolvedValue(createSandboxMock());
+
+      await captureScreenshot("https://example.com");
+
+      const options = mocks.createSandbox.mock.calls[0]?.[0] as {
+        networkPolicy: { subnets: { deny: string[] } };
+      };
+      const { deny } = options.networkPolicy.subnets;
+      expect(deny).toHaveLength(15);
+      for (const cidr of deny) {
+        expect(cidr).toMatch(/^\d{1,3}(\.\d{1,3}){3}\/\d{1,2}$/);
+      }
     });
 
     it("logs the sandbox's active CPU time as the cost signal", async () => {
