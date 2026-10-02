@@ -152,7 +152,6 @@ async function captureScreenshot(domain: string): Promise<CaptureResult> {
         attempt,
         sandboxId: result.sandboxId,
         durationMs: result.durationMs,
-        cleanupSucceeded: result.cleanupSucceeded,
       },
       "screenshot capture succeeded",
     );

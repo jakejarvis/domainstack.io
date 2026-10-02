@@ -33,13 +33,14 @@ export type ScreenshotErrorClassification =
   | "configuration"
   | "not_configured";
 
+/**
+ * Cleanup outcome and CPU usage are not here: they are logged once the sandbox
+ * stops, after the capture has returned.
+ */
 export interface ScreenshotErrorContext {
   sandboxId: string | null;
   durationMs: number;
   exitCode: number | null;
-  cleanupSucceeded: boolean;
-  /** Active CPU time the sandbox reported once stopped: the per-capture cost signal. */
-  activeCpuUsageMs?: number | null;
   /** Code the runner reported, when it differs from the classified code. */
   runnerErrorCode?: ScreenshotErrorCode | null;
   /** Truncated runner stderr, kept for diagnosing opaque command failures. */

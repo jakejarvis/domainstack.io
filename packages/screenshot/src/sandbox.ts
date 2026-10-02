@@ -1,3 +1,4 @@
+import { waitUntil } from "@vercel/functions";
 import { APIError, Sandbox } from "@vercel/sandbox";
 
 import { createLogger } from "@domainstack/logger";
@@ -89,7 +90,6 @@ export interface SandboxCaptureResult {
   height: number;
   sandboxId: string;
   durationMs: number;
-  cleanupSucceeded: boolean;
 }
 
 export interface SandboxCaptureOptions {
@@ -99,6 +99,20 @@ export interface SandboxCaptureOptions {
   height: number;
   format: "webp" | "png" | "jpeg";
   fullPage: boolean;
+}
+
+type CaptureSandbox = Awaited<ReturnType<typeof Sandbox.create>>;
+
+/** What the capture itself produced, logged alongside the cleanup outcome. */
+interface CaptureOutcome {
+  sandboxId: string | null;
+  durationMs: number;
+  exitCode: number | null;
+  adblock: AdblockStatus | null;
+  browserVersion: string | null;
+  runnerErrorCode: ScreenshotErrorCode | null;
+  stderr: string | null;
+  errorCode: ScreenshotErrorCode | null;
 }
 
 function isRunnerResult(value: unknown): value is RunnerResult {
@@ -212,24 +226,58 @@ async function createCaptureSandbox(image: string) {
   }
 }
 
+/**
+ * Stops the sandbox, deletes it so the stopped record doesn't linger, then
+ * logs the capture with its cost signal. Runs after the capture has already
+ * returned, so nothing here can change its result; a failure only leaves a
+ * sandbox the platform stops at its own timeout. Never rejects.
+ */
+async function cleanUpSandbox(sandbox: CaptureSandbox, outcome: CaptureOutcome): Promise<void> {
+  let cleanupSucceeded = false;
+  let activeCpuUsageMs: number | null = null;
+  let deleted = false;
+  try {
+    await sandbox.stop();
+    cleanupSucceeded = true;
+    // Only reported once the VM is stopped, and unreadable after delete().
+    activeCpuUsageMs = sandbox.activeCpuUsageMs ?? null;
+  } catch (error) {
+    logger.warn({ err: error, sandboxId: outcome.sandboxId }, "failed to stop screenshot sandbox");
+  }
+
+  // stop() ends billing; delete() removes the stopped sandbox, which would
+  // otherwise stay listed forever. Attempted even when stop() failed,
+  // because deleting a sandbox also ends any session still running.
+  try {
+    await sandbox.delete();
+    deleted = true;
+  } catch (error) {
+    logger.warn(
+      { err: error, sandboxId: outcome.sandboxId },
+      "failed to delete screenshot sandbox",
+    );
+  }
+
+  logger.info(
+    { ...outcome, cleanupSucceeded, deleted, activeCpuUsageMs },
+    "screenshot sandbox capture finished",
+  );
+}
+
 export async function runSandboxCapture(
   url: string,
   options: SandboxCaptureOptions,
 ): Promise<SandboxCaptureResult> {
   const startedAt = Date.now();
   const { image } = options;
-  let sandbox: Awaited<ReturnType<typeof Sandbox.create>> | null = null;
+  let sandbox: CaptureSandbox | null = null;
   let sandboxId: string | null = null;
   let exitCode: number | null = null;
   let adblock: AdblockStatus | null = null;
   let browserVersion: string | null = null;
   let runnerErrorCode: ScreenshotErrorCode | null = null;
   let stderr: string | null = null;
-  let activeCpuUsageMs: number | null = null;
   let primaryError: ScreenshotError | undefined;
-  let cleanupError: unknown;
-  let cleanupSucceeded = false;
-  let deleted = false;
   let successfulResult: SandboxCaptureResult | null = null;
 
   try {
@@ -284,7 +332,6 @@ export async function runSandboxCapture(
       height: result.height,
       sandboxId,
       durationMs: Date.now() - startedAt,
-      cleanupSucceeded: false,
     };
   } catch (error) {
     primaryError =
@@ -294,63 +341,32 @@ export async function runSandboxCapture(
             cause: error,
           });
   } finally {
+    const outcome: CaptureOutcome = {
+      sandboxId,
+      durationMs: Date.now() - startedAt,
+      exitCode,
+      adblock,
+      browserVersion,
+      runnerErrorCode,
+      stderr,
+      errorCode: primaryError?.code ?? null,
+    };
     if (sandbox) {
-      try {
-        await sandbox.stop();
-        cleanupSucceeded = true;
-        // Only reported once the VM is stopped.
-        activeCpuUsageMs = sandbox.activeCpuUsageMs ?? null;
-        if (successfulResult) {
-          successfulResult.cleanupSucceeded = true;
-          successfulResult.durationMs = Date.now() - startedAt;
-        }
-      } catch (error) {
-        cleanupError = error;
-        logger.warn(
-          { err: error, sandboxId, durationMs: Date.now() - startedAt, exitCode },
-          "failed to stop screenshot sandbox",
-        );
-      }
-
-      // stop() ends billing; delete() removes the stopped sandbox, which would
-      // otherwise stay listed forever. Attempted even when stop() failed,
-      // because deleting a sandbox also ends any session still running.
-      try {
-        await sandbox.delete();
-        deleted = true;
-      } catch (error) {
-        logger.warn({ err: error, sandboxId }, "failed to delete screenshot sandbox");
-      }
+      // Stopping and deleting take control-plane round trips the screenshot
+      // shouldn't wait for.
+      waitUntil(cleanUpSandbox(sandbox, outcome));
+    } else {
+      logger.info(
+        { ...outcome, cleanupSucceeded: false, deleted: false, activeCpuUsageMs: null },
+        "screenshot sandbox capture finished",
+      );
     }
-
-    logger.info(
-      {
-        sandboxId,
-        durationMs: Date.now() - startedAt,
-        exitCode,
-        adblock,
-        browserVersion,
-        runnerErrorCode,
-        stderr,
-        errorCode: primaryError
-          ? primaryError instanceof ScreenshotError
-            ? primaryError.code
-            : "sandbox_control_plane"
-          : null,
-        cleanupSucceeded,
-        deleted,
-        activeCpuUsageMs,
-      },
-      "screenshot sandbox capture finished",
-    );
   }
 
   const errorContext = {
     sandboxId,
     durationMs: Date.now() - startedAt,
     exitCode,
-    cleanupSucceeded,
-    activeCpuUsageMs,
     runnerErrorCode,
     stderr,
   };
@@ -365,13 +381,10 @@ export async function runSandboxCapture(
   if (!successfulResult) {
     throw new ScreenshotError(
       "sandbox_control_plane",
-      cleanupError ? "Failed to stop screenshot sandbox" : "Screenshot capture produced no result",
-      cleanupError ? { cause: cleanupError } : undefined,
+      "Screenshot capture produced no result",
+      undefined,
       errorContext,
     );
   }
-  // A stop() failure after the image is already in hand only leaks a sandbox
-  // that the platform reclaims on timeout anyway. Discarding a valid capture
-  // would buy nothing and cost a full retry, so it is reported instead.
   return successfulResult;
 }

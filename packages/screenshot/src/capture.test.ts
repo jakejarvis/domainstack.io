@@ -19,11 +19,19 @@ const mocks = vi.hoisted(() => {
     loggerInfo: vi.fn<(bindings: Record<string, unknown>, message: string) => void>(),
     loggerWarn: vi.fn<(bindings: Record<string, unknown>, message: string) => void>(),
     resolvePublicHost: vi.fn<(hostname: string) => Promise<unknown>>(),
+    // Background work handed to waitUntil, so tests decide when to await it.
+    pendingCleanups: [] as Promise<unknown>[],
   };
 });
 
 vi.mock("@domainstack/logger", () => ({
   createLogger: () => ({ info: mocks.loggerInfo, warn: mocks.loggerWarn }),
+}));
+
+vi.mock("@vercel/functions", () => ({
+  waitUntil: (promise: Promise<unknown>) => {
+    mocks.pendingCleanups.push(promise);
+  },
 }));
 
 vi.mock("@vercel/sandbox", () => ({
@@ -121,9 +129,15 @@ async function captureError(url = "https://example.com") {
   return captureScreenshot(url).catch((caught: unknown) => caught);
 }
 
+/** Waits for the stop/delete/log work the capture handed to waitUntil. */
+async function flushCleanups() {
+  await Promise.all(mocks.pendingCleanups.splice(0));
+}
+
 describe("captureScreenshot", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.pendingCleanups.length = 0;
     vi.stubEnv("SCREENSHOT_SANDBOX_IMAGE", IMAGE);
     mocks.resolvePublicHost.mockResolvedValue([{ address: "93.184.216.34", family: 4 }]);
   });
@@ -252,7 +266,6 @@ describe("captureScreenshot", () => {
         width: 1200,
         height: 630,
         sandboxId: "sbx_test",
-        cleanupSucceeded: true,
       });
 
       expect(mocks.createSandbox).toHaveBeenCalledWith(
@@ -286,6 +299,8 @@ describe("captureScreenshot", () => {
         ]),
         { timeoutMs: 30_000 },
       );
+
+      await flushCleanups();
       expect(sandbox.stop).toHaveBeenCalledOnce();
       // stop() ends the VM; delete() then removes the stopped sandbox record.
       expect(sandbox.delete).toHaveBeenCalledOnce();
@@ -313,6 +328,7 @@ describe("captureScreenshot", () => {
       mocks.createSandbox.mockResolvedValue(createSandboxMock());
 
       await captureScreenshot("https://example.com");
+      await flushCleanups();
 
       expect(mocks.loggerInfo).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -325,12 +341,53 @@ describe("captureScreenshot", () => {
       );
     });
 
+    it("returns the capture without waiting for the sandbox to stop", async () => {
+      const sandbox = createSandboxMock();
+      // A stop() that never settles would hang the capture if it were awaited.
+      sandbox.stop.mockReturnValue(new Promise(() => {}));
+      mocks.createSandbox.mockResolvedValue(sandbox);
+
+      await expect(captureScreenshot("https://example.com")).resolves.toMatchObject({
+        buffer: Buffer.from("webp"),
+      });
+
+      expect(mocks.pendingCleanups).toHaveLength(1);
+      expect(sandbox.stop).toHaveBeenCalledOnce();
+      expect(sandbox.delete).not.toHaveBeenCalled();
+      // Not flushed: the pending stop() never settles.
+    });
+
+    it("cleans up in the background after a failed capture too", async () => {
+      const sandbox = createSandboxMock({ exitCode: 1, stdout: runnerFailure("tls_error") });
+      mocks.createSandbox.mockResolvedValue(sandbox);
+
+      const error = await captureError();
+
+      expect(error).toMatchObject({ code: "tls_error" });
+      expect(mocks.pendingCleanups).toHaveLength(1);
+
+      await flushCleanups();
+      expect(sandbox.stop).toHaveBeenCalledOnce();
+      expect(sandbox.delete).toHaveBeenCalledOnce();
+      expect(mocks.loggerInfo).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sandboxId: "sbx_test",
+          errorCode: "tls_error",
+          cleanupSucceeded: true,
+          deleted: true,
+        }),
+        "screenshot sandbox capture finished",
+      );
+    });
+
     it("does not try to delete a sandbox that was never created", async () => {
       mocks.createSandbox.mockRejectedValue(new mocks.MockAPIError({ status: 500 }));
 
       await captureError();
 
       // No sandbox object exists to assert on, so the finish log is the evidence.
+      // It is written immediately: there is no background cleanup to wait for.
+      expect(mocks.pendingCleanups).toHaveLength(0);
       expect(mocks.loggerInfo).toHaveBeenCalledWith(
         expect.objectContaining({ sandboxId: null, cleanupSucceeded: false, deleted: false }),
         "screenshot sandbox capture finished",
@@ -407,6 +464,8 @@ describe("captureScreenshot", () => {
 
       expect(error).toMatchObject({ code: "sandbox_control_plane" });
       expect(classifyScreenshotError(error)).toBe("infrastructure");
+
+      await flushCleanups();
       expect(sandbox.stop).toHaveBeenCalledOnce();
     });
   });
@@ -452,6 +511,8 @@ describe("captureScreenshot", () => {
       expect(error).toBeInstanceOf(ScreenshotError);
       expect(error).toMatchObject({ code: "invalid_url" });
       expect(classifyScreenshotError(error)).toBe("permanent_target");
+
+      await flushCleanups();
       expect(sandbox.stop).toHaveBeenCalledOnce();
     });
 
@@ -477,7 +538,7 @@ describe("captureScreenshot", () => {
       expect(classifyScreenshotError(error)).toBe("infrastructure");
     });
 
-    it("attaches truncated runner stderr and CPU usage to the failure context", async () => {
+    it("attaches truncated runner stderr to the failure context", async () => {
       mocks.createSandbox.mockResolvedValue(
         createSandboxMock({
           exitCode: 1,
@@ -491,7 +552,6 @@ describe("captureScreenshot", () => {
       expect(error).toMatchObject({
         context: expect.objectContaining({
           stderr: "chromium exploded",
-          activeCpuUsageMs: 1234,
           sandboxId: "sbx_test",
         }),
       });
@@ -542,14 +602,19 @@ describe("captureScreenshot", () => {
 
       await expect(captureScreenshot("https://example.com")).resolves.toMatchObject({
         buffer: Buffer.from("webp"),
-        cleanupSucceeded: false,
       });
+
+      await flushCleanups();
       expect(mocks.loggerWarn).toHaveBeenCalledWith(
         expect.objectContaining({ sandboxId: "sbx_test" }),
         "failed to stop screenshot sandbox",
       );
       // Deleting also ends any session still running, so it is still attempted.
       expect(sandbox.delete).toHaveBeenCalledOnce();
+      expect(mocks.loggerInfo).toHaveBeenCalledWith(
+        expect.objectContaining({ cleanupSucceeded: false, deleted: true, activeCpuUsageMs: null }),
+        "screenshot sandbox capture finished",
+      );
     });
 
     it("keeps the capture when deleting the sandbox fails", async () => {
@@ -559,14 +624,15 @@ describe("captureScreenshot", () => {
 
       await expect(captureScreenshot("https://example.com")).resolves.toMatchObject({
         buffer: Buffer.from("webp"),
-        cleanupSucceeded: true,
       });
+
+      await flushCleanups();
       expect(mocks.loggerWarn).toHaveBeenCalledWith(
         expect.objectContaining({ sandboxId: "sbx_test" }),
         "failed to delete screenshot sandbox",
       );
       expect(mocks.loggerInfo).toHaveBeenCalledWith(
-        expect.objectContaining({ deleted: false }),
+        expect.objectContaining({ cleanupSucceeded: true, deleted: false }),
         "screenshot sandbox capture finished",
       );
     });

@@ -84,7 +84,6 @@ describe("screenshotWorkflow", () => {
       height: 630,
       sandboxId: "sbx_1",
       durationMs: 10,
-      cleanupSucceeded: true,
     });
   });
 

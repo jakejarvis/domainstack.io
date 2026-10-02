@@ -17,6 +17,7 @@
   "dependencies": {
     "@domainstack/logger": "workspace:*",
     "@domainstack/safe-fetch": "workspace:*",
+    "@vercel/functions": "catalog:",
     "@vercel/sandbox": "^3.5.1"
   },
   "devDependencies": {

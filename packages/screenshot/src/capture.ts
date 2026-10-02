@@ -21,7 +21,6 @@ export interface CaptureResult {
   height: number;
   sandboxId: string;
   durationMs: number;
-  cleanupSucceeded: boolean;
 }
 
 function validateTarget(url: string): URL {
