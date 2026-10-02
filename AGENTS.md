@@ -214,6 +214,7 @@ domainstack.io/
 │   ├── redis/                   # Upstash Redis client + rate limiter
 │   ├── safe-fetch/               # SSRF-hardened fetch (DNS pinning, private-IP blocks)
 │   ├── screenshot/              # Puppeteer screenshot capture
+│   ├── screenshot-runner/       # Chromium runner image for Vercel Sandbox (published to VCR by GitHub Actions)
 │   ├── types/                  # Shared TypeScript types (@domainstack/types)
 │   │   └── src/
 │   │       └── domain/         # Domain-related types (DNS, certs, headers, etc.)
