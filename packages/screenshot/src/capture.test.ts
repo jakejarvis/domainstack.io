@@ -64,10 +64,14 @@ function createSandboxMock(options?: {
   stderr?: string;
   buffer?: Buffer | null;
   stopError?: Error;
+  deleteError?: Error;
 }) {
   const stop = vi.fn<() => Promise<void>>();
   if (options?.stopError) stop.mockRejectedValue(options.stopError);
   else stop.mockResolvedValue(undefined);
+  const deleteSandbox = vi.fn<() => Promise<void>>();
+  if (options?.deleteError) deleteSandbox.mockRejectedValue(options.deleteError);
+  else deleteSandbox.mockResolvedValue(undefined);
   const stdout = vi.fn<() => Promise<string>>().mockResolvedValue(
     options?.stdout ??
       JSON.stringify({
@@ -94,7 +98,14 @@ function createSandboxMock(options?: {
   const readFileToBuffer = vi
     .fn<() => Promise<Buffer | null>>()
     .mockResolvedValue(options && "buffer" in options ? options.buffer! : Buffer.from("webp"));
-  return { name: "sbx_test", activeCpuUsageMs: 1234, runCommand, readFileToBuffer, stop };
+  return {
+    name: "sbx_test",
+    activeCpuUsageMs: 1234,
+    runCommand,
+    readFileToBuffer,
+    stop,
+    delete: deleteSandbox,
+  };
 }
 
 function dnsError(message: string, causeCode?: string) {
@@ -276,6 +287,11 @@ describe("captureScreenshot", () => {
         { timeoutMs: 30_000 },
       );
       expect(sandbox.stop).toHaveBeenCalledOnce();
+      // stop() ends the VM; delete() then removes the stopped sandbox record.
+      expect(sandbox.delete).toHaveBeenCalledOnce();
+      expect(sandbox.stop.mock.invocationCallOrder[0]).toBeLessThan(
+        sandbox.delete.mock.invocationCallOrder[0],
+      );
     });
 
     it("denies only IPv4 ranges, which is all the Sandbox API accepts", async () => {
@@ -302,9 +318,26 @@ describe("captureScreenshot", () => {
         expect.objectContaining({
           sandboxId: "sbx_test",
           cleanupSucceeded: true,
+          deleted: true,
           activeCpuUsageMs: 1234,
         }),
         "screenshot sandbox capture finished",
+      );
+    });
+
+    it("does not try to delete a sandbox that was never created", async () => {
+      mocks.createSandbox.mockRejectedValue(new mocks.MockAPIError({ status: 500 }));
+
+      await captureError();
+
+      // No sandbox object exists to assert on, so the finish log is the evidence.
+      expect(mocks.loggerInfo).toHaveBeenCalledWith(
+        expect.objectContaining({ sandboxId: null, cleanupSucceeded: false, deleted: false }),
+        "screenshot sandbox capture finished",
+      );
+      expect(mocks.loggerWarn).not.toHaveBeenCalledWith(
+        expect.anything(),
+        "failed to delete screenshot sandbox",
       );
     });
 
@@ -504,9 +537,8 @@ describe("captureScreenshot", () => {
     });
 
     it("keeps the captured image when stopping the sandbox fails", async () => {
-      mocks.createSandbox.mockResolvedValue(
-        createSandboxMock({ stopError: new Error("stop failed") }),
-      );
+      const sandbox = createSandboxMock({ stopError: new Error("stop failed") });
+      mocks.createSandbox.mockResolvedValue(sandbox);
 
       await expect(captureScreenshot("https://example.com")).resolves.toMatchObject({
         buffer: Buffer.from("webp"),
@@ -515,6 +547,27 @@ describe("captureScreenshot", () => {
       expect(mocks.loggerWarn).toHaveBeenCalledWith(
         expect.objectContaining({ sandboxId: "sbx_test" }),
         "failed to stop screenshot sandbox",
+      );
+      // Deleting also ends any session still running, so it is still attempted.
+      expect(sandbox.delete).toHaveBeenCalledOnce();
+    });
+
+    it("keeps the capture when deleting the sandbox fails", async () => {
+      mocks.createSandbox.mockResolvedValue(
+        createSandboxMock({ deleteError: new Error("delete failed") }),
+      );
+
+      await expect(captureScreenshot("https://example.com")).resolves.toMatchObject({
+        buffer: Buffer.from("webp"),
+        cleanupSucceeded: true,
+      });
+      expect(mocks.loggerWarn).toHaveBeenCalledWith(
+        expect.objectContaining({ sandboxId: "sbx_test" }),
+        "failed to delete screenshot sandbox",
+      );
+      expect(mocks.loggerInfo).toHaveBeenCalledWith(
+        expect.objectContaining({ deleted: false }),
+        "screenshot sandbox capture finished",
       );
     });
   });

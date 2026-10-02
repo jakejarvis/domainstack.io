@@ -229,6 +229,7 @@ export async function runSandboxCapture(
   let primaryError: ScreenshotError | undefined;
   let cleanupError: unknown;
   let cleanupSucceeded = false;
+  let deleted = false;
   let successfulResult: SandboxCaptureResult | null = null;
 
   try {
@@ -310,6 +311,16 @@ export async function runSandboxCapture(
           "failed to stop screenshot sandbox",
         );
       }
+
+      // stop() ends billing; delete() removes the stopped sandbox, which would
+      // otherwise stay listed forever. Attempted even when stop() failed,
+      // because deleting a sandbox also ends any session still running.
+      try {
+        await sandbox.delete();
+        deleted = true;
+      } catch (error) {
+        logger.warn({ err: error, sandboxId }, "failed to delete screenshot sandbox");
+      }
     }
 
     logger.info(
@@ -327,6 +338,7 @@ export async function runSandboxCapture(
             : "sandbox_control_plane"
           : null,
         cleanupSucceeded,
+        deleted,
         activeCpuUsageMs,
       },
       "screenshot sandbox capture finished",
