@@ -20,13 +20,11 @@ export type RunnerErrorCode =
  */
 export class RunnerError extends Error {
   readonly name = "RunnerError";
+  readonly code: RunnerErrorCode;
 
-  constructor(
-    readonly code: RunnerErrorCode,
-    message: string,
-    options?: ErrorOptions,
-  ) {
+  constructor(code: RunnerErrorCode, message: string, options?: ErrorOptions) {
     super(message, options);
+    this.code = code;
   }
 }
 

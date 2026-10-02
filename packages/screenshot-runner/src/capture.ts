@@ -2,9 +2,9 @@ import { stat } from "node:fs/promises";
 
 import puppeteer, { type Browser, type Page } from "puppeteer";
 
-import { type AdblockStatus, enableAdBlocking } from "./adblock.js";
-import { type CaptureArguments, parseArguments, safeFinalUrl, validateUrl } from "./args.js";
-import { classifyError, RunnerError } from "./errors.js";
+import { type AdblockStatus, enableAdBlocking } from "./adblock.ts";
+import { type CaptureArguments, parseArguments, safeFinalUrl, validateUrl } from "./args.ts";
+import { classifyError, RunnerError } from "./errors.ts";
 
 const NAVIGATION_TIMEOUT_MS = 15_000;
 const NETWORK_IDLE_TIMEOUT_MS = 2_000;

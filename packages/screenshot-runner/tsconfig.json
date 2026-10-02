@@ -1,16 +1,15 @@
 {
   "compilerOptions": {
-    "declaration": false,
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
     "esModuleInterop": true,
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "noEmit": false,
-    "outDir": "dist",
-    "rootDir": "src",
+    "noEmit": true,
     "skipLibCheck": true,
     "strict": true,
-    "target": "ES2022"
+    "target": "ES2022",
+    "verbatimModuleSyntax": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["src/**/*.test.ts"]
+  "include": ["src/**/*"]
 }

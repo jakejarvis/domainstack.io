@@ -2,12 +2,14 @@
 
 This package builds the Chromium runner used by `@domainstack/screenshot`. It runs as a single-use [Vercel Sandbox](https://vercel.com/docs/sandbox), not inside the Next.js process.
 
-The base is `node:24-trixie-slim` pinned by digest, with Chromium and fonts installed from Debian, unpinned — a rebuild picks up the distro's current security build. `@domainstack/screenshot` records the browser version it actually ran. Reproducibility comes from the published image digest, which `SCREENSHOT_SANDBOX_IMAGE` requires.
+The base is `node:24-trixie-slim`, with Chromium and fonts installed from Debian — a rebuild picks up the distro's current security build. `@domainstack/screenshot` records the browser version it actually ran. Reproducibility comes from the published image digest, which `SCREENSHOT_SANDBOX_IMAGE` requires.
+
+There is no compile step: Node runs `src/*.ts` directly with its built-in type stripping (`node src/capture.ts`). That only works for erasable syntax — no enums, namespaces or constructor parameter properties — which `erasableSyntaxOnly` in `tsconfig.json` makes `pnpm lint` enforce. Relative imports must name the `.ts` file; a `.js` import still type-checks but fails at runtime, so the image build's last step runs `node src/capture.ts` without arguments to prove every module loads.
 
 Nothing a capture needs is fetched at runtime:
 
 - **Fonts.** `fonts-liberation`, `fonts-noto-cjk`, `fonts-noto-color-emoji` and `fonts-freefont-ttf` are installed at build time. Without the emoji font in particular, emoji in page content render as tofu boxes.
-- **Ad blocking.** `build:blocklist` compiles the Ghostery ads-and-tracking engine during the image build and serializes it to `dist/adblock-engine.bin`; `capture.ts` deserializes that file. Building the engine at runtime would download and parse fourteen filter lists from `raw.githubusercontent.com` before every navigation.
+- **Ad blocking.** `compile:blocklist` compiles the Ghostery ads-and-tracking engine during the image build and serializes it to `vendor/adblock-engine.bin`; `capture.ts` deserializes that file. Building the engine at runtime would download and parse fourteen filter lists from `raw.githubusercontent.com` before every navigation.
 
 Blocking is best-effort: if the engine is missing or unreadable, the capture still runs and the runner reports `adblock: "unavailable"` in its JSON result, so a broken image shows up in the capture logs instead of silently degrading. A capture that failed before blocking was set up reports `adblock: "skipped"` instead.
 

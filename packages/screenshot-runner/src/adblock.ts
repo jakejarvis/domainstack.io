@@ -5,12 +5,12 @@ import { PuppeteerBlocker } from "@ghostery/adblocker-puppeteer";
 import type { Page } from "puppeteer";
 
 /**
- * Compiled ads-and-tracking engine, serialized next to the runner at image
- * build time. Building it at runtime would download and parse fourteen filter
- * lists from raw.githubusercontent.com before every capture, so the engine
- * ships inside the image instead.
+ * Compiled ads-and-tracking engine, serialized into the package's `vendor/`
+ * directory at image build time. Building it at runtime would download and
+ * parse fourteen filter lists from raw.githubusercontent.com before every
+ * capture, so the engine ships inside the image instead.
  */
-export const ENGINE_PATH = fileURLToPath(new URL("adblock-engine.bin", import.meta.url));
+export const ENGINE_PATH = fileURLToPath(new URL("../vendor/adblock-engine.bin", import.meta.url));
 
 /**
  * `skipped` means the capture failed before blocking was set up, so it says

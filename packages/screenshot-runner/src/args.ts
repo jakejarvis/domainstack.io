@@ -1,4 +1,4 @@
-import { RunnerError } from "./errors.js";
+import { RunnerError } from "./errors.ts";
 
 export type ImageFormat = "webp" | "png" | "jpeg";
 
