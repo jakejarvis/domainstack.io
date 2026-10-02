@@ -33,7 +33,7 @@ Runs without OAuth apps or third-party keys (full walkthrough: README "Developme
 4. `pnpm dev`, then use the **Dev sign-in** form at `/login` (exists only when `NODE_ENV=development`)
 5. Crons by hand: `curl -H "Authorization: Bearer dev" http://localhost:3000/api/cron/<name>`
 
-Unset services degrade instead of failing (Blob → `apps/web/public/_dev-blob/`, no Redis → no rate limits or monitor locks, no Resend → sends throw). Code that adds a new external service must keep `pnpm dev` working without its credentials (pattern: `packages/blob/src/files.ts`, `getRedis()`) and add a row to the README's optional-services table.
+Unset services degrade instead of failing (Blob → `apps/web/public/_dev-blob/`, no Redis → no rate limits or monitor locks, no Resend → sends throw, no `SCREENSHOT_SANDBOX_IMAGE` → no screenshots). Code that adds a new external service must keep `pnpm dev` working without its credentials (pattern: `packages/blob/src/files.ts`, `getRedis()`) and add a row to the README's optional-services table.
 
 ### Development
 
@@ -213,7 +213,7 @@ domainstack.io/
 │   ├── polar/                   # Polar billing SDK, webhooks, reconciliation
 │   ├── redis/                   # Upstash Redis client + rate limiter
 │   ├── safe-fetch/               # SSRF-hardened fetch (DNS pinning, private-IP blocks)
-│   ├── screenshot/              # Puppeteer screenshot capture
+│   ├── screenshot/              # Screenshot capture in a single-use Vercel Sandbox (client, network denylist, error classes)
 │   ├── screenshot-runner/       # Chromium runner image for Vercel Sandbox (published to VCR by GitHub Actions)
 │   ├── types/                  # Shared TypeScript types (@domainstack/types)
 │   │   └── src/
