@@ -41,7 +41,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build
         uses: docker/build-push-action@v6
@@ -73,7 +73,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to Vercel Container Registry
         uses: vercel/vcr-action/login@v1
