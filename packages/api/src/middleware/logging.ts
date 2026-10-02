@@ -1,26 +1,8 @@
 import { createLogger } from "@domainstack/logger";
 
-import { t } from "../trpc";
+import { EXPECTED_ERROR_CODES, t } from "../trpc";
 
 const logger = createLogger({ source: "trpc" });
-
-const EXPECTED_ERROR_CODES = new Set([
-  "PARSE_ERROR",
-  "BAD_REQUEST",
-  "UNAUTHORIZED",
-  "PAYMENT_REQUIRED",
-  "FORBIDDEN",
-  "NOT_FOUND",
-  "METHOD_NOT_SUPPORTED",
-  "CONFLICT",
-  "PRECONDITION_FAILED",
-  "PAYLOAD_TOO_LARGE",
-  "UNSUPPORTED_MEDIA_TYPE",
-  "UNPROCESSABLE_CONTENT",
-  "PRECONDITION_REQUIRED",
-  "TOO_MANY_REQUESTS",
-  "CLIENT_CLOSED_REQUEST",
-]);
 
 /**
  * One canonical log line per procedure: path, type, duration, outcome,
