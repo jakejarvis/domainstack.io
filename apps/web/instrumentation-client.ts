@@ -1,7 +1,5 @@
 import posthogClient from "posthog-js";
 
-import { dropEventsWithFeedTokens } from "@/lib/analytics-redaction";
-
 const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 
 if (!posthogKey) {
@@ -16,8 +14,6 @@ if (!posthogKey) {
     tracing_headers: [window.location.hostname],
     defaults: "2026-05-30",
     capture_exceptions: true,
-    // Defense in depth: never send events that carry a calendar feed token
-    before_send: dropEventsWithFeedTokens,
     disable_session_recording: true,
     disable_surveys: true,
     disable_scroll_properties: true,
