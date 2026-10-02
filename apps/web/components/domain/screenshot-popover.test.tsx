@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { page } from "vitest/browser";
 
 const { useScreenshotMock } = vi.hoisted(() => ({
@@ -25,6 +25,10 @@ function lastEnabled() {
 }
 
 describe("ScreenshotPopover", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("does not start a screenshot when the pointer only passes through", async () => {
     useScreenshotMock.mockClear();
     await render(
@@ -33,12 +37,15 @@ describe("ScreenshotPopover", () => {
       </ScreenshotPopover>,
     );
 
+    // Fake only the open-delay timer so the result doesn't depend on how long
+    // the hover/unhover round-trips to the browser take under load.
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     const link = page.getByText("example.com", { exact: true });
     await link.hover();
-    await wait(100);
+    vi.advanceTimersByTime(300);
     await link.unhover();
     // Outlast the open delay: a pass-through hover must never open the popover.
-    await wait(600);
+    vi.advanceTimersByTime(1000);
 
     expect(useScreenshotMock).toHaveBeenCalled();
     expect(lastEnabled()).toBe(false);
