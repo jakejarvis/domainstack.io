@@ -133,7 +133,7 @@ describe("useScreenshot", () => {
     expect(view.result.current.isLoading).toBe(false);
 
     // No POST was re-issued: every retry after the initial start polled the
-    // same run instead of re-triggering the expensive Puppeteer capture.
+    // same run instead of re-triggering the expensive capture.
     const postRequests = fetchMock.mock.calls.filter(([, init]) => init?.method === "POST");
     expect(postRequests).toHaveLength(1);
     expect(fetchMock).toHaveBeenCalledTimes(6);

@@ -10,6 +10,5 @@
     "security:minimumReleaseAgeNpm"
   ],
   "rangeStrategy": "bump",
-  "postUpdateOptions": ["pnpmDedupe"],
-  "ignoreDeps": ["@sparticuz/chromium", "puppeteer", "puppeteer-core"]
+  "postUpdateOptions": ["pnpmDedupe"]
 }
