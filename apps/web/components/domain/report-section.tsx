@@ -81,11 +81,14 @@ export function ReportSection({
                   {help && (
                     <ResponsiveTooltip>
                       <ResponsiveTooltipTrigger
-                        nativeButton={false}
                         render={
-                          <span role="img" aria-label={`More info about ${title}`}>
+                          <button
+                            type="button"
+                            aria-label={`More info about ${title}`}
+                            className="-m-1 inline-flex cursor-help rounded-sm p-1 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                          >
                             <IconInfoCircle className="size-3.5 opacity-60" aria-hidden />
-                          </span>
+                          </button>
                         }
                       />
                       <ResponsiveTooltipContent>{help}</ResponsiveTooltipContent>
