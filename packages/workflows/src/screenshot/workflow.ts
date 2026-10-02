@@ -1,9 +1,11 @@
-import { createHook, RetryableError } from "workflow";
+import { createHook, FatalError, getStepMetadata, RetryableError } from "workflow";
 
 import type { ScreenshotData } from "@domainstack/types";
 
 const VIEWPORT_WIDTH = 1200;
 const VIEWPORT_HEIGHT = 630;
+// Every attempt is a paid sandbox.
+const CAPTURE_MAX_RETRIES = 2;
 
 export function getScreenshotWorkflowToken(domainId: string): string {
   return `screenshot:${domainId}`;
@@ -25,30 +27,17 @@ export type ScreenshotWorkflowResult =
       data: { url: null };
     };
 
-type CaptureResult = { success: true; imageBytes: Uint8Array } | { success: false };
-
-/**
- * Puppeteer/browser-crash errors, as opposed to a navigation failure caused
- * by the target site itself (DNS, connection refused, TLS, timeout — all
- * surfaced by Chromium as `net::ERR_*` or a navigation `TimeoutError`).
- * These mean the browser process itself broke mid-capture, unrelated to the
- * domain being captured, and must not be cached as "this domain can't be
- * captured."
- */
-const INFRA_CAPTURE_ERROR_PATTERN =
-  /protocol error|target (closed|crashed)|session closed|page, context or browser (has )?been closed|websocket is (not open|closed)|connection closed|socket hang up|browser (has )?disconnected/i;
-
-/** @internal exported for testing only */
-export function isInfraCaptureError(err: unknown): boolean {
-  const message = err instanceof Error ? err.message : String(err);
-  return INFRA_CAPTURE_ERROR_PATTERN.test(message);
-}
+type CaptureResult =
+  | { success: true; imageBytes: Uint8Array }
+  // `cache` says whether the miss is a property of the domain (cache it for the TTL)
+  // or of this deployment (skip quietly, leave the cache alone).
+  | { success: false; cache: boolean };
 
 /**
  * Durable screenshot workflow that breaks down screenshot generation into
  * independently retryable steps:
  * 1. Check blocklist
- * 2. Capture screenshot (Puppeteer)
+ * 2. Capture screenshot (a single-use Vercel Sandbox)
  * 3. Process and store image (Vercel Blob)
  * 4. Persist to database
  */
@@ -77,13 +66,17 @@ export async function screenshotWorkflow(
     };
   }
 
-  // Step 2: Capture screenshot using Puppeteer
+  // Step 2: Capture screenshot in a single-use Vercel Sandbox
   // This is the heavy operation that benefits most from durability
   const captureResult = await captureScreenshot(domain);
 
   if (!captureResult.success) {
-    // Step 3a: Persist failure to cache
-    await persistFailure(domain);
+    // A deployment without a runner image says nothing about the domain, so
+    // only a real capture failure is cached.
+    if (captureResult.cache) {
+      // Step 3a: Persist failure to cache
+      await persistFailure(domain);
+    }
     return {
       success: false,
       error: "capture_error",
@@ -116,35 +109,35 @@ async function checkBlocklist(domain: string): Promise<boolean> {
 }
 
 /**
- * Step: Capture screenshot using Puppeteer
+ * Step: Capture screenshot in a single-use Vercel Sandbox
  * This is the heavy operation that benefits from workflow durability
  *
- * Three failure classes are handled differently:
- * - Browser launch failures are an infrastructure problem, not a property of
- *   the domain, so they retry. Caching them would blank out every domain
- *   captured during the outage for a full screenshot TTL.
- * - A crashed browser/page mid-capture (protocol error, target/session
- *   closed) is also infrastructure, not evidence the domain is
- *   uncapturable, so it retries too.
- * - Navigation, timeout, and TLS failures mean this site cannot be captured.
- *   They are returned so the caller can cache the miss instead of re-running
- *   Puppeteer against a dead host on every request.
+ * A failure is acted on by its class (see `classifyScreenshotError`):
+ * - permanent_target: the site itself can't be captured (dead host, bad
+ *   certificate, timeout). Return a cached miss instead of paying for a
+ *   sandbox against it on every request.
+ * - transient_target: possibly a hiccup on the site. Retry, and cache the miss
+ *   on the final attempt so a persistently broken site stops costing sandboxes.
+ * - infrastructure: our side broke (sandbox control plane, runner crash).
+ *   Retry and never cache: a miss would blank the domain for the whole TTL.
+ * - configuration: the deployment is broken (bad or missing-from-project
+ *   image). Retrying can't help and the domain isn't at fault, so fail fatally
+ *   without caching.
+ * - not_configured: no runner image is set (normal in local development).
+ *   Return a miss without caching and without throwing.
  */
 async function captureScreenshot(domain: string): Promise<CaptureResult> {
   "use step";
 
-  const { captureScreenshot: capture, getBrowser } = await import("@domainstack/screenshot");
+  const {
+    captureScreenshot: capture,
+    classifyScreenshotError,
+    getScreenshotErrorCode,
+    getScreenshotErrorContext,
+  } = await import("@domainstack/screenshot");
   const { createLogger } = await import("@domainstack/logger");
   const logger = createLogger({ source: "screenshot/workflow" });
-
-  try {
-    await getBrowser();
-  } catch (err) {
-    throw new RetryableError(
-      `Browser launch failed: ${err instanceof Error ? err.message : String(err)}`,
-      { retryAfter: "10s" },
-    );
-  }
+  const { attempt } = getStepMetadata();
 
   try {
     const result = await capture(`https://${domain}`, {
@@ -153,22 +146,45 @@ async function captureScreenshot(domain: string): Promise<CaptureResult> {
       format: "webp",
       fullPage: false,
     });
+    logger.info(
+      {
+        domain,
+        attempt,
+        sandboxId: result.sandboxId,
+        durationMs: result.durationMs,
+        cleanupSucceeded: result.cleanupSucceeded,
+      },
+      "screenshot capture succeeded",
+    );
 
     return {
       success: true,
       imageBytes: Uint8Array.from(result.buffer),
     };
   } catch (err) {
-    if (isInfraCaptureError(err)) {
-      throw new RetryableError(
-        `Screenshot capture infra failure: ${err instanceof Error ? err.message : String(err)}`,
-        { retryAfter: "10s" },
-      );
+    const errorCode = getScreenshotErrorCode(err);
+    const classification = classifyScreenshotError(err);
+    logger.warn(
+      { err, domain, attempt, errorCode, classification, ...getScreenshotErrorContext(err) },
+      "screenshot capture failed",
+    );
+
+    switch (classification) {
+      case "permanent_target":
+        return { success: false, cache: true };
+      case "not_configured":
+        return { success: false, cache: false };
+      case "configuration":
+        throw new FatalError(`Screenshot capture is misconfigured: ${errorCode}`);
+      case "transient_target":
+        if (attempt > CAPTURE_MAX_RETRIES) return { success: false, cache: true };
+        throw new RetryableError(`Screenshot capture failed: ${errorCode}`, { retryAfter: "5s" });
+      case "infrastructure":
+        throw new RetryableError(`Screenshot capture failed: ${errorCode}`, { retryAfter: "5s" });
     }
-    logger.debug({ err, domain }, "screenshot unavailable, caching miss");
-    return { success: false };
   }
 }
+captureScreenshot.maxRetries = CAPTURE_MAX_RETRIES;
 
 /**
  * Step: Store screenshot to Vercel Blob

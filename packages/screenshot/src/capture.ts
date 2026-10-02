@@ -1,84 +1,96 @@
-import { type Browser, getBrowser, type Page } from "./browser";
-import { createPage } from "./page";
+import { isExpectedDnsError } from "@domainstack/safe-fetch/dns";
+import { SafeFetchError } from "@domainstack/safe-fetch/errors";
+import { resolvePublicHost } from "@domainstack/safe-fetch/resolve";
+
+import { ScreenshotError } from "./errors";
+import { requireSandboxImage, runSandboxCapture } from "./sandbox";
 
 const DEFAULT_VIEWPORT_WIDTH = 1200;
 const DEFAULT_VIEWPORT_HEIGHT = 630;
 
 export interface CaptureOptions {
-  /** Viewport width in pixels */
   width?: number;
-  /** Viewport height in pixels */
   height?: number;
-  /** Screenshot format */
   format?: "webp" | "png" | "jpeg";
-  /** Whether to capture full page */
   fullPage?: boolean;
 }
 
 export interface CaptureResult {
-  /** Screenshot buffer */
   buffer: Buffer;
-  /** Width of the captured screenshot */
   width: number;
-  /** Height of the captured screenshot */
   height: number;
+  sandboxId: string;
+  durationMs: number;
+  cleanupSucceeded: boolean;
+}
+
+function validateTarget(url: string): URL {
+  let target: URL;
+  try {
+    target = new URL(url);
+  } catch (error) {
+    throw new ScreenshotError("invalid_url", "Screenshot target is not a valid URL", {
+      cause: error,
+    });
+  }
+  if (target.protocol !== "https:") {
+    throw new ScreenshotError("invalid_url", "Screenshot target must use HTTPS");
+  }
+  if (target.username || target.password) {
+    throw new ScreenshotError("invalid_url", "Screenshot target must not contain credentials");
+  }
+  return target;
 }
 
 /**
- * Capture a screenshot of a URL.
- * Handles browser lifecycle and page creation.
+ * Rejects a target that resolves to a private or reserved address before a
+ * sandbox is paid for. The sandbox's network policy denies the same ranges at
+ * connect time, which also covers DNS that changes between here and the page load.
  */
+async function validatePublicTarget(target: URL): Promise<void> {
+  try {
+    await resolvePublicHost(target.hostname);
+  } catch (error) {
+    if (error instanceof SafeFetchError) {
+      if (error.code === "host_blocked" || error.code === "private_ip") {
+        throw new ScreenshotError("target_blocked", "Screenshot target is not publicly reachable", {
+          cause: error,
+        });
+      }
+      if (error.code === "invalid_url") {
+        throw new ScreenshotError("invalid_target", "Screenshot target is not a valid host", {
+          cause: error,
+        });
+      }
+      if (isExpectedDnsError(error)) {
+        throw new ScreenshotError("dns_error", "Screenshot target does not resolve", {
+          cause: error,
+        });
+      }
+    }
+    // A resolver timeout or temporary failure says nothing about the target;
+    // caching it as missing would blank the screenshot for a whole TTL.
+    throw new ScreenshotError("upstream_temporary", "Screenshot target DNS validation failed", {
+      cause: error,
+    });
+  }
+}
+
 export async function captureScreenshot(
   url: string,
   options: CaptureOptions = {},
 ): Promise<CaptureResult> {
-  const {
-    width = DEFAULT_VIEWPORT_WIDTH,
-    height = DEFAULT_VIEWPORT_HEIGHT,
-    format = "webp",
-    fullPage = false,
-  } = options;
+  const target = validateTarget(url);
+  // Checked before DNS so a missing or malformed image is reported as such,
+  // not masked by an unrelated target failure.
+  const image = requireSandboxImage();
+  await validatePublicTarget(target);
 
-  let browser: Browser | null = null;
-  let page: Page | null = null;
-
-  try {
-    browser = await getBrowser();
-
-    page = await createPage(browser, url, {
-      viewport: { width, height },
-    });
-
-    if (!page) {
-      throw new Error("Failed to create page");
-    }
-
-    const buffer = await page.screenshot({
-      type: format,
-      fullPage,
-      encoding: "binary",
-    });
-
-    // For fullPage screenshots, get actual content dimensions
-    let actualWidth = width;
-    let actualHeight = height;
-    if (fullPage) {
-      const dimensions = await page.evaluate(() => ({
-        width: document.documentElement.scrollWidth,
-        height: document.documentElement.scrollHeight,
-      }));
-      actualWidth = dimensions.width;
-      actualHeight = dimensions.height;
-    }
-
-    return {
-      buffer: Buffer.from(buffer),
-      width: actualWidth,
-      height: actualHeight,
-    };
-  } finally {
-    // Close page in background to avoid blocking; after a browser crash this
-    // rejects, and an unhandled rejection can take the function instance down.
-    void page?.close().catch(() => {});
-  }
+  return runSandboxCapture(target.href, {
+    image,
+    width: options.width ?? DEFAULT_VIEWPORT_WIDTH,
+    height: options.height ?? DEFAULT_VIEWPORT_HEIGHT,
+    format: options.format ?? "webp",
+    fullPage: options.fullPage ?? false,
+  });
 }

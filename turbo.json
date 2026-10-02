@@ -35,6 +35,7 @@
         "REDIS_URL",
         "RESEND_API_KEY",
         "RESEND_FROM_EMAIL",
+        "SCREENSHOT_SANDBOX_IMAGE",
         "UPSTASH_REDIS_REST_TOKEN",
         "UPSTASH_REDIS_REST_URL",
         "VERCEL_CLIENT_ID",
