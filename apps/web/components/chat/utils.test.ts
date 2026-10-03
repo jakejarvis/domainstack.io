@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import type { AiModePreference, ChatMode } from "@/lib/stores/preferences-store";
 
 import {
+  CLOUD_HAS_LOCAL_CONVERSATION_MESSAGE,
   formatMessagesAsMarkdown,
   getUserFriendlyError,
   LOCAL_HAS_CLOUD_CONVERSATION_MESSAGE,
@@ -92,6 +93,33 @@ describe("resolveChatMode", () => {
       lockedMode: "cloud",
       mode: "cloud",
       blockedReason: LOCAL_HAS_CLOUD_CONVERSATION_MESSAGE,
+    },
+    {
+      name: "cloud blocks sending in a conversation locked to local",
+      aiMode: "cloud",
+      browserReady: true,
+      hasStoredConversation: false,
+      lockedMode: "local",
+      mode: "local",
+      blockedReason: CLOUD_HAS_LOCAL_CONVERSATION_MESSAGE,
+    },
+    {
+      name: "auto keeps a conversation locked to local",
+      aiMode: "auto",
+      browserReady: true,
+      hasStoredConversation: false,
+      lockedMode: "local",
+      mode: "local",
+      blockedReason: null,
+    },
+    {
+      name: "cloud keeps a conversation locked to cloud",
+      aiMode: "cloud",
+      browserReady: true,
+      hasStoredConversation: false,
+      lockedMode: "cloud",
+      mode: "cloud",
+      blockedReason: null,
     },
   ];
 

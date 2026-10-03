@@ -7,10 +7,15 @@ export const LOCAL_NOT_READY_MESSAGE =
   "The on-device model isn't ready yet. Download it from the model menu, or switch to Cloud.";
 export const LOCAL_HAS_CLOUD_CONVERSATION_MESSAGE =
   "This conversation used Cloud. Clear it to continue on your device, or switch to Cloud.";
+export const CLOUD_HAS_LOCAL_CONVERSATION_MESSAGE =
+  "This conversation is running on your device. Clear it to continue with Cloud, or switch to Local.";
 
 /**
  * Which session runs, and whether sending must be blocked. "local" never falls back
- * to cloud: when the browser model can't take the message, sending is blocked.
+ * to cloud: when the browser model can't take the message, sending is blocked. Sending
+ * is also blocked in both mismatch directions: a conversation can't move between
+ * sessions, so choosing Local on a cloud conversation, or Cloud on an on-device one,
+ * blocks until it's cleared or the choice is switched back.
  */
 export function resolveChatMode(input: {
   aiMode: AiModePreference;
@@ -22,6 +27,11 @@ export function resolveChatMode(input: {
   const wantsLocal = (aiMode === "local" || aiMode === "auto") && browserReady;
   const preferred: ChatMode = hasStoredConversation ? "cloud" : wantsLocal ? "local" : "cloud";
   const mode = lockedMode ?? preferred;
+
+  // Cloud was chosen after the conversation started on-device; it can't move over.
+  if (aiMode === "cloud" && mode === "local") {
+    return { mode, blockedReason: CLOUD_HAS_LOCAL_CONVERSATION_MESSAGE };
+  }
 
   if (aiMode !== "local" || mode !== "cloud") return { mode, blockedReason: null };
   return {
