@@ -618,6 +618,38 @@ describe("registration change orchestration", () => {
         nameservers: [{ host: "ns1.example.net" }],
         transferLock: true,
         statuses: [],
+        statusFormat: "epp",
+        pending: null,
+      },
+    });
+  });
+
+  it("re-baselines an unmarked snapshot's statuses without notifying", async () => {
+    const stored = storedRegistration({
+      registrarProviderId: "p-new",
+      statuses: ["active", "client transfer prohibited"],
+    });
+    snapshotsMock.getSnapshot.mockResolvedValue(makeSnapshot({ registration: stored }));
+    registrationMock.normalizeAndBuildResponseStep.mockResolvedValue(
+      registered({
+        registrarProvider: providerRef("p-new"),
+        statuses: [{ status: "ok" }, { status: "clientTransferProhibited" }],
+      }),
+    );
+
+    const result = await runWorkflow();
+
+    expect(result.registrationChanges).toBe(false);
+    expect(notificationsMock.determineNotificationChannelsStep).not.toHaveBeenCalled();
+    expect(notificationsMock.sendChangeNotificationStep).not.toHaveBeenCalled();
+    expect(snapshotsMock.updateSnapshot).toHaveBeenCalledTimes(1);
+    expect(snapshotsMock.updateSnapshot).toHaveBeenCalledWith("td-1", {
+      registration: {
+        registrarProviderId: "p-new",
+        nameservers: [],
+        transferLock: null,
+        statuses: ["ok", "clientTransferProhibited"],
+        statusFormat: "epp",
         pending: null,
       },
     });

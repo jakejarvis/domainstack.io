@@ -84,6 +84,7 @@ export function registrationSnapshotFrom(
     nameservers: registration.nameservers || [],
     transferLock: registration.transferLock ?? null,
     statuses: (registration.statuses ?? []).map((status) => status.status),
+    statusFormat: "epp",
   };
 }
 
@@ -148,7 +149,10 @@ export function detectRegistrationChange(
   // Check status changes (using normalized comparison to handle formatting differences)
   const snapshotStatuses = previous.statuses ?? [];
   const currentStatuses = current.statuses ?? [];
-  const statusesChanged = !statusesAreEqual(snapshotStatuses, currentStatuses);
+  // A snapshot from before rdapper 0.17 spells statuses differently; that's not a change.
+  const statusesComparable = previous.statusFormat === current.statusFormat;
+  const statusesChanged =
+    statusesComparable && !statusesAreEqual(snapshotStatuses, currentStatuses);
 
   // If nothing changed, return null
   if (!registrarChanged && !nameserversChanged && !transferLockChanged && !statusesChanged) {

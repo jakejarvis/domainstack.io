@@ -129,6 +129,12 @@ export interface RegistrationSnapshotData {
   nameservers: { host: string }[];
   transferLock: boolean | null;
   statuses: string[];
+  /**
+   * "epp" once statuses come from rdapper ≥ 0.17, which maps RDAP and WHOIS
+   * spellings to EPP codes. Older snapshots lack it, and their statuses are
+   * re-baselined silently instead of compared (spelling isn't a change).
+   */
+  statusFormat?: "epp";
   /** Unconfirmed change awaiting a repeat observation (see confirmChange). */
   pending?: PendingChangeObservation | null;
   /** True once a confirmed "domain is no longer registered" alert has been handled for this snapshot. */

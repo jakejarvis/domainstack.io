@@ -120,6 +120,43 @@ describe("detectRegistrationChange", () => {
   });
 });
 
+describe("detectRegistrationChange status format", () => {
+  const unmarked: RegistrationSnapshotData = {
+    registrarProviderId: "registrar-1",
+    nameservers: [{ host: "ns1.example.com" }],
+    transferLock: true,
+    statuses: ["active", "client transfer prohibited"],
+  };
+  const marked: RegistrationSnapshotData = {
+    ...unmarked,
+    statuses: ["ok", "clientTransferProhibited"],
+    statusFormat: "epp",
+  };
+
+  it("ignores a status spelling change from an unmarked snapshot", () => {
+    expect(detectRegistrationChange(unmarked, marked)).toBeNull();
+  });
+
+  it("still reports a registrar change from an unmarked snapshot", () => {
+    const result = detectRegistrationChange(unmarked, {
+      ...marked,
+      registrarProviderId: "registrar-2",
+    });
+
+    expect(result?.registrarChanged).toBe(true);
+    expect(result?.statusesChanged).toBe(false);
+  });
+
+  it("compares statuses between marked snapshots", () => {
+    const result = detectRegistrationChange(
+      { ...marked, statuses: ["ok"] },
+      { ...marked, statuses: ["ok", "clientHold"] },
+    );
+
+    expect(result?.statusesChanged).toBe(true);
+  });
+});
+
 describe("detectProviderChange", () => {
   const baseSnapshot = {
     dnsProviderId: "dns-1",
@@ -932,6 +969,7 @@ describe("registrationSnapshotFrom", () => {
       nameservers: [{ host: "ns1.example.com" }],
       transferLock: true,
       statuses: ["clientTransferProhibited"],
+      statusFormat: "epp",
     });
   });
 
@@ -946,6 +984,7 @@ describe("registrationSnapshotFrom", () => {
       nameservers: [],
       transferLock: null,
       statuses: [],
+      statusFormat: "epp",
     });
   });
 });

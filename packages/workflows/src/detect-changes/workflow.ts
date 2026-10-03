@@ -181,6 +181,11 @@ async function checkRegistration(
   const registrationChange = detectRegistrationChange(stored, currentRegistration);
 
   if (!registrationChange) {
+    if (stored.statusFormat !== currentRegistration.statusFormat) {
+      // Re-baseline statuses written by an older rdapper (see statusFormat).
+      await updateRegistrationSnapshot(trackedDomainId, { ...currentRegistration, pending: null });
+      return false;
+    }
     // No difference from the stored snapshot: clear a stale pending
     // observation if one is set (the wobble went away), or a stale
     // "unregistered" flag if the domain came back with the same data.
