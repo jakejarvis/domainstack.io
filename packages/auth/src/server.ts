@@ -26,7 +26,7 @@ import { getBaseUrl } from "@domainstack/utils/base-url";
 
 import { analytics } from "./analytics";
 import { buildOAuthProviders, validateOAuthCredentialPair } from "./providers";
-import { gitlabEmailVerified } from "./sign-up-policy";
+import { gitlabEmailVerified, rejectUnverifiedSignUp } from "./sign-up-policy";
 import { createRedisStorage } from "./storage";
 
 const logger = createLogger({ source: "auth" });
@@ -179,6 +179,9 @@ export const auth = betterAuth({
     },
   },
   user: {
+    // Without this, whoever first signs in with an address owns it (implicit
+    // linking is off), even if the provider never verified it.
+    validateUserInfo: rejectUnverifiedSignUp,
     deleteUser: {
       enabled: true,
       beforeDelete: async (user) => {
