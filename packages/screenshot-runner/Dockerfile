@@ -1,4 +1,4 @@
-FROM node:24-trixie-slim
+FROM node:24.21.0-trixie-slim
 
 # chromium-sandbox isn't pulled in by --no-install-recommends; it's the
 # setuid fallback for hosts without unprivileged user namespaces, since the
