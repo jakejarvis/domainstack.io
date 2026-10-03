@@ -26,6 +26,7 @@ import { getBaseUrl } from "@domainstack/utils/base-url";
 
 import { analytics } from "./analytics";
 import { buildOAuthProviders, validateOAuthCredentialPair } from "./providers";
+import { gitlabEmailVerified } from "./sign-up-policy";
 import { createRedisStorage } from "./storage";
 
 const logger = createLogger({ source: "auth" });
@@ -211,7 +212,16 @@ export const auth = betterAuth({
       },
     },
   },
-  socialProviders,
+  socialProviders: {
+    ...socialProviders,
+    // GitLab has no email_verified field; derive it so confirmed users can sign up.
+    ...(socialProviders.gitlab && {
+      gitlab: {
+        ...socialProviders.gitlab,
+        mapProfileToUser: (profile) => ({ emailVerified: gitlabEmailVerified(profile) }),
+      },
+    }),
+  },
   emailAndPassword: {
     enabled: isDev,
     // Dev accounts come from `pnpm db:seed`; no need to expose sign-up
