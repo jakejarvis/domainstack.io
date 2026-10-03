@@ -281,8 +281,8 @@ export function Screenshot({
   imageClassName?: string;
   aspectClassName?: string;
 }) {
-  const url = data?.url ?? null;
   const blocked = data?.blocked ?? false;
+  const url = blocked ? null : (data?.url ?? null);
 
   return (
     <div className={className}>

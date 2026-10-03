@@ -73,6 +73,36 @@ describe("screenshot API", () => {
     ]);
   });
 
+  it("hides the cached screenshot URL of a blocklisted domain", async () => {
+    mocks.getScreenshotByDomainId.mockResolvedValue({
+      url: "https://blob.example/x.webp",
+      notFound: false,
+    });
+    mocks.isDomainBlocked.mockResolvedValue(true);
+
+    const response = await POST(postRequest());
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.data).toEqual({ url: null, blocked: true });
+    expect(mocks.isDomainBlocked).toHaveBeenCalledWith("example.com");
+    expect(mocks.start).not.toHaveBeenCalled();
+  });
+
+  it("returns the cached screenshot URL for an unblocked domain", async () => {
+    mocks.getScreenshotByDomainId.mockResolvedValue({
+      url: "https://blob.example/x.webp",
+      notFound: false,
+    });
+    mocks.isDomainBlocked.mockResolvedValue(false);
+
+    const response = await POST(postRequest());
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.data).toEqual({ url: "https://blob.example/x.webp", blocked: false });
+  });
+
   it("reports a cancelled workflow as terminal", async () => {
     mocks.getRun.mockReturnValue({ status: Promise.resolve("cancelled") });
 

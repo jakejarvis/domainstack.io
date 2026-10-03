@@ -114,7 +114,7 @@ export async function POST(
           {
             status: "completed",
             cached: true,
-            data: { url: cachedScreenshot.url, blocked },
+            data: { url: blocked ? null : cachedScreenshot.url, blocked },
           },
           { headers: withNoStore(rateLimit.headers) },
         );

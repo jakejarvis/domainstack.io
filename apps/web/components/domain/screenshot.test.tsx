@@ -387,4 +387,19 @@ describe("Screenshot", () => {
       .element() as HTMLImageElement;
     expect(reloadedImage.src).toContain("domainstack-reload=1");
   });
+
+  it("shows the blocked placeholder instead of an image for a blocked domain", async () => {
+    await render(
+      <Screenshot
+        domain="example.com"
+        data={{ url: screenshotUrl, blocked: true }}
+        isLoading={false}
+      />,
+    );
+
+    await expect.element(page.getByText("Screenshot unavailable for this domain.")).toBeVisible();
+    await expect
+      .element(page.getByRole("img", { name: "Homepage preview of example.com" }))
+      .not.toBeInTheDocument();
+  });
 });
