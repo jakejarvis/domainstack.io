@@ -155,10 +155,13 @@ export function catalogRuleMatchesDiscovered(
       ctx.ns = [normalizeDnsHost(discoveredProvider.name)];
       if (discoveredProvider.domain) ctx.ns.push(normalizeDnsHost(discoveredProvider.domain));
       break;
-    case "hosting":
-      // Hosting providers use header-based detection, harder to match retrospectively
-      // Skip rule-based matching for hosting
-      return false;
+    case "hosting": {
+      // Hosting rules match response headers, which a stored row doesn't have. Discovered
+      // hosting rows come from the GeoIP owner, so match on the provider's domain instead.
+      if (!discoveredProvider.domain) return false;
+      const bare = (host: string) => normalizeDnsHost(host).replace(/^www\./, "");
+      return bare(discoveredProvider.domain) === bare(catalogProvider.domain);
+    }
     case "ca":
       // CA providers use issuer string detection
       if (discoveredProvider.name) {

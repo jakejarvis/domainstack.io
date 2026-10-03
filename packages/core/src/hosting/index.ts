@@ -190,7 +190,7 @@ export async function detectAndResolveProviders(
   // Resolve provider IDs
   const [hostingProviderId, emailProviderId, dnsProviderId] = await Promise.all([
     hostingCatalogProvider
-      ? upsertCatalogProvider(hostingCatalogProvider).then((r) => r.id)
+      ? upsertCatalogProvider(hostingCatalogProvider, hostingProviders).then((r) => r.id)
       : hostingName
         ? resolveOrCreateProviderId({
             category: "hosting",
@@ -199,7 +199,7 @@ export async function detectAndResolveProviders(
           })
         : Promise.resolve(null),
     emailCatalogProvider
-      ? upsertCatalogProvider(emailCatalogProvider).then((r) => r.id)
+      ? upsertCatalogProvider(emailCatalogProvider, emailProviders).then((r) => r.id)
       : emailName
         ? resolveOrCreateProviderId({
             category: "email",
@@ -208,7 +208,7 @@ export async function detectAndResolveProviders(
           })
         : Promise.resolve(null),
     dnsCatalogProvider
-      ? upsertCatalogProvider(dnsCatalogProvider).then((r) => r.id)
+      ? upsertCatalogProvider(dnsCatalogProvider, dnsProviders).then((r) => r.id)
       : dnsName
         ? resolveOrCreateProviderId({
             category: "dns",

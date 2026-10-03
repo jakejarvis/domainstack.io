@@ -44,11 +44,11 @@ beforeEach(async () => {
 describe("upsertCatalogProvider memo", () => {
   it("issues one select in total for repeated calls with an unchanged provider", async () => {
     // The first call inserts the row, so it is not yet memoized.
-    await upsertCatalogProvider(provider);
+    await upsertCatalogProvider(provider, [provider]);
 
     const statements = await captureStatements(async () => {
-      const a = await upsertCatalogProvider(provider);
-      const b = await upsertCatalogProvider(provider);
+      const a = await upsertCatalogProvider(provider, [provider]);
+      const b = await upsertCatalogProvider(provider, [provider]);
       expect(b.id).toBe(a.id);
     });
 
@@ -56,12 +56,12 @@ describe("upsertCatalogProvider memo", () => {
   });
 
   it("reads again after clearCatalogProviderMemo()", async () => {
-    await upsertCatalogProvider(provider);
-    await upsertCatalogProvider(provider);
+    await upsertCatalogProvider(provider, [provider]);
+    await upsertCatalogProvider(provider, [provider]);
 
     clearCatalogProviderMemo();
 
-    const statements = await captureStatements(() => upsertCatalogProvider(provider));
+    const statements = await captureStatements(() => upsertCatalogProvider(provider, [provider]));
     expect(statements.filter(isProviderSelect)).toHaveLength(1);
   });
 });

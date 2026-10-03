@@ -244,3 +244,39 @@ describe("catalogRuleMatchesDiscovered normalization", () => {
     ).toBe(true);
   });
 });
+
+describe("catalogRuleMatchesDiscovered hosting", () => {
+  const hetzner: Provider = {
+    name: "Hetzner",
+    domain: "hetzner.com",
+    category: "hosting",
+    rule: { kind: "headerPresent", name: "x-hetzner" },
+  };
+
+  it("matches a discovered row with the same domain", () => {
+    expect(
+      catalogRuleMatchesDiscovered(hetzner, { name: "Hetzner Online GmbH", domain: "hetzner.com" }),
+    ).toBe(true);
+  });
+
+  it("ignores case, a www prefix and a trailing root label", () => {
+    expect(
+      catalogRuleMatchesDiscovered(hetzner, {
+        name: "Hetzner Online GmbH",
+        domain: "WWW.Hetzner.com.",
+      }),
+    ).toBe(true);
+  });
+
+  it("does not match a different domain", () => {
+    expect(
+      catalogRuleMatchesDiscovered(hetzner, { name: "Hetzner Online GmbH", domain: "example.com" }),
+    ).toBe(false);
+  });
+
+  it("does not match a discovered row without a domain", () => {
+    expect(
+      catalogRuleMatchesDiscovered(hetzner, { name: "Hetzner Online GmbH", domain: null }),
+    ).toBe(false);
+  });
+});

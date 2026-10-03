@@ -146,7 +146,7 @@ export async function processChain(
       const key = `${catalogProvider.category}|${catalogProvider.name}|${catalogProvider.domain}`;
       let pending = upsertsByProvider.get(key);
       if (!pending) {
-        pending = upsertCatalogProvider(catalogProvider).then((ref) => ref.id);
+        pending = upsertCatalogProvider(catalogProvider, caProviders).then((ref) => ref.id);
         upsertsByProvider.set(key, pending);
       }
       return pending;

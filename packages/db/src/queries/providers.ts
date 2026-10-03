@@ -141,15 +141,20 @@ export function clearCatalogProviderMemo() {
  * This function implements lazy insertion of catalog providers:
  * 1. Look up existing provider by (category, slug)
  * 2. If found with source="discovered", upgrade to source="catalog"
- * 3. If not found, check if any discovered provider matches via rules and merge
- * 4. If still not found, insert new catalog provider
+ * 3. If not found, look for a renamed entry: the one unlisted catalog row with the same domain
+ * 4. If not found, check if any discovered provider matches via rules and merge
+ * 5. If still not found, insert new catalog provider
  *
  * Returns the provider row with database ID for FK references.
  *
  * @param provider - Provider from Edge Config catalog
+ * @param catalogEntries - The current catalog's entries for `provider.category`
  * @returns Provider row with database ID
  */
-export async function upsertCatalogProvider(provider: Provider): Promise<ProviderRow> {
+export async function upsertCatalogProvider(
+  provider: Provider,
+  catalogEntries: readonly Provider[],
+): Promise<ProviderRow> {
   const slug = slugify(provider.name);
   const lowerDomain = provider.domain?.toLowerCase() ?? null;
 
@@ -189,6 +194,45 @@ export async function upsertCatalogProvider(provider: Provider): Promise<Provide
       .returning();
 
     return updated[0] ?? row;
+  }
+
+  // Step 1b: A renamed catalog entry. Its old row has the same domain and a slug that no
+  // current entry produces. Keep that row, and its id, under the new name: a new id
+  // would read as a provider change for every domain on it.
+  if (lowerDomain) {
+    const listedSlugs = new Set(catalogEntries.map((entry) => slugify(entry.name)));
+    const sameDomain = await db
+      .select()
+      .from(providers)
+      .where(
+        and(
+          eq(providers.category, provider.category),
+          eq(providers.source, "catalog"),
+          eq(providers.domain, lowerDomain),
+        ),
+      );
+    const orphaned = sameDomain.filter((row) => !listedSlugs.has(row.slug));
+    if (orphaned.length === 1) {
+      try {
+        const renamed = await db
+          .update(providers)
+          .set({ name: provider.name, slug, updatedAt: sql`now()` })
+          .where(eq(providers.id, orphaned[0].id))
+          .returning();
+        if (renamed[0]) return renamed[0];
+      } catch (err) {
+        // Another request renamed it first.
+        if (isUniqueViolation(err)) {
+          const retried = await db
+            .select()
+            .from(providers)
+            .where(and(eq(providers.category, provider.category), eq(providers.slug, slug)))
+            .limit(1);
+          if (retried[0]) return retried[0];
+        }
+        throw err;
+      }
+    }
   }
 
   // Step 2: No direct match - check if any discovered provider matches via rules

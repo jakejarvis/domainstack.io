@@ -163,7 +163,7 @@ export async function normalizeRegistration(
 
   if (hasProviderInfo) {
     if (catalogProvider) {
-      const providerRef = await upsertCatalogProvider(catalogProvider);
+      const providerRef = await upsertCatalogProvider(catalogProvider, registrarProviders);
       registrarProviderId = providerRef.id;
     } else {
       registrarProviderId = await resolveOrCreateProviderId({
