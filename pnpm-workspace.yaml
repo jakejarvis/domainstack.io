@@ -17,14 +17,14 @@ catalog:
   '@types/node': ^24.19.0
   '@types/react': 19.3.0
   '@types/react-dom': 19.3.0
-  '@vercel/functions': ^3.9.9
+  '@vercel/functions': ^3.9.10
   ipaddr.js: ^2.5.0
   msw: ^2.15.0
   rdapper: ^0.16.4
   sonner: ^2.0.8
   superjson: ^2.2.6
   vitest: ^5.0.3
-  workflow: 5.0.0-beta.58
+  workflow: ^5.0.1
   zod: ^4.6.5
 overrides:
   # iconv-lite 0.6.3 ships a .idea/ folder, which the Claude Code sandbox refuses to write.

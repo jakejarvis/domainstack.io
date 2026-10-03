@@ -32,7 +32,7 @@
     "oxfmt": "^0.71.0",
     "oxlint": "^1.86.0",
     "oxlint-tsgolint": "^7.0.2003",
-    "turbo": "^2.11.5",
+    "turbo": "^2.11.7",
     "typescript": "^7.0.2"
   },
   "engines": {

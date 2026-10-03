@@ -19,7 +19,7 @@
     "@domainstack/types": "workspace:*",
     "@domainstack/utils": "workspace:*",
     "react-email": "^6.11.0",
-    "resend": "^6.31.0"
+    "resend": "^6.32.0"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",

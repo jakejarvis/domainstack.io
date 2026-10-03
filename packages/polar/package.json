@@ -25,8 +25,8 @@
     "@domainstack/logger": "workspace:*",
     "@domainstack/types": "workspace:*",
     "@domainstack/utils": "workspace:*",
-    "@polar-sh/better-auth": "^2.0.0",
-    "@polar-sh/sdk": "^1.0.1",
+    "@polar-sh/better-auth": "^2.0.1",
+    "@polar-sh/sdk": "^1.0.2",
     "@vercel/functions": "catalog:"
   },
   "devDependencies": {

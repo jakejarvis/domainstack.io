@@ -28,7 +28,7 @@
     "@domainstack/workflows": "workspace:*",
     "@trpc/server": "catalog:",
     "@vercel/functions": "catalog:",
-    "posthog-node": "^5.54.1",
+    "posthog-node": "^5.55.0",
     "superjson": "catalog:",
     "workflow": "catalog:",
     "zod": "catalog:"
