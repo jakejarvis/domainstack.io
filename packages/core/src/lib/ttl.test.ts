@@ -62,6 +62,18 @@ describe("TTL policy", () => {
     expect(d.getTime() - now.getTime()).toBe(60 * 60 * 1000);
   });
 
+  it.each([0, 1, 3])("dns: ttl %i is floored to 60s", (ttl) => {
+    const now = new Date("2024-01-01T00:00:00.000Z");
+    const d = ttlForDnsRecord(now, ttl);
+    expect(d.getTime() - now.getTime()).toBe(60 * 1000);
+  });
+
+  it("dns: uses the record ttl between the floor and the cap", () => {
+    const now = new Date("2024-01-01T00:00:00.000Z");
+    const d = ttlForDnsRecord(now, 300);
+    expect(d.getTime() - now.getTime()).toBe(300 * 1000);
+  });
+
   it("dns: cap at 24h", () => {
     const now = new Date("2024-01-01T00:00:00.000Z");
     const d = ttlForDnsRecord(now, 3 * 24 * 60 * 60);

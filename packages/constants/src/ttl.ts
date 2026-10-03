@@ -31,6 +31,7 @@ export const TTL_REGISTRATION_EXPIRY_THRESHOLD = ONE_WEEK; // 7 days (when to sw
 
 // DNS records
 export const TTL_DNS_DEFAULT = ONE_HOUR; // 1 hour (fallback when no TTL provided)
+export const TTL_DNS_MIN = ONE_MINUTE; // 1 minute (floor; DoH answers carry the resolver's remaining TTL)
 export const TTL_DNS_MAX = ONE_DAY; // 24 hours (cap for received TTLs)
 
 // TLS certificates

@@ -10,6 +10,7 @@ import {
   TTL_CERTIFICATES_WINDOW,
   TTL_DNS_DEFAULT,
   TTL_DNS_MAX,
+  TTL_DNS_MIN,
   TTL_FAVICON,
   TTL_HEADERS,
   TTL_HOSTING,
@@ -43,12 +44,14 @@ export function ttlForRegistration(now: Date, expirationDate?: Date | null): Dat
 
 /**
  * TTL for DNS records.
- * Uses the record's TTL if available, clamped to max.
+ * Uses the record's TTL if available, clamped to [TTL_DNS_MIN, TTL_DNS_MAX]. The floor
+ * matters because DoH resolvers report the time left in their cache, so a long-lived
+ * record can arrive with a TTL of a few seconds. Only a missing TTL gets the default.
  */
 export function ttlForDnsRecord(now: Date, ttlSeconds?: number | null): Date {
   const ttl =
-    typeof ttlSeconds === "number" && ttlSeconds > 0
-      ? Math.min(ttlSeconds, TTL_DNS_MAX)
+    typeof ttlSeconds === "number" && Number.isFinite(ttlSeconds)
+      ? Math.min(Math.max(ttlSeconds, TTL_DNS_MIN), TTL_DNS_MAX)
       : TTL_DNS_DEFAULT;
   return addSeconds(now, ttl);
 }
