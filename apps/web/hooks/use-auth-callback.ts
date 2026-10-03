@@ -5,6 +5,7 @@ import posthogClient from "posthog-js";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 
+import { EMAIL_CHANGE_PARAM } from "@/hooks/use-email-change-callback";
 import {
   getAuthErrorMessage,
   isAccountLinkingError,
@@ -37,6 +38,8 @@ export function useAuthCallback({ context = "sign_in" }: { context?: "sign_in" |
 
   useEffect(() => {
     const error = searchParams.get("error");
+    // Change-email links report their own result (useEmailChangeCallback).
+    if (searchParams.get(EMAIL_CHANGE_PARAM) === "1") return;
 
     // Skip if no error param or already processed
     if (!error || processedRef.current) {
@@ -56,9 +59,13 @@ export function useAuthCallback({ context = "sign_in" }: { context?: "sign_in" |
       errorCode: code,
     });
 
-    toast.error(isLinkError ? "Failed to link account" : "Sign in failed", {
-      description: getAuthErrorMessage(error),
-    });
+    const title =
+      error === "email_change_sign_in_required"
+        ? "Sign in to finish changing your email"
+        : isLinkError
+          ? "Failed to link account"
+          : "Sign in failed";
+    toast.error(title, { description: getAuthErrorMessage(error) });
 
     // Clear error params from the URL while preserving others
     const params = new URLSearchParams(searchParams.toString());
