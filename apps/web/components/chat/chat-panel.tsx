@@ -320,7 +320,8 @@ function ChatErrorAlert({
   onClearError,
 }: {
   error: string;
-  onRetry: () => void;
+  /** Omitted when a retry can't run, which hides the Retry button. */
+  onRetry?: () => void;
   onClearError: () => void;
 }) {
   return (
@@ -331,15 +332,17 @@ function ChatErrorAlert({
       <IconAlertCircle className="size-4 shrink-0" aria-hidden />
       <span className="min-w-0 flex-1 break-words">{error}</span>
       <div className="flex shrink-0 items-center gap-1">
-        <Button
-          variant="ghost"
-          size="xs"
-          onClick={onRetry}
-          className="text-destructive hover:!bg-destructive/20 hover:!text-destructive"
-        >
-          <IconRefresh />
-          Retry
-        </Button>
+        {onRetry ? (
+          <Button
+            variant="ghost"
+            size="xs"
+            onClick={onRetry}
+            className="text-destructive hover:!bg-destructive/20 hover:!text-destructive"
+          >
+            <IconRefresh />
+            Retry
+          </Button>
+        ) : null}
         <Button
           variant="ghost"
           size="icon-xs"
@@ -478,7 +481,11 @@ function ChatPanelBody({
         ) : null}
 
         {error ? (
-          <ChatErrorAlert error={error} onRetry={handleRetry} onClearError={clearError} />
+          <ChatErrorAlert
+            error={error}
+            onRetry={blockedReason ? undefined : handleRetry}
+            onClearError={clearError}
+          />
         ) : null}
 
         {blockedReason ? (

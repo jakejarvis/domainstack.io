@@ -313,7 +313,10 @@ function ChatShell({
       session.clear();
       onActiveChange(false);
     },
-    retry: session.retry,
+    retry: () => {
+      if (blockedReason) return;
+      session.retry();
+    },
     clearError: session.clearError,
   };
 

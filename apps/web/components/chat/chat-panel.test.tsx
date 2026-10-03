@@ -5,7 +5,7 @@ import type { UseBrowserAIResult } from "@/hooks/use-browser-ai";
 import { render } from "@/mocks/react";
 
 import { type ChatController, ChatPanel } from "./chat-panel";
-import { LOCAL_NOT_READY_MESSAGE } from "./utils";
+import { LOCAL_HAS_CLOUD_CONVERSATION_MESSAGE, LOCAL_NOT_READY_MESSAGE } from "./utils";
 
 const browserAI = {
   status: "downloadable",
@@ -29,6 +29,7 @@ describe("ChatPanel", () => {
   beforeEach(() => {
     chat.sendMessage.mockClear();
     chat.clearMessages.mockClear();
+    chat.retry.mockClear();
   });
 
   it("sends the typed message on Enter", async () => {
@@ -59,5 +60,31 @@ describe("ChatPanel", () => {
 
     expect(chat.sendMessage).not.toHaveBeenCalled();
     expect(chat.clearMessages).not.toHaveBeenCalled();
+  });
+
+  it("retries a failed response", async () => {
+    const erroredChat = { ...chat, error: "Something went wrong. Please try again." };
+    await render(<ChatPanel chat={erroredChat} browserAI={browserAI} activeMode="cloud" />);
+
+    await page.getByRole("button", { name: "Retry" }).click();
+
+    expect(chat.retry).toHaveBeenCalledOnce();
+  });
+
+  it("hides Retry on an error while local mode blocks sending", async () => {
+    const erroredChat = { ...chat, error: "Something went wrong. Please try again." };
+    await render(
+      <ChatPanel
+        chat={erroredChat}
+        browserAI={browserAI}
+        activeMode="cloud"
+        blockedReason={LOCAL_HAS_CLOUD_CONVERSATION_MESSAGE}
+      />,
+    );
+
+    await expect.element(page.getByRole("alert")).toHaveTextContent(erroredChat.error);
+    await expect.element(page.getByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+    await expect.element(page.getByRole("button", { name: "Dismiss error" })).toBeVisible();
+    expect(chat.retry).not.toHaveBeenCalled();
   });
 });
