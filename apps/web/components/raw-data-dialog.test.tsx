@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { page } from "vitest/browser";
 
-import { RawDataDialog } from "@/components/domain/registration/raw-data-dialog";
 import { render } from "@/mocks/react";
+
+import { RawDataDialog } from "./raw-data-dialog";
 
 vi.mock("@/components/icons/favicon", () => ({
   Favicon: ({ domain }: { domain: string }) => <div data-slot="favicon" data-domain={domain} />,
@@ -61,7 +62,7 @@ describe("RawDataDialog", () => {
     await expect.element(code.getByText('"ldhName"', { exact: true })).not.toBeInTheDocument();
   });
 
-  it("shows a loading line when data is not loaded yet", async () => {
+  it("shows a loading status and disables wrapping while data loads", async () => {
     await render(
       <RawDataDialog
         domain="example.com"
@@ -75,6 +76,45 @@ describe("RawDataDialog", () => {
     await page.getByRole("button", { name: "View raw RDAP data" }).click();
 
     await expect.element(page.getByRole("dialog")).toBeInTheDocument();
-    await expect.element(page.getByText("Loading…")).toBeInTheDocument();
+    await expect.element(page.getByRole("status")).toHaveTextContent("Loading…");
+    await expect.element(page.getByRole("button", { name: "Wrap lines" })).toBeDisabled();
+  });
+
+  it("renders a custom loading fallback in place of the default message", async () => {
+    await render(
+      <RawDataDialog
+        domain="example.com"
+        format="RDAP"
+        loadState="loading"
+        loadingFallback={<div role="status" aria-label="Loading raw RDAP data" />}
+        serverName="rdap.verisign.com"
+        serverUrl="https://rdap.verisign.com/com/v1/"
+      />,
+    );
+
+    await page.getByRole("button", { name: "View raw RDAP data" }).click();
+
+    await expect
+      .element(page.getByRole("status", { name: "Loading raw RDAP data" }))
+      .toBeInTheDocument();
+    await expect.element(page.getByText("Loading…")).not.toBeInTheDocument();
+  });
+
+  it("shows an unavailable message when loading fails", async () => {
+    await render(
+      <RawDataDialog
+        domain="example.com"
+        format="WHOIS"
+        loadState="error"
+        serverName="whois.verisign-grs.com"
+        serverUrl={undefined}
+      />,
+    );
+
+    await page.getByRole("button", { name: "View raw WHOIS data" }).click();
+
+    await expect
+      .element(page.getByRole("status"))
+      .toHaveTextContent("Raw data isn’t available right now.");
   });
 });

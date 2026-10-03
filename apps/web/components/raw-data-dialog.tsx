@@ -79,6 +79,8 @@ interface RawDataDialogProps {
   data?: Record<string, unknown> | string;
   /** Shown in place of the data while it is not available. */
   loadState?: "loading" | "error";
+  /** Replaces the default loading message; should fill the code pane like the loaded data. */
+  loadingFallback?: React.ReactNode;
   /** Called whenever the dialog opens or closes. */
   onOpenChange?: (open: boolean) => void;
   serverName: string;
@@ -90,6 +92,7 @@ export function RawDataDialog({
   format,
   data,
   loadState,
+  loadingFallback,
   onOpenChange,
   serverName,
   serverUrl,
@@ -158,7 +161,8 @@ export function RawDataDialog({
           </Tooltip>
         }
       />
-      <DialogContent className="gap-0 p-0 sm:max-w-2xl">
+      {/* Fixed height so the dialog keeps its size from loading through loaded data. */}
+      <DialogContent className="h-[min(100%,48rem)] gap-0 p-0 sm:max-w-2xl">
         <DialogHeader className="place-items-start space-y-1 border-b border-border bg-card/60 p-4">
           <DialogTitle className="flex items-center gap-2">
             <Favicon domain={domain} />
@@ -203,9 +207,16 @@ export function RawDataDialog({
           aria-label={`Raw ${format} data`}
         >
           {data === undefined ? (
-            <p className="p-6 text-center text-[13px] text-muted-foreground" role="status">
-              {loadState === "loading" ? "Loading…" : "Raw data isn’t available right now."}
-            </p>
+            loadState === "loading" && loadingFallback ? (
+              loadingFallback
+            ) : (
+              <p
+                className="flex h-full items-center justify-center p-6 text-center text-[13px] text-muted-foreground"
+                role="status"
+              >
+                {loadState === "loading" ? "Loading…" : "Raw data isn’t available right now."}
+              </p>
+            )
           ) : (
             <div className="p-3">
               <pre className="font-mono text-xs leading-5 text-foreground/90">
@@ -239,19 +250,16 @@ export function RawDataDialog({
           )}
         </div>
         <div className="flex w-full items-center justify-between gap-2 border-t border-border bg-card/60 p-3">
-          {data === undefined ? (
-            <span />
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2 !px-3 text-[13px]"
-              onClick={() => setWrapLines((prev) => !prev)}
-            >
-              <Checkbox checked={wrapLines} className="size-3.5" />
-              Wrap lines
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 !px-3 text-[13px]"
+            disabled={data === undefined}
+            onClick={() => setWrapLines((prev) => !prev)}
+          >
+            <Checkbox checked={wrapLines} className="size-3.5" />
+            Wrap lines
+          </Button>
           <div className="space-x-2">
             {data === undefined ? (
               <Button variant="outline" size="sm" className="gap-2 !px-3 text-[13px]" disabled>

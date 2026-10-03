@@ -3,7 +3,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
-import { RawDataDialog } from "@/components/domain/registration/raw-data-dialog";
+import { RegistrationRawDataSkeleton } from "@/components/domain/registration/registration-raw-data-skeleton";
+import { RawDataDialog } from "@/components/raw-data-dialog";
 import { useTRPC } from "@/lib/trpc/client";
 
 interface RegistrationRawDataDialogProps {
@@ -41,6 +42,7 @@ export function RegistrationRawDataDialog({
             ? "error"
             : undefined
       }
+      loadingFallback={<RegistrationRawDataSkeleton format={format} />}
       onOpenChange={(open) => {
         if (open) setRequested(true);
       }}
