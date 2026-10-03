@@ -26,6 +26,7 @@ interface SeoRow {
   previewImageUploadedUrl: string | null;
   previewImageStoredAt: Date | null;
   robotsSitemaps: string[];
+  errors: Record<string, string>;
 }
 
 vi.mock("@domainstack/safe-fetch", async (importOriginal) => ({
@@ -139,6 +140,39 @@ describe("fetchSeo", () => {
       await fetchSeo(DOMAIN);
 
       expect(persisted().robotsSitemaps).toEqual(["https://www.example.com/sitemap.xml"]);
+    });
+
+    it.each(["", "application/octet-stream"])(
+      "parses robots.txt served with content-type %j",
+      async (contentType) => {
+        respondWith({
+          robots: {
+            ...robotsResponse("Sitemap: https://example.com/sitemap.xml"),
+            contentType,
+          },
+          image: async () => imageResponse(),
+        });
+
+        await fetchSeo(DOMAIN);
+
+        expect(persisted().robotsSitemaps).toEqual(["https://example.com/sitemap.xml"]);
+        expect(persisted().errors.robots).toBeUndefined();
+      },
+    );
+
+    it("discards robots.txt served as a clearly non-text type", async () => {
+      respondWith({
+        robots: {
+          ...robotsResponse("Sitemap: https://example.com/sitemap.xml"),
+          contentType: "image/png",
+        },
+        image: async () => imageResponse(),
+      });
+
+      await fetchSeo(DOMAIN);
+
+      expect(persisted().robotsSitemaps).toEqual([]);
+      expect(persisted().errors.robots).toBe("Unexpected robots content-type: image/png");
     });
   });
 

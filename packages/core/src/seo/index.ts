@@ -263,8 +263,9 @@ async function fetchRobots(domain: string): Promise<RobotsFetchData> {
     });
 
     if (robotsResult.status >= 200 && robotsResult.status < 300) {
+      // Crawlers parse robots.txt whatever its Content-Type; reject only types that can't be text.
       const ct = robotsResult.contentType ?? "";
-      if (/^text\/(plain|html|xml)?($|;|,)/i.test(ct)) {
+      if (!/^(image|audio|video|font)\/|^application\/(json|pdf|zip|gzip)\b/i.test(ct)) {
         const txt = robotsResult.buffer.toString("utf-8");
         const robots = parseRobotsTxt(txt, { baseUrl: robotsResult.finalUrl });
         return { robots };
