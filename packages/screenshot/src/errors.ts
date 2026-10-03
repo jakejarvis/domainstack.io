@@ -12,6 +12,7 @@ export type ScreenshotErrorCode =
   | "invalid_url"
   | "not_configured"
   | "output_too_large"
+  | "resolver_unavailable"
   | "sandbox_control_plane"
   | "target_blocked"
   | "timeout"

@@ -238,20 +238,33 @@ describe("captureScreenshot", () => {
       expect(mocks.createSandbox).not.toHaveBeenCalled();
     });
 
-    // resolvePublicHost reports its own timeout and the resolver's temporary
-    // failures under the same code as a genuine NXDOMAIN.
-    it.each([
-      ["the resolver timeout", () => dnsError("DNS lookup timed out after 8000ms")],
-      ["EAI_AGAIN", () => dnsError("getaddrinfo EAI_AGAIN example.com", "EAI_AGAIN")],
-      ["ESERVFAIL", () => dnsError("queryA ESERVFAIL example.com", "ESERVFAIL")],
-      ["an unexpected throw", () => new Error("resolver exploded")],
-    ])("keeps a transient DNS failure retryable (%s)", async (_label, makeError) => {
-      mocks.resolvePublicHost.mockRejectedValue(makeError());
+    // SERVFAIL comes from the target's nameservers, so it is the site's failure.
+    it("retries then caches a SERVFAIL as a transient target failure", async () => {
+      mocks.resolvePublicHost.mockRejectedValue(
+        dnsError("queryA ESERVFAIL example.com", "ESERVFAIL"),
+      );
 
       const error = await captureError();
 
       expect(error).toMatchObject({ code: "upstream_temporary" });
       expect(classifyScreenshotError(error)).toBe("transient_target");
+      expect(mocks.createSandbox).not.toHaveBeenCalled();
+    });
+
+    // resolvePublicHost reports its own timeout and the resolver's temporary
+    // failures under the same code as a genuine NXDOMAIN. They are our side
+    // breaking: retried, never cached.
+    it.each([
+      ["the resolver timeout", () => dnsError("DNS lookup timed out after 8000ms")],
+      ["EAI_AGAIN", () => dnsError("getaddrinfo EAI_AGAIN example.com", "EAI_AGAIN")],
+      ["an unexpected throw", () => new Error("resolver exploded")],
+    ])("treats a resolver failure as infrastructure (%s)", async (_label, makeError) => {
+      mocks.resolvePublicHost.mockRejectedValue(makeError());
+
+      const error = await captureError();
+
+      expect(error).toMatchObject({ code: "resolver_unavailable" });
+      expect(classifyScreenshotError(error)).toBe("infrastructure");
       expect(mocks.createSandbox).not.toHaveBeenCalled();
     });
   });
@@ -655,6 +668,7 @@ describe("classifyScreenshotError", () => {
     command_failed: "infrastructure",
     empty_output: "infrastructure",
     invalid_output: "infrastructure",
+    resolver_unavailable: "infrastructure",
     sandbox_control_plane: "infrastructure",
     configuration_error: "configuration",
     invalid_arguments: "configuration",

@@ -67,9 +67,21 @@ async function validatePublicTarget(target: URL): Promise<void> {
         });
       }
     }
-    // A resolver timeout or temporary failure says nothing about the target;
-    // caching it as missing would blank the screenshot for a whole TTL.
-    throw new ScreenshotError("upstream_temporary", "Screenshot target DNS validation failed", {
+    // SERVFAIL comes from the target's nameservers: a property of the site, retried and
+    // then cached like other transient target failures.
+    const causeCode =
+      error instanceof SafeFetchError
+        ? (error.cause as { code?: unknown } | undefined)?.code
+        : undefined;
+    if (causeCode === "ESERVFAIL") {
+      throw new ScreenshotError("upstream_temporary", "Screenshot target DNS failed", {
+        cause: error,
+      });
+    }
+    // Our resolver's own timeout or temporary failure says nothing about the target;
+    // caching it as missing would blank the screenshot for a whole TTL. No sandbox was
+    // spent, so retrying is cheap.
+    throw new ScreenshotError("resolver_unavailable", "Screenshot target DNS validation failed", {
       cause: error,
     });
   }
