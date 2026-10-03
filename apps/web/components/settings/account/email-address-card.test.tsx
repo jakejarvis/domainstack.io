@@ -49,7 +49,7 @@ describe("EmailAddressCard", () => {
     if (value) await input.fill(value);
     await page.getByRole("button", { name: "Send confirmation link" }).click();
 
-    await expect.element(page.getByText(message)).toBeVisible();
+    await expect.element(page.getByRole("alert")).toHaveTextContent(message);
     expect(auth.changeEmail).not.toHaveBeenCalled();
   });
 
