@@ -132,7 +132,7 @@ export async function safeFetch(opts: SafeFetchOptions): Promise<SafeFetchResult
           if (!normalizedAllowedHosts.includes(nextHost)) {
             if (returnOnDisallowedRedirect) {
               // Return the redirect response as-is
-              return await buildResult(response, hopUrl, maxBytes, truncateOnLimit);
+              return await buildResult(response, hopUrl, method, maxBytes, truncateOnLimit);
             }
             // Otherwise continue to next iteration which will throw
           }
@@ -157,7 +157,7 @@ export async function safeFetch(opts: SafeFetchOptions): Promise<SafeFetchResult
         continue;
       }
 
-      return await buildResult(response, hopUrl, maxBytes, truncateOnLimit);
+      return await buildResult(response, hopUrl, method, maxBytes, truncateOnLimit);
     } finally {
       void dispatcher.close().catch(() => {
         // Agent teardown failures are not actionable
@@ -250,12 +250,15 @@ function isRedirect(response: Response): boolean {
 async function buildResult(
   response: Response,
   url: URL,
+  method: string,
   maxBytes: number,
   truncateOnLimit: boolean,
 ): Promise<SafeFetchResult> {
   // Check Content-Length before downloading
   const declaredLength = response.headers.get("content-length");
-  if (declaredLength && !truncateOnLimit) {
+  // HEAD, 204 and 304 responses carry no body, whatever Content-Length says.
+  const hasBody = method !== "HEAD" && response.status !== 204 && response.status !== 304;
+  if (hasBody && declaredLength && !truncateOnLimit) {
     const declared = Number(declaredLength);
     if (Number.isFinite(declared) && declared > maxBytes) {
       throw new SafeFetchError(

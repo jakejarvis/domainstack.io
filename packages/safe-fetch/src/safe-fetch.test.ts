@@ -674,6 +674,26 @@ describe("safeFetch", () => {
       ).rejects.toMatchObject({ code: "size_exceeded" });
     });
 
+    it("ignores Content-Length on HEAD responses", async () => {
+      const mockFetch = createMockFetch(
+        new Response(null, {
+          status: 200,
+          headers: { "Content-Length": "52428800" },
+        }),
+      );
+
+      const result = await safeFetch({
+        url: "https://example.com",
+        method: "HEAD",
+        userAgent: "TestBot/1.0",
+        fetch: mockFetch,
+        logger: silentLogger,
+      });
+
+      expect(result.status).toBe(200);
+      expect(result.headers["content-length"]).toBe("52428800");
+    });
+
     it("truncates response when truncateOnLimit is true", async () => {
       const mockFetch = createMockFetch(mockResponse("Hello, World!", { status: 200 }));
 
