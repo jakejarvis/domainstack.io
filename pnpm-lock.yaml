@@ -61,8 +61,8 @@ catalogs:
       specifier: ^2.15.0
       version: 2.15.0
     rdapper:
-      specifier: ^0.16.4
-      version: 0.16.4
+      specifier: ^0.17.0
+      version: 0.17.0
     sonner:
       specifier: ^2.0.8
       version: 2.0.8
@@ -560,7 +560,7 @@ importers:
         version: 11.5.3
       rdapper:
         specifier: 'catalog:'
-        version: 0.16.4
+        version: 0.17.0
     devDependencies:
       '@domainstack/typescript-config':
         specifier: workspace:*
@@ -914,7 +914,7 @@ importers:
         version: link:../types
       rdapper:
         specifier: 'catalog:'
-        version: 0.16.4
+        version: 0.17.0
     devDependencies:
       '@domainstack/typescript-config':
         specifier: workspace:*
@@ -7342,8 +7342,8 @@ packages:
   rc9@3.1.0:
     resolution: {integrity: sha512-ufjkNVzbRHKcCOmTahZkmVsyc3W+MSk3jY03m+a7tGHkIsdVMG9l10/3HvFbWkkKzY5VFp3pkRsIo/UYgmFL7Q==}
 
-  rdapper@0.16.4:
-    resolution: {integrity: sha512-07me6va4Q85Ei6r+Wbu4h29osq8+rT0Md6sNp4/U7l/sb0DYd0z87p6lS5dQY+SS3pPe3nry7WU5+hBEf6QGqA==}
+  rdapper@0.17.0:
+    resolution: {integrity: sha512-b8YNKxmTwM+l0JwMrHhwbHaC2TwzLr1lUb/0y65CfAfVqGa7g8S0olqb9DQ2c2Zq3EwJf0sl91nVWabhIOQgFQ==}
     engines: {node: '>=20'}
     hasBin: true
 
@@ -15277,7 +15277,7 @@ snapshots:
       defu: 6.1.7
       destr: 2.0.5
 
-  rdapper@0.16.4:
+  rdapper@0.17.0:
     dependencies:
       tldts: 7.4.16
 
