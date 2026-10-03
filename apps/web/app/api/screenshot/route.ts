@@ -31,6 +31,20 @@ const NO_STORE_HEADERS = {
   "Cache-Control": "no-cache, no-store",
 } as const;
 
+// start() can return before the run is readable (the SDK accepts it via the queue when
+// the run_created write fails), so a 404 right after start means "not visible yet".
+const RUN_VISIBILITY_GRACE_MS = 30_000;
+const CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+
+/** Creation time encoded in a `wrun_<ULID>` id, or null for any other shape. */
+function runCreatedAtMs(runId: string): number | null {
+  const match = /^wrun_([0-9A-HJKMNP-TV-Z]{26})$/i.exec(runId);
+  if (!match) return null;
+  let ms = 0;
+  for (const ch of match[1].slice(0, 10).toUpperCase()) ms = ms * 32 + CROCKFORD.indexOf(ch);
+  return ms;
+}
+
 function withNoStore(headers?: HeadersInit): Headers {
   const result = new Headers(headers);
   result.set("Cache-Control", NO_STORE_HEADERS["Cache-Control"]);
@@ -240,6 +254,13 @@ export async function GET(
   } catch (err) {
     if (WorkflowRunNotFoundError.is(err)) {
       logger.debug({ err, runId }, "workflow run not visible yet");
+      const createdAt = runCreatedAtMs(runId);
+      if (createdAt !== null && Date.now() - createdAt < RUN_VISIBILITY_GRACE_MS) {
+        return NextResponse.json(
+          { status: "running" },
+          { headers: withNoStore(rateLimit.headers) },
+        );
+      }
       return NextResponse.json(
         { error: "Run not found" },
         { status: 404, headers: NO_STORE_HEADERS },

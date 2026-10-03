@@ -33,6 +33,16 @@ vi.mock("@domainstack/db/queries/screenshots", () => ({
 
 import { GET, POST } from "./route";
 
+const CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+function ulidAt(ms: number): string {
+  let time = "";
+  for (let i = 0; i < 10; i++) {
+    time = CROCKFORD[ms % 32] + time;
+    ms = Math.floor(ms / 32);
+  }
+  return `${time}${"0".repeat(16)}`;
+}
+
 function postRequest() {
   return new NextRequest("https://domainstack.io/api/screenshot", {
     method: "POST",
@@ -116,6 +126,31 @@ describe("screenshot API", () => {
       error: "workflow_cancelled",
     });
     expect(response.headers.get("Cache-Control")).toBe("no-cache, no-store");
+  });
+
+  it("reports a not-yet-visible young run as running", async () => {
+    mocks.getRun.mockReturnValueOnce({ status: Promise.reject(mocks.runNotFound) });
+
+    const response = await GET(
+      new NextRequest(`https://domainstack.io/api/screenshot?runId=wrun_${ulidAt(Date.now())}`),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ status: "running" });
+    expect(response.headers.get("Cache-Control")).toBe("no-cache, no-store");
+  });
+
+  it("reports an old missing run as 404", async () => {
+    mocks.getRun.mockReturnValueOnce({ status: Promise.reject(mocks.runNotFound) });
+
+    const response = await GET(
+      new NextRequest(
+        `https://domainstack.io/api/screenshot?runId=wrun_${ulidAt(Date.now() - 120_000)}`,
+      ),
+    );
+
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toEqual({ error: "Run not found" });
   });
 
   it("distinguishes a not-yet-visible run from a status backend failure", async () => {
