@@ -29,6 +29,7 @@ import {
 import { sendEmail } from "@domainstack/email";
 import VerificationInstructionsEmail from "@domainstack/email/templates/verification-instructions";
 import { createLogger } from "@domainstack/logger";
+import { getRedis } from "@domainstack/redis";
 import { enforceRateLimit } from "@domainstack/redis/enforce";
 import { getBaseUrl } from "@domainstack/utils/base-url";
 import { buildVerificationInstructions } from "@domainstack/utils/verification";
@@ -48,6 +49,30 @@ const logger = createLogger({ source: "routers/tracking" });
  * per-user daily limit doesn't stop many accounts mailing the same person.
  */
 const VERIFICATION_INSTRUCTIONS_PER_RECIPIENT = { requests: 3, window: "1 d" } as const;
+
+// The auto-verify schedule (packages/workflows/src/auto-verify/workflow.ts) spans about
+// 30 days; one extra day of slack.
+const AUTO_VERIFY_WINDOW_MS = 31 * 24 * 60 * 60 * 1000;
+const AUTO_VERIFY_RESTART_TTL_SECONDS = 31 * 24 * 60 * 60;
+
+/**
+ * Claims the one auto-verify restart allowed per domain per schedule window, so repeated
+ * Check Now clicks don't start a run each. Fails open, like the monitor lock: without
+ * Redis, a duplicate run is harmless (each checks state first).
+ */
+async function claimAutoVerifyRestart(trackedDomainId: string): Promise<boolean> {
+  const redis = getRedis();
+  if (!redis) return true;
+  try {
+    const result = await redis.set(`auto-verify:restart:${trackedDomainId}`, "1", {
+      nx: true,
+      ex: AUTO_VERIFY_RESTART_TTL_SECONDS,
+    });
+    return result === "OK";
+  } catch {
+    return true;
+  }
+}
 
 export const trackingRouter = createTRPCRouter({
   /**
@@ -368,6 +393,22 @@ export const trackingRouter = createTRPCRouter({
       }
 
       analytics.track("domain_verification_failed", { reason: "not_verified" }, ctx.user.id);
+
+      // The add-time auto-verify run is over once the domain was verified (then revoked) or
+      // its ~30-day schedule ran out. The failure screen promises a daily check, so start one.
+      const addTimeRunOver =
+        tracked.verifiedAt !== null ||
+        Date.now() - tracked.createdAt.getTime() > AUTO_VERIFY_WINDOW_MS;
+      if (
+        !tracked.verified &&
+        !tracked.archivedAt &&
+        addTimeRunOver &&
+        (await claimAutoVerifyRestart(trackedDomainId))
+      ) {
+        void start(autoVerifyWorkflow, [{ trackedDomainId }]).catch((err: unknown) => {
+          logger.error({ err, trackedDomainId }, "failed to start auto-verify workflow");
+        });
+      }
 
       return {
         verified: false,

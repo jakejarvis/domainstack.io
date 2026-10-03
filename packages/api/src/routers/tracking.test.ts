@@ -61,6 +61,7 @@ const {
 const { sendEmail } = await import("@domainstack/email");
 const { default: VerificationInstructionsEmail } =
   await import("@domainstack/email/templates/verification-instructions");
+const { getRedis } = await import("@domainstack/redis");
 const { getRateLimiter } = await import("@domainstack/redis/ratelimit");
 const { start } = await import("workflow/api");
 const { createCaller } = await import("../router");
@@ -1336,6 +1337,102 @@ describe("tracking router", () => {
 
       expect(result.verified).toBe(false);
       expect(result.method).toBeNull();
+      expect(start).not.toHaveBeenCalled();
+    });
+
+    it("restarts auto-verify when a revoked domain fails a manual check", async () => {
+      const caller = createAuthenticatedCaller();
+
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "test-token",
+        verified: false,
+        verificationStatus: "unverified",
+        verifiedAt: new Date("2026-01-01T00:00:00Z"),
+      });
+
+      verificationMock.verifyDomain.mockResolvedValue({ verified: false, method: null });
+
+      await caller.tracking.verifyDomain({ trackedDomainId: TEST_TRACKED_ID });
+
+      expect(start).toHaveBeenCalledTimes(1);
+      expect(start).toHaveBeenCalledWith(expect.any(Function), [
+        { trackedDomainId: TEST_TRACKED_ID },
+      ]);
+    });
+
+    it("restarts auto-verify for a row pending longer than the schedule", async () => {
+      const caller = createAuthenticatedCaller();
+
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "test-token",
+        verified: false,
+        createdAt: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000),
+      });
+
+      verificationMock.verifyDomain.mockResolvedValue({ verified: false, method: null });
+
+      await caller.tracking.verifyDomain({ trackedDomainId: TEST_TRACKED_ID });
+
+      expect(start).toHaveBeenCalledTimes(1);
+      expect(start).toHaveBeenCalledWith(expect.any(Function), [
+        { trackedDomainId: TEST_TRACKED_ID },
+      ]);
+    });
+
+    it("restarts auto-verify at most once per window", async () => {
+      const caller = createAuthenticatedCaller();
+
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "test-token",
+        verified: false,
+        verificationStatus: "unverified",
+        verifiedAt: new Date("2026-01-01T00:00:00Z"),
+      });
+
+      verificationMock.verifyDomain.mockResolvedValue({ verified: false, method: null });
+      vi.mocked(getRedis).mockReturnValue({
+        set: vi
+          .fn<() => Promise<string | null>>()
+          .mockResolvedValueOnce("OK")
+          .mockResolvedValueOnce(null),
+      } as never);
+
+      try {
+        await caller.tracking.verifyDomain({ trackedDomainId: TEST_TRACKED_ID });
+        await caller.tracking.verifyDomain({ trackedDomainId: TEST_TRACKED_ID });
+      } finally {
+        vi.mocked(getRedis).mockReturnValue(undefined);
+      }
+
+      expect(start).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not restart auto-verify for an archived row", async () => {
+      const caller = createAuthenticatedCaller();
+
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "test-token",
+        verified: false,
+        createdAt: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000),
+        archivedAt: new Date(),
+      });
+
+      verificationMock.verifyDomain.mockResolvedValue({ verified: false, method: null });
+
+      await caller.tracking.verifyDomain({ trackedDomainId: TEST_TRACKED_ID });
+
       expect(start).not.toHaveBeenCalled();
     });
 

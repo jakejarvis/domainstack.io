@@ -46,6 +46,8 @@ const baseRow = {
   verified: false,
   verificationStatus: "unverified" as const,
   archivedAt: null,
+  createdAt: new Date("2026-01-01T00:00:00Z"),
+  verifiedAt: null,
 };
 
 const NOT_VERIFIED: VerificationResult = { verified: false, method: null };
