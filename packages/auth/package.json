@@ -9,6 +9,7 @@
     "./errors": "./src/errors.ts",
     "./providers": "./src/providers.ts",
     "./sign-up-policy": "./src/sign-up-policy.ts",
+    "./email-change": "./src/email-change.ts",
     "./types": "./src/types.ts"
   },
   "scripts": {
