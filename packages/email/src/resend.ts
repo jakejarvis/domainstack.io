@@ -146,7 +146,12 @@ export async function replaceContact(
   } catch (err) {
     // Roll back to the old contact alone (it holds the current opt-out state),
     // rather than leave two contacts that would both receive sends.
-    await resend.contacts.remove({ email: newEmail });
+    const rolledBack = await resend.contacts.remove({ email: newEmail });
+    if (rolledBack.error) {
+      // Can't delete it: at least stop it receiving sends. The old contact
+      // still holds the real subscription state.
+      await resend.contacts.update({ email: newEmail, unsubscribed: true });
+    }
     throw err;
   }
 }
