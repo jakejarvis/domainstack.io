@@ -209,7 +209,7 @@ function DashboardGridCardHeader({
           />
         </div>
         <div className="min-w-0 flex-1">
-          <ScreenshotPopover domain={domain.domainName} domainId={domain.domainId}>
+          <ScreenshotPopover domain={domain.domainName} domainId={domain.domainId} delay={500}>
             <Link
               href={`/${encodeURIComponent(domain.domainName)}`}
               className="block min-w-0 hover:underline"

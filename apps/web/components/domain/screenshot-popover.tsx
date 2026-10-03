@@ -14,10 +14,12 @@ export function ScreenshotPopover({
   alignOffset,
   side,
   sideOffset,
+  delay,
 }: {
   domain: string;
   domainId?: string;
   children: React.ReactElement;
+  delay?: number;
 } & Pick<
   React.ComponentProps<typeof PopoverContent>,
   "align" | "alignOffset" | "side" | "sideOffset"
@@ -54,8 +56,8 @@ export function ScreenshotPopover({
       <PopoverTrigger
         nativeButton={false}
         openOnHover
-        delay={400}
-        closeDelay={300}
+        delay={delay}
+        closeDelay={250}
         onClick={handleInteraction}
         render={children}
       />
