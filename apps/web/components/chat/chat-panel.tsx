@@ -22,7 +22,7 @@ import {
   hasVisibleAssistantParts,
 } from "@/lib/chat/message-parts";
 import { preferredScrollBehavior } from "@/lib/scroll-behavior";
-import { usePreferencesStore } from "@/lib/stores/preferences-store";
+import { type ChatMode, usePreferencesStore } from "@/lib/stores/preferences-store";
 import { MAX_MESSAGE_LENGTH } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
 import {
@@ -371,6 +371,8 @@ interface ChatPanelProps {
   domain?: string;
   homeSuggestions?: string[];
   browserAI: UseBrowserAIResult;
+  /** The session actually in use, which "auto" can resolve to either mode. */
+  activeMode: ChatMode;
   /** Why sending is blocked (local mode without a usable on-device model); null when it isn't. */
   blockedReason?: string | null;
   conversationClassName?: string;
@@ -390,6 +392,7 @@ function ChatPanelBody({
   domain,
   homeSuggestions = EMPTY_SUGGESTIONS,
   browserAI,
+  activeMode,
   blockedReason,
   conversationClassName,
   inputClassName,
@@ -494,7 +497,7 @@ function ChatPanelBody({
           <PromptInputFooter className="pr-1.5 pb-1.5 pl-3">
             <PromptInputCharacterCount current={inputLength} max={MAX_MESSAGE_LENGTH} />
             <div className="flex items-center gap-2">
-              <ChatModeSelector browserAI={browserAI} disabled={isBusy} />
+              <ChatModeSelector browserAI={browserAI} activeMode={activeMode} disabled={isBusy} />
               <PromptInputSubmit
                 disabled={inputLength === 0 || Boolean(blockedReason)}
                 status={error ? "error" : status}

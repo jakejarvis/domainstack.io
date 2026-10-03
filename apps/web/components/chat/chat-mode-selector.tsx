@@ -9,7 +9,11 @@ import {
 } from "@tabler/icons-react";
 
 import { type BrowserAIStatus, type UseBrowserAIResult } from "@/hooks/use-browser-ai";
-import { type AiModePreference, usePreferencesStore } from "@/lib/stores/preferences-store";
+import {
+  type AiModePreference,
+  type ChatMode,
+  usePreferencesStore,
+} from "@/lib/stores/preferences-store";
 import { Button } from "@domainstack/ui/button";
 import {
   ResponsiveTooltip,
@@ -31,6 +35,8 @@ interface ChatModeSelectorProps {
   className?: string;
   disabled?: boolean;
   browserAI: UseBrowserAIResult;
+  /** The session actually in use; "auto" shows whichever it resolved to. */
+  activeMode: ChatMode;
 }
 
 interface ChatModeOption {
@@ -39,7 +45,7 @@ interface ChatModeOption {
   triggerLabel: string;
   icon: TablerIcon;
   getDescription: (browserAI: UseBrowserAIResult) => string;
-  getTriggerIcon: (browserAI: UseBrowserAIResult) => TablerIcon;
+  getTriggerIcon: (activeMode: ChatMode) => TablerIcon;
   isDisabled: (browserAI: UseBrowserAIResult) => boolean;
 }
 
@@ -91,14 +97,19 @@ const MODE_OPTIONS = {
     triggerLabel: "Auto",
     icon: IconArrowFork,
     getDescription: () => "Use local when available",
-    getTriggerIcon: (browserAI) => (browserAI.status === "ready" ? IconDeviceLaptop : IconCloud),
+    getTriggerIcon: (activeMode) => (activeMode === "local" ? IconDeviceLaptop : IconCloud),
     isDisabled: (browserAI) => !canUseLocal(browserAI.status),
   },
 } satisfies Record<AiModePreference, ChatModeOption>;
 
 const MODE_OPTION_LIST = Object.values(MODE_OPTIONS);
 
-export function ChatModeSelector({ className, disabled, browserAI }: ChatModeSelectorProps) {
+export function ChatModeSelector({
+  className,
+  disabled,
+  browserAI,
+  activeMode,
+}: ChatModeSelectorProps) {
   const aiMode = usePreferencesStore((s) => s.aiMode);
   const setAiMode = usePreferencesStore((s) => s.setAiMode);
   const selectedMode = MODE_OPTIONS[aiMode];
@@ -131,7 +142,7 @@ export function ChatModeSelector({ className, disabled, browserAI }: ChatModeSel
       >
         <SelectValue className="gap-1.5">
           {(option: ChatModeOption) => {
-            const TriggerIcon = option.getTriggerIcon(browserAI);
+            const TriggerIcon = option.getTriggerIcon(activeMode);
             return (
               <>
                 <TriggerIcon className="size-4 text-foreground/70 group-hover:text-foreground" />

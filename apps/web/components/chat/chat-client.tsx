@@ -99,6 +99,7 @@ export function ChatClient({
       domain={domain}
       suggestions={suggestions}
       browserAI={browserAI}
+      mode={mode}
       blockedReason={blockedReason}
       open={open}
       onOpenChange={onOpenChange}
@@ -274,6 +275,7 @@ function ChatShell({
   domain,
   suggestions,
   browserAI,
+  mode,
   blockedReason,
   open,
   onOpenChange,
@@ -285,6 +287,7 @@ function ChatShell({
   domain?: string;
   suggestions: string[];
   browserAI: UseBrowserAIResult;
+  mode: ChatMode;
   blockedReason: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -347,6 +350,7 @@ function ChatShell({
           domain={domain}
           homeSuggestions={suggestions}
           browserAI={browserAI}
+          activeMode={mode}
           blockedReason={blockedReason}
           conversationClassName="px-4 md:px-0"
           inputClassName="p-4 md:p-3"

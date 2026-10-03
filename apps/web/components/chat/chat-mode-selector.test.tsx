@@ -36,7 +36,7 @@ describe("ChatModeSelector", () => {
   });
 
   it("renders the current mode and selects a mode from the listbox", async () => {
-    await render(<ChatModeSelector browserAI={browserAI} />);
+    await render(<ChatModeSelector browserAI={browserAI} activeMode="cloud" />);
 
     const trigger = page.getByRole("combobox", { name: "AI Provider" });
     await expect.element(trigger.getByText("Cloud", { exact: true })).toBeVisible();
@@ -53,7 +53,9 @@ describe("ChatModeSelector", () => {
   });
 
   it("starts the local model download without selecting the mode", async () => {
-    await render(<ChatModeSelector browserAI={{ ...browserAI, status: "downloadable" }} />);
+    await render(
+      <ChatModeSelector browserAI={{ ...browserAI, status: "downloadable" }} activeMode="cloud" />,
+    );
 
     await page.getByRole("combobox", { name: "AI Provider" }).click();
     await page.getByRole("button", { name: "Download on-device model" }).click();
@@ -64,11 +66,33 @@ describe("ChatModeSelector", () => {
   });
 
   it("shows availability help when the disabled local option is hovered", async () => {
-    await render(<ChatModeSelector browserAI={{ ...browserAI, status: "unavailable" }} />);
+    await render(
+      <ChatModeSelector browserAI={{ ...browserAI, status: "unavailable" }} activeMode="cloud" />,
+    );
 
     await page.getByRole("combobox", { name: "AI Provider" }).click();
     await page.getByRole("option", { name: /Local/ }).hover();
 
     await expect.element(page.getByText(/Requires latest/)).toBeVisible();
+  });
+
+  it("shows the cloud icon for auto when the session is on cloud, even with a ready model", async () => {
+    preferences.aiMode = "auto";
+    await render(<ChatModeSelector browserAI={browserAI} activeMode="cloud" />);
+
+    const trigger = page.getByRole("combobox", { name: "AI Provider" });
+    await expect.element(trigger.getByText("Auto", { exact: true })).toBeVisible();
+    expect(trigger.element().querySelector(".tabler-icon-cloud")).not.toBeNull();
+    expect(trigger.element().querySelector(".tabler-icon-device-laptop")).toBeNull();
+  });
+
+  it("shows the laptop icon for auto when the session is on the device", async () => {
+    preferences.aiMode = "auto";
+    await render(<ChatModeSelector browserAI={browserAI} activeMode="local" />);
+
+    const trigger = page.getByRole("combobox", { name: "AI Provider" });
+    await expect.element(trigger.getByText("Auto", { exact: true })).toBeVisible();
+    expect(trigger.element().querySelector(".tabler-icon-device-laptop")).not.toBeNull();
+    expect(trigger.element().querySelector(".tabler-icon-cloud")).toBeNull();
   });
 });

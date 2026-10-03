@@ -32,7 +32,7 @@ describe("ChatPanel", () => {
   });
 
   it("sends the typed message on Enter", async () => {
-    await render(<ChatPanel chat={chat} browserAI={browserAI} />);
+    await render(<ChatPanel chat={chat} browserAI={browserAI} activeMode="cloud" />);
 
     await page.getByRole("textbox", { name: "Ask about a domain" }).fill("example.com");
     await userEvent.keyboard("{Enter}");
@@ -45,6 +45,7 @@ describe("ChatPanel", () => {
       <ChatPanel
         chat={chat}
         browserAI={browserAI}
+        activeMode="cloud"
         blockedReason={LOCAL_NOT_READY_MESSAGE}
         homeSuggestions={["Is example.com available?"]}
       />,
