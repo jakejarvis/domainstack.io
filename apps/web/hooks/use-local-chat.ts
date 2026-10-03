@@ -143,14 +143,39 @@ export function useLocalChat({
           timeout: { totalMs: CHAT_RUN_TIMEOUT_MS, chunkMs: CHAT_STALL_TIMEOUT_MS },
         });
 
-        for await (const uiMessage of readUIMessageStream({
-          stream: result.toUIMessageStream(),
-        })) {
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === assistantMessageId ? { ...msg, parts: uiMessage.parts } : msg,
-            ),
-          );
+        // streamText reports model failures as stream parts and its own timeout as an
+        // "abort" part; neither throws. Surface both so the catch below shows them.
+        let streamError: unknown;
+        let endedAborted = false;
+        const uiStream = result.toUIMessageStream({
+          onError: (streamErr) => {
+            streamError = streamErr;
+            return streamErr instanceof Error ? streamErr.message : "Local chat failed";
+          },
+          onEnd: ({ isAborted }) => {
+            endedAborted = isAborted;
+          },
+        });
+
+        try {
+          for await (const uiMessage of readUIMessageStream({
+            stream: uiStream,
+            terminateOnError: true,
+          })) {
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === assistantMessageId ? { ...msg, parts: uiMessage.parts } : msg,
+              ),
+            );
+          }
+        } catch (err) {
+          // Prefer the original error over the chunk text for telemetry.
+          throw streamError ?? err;
+        }
+
+        // An abort part we didn't cause is the SDK's total or stall timeout.
+        if (endedAborted && !controller.signal.aborted) {
+          throw new DOMException("Local chat timed out", "AbortError");
         }
 
         if (isCurrent()) setStatus("ready");
