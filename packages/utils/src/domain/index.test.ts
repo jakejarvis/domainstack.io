@@ -9,6 +9,11 @@ describe("toRegistrableDomain", () => {
     expect(toRegistrableDomain("www.example.com")).toBe("example.com");
   });
 
+  it("keeps www.<tld>, a registrable domain in its own right", () => {
+    expect(toRegistrableDomain("www.com")).toBe("www.com");
+    expect(toRegistrableDomain("https://www.com/path")).toBe("www.com");
+  });
+
   it("extracts eTLD+1 from a URL on a multi-label public suffix", () => {
     expect(toRegistrableDomain("https://blog.example.co.uk/path")).toBe("example.co.uk");
   });

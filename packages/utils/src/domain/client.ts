@@ -76,8 +76,8 @@ export function normalizeDomainInput(input: string): string {
   // Trim any remaining whitespace
   value = value.trim();
 
-  // Remove common leading www.
-  value = value.replace(/^www\./i, "");
+  // Remove a leading "www." label, unless what remains is a bare TLD ("www.com" is a domain).
+  if (/^www\.[^.]+\.[^.]/i.test(value)) value = value.slice(4);
 
   return value.toLowerCase();
 }

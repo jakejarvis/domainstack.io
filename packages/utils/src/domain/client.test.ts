@@ -49,6 +49,11 @@ describe("normalizeDomainInput", () => {
     expect(normalizeDomainInput("WWW.EXAMPLE.TEST")).toBe("example.test");
   });
 
+  it("keeps www when what remains would be a bare TLD", () => {
+    expect(normalizeDomainInput("www.com")).toBe("www.com");
+    expect(normalizeDomainInput("WWW.COM.")).toBe("www.com");
+  });
+
   it("preserves non-www subdomains", () => {
     expect(normalizeDomainInput("api.example.test")).toBe("api.example.test");
     expect(normalizeDomainInput("sub.domain.example.test")).toBe("sub.domain.example.test");
