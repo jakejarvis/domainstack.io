@@ -1134,6 +1134,58 @@ describe("tracking router", () => {
       expect(remaining).toHaveLength(0);
     });
 
+    it("starts a fresh grace period for a failing domain", async () => {
+      const caller = createAuthenticatedCaller();
+
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "test-token",
+        verified: true,
+        verificationStatus: "failing",
+        verificationFailedAt: new Date("2026-01-01T00:00:00Z"),
+        archivedAt: new Date(),
+      });
+
+      await caller.tracking.unarchiveDomain({ trackedDomainId: TEST_TRACKED_ID });
+
+      const [row] = await db
+        .select()
+        .from(userTrackedDomains)
+        .where(eq(userTrackedDomains.id, TEST_TRACKED_ID));
+
+      expect(row.verificationStatus).toBe("failing");
+      expect(row.verificationFailedAt).not.toBeNull();
+      expect(Math.abs(Date.now() - (row.verificationFailedAt?.getTime() ?? 0))).toBeLessThan(
+        60_000,
+      );
+    });
+
+    it("leaves verificationFailedAt alone for a non-failing domain", async () => {
+      const caller = createAuthenticatedCaller();
+
+      await db.insert(userTrackedDomains).values({
+        id: TEST_TRACKED_ID,
+        userId: TEST_USER_ID,
+        domainId: TEST_DOMAIN_ID,
+        verificationToken: "test-token",
+        verified: true,
+        verificationStatus: "verified",
+        verificationFailedAt: null,
+        archivedAt: new Date(),
+      });
+
+      await caller.tracking.unarchiveDomain({ trackedDomainId: TEST_TRACKED_ID });
+
+      const [row] = await db
+        .select()
+        .from(userTrackedDomains)
+        .where(eq(userTrackedDomains.id, TEST_TRACKED_ID));
+
+      expect(row.verificationFailedAt).toBeNull();
+    });
+
     it("keeps the snapshot when unarchive is rejected", async () => {
       const caller = createAuthenticatedCaller();
 

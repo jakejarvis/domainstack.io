@@ -1148,7 +1148,12 @@ export async function unarchiveTrackedDomainWithLimitCheck(
 
     const [updated] = await tx
       .update(userTrackedDomains)
-      .set({ archivedAt: null })
+      .set({
+        archivedAt: null,
+        // Archived rows aren't re-checked, so a grace period that ran while archived was never
+        // monitored. Start a fresh one (and a fresh warning) from now.
+        verificationFailedAt: sql`CASE WHEN ${userTrackedDomains.verificationStatus} = 'failing' THEN now() ELSE ${userTrackedDomains.verificationFailedAt} END`,
+      })
       .where(eq(userTrackedDomains.id, id))
       .returning();
 
