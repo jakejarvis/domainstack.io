@@ -41,9 +41,9 @@ describe("EmailAddressCard", () => {
   });
 
   it.each([
-    ["", "Enter an email address"],
-    ["not-an-email", "Enter a valid email address"],
-    ["  CURRENT@example.com ", "already your email address"],
+    ["", "Enter an email address, like you@example.com."],
+    ["not-an-email", "Enter a valid email address, like you@example.com."],
+    ["  CURRENT@example.com ", "That's already your email address."],
   ])("rejects %j without calling the server", async (value, message) => {
     const input = await openForm();
     if (value) await input.fill(value);
