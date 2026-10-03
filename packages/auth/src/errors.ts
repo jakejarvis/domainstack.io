@@ -76,6 +76,8 @@ const AUTH_CALLBACK_ERROR_MESSAGES: Record<AuthCallbackErrorCode, string> = {
   [AUTH_CALLBACK_ERROR_CODES.UNABLE_TO_CREATE_SESSION]: "Unable to sign you in. Please try again.",
 };
 
+const GENERIC_AUTH_ERROR_MESSAGE = "An error occurred during authentication. Please try again.";
+
 /** True for codes this app has a message for. Anything else is untrusted URL input. */
 export function isKnownAuthErrorCode(code: string): code is AuthCallbackErrorCode {
   return Object.hasOwn(AUTH_CALLBACK_ERROR_MESSAGES, code);
@@ -86,10 +88,9 @@ export function isKnownAuthErrorCode(code: string): code is AuthCallbackErrorCod
  * Returns a generic message for unknown error codes.
  */
 export function getAuthErrorMessage(errorCode: string): string {
-  return (
-    AUTH_CALLBACK_ERROR_MESSAGES[errorCode as AuthCallbackErrorCode] ??
-    "An error occurred during authentication. Please try again."
-  );
+  return isKnownAuthErrorCode(errorCode)
+    ? AUTH_CALLBACK_ERROR_MESSAGES[errorCode]
+    : GENERIC_AUTH_ERROR_MESSAGE;
 }
 
 /**

@@ -43,12 +43,16 @@ describe("useAuthCallback", () => {
 
   it("toasts once and strips error params without a client navigation", async () => {
     mocks.search = "next=/x&error=access_denied&error_description=foo";
+    // App Router entries carry `__NA`, which makes Next skip its router sync.
+    const stateSpy = vi.spyOn(window.history, "state", "get").mockReturnValue({ __NA: true });
     await render(<Harness />);
+    stateSpy.mockRestore();
 
     expect(mocks.toastError).toHaveBeenCalledTimes(1);
     expect(mocks.toastError.mock.calls[0]?.[0]).toBe("Sign in failed");
 
     expect(mocks.replaceState).toHaveBeenCalledTimes(1);
+    expect(mocks.replaceState.mock.calls[0]?.[0]).toBeNull();
     const url = new URL(String(mocks.replaceState.mock.calls[0]?.[2]), "http://localhost");
     expect([...url.searchParams.entries()]).toEqual([["next", "/x"]]);
   });
@@ -69,6 +73,28 @@ describe("useAuthCallback", () => {
     const [err, props] = mocks.captureException.mock.calls[0] ?? [];
     expect(props).toMatchObject({ errorCode: "unknown" });
     expect(err?.message).not.toContain("<script>");
+  });
+
+  it.each(["constructor", "__proto__", "valueOf", "toString", "hasOwnProperty"])(
+    "uses the generic message for inherited property names (%s)",
+    async (value) => {
+      mocks.search = `error=${value}`;
+      await render(<Harness />);
+
+      expect(mocks.toastError.mock.calls[0]?.[1]).toEqual({
+        description: "An error occurred during authentication. Please try again.",
+      });
+    },
+  );
+
+  it("passes a known code's own message", async () => {
+    mocks.search = "error=access_denied";
+    await render(<Harness />);
+
+    const description = mocks.toastError.mock.calls[0]?.[1]?.description;
+    expect(typeof description).toBe("string");
+    expect(description).not.toBe("");
+    expect(description).not.toBe("An error occurred during authentication. Please try again.");
   });
 
   it("does not toast again when re-rendered with the same params", async () => {

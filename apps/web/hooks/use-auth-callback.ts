@@ -18,9 +18,11 @@ import {
  * - Shows toast notifications for errors with user-friendly messages
  * - Cleans up the `error` and `error_description` query params from the URL
  *
- * The URL is cleaned with `history.replaceState` rather than a router navigation:
+ * The URL is cleaned with `history.replaceState(null, …)` rather than a router navigation:
  * `/login` and `/settings/*` have intercepting routes, so a client-side navigation
- * would open a second modal on top of the full page.
+ * would open a second modal on top of the full page. Passing `null` (not
+ * `history.state`, which carries Next's `__NA` flag) lets Next sync `useSearchParams`,
+ * so a later `router.refresh()` can't restore the error params.
  *
  * @example
  * // In login page (sign-in callbacks)
@@ -66,6 +68,6 @@ export function useAuthCallback({ context = "sign_in" }: { context?: "sign_in" |
     params.delete("error_description");
     const newSearch = params.toString();
     const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
-    window.history.replaceState(window.history.state, "", newUrl);
+    window.history.replaceState(null, "", newUrl);
   }, [context, searchParams]);
 }
