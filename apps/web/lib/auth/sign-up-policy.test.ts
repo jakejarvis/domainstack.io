@@ -4,8 +4,17 @@ import { gitlabEmailVerified, rejectUnverifiedSignUp } from "@domainstack/auth/s
 
 describe("gitlabEmailVerified", () => {
   it("is true for a confirmed account", () => {
-    expect(gitlabEmailVerified({ confirmed_at: "2024-01-01T00:00:00Z" })).toBe(true);
+    expect(
+      gitlabEmailVerified({ confirmed_at: "2024-01-01T00:00:00Z", email: "jdoe@example.com" }),
+    ).toBe(true);
   });
+
+  it.each([null, undefined, ""])(
+    "is false for a confirmed account without an email (%j)",
+    (email) => {
+      expect(gitlabEmailVerified({ confirmed_at: "2024-01-01T00:00:00Z", email })).toBe(false);
+    },
+  );
 
   it("is false when confirmed_at is null", () => {
     expect(gitlabEmailVerified({ confirmed_at: null })).toBe(false);

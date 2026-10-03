@@ -14,7 +14,9 @@ export function gitlabEmailVerified(profile: {
   return (
     typeof profile.confirmed_at === "string" &&
     profile.confirmed_at.length > 0 &&
-    !profile.email?.startsWith("temp-email-for-oauth")
+    typeof profile.email === "string" &&
+    profile.email.length > 0 &&
+    !profile.email.startsWith("temp-email-for-oauth")
   );
 }
 

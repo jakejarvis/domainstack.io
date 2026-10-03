@@ -16,6 +16,8 @@ export type EmailChangedNoticeEmailProps = {
 
 function EmailChangedNoticeEmail({ userName, baseUrl }: EmailChangedNoticeEmailProps) {
   const previewText = "The email address on your Domainstack account was changed";
+  // Show the real host, so preview deployments don't display a link to production.
+  const helpLabel = `${baseUrl.replace(/^https?:\/\//, "").replace(/\/+$/, "")}/help`;
 
   return (
     <EmailLayout previewText={previewText}>
@@ -32,7 +34,7 @@ function EmailChangedNoticeEmail({ userName, baseUrl }: EmailChangedNoticeEmailP
         <EmailBoxText variant="warning">
           Didn&apos;t make this change? Sign in with your login provider, change the address back
           under Settings → Account, and contact us at{" "}
-          <EmailLink href={`${baseUrl}/help#contact`}>domainstack.io/help</EmailLink>.
+          <EmailLink href={`${baseUrl}/help#contact`}>{helpLabel}</EmailLink>.
         </EmailBoxText>
       </EmailBox>
 
