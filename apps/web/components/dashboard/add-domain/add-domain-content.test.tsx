@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -76,6 +77,50 @@ describe("AddDomainContent", () => {
       .element(page.getByRole("heading", { name: "Domain verified!" }))
       .toBeInTheDocument();
     await expect.element(page.getByText("newdomain.com", { exact: true })).toBeInTheDocument();
+  });
+
+  it("tracks and instructs for the registrable domain when a subdomain is entered", async () => {
+    addDomainMutation.mockResolvedValueOnce({
+      id: "domain-new",
+      domain: "example.com",
+      verificationToken: "token-new",
+      resumed: false,
+    });
+    await renderAddDomainContent();
+
+    await page.getByLabelText("Domain name").fill("blog.example.com");
+    await page.getByRole("button", { name: "Continue" }).click();
+
+    await waitForStep2();
+    expect(addDomainMutation.mock.calls[0]?.[0]).toEqual({ domain: "blog.example.com" });
+    expect(toast.info).toHaveBeenCalledWith("Tracking example.com", expect.anything());
+    await expect.element(page.getByText(/\(example\.com\)/)).toBeInTheDocument();
+    await expect.element(page.getByText(/blog\.example\.com/)).not.toBeInTheDocument();
+
+    await page.getByRole("button", { name: "Check Now" }).click();
+
+    await vi.waitFor(() => {
+      expect(addDomainActionSpies.onSuccess).toHaveBeenCalledOnce();
+    });
+    await expect.element(page.getByText("example.com", { exact: true })).toBeInTheDocument();
+  });
+
+  it("shows the fetched domain on the confirmation step when resuming", async () => {
+    await renderAddDomainContent({
+      resumeDomain: makeResumeDomain({ domainName: "", verificationToken: "" }),
+    });
+
+    await waitForStep2();
+    await expect
+      .element(page.getByText("domainstack-verification=token-pending", { exact: true }))
+      .toBeInTheDocument();
+
+    await page.getByRole("button", { name: "Check Now" }).click();
+
+    await expect
+      .element(page.getByRole("heading", { name: "Domain verified!" }))
+      .toBeInTheDocument();
+    await expect.element(page.getByText("pending.dev", { exact: true })).toBeInTheDocument();
   });
 
   it("keeps showing verification instructions after the added domain fills the quota", async () => {

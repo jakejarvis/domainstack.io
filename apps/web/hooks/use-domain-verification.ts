@@ -117,7 +117,13 @@ export function useDomainVerification({
         domain: normalized,
       });
 
-      setState(toStep2(normalized, result.id, result.verificationToken));
+      setState(toStep2(result.domain, result.id, result.verificationToken));
+
+      if (result.domain !== normalized) {
+        toast.info(`Tracking ${result.domain}`, {
+          description: "Ownership is verified for the whole domain, not a subdomain.",
+        });
+      }
 
       if (result.resumed) {
         toast.info("Resuming verification", {
@@ -146,14 +152,14 @@ export function useDomainVerification({
       });
 
       if (result.verified) {
-        setState(toStep3(state));
+        setState(toStep3({ ...state, domain }));
         toast.success("Domain verified successfully!");
         onSuccess();
       }
     } catch {
       // Failed status is derived from the mutation
     }
-  }, [state, verifyDomainMutation, onSuccess]);
+  }, [state, domain, verifyDomainMutation, onSuccess]);
 
   const handleReturnLater = useCallback(() => {
     toast.info("Domain saved", {
