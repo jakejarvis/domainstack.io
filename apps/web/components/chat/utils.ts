@@ -1,6 +1,35 @@
 import type { UIMessage } from "ai";
 import { isTextUIPart } from "ai";
 
+import type { AiModePreference, ChatMode } from "@/lib/stores/preferences-store";
+
+export const LOCAL_NOT_READY_MESSAGE =
+  "The on-device model isn't ready yet. Download it from the model menu, or switch to Cloud.";
+export const LOCAL_HAS_CLOUD_CONVERSATION_MESSAGE =
+  "This conversation used Cloud. Clear it to continue on your device, or switch to Cloud.";
+
+/**
+ * Which session runs, and whether sending must be blocked. "local" never falls back
+ * to cloud: when the browser model can't take the message, sending is blocked.
+ */
+export function resolveChatMode(input: {
+  aiMode: AiModePreference;
+  browserReady: boolean;
+  hasStoredConversation: boolean;
+  lockedMode: ChatMode | null;
+}): { mode: ChatMode; blockedReason: string | null } {
+  const { aiMode, browserReady, hasStoredConversation, lockedMode } = input;
+  const wantsLocal = (aiMode === "local" || aiMode === "auto") && browserReady;
+  const preferred: ChatMode = hasStoredConversation ? "cloud" : wantsLocal ? "local" : "cloud";
+  const mode = lockedMode ?? preferred;
+
+  if (aiMode !== "local" || mode !== "cloud") return { mode, blockedReason: null };
+  return {
+    mode,
+    blockedReason: browserReady ? LOCAL_HAS_CLOUD_CONVERSATION_MESSAGE : LOCAL_NOT_READY_MESSAGE,
+  };
+}
+
 /** Format messages as markdown for clipboard copy */
 export function formatMessagesAsMarkdown(messages: UIMessage[]): string {
   const blocks: string[] = [];

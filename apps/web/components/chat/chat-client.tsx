@@ -26,7 +26,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@domainstack/u
 import { ChatHeaderActions } from "./chat-header-actions";
 import { type ChatController, ChatPanel, LIVE_MESSAGE_STATUSES } from "./chat-panel";
 import { ChatSettingsDialog } from "./chat-settings-dialog";
-import { getUserFriendlyError } from "./utils";
+import { getUserFriendlyError, resolveChatMode } from "./utils";
 
 interface ChatClientProps {
   suggestions?: string[];
@@ -73,21 +73,22 @@ export function ChatClient({
 
   const domain = params.domain ? safeDecodeURIComponent(params.domain) : undefined;
 
-  const wantsLocal = (aiMode === "local" || aiMode === "auto") && browserAI.status === "ready";
-  const preferredMode: ChatMode =
-    chatHydrated && storedMessageCount > 0 ? "cloud" : wantsLocal ? "local" : "cloud";
-
   const [lockedMode, setLockedMode] = useState<ChatMode | null>(null);
-  const mode = lockedMode ?? preferredMode;
+  const { mode, blockedReason } = resolveChatMode({
+    aiMode,
+    browserReady: browserAI.status === "ready",
+    hasStoredConversation: chatHydrated && storedMessageCount > 0,
+    lockedMode,
+  });
 
   const handleActiveChange = useCallback(
     (active: boolean) => {
       setLockedMode((prev) => {
-        if (active) return prev ?? preferredMode;
+        if (active) return prev ?? mode;
         return null;
       });
     },
-    [preferredMode],
+    [mode],
   );
 
   if (!chatHydrated) return null;
@@ -98,6 +99,7 @@ export function ChatClient({
       domain={domain}
       suggestions={suggestions}
       browserAI={browserAI}
+      blockedReason={blockedReason}
       open={open}
       onOpenChange={onOpenChange}
       settingsOpen={settingsOpen}
@@ -272,6 +274,7 @@ function ChatShell({
   domain,
   suggestions,
   browserAI,
+  blockedReason,
   open,
   onOpenChange,
   settingsOpen,
@@ -282,6 +285,7 @@ function ChatShell({
   domain?: string;
   suggestions: string[];
   browserAI: UseBrowserAIResult;
+  blockedReason: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   settingsOpen: boolean;
@@ -296,6 +300,7 @@ function ChatShell({
     status: session.status,
     error: !isBusy && session.error ? getUserFriendlyError(session.error) : null,
     sendMessage: ({ text }) => {
+      if (blockedReason) return;
       const trimmed = text.trim();
       if (!trimmed) return;
       session.send(trimmed);
@@ -342,6 +347,7 @@ function ChatShell({
           domain={domain}
           homeSuggestions={suggestions}
           browserAI={browserAI}
+          blockedReason={blockedReason}
           conversationClassName="px-4 md:px-0"
           inputClassName="p-4 md:p-3"
         />

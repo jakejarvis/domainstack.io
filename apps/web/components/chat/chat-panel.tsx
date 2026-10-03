@@ -371,6 +371,8 @@ interface ChatPanelProps {
   domain?: string;
   homeSuggestions?: string[];
   browserAI: UseBrowserAIResult;
+  /** Why sending is blocked (local mode without a usable on-device model); null when it isn't. */
+  blockedReason?: string | null;
   conversationClassName?: string;
   inputClassName?: string;
 }
@@ -388,6 +390,7 @@ function ChatPanelBody({
   domain,
   homeSuggestions = EMPTY_SUGGESTIONS,
   browserAI,
+  blockedReason,
   conversationClassName,
   inputClassName,
 }: ChatPanelProps) {
@@ -412,6 +415,7 @@ function ChatPanelBody({
   };
 
   const handleSuggestionClick = (suggestion: string) => {
+    if (blockedReason) return;
     clearMessages();
     clearError();
     sendMessage({ text: suggestion });
@@ -474,6 +478,12 @@ function ChatPanelBody({
           <ChatErrorAlert error={error} onRetry={handleRetry} onClearError={clearError} />
         ) : null}
 
+        {blockedReason ? (
+          <p role="status" className="px-1 text-xs text-muted-foreground">
+            {blockedReason}
+          </p>
+        ) : null}
+
         <PromptInput onSubmit={handleSubmit}>
           <PromptInputTextarea
             placeholder={domain ? `Ask about ${domain}\u2026` : "Ask about a domain\u2026"}
@@ -485,7 +495,10 @@ function ChatPanelBody({
             <PromptInputCharacterCount current={inputLength} max={MAX_MESSAGE_LENGTH} />
             <div className="flex items-center gap-2">
               <ChatModeSelector browserAI={browserAI} disabled={isBusy} />
-              <PromptInputSubmit disabled={inputLength === 0} status={error ? "error" : status} />
+              <PromptInputSubmit
+                disabled={inputLength === 0 || Boolean(blockedReason)}
+                status={error ? "error" : status}
+              />
             </div>
           </PromptInputFooter>
         </PromptInput>
