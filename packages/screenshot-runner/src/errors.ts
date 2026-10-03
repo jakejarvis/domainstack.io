@@ -34,7 +34,11 @@ export class RunnerError extends Error {
  */
 export function classifyError(error: unknown): RunnerErrorCode {
   if (error instanceof RunnerError) return error.code;
-  const message = error instanceof Error ? error.message.toLowerCase() : "";
+  // Puppeteer appends the target URL ("net::ERR_… at https://host/"); a hostname like
+  // "masslive.com" must not read as "ssl".
+  const message = (error instanceof Error ? error.message : "")
+    .replace(/\bhttps?:\/\/\S+/gi, "")
+    .toLowerCase();
   if (message.includes("err_name_not_resolved") || message.includes("enotfound"))
     return "dns_error";
   if (
