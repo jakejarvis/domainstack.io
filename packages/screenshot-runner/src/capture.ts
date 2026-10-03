@@ -9,6 +9,10 @@ import { classifyError, RunnerError } from "./errors.ts";
 const NAVIGATION_TIMEOUT_MS = 15_000;
 const NETWORK_IDLE_TIMEOUT_MS = 2_000;
 const NETWORK_IDLE_TIME_MS = 500;
+// Puppeteer's CDP calls (screenshot, close) otherwise wait 180 s on a busy renderer.
+const PROTOCOL_TIMEOUT_MS = 10_000;
+// The sandbox kills the command at 30 s (packages/screenshot/src/sandbox.ts); report first.
+const RUN_DEADLINE_MS = 25_000;
 const MAX_OUTPUT_BYTES = 10 * 1024 * 1024;
 // --no-sandbox is never added: the page being rendered is attacker-supplied,
 // so a launch failure must surface rather than silently downgrade isolation.
@@ -39,6 +43,14 @@ function dropRootPrivileges(): void {
 // the fact.
 const MAX_OUTPUT_PIXELS = 64_000_000;
 
+let reported = false;
+function report(result: Record<string, unknown>, exitCode: number): void {
+  if (reported) return;
+  reported = true;
+  console.log(JSON.stringify(result));
+  process.exitCode = exitCode;
+}
+
 async function closeResources(page: Page | null, browser: Browser | null): Promise<void> {
   if (page) {
     try {
@@ -63,6 +75,23 @@ async function main(): Promise<void> {
   let dimensions: { width: number; height: number } | null = null;
   let failure: unknown;
 
+  setTimeout(() => {
+    report(
+      {
+        success: false,
+        width: null,
+        height: null,
+        finalUrl,
+        adblock,
+        browserVersion,
+        durationMs: Date.now() - startedAt,
+        errorCode: "timeout",
+      },
+      1,
+    );
+    process.exit();
+  }, RUN_DEADLINE_MS).unref();
+
   try {
     dropRootPrivileges();
     args = parseArguments(process.argv.slice(2));
@@ -73,6 +102,7 @@ async function main(): Promise<void> {
       headless: true,
       pipe: true,
       args: LAUNCH_ARGS,
+      protocolTimeout: PROTOCOL_TIMEOUT_MS,
     });
     // Reported, not asserted: the version is a property of the image digest.
     browserVersion = await browser.version();
@@ -137,13 +167,13 @@ async function main(): Promise<void> {
     }
   } catch (error) {
     failure = error;
-  } finally {
-    await closeResources(page, browser);
   }
 
+  // Reported before cleanup: a hung browser.close() must not hide a finished capture
+  // (the deadline timer exits the process with the result already printed).
   if (failure || !args || !dimensions) {
-    console.log(
-      JSON.stringify({
+    report(
+      {
         success: false,
         width: null,
         height: null,
@@ -152,24 +182,26 @@ async function main(): Promise<void> {
         browserVersion,
         durationMs: Date.now() - startedAt,
         errorCode: classifyError(failure),
-      }),
+      },
+      1,
     );
-    process.exitCode = 1;
-    return;
+  } else {
+    report(
+      {
+        success: true,
+        width: dimensions.width,
+        height: dimensions.height,
+        finalUrl,
+        adblock,
+        browserVersion,
+        durationMs: Date.now() - startedAt,
+        errorCode: null,
+      },
+      0,
+    );
   }
 
-  console.log(
-    JSON.stringify({
-      success: true,
-      width: dimensions.width,
-      height: dimensions.height,
-      finalUrl,
-      adblock,
-      browserVersion,
-      durationMs: Date.now() - startedAt,
-      errorCode: null,
-    }),
-  );
+  await closeResources(page, browser);
 }
 
 await main();
