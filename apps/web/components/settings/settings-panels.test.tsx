@@ -77,6 +77,10 @@ vi.mock("@/hooks/use-notification-preferences", () => ({
 vi.mock("@/hooks/use-auth-callback", () => ({
   useAuthCallback: () => undefined,
 }));
+vi.mock("@/hooks/use-email-change-callback", () => ({
+  EMAIL_CHANGE_PARAM: "email_change",
+  useEmailChangeCallback: () => undefined,
+}));
 
 class RecordingBoundary extends Component<
   { onCatch: (error: unknown) => void; children: ReactNode },
@@ -121,7 +125,7 @@ describe("settings panels", () => {
   });
 
   it("AccountPanel throws the original query error to the boundary", async () => {
-    const caught = await renderCaught(<AccountPanel />);
+    const caught = await renderCaught(<AccountPanel userEmail="user@example.com" />);
     expect(caught).toHaveLength(1);
     expect(caught[0]).toBe(errors.account);
   });
@@ -156,7 +160,7 @@ describe("settings panels", () => {
     const caught: unknown[] = [];
     await render(
       <RecordingBoundary onCatch={(error) => caught.push(error)}>
-        <AccountPanel />
+        <AccountPanel userEmail="user@example.com" />
       </RecordingBoundary>,
     );
     await expect.element(page.getByText("Login Providers")).toBeInTheDocument();
