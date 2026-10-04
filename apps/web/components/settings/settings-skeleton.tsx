@@ -150,6 +150,18 @@ export function LinkedAccountsSkeleton({ className }: { className?: string }) {
   return (
     <div className={cn("max-w-full overflow-x-hidden", className)}>
       <SettingsCard
+        title="Email Address"
+        description="Alerts and account emails go to this address."
+      >
+        <div className="flex w-full items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5">
+          <Skeleton className="h-4 w-48" />
+          <Skeleton className="h-8 w-[70px] rounded-md" />
+        </div>
+      </SettingsCard>
+
+      <SettingsCardSeparator />
+
+      <SettingsCard
         title="Login Providers"
         description="Protect your account with additional third-party services."
       >

@@ -75,7 +75,7 @@ export function SettingsPanels({ userEmail }: { userEmail: string }) {
 
       <TabsContent value="account">
         <SettingsErrorBoundary sectionName="Account">
-          <AccountPanel />
+          <AccountPanel userEmail={userEmail} />
         </SettingsErrorBoundary>
       </TabsContent>
     </>

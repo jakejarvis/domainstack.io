@@ -4,6 +4,7 @@ import { LinkedAccountRow } from "@/components/settings/account/linked-account-r
 import { SettingsCard, SettingsCardSeparator } from "@/components/settings/settings-card";
 import { LinkedAccountsSkeleton } from "@/components/settings/settings-skeleton";
 import { useAuthCallback } from "@/hooks/use-auth-callback";
+import { useEmailChangeCallback } from "@/hooks/use-email-change-callback";
 import { useLinkedAccounts } from "@/hooks/use-linked-accounts";
 import type { OAuthProviderConfig } from "@/lib/oauth";
 import {
@@ -19,13 +20,15 @@ import {
 import { ItemGroup } from "@domainstack/ui/item";
 
 import { DangerZone } from "./danger-zone";
+import { EmailAddressCard } from "./email-address-card";
 
-export function AccountPanel() {
+export function AccountPanel({ userEmail }: { userEmail: string }) {
   const [unlinkingProvider, setUnlinkingProvider] = useState<string | null>(null);
   const [linkingProvider, setLinkingProvider] = useState<string | null>(null);
 
   // Handle auth callback errors from URL params (account linking)
   useAuthCallback({ context: "link" });
+  useEmailChangeCallback();
 
   const {
     linkedAccounts,
@@ -84,6 +87,10 @@ export function AccountPanel() {
 
   return (
     <>
+      <EmailAddressCard email={userEmail} />
+
+      <SettingsCardSeparator />
+
       <SettingsCard
         title="Login Providers"
         description="Protect your account with additional third-party services."

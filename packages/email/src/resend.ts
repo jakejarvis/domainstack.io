@@ -51,6 +51,14 @@ export async function sendEmail(
   );
 }
 
+/** Best-effort first/last split for Resend contacts. */
+function splitName(fullName: string | null | undefined) {
+  const nameParts = fullName?.trim().split(/\s+/) ?? [];
+  const [firstName] = nameParts;
+  const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : undefined;
+  return { firstName, lastName };
+}
+
 /**
  * Add a contact to Resend.
  *
@@ -62,15 +70,9 @@ export async function addContact(email: string, fullName: string | null | undefi
     throw new Error("Resend is not configured");
   }
 
-  // Parse name into first/last (best-effort)
-  const nameParts = fullName?.trim().split(/\s+/) ?? [];
-  const [firstName] = nameParts;
-  const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : undefined;
-
   return resend.contacts.create({
     email: email,
-    firstName,
-    lastName,
+    ...splitName(fullName),
     unsubscribed: false,
   });
 }
@@ -86,4 +88,70 @@ export async function removeContact(email: string) {
   }
 
   return resend.contacts.remove({ email });
+}
+
+/**
+ * Move a contact to a new address. Resend can't change a contact's email, so
+ * this creates the new contact (keeping the old one's unsubscribe choice) and
+ * then removes the old one. Any failure throws and leaves only the old contact
+ * in place (a new contact created along the way is removed again): re-
+ * subscribing someone who opted out, or keeping two contacts that both get
+ * sends, would be worse than a stale address.
+ */
+export async function replaceContact(
+  previousEmail: string,
+  newEmail: string,
+  fullName: string | null | undefined,
+) {
+  if (!resend) {
+    throw new Error("Resend is not configured");
+  }
+
+  const previous = await resend.contacts.get({ email: previousEmail });
+  if (previous.error && previous.error.name !== "not_found") {
+    throw new Error(`failed to read Resend contact: ${previous.error.message}`);
+  }
+
+  const created = await resend.contacts.create({
+    email: newEmail,
+    ...splitName(fullName),
+    unsubscribed: previous.data?.unsubscribed ?? false,
+  });
+  if (created.error) {
+    throw new Error(`failed to create Resend contact: ${created.error.message}`);
+  }
+
+  if (!previous.data) return;
+  const wasUnsubscribed = previous.data.unsubscribed;
+
+  try {
+    // An unsubscribe that landed on the old contact while the new one was being
+    // created must survive the old contact's removal.
+    const latest = await resend.contacts.get({ email: previousEmail });
+    if (latest.error) {
+      if (latest.error.name === "not_found") return;
+      throw new Error(`failed to re-read Resend contact: ${latest.error.message}`);
+    }
+    if (latest.data.unsubscribed && !wasUnsubscribed) {
+      const optedOut = await resend.contacts.update({ email: newEmail, unsubscribed: true });
+      if (optedOut.error) {
+        throw new Error(`failed to carry over Resend opt-out: ${optedOut.error.message}`);
+      }
+    }
+
+    const removed = await resend.contacts.remove({ email: previousEmail });
+    if (removed.error) {
+      throw new Error(`failed to remove old Resend contact: ${removed.error.message}`);
+    }
+  } catch (err) {
+    // Roll back to the old contact alone (it holds the current opt-out state),
+    // rather than leave two contacts that would both receive sends.
+    const rolledBack = await resend.contacts.remove({ email: newEmail });
+    if (rolledBack.error) {
+      // Can't delete it: at least stop it receiving sends. The old contact
+      // still holds the real subscription state.
+      await resend.contacts.update({ email: newEmail, unsubscribed: true });
+    }
+    throw err;
+  }
 }
