@@ -20,6 +20,7 @@ import type {
 } from "@domainstack/types";
 
 import { isDefinitiveNotFoundError, RemoteDataUnavailableError } from "../lib/fetch-errors";
+import { fetchHomepage, isOffHostRedirect, PAGE_REQUEST_OPTIONS } from "../lib/homepage";
 import { ttlForSeo } from "../lib/ttl";
 import { isExpectedTlsError } from "../tls/utils";
 import { decodeHtml, parseHtmlMeta, selectPreview } from "./parse";
@@ -146,22 +147,23 @@ export async function fetchSeo(domain: string): Promise<SeoResult> {
 async function fetchHtml(domain: string): Promise<HtmlFetchData> {
   let finalUrl = `https://${domain}/`;
   let status: number | null = null;
+  const startedAt = Date.now();
 
   try {
-    const htmlResult = await safeFetch({
-      url: finalUrl,
-      userAgent: process.env.EXTERNAL_USER_AGENT,
-      allowHttp: true,
-      timeoutMs: 10_000,
-      totalTimeoutMs: 15_000,
-      maxBytes: 512 * 1024,
-      maxRedirects: 5,
-      truncateOnLimit: true,
-      headers: {
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en",
-      },
-    });
+    // Shared with the headers service, which stops at an off-host redirect.
+    let htmlResult = await fetchHomepage(domain);
+    if (isOffHostRedirect(htmlResult) && htmlResult.headers.location) {
+      // Follow it the rest of the way. The homepage load already spent at least
+      // one redirect and part of the time budget.
+      htmlResult = await safeFetch({
+        ...PAGE_REQUEST_OPTIONS,
+        url: htmlResult.headers.location,
+        currentUrl: htmlResult.finalUrl,
+        userAgent: process.env.EXTERNAL_USER_AGENT,
+        maxRedirects: PAGE_REQUEST_OPTIONS.maxRedirects - 1,
+        totalTimeoutMs: PAGE_REQUEST_OPTIONS.totalTimeoutMs - (Date.now() - startedAt),
+      });
+    }
 
     status = htmlResult.status;
     finalUrl = htmlResult.finalUrl;

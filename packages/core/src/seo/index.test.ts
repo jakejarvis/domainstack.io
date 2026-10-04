@@ -49,6 +49,7 @@ vi.mock("@domainstack/db/queries/seo", () => ({
   getSeoImageState: mocks.getSeoImageState,
 }));
 
+import { fetchHttpHeaders } from "../headers/fetch";
 import { fetchSeo } from "./index";
 
 const DOMAIN = "example.com";
@@ -67,6 +68,7 @@ function htmlResponse() {
     finalUrl: `https://${DOMAIN}/`,
     buffer: Buffer.from(HTML),
     headers: {},
+    setCookies: [],
   };
 }
 
@@ -312,6 +314,47 @@ describe("fetchSeo", () => {
 
       expect(mocks.getSeoImageState).not.toHaveBeenCalled();
       expect(persisted().previewImageUploadedUrl).toBeNull();
+    });
+  });
+
+  describe("page fetch", () => {
+    it("shares the homepage request with a concurrent headers fetch", async () => {
+      respondWith({ image: async () => imageResponse() });
+
+      await Promise.all([fetchSeo(DOMAIN), fetchHttpHeaders(DOMAIN)]);
+
+      const pageCalls = mocks.safeFetch.mock.calls.filter(
+        ([opts]) => opts.url === `https://${DOMAIN}/`,
+      );
+      expect(pageCalls).toHaveLength(1);
+    });
+
+    it("follows an off-host redirect from where the homepage load stopped", async () => {
+      const target = "https://example.net/home";
+      mocks.safeFetch.mockImplementation(async ({ url }) => {
+        if (url.endsWith("/robots.txt")) return robotsResponse("User-agent: *");
+        if (url === `https://${DOMAIN}/`) {
+          return {
+            ok: false,
+            status: 301,
+            contentType: null,
+            finalUrl: `https://${DOMAIN}/`,
+            buffer: Buffer.alloc(0),
+            headers: { location: target },
+            setCookies: [],
+          };
+        }
+        if (url === target) return { ...htmlResponse(), finalUrl: target };
+        return imageResponse();
+      });
+
+      await expect(fetchSeo(DOMAIN)).resolves.toMatchObject({ success: true });
+      const continuation = mocks.safeFetch.mock.calls.find(([opts]) => opts.url === target);
+      expect(continuation?.[0]).toMatchObject({
+        currentUrl: `https://${DOMAIN}/`,
+        maxRedirects: 4,
+      });
+      expect(continuation?.[0]).not.toHaveProperty("allowedHosts");
     });
   });
 

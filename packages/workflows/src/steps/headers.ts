@@ -15,7 +15,8 @@ export async function fetchHeadersStep(domain: string): Promise<HeadersFetchResu
 
   const { fetchHttpHeaders } = await import("@domainstack/core/headers/fetch");
 
-  const result = await fetchHttpHeaders(domain);
+  // Monitoring needs only the headers, so skip downloading the page body.
+  const result = await fetchHttpHeaders(domain, { method: "HEAD" });
 
   if (!result.success) {
     return { success: false, error: result.error };

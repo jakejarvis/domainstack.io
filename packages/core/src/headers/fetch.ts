@@ -5,19 +5,20 @@
  * Does not handle persistence - that's done by callers (workflows, services).
  */
 
-import { safeFetch } from "@domainstack/safe-fetch";
 import { isExpectedDnsError } from "@domainstack/safe-fetch/dns";
 import type { Header } from "@domainstack/types";
 
 import { RemoteDataUnavailableError } from "../lib/fetch-errors";
+import { fetchHomepage } from "../lib/homepage";
 import { isExpectedTlsError } from "../tls/utils";
 import { getHttpStatusMessage } from "./status-message";
 import type { HeadersFetchResult } from "./types";
 
-const REQUEST_TIMEOUT_MS = 5000;
-
 /**
  * Fetch HTTP headers from a domain.
+ *
+ * The default GET shares its request with the SEO service's page fetch (see
+ * `fetchHomepage`). Pass `method: "HEAD"` when nothing else needs the body.
  *
  * DNS and TLS errors are returned as failure results (permanent).
  * Other errors throw RemoteDataUnavailableError (transient, should retry).
@@ -25,25 +26,12 @@ const REQUEST_TIMEOUT_MS = 5000;
  * @param domain - The domain to probe
  * @returns Headers fetch result with data or typed error
  */
-export async function fetchHttpHeaders(domain: string): Promise<HeadersFetchResult> {
-  // Normalize domain: strip www. prefix and port to get base hostname
-  // Then allow both apex and www variants
-  const [hostname] = domain.replace(/^www\./i, "").split(":");
-  const allowedHosts = [hostname, `www.${hostname}`];
-
+export async function fetchHttpHeaders(
+  domain: string,
+  options: { method?: "GET" | "HEAD" } = {},
+): Promise<HeadersFetchResult> {
   try {
-    const final = await safeFetch({
-      url: `https://${domain}/`,
-      userAgent: process.env.EXTERNAL_USER_AGENT,
-      allowHttp: true,
-      timeoutMs: REQUEST_TIMEOUT_MS,
-      totalTimeoutMs: 10_000, // shared by the HEAD attempt and its GET fallback
-      maxRedirects: 5,
-      allowedHosts,
-      method: "HEAD",
-      fallbackToGetOnHeadFailure: true,
-      returnOnDisallowedRedirect: true,
-    });
+    const final = await fetchHomepage(domain, options);
 
     // `final.headers` collapses repeated Set-Cookie into the last one, so add each back separately.
     const headers: Header[] = [
