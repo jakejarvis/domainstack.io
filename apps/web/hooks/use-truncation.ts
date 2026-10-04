@@ -1,20 +1,21 @@
-import { startTransition, useCallback, useEffect, useRef, useState } from "react";
+import { startTransition, useCallback, useRef, useState } from "react";
 
 export function useTruncation() {
-  const valueRef = useRef<HTMLSpanElement | null>(null);
   const [isTruncated, setIsTruncated] = useState(false);
+  const cleanupRef = useRef<(() => void) | null>(null);
 
-  const recalcTruncation = useCallback(() => {
-    const element = valueRef.current;
+  // A callback ref, so observers follow the element even when the caller swaps
+  // it (e.g. ProviderCell wrapping the value in a tooltip trigger once truncated).
+  const valueRef = useCallback((element: HTMLSpanElement | null) => {
+    cleanupRef.current?.();
+    cleanupRef.current = null;
     if (!element) return;
-    startTransition(() => {
-      setIsTruncated(element.scrollWidth > element.clientWidth);
-    });
-  }, []);
 
-  useEffect(() => {
-    const element = valueRef.current;
-    if (!element) return;
+    const recalcTruncation = () => {
+      startTransition(() => {
+        setIsTruncated(element.scrollWidth > element.clientWidth);
+      });
+    };
 
     // Defer measurement to the next frame so ResizeObserver callbacks do not
     // mutate layout in the same delivery loop (Firefox reports that as an error).
@@ -44,13 +45,13 @@ export function useTruncation() {
 
     window.addEventListener("resize", scheduleRecalc);
 
-    return () => {
+    cleanupRef.current = () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", scheduleRecalc);
       if (resizeObserver) resizeObserver.disconnect();
       if (mutationObserver) mutationObserver.disconnect();
     };
-  }, [recalcTruncation]);
+  }, []);
 
   return {
     valueRef,

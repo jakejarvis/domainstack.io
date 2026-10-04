@@ -202,11 +202,7 @@ export async function hasRecentNotification(
   type: NotificationType,
   since?: Date,
 ): Promise<boolean> {
-  let cutoff = since;
-  if (!cutoff) {
-    cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 30);
-  }
+  const cutoff = since ?? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
   const rows = await db
     .select({ id: notifications.id })

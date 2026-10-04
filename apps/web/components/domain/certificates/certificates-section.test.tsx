@@ -43,26 +43,6 @@ vi.mock("@/components/icons/provider-logo", () => ({
   ),
 }));
 
-vi.mock("@domainstack/ui/tooltip", () => ({
-  Tooltip: ({ children }: { children: React.ReactNode }) => (
-    <div data-slot="tooltip">{children}</div>
-  ),
-  TooltipTrigger: ({
-    children,
-    render: renderProp,
-  }: {
-    children?: React.ReactNode;
-    render?: React.ReactNode;
-  }) => (
-    <button type="button" data-slot="tooltip-trigger">
-      {renderProp ?? children}
-    </button>
-  ),
-  TooltipContent: ({ children }: { children: React.ReactNode }) => (
-    <div data-slot="tooltip-content">{children}</div>
-  ),
-}));
-
 vi.mock("@domainstack/ui/responsive-tooltip", () => ({
   ResponsiveTooltip: ({ children }: { children: React.ReactNode }) => (
     <div data-slot="responsive-tooltip">{children}</div>

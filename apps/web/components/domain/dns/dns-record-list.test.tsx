@@ -8,26 +8,6 @@ vi.mock("@/components/icons/favicon", () => ({
   Favicon: ({ domain }: { domain: string }) => <div>icon:{domain}</div>,
 }));
 
-vi.mock("@domainstack/ui/tooltip", () => ({
-  Tooltip: ({ children }: { children: React.ReactNode }) => (
-    <div data-slot="tooltip">{children}</div>
-  ),
-  TooltipTrigger: ({
-    children,
-    render: renderProp,
-  }: {
-    children?: React.ReactNode;
-    render?: React.ReactNode;
-  }) => (
-    <button type="button" data-slot="tooltip-trigger">
-      {renderProp ?? children}
-    </button>
-  ),
-  TooltipContent: ({ children }: { children: React.ReactNode }) => (
-    <div data-slot="tooltip-content">{children}</div>
-  ),
-}));
-
 describe("DnsRecordList", () => {
   it("renders MX with TTL badges (sorting handled server-side)", async () => {
     const records = [

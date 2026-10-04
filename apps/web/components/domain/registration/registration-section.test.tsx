@@ -9,20 +9,6 @@ vi.mock("@/components/icons/favicon", () => ({
   Favicon: ({ domain }: { domain: string }) => <div data-slot="favicon" data-domain={domain} />,
 }));
 
-vi.mock("@domainstack/ui/tooltip", () => ({
-  Tooltip: ({ children }: { children: React.ReactNode }) => (
-    <div data-slot="tooltip">{children}</div>
-  ),
-  TooltipTrigger: ({ children }: { children: React.ReactNode }) => (
-    <button type="button" data-slot="tooltip-trigger">
-      {children}
-    </button>
-  ),
-  TooltipContent: ({ children }: { children: React.ReactNode }) => (
-    <div data-slot="tooltip-content">{children}</div>
-  ),
-}));
-
 describe("RegistrationSection", () => {
   it("renders registrar and dates", async () => {
     await render(
@@ -41,8 +27,7 @@ describe("RegistrationSection", () => {
         }
       />,
     );
-    // Provider name appears in multiple places (value + tooltip)
-    expect(page.getByText("Namecheap", { exact: true }).length).toBeGreaterThan(0);
+    await expect.element(page.getByText("Namecheap", { exact: true })).toBeInTheDocument();
   });
 
   it("shows unavailable notice when status is unknown", async () => {
@@ -85,7 +70,7 @@ describe("RegistrationSection", () => {
 
     it("shows location only instead of 'Unknown' when no name is published", async () => {
       await renderWith({ contacts: [{ type: "registrant", country: "United States of America" }] });
-      await expect.element(page.getByText("United States of America").first()).toBeInTheDocument();
+      await expect.element(page.getByText("United States of America")).toBeInTheDocument();
       expect(page.getByText(/Unknown —/).length).toBe(0);
     });
 
@@ -93,15 +78,15 @@ describe("RegistrationSection", () => {
       await renderWith({
         contacts: [{ type: "registrant", organization: "Acme Corp", state: "CA", country: "US" }],
       });
-      await expect.element(page.getByText("Acme Corp").first()).toBeInTheDocument();
-      await expect.element(page.getByText(/CA, United States/).first()).toBeInTheDocument();
+      await expect.element(page.getByText("Acme Corp")).toBeInTheDocument();
+      await expect.element(page.getByText(/CA, United States/)).toBeInTheDocument();
     });
 
     it("shows Not published, not Hidden, when only the country was redacted", async () => {
       await renderWith({
         contacts: [{ type: "registrant", redacted: true, redactedFields: ["country"] }],
       });
-      await expect.element(page.getByText("Not published").first()).toBeInTheDocument();
+      await expect.element(page.getByText("Not published")).toBeInTheDocument();
     });
 
     it("shows Hidden when privacy is enabled and the name is a placeholder", async () => {
@@ -109,7 +94,7 @@ describe("RegistrationSection", () => {
         privacyEnabled: true,
         contacts: [{ type: "registrant", redacted: true, redactedFields: ["name"] }],
       });
-      await expect.element(page.getByText("Hidden").first()).toBeInTheDocument();
+      await expect.element(page.getByText("Hidden")).toBeInTheDocument();
     });
 
     it("still shows a visible name when privacy is enabled by an email-only redaction", async () => {
@@ -117,12 +102,12 @@ describe("RegistrationSection", () => {
         privacyEnabled: true,
         contacts: [{ type: "registrant", name: "Jane Doe", redacted: true }],
       });
-      await expect.element(page.getByText("Jane Doe").first()).toBeInTheDocument();
+      await expect.element(page.getByText("Jane Doe")).toBeInTheDocument();
     });
 
     it("shows Not published when the contact is empty", async () => {
       await renderWith({ contacts: [{ type: "registrant" }] });
-      await expect.element(page.getByText("Not published").first()).toBeInTheDocument();
+      await expect.element(page.getByText("Not published")).toBeInTheDocument();
     });
   });
 });

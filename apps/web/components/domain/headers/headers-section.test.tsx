@@ -1,28 +1,9 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import { render } from "@/mocks/react";
 
 import { HeadersSection } from "./headers-section";
-
-// Keep TooltipContent empty in unit tests to avoid text duplication issues.
-vi.mock("@domainstack/ui/tooltip", () => ({
-  Tooltip: ({ children }: { children: React.ReactNode }) => (
-    <div data-slot="tooltip">{children}</div>
-  ),
-  TooltipTrigger: ({
-    children,
-    render: renderProp,
-  }: {
-    children?: React.ReactNode;
-    render?: React.ReactNode;
-  }) => (
-    <button type="button" data-slot="tooltip-trigger">
-      {renderProp ?? children}
-    </button>
-  ),
-  TooltipContent: (_: { children: React.ReactNode }) => null,
-}));
 
 describe("HeadersSection", () => {
   it("highlights important headers and renders values", async () => {
@@ -38,12 +19,7 @@ describe("HeadersSection", () => {
     await expect
       .element(page.getByText("strict-transport-security", { exact: true }))
       .toBeInTheDocument();
-    expect(
-      page
-        .getByText("max-age=63072000", { exact: true })
-        .elements()
-        .some((n) => n.tagName.toLowerCase() === "span"),
-    ).toBe(true);
+    await expect.element(page.getByText("max-age=63072000", { exact: true })).toBeInTheDocument();
   });
 
   it("sorts headers with important ones first, then alphabetically", async () => {

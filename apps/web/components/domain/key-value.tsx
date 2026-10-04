@@ -67,15 +67,11 @@ export function KeyValue({
                 </span>
               }
             />
-            <ResponsiveTooltipContent
-              className={cn(
-                isTruncated || valueTooltip != null
-                  ? "max-w-[80vw] break-words whitespace-pre-wrap md:max-w-[40rem]"
-                  : "hidden",
-              )}
-            >
-              {valueTooltip ?? value}
-            </ResponsiveTooltipContent>
+            {isTruncated || valueTooltip != null ? (
+              <ResponsiveTooltipContent className="max-w-[80vw] break-words whitespace-pre-wrap md:max-w-[40rem]">
+                {valueTooltip ?? value}
+              </ResponsiveTooltipContent>
+            ) : null}
           </ResponsiveTooltip>
 
           {suffix ? (
