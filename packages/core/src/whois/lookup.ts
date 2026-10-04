@@ -16,11 +16,13 @@ const DEFAULT_DEADLINE_MS = 10_000;
  *
  * `no_server` (IANA answered, no WHOIS server exists) and `blocked` (the WHOIS
  * server refuses this client outright) are permanent: neither will succeed on
- * retry, so both surface as `unsupported_tld`. A failed IANA query surfaces
- * as `timeout` or `connect_failed`, so it retries instead of being mistaken
- * for an unsupported TLD. `rate_limited` (throttle notice or RDAP 429) and
- * `unparseable` (a reply with no recognizable record) are treated as
- * transient, so they are retried rather than persisted.
+ * retry, so both surface as `unsupported_tld`. `invalid_input` (not a
+ * registrable domain), `invalid_tld` and `unsupported_runtime` are permanent
+ * too, so they surface as `lookup_failed` instead of being retried. A failed
+ * IANA query surfaces as `timeout` or `connect_failed`, so it retries instead
+ * of being mistaken for an unsupported TLD. `rate_limited` (throttle notice or
+ * RDAP 429) and `unparseable` (a reply with no recognizable record) are treated
+ * as transient, so they are retried rather than persisted.
  */
 function toFailure(
   res: Pick<
@@ -31,9 +33,13 @@ function toFailure(
   const error =
     res.errorCode === "no_server" || res.errorCode === "blocked"
       ? "unsupported_tld"
-      : res.errorCode === "timeout"
-        ? "timeout"
-        : "retry";
+      : res.errorCode === "invalid_input" ||
+          res.errorCode === "invalid_tld" ||
+          res.errorCode === "unsupported_runtime"
+        ? "lookup_failed"
+        : res.errorCode === "timeout"
+          ? "timeout"
+          : "retry";
   return {
     success: false,
     error,
@@ -74,7 +80,8 @@ export async function fetchBootstrapData(
       return undefined;
     }
 
-    // rdapper throws on malformed bootstrap data, so treat a bad shape like a failed fetch
+    // rdapper fails the lookup (invalid_input) on data without a services array, so treat a bad
+    // shape like a failed fetch and let rdapper load its own
     const json = (await res.json()) as Partial<BootstrapData> | null;
     return Array.isArray(json?.services) ? (json as BootstrapData) : undefined;
   } catch {
@@ -109,9 +116,8 @@ export async function lookupWhois(
       includeRaw,
       // Route every RDAP request (including followed links and redirects) through safeFetch.
       customFetch: createRdapFetch({ userAgent: options.userAgent, timeoutMs }),
-      // rdapper throws on the mere presence of this key, even when undefined, so omit it when our
-      // fetch failed and let rdapper load its own bootstrap (or fall back to WHOIS).
-      ...(bootstrapData ? { customBootstrapData: bootstrapData } : {}),
+      // Undefined when our fetch failed: rdapper then loads its own (or falls back to WHOIS).
+      customBootstrapData: bootstrapData,
     });
 
     if (!res.ok || !res.record) {

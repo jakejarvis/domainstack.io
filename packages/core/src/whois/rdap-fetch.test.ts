@@ -1,3 +1,4 @@
+import { RdapperError } from "rdapper";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { safeFetch } from "@domainstack/safe-fetch";
@@ -73,7 +74,7 @@ describe("createRdapFetch", () => {
     expect(await res.json()).toEqual({ errorCode: 429 });
   });
 
-  it("propagates SafeFetchError as a rejection", async () => {
+  it("propagates a SafeFetchError refusal as is", async () => {
     safeFetchMock.mockRejectedValue(new SafeFetchError("host_blocked", "blocked"));
     const rdapFetch = createRdapFetch({ timeoutMs: 1000 });
 
@@ -81,6 +82,24 @@ describe("createRdapFetch", () => {
       SafeFetchError,
     );
   });
+
+  it.each([
+    ["timeout", "timeout"],
+    ["connection_error", "connect_failed"],
+    ["dns_error", "connect_failed"],
+  ] as const)(
+    "rethrows a safeFetch %s as an RdapperError coded %s, so rdapper's trace keeps it",
+    async (safeFetchCode, rdapperCode) => {
+      const original = new SafeFetchError(safeFetchCode, "Request failed");
+      safeFetchMock.mockRejectedValue(original);
+      const rdapFetch = createRdapFetch({ timeoutMs: 1000 });
+
+      const err = await rdapFetch("https://rdap.example/domain/example.com").catch((e) => e);
+
+      expect(err).toBeInstanceOf(RdapperError);
+      expect(err).toMatchObject({ code: rdapperCode, message: "Request failed", cause: original });
+    },
+  );
 
   it("forwards the dispatcher and combines safeFetch's and rdapper's abort signals", async () => {
     safeFetchMock.mockResolvedValue(makeResult());

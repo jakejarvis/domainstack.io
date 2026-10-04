@@ -32,7 +32,8 @@ interface RdapLookupFailureDetail {
  */
 export interface RdapLookupFailure {
   success: false;
-  error: "unsupported_tld" | "timeout" | "retry";
+  /** `unsupported_tld` and `lookup_failed` are permanent; `timeout` and `retry` are transient. */
+  error: "unsupported_tld" | "lookup_failed" | "timeout" | "retry";
   detail: RdapLookupFailureDetail;
 }
 

@@ -6,8 +6,9 @@ import type { RegistrationContact } from "@domainstack/types";
  * Client-safe: this only reads what rdapper already decided (`redacted`,
  * `redactedFields`, `privacyService`) and never imports rdapper itself.
  *
- * Registries can also return NIC handles (e.g. `JJ1234-IS`) in place of a name,
- * which rdapper doesn't resolve yet, so that one check lives here.
+ * Registries can also return NIC handles (e.g. `JJ1234-IS`) in place of a name.
+ * rdapper ≥ 0.18 drops them, but rows stored by older versions stay until the
+ * domain is looked up again, so the same check (rdapper's pattern) stays here.
  */
 
 type RegistrantState =
@@ -83,9 +84,10 @@ export function describeRegistrant(
     : (usableName(registrant.organization) ?? usableName(registrant.name));
   const location = formatLocation(registrant);
 
-  // Identity is withheld or belongs to a privacy service. Mirrors rdapper's
-  // `isPrivacyContact`; a bare `redacted` flag with no field list counts too,
-  // since we can't tell what was hidden.
+  // Identity is withheld or belongs to a privacy service. rdapper's
+  // `isPrivacyContact` asks the same, but it's re-derived here so rows cached by
+  // older rdapper versions read the same way; a bare `redacted` flag with no
+  // field list counts too, since we can't tell what was hidden.
   const redactedFields = registrant.redactedFields ?? [];
   const identityRedacted =
     Boolean(registrant.privacyService) ||
@@ -93,10 +95,12 @@ export function describeRegistrant(
       ? redactedFields.some((f) => f === "name" || f === "organization")
       : Boolean(registrant.redacted));
 
-  // `privacyEnabled` is coarse: rdapper sets it for any redacted registrant field
-  // (an email-only redaction is the usual GDPR shape). Identity is only hidden
-  // when no usable name survived, so a visible name stays a named registrant, and
-  // a redacted country or email on its own doesn't hide anything.
+  // Since rdapper 0.17, `privacyEnabled` means the identity is hidden, but rows
+  // cached before then set it for any redacted registrant field (an email-only
+  // redaction is the usual GDPR shape). Either way identity is only hidden when
+  // no usable name survived (a NIC handle isn't one), so a visible name stays a
+  // named registrant, and a redacted country or email on its own doesn't hide
+  // anything.
   const redacted = !name && (Boolean(privacyEnabled) || identityRedacted);
 
   // Redaction wins even when a stray country is published.

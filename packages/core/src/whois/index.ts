@@ -9,6 +9,8 @@
 
 import { domainToUnicode } from "node:url";
 
+import type { DomainRecord } from "rdapper";
+
 import { upsertDomain } from "@domainstack/db/queries/domains";
 import {
   resolveOrCreateProviderId,
@@ -17,7 +19,7 @@ import {
 } from "@domainstack/db/queries/providers";
 import { getCachedRegistration, upsertRegistration } from "@domainstack/db/queries/registrations";
 import { getProviderCatalog } from "@domainstack/edge-config";
-import type { RegistrationContact, RegistrationResponse } from "@domainstack/types";
+import type { RegistrationResponse } from "@domainstack/types";
 import { getDomainTld } from "@domainstack/utils/domain";
 import {
   detectRegistrar,
@@ -133,7 +135,7 @@ export async function normalizeRegistration(
   options: NormalizeOptions,
 ): Promise<RegistrationResponse> {
   const { catalog } = options;
-  const record = JSON.parse(recordJson) as ParsedRdapRecord;
+  const record = JSON.parse(recordJson) as DomainRecord;
   const registrarProviders = catalog ? getProvidersFromCatalog(catalog, "registrar") : [];
 
   // Normalize registrar
@@ -183,7 +185,7 @@ export async function normalizeRegistration(
     unicodeName: record.unicodeName,
     punycodeName: record.punycodeName,
     registry: record.registry,
-    reseller: record.reseller?.name,
+    reseller: record.reseller,
     statuses: record.statuses,
     creationDate: record.creationDate,
     updatedDate: record.updatedDate,
@@ -263,45 +265,10 @@ export async function persistRegistration(
 }
 
 // ============================================================================
-// Internal: Types & Helpers
+// Internal: Helpers
 // ============================================================================
 
-interface ParsedRdapRecord {
-  domain: string;
-  tld: string;
-  isRegistered: boolean;
-  unicodeName?: string;
-  punycodeName?: string;
-  registry?: string;
-  registrar?: { name?: string; url?: string };
-  reseller?: { name?: string };
-  statuses?: Array<{ status: string; description?: string; raw?: string }>;
-  creationDate?: string;
-  updatedDate?: string;
-  expirationDate?: string;
-  deletionDate?: string;
-  transferLock?: boolean;
-  dnssec?: {
-    enabled: boolean;
-    dsRecords?: Array<{
-      keyTag?: number;
-      algorithm?: number;
-      digestType?: number;
-      digest?: string;
-    }>;
-  };
-  nameservers?: Array<{ host: string; ipv4?: string[]; ipv6?: string[] }>;
-  contacts?: RegistrationContact[];
-  privacyEnabled?: boolean;
-  whoisServer?: string;
-  rdapServers?: string[];
-  rawRdap?: unknown;
-  rawWhois?: string;
-  source?: "rdap" | "whois" | null;
-  warnings?: string[];
-}
-
-function formatRawResponse(record: ParsedRdapRecord): Record<string, unknown> | string | undefined {
+function formatRawResponse(record: DomainRecord): Record<string, unknown> | string | undefined {
   if (record.source === "rdap" && record.rawRdap) {
     return record.rawRdap as Record<string, unknown>;
   }

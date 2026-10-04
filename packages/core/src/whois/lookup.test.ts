@@ -124,7 +124,6 @@ describe("lookupWhois", () => {
     "no_data",
     "rate_limited",
     "unparseable",
-    "unsupported_runtime",
     "aborted",
     "unknown",
   ] as const)("returns retry for errorCode %s", async (errorCode) => {
@@ -134,6 +133,21 @@ describe("lookupWhois", () => {
 
     expect(result).toMatchObject({ success: false, error: "retry" });
   });
+
+  it.each(["invalid_input", "invalid_tld", "unsupported_runtime"] as const)(
+    "returns lookup_failed, not retry, for errorCode %s",
+    async (errorCode) => {
+      vi.mocked(lookup).mockResolvedValue({ ok: false, error: "boom", errorCode, attempts: [] });
+
+      const result = await lookupWhois("www.example.com");
+
+      expect(result).toMatchObject({
+        success: false,
+        error: "lookup_failed",
+        detail: { code: errorCode },
+      });
+    },
+  );
 
   it("returns timeout for a deadline timeout", async () => {
     vi.mocked(lookup).mockResolvedValue({
@@ -241,7 +255,7 @@ describe("lookupWhois", () => {
     );
   });
 
-  it("omits customBootstrapData when the bootstrap fetch fails, so rdapper loads its own", async () => {
+  it("passes no customBootstrapData when the bootstrap fetch fails, so rdapper loads its own", async () => {
     // beforeEach makes the bootstrap fetch fail (ok: false)
     vi.mocked(lookup).mockResolvedValue({
       ok: true,
@@ -251,9 +265,7 @@ describe("lookupWhois", () => {
 
     await lookupWhois("example.com");
 
-    const passed = vi.mocked(lookup).mock.calls[0]?.[1] ?? {};
-    // rdapper rejects the key even when its value is undefined
-    expect("customBootstrapData" in passed).toBe(false);
+    expect(vi.mocked(lookup).mock.calls[0]?.[1]?.customBootstrapData).toBeUndefined();
   });
 
   it("passes the fetched bootstrap data through to rdapper", async () => {

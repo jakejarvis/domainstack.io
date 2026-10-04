@@ -10,12 +10,12 @@ const MAX_RETRY_AFTER_MS = 5 * 60_000;
 
 type FetchRegistrationResult =
   | { success: true; data: { recordJson: string } }
-  | { success: false; error: "unsupported_tld" };
+  | { success: false; error: "unsupported_tld" | "lookup_failed" };
 
 /**
  * Step: Lookup domain registration via rdapper (WHOIS/RDAP).
  *
- * Unsupported TLD is a permanent failure.
+ * Unsupported TLD and invalid input (`lookup_failed`) are permanent failures.
  * Retry and timeout errors are thrown as RetryableError for automatic retry.
  *
  * @param domain - The domain to lookup
@@ -60,7 +60,7 @@ export async function lookupWhoisStep(domain: string): Promise<FetchRegistration
       }
       throw new RetryableError("RDAP lookup timed out", { retryAfter });
     }
-    // Permanent failure (unsupported_tld) - return to caller
+    // Permanent failure (unsupported_tld, lookup_failed) - return to caller
     return { success: false, error: result.error };
   }
 

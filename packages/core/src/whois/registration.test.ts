@@ -1,4 +1,5 @@
 /* @vitest-environment node */
+import type { DomainRecord } from "rdapper";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { RemoteDataUnavailableError } from "../lib/fetch-errors";
@@ -37,7 +38,7 @@ beforeEach(async () => {
   whoisMock.lookupWhois.mockReset();
 });
 
-function mockRecord(record: Record<string, unknown>) {
+function mockRecord(record: DomainRecord) {
   whoisMock.lookupWhois.mockResolvedValue({
     success: true,
     recordJson: JSON.stringify(record),
@@ -58,7 +59,7 @@ describe("fetchRegistration", () => {
         punycodeName: domain,
         registry: "Verisign",
         registrar: { name: "Example Registrar, Inc.", url: "https://registrar.example.net/" },
-        reseller: { name: "Example Registrar, Inc." },
+        reseller: "Example Registrar, Inc.",
         statuses: [
           { status: "clientTransferProhibited", description: "Transfer locked", raw: "raw-1" },
           { status: "clientDeleteProhibited" },
@@ -88,6 +89,8 @@ describe("fetchRegistration", () => {
 
       expect(typeof fresh.data.domainId).toBe("string");
       expect(fresh.data.domainId).not.toBe("");
+      // rdapper reports the reseller as a plain name; it links to the known registrar
+      expect(fresh.data.reseller).toBe("Example Registrar, Inc.");
 
       const cached = await getCachedRegistration(domain);
       expect(fresh.data).toEqual(cached.data);
