@@ -19,7 +19,7 @@ catalog:
   '@types/react-dom': 19.3.0
   '@vercel/functions': ^3.9.11
   ipaddr.js: ^2.5.0
-  msw: ^2.15.0
+  msw: ^3.0.2
   rdapper: ^0.18.0
   sonner: ^2.0.8
   superjson: ^2.2.6
