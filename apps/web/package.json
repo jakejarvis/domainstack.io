@@ -55,7 +55,7 @@
     "@tanstack/react-hotkeys": "^0.12.1",
     "@tanstack/react-query": "^5.104.1",
     "@tanstack/react-query-devtools": "^5.104.1",
-    "@tanstack/react-table": "^9.2.4",
+    "@tanstack/react-table": "^9.2.6",
     "@trpc/client": "catalog:",
     "@trpc/server": "catalog:",
     "@trpc/tanstack-react-query": "catalog:",
