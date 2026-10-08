@@ -38,7 +38,7 @@
     "@icons-pack/react-simple-icons": "^13.15.1",
     "@mdx-js/loader": "^3.1.1",
     "@mdx-js/react": "^3.1.1",
-    "@modelcontextprotocol/server": "^2.3.0",
+    "@modelcontextprotocol/server": "^2.3.1",
     "@next/mdx": "16.3.8",
     "@opentelemetry/api": "catalog:",
     "@opentelemetry/api-logs": "catalog:",
