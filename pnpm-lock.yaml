@@ -492,11 +492,11 @@ importers:
         specifier: workspace:*
         version: link:../logger
       '@vercel/blob':
-        specifier: ^2.8.0
-        version: 2.8.0
+        specifier: ^2.8.1
+        version: 2.8.1
       files-sdk:
         specifier: ^2.6.2
-        version: 2.6.2(@nestjs/common@12.1.2(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@vercel/blob@2.8.0)(ai@7.0.127(zod@4.6.5))(hono@4.13.12)(next@16.3.8(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@types/node@24.19.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(supports-color@10.2.2)(zod@4.6.5)
+        version: 2.6.2(@nestjs/common@12.1.2(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@vercel/blob@2.8.1)(ai@7.0.127(zod@4.6.5))(hono@4.13.12)(next@16.3.8(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@types/node@24.19.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(supports-color@10.2.2)(zod@4.6.5)
     devDependencies:
       '@domainstack/typescript-config':
         specifier: workspace:*
@@ -3812,8 +3812,8 @@ packages:
   '@upstash/redis@1.39.0':
     resolution: {integrity: sha512-VwkpYTdxSfjSulQS5h16NHtg/1UEheBfvez2AeGKinAujOoGXhXCcohQRzsQ/d2g/XzbjzTVGhG8Ds8uOI0Mxg==}
 
-  '@vercel/blob@2.8.0':
-    resolution: {integrity: sha512-Nu+HWKpkgovCh/ezlG7wCVwF7RErTzLzZMbGKFBdGBCbTKyK+s5VXPLl+0+TpNEQPH8AVaGzOpIsXUOtkqylCQ==}
+  '@vercel/blob@2.8.1':
+    resolution: {integrity: sha512-QFX17sMRoBnPuNyHsQsY5GsYRg9HoE8yGKKbfB/V/JK9QuyQp10R5qeNntT6EgUJ4cQ3R+sH26n5l/LacfzzEw==}
     engines: {node: '>=20.0.0'}
 
   '@vercel/cli-auth@0.0.1':
@@ -11017,7 +11017,7 @@ snapshots:
     dependencies:
       uncrypto: 0.1.3
 
-  '@vercel/blob@2.8.0':
+  '@vercel/blob@2.8.1':
     dependencies:
       '@vercel/oidc': 3.8.10
       async-retry: 1.3.3
@@ -13261,7 +13261,7 @@ snapshots:
     dependencies:
       filename-reserved-regex: 4.0.1
 
-  files-sdk@2.6.2(@nestjs/common@12.1.2(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@vercel/blob@2.8.0)(ai@7.0.127(zod@4.6.5))(hono@4.13.12)(next@16.3.8(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@types/node@24.19.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(supports-color@10.2.2)(zod@4.6.5):
+  files-sdk@2.6.2(@nestjs/common@12.1.2(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@vercel/blob@2.8.1)(ai@7.0.127(zod@4.6.5))(hono@4.13.12)(next@16.3.8(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@types/node@24.19.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(supports-color@10.2.2)(zod@4.6.5):
     dependencies:
       aws4fetch: 1.0.20
       commander: 15.0.0
@@ -13274,7 +13274,7 @@ snapshots:
       '@modelcontextprotocol/sdk': 1.31.0(supports-color@10.2.2)(zod@4.6.5)
       '@nestjs/common': 12.1.2(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2)
       '@opentelemetry/api': 1.9.1
-      '@vercel/blob': 2.8.0
+      '@vercel/blob': 2.8.1
       ai: 7.0.127(zod@4.6.5)
       hono: 4.13.12
       next: 16.3.8(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@types/node@24.19.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
