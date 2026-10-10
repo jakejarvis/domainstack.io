@@ -27,7 +27,7 @@
     "@tabler/icons-react": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "shadcn": "^4.21.1",
+    "shadcn": "^4.21.4",
     "sonner": "catalog:"
   },
   "peerDependencies": {
