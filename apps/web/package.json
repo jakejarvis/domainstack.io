@@ -67,7 +67,7 @@
     "geist": "^1.7.2",
     "jotai": "^3.0.1",
     "maplibre-gl": "^6.11.2",
-    "mcp-handler": "^2.2.0",
+    "mcp-handler": "^2.3.0",
     "motion": "^14.0.0",
     "ms": "3.0.0-canary.202508261828",
     "next": "16.3.8",
