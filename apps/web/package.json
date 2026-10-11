@@ -16,7 +16,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@ai-sdk/gateway": "^4.0.103",
+    "@ai-sdk/gateway": "^4.0.107",
     "@ai-sdk/react": "^4.0.130",
     "@ai-sdk/workflow": "^2.0.58",
     "@bprogress/next": "^3.2.12",
