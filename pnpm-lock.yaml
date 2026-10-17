@@ -52,8 +52,8 @@ catalogs:
       specifier: 19.3.0
       version: 19.3.0
     '@vercel/functions':
-      specifier: ^3.9.11
-      version: 3.9.11
+      specifier: ^3.10.1
+      version: 3.10.1
     ipaddr.js:
       specifier: ^2.5.0
       version: 2.5.0
@@ -235,7 +235,7 @@ importers:
         version: 11.19.0(@tanstack/react-query@5.104.1(react@19.3.0))(@trpc/client@11.19.0(@trpc/server@11.19.0(typescript@7.0.2))(typescript@7.0.2))(@trpc/server@11.19.0(typescript@7.0.2))(react@19.3.0)(typescript@7.0.2)
       '@vercel/functions':
         specifier: 'catalog:'
-        version: 3.9.11(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)
+        version: 3.10.1(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)
       '@vercel/otel':
         specifier: ^2.1.3
         version: 2.1.3(@opentelemetry/api-logs@0.222.0)(@opentelemetry/api@1.9.1)(@opentelemetry/instrumentation@0.222.0(@opentelemetry/api@1.9.1)(supports-color@8.1.1))(@opentelemetry/resources@2.11.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-logs@0.222.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-metrics@2.11.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.11.0(@opentelemetry/api@1.9.1))
@@ -413,7 +413,7 @@ importers:
         version: 11.19.0(typescript@7.0.2)
       '@vercel/functions':
         specifier: 'catalog:'
-        version: 3.9.11(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)
+        version: 3.10.1(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)
       posthog-node:
         specifier: ^5.55.0
         version: 5.55.0(rxjs@7.8.2)
@@ -468,7 +468,7 @@ importers:
         version: link:../utils
       '@vercel/functions':
         specifier: 'catalog:'
-        version: 3.9.11(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)
+        version: 3.10.1(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)
       better-auth:
         specifier: ^1.7.7
         version: 1.7.7(@opentelemetry/api@1.9.1)(drizzle-kit@0.31.11)(drizzle-orm@0.45.3(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(@upstash/redis@1.39.0)(kysely@0.29.6)(pg@8.23.1))(next@16.3.8(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@types/node@24.19.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(pg@8.23.1)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(solid-js@1.9.15)(vitest@5.0.3)
@@ -548,7 +548,7 @@ importers:
         version: 9.0.6
       '@vercel/functions':
         specifier: 'catalog:'
-        version: 3.9.11(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)
+        version: 3.10.1(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)
       cheerio:
         specifier: ^1.2.0
         version: 1.2.0
@@ -588,7 +588,7 @@ importers:
         version: link:../utils
       '@vercel/functions':
         specifier: 'catalog:'
-        version: 3.9.11(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)
+        version: 3.10.1(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)
       drizzle-orm:
         specifier: ^0.45.3
         version: 0.45.3(@electric-sql/pglite@0.5.8)(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(@upstash/redis@1.39.0)(kysely@0.29.6)(pg@8.23.1)
@@ -749,7 +749,7 @@ importers:
         version: 1.0.2
       '@vercel/functions':
         specifier: 'catalog:'
-        version: 3.9.11(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)
+        version: 3.10.1(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)
       next:
         specifier: '>=16'
         version: 16.3.8(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@types/node@24.19.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -777,7 +777,7 @@ importers:
         version: 1.39.0
       '@vercel/functions':
         specifier: 'catalog:'
-        version: 3.9.11(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)
+        version: 3.10.1(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)
       ipaddr.js:
         specifier: 'catalog:'
         version: 2.5.0
@@ -824,7 +824,7 @@ importers:
         version: link:../safe-fetch
       '@vercel/functions':
         specifier: 'catalog:'
-        version: 3.9.11(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)
+        version: 3.10.1(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)
       '@vercel/sandbox':
         specifier: ^3.5.1
         version: 3.5.1
@@ -3841,8 +3841,8 @@ packages:
       next:
         optional: true
 
-  '@vercel/functions@3.9.11':
-    resolution: {integrity: sha512-DbqKqcbUHGBTYgHZieSNDuF1/L2iSPZV0OGm0Xkm/t+s61lFk4VX8yGQ22Og3WYGxypW1l4Elx1NP8BL928u8Q==}
+  '@vercel/functions@3.10.1':
+    resolution: {integrity: sha512-Ca7peSyID6CW5a9Pyu6rDK2AC3n9hyJD0aTBuO74x9eL50Z+rgXIR0H0umI6j0gb9NMG7jvrx7DUhMGuuOFxsg==}
     engines: {node: '>= 20'}
     peerDependencies:
       '@aws-sdk/credential-provider-web-identity': '*'
@@ -3907,8 +3907,8 @@ packages:
     resolution: {integrity: sha512-sPw1kIfQEA6/2dB+zlAJHnhhNBRJ8t/t4HfFvKO+g0EPBA7NbCKyGovuhgAV6Mnl865ka7HqCEguIy596czdAw==}
     engines: {node: '>= 20'}
 
-  '@vercel/oidc@4.0.0':
-    resolution: {integrity: sha512-ko6ATeRUlHZMB5hLFdC7+/Q1dI2f3NX3gZHxtpALdkxurwjD5HFHGWYF+4o+4SF0E47jg6KzcHknmRpHcKgJ5A==}
+  '@vercel/oidc@4.0.1':
+    resolution: {integrity: sha512-l//xMmDTj2WR6EMtfA2BEF2oR7ViKCD1SCxqFKCn1/8wOZBxgxhxkegSGi90ICTc1rB50ZbKuPIslc8aJxAqew==}
     engines: {node: '>= 20'}
 
   '@vercel/otel@2.1.3':
@@ -11046,7 +11046,7 @@ snapshots:
 
   '@vercel/flags-core@1.9.0(@aws-sdk/credential-provider-web-identity@3.972.49)(next@16.3.8(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@24.19.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(ws@8.22.0)':
     dependencies:
-      '@vercel/functions': 3.9.11(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)
+      '@vercel/functions': 3.10.1(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)
       '@vercel/oidc': 3.5.0
       dequal: 2.0.3
       jose: 5.10.0
@@ -11057,9 +11057,9 @@ snapshots:
       - '@aws-sdk/credential-provider-web-identity'
       - ws
 
-  '@vercel/functions@3.9.11(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)':
+  '@vercel/functions@3.10.1(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)':
     dependencies:
-      '@vercel/oidc': 4.0.0
+      '@vercel/oidc': 4.0.1
     optionalDependencies:
       '@aws-sdk/credential-provider-web-identity': 3.972.49
       ws: 8.22.0
@@ -11105,7 +11105,7 @@ snapshots:
       '@vercel/cli-exec': 1.0.1
       jose: 5.10.0
 
-  '@vercel/oidc@4.0.0':
+  '@vercel/oidc@4.0.1':
     dependencies:
       '@vercel/cli-config': 0.3.1
       '@vercel/cli-exec': 1.0.1
@@ -11503,7 +11503,7 @@ snapshots:
       '@jridgewell/trace-mapping': 0.3.31
       '@standard-schema/spec': 1.0.0
       '@types/ms': 2.1.0
-      '@vercel/functions': 3.9.11(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)
+      '@vercel/functions': 3.10.1(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)
       '@workflow/errors': 5.0.1
       '@workflow/serde': 5.0.0
       '@workflow/utils': 5.0.0
@@ -11534,7 +11534,7 @@ snapshots:
       '@jridgewell/trace-mapping': 0.3.31
       '@standard-schema/spec': 1.0.0
       '@types/ms': 2.1.0
-      '@vercel/functions': 3.9.11(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)
+      '@vercel/functions': 3.10.1(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)
       '@workflow/errors': 5.0.1
       '@workflow/serde': 5.0.0
       '@workflow/utils': 5.0.0
@@ -11840,7 +11840,7 @@ snapshots:
 
   '@workflow/world-vercel@5.0.1(@aws-sdk/credential-provider-web-identity@3.972.49)(@opentelemetry/api@1.9.1)':
     dependencies:
-      '@vercel/functions': 3.9.11(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)
+      '@vercel/functions': 3.10.1(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.22.0)
       '@vercel/oidc': 3.2.0
       '@vercel/queue': 0.5.1(@opentelemetry/api@1.9.1)
       '@workflow/errors': 5.0.1
