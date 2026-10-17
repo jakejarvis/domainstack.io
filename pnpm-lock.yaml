@@ -495,8 +495,8 @@ importers:
         specifier: ^2.8.0
         version: 2.8.0
       files-sdk:
-        specifier: ^2.6.2
-        version: 2.6.2(@nestjs/common@12.1.2(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@vercel/blob@2.8.0)(ai@7.0.127(zod@4.6.5))(hono@4.13.12)(next@16.3.8(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@types/node@24.19.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(supports-color@10.2.2)(zod@4.6.5)
+        specifier: ^3.1.1
+        version: 3.1.1(@nestjs/common@12.1.2(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@vercel/blob@2.8.0)(ai@7.0.127(zod@4.6.5))(hono@4.13.12)(next@16.3.8(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@types/node@24.19.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(supports-color@10.2.2)(zod@4.6.5)
     devDependencies:
       '@domainstack/typescript-config':
         specifier: workspace:*
@@ -5398,9 +5398,9 @@ packages:
     resolution: {integrity: sha512-Pf0dwHrWs1GcIK15ps304fmxp2AOcfNR6vOIMvCPEy6ZztKYxzRQHlOuPVWo2HRjbCLHaRTY+kD8n3RbQ0A/fw==}
     engines: {node: '>=20'}
 
-  files-sdk@2.6.2:
-    resolution: {integrity: sha512-saXZhszxRbHsjmyzXIKTIgNUQxffRVcLl6IjqEbkGn35qTkf8MyBi8WBwpOmJBdBIxycQJyQGWrjXBCs/YBHnQ==}
-    engines: {node: '>=20'}
+  files-sdk@3.1.1:
+    resolution: {integrity: sha512-JRaEXd9Ig/QzHNFSU/L/BZQecHQM3zjxG7F2YcPwYnve7znSF5CieqW4PZHAnawxEHaOhhaYpSS73VKPXs0H1Q==}
+    engines: {node: '>=22'}
     hasBin: true
     peerDependencies:
       '@anthropic-ai/claude-agent-sdk': ^0.3.0
@@ -5413,14 +5413,14 @@ packages:
       '@azure/storage-blob': ^12.26.0
       '@bunny.net/storage-sdk': ^0.3.1
       '@google-cloud/storage': ^7.19.0 || ^8.0.0
-      '@googleapis/drive': ^20.0.0 || ^21.0.0 || ^22.0.0
+      '@googleapis/drive': ^20.0.0 || ^21.0.0 || ^22.0.0 || ^25.0.0 || ^26.0.0
       '@microsoft/microsoft-graph-client': ^3.0.7
       '@nestjs/common': ^10.0.0 || ^11.0.0 || ^12.0.0
       '@netlify/blobs': ^10.7.4 || ^11.0.0
       '@openai/agents': '>=0.11.0 <1.0.0'
       '@opentelemetry/api': ^1.9.0
       '@supabase/storage-js': ^2.105.4
-      '@sveltejs/kit': ^2.0.0
+      '@sveltejs/kit': ^2.0.0 || ^3.0.0
       '@tanstack/react-start': ^1.0.0
       '@vercel/blob': ^2.4.0
       ai: ^6.0.0 || ^7.0.0
@@ -5431,10 +5431,11 @@ packages:
       convex: ^1.16.0
       disk: ^0.8.18 || ^1.0.0
       dropbox: ^10.34.0
+      effect: ^4.0.0
       fastify: ^4.0.0 || ^5.0.0
       firebase-admin: ^14.1.0
       google-auth-library: ^10.0.0 || ^11.0.0
-      h3: ^1.0.0
+      h3: ^1.0.0 || ^2.0.0
       hono: ^4.0.0
       koa: ^2.0.0 || ^3.0.0
       next: ^14.0.0 || ^15.0.0 || ^16.0.0
@@ -5505,6 +5506,8 @@ packages:
       disk:
         optional: true
       dropbox:
+        optional: true
+      effect:
         optional: true
       fastify:
         optional: true
@@ -13261,7 +13264,7 @@ snapshots:
     dependencies:
       filename-reserved-regex: 4.0.1
 
-  files-sdk@2.6.2(@nestjs/common@12.1.2(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@vercel/blob@2.8.0)(ai@7.0.127(zod@4.6.5))(hono@4.13.12)(next@16.3.8(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@types/node@24.19.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(supports-color@10.2.2)(zod@4.6.5):
+  files-sdk@3.1.1(@nestjs/common@12.1.2(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@vercel/blob@2.8.0)(ai@7.0.127(zod@4.6.5))(hono@4.13.12)(next@16.3.8(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@types/node@24.19.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(supports-color@10.2.2)(zod@4.6.5):
     dependencies:
       aws4fetch: 1.0.20
       commander: 15.0.0
