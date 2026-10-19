@@ -64,7 +64,7 @@
     "@vercel/toolbar": "^0.2.7",
     "ai": "^7.0.127",
     "flags": "^4.3.1",
-    "geist": "^1.7.2",
+    "geist": "^1.8.1",
     "jotai": "^3.0.1",
     "maplibre-gl": "^6.11.2",
     "mcp-handler": "^2.2.0",
