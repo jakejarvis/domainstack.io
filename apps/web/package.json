@@ -82,7 +82,7 @@
     "remark-smartypants": "^3.0.3",
     "server-only": "0.0.1",
     "sonner": "catalog:",
-    "streamdown": "^2.7.0",
+    "streamdown": "^2.7.1",
     "superjson": "catalog:",
     "ts-ics": "^2.4.7",
     "workflow": "catalog:",
