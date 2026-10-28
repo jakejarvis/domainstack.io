@@ -49,7 +49,7 @@ vi.mock("@domainstack/edge-config", () => ({
 }));
 
 beforeAll(() => {
-  server.listen({ onUnhandledRequest: "error" });
+  server.listen({ onUnhandledFrame: "error" });
   // Stub the API key for tests
   vi.stubEnv("IPLOCATE_API_KEY", "test-api-key");
 });

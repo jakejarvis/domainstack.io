@@ -17,9 +17,9 @@
     "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json"
   },
   "dependencies": {
-    "@base-ui/react": "^1.8.0",
+    "@base-ui/react": "^1.9.0",
     "@shadcn/react": "^0.3.1",
-    "cn": "^0.4.0",
+    "cn": "^0.5.0",
     "cva": "^1.0.0-beta.12"
   },
   "devDependencies": {
@@ -27,7 +27,7 @@
     "@tabler/icons-react": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "shadcn": "^4.21.1",
+    "shadcn": "^4.23.0",
     "sonner": "catalog:"
   },
   "peerDependencies": {

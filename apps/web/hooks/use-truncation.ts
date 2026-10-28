@@ -4,8 +4,8 @@ export function useTruncation() {
   const [isTruncated, setIsTruncated] = useState(false);
   const cleanupRef = useRef<(() => void) | null>(null);
 
-  // A callback ref, so observers follow the element even when the caller swaps
-  // it (e.g. ProviderCell wrapping the value in a tooltip trigger once truncated).
+  // A callback ref, so observers follow the element even when the caller swaps the
+  // element (e.g. ProviderCell wrapping the value in a tooltip trigger once truncated).
   const valueRef = useCallback((element: HTMLSpanElement | null) => {
     cleanupRef.current?.();
     cleanupRef.current = null;

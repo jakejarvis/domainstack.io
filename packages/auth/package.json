@@ -17,8 +17,8 @@
     "fmt:check": "oxfmt --check --config ../../.oxfmtrc.json"
   },
   "dependencies": {
-    "@better-auth/drizzle-adapter": "^1.7.7",
-    "@better-auth/infra": "^0.4.14",
+    "@better-auth/drizzle-adapter": "^1.7.14",
+    "@better-auth/infra": "^0.4.23",
     "@domainstack/db": "workspace:*",
     "@domainstack/email": "workspace:*",
     "@domainstack/logger": "workspace:*",
@@ -27,7 +27,7 @@
     "@domainstack/types": "workspace:*",
     "@domainstack/utils": "workspace:*",
     "@vercel/functions": "catalog:",
-    "better-auth": "^1.7.7"
+    "better-auth": "^1.7.14"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
