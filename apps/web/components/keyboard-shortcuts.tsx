@@ -87,11 +87,13 @@ function ShortcutSection({ title, items }: { title: string; items: ShortcutItem[
  * open dialog, because the registry also updates each time a hotkey fires.
  */
 function ShortcutList() {
-  const { hotkeys } = useHotkeyRegistrations();
+  const registrations = useHotkeyRegistrations();
 
   const groups = new Map<string, ShortcutItem[]>();
   const seen = new Set<string>();
-  for (const registration of hotkeys) {
+  for (const registration of registrations) {
+    // Only single chords are listed; sequences would need their own layout.
+    if (registration.kind !== "chord") continue;
     const { meta } = registration.options;
     // The same hotkey can be registered more than once (e.g. header and home search).
     if (!meta?.name || seen.has(registration.hotkey)) continue;
