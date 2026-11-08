@@ -842,8 +842,8 @@ importers:
   packages/screenshot-runner:
     dependencies:
       '@ghostery/adblocker-puppeteer':
-        specifier: 2.18.2
-        version: 2.18.2(puppeteer@25.12.0(yauzl@3.4.0))
+        specifier: 2.20.3
+        version: 2.20.3(puppeteer@25.12.0(yauzl@3.4.0))
       puppeteer:
         specifier: 25.12.0
         version: 25.12.0(yauzl@3.4.0)
@@ -1888,19 +1888,19 @@ packages:
   '@floating-ui/utils@0.2.12':
     resolution: {integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==}
 
-  '@ghostery/adblocker-content@2.18.2':
-    resolution: {integrity: sha512-TOe/b4KOBFEc9OjLG+wvgamGcSTIPSDBAL5YSa8lzjBsoSl8IDnfOjeJDldlLacsC/JEUMLkZIDDNknEolJVqg==}
+  '@ghostery/adblocker-content@2.20.3':
+    resolution: {integrity: sha512-tuV4T5wPbfVdcY6dnM1dfaXSazpStx7ZI54bd2l9r93yPZfZoVsHR1Uxf/A8ETBMXJPQ92JMDQzmV8hOgpyq+w==}
 
-  '@ghostery/adblocker-extended-selectors@2.18.2':
-    resolution: {integrity: sha512-doKNShBk3+czQL08UkrysHkCPeG/kNPlXvz3DH7SXxD9Y78ovWkEAhjeR+upoan3fomJJuK3dD+IrlofnjckYw==}
+  '@ghostery/adblocker-extended-selectors@2.20.3':
+    resolution: {integrity: sha512-cwloe8GXCoiLor685fOCsx3PyDFvsVnYdCO/MMAyZ4Dr5q8cgSHijqqYSU2fWgoWfz1Fhfepj7mGbQnrvUR37w==}
 
-  '@ghostery/adblocker-puppeteer@2.18.2':
-    resolution: {integrity: sha512-40rz+YOsBXstIZBa/ElZTmyhYCUGPdI9q9tdaOzPz7YkaZA9u9omC9UXkLhFtEQTNgagRBs2nPJkF4Xm2HyS+A==}
+  '@ghostery/adblocker-puppeteer@2.20.3':
+    resolution: {integrity: sha512-R4WgmwVn5qJ6IhD3GHAZwgDoU5OdvZDUyRopkwW//Dr65hIh1f+R7vRtPvR6VGcdTCJUwXXBr/ARvSS5HcW9rw==}
     peerDependencies:
       puppeteer: '>5'
 
-  '@ghostery/adblocker@2.18.2':
-    resolution: {integrity: sha512-x6zEkf1dHSN0t4ExLmuN6nIgH0oAi6laoKe5yGsiIB4jkEvutea1PJgxgRUIjWfNbDRmkf4GjUtuqQFZgvQG1w==}
+  '@ghostery/adblocker@2.20.3':
+    resolution: {integrity: sha512-Wxv+RiqfD+xYVij9gkudU6nDb+eqbfu2roDZa0rtqVw2qIm0ICxEnkrsgUyfZw7+L+3PfI2PszHZQeoCkR1CuA==}
 
   '@ghostery/url-parser@1.3.1':
     resolution: {integrity: sha512-QKqGi+7aDQ4RcyHyCwgEk6B9vWnsBP4Q7htaN0zPJV3ATqTKEQDtSTb9c/AN586oJUDs24YXKcwFYwNweY/YjQ==}
@@ -2539,6 +2539,7 @@ packages:
   '@opentelemetry/sdk-trace-base@2.11.0':
     resolution: {integrity: sha512-H19x/TX/LZdqiYOjM7fqtSxwlplC5pgelavqbQdHbhdq0q/AI/TGkM2dfGuuynTXmJPeF2HoZVoPDu+TGoW78A==}
     engines: {node: ^18.19.0 || >=20.6.0}
+    deprecated: Use @opentelemetry/sdk-trace package
     peerDependencies:
       '@opentelemetry/api': '>=1.3.0 <1.10.0'
 
@@ -3115,6 +3116,9 @@ packages:
   '@smithy/core@3.35.0':
     resolution: {integrity: sha512-zRMhfkByhT2snNdr1si24vJitU6Cr9ix2MikUfWmkAgp4jrNP0GcKSP5YvwQ+TlI8AZXER5QOGJn3JsVtSD9/A==}
     engines: {node: '>=18.0.0'}
+    deprecated: |-
+      Deprecated due to a bug in custom logger data redaction. Upgrade to the latest version. If you used a custom logger with this
+        version, review your logs and rotate any credentials or other secrets. See https://github.com/aws/aws-sdk-js-v3/issues/8393.
 
   '@smithy/fetch-http-handler@5.8.0':
     resolution: {integrity: sha512-ycSJu3tFAQ4v04CBB0agqFMVsSQ1iG3yw+SpgxRqKfaURpQD4CZ8Wn0zPMmSnOuTpTh65Vz+EA0rMrw089wvkA==}
@@ -9329,23 +9333,23 @@ snapshots:
 
   '@floating-ui/utils@0.2.12': {}
 
-  '@ghostery/adblocker-content@2.18.2':
+  '@ghostery/adblocker-content@2.20.3':
     dependencies:
-      '@ghostery/adblocker-extended-selectors': 2.18.2
+      '@ghostery/adblocker-extended-selectors': 2.20.3
 
-  '@ghostery/adblocker-extended-selectors@2.18.2': {}
+  '@ghostery/adblocker-extended-selectors@2.20.3': {}
 
-  '@ghostery/adblocker-puppeteer@2.18.2(puppeteer@25.12.0(yauzl@3.4.0))':
+  '@ghostery/adblocker-puppeteer@2.20.3(puppeteer@25.12.0(yauzl@3.4.0))':
     dependencies:
-      '@ghostery/adblocker': 2.18.2
-      '@ghostery/adblocker-content': 2.18.2
+      '@ghostery/adblocker': 2.20.3
+      '@ghostery/adblocker-content': 2.20.3
       puppeteer: 25.12.0(yauzl@3.4.0)
       tldts-experimental: 7.4.16
 
-  '@ghostery/adblocker@2.18.2':
+  '@ghostery/adblocker@2.20.3':
     dependencies:
-      '@ghostery/adblocker-content': 2.18.2
-      '@ghostery/adblocker-extended-selectors': 2.18.2
+      '@ghostery/adblocker-content': 2.20.3
+      '@ghostery/adblocker-extended-selectors': 2.20.3
       '@ghostery/url-parser': 1.3.1
       '@remusao/guess-url-type': 2.1.0
       '@remusao/small': 2.1.0
