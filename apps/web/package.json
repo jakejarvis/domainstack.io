@@ -84,7 +84,7 @@
     "sonner": "catalog:",
     "streamdown": "^2.7.0",
     "superjson": "catalog:",
-    "ts-ics": "^2.4.7",
+    "ts-ics": "^2.4.8",
     "workflow": "catalog:",
     "zod": "catalog:",
     "zustand": "^5.0.15"
