@@ -24,6 +24,9 @@ export const {
   unlinkAccount,
   deleteUser,
   // Provided by Polar client adapter:
-  customer,
   checkoutEmbed,
 } = client;
+
+// The full `customer` API returns @polar-sh/sdk models that live in unexported,
+// hashed chunks and can't be named in declarations; expose only what the app uses.
+export const customer: Pick<typeof client.customer, "portal"> = client.customer;

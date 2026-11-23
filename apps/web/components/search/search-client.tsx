@@ -1,7 +1,7 @@
 "use client";
 
 import { IconArrowRight, IconCircleX, IconSearch, IconX } from "@tabler/icons-react";
-import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
+import { useFormatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
 import { useAtom } from "jotai";
 import { useParams } from "next/navigation";
 import posthogClient from "posthog-js";
@@ -89,6 +89,8 @@ function SearchInputAddons({
   isFocused: boolean;
   onDismissAction?: () => void;
 }) {
+  const formatForDisplay = useFormatForDisplay();
+
   if (variant === "sm" && (loading || mounted)) {
     return (
       <InputGroupAddon align="inline-end">

@@ -290,7 +290,7 @@ export async function captureChatTelemetry(payload: ChatTelemetryPayload): Promi
       const events = buildAiObservabilityEvents(payload, generations);
       await Promise.all(
         events.map((event) =>
-          posthog.captureImmediate({
+          posthog.captureAiImmediate({
             event: event.event,
             distinctId,
             properties: event.properties,

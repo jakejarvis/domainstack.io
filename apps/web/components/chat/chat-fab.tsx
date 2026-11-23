@@ -1,7 +1,7 @@
 "use client";
 
 import { IconMessageCircleFilled } from "@tabler/icons-react";
-import { formatForDisplay } from "@tanstack/react-hotkeys";
+import { useFormatForDisplay } from "@tanstack/react-hotkeys";
 
 import { Button } from "@domainstack/ui/button";
 import { Separator } from "@domainstack/ui/separator";
@@ -83,6 +83,8 @@ function MobileChatFab({ loading, onClick, onPrefetch }: ChatFabProps & { loadin
 }
 
 function DesktopChatFab({ loading, onClick, onPrefetch }: ChatFabProps & { loading: boolean }) {
+  const formatForDisplay = useFormatForDisplay();
+
   return (
     <ChatFabButton
       loading={loading}

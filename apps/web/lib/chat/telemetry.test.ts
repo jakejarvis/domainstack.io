@@ -12,7 +12,7 @@ import {
 } from "./telemetry";
 
 const mocks = vi.hoisted(() => ({
-  captureImmediate: vi.fn<(...args: unknown[]) => Promise<void>>(async () => undefined),
+  captureAiImmediate: vi.fn<(...args: unknown[]) => Promise<void>>(async () => undefined),
   flush: vi.fn<(...args: unknown[]) => Promise<void>>(async () => undefined),
   shutdown: vi.fn<(...args: unknown[]) => Promise<void>>(async () => undefined),
   getGenerationInfo:
@@ -21,7 +21,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("posthog-node", () => ({
   PostHog: class MockPostHog {
-    captureImmediate = mocks.captureImmediate;
+    captureAiImmediate = mocks.captureAiImmediate;
     flush = mocks.flush;
     shutdown = mocks.shutdown;
   },
@@ -290,7 +290,7 @@ describe("captureChatTelemetry", () => {
   const originalKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 
   beforeEach(() => {
-    mocks.captureImmediate.mockClear();
+    mocks.captureAiImmediate.mockClear();
     mocks.flush.mockClear();
     mocks.shutdown.mockClear();
     mocks.getGenerationInfo.mockReset();
@@ -311,7 +311,7 @@ describe("captureChatTelemetry", () => {
     await captureChatTelemetry(payload());
 
     expect(mocks.getGenerationInfo).not.toHaveBeenCalled();
-    expect(mocks.captureImmediate).not.toHaveBeenCalled();
+    expect(mocks.captureAiImmediate).not.toHaveBeenCalled();
     expect(mocks.flush).not.toHaveBeenCalled();
   });
 
@@ -321,8 +321,8 @@ describe("captureChatTelemetry", () => {
     await captureChatTelemetry(payload());
 
     expect(mocks.getGenerationInfo).toHaveBeenCalledWith({ id: "gen_01ABC" });
-    expect(mocks.captureImmediate).toHaveBeenCalledTimes(2);
-    expect(mocks.captureImmediate).toHaveBeenNthCalledWith(
+    expect(mocks.captureAiImmediate).toHaveBeenCalledTimes(2);
+    expect(mocks.captureAiImmediate).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({
         event: "$ai_generation",
@@ -330,7 +330,7 @@ describe("captureChatTelemetry", () => {
         properties: expect.not.objectContaining({ $ai_total_cost_usd: expect.anything() }),
       }),
     );
-    expect(mocks.captureImmediate).toHaveBeenNthCalledWith(
+    expect(mocks.captureAiImmediate).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
         event: "$ai_span",
@@ -347,7 +347,7 @@ describe("captureChatTelemetry", () => {
 
     await captureChatTelemetry(payload());
 
-    expect(mocks.captureImmediate).toHaveBeenNthCalledWith(
+    expect(mocks.captureAiImmediate).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({
         event: "$ai_generation",
@@ -364,7 +364,7 @@ describe("captureChatTelemetry", () => {
 
     await captureChatTelemetry(payload({ userId: null }));
 
-    expect(mocks.captureImmediate).toHaveBeenCalledWith(
+    expect(mocks.captureAiImmediate).toHaveBeenCalledWith(
       expect.objectContaining({ distinctId: "anonymous" }),
     );
   });

@@ -31,7 +31,7 @@ function mockDns(domain: string) {
   expect(domain.endsWith(".test")).toBe(true);
 }
 
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 
 afterEach(() => {
   vi.restoreAllMocks();

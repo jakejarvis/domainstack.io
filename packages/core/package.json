@@ -43,7 +43,7 @@
     "@domainstack/safe-fetch": "workspace:*",
     "@domainstack/types": "workspace:*",
     "@domainstack/utils": "workspace:*",
-    "@readme/http-status-codes": "^9.0.6",
+    "@readme/http-status-codes": "^10.0.0",
     "@vercel/functions": "catalog:",
     "cheerio": "^1.2.0",
     "ipaddr.js": "catalog:",
