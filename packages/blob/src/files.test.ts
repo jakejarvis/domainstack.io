@@ -78,7 +78,7 @@ describe("getFiles", () => {
       WEBP,
       expect.objectContaining({ contentType: "image/webp" }),
     );
-    expect((await files.head("abc/32x32.png")).type).toBe("image/webp");
+    expect((await files.head("abc/32x32.png")).contentType).toBe("image/webp");
   });
 });
 

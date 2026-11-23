@@ -854,6 +854,7 @@ describe("safeFetch", () => {
       expect(Agent).toHaveBeenCalledTimes(1);
       expect(Agent).toHaveBeenCalledWith(
         expect.objectContaining({
+          allowH2: false,
           connect: expect.objectContaining({ lookup: pinnedLookup }),
         }),
       );

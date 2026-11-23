@@ -1,6 +1,11 @@
 "use client";
 
-import { formatForDisplay, useHotkey, useHotkeyRegistrations } from "@tanstack/react-hotkeys";
+import {
+  type DisplayHotkeyChord,
+  useFormatForDisplay,
+  useHotkey,
+  useHotkeyRegistrations,
+} from "@tanstack/react-hotkeys";
 import { useId, useRef, useState } from "react";
 
 import {
@@ -16,8 +21,8 @@ import { cn } from "@domainstack/ui/utils";
 type ShortcutItem = {
   id: string;
   name: string;
-  /** Anything `formatForDisplay` accepts, e.g. "Mod+K" or a lone "Shift". */
-  hotkey: string;
+  /** A registered chord such as "Mod+K", or a lone modifier such as "Shift". */
+  hotkey: DisplayHotkeyChord;
   /** A pointer action that follows the keys, e.g. "click". */
   gesture?: string;
 };
@@ -41,6 +46,7 @@ const POINTER_SHORTCUTS: Array<ShortcutItem & { group: string }> = [
 
 /** One keycap per key, as symbols on macOS (⌘ K) and labels elsewhere (Ctrl K). */
 function ShortcutKeys({ hotkey, gesture }: Pick<ShortcutItem, "hotkey" | "gesture">) {
+  const formatForDisplay = useFormatForDisplay();
   const keys = formatForDisplay(hotkey, { parts: true });
   const spoken = formatForDisplay(hotkey, { parts: true, useSymbols: false }).join(" ");
 
@@ -87,11 +93,13 @@ function ShortcutSection({ title, items }: { title: string; items: ShortcutItem[
  * open dialog, because the registry also updates each time a hotkey fires.
  */
 function ShortcutList() {
-  const { hotkeys } = useHotkeyRegistrations();
+  const registrations = useHotkeyRegistrations();
 
   const groups = new Map<string, ShortcutItem[]>();
   const seen = new Set<string>();
-  for (const registration of hotkeys) {
+  for (const registration of registrations) {
+    // Only chords are registered; sequences would need their own formatting.
+    if (registration.kind !== "chord") continue;
     const { meta } = registration.options;
     // The same hotkey can be registered more than once (e.g. header and home search).
     if (!meta?.name || seen.has(registration.hotkey)) continue;

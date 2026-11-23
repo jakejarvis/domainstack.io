@@ -1,4 +1,4 @@
-import { Agent } from "undici";
+import { Agent, type Dispatcher } from "undici";
 
 import { createLogger } from "@domainstack/logger";
 
@@ -17,7 +17,7 @@ const DEFAULT_MAX_REDIRECTS = 3;
 const CREDENTIAL_HEADERS = new Set(["authorization", "cookie", "proxy-authorization"]);
 
 /** `dispatcher` is an undici extension that the DOM `RequestInit` type omits. */
-type FetchInit = RequestInit & { dispatcher?: Agent };
+type FetchInit = RequestInit & { dispatcher?: Dispatcher };
 
 /**
  * Fetch a URL with SSRF protection, redirect validation, and size limits.
@@ -86,8 +86,13 @@ export async function safeFetch(opts: SafeFetchOptions): Promise<SafeFetchResult
 
     // Pin the socket to the addresses we just validated so a second DNS answer
     // cannot point the connection at a private target (DNS rebinding). The
-    // agent is per-request, so it is closed once the body has been read.
-    const dispatcher = new Agent({ connect: { lookup: createPinnedLookup(addresses) } });
+    // agent is per-request, so it is closed once the body has been read. undici 8
+    // negotiates HTTP/2 by default; stay on HTTP/1.1 to keep the connection path
+    // (and what the headers report sees) unchanged.
+    const dispatcher = new Agent({
+      allowH2: false,
+      connect: { lookup: createPinnedLookup(addresses) },
+    });
     const hopUrl = currentUrl;
 
     try {

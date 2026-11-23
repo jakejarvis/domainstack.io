@@ -18,8 +18,8 @@
   },
   "dependencies": {
     "@domainstack/logger": "workspace:*",
-    "@upstash/ratelimit": "^2.2.0",
-    "@upstash/redis": "^1.39.0",
+    "@upstash/ratelimit": "^2.2.1",
+    "@upstash/redis": "^1.41.0",
     "@vercel/functions": "catalog:",
     "ipaddr.js": "catalog:"
   },

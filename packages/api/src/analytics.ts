@@ -53,9 +53,12 @@ export async function captureException(
   // tick frames between otherwise identical throws, so a stack-based fingerprint
   // splits one burst across several issues. Non-Errors are coerced only to build
   // the fingerprint; posthog-node extracts its own details from the raw value.
-  client.captureException(error, distinctId, {
-    ...properties,
-    $exception_fingerprint: exceptionFingerprint(error),
+  client.captureException(error, {
+    distinctId,
+    properties: {
+      ...properties,
+      $exception_fingerprint: exceptionFingerprint(error),
+    },
   });
 
   // Deferring past the response is the caller's job — `trackException` already
