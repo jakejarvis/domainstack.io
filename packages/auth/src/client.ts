@@ -23,6 +23,7 @@ export const {
   linkSocial,
   unlinkAccount,
   deleteUser,
+  changeEmail,
   // Provided by Polar client adapter:
   checkoutEmbed,
 } = client;

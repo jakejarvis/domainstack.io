@@ -33,6 +33,7 @@ const AUTH_CALLBACK_ERROR_CODES = {
   SIGNUP_DISABLED: "signup_disabled",
   UNABLE_TO_CREATE_USER: "unable_to_create_user",
   UNABLE_TO_CREATE_SESSION: "unable_to_create_session",
+  EMAIL_CHANGE_SIGN_IN_REQUIRED: "email_change_sign_in_required",
 } as const;
 
 export type AuthCallbackErrorCode =
@@ -74,6 +75,8 @@ const AUTH_CALLBACK_ERROR_MESSAGES: Record<AuthCallbackErrorCode, string> = {
   [AUTH_CALLBACK_ERROR_CODES.UNABLE_TO_CREATE_USER]:
     "Unable to create your account. Please try again later.",
   [AUTH_CALLBACK_ERROR_CODES.UNABLE_TO_CREATE_SESSION]: "Unable to sign you in. Please try again.",
+  [AUTH_CALLBACK_ERROR_CODES.EMAIL_CHANGE_SIGN_IN_REQUIRED]:
+    "For your security, email change links only work where you're signed in. Sign in, then open the link again.",
 };
 
 const GENERIC_AUTH_ERROR_MESSAGE = "An error occurred during authentication. Please try again.";

@@ -105,4 +105,20 @@ describe("useAuthCallback", () => {
     expect(mocks.toastError).toHaveBeenCalledTimes(1);
     expect(mocks.replaceState).toHaveBeenCalledTimes(1);
   });
+
+  it("steps aside for change-email callbacks", async () => {
+    mocks.search = "email_change=1&error=TOKEN_EXPIRED";
+    await render(<Harness />);
+
+    expect(mocks.toastError).not.toHaveBeenCalled();
+    expect(mocks.replaceState).not.toHaveBeenCalled();
+  });
+
+  it("titles the toast for a change-email link opened without a session", async () => {
+    mocks.search = "error=email_change_sign_in_required";
+    await render(<Harness />);
+
+    expect(mocks.toastError).toHaveBeenCalledTimes(1);
+    expect(mocks.toastError.mock.calls[0]?.[0]).toBe("Sign in to finish changing your email");
+  });
 });
